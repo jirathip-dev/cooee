@@ -149,7 +149,12 @@ test("switching style or sprites keeps the scroll position", async ({ page }, in
   await page.goto(`/t/long-${info.project.name}`);
   await expect(page.locator("#msgs .unread")).toBeVisible();
   const list = page.locator("#msgs");
-  await list.evaluate((l) => { l.scrollTop = l.scrollHeight / 2; });
+  // Mid-thread, with the top row cut through its middle.
+  await list.evaluate((l) => {
+    l.scrollTop = l.scrollHeight / 2;
+    const r = [...l.children].find((r) => r.getBoundingClientRect().bottom > l.getBoundingClientRect().top);
+    l.scrollTop += r.getBoundingClientRect().top - l.getBoundingClientRect().top + r.offsetHeight / 2;
+  });
   // The first row in view, and how much of it is above the list's top edge (its share of the row's height): a
   // switch restyles every row, so the same row stays first in view, cut at the same share.
   const view = () => list.evaluate((l) => {
