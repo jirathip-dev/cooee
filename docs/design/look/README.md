@@ -120,8 +120,9 @@ What the theme changes (left: the plain words, which terminal uses as they are):
 
   The shots show frame 1 of each. Terminal has no moments: a row changes its glyph (`✻ ! ✓ ✕`) and colour, and
   nothing moves.
-- **Push lines** cover M2's three triggers. The title is the thread's title. The body is the theme word, then the
-  agent's line: `at the gate · codex: Edit src/pair.rs?`. Terminal says `needs you · …`.
+- **Push lines** cover M2's three triggers. The title is the thread's title. The body is the theme word, the plain
+  word, then the agent's line: `at the gate · needs you · codex: Edit src/pair.rs?` (q420). Terminal says
+  `needs you · …`.
 - **What stays plain:** your messages and the agent's, tool rows (`Read`, `$ cargo test`, and the `✓` / `✕ exit 101`
   / `⋯ 0:41` statuses), diffs and output, the agent's own approval options (`[allow] [always allow] [reject]`),
   folders, agent names, times, the composer, Settings and sign-ins. Colours come from the scheme alone.
@@ -202,8 +203,8 @@ There are herdsman's 8 (`assets/schemes/`, values unchanged) and garden's 2 (#42
 3. **Other-mode taps switch Appearance** (section 1). The alternative is a tap that only ticks that list and shows
    nothing until the phone changes mode. **Recommend: as drawn.**
 4. **Push text: the theme word only** (`at the gate · codex: …`), or with the plain word (`at the gate · needs you ·
-   codex: …`)? A lock screen is read cold, but the owner picked the theme. **Recommend: the theme word only;**
-   terminal reads plainly anyway.
+   codex: …`)? A lock screen is read cold, but the owner picked the theme. **Decided (q420): with the plain word,**
+   as drawn.
 5. **The working sprite follows the tool kind** (edit, read, run). The alternative is one working sprite. **Recommend:
    as drawn.** It is the one live hint of what the agent is doing.
 6. **The turn-end line is new** (`in the stable · done 09:21 · 9 min · 6 tools`). v1 had none, and the moment needs a
