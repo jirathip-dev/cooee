@@ -1,0 +1,50 @@
+# Themes and colour schemes
+
+cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.md`), as the #7 design
+(`docs/design/look/`) draws it. A theme is a folder of data and a scheme is a JSON file. Neither holds code.
+
+## A theme: `themes/<name>/`
+
+| File | Required | What it is |
+|---|---|---|
+| `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words` |
+| `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
+| `icon.png` | no | the tile in the look sheet, the favicon and the home-screen icon (else cooee's icon) |
+
+`words` maps cooee's state keys to the theme's words: `working needs done fail idle merged loading empty-threads`.
+A missing key says the plain word (`working`, `needs you`, `done`, `failed`, …). The theme words dress cooee's own
+state words and figures, never what you or an agent wrote, and never a control. Where there is room (the working
+pill, the live line, a turn's end, push text), the plain word follows the theme word: `at the gate · needs you`.
+
+Built in: `farm`, `kitchen`, `garden` and `terminal` (`web/themes/`). Your own go in `<config dir>/themes/<name>/`,
+where the config dir is the folder holding `config.toml`. One with a built-in's name replaces it. A theme naming an
+unknown scheme, or a scheme of the wrong mode, is refused, and so is one with `sprites` but no `sprites.svg`.
+`cooee serve` prints why.
+
+## A scheme: `schemes/<name>.json`
+
+`label`, `color-scheme` (`dark` or `light`) and `tokens`: `--bg --card --edge --line --scrim --fg --mute --l --link
+--g --a --r --p --c --fk-l --fk-p --fk-c --fk-g --fk-a`, each `#rrggbb`. Built in: the 12 in `web/schemes/`. Your own
+go in `<config dir>/schemes/`. Every scheme must pass herdsman's contrast gate (`cooee_web::gate`, ported from
+`docs/design/look/gate.mjs`): text at 4.5:1 and state colours at 3:1 on the background, the cards and the needs-you and
+group tints, and the state colours at least ΔE2000 20 apart. A scheme that fails the gate is refused.
+
+## The pick
+
+The server holds only the default theme (`theme` in `config.toml`, default `farm`). Each device keeps its own pick
+in `localStorage` (`cooee.look`): the theme, Appearance (`system`, `light` or `dark`; System follows the phone
+live), Style (`modern` or `terminal`), Sprites (`on` or `off`) and a scheme per mode. `look.js` applies it in
+`<head>`, before the first paint. Both styles read the same tokens: a style sets only shape, radius, type and buttons.
+
+## Plugin tabs
+
+A plugin tab (`<iframe data-plugin>`, M4) posts `{type: "cooee-look?"}` to its parent. It gets back, and again on
+every change, `{type: "cooee-look", theme, mode, style, sprites, vars, words, urls}`. `vars` holds the scheme's CSS
+variables. `urls` holds the theme's data: `theme` (`/look/<name>/theme.json`), `sprites` (`/look/<name>/sprites.svg`,
+or `null`) and `icon`.
+
+## Push text
+
+`Theme::push_body(key, line)` gives the body of a push: the theme word, the plain word, then the agent's line, as in
+`at the gate · needs you · codex: Edit src/pair.rs?`. The terminal theme says `needs you · …`. Push uses
+the server's default theme (`theme` in `config.toml`), because a device's own pick never leaves that device.

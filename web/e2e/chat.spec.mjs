@@ -23,7 +23,8 @@ test("each event kind renders: reply, tool call, plan, approval, state, stop", a
   const msgs = page.locator("#msgs");
   await expect(msgs.locator(".blk.me").first()).toHaveText(/Say hello/);
   await expect(msgs.locator(".blk.ai").first()).toContainText("Hello");
-  await expect(page.locator("#st")).toHaveText("✓ done");
+  await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
+  await expect(page.locator("#st")).toHaveText("in the stable");
 
   await say(page, "use a tool");
   const tool = msgs.locator(".blk.run", { hasText: "Read src/lib.rs" });
@@ -38,7 +39,8 @@ test("each event kind renders: reply, tool call, plan, approval, state, stop", a
   await say(page, "approve an edit");
   const ask = msgs.locator(".blk.ap");
   await expect(ask.getByRole("button")).toHaveText(["Allow", "Always allow", "Reject"]);
-  await expect(page.locator("#st")).toHaveText("! needs you");
+  await expect(page.locator("#st")).toHaveText("at the gate");
+  await expect(page.locator("#wait")).toHaveText("at the gate · needs you");
   await expect(page.locator("#wait")).toBeVisible();
   await shot(page, info, "chat-approval");
   const taps = [];

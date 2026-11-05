@@ -95,6 +95,8 @@ pub struct Hub {
     shed: Shed,
     store: Store,
     push: Push,
+    /// The server's default theme, whose words a push says.
+    theme: cooee_web::Theme,
     roots: Vec<PathBuf>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
@@ -132,7 +134,9 @@ impl Live {
         let store = &hub.store;
         for change in changes {
             let watched = self.tx.receiver_count() > 0;
-            if let Some(n) = note(&self.meta, &self.chat, &change, &self.was, watched) {
+            if let Some(n) = note(
+                &self.meta, &self.chat, &change, &self.was, watched, &hub.theme,
+            ) {
                 hub.push.send(&n);
             }
             if let Change::State(turn) = &change {
@@ -153,11 +157,16 @@ impl Live {
 
 impl Hub {
     /// Loads every stored thread, re-attaches the open ones to their shed terminals by name, and starts
-    /// following shed's events.
+    /// following shed's events. A push speaks `theme`'s words.
     ///
     /// # Errors
     /// [`HubError::Store`] when the store can't be read.
-    pub fn open(shed: Shed, data: &Path, roots: Vec<PathBuf>) -> Result<Arc<Self>, HubError> {
+    pub fn open(
+        shed: Shed,
+        data: &Path,
+        roots: Vec<PathBuf>,
+        theme: cooee_web::Theme,
+    ) -> Result<Arc<Self>, HubError> {
         let store = Store::open(data)?;
         let mut threads = BTreeMap::new();
         for id in store.ids()? {
@@ -178,6 +187,7 @@ impl Hub {
             shed,
             store,
             push: Push::new(data),
+            theme,
             roots,
             boot: format!("{:x}", now()),
             threads: Mutex::new(threads),

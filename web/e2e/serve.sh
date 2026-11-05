@@ -29,6 +29,10 @@ for id in long-390 long-1440; do
   }' >"$tmp/data/threads/$id.jsonl"
 done
 
+# An own scheme beside the config (the built-in nord, relabelled), so the look sheet lists it.
+mkdir -p "$tmp/schemes"
+sed 's/"Nord"/"Sea"/' web/schemes/nord.json >"$tmp/schemes/sea.json"
+
 cat >"$tmp/config.toml" <<EOF
 port = ${PORT:?}
 roots = ["$tmp/root"]
