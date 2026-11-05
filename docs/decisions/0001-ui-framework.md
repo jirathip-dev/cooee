@@ -54,7 +54,7 @@ Two measurement notes:
 | 2 | **Reconnect:** connection cut 10 s mid-stream, recovers with no lost or duplicated text | **Pass** | Cut at token 500 / 501 / 502; final text exact, 0 bad renders. Back 5.0 / 5.0 / 5.1 s after the network returned: Topcoat retries at 1, 2, 4, 8 … 30 s, so a longer cut waits up to 30 s. |
 | 3 | **Long thread:** 1,000 messages scroll smoothly, no long tasks over 50 ms (4× throttle) | **Pass** | Touch scroll of 134,000 px top to bottom: 0 / 4 / 0 long tasks. Run 2's four (max 154 ms) came at load 22; runs 1 and 3 are clean. The 1,000 messages are plain server-rendered HTML, and no script runs while scrolling. |
 | 4 | **Approval:** tap → server → row updated in under 300 ms on localhost | **Pass** | 5.8 / 7.8 / 7.5 ms from `click()` to the updated row painted (a procedure call, then the live region's re-render over the WebSocket). |
-| 5 | **Thai input:** IME composition intact (“สวัสดีครับ ที่นี่”) in Chrome and Safari on macOS | **Chrome: pass. Safari: not measured; the owner checks** | Chrome, while streaming: typed one code point per key with tone marks (as Thai Kedmanee types), and composed word by word through the IME (`Input.imeSetComposition`). The value is exact both ways, with one `compositionend` per word (none cut short), and the sent message is exact. Safari could not be driven: `safaridriver` needs “Allow remote automation” turned on in Safari, a host change this lane may not make. Risk below: Topcoat's `:value` binding sets the textarea's value on every input event. |
+| 5 | **Thai input:** IME composition intact (“สวัสดีครับ ที่นี่”) in Chrome and Safari on macOS | **Chrome: pass. Safari (iPhone): pass, by the owner (q393)** | Chrome, while streaming: typed one code point per key with tone marks (as Thai Kedmanee types), and composed word by word through the IME (`Input.imeSetComposition`). The value is exact both ways, with one `compositionend` per word (none cut short), and the sent message is exact. Safari could not be driven: `safaridriver` needs “Allow remote automation” turned on in Safari, a host change this lane may not make. The owner typed it in Safari on the iPhone over the tailnet (command below), while streaming and after Send: “Ok the Thai words work nicely” (q393). Safari on macOS was not checked separately; it shares WebKit with iOS Safari. Risk below: Topcoat's `:value` binding sets the textarea's value on every input event. |
 | 6 | **Theme:** the farm scheme and sprite render as in herdsman, theme files unchanged | **Pass** | `theme/` is herdsman's `assets/themes/farm/{theme.json,sprites.svg}` and `assets/schemes/farm.json`, byte-identical (`theme/SHA256SUMS`, `theme/SOURCE`). The scheme's tokens go on `:root` the way herdsman's server does it. Sprites are `<use href="#row-…">` with herdsman's `.rsp`/`.kf1`/`.kf2`/`kfr` rules, and the frames alternate (`--o1` read 1, 0, 0, 1 at 300 ms steps). Screenshots below. |
 | 7 | **Cost** | (measured) | See below. |
 
@@ -90,9 +90,8 @@ criterion above was measured on this version. Header overhead (about 500 B a fra
 
 ## Verdict
 
-**Topcoat**, provided the owner's Safari and iPhone Thai check (criterion 5) passes. Every criterion measured here
-passes. The one left open is the Safari half of the Thai input. If it fails there and the fix (below) doesn't hold, the
-verdict becomes Solid.
+**Topcoat.** Every criterion passes. The Safari half of the Thai input (criterion 5) passed in the owner's check on
+the iPhone (q393: “Intact: Topcoat is the framework”).
 
 The owner's check, on the tailnet:
 
