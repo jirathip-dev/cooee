@@ -67,6 +67,8 @@ test("each event kind renders: reply, tool call, plan, approval, state, stop", a
 });
 
 test("a reconnect mid-stream loses and doubles no text", async ({ page }, info) => {
+  // The fake streams a word per 20 ms sleep, which a busy or power-saving host can stretch many times over.
+  test.setTimeout(90_000);
   // The page talks to cooee through a proxy that can cut every connection, as a phone losing its network would.
   const sockets = new Set();
   const proxy = net.createServer((client) => {
@@ -96,6 +98,7 @@ test("a reconnect mid-stream loses and doubles no text", async ({ page }, info) 
   expect(streams.at(-1)).toMatch(/^[0-9a-f]+\.\d+$/);
   const want = Array.from({ length: 150 }, (_, i) => `w${i} `).join("");
   expect(await live.textContent()).toBe(want);
+  await page.locator(".blk.live .stop").click();
   await expect(page.locator(".blk.ai").last()).toContainText("streamed 150 words");
   await expect(page.locator(".blk.live")).toHaveCount(0);
   proxy.close();

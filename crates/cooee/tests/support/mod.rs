@@ -335,8 +335,10 @@ impl FakeShed {
                 }
                 self.emit(name, text(&format!("w{i} ")));
             }
-            // A pause before the reply, so a page can be read with the whole stream.
-            thread::sleep(delay * 50);
+            // The reply waits for a stop, so a page can be read with the whole stream, however late it reconnects.
+            if stop == "end_turn" {
+                while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
+            }
             (vec![reply(&format!("streamed {n} words"), stop)], stop)
         } else if prompt.contains("exit") {
             self.shared.lock().unwrap().stopped.insert(name.to_owned());
