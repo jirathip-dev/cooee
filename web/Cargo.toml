@@ -10,6 +10,8 @@ publish.workspace = true
 
 [dependencies]
 cooee-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 topcoat.workspace = true
 
 [lints]

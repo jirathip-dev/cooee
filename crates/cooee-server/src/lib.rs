@@ -239,10 +239,10 @@ async fn read(cx: &Cx, Json(r): Json<Read>) -> Result<Answer<()>> {
     Ok(Answer(blocking(cx, move |hub| hub.read(&id, r.item)).await))
 }
 
-/// The web UI and the threads' API over `hub`.
+/// The web UI (with `looks`, its themes and schemes) and the threads' API over `hub`.
 #[must_use]
-pub fn router(hub: Arc<Hub>) -> Router {
-    cooee_web::assets(Router::builder())
+pub fn router(hub: Arc<Hub>, looks: cooee_web::Looks) -> Router {
+    cooee_web::assets(Router::builder(), looks)
         .page(home)
         .page(chat)
         .route(messages)
@@ -257,7 +257,8 @@ pub fn router(hub: Arc<Hub>) -> Router {
         .build()
 }
 
-/// Opens the threads (`config`'s data folder and shed) and serves the web UI on `127.0.0.1:port` until Ctrl+C or
+/// Opens the threads (`config`'s data folder and shed) and the looks (the built-in and own themes and schemes), and
+/// serves the web UI on `127.0.0.1:port` until Ctrl+C or
 /// `SIGTERM`. `ready` gets the bound address first (port 0 picks a free one).
 ///
 /// # Errors
@@ -270,6 +271,10 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
     let hub = Hub::open(shed, &data, config.roots.clone())?;
+    let (looks, refused) = cooee_web::Looks::load(config.dir.as_deref(), config.theme.as_deref());
+    for why in refused {
+        eprintln!("cooee: refused {why}");
+    }
     let port = config.port;
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -277,6 +282,6 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .block_on(async {
             let listener = tokio::net::TcpListener::bind((Ipv4Addr::LOCALHOST, port)).await?;
             ready(listener.local_addr()?);
-            topcoat::serve(listener, router(hub)).await
+            topcoat::serve(listener, router(hub, looks)).await
         })
 }

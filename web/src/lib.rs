@@ -1,35 +1,110 @@
 //! cooee's web UI in Topcoat (docs/decisions/0001-ui-framework.md), in the Modern style: the thread list and the
 //! chat page (server-rendered), the chat's script (`chat.js`: the window of items, SSE, the outbox and drafts), the
-//! style sheet and the PWA manifest.
+//! style sheet, the PWA manifest, and the look (`look.rs` themes and schemes, `look.js` applying a device's pick
+//! before the first paint, its look sheet and Settings).
 
 #![forbid(unsafe_code)]
+
+mod look;
 
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
+    sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
 
 use cooee_core::{Agent, Summary, Thread, Turn};
+pub use look::{Looks, Pair, Scheme, TOKENS, Theme, gate, plain};
 use topcoat::{
     Result,
-    context::Cx,
+    context::{Cx, app_context},
     router::{
         Body, RouterBuilder,
+        error::not_found,
+        path_param,
         response::{IntoResponse, Response},
         route,
     },
     view::{Child, View, component, view},
 };
 
-/// The static routes: the manifest, the icon, the style sheet and the chat's script.
+/// The static routes: the manifest, the icon, the style sheet and the chat's script; and the look: `look.js` with
+/// every theme and scheme in it, and each theme's data at
+/// `/look/<theme>/{theme.json,sprites.svg,icon.png}`.
+///
+/// # Panics
+///
+/// Never: [`Looks`] always serialises.
 #[must_use]
-pub fn assets(builder: RouterBuilder) -> RouterBuilder {
+pub fn assets(builder: RouterBuilder, looks: Looks) -> RouterBuilder {
+    let js = format!(
+        "const LOOK = {};\n{}",
+        serde_json::to_string(&looks).expect("looks serialise"),
+        include_str!("look.js")
+    );
     builder
         .route(manifest)
         .route(icon)
         .route(style)
         .route(script)
+        .route(look_script)
+        .route(look_file)
+        .app_context(Arc::new(LookAssets { looks, js }))
+}
+
+/// The looks and `look.js` built from them, once at start.
+struct LookAssets {
+    looks: Looks,
+    js: String,
+}
+
+/// A file made at start, served with its content type.
+struct Owned(&'static str, Vec<u8>);
+
+impl IntoResponse for Owned {
+    fn into_response(self, _cx: &Cx) -> Result<Response> {
+        Ok(Response::builder()
+            .header("Content-Type", self.0)
+            .header("Cache-Control", "no-cache")
+            .body(Body::from(self.1))?)
+    }
+}
+
+#[route(GET "/look.js")]
+async fn look_script(cx: &Cx) -> Result<Owned> {
+    let look = app_context::<Arc<LookAssets>>(cx);
+    Ok(Owned(
+        "text/javascript; charset=utf-8",
+        look.js.clone().into_bytes(),
+    ))
+}
+
+path_param!(look);
+path_param!(file);
+
+#[route(GET "/look/{look}/{file}")]
+async fn look_file(cx: &Cx) -> Result<Owned> {
+    let theme = app_context::<Arc<LookAssets>>(cx)
+        .looks
+        .themes
+        .get(path_param::<Look>(cx))
+        .ok_or_else(not_found)?;
+    let found = match path_param::<File>(cx) {
+        "sprites.svg" => theme
+            .sprite_sheet
+            .clone()
+            .map(|b| Owned("image/svg+xml", b)),
+        "icon.png" => Some(theme.icon.clone().map_or_else(
+            || Owned("image/svg+xml", include_bytes!("icon.svg").to_vec()),
+            |b| Owned("image/png", b),
+        )),
+        "theme.json" => serde_json::to_vec(theme)
+            .ok()
+            .map(|b| Owned("application/json", b)),
+        _ => None,
+    };
+    Ok(found.ok_or_else(not_found)?)
 }
 
 /// A fixed file served with its content type.
@@ -84,7 +159,9 @@ async fn document(title: &str, #[default] child: Child<'_>) -> Result<impl View>
                 <title>(title)</title>
                 <link rel="manifest" href="/manifest.webmanifest">
                 <link rel="icon" href="/icon.svg" type="image/svg+xml">
+                <link rel="apple-touch-icon" href="/icon.svg">
                 <link rel="stylesheet" href="/app.css">
+                <script src="/look.js"></script>
                 <script type="module" src="/chat.js"></script>
             </head>
             <body>(child)</body>
@@ -115,21 +192,60 @@ fn age(at: u64) -> String {
     }
 }
 
-/// A state's colour class and label.
-fn state(state: &str) -> (&'static str, &'static str) {
+/// A turn state's key in the theme (`look.js` draws its sprite and words).
+fn state(state: &str) -> &'static str {
     match state {
-        "blocked" => ("r", "! needs you"),
-        "working" => ("a", "✻ working"),
-        "error" => ("r", "✕ error"),
-        "done" => ("m", "✓ done"),
-        "ended" => ("m", "■ ended"),
-        _ => ("m", ""),
+        "blocked" => "needs",
+        "working" => "working",
+        "error" => "fail",
+        "done" => "done",
+        "ended" => "ended",
+        _ => "",
     }
+}
+
+/// The header: the app's name (the heading on the thread list, else a link to it), `+`, the look sheet and Settings.
+#[component]
+async fn header(home: bool) -> Result<impl View> {
+    Ok(view! {
+        <header class="bar">
+            if home {
+                <h1>"cooee"</h1>
+            } else {
+                <a class="brand" href="/">"cooee"</a>
+            }
+            <a
+                class="gl"
+                href=(if home { "#new" } else { "/#new" })
+                aria-label="new thread"
+            >
+                "+"
+            </a>
+            <button
+                type="button"
+                class="gl"
+                data-open="look"
+                aria-label="look: theme and colours"
+                aria-pressed="false"
+            >
+                "◐"
+            </button>
+            <button
+                type="button"
+                class="gl"
+                data-open="settings"
+                aria-label="settings"
+                aria-pressed="false"
+            >
+                "⚙"
+            </button>
+        </header>
+    })
 }
 
 #[component]
 async fn row(r: Summary) -> Result<impl View> {
-    let (class, label) = state(&r.state);
+    let st = state(&r.state);
     let href = format!("/t/{}", r.id);
     let meta = format!("{} · {}", r.agent, age(r.at));
     Ok(view! {
@@ -138,7 +254,7 @@ async fn row(r: Summary) -> Result<impl View> {
             <span class="tt">(r.title)</span>
             <span class="ta">(meta)</span>
             <span class="tp">
-                <b class=(class)>(label)</b>
+                <b data-st=(st)></b>
                 (r.last)
             </span>
         </a>
@@ -171,11 +287,14 @@ async fn threads(
     Ok(view! {
         document(
             title: "cooee",
-            <header class="bar">
-                <h1>"cooee"</h1>
-                <a class="gl" href="#new" aria-label="new thread">"+"</a>
-            </header>
+            header(home: true)
             <main class="list">
+                if empty {
+                    <div class="emp">
+                        <span data-s="empty"></span>
+                        <p data-w="empty-threads" data-plain=""></p>
+                    </div>
+                }
                 <form class="nf" id="new" hidden=(!empty)>
                     <div class="fh">
                         <b>"new thread"</b>
@@ -254,7 +373,6 @@ pub fn chat_page(cx: &Cx, thread: Thread, turn: Turn) -> impl View {
 #[component]
 async fn chat(thread: Thread, turn: Turn) -> Result<impl View> {
     let folder = thread.folder.as_deref().map(short).unwrap_or_default();
-    let (_, label) = state(&turn.state);
     let ended = thread.closed || turn.state == "ended";
     Ok(view! {
         document(
@@ -266,6 +384,7 @@ async fn chat(thread: Thread, turn: Turn) -> Result<impl View> {
                 data-read=(thread.read.unwrap_or(0).to_string())
                 data-state=(turn.state.clone())
             >
+                header(home: false)
                 <div class="th">
                     <a class="gl bk" href="/" aria-label="back to threads">"‹"</a>
                     <div class="tb">
@@ -273,7 +392,7 @@ async fn chat(thread: Thread, turn: Turn) -> Result<impl View> {
                         <span class="ds">
                             <i class="dt"></i>
                             (format!("{} · {folder} · ", thread.agent))
-                            <span id="st">(label)</span>
+                            <span id="st" data-st=(state(&turn.state))></span>
                         </span>
                     </div>
                     <button
@@ -293,10 +412,12 @@ async fn chat(thread: Thread, turn: Turn) -> Result<impl View> {
                     aria-label="messages"
                     aria-live="polite"
                 ></ol>
-                <p class="tlv" id="wait" hidden=(true)>"● waiting for you"</p>
+                <p class="tlv" id="wait" hidden=(true)>
+                    <span data-st="needs" data-plain=""></span>
+                </p>
                 <form class="tw" id="composer">
                     <div class="pill" id="pill" hidden=(true)>
-                        "✻ working · "
+                        <span id="pst" data-st="working" data-plain=""></span>
                         <span id="el">"0:00"</span>
                         <button type="button" class="stop">"stop"</button>
                     </div>

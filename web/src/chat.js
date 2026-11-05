@@ -1,7 +1,8 @@
 // cooee's pages. The thread list: the new-thread form. The chat: a window of about 9 screens of items around an
 // anchor (slices by id as the reader nears an edge), scroll kept on a message rather than pixels, live events over
 // SSE resumed from the last one seen, the outbox (sending → sent → failed, tap to retry), the per-thread draft in
-// IndexedDB, approvals that lock once tapped, and debounced read marks.
+// IndexedDB, approvals that lock once tapped, and debounced read marks. States are theme keys (data-st) that look.js
+// draws: the thread bar, the working pill (its sprite following the running tool), the live line and a turn's end.
 const $ = (s, el = document) => el.querySelector(s);
 const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 const post = (url, body) =>
@@ -32,7 +33,7 @@ if (main) chat(main);
 function chat(main) {
   const id = main.dataset.thread, agent = main.dataset.agent, list = $("#msgs"), box = $("#box");
   const api = `/threads/${id}`, SLICE = 20, KEEP = 9, EDGE = 2;
-  let before = 0, after = 0, cursor = "", es = null, live = null, state = main.dataset.state, since = Date.now();
+  let before = 0, after = 0, cursor = "", es = null, live = null, state = main.dataset.state, since = Date.now(), note = "";
   let read = Number(main.dataset.read), seen = read, readTimer = 0;
   // Sends and history loads of this thread run one after another.
   let chain = Promise.resolve();
@@ -56,9 +57,31 @@ function chat(main) {
     else if (anchor && anchor.isConnected) list.scrollTop = anchor.offsetTop - offset;
   }
 
+  // The working sprite follows the tool that runs: reading and searching, running a command, else editing.
+  const toolKind = (title) => (/^(read|search|grep|glob|find|list|fetch|view)\b/i.test(title) ? "read"
+    : /^(\$|run|bash|exec|execute|terminal)\b/i.test(title) ? "run" : "edit");
+  const KEY = { blocked: "needs", working: "working", done: "done", error: "fail", ended: "ended" };
+
+  // A turn's end: one quiet line under its last block, `[sprite] in the stable · done 09:21 · 9 min · 6 tools`.
+  function turnEnd() {
+    $(".te", list)?.remove();
+    if ((state !== "done" && state !== "error") || after > 0) return;
+    const all = rows(), me = all.findLastIndex((r) => r.classList.contains("me")), last = all.at(-1);
+    if (me < 0 || !last) return;
+    const tools = all.slice(me).filter((r) => r.classList.contains("run")).length;
+    const mins = Math.round((Number(last.dataset.at) - Number(all[me].dataset.at)) / 60000);
+    const te = el("li", "te"), st = el("span", "", "");
+    st.dataset.st = KEY[state];
+    st.dataset.plain = "";
+    const more = state === "error" ? [note] : [mins >= 1 ? `${mins} min` : "", tools ? `${tools} tool${tools > 1 ? "s" : ""}` : ""];
+    te.append(st, el("span", "ct", [time(Number(last.dataset.at)), ...more].filter(Boolean).join(" · ")));
+    list.append(te);
+  }
+
   function fill(row, it) {
     row.replaceChildren();
     row.dataset.id = it.id;
+    row.dataset.at = it.at;
     const k = it.kind;
     if (k === "you") {
       row.className = "blk me";
@@ -71,7 +94,7 @@ function chat(main) {
       const s = it.status, ok = s === "completed", bad = s === "failed" || s === "cancelled";
       row.className = "blk run";
       const ts = el("span", `ts ${ok ? "g" : bad ? "r" : "a"}`, ok ? "✓" : bad ? `✕ ${s}` : "⋯");
-      if (!ok && !bad) ts.dataset.since = it.at;
+      if (!ok && !bad) { ts.dataset.since = it.at; $("#pst").dataset.tool = toolKind(it.title); }
       row.append(el("span", "k", "tool"), el("span", "cmd", it.title), ts);
     } else if (k === "approval") {
       row.className = "blk ap";
@@ -122,11 +145,13 @@ function chat(main) {
     if (row) return keep(() => fill(row, it));
     if (after > 0) { after++; return; }
     keep(() => {
+      $(".te", list)?.remove();
       let row = it.kind === "you" && list.querySelector(`[data-rid="${it.random_id}"]`);
       // The final reply takes over the streaming row's node.
       if (!row && it.kind === "agent" && live) { row = live; live = null; }
       if (row) { delete row.dataset.rid; fill(row, it); } else list.insertBefore(fill(el("li"), it), live);
       if (live) list.append(live);
+      turnEnd();
     });
     markRead();
   }
@@ -135,6 +160,7 @@ function chat(main) {
     if (after > 0) return;
     keep(() => {
       if (!live) {
+        $(".te", list)?.remove();
         live = el("li", "blk ai live");
         live.dataset.cid = rid();
         const stop = el("button", "stop", "stop");
@@ -150,8 +176,9 @@ function chat(main) {
   function setState(t) {
     if (t.state !== state) since = Date.now();
     state = t.state;
-    const label = { blocked: "! needs you", working: "✻ working", done: "✓ done", error: `✕ ${t.note ?? "error"}`, ended: "■ ended" };
-    $("#st").textContent = label[state] ?? "";
+    note = t.note ?? "";
+    $("#st").dataset.st = KEY[state] ?? "";
+    main.dataset.state = state;
     $("#pill").hidden = state !== "working";
     $("#wait").hidden = state !== "blocked";
     if (state === "ended") {
@@ -159,6 +186,7 @@ function chat(main) {
       $("#close").hidden = true;
     }
     if (state !== "working" && state !== "blocked" && live && !$(".md", live).textContent) { live.remove(); live = null; }
+    keep(turnEnd);
   }
 
   // Drops the rows more than (KEEP - 1) / 2 screens past the viewport, on the side away from the reader, so the
@@ -199,7 +227,15 @@ function chat(main) {
 
   // The first slice is held up to ~300 ms and painted at once; a skeleton shows only after that.
   async function open() {
-    const skeleton = setTimeout(() => list.classList.add("skeleton"), 300);
+    const skeleton = setTimeout(() => {
+      list.classList.add("skeleton");
+      const fig = el("li", "emp"), w = el("p");
+      fig.append(el("span"), w);
+      fig.firstChild.dataset.s = "loading";
+      w.dataset.w = "loading";
+      w.dataset.plain = "";
+      list.append(fig);
+    }, 300);
     const unread = ids().length === 0 && read > 0 ? read + 1 : 0;
     const s = await load(unread ? `around=${unread}&before=${SLICE / 2}&after=${SLICE}` : `before=${SLICE}`, "replace");
     clearTimeout(skeleton);

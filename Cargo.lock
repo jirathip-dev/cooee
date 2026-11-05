@@ -152,6 +152,8 @@ name = "cooee-web"
 version = "0.1.0"
 dependencies = [
  "cooee-core",
+ "serde",
+ "serde_json",
  "topcoat",
 ]
 
