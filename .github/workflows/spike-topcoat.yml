@@ -1,0 +1,20 @@
+# Builds the Topcoat spike (#10) and checks its copied theme files are unchanged.
+# Its own file so cooee's main CI (M0 #2) stays separate.
+name: spike-topcoat
+on:
+  pull_request:
+    paths: ["spikes/topcoat-chat/**", ".github/workflows/spike-topcoat.yml"]
+  push:
+    branches: [staging]
+    paths: ["spikes/topcoat-chat/**", ".github/workflows/spike-topcoat.yml"]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: spikes/topcoat-chat
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal && rustup default stable
+      - run: cargo check --locked
+      - run: cd theme && sha256sum -c SHA256SUMS
