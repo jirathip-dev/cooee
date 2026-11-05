@@ -1,0 +1,14 @@
+import { launch } from './cdp.mjs';
+const B = process.argv[2];
+const { page, close } = await launch();
+await page.goto(`${B}/live`);
+await new Promise(r => setTimeout(r, 500));
+await fetch(`${B}/api/start`, { method: 'POST' });
+await page.waitFor("((document.getElementById('reply')?.textContent ?? '').split(' ').length - 1) > 1100");
+await page.waitFor("!!document.querySelector('#approval button')");
+const t0 = await page.eval("performance.now()");
+await page.eval("document.querySelector('#approval button').click()");
+await page.waitFor("!!document.getElementById('chosen')");
+console.log('approval ms', await page.eval("performance.now()") - t0);
+console.log(await page.eval("document.querySelector('.rows').innerText"));
+close();

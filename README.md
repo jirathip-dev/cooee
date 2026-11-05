@@ -5,7 +5,8 @@ Linux), reached from your phone over Tailscale. Agents (Claude Code, Codex, Gemi
 machine through [shed](https://github.com/jirathip-dev/shed), keep working while you are away, and cooee pings your
 phone when they need you.
 
-> **Status: spec only.** No code yet.
+> **Status: M1.** Chat: `cooee serve` lists threads and runs each as an ACP session on shed, with streamed replies,
+> tool rows and approvals. `just check` runs every CI gate; see [docs/architecture.md](docs/architecture.md).
 
 A cooee is the bush call you use to reach someone far off.
 

@@ -1,0 +1,34 @@
+/* The chat at 390 px on the farm scheme's tokens (herdsman's names: --bg --card --edge --fg --mute --g --a --r). */
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,-apple-system,sans-serif}
+a{color:var(--link)}
+.mute,small{color:var(--mute)}
+.bar{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;height:48px;padding:0 12px;background:var(--card);border-bottom:1px solid var(--edge)}
+.bar a{text-decoration:none;font-size:24px}
+.bar .ghost{margin-left:auto}
+button{font:inherit;color:var(--bg);background:var(--l);border:0;border-radius:8px;min-height:36px;padding:0 12px}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--edge)}
+.threads{list-style:none;margin:0;padding:0}
+.threads a{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 12px;border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none}
+.threads .t{display:flex;flex-direction:column;min-width:0}
+.threads small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat{display:flex;flex-direction:column;min-height:100dvh}
+.msgs{flex:1;list-style:none;margin:0;padding:8px 12px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:85%;padding:8px 10px;border-radius:12px;overflow-wrap:anywhere;white-space:pre-wrap}
+.msg.you{align-self:flex-end;background:var(--card);border:1px solid var(--edge)}
+.msg.agent{align-self:flex-start;max-width:100%}
+.reply{margin:0}
+.rows{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.rows li{display:flex;align-items:center;gap:6px;min-height:36px;padding:4px 8px;border:1px solid var(--edge);border-radius:8px;background:var(--card)}
+.rows small{margin-left:auto}
+.tool.running small{color:var(--a)}.tool.done small{color:var(--g)}
+.approval{flex-wrap:wrap;border-color:var(--r)!important}
+.approval .opts{display:flex;gap:6px;width:100%}
+.chosen{margin-left:auto;color:var(--g)}
+.composer{position:sticky;bottom:0;display:flex;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--edge)}
+.composer textarea{flex:1;font:16px/1.4 system-ui,sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:8px;padding:8px;resize:none}
+/* herdsman's row sprite, as assets/serve.css and herd.css draw it: 24 px, crisp, its .kf1/.kf2 frames swapped every 0.6 s. */
+.rsp{display:inline-block;flex:none;width:24px;height:24px;vertical-align:middle;image-rendering:pixelated;shape-rendering:crispEdges;animation:kfr 1.2s infinite}
+.kf1{opacity:var(--o1,1)}.kf2{opacity:var(--o2,0)}
+@keyframes kfr{0%,49.9%{--o1:1;--o2:0}50%,100%{--o1:0;--o2:1}}
+@media (prefers-reduced-motion:reduce){.rsp{animation:none}}

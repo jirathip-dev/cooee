@@ -1,0 +1,50 @@
+<!doctype html><html lang=en data-tab=chat><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>cooee v1: sign-ins</title>
+<!-- #1: the login sheet, opened from [⚙] (or a signed-out agent in the new-thread form) over the thread list.
+     serve.css is herdsman's (unchanged), cooee.css the additions. The terminal is the provider CLI's own login
+     command, run in a shed terminal on the machine; tokens stay with the CLI and never reach the page. -->
+<link rel=stylesheet href=serve.css><link rel=stylesheet href=cooee.css>
+</head>
+<body class=v-l>
+<header><b>cooee</b><i id=dot class=g></i><button type=button aria-label="new thread">+</button><button type=button aria-label=sign-ins>⚙</button></header>
+<main id=chat>
+<div class=clp>
+<div class="fc k-l"><div class=fh><span class=fn><b>~/Projects/cooee</b><span class=ds>3 threads</span></span></div>
+<a class=tr href=#><i class=ud>●</i><span class=tt>Push stops after pairing again</span><span class=ta>claude · 2m</span><span class=tp><b class=r>! needs you</b>claude: Edit src/push.rs?</span></a>
+<a class=tr href=#><i class=ud>●</i><span class=tt>Pairing QR code on the desktop page</span><span class=ta>codex · 6m</span><span class=tp><b class=a>✻ working</b>codex: $ cargo test -p cooee-pair</span></a>
+<a class="tr rd" href=#><i class=ud></i><span class=tt>README: install over Tailscale</span><span class=ta>gemini · 1h</span><span class=tp><b class=m>✓ done</b>gemini: Added the install section and the two serve commands.</span></a>
+</div>
+<div class="fc k-p"><div class=fh><span class=fn><b>~/Projects/shed</b><span class=ds>2 threads</span></span></div>
+<a class=tr href=#><i class=ud>●</i><span class=tt>ACP sessions survive a restart</span><span class=ta>claude · 25m</span><span class=tp><b class=m>✓ done</b>claude: Pushed 3 commits; cargo test is green.</span></a>
+<a class="tr rd" href=#><i class=ud></i><span class=tt>Linux: a systemd user unit</span><span class=ta>codex · 2d</span><span class=tp><b class=m>✓ done</b>you: ship it</span></a>
+</div>
+</div>
+</main>
+
+<div id=sheet class=on><div class=bd></div><div class=sh role=dialog aria-modal=true aria-labelledby=sgt>
+<div class=hd><p><b id=sgt>sign-ins</b><button type=button aria-label=close>×</button></p></div>
+<div class=top><div class="pvc lgn">
+
+<div class="pvr on"><div class=pvh><b>claude</b><span class="pvs a">signing in</span></div>
+<p class=pvm>claude auth login · shed terminal on mac-mini</p>
+<div class=out><pre><span class=hh>$ claude auth login</span>
+Opening your browser to sign in…
+If it did not open, visit:
+<a href=#>https://claude.ai/oauth/authorize?code=true&amp;client_id=9d1c250a-e61b-44d9&amp;response_type=code&amp;redirect_uri=https%3A%2F%2Fconsole.anthropic.com%2Foauth%2Fcode%2Fcallback&amp;scope=user%3Ainference&amp;state=k3XqP0w</a>
+
+Paste code here if prompted &gt; <span class=cur> </span></pre></div>
+<form class=chs><input aria-label="the code from the sign-in page" placeholder="paste the code" autocomplete=off><button type=button>send</button><button type=button>cancel</button></form>
+</div>
+
+<div class=pvr><div class=pvh><b>codex</b><span class="pvs g">✓ signed in</span></div>
+<p class=pvm>ChatGPT Plus · checked 2m ago</p></div>
+
+<div class=pvr><div class=pvh><b>gemini</b><span class="pvs g">✓ signed in</span></div>
+<p class=pvm>Google account · checked 2m ago</p></div>
+
+<div class=pvr><div class=pvh><b>pi</b><span class="pvs m">signed out</span><button type=button>sign in</button></div></div>
+
+</div></div>
+</div></div>
+</body></html>

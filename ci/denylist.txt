@@ -1,0 +1,14 @@
+# Setup-specific names and secrets that must never land in this public repo: one extended regex per line.
+# scripts/hygiene.sh checks every tracked file except this one. Use placeholders instead
+# (example.com, /home/user, host-a, 203.0.113.7); build secret-shaped test values at runtime.
+/Users/[A-Za-z]
+[A-Za-z0-9-]\.ts\.net
+telegram:-?[0-9]
+@gmail\.com
+\b(10\.[0-9]+|192\.168|172\.(1[6-9]|2[0-9]|3[01]))\.[0-9]+\.[0-9]+\b
+\b100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]+\.[0-9]+\b
+-----BEGIN [A-Z ]*PRIVATE KEY-----
+\b(ghp|gho|ghs|ghu|github_pat)_[A-Za-z0-9_]{20,}
+\bsk-(ant-)?[A-Za-z0-9_-]{20,}
+\bAKIA[0-9A-Z]{16}\b
+\bxox[abprs]-[A-Za-z0-9-]{10,}

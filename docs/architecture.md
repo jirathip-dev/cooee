@@ -1,0 +1,70 @@
+# Architecture
+
+cooee is one binary on the owner's machine (Mac or Linux). It serves a web app (an installable PWA) on 127.0.0.1,
+and Tailscale carries it to the owner's phone. Agents run under [shed](https://github.com/jirathip-dev/shed), which
+keeps them going while the phone is away; cooee talks to shed and pings the phone when an agent needs the owner.
+
+```
+  phone (PWA, Safari/Chrome)                 owner's machine
+ ┌──────────────────────────┐   Tailscale   ┌──────────────────────────────────────────────────────────┐
+ │ thread list, chat, login │◄─────────────►│ cooee (one binary)                                       │
+ │ web push ◄───────────────┼───────────────┤  ├─ cooee         args + wiring                          │
+ └──────────────────────────┘    (M2)       │  ├─ cooee-server  HTTP on 127.0.0.1, live events,        │
+                                            │  │                pairing, push (Tokio, via Topcoat)     │
+                                            │  ├─ cooee-web     the UI: Topcoat pages (server-rendered)│
+                                            │  └─ cooee-core    config, threads, store (no sockets)    │
+                                            │         │ ACP over shed's API (M1)                       │
+                                            │         ▼                                                │
+                                            │  shed ──► agents: Claude Code, Codex, Gemini, Pi, any ACP│
+                                            └──────────────────────────────────────────────────────────┘
+```
+
+## Crates
+
+| Crate | Path | Holds | May depend on |
+|---|---|---|---|
+| `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), the shed client; no HTTP | no workspace crate |
+| `cooee-web` | `web/` | the web UI in Topcoat (ADR 0001): pages, `chat.js`, `app.css`, the PWA manifest | not the server or binary |
+| `cooee-server` | `crates/cooee-server` | HTTP on 127.0.0.1, the threads' JSON API and SSE (M1), pairing, push | core, web |
+| `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
+
+`scripts/dep-direction.sh` enforces the last column in CI.
+
+## Storage
+
+One typed JSON file per thread, `<data>/threads/<id>.json`: `{"format": 1, "thread": {…}}`. Every write is
+write-temp, fsync, rename, then fsync of the folder, under that thread's lock, so a crash leaves the old file or the new
+one, never half of either. A file from a newer format is refused, not guessed at. `crates/cooee-core/tests/upgrade_compat.rs`
+loads every earlier release's files (`tests/fixtures/upgrade/<version>/`) and fails if any field would be lost.
+
+A thread's rows (items: your messages, replies, tool calls, approvals, plans) are JSON lines beside it,
+`<data>/threads/<id>.jsonl`. Each change appends the item's whole new version as one fsynced line; reading folds them
+by id, and a torn last line from a crash is skipped. A pending approval is stored before the page hears of it.
+
+## Chat (M1)
+
+One thread is one ACP session on [shed](https://github.com/jirathip-dev/shed): `shed run --acp <agent> --name
+cooee-<id> --label cooee=1 --label cooee.thread=<id> --cwd <folder>` (the CLI, as are `shed agents`; the socket has
+no method for them). Everything else goes over shed's socket, one connection per request, each opening with the exact
+`hello` of the pinned `shed-proto` (another version is refused with both versions named). Prompts, approvals and
+cancels are framed `send`s, as `shed send|approve|cancel` do. One `events` stream (label `cooee=1`) feeds every thread;
+after a restart cooee re-attaches each open thread to its terminal by name and replays from the last event it applied.
+
+Each shed event maps to items through one exhaustive `match` (`cooee-core/src/chat.rs`). The page gets them over SSE
+(`/threads/<id>/events`), each with id `<run>.<seq>`; a thread keeps its last 4,096 page events, so a page that
+reconnects with `Last-Event-ID` gets exactly what it missed, and one from another run or too far behind gets `reset`
+and reloads. Its first slice (`/threads/<id>/messages?around=&before=&after=`) carries the cursor it is current to,
+taken under the thread's lock with the subscription, so nothing is lost or doubled.
+
+## Configuration
+
+One TOML file, `$XDG_CONFIG_HOME/cooee/config.toml` (else `~/.config/cooee/config.toml`, or `cooee serve --config
+<file>`). Every key is optional; an unknown key is an error that lists the known ones.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `port` | `4747` | The port `cooee serve` listens on, on 127.0.0.1 (`0` picks a free one). |
+| `roots` | none | The folders a thread may work in: each root and the folders right inside it, nothing outside. |
+| `shed` | `shed` | The `shed` binary. |
+| `shed_dir` | shed's per-user server | shed's `--dir` (its socket `shed.sock` and state). |
+| `data` | `$XDG_DATA_HOME/cooee`, else `~/.local/share/cooee` | Where threads are stored. |

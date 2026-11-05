@@ -1,0 +1,16 @@
+[package]
+name = "cooee-web"
+description = "cooee's web UI in Topcoat (ADR 0001): pages and the PWA manifest."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+cooee-core.workspace = true
+topcoat.workspace = true
+
+[lints]
+workspace = true
