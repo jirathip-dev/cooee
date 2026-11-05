@@ -1,0 +1,16 @@
+[package]
+name = "cooee"
+description = "Chat with any coding agent from your phone."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+cooee-core.workspace = true
+cooee-server.workspace = true
+
+[lints]
+workspace = true

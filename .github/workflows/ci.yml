@@ -1,0 +1,89 @@
+name: ci
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64 and macOS arm64.
+  msrv:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.99.1
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-deny,topcoat-cli@0.11.0
+      - name: fmt (cargo fmt, topcoat fmt)
+        run: just fmt
+      - name: clippy (pedantic, at most 10 allows)
+        run: just clippy
+      - name: test (incl. upgrade compatibility and crash injection)
+        run: just test
+      - name: doc
+        run: just doc
+      - name: deny (licences, advisories, duplicate versions)
+        run: just deny
+      - name: line cap (≤ 6,000 non-test lines in crates/*/src and web/src)
+        run: just cap
+      - name: dependency direction (cooee-core has no workspace deps)
+        run: just deps
+      - name: public hygiene (ci/denylist.txt)
+        run: just hygiene
+
+  stable:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUSTUP_TOOLCHAIN: stable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: test
+        run: cargo test --workspace --locked
+
+  # Playwright at 390 and 1440 px with axe accessibility checks; the screenshots are artifacts.
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: install
+        working-directory: web/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: build
+        run: cargo build --locked -p cooee
+      - name: playwright (390, 1440, axe)
+        working-directory: web/e2e
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-390
+          path: ui-390/*.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-1440
+          path: ui-1440/*.png

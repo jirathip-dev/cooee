@@ -1,0 +1,17 @@
+{
+  "format": 1,
+  "thread": {
+    "id": "welcome",
+    "title": "First thread",
+    "messages": [
+      {
+        "role": "user",
+        "text": "Run the tests in ~/src/example and tell me what fails."
+      },
+      {
+        "role": "agent",
+        "text": "Two tests fail in parser.rs; both expect a trailing newline."
+      }
+    ]
+  }
+}
