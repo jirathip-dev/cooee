@@ -288,14 +288,10 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
     Ok(view! {
         document(
             title: "pair · cooee",
-            <header class="bar">
-                <h1>"cooee"</h1>
-            </header>
+            <header class="bar"><h1>"cooee"</h1></header>
             <main class="list">
                 <form class="nf" method="post" action="/pair">
-                    <div class="fh">
-                        <b>"pair this device"</b>
-                    </div>
+                    <div class="fh"><b>"pair this device"</b></div>
                     <p class="ds">
                         "Run cooee pair on your machine and enter the code it prints. On a phone, add cooee to the Home Screen first and pair there."
                     </p>
