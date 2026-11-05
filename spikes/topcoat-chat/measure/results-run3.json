@@ -1,0 +1,81 @@
+{
+ "host_load_at_start": [
+  22,
+  16.4,
+  16.9
+ ],
+ "cpus": 12,
+ "control_typing_no_stream": {
+  "seconds": 29.811,
+  "typed": 201,
+  "composer_intact": true,
+  "key_to_commit_p50_ms": 22.999000000003434,
+  "key_to_commit_p95_ms": 119.95600000000195,
+  "key_to_commit_max_ms": 173.77000000000044,
+  "keys_over_50ms": 50,
+  "trace_tasks_over_50ms": 55,
+  "trace_task_max_ms": 195.402,
+  "key_presentation_p95_ms": 602.768,
+  "key_presentation_max_ms": 709.314
+ },
+ "streaming": {
+  "tokens": 2000,
+  "exact": true,
+  "bad_renders": 0,
+  "renders": 1989,
+  "seconds": 42.711,
+  "typed": 297,
+  "composer_intact": true,
+  "key_to_commit_p50_ms": 8.112999999999374,
+  "key_to_commit_p95_ms": 26.19600000000355,
+  "key_to_commit_max_ms": 71.8739999999998,
+  "keys_over_50ms": 3,
+  "trace_tasks_over_50ms": 22,
+  "trace_task_max_ms": 157.885,
+  "key_presentation_p95_ms": 170.088,
+  "key_presentation_max_ms": 322.074
+ },
+ "reconnect": {
+  "cut_at_token": 502,
+  "cut_seconds": 10.001,
+  "recovered_ms_after_restore": 5084,
+  "exact": true,
+  "bad_renders": 0,
+  "renders": 1244
+ },
+ "long_thread": {
+  "messages": 1002,
+  "scroll_px": 134281,
+  "scrolled_to": 133437,
+  "scroll_ms": 45546,
+  "long_tasks": 0,
+  "long_task_max_ms": 0
+ },
+ "approval": {
+  "tap_to_row_ms": 7.5,
+  "chosen": "Allow once"
+ },
+ "thai_chrome": {
+  "keystrokes_exact": true,
+  "keystrokes_value": "สวัสดีครับ ที่นี่",
+  "ime_exact": true,
+  "ime_value": "สวัสดีครับ ที่นี่",
+  "compositionend_events": 2,
+  "words": 2,
+  "sent_exact": true,
+  "composer_cleared": true
+ },
+ "theme": {
+  "sprite_frames": [
+   "1",
+   "0",
+   "0",
+   "1"
+  ]
+ },
+ "host_load_at_end": [
+  25.7,
+  21.4,
+  19
+ ]
+}
