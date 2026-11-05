@@ -8,7 +8,7 @@ self.addEventListener("push", (e) => e.waitUntil((async () => {
   const n = e.data ? e.data.json() : null;
   if (!n) return;
   const open = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-  if (open.some((c) => c.visibilityState === "visible" && new URL(c.url).pathname === n.url)) return;
+  if (open.some((c) => c.visibilityState === "visible" && new URL(c.url).pathname === new URL(n.url, c.url).pathname)) return;
   await self.registration.showNotification(n.title, { body: n.body, tag: n.tag, data: n, icon: "/icon-192.png" });
 })()));
 

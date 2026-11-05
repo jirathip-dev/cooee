@@ -9,7 +9,7 @@ mod shed;
 mod store;
 
 pub use chat::{Body, Change, Chat, Item, Summary, Turn};
-pub use config::{Config, ConfigError};
+pub use config::{Config, ConfigError, Plugin};
 pub use devices::{Device, Devices, random, sha256, write_private};
 pub use shed::{Agent, Shed, ShedError};
 pub use shed_proto;

@@ -11,8 +11,9 @@ use std::{
 };
 
 use cooee_core::{
-    Agent, Body, Change, Chat, Item, Shed, ShedError, Store, StoreError, Summary, Thread, Turn,
-    shed_proto::{self, Event},
+    Agent, Body, Change, Chat, Item, Plugin, Shed, ShedError, Store, StoreError, Summary, Thread,
+    Turn,
+    shed_proto::{self, ApprovalOption, Event},
 };
 use serde::Serialize;
 use serde_json::json;
@@ -98,6 +99,7 @@ pub struct Hub {
     /// The server's default theme, whose words a push says.
     theme: cooee_web::Theme,
     roots: Vec<PathBuf>,
+    plugins: Vec<Plugin>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
     /// The stamp of the newest thread id handed out.
@@ -157,7 +159,7 @@ impl Live {
 
 impl Hub {
     /// Loads every stored thread, re-attaches the open ones to their shed terminals by name, and starts
-    /// following shed's events. A push speaks `theme`'s words.
+    /// following shed's events. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers.
     ///
     /// # Errors
     /// [`HubError::Store`] when the store can't be read.
@@ -166,6 +168,7 @@ impl Hub {
         data: &Path,
         roots: Vec<PathBuf>,
         theme: cooee_web::Theme,
+        plugins: Vec<Plugin>,
     ) -> Result<Arc<Self>, HubError> {
         let store = Store::open(data)?;
         let mut threads = BTreeMap::new();
@@ -189,6 +192,7 @@ impl Hub {
             push: Push::new(data),
             theme,
             roots,
+            plugins,
             boot: format!("{:x}", now()),
             threads: Mutex::new(threads),
             last: Mutex::new(0),
@@ -427,10 +431,11 @@ impl Hub {
         Ok(item)
     }
 
-    /// The owner's answer to approval `item`: sent to shed once (stored first); a second tap returns the item.
+    /// The owner's answer to approval `item`: sent once (stored first) to shed, or to the plugin whose choice card
+    /// it is (then chosen); a second tap returns the item.
     ///
     /// # Errors
-    /// [`HubError::Shed`] when shed fails.
+    /// [`HubError::Shed`] when shed fails; [`HubError::Refused`] when the plugin does.
     pub fn approve(&self, id: &str, item: u64, option: &str) -> Result<Option<Item>, HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
@@ -438,9 +443,40 @@ impl Hub {
             return Ok(live.chat.items.iter().find(|i| i.id == item).cloned());
         };
         live.publish(self, vec![Change::Item(tapped.clone())])?;
+        let sent = match &tapped.body {
+            Body::Approval {
+                plugin: Some(name), ..
+            } => self
+                .plugins
+                .iter()
+                .find(|p| &p.name == name)
+                .ok_or_else(|| io::Error::other("no longer configured"))
+                .and_then(|p| crate::plugin::answer(p, id, item, option))
+                .map_err(|e| HubError::Refused(format!("plugin {name}: {e}"))),
+            _ => return self.shed_approve(&mut live, tapped, option),
+        };
+        let done = live.chat.update(item, 0, |b| {
+            if let Body::Approval { tapped, chosen, .. } = b {
+                if sent.is_ok() {
+                    *chosen = Some(option.to_owned());
+                } else {
+                    *tapped = None;
+                }
+            }
+        });
+        live.publish(self, done.clone().map(Change::Item).into_iter().collect())?;
+        sent.map(|()| done)
+    }
+
+    fn shed_approve(
+        &self,
+        live: &mut Live,
+        tapped: Item,
+        option: &str,
+    ) -> Result<Option<Item>, HubError> {
         if let Err(e) = self.shed.approve(&live.meta.terminal, option) {
             // Not delivered: the row can be tapped again.
-            let untapped = live.chat.update(item, 0, |b| {
+            let untapped = live.chat.update(tapped.id, 0, |b| {
                 if let Body::Approval { tapped, .. } = b {
                     *tapped = None;
                 }
@@ -449,6 +485,42 @@ impl Hub {
             return Err(e.into());
         }
         Ok(Some(tapped))
+    }
+
+    /// Plugin `plugin`'s choice card in thread `id`: `text` and a button per option. The owner's tap goes to the
+    /// plugin.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] without text or options.
+    pub fn card(
+        &self,
+        id: &str,
+        plugin: &str,
+        text: &str,
+        options: &[String],
+    ) -> Result<Item, HubError> {
+        if text.trim().is_empty() || options.is_empty() {
+            return Err(HubError::Refused(
+                "a choice card needs text and options".to_owned(),
+            ));
+        }
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        let options = options.iter().map(|o| ApprovalOption {
+            id: o.clone(),
+            name: o.clone(),
+            kind: String::new(),
+        });
+        let body = Body::Approval {
+            tool: text.to_owned(),
+            options: options.collect(),
+            tapped: None,
+            chosen: None,
+            plugin: Some(plugin.to_owned()),
+        };
+        let item = live.chat.push(now(), 0, body);
+        live.publish(self, vec![Change::Item(item.clone())])?;
+        Ok(item)
     }
 
     /// Cancels the turn in progress.
@@ -590,6 +662,12 @@ impl Hub {
             _ => Resume::Reset,
         };
         Ok((resume, live.tx.subscribe()))
+    }
+
+    /// The configured plugins.
+    #[must_use]
+    pub fn plugins(&self) -> &[Plugin] {
+        &self.plugins
     }
 
     /// The push subscriptions and key.
