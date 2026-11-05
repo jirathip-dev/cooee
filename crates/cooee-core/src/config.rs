@@ -13,11 +13,25 @@ use serde::Deserialize;
 pub struct Config {
     /// The port `cooee serve` listens on, on 127.0.0.1 (default 4747; 0 picks a free one).
     pub port: u16,
+    /// The folders a thread may work in: each root and the folders right inside it, nothing outside them.
+    pub roots: Vec<PathBuf>,
+    /// The `shed` binary (default `shed`, found on `PATH`).
+    pub shed: PathBuf,
+    /// shed's `--dir` (its socket and state); default shed's per-user server.
+    pub shed_dir: Option<PathBuf>,
+    /// Where threads are stored; default `$XDG_DATA_HOME/cooee`, else `~/.local/share/cooee`.
+    pub data: Option<PathBuf>,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Self { port: 4747 }
+        Self {
+            port: 4747,
+            roots: Vec::new(),
+            shed: PathBuf::from("shed"),
+            shed_dir: None,
+            data: None,
+        }
     }
 }
 
@@ -52,6 +66,19 @@ impl Config {
         Some(base.join("cooee").join("config.toml"))
     }
 
+    /// The data folder: `data`, else `$XDG_DATA_HOME/cooee`, else `$HOME/.local/share/cooee`.
+    #[must_use]
+    pub fn data_dir(&self) -> Option<PathBuf> {
+        self.data.clone().or_else(|| {
+            let base = env::var_os("XDG_DATA_HOME")
+                .map(PathBuf::from)
+                .or_else(|| {
+                    env::var_os("HOME").map(|home| Path::new(&home).join(".local/share"))
+                })?;
+            Some(base.join("cooee"))
+        })
+    }
+
     /// Reads `path`; a missing file gives the defaults.
     ///
     /// # Errors
@@ -83,7 +110,10 @@ mod tests {
     fn port_from_toml_unknown_key_rejected() {
         assert_eq!(
             toml::from_str::<Config>("port = 8080").unwrap(),
-            Config { port: 8080 }
+            Config {
+                port: 8080,
+                ..Config::default()
+            }
         );
         assert_eq!(toml::from_str::<Config>("").unwrap(), Config::default());
         let e = toml::from_str::<Config>("prot = 8080")
