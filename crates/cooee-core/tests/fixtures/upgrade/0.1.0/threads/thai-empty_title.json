@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "thread": {
+    "id": "thai-empty_title",
+    "title": "",
+    "messages": [
+      {
+        "role": "user",
+        "text": "สวัสดีครับ ที่นี่\n\nline two, \"quoted\", tab\there"
+      }
+    ]
+  }
+}
