@@ -417,20 +417,28 @@ pub fn scratch(name: &str) -> PathBuf {
     dir
 }
 
-/// `cooee serve` on a free port with data in `dir/data`, the fake shed in `shed`, and the root `dir/root`.
+/// `cooee serve` on a free port with data in `dir/data`, the fake shed in `shed`, and the root `dir/root`; paired
+/// (`cookie` goes with every request).
 pub struct Cooee {
     pub child: Child,
     pub addr: String,
+    pub config: PathBuf,
+    pub cookie: String,
 }
 
 impl Cooee {
     pub fn start(dir: &Path, shed: &Path) -> Self {
+        Self::start_with(dir, shed, "")
+    }
+
+    /// [`Cooee::start`] with more config lines.
+    pub fn start_with(dir: &Path, shed: &Path, extra: &str) -> Self {
         let root = dir.join("root");
         fs::create_dir_all(root.join("project")).unwrap();
         let config = dir.join("config.toml");
         let q = |p: &Path| format!("{:?}", p.to_string_lossy());
         let toml = format!(
-            "port = 0\nroots = [{}]\nshed = {}\nshed_dir = {}\ndata = {}\n",
+            "port = 0\nroots = [{}]\nshed = {}\nshed_dir = {}\ndata = {}\n{extra}",
             q(&root),
             q(&shed.join("shed")),
             q(shed),
@@ -453,24 +461,89 @@ impl Cooee {
             .strip_prefix("cooee: listening on http://")
             .unwrap_or_else(|| panic!("{line}"))
             .to_owned();
-        Self { child, addr }
+        let mut cooee = Self {
+            child,
+            addr,
+            config,
+            cookie: String::new(),
+        };
+        let token = cooee.pair().expect("pairing");
+        cooee.cookie = format!("cooee={token}");
+        cooee
+    }
+
+    /// Runs `cooee <args> --config <ours>`; its stdout, which must succeed.
+    pub fn cli(&self, args: &[&str]) -> String {
+        let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
+            .args(args)
+            .arg("--config")
+            .arg(&self.config)
+            .output()
+            .unwrap();
+        assert!(out.status.success(), "{out:?}");
+        String::from_utf8(out.stdout).unwrap()
+    }
+
+    /// `cooee pair`, then its code entered as a browser would: the new device's token, if it paired.
+    pub fn pair(&self) -> Option<String> {
+        let out = self.cli(&["pair"]);
+        let code = out
+            .lines()
+            .next()?
+            .strip_prefix("code: ")?
+            .split(' ')
+            .next()?;
+        let (head, _) = self.raw(
+            "POST",
+            "/pair",
+            &[("Content-Type", "application/x-www-form-urlencoded")],
+            &format!("code={code}"),
+        );
+        head.lines()
+            .find_map(|l| l.strip_prefix("set-cookie: cooee="))
+            .map(|c| c.split(';').next().unwrap().to_owned())
+    }
+
+    /// One request with exactly these headers (and `Host: <addr>` unless given): the status line and headers
+    /// (lowercased names), and the body.
+    pub fn raw(
+        &self,
+        method: &str,
+        path: &str,
+        headers: &[(&str, &str)],
+        body: &str,
+    ) -> (String, String) {
+        let mut stream = TcpStream::connect(&self.addr).unwrap();
+        write!(stream, "{method} {path} HTTP/1.0\r\n").unwrap();
+        if !headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("host")) {
+            write!(stream, "Host: {}\r\n", self.addr).unwrap();
+        }
+        for (k, v) in headers {
+            write!(stream, "{k}: {v}\r\n").unwrap();
+        }
+        write!(stream, "Content-Length: {}\r\n\r\n{body}", body.len()).unwrap();
+        let mut response = String::new();
+        stream.read_to_string(&mut response).unwrap();
+        let (head, body) = response.split_once("\r\n\r\n").unwrap();
+        let head = head
+            .lines()
+            .map(|l| match l.split_once(": ") {
+                Some((k, v)) => format!("{}: {v}", k.to_ascii_lowercase()),
+                None => l.to_owned(),
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        (head, body.to_owned())
     }
 
     fn request(&self, method: &str, path: &str, body: Option<&Value>) -> (u16, String) {
-        let mut stream = TcpStream::connect(&self.addr).unwrap();
         let body = body.map(Value::to_string).unwrap_or_default();
-        write!(
-            stream,
-            "{method} {path} HTTP/1.0\r\nHost: {}\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}",
-            self.addr,
-            body.len()
-        )
-        .unwrap();
-        let mut response = String::new();
-        stream.read_to_string(&mut response).unwrap();
-        let status = response[9..12].parse().unwrap();
-        let body = response.split_once("\r\n\r\n").unwrap().1.to_owned();
-        (status, body)
+        let headers = [
+            ("Content-Type", "application/json"),
+            ("Cookie", self.cookie.as_str()),
+        ];
+        let (head, body) = self.raw(method, path, &headers, &body);
+        (head[9..12].parse().unwrap(), body)
     }
 
     /// GET `path` as text.
@@ -509,8 +582,8 @@ impl Cooee {
         };
         write!(
             stream,
-            "GET {path} HTTP/1.0\r\nHost: {}\r\n{extra}\r\n",
-            self.addr
+            "GET {path} HTTP/1.0\r\nHost: {}\r\nCookie: {}\r\n{extra}\r\n",
+            self.addr, self.cookie
         )
         .unwrap();
         let mut reader = BufReader::new(stream);

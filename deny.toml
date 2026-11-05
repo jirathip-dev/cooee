@@ -19,6 +19,9 @@ ignore = true
 multiple-versions = "deny"
 wildcards = "deny"
 allow-wildcard-paths = true
+# p256 0.13 (web push) needs rand_core 0.6, traits only (no getrandom); Topcoat's tungstenite brings 0.9. p256 0.14
+# would trade it for a second digest/sha2 instead.
+skip = [{ crate = "rand_core@0.6.4", reason = "p256 0.13's elliptic-curve; Topcoat's tungstenite has 0.9" }]
 
 [sources]
 unknown-registry = "deny"

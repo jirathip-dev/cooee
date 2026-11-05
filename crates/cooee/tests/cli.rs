@@ -1,4 +1,5 @@
-//! The binary end to end: `--version`, and `cooee serve` on the configured port serving the thread list.
+//! The binary end to end: `--version`, and `cooee serve` on the configured port: an unpaired browser gets the
+//! pairing page and the PWA's files.
 
 use std::{
     env, fs,
@@ -49,9 +50,9 @@ fn get(addr: &str, path: &str) -> String {
         "GET {path} HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\n\r\n"
     )
     .unwrap();
-    let mut response = String::new();
-    stream.read_to_string(&mut response).unwrap();
-    response
+    let mut response = Vec::new();
+    stream.read_to_end(&mut response).unwrap();
+    String::from_utf8_lossy(&response).into_owned()
 }
 
 #[test]
@@ -84,18 +85,27 @@ fn serve_listens_on_localhost_at_the_configured_port() {
         .to_owned();
 
     let page = get(&addr, "/");
+    let pair = get(&addr, "/pair");
     let manifest = get(&addr, "/manifest.webmanifest");
+    let worker = get(&addr, "/sw.js");
+    let icon = get(&addr, "/icon-512.png");
     child.kill().unwrap();
     child.wait().unwrap();
     assert!(
         addr.starts_with("127.0.0.1:") && !addr.ends_with(":0"),
         "{addr}"
     );
-    assert!(page.starts_with("HTTP/1.1 200"), "{page}");
     assert!(
-        page.contains("<h1>cooee</h1>") && page.contains(r#"rel="manifest""#),
+        page.starts_with("HTTP/1.1 303") && page.to_ascii_lowercase().contains("location: /pair"),
         "{page}"
     );
+    assert!(pair.starts_with("HTTP/1.1 200"), "{pair}");
+    assert!(
+        pair.contains("pair this device") && pair.contains(r#"rel="manifest""#),
+        "{pair}"
+    );
+    assert!(worker.contains(r#"addEventListener("push""#), "{worker}");
+    assert!(icon.contains("image/png"), "{icon}");
     assert!(
         manifest
             .to_ascii_lowercase()
@@ -103,7 +113,24 @@ fn serve_listens_on_localhost_at_the_configured_port() {
         "{manifest}"
     );
     assert!(
-        manifest.contains(r#""display": "standalone""#),
+        manifest.contains(r#""display": "standalone""#)
+            && manifest.contains(r#""sizes": "512x512""#),
         "{manifest}"
+    );
+}
+
+#[test]
+fn listening_beyond_localhost_needs_allowed_hosts() {
+    let config = env::temp_dir().join(format!("cooee-bind-{}.toml", std::process::id()));
+    fs::write(&config, "port = 0\nbind = \"0.0.0.0\"\n").unwrap();
+    let out = Command::new(BIN)
+        .args(["serve", "--config"])
+        .arg(&config)
+        .output()
+        .unwrap();
+    assert!(!out.status.success());
+    assert!(
+        String::from_utf8_lossy(&out.stderr).contains("needs `allowed_hosts`"),
+        "{out:?}"
     );
 }
