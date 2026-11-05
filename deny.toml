@@ -19,9 +19,16 @@ ignore = true
 multiple-versions = "deny"
 wildcards = "deny"
 allow-wildcard-paths = true
-# p256 0.13 (web push) needs rand_core 0.6, traits only (no getrandom); Topcoat's tungstenite brings 0.9. p256 0.14
-# would trade it for a second digest/sha2 instead.
-skip = [{ crate = "rand_core@0.6.4", reason = "p256 0.13's elliptic-curve; Topcoat's tungstenite has 0.9" }]
+# Web push needs p256 0.14 (0.13's crypto-bigint 0.5 has RUSTSEC-2026-0387), which is on RustCrypto's digest 0.11
+# line while Topcoat (tungstenite's sha1 and rand) is still on digest 0.10 and rand_core 0.9: both lines stay until
+# Topcoat moves.
+skip = [
+    { crate = "block-buffer@0.10.4", reason = "Topcoat's sha1; p256 0.14 / sha2 0.11 use 0.12" },
+    { crate = "cpufeatures@0.2.17", reason = "Topcoat's sha1 and aes 0.8; sha2 0.11 uses 0.3" },
+    { crate = "crypto-common@0.1.7", reason = "Topcoat's sha1 and aes-gcm 0.10; sha2 0.11 uses 0.2" },
+    { crate = "digest@0.10.7", reason = "Topcoat's sha1; sha2 0.11 uses 0.11" },
+    { crate = "rand_core@0.9.5", reason = "Topcoat's tungstenite; p256 0.14 uses 0.10 (traits only)" },
+]
 
 [sources]
 unknown-registry = "deny"

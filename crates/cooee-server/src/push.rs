@@ -22,7 +22,7 @@ use hkdf::Hkdf;
 use p256::{
     PublicKey, SecretKey,
     ecdsa::{Signature, SigningKey, signature::Signer},
-    elliptic_curve::sec1::ToEncodedPoint,
+    elliptic_curve::sec1::ToSec1Point,
 };
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
@@ -126,7 +126,7 @@ fn new_key() -> io::Result<SecretKey> {
 
 /// The uncompressed public point (65 bytes).
 fn public(k: &SecretKey) -> Vec<u8> {
-    k.public_key().to_encoded_point(false).as_bytes().to_vec()
+    k.public_key().to_sec1_point(false).as_bytes().to_vec()
 }
 
 /// RFC 8291 aes128gcm body for one subscription: a single record, `salt` and `eph`'s public key in its header.
@@ -151,7 +151,7 @@ pub fn encrypt(
             .map_err(|_| io::Error::other("hkdf"))
     };
     let (mut ikm, mut cek, mut nonce) = ([0u8; 32], [0u8; 16], [0u8; 12]);
-    hk(auth, shared.raw_secret_bytes(), &info, &mut ikm)?;
+    hk(auth, shared.raw_secret_bytes().as_slice(), &info, &mut ikm)?;
     hk(salt, &ikm, b"Content-Encoding: aes128gcm\0", &mut cek)?;
     hk(salt, &ikm, b"Content-Encoding: nonce\0", &mut nonce)?;
     let ct = Aes128Gcm::new(GenericArray::from_slice(&cek))

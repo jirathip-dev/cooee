@@ -17,9 +17,9 @@ cooee-web = { path = "web" }
 # Web push (herdsman's webpush.rs): RFC 8291 encryption and the ES256 VAPID JWT; paired-device token hashes.
 aes-gcm = { version = "=0.10.3", default-features = false, features = ["aes", "alloc"] }
 base64 = "=0.22.1"
-hkdf = "=0.12.4"
-p256 = { version = "=0.13.2", default-features = false, features = ["ecdh", "ecdsa"] }
-sha2 = "=0.10.9"
+hkdf = "=0.13.0"
+p256 = { version = "=0.14.0", default-features = false, features = ["ecdh", "ecdsa"] }
+sha2 = "=0.11.1"
 # `cooee pair`'s QR code in the terminal.
 qrcode = { version = "=0.14.1", default-features = false }
 serde = { version = "=1.0.229", features = ["derive"] }
