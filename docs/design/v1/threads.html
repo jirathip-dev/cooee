@@ -1,0 +1,45 @@
+<!doctype html><html lang=en data-tab=chat><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>cooee v1: threads</title>
+<!-- #1: the thread list. serve.css is herdsman's (unchanged), cooee.css the additions. Static: #new opens the
+     new-thread form on a phone; from 1000 px it is always the right column. -->
+<link rel=stylesheet href=serve.css><link rel=stylesheet href=cooee.css>
+</head>
+<body class=v-l>
+<header><b>cooee</b><i id=dot class=g></i><button type=button aria-label="new thread">+</button><button type=button aria-label=sign-ins>⚙</button></header>
+<main id=chat>
+
+<div class=nwp>
+<form class=nf>
+<div class=fh><span class=fn><b>new thread</b></span><button type=button class=cl aria-label=close>×</button></div>
+<p class=lb>agent</p>
+<div class=ag><button type=button aria-pressed=true>claude</button><button type=button aria-pressed=false>codex</button><button type=button aria-pressed=false>gemini</button><button type=button class=so>pi · sign in</button></div>
+<p class=lb>folder</p>
+<label class=pk><span>~/Projects/cooee ▾</span><select aria-label=folder><option>~/Projects/cooee</option><option>~/Projects/shed</option><option>~/notes</option><option>other folder…</option></select></label>
+<div class=tw><button type=button aria-label="attach an image or file">+</button><textarea rows=2 aria-label="first message" placeholder="message claude"></textarea><button type=button>start</button></div>
+</form>
+</div>
+
+<div class=clp>
+<div class="fc k-l"><div class=fh><span class=fn><b>~/Projects/cooee</b><span class=ds>3 threads</span></span></div>
+<a class=tr href=chat.html><i class=ud>●</i><span class=tt>Push stops after pairing again</span><span class=ta>claude · 2m</span><span class=tp><b class=r>! needs you</b>claude: Edit src/push.rs?</span></a>
+<a class=tr href=chat.html><i class=ud>●</i><span class=tt>Pairing QR code on the desktop page</span><span class=ta>codex · 6m</span><span class=tp><b class=a>✻ working</b>codex: $ cargo test -p cooee-pair</span></a>
+<a class="tr rd" href=chat.html><i class=ud></i><span class=tt>README: install over Tailscale</span><span class=ta>gemini · 1h</span><span class=tp><b class=m>✓ done</b>gemini: Added the install section and the two serve commands.</span></a>
+<details class=done><summary><span>4 older threads</span><i class=cv></i></summary></details>
+</div>
+
+<div class="fc k-p"><div class=fh><span class=fn><b>~/Projects/shed</b><span class=ds>2 threads</span></span></div>
+<a class=tr href=chat.html><i class=ud>●</i><span class=tt>ACP sessions survive a restart</span><span class=ta>claude · 25m</span><span class=tp><b class=m>✓ done</b>claude: Pushed 3 commits; cargo test is green.</span></a>
+<a class="tr rd" href=chat.html><i class=ud></i><span class=tt>Linux: a systemd user unit</span><span class=ta>codex · 2d</span><span class=tp><b class=m>✓ done</b>you: ship it</span></a>
+</div>
+
+<div class="fc k-c"><div class=fh><span class=fn><b>~/notes</b><span class=ds>1 thread</span></span></div>
+<a class="tr rd" href=chat.html><i class=ud></i><span class=tt>Running plan for December</span><span class=ta>pi · 3d</span><span class=tp><b class=m>✓ done</b>pi: Three easy runs and a long one on Sunday.</span></a>
+</div>
+</div>
+
+</main>
+<script>
+const v=()=>{document.body.className='v-'+({new:'n'}[location.hash.slice(1)]||'l')};v();addEventListener('hashchange',v);
+</script>
+</body></html>
