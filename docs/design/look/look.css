@@ -93,3 +93,9 @@
 .sr button.on{color:var(--bg);background:var(--l)}
 .lth .pick+.pick,.lsl .pick+.pick{margin-top:0}
 .swa i{display:inline-block}
+
+/* Amendment A: STYLE and SPRITES, two rows above THEME: the name on the left, the keys on the right. */
+.lrw{display:flex;align-items:center;justify-content:space-between;gap:var(--s4);min-height:var(--hit);border-bottom:1px solid var(--line)}
+.lrw+.lrw{margin-top:0}.lrw:first-child{margin-top:var(--s2)}
+/* Sprites off: every row and state sprite (terminal: its glyph) is a dot in the state's colour, before the word. */
+.sd{display:inline-block;width:var(--s2);height:var(--s2);margin-right:.75ch;border-radius:50%;background:currentColor;vertical-align:middle}

@@ -1,10 +1,11 @@
 # cooee look: the look sheet, the themes on the chat, settings (#7)
 
 cooee takes over herdsman's four themes (farm, kitchen, terminal, and garden from herdsman#423) and its colour
-schemes, and adds **Appearance: System / Light / Dark**. These are three static pages on cooee's v1 screens (#1).
+schemes, and adds **Appearance: System / Light / Dark**, and (amendment A) two switches: **Style: Modern | Terminal**
+and **Sprites: on | off**. These are three static pages on cooee's v1 screens (#1).
 `serve.css` and `cooee.css` are v1's, copied unchanged from branch `design-1` (`53409f6`). `look.css` holds this
-design's additions: tokens only, no raw colour. `look.js` applies a theme and a scheme the way cooee's head script
-will.
+design's additions: tokens only, no raw colour. `modern.css` is the Modern style (below). `look.js` applies a style,
+the sprites switch, a theme and a scheme the way cooee's head script will.
 
 | page | shots | what it shows |
 |---|---|---|
@@ -12,21 +13,56 @@ will.
 | `themes.html` | `themes-<theme>-{390,1440}-{dark,light}`, 16 in all | each theme on the thread list and chat (at 390 the list and chat are stacked on one page), then what else the theme owns: moments, waiting on you, a turn's end, the empty list, loading, push |
 | `settings.html` | `settings-{390,1440}-{dark,light}` | Settings: look, devices, push alerts, sign-ins, plugins |
 
-Query parameters for any page: `?theme=farm|kitchen|garden|terminal`, `&mode=system|light|dark`, and
+The 28 shots above are the **Terminal** style (the first pass). Amendment A adds 16:
+
+| shots | what they show |
+|---|---|
+| `combo-{modern,terminal}-sprites-{on,off}-390-{dark,light}` | `themes.html` in farm in all four combinations, light and dark |
+| `modern-kitchen-390-light`, `modern-garden-390-dark`, `modern-terminal-390-light`, `modern-farm-1440-dark` | each theme once in Modern with sprites on (farm at 390 is `combo-modern-sprites-on-390-*`) |
+| `look-modern-390-dark`, `look-modern-1440-light` | the look sheet with the defaults: Modern, sprites on |
+| `settings-modern-390-dark`, `settings-modern-1440-light` | Settings in Modern |
+
+Query parameters for any page: `?theme=farm|kitchen|garden|terminal`, `&mode=system|light|dark`,
+`&style=modern|terminal` (default modern), `&sprites=on|off` (default on), and
 `&dark=<scheme>` / `&light=<scheme>` for the COLOURS picks. Serve the folder over http, because the pages fetch
 JSON and SVG: `python3 -m http.server -d docs/design/look`.
 
 **Regenerate:**
-- `node docs/design/look/shoot.mjs <chrome-headless-shell>` shoots the 28 PNGs. The 390 shots are DPR 2, the 1440
+- `node docs/design/look/shoot.mjs <chrome-headless-shell> [name regexp]` shoots the 44 PNGs. The 390 shots are DPR 2, the 1440
   shots DPR 1, all under reduced motion, so every loop shows frame 1. The script runs v1's gate-2 audit on each shot:
-  no sideways scroll, text 11/13 px, 28 px controls with a ≥ 44 px tap, ≥ 44 px rows, cut lines ellipsised. **All 28
-  pass.**
+  no sideways scroll, text 11/13 px, 28 px controls with a ≥ 44 px tap, ≥ 44 px rows, cut lines ellipsised. Modern has its own scale: text 13/15/17 px and
+  36 px controls. **All 44 pass.**
 - `node docs/design/look/check.mjs` runs herdsman's scheme gate (`gate.mjs`, copied from herdsman#423, which ported it
   line for line from serve.js). **All 12 schemes pass.**
 - `node build.mjs <herdsman> <herdsman design-423>` (run from this folder) rebuilds `sprites/` and `icons/` from
   herdsman's theme files and garden's `art.mjs`.
 
 **Data:** illustrative. Threads, devices and plugins are made up.
+
+## Two styles, one design system (amendment A)
+
+**Style** changes only shapes, radii, type and button form. Both styles take the same tokens, colour schemes, theme
+words, sprites, moments and markup. A Terminal shot and a Modern shot of the same thread differ only in `modern.css`.
+
+| | Terminal (herdsman's look, #1) | Modern (the Topcoat spike's look, #10) |
+|---|---|---|
+| type | monospace 13 / 11 px | system sans 15 / 13 px, 17 for the title and glyph keys; code, commands and tool rows stay monospace |
+| buttons | `[bracket]` keys, 28 px | filled pills in `--l`, 36 px; the second and later approval options in `--card` with an `--edge` ring; header, back, close and `[+]` are plain glyphs |
+| keys in a row (style, sprites, appearance) | bracket keys, the current one filled | one segmented pill, the current segment raised |
+| your message | a card with a `--l` bar on its left | a bubble on the right, `--l` at 14 % on `--card`, its tail corner at the bottom right |
+| the agent's message | a card with a `--p` bar | plain text on the left, the agent's name in bold |
+| a tool call | a card with an `--a` bar | a rounded `--card` row |
+| an approval | a card with an `--a` bar | a rounded card with an `--a` border |
+| folders | a card with a 3 px top bar in the folder colour | a rounded card; the folder colour is a dot before its name |
+| radii | 6 px | 12 px for rows, 16 for cards, 20 for bubbles and sheets, pills round |
+
+**Sprites** is independent of Style, so all four combinations work. **Off** turns every row and state sprite into a
+dot in the state's colour, followed by the theme word, so `at the gate` reads as `● at the gate`. The loading and
+empty figures go, and the loading overlay shows v1's `↻`. The theme's words, moments (the row flash and the shake;
+the `merged` hop becomes the dot), colour scheme and home-screen icon stay. The terminal theme has no sprites: its
+glyphs (`✻ ! ✓ ✕`) are its sprites, and off turns them into the dot too, so off reads the same in every theme.
+
+**Defaults:** Modern and sprites on. drover's board will get the same two switches later, defaulting to Terminal.
 
 ## 1. The look sheet
 
@@ -36,6 +72,8 @@ once, in place. The sheet stays open.
 - **Phone:** the low detent (about 34 % down) with the scrim at 35 %, so the thread bar and the first blocks stay
   visible above it. **From 1000 px:** a 420 px panel under `[◐]` with no scrim, so the list and the chat stay
   readable.
+- **STYLE** and **SPRITES** come first: two 44 px rows, each with its name on the left and its keys on the right
+  (`modern | terminal`, `on | off`). A tap restyles the app in place, the sheet included.
 - **THEME:** four tiles in one row, each showing the theme's home-screen icon and its name. The current tile has a
   `--l` border and a tick.
 - **APPEARANCE:** `[system] [light] [dark]`, the current one pressed (`--bg` on `--l`). System follows
@@ -100,7 +138,7 @@ kitchen `kitchen` / `kitchen-light`, garden `garden-dark` / `garden-light`, term
 box. It is one list in five sections. Each row is ≥ 44 px, its value is muted on the right, and `▸` means the row
 opens something.
 
-- **look:** `theme · farm`, `appearance · system · dark now`, `colours · dark farm · light farm`. Each row opens the
+- **look:** `style · modern`, `sprites · on`, `theme · farm`, `appearance · system · dark now`, `colours · dark farm · light farm`. Each row opens the
   look sheet.
 - **devices:** one row per paired device with its last-seen time. This device reads `this device` in green. A row
   opens the device (rename, remove). `[pair a device]` shows the pairing code (M2).
@@ -149,6 +187,12 @@ There are herdsman's 8 (`assets/schemes/`, values unchanged) and garden's 2 (#42
 13. **Glyphs are text, never emoji:** terminal's `✻ ! ✓ ✕` and kitchen's ASCII `♨` take VS15 (`♨︎`) when ported
     (#8), because iOS draws a bare `♨` as a colour emoji.
 
+14. **Modern from the Topcoat spike, adjusted:** the spike's pills were 8 px rounded rectangles in one fill; here they
+    are round, and the second and later approval options are quieter, so `allow` reads as the default. Its plain list
+    rows gain the folder cards and the theme word.
+15. **Your bubble is tinted** (`--l` at 14 % on `--card`), not the spike's flat `--card`, so it stands apart from the
+    tool rows, which are `--card` too.
+
 ## Open questions for the owner
 
 1. **`[◐]` in the header as well as in Settings?** herdsman has it on every tab. It costs one header slot (it still
@@ -169,3 +213,8 @@ There are herdsman's 8 (`assets/schemes/`, values unchanged) and garden's 2 (#42
    changes.
 8. **Garden depends on herdsman#423's approval.** Its art and schemes here come from `design-423` revision 1. If #423
    changes, `build.mjs` and `schemes/garden-*.json` are refreshed from it.
+9. **Sprites off in the terminal theme** turns its glyphs into the dot too (Two styles, above). The alternative keeps
+   the glyphs, since they are text, which makes the switch do nothing in terminal. **Recommend: as drawn.**
+10. **The bubble's `you` line** (`you · 09:12 ▾`) stays in Modern, because the bubble folds like every block. Hide
+    `you` in Modern, since the right side already says it? **Recommend: keep it** for now; it is one line and the fold
+    needs a summary.

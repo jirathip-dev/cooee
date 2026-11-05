@@ -3,9 +3,9 @@
 <meta name=theme-color content="#0d1117">
 <title>cooee look: the look sheet</title>
 <!-- #7 screen 1: the look sheet, opened from the header's [◐] (or Settings' look rows) over a chat, so a pick shows in
-     place: THEME (four tiles), APPEARANCE (system / light / dark) and COLOURS, one pick per mode. A phone: the low
+     place: STYLE (modern | terminal) and SPRITES (on | off), two keyed rows, then THEME (four tiles), APPEARANCE (system / light / dark) and COLOURS, one pick per mode. A phone: the low
      detent, a light scrim, the chat above it. From 1000 px: a panel under [◐], no scrim. Same query as look.js. -->
-<link rel=stylesheet href=serve.css><link rel=stylesheet href=cooee.css><link rel=stylesheet href=look.css>
+<link rel=stylesheet href=serve.css><link rel=stylesheet href=cooee.css><link rel=stylesheet href=look.css><link rel=stylesheet href=modern.css>
 </head>
 <body class=v-l>
 <header><b>cooee</b><i id=dot class=g></i><button type=button aria-label="new thread">+</button><button type=button id=look aria-label="look: theme and colours" aria-pressed=true>◐</button><button type=button aria-label=settings>⚙</button></header>
@@ -47,21 +47,26 @@
 <div id=sheet class="on lks"><div class=bd></div><div class=sh role=dialog aria-modal=false aria-labelledby=lkt>
 <div class=hd><p><b id=lkt>look</b><button type=button aria-label=close>×</button></p></div>
 <div class=top>
+<div class=lrw><span>style</span><div class="lap seg lst" role=radiogroup aria-label=style></div></div>
+<div class=lrw><span>sprites</span><div class="lap seg lsp" role=radiogroup aria-label=sprites></div></div>
 <p class=ch>theme</p><div class=lth role=listbox aria-label=theme></div>
-<p class=ch>appearance</p><div class=lap role=radiogroup aria-label=appearance></div>
+<p class=ch>appearance</p><div class="lap seg lmd" role=radiogroup aria-label=appearance></div>
 <div class=lcs></div>
 <p class=lft>this device only · iOS keeps the icon it installed with</p>
 </div>
 </div></div>
 
 <script type=module>
-import { T, MODE, S, NAMES, mode, pick, theme } from './look.js';
+import { T, MODE, STYLE, SPRITES, S, NAMES, mode, pick, theme } from './look.js';
 const THEMES = ['farm', 'kitchen', 'garden', 'terminal'];
 const tick = on => on ? '<i class=tk>✓</i>' : '';
 document.querySelector('.lth').innerHTML = THEMES.map(t =>
   `<button type=button class=pick role=option aria-selected=${t === T}><img alt="" src="icons/${t}.png"><span>${t}</span>${tick(t === T)}</button>`).join('');
-document.querySelector('.lap').innerHTML = ['system', 'light', 'dark'].map(m =>
-  `<button type=button role=radio aria-checked=${m === MODE} aria-pressed=${m === MODE}>${m}</button>`).join('');
+const keys = (sel, list, cur) => document.querySelector(sel).innerHTML = list.map(m =>
+  `<button type=button role=radio aria-checked=${m === cur} aria-pressed=${m === cur}>${m}</button>`).join('');
+keys('.lst', ['modern', 'terminal'], STYLE);
+keys('.lsp', ['on', 'off'], SPRITES ? 'on' : 'off');
+keys('.lmd', ['system', 'light', 'dark'], MODE);
 // COLOURS: one list per mode, each with its own tick; the list the page shows now says so. A tap on the other mode's
 // list switches Appearance to that mode, so every tap shows.
 const sw = s => `<span class=swa style="--sbg:${s.tokens['--bg']};--sfg:${s.tokens['--fg']};--sl:${s.tokens['--l']}"><b>Aa</b>${['--g', '--a', '--r'].map(k => `<i style="background:${s.tokens[k]}"></i>`).join('')}</span>`;

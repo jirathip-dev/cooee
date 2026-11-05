@@ -6,7 +6,7 @@
      sign-ins, plugins), each row a tap. Look rows open the look sheet, a device opens its page (rename, remove), a
      provider its sign-in (v1's login sheet), a plugin its page. A phone: herdsman's sheet at the top detent; from
      1000 px a centred 720 px box, as v1's sign-ins. Same query as look.js. -->
-<link rel=stylesheet href=serve.css><link rel=stylesheet href=cooee.css><link rel=stylesheet href=look.css>
+<link rel=stylesheet href=serve.css><link rel=stylesheet href=cooee.css><link rel=stylesheet href=look.css><link rel=stylesheet href=modern.css>
 </head>
 <body class=v-l>
 <header><b>cooee</b><i id=dot class=g></i><button type=button aria-label="new thread">+</button><button type=button aria-label="look: theme and colours">◐</button><button type=button aria-label=settings aria-pressed=true>⚙</button></header>
@@ -25,6 +25,8 @@
 <div class=top><div class=sl>
 
 <p class=ch>look</p>
+<a class=sr href=look.html><span class=sk>style</span><span class=sv id=v-style></span><i class=cv></i></a>
+<a class=sr href=look.html><span class=sk>sprites</span><span class=sv id=v-sprites></span><i class=cv></i></a>
 <a class=sr href=look.html><span class=sk>theme</span><span class=sv id=v-theme></span><i class=cv></i></a>
 <a class=sr href=look.html><span class=sk>appearance</span><span class=sv id=v-mode></span><i class=cv></i></a>
 <a class=sr href=look.html><span class=sk>colours</span><span class=sv id=v-colours></span><i class=cv></i></a>
@@ -55,7 +57,9 @@
 </div></div>
 
 <script type=module>
-import { T, MODE, S, mode, pick } from './look.js';
+import { T, MODE, STYLE, SPRITES, S, mode, pick } from './look.js';
+document.getElementById('v-style').textContent = STYLE;
+document.getElementById('v-sprites').textContent = SPRITES ? 'on' : 'off';
 document.getElementById('v-theme').textContent = T;
 document.getElementById('v-mode').textContent = MODE === 'system' ? `system · ${mode()} now` : MODE;
 document.getElementById('v-colours').textContent = `dark ${S[pick("dark")].label.toLowerCase()} · light ${S[pick("light")].label.toLowerCase()}`;
