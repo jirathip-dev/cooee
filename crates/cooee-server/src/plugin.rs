@@ -235,7 +235,7 @@ pub fn frame(p: &Plugin, api: &str) -> io::Result<(String, String)> {
     let page = format!(
         "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>{title}</title>\
          <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>:root{{color-scheme:light dark}}\
-         body{{margin:0;padding:12px;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,sans-serif}}</style>\
+         body{{margin:0;padding:12px;background:var(--bg);color:var(--fg);font:var(--fs,15px)/1.4 var(--font,system-ui)}}</style>\
          </head><body><script type=\"module\">{script}</script></body></html>"
     );
     let csp = format!(

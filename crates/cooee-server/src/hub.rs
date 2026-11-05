@@ -96,6 +96,8 @@ pub struct Hub {
     shed: Shed,
     store: Store,
     push: Push,
+    /// The server's default theme, whose words a push says.
+    theme: cooee_web::Theme,
     roots: Vec<PathBuf>,
     plugins: Vec<Plugin>,
     boot: String,
@@ -134,7 +136,9 @@ impl Live {
         let store = &hub.store;
         for change in changes {
             let watched = self.tx.receiver_count() > 0;
-            if let Some(n) = note(&self.meta, &self.chat, &change, &self.was, watched) {
+            if let Some(n) = note(
+                &self.meta, &self.chat, &change, &self.was, watched, &hub.theme,
+            ) {
                 hub.push.send(&n);
             }
             if let Change::State(turn) = &change {
@@ -155,7 +159,7 @@ impl Live {
 
 impl Hub {
     /// Loads every stored thread, re-attaches the open ones to their shed terminals by name, and starts
-    /// following shed's events. `plugins` may post choice cards and get their answers.
+    /// following shed's events. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers.
     ///
     /// # Errors
     /// [`HubError::Store`] when the store can't be read.
@@ -163,6 +167,7 @@ impl Hub {
         shed: Shed,
         data: &Path,
         roots: Vec<PathBuf>,
+        theme: cooee_web::Theme,
         plugins: Vec<Plugin>,
     ) -> Result<Arc<Self>, HubError> {
         let store = Store::open(data)?;
@@ -185,6 +190,7 @@ impl Hub {
             shed,
             store,
             push: Push::new(data),
+            theme,
             roots,
             plugins,
             boot: format!("{:x}", now()),
