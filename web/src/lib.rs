@@ -87,6 +87,19 @@ async fn look_script(cx: &Cx) -> Result<Owned> {
 path_param!(look);
 path_param!(file);
 
+/// A sprite sheet with its two-frame loop rule, since a `<use>` of another file takes that file's styles: frame 1 (`.kf1`,
+/// `.f1`) shows by default, and `--o1`/`--o2`, which the page animates, inherit into each sprite.
+fn with_frames(svg: &[u8]) -> Vec<u8> {
+    const RULE: &[u8] =
+        b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
+    let at = svg
+        .windows(4)
+        .position(|w| w == b"<svg")
+        .and_then(|i| svg[i..].iter().position(|&b| b == b'>').map(|j| i + j + 1))
+        .unwrap_or(0);
+    [&svg[..at], RULE, &svg[at..]].concat()
+}
+
 #[route(GET "/look/{look}/{file}")]
 async fn look_file(cx: &Cx) -> Result<Owned> {
     let theme = app_context::<Arc<LookAssets>>(cx)
@@ -97,8 +110,8 @@ async fn look_file(cx: &Cx) -> Result<Owned> {
     let found = match path_param::<File>(cx) {
         "sprites.svg" => theme
             .sprite_sheet
-            .clone()
-            .map(|b| Owned("image/svg+xml", b)),
+            .as_deref()
+            .map(|b| Owned("image/svg+xml", with_frames(b))),
         "icon.png" => Some(theme.icon.clone().map_or_else(
             || Owned("image/svg+xml", include_bytes!("icon.svg").to_vec()),
             |b| Owned("image/png", b),

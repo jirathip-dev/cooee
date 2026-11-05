@@ -76,7 +76,6 @@ main[data-state=working] .dt,main[data-state=blocked] .dt{background:var(--a)}
 .sd{display:inline-block;width:8px;height:8px;margin-right:.75ch;border-radius:50%;background:currentColor;vertical-align:middle}
 .rsp{display:inline-block;width:24px;height:24px;margin:-4px .5ch -4px 0;vertical-align:middle;shape-rendering:crispEdges;animation:kfr 1.2s infinite}
 .big{display:block;width:132px;height:100px;shape-rendering:crispEdges;animation:kfr 1.2s infinite}
-#sprites{position:absolute}
 /* The sprites' two-frame loops (.kf1/.kf2 farm and kitchen, .f1/.f2 garden), 0.6 s a frame; reduced motion: frame 1. */
 .kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}
 @keyframes kfr{0%,49.9%{--o1:1;--o2:0}50%,100%{--o1:0;--o2:1}}

@@ -135,10 +135,18 @@ test("all four Style × Sprites combinations render at 390", async ({ page }, in
       await page.goto("/");
       await expect(page.locator("html")).toHaveAttribute("data-style", style);
       await expect(page.locator(".tp .rsp")).toHaveCount(sprites === "on" ? await page.locator(".tp [data-st]:not([data-st=''])").count() : 0);
-      await expect.poll(() => page.locator("#sprites").count()).toBe(sprites === "on" ? 1 : 0);
       await audit(page);
       await shot(page, info, `combo-${style}-sprites-${sprites}-list`, true);
       await blocked(page);
+      if (sprites === "on") {
+        // The live line's sprite draws from the theme's sheet: it differs from the same box with its <use> hidden.
+        const sprite = page.locator("#wait .rsp");
+        await expect(sprite.locator("use")).toHaveAttribute("href", "/look/farm/sprites.svg#s-needs");
+        const drawn = await sprite.screenshot();
+        await sprite.locator("use").evaluate((u) => { u.style.visibility = "hidden"; });
+        expect(drawn.equals(await sprite.screenshot())).toBe(false);
+        await sprite.locator("use").evaluate((u) => { u.style.visibility = ""; });
+      } else await expect(page.locator("#wait .sd")).toBeVisible();
       await audit(page);
       await shot(page, info, `combo-${style}-sprites-${sprites}-chat`);
     }

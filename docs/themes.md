@@ -8,7 +8,7 @@ cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.
 | File | Required | What it is |
 |---|---|---|
 | `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words` |
-| `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100); two-frame loops use `.kf1/.kf2` or `.f1/.f2` |
+| `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
 | `icon.png` | no | the tile in the look sheet, the favicon and the home-screen icon (else cooee's icon) |
 
 `words` maps cooee's state keys to the theme's words: `working needs done fail idle merged loading empty-threads`.

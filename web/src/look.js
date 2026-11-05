@@ -38,7 +38,7 @@
 
   function svg(id, cls) {
     const box = cls === "big" ? "0 0 132 100" : "0 0 24 24";
-    return `<svg class="${cls}" viewBox="${box}" aria-hidden="true"><use href="#s-${id}"/></svg>`;
+    return `<svg class="${cls}" viewBox="${box}" aria-hidden="true"><use href="/look/${name()}/sprites.svg#s-${id}"/></svg>`;
   }
 
   function fill(e) {
@@ -61,20 +61,6 @@
     }
   }).observe(html, { subtree: true, childList: true, attributes: true, attributeFilter: ["data-st", "data-tool"] });
 
-  // The theme's sprite sheet, fetched once per theme and kept hidden at the top of <body>; the <use>s point into it.
-  let sheetOf = "";
-  function loadSprites() {
-    if (!art() || sheetOf === name()) return;
-    const t = (sheetOf = name());
-    fetch(url("sprites.svg")).then((r) => r.text()).then(async (text) => {
-      if (!document.body) await new Promise((ok) => addEventListener("DOMContentLoaded", ok, { once: true }));
-      if (t !== name()) return;
-      document.getElementById("sprites")?.remove();
-      const defs = text.replace(/^[\s\S]*?<svg[^>]*>|<\/svg>\s*$/g, "");
-      document.body.insertAdjacentHTML("afterbegin", `<svg id="sprites" width="0" height="0" aria-hidden="true"><defs>${defs}</defs></svg>`);
-    }).catch(() => { sheetOf = ""; });
-  }
-
   // The look as a plugin tab gets it.
   function forPlugin() {
     const t = theme();
@@ -92,7 +78,6 @@
     Object.assign(html.dataset, { theme: name(), mode: mode(), style: style(), sprites: sprites() ? "on" : "off" });
     document.querySelector("meta[name=theme-color]")?.setAttribute("content", s.tokens["--bg"]);
     for (const l of document.querySelectorAll("link[rel=icon],link[rel=apple-touch-icon]")) { l.href = url("icon.png"); l.type = ""; }
-    loadSprites();
     fillAll();
     for (const f of document.querySelectorAll("iframe[data-plugin]")) tell(f.contentWindow);
     if (open) render();
