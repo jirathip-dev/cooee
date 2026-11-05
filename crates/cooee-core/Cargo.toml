@@ -1,6 +1,6 @@
 [package]
 name = "cooee-core"
-description = "cooee's threads, store and shed client: no sockets, no HTTP."
+description = "cooee's threads, store and shed client: no HTTP."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -11,6 +11,7 @@ publish.workspace = true
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+shed-proto.workspace = true
 thiserror.workspace = true
 toml.workspace = true
 

@@ -1,14 +1,19 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-test("placeholder page: renders, fits the width, no axe violations", async ({ page }, info) => {
+test("thread list: renders, fits the width, no axe violations", async ({ page }, info) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("cooee");
+  await expect(page.locator(".fc .tr").first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
-  await page.screenshot({ path: `../../ui-${info.project.name}/home.png`, fullPage: true });
+  await page.screenshot({ path: `../../ui-${info.project.name}/threads.png`, fullPage: true });
+  await page.getByRole("link", { name: "new thread" }).click();
+  await expect(page.locator("#new")).toBeVisible();
+  await expect(page.getByRole("radio", { name: "fake-acp" })).toBeChecked();
+  await page.screenshot({ path: `../../ui-${info.project.name}/threads-new.png`, fullPage: true });
   const { violations } = await new AxeBuilder({ page }).analyze();
-  expect(violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+  expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 });
 
 test("installable: the manifest and icon load", async ({ page, request }) => {

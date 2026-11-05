@@ -119,6 +119,7 @@ version = "0.1.0"
 dependencies = [
  "cooee-core",
  "cooee-server",
+ "serde_json",
 ]
 
 [[package]]
@@ -127,6 +128,7 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+ "shed-proto",
  "thiserror",
  "toml",
 ]
@@ -135,7 +137,12 @@ dependencies = [
 name = "cooee-server"
 version = "0.1.0"
 dependencies = [
+ "cooee-core",
  "cooee-web",
+ "futures-util",
+ "serde",
+ "serde_json",
+ "thiserror",
  "tokio",
  "topcoat",
 ]
@@ -144,6 +151,7 @@ dependencies = [
 name = "cooee-web"
 version = "0.1.0"
 dependencies = [
+ "cooee-core",
  "topcoat",
 ]
 
@@ -1151,6 +1159,15 @@ dependencies = [
  "cfg-if",
  "cpufeatures 0.3.1",
  "digest 0.11.3",
+]
+
+[[package]]
+name = "shed-proto"
+version = "0.0.0"
+source = "git+https://github.com/jirathip-dev/shed?rev=9a4f32a811bf4e68641d0ddb9b20c84f07fcf8ef#9a4f32a811bf4e68641d0ddb9b20c84f07fcf8ef"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

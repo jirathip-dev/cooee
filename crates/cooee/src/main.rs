@@ -41,7 +41,7 @@ fn serve(path: Option<PathBuf>) -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    match cooee_server::serve(config.port, |addr| {
+    match cooee_server::serve(&config, |addr| {
         println!("cooee: listening on http://{addr}");
     }) {
         Ok(()) => ExitCode::SUCCESS,

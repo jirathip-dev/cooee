@@ -1,4 +1,4 @@
-//! The binary end to end: `--version`, and `cooee serve` on the configured port serving the placeholder page.
+//! The binary end to end: `--version`, and `cooee serve` on the configured port serving the thread list.
 
 use std::{
     env, fs,
@@ -58,7 +58,14 @@ fn get(addr: &str, path: &str) -> String {
 fn serve_listens_on_localhost_at_the_configured_port() {
     // Port 0 in the config: the server binds a free port on 127.0.0.1 and prints it.
     let config = env::temp_dir().join(format!("cooee-config-{}.toml", std::process::id()));
-    fs::write(&config, "port = 0\n").unwrap();
+    fs::write(
+        &config,
+        format!(
+            "port = 0\ndata = {:?}\n",
+            env::temp_dir().join("cooee-cli-data")
+        ),
+    )
+    .unwrap();
     let mut child = Command::new(BIN)
         .arg("serve")
         .arg("--config")
