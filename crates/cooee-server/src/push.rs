@@ -449,6 +449,7 @@ mod tests {
                     options: Vec::new(),
                     tapped: tapped.map(str::to_owned),
                     chosen: None,
+                    plugin: None,
                 },
             })
         };

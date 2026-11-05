@@ -2,7 +2,8 @@
 // anchor (slices by id as the reader nears an edge), scroll kept on a message rather than pixels, live events over
 // SSE resumed from the last one seen, the outbox (sending → sent → failed, tap to retry), the per-thread draft in
 // IndexedDB, approvals that lock once tapped, and debounced read marks (which also close the thread's notifications).
-// Every page registers the service worker (sw.js, push only); the thread list's 🔔 turns alerts on.
+// Every page registers the service worker (sw.js, push only); the thread list's 🔔 turns alerts on. A plugin tab hosts
+// the plugin's sandboxed frame.
 const $ = (s, el = document) => el.querySelector(s);
 const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 const post = (url, body) =>
@@ -51,6 +52,44 @@ if (bell && "PushManager" in window) (async () => {
     } catch (x) { alert(`alerts failed: ${x.message}`); }
   };
 })();
+
+// A plugin tab: the frame (sandboxed, see frame.js) asks this page to fetch or stream paths of its own backend only
+// (/p/<name>/api/…; anything else is refused), gets the theme's CSS variables, and its URL's #hash (a push's link).
+const frame = $("iframe.pf");
+if (frame) {
+  const base = `/p/${frame.dataset.plugin}/api`, streams = new Map();
+  const to = (m) => frame.contentWindow.postMessage(m, "*");
+  const own = (path) => {
+    if (typeof path !== "string" || !path.startsWith("/")) return null;
+    const u = new URL(base + path, location.origin);
+    return u.origin === location.origin && u.pathname.startsWith(`${base}/`) ? u : null;
+  };
+  addEventListener("message", async (e) => {
+    if (e.source !== frame.contentWindow) return;
+    const m = e.data ?? {}, u = own(m.path);
+    if (m.op === "fetch") {
+      const answer = (r) => to({ op: "response", id: m.id, ...r });
+      if (!u || !["GET", "POST"].includes(m.method)) return answer({ status: 403, ok: false, text: "not this plugin's backend" });
+      try {
+        const r = await fetch(u, { method: m.method, body: m.body, headers: m.type ? { "content-type": m.type } : {} });
+        answer({ status: r.status, ok: r.ok, type: r.headers.get("content-type"), text: await r.text() });
+      } catch (x) { answer({ status: 0, ok: false, text: x.message }); }
+    } else if (m.op === "events") {
+      if (!u) return to({ op: "event", id: m.id, event: "error", data: "not this plugin's backend" });
+      const es = new EventSource(u);
+      es.onmessage = (ev) => to({ op: "event", id: m.id, ...JSON.parse(ev.data) });
+      streams.set(m.id, es);
+    } else if (m.op === "close") { streams.get(m.id)?.close(); streams.delete(m.id); }
+  });
+  const vars = ["--bg", "--card", "--edge", "--line", "--fg", "--mute", "--l", "--link", "--g", "--a", "--r", "--p"];
+  const theme = () => {
+    const css = getComputedStyle(document.documentElement);
+    to({ op: "theme", vars: Object.fromEntries(vars.map((v) => [v, css.getPropertyValue(v).trim()])) });
+  };
+  frame.onload = theme;
+  matchMedia("(prefers-color-scheme: light)").addEventListener("change", theme);
+  frame.src = frame.dataset.src + location.hash;
+}
 
 const main = $("main.chat");
 if (main) chat(main);
@@ -101,7 +140,7 @@ function chat(main) {
       row.append(el("span", "k", "tool"), el("span", "cmd", it.title), ts);
     } else if (k === "approval") {
       row.className = "blk ap";
-      row.append(el("b", "k", agent), el("div", "md", it.tool));
+      row.append(el("b", "k", it.plugin ?? agent), el("div", "md", it.tool));
       const chosen = it.chosen ?? it.tapped;
       if (chosen && it.chosen) {
         const o = it.options.find((o) => o.id === chosen);

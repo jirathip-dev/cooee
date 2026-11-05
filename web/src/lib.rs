@@ -1,7 +1,7 @@
 //! cooee's web UI in Topcoat (docs/decisions/0001-ui-framework.md), in the Modern style: the thread list and the
-//! chat page (server-rendered), the pairing page, the chat's script (`chat.js`: the window of items, SSE, the outbox,
-//! drafts and turning alerts on), the style sheet and the installable PWA: its manifest, icons and the service worker
-//! (`sw.js`: push only, nothing cached).
+//! chat page (server-rendered), the pairing page, plugin tabs, the chat's script (`chat.js`: the window of items, SSE,
+//! the outbox, drafts, turning alerts on and hosting a plugin's frame), the style sheet and the installable PWA: its
+//! manifest, icons and the service worker (`sw.js`: push only, nothing cached).
 
 #![forbid(unsafe_code)]
 
@@ -35,6 +35,9 @@ pub fn assets(builder: RouterBuilder) -> RouterBuilder {
         .route(script)
         .route(worker)
 }
+
+/// The plugin API inside a plugin's frame (`frame.js`): the server puts it before the plugin's module.
+pub const FRAME_JS: &str = include_str!("frame.js");
 
 /// A fixed file served with its content type.
 struct Static(&'static str, &'static [u8]);
@@ -168,16 +171,39 @@ async fn row(r: Summary) -> Result<impl View> {
     })
 }
 
+/// Chat and the plugin tabs (`(name, label)`), when there are any; `current` is the open one (`""`: Chat).
+#[component]
+async fn nav(tabs: Vec<(String, String)>, current: String) -> Result<impl View> {
+    Ok(view! {
+        if !tabs.is_empty() {
+            <nav class="tabs" aria-label="tabs">
+                <a href="/" class=(if current.is_empty() { "on" } else { "" })>
+                    "Chat"
+                </a>
+                for (name, label) in tabs {
+                    <a
+                        href=(format!("/p/{name}"))
+                        class=(if name == current { "on" } else { "" })
+                    >
+                        (label)
+                    </a>
+                }
+            </nav>
+        }
+    })
+}
+
 /// The thread list: one card per working folder, its 3 newest threads shown, the rest folded; and the new-thread
-/// form (open when there are no threads, else behind `+`).
+/// form (open when there are no threads, else behind `+`). `tabs`: the plugins' names and labels.
 #[must_use]
 pub fn threads_page(
     cx: &Cx,
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
     folders: Vec<PathBuf>,
+    tabs: Vec<(String, String)>,
 ) -> impl View {
-    view! { cx => threads(rows: rows, agents: agents, folders: folders) }
+    view! { cx => threads(rows: rows, agents: agents, folders: folders, tabs: tabs) }
 }
 
 #[component]
@@ -185,6 +211,7 @@ async fn threads(
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
     folders: Vec<PathBuf>,
+    tabs: Vec<(String, String)>,
 ) -> Result<impl View> {
     let empty = rows.is_empty();
     let mut cards: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
@@ -196,6 +223,7 @@ async fn threads(
             title: "cooee",
             <header class="bar">
                 <h1>"cooee"</h1>
+                nav(tabs: tabs, current: String::new())
                 <button
                     type="button"
                     class="gl"
@@ -272,6 +300,35 @@ async fn threads(
                         }
                     </section>
                 }
+            </main>
+        )
+    })
+}
+
+/// Plugin `name`'s tab: its module runs in a sandboxed frame that `chat.js` hosts.
+#[must_use]
+pub fn plugin_page(cx: &Cx, tabs: Vec<(String, String)>, name: String, label: String) -> impl View {
+    view! { cx => plugin(tabs: tabs, name: name, label: label) }
+}
+
+#[component]
+async fn plugin(tabs: Vec<(String, String)>, name: String, label: String) -> Result<impl View> {
+    let title = format!("{label} · cooee");
+    Ok(view! {
+        document(
+            title: title.as_str(),
+            <main class="pt">
+                <header class="bar">
+                    <h1>"cooee"</h1>
+                    nav(tabs: tabs, current: name.clone())
+                </header>
+                <iframe
+                    class="pf"
+                    title=(label)
+                    sandbox="allow-scripts"
+                    data-plugin=(name.clone())
+                    data-src=(format!("/p/{name}/frame"))
+                ></iframe>
             </main>
         )
     })

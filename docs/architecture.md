@@ -77,6 +77,13 @@ approval, a turn finishes while no page has the thread open, or an agent errors.
 thread's tag, so a newer push replaces the older one. It shows nothing while that thread is open in view. A tap opens
 the thread, and reading the thread past `item` closes it.
 
+## Plugins (M4)
+
+A plugin is a tab beside Chat: a backend of its own and a UI module it serves ([plugins.md](plugins.md)). The module
+runs in a sandboxed frame (an opaque origin with a strict Content-Security-Policy) and reaches only its own backend,
+through the page around it and cooee's proxy (`/p/<name>/api/…`), which adds the plugin's token and drops the device's
+cookie. The backend posts pushes and choice cards back with that token; the owner's answer to a card goes to it.
+
 ## Configuration
 
 One TOML file, `$XDG_CONFIG_HOME/cooee/config.toml` (else `~/.config/cooee/config.toml`, or `cooee serve --config
@@ -91,3 +98,4 @@ One TOML file, `$XDG_CONFIG_HOME/cooee/config.toml` (else `~/.config/cooee/confi
 | `shed` | `shed` | The `shed` binary. |
 | `shed_dir` | shed's per-user server | shed's `--dir` (its socket `shed.sock` and state). |
 | `data` | `$XDG_DATA_HOME/cooee`, else `~/.local/share/cooee` | Where threads are stored. |
+| `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |

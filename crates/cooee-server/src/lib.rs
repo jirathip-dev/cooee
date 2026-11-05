@@ -1,11 +1,13 @@
 //! cooee's HTTP server: the web UI's pages (`cooee-web`), the threads' JSON API and their live events over SSE
 //! (replayed from the last seen event on reconnect), pairing and web push. Every request must name one of the
 //! server's own hosts (`Host`, and `Origin` when sent: no DNS rebinding), and every page and API call but pairing
-//! and the static files needs a paired device's cookie.
+//! and the static files needs a paired device's cookie; a plugin's backend posts with its token instead. Plugin tabs
+//! (docs/plugins.md) run their module in a sandboxed frame and reach their backend through cooee's proxy.
 
 #![forbid(unsafe_code)]
 
 mod hub;
+mod plugin;
 mod push;
 
 use std::{
@@ -13,10 +15,10 @@ use std::{
     net::{IpAddr, SocketAddr},
     path::PathBuf,
     sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Config, Device, Devices};
+use cooee_core::{Config, Device, Devices, Plugin};
 use futures_util::{Stream, StreamExt, stream};
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::error::RecvError;
@@ -76,12 +78,16 @@ fn header<'a>(cx: &'a Cx, name: &str) -> Option<&'a str> {
 /// The request's paired device, put in the request context by the [`Gate`].
 struct Paired(Device);
 
+/// The plugin whose token a `/plugin/` request carries, put in the request context by the [`Gate`].
+struct Caller(Plugin);
+
 /// Checks every request: its `Host` (and `Origin`, when sent) must be one of `names`, and a page or API call must
 /// carry a paired device's cookie (an unpaired page load goes to `/pair`).
 struct Gate {
     /// localhost, the bind address and `allowed_hosts`; matched exactly, so a `*` never widens them.
     names: Vec<String>,
     devices: Devices,
+    plugins: Vec<Plugin>,
 }
 
 impl Gate {
@@ -116,13 +122,28 @@ impl Layer for Gate {
             if OPEN.contains(&path) {
                 return next.run(cx, body).await;
             }
+            if path.starts_with("/plugin/") {
+                let token = header(cx, "authorization").and_then(|a| a.strip_prefix("Bearer "));
+                let token = token.map(|t| cooee_core::sha256(t.as_bytes()));
+                let found = self.plugins.iter().find(|p| {
+                    token.as_deref() == Some(cooee_core::sha256(p.token.as_bytes()).as_str())
+                });
+                return match found {
+                    Some(p) => next.run(&cx.with(Caller(p.clone())), body).await,
+                    None => plain(401, "a plugin's token is needed"),
+                };
+            }
             let token = header(cx, "cookie").and_then(|c| {
                 c.split(';')
                     .find_map(|c| c.trim().strip_prefix(COOKIE)?.strip_prefix('='))
             });
             match token.and_then(|t| self.devices.find(t, now())) {
                 Some(d) => next.run(&cx.with(Paired(d)), body).await,
-                None if method(cx) == "GET" && (path == "/" || path.starts_with("/t/")) => {
+                None if method(cx) == "GET"
+                    && (path == "/"
+                        || path.starts_with("/t/")
+                        || path.strip_prefix("/p/").is_some_and(|p| !p.contains('/'))) =>
+                {
                     Ok(Response::builder()
                         .status(303)
                         .header("Location", "/pair")
@@ -180,6 +201,13 @@ impl<T: Serialize> IntoResponse for Answer<T> {
     }
 }
 
+/// The plugin tabs: each one's name and label.
+fn tabs(cx: &Cx) -> Vec<(String, String)> {
+    let hub = app_context::<Arc<Hub>>(cx);
+    let tabs = hub.plugins().iter();
+    tabs.map(|p| (p.name.clone(), p.label.clone())).collect()
+}
+
 #[page("/")]
 async fn home(cx: &Cx) -> Result<impl View> {
     let (rows, agents, folders) = blocking(cx, |hub| {
@@ -187,7 +215,7 @@ async fn home(cx: &Cx) -> Result<impl View> {
         Ok((hub.list(), agents, hub.folders()))
     })
     .await?;
-    Ok(cooee_web::threads_page(cx, rows, agents, folders))
+    Ok(cooee_web::threads_page(cx, rows, agents, folders, tabs(cx)))
 }
 
 #[page("/t/{id}")]
@@ -389,6 +417,151 @@ async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
 /// The data folder.
 struct Data(PathBuf);
 
+path_param!(name);
+path_param!(rest);
+
+/// The plugin the path names.
+fn named(cx: &Cx) -> Result<Plugin> {
+    let name = path_param::<Name>(cx);
+    let hub = app_context::<Arc<Hub>>(cx);
+    let found = hub.plugins().iter().find(|p| p.name == name).cloned();
+    Ok(found.ok_or_else(not_found)?)
+}
+
+#[page("/p/{name}")]
+async fn tab(cx: &Cx) -> Result<impl View> {
+    let p = named(cx)?;
+    Ok(cooee_web::plugin_page(cx, tabs(cx), p.name, p.label))
+}
+
+#[route(GET "/p/{name}/frame")]
+async fn frame(cx: &Cx) -> Result<Response> {
+    let p = named(cx)?;
+    match tokio::task::spawn_blocking(move || plugin::frame(&p, cooee_web::FRAME_JS)).await? {
+        Ok((page, csp)) => Ok(Response::builder()
+            .header("Content-Type", "text/html; charset=utf-8")
+            .header("Content-Security-Policy", csp)
+            .header("Cache-Control", "no-store")
+            .body(Body::from(page))?),
+        Err(e) => plain(502, &format!("plugin {}: {e}", path_param::<Name>(cx))),
+    }
+}
+
+/// A backend's event as one `{event, data}` message (a page's `EventSource` hears only those), its id kept.
+fn relay(e: plugin::Sse) -> Event {
+    let event = if e.event.is_empty() {
+        "message"
+    } else {
+        &e.event
+    };
+    let out = Event::new().data(serde_json::json!({ "event": event, "data": e.data }).to_string());
+    match e.id {
+        Some(id) => out.id(id),
+        None => out,
+    }
+}
+
+/// `/p/<name>/api/<path>`: `<path>` on the plugin's backend with its token. Only the content type, `Accept` and
+/// `Last-Event-ID` go along (never the cookie); an event stream comes back as `{event, data}` messages.
+#[route([GET, POST] "/p/{name}/api/{*rest}")]
+async fn proxy(cx: &Cx, body: String) -> Result<Response> {
+    let p = named(cx)?;
+    let prefix = format!("/p/{}/api", p.name);
+    let uri = uri(cx);
+    let target = uri.path_and_query().map_or("/", |t| t.as_str());
+    let target = target.strip_prefix(&prefix).unwrap_or(target).to_owned();
+    let method = method(cx).to_string();
+    let pass: Vec<(&str, String)> = ["content-type", "accept", "last-event-id"]
+        .into_iter()
+        .filter_map(|h| Some((h, header(cx, h)?.to_owned())))
+        .collect();
+    let reply = tokio::task::spawn_blocking(move || {
+        let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
+        let timeout = Some(Duration::from_secs(30));
+        plugin::call(&p, &method, &target, &headers, body.as_bytes(), timeout)
+    })
+    .await?;
+    let reply = match reply {
+        Ok(r) => r,
+        Err(e) => return plain(502, &format!("{prefix}: {e}")),
+    };
+    if reply
+        .header("content-type")
+        .is_some_and(|t| t.starts_with("text/event-stream"))
+    {
+        reply.body.get_ref().set_read_timeout(None)?;
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        std::thread::spawn(move || plugin::events(reply, |e| tx.send(e).is_ok()));
+        let stream = stream::unfold(rx, |mut rx| async move {
+            let e = rx.recv().await?;
+            Some((Result::<Event>::Ok(relay(e)), rx))
+        });
+        return Sse::new(stream)
+            .keep_alive(KeepAlive::new())
+            .into_response(cx);
+    }
+    let status = reply.status;
+    let kind = reply
+        .header("content-type")
+        .unwrap_or("application/octet-stream")
+        .to_owned();
+    let bytes = tokio::task::spawn_blocking(move || reply.bytes()).await??;
+    Ok(Response::builder()
+        .status(status)
+        .header("Content-Type", kind)
+        .header("Cache-Control", "no-store")
+        .body(Body::from(bytes))?)
+}
+
+/// `POST /plugin/push`: a line from a plugin; a tap opens its tab (at `#<path>`, when given).
+#[derive(Deserialize)]
+struct PluginPush {
+    text: String,
+    #[serde(default)]
+    path: String,
+}
+
+#[route(POST "/plugin/push")]
+async fn plugin_push(cx: &Cx, Json(b): Json<PluginPush>) -> Result<Response> {
+    let p = &request_context::<Caller>(cx).0;
+    if b.text.trim().is_empty() {
+        return plain(400, "a push needs text");
+    }
+    let hash = if b.path.is_empty() {
+        String::new()
+    } else {
+        format!("#{}", b.path)
+    };
+    let note = Note {
+        title: p.label.clone(),
+        body: b.text.chars().take(120).collect(),
+        tag: format!("plugin-{}", p.name),
+        url: format!("/p/{}{hash}", p.name),
+        item: 0,
+    };
+    hub(cx).push().send(&note);
+    Json(note).into_response(cx)
+}
+
+/// `POST /plugin/card`: a plugin's choice card in a thread.
+#[derive(Deserialize)]
+struct Card {
+    thread: String,
+    text: String,
+    options: Vec<String>,
+}
+
+#[route(POST "/plugin/card")]
+async fn plugin_card(cx: &Cx, Json(c): Json<Card>) -> Result<Answer<cooee_core::Item>> {
+    let name = request_context::<Caller>(cx).0.name.clone();
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.card(&c.thread, &name, &c.text, &c.options)
+        })
+        .await,
+    ))
+}
+
 #[route(GET "/push/key")]
 async fn push_key(cx: &Cx) -> Result<Response> {
     let hub = hub(cx);
@@ -444,6 +617,7 @@ pub fn router(
     let gate = Gate {
         names,
         devices: Devices::new(data),
+        plugins: hub.plugins().to_vec(),
     };
     cooee_web::assets(Router::builder())
         .layer(gate)
@@ -461,6 +635,11 @@ pub fn router(
         .route(cancel)
         .route(close)
         .route(read)
+        .page(tab)
+        .route(frame)
+        .route(proxy)
+        .route(plugin_push)
+        .route(plugin_card)
         .app_context(hub)
         .app_context(Data(data.to_owned()))
         .build()
@@ -471,8 +650,8 @@ pub fn router(
 ///
 /// # Errors
 ///
-/// Returns `Err` if `bind` isn't loopback and `allowed_hosts` is empty, the store can't be opened, the runtime
-/// can't start, the port can't be bound or accepting a connection fails.
+/// Returns `Err` if `bind` isn't loopback and `allowed_hosts` is empty, a plugin is misconfigured (no token, …),
+/// the store can't be opened, the runtime can't start, the port can't be bound or accepting a connection fails.
 pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> {
     if !config.bind.is_loopback() && config.allowed_hosts.is_empty() {
         return Err(io::Error::other(format!(
@@ -480,11 +659,12 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             config.bind
         )));
     }
+    plugin::check(&config.plugins)?;
     let data = config
         .data_dir()
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
-    let hub = Hub::open(shed, &data, config.roots.clone())?;
+    let hub = Hub::open(shed, &data, config.roots.clone(), config.plugins.clone())?;
     let router = router(hub, &data, config.bind, &config.allowed_hosts);
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
