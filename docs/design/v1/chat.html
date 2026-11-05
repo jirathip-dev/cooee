@@ -1,0 +1,88 @@
+<!doctype html><html lang=en data-tab=chat><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>cooee v1: chat</title>
+<!-- #1: one thread (one ACP session). serve.css is herdsman's (unchanged), cooee.css the additions. Static: no hash is
+     the thread waiting on an approval; #working is the same thread after [allow], the agent at work. From 1000 px
+     the thread list sits on the left. -->
+<link rel=stylesheet href=serve.css><link rel=stylesheet href=cooee.css>
+</head>
+<body class=v-l>
+<header><b>cooee</b><i id=dot class=g></i><button type=button aria-label="new thread">+</button><button type=button aria-label=sign-ins>⚙</button></header>
+<main id=chat>
+
+<div class=clp>
+<div class="fc k-l"><div class=fh><span class=fn><b>~/Projects/cooee</b><span class=ds>3 threads</span></span></div>
+<a class=tr href=#t aria-current=true><i class=ud></i><span class=tt>Push stops after pairing again</span><span class=ta>claude · 2m</span><span class=tp><b class="r xa">! needs you</b><b class="a xw">✻ working</b>claude: <span class=xa>Edit src/push.rs?</span><span class=xw>$ cargo test -p cooee-push</span></span></a>
+<a class=tr href=#t><i class=ud>●</i><span class=tt>Pairing QR code on the desktop page</span><span class=ta>codex · 6m</span><span class=tp><b class=a>✻ working</b>codex: $ cargo test -p cooee-pair</span></a>
+<a class="tr rd" href=#t><i class=ud></i><span class=tt>README: install over Tailscale</span><span class=ta>gemini · 1h</span><span class=tp><b class=m>✓ done</b>gemini: Added the install section and the two serve commands.</span></a>
+<details class=done><summary><span>4 older threads</span><i class=cv></i></summary></details>
+</div>
+<div class="fc k-p"><div class=fh><span class=fn><b>~/Projects/shed</b><span class=ds>2 threads</span></span></div>
+<a class=tr href=#t><i class=ud>●</i><span class=tt>ACP sessions survive a restart</span><span class=ta>claude · 25m</span><span class=tp><b class=m>✓ done</b>claude: Pushed 3 commits; cargo test is green.</span></a>
+<a class="tr rd" href=#t><i class=ud></i><span class=tt>Linux: a systemd user unit</span><span class=ta>codex · 2d</span><span class=tp><b class=m>✓ done</b>you: ship it</span></a>
+</div>
+<div class="fc k-c"><div class=fh><span class=fn><b>~/notes</b><span class=ds>1 thread</span></span></div>
+<a class="tr rd" href=#t><i class=ud></i><span class=tt>Running plan for December</span><span class=ta>pi · 3d</span><span class=tp><b class=m>✓ done</b>pi: Three easy runs and a long one on Sunday.</span></a>
+</div>
+</div>
+
+<div class=cvp>
+<div class=th><button type=button class=bk aria-label="back to threads">‹</button><div><b>Push stops after pairing again</b><span class="ds xa"><i class="dt a"></i>claude · opus · ~/Projects/cooee · needs you</span><span class="ds xw"><i class="dt a"></i>claude · opus · ~/Projects/cooee · working</span></div></div>
+<div class=tc>
+<p class=qs>thread started · claude over ACP · 09:12</p>
+
+<details class="blk me" open><summary><span class=k>you</span><span class=pv></span><span class=ct>09:12</span><i class=cv></i></summary>
+<div class=md><p>Push to my phone stops after I pair it again. Find out why and fix it.</p></div>
+</details>
+
+<details class="blk run"><summary><span class=k>Read</span><span class=cmd>src/push.rs</span><span class="ts g">✓</span><i class=cv></i></summary></details>
+<details class="blk run"><summary><span class=k>Search</span><span class=cmd>"subscription" in src/</span><span class="ts g">✓</span><i class=cv></i></summary></details>
+<details class="blk run" open><summary><span class=k>$</span><span class=cmd>cargo test -p cooee-push</span><span class="ts r">✕ exit 101</span><i class=cv></i></summary>
+<div class=out><pre>running 4 tests
+test send::sends_once ... <span class=t-g>ok</span>
+test send::drops_on_404 ... <span class=t-g>ok</span>
+test send::uses_newest_subscription ... <span class=t-r>FAILED</span>
+test pair::stores_keys ... <span class=t-g>ok</span>
+
+<span class=t-r>thread 'send::uses_newest_subscription' panicked at src/push.rs:58:9:</span>
+assertion `left == right` failed
+  left: <span class=t-a>"https://web.push.apple.com/QH4…"</span>
+ right: <span class=t-a>"https://web.push.apple.com/Zr8…"</span>
+
+test result: <span class=t-r>FAILED</span>. 3 passed; 1 failed</pre></div>
+</details>
+
+<details class="blk ai" open><summary><span class=k>claude</span><span class=pv></span><span class=ct>09:14</span><i class=cv></i></summary>
+<div class=md><p>Found it: pairing again adds a new subscription, but <code>send</code> keeps the first endpoint, and Apple's push service answers <b>410 Gone</b>. I'll drop a subscription on a 410 and send to the newest one.</p></div>
+</details>
+
+<details class="blk ai ap xa" open><summary><span class=k>claude</span><span class=pv></span><span class=ct>09:15</span><i class=cv></i></summary>
+<div class=md><p>Edit <code>src/push.rs</code></p></div>
+<div class=out><pre><span class=hh>@@ -52,7 +52,10 @@ pub async fn send</span>
+<span class=bg-r>-    let sub = subs.first().ok_or(Error::NotPaired)?;</span>
+<span class=bg-g>+    let sub = subs.last().ok_or(Error::NotPaired)?;</span>
+     let res = client.post(&amp;sub.endpoint).send().await?;
+<span class=bg-g>+    if res.status() == StatusCode::GONE {</span>
+<span class=bg-g>+        store.drop_subscription(sub.id).await?;</span>
+<span class=bg-g>+    }</span></pre></div>
+<div class=chc><button type=button>allow</button><button type=button>always allow</button><button type=button>reject</button></div>
+</details>
+
+<details class="blk ai xw" open><summary><span class=k>claude</span><span class=pv></span><span class=ct>09:15</span><i class=cv></i></summary>
+<div class=md><p>Edit <code>src/push.rs</code></p></div>
+<p class=ans>✓ allow <span class=m>· you · 09:16</span></p>
+</details>
+<details class="blk run xw"><summary><span class=k>Edit</span><span class=cmd>src/push.rs</span><span class="ts g">✓</span><i class=cv></i></summary></details>
+<details class="blk run xw"><summary><span class=k>$</span><span class=cmd>cargo test -p cooee-push</span><span class="ts a">⋯ 0:41</span><i class=cv></i></summary></details>
+</div>
+<p class="tlv xa"><b>●</b> waiting for you</p>
+<form class=tw><div class="pill xw"><span class=wg>✻</span>working · 0:41<button type=button>stop</button></div>
+<div class="ats xw"><div class=att><span>phone.log</span><button type=button aria-label="remove the file">×</button></div></div>
+<button type=button aria-label="attach an image or file">+</button><textarea rows=1 aria-label=message placeholder="message claude"></textarea><button type=button>send</button></form>
+</div>
+
+</main>
+<script>
+const v=()=>{document.body.className='v-'+({working:'w'}[location.hash.slice(1)]||'l')};v();addEventListener('hashchange',v);
+</script>
+</body></html>
