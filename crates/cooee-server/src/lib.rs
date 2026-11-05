@@ -1,11 +1,12 @@
 //! cooee's HTTP server: the web UI's pages (`cooee-web`), the threads' JSON API and their live events over SSE
-//! (replayed from the last seen event on reconnect), pairing and web push. Every request must name one of the
+//! (replayed from the last seen event on reconnect), provider logins, pairing and web push. Every request must name one of the
 //! server's own hosts (`Host`, and `Origin` when sent: no DNS rebinding), and every page and API call but pairing
 //! and the static files needs a paired device's cookie.
 
 #![forbid(unsafe_code)]
 
 mod hub;
+mod login;
 mod push;
 
 use std::{
@@ -39,6 +40,7 @@ use topcoat::{
 };
 
 pub use hub::{Hub, HubError, Out, Resume, Slice};
+pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
 
 /// The paths an unpaired browser may load: pairing and the static files.
@@ -180,14 +182,63 @@ impl<T: Serialize> IntoResponse for Answer<T> {
     }
 }
 
+fn logins(cx: &Cx) -> Arc<Logins> {
+    Arc::clone(app_context::<Arc<Logins>>(cx))
+}
+
+/// Runs a blocking login call off the async workers.
+async fn on_logins<T: Send + 'static>(
+    cx: &Cx,
+    f: impl FnOnce(&Arc<Logins>) -> Result<T, HubError> + Send + 'static,
+) -> Result<T, HubError> {
+    let logins = logins(cx);
+    tokio::task::spawn_blocking(move || f(&logins))
+        .await
+        .map_err(|e| HubError::Refused(e.to_string()))?
+}
+
 #[page("/")]
 async fn home(cx: &Cx) -> Result<impl View> {
-    let (rows, agents, folders) = blocking(cx, |hub| {
+    let providers = on_logins(cx, |l| Ok(l.statuses()));
+    let rest = blocking(cx, |hub| {
         let agents = hub.agents().map_err(|e| e.to_string());
         Ok((hub.list(), agents, hub.folders()))
-    })
-    .await?;
-    Ok(cooee_web::threads_page(cx, rows, agents, folders))
+    });
+    let (providers, (rows, agents, folders)) =
+        futures_util::future::try_join(providers, rest).await?;
+    Ok(cooee_web::threads_page(
+        cx, rows, agents, folders, providers,
+    ))
+}
+
+#[route(POST "/logins/{id}")]
+async fn login_start(cx: &Cx) -> Result<Answer<()>> {
+    let name = thread_id(cx);
+    Ok(Answer(on_logins(cx, move |l| l.start(&name)).await))
+}
+
+#[route(GET "/logins/{id}")]
+async fn login_view(cx: &Cx) -> Result<Answer<LoginView>> {
+    let name = thread_id(cx);
+    Ok(Answer(on_logins(cx, move |l| l.view(&name)).await))
+}
+
+/// `POST /logins/{id}/send`: a code from the sign-in page.
+#[derive(Deserialize)]
+struct Code {
+    text: String,
+}
+
+#[route(POST "/logins/{id}/send")]
+async fn login_send(cx: &Cx, Json(c): Json<Code>) -> Result<Answer<()>> {
+    let name = thread_id(cx);
+    Ok(Answer(on_logins(cx, move |l| l.send(&name, &c.text)).await))
+}
+
+#[route(POST "/logins/{id}/cancel")]
+async fn login_cancel(cx: &Cx) -> Result<Answer<()>> {
+    let name = thread_id(cx);
+    Ok(Answer(on_logins(cx, move |l| l.cancel(&name)).await))
 }
 
 #[page("/t/{id}")]
@@ -422,11 +473,12 @@ async fn push_subscribe(cx: &Cx, Json(s): Json<Subscribe>) -> Result<Response> {
     }
 }
 
-/// The web UI, the threads' API over `hub` and pairing, behind the gate: requests must name `bind`, localhost
+/// The web UI, the threads' API over `hub`, the providers' `logins` and pairing, behind the gate: requests must name `bind`, localhost
 /// or one of `allowed_hosts`; devices are paired in `data`.
 #[must_use]
 pub fn router(
     hub: Arc<Hub>,
+    logins: Arc<Logins>,
     data: &std::path::Path,
     bind: IpAddr,
     allowed_hosts: &[String],
@@ -461,7 +513,12 @@ pub fn router(
         .route(cancel)
         .route(close)
         .route(read)
+        .route(login_start)
+        .route(login_view)
+        .route(login_send)
+        .route(login_cancel)
         .app_context(hub)
+        .app_context(logins)
         .app_context(Data(data.to_owned()))
         .build()
 }
@@ -484,8 +541,9 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .data_dir()
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
+    let logins = Logins::new(shed.clone(), config.providers.clone());
     let hub = Hub::open(shed, &data, config.roots.clone())?;
-    let router = router(hub, &data, config.bind, &config.allowed_hosts);
+    let router = router(hub, logins, &data, config.bind, &config.allowed_hosts);
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?

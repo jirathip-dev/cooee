@@ -11,7 +11,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Agent, Summary, Thread, Turn};
+use cooee_core::{Agent, Provider, Status, Summary, Thread, Turn};
 use topcoat::{
     Result,
     context::Cx,
@@ -168,16 +168,93 @@ async fn row(r: Summary) -> Result<impl View> {
     })
 }
 
-/// The thread list: one card per working folder, its 3 newest threads shown, the rest folded; and the new-thread
-/// form (open when there are no threads, else behind `+`).
+/// The thread list: one card per working folder, its 3 newest threads shown, the rest folded; the new-thread
+/// form (open when there are no threads, else behind `+`), each agent with its provider's state; and the
+/// sign-ins sheet (behind `⚙`): each provider's state, and its login's terminal (drawn by `chat.js`).
 #[must_use]
 pub fn threads_page(
     cx: &Cx,
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
     folders: Vec<PathBuf>,
+    providers: Vec<(Provider, Status)>,
 ) -> impl View {
-    view! { cx => threads(rows: rows, agents: agents, folders: folders) }
+    view! {
+        cx =>
+        threads(rows: rows, agents: agents, folders: folders, providers: providers)
+    }
+}
+
+#[component]
+async fn provider(p: Provider, s: Status) -> Result<impl View> {
+    let (class, label) = if s.signed_in {
+        ("g", "✓ signed in")
+    } else {
+        ("m", "signed out")
+    };
+    Ok(view! {
+        <div class="pv" data-provider=(p.name.clone())>
+            <div class="fh">
+                <b>(p.name.clone())</b>
+                <span class=(class)>(label)</span>
+                <button type="button" class="si" hidden=(s.signed_in)>"sign in"</button>
+            </div>
+            <p class="ds">(s.line)</p>
+            <div class="lg" hidden=(true)>
+                <p class="ds">(format!("{} · shed terminal", p.login.join(" ")))</p>
+                <pre class="out"></pre>
+                <form class="tw">
+                    <input
+                        aria-label=(format!("the code from the {} sign-in page", p.name))
+                        placeholder="paste the code"
+                        autocomplete="off"
+                    >
+                    <button type="submit">"send"</button>
+                    <button type="button" class="cn">"cancel"</button>
+                </form>
+            </div>
+        </div>
+    })
+}
+
+#[component]
+async fn signins(providers: Vec<(Provider, Status)>) -> Result<impl View> {
+    Ok(view! {
+        <section class="nf" id="signins" hidden=(true)>
+            <div class="fh">
+                <b>"sign-ins"</b>
+                <a class="gl" href="#" aria-label="close sign-ins">"×"</a>
+            </div>
+            for (p, s) in providers {
+                provider(p: p, s: s)
+            }
+        </section>
+    })
+}
+
+/// One agent in the new-thread picker: signed in `✓`, or signed out with a link to the sign-ins sheet.
+#[component]
+async fn agent(id: String, first: bool, signed: Option<bool>) -> Result<impl View> {
+    Ok(view! {
+        <label>
+            <input type="radio" name="agent" value=(id.clone()) checked=(first)>
+            <span>(id.clone())</span>
+            match signed {
+                Some(true) => {
+                    <span class="g">"✓"</span>
+                }
+                Some(false) => {
+                    <span class="m">"signed out"</span>
+                }
+                None => {
+
+                }
+            }
+        </label>
+        if signed == Some(false) {
+            <a class="so" href="#signins">(format!("sign in {id}"))</a>
+        }
+    })
 }
 
 #[component]
@@ -185,8 +262,14 @@ async fn threads(
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
     folders: Vec<PathBuf>,
+    providers: Vec<(Provider, Status)>,
 ) -> Result<impl View> {
     let empty = rows.is_empty();
+    let signed: BTreeMap<String, bool> = providers
+        .iter()
+        .rev()
+        .map(|(p, s)| (p.agent.clone(), s.signed_in))
+        .collect();
     let mut cards: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
     for r in rows {
         cards.entry(r.folder.clone()).or_default().push(r);
@@ -206,8 +289,10 @@ async fn threads(
                     "🔔"
                 </button>
                 <a class="gl" href="#new" aria-label="new thread">"+"</a>
+                <a class="gl" href="#signins" aria-label="sign-ins">"⚙"</a>
             </header>
             <main class="list">
+                signins(providers: providers)
                 <form class="nf" id="new" hidden=(!empty)>
                     <div class="fh">
                         <b>"new thread"</b>
@@ -218,15 +303,11 @@ async fn threads(
                         match agents {
                             Ok(list) => {
                                 for (i, a) in list.into_iter().enumerate() {
-                                    <label>
-                                        <input
-                                            type="radio"
-                                            name="agent"
-                                            value=(a.id.clone())
-                                            checked=(i == 0)
-                                        >
-                                        <span>(a.id)</span>
-                                    </label>
+                                    agent(
+                                        id: a.id.clone(),
+                                        first: i == 0,
+                                        signed: signed.get(&a.id).copied()
+                                    )
                                 }
                             }
                             Err(e) => {

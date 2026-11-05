@@ -27,6 +27,54 @@ if (form) {
   });
 }
 
+// The sign-ins sheet: open on `#signins`. [sign in] starts the provider's own login in a shed terminal; its screen
+// (redacted by the server) is drawn every second with its links tappable, a code typed below goes to it, and once
+// it ends the provider's status is shown again.
+const sheet = $("#signins");
+if (sheet) {
+  const open = () => { sheet.hidden = location.hash !== "#signins"; };
+  addEventListener("hashchange", open);
+  open();
+  for (const row of sheet.querySelectorAll(".pv")) {
+    const api = `/logins/${row.dataset.provider}`, lg = $(".lg", row), out = $(".out", row), code = $("input", row);
+    const [state, signIn] = [$(".fh span", row), $(".si", row)], line = $(".pv > .ds", row);
+    let timer = 0;
+    const draw = (v) => {
+      if (v.state !== "running") {
+        clearInterval(timer); lg.hidden = true;
+        const s = v.status ?? { signed_in: false, line: "" };
+        state.className = s.signed_in ? "g" : "m";
+        state.textContent = s.signed_in ? "✓ signed in" : "signed out";
+        line.textContent = [v.why, s.line].filter(Boolean).join(" · ");
+        signIn.hidden = s.signed_in;
+        return;
+      }
+      state.className = "a"; state.textContent = "signing in"; lg.hidden = false; signIn.hidden = true;
+      out.replaceChildren();
+      let rest = v.screen;
+      for (const url of v.links) {
+        const i = rest.indexOf(url);
+        if (i < 0) continue;
+        const a = document.createElement("a");
+        a.href = url; a.target = "_blank"; a.rel = "noopener"; a.textContent = url;
+        out.append(rest.slice(0, i), a);
+        rest = rest.slice(i + url.length);
+      }
+      out.append(rest);
+    };
+    const poll = async () => { const r = await fetch(api); if (r.ok) draw(await r.json()); };
+    signIn.onclick = async () => {
+      try { await post(api, null); } catch (x) { line.textContent = x.message; return; }
+      clearInterval(timer); timer = setInterval(poll, 1000); poll();
+    };
+    $("form", row).onsubmit = async (e) => {
+      e.preventDefault();
+      try { await post(`${api}/send`, { text: code.value }); code.value = ""; poll(); } catch (x) { line.textContent = x.message; }
+    };
+    $(".cn", row).onclick = () => post(`${api}/cancel`, {}).then(poll, poll);
+  }
+}
+
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 // Closes thread `thread`'s notifications up to item `read`.
 const cleared = (thread, read) => navigator.serviceWorker?.ready.then((r) => r.active?.postMessage({ thread, read }));

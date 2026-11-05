@@ -62,3 +62,7 @@ main[data-state=working] .dt,main[data-state=blocked] .dt{background:var(--a)}
 .pill{position:absolute;bottom:100%;left:50%;transform:translate(-50%,-8px);display:flex;align-items:center;padding:4px 4px 4px 12px;background:var(--card);border:1px solid var(--edge);border-radius:999px;color:var(--a);white-space:nowrap}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.chc.busy::after{animation:none}}
+.pv{border-top:1px solid var(--line)}.pv .fh b{margin-right:auto}.pv .ds{margin:0 0 8px;overflow-wrap:anywhere}
+.out{margin:0 0 8px;padding:8px;max-height:50vh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--edge);border-radius:12px}
+.pv .tw{padding:0;background:none;border:0}.pv .cn{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
+.nf .so{align-self:center;min-height:44px;display:inline-flex;align-items:center}

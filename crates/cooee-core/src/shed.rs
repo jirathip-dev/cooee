@@ -1,5 +1,5 @@
 //! The shed client: shed's JSON-RPC over its Unix socket, one connection per request, each starting with the
-//! exact-version `hello`; and the `shed` CLI for what the socket doesn't offer (`agents`, `run --acp`).
+//! exact-version `hello` (ACP terminals for threads, plain ones for logins); and the `shed` CLI for what the socket doesn't offer (`agents`, `run --acp`).
 
 use std::{
     collections::BTreeMap,
@@ -13,8 +13,9 @@ use std::{
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 use shed_proto::{
-    ErrorCode, Event, EventsParams, Hello, Method, Reported, Request, Response, RpcError,
-    SendParams, StateParams, Target, TerminalInfo, WaitOutcome, WaitParams, WaitResult,
+    ErrorCode, Event, EventsParams, Hello, KeysParams, LsParams, Method, ReadParams, ReadResult,
+    Reported, Request, ResizeParams, Response, RpcError, RunParams, SendParams, StateParams,
+    Target, TerminalInfo, WaitOutcome, WaitParams, WaitResult,
 };
 
 /// Why a call to shed failed.
@@ -261,6 +262,80 @@ impl Shed {
             }
         }
         Ok(())
+    }
+
+    /// Starts a terminal (terminal mode, not ACP).
+    ///
+    /// # Errors
+    /// [`ShedError`] when the call fails (e.g. the program can't start or the name is taken).
+    pub fn run(&self, params: &RunParams) -> Result<TerminalInfo, ShedError> {
+        self.call(Method::Run, json!(params))
+    }
+
+    /// The terminals carrying every one of `labels`.
+    ///
+    /// # Errors
+    /// [`ShedError`] when the call fails.
+    pub fn ls(&self, labels: BTreeMap<String, String>) -> Result<Vec<TerminalInfo>, ShedError> {
+        self.call(Method::Ls, json!(LsParams { labels }))
+    }
+
+    /// Resizes terminal `name`.
+    ///
+    /// # Errors
+    /// [`ShedError`] when the call fails.
+    pub fn resize(&self, name: &str, rows: u16, cols: u16) -> Result<(), ShedError> {
+        let resize = ResizeParams {
+            name: name.into(),
+            rows,
+            cols,
+        };
+        self.call::<Value>(Method::Resize, json!(resize)).map(drop)
+    }
+
+    /// Terminal `name`'s visible screen as plain text.
+    ///
+    /// # Errors
+    /// [`ShedError`] when the call fails.
+    pub fn screen(&self, name: &str) -> Result<String, ShedError> {
+        let read = ReadParams {
+            name: name.into(),
+            lines: None,
+            history: false,
+        };
+        Ok(self.call::<ReadResult>(Method::Read, json!(read))?.text)
+    }
+
+    /// Types `text` into terminal `name`, then presses enter (`shed send`, `shed keys enter`).
+    ///
+    /// # Errors
+    /// [`ShedError`] when either call fails.
+    pub fn type_line(&self, name: &str, text: &str) -> Result<(), ShedError> {
+        let mut conn = self.connect()?;
+        let send = SendParams {
+            name: name.into(),
+            text: text.into(),
+        };
+        let _: Value = conn.call(Method::Send, json!(send))?;
+        let keys = KeysParams {
+            name: name.into(),
+            keys: vec!["enter".to_owned()],
+        };
+        conn.call::<Value>(Method::Keys, json!(keys)).map(drop)
+    }
+
+    /// Waits until terminal `name`'s program exits or `timeout` seconds pass.
+    ///
+    /// # Errors
+    /// [`ShedError`] when the call fails.
+    pub fn exited(&self, name: &str, timeout: f64) -> Result<WaitResult, ShedError> {
+        let wait = WaitParams {
+            name: name.into(),
+            until: Vec::new(),
+            output: None,
+            timeout: Some(timeout),
+        };
+        self.call(Method::Wait, json!(wait))
     }
 
     /// Streams the events of the terminals carrying every one of `labels`, first the kept ones after `since`.

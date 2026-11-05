@@ -1,7 +1,8 @@
 #!/bin/sh
 # Playwright's web server: the fake shed (crates/cooee/tests/support, run as an ignored test) and `cooee serve` with
 # a throwaway config on $PORT, its data seeded with a thread of 1,000 messages, read up to #990, per viewport; a
-# pairing code (`cooee pair`) goes to $PAIR_CODE for pair.setup.mjs.
+# pairing code (`cooee pair`) goes to $PAIR_CODE for pair.setup.mjs. One fake provider per viewport: its login prints
+# a link and reads a code (good-code signs it in), its status succeeds once signed in.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -29,12 +30,41 @@ for id in long-390 long-1440; do
   }' >"$tmp/data/threads/$id.jsonl"
 done
 
+for v in 390 1440; do
+  cat >"$tmp/login-$v.sh" <<EOF
+#!/bin/sh
+echo 'Open this link to sign in:'
+echo 'https://login.example.com/device?client_id=cooee-$v'
+printf 'Paste code here > '
+read code
+[ "\$code" = good-code ] && touch "$tmp/signed-in-$v" && echo 'Signed in.'
+EOF
+  cat >"$tmp/status-$v.sh" <<EOF
+#!/bin/sh
+test -f "$tmp/signed-in-$v" || { echo 'Not signed in'; exit 1; }
+echo 'Signed in as owner@example.com'
+EOF
+  chmod +x "$tmp/login-$v.sh" "$tmp/status-$v.sh"
+done
+
 cat >"$tmp/config.toml" <<EOF
 port = ${PORT:?}
 roots = ["$tmp/root"]
 shed = "$tmp/shed/shed"
 shed_dir = "$tmp/shed"
 data = "$tmp/data"
+
+[[providers]]
+name = "fake-390"
+agent = "fake-acp"
+login = ["$tmp/login-390.sh"]
+status = ["$tmp/status-390.sh"]
+
+[[providers]]
+name = "fake-1440"
+agent = "other-acp"
+login = ["$tmp/login-1440.sh"]
+status = ["$tmp/status-1440.sh"]
 EOF
 mkdir -p "$(dirname "${PAIR_CODE:?}")"
 cargo run --quiet --locked -p cooee -- pair --config "$tmp/config.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE"
