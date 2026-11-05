@@ -1,0 +1,290 @@
+//! Paired devices (herdsman's `devices.rs`): `cooee pair` opens a six-digit code for 10 minutes; the browser that
+//! enters it gets a random token as its cookie. Only SHA-256 hashes of codes and tokens are kept, in
+//! `<data>/devices.json` (mode 0600). Five wrong codes drop the open one.
+
+use std::{
+    fmt::Write as _,
+    fs,
+    io::{self, Read, Write},
+    os::unix::fs::OpenOptionsExt,
+    path::{Path, PathBuf},
+    sync::{Mutex, PoisonError},
+};
+
+use serde::{Deserialize, Serialize};
+
+/// How long a pairing code is good for, in milliseconds.
+const CODE_TTL: u64 = 10 * 60 * 1000;
+
+/// Wrong codes before the open one is dropped.
+const MISSES: u32 = 5;
+
+/// One paired browser.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Device {
+    /// The first 8 hex digits of its token's hash: what `cooee devices rm` takes.
+    pub id: String,
+    /// What it is (`iPhone`, `Android`, `Mac`, …), from its user agent.
+    pub label: String,
+    /// SHA-256 of its token, hex.
+    pub hash: String,
+    /// When it paired, in Unix milliseconds.
+    pub created: u64,
+    /// When it was last seen (to the hour), in Unix milliseconds.
+    pub used: u64,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(default)]
+struct File {
+    devices: Vec<Device>,
+    /// The open code's hash and when it was made.
+    code: Option<(String, u64)>,
+    misses: u32,
+}
+
+/// The paired devices of one data folder.
+pub struct Devices {
+    path: PathBuf,
+}
+
+/// Held across a load → change → save in this process.
+static LOCK: Mutex<()> = Mutex::new(());
+
+/// SHA-256 of `data`, lowercase hex.
+#[must_use]
+pub fn sha256(data: &[u8]) -> String {
+    use sha2::Digest;
+    hex(&sha2::Sha256::digest(data))
+}
+
+/// Lowercase hex.
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().fold(String::new(), |mut s, b| {
+        let _ = write!(s, "{b:02x}");
+        s
+    })
+}
+
+/// `n` bytes from `/dev/urandom`.
+///
+/// # Errors
+/// When `/dev/urandom` can't be read.
+pub fn random(n: usize) -> io::Result<Vec<u8>> {
+    let mut b = vec![0; n];
+    fs::File::open("/dev/urandom")?.read_exact(&mut b)?;
+    Ok(b)
+}
+
+/// Replaces `path` with `bytes`, mode 0600: a temp file fsynced and renamed over it.
+///
+/// # Errors
+/// When the folder or the file can't be written.
+pub fn write_private(path: &Path, bytes: &[u8]) -> io::Result<()> {
+    let dir = path.parent().unwrap_or(path);
+    fs::create_dir_all(dir)?;
+    let tmp = path.with_extension(format!("tmp-{}", std::process::id()));
+    let mut f = fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .mode(0o600)
+        .open(&tmp)?;
+    f.write_all(bytes)?;
+    f.sync_all()?;
+    fs::rename(&tmp, path)?;
+    fs::File::open(dir)?.sync_all()
+}
+
+/// Constant-time equality.
+fn same(a: &str, b: &str) -> bool {
+    a.len() == b.len() && a.bytes().zip(b.bytes()).fold(0, |d, (x, y)| d | (x ^ y)) == 0
+}
+
+/// A short name for the browser behind `agent`.
+fn label(agent: &str) -> &'static str {
+    [
+        ("iPhone", "iPhone"),
+        ("iPad", "iPad"),
+        ("Android", "Android"),
+        ("Macintosh", "Mac"),
+        ("Windows", "Windows"),
+        ("Linux", "Linux"),
+    ]
+    .into_iter()
+    .find(|(k, _)| agent.contains(k))
+    .map_or("browser", |(_, v)| v)
+}
+
+impl Devices {
+    /// The devices kept in `data`.
+    #[must_use]
+    pub fn new(data: &Path) -> Self {
+        Self {
+            path: data.join("devices.json"),
+        }
+    }
+
+    fn load(&self) -> io::Result<File> {
+        match fs::read(&self.path) {
+            Ok(b) => serde_json::from_slice(&b).map_err(io::Error::other),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(File::default()),
+            Err(e) => Err(e),
+        }
+    }
+
+    fn save(&self, f: &File) -> io::Result<()> {
+        write_private(&self.path, &serde_json::to_vec_pretty(f)?)
+    }
+
+    fn change<T>(&self, f: impl FnOnce(&mut File) -> io::Result<T>) -> io::Result<T> {
+        let _g = LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut file = self.load()?;
+        let out = f(&mut file)?;
+        self.save(&file)?;
+        Ok(out)
+    }
+
+    /// Opens a new pairing code (replacing any open one), good for 10 minutes.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn pair(&self, now: u64) -> io::Result<String> {
+        let b = random(4)?;
+        let code = format!(
+            "{:06}",
+            u32::from_be_bytes([b[0], b[1], b[2], b[3]]) % 1_000_000
+        );
+        self.change(|f| {
+            f.code = Some((sha256(code.as_bytes()), now));
+            f.misses = 0;
+            Ok(())
+        })?;
+        Ok(code)
+    }
+
+    /// Pairs the browser that entered `code` (once): its new token, or `None` for a wrong or expired code.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn claim(&self, code: &str, agent: &str, now: u64) -> io::Result<Option<String>> {
+        let token = hex(&random(32)?);
+        self.change(|f| {
+            let Some((hash, at)) = f.code.clone() else {
+                return Ok(None);
+            };
+            if at + CODE_TTL <= now || !same(&hash, &sha256(code.trim().as_bytes())) {
+                f.misses += 1;
+                if f.misses >= MISSES || at + CODE_TTL <= now {
+                    f.code = None;
+                }
+                return Ok(None);
+            }
+            let hash = sha256(token.as_bytes());
+            f.code = None;
+            f.devices.push(Device {
+                id: hash[..8].to_owned(),
+                label: label(agent).to_owned(),
+                hash,
+                created: now,
+                used: now,
+            });
+            Ok(Some(token.clone()))
+        })
+    }
+
+    /// The paired device whose token this is; its `used` is updated at most hourly.
+    #[must_use]
+    pub fn find(&self, token: &str, now: u64) -> Option<Device> {
+        let hash = sha256(token.as_bytes());
+        let device = self
+            .load()
+            .ok()?
+            .devices
+            .into_iter()
+            .find(|d| same(&d.hash, &hash))?;
+        if device.used + 3_600_000 <= now {
+            let _ = self.change(|f| {
+                for d in f.devices.iter_mut().filter(|d| d.hash == hash) {
+                    d.used = now;
+                }
+                Ok(())
+            });
+        }
+        Some(device)
+    }
+
+    /// Every paired device, oldest first.
+    ///
+    /// # Errors
+    /// When the file can't be read.
+    pub fn list(&self) -> io::Result<Vec<Device>> {
+        Ok(self.load()?.devices)
+    }
+
+    /// Unpairs device `id`; whether there was one.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn remove(&self, id: &str) -> io::Result<bool> {
+        self.change(|f| {
+            let n = f.devices.len();
+            f.devices.retain(|d| d.id != id);
+            Ok(f.devices.len() < n)
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn scratch(name: &str) -> Devices {
+        let dir = std::env::temp_dir().join(format!("cooee-devices-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        Devices::new(&dir)
+    }
+
+    #[test]
+    fn pair_use_remove_and_only_hashes_on_disk() {
+        let d = scratch("flow");
+        let code = d.pair(1000).unwrap();
+        assert_eq!(code.len(), 6);
+        let token = d
+            .claim(&code, "Mozilla/5.0 (iPhone)", 2000)
+            .unwrap()
+            .unwrap();
+        // Single use.
+        assert_eq!(d.claim(&code, "x", 2000).unwrap(), None);
+        let found = d.find(&token, 3000).unwrap();
+        assert_eq!(found.label, "iPhone");
+        assert_eq!(d.find("not-a-token", 3000), None);
+
+        let disk = fs::read_to_string(&d.path).unwrap();
+        assert!(!disk.contains(&token) && !disk.contains(&code), "{disk}");
+        assert!(disk.contains(&sha256(token.as_bytes())));
+        let mode = fs::metadata(&d.path).unwrap().permissions();
+        assert_eq!(
+            std::os::unix::fs::PermissionsExt::mode(&mode) & 0o777,
+            0o600
+        );
+
+        assert!(d.remove(&found.id).unwrap());
+        assert_eq!(d.find(&token, 4000), None);
+        assert_eq!(d.list().unwrap(), Vec::new());
+    }
+
+    #[test]
+    fn expired_and_guessed_codes_are_refused() {
+        let d = scratch("refused");
+        let code = d.pair(0).unwrap();
+        assert_eq!(d.claim(&code, "x", CODE_TTL).unwrap(), None);
+        let code = d.pair(0).unwrap();
+        let wrong = if code == "000000" { "000001" } else { "000000" };
+        for _ in 0..MISSES {
+            assert_eq!(d.claim(wrong, "x", 1).unwrap(), None);
+        }
+        // Too many misses dropped the code: even the right one fails now.
+        assert_eq!(d.claim(&code, "x", 1).unwrap(), None);
+    }
+}

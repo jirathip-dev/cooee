@@ -1,7 +1,8 @@
 //! cooee's web UI in Topcoat (docs/decisions/0001-ui-framework.md), in the Modern style: the thread list and the
-//! chat page (server-rendered), the chat's script (`chat.js`: the window of items, SSE, the outbox and drafts), the
-//! style sheet, the PWA manifest, and the look (`look.rs` themes and schemes, `look.js` applying a device's pick
-//! before the first paint, its look sheet and Settings).
+//! chat page (server-rendered), the pairing page, the chat's script (`chat.js`: the window of items, SSE, the outbox,
+//! drafts and turning alerts on), the style sheet and the installable PWA: its manifest, icons and the service worker
+//! (`sw.js`: push only, nothing cached), and the look (`look.rs` themes and schemes, `look.js` applying a device's
+//! pick before the first paint, its look sheet and Settings).
 
 #![forbid(unsafe_code)]
 
@@ -29,8 +30,8 @@ use topcoat::{
     view::{Child, View, component, view},
 };
 
-/// The static routes: the manifest, the icon, the style sheet and the chat's script; and the look: `look.js` with
-/// every theme and scheme in it, and each theme's data at
+/// The static routes: the manifest, the icons, the style sheet, the chat's script and the service worker; and the
+/// look: `look.js` with every theme and scheme in it, and each theme's data at
 /// `/look/<theme>/{theme.json,sprites.svg,icon.png}`.
 ///
 /// # Panics
@@ -46,8 +47,11 @@ pub fn assets(builder: RouterBuilder, looks: Looks) -> RouterBuilder {
     builder
         .route(manifest)
         .route(icon)
+        .route(icon_192)
+        .route(icon_512)
         .route(style)
         .route(script)
+        .route(worker)
         .route(look_script)
         .route(look_file)
         .app_context(Arc::new(LookAssets { looks, js }))
@@ -108,7 +112,7 @@ async fn look_file(cx: &Cx) -> Result<Owned> {
 }
 
 /// A fixed file served with its content type.
-struct Static(&'static str, &'static str);
+struct Static(&'static str, &'static [u8]);
 
 impl IntoResponse for Static {
     fn into_response(self, _cx: &Cx) -> Result<Response> {
@@ -122,25 +126,43 @@ impl IntoResponse for Static {
 async fn manifest() -> Result<Static> {
     Ok(Static(
         "application/manifest+json",
-        include_str!("manifest.webmanifest"),
+        include_bytes!("manifest.webmanifest"),
     ))
 }
 
 #[route(GET "/icon.svg")]
 async fn icon() -> Result<Static> {
-    Ok(Static("image/svg+xml", include_str!("icon.svg")))
+    Ok(Static("image/svg+xml", include_bytes!("icon.svg")))
+}
+
+#[route(GET "/icon-192.png")]
+async fn icon_192() -> Result<Static> {
+    Ok(Static("image/png", include_bytes!("../icons/icon-192.png")))
+}
+
+#[route(GET "/icon-512.png")]
+async fn icon_512() -> Result<Static> {
+    Ok(Static("image/png", include_bytes!("../icons/icon-512.png")))
+}
+
+#[route(GET "/sw.js")]
+async fn worker() -> Result<Static> {
+    Ok(Static(
+        "text/javascript; charset=utf-8",
+        include_bytes!("sw.js"),
+    ))
 }
 
 #[route(GET "/app.css")]
 async fn style() -> Result<Static> {
-    Ok(Static("text/css; charset=utf-8", include_str!("app.css")))
+    Ok(Static("text/css; charset=utf-8", include_bytes!("app.css")))
 }
 
 #[route(GET "/chat.js")]
 async fn script() -> Result<Static> {
     Ok(Static(
         "text/javascript; charset=utf-8",
-        include_str!("chat.js"),
+        include_bytes!("chat.js"),
     ))
 }
 
@@ -159,7 +181,7 @@ async fn document(title: &str, #[default] child: Child<'_>) -> Result<impl View>
                 <title>(title)</title>
                 <link rel="manifest" href="/manifest.webmanifest">
                 <link rel="icon" href="/icon.svg" type="image/svg+xml">
-                <link rel="apple-touch-icon" href="/icon.svg">
+                <link rel="apple-touch-icon" href="/icon-192.png">
                 <link rel="stylesheet" href="/app.css">
                 <script src="/look.js"></script>
                 <script type="module" src="/chat.js"></script>
@@ -204,13 +226,23 @@ fn state(state: &str) -> &'static str {
     }
 }
 
-/// The header: the app's name (the heading on the thread list, else a link to it), `+`, the look sheet and Settings.
+/// The header: the app's name (the heading on the thread list, with the 🔔 that turns alerts on; else a link to
+/// it), `+`, the look sheet and Settings.
 #[component]
 async fn header(home: bool) -> Result<impl View> {
     Ok(view! {
         <header class="bar">
             if home {
                 <h1>"cooee"</h1>
+                <button
+                    type="button"
+                    class="gl"
+                    id="alerts"
+                    hidden=(true)
+                    aria-label="turn on notifications"
+                >
+                    "🔔"
+                </button>
             } else {
                 <a class="brand" href="/">"cooee"</a>
             }
@@ -359,6 +391,45 @@ async fn threads(
                         }
                     </section>
                 }
+            </main>
+        )
+    })
+}
+
+/// Pairing: the code `cooee pair` printed (`code` prefilled from its QR link; `bad` after a wrong one).
+#[must_use]
+pub fn pair_page(cx: &Cx, code: String, bad: bool) -> impl View {
+    view! { cx => pair(code: code, bad: bad) }
+}
+
+#[component]
+async fn pair(code: String, bad: bool) -> Result<impl View> {
+    Ok(view! {
+        document(
+            title: "pair · cooee",
+            <header class="bar"><h1>"cooee"</h1></header>
+            <main class="list">
+                <form class="nf" method="post" action="/pair">
+                    <div class="fh"><b>"pair this device"</b></div>
+                    <p class="ds">
+                        "Run cooee pair on your machine and enter the code it prints. On a phone, add cooee to the Home Screen first and pair there."
+                    </p>
+                    <div class="tw">
+                        <input
+                            name="code"
+                            aria-label="pairing code"
+                            inputmode="numeric"
+                            autocomplete="one-time-code"
+                            maxlength="6"
+                            required=(true)
+                            value=(code)
+                        >
+                        <button type="submit">"pair"</button>
+                    </div>
+                    <p class="err" hidden=(!bad)>
+                        "That code is wrong or expired: run cooee pair again."
+                    </p>
+                </form>
             </main>
         )
     })

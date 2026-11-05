@@ -2,6 +2,7 @@
 
 use std::{
     env, fs, io,
+    net::{IpAddr, Ipv4Addr},
     path::{Path, PathBuf},
 };
 
@@ -11,8 +12,12 @@ use serde::Deserialize;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
-    /// The port `cooee serve` listens on, on 127.0.0.1 (default 4747; 0 picks a free one).
+    /// The port `cooee serve` listens on (default 4747; 0 picks a free one).
     pub port: u16,
+    /// The address `cooee serve` listens on (default 127.0.0.1); any other needs `allowed_hosts`.
+    pub bind: IpAddr,
+    /// The names requests may come to besides localhost and `bind` (the Tailscale name), matched exactly.
+    pub allowed_hosts: Vec<String>,
     /// The folders a thread may work in: each root and the folders right inside it, nothing outside them.
     pub roots: Vec<PathBuf>,
     /// The `shed` binary (default `shed`, found on `PATH`).
@@ -32,6 +37,8 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             port: 4747,
+            bind: IpAddr::V4(Ipv4Addr::LOCALHOST),
+            allowed_hosts: Vec::new(),
             roots: Vec::new(),
             shed: PathBuf::from("shed"),
             shed_dir: None,

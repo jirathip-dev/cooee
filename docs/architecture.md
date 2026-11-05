@@ -23,9 +23,9 @@ keeps them going while the phone is away; cooee talks to shed and pings the phon
 
 | Crate | Path | Holds | May depend on |
 |---|---|---|---|
-| `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), the shed client; no HTTP | no workspace crate |
+| `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), paired devices, the shed client; no HTTP | no workspace crate |
 | `cooee-web` | `web/` | the web UI in Topcoat (ADR 0001): pages, `chat.js`, `app.css`, the PWA manifest, the themes and schemes (`look.rs`, `look.js`, `themes/`, `schemes/`) | not the server or binary |
-| `cooee-server` | `crates/cooee-server` | HTTP on 127.0.0.1, the threads' JSON API and SSE (M1), pairing, push | core, web |
+| `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2) | core, web |
 | `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
 
 `scripts/dep-direction.sh` enforces the last column in CI.
@@ -56,6 +56,27 @@ reconnects with `Last-Event-ID` gets exactly what it missed, and one from anothe
 and reloads. Its first slice (`/threads/<id>/messages?around=&before=&after=`) carries the cursor it is current to,
 taken under the thread's lock with the subscription, so nothing is lost or doubled.
 
+## Pairing and push (M2)
+
+Everything but `/pair` and the static files (manifest, icons, style, script, `sw.js`) needs a paired device: an
+unpaired page load goes to `/pair`, any other read or write gets 401. `cooee pair` prints a six-digit code (and its
+`/pair?code=` link as a QR code), good for 10 minutes and once; five wrong tries drop it. The browser that enters it
+gets a random token as an `HttpOnly`, `SameSite=Strict` cookie. `<data>/devices.json` (0600) keeps only SHA-256
+hashes. `cooee devices` lists the devices and `cooee devices rm <id>` unpairs one (its pushes stop too). On iPhone,
+add cooee to the Home Screen first and pair there: the app has its own cookies.
+
+Before that, every request's `Host` (and its `Origin`, when sent) must be localhost, the `bind` address or one of
+`allowed_hosts`, or it gets 403, paired cookie or not. That blocks DNS rebinding. To reach cooee from the phone,
+keep `bind` on 127.0.0.1, run `tailscale serve --bg 4747`, and put the machine's Tailscale name in `allowed_hosts`.
+
+Web push (RFC 8291 aes128gcm, VAPID per RFC 8292, sent with `curl`): the VAPID key is made once and kept in the
+macOS keychain (`security`, service `cooee`), else in `<data>/vapid.key` (0600). The thread list's 🔔 subscribes;
+subscriptions sit in `<data>/push.json` (0600), each tied to its device. A push goes out when an agent asks for an
+approval, a turn finishes while no page has the thread open, or an agent errors. Each one is a line about the thread:
+`{title, body, tag: <thread>, url: /t/<thread>, item}`. The service worker (push only, no cache) shows it under the
+thread's tag, so a newer push replaces the older one. It shows nothing while that thread is open in view. A tap opens
+the thread, and reading the thread past `item` closes it.
+
 ## Configuration
 
 One TOML file, `$XDG_CONFIG_HOME/cooee/config.toml` (else `~/.config/cooee/config.toml`, or `cooee serve --config
@@ -63,7 +84,9 @@ One TOML file, `$XDG_CONFIG_HOME/cooee/config.toml` (else `~/.config/cooee/confi
 
 | Key | Default | Meaning |
 |---|---|---|
-| `port` | `4747` | The port `cooee serve` listens on, on 127.0.0.1 (`0` picks a free one). |
+| `port` | `4747` | The port `cooee serve` listens on (`0` picks a free one). |
+| `bind` | `127.0.0.1` | The address it listens on. Anything but loopback needs `allowed_hosts`. |
+| `allowed_hosts` | none | The names requests may use besides localhost and `bind`: the Tailscale name. Matched exactly, so `*` widens nothing. |
 | `roots` | none | The folders a thread may work in: each root and the folders right inside it, nothing outside. |
 | `shed` | `shed` | The `shed` binary. |
 | `shed_dir` | shed's per-user server | shed's `--dir` (its socket `shed.sock` and state). |

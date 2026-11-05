@@ -1,6 +1,7 @@
 #!/bin/sh
 # Playwright's web server: the fake shed (crates/cooee/tests/support, run as an ignored test) and `cooee serve` with
-# a throwaway config on $PORT, its data seeded with a thread of 1,000 messages, read up to #990, per viewport.
+# a throwaway config on $PORT, its data seeded with a thread of 1,000 messages, read up to #990, per viewport; a
+# pairing code (`cooee pair`) goes to $PAIR_CODE for pair.setup.mjs.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -39,5 +40,7 @@ shed = "$tmp/shed/shed"
 shed_dir = "$tmp/shed"
 data = "$tmp/data"
 EOF
+mkdir -p "$(dirname "${PAIR_CODE:?}")"
+cargo run --quiet --locked -p cooee -- pair --config "$tmp/config.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE"
 cargo run --quiet --locked -p cooee -- serve --config "$tmp/config.toml" &
 wait $!

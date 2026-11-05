@@ -16,14 +16,18 @@ test("thread list: renders, fits the width, no axe violations", async ({ page },
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 });
 
-test("installable: the manifest and icon load", async ({ page, request }) => {
+test("installable: the manifest, its icons and the service worker load", async ({ page, request }) => {
   await page.goto("/");
   const href = await page.locator('link[rel="manifest"]').getAttribute("href");
   const res = await request.get(href);
   expect(res.headers()["content-type"]).toBe("application/manifest+json");
   const manifest = await res.json();
   expect(manifest).toMatchObject({ name: "cooee", start_url: "/", display: "standalone" });
-  const icon = await request.get(manifest.icons[0].src);
-  expect(icon.ok()).toBe(true);
-  expect(icon.headers()["content-type"]).toBe("image/svg+xml");
+  for (const { src, type } of manifest.icons) {
+    const icon = await request.get(src);
+    expect(icon.ok()).toBe(true);
+    expect(icon.headers()["content-type"]).toBe(type);
+  }
+  expect(manifest.icons.map((i) => i.sizes)).toEqual(expect.arrayContaining(["192x192", "512x512"]));
+  expect(await page.evaluate(async () => (await navigator.serviceWorker.ready).active.scriptURL)).toMatch(/\/sw\.js$/);
 });

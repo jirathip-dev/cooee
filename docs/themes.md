@@ -46,4 +46,5 @@ or `null`) and `icon`.
 ## Push text
 
 `Theme::push_body(key, line)` gives the body of a push: the theme word, the plain word, then the agent's line, as in
-`at the gate · needs you · codex: Edit src/pair.rs?`. The terminal theme says `needs you · …`. M2's push sends it.
+`at the gate · needs you · codex: Edit src/pair.rs?`. The terminal theme says `needs you · …`. Push uses
+the server's default theme (`theme` in `config.toml`), because a device's own pick never leaves that device.

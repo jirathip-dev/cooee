@@ -1,32 +1,37 @@
-//! cooee's HTTP server on localhost: the web UI's pages (`cooee-web`), the threads' JSON API and their live events
-//! over SSE (replayed from the last seen event on reconnect). Pairing and push come later.
+//! cooee's HTTP server: the web UI's pages (`cooee-web`), the threads' JSON API and their live events over SSE
+//! (replayed from the last seen event on reconnect), pairing and web push. Every request must name one of the
+//! server's own hosts (`Host`, and `Origin` when sent: no DNS rebinding), and every page and API call but pairing
+//! and the static files needs a paired device's cookie.
 
 #![forbid(unsafe_code)]
 
 mod hub;
+mod push;
 
 use std::{
     io,
-    net::{Ipv4Addr, SocketAddr},
+    net::{IpAddr, SocketAddr},
     path::PathBuf,
     sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::Config;
+use cooee_core::{Config, Device, Devices};
 use futures_util::{Stream, StreamExt, stream};
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::error::RecvError;
 use topcoat::{
     Result,
-    context::{Cx, app_context},
+    context::{Cx, app_context, request_context},
     router::{
-        Body, Router,
+        Body, Layer, LayerFuture, Next, Path, Router,
         content::{
-            Json,
+            Form, Json,
             sse::{Event, KeepAlive, Sse, last_event_id},
         },
         error::not_found,
         page, parse_query_params, path_param,
+        request::{headers, method, uri},
         response::{IntoResponse, Response},
         route,
     },
@@ -34,6 +39,103 @@ use topcoat::{
 };
 
 pub use hub::{Hub, HubError, Out, Resume, Slice};
+pub use push::{Note, Push, Sub, encrypt, jwt, note};
+
+/// The paths an unpaired browser may load: pairing and the static files.
+const OPEN: [&str; 8] = [
+    "/pair",
+    "/manifest.webmanifest",
+    "/icon.svg",
+    "/icon-192.png",
+    "/icon-512.png",
+    "/app.css",
+    "/chat.js",
+    "/sw.js",
+];
+
+/// The pairing cookie.
+const COOKIE: &str = "cooee";
+
+fn now() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
+}
+
+fn plain(status: u16, text: &str) -> Result<Response> {
+    Ok(Response::builder()
+        .status(status)
+        .header("Content-Type", "text/plain; charset=utf-8")
+        .body(Body::from(text.to_owned()))?)
+}
+
+fn header<'a>(cx: &'a Cx, name: &str) -> Option<&'a str> {
+    headers(cx).get(name).and_then(|v| v.to_str().ok())
+}
+
+/// The request's paired device, put in the request context by the [`Gate`].
+struct Paired(Device);
+
+/// Checks every request: its `Host` (and `Origin`, when sent) must be one of `names`, and a page or API call must
+/// carry a paired device's cookie (an unpaired page load goes to `/pair`).
+struct Gate {
+    /// localhost, the bind address and `allowed_hosts`; matched exactly, so a `*` never widens them.
+    names: Vec<String>,
+    devices: Devices,
+}
+
+impl Gate {
+    /// Whether `host` (`name` or `name:port`) is one of ours.
+    fn ours(&self, host: &str) -> bool {
+        let name = if host.starts_with('[') {
+            host.split_inclusive(']').next().unwrap_or(host)
+        } else {
+            host.split(':').next().unwrap_or(host)
+        };
+        self.names.iter().any(|n| n.eq_ignore_ascii_case(name))
+    }
+}
+
+impl Layer for Gate {
+    fn path(&self) -> Option<&Path> {
+        None
+    }
+
+    fn handle<'a>(&'a self, cx: &'a Cx, body: Body, next: Next<'a>) -> LayerFuture<'a> {
+        Box::pin(async move {
+            let host = header(cx, "host").or_else(|| uri(cx).host());
+            let origin = header(cx, "origin").map(|o| {
+                o.strip_prefix("https://")
+                    .or_else(|| o.strip_prefix("http://"))
+                    .is_some_and(|o| self.ours(o))
+            });
+            if !host.is_some_and(|h| self.ours(h)) || origin == Some(false) {
+                return plain(403, "forbidden: foreign Host or Origin");
+            }
+            let path = uri(cx).path();
+            if OPEN.contains(&path) {
+                return next.run(cx, body).await;
+            }
+            let token = header(cx, "cookie").and_then(|c| {
+                c.split(';')
+                    .find_map(|c| c.trim().strip_prefix(COOKIE)?.strip_prefix('='))
+            });
+            match token.and_then(|t| self.devices.find(t, now())) {
+                Some(d) => next.run(&cx.with(Paired(d)), body).await,
+                None if method(cx) == "GET" && (path == "/" || path.starts_with("/t/")) => {
+                    Ok(Response::builder()
+                        .status(303)
+                        .header("Location", "/pair")
+                        .body(Body::from(()))?)
+                }
+                None => plain(
+                    401,
+                    "pair this device first: run `cooee pair` on the machine",
+                ),
+            }
+        })
+    }
+}
 
 path_param!(id: String);
 
@@ -239,10 +341,117 @@ async fn read(cx: &Cx, Json(r): Json<Read>) -> Result<Answer<()>> {
     Ok(Answer(blocking(cx, move |hub| hub.read(&id, r.item)).await))
 }
 
-/// The web UI (with `looks`, its themes and schemes) and the threads' API over `hub`.
+/// `?code=` (the QR code's link fills it in) and `?bad` after a wrong code.
+#[derive(Deserialize)]
+struct PairQuery {
+    code: Option<String>,
+    bad: Option<String>,
+}
+
+#[page("/pair")]
+async fn pairing(cx: &Cx) -> Result<impl View> {
+    let q: Option<PairQuery> = parse_query_params(cx).ok();
+    let (code, bad) = q.map_or((None, false), |q| (q.code, q.bad.is_some()));
+    Ok(cooee_web::pair_page(cx, code.unwrap_or_default(), bad))
+}
+
+/// `POST /pair`: the code `cooee pair` printed.
+#[derive(Deserialize)]
+struct PairForm {
+    code: String,
+}
+
+#[route(POST "/pair")]
+async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
+    let devices = Devices::new(&app_context::<Data>(cx).0);
+    let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
+    let token = tokio::task::spawn_blocking(move || devices.claim(&f.code, &agent, now()))
+        .await
+        .map_err(io::Error::other)??;
+    let Some(token) = token else {
+        return Ok(Response::builder()
+            .status(303)
+            .header("Location", "/pair?bad=1")
+            .body(Body::from(()))?);
+    };
+    let secure = header(cx, "origin").is_some_and(|o| o.starts_with("https://"));
+    let cookie = format!(
+        "{COOKIE}={token}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Strict{}",
+        if secure { "; Secure" } else { "" }
+    );
+    Ok(Response::builder()
+        .status(303)
+        .header("Location", "/")
+        .header("Set-Cookie", cookie)
+        .body(Body::from(()))?)
+}
+
+/// The data folder.
+struct Data(PathBuf);
+
+#[route(GET "/push/key")]
+async fn push_key(cx: &Cx) -> Result<Response> {
+    let hub = hub(cx);
+    match tokio::task::spawn_blocking(move || hub.push().public_key()).await? {
+        Ok(key) => Json(serde_json::json!({ "key": key })).into_response(cx),
+        Err(e) => plain(500, &e.to_string()),
+    }
+}
+
+/// `POST /push/subscribe`: the browser's subscription (`PushSubscription.toJSON()`'s endpoint and keys).
+#[derive(Deserialize)]
+struct Subscribe {
+    endpoint: String,
+    p256dh: String,
+    auth: String,
+}
+
+#[route(POST "/push/subscribe")]
+async fn push_subscribe(cx: &Cx, Json(s): Json<Subscribe>) -> Result<Response> {
+    let sub = Sub {
+        device: request_context::<Paired>(cx).0.id.clone(),
+        endpoint: s.endpoint,
+        p256dh: s.p256dh,
+        auth: s.auth,
+    };
+    let hub = hub(cx);
+    match tokio::task::spawn_blocking(move || hub.push().subscribe(sub)).await? {
+        Ok(()) => plain(200, "alerts on"),
+        Err(e) if e.kind() == io::ErrorKind::InvalidInput => plain(400, &e.to_string()),
+        Err(e) => plain(500, &e.to_string()),
+    }
+}
+
+/// The web UI (with `looks`, its themes and schemes), the threads' API over `hub` and pairing, behind the gate: requests must name `bind`, localhost
+/// or one of `allowed_hosts`; devices are paired in `data`.
 #[must_use]
-pub fn router(hub: Arc<Hub>, looks: cooee_web::Looks) -> Router {
+pub fn router(
+    hub: Arc<Hub>,
+    data: &std::path::Path,
+    bind: IpAddr,
+    allowed_hosts: &[String],
+    looks: cooee_web::Looks,
+) -> Router {
+    let mut names: Vec<String> = ["localhost", "127.0.0.1", "[::1]"]
+        .map(str::to_owned)
+        .into();
+    if !bind.is_unspecified() {
+        names.push(match bind {
+            IpAddr::V4(ip) => ip.to_string(),
+            IpAddr::V6(ip) => format!("[{ip}]"),
+        });
+    }
+    names.extend(allowed_hosts.iter().cloned());
+    let gate = Gate {
+        names,
+        devices: Devices::new(data),
+    };
     cooee_web::assets(Router::builder(), looks)
+        .layer(gate)
+        .page(pairing)
+        .route(pair)
+        .route(push_key)
+        .route(push_subscribe)
         .page(home)
         .page(chat)
         .route(messages)
@@ -254,34 +463,42 @@ pub fn router(hub: Arc<Hub>, looks: cooee_web::Looks) -> Router {
         .route(close)
         .route(read)
         .app_context(hub)
+        .app_context(Data(data.to_owned()))
         .build()
 }
 
 /// Opens the threads (`config`'s data folder and shed) and the looks (the built-in and own themes and schemes), and
-/// serves the web UI on `127.0.0.1:port` until Ctrl+C or
+/// serves the web UI on `bind:port` until Ctrl+C or
 /// `SIGTERM`. `ready` gets the bound address first (port 0 picks a free one).
 ///
 /// # Errors
 ///
-/// Returns `Err` if the store can't be opened, the runtime can't start, the port can't be bound or accepting a
-/// connection fails.
+/// Returns `Err` if `bind` isn't loopback and `allowed_hosts` is empty, the store can't be opened, the runtime
+/// can't start, the port can't be bound or accepting a connection fails.
 pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> {
+    if !config.bind.is_loopback() && config.allowed_hosts.is_empty() {
+        return Err(io::Error::other(format!(
+            "listening on {} needs `allowed_hosts` (the names the phone uses, e.g. the Tailscale name)",
+            config.bind
+        )));
+    }
     let data = config
         .data_dir()
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
-    let hub = Hub::open(shed, &data, config.roots.clone())?;
     let (looks, refused) = cooee_web::Looks::load(config.dir.as_deref(), config.theme.as_deref());
     for why in refused {
         eprintln!("cooee: refused {why}");
     }
-    let port = config.port;
+    let theme = looks.themes[&looks.default].clone();
+    let hub = Hub::open(shed, &data, config.roots.clone(), theme)?;
+    let router = router(hub, &data, config.bind, &config.allowed_hosts, looks);
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?
         .block_on(async {
-            let listener = tokio::net::TcpListener::bind((Ipv4Addr::LOCALHOST, port)).await?;
+            let listener = tokio::net::TcpListener::bind((config.bind, config.port)).await?;
             ready(listener.local_addr()?);
-            topcoat::serve(listener, router(hub, looks)).await
+            topcoat::serve(listener, router).await
         })
 }

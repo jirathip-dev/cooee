@@ -1,8 +1,10 @@
 // cooee's pages. The thread list: the new-thread form. The chat: a window of about 9 screens of items around an
 // anchor (slices by id as the reader nears an edge), scroll kept on a message rather than pixels, live events over
 // SSE resumed from the last one seen, the outbox (sending → sent → failed, tap to retry), the per-thread draft in
-// IndexedDB, approvals that lock once tapped, and debounced read marks. States are theme keys (data-st) that look.js
-// draws: the thread bar, the working pill (its sprite following the running tool), the live line and a turn's end.
+// IndexedDB, approvals that lock once tapped, and debounced read marks (which also close the thread's notifications).
+// Every page registers the service worker (sw.js, push only); the thread list's 🔔 turns alerts on.
+// States are theme keys (data-st) that look.js draws: the thread bar, the working pill (its sprite following the
+// running tool), the live line and a turn's end.
 const $ = (s, el = document) => el.querySelector(s);
 const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 const post = (url, body) =>
@@ -26,6 +28,31 @@ if (form) {
     }
   });
 }
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+// Closes thread `thread`'s notifications up to item `read`.
+const cleared = (thread, read) => navigator.serviceWorker?.ready.then((r) => r.active?.postMessage({ thread, read }));
+
+// Alerts: the 🔔 shows where push works and isn't on yet; a tap asks for permission and subscribes.
+const bell = $("#alerts");
+if (bell && "PushManager" in window) (async () => {
+  const reg = await navigator.serviceWorker.ready;
+  if (Notification.permission === "granted" && (await reg.pushManager.getSubscription())) return;
+  bell.hidden = false;
+  bell.onclick = async () => {
+    try {
+      if ((await Notification.requestPermission()) !== "granted") throw new Error("notifications are off for this app");
+      const r = await fetch("/push/key");
+      if (!r.ok) throw new Error(await r.text());
+      const key = (await r.json()).key.replace(/-/g, "+").replace(/_/g, "/");
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: Uint8Array.from(atob(key), (c) => c.charCodeAt(0)) });
+      const { endpoint, keys } = sub.toJSON();
+      const ok = await fetch("/push/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint, ...keys }) });
+      if (!ok.ok) throw new Error(await ok.text());
+      bell.hidden = true;
+    } catch (x) { alert(`alerts failed: ${x.message}`); }
+  };
+})();
 
 const main = $("main.chat");
 if (main) chat(main);
@@ -246,6 +273,8 @@ function chat(main) {
       list.insertBefore(bar, first);
       list.scrollTop = bar.offsetTop;
     } else list.scrollTop = list.scrollHeight;
+    cleared(id, read);
+    markRead();
     listen();
     preload();
     return s;
@@ -285,7 +314,9 @@ function chat(main) {
   // Read marks: the newest row in view, sent at most every ~3 s.
   function markRead() {
     const bottom = list.scrollTop + list.clientHeight;
+    const was = seen;
     for (const r of rows()) if (r.offsetTop < bottom) seen = Math.max(seen, Number(r.dataset.id));
+    if (seen > was) cleared(id, seen);
     if (seen > read && !readTimer) {
       readTimer = setTimeout(() => {
         readTimer = 0;

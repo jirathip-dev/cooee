@@ -18,6 +18,8 @@ use serde::Serialize;
 use serde_json::json;
 use tokio::sync::broadcast;
 
+use crate::push::{Push, note};
+
 /// How many page events a thread keeps for a reconnecting page.
 const RING: usize = 4096;
 
@@ -61,6 +63,8 @@ struct Live {
     seq: u64,
     ring: VecDeque<Out>,
     tx: broadcast::Sender<Out>,
+    /// The state the last published change left (a push goes on a change of state only).
+    was: String,
 }
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
@@ -90,6 +94,9 @@ pub enum Resume {
 pub struct Hub {
     shed: Shed,
     store: Store,
+    push: Push,
+    /// The server's default theme, whose words a push says.
+    theme: cooee_web::Theme,
     roots: Vec<PathBuf>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
@@ -122,9 +129,19 @@ impl Live {
         let _ = self.tx.send(out);
     }
 
-    /// Stores and then publishes `changes`.
-    fn publish(&mut self, store: &Store, changes: Vec<Change>) -> Result<(), StoreError> {
+    /// Stores and then publishes `changes`, pushing the ones the owner should hear of.
+    fn publish(&mut self, hub: &Hub, changes: Vec<Change>) -> Result<(), StoreError> {
+        let store = &hub.store;
         for change in changes {
+            let watched = self.tx.receiver_count() > 0;
+            if let Some(n) = note(
+                &self.meta, &self.chat, &change, &self.was, watched, &hub.theme,
+            ) {
+                hub.push.send(&n);
+            }
+            if let Change::State(turn) = &change {
+                self.was.clone_from(&turn.state);
+            }
             match change {
                 Change::Item(item) => {
                     store.append(&self.meta.id, &item)?;
@@ -140,11 +157,16 @@ impl Live {
 
 impl Hub {
     /// Loads every stored thread, re-attaches the open ones to their shed terminals by name, and starts
-    /// following shed's events.
+    /// following shed's events. A push speaks `theme`'s words.
     ///
     /// # Errors
     /// [`HubError::Store`] when the store can't be read.
-    pub fn open(shed: Shed, data: &Path, roots: Vec<PathBuf>) -> Result<Arc<Self>, HubError> {
+    pub fn open(
+        shed: Shed,
+        data: &Path,
+        roots: Vec<PathBuf>,
+        theme: cooee_web::Theme,
+    ) -> Result<Arc<Self>, HubError> {
         let store = Store::open(data)?;
         let mut threads = BTreeMap::new();
         for id in store.ids()? {
@@ -152,6 +174,7 @@ impl Hub {
             let chat = Chat::from_versions(store.items(&id)?);
             let live = Live {
                 applied: chat.seq(),
+                was: chat.turn.state.clone(),
                 meta,
                 chat,
                 seq: 0,
@@ -163,6 +186,8 @@ impl Hub {
         let hub = Arc::new(Self {
             shed,
             store,
+            push: Push::new(data),
+            theme,
             roots,
             boot: format!("{:x}", now()),
             threads: Mutex::new(threads),
@@ -212,8 +237,7 @@ impl Hub {
                 }
                 Err(e) => return Err(e),
             };
-            let store = &self.store;
-            if let Err(e) = live.publish(store, changes) {
+            if let Err(e) = live.publish(self, changes) {
                 eprintln!("cooee: {e}");
             }
         }
@@ -261,7 +285,7 @@ impl Hub {
         }
         live.applied = event.seq;
         let changes = live.chat.apply(now(), event.seq, event.kind);
-        if let Err(e) = live.publish(&self.store, changes) {
+        if let Err(e) = live.publish(self, changes) {
             eprintln!("cooee: {e}");
         }
     }
@@ -363,6 +387,7 @@ impl Hub {
             seq: 0,
             ring: VecDeque::new(),
             tx: broadcast::channel(RING).0,
+            was: String::new(),
         };
         lock(&self.threads).insert(id.clone(), Arc::new(Mutex::new(live)));
         self.shed.ready(&terminal)?;
@@ -398,7 +423,7 @@ impl Hub {
             random_id: random_id.to_owned(),
         };
         let item = live.chat.push(now(), 0, body);
-        live.publish(&self.store, vec![Change::Item(item.clone())])?;
+        live.publish(self, vec![Change::Item(item.clone())])?;
         Ok(item)
     }
 
@@ -412,7 +437,7 @@ impl Hub {
         let Some(tapped) = live.chat.tap(item, option) else {
             return Ok(live.chat.items.iter().find(|i| i.id == item).cloned());
         };
-        live.publish(&self.store, vec![Change::Item(tapped.clone())])?;
+        live.publish(self, vec![Change::Item(tapped.clone())])?;
         if let Err(e) = self.shed.approve(&live.meta.terminal, option) {
             // Not delivered: the row can be tapped again.
             let untapped = live.chat.update(item, 0, |b| {
@@ -420,10 +445,7 @@ impl Hub {
                     *tapped = None;
                 }
             });
-            live.publish(
-                &self.store,
-                untapped.map(Change::Item).into_iter().collect(),
-            )?;
+            live.publish(self, untapped.map(Change::Item).into_iter().collect())?;
             return Err(e.into());
         }
         Ok(Some(tapped))
@@ -453,7 +475,7 @@ impl Hub {
             let changes = live
                 .chat
                 .ended(now(), 0, "The thread was closed.".to_owned());
-            live.publish(&self.store, changes)?;
+            live.publish(self, changes)?;
         }
         Ok(())
     }
@@ -568,6 +590,12 @@ impl Hub {
             _ => Resume::Reset,
         };
         Ok((resume, live.tx.subscribe()))
+    }
+
+    /// The push subscriptions and key.
+    #[must_use]
+    pub fn push(&self) -> &Push {
+        &self.push
     }
 
     /// The SSE id of a page event.
