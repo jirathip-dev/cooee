@@ -28,7 +28,7 @@ details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute
 .nf fieldset{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .nf fieldset label{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 12px;border:1px solid var(--edge);border-radius:999px}
 .nf select{max-width:100%}
-.nf select,textarea{font:16px/1.4 system-ui,sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:12px;padding:8px;min-height:44px}
+.nf select,.nf input,textarea{font:16px/1.4 system-ui,sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:12px;padding:8px;min-height:44px}
 .chat{display:flex;flex-direction:column;height:100dvh;max-width:100ch;margin:0 auto}
 .th{display:flex;align-items:center;gap:4px;min-height:52px;padding:0 4px;background:var(--card);border-bottom:1px solid var(--edge)}
 .th .bk{font-size:24px;color:var(--link)}
@@ -58,7 +58,7 @@ main[data-state=working] .dt,main[data-state=blocked] .dt{background:var(--a)}
 .unread{align-self:stretch;text-align:center;color:var(--link);font-size:13px;border-top:1px solid var(--link)}
 .tlv{margin:0;padding:4px 16px;color:var(--a)}
 .tw{position:relative;display:flex;align-items:flex-end;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--edge)}
-.tw textarea{flex:1;resize:none}
+.tw textarea,.tw input{flex:1;min-width:0;resize:none}
 .pill{position:absolute;bottom:100%;left:50%;transform:translate(-50%,-8px);display:flex;align-items:center;padding:4px 4px 4px 12px;background:var(--card);border:1px solid var(--edge);border-radius:999px;color:var(--a);white-space:nowrap}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.chc.busy::after{animation:none}}
