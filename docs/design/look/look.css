@@ -1,0 +1,101 @@
+/* cooee look (#7): what this design adds on top of v1 (serve.css + cooee.css, #1). Tokens only; look.js sets the scheme's
+   tokens on <html>, so they win over cooee.css's built-in github-dark / paper pair. */
+[hidden]{display:none!important}
+
+/* Sprites: two-frame loops (.kf1/.kf2 farm and kitchen, .f1/.f2 garden), 0.6 s a frame; reduced motion: frame 1. */
+.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}
+@keyframes kfr{0%,49.9%{--o1:1;--o2:0}50%,100%{--o1:0;--o2:1}}
+.big{display:block;width:132px;height:100px;animation:kfr 1.2s infinite;shape-rendering:crispEdges}
+@media (prefers-reduced-motion:reduce){.big{animation:none}}
+
+/* A state label: the theme's sprite (terminal: the glyph), its word in the state colour, `· plain word` muted. */
+.sta{font-weight:400;white-space:nowrap}
+.sta .sg{font-style:normal;font-size:inherit;}
+.sta .rsp{vertical-align:middle;margin:calc(-1 * var(--s1)) .5ch calc(-1 * var(--s1)) 0}
+/* A row's line 2 is short: the sprite and the theme word only, then the last line; the plain word is on the thread bar. */
+.tr>.tp b.sta{margin-right:1ch}.tr>.tp .pw{display:none}
+.th .ds .pw{font-size:inherit}
+
+/* The working pill: the sprite follows the tool that runs, then the theme word, the time, [stop]. */
+.pill{display:flex;align-items:center;gap:1ch}.pill .sta{color:var(--a)}.pill .ptm{color:var(--mute)}
+.tlv .sta{color:var(--a)}
+
+/* What the theme owns, below the app in these shots: one card per part, three across from 1000 px. */
+.xs{display:grid;gap:var(--s3);margin:calc(2 * var(--s4)) 0 var(--s4);padding-top:var(--s3);border-top:1px solid var(--edge)}
+@media (min-width:1000px){.xs{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s4) calc(2 * var(--s4))}}
+.xc{min-width:0}.xc>.ch:first-child{margin-top:0}
+.xn{font-size:var(--fs-meta);margin:var(--s2) 0}
+/* Moments, frame 1 of each (the live ones run 2.4 s, silent): needs you flashes the row, a turn done hops its sprite
+   with the theme word as a tag in the age slot, a failed turn shakes the row. */
+.xmo{margin-top:var(--s2)}
+.mo-n{background:color-mix(in srgb,var(--r) 15%,transparent)}.mo-n .rsp{scale:1.25}
+.mo-d .rsp{translate:0 calc(-1 * var(--s1))}
+.mo-f{translate:calc(var(--s1) / -2) 0}
+.tr>.ta.tag{align-self:center;line-height:1.4}
+/* A turn's end: one quiet line under the last block. */
+.te{display:flex;flex-wrap:wrap;align-items:center;gap:0 1ch;margin:var(--s2) 0;font-size:var(--fs-meta)}
+.te .sta{font-size:var(--fs)}
+/* The empty list and the loading overlay: the theme's figure, its word · the plain word. */
+.emp{display:flex;flex-direction:column;align-items:center;gap:var(--s2);padding:var(--s4) 0;border:1px solid var(--line);border-radius:6px;text-align:center}
+.emp p{margin:0}
+.emp .spin{font-style:normal;color:var(--mute);scale:3;margin:var(--s4) 0}
+/* A push as the lock screen shows it: the app's icon, the thread title, the theme's word and the agent's last line. */
+.pn{display:flex;gap:var(--s2);margin:var(--s2) 0;padding:var(--s2) var(--s3);background:var(--card);border:1px solid var(--edge);border-radius:14px;font-size:var(--fs-meta)}
+.pn .pi{flex:none;width:calc(2 * var(--s4));height:calc(2 * var(--s4));border-radius:var(--s2);image-rendering:pixelated}
+.pn>div{min-width:0;flex:1}.pn p{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pn .ph{display:flex;justify-content:space-between}
+
+/* The design sheets at phone width: the list, then the chat, in one tall page (the app shows one at a time). */
+@media (max-width:999px){
+  .stack .clp{display:block!important}
+  .stack .cvp{position:static!important;padding:0!important;margin-top:var(--s4);border-top:1px solid var(--edge)}
+  .stack .cvp .tc{overflow:visible!important}
+}
+
+/* The look sheet. A phone: the low detent and a light scrim, so the chat above shows each pick. From 1000 px: a
+   420 px panel under [◐], no scrim. THEME is a row of four tiles, APPEARANCE three keys, COLOURS one list per mode
+   in two columns, each list with its own tick. */
+#sheet.lks .bd{opacity:.35}
+#sheet.lks .sh{--det:34%}
+.lks .top,.set .top{overflow-y:auto}
+@media (min-width:1000px){
+  #sheet.lks .bd{display:none}
+  #sheet.lks .sh{left:auto;right:var(--s3);top:calc(var(--hit) + var(--s2));bottom:auto;width:420px;max-height:calc(100% - var(--hit) - var(--s4));border:1px solid var(--edge);border-radius:14px;box-shadow:0 var(--s2) calc(3 * var(--s4)) #0006;--det:0}
+}
+.lks .ch,.set .ch{margin:var(--s3) 0 var(--s1)}
+.lth{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s2)}
+.lth .pick::before,.lth .pick::after,.lsl .pick::before,.lsl .pick::after{content:none}
+.lth .pick{position:relative;flex-direction:column;align-items:center;justify-content:center;gap:var(--s1);height:auto;min-height:calc(var(--hit) + var(--s4) * 2);padding:var(--s2) 0;border:1px solid var(--line);border-radius:6px;color:var(--fg);font-size:var(--fs-meta)}
+.lth img{width:calc(2 * var(--s4));height:calc(2 * var(--s4));border-radius:var(--s2);image-rendering:pixelated}
+.lth .pick[aria-selected=true]{border-color:var(--l);box-shadow:inset 0 0 0 1px var(--l)}
+.pick .tk{font-style:normal;color:var(--l)}
+.lth .tk{position:absolute;top:var(--s1);right:var(--s1)}
+.lap{display:flex;gap:var(--s4)}
+.lap button[aria-pressed=true]{background:var(--l);color:var(--bg)}
+.lks .shw{color:var(--mute);font-weight:400;letter-spacing:0;text-transform:none}
+.lsl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 var(--s3)}
+.lsl .pick{align-items:center;justify-content:flex-start;gap:1ch;height:auto;min-height:var(--hit);padding:0;border-bottom:1px solid var(--line);color:var(--fg);text-transform:none}
+.lsl .nm{overflow:hidden;text-overflow:ellipsis}.lsl .tk{margin-left:auto}
+.lsl small{font-size:var(--fs-meta)}
+.swa{display:inline-flex;align-items:center;gap:2px;flex:none;padding:0 var(--s1);height:var(--ctl);background:var(--sbg);border:1px solid var(--edge);border-radius:var(--s1)}
+.swa b{color:var(--sfg);font-weight:700;margin-right:2px;box-shadow:inset 0 -2px var(--sl)}
+.swa i{width:6px;height:var(--s4);border-radius:1px}
+.lft{margin:var(--s3) 0 var(--s4);font-size:var(--fs-meta);color:var(--mute)}
+
+/* Settings: herdsman's sheet at the top detent; from 1000 px the 720 px box. A row: the name, the value muted on the
+   right, ▸ when it opens something; a toggle is a bracket key, pressed when on. */
+#sheet.set .sh{--det:0}
+.sl{padding-bottom:var(--s4)}
+.sr{display:flex;align-items:center;gap:var(--s2);min-height:var(--hit);border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
+.sr .sk{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr .sv{flex:none;max-width:55%;font-size:var(--fs-meta);color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr .sv.g{color:var(--g)}.sr .sv.a{color:var(--a)}.sr .sv.m{color:var(--mute)}
+.sr button.on{color:var(--bg);background:var(--l)}
+.lth .pick+.pick,.lsl .pick+.pick{margin-top:0}
+.swa i{display:inline-block}
+
+/* Amendment A: STYLE and SPRITES, two rows above THEME: the name on the left, the keys on the right. */
+.lrw{display:flex;align-items:center;justify-content:space-between;gap:var(--s4);min-height:var(--hit);border-bottom:1px solid var(--line)}
+.lrw+.lrw{margin-top:0}.lrw:first-child{margin-top:var(--s2)}
+/* Sprites off: every row and state sprite (terminal: its glyph) is a dot in the state's colour, before the word. */
+.sd{display:inline-block;width:var(--s2);height:var(--s2);margin-right:.75ch;border-radius:50%;background:currentColor;vertical-align:middle}

@@ -1,0 +1,7 @@
+{
+  "label": "terminal",
+  "scheme": { "dark": "github-dark", "light": "paper" },
+  "sprites": false,
+  "moments": false,
+  "words": {}
+}

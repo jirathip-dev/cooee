@@ -1,0 +1,79 @@
+<!doctype html><html lang=en data-tab=chat><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name=theme-color content="#0d1117">
+<title>cooee look: the look sheet</title>
+<!-- #7 screen 1: the look sheet, opened from the header's [◐] (or Settings' look rows) over a chat, so a pick shows in
+     place: STYLE (modern | terminal) and SPRITES (on | off), two keyed rows, then THEME (four tiles), APPEARANCE (system / light / dark) and COLOURS, one pick per mode. A phone: the low
+     detent, a light scrim, the chat above it. From 1000 px: a panel under [◐], no scrim. Same query as look.js. -->
+<link rel=stylesheet href=serve.css><link rel=stylesheet href=cooee.css><link rel=stylesheet href=look.css><link rel=stylesheet href=modern.css>
+</head>
+<body class=v-l>
+<header><b>cooee</b><i id=dot class=g></i><button type=button aria-label="new thread">+</button><button type=button id=look aria-label="look: theme and colours" aria-pressed=true>◐</button><button type=button aria-label=settings>⚙</button></header>
+<main id=chat>
+
+<div class=clp>
+<div class="fc k-l"><div class=fh><span class=fn><b>~/Projects/cooee</b><span class=ds>3 threads</span></span></div>
+<a class=tr href=#t aria-current=true><i class=ud></i><span class=tt>Push stops after pairing again</span><span class=ta>claude · 2m</span><span class=tp><b class="sta r" data-st=needs></b>claude: Edit src/push.rs?</span></a>
+<a class=tr href=#t><i class=ud>●</i><span class=tt>Pairing QR code on the desktop page</span><span class=ta>codex · 6m</span><span class=tp><b class="sta a" data-st=working data-tool=run></b>codex: $ cargo test -p cooee-pair</span></a>
+<a class="tr rd" href=#t><i class=ud></i><span class=tt>README: install over Tailscale</span><span class=ta>gemini · 1h</span><span class=tp><b class="sta m" data-st=done></b>gemini: Added the install section and the two serve commands.</span></a>
+</div>
+<div class="fc k-p"><div class=fh><span class=fn><b>~/Projects/shed</b><span class=ds>2 threads</span></span></div>
+<a class=tr href=#t><i class=ud>●</i><span class=tt>ACP sessions survive a restart</span><span class=ta>claude · 25m</span><span class=tp><b class="sta m" data-st=done></b>claude: Pushed 3 commits; cargo test is green.</span></a>
+</div>
+</div>
+
+<div class=cvp>
+<div class=th><button type=button class=bk aria-label="back to threads">‹</button><div><b>Push stops after pairing again</b><span class=ds><i class="dt a"></i>claude · opus · ~/Projects/cooee · <span data-w=needs></span></span></div></div>
+<div class=tc>
+<details class="blk me" open><summary><span class=k>you</span><span class=pv></span><span class=ct>09:12</span><i class=cv></i></summary>
+<div class=md><p>Push to my phone stops after I pair it again. Find out why and fix it.</p></div>
+</details>
+<details class="blk run"><summary><span class=k>Read</span><span class=cmd>src/push.rs</span><span class="ts g">✓</span><i class=cv></i></summary></details>
+<details class="blk run"><summary><span class=k>$</span><span class=cmd>cargo test -p cooee-push</span><span class="ts r">✕ exit 101</span><i class=cv></i></summary></details>
+<details class="blk ai" open><summary><span class=k>claude</span><span class=pv></span><span class=ct>09:14</span><i class=cv></i></summary>
+<div class=md><p>Found it: pairing again adds a new subscription, but <code>send</code> keeps the first endpoint, and Apple's push service answers <b>410 Gone</b>.</p></div>
+</details>
+<details class="blk ai ap" open><summary><span class=k>claude</span><span class=pv></span><span class=ct>09:15</span><i class=cv></i></summary>
+<div class=md><p>Edit <code>src/push.rs</code></p></div>
+<div class=chc><button type=button>allow</button><button type=button>always allow</button><button type=button>reject</button></div>
+</details>
+</div>
+<p class=tlv><b class="sta a" data-st=needs></b></p>
+<form class=tw><button type=button aria-label="attach an image or file">+</button><textarea rows=1 aria-label=message placeholder="message claude"></textarea><button type=button>send</button></form>
+</div>
+
+</main>
+
+<div id=sheet class="on lks"><div class=bd></div><div class=sh role=dialog aria-modal=false aria-labelledby=lkt>
+<div class=hd><p><b id=lkt>look</b><button type=button aria-label=close>×</button></p></div>
+<div class=top>
+<div class=lrw><span>style</span><div class="lap seg lst" role=radiogroup aria-label=style></div></div>
+<div class=lrw><span>sprites</span><div class="lap seg lsp" role=radiogroup aria-label=sprites></div></div>
+<p class=ch>theme</p><div class=lth role=listbox aria-label=theme></div>
+<p class=ch>appearance</p><div class="lap seg lmd" role=radiogroup aria-label=appearance></div>
+<div class=lcs></div>
+<p class=lft>this device only · iOS keeps the icon it installed with</p>
+</div>
+</div></div>
+
+<script type=module>
+import { T, MODE, STYLE, SPRITES, S, NAMES, mode, pick, theme } from './look.js';
+const THEMES = ['farm', 'kitchen', 'garden', 'terminal'];
+const tick = on => on ? '<i class=tk>✓</i>' : '';
+document.querySelector('.lth').innerHTML = THEMES.map(t =>
+  `<button type=button class=pick role=option aria-selected=${t === T}><img alt="" src="icons/${t}.png"><span>${t}</span>${tick(t === T)}</button>`).join('');
+const keys = (sel, list, cur) => document.querySelector(sel).innerHTML = list.map(m =>
+  `<button type=button role=radio aria-checked=${m === cur} aria-pressed=${m === cur}>${m}</button>`).join('');
+keys('.lst', ['modern', 'terminal'], STYLE);
+keys('.lsp', ['on', 'off'], SPRITES ? 'on' : 'off');
+keys('.lmd', ['system', 'light', 'dark'], MODE);
+// COLOURS: one list per mode, each with its own tick; the list the page shows now says so. A tap on the other mode's
+// list switches Appearance to that mode, so every tap shows.
+const sw = s => `<span class=swa style="--sbg:${s.tokens['--bg']};--sfg:${s.tokens['--fg']};--sl:${s.tokens['--l']}"><b>Aa</b>${['--g', '--a', '--r'].map(k => `<i style="background:${s.tokens[k]}"></i>`).join('')}</span>`;
+document.querySelector('.lcs').innerHTML = ['dark', 'light'].map(m => {
+  const list = NAMES.filter(n => S[n]['color-scheme'] === m);
+  return `<p class=ch>${m} colours${m === mode() ? '<span class=shw> · showing</span>' : ''}</p><div class=lsl role=listbox aria-label="${m} colours">` +
+    list.map(n => `<button type=button class=pick role=option aria-selected=${n === pick(m)}>${sw(S[n])}<span class=nm>${S[n].label.toLowerCase()}</span>${n === theme.scheme[m] ? '<small class=m>default</small>' : ''}${tick(n === pick(m))}</button>`).join('') + '</div>';
+}).join('');
+</script>
+</body></html>

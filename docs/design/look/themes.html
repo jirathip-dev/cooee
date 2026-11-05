@@ -1,0 +1,97 @@
+<!doctype html><html lang=en data-tab=chat><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name=theme-color content="#0d1117">
+<title>cooee look: a theme on the chat</title>
+<!-- #7 screen 2: one theme (?theme=farm|kitchen|garden|terminal) on cooee's v1 thread list and chat, then what else the
+     theme owns: the moments, waiting on you, a turn's end, the empty list, the loading overlay, the push lines.
+     serve.css and cooee.css are v1's (#1), look.css this design's additions. Everything an agent or you wrote stays plain. -->
+<link rel=stylesheet href=serve.css><link rel=stylesheet href=cooee.css><link rel=stylesheet href=look.css><link rel=stylesheet href=modern.css>
+</head>
+<body class="v-w stack">
+<header><b>cooee</b><i id=dot class=g></i><button type=button aria-label="new thread">+</button><button type=button aria-label="look: theme and colours">◐</button><button type=button aria-label=settings>⚙</button></header>
+<main id=chat>
+
+<div class=clp>
+<div class="fc k-l"><div class=fh><span class=fn><b>~/Projects/cooee</b><span class=ds>3 threads</span></span></div>
+<a class=tr href=#t aria-current=true><i class=ud></i><span class=tt>Push stops after pairing again</span><span class=ta>claude · 2m</span><span class=tp><b class="sta a" data-st=working data-tool=run></b>claude: $ cargo test -p cooee-push</span></a>
+<a class=tr href=#t><i class=ud>●</i><span class=tt>Pairing QR code on the desktop page</span><span class=ta>codex · 6m</span><span class=tp><b class="sta r" data-st=needs></b>codex: Edit src/pair.rs?</span></a>
+<a class="tr rd" href=#t><i class=ud></i><span class=tt>README: install over Tailscale</span><span class=ta>gemini · 1h</span><span class=tp><b class="sta m" data-st=done></b>gemini: Added the install section and the two serve commands.</span></a>
+<details class=done><summary><span>4 older threads</span><i class=cv></i></summary></details>
+</div>
+<div class="fc k-p"><div class=fh><span class=fn><b>~/Projects/shed</b><span class=ds>2 threads</span></span></div>
+<a class=tr href=#t><i class=ud>●</i><span class=tt>ACP sessions survive a restart</span><span class=ta>claude · 25m</span><span class=tp><b class="sta m" data-st=done></b>claude: Pushed 3 commits; cargo test is green.</span></a>
+<a class="tr rd" href=#t><i class=ud></i><span class=tt>Linux: a systemd user unit</span><span class=ta>codex · 2d</span><span class=tp><b class="sta r" data-st=fail></b>codex: the session ended: shed lost the terminal.</span></a>
+</div>
+</div>
+
+<div class=cvp>
+<div class=th><button type=button class=bk aria-label="back to threads">‹</button><div><b>Push stops after pairing again</b><span class=ds><i class="dt a"></i>claude · opus · ~/Projects/cooee · <span data-w=working></span></span></div></div>
+<div class=tc>
+<p class=qs>thread started · claude over ACP · 09:12</p>
+<details class="blk me" open><summary><span class=k>you</span><span class=pv></span><span class=ct>09:12</span><i class=cv></i></summary>
+<div class=md><p>Push to my phone stops after I pair it again. Find out why and fix it.</p></div>
+</details>
+<details class="blk run"><summary><span class=k>Read</span><span class=cmd>src/push.rs</span><span class="ts g">✓</span><i class=cv></i></summary></details>
+<details class="blk run"><summary><span class=k>$</span><span class=cmd>cargo test -p cooee-push</span><span class="ts r">✕ exit 101</span><i class=cv></i></summary></details>
+<details class="blk ai" open><summary><span class=k>claude</span><span class=pv></span><span class=ct>09:14</span><i class=cv></i></summary>
+<div class=md><p>Found it: pairing again adds a new subscription, but <code>send</code> keeps the first endpoint, and Apple's push service answers <b>410 Gone</b>. I'll drop a subscription on a 410 and send to the newest one.</p></div>
+</details>
+<details class="blk ai" open><summary><span class=k>claude</span><span class=pv></span><span class=ct>09:15</span><i class=cv></i></summary>
+<div class=md><p>Edit <code>src/push.rs</code></p></div>
+<p class=ans>✓ allow <span class=m>· you · 09:16</span></p>
+</details>
+<details class="blk run"><summary><span class=k>Edit</span><span class=cmd>src/push.rs</span><span class="ts g">✓</span><i class=cv></i></summary></details>
+<details class="blk run"><summary><span class=k>$</span><span class=cmd>cargo test -p cooee-push</span><span class="ts a">⋯ 0:41</span><i class=cv></i></summary></details>
+</div>
+<form class=tw><div class=pill><b class=sta data-st=working data-tool=run></b><span class=ptm>0:41</span><button type=button>stop</button></div>
+<button type=button aria-label="attach an image or file">+</button><textarea rows=1 aria-label=message placeholder="message claude"></textarea><button type=button>send</button></form>
+</div>
+
+</main>
+
+<section class=xs aria-label="what the theme owns">
+<div class=xc><p class=ch>moments</p>
+<div class="fc k-c xmo" data-if=moments>
+<a class="tr mo-n" href=#t><i class=ud>●</i><span class=tt>Pairing QR code on the desktop page</span><span class="ta tag r" data-w=needs></span><span class=tp><b class="sta r" data-st=needs></b>codex: Edit src/pair.rs?</span></a>
+<a class="tr mo-d" href=#t><i class=ud>●</i><span class=tt>ACP sessions survive a restart</span><span class="ta tag g" data-w=merged></span><span class=tp><b class="sta m" data-s=merged></b>claude: Pushed 3 commits; cargo test is green.</span></a>
+<a class="tr mo-f" href=#t><i class=ud>●</i><span class=tt>Linux: a systemd user unit</span><span class="ta tag r" data-w=fail></span><span class=tp><b class="sta r" data-st=fail></b>codex: the session ended: shed lost the terminal.</span></a>
+</div>
+<p class="xn m" data-ifnot=moments>none: a row changes its glyph and colour, nothing moves</p>
+</div>
+
+<div class=xc><p class=ch>waiting on you</p>
+<details class="blk ai ap" open><summary><span class=k>codex</span><span class=pv></span><span class=ct>09:20</span><i class=cv></i></summary>
+<div class=md><p>Edit <code>src/pair.rs</code></p></div>
+<div class=chc><button type=button>allow</button><button type=button>always allow</button><button type=button>reject</button></div>
+</details>
+<p class="tlv xw0"><b class="sta a" data-st=needs></b></p>
+</div>
+
+<div class=xc><p class=ch>a turn's end</p>
+<details class="blk ai" open><summary><span class=k>claude</span><span class=pv></span><span class=ct>09:21</span><i class=cv></i></summary>
+<div class=md><p>Fixed: <code>send</code> uses the newest subscription and drops one on a 410. <code>cargo test</code> passes.</p></div>
+</details>
+<p class=te><b class="sta m" data-st=done></b><span class=m>09:21 · 9 min · 6 tools</span></p>
+<p class=te><b class="sta r" data-st=fail></b><span class=m>09:40 · shed lost the terminal</span></p>
+</div>
+
+<div class=xc><p class=ch>no threads yet</p>
+<div class=emp><span data-s=empty data-cls=big data-if=sprites></span><p data-w=empty-threads data-plain></p><button type=button>new thread</button></div>
+</div>
+
+<div class=xc><p class=ch>loading</p>
+<div class=emp><span data-s=loading data-cls=big data-if=sprites></span><i class=spin data-ifnot=sprites>↻</i><p data-w=loading data-plain></p></div>
+</div>
+
+<div class=xc><p class=ch>push</p>
+<div class=pn><img class=pi alt="" src=icons/farm.png><div><p class=ph><b>cooee</b><span class=m>now</span></p><p><b>Pairing QR code on the desktop page</b></p><p><span data-w=needs data-plain></span> · codex: Edit src/pair.rs?</p></div></div>
+<div class=pn><img class=pi alt="" src=icons/farm.png><div><p class=ph><b>cooee</b><span class=m>2m ago</span></p><p><b>Push stops after pairing again</b></p><p><span data-w=done data-plain></span> · claude: Fixed: send uses the newest subscription…</p></div></div>
+<div class=pn><img class=pi alt="" src=icons/farm.png><div><p class=ph><b>cooee</b><span class=m>9m ago</span></p><p><b>Linux: a systemd user unit</b></p><p><span data-w=fail data-plain></span> · codex: the session ended: shed lost the terminal.</p></div></div>
+</div>
+</section>
+
+<script type=module>
+import { T } from './look.js';
+for (const i of document.querySelectorAll('.pi')) i.src = `icons/${T}.png`;
+</script>
+</body></html>

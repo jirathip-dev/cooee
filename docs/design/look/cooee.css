@@ -1,0 +1,65 @@
+/* cooee v1 mockup (#1): what cooee adds on top of herdsman's serve.css (copied here unchanged). Tokens only, no
+   new ones. Dark is herdsman's github-dark scheme, light its paper scheme, picked by the system setting. */
+:root{--bg:#0d1117;--card:#161b22;--edge:#30363d;--line:#21262d;--scrim:#000000aa;--fg:#c9d1d9;--mute:#8b949e;--l:#58a6ff;--link:#58a6ff;--g:#3fb950;--a:#d29922;--r:#f85149;--p:#bc8cff;--c:#39c5cf;--fk-l:#58a6ff;--fk-p:#bc8cff;--fk-c:#39c5cf;--fk-g:#3fb950;--fk-a:#d29922;color-scheme:dark}
+@media (prefers-color-scheme:light){:root{--bg:#fbf8f1;--card:#f3eee2;--edge:#d8d0bf;--line:#e7e0d0;--scrim:#2b241866;--fg:#24292f;--mute:#5b616a;--l:#0b5cad;--link:#0b5cad;--g:#197b35;--a:#8a5a00;--r:#c4202b;--p:#7c4dcf;--c:#0b7480;--fk-l:#0b5cad;--fk-p:#7c4dcf;--fk-c:#0b7480;--fk-g:#197b35;--fk-a:#8a5a00;color-scheme:light}}
+
+/* v1 has no tab bar (plugin tabs come with M4): the page ends at the composer. */
+body{padding-bottom:env(safe-area-inset-bottom)}
+@media (max-width:999px){html[data-tab=chat] .cvp{bottom:max(var(--kb),env(safe-area-inset-bottom))}}
+.cvp .tw{bottom:env(safe-area-inset-bottom);margin-bottom:0}
+
+/* The list: herdsman's repo cards, one per folder. A row's right cell is `agent · age`. Phone: the list, or one
+   thread; the new-thread form opens above the list. From 1000 px the list is the left column and the new-thread
+   form or the open thread the right one. */
+body:not(.v-n) .nwp{display:none}
+@media (max-width:999px){.clp:has(~.cvp){display:none}}
+/* The open thread's row, as in herdsman's conductor-chat mockup: tinted, the folder's colour bar on its left. */
+@media (min-width:1000px){.tr[aria-current]{background:color-mix(in srgb,var(--fk) 10%,transparent);box-shadow:inset 2px 0 var(--fk)}}
+@media (min-width:1000px){.nwp{display:block!important;grid-column:2;grid-row:1;border-left:1px solid var(--line);padding-left:calc(2 * var(--s4))}.nwp>*{max-width:100ch}.clp{grid-row:1}}
+
+/* New thread: the agent (signed-out ones muted, a tap opens the login sheet), the folder, the first message. */
+.nf{display:flex;flex-direction:column;align-items:stretch;gap:var(--s2);margin:var(--s3) 0;padding:var(--s2);border:1px solid var(--edge);border-top:3px solid var(--fg);border-radius:6px}
+.nf>.fh{min-height:var(--ctl);flex-wrap:nowrap}
+.nf .lb{margin:0;font-size:var(--fs-meta);color:var(--mute)}
+.ag{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4);padding:var(--s1) 0}
+.ag button[aria-pressed=true]{color:var(--l);box-shadow:inset 0 -2px var(--l)}
+.ag button.so{color:var(--mute)}
+.nf .pk{align-self:flex-start;text-transform:none;margin:var(--s1) 0}
+.nf .tw{padding:0}
+.nf .tw textarea{min-height:calc(var(--hit) * 2)}
+@media (min-width:1000px){.nf .cl{display:none}}
+
+/* A tool call's row: herdsman's closed tool run, its status on the right (✓ green, ✕ red with the exit code,
+   ⋯ amber with the elapsed time while it runs). */
+.blk>summary .ts{flex:none}
+/* An approval (ACP's permission request): the agent's block in amber, the call and its diff, the options as buttons. */
+.blk.ap{--k:var(--a)}
+.blk.ap .chc{flex-wrap:wrap;margin-top:var(--s3)}
+.blk.ap .md code{color:var(--fg)}
+/* Working: the floating pill over the composer, so the last block keeps clear of it. */
+.v-w .tc{padding-bottom:calc(var(--ctl) + var(--s4))}
+.pill .wg{color:var(--a)}
+.th .dt.a{background:var(--a)}
+/* Mockup only: the hash picks the state (#working: the same thread after [allow]). */
+body:not(.v-w) .xw,body.v-w .xa{display:none}
+
+/* The login sheet: herdsman's sheet at the mid detent on a phone, a centred box from 1000 px. A provider row: its
+   name, its state on the right, one 11 px status line; signing in, the CLI's own login in a terminal panel (its
+   link tappable) and the code field under it. */
+#sheet .sh{transform:translateY(var(--det,6%))}
+@media (min-width:1000px){#sheet .sh{left:calc(50% - 360px);right:auto;width:720px;top:8%;bottom:8%;border:1px solid var(--edge);border-radius:14px;--det:0}}
+.sh .hd p{display:flex;align-items:center;gap:var(--s2)}.sh .hd b{flex:1}
+.sh .top{flex:1 1 auto;max-height:none;border:0}
+.lgn{box-shadow:none;padding:0}
+.lgn .pvr{padding:var(--s2) 0}
+.lgn .pvh b{flex:1;min-width:0}
+.lgn .pvs{font-weight:400}
+.lgn .out{margin:var(--s2) 0;background:color-mix(in srgb,var(--fg) 5%,var(--bg));border:1px solid var(--edge)}
+.lgn .out .hh{color:var(--mute)}
+.lgn .out .cur{background:var(--fg)}
+.lgn .chs{margin-top:var(--s2)}
+.lgn .pvr.on{box-shadow:inset 2px 0 var(--a);padding-left:var(--s2)}
+
+/* Mockup only: a full-page shot has no scroll, so the phone's fixed thread stays in the flow. */
+.shot .cvp{position:static!important;padding:0!important}
+.shot .cvp .tc{overflow:visible!important}

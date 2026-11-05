@@ -1,0 +1,67 @@
+<!doctype html><html lang=en data-tab=chat><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name=theme-color content="#0d1117">
+<title>cooee look: settings</title>
+<!-- #7 screen 3: Settings, opened from the header's [⚙]: one list in five sections (look, devices, push alerts,
+     sign-ins, plugins), each row a tap. Look rows open the look sheet, a device opens its page (rename, remove), a
+     provider its sign-in (v1's login sheet), a plugin its page. A phone: herdsman's sheet at the top detent; from
+     1000 px a centred 720 px box, as v1's sign-ins. Same query as look.js. -->
+<link rel=stylesheet href=serve.css><link rel=stylesheet href=cooee.css><link rel=stylesheet href=look.css><link rel=stylesheet href=modern.css>
+</head>
+<body class=v-l>
+<header><b>cooee</b><i id=dot class=g></i><button type=button aria-label="new thread">+</button><button type=button aria-label="look: theme and colours">◐</button><button type=button aria-label=settings aria-pressed=true>⚙</button></header>
+<main id=chat>
+<div class=clp>
+<div class="fc k-l"><div class=fh><span class=fn><b>~/Projects/cooee</b><span class=ds>3 threads</span></span></div>
+<a class=tr href=#><i class=ud>●</i><span class=tt>Push stops after pairing again</span><span class=ta>claude · 2m</span><span class=tp><b class="sta r" data-st=needs></b>claude: Edit src/push.rs?</span></a>
+<a class=tr href=#><i class=ud>●</i><span class=tt>Pairing QR code on the desktop page</span><span class=ta>codex · 6m</span><span class=tp><b class="sta a" data-st=working data-tool=run></b>codex: $ cargo test -p cooee-pair</span></a>
+<a class="tr rd" href=#><i class=ud></i><span class=tt>README: install over Tailscale</span><span class=ta>gemini · 1h</span><span class=tp><b class="sta m" data-st=done></b>gemini: Added the install section.</span></a>
+</div>
+</div>
+</main>
+
+<div id=sheet class="on set"><div class=bd></div><div class=sh role=dialog aria-modal=true aria-labelledby=stt>
+<div class=hd><p><b id=stt>settings</b><button type=button aria-label=close>×</button></p></div>
+<div class=top><div class=sl>
+
+<p class=ch>look</p>
+<a class=sr href=look.html><span class=sk>style</span><span class=sv id=v-style></span><i class=cv></i></a>
+<a class=sr href=look.html><span class=sk>sprites</span><span class=sv id=v-sprites></span><i class=cv></i></a>
+<a class=sr href=look.html><span class=sk>theme</span><span class=sv id=v-theme></span><i class=cv></i></a>
+<a class=sr href=look.html><span class=sk>appearance</span><span class=sv id=v-mode></span><i class=cv></i></a>
+<a class=sr href=look.html><span class=sk>colours</span><span class=sv id=v-colours></span><i class=cv></i></a>
+
+<p class=ch>devices</p>
+<a class=sr href=#><span class=sk>iPhone 16</span><span class="sv g">this device</span><i class=cv></i></a>
+<a class=sr href=#><span class=sk>MacBook Air · Safari</span><span class=sv>2d ago</span><i class=cv></i></a>
+<a class=sr href=#><span class=sk>iPad mini</span><span class=sv>3w ago</span><i class=cv></i></a>
+<div class=sr><button type=button>pair a device</button></div>
+
+<p class=ch>push alerts</p>
+<div class=sr><span class=sk>on this device</span><span class="sv g">allowed</span></div>
+<div class=sr><span class=sk data-w=needs data-plain></span><button type=button class=on aria-pressed=true>on</button></div>
+<div class=sr><span class=sk data-w=done data-plain></span><button type=button class=on aria-pressed=true>on</button></div>
+<div class=sr><span class=sk data-w=fail data-plain></span><button type=button aria-pressed=false>off</button></div>
+
+<p class=ch>sign-ins</p>
+<a class=sr href=#><span class=sk>claude</span><span class="sv g">✓ signed in</span><i class=cv></i></a>
+<a class=sr href=#><span class=sk>codex</span><span class="sv g">✓ signed in</span><i class=cv></i></a>
+<a class=sr href=#><span class=sk>gemini</span><span class="sv a">signing in</span><i class=cv></i></a>
+<div class=sr><span class=sk>pi</span><span class="sv m">signed out</span><button type=button>sign in</button></div>
+
+<p class=ch>plugins</p>
+<a class=sr href=#><span class=sk>drover</span><span class=sv>queue · lanes · host · events</span><i class=cv></i></a>
+<div class=sr><button type=button>add a plugin</button></div>
+
+</div></div>
+</div></div>
+
+<script type=module>
+import { T, MODE, STYLE, SPRITES, S, mode, pick } from './look.js';
+document.getElementById('v-style').textContent = STYLE;
+document.getElementById('v-sprites').textContent = SPRITES ? 'on' : 'off';
+document.getElementById('v-theme').textContent = T;
+document.getElementById('v-mode').textContent = MODE === 'system' ? `system · ${mode()} now` : MODE;
+document.getElementById('v-colours').textContent = `dark ${S[pick("dark")].label.toLowerCase()} · light ${S[pick("light")].label.toLowerCase()}`;
+</script>
+</body></html>
