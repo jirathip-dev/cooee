@@ -473,7 +473,7 @@ async fn push_subscribe(cx: &Cx, Json(s): Json<Subscribe>) -> Result<Response> {
     }
 }
 
-/// The web UI, the threads' API over `hub`, the providers' `logins` and pairing, behind the gate: requests must name `bind`, localhost
+/// The web UI (with `looks`, its themes and schemes), the threads' API over `hub`, the providers' `logins` and pairing, behind the gate: requests must name `bind`, localhost
 /// or one of `allowed_hosts`; devices are paired in `data`.
 #[must_use]
 pub fn router(
@@ -482,6 +482,7 @@ pub fn router(
     data: &std::path::Path,
     bind: IpAddr,
     allowed_hosts: &[String],
+    looks: cooee_web::Looks,
 ) -> Router {
     let mut names: Vec<String> = ["localhost", "127.0.0.1", "[::1]"]
         .map(str::to_owned)
@@ -497,7 +498,7 @@ pub fn router(
         names,
         devices: Devices::new(data),
     };
-    cooee_web::assets(Router::builder())
+    cooee_web::assets(Router::builder(), looks)
         .layer(gate)
         .page(pairing)
         .route(pair)
@@ -523,7 +524,8 @@ pub fn router(
         .build()
 }
 
-/// Opens the threads (`config`'s data folder and shed) and serves the web UI on `bind:port` until Ctrl+C or
+/// Opens the threads (`config`'s data folder and shed) and the looks (the built-in and own themes and schemes), and
+/// serves the web UI on `bind:port` until Ctrl+C or
 /// `SIGTERM`. `ready` gets the bound address first (port 0 picks a free one).
 ///
 /// # Errors
@@ -541,9 +543,21 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .data_dir()
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
+    let (looks, refused) = cooee_web::Looks::load(config.dir.as_deref(), config.theme.as_deref());
+    for why in refused {
+        eprintln!("cooee: refused {why}");
+    }
+    let theme = looks.themes[&looks.default].clone();
     let logins = Logins::new(shed.clone(), config.providers.clone());
-    let hub = Hub::open(shed, &data, config.roots.clone())?;
-    let router = router(hub, logins, &data, config.bind, &config.allowed_hosts);
+    let hub = Hub::open(shed, &data, config.roots.clone(), theme)?;
+    let router = router(
+        hub,
+        logins,
+        &data,
+        config.bind,
+        &config.allowed_hosts,
+        looks,
+    );
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?

@@ -6,7 +6,9 @@ import { expect, test } from "@playwright/test";
 test("sign-ins: the provider's own login, its link tappable, a code typed in, then signed in", async ({ page, context }, info) => {
   const name = `fake-${info.project.name}`, url = `https://login.example.com/device?client_id=cooee-${info.project.name}`;
   await page.goto("/");
-  await page.getByRole("link", { name: "sign-ins" }).click();
+  await page.getByRole("button", { name: "settings" }).click();
+  await page.locator("#sheet").getByRole("link", { name: "providers" }).click();
+  await expect(page.locator("#sheet")).toBeHidden();
   const row = page.locator(`.pv[data-provider="${name}"]`), state = row.locator(".fh span");
   await expect(state).toHaveText("signed out");
   await expect(row).toContainText("Not signed in");

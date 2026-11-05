@@ -30,6 +30,11 @@ pub struct Config {
     pub data: Option<PathBuf>,
     /// The sign-ins sheet's providers (`[[providers]]`); default Claude Code, Codex and Gemini.
     pub providers: Vec<Provider>,
+    /// The theme a device shows until it picks its own (default farm).
+    pub theme: Option<String>,
+    /// The config file's folder, where the owner's own `themes/` and `schemes/` live (set by [`Config::load`]).
+    #[serde(skip)]
+    pub dir: Option<PathBuf>,
 }
 
 impl Default for Config {
@@ -43,6 +48,8 @@ impl Default for Config {
             shed_dir: None,
             data: None,
             providers: Provider::defaults(),
+            theme: None,
+            dir: None,
         }
     }
 }
@@ -91,7 +98,7 @@ impl Config {
         })
     }
 
-    /// Reads `path`; a missing file gives the defaults.
+    /// Reads `path`; a missing file gives the defaults. Either way [`Config::dir`] is `path`'s folder.
     ///
     /// # Errors
     ///
@@ -99,7 +106,7 @@ impl Config {
     pub fn load(path: &Path) -> Result<Self, ConfigError> {
         let text = match fs::read_to_string(path) {
             Ok(text) => text,
-            Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(Self::default()),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => String::new(),
             Err(source) => {
                 return Err(ConfigError::Read {
                     path: path.to_owned(),
@@ -107,9 +114,13 @@ impl Config {
                 });
             }
         };
-        toml::from_str(&text).map_err(|source| ConfigError::Parse {
+        let config: Self = toml::from_str(&text).map_err(|source| ConfigError::Parse {
             path: path.to_owned(),
             source,
+        })?;
+        Ok(Self {
+            dir: path.parent().map(Path::to_owned),
+            ..config
         })
     }
 }
@@ -140,6 +151,12 @@ mod tests {
     #[test]
     fn missing_file_gives_defaults() {
         let path = env::temp_dir().join(format!("cooee-no-config-{}.toml", std::process::id()));
-        assert_eq!(Config::load(&path).unwrap(), Config::default());
+        assert_eq!(
+            Config::load(&path).unwrap(),
+            Config {
+                dir: Some(env::temp_dir()),
+                ..Config::default()
+            }
+        );
     }
 }

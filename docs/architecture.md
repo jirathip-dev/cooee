@@ -24,7 +24,7 @@ keeps them going while the phone is away; cooee talks to shed and pings the phon
 | Crate | Path | Holds | May depend on |
 |---|---|---|---|
 | `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), paired devices, providers (status, redaction), the shed client; no HTTP | no workspace crate |
-| `cooee-web` | `web/` | the web UI in Topcoat (ADR 0001): pages, `chat.js`, `app.css`, the PWA manifest | not the server or binary |
+| `cooee-web` | `web/` | the web UI in Topcoat (ADR 0001): pages, `chat.js`, `app.css`, the PWA manifest, the themes and schemes (`look.rs`, `look.js`, `themes/`, `schemes/`) | not the server or binary |
 | `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3) | core, web |
 | `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
 
@@ -81,8 +81,8 @@ the thread, and reading the thread past `item` closes it.
 
 Each provider is one row of the `providers` table in the config: its name, the ACP agent it signs in, its CLI's own
 login command and a read-only status command. There is no provider-specific code beyond that table. The status
-command signs a provider in when it exits 0; its output, on one line and redacted, is the status line. The thread
-list's `⚙` opens the sign-ins sheet: each provider's state, and `[sign in]` for a signed-out one. The new-thread
+command signs a provider in when it exits 0; its output, on one line and redacted, is the status line. Settings'
+sign-ins row opens the sign-ins card on the thread list: each provider's state, and `[sign in]` for a signed-out one. The new-thread
 picker marks each agent `✓` or `signed out`, with a link to the sheet.
 
 `[sign in]` runs the login command in a plain shed terminal (terminal mode, not ACP; over the socket: `run`, then
@@ -110,3 +110,4 @@ One TOML file, `$XDG_CONFIG_HOME/cooee/config.toml` (else `~/.config/cooee/confi
 | `shed_dir` | shed's per-user server | shed's `--dir` (its socket `shed.sock` and state). |
 | `data` | `$XDG_DATA_HOME/cooee`, else `~/.local/share/cooee` | Where threads are stored. |
 | `providers` | Claude Code, Codex, Gemini | The sign-ins: `[[providers]]` with `name`, `agent` (its ACP agent id), `login` and `status` (commands, as arrays). Setting it replaces the defaults. |
+| `theme` | `farm` | The theme a device shows until it picks its own ([themes.md](themes.md)); own themes and schemes live in `themes/` and `schemes/` beside the config file. |

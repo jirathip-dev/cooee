@@ -27,7 +27,7 @@ test("two pushes for a thread show one notification; none while it is open; read
   await page.getByLabel("first message").fill("Say hello");
   await page.getByRole("button", { name: "start" }).click();
   await page.waitForURL(/\/t\//);
-  await expect(page.locator("#st")).toHaveText("✓ done");
+  await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
   const id = new URL(page.url()).pathname.split("/")[2];
   const last = (await (await page.request.get(`/threads/${id}/messages`)).json()).items.at(-1).id;
 

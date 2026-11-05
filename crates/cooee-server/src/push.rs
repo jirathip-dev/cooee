@@ -44,7 +44,8 @@ pub struct Note {
 }
 
 /// The notification for `change` in `thread`, if it is one: an approval waiting, a turn done while no page
-/// watches the thread (`watched`), or an error. `was` is the state before the change.
+/// watches the thread (`watched`), or an error. `was` is the state before the change. The body is `theme`'s word,
+/// the plain word and the agent's line: `at the gate · needs you · codex: Edit src/pair.rs`.
 #[must_use]
 pub fn note(
     thread: &Thread,
@@ -52,16 +53,17 @@ pub fn note(
     change: &Change,
     was: &str,
     watched: bool,
+    theme: &cooee_web::Theme,
 ) -> Option<Note> {
     let last = chat.items.last().map_or(0, |i| i.id);
-    let (body, item) = match change {
+    let (key, line, item) = match change {
         Change::Item(i) => match &i.body {
             Body::Approval {
                 tool,
                 tapped: None,
                 chosen: None,
                 ..
-            } => (format!("needs you: {tool}"), i.id),
+            } => ("needs", tool.clone(), i.id),
             _ => return None,
         },
         Change::State(t) if t.state == was => return None,
@@ -70,17 +72,22 @@ pub fn note(
                 Body::Agent { text, .. } => text.lines().find(|l| !l.trim().is_empty()),
                 _ => None,
             });
-            (format!("done: {}", reply.unwrap_or("the turn ended")), last)
+            ("done", reply.unwrap_or("the turn ended").to_owned(), last)
         }
         Change::State(t) if t.state == "error" => (
-            format!("error: {}", t.note.as_deref().unwrap_or("the agent failed")),
+            "fail",
+            t.note.as_deref().unwrap_or("the agent failed").to_owned(),
             last,
         ),
         Change::State(_) | Change::Text(_) => return None,
     };
     Some(Note {
         title: thread.title.clone(),
-        body: body.chars().take(120).collect(),
+        body: theme
+            .push_body(key, &format!("{}: {line}", thread.agent))
+            .chars()
+            .take(120)
+            .collect(),
         tag: thread.id.clone(),
         url: format!("/t/{}", thread.id),
         item,
@@ -408,6 +415,7 @@ mod tests {
         Thread {
             id: "t1".to_owned(),
             title: "Fix the build".to_owned(),
+            agent: "codex".to_owned(),
             ..Thread::default()
         }
     }
@@ -460,34 +468,53 @@ mod tests {
             item,
         };
         let t = thread();
+        let (looks, _) = cooee_web::Looks::load(None, None);
+        let (farm, terminal) = (&looks.themes["farm"], &looks.themes["terminal"]);
         assert_eq!(
-            note(&t, &chat, &approval(None), "working", true),
-            Some(n("needs you: Edit src/lib.rs", 3))
+            note(&t, &chat, &approval(None), "working", true, farm),
+            Some(n("at the gate · needs you · codex: Edit src/lib.rs", 3))
         );
         assert_eq!(
-            note(&t, &chat, &approval(Some("allow")), "working", false),
+            note(&t, &chat, &approval(Some("allow")), "working", false, farm),
             None
         );
         assert_eq!(
-            note(&t, &chat, &turn("done", None), "working", false),
-            Some(n("done: All tests pass.", 2))
+            note(&t, &chat, &turn("done", None), "working", false, farm),
+            Some(n("in the stable · done · codex: All tests pass.", 2))
         );
         // A page has the thread open: no push for a finished turn; nor for a state that didn't change.
-        assert_eq!(note(&t, &chat, &turn("done", None), "working", true), None);
-        assert_eq!(note(&t, &chat, &turn("done", None), "done", false), None);
+        assert_eq!(
+            note(&t, &chat, &turn("done", None), "working", true, farm),
+            None
+        );
+        assert_eq!(
+            note(&t, &chat, &turn("done", None), "done", false, farm),
+            None
+        );
         assert_eq!(
             note(
                 &t,
                 &chat,
                 &turn("error", Some("rate limited")),
                 "working",
-                true
+                true,
+                terminal
             ),
-            Some(n("error: rate limited", 2))
+            Some(n("failed · codex: rate limited", 2))
         );
-        assert_eq!(note(&t, &chat, &turn("working", None), "done", false), None);
         assert_eq!(
-            note(&t, &chat, &Change::Text("x".to_owned()), "working", false),
+            note(&t, &chat, &turn("working", None), "done", false, farm),
+            None
+        );
+        assert_eq!(
+            note(
+                &t,
+                &chat,
+                &Change::Text("x".to_owned()),
+                "working",
+                false,
+                farm
+            ),
             None
         );
         assert_eq!(
