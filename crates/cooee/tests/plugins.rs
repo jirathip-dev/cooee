@@ -346,3 +346,39 @@ fn the_docs_show_the_example_plugin_the_ui_tests_run() {
         assert!(doc.contains(file), "docs/plugins.md is out of date: {file}");
     }
 }
+
+#[test]
+fn a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab() {
+    let s = setup("plugin-dot");
+    let a = format!("Bearer {TOKEN_A}");
+    let push = json!({ "text": "air offline", "path": "air", "tag": "machine" });
+    let (code, note) = s.as_backend("/plugin/push", &a, &push);
+    assert_eq!(code, 200, "{note}");
+    let note: Value = serde_json::from_str(&note).unwrap();
+    assert_eq!(
+        (&note["tag"], &note["url"]),
+        (&json!("machine"), &json!("/p/a#air"))
+    );
+
+    let dot = "Alpha<i class=\"dot\" aria-hidden=\"true\">●</i>";
+    assert!(!s.cooee.get("/").1.contains("class=\"dot\""));
+    assert_eq!(
+        s.as_backend("/plugin/dot", "", &json!({ "on": true })).0,
+        401
+    );
+    assert_eq!(
+        s.as_backend("/plugin/dot", &a, &json!({ "on": true })).0,
+        200
+    );
+    let home = s.cooee.get("/").1;
+    assert!(
+        home.contains(dot) && home.matches("class=\"dot\"").count() == 1,
+        "{home}"
+    );
+    assert!(s.cooee.get("/p/b").1.contains(dot));
+    assert_eq!(
+        s.as_backend("/plugin/dot", &a, &json!({ "on": false })).0,
+        200
+    );
+    assert!(!s.cooee.get("/").1.contains("class=\"dot\""));
+}

@@ -131,7 +131,9 @@ impl Setup {
     fn thread(&self, account: Option<&str>) -> (String, String) {
         let root = self.dir.join("root");
         fs::create_dir_all(&root).unwrap();
-        let new = json!({ "agent": "fake-acp", "account": account, "folder": root, "text": "hi", "random_id": "r" });
+        // Each start its own id, as the page makes one: a repeated id adopts the thread it started.
+        let random = format!("start-{}", self.shed.cli_log().len());
+        let new = json!({ "agent": "fake-acp", "account": account, "folder": root, "text": "hi", "random_id": random });
         let (status, body) = self.cooee.post("/threads", &new);
         assert_eq!(status, 200, "{body}");
         let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
@@ -209,6 +211,11 @@ fn add_account_listed_only_on_success_default_and_thread_pick_spawn_with_its_fol
             && row.contains("make default"),
         "{row}"
     );
+    // The page's own data (the looks, #49) aside.
+    let (head, rest) = page
+        .split_once(r#"<script type="application/json" id="looks">"#)
+        .unwrap();
+    let page = format!("{head}{}", rest.split_once("</script>").unwrap().1);
     assert!(
         !page.contains("loggedIn") && !page.contains("{\""),
         "no raw JSON: {page}"

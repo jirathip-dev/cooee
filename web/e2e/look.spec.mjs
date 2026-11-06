@@ -1,12 +1,18 @@
-// The look (#8, docs/design/look): a device's pick applied before the first paint, the look sheet and Settings, System
-// following the phone live, the four Style × Sprites combinations at 390, the scroll kept on a switch, and the look
-// reaching a plugin tab.
+// The look (#8, docs/design/look): a device's pick (its cookie, #49) drawn by the server from the first frame, the look
+// sheet and Settings, System following the phone live, the four Style × Sprites combinations at 390, the scroll kept on
+// a switch, and the look reaching a plugin tab.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const shot = (page, info, name, fullPage = false) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png`, fullPage });
 const bg = (page) => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--bg").trim());
-const sheet = (page) => page.locator("#sheet .sh");
+// The open sheet (the sheets are popovers in #sheet).
+const sheet = (page) => page.locator("#sheet .sh:popover-open");
+// A device's pick, as its `cooee-look` cookie keeps it (`theme:kitchen/style:terminal`).
+const pickOn = (context, url, pick) =>
+  context.addCookies([{ name: "cooee-look", value: Object.entries(pick).map(([k, v]) => `${k}:${v}`).join("/"), url }]);
+const pickOf = async (context) =>
+  Object.fromEntries((await context.cookies()).find((c) => c.name === "cooee-look")?.value.split("/").map((kv) => kv.split(":")) ?? []);
 // The theme tiles' icons have loaded.
 const icons = (page) => expect.poll(() => page.locator(".lth img").evaluateAll((l) => l.every((i) => i.complete && i.naturalWidth > 0))).toBe(true);
 // A key in the look sheet: style, sprites, theme, mode (appearance), dark or light (colours), and its value.
@@ -29,12 +35,9 @@ async function blocked(page) {
 
 test.beforeEach(async ({ page }) => { await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" }); });
 
-test("a device's pick shows from the first frame, and stays on this device only", async ({ page, browser }) => {
+test("a device's pick shows from the first frame, and stays on this device only", async ({ page, browser, context, baseURL }) => {
+  await pickOn(context, baseURL, { theme: "kitchen", style: "terminal", sprites: "off" });
   await page.addInitScript(() => {
-    if (!sessionStorage.seeded) {
-      localStorage.setItem("cooee.look", JSON.stringify({ theme: "kitchen", style: "terminal", sprites: "off" }));
-      sessionStorage.seeded = 1;
-    }
     // The first frame, before anything else paints.
     requestAnimationFrame(() => {
       const h = document.documentElement;
@@ -42,6 +45,9 @@ test("a device's pick shows from the first frame, and stays on this device only"
     });
   });
   await page.goto("/");
+  await expect.poll(() => page.evaluate(() => window.first)).toEqual({ bg: "#1a1816", style: "terminal", sprites: "off" });
+  // A reload draws it from the first frame too: no flash of the default look.
+  await page.reload();
   await expect.poll(() => page.evaluate(() => window.first)).toEqual({ bg: "#1a1816", style: "terminal", sprites: "off" });
   await expect(page.locator("body")).toHaveCSS("font-family", /monospace/);
   // Kitchen's words, sprites off: a dot, then the word.
@@ -61,7 +67,7 @@ test("a device's pick shows from the first frame, and stays on this device only"
   await other.close();
 });
 
-test("the look sheet: style, sprites, theme, appearance and colours apply at once and stay", async ({ page }, info) => {
+test("the look sheet: style, sprites, theme, appearance and colours apply at once and stay", async ({ page, context }, info) => {
   await blocked(page);
   await page.getByRole("button", { name: "look: theme and colours" }).click();
   await expect(sheet(page)).toBeVisible();
@@ -95,19 +101,19 @@ test("the look sheet: style, sprites, theme, appearance and colours apply at onc
   await tap(page, "sprites", "off");
   await expect(page.locator("#st .sd")).toBeVisible();
   await page.reload();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("cooee.look")))).toEqual({ theme: "kitchen", mode: "dark", style: "modern", sprites: "off" });
+  expect(await pickOf(context)).toEqual({ theme: "kitchen", mode: "dark", style: "modern", sprites: "off" });
   await expect(page.locator("#st")).toHaveText("the bell");
   await page.keyboard.press("Escape");
 });
 
-test("System follows the phone's mode live", async ({ page }) => {
+test("System follows the phone's mode live", async ({ page, context, baseURL }) => {
   await page.goto("/");
   expect(await bg(page)).toBe("#0f1a13");
   await page.emulateMedia({ colorScheme: "light" });
   await expect.poll(() => bg(page)).toBe("#f5efda");
   await expect(page.locator("html")).toHaveAttribute("data-mode", "light");
   // A forced mode ignores the phone.
-  await page.evaluate(() => localStorage.setItem("cooee.look", JSON.stringify({ mode: "dark" })));
+  await pickOn(context, baseURL, { mode: "dark" });
   await page.reload();
   expect(await bg(page)).toBe("#0f1a13");
   await page.emulateMedia({ colorScheme: "dark" });
@@ -127,11 +133,11 @@ test("Settings: the look rows show the pick and open the look sheet", async ({ p
   await expect(sheet(page).getByText("dark colours · showing")).toBeVisible();
 });
 
-test("all four Style × Sprites combinations render at 390", async ({ page }, info) => {
+test("all four Style × Sprites combinations render at 390", async ({ page, context, baseURL }, info) => {
   test.skip(info.project.name !== "390", "the combinations are a phone audit");
   for (const style of ["modern", "terminal"]) {
     for (const sprites of ["on", "off"]) {
-      await page.addInitScript((p) => localStorage.setItem("cooee.look", p), JSON.stringify({ style, sprites }));
+      await pickOn(context, baseURL, { style, sprites });
       await page.goto("/");
       await expect(page.locator("html")).toHaveAttribute("data-style", style);
       await expect(page.locator(".tp .rsp")).toHaveCount(sprites === "on" ? await page.locator(".tp [data-st]:not([data-st=''])").count() : 0);

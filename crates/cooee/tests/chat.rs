@@ -29,7 +29,10 @@ impl Setup {
 
     /// Starts a thread with `text`; returns its id.
     fn create(&self, text: &str) -> String {
-        let new = json!({ "agent": "fake-acp", "folder": self.folder(), "text": text, "random_id": "r0" });
+        // Each start its own id, as the page makes one: a repeated id adopts the thread it started.
+        static STARTS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let n = STARTS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let new = json!({ "agent": "fake-acp", "folder": self.folder(), "text": text, "random_id": format!("start-{n}") });
         let (status, body) = self.cooee.post("/threads", &new);
         assert_eq!(status, 200, "{body}");
         serde_json::from_str::<Value>(&body).unwrap()["id"]

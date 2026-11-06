@@ -8,6 +8,7 @@
 
 mod hub;
 mod login;
+mod manage;
 mod plugin;
 mod push;
 
@@ -43,11 +44,13 @@ use topcoat::{
 
 pub use hub::{Hub, HubError, Listing, Out, Resume, Slice};
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
+pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
 
 /// The paths an unpaired browser may load: pairing and the static files (and the themes' files under `/look/`).
-const OPEN: [&str; 12] = [
+const OPEN: [&str; 13] = [
     "/pair",
+    "/look",
     "/look.js",
     "/pair/request",
     "/pair/claim",
@@ -70,7 +73,7 @@ fn now() -> u64 {
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
 
-/// cooee's own error: one plain sentence, marked so the page shows it (`chat.js` words any other failure itself).
+/// cooee's own error: one plain sentence, marked so the page shows it (`chat.ts` words any other failure itself).
 fn plain(status: u16, text: &str) -> Result<Response> {
     Ok(Response::builder()
         .status(status)
@@ -95,7 +98,8 @@ struct Gate {
     /// localhost, the bind address and `allowed_hosts`; matched exactly, so a `*` never widens them.
     names: Vec<String>,
     devices: Devices,
-    plugins: Vec<Plugin>,
+    /// Its plugins are the ones a backend's token may name.
+    hub: Arc<Hub>,
 }
 
 impl Gate {
@@ -133,11 +137,11 @@ impl Layer for Gate {
             if path.starts_with("/plugin/") {
                 let token = header(cx, "authorization").and_then(|a| a.strip_prefix("Bearer "));
                 let token = token.map(|t| cooee_core::sha256(t.as_bytes()));
-                let found = self.plugins.iter().find(|p| {
+                let found = self.hub.plugins().into_iter().find(|p| {
                     token.as_deref() == Some(cooee_core::sha256(p.token.as_bytes()).as_str())
                 });
                 return match found {
-                    Some(p) => next.run(&cx.with(Caller(p.clone())), body).await,
+                    Some(p) => next.run(&cx.with(Caller(p)), body).await,
                     None => plain(401, "a plugin's token is needed"),
                 };
             }
@@ -145,7 +149,15 @@ impl Layer for Gate {
                 c.split(';')
                     .find_map(|c| c.trim().strip_prefix(COOKIE)?.strip_prefix('='))
             });
-            match token.and_then(|t| self.devices.find(t, now())) {
+            // A store that can't be read is a 503: never taken for "unpaired" (herdsman#501).
+            let found = match token.map(|t| self.devices.find(t, now())).transpose() {
+                Ok(found) => found.flatten(),
+                Err(e) => {
+                    eprintln!("cooee: devices: {e}");
+                    return plain(503, "cooee can't read its paired devices: try again soon.");
+                }
+            };
+            match found {
                 Some(d) => next.run(&cx.with(Paired(d)), body).await,
                 None if method(cx) == "GET"
                     && (path == "/"
@@ -199,6 +211,11 @@ impl<T: Serialize> IntoResponse for Answer<T> {
             Ok(value) => return Json(value).into_response(cx),
             Err(e @ HubError::NoThread(_)) => (404, e.to_string()),
             Err(e @ HubError::Refused(_)) => (400, e.to_string()),
+            // An answer or message to a session that is gone says so (herdsman#325).
+            Err(HubError::Shed(e)) if e.no_such_terminal() => (
+                410,
+                "Not delivered: this thread's agent is gone.".to_owned(),
+            ),
             // shed's own errors go to the log; the page gets a sentence.
             Err(HubError::Shed(
                 e @ (ShedError::Rpc(_) | ShedError::Bad(_) | ShedError::Cli { .. }),
@@ -231,18 +248,28 @@ async fn on_logins<T: Send + 'static>(
         .map_err(|e| HubError::Refused(e.to_string()))?
 }
 
-/// The plugin tabs: each one's name and label.
-fn tabs(cx: &Cx) -> Vec<(String, String)> {
+/// The plugins whose tab shows a dot (`POST /plugin/dot`), by name; kept in memory only.
+#[derive(Default)]
+struct Dots(std::sync::Mutex<std::collections::BTreeSet<String>>);
+
+/// The plugin tabs: each one's name, label and dot.
+fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
     let hub = app_context::<Arc<Hub>>(cx);
-    let tabs = hub.plugins().iter();
-    tabs.map(|p| (p.name.clone(), p.label.clone())).collect()
+    let dots = app_context::<Arc<Dots>>(cx).0.lock().map(|d| d.clone());
+    let dots = dots.unwrap_or_default();
+    let tabs = hub.plugins().into_iter();
+    tabs.map(|p| {
+        let dot = dots.contains(&p.name);
+        (p.name, p.label, dot)
+    })
+    .collect()
 }
 
 #[page("/")]
 async fn home(cx: &Cx) -> Result<impl View> {
     let providers = on_logins(cx, |l| Ok(l.statuses()));
     let rest = blocking(cx, |hub| {
-        let agents = hub.agents().map_err(|e| e.to_string());
+        let agents = hub.agents();
         Ok((hub.list(), agents, hub.folders()))
     });
     let (providers, (rows, agents, folders)) =
@@ -392,6 +419,14 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
         }
     });
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
+}
+
+/// `GET /threads`: the thread list's cards, as the page draws them (its refresh, docs/api.md).
+#[route(GET "/threads")]
+async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_web::Card>>> {
+    Ok(Answer(
+        blocking(cx, |hub| Ok(cooee_web::cards(hub.list()))).await,
+    ))
 }
 
 /// `POST /threads`: a new thread.
@@ -660,7 +695,7 @@ path_param!(rest);
 fn named(cx: &Cx) -> Result<Plugin> {
     let name = path_param::<Name>(cx);
     let hub = app_context::<Arc<Hub>>(cx);
-    let found = hub.plugins().iter().find(|p| p.name == name).cloned();
+    let found = hub.plugins().into_iter().find(|p| p.name == name);
     Ok(found.ok_or_else(not_found)?)
 }
 
@@ -749,12 +784,178 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
         .body(Body::from(bytes))?)
 }
 
-/// `POST /plugin/push`: a line from a plugin; a tap opens its tab (at `#<path>`, when given).
+fn manager(cx: &Cx) -> Arc<Manager> {
+    Arc::clone(app_context::<Arc<Manager>>(cx))
+}
+
+fn refused(e: impl std::fmt::Display) -> HubError {
+    HubError::Refused(e.to_string())
+}
+
+/// `GET /plugins`: Settings › Plugins: the installed plugins with their state, the index, the jobs in progress.
+#[route(GET "/plugins")]
+async fn plugin_list(cx: &Cx) -> Result<Answer<serde_json::Value>> {
+    let m = manager(cx);
+    let list = tokio::task::spawn_blocking(move || {
+        let rows = m.list().map_err(refused)?;
+        let index = m.index();
+        Ok(
+            serde_json::json!({ "installed": rows, "index": index, "jobs": m.jobs(), "issues": ISSUES }),
+        )
+    });
+    Ok(Answer(
+        list.await.map_err(|e| HubError::Refused(e.to_string()))?,
+    ))
+}
+
+/// `?name=`: whose log.
+#[derive(Deserialize)]
+struct LogQuery {
+    name: String,
+}
+
+/// `GET /plugins/log?name=`: the end of a plugin's log (its builds' and backend's output).
+#[route(GET "/plugins/log")]
+async fn plugin_log(cx: &Cx) -> Result<Response> {
+    let q: LogQuery =
+        parse_query_params(cx).map_err(|e| topcoat::router::error::bad_request(e.to_string()))?;
+    let installed = manager(cx).installed()?;
+    if !installed.iter().any(|l| l.name == q.name) {
+        return plain(404, &format!("{} isn't installed.", q.name));
+    }
+    let text = std::fs::read(manager(cx).log(&q.name)).unwrap_or_default();
+    let tail = String::from_utf8_lossy(&text[text.len().saturating_sub(16 << 10)..]).into_owned();
+    plain(
+        200,
+        if tail.is_empty() {
+            "(no log yet)"
+        } else {
+            &tail
+        },
+    )
+}
+
+/// `POST /plugins/<action>`: Settings › Plugins' buttons.
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct Act {
+    name: String,
+    source: String,
+    rev: Option<String>,
+    /// The commit the owner confirmed (add, update).
+    commit: String,
+    purge: bool,
+    on: bool,
+    text: String,
+}
+
+/// `[improve]`: a thread with the first agent (its default account) in the plugin's checkout, on its
+/// `cooee-improve` branch, with the owner's `text`.
+fn improve(
+    m: &Manager,
+    hub: &Hub,
+    logins: &Logins,
+    name: &str,
+    text: &str,
+) -> Result<String, HubError> {
+    let (repo, manifest) = m.improve(name).map_err(refused)?;
+    let agents = hub.agents().map_err(refused)?;
+    let agent = agents.first().ok_or_else(|| {
+        HubError::Refused("No agents in shed: run cooee doctor on the Mac.".to_owned())
+    })?;
+    let (account, env) = logins.home(&agent.id, None)?;
+    let env = env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path()));
+    let ask = if text.trim().is_empty() {
+        "Ask me what to change."
+    } else {
+        text.trim()
+    };
+    let prompt = format!(
+        "You're improving the cooee plugin {name}: this folder is its checkout, on the branch cooee-improve. \
+         cooee-plugin.toml says how it builds (`{}`) and runs; docs/plugins.md in cooee's repo has the plugin API. \
+         Make the change here and build it to check it; don't push. When I approve in Settings › Plugins, cooee \
+         commits the branch, builds it and swaps it in.\n\n{ask}",
+        manifest.build
+    );
+    let rid = format!("improve-{name}-{}", now());
+    let thread = hub.start(&agent.id, &repo, &prompt, &rid, (&account, env))?;
+    m.improving(name, Some(thread.clone())).map_err(refused)?;
+    Ok(thread)
+}
+
+#[route(POST "/plugins/{id}")]
+async fn plugin_act(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<serde_json::Value>> {
+    let (act, m, hub, logins) = (thread_id(cx), manager(cx), hub(cx), logins(cx));
+    let done = tokio::task::spawn_blocking(move || {
+        let said = |what: &str| Ok(serde_json::json!(what));
+        // A confirm holds for the exact commit it showed.
+        let confirmed = |p: &Plan| {
+            let again = "It changed since you confirmed: confirm again.";
+            (p.commit == a.commit)
+                .then_some(())
+                .ok_or_else(|| HubError::Refused(again.to_owned()))
+        };
+        let done = match act.as_str() {
+            "plan" if a.name.is_empty() => Ok(serde_json::json!(
+                m.plan(&a.source, a.rev.as_deref()).map_err(refused)?
+            )),
+            "plan" => Ok(serde_json::json!(m.plan_update(&a.name).map_err(refused)?)),
+            "add" => {
+                let p = m.plan(&a.source, a.rev.as_deref()).map_err(refused)?;
+                confirmed(&p)?;
+                let name = p.manifest.name.clone();
+                m.job(&name, "installing", move |m| m.add(&p))
+                    .map_err(refused)?;
+                said("installing")
+            }
+            "update" => {
+                let p = m.plan_update(&a.name).map_err(refused)?;
+                confirmed(&p)?;
+                m.job(&a.name, "updating", move |m| m.update(&p))
+                    .map_err(refused)?;
+                said("updating")
+            }
+            "approve" => {
+                let name = a.name.clone();
+                let build = move |m: &Manager| m.approve(&name);
+                m.job(&a.name, "building the improvement", build)
+                    .map_err(refused)?;
+                said("building the improvement")
+            }
+            "remove" => m
+                .remove(&a.name, a.purge)
+                .map_err(refused)
+                .and_then(|()| said("removed")),
+            "enable" => m
+                .enable(&a.name, a.on)
+                .map_err(refused)
+                .and_then(|()| said(if a.on { "on" } else { "off" })),
+            "rollback" => m
+                .rollback(&a.name)
+                .map_err(refused)
+                .and_then(|()| said("rolled back")),
+            "improve" => improve(&m, &hub, &logins, &a.name, &a.text)
+                .map(|t| serde_json::json!({ "thread": t })),
+            _ => Err(HubError::Refused(format!("no plugin action {act}"))),
+        };
+        // The tabs follow at once (the supervisor would within half a second).
+        hub.set_plugins(m.tabs());
+        done
+    });
+    Ok(Answer(
+        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
+    ))
+}
+
+/// `POST /plugin/push`: a line from a plugin; a tap opens its tab (at `#<path>`, when given). A newer push of the same
+/// `tag` (default `plugin-<name>`) replaces the older one.
 #[derive(Deserialize)]
 struct PluginPush {
     text: String,
     #[serde(default)]
     path: String,
+    #[serde(default)]
+    tag: String,
 }
 
 #[route(POST "/plugin/push")]
@@ -771,12 +972,35 @@ async fn plugin_push(cx: &Cx, Json(b): Json<PluginPush>) -> Result<Response> {
     let note = Note {
         title: p.label.clone(),
         body: b.text.chars().take(120).collect(),
-        tag: format!("plugin-{}", p.name),
+        tag: if b.tag.is_empty() {
+            format!("plugin-{}", p.name)
+        } else {
+            b.tag
+        },
         url: format!("/p/{}{hash}", p.name),
         item: 0,
     };
     hub(cx).push().send(&note);
     Json(note).into_response(cx)
+}
+
+/// `POST /plugin/dot` `{"on": bool}`: shows or clears the dot on the plugin's tab.
+#[derive(Deserialize)]
+struct Dot {
+    on: bool,
+}
+
+#[route(POST "/plugin/dot")]
+async fn plugin_dot(cx: &Cx, Json(d): Json<Dot>) -> Result<Response> {
+    let name = request_context::<Caller>(cx).0.name.clone();
+    let dots = app_context::<Arc<Dots>>(cx);
+    let mut dots = dots.0.lock().map_err(|e| io::Error::other(e.to_string()))?;
+    if d.on {
+        dots.insert(name);
+    } else {
+        dots.remove(&name);
+    }
+    Json(d.on).into_response(cx)
 }
 
 /// `POST /plugin/card`: a plugin's choice card in a thread.
@@ -912,12 +1136,12 @@ async fn report(cx: &Cx, Json(r): Json<Report>) -> Result<Response> {
     plain(200, "report sent")
 }
 
-/// The web UI (with `looks`, its themes and schemes), the threads' API over `hub`, the providers' `logins` and pairing, behind the gate: requests must name `bind`, localhost
+/// The web UI (with `looks`, its themes and schemes), the threads' API over `hub`, the providers' `logins`, the plugin `manager` and pairing, behind the gate: requests must name `bind`, localhost
 /// or one of `allowed_hosts`; devices are paired in `data`.
 #[must_use]
 pub fn router(
     hub: Arc<Hub>,
-    logins: Arc<Logins>,
+    (logins, manager): (Arc<Logins>, Arc<Manager>),
     data: &std::path::Path,
     bind: IpAddr,
     allowed_hosts: &[String],
@@ -936,7 +1160,7 @@ pub fn router(
     let gate = Gate {
         names,
         devices: Devices::new(data),
-        plugins: hub.plugins().to_vec(),
+        hub: Arc::clone(&hub),
     };
     cooee_web::assets(Router::builder(), looks)
         .layer(gate)
@@ -955,6 +1179,7 @@ pub fn router(
         .route(report)
         .page(home)
         .page(chat)
+        .route(thread_list)
         .route(messages)
         .route(events)
         .route(create)
@@ -977,8 +1202,14 @@ pub fn router(
         .route(proxy)
         .route(plugin_push)
         .route(plugin_card)
+        .route(plugin_list)
+        .route(plugin_log)
+        .route(plugin_act)
+        .route(plugin_dot)
         .app_context(hub)
+        .app_context(Arc::new(Dots::default()))
         .app_context(logins)
+        .app_context(manager)
         .app_context(Data(data.to_owned()))
         .build()
 }
@@ -998,7 +1229,8 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             config.bind
         )));
     }
-    plugin::check(&config.plugins)?;
+    let manager = Manager::new(config)?;
+    plugin::check(&manager.tabs())?;
     let data = config
         .data_dir()
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
@@ -1014,22 +1246,26 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         &data,
         (config.roots.clone(), config.path.clone()),
         theme,
-        config.plugins.clone(),
+        manager.tabs(),
     )?;
     let router = router(
-        hub,
-        logins,
+        Arc::clone(&hub),
+        (logins, Arc::clone(&manager)),
         &data,
         config.bind,
         &config.allowed_hosts,
         looks,
     );
-    tokio::runtime::Builder::new_multi_thread()
+    let served = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?
         .block_on(async {
             let listener = tokio::net::TcpListener::bind((config.bind, config.port)).await?;
-            ready(listener.local_addr()?);
+            let addr = listener.local_addr()?;
+            manager.supervise(hub, format!("http://127.0.0.1:{}", addr.port()));
+            ready(addr);
             topcoat::serve(listener, router).await
-        })
+        });
+    manager.stop_all();
+    served
 }

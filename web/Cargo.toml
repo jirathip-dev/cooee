@@ -14,5 +14,8 @@ serde.workspace = true
 serde_json.workspace = true
 topcoat.workspace = true
 
+[build-dependencies]
+oxc.workspace = true
+
 [lints]
 workspace = true

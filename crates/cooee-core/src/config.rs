@@ -41,6 +41,9 @@ pub struct Config {
     pub path: Option<PathBuf>,
     /// The plugins: each one a tab beside Chat (`[[plugins]]`).
     pub plugins: Vec<Plugin>,
+    /// The plugin index Settings › Plugins and `cooee plugin add <name>` list; default the built-in one
+    /// (`plugins/index.toml` in cooee's repo).
+    pub plugin_index: Option<PathBuf>,
     /// The instance's name (`cooee serve --instance`, default `cooee`): its own config, data folder and pairing.
     #[serde(skip)]
     pub instance: String,
@@ -76,6 +79,7 @@ impl Default for Config {
             data: None,
             providers: Provider::defaults(),
             plugins: Vec::new(),
+            plugin_index: None,
             theme: None,
             dir: None,
             path: None,

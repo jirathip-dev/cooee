@@ -1,4 +1,4 @@
-/* cooee on the shared tokens (#7, docs/design/look): look.js sets a scheme's colours on <html> before the first paint
+/* cooee on the shared tokens (#7, docs/design/look): the server sets a device's scheme on :root from its first byte (shown.rs)
    (these defaults are farm, dark, or farm light when the system is light) and data-style, data-sprites. Both styles
    read the same tokens: Modern (the default, the Topcoat spike's look) and Terminal (herdsman's look) differ only in
    shape, radius, type and button form, set in the html[data-style=terminal] block below. Class names follow the v1
@@ -29,7 +29,7 @@ h1{font-size:inherit;margin:0}
 .tt{font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.tr.rd .tt{font-weight:400;color:var(--mute)}
 .tp{grid-column:2/4;font-size:var(--fs-meta);color:var(--mute);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.tp b{font-weight:400;margin-right:1ch}
 details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute);cursor:pointer}
-.nf{display:flex;flex-direction:column;gap:6px;padding-bottom:12px}.nf[hidden]{display:none}
+.nf{display:flex;flex-direction:column;gap:6px;padding-bottom:12px}.nf[hidden]{display:none}.nf.shut:not(:target){display:none}
 p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;color:var(--mute)}.hn code{font-family:var(--mono);color:var(--fg);overflow-wrap:anywhere}
 .nf fieldset{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .nf fieldset label{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 12px;border:1px solid var(--edge);border-radius:var(--r-pill)}
@@ -68,11 +68,11 @@ p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:
 .pill{position:absolute;bottom:100%;left:50%;transform:translate(-50%,-8px);display:flex;align-items:center;gap:1ch;padding:4px 4px 4px 12px;background:var(--card);border:1px solid var(--edge);border-radius:var(--r-pill);color:var(--mute);white-space:nowrap}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media (max-width:599px){.bar{flex-wrap:wrap}.tabs{order:9;flex-basis:100%}}
-.tabs{display:flex;gap:4px}.tabs a{display:inline-grid;place-items:center;min-height:44px;padding:0 10px;border-radius:999px;color:var(--fg);text-decoration:none}.tabs a.on{background:var(--bg);font-weight:600}
+.tabs{display:flex;gap:4px}.tabs a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 10px;border-radius:999px;color:var(--fg);text-decoration:none}.tabs a.on{background:var(--bg);font-weight:600}.tabs .dot{color:var(--r);font-style:normal;font-size:.7em;margin-left:4px}
 .pt{display:flex;flex-direction:column;height:100dvh}.pf{flex:1;width:100%;border:0;background:var(--bg)}
 [hidden]{display:none!important}
 
-/* A state (look.js): the sprite, the glyph or the dot, then the theme word in the state's colour and `· plain` muted.
+/* A state (shown.rs, look.ts): the sprite, the glyph or the dot, then the theme word in the state's colour and `· plain` muted.
    A row's line 2 and the thread bar are short: the plain word shows on the pill, the live line and a turn's end. */
 [data-st]{color:var(--mute);white-space:nowrap}
 [data-st=working]{color:var(--a)}[data-st=needs],[data-st=fail]{color:var(--r)}
@@ -89,18 +89,20 @@ p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:
 .emp p{margin:0}.tc .emp{align-self:center;margin:auto}
 .spin{font-style:normal;color:var(--mute);font-size:40px}
 
-/* The look sheet and Settings: a sheet from the bottom on a phone (the look sheet at a low detent over a light scrim,
-   so the page above shows each pick; Settings at the top), from 1000 px a 420 px panel under [◐] / a 720 px box. */
-#sheet .bd{position:fixed;inset:0;z-index:2;background:var(--scrim)}
-#sheet.lks .bd{opacity:.35}
-#sheet .sh{position:fixed;z-index:3;left:0;right:0;bottom:0;top:var(--det,0);display:flex;flex-direction:column;background:var(--bg);border-top:1px solid var(--edge);border-radius:20px 20px 0 0}
-#sheet.lks .sh{--det:34%}#sheet.set .sh{--det:24px}
+/* The look sheet and Settings (popovers, sheet.rs): a sheet from the bottom on a phone (the look sheet at a low detent
+   over a light scrim, so the page above shows each pick; Settings at the top), from 1000 px a 420 px panel under [◐] /
+   a 720 px box. The popover's own box (inset, size, border, padding) is undone first. */
+#sheet .sh{position:fixed;inset:auto;left:0;right:0;bottom:0;top:var(--det,0);width:auto;height:auto;max-width:none;max-height:none;margin:0;padding:0;overflow:visible;color:inherit;flex-direction:column;background:var(--bg);border:0;border-top:1px solid var(--edge);border-radius:20px 20px 0 0}
+#sheet .sh:popover-open{display:flex}
+#sheet .sh::backdrop{background:var(--scrim)}
+#sheet .lks::backdrop{opacity:.35}
+#sheet .lks{--det:34%}#sheet .set{--det:24px}
 .sh .hd{display:flex;align-items:center;min-height:52px;padding:0 4px 0 16px}.sh .hd b{flex:1;font-size:var(--fs-key)}
 .sh .top{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:0 16px calc(16px + env(safe-area-inset-bottom))}
 @media (min-width:1000px){
-  #sheet.lks .bd{display:none}
-  #sheet.lks .sh{left:auto;right:12px;top:56px;bottom:auto;width:420px;max-height:calc(100% - 72px);border:1px solid var(--edge);border-radius:var(--r-card);box-shadow:0 8px 48px #0006}
-  #sheet.set .sh{left:calc(50% - 360px);right:auto;width:720px;top:8%;bottom:auto;max-height:84%;border:1px solid var(--edge);border-radius:var(--r-card)}
+  #sheet .lks::backdrop{background:none}
+  #sheet .lks{left:auto;right:12px;top:56px;bottom:auto;width:420px;max-height:calc(100% - 72px);border:1px solid var(--edge);border-radius:var(--r-card);box-shadow:0 8px 48px #0006}
+  #sheet .set{left:calc(50% - 360px);right:auto;width:720px;top:8%;bottom:auto;max-height:84%;border:1px solid var(--edge);border-radius:var(--r-card)}
 }
 .ch{margin:16px 0 4px;font-size:var(--fs-meta);font-weight:600;color:var(--mute)}
 .shw{font-weight:400}
@@ -171,7 +173,7 @@ html[data-style=terminal] .swa{border-radius:4px}
 #ld span:not(:empty){display:inline-block;padding:0 6px;background:var(--card);border-radius:0 0 6px 6px}
 #ld.run{border-top-color:var(--l);animation:ldp 1.2s ease-in-out infinite}#ld:not(.run) .lw{display:none}
 @keyframes ldp{50%{border-top-color:var(--line)}}
-#toast{position:fixed;z-index:4;top:56px;left:12px;right:12px;max-width:60ch;margin:0 auto;padding:6px 12px;background:var(--bg);border:1px solid currentColor;border-radius:var(--r-row);font-size:var(--fs-meta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+#toast{position:fixed;z-index:4;inset:auto;top:56px;left:12px;right:12px;width:auto;height:auto;max-width:60ch;margin:0 auto;padding:6px 12px;background:var(--bg);border:1px solid currentColor;border-radius:var(--r-row);font-size:var(--fs-meta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 #toast.r{white-space:normal;overflow-wrap:anywhere}
 .rfs{animation:spin 1s linear infinite}
 .gl[data-dot]{background-image:radial-gradient(circle at calc(100% - 12px) 12px,var(--r) 4px,transparent 4.5px)!important}
@@ -200,3 +202,6 @@ html[data-style=terminal] .swa{border-radius:4px}
 .nf .fl{flex-direction:column;flex-wrap:nowrap;gap:0;max-height:40vh;overflow-y:auto}
 .nf .fl label{border:0;border-radius:0;border-top:1px solid var(--line);overflow-wrap:anywhere}.fl [data-d="1"]{padding-left:28px}.fl [data-d="2"]{padding-left:44px}
 #fq{flex:1;min-width:0}.lrw .sk{min-width:0;overflow-wrap:anywhere}
+.pga{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.plg{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.4 var(--mono);max-height:40vh;overflow:auto;margin:8px 0;padding:8px;background:var(--bg);border-radius:var(--r-row)}
+#s-plugins-box form input{flex:1;min-width:0;font:16px var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:var(--hit)}
