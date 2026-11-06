@@ -42,7 +42,7 @@ use topcoat::{
     view::View,
 };
 
-pub use hub::{CardSpec, Hub, HubError, Listing, Out, Resume, Slice};
+pub use hub::{CardSpec, Hub, HubError, Launch, Listing, Out, Resume, Slice};
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
@@ -354,7 +354,8 @@ async fn chat(cx: &Cx) -> Result<impl View> {
     let Ok((thread, turn)) = blocking(cx, move |hub| hub.thread(&id)).await else {
         return Err(not_found().into());
     };
-    Ok(cooee_web::chat_page(cx, thread, turn))
+    let choices = logins(cx).choices(&thread.agent);
+    Ok(cooee_web::chat_page(cx, thread, turn, choices))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -439,6 +440,11 @@ struct New {
     /// The agent's provider account (none: its default).
     #[serde(default)]
     account: Option<String>,
+    /// The model and effort (#553 row 34; empty: the agent's default).
+    #[serde(default)]
+    model: String,
+    #[serde(default)]
+    effort: String,
 }
 
 /// A new thread's id.
@@ -452,14 +458,15 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     let logins = logins(cx);
     let id = blocking(cx, move |hub| {
         let (account, env) = logins.home(&new.agent, new.account.as_deref())?;
-        let env = env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path()));
-        hub.create(
-            &new.agent,
-            &new.folder,
-            &new.text,
-            &new.random_id,
-            (&account, env),
-        )
+        let words = logins.picks(&new.agent, &new.model, &new.effort)?;
+        let launch = Launch {
+            account: &account,
+            env: env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path())),
+            model: &new.model,
+            effort: &new.effort,
+            words,
+        };
+        hub.create(&new.agent, &new.folder, &new.text, &new.random_id, &launch)
     })
     .await;
     Ok(Answer(id.map(|id| Created { id })))
@@ -541,6 +548,28 @@ async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Answer<Option<cooee_
     Ok(Answer(
         blocking(cx, move |hub| {
             hub.approve(&id, a.item, &a.option, a.value.as_deref(), &by)
+        })
+        .await,
+    ))
+}
+
+/// `POST /threads/{id}/model` `{model, effort}`: the composer's chip (#553 row 34; empty: the default).
+#[derive(Deserialize)]
+struct ModelPick {
+    #[serde(default)]
+    model: String,
+    #[serde(default)]
+    effort: String,
+}
+
+#[route(POST "/threads/{id}/model")]
+async fn model(cx: &Cx, Json(p): Json<ModelPick>) -> Result<Answer<cooee_core::Item>> {
+    let (id, logins) = (thread_id(cx), logins(cx));
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let agent = hub.thread(&id)?.0.agent;
+            logins.picks(&agent, &p.model, &p.effort)?;
+            hub.pick(&id, &p.model, &p.effort)
         })
         .await,
     ))
@@ -884,7 +913,12 @@ fn improve(
         manifest.build
     );
     let rid = format!("improve-{name}-{}", now());
-    let thread = hub.start(&agent.id, &repo, &prompt, &rid, (&account, env))?;
+    let launch = Launch {
+        account: &account,
+        env,
+        ..Launch::default()
+    };
+    let thread = hub.start(&agent.id, &repo, &prompt, &rid, &launch)?;
     m.improving(name, Some(thread.clone())).map_err(refused)?;
     Ok(thread)
 }
@@ -1216,6 +1250,7 @@ pub fn router(
         .route(send)
         .route(approve)
         .route(cancel)
+        .route(model)
         .route(close)
         .route(read)
         .route(login_start)

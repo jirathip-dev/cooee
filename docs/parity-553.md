@@ -38,7 +38,7 @@ Row numbers are #553's.
 | 31 | Conductor-answered asks keep [change] 30 min | built (#44) | `/plugin/card` `answered`/`by`: [change] until `until` (core `Chat::tap`) | — |
 | 32 | Config-proposal card | built (#44) | `form: config`: the diff, [apply] [discard], the backend's line or its 409 (stale); `#cw` bar and the list's `waiting` | — |
 | 33 | Secret request card, masked input | built (#44) | `form: secret`: a password field; the value goes to the plugin only | — |
-| 34 | Harness pick at start; model/effort chip | partial | agent picker at start (`web/src/lib.rs` `agent`) | model/effort chip and its op |
+| 34 | Harness pick at start; model/effort chip | built (#44) | agent picker plus model/effort at start; composer chips, `POST /threads/{id}/model` (q662: from the next start until shed can switch a live session) | live switch: a shed input for ACP `session/set_model` |
 | 35 | Handoff chips, flow-back lines, pick-a-thread row | built (#44) | `/plugin/handoff`, `/plugin/line` (`link` items with chips); `form: thread` | — |
 
 Totals at `51f92e8`: 4 done (9, 11, 21, 29), 18 partial, 13 missing. The rows 1–14 PR builds 1–8, 10 and 12–14

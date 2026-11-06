@@ -98,6 +98,22 @@ pub struct Slice {
     pub waiting: Option<Item>,
 }
 
+/// How a thread's agent starts: its account (as the header names it) and that account's folder (`env`), and the
+/// model and effort picked (#553 row 34) with the `words` that start it on them.
+#[derive(Debug, Default)]
+pub struct Launch<'a> {
+    /// The account's label.
+    pub account: &'a str,
+    /// The provider's variable and the account's folder.
+    pub env: Option<(&'a str, &'a Path)>,
+    /// The model (empty: the agent's default).
+    pub model: &'a str,
+    /// The effort (empty: the agent's default).
+    pub effort: &'a str,
+    /// The words for the model and effort (`Provider::picks`).
+    pub words: Vec<String>,
+}
+
 /// A plugin's card (`POST /plugin/card`, docs/plugins.md).
 #[derive(Debug, Deserialize)]
 pub struct CardSpec {
@@ -570,12 +586,12 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        (account, env): (&str, Option<(&str, &Path)>),
+        launch: &Launch<'_>,
     ) -> Result<String, HubError> {
         let Some(folder) = self.allowed(folder) else {
             return Err(outside(folder));
         };
-        self.start(agent, &folder, text, random_id, (account, env))
+        self.start(agent, &folder, text, random_id, launch)
     }
 
     /// [`Hub::create`] in a folder of cooee's own (a plugin's checkout), not checked against the roots.
@@ -588,7 +604,7 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        (account, env): (&str, Option<(&str, &Path)>),
+        launch: &Launch<'_>,
     ) -> Result<String, HubError> {
         self.shed.hello()?;
         if text.trim().is_empty() {
@@ -624,8 +640,10 @@ impl Hub {
                         title,
                         agent: agent.to_owned(),
                         folder: Some(folder.to_owned()),
-                        account: account.to_owned(),
+                        account: launch.account.to_owned(),
                         terminal: format!("cooee-{id}"),
+                        model: launch.model.to_owned(),
+                        effort: launch.effort.to_owned(),
                         random_id: random_id.to_owned(),
                         ..Thread::default()
                     };
@@ -645,8 +663,13 @@ impl Hub {
                 (format!("{LABEL}.thread"), id.clone()),
             ]);
             // A start that failed but came up anyway (a slow CLI) is kept, never started twice (herdsman#477).
-            if let Err(e) = self.shed.run_acp(&terminal, agent, folder, &labels, env)
-                && self.shed.get(&terminal).is_err()
+            if let Err(e) = self.shed.run_acp(
+                &terminal,
+                agent,
+                folder,
+                &labels,
+                (launch.env, &launch.words),
+            ) && self.shed.get(&terminal).is_err()
             {
                 lock(&self.threads).remove(&id);
                 self.store.remove(&id)?;
@@ -854,6 +877,30 @@ impl Hub {
         Ok(item)
     }
 
+    /// The owner's model and effort for thread `id` (#553 row 34): kept on the thread and said in it. shed can't
+    /// change a running agent's model yet, so they apply from the agent's next start.
+    ///
+    /// # Errors
+    /// [`HubError::Store`] when the thread can't be saved.
+    pub fn pick(&self, id: &str, model: &str, effort: &str) -> Result<Item, HubError> {
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        model.clone_into(&mut live.meta.model);
+        effort.clone_into(&mut live.meta.effort);
+        self.store.save(&live.meta)?;
+        let say = |what: &str, pick: &str| {
+            format!("{what} {}", if pick.is_empty() { "default" } else { pick })
+        };
+        let text = format!(
+            "{} · {} from the next start",
+            say("model", model),
+            say("effort", effort)
+        );
+        let item = live.chat.push(now(), 0, Body::Note { text });
+        live.publish(self, vec![Change::Item(item.clone())])?;
+        Ok(item)
+    }
+
     /// Cancels the turn in progress.
     ///
     /// # Errors
@@ -907,13 +954,14 @@ impl Hub {
                 let live = lock(live);
                 let last = live.chat.items.last();
                 let text = last.map_or("", |i| match &i.body {
-                    Body::You { text, .. } | Body::Agent { text, .. } | Body::Ended { text } => {
-                        text
-                    }
+                    Body::Link { text, title, .. } if text.is_empty() => title,
+                    Body::You { text, .. }
+                    | Body::Agent { text, .. }
+                    | Body::Note { text }
+                    | Body::Link { text, .. }
+                    | Body::Ended { text } => text,
                     Body::Tool { title, .. } => title,
                     Body::Approval { tool, .. } => tool,
-                    Body::Link { text, title, .. } if text.is_empty() => title,
-                    Body::Link { text, .. } => text,
                     Body::Plan { .. } => "plan",
                 });
                 let waiting = live.chat.items.iter().find_map(|i| match &i.body {

@@ -64,6 +64,7 @@ p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:
 .oth{display:flex;gap:8px;flex:1 1 100%}.oth input{flex:1;min-width:0;font:16px var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:44px}
 .diff{margin:8px 0 0;padding:8px;overflow-x:auto;background:var(--bg);border-radius:var(--r-row);font:12px/1.5 var(--mono)}
 .chip{display:inline-block;padding:4px 8px;border:1px solid var(--edge);border-radius:var(--r-pill);color:var(--link);text-decoration:none}
+.mc{display:flex;gap:8px;padding:4px 12px 0;background:var(--card);border-top:1px solid var(--edge)}.mc select{font:var(--fs-meta) var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-pill);padding:4px 8px;min-height:32px}
 .cw{width:100%;border-radius:0;text-align:left;font-weight:400;color:var(--fg);background:color-mix(in srgb,var(--a) 18%,var(--card))}
 .blk.plan ol{margin:0;padding-left:1.4em;color:var(--mute)}.blk.plan .completed{text-decoration:line-through}.blk.plan .in_progress{color:var(--fg)}
 .qs{align-self:center;padding:4px 12px;border-radius:var(--r-pill);background:var(--card);color:var(--mute);font-size:var(--fs-meta)}

@@ -20,6 +20,7 @@ type Item = { id: number; at: number; seq?: number } & (
   | ({ kind: "approval"; tool: string; options: Option[]; tapped?: string; chosen?: string; plugin?: string } & Form)
   | { kind: "plan"; entries: { content: string; status: string }[] }
   | { kind: "link"; text: string; thread: string; title: string; out?: boolean }
+  | { kind: "note"; text: string }
   | { kind: "ended"; text: string }
 );
 // Who answered and when, and a plugin card's form (#553 rows 30-33).
@@ -230,6 +231,8 @@ if (form) {
     const body = {
       agent,
       account: f.get(`account:${agent}`),
+      model: f.get(`model:${agent}`) ?? "",
+      effort: f.get(`effort:${agent}`) ?? "",
       folder: f.get("folder"),
       text: f.get("text"),
       random_id: form.dataset.rid,
@@ -1498,6 +1501,12 @@ function chat(main: HTMLElement): void {
   box.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(e);
   });
+  // The model and effort chips (#553 row 34): a pick is kept on the thread, which says from when it applies.
+  for (const s of document.querySelectorAll<HTMLSelectElement>(".mc select"))
+    s.onchange = () => {
+      const pick = (n: string): string => $<HTMLSelectElement>(`#${n}`)?.value ?? "";
+      post(`${api}/model`, { model: pick("model"), effort: pick("effort") }).catch((x) => toast(message(x), true));
+    };
   const stop = $("#pill .stop");
   if (stop) stop.onclick = cancel;
   const close = $("#close");

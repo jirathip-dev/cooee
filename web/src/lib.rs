@@ -553,6 +553,7 @@ async fn agent(
     id: String,
     first: bool,
     accounts: Option<Vec<(Account, Status)>>,
+    choices: (Vec<String>, Vec<String>),
 ) -> Result<impl View> {
     let signed = accounts.as_ref().and_then(|list| {
         let default = list.iter().find(|(a, _)| a.default);
@@ -587,6 +588,18 @@ async fn agent(
                 }
             </select>
         }
+        pick(
+            id: format!("model:{id}"),
+            name: "model",
+            list: choices.0,
+            now: String::new()
+        )
+        pick(
+            id: format!("effort:{id}"),
+            name: "effort",
+            list: choices.1,
+            now: String::new()
+        )
         if signed == Some(false) {
             <a class="so" href="#signins">(format!("sign in {id}"))</a>
         }
@@ -664,6 +677,14 @@ async fn threads(
         .rev()
         .map(|p| (p.provider.agent.clone(), p.accounts.clone()))
         .collect();
+    let picks: BTreeMap<String, (Vec<String>, Vec<String>)> = providers
+        .iter()
+        .rev()
+        .map(|p| {
+            let p = &p.provider;
+            (p.agent.clone(), (p.models.clone(), p.efforts.clone()))
+        })
+        .collect();
     let cards = cards(rows);
     Ok(view! {
         document(
@@ -699,7 +720,8 @@ async fn threads(
                                     agent(
                                         id: a.id.clone(),
                                         first: i == 0,
-                                        accounts: accounts.get(&a.id).cloned()
+                                        accounts: accounts.get(&a.id).cloned(),
+                                        choices: picks.get(&a.id).cloned().unwrap_or_default()
                                     )
                                 }
                             }
@@ -869,12 +891,39 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
 
 /// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer.
 #[must_use]
-pub fn chat_page(cx: &Cx, thread: Thread, turn: Turn) -> impl View {
-    view! { cx => chat(thread: thread, turn: turn) }
+pub fn chat_page(
+    cx: &Cx,
+    thread: Thread,
+    turn: Turn,
+    choices: (Vec<String>, Vec<String>),
+) -> impl View {
+    view! { cx => chat(thread: thread, turn: turn, choices: choices) }
+}
+
+/// A model or effort select (#553 row 34): `name`'s choices, `default` first, `now` selected.
+#[component]
+async fn pick(id: String, name: &str, list: Vec<String>, now: String) -> Result<impl View> {
+    Ok(view! {
+        if !list.is_empty() {
+            <select name=(id.clone()) id=(id) aria-label=(name)>
+                <option value="">(format!("{name}: default"))</option>
+                for m in list {
+                    <option value=(m.clone()) selected=(m == now)>
+                        (format!("{name}: {m}"))
+                    </option>
+                }
+            </select>
+        }
+    })
 }
 
 #[component]
-async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
+async fn chat(
+    cx: &Cx,
+    thread: Thread,
+    turn: Turn,
+    choices: (Vec<String>, Vec<String>),
+) -> Result<impl View> {
     let look = shown(cx);
     let [st, wait, pill] = [
         (state(&turn.state), false),
@@ -901,15 +950,11 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
                         <h1>(thread.title.clone())</h1>
                         <span class="ds">
                             <i class="dt"></i>
-                            (if thread.account.is_empty() {
-                                format!("{} · {folder} · ", thread.agent)
-                            } else {
-                                format!(
-                                    "{} · {} · {folder} · ",
-                                    thread.agent,
-                                    thread.account,
-                                )
-                            })
+                            ([&thread.agent, &thread.account, &thread.model, &folder]
+                                .into_iter()
+                                .filter(|s| !s.is_empty())
+                                .flat_map(|s| [s.as_str(), " · "])
+                                .collect::<String>())
                             <span id="st" data-st=(state(&turn.state))>(st)</span>
                         </span>
                     </div>
@@ -934,6 +979,22 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
                 <p class="tlv" id="wait" hidden=(true)>
                     <span data-st="needs" data-plain="">(wait)</span>
                 </p>
+                if !ended && (!choices.0.is_empty() || !choices.1.is_empty()) {
+                    <div class="mc">
+                        pick(
+                            id: "model".to_owned(),
+                            name: "model",
+                            list: choices.0,
+                            now: thread.model.clone()
+                        )
+                        pick(
+                            id: "effort".to_owned(),
+                            name: "effort",
+                            list: choices.1,
+                            now: thread.effort.clone()
+                        )
+                    </div>
+                }
                 <form class="tw" id="composer">
                     <div class="pill" id="pill" hidden=(true)>
                         <span id="pst" data-st="working" data-plain="">(pill)</span>

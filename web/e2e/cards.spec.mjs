@@ -1,7 +1,8 @@
 // herdsman#553 parity, rows 30–35 (#44): a plugin's (the conductor's) cards in a thread. Choice rows with the
 // recommended one first, an "other" box and a ✓ line with who and when; a conductor's answer with [change]; a config
-// card's diff, waiting bar and [apply]; a secret card's masked field; handoff chips and a pick-a-thread row. The
-// example plugin `hello` answers each tap 200. Each row's shot is ui-<viewport>/parity-<row>-….png.
+// card's diff, waiting bar and [apply]; a secret card's masked field; the model and effort chips; handoff chips and a
+// pick-a-thread row. The example plugin `hello` answers each tap 200. Each row's shot is
+// ui-<viewport>/parity-<row>-….png.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -111,6 +112,17 @@ test("row 33: a secret card's field is masked; saved, the line names only the se
   await expect(row.locator(".ans")).toHaveText(/^secret BOT_TOKEN set ✓ · /);
   await expect(page.locator("main")).not.toContainText("not-a-real-token-123");
   await shot(page, info, "parity-33-set");
+});
+
+test("row 34: the composer's model and effort chips; a pick is kept and said in the thread", async ({ page }, info) => {
+  const id = await thread(page, `Row 34 ${info.project.name}`);
+  await expect(page.getByLabel("model", { exact: true })).toHaveValue("");
+  await page.getByLabel("effort", { exact: true }).selectOption("low");
+  await expect(page.locator(".qs", { hasText: "effort low" })).toHaveText("model default · effort low from the next start");
+  await audit(page);
+  await shot(page, info, "parity-34-chip");
+  await page.goto(`/t/${id}`);
+  await expect(page.getByLabel("effort", { exact: true })).toHaveValue("low");
 });
 
 test("row 35: handoff chips open the other thread; a line flows back; a pick-a-thread row", async ({ page }, info) => {

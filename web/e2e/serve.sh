@@ -102,6 +102,10 @@ agent = "fake-acp"
 home = "FAKE_HOME"
 login = ["$tmp/login-390.sh"]
 status = ["$tmp/status-390.sh"]
+models = ["opus", "sonnet"]
+model = ["FAKE_MODEL={}"]
+efforts = ["low", "high"]
+effort = ["--effort", "{}"]
 
 [[providers]]
 name = "fake-1440"

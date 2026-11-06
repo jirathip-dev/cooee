@@ -90,6 +90,11 @@ pub enum Body {
         #[serde(default)]
         out: bool,
     },
+    /// A line from cooee itself (`model sonnet · effort low from the next start`).
+    Note {
+        /// The line.
+        text: String,
+    },
     /// The session ended (the agent exited, or the thread was closed).
     Ended {
         /// Why.
