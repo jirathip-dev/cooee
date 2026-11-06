@@ -179,7 +179,6 @@ html[data-style=terminal] .swa{border-radius:4px}
 .gl[data-dot]{background-image:radial-gradient(circle at calc(100% - 12px) 12px,var(--r) 4px,transparent 4.5px)!important}
 .six{display:flex;flex-wrap:wrap;gap:4px 12px;padding:4px 0}.six a{display:inline-flex;align-items:center;min-height:var(--hit)}
 #sheet .lrw{flex-wrap:wrap;padding:4px 0}#sheet .lrw .cn{min-height:var(--hit)}
-.code{margin:0;font:700 32px var(--mono);letter-spacing:.2em;text-align:center}
 .nf .cn{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
 /* Report mode: the tapped element outlined; the note box fixed at the bottom. */
 .rep .repo{outline:2px solid var(--r);outline-offset:-2px}
@@ -205,3 +204,53 @@ html[data-style=terminal] .swa{border-radius:4px}
 .pga{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .plg{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.4 var(--mono);max-height:40vh;overflow:auto;margin:8px 0;padding:8px;background:var(--bg);border-radius:var(--r-row)}
 #s-plugins-box form input{flex:1;min-width:0;font:16px var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:var(--hit)}
+/* Pairing (#47, docs/design/pair): the shell (the name and the connection dot), the welcome with the theme's figure,
+   three numbered steps, six code boxes, the other ways, the state cards; on a paired device the approve card, the
+   QR panel and the passkey rows. The QR tile is black on white in every scheme, so any camera reads it. */
+.cdot{width:10px;height:10px;margin-right:12px;border-radius:50%;background:var(--g)}.cdot.off{background:var(--r)}
+.pg{gap:0}.pg [hidden]{display:none!important}
+.hero{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:12px 0 16px}
+.hero h2{margin:0;font-size:var(--fs-key)}.hero p{margin:0;max-width:36ch;color:var(--mute)}
+.hero svg.big{width:132px;height:100px}.hic{width:64px;height:64px;border-radius:12px;image-rendering:pixelated}
+.steps{list-style:none;counter-reset:st;margin:0;padding:0}
+.steps li{counter-increment:st;display:grid;grid-template-columns:var(--ctl) minmax(0,1fr);gap:4px 12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.steps li:last-child{border-bottom:0}
+.steps li::before{content:counter(st);grid-row:1 / span 2;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:50%;background:var(--l);color:var(--bg);font-weight:700}
+.steps span{color:var(--mute);font-size:var(--fs-meta)}
+:is(.steps,.pc) code{font:var(--fs-meta) var(--mono);color:var(--fg)}
+.cdc{display:flex;flex-direction:column;gap:8px;margin:12px 0;padding:12px;background:var(--card);border:1px solid var(--edge);border-radius:var(--r-card)}
+.cdc .ch{margin:0}
+.cb{display:flex;justify-content:center;gap:8px}
+.cb input{flex:0 1 48px;min-width:0;width:0;height:60px;padding:0;border:1px solid var(--edge);border-radius:var(--r-row);background:var(--bg);color:var(--fg);font:700 32px/1 var(--mono);text-align:center;caret-color:var(--l)}
+.cb input:nth-child(4){margin-left:12px}
+.cb input:focus{outline:0;border:2px solid var(--l);box-shadow:0 0 0 3px color-mix(in srgb,var(--l) 25%,transparent)}
+.cb.r input{border-color:var(--r);color:var(--r)}.cb.ok input{border-color:var(--g)}.cb.dim input{color:var(--mute)}
+.cdn{margin:0;text-align:center;font-size:var(--fs-meta);color:var(--mute)}
+.cdc>.go{display:flex;justify-content:center}.cdc>.go button{min-width:50%}
+.alt .lrw:last-child{border-bottom:0}
+.hint{display:flex;gap:12px;align-items:flex-start;margin:0 0 12px;padding:12px;border:1px solid var(--edge);border-left:3px solid var(--link);border-radius:var(--r-card)}
+.hint p{margin:0}.hint p+p{margin-top:4px;font-size:var(--fs-meta);color:var(--mute)}
+.shi{flex:none;display:inline-block;width:16px;height:18px;vertical-align:-3px;color:var(--link)}.hint>.shi{width:24px;height:28px}
+.pc{display:flex;flex-direction:column;gap:8px;margin:12px 0;padding:12px;background:var(--card);border:1px solid var(--edge);border-radius:var(--r-card)}
+.pc p{margin:0}.pc[data-k=r]{border-color:var(--r)}.pc[data-k=g]{border-color:var(--g)}.pc[data-k=a]{border-color:var(--a)}
+.et{font-weight:700}.pc[data-k=r] .et{color:var(--r)}.pc[data-k=g] .et{color:var(--g)}.pc[data-k=a] .et{color:var(--a)}
+.pc .m,.apc .m{font-size:var(--fs-meta)}.ctr{text-align:center}.pc .big{margin:0 auto}.pc .big svg{width:132px;height:100px}
+.acts{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}.acts.ctr{justify-content:center}
+.bt{display:inline-flex;align-items:center;min-height:var(--ctl);padding:0 16px;border-radius:var(--r-pill);background:var(--l);color:var(--bg);font-weight:600;text-decoration:none}
+:is(.acts,.alt) .q,.acts button+button{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
+.cw,.bc{margin:0;text-align:center;font:700 32px/1.2 var(--mono);letter-spacing:.02em}.bc{letter-spacing:.12em}
+.qrt{display:block;width:216px;margin:0 auto;padding:8px;background:#fff;border-radius:12px}.qrt img{display:block;width:100%}
+.apc{display:block;margin:0 0 12px;padding:12px;border:1px solid var(--a);border-radius:var(--r-card);background:var(--card)}
+.apc p{margin:0}.apc .aph{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.apc .aph b{color:var(--a)}
+.apc .who{margin:4px 0 8px}.apc .cwl{display:flex;align-items:baseline;gap:1ch;margin-bottom:12px}.apc .cwl b{font-size:17px}
+.pkr small{color:var(--mute)}
+@media (min-width:1000px){
+  .pg{max-width:1080px;padding-top:48px}
+  .wel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 64px;align-items:start}
+  .wel>.hero{align-items:flex-start;text-align:left;padding-top:0}
+  .wel>.cdc{grid-column:2;grid-row:1 / span 3;margin-top:0}
+  .wel>.hint{display:none}
+}
+html[data-style=terminal] .bt{background:none;color:var(--l);font-weight:400;padding:0 1ch}
+html[data-style=terminal] .bt::before{content:"["}html[data-style=terminal] .bt::after{content:"]"}
+html[data-style=terminal] :is(.acts,.alt) .q,html[data-style=terminal] .acts button+button{background:none;color:var(--l);box-shadow:none}

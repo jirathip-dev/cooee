@@ -5,8 +5,8 @@
 // debounced read marks (which also close the thread's notifications). Every page but pairing registers the service
 // worker (sw.ts: push and the last copy of each page); the thread list's 🔔 turns alerts on. On every page (#21):
 // short toasts, the loading strip (with a copy's age when it is an old one), refresh (↻, a pull down, coming back
-// after 30 s or the network returning), Settings' alerts, devices and report mode; on the pairing page, a code to
-// approve on the Mac. It talks to the server only through the JSON and SSE API in docs/api.md.
+// after 30 s or the network returning), Settings' alerts, devices and report mode (pairing is pair.ts). It talks to
+// the server only through the JSON and SSE API in docs/api.md.
 // States are theme keys (data-st) that look.ts draws: the thread bar, the working pill (its sprite following the
 // running tool), the live line and a turn's end.
 // A plugin tab hosts the plugin's sandboxed frame (frame.ts is the frame's side).
@@ -753,53 +753,6 @@ addEventListener("click", (e) => {
   if ((e.target as Element).closest?.("[data-report]")) reportMode();
 });
 if (location.hash === "#report") reportMode();
-
-// Pairing the other way round: the phone asks for a code, shows it, and polls until `cooee pair <code>` on the Mac
-// approves it; then it is paired and opens the thread list.
-const go = $<HTMLButtonElement>("#ask-go");
-if (go) {
-  let claim = "";
-  let timer = 0;
-  const wait = $("#ask-wait");
-  const err = $("#ask-err");
-  const reset = (text = ""): void => {
-    clearInterval(timer);
-    if (wait) wait.hidden = true;
-    go.hidden = false;
-    say(err, text);
-  };
-  go.onclick = async () => {
-    try {
-      const r = await post<{ code: string; claim: string }>("/pair/request", {});
-      const cmd = `cooee pair ${r.code}`;
-      claim = r.claim;
-      const [code, line, copy] = [$("#ask-code"), $("#ask-cmd"), $("#ask-copy")];
-      if (code) code.textContent = r.code;
-      if (line) line.textContent = cmd;
-      if (copy) copy.dataset.copy = cmd;
-      if (wait) wait.hidden = false;
-      go.hidden = true;
-      say(err, "");
-      timer = setInterval(async () => {
-        const body = JSON.stringify({ claim });
-        const headers = { "content-type": "application/json" };
-        const c = await fetch("/pair/claim", { method: "POST", headers, body }).catch(() => null);
-        if (c?.status === 200) {
-          clearInterval(timer);
-          location.replace("/");
-        } else if (c?.status === 410) reset(await c.text());
-      }, 2000);
-    } catch (x) {
-      reset(message(x));
-    }
-  };
-  const cancel = $("#ask-cancel");
-  if (cancel)
-    cancel.onclick = () => {
-      post("/pair/cancel", { claim }).catch(() => {});
-      reset();
-    };
-}
 
 // A plugin tab: the frame (sandboxed, see frame.ts) asks this page to fetch or stream paths of its own backend only
 // (/p/<name>/api/…; anything else is refused), gets the theme's CSS variables, and its URL's #hash (a push's link).

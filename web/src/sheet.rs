@@ -308,6 +308,9 @@ async fn settings(cx: &Cx) -> Result<impl View> {
                 <div id="s-alerts-box"></div>
                 <p class="ch" id="s-devices">"devices"</p>
                 <div id="s-devices-box"></div>
+                <div id="s-pair-box"></div>
+                <p class="ch" id="s-passkeys">"passkeys"</p>
+                <div id="s-passkeys-box"></div>
                 <p class="ch" id="s-plugins">"plugins"</p>
                 <div id="s-plugins-box"></div>
                 <p class="ch" id="s-report">"report"</p>

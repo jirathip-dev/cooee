@@ -69,6 +69,12 @@ another run; load the newest slice again).
 | `POST /push/test` | `{}` | text |
 | `GET /devices` | | `{id, label, created, used, me}[]` |
 | `POST /devices/remove` | `{id}` | text |
+| `POST /devices/pair` | `{}` | `{code, link, svg, host}`: a new code (dropping the open one), its link and the link as a QR code |
+| `GET /pair/asks` | | the requests to pair still waiting, `{id, word, label, at}[]` |
+| `POST /pair/answer` | `{id, yes, passkey?}`: approving needs a passkey's `{id, client, auth, sig}` | text; 403 for a bad passkey, 410 when it's gone |
+| `GET /passkeys` | | `{id, label, created, used}[]` |
+| `POST /passkeys` | `{id, key, client, auth}`: `navigator.credentials.create`'s id, `getPublicKey()` (P-256), client and authenticator data | text |
+| `POST /passkeys/remove` | `{id}` | text |
 | `POST /report` | `{note, path, target, html, look, viewport}` | text |
 
 ## Plugins (Settings › Plugins)
@@ -87,9 +93,12 @@ another run; load the newest slice again).
 
 | Call | Body | Answer |
 |---|---|---|
-| `POST /pair/request` | `{}` | `{code, claim}` |
-| `POST /pair/claim` | `{claim}` | 200 with the cookie once approved, 202 while it waits, 410 when it's gone |
+| `POST /pair` | a form: `code` (or `code` and `d2`…`d6`, the six boxes) | 303 to `/?paired` with the cookie, else to `/pair?bad=wrong&left=N`, `bad=expired` or `bad=limit&wait=S` (5 wrong codes a minute per address) |
+| `POST /pair/request` | `{}` | `{word, claim}`: the check word; every paired device gets a push and the card |
+| `POST /pair/claim` | `{claim}` | 200 with the cookie once approved, 202 while it waits, 403 declined (who said no, text), 410 when it's gone (5 minutes) |
 | `POST /pair/cancel` | `{claim}` | text |
+| `POST /passkey/challenge` | `{}` | `{challenge, ids}`: a challenge good once for 5 minutes, the passkeys' ids |
+| `POST /passkey/signin` | a passkey's `{id, client, auth, sig}` (`navigator.credentials.get`, user verified) | 200 with the cookie, 403 why not |
 
 ## Plugin tabs
 

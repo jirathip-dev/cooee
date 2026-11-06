@@ -12,8 +12,8 @@ test("first run: no agents and no roots show their fix lines with copy buttons, 
   await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: url });
   await page.goto(`${url}/`);
   const code = fs.readFileSync(new URL("./.auth/code.bare", import.meta.url), "utf8").trim();
-  await page.getByLabel("pairing code").fill(code);
-  await page.getByRole("button", { name: "pair" }).click();
+  await page.getByLabel("digit 1").click();
+  await page.keyboard.type(code);
 
   const form = page.locator("#new");
   await expect(form).toBeVisible();

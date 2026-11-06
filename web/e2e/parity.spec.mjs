@@ -1,5 +1,5 @@
 // herdsman#553 parity, rows 1–14 (#21): the Home Screen app's offline copy, the sync dot, the loading strip, toasts,
-// refresh, pairing approved on the Mac and the devices list, truthful alerts, moments, ascii figures, Settings' index
+// refresh, pairing approved on a paired device (#47) and the devices list, truthful alerts, moments, ascii figures, Settings' index
 // and deep links, and report mode. Each row's shot is ui-<viewport>/parity-<row>-….png.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -139,45 +139,90 @@ test("row 4: an action's toast is one short line on screen, then it clears", asy
   await expect(toast).toBeHidden();
 });
 
-test("row 6: a phone asks for a code, the Mac approves it, and the phone pairs; Settings lists and removes devices", async ({ browser }, info) => {
-  const context = await browser.newContext({ viewport: viewport(info), storageState: { cookies: [], origins: [] } });
-  const page = await context.newPage();
-  await page.goto("/pair");
-  await page.getByRole("button", { name: "ask for a code" }).click();
-  await expect(page.locator("#ask-code")).toHaveText(/^\d{6}$/);
-  const code = await page.locator("#ask-code").textContent();
-  await expect(page.locator("#ask-cmd")).toHaveText(`cooee pair ${code}`);
-  await shot(page, info, "parity-6-ask");
-  await audit(page);
-  expect(cooee("pair", code)).toContain("approved");
-  await page.waitForURL(/\/$/);
-  await expect(page.locator("main.list")).toBeVisible();
+// A browser on http://localhost (WebAuthn takes no IP address), paired with the setup's cookie unless `paired` is false.
+async function onLocalhost(browser, info, baseURL, paired = true) {
+  const state = JSON.parse(fs.readFileSync(new URL("./.auth/state.json", import.meta.url), "utf8"));
+  const host = new URL(baseURL).port;
+  const cookies = paired ? state.cookies.map((c) => ({ ...c, domain: "localhost" })) : [];
+  const context = await browser.newContext({ viewport: viewport(info), baseURL: `http://localhost:${host}`, storageState: { cookies, origins: [] } });
+  return [context, await context.newPage()];
+}
 
-  await page.goto("/#settings/devices");
-  const mine = page.locator("#s-devices-box .lrw").filter({ hasText: "this device" });
+test("row 6 (#47): a new device asks, a paired one approves with its passkey (a virtual authenticator) or declines", async ({ browser, baseURL }, info) => {
+  test.setTimeout(90_000);
+  const [paired, phone] = await onLocalhost(browser, info, baseURL);
+  await phone.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+  const cdp = await paired.newCDPSession(phone);
+  await cdp.send("WebAuthn.enable");
+  await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true },
+  });
+  // Right after pairing the list offers a passkey.
+  await phone.goto("/?paired");
+  await expect(phone).toHaveURL(/\/$/);
+  const offer = phone.locator("#pairing .pc").filter({ hasText: "Save a passkey?" });
+  await offer.getByRole("button", { name: "save a passkey" }).click();
+  await expect(phone.locator("#pairing")).toContainText("✓ passkey saved");
+
+  // The new device asks: its check word, waiting.
+  const [fresh, ipad] = await onLocalhost(browser, info, baseURL, false);
+  await ipad.goto("/pair");
+  await ipad.getByRole("button", { name: "ask to pair" }).click();
+  await expect(ipad.locator("#ask-word")).toHaveText(/^[a-z]+ [a-z]+$/);
+  const word = (await ipad.locator("#ask-word").textContent()).trim();
+  await expect(ipad.locator("#ask-wait")).toContainText("waiting for approval");
+  await shot(ipad, info, "pair-waiting", true);
+  await audit(ipad);
+
+  // The paired device's card: approve with its passkey; the new device pairs by itself.
+  const card = phone.getByRole("group", { name: new RegExp(`asks to pair: ${word}$`) });
+  await expect(card).toContainText("Pair a new device?");
+  await shot(phone, info, "pair-approve-card");
+  await audit(phone);
+  await card.getByRole("button", { name: /^approve with/ }).click();
+  await expect(card).toContainText("It's in settings › devices.");
+  await ipad.waitForURL(/\/$/);
+  await expect(ipad.locator("main.list")).toBeVisible();
+
+  // Declined: the card can be undone for 10 s, then the new device hears who said no.
+  const [, other] = await onLocalhost(browser, info, baseURL, false);
+  await phone.clock.install();
+  await other.goto("/pair");
+  await other.getByRole("button", { name: "ask to pair" }).click();
+  await expect(other.locator("#ask-word")).toHaveText(/^[a-z]+ [a-z]+$/);
+  const word2 = (await other.locator("#ask-word").textContent()).trim();
+  const card2 = phone.getByRole("group", { name: new RegExp(`asks to pair: ${word2}$`) });
+  await card2.getByRole("button", { name: "decline" }).click();
+  await expect(card2).toContainText("Declined");
+  await phone.clock.runFor(10500);
+  await expect(other.locator("#ask-no")).toContainText("said no.");
+  await expect(other.locator("#ask-no")).toContainText(`(${word2}) was declined`);
+  await shot(other, info, "pair-declined", true);
+  await audit(other);
+
+  // Settings lists the devices and the passkey; the new device removes itself and goes back to pairing.
+  await ipad.goto("/#settings/devices");
+  await expect(ipad.locator("#s-passkeys-box .pkr").first()).toBeVisible();
+  const mine = ipad.locator("#s-devices-box .lrw").filter({ hasText: "this device" });
   await expect(mine).toHaveCount(1);
-  await shot(page, info, "parity-6-devices");
-  page.on("dialog", (d) => d.accept());
+  await shot(ipad, info, "parity-6-devices");
+  ipad.on("dialog", (d) => d.accept());
   await mine.getByRole("button").click();
-  await page.waitForURL(/\/pair$/);
-  expect((await page.request.get("/devices")).status()).toBe(401);
-  await context.close();
+  await ipad.waitForURL(/\/pair$/);
+  expect((await ipad.request.get("/devices")).status()).toBe(401);
+  await paired.close();
+  await fresh.close();
 });
-test("row 7: an unpaired browser gets the app's shell: the composer off, a pair hint, no thread data", async ({ browser }, info) => {
+test("row 7: an unpaired browser gets the shell only: pairing, no thread data", async ({ browser }, info) => {
   const context = await browser.newContext({ viewport: viewport(info), storageState: { cookies: [], origins: [] } });
   const page = await context.newPage();
   await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
   await page.goto(`/t/long-${info.project.name}`);
   await expect(page).toHaveURL(/\/pair$/);
-  await expect(page.getByLabel("message")).toBeDisabled();
-  await expect(page.locator("#locked button[type=submit]")).toBeDisabled();
-  await expect(page.locator("main")).toContainText("This device isn't paired");
+  await expect(page.locator("main")).toContainText("pair this device");
+  await expect(page.locator("header")).not.toContainText("⚙");
   expect(await page.content()).not.toContain("Long thread");
   expect((await page.request.get(`/threads/long-${info.project.name}/messages`)).status()).toBe(401);
-  // Themed like the app: the look sheet opens.
-  await page.getByRole("button", { name: "look: theme and colours" }).click();
-  await expect(page.locator("#sheet .sh:popover-open")).toBeVisible();
-  await page.keyboard.press("Escape");
   await shot(page, info, "parity-7-shell", true);
   await audit(page);
   await context.close();
