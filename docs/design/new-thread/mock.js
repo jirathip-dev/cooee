@@ -5,6 +5,7 @@
 //   ?theme=farm|kitchen|garden|terminal  &mode=system|light|dark  &style=modern|terminal  &sprites=on|ascii|off
 //   [data-only="a b"]  shown only on those screens; [data-exp=<screen>] aria-expanded on that screen
 //   [data-ld="claude · jk@work.com"]  the connecting line: what look.js gains for the `loading` state (below)
+//   <aside class="side" data-cur=<id>>  the desktop sidebar: side.html put in, its [data-id=<id>] row aria-current
 //   ?s=<screen>  one screen (html[data-screen]); without it the page stacks every screen in <html data-screens> as frames,
 //                each one phone screen (844 px) below 1000 px wide, else one 900 px desktop screen.
 (() => {
@@ -24,7 +25,7 @@
   const html = document.documentElement, s = q.get("s");
   if (s) {
     html.dataset.screen = s;
-    addEventListener("DOMContentLoaded", () => { screen(s); fillLoading(); });
+    addEventListener("DOMContentLoaded", () => { side(); screen(s); fillLoading(); });
     return;
   }
   html.classList.add("gallery");
@@ -40,6 +41,15 @@
     for (const f of document.querySelectorAll("iframe")) f.onload = () => { if (!--left) setTimeout(() => (document.body.dataset.ready = 1), 300); };
   });
 
+  function side() {
+    const a = document.querySelector("aside.side");
+    if (!a) return;
+    const x = new XMLHttpRequest();
+    x.open("GET", "side.html", false);
+    x.send();
+    a.innerHTML = x.responseText;
+    for (const e of a.querySelectorAll(`[data-id="${a.dataset.cur}"]`)) e.setAttribute("aria-current", "page");
+  }
   function screen(s) {
     for (const e of document.querySelectorAll("[data-only]")) if (!e.dataset.only.split(" ").includes(s)) e.remove();
     for (const e of document.querySelectorAll("[data-exp]")) e.setAttribute("aria-expanded", e.dataset.exp === s);

@@ -5,18 +5,21 @@
 <!-- #48 screen 6: Settings › providers replaces the sign-ins card (#signins) and its nested provider › account blocks:
      one row per account, [+ account] per installed provider, one row per provider that isn't installed. No default
      for new threads: the composer's chip remembers the last pick per folder. A sign-in keeps today's terminal panel,
-     opened under its row. app.css and look.js are the app's own (web/src/), new.css this design's additions. -->
+     opened under its row. Behind the sheet is `/`: the list on a phone; from 1024 px the sidebar (the list) and the
+     composer. app.css and look.js are the app's own (web/src/), new.css this design's additions, side.html the sidebar. -->
 <link rel=stylesheet href=/web/src/app.css><link rel=stylesheet href=new.css>
 <script src=mock.js></script><script src=/web/src/look.js></script>
 </head>
-<body>
+<body class="app">
 <header class="bar">
   <h1>cooee</h1>
   <button type="button" class="gl" id="rf" aria-label="refresh">↻</button>
-  <a class="gl" href="/new" aria-label="new thread">+</a>
+  <a class="gl np" href="/new" aria-label="new thread">+</a>
   <button type="button" class="gl" data-open="look" aria-label="look: theme and colours" aria-pressed="false">◐</button>
   <button type="button" class="gl" data-open="settings" aria-label="settings" aria-pressed="true">⚙</button>
 </header>
+<div class="shell">
+<aside class="side" data-cur="new"></aside>
 <main class="list">
   <section class="fc">
     <div class="fh"><b>~/Projects/cooee</b><span class="ds">3 threads</span></div>
@@ -28,6 +31,20 @@
     <a class="tr rd" href="#"><i class="ud"></i><span class="tt">ACP sessions survive a restart</span><span class="ta">gemini · 1d</span><span class="tp"><b data-st="done"></b>Pushed 3 commits.</span></a>
   </section>
 </main>
+<main class="nt home">
+  <div class="th"><div class="tb"><h1>new thread</h1></div></div>
+  <div class="sp"></div>
+  <form class="tw nc">
+    <div class="chips">
+      <button type="button" class="chip" aria-haspopup="dialog" aria-label="agent: claude · jk@work.com"><span>claude · jk@work.com</span><i>▾</i></button>
+      <button type="button" class="chip" aria-haspopup="dialog" aria-label="folder: ~/Projects/cooee" title="~/Projects/cooee"><span>cooee</span><i>▾</i></button>
+    </div>
+    <textarea rows="1" aria-label="first message" placeholder="message claude"></textarea>
+    <button type="submit">send</button>
+  </form>
+  <div class="sp"></div>
+</main>
+</div>
 <div id="sheet" class="set">
   <div class="bd"></div>
   <div class="sh" role="dialog" aria-modal="true" aria-labelledby="sht">

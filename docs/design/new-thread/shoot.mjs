@@ -6,7 +6,9 @@
 // Every screen is checked, at 390 and 1440, in each look below: no sideways scroll; every chip, button and one-line
 // input in the composer, the sheets and Settings › providers is --ctl tall with the --r-ctl radius and --fs text
 // (inputs 16 px); every sheet and Settings row is 44 px; a cut line is ellipsised; at 390 the composer screen fits
-// one 844 px screen. Text an ellipsised ancestor cuts (the thread bar's line) may run past the edge. Prints one line per shot, exits 1 on a failure.
+// one 844 px screen. Text an ellipsised ancestor cuts (the thread bar's line) may run past the edge. From 1024 px the
+// sidebar shows (320 px; [+ new thread], folders and rows --ctl tall) and the header's [+] doesn't; below it, the
+// reverse. No dev text anywhere: no agent id (`…-acp`), no `System default`. Prints one line per shot, exits 1 on a failure.
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -27,7 +29,7 @@ await new Promise(ok => srv.on('listening', ok));
 const base = `http://127.0.0.1:${srv.address().port}/docs/design/new-thread/`;
 if (chrome === '--serve') { console.log(`${base}composer.html · chat.html · providers.html (?theme=…&mode=…&style=…&sprites=…)`); await new Promise(() => {}); }
 
-const PAGES = { composer: ['composer', 'provider', 'folder'], chat: ['connecting', 'failed'], providers: ['providers'] };
+const PAGES = { composer: ['composer', 'profile', 'folder', 'profiled'], chat: ['connecting', 'failed'], providers: ['providers'] };
 // [file suffix, query]: farm in Modern, dark, is the main pair; then each other theme once, light and dark mixed, and
 // terminal in its own style.
 const LOOKS = [
@@ -63,6 +65,12 @@ function audit(screen) {
   if (document.documentElement.scrollWidth > W) bad.push(`sideways scroll ${document.documentElement.scrollWidth} > ${W}`);
   if (screen === 'composer' && W < 1000 && document.documentElement.scrollHeight > innerHeight) bad.push(`composer scrolls: ${document.documentElement.scrollHeight} > ${innerHeight}`);
   const near = (a, b) => Math.abs(a - b) < 0.6;
+  const dev = document.body.innerText.match(/\b[\w-]+-acp\b|system default/i);
+  if (dev) bad.push(`dev text "${dev[0]}"`);
+  const side = document.querySelector('.side'), plus = document.querySelector('.bar .np');
+  if (side && W >= 1024 !== Boolean(shown(side))) bad.push(`sidebar ${shown(side) ? 'shown' : 'hidden'} at ${W}`);
+  if (side && W >= 1024 && !near(side.getBoundingClientRect().width, 320)) bad.push(`sidebar ${side.getBoundingClientRect().width}px, not 320`);
+  if (plus && W >= 1024 === Boolean(shown(plus))) bad.push(`header [+] ${shown(plus) ? 'shown' : 'hidden'} at ${W}`);
   for (const e of document.querySelectorAll('body *')) {
     if (!shown(e)) continue;
     const r = e.getBoundingClientRect(), s = getComputedStyle(e);
@@ -78,6 +86,7 @@ function audit(screen) {
       const want = e.matches('input,textarea') ? 16 : FS;
       if (!near(parseFloat(s.fontSize), want)) bad.push(`text ${s.fontSize}, not ${want} · ${name(e)}`);
     }
+    if (e.matches('.side :is(.nw, .sb, summary)') && !near(r.height, CTL)) bad.push(`sidebar row ${r.height}px, not --ctl ${CTL} · ${name(e)}`);
     if (e.matches('.pk, .acr') && !near(r.height, ROW)) bad.push(`row ${r.height}px, not --row ${ROW} · ${name(e)}`);
     if (e.matches('.pk .sk, .acr .sk') && !near(parseFloat(s.fontSize), FS)) bad.push(`row text ${s.fontSize}, not --fs ${FS} · ${name(e)}`);
   }
@@ -95,7 +104,7 @@ let fail = 0;
 for (const [page, screens] of Object.entries(PAGES)) for (const [suffix, look] of LOOKS) for (const [w, dpr] of [[390, 2], [1440, 1]]) {
   const out = `${page}-${w}${suffix}.png`;
   if (only && !new RegExp(only).test(out)) continue;
-  if (suffix && w === 1440) continue; // the other looks at 390 only
+  if (suffix && w === 1440 && `${page}${suffix}` !== 'chat-terminal-light') continue; // the other looks at 390 only, but the Terminal sidebar once
   const h0 = w < 1000 ? 844 : 900;
   await cmd('Emulation.setDeviceMetricsOverride', { width: w, height: h0, deviceScaleFactor: dpr, mobile: w < 1000 });
   const bad = [];
