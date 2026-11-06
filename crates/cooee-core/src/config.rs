@@ -24,7 +24,7 @@ pub struct Config {
     pub shed: PathBuf,
     /// shed's `--dir` (its socket and state); default shed's per-user server.
     pub shed_dir: Option<PathBuf>,
-    /// Where threads are stored; default `$XDG_DATA_HOME/cooee`, else `~/.local/share/cooee`.
+    /// Where threads are stored; default `$XDG_DATA_HOME/cooee/<instance>`, else `~/.local/share/cooee/<instance>`.
     pub data: Option<PathBuf>,
     /// The theme a device shows until it picks its own (default farm).
     pub theme: Option<String>,
@@ -33,6 +33,9 @@ pub struct Config {
     pub dir: Option<PathBuf>,
     /// The plugins: each one a tab beside Chat (`[[plugins]]`).
     pub plugins: Vec<Plugin>,
+    /// The instance's name (`cooee serve --instance`, default `cooee`): its own config, data folder and pairing.
+    #[serde(skip)]
+    pub instance: String,
 }
 
 /// A plugin: a tab whose page is an ES module served by the plugin's own backend, which cooee reaches with the
@@ -66,6 +69,7 @@ impl Default for Config {
             plugins: Vec::new(),
             theme: None,
             dir: None,
+            instance: "cooee".to_owned(),
         }
     }
 }
@@ -92,16 +96,16 @@ pub enum ConfigError {
 }
 
 impl Config {
-    /// `$XDG_CONFIG_HOME/cooee/config.toml`, else `$HOME/.config/cooee/config.toml`.
+    /// Instance `instance`'s config: `$XDG_CONFIG_HOME/cooee/<instance>/config.toml`, else under `$HOME/.config`.
     #[must_use]
-    pub fn default_path() -> Option<PathBuf> {
+    pub fn default_path(instance: &str) -> Option<PathBuf> {
         let base = env::var_os("XDG_CONFIG_HOME")
             .map(PathBuf::from)
             .or_else(|| env::var_os("HOME").map(|home| Path::new(&home).join(".config")))?;
-        Some(base.join("cooee").join("config.toml"))
+        Some(base.join("cooee").join(instance).join("config.toml"))
     }
 
-    /// The data folder: `data`, else `$XDG_DATA_HOME/cooee`, else `$HOME/.local/share/cooee`.
+    /// The data folder: `data`, else `$XDG_DATA_HOME/cooee/<instance>`, else `$HOME/.local/share/cooee/<instance>`.
     #[must_use]
     pub fn data_dir(&self) -> Option<PathBuf> {
         self.data.clone().or_else(|| {
@@ -110,7 +114,7 @@ impl Config {
                 .or_else(|| {
                     env::var_os("HOME").map(|home| Path::new(&home).join(".local/share"))
                 })?;
-            Some(base.join("cooee"))
+            Some(base.join("cooee").join(&self.instance))
         })
     }
 

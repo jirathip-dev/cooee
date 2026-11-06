@@ -12,9 +12,7 @@ publish.workspace = true
 cooee-core.workspace = true
 cooee-server.workspace = true
 qrcode.workspace = true
+serde_json.workspace = true
 
 [lints]
 workspace = true
-
-[dev-dependencies]
-serde_json.workspace = true

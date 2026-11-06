@@ -86,8 +86,15 @@ cookie. The backend posts pushes and choice cards back with that token; the owne
 
 ## Configuration
 
-One TOML file, `$XDG_CONFIG_HOME/cooee/config.toml` (else `~/.config/cooee/config.toml`, or `cooee serve --config
-<file>`). Every key is optional; an unknown key is an error that lists the known ones.
+One TOML file per instance, `$XDG_CONFIG_HOME/cooee/<instance>/config.toml` (else `~/.config/cooee/<instance>/…`, or
+`--config <file>`). Every key is optional; an unknown key is an error that lists the known ones.
+
+**Instances.** `--instance <name>` (default `cooee`) picks one: its own config, port, data folder (threads, devices,
+push key) and pairing, so two instances never share state; both use the one shed server. Plugins are per instance, so
+`cooee-drover` adds its tabs without touching `cooee`. `cooee install --instance <name> --port <p>` writes
+`~/Library/LaunchAgents/dev.cooee.<name>.plist` (KeepAlive, log in the data folder) and the config's `port` if it has
+no config yet, then prints the `launchctl bootstrap`, `tailscale serve` and (if shed isn't running) shed install lines
+for the owner to run. `cooee doctor` checks the service, port, shed, push key and tailnet URL.
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -97,6 +104,6 @@ One TOML file, `$XDG_CONFIG_HOME/cooee/config.toml` (else `~/.config/cooee/confi
 | `roots` | none | The folders a thread may work in: each root and the folders right inside it, nothing outside. |
 | `shed` | `shed` | The `shed` binary. |
 | `shed_dir` | shed's per-user server | shed's `--dir` (its socket `shed.sock` and state). |
-| `data` | `$XDG_DATA_HOME/cooee`, else `~/.local/share/cooee` | Where threads are stored. |
+| `data` | `$XDG_DATA_HOME/cooee/<instance>`, else `~/.local/share/cooee/<instance>` | Where threads, devices and push subscriptions are stored. |
 | `theme` | `farm` | The theme a device shows until it picks its own ([themes.md](themes.md)); own themes and schemes live in `themes/` and `schemes/` beside the config file. |
 | `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |
