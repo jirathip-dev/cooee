@@ -98,7 +98,9 @@ pub struct Hub {
     push: Push,
     /// The server's default theme, whose words a push says.
     theme: cooee_web::Theme,
-    roots: Vec<PathBuf>,
+    roots: Mutex<Vec<PathBuf>>,
+    /// The config file the roots are saved in.
+    config: Option<PathBuf>,
     plugins: Vec<Plugin>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
@@ -114,6 +116,69 @@ pub(crate) fn now() -> u64 {
 
 pub(crate) fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// Settings › Folders' view of one folder.
+#[derive(Debug, Serialize)]
+pub struct Listing {
+    /// The folder shown, resolved.
+    pub path: PathBuf,
+    /// The home folder, resolved: browsing stops there.
+    pub home: PathBuf,
+    /// The names of the folders inside it.
+    pub dirs: Vec<String>,
+    /// The roots.
+    pub roots: Vec<PathBuf>,
+}
+
+/// The folders right inside `dir` (hidden ones if `hidden`; never symlinks), sorted.
+fn dirs(dir: &Path, hidden: bool) -> Vec<PathBuf> {
+    let mut out: Vec<PathBuf> = fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
+        .filter(|e| hidden || !e.file_name().to_string_lossy().starts_with('.'))
+        .map(|e| e.path())
+        .collect();
+    out.sort();
+    out
+}
+
+/// `path` (default the home folder), if it is a folder inside the home folder, resolved but spelled from `$HOME`
+/// (as `~` shortens it); and `$HOME`.
+fn in_home(path: Option<&Path>) -> Result<(PathBuf, PathBuf), HubError> {
+    let home = std::env::var_os("HOME")
+        .map(PathBuf::from)
+        .unwrap_or_default();
+    let real = home.canonicalize().unwrap_or_default();
+    let path = path.unwrap_or(&home);
+    match path.canonicalize() {
+        Ok(p) if p.is_dir() && p.starts_with(&real) && real.has_root() => {
+            let rest = p.strip_prefix(&real).unwrap_or(&p);
+            let p = if rest.as_os_str().is_empty() {
+                home.clone()
+            } else {
+                home.join(rest)
+            };
+            Ok((p, home))
+        }
+        _ => Err(HubError::Refused(format!(
+            "{} is not a folder in your home folder",
+            path.display()
+        ))),
+    }
+}
+
+fn outside(folder: &Path) -> HubError {
+    HubError::Refused(format!(
+        "{} is not inside a configured root",
+        folder.display()
+    ))
+}
+
+fn refused(path: &Path, e: &io::Error) -> HubError {
+    HubError::Refused(format!("{}: {e}", path.display()))
 }
 
 impl Live {
@@ -159,14 +224,15 @@ impl Live {
 
 impl Hub {
     /// Loads every stored thread, re-attaches the open ones to their shed terminals by name, and starts
-    /// following shed's events. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers.
+    /// following shed's events. A push speaks `theme`'s words; `plugins` may post choice cards and get their answers;
+    /// roots added or removed on the phone are saved in `config`.
     ///
     /// # Errors
     /// [`HubError::Store`] when the store can't be read.
     pub fn open(
         shed: Shed,
         data: &Path,
-        roots: Vec<PathBuf>,
+        (roots, config): (Vec<PathBuf>, Option<PathBuf>),
         theme: cooee_web::Theme,
         plugins: Vec<Plugin>,
     ) -> Result<Arc<Self>, HubError> {
@@ -191,7 +257,8 @@ impl Hub {
             store,
             push: Push::new(data),
             theme,
-            roots,
+            roots: Mutex::new(roots),
+            config,
             plugins,
             boot: format!("{:x}", now()),
             threads: Mutex::new(threads),
@@ -302,22 +369,18 @@ impl Hub {
         Ok(self.shed.agents()?)
     }
 
-    /// The folders a thread may work in: each root, then the folders right inside it (not hidden ones), by name.
+    /// The folders a thread may work in, with their depth: each root (0), then the folders inside it (1) and inside
+    /// those (2), by name; never hidden ones or symlinks.
     #[must_use]
-    pub fn folders(&self) -> Vec<PathBuf> {
+    pub fn folders(&self) -> Vec<(PathBuf, u8)> {
         let mut out = Vec::new();
-        for root in &self.roots {
-            out.push(root.clone());
-            let mut inside: Vec<PathBuf> = fs::read_dir(root)
-                .into_iter()
-                .flatten()
-                .flatten()
-                .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
-                .filter(|e| !e.file_name().to_string_lossy().starts_with('.'))
-                .map(|e| e.path())
-                .collect();
-            inside.sort();
-            out.extend(inside);
+        for root in lock(&self.roots).iter() {
+            out.push((root.clone(), 0));
+            for a in dirs(root, false) {
+                let inside = dirs(&a, false);
+                out.push((a, 1));
+                out.extend(inside.into_iter().map(|b| (b, 2)));
+            }
         }
         out
     }
@@ -326,7 +389,73 @@ impl Hub {
     fn allowed(&self, folder: &Path) -> Option<PathBuf> {
         let folder = folder.canonicalize().ok()?;
         let inside = |root: &PathBuf| root.canonicalize().is_ok_and(|r| folder.starts_with(r));
-        self.roots.iter().any(inside).then_some(folder)
+        lock(&self.roots).iter().any(inside).then_some(folder)
+    }
+
+    /// Settings › Folders: the folders inside `path` (default the home folder; hidden ones if `hidden`), and the roots.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a path outside the home folder or not a folder.
+    pub fn browse(&self, path: Option<&Path>, hidden: bool) -> Result<Listing, HubError> {
+        let (path, home) = in_home(path)?;
+        let dirs = dirs(&path, hidden).into_iter().filter_map(|d| {
+            let name = d.file_name()?.to_string_lossy();
+            Some(name.into_owned())
+        });
+        Ok(Listing {
+            dirs: dirs.collect(),
+            path,
+            home,
+            roots: lock(&self.roots).clone(),
+        })
+    }
+
+    /// Adds folder `path` (inside the home folder) to the roots, or removes it (as listed), and saves them in the
+    /// config file. Returns the roots.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a path outside the home folder, no config file, or one that can't be written.
+    pub fn set_root(&self, path: &Path, add: bool) -> Result<Vec<PathBuf>, HubError> {
+        let mut roots = lock(&self.roots);
+        let mut new = roots.clone();
+        if add {
+            let (path, _) = in_home(Some(path))?;
+            if !new.contains(&path) {
+                new.push(path);
+            }
+        } else {
+            new.retain(|r| r != path);
+        }
+        let Some(config) = &self.config else {
+            return Err(HubError::Refused(
+                "there is no config file to save roots in".to_owned(),
+            ));
+        };
+        cooee_core::save_roots(config, &new).map_err(|e| refused(config, &e))?;
+        *roots = new;
+        Ok(roots.clone())
+    }
+
+    /// Makes folder `name` inside `parent` (a root or inside one); returns its path.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a parent outside the roots, a name that isn't one plain folder name, or a folder that
+    /// can't be made (it exists).
+    pub fn new_folder(&self, parent: &Path, name: &str) -> Result<PathBuf, HubError> {
+        let mut parts = Path::new(name).components();
+        let plain = matches!(parts.next(), Some(std::path::Component::Normal(_)))
+            && parts.next().is_none()
+            && !name.contains('/')
+            && !name.starts_with('.');
+        if !plain {
+            return Err(HubError::Refused(format!("{name:?} is not a folder name")));
+        }
+        if self.allowed(parent).is_none() {
+            return Err(outside(parent));
+        }
+        let path = parent.join(name);
+        fs::create_dir(&path).map_err(|e| refused(&path, &e))?;
+        Ok(path)
     }
 
     /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, then sends `text`.
@@ -344,10 +473,7 @@ impl Hub {
     ) -> Result<String, HubError> {
         self.shed.hello()?;
         let Some(folder) = self.allowed(folder) else {
-            return Err(HubError::Refused(format!(
-                "{} is not inside a configured root",
-                folder.display()
-            )));
+            return Err(outside(folder));
         };
         if text.trim().is_empty() {
             return Err(HubError::Refused("the first message is empty".to_owned()));
