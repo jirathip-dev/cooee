@@ -1,0 +1,74 @@
+<!doctype html><html lang=en data-screens="composer:1 · new thread: the composer and its chip row|provider:2 · the provider chip's sheet: each installed provider's accounts|folder:3 · the folder chip's sheet: search, recent folders first, + new folder"><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name=theme-color content="#0f1a13">
+<title>new thread · cooee (#48 mockup)</title>
+<!-- #48 screens 1–3: `[+]` opens /new, a composer and nothing else: the thread bar, then the chip row
+     [<provider> · <account> ▾] [<folder> ▾], the box and [send]. Each chip opens its sheet. app.css and look.js are the
+     app's own (web/src/), new.css this design's additions. Data is illustrative. -->
+<link rel=stylesheet href=/web/src/app.css><link rel=stylesheet href=new.css>
+<script src=mock.js></script><script src=/web/src/look.js></script>
+</head>
+<body>
+<main class="nt">
+  <header class="bar">
+    <a class="brand" href="/">cooee</a>
+    <button type="button" class="gl" id="rf" aria-label="refresh">↻</button>
+    <a class="gl" href="/new" aria-label="new thread" aria-pressed="true">+</a>
+    <button type="button" class="gl" data-open="look" aria-label="look: theme and colours" aria-pressed="false">◐</button>
+    <button type="button" class="gl" data-open="settings" aria-label="settings" aria-pressed="false">⚙</button>
+  </header>
+  <div class="th">
+    <a class="gl bk" href="/" aria-label="back to threads">‹</a>
+    <div class="tb"><h1>new thread</h1></div>
+  </div>
+  <div class="sp"></div>
+  <form class="tw nc" id="composer">
+    <div class="chips">
+      <button type="button" class="chip" data-exp="provider" aria-haspopup="dialog" aria-label="provider and account: claude · jk@work.com"><span>claude · jk@work.com</span><i>▾</i></button>
+      <button type="button" class="chip" data-exp="folder" aria-haspopup="dialog" aria-label="folder: ~/Projects/cooee" title="~/Projects/cooee"><span>cooee</span><i>▾</i></button>
+    </div>
+    <textarea id="box" rows="1" aria-label="first message" placeholder="message claude"></textarea>
+    <button type="submit">send</button>
+
+    <div class="pop" data-only="provider">
+      <div class="bd"></div>
+      <div class="sh" role="dialog" aria-label="provider and account">
+        <div class="hd"><b>provider</b><button type="button" class="gl" aria-label="close">×</button></div>
+        <div class="top" role="listbox" aria-label="accounts">
+          <p class="ch">claude</p>
+          <button type="button" class="sr pk" role="option" aria-selected="true"><span class="sk">jk@work.com</span><i class="tk">✓</i></button>
+          <button type="button" class="sr pk" role="option" aria-selected="false"><span class="sk">guy@gmail.com</span></button>
+          <p class="ch">gemini</p>
+          <button type="button" class="sr pk" role="option" aria-selected="false"><span class="sk">guy@gmail.com</span></button>
+          <div class="sr pk so" role="option" aria-disabled="true"><span class="sk">lab</span><span class="sv">signed out</span><button type="button">sign in</button></div>
+          <p class="lft"><a href="#settings/providers">add an account or a provider in settings ›</a></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pop" data-only="folder">
+      <div class="bd"></div>
+      <div class="sh" role="dialog" aria-label="folder">
+        <div class="hd"><b>folder</b><button type="button" class="gl" aria-label="close">×</button></div>
+        <div class="top">
+          <div class="fq"><input type="search" aria-label="search folders" placeholder="search folders" autocomplete="off"><button type="button" class="sec">+ new folder</button></div>
+          <div role="listbox" aria-label="folders">
+            <p class="ch">recent</p>
+            <button type="button" class="sr pk" role="option" aria-selected="true"><span class="sk">~/Projects/cooee</span><span class="sv">claude · jk@work.com</span><i class="tk">✓</i></button>
+            <button type="button" class="sr pk" role="option" aria-selected="false"><span class="sk">~/Projects/shed</span><span class="sv">gemini · guy@gmail.com</span></button>
+            <button type="button" class="sr pk" role="option" aria-selected="false"><span class="sk">~/Projects/herdsman</span><span class="sv">claude · guy@gmail.com</span></button>
+            <p class="ch">all folders</p>
+            <button type="button" class="sr pk" role="option" aria-selected="false"><span class="sk">~/Projects</span></button>
+            <button type="button" class="sr pk" role="option" aria-selected="false"><span class="sk">~/Projects/drover</span></button>
+            <button type="button" class="sr pk" role="option" aria-selected="false"><span class="sk">~/Projects/dotfiles</span></button>
+            <button type="button" class="sr pk" role="option" aria-selected="false"><span class="sk">~/Projects/topcoat</span></button>
+            <button type="button" class="sr pk" role="option" aria-selected="false"><span class="sk">~/Work</span></button>
+            <button type="button" class="sr pk" role="option" aria-selected="false"><span class="sk">~/Work/site</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+  <div class="sp"></div>
+</main>
+</body></html>

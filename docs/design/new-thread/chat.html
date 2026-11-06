@@ -1,0 +1,42 @@
+<!doctype html><html lang=en data-screens="connecting:4 · send opens the chat at once: your message, then the theme's loading line until the reply replaces it|failed:5 · connecting failed: the error inline with [retry]; your message stays"><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name=theme-color content="#0f1a13">
+<title>the chat on send · cooee (#48 mockup)</title>
+<!-- #48 screens 4–5: [send] on /new goes straight to /t/<id>, drawn from what the device already knows (the message,
+     the provider, the account, the folder); the agent connects behind it. app.css and look.js are the app's own
+     (web/src/), new.css this design's additions, mock.js draws the loading state look.js gains. Data is illustrative. -->
+<link rel=stylesheet href=/web/src/app.css><link rel=stylesheet href=new.css>
+<script src=mock.js></script><script src=/web/src/look.js></script>
+</head>
+<body>
+<main class="chat" data-agent="claude">
+  <header class="bar">
+    <a class="brand" href="/">cooee</a>
+    <button type="button" class="gl" id="rf" aria-label="refresh">↻</button>
+    <a class="gl" href="/new" aria-label="new thread">+</a>
+    <button type="button" class="gl" data-open="look" aria-label="look: theme and colours" aria-pressed="false">◐</button>
+    <button type="button" class="gl" data-open="settings" aria-label="settings" aria-pressed="false">⚙</button>
+  </header>
+  <div class="th">
+    <a class="gl bk" href="/" aria-label="back to threads">‹</a>
+    <div class="tb">
+      <h1>Push stops after I pair my phone again</h1>
+      <span class="ds"><i class="dt"></i>claude · jk@work.com · ~/Projects/cooee · <span data-only="connecting" data-ld=""></span><span data-only="failed" data-st="fail"></span></span>
+    </div>
+    <button type="button" class="gl" id="close" aria-label="close the thread">×</button>
+  </div>
+  <ol class="tc" id="msgs" tabindex="0" aria-label="messages" aria-live="polite">
+    <li class="blk me"><div class="md">Push stops after I pair my phone again. Find out why and fix it; the test for it is in crates/cooee-server/src/push.rs.</div><span class="ct">09:12</span></li>
+    <li class="cnx" data-only="connecting" data-ld="claude · jk@work.com"></li>
+    <li class="cfl" data-only="failed" role="alert">
+      <p class="cnx"><span data-st="fail"></span><span>· couldn't connect claude · jk@work.com</span></p>
+      <p class="ds">claude-acp exited (1): Invalid API key · Please run /login</p>
+      <button type="button">retry</button>
+    </li>
+  </ol>
+  <form class="tw nc" id="composer">
+    <textarea id="box" rows="1" aria-label="message" placeholder="message claude"></textarea>
+    <button type="submit">send</button>
+  </form>
+</main>
+</body></html>
