@@ -246,6 +246,7 @@ impl FakeShed {
         let r = Reported {
             state: state.to_owned(),
             note: note.map(str::to_owned),
+            state_source: None,
         };
         self.shared
             .lock()

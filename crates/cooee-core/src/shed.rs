@@ -228,6 +228,7 @@ impl Shed {
         let report = Reported {
             state: "working".to_owned(),
             note: None,
+            state_source: None,
         };
         let state = StateParams {
             name: name.into(),

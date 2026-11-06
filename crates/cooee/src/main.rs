@@ -13,12 +13,26 @@ use std::{
 use cooee_core::{AGENTS_FIX, Config, Devices, ROOTS_FIX, Shed};
 use qrcode::{QrCode, render::unicode::Dense1x2};
 
-const USAGE: &str = "usage: cooee <serve | pair | devices | devices rm <id> | install --port <p> | doctor> \
-                     [--instance <name>] [--config <file>] | cooee --version";
+mod setup;
 
-/// shed's install line: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the exact version.
-const SHED_INSTALL: &str = "cargo install --locked --git https://github.com/jirathip-dev/shed \
-                            --rev 9a4f32a811bf4e68641d0ddb9b20c84f07fcf8ef shed && shed serve";
+const USAGE: &str = "usage: cooee <serve | pair | devices | devices rm <id> | install --port <p> | doctor \
+                     | setup [--port <p>] [--dry-run] [--yes]> [--instance <name>] [--config <file>] | cooee --version";
+
+/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the exact version.
+const SHED_CARGO: [&str; 8] = [
+    "cargo",
+    "install",
+    "--locked",
+    "--git",
+    "https://github.com/jirathip-dev/shed",
+    "--rev",
+    "8bac04fdb8542ef496c614b47126d85c50a7892e",
+    "shed",
+];
+
+fn shed_install() -> String {
+    format!("{} && shed serve", SHED_CARGO.join(" "))
+}
 
 /// Removes `--flag <value>` from `args`: `Err` when the value is missing.
 fn flag(args: &mut Vec<String>, name: &str) -> Result<Option<String>, ()> {
@@ -35,6 +49,11 @@ fn flag(args: &mut Vec<String>, name: &str) -> Result<Option<String>, ()> {
 
 fn main() -> ExitCode {
     let mut args: Vec<String> = env::args().skip(1).collect();
+    let mut switch = |name: &str| {
+        let at = args.iter().position(|a| a == name);
+        at.map(|i| args.remove(i)).is_some()
+    };
+    let (dry_run, yes) = (switch("--dry-run"), switch("--yes"));
     let (Ok(instance), Ok(config), Ok(port)) = (
         flag(&mut args, "--instance"),
         flag(&mut args, "--config"),
@@ -80,6 +99,21 @@ fn main() -> ExitCode {
                 return ExitCode::from(2);
             };
             return finish(install(path, &instance, port, explicit));
+        }
+        ["setup"] => {
+            let Ok(port) = port.map(|p| p.parse()).transpose() else {
+                eprintln!("{USAGE}");
+                return ExitCode::from(2);
+            };
+            let path = path.ok_or("no config path: set HOME");
+            let setup = setup::Setup {
+                instance,
+                port,
+                explicit,
+                dry_run,
+                yes,
+            };
+            return finish(path.map_err(str::to_owned).and_then(|p| setup.run(&p)));
         }
         _ => {
             eprintln!("{USAGE}");
@@ -192,7 +226,6 @@ fn xml(s: &str) -> String {
 /// Writes the instance's launchd plist (and its config with `port`, if it has none), then prints the commands that
 /// start it, serve it on the tailnet and, if shed isn't running, install shed.
 fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> Result<(), String> {
-    let home = env::var_os("HOME").ok_or("no HOME")?;
     let path = path.ok_or("no config path: set HOME")?;
     if !path.exists() {
         let hosts = tailnet_name().map(|n| format!("allowed_hosts = [{n:?}]\n"));
@@ -209,14 +242,31 @@ fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> 
             config.port
         ));
     }
+    let (file, plist) = plist(&config, &path, explicit)?;
+    write_plist(&config, &file, &plist)?;
+    println!("wrote {}\n\nrun these yourself:", file.display());
+    println!("  launchctl bootstrap gui/$(id -u) {}", file.display());
+    println!("  tailscale serve --bg --https={port} http://127.0.0.1:{port}");
+    if Shed::new(config.shed.clone(), config.shed_dir.clone())
+        .hello()
+        .is_err()
+    {
+        println!("  {}   # shed isn't running", shed_install());
+    }
+    Ok(())
+}
+
+/// The instance's launchd plist, `~/Library/LaunchAgents/dev.cooee.<instance>.plist`, and its text: `cooee serve`
+/// (with `--config <path>` if `explicit`), kept alive, logging to the data folder.
+fn plist(config: &Config, path: &Path, explicit: bool) -> Result<(PathBuf, String), String> {
+    let home = env::var_os("HOME").ok_or("no HOME")?;
     let data = config.data_dir().ok_or("no data folder")?;
-    fs::create_dir_all(&data).map_err(|e| e.to_string())?;
     let exe = env::current_exe().map_err(|e| e.to_string())?;
     let mut argv = vec![
         exe.display().to_string(),
         "serve".into(),
         "--instance".into(),
-        instance.into(),
+        config.instance.clone(),
     ];
     if explicit {
         argv.extend(["--config".into(), path.display().to_string()]);
@@ -227,7 +277,7 @@ fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> 
         .collect();
     let log = xml(&data.join("cooee.log").display().to_string());
     let env_path = xml(&env::var("PATH").unwrap_or_default());
-    let label = label(instance);
+    let label = label(&config.instance);
     let plist = format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -255,28 +305,26 @@ fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> 
 </plist>
 "#
     );
-    let agents = Path::new(&home).join("Library/LaunchAgents");
-    let file = agents.join(format!("{label}.plist"));
-    fs::create_dir_all(&agents).map_err(|e| e.to_string())?;
-    fs::write(&file, plist).map_err(|e| e.to_string())?;
-    println!("wrote {}\n\nrun these yourself:", file.display());
-    println!("  launchctl bootstrap gui/$(id -u) {}", file.display());
-    println!("  tailscale serve --bg --https={port} http://127.0.0.1:{port}");
-    if Shed::new(config.shed.clone(), config.shed_dir.clone())
-        .hello()
-        .is_err()
-    {
-        println!("  {SHED_INSTALL}   # shed isn't running");
-    }
-    Ok(())
+    let file = Path::new(&home).join(format!("Library/LaunchAgents/{label}.plist"));
+    Ok((file, plist))
+}
+
+/// Writes the plist `file`, and the data folder its log goes to.
+fn write_plist(config: &Config, file: &Path, plist: &str) -> Result<(), String> {
+    let data = config.data_dir().ok_or("no data folder")?;
+    fs::create_dir_all(&data).map_err(|e| e.to_string())?;
+    fs::create_dir_all(file.parent().unwrap_or(file)).map_err(|e| e.to_string())?;
+    fs::write(file, plist).map_err(|e| e.to_string())
 }
 
 /// Checks the instance: its service, port, shed, push keys and tailnet URL; fails if any check fails.
 fn doctor(config: &Config) -> Result<(), String> {
-    let mut failed = 0;
+    let mut failed = Vec::new();
     let mut check = |ok: bool, what: String| {
         println!("{} {what}", if ok { "ok  " } else { "FAIL" });
-        failed += usize::from(!ok);
+        if !ok {
+            failed.push(format!("FAIL {what}"));
+        }
     };
     let label = label(&config.instance);
     let loaded = Command::new("launchctl")
@@ -299,7 +347,10 @@ fn doctor(config: &Config) -> Result<(), String> {
                 println!("warn no agents installed in shed\n     fix: {AGENTS_FIX}");
             }
         }
-        Err(e) => check(false, format!("shed: {e}\n     install: {SHED_INSTALL}")),
+        Err(e) => check(
+            false,
+            format!("shed: {e}\n     install: {}", shed_install()),
+        ),
     }
     if config.roots.is_empty() {
         println!("warn no roots configured\n     fix: add {ROOTS_FIX} to config.toml");
@@ -332,9 +383,13 @@ fn doctor(config: &Config) -> Result<(), String> {
             );
         }
     }
-    if failed == 0 {
+    if failed.is_empty() {
         Ok(())
     } else {
-        Err(format!("{failed} check(s) failed"))
+        Err(format!(
+            "{} check(s) failed:\n{}",
+            failed.len(),
+            failed.join("\n")
+        ))
     }
 }
