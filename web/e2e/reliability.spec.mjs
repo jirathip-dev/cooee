@@ -51,16 +51,17 @@ test.describe("on every browser", () => {
       await expect(page.locator("#rf")).not.toHaveClass(/rfs/);
     }
     expect(await ids()).toEqual(before);
+    const mine = new URL(page.url()).pathname;
     await page.goto("/");
+    // Other tests add threads meanwhile, so the order may change: never a card twice, this thread's once.
     const cards = () => page.locator(".fc .tr").evaluateAll((a) => a.map((e) => e.getAttribute("href")));
-    const listed = await cards();
     for (let i = 0; i < 5; i++) {
       await page.getByRole("button", { name: "refresh" }).click();
       await expect(page.locator("#rf")).not.toHaveClass(/rfs/);
+      const hrefs = await cards();
+      expect(new Set(hrefs).size).toBe(hrefs.length);
+      expect(hrefs.filter((h) => h === mine)).toEqual([mine]);
     }
-    const again = await cards();
-    expect(again).toEqual(listed);
-    expect(new Set(again).size).toBe(again.length);
   });
 
   test("R17: paths and image words in a message stay text: no image, no file fetched", async ({ page }) => {
