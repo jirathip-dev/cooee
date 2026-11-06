@@ -176,7 +176,7 @@ test("row 7: an unpaired browser gets the app's shell: the composer off, a pair 
   expect((await page.request.get(`/threads/long-${info.project.name}/messages`)).status()).toBe(401);
   // Themed like the app: the look sheet opens.
   await page.getByRole("button", { name: "look: theme and colours" }).click();
-  await expect(page.locator("#sheet .sh")).toBeVisible();
+  await expect(page.locator("#sheet .sh:popover-open")).toBeVisible();
   await page.keyboard.press("Escape");
   await shot(page, info, "parity-7-shell", true);
   await audit(page);
@@ -188,7 +188,7 @@ test("rows 8 and 13: Settings opens at a section from its link, has an index, an
   // Allowed but not subscribed: off.
   await context.grantPermissions(["notifications"]);
   await page.goto("/#settings/alerts");
-  const sheet = page.locator("#sheet .sh");
+  const sheet = page.locator("#sheet .sh:popover-open");
   await expect(sheet.locator(".six a")).toHaveText(["sign-ins", "folders", "look", "alerts", "devices", "plugins", "report"]);
   await expect(sheet.locator("#s-alerts")).toBeInViewport();
   await expect(sheet.locator("#s-alerts-box")).toContainText(/alerts are off|can't show alerts/);
@@ -205,7 +205,7 @@ test("rows 8 and 13: Settings opens at a section from its link, has an index, an
   await expect(page).toHaveURL(/\/$/);
 });
 
-test("row 10: a theme with moments plays one when a turn ends live; terminal plays none", async ({ page }, info) => {
+test("row 10: a theme with moments plays one when a turn ends live; terminal plays none", async ({ page, context, baseURL }, info) => {
   await thread(page);
   const bar = page.locator(".th");
   const turn = async () => {
@@ -216,7 +216,7 @@ test("row 10: a theme with moments plays one when a turn ends live; terminal pla
   await expect(bar).toHaveAttribute("data-mo", "done");
   await expect(bar.locator(".mot")).toHaveText("over the fence");
   await shot(page, info, "parity-10-moment");
-  await page.evaluate(() => localStorage.setItem("cooee.look", JSON.stringify({ theme: "terminal" })));
+  await context.addCookies([{ name: "cooee-look", value: "theme:terminal", url: baseURL }]);
   await page.reload();
   await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
   const played = page.evaluate(() => new Promise((ok) => {

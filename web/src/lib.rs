@@ -1,12 +1,15 @@
-//! cooee's web UI in Topcoat (docs/decisions/0001-ui-framework.md), in the Modern style: the thread list and the
-//! chat page (server-rendered), the pairing page, the chat's script (`chat.js`: the window of items, SSE, the outbox,
-//! drafts and turning alerts on), the style sheet and the installable PWA: its manifest, icons and the service worker
-//! (`sw.js`: push only, nothing cached), plugin tabs (`chat.js` hosts a plugin's sandboxed frame), and the look (`look.rs` themes and schemes, `look.js` applying a device's
-//! pick before the first paint, its look sheet and Settings).
+//! cooee's web UI, HTML-first (#49): Topcoat renders every page on the server (docs/decisions/0001-ui-framework.md),
+//! in the device's look from its cookie (`shown.rs`), and the sheets, menus and forms are native HTML (`sheet.rs`)
+//! that work with no script. Strict TypeScript in `web/ts` (stripped by `build.rs`) does only what needs script:
+//! `chat.ts` (the live chat over SSE, the scroll window, drafts, the offline copy, report mode, clipboard, push),
+//! `look.ts` (a pick applied in place, the marks of what a page adds), `frame.ts` (a plugin frame's bridge) and
+//! `sw.ts` (the service worker). Also the style sheet, the PWA's manifest and icons, and the themes' files.
 
 #![forbid(unsafe_code)]
 
 mod look;
+mod sheet;
+mod shown;
 
 use std::{
     collections::BTreeMap,
@@ -17,6 +20,8 @@ use std::{
 
 use cooee_core::{AGENTS_FIX, Account, Agent, ROOTS_FIX, Sheet, Status, Summary, Thread, Turn};
 pub use look::{Looks, Pair, Scheme, TOKENS, Theme, gate, plain};
+use sheet::{sheets, shown};
+pub use shown::Shown;
 use topcoat::{
     Result,
     context::{Cx, app_context},
@@ -27,23 +32,28 @@ use topcoat::{
         response::{IntoResponse, Response},
         route,
     },
-    view::{Child, View, component, view},
+    view::{Child, Unescaped, View, component, view},
 };
 
-/// The static routes: the manifest, the icons, the style sheet, the chat's script and the service worker; and the
-/// look: `look.js` with every theme and scheme in it, and each theme's data at
-/// `/look/<theme>/{theme.json,sprites.svg,icon.png}`.
+/// A `web/ts` entry as `build.rs` stripped it.
+macro_rules! built {
+    ($name:literal) => {
+        include_str!(concat!(env!("OUT_DIR"), "/", $name))
+    };
+}
+
+/// The static routes: the manifest, the icons, the style sheet, the scripts and the service worker; and the look:
+/// `POST /look` (a pick with no script) and each theme's data at `/look/<theme>/{theme.json,sprites.svg,icon.png}`.
 ///
 /// # Panics
 ///
 /// Never: [`Looks`] always serialises.
 #[must_use]
 pub fn assets(builder: RouterBuilder, looks: Looks) -> RouterBuilder {
-    let js = format!(
-        "const LOOK = {};\n{}",
-        serde_json::to_string(&looks).expect("looks serialise"),
-        include_str!("look.js")
-    );
+    // In a <script> element: no `</` may end it.
+    let json = serde_json::to_string(&looks)
+        .expect("looks serialise")
+        .replace("</", "<\\/");
     builder
         .route(manifest)
         .route(icon)
@@ -52,15 +62,16 @@ pub fn assets(builder: RouterBuilder, looks: Looks) -> RouterBuilder {
         .route(style)
         .route(script)
         .route(worker)
-        .route(look_script)
+        .route(look_js)
+        .route(sheet::look_set)
         .route(look_file)
-        .app_context(Arc::new(LookAssets { looks, js }))
+        .app_context(Arc::new(LookAssets { looks, json }))
 }
 
-/// The looks and `look.js` built from them, once at start.
+/// The looks, and their JSON for the pages' `<script id="looks">`, once at start.
 struct LookAssets {
     looks: Looks,
-    js: String,
+    json: String,
 }
 
 /// A file made at start, served with its content type.
@@ -73,15 +84,6 @@ impl IntoResponse for Owned {
             .header("Cache-Control", "no-cache")
             .body(Body::from(self.1))?)
     }
-}
-
-#[route(GET "/look.js")]
-async fn look_script(cx: &Cx) -> Result<Owned> {
-    let look = app_context::<Arc<LookAssets>>(cx);
-    Ok(Owned(
-        "text/javascript; charset=utf-8",
-        look.js.clone().into_bytes(),
-    ))
 }
 
 path_param!(look);
@@ -124,8 +126,8 @@ async fn look_file(cx: &Cx) -> Result<Owned> {
     Ok(found.ok_or_else(not_found)?)
 }
 
-/// The plugin API inside a plugin's frame (`frame.js`): the server puts it before the plugin's module.
-pub const FRAME_JS: &str = include_str!("frame.js");
+/// The plugin API inside a plugin's frame (`frame.ts`): the server puts it before the plugin's module.
+pub const FRAME_JS: &str = built!("frame.js");
 
 /// A fixed file served with its content type.
 struct Static(&'static str, &'static [u8]);
@@ -165,7 +167,7 @@ async fn icon_512() -> Result<Static> {
 async fn worker() -> Result<Static> {
     Ok(Static(
         "text/javascript; charset=utf-8",
-        include_bytes!("sw.js"),
+        built!("sw.js").as_bytes(),
     ))
 }
 
@@ -178,37 +180,70 @@ async fn style() -> Result<Static> {
 async fn script() -> Result<Static> {
     Ok(Static(
         "text/javascript; charset=utf-8",
-        include_bytes!("chat.js"),
+        built!("chat.js").as_bytes(),
     ))
 }
 
+#[route(GET "/look.js")]
+async fn look_js() -> Result<Static> {
+    Ok(Static(
+        "text/javascript; charset=utf-8",
+        built!("look.js").as_bytes(),
+    ))
+}
+
+/// A page in the device's look, drawn from the first byte: the scheme's tokens, `data-*` on `<html>` and the
+/// theme's icon; the sheets after the content.
 #[component]
-async fn document(title: &str, #[default] child: Child<'_>) -> Result<impl View> {
+async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<impl View> {
+    let look = shown(cx);
+    let name = look.name().to_owned();
+    let bg = look
+        .scheme_of(look.scheme(look.mode().unwrap_or("dark")))
+        .tokens
+        .get("--bg")
+        .cloned();
+    let ico = format!("/look/{name}/icon.png");
+    let json = app_context::<Arc<LookAssets>>(cx).json.clone();
     Ok(view! {
         <!DOCTYPE html>
-        <html lang="en">
+        <html
+            lang="en"
+            data-theme=(name)
+            data-mode=(look.mode().map(str::to_owned))
+            data-style=(look.style().to_owned())
+            data-sprites=(look.figs().to_owned())
+            data-moments=(if look.theme().moments { "on" } else { "off" })
+        >
             <head>
                 <meta charset="utf-8">
                 <meta
                     name="viewport"
                     content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content"
                 >
-                <meta name="theme-color" content="#0f1a13">
+                <meta name="theme-color" content=(bg)>
                 <title>(title)</title>
                 <link rel="manifest" href="/manifest.webmanifest">
-                <link rel="icon" href="/icon.svg" type="image/svg+xml">
-                <link rel="apple-touch-icon" href="/icon-192.png">
+                <link rel="icon" href=(ico.clone())>
+                <link rel="apple-touch-icon" href=(ico)>
                 <link rel="stylesheet" href="/app.css">
-                <script src="/look.js"></script>
+                <style id="scheme">(Unescaped::new_unchecked(look.css()))</style>
+                <script type="application/json" id="looks">
+                    (Unescaped::new_unchecked(json))
+                </script>
+                <script type="module" src="/look.js"></script>
                 <script type="module" src="/chat.js"></script>
             </head>
             <body data-at=(now().to_string())>
                 (child)
                 <p id="ld" role="status" hidden=(true)>
-                    <span class="lw" data-w="loading"></span>
+                    <span class="lw" data-w="loading">
+                        (Unescaped::new_unchecked(look.w("loading", false)))
+                    </span>
                     <span class="ago"></span>
                 </p>
-                <p id="toast" role="status" hidden=(true)></p>
+                <p id="toast" role="status" popover="manual"></p>
+                sheets()
             </body>
         </html>
     })
@@ -222,6 +257,30 @@ fn short(folder: &Path) -> String {
         Some(rest) => format!("~/{}", rest.display()),
         None => folder.display().to_string(),
     }
+}
+
+/// A working folder's card on the thread list: the folder as shown (`~/x`) and its threads.
+#[derive(serde::Serialize)]
+pub struct Card {
+    /// The folder, `~/` for one under `$HOME`.
+    pub folder: String,
+    /// Its threads, in the list's order.
+    pub rows: Vec<Summary>,
+}
+
+/// The thread list's cards, one per working folder, by folder (`GET /threads` and the page draw the same).
+#[must_use]
+pub fn cards(rows: Vec<Summary>) -> Vec<Card> {
+    let mut by: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
+    for r in rows {
+        by.entry(r.folder.clone()).or_default().push(r);
+    }
+    by.into_iter()
+        .map(|(f, rows)| Card {
+            folder: short(&f),
+            rows,
+        })
+        .collect()
 }
 
 /// Now, in Unix ms.
@@ -241,7 +300,7 @@ fn age(at: u64) -> String {
     }
 }
 
-/// A turn state's key in the theme (`look.js` draws its sprite and words).
+/// A turn state's key in the theme (`shown.rs` and `look.ts` draw its sprite and words).
 fn state(state: &str) -> &'static str {
     match state {
         "blocked" => "needs",
@@ -290,6 +349,7 @@ async fn header(
                 type="button"
                 class="gl"
                 data-open="look"
+                popovertarget="sh-look"
                 aria-label="look: theme and colours"
                 aria-pressed="false"
             >
@@ -299,6 +359,7 @@ async fn header(
                 type="button"
                 class="gl"
                 data-open="settings"
+                popovertarget="sh-settings"
                 aria-label="settings"
                 aria-pressed="false"
             >
@@ -309,8 +370,9 @@ async fn header(
 }
 
 #[component]
-async fn row(r: Summary) -> Result<impl View> {
+async fn row(cx: &Cx, r: Summary) -> Result<impl View> {
     let st = state(&r.state);
+    let mark = Unescaped::new_unchecked(shown(cx).st(st, false));
     let href = format!("/t/{}", r.id);
     let meta = format!("{} · {}", r.agent, age(r.at));
     Ok(view! {
@@ -319,7 +381,7 @@ async fn row(r: Summary) -> Result<impl View> {
             <span class="tt">(r.title)</span>
             <span class="ta">(meta)</span>
             <span class="tp">
-                <b data-st=(st)></b>
+                <b data-st=(st)>(mark)</b>
                 (r.last)
             </span>
         </a>
@@ -355,7 +417,7 @@ async fn nav(tabs: Vec<(String, String, bool)>, current: String) -> Result<impl 
 /// The thread list: one card per working folder, its 3 newest threads shown, the rest folded; the new-thread
 /// form (open when there are no threads, else behind `+`), each agent with its provider's state (no agents or no
 /// folders: the fix line instead); the
-/// sign-ins card (`#signins`, from Settings): each provider's accounts and their state, and its login's terminal (drawn by `chat.js`); `tabs`: the
+/// sign-ins card (`#signins`, from Settings): each provider's accounts and their state, and its login's terminal (drawn by `chat.ts`); `tabs`: the
 /// plugins' names and labels.
 #[must_use]
 pub fn threads_page(
@@ -419,7 +481,7 @@ async fn account(a: Account, s: Status) -> Result<impl View> {
 }
 
 /// One provider on the sign-ins card: its accounts (the system default first) and [+ account], or the install line
-/// when its CLI is missing; the login terminal (drawn by `chat.js`).
+/// when its CLI is missing; the login terminal (drawn by `chat.ts`).
 #[component]
 async fn provider(sheet: Sheet) -> Result<impl View> {
     let p = sheet.provider;
@@ -472,7 +534,7 @@ async fn provider(sheet: Sheet) -> Result<impl View> {
 #[component]
 async fn signins(providers: Vec<Sheet>) -> Result<impl View> {
     Ok(view! {
-        <section class="nf" id="signins" hidden=(true)>
+        <section class="nf shut" id="signins">
             <div class="fh">
                 <b>"sign-ins"</b>
                 <a class="gl" href="#" aria-label="close sign-ins">"×"</a>
@@ -531,7 +593,7 @@ async fn agent(
     })
 }
 
-/// An empty picker's row instead: why, and the line that fixes it with its copy button (`chat.js`).
+/// An empty picker's row instead: why, and the line that fixes it with its copy button (`chat.ts`).
 #[component]
 async fn hint(why: &str, fix: &str, then: &str) -> Result<impl View> {
     Ok(view! {
@@ -546,7 +608,7 @@ async fn hint(why: &str, fix: &str, then: &str) -> Result<impl View> {
     })
 }
 
-/// The new-thread form's folder: the roots and the folders 1 level inside them (and 2 levels, as `chat.js`'s search
+/// The new-thread form's folder: the roots and the folders 1 level inside them (and 2 levels, as `chat.ts`'s search
 /// finds them), with [+ new folder]; or the fix line when there are none.
 #[component]
 async fn folder_picker(folders: Vec<(PathBuf, u8)>) -> Result<impl View> {
@@ -585,6 +647,7 @@ async fn folder_picker(folders: Vec<(PathBuf, u8)>) -> Result<impl View> {
 
 #[component]
 async fn threads(
+    cx: &Cx,
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
     folders: Vec<(PathBuf, u8)>,
@@ -592,6 +655,8 @@ async fn threads(
     tabs: Vec<(String, String, bool)>,
 ) -> Result<impl View> {
     let empty = rows.is_empty();
+    let look = shown(cx);
+    let (figure, words) = (look.s("empty"), look.w("empty-threads", true));
     // Start waits for an agent and a folder to pick.
     let can_start = !folders.is_empty() && agents.as_ref().is_ok_and(|a| !a.is_empty());
     let accounts: BTreeMap<String, Vec<(Account, Status)>> = providers
@@ -599,10 +664,7 @@ async fn threads(
         .rev()
         .map(|p| (p.provider.agent.clone(), p.accounts.clone()))
         .collect();
-    let mut cards: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
-    for r in rows {
-        cards.entry(r.folder.clone()).or_default().push(r);
-    }
+    let cards = cards(rows);
     Ok(view! {
         document(
             title: "cooee",
@@ -611,11 +673,13 @@ async fn threads(
                 signins(providers: providers)
                 if empty {
                     <div class="emp">
-                        <span data-s="empty"></span>
-                        <p data-w="empty-threads" data-plain=""></p>
+                        <span data-s="empty">(Unescaped::new_unchecked(figure))</span>
+                        <p data-w="empty-threads" data-plain="">
+                            (Unescaped::new_unchecked(words))
+                        </p>
                     </div>
                 }
-                <form class="nf" id="new" hidden=(!empty)>
+                <form class=(if empty { "nf" } else { "nf shut" }) id="new">
                     <div class="fh">
                         <b>"new thread"</b>
                         <a class="gl" href="#" aria-label="close">"×"</a>
@@ -656,10 +720,10 @@ async fn threads(
                     </div>
                     <p class="err" id="new-err" hidden=(true)></p>
                 </form>
-                for (folder, rows) in cards {
+                for Card { folder, rows } in cards {
                     <section class="fc">
                         <div class="fh">
-                            <b>(short(&folder))</b>
+                            <b>(folder)</b>
                             <span class="ds">(format!("{} threads", rows.len()))</span>
                         </div>
                         for r in rows.iter().take(3).cloned() {
@@ -682,7 +746,7 @@ async fn threads(
     })
 }
 
-/// Plugin `name`'s tab: its module runs in a sandboxed frame that `chat.js` hosts.
+/// Plugin `name`'s tab: its module runs in a sandboxed frame that `chat.ts` hosts.
 #[must_use]
 pub fn plugin_page(
     cx: &Cx,
@@ -737,6 +801,7 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
                     type="button"
                     class="gl"
                     data-open="look"
+                    popovertarget="sh-look"
                     aria-label="look: theme and colours"
                     aria-pressed="false"
                 >
@@ -802,14 +867,21 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
     })
 }
 
-/// One thread: its bar, the items (drawn by `chat.js`), the working pill and the composer.
+/// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer.
 #[must_use]
 pub fn chat_page(cx: &Cx, thread: Thread, turn: Turn) -> impl View {
     view! { cx => chat(thread: thread, turn: turn) }
 }
 
 #[component]
-async fn chat(thread: Thread, turn: Turn) -> Result<impl View> {
+async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
+    let look = shown(cx);
+    let [st, wait, pill] = [
+        (state(&turn.state), false),
+        ("needs", true),
+        ("working", true),
+    ]
+    .map(|(st, plain)| Unescaped::new_unchecked(look.st(st, plain)));
     let folder = thread.folder.as_deref().map(short).unwrap_or_default();
     let ended = thread.closed || turn.state == "ended";
     Ok(view! {
@@ -838,7 +910,7 @@ async fn chat(thread: Thread, turn: Turn) -> Result<impl View> {
                                     thread.account,
                                 )
                             })
-                            <span id="st" data-st=(state(&turn.state))></span>
+                            <span id="st" data-st=(state(&turn.state))>(st)</span>
                         </span>
                     </div>
                     <button
@@ -859,11 +931,11 @@ async fn chat(thread: Thread, turn: Turn) -> Result<impl View> {
                     aria-live="polite"
                 ></ol>
                 <p class="tlv" id="wait" hidden=(true)>
-                    <span data-st="needs" data-plain=""></span>
+                    <span data-st="needs" data-plain="">(wait)</span>
                 </p>
                 <form class="tw" id="composer">
                     <div class="pill" id="pill" hidden=(true)>
-                        <span id="pst" data-st="working" data-plain=""></span>
+                        <span id="pst" data-st="working" data-plain="">(pill)</span>
                         <span id="el">"0:00"</span>
                         <button type="button" class="stop">"stop"</button>
                     </div>

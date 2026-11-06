@@ -19,8 +19,8 @@ test("Settings › Folders: browse from home, add a root and remove it", async (
   await page.goto("/");
   await page.getByRole("button", { name: "settings" }).click();
   await page.locator("#sheet").getByRole("button", { name: "roots" }).click();
-  const sheet = page.locator("#sheet .sh");
-  await expect(sheet.locator("#sht")).toHaveText("folders");
+  const sheet = page.locator("#sheet .sh:popover-open");
+  await expect(sheet.locator(".hd b")).toHaveText("folders");
   await expect(sheet.locator(".lrw .sk").first()).toHaveText("~/root");
   await expect(sheet.locator("[data-go]", { hasText: folder })).toBeVisible();
   // Folder names only: no config.toml, no hidden folder until the toggle.

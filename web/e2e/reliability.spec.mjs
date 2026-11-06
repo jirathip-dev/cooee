@@ -103,18 +103,17 @@ test.describe("on WebKit, as on the iPhone", () => {
     await page.evaluate(() => { window.kept = true; });
     for (const name of ["settings", "look"]) {
       await page.locator(`[data-open=${name}]`).first().click();
-      await expect(page.locator("#sheet .sh")).toBeVisible();
+      await expect(page.locator("#sheet .sh:popover-open")).toBeVisible();
       // Every frame from the tap: whether the sheet shows, and the page's background under it.
       await page.evaluate(() => {
         window.frames_ = [];
         const look = () => {
-          const sheet = document.querySelector("#sheet");
-          window.frames_.push({ sheet: !!sheet && !sheet.hidden, bg: getComputedStyle(document.body).backgroundColor });
+          window.frames_.push({ sheet: !!document.querySelector("#sheet .sh:popover-open"), bg: getComputedStyle(document.body).backgroundColor });
           if (window.frames_.length < 60) requestAnimationFrame(look);
         };
         requestAnimationFrame(look);
       });
-      await page.locator("#sheet [data-close]").first().click();
+      await page.locator("#sheet .sh:popover-open [data-close]").first().click();
       await expect.poll(() => page.evaluate(() => window.frames_.length)).toBe(60);
       const frames = await page.evaluate(() => window.frames_);
       const shown = frames.map((f) => f.sheet);

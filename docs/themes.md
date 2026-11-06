@@ -32,9 +32,9 @@ group tints, and the state colours at least ΔE2000 20 apart. A scheme that fail
 ## The pick
 
 The server holds only the default theme (`theme` in `config.toml`, default `farm`). Each device keeps its own pick
-in `localStorage` (`cooee.look`): the theme, Appearance (`system`, `light` or `dark`; System follows the phone
-live), Style (`modern` or `terminal`), Sprites (`on` or `off`) and a scheme per mode. `look.js` applies it in
-`<head>`, before the first paint. Both styles read the same tokens: a style sets only shape, radius, type and buttons.
+in its `cooee-look` cookie (#49): the theme, Appearance (`system`, `light` or `dark`; System follows the phone
+live), Style (`modern` or `terminal`), Sprites (`on`, `ascii` or `off`) and a scheme per mode. The server draws it from
+the page's first byte (`web/src/shown.rs`), so there is no flash; `look.ts` applies a new pick in place. Both styles read the same tokens: a style sets only shape, radius, type and buttons.
 
 ## Plugin tabs
 
