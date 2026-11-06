@@ -569,6 +569,7 @@ mod tests {
             Body::You {
                 text: "hi".to_owned(),
                 random_id: "r".to_owned(),
+                files: Vec::new(),
             },
         );
         chat.push(

@@ -61,6 +61,7 @@ pub fn assets(builder: RouterBuilder, looks: Looks) -> RouterBuilder {
         .route(icon_512)
         .route(style)
         .route(script)
+        .route(md_js)
         .route(worker)
         .route(look_js)
         .route(sheet::look_set)
@@ -184,6 +185,14 @@ async fn script() -> Result<Static> {
     ))
 }
 
+#[route(GET "/md.js")]
+async fn md_js() -> Result<Static> {
+    Ok(Static(
+        "text/javascript; charset=utf-8",
+        built!("md.js").as_bytes(),
+    ))
+}
+
 #[route(GET "/look.js")]
 async fn look_js() -> Result<Static> {
     Ok(Static(
@@ -268,19 +277,31 @@ pub struct Card {
     pub rows: Vec<Summary>,
 }
 
-/// The thread list's cards, one per working folder, by folder (`GET /threads` and the page draw the same).
+/// The thread list as `GET /threads` and the page draw it: the cards, and the archived threads apart.
+#[derive(serde::Serialize)]
+pub struct Listed {
+    /// One per working folder, by folder.
+    pub cards: Vec<Card>,
+    /// The archived threads, newest first.
+    pub archived: Vec<Summary>,
+}
+
+/// The thread list's cards, one per working folder, by folder, and the archived threads.
 #[must_use]
-pub fn cards(rows: Vec<Summary>) -> Vec<Card> {
+pub fn listed(rows: Vec<Summary>) -> Listed {
+    let (archived, rows): (Vec<_>, Vec<_>) = rows.into_iter().partition(|r| r.archived);
     let mut by: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
     for r in rows {
         by.entry(r.folder.clone()).or_default().push(r);
     }
-    by.into_iter()
-        .map(|(f, rows)| Card {
-            folder: short(&f),
-            rows,
-        })
-        .collect()
+    let cards = by.into_iter().map(|(f, rows)| Card {
+        folder: short(&f),
+        rows,
+    });
+    Listed {
+        cards: cards.collect(),
+        archived,
+    }
 }
 
 /// Now, in Unix ms.
@@ -376,10 +397,21 @@ async fn row(cx: &Cx, r: Summary) -> Result<impl View> {
     let href = format!("/t/{}", r.id);
     let meta = format!("{} · {}", r.agent, age(r.at));
     Ok(view! {
-        <a class=(if r.unread { "tr" } else { "tr rd" }) href=(href)>
+        <a
+            class=(if r.unread { "tr" } else { "tr rd" })
+            href=(href)
+            data-id=(r.id.clone())
+        >
             <i class="ud">(if r.unread { "●" } else { "" })</i>
             <span class="tt">(r.title)</span>
-            <span class="ta">(meta)</span>
+            <span class="ta">
+                (meta)
+                if r.unseen > 0 {
+                    <b class="bd" aria-label=(format!("{} unread", r.unseen))>
+                        (r.unseen.to_string())
+                    </b>
+                }
+            </span>
             <span class="tp">
                 <b data-st=(st)>(mark)</b>
                 (r.last)
@@ -654,7 +686,6 @@ async fn threads(
     providers: Vec<Sheet>,
     tabs: Vec<(String, String, bool)>,
 ) -> Result<impl View> {
-    let empty = rows.is_empty();
     let look = shown(cx);
     let (figure, words) = (look.s("empty"), look.w("empty-threads", true));
     // Start waits for an agent and a folder to pick.
@@ -664,7 +695,8 @@ async fn threads(
         .rev()
         .map(|p| (p.provider.agent.clone(), p.accounts.clone()))
         .collect();
-    let cards = cards(rows);
+    let Listed { cards, archived } = listed(rows);
+    let empty = cards.is_empty();
     Ok(view! {
         document(
             title: "cooee",
@@ -741,8 +773,85 @@ async fn threads(
                         }
                     </section>
                 }
+                shelf(rows: archived)
             </main>
         )
+    })
+}
+
+/// The archived threads, folded, each with [restore] (`chat.ts`).
+#[component]
+async fn shelf(rows: Vec<Summary>) -> Result<impl View> {
+    Ok(view! {
+        if !rows.is_empty() {
+            <details class="fc arc">
+                <summary>(format!("{} archived", rows.len()))</summary>
+                for r in rows {
+                    <div class="arw">
+                        <a href=(format!("/t/{}", r.id))>(r.title.clone())</a>
+                        <button
+                            type="button"
+                            class="cn"
+                            data-restore=(r.id.clone())
+                            aria-label=(format!("restore {}", r.title))
+                        >
+                            "restore"
+                        </button>
+                    </div>
+                }
+            </details>
+        }
+    })
+}
+
+/// A thread's foot: the working pill, the queued messages, the picked files, the composer; the long-press menu and
+/// the image viewer (`chat.ts`).
+#[component]
+async fn foot(who: String, ended: bool, pill: Unescaped<String>) -> Result<impl View> {
+    Ok(view! {
+        <div class="cmp">
+            <div class="pill" id="pill" hidden=(true)>
+                <span id="pst" data-st="working" data-plain="">(pill)</span>
+                <span id="el">"0:00"</span>
+                <button type="button" class="stop">"stop"</button>
+            </div>
+            <ul class="qu" id="queue" aria-label="queued messages" hidden=(true)></ul>
+            <div class="fis" id="picked" hidden=(true)></div>
+            <form class="tw" id="composer">
+                <label class="gl att" hidden=(ended)>
+                    "📎"
+                    <input
+                        type="file"
+                        id="files"
+                        class="vh"
+                        multiple=(true)
+                        aria-label="attach files"
+                    >
+                </label>
+                <textarea
+                    id="box"
+                    rows="1"
+                    aria-label="message"
+                    placeholder=(format!("message {who}"))
+                    disabled=(ended)
+                ></textarea>
+                <button type="submit" disabled=(ended)>"send"</button>
+            </form>
+        </div>
+        <div
+            id="menu"
+            class="mn"
+            popover="auto"
+            role="menu"
+            aria-label="message actions"
+        >
+            <button type="button" role="menuitem" data-m="copy">"copy"</button>
+            <button type="button" role="menuitem" data-m="md">
+                "copy as markdown"
+            </button>
+            <button type="button" role="menuitem" data-m="quote">"quote"</button>
+        </div>
+        <div id="viewer" class="vw" popover="auto" aria-label="image"><img alt=""></div>
     })
 }
 
@@ -898,9 +1007,19 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
                 <div class="th">
                     <a class="gl bk" href="/" aria-label="back to threads">"‹"</a>
                     <div class="tb">
-                        <h1>(thread.title.clone())</h1>
+                        <h1>
+                            <button
+                                type="button"
+                                class="ttl"
+                                popovertarget="rt"
+                                aria-label=(format!("{} · rename", thread.title))
+                            >
+                                (thread.title.clone())
+                            </button>
+                        </h1>
                         <span class="ds">
                             <i class="dt"></i>
+                            <span id="net"></span>
                             (if thread.account.is_empty() {
                                 format!("{} · {folder} · ", thread.agent)
                             } else {
@@ -922,6 +1041,21 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
                     >
                         "×"
                     </button>
+                    <form
+                        id="rt"
+                        class="rt"
+                        popover="auto"
+                        aria-label="rename the thread"
+                    >
+                        <input
+                            name="title"
+                            aria-label="thread title"
+                            value=(thread.title.clone())
+                            maxlength="80"
+                            required=(true)
+                        >
+                        <button type="submit">"rename"</button>
+                    </form>
                 </div>
                 <ol
                     class="tc"
@@ -933,21 +1067,7 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
                 <p class="tlv" id="wait" hidden=(true)>
                     <span data-st="needs" data-plain="">(wait)</span>
                 </p>
-                <form class="tw" id="composer">
-                    <div class="pill" id="pill" hidden=(true)>
-                        <span id="pst" data-st="working" data-plain="">(pill)</span>
-                        <span id="el">"0:00"</span>
-                        <button type="button" class="stop">"stop"</button>
-                    </div>
-                    <textarea
-                        id="box"
-                        rows="1"
-                        aria-label="message"
-                        placeholder=(format!("message {}", thread.agent))
-                        disabled=(ended)
-                    ></textarea>
-                    <button type="submit" disabled=(ended)>"send"</button>
-                </form>
+                foot(who: thread.agent.clone(), ended: ended, pill: pill)
             </main>
         )
     })

@@ -9,7 +9,7 @@ A failure is a status ≥ 400. When the body is cooee's own sentence, the answer
 
 ```ts
 type Item = { id: number; at: number; seq?: number } & (
-  | { kind: "you"; text: string; random_id: string }
+  | { kind: "you"; text: string; random_id: string; files?: string[] }
   | { kind: "agent"; text: string; stop_reason: string }
   | { kind: "tool"; call: string; title: string; status: string; ended?: number }
   | { kind: "approval"; tool: string; options: { id: string; name: string; kind: string }[]; tapped?: string; chosen?: string; plugin?: string }
@@ -17,24 +17,33 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "ended"; text: string }
 );
 type Turn = { text: string; state: "working" | "blocked" | "done" | "error" | "ended" | ""; note?: string };
+type Queued = { text: string; random_id: string; files?: string[] };
+type Row = { id; title; agent; folder; state; last; at; unread: boolean; unseen: number; archived: boolean };
+type File = { name: string; data: string }; // data: the bytes in base64
 ```
 
 ## Threads
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | the thread list's cards, `{folder, rows: {id, title, agent, folder, state, last, at, unread}[]}[]` (`folder`: `~/…` under home) |
+| `GET /threads` | | the thread list: `{cards: {folder, rows: Row[]}[], archived: Row[]}` (`folder`: `~/…` under home; `unseen`: the agent's items past the read mark) |
 | `POST /threads` | `{agent, account?, folder, text, random_id}` | `{id}` |
-| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor}` |
+| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, queue: Queued[]}` |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |
-| `POST /threads/{id}/send` | `{text, random_id}` (a retry with the same id is stored once) | `Item` |
+| `POST /threads/{id}/send` | `{text, random_id, files?: File[]}` (a retry with the same id is stored once; the agent gets the files' paths under the text) | `Item` |
+| `POST /threads/{id}/queue` | as `send`: held until the turn in progress ends, then sent (between turns: at once) | `Queued[]` |
+| `POST /threads/{id}/steer` | `{random_id}`: a queued message sent into the turn now | `Queued[]` |
+| `POST /threads/{id}/unqueue` | `{random_id}`: a queued message taken back | `Queued[]` |
+| `GET /threads/{id}/files/{name}` | | a file sent in the thread: images as themselves, anything else as a download (`sandbox`, `nosniff`) |
+| `POST /threads/{id}/title` | `{title}` | `null` |
+| `POST /threads/{id}/archive` | `{on}`: archive it, or restore it | `null` |
 | `POST /threads/{id}/approve` | `{item, option}` | `Item` or `null` |
 | `POST /threads/{id}/cancel` | `{}` | `null` |
 | `POST /threads/{id}/close` | `{}` | `null` |
 | `POST /threads/{id}/read` | `{item}`: read up to this id | `null` |
 
 The event stream's events, each with an id `<boot>.<seq>` to resume after: `item` (an `Item`, new or changed), `text`
-(`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), and `reset` (`{}`: too far behind or
+(`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), `queue` (the `Queued[]` now), and `reset` (`{}`: too far behind or
 another run; load the newest slice again).
 
 ## Folders

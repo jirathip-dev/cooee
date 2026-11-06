@@ -50,6 +50,25 @@ pub struct Thread {
     /// The page's id for the start that made it, so a retried start adopts this thread instead of starting another.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub random_id: String,
+    /// Archived: listed apart, under the thread list's archived threads, until restored.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub archived: bool,
+    /// The owner's messages queued during a turn, sent in order as each turn ends.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub queue: Vec<Queued>,
+}
+
+/// A message queued during a turn.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Queued {
+    /// The text.
+    pub text: String,
+    /// The page's id for the send: the item it becomes keeps it.
+    pub random_id: String,
+    /// Its files' stored names.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub files: Vec<String>,
 }
 
 /// One message in a thread.
