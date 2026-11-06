@@ -1066,6 +1066,8 @@ function chat(main: HTMLElement): void {
   // Runs of 2 or more tool calls fold under one row, `▸ 3 commands`; one opened stays open as the run grows.
   const opened = new Set<string>();
   function fold(): void {
+    // Most changes (a chunk of text, a slice of replies) have nothing to fold: no walk.
+    if (!list.querySelector(":scope > .run, :scope > .fold")) return;
     const used = new Set<Element>();
     let run: HTMLElement[] = [];
     const close = (): void => {
