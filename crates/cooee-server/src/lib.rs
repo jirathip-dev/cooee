@@ -145,7 +145,15 @@ impl Layer for Gate {
                 c.split(';')
                     .find_map(|c| c.trim().strip_prefix(COOKIE)?.strip_prefix('='))
             });
-            match token.and_then(|t| self.devices.find(t, now())) {
+            // A store that can't be read is a 503: never taken for "unpaired" (herdsman#501).
+            let found = match token.map(|t| self.devices.find(t, now())).transpose() {
+                Ok(found) => found.flatten(),
+                Err(e) => {
+                    eprintln!("cooee: devices: {e}");
+                    return plain(503, "cooee can't read its paired devices: try again soon.");
+                }
+            };
+            match found {
                 Some(d) => next.run(&cx.with(Paired(d)), body).await,
                 None if method(cx) == "GET"
                     && (path == "/"
@@ -199,6 +207,11 @@ impl<T: Serialize> IntoResponse for Answer<T> {
             Ok(value) => return Json(value).into_response(cx),
             Err(e @ HubError::NoThread(_)) => (404, e.to_string()),
             Err(e @ HubError::Refused(_)) => (400, e.to_string()),
+            // An answer or message to a session that is gone says so (herdsman#325).
+            Err(HubError::Shed(e)) if e.no_such_terminal() => (
+                410,
+                "Not delivered: this thread's agent is gone.".to_owned(),
+            ),
             // shed's own errors go to the log; the page gets a sentence.
             Err(HubError::Shed(
                 e @ (ShedError::Rpc(_) | ShedError::Bad(_) | ShedError::Cli { .. }),
@@ -249,7 +262,7 @@ fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
 async fn home(cx: &Cx) -> Result<impl View> {
     let providers = on_logins(cx, |l| Ok(l.statuses()));
     let rest = blocking(cx, |hub| {
-        let agents = hub.agents().map_err(|e| e.to_string());
+        let agents = hub.agents();
         Ok((hub.list(), agents, hub.folders()))
     });
     let (providers, (rows, agents, folders)) =

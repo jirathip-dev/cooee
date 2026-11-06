@@ -8,6 +8,7 @@ use std::{
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
     process::Command,
+    time::Duration,
 };
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -60,6 +61,10 @@ impl ShedError {
         matches!(self, Self::Rpc(e) if e.code == ErrorCode::NoSuchTerminal.code())
     }
 }
+
+/// How long one call may wait for shed's answer: a stuck call fails, and frees the thread it holds, rather than
+/// waiting for ever (herdsman#548). A `wait` gets its own timeout on top.
+const CALL: Duration = Duration::from_secs(10);
 
 /// The fix for no installed agents, as the agent picker and `cooee doctor` print it.
 pub const AGENTS_FIX: &str = "shed agents add claude-acp";
@@ -156,11 +161,18 @@ impl Shed {
     }
 
     fn connect(&self) -> Result<Conn, ShedError> {
+        self.connect_for(CALL)
+    }
+
+    /// A connection whose reads and writes give up after `timeout`.
+    fn connect_for(&self, timeout: Duration) -> Result<Conn, ShedError> {
         let io = |source| ShedError::Io {
             path: self.socket.clone(),
             source,
         };
         let writer = UnixStream::connect(&self.socket).map_err(io)?;
+        writer.set_read_timeout(Some(timeout)).map_err(io)?;
+        writer.set_write_timeout(Some(timeout)).map_err(io)?;
         let mut conn = Conn {
             reader: BufReader::new(writer.try_clone().map_err(io)?),
             writer,
@@ -213,7 +225,8 @@ impl Shed {
             output: Some("ACP session ready".to_owned()),
             timeout: Some(60.0),
         };
-        let result: WaitResult = self.call(Method::Wait, json!(wait))?;
+        let mut conn = self.connect_for(CALL + Duration::from_secs(60))?;
+        let result: WaitResult = conn.call(Method::Wait, json!(wait))?;
         match result.outcome {
             WaitOutcome::Matched => Ok(()),
             outcome => Err(ShedError::Bad(format!(
@@ -342,7 +355,8 @@ impl Shed {
             output: None,
             timeout: Some(timeout),
         };
-        self.call(Method::Wait, json!(wait))
+        let mut conn = self.connect_for(CALL + Duration::from_secs_f64(timeout.max(0.0)))?;
+        conn.call(Method::Wait, json!(wait))
     }
 
     /// Streams the events of the terminals carrying every one of `labels`, first the kept ones after `since`.
@@ -357,6 +371,8 @@ impl Shed {
     ) -> Result<impl Iterator<Item = Event>, ShedError> {
         let mut conn = self.connect()?;
         let _: Value = conn.call(Method::Events, json!(EventsParams { labels, since }))?;
+        // The stream may be quiet for hours.
+        conn.writer.set_read_timeout(None).map_err(conn.io())?;
         Ok(std::iter::from_fn(move || {
             loop {
                 let line = conn.line().ok()??;

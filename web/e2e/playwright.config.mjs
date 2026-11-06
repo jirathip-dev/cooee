@@ -16,6 +16,8 @@ export default defineConfig({
     { name: "pair", testMatch: /pair\.setup\.mjs/, use: { ...devices["iPhone 13"], colorScheme: "dark" } },
     { name: "390", dependencies: ["pair"], use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, storageState } },
     { name: "1440", dependencies: ["pair"], use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, storageState } },
+    // The iPhone audits (#24: keyboard, sheets) on WebKit.
+    { name: "webkit", dependencies: ["pair"], testMatch: /reliability\.spec\.mjs/, use: { ...devices["iPhone 13"], colorScheme: "dark", storageState } },
   ],
   webServer: {
     command: "./serve.sh",

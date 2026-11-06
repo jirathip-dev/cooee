@@ -10,7 +10,10 @@ use std::{
     io::{self, Read, Write},
     os::unix::fs::OpenOptionsExt,
     path::{Path, PathBuf},
-    sync::{Mutex, PoisonError},
+    sync::{
+        Mutex, PoisonError,
+        atomic::{AtomicU64, Ordering},
+    },
 };
 
 use serde::{Deserialize, Serialize};
@@ -125,14 +128,17 @@ pub fn random(n: usize) -> io::Result<Vec<u8>> {
     Ok(b)
 }
 
-/// Replaces `path` with `bytes`, mode 0600: a temp file fsynced and renamed over it.
+/// Replaces `path` with `bytes`, mode 0600: a temp file of its own (named by process and write, so concurrent
+/// writers never share one) fsynced and renamed over it.
 ///
 /// # Errors
 /// When the folder or the file can't be written.
 pub fn write_private(path: &Path, bytes: &[u8]) -> io::Result<()> {
+    static WRITES: AtomicU64 = AtomicU64::new(0);
     let dir = path.parent().unwrap_or(path);
     fs::create_dir_all(dir)?;
-    let tmp = path.with_extension(format!("tmp-{}", std::process::id()));
+    let n = WRITES.fetch_add(1, Ordering::Relaxed);
+    let tmp = path.with_extension(format!("tmp-{}-{n}", std::process::id()));
     let mut f = fs::OpenOptions::new()
         .write(true)
         .create(true)
@@ -301,16 +307,20 @@ impl Devices {
         })
     }
 
-    /// The paired device whose token this is; its `used` is updated at most hourly.
-    #[must_use]
-    pub fn find(&self, token: &str, now: u64) -> Option<Device> {
+    /// The paired device whose token this is (`None`: no such device); its `used` is updated at most hourly.
+    ///
+    /// # Errors
+    /// When the file can't be read: that is not "unpaired".
+    pub fn find(&self, token: &str, now: u64) -> io::Result<Option<Device>> {
         let hash = sha256(token.as_bytes());
-        let device = self
-            .load()
-            .ok()?
+        let found = self
+            .load()?
             .devices
             .into_iter()
-            .find(|d| same(&d.hash, &hash))?;
+            .find(|d| same(&d.hash, &hash));
+        let Some(device) = found else {
+            return Ok(None);
+        };
         if device.used + 3_600_000 <= now {
             let _ = self.change(|f| {
                 for d in f.devices.iter_mut().filter(|d| d.hash == hash) {
@@ -319,7 +329,7 @@ impl Devices {
                 Ok(())
             });
         }
-        Some(device)
+        Ok(Some(device))
     }
 
     /// Every paired device, oldest first.
@@ -364,9 +374,9 @@ mod tests {
             .unwrap();
         // Single use.
         assert_eq!(d.claim(&code, "x", 2000).unwrap(), None);
-        let found = d.find(&token, 3000).unwrap();
+        let found = d.find(&token, 3000).unwrap().unwrap();
         assert_eq!(found.label, "iPhone");
-        assert_eq!(d.find("not-a-token", 3000), None);
+        assert_eq!(d.find("not-a-token", 3000).unwrap(), None);
 
         let disk = fs::read_to_string(&d.path).unwrap();
         assert!(!disk.contains(&token) && !disk.contains(&code), "{disk}");
@@ -378,7 +388,7 @@ mod tests {
         );
 
         assert!(d.remove(&found.id).unwrap());
-        assert_eq!(d.find(&token, 4000), None);
+        assert_eq!(d.find(&token, 4000).unwrap(), None);
         assert_eq!(d.list().unwrap(), Vec::new());
     }
 
@@ -406,7 +416,7 @@ mod tests {
         let Claim::Paired(token) = d.collect(&claim, "Mozilla/5.0 (iPhone)", 2).unwrap() else {
             panic!("not paired");
         };
-        assert_eq!(d.find(&token, 3).unwrap().label, "iPhone");
+        assert_eq!(d.find(&token, 3).unwrap().unwrap().label, "iPhone");
         assert_eq!(d.collect(&claim, "x", 3).unwrap(), Claim::Gone);
         let disk = fs::read_to_string(&d.path).unwrap();
         assert!(!disk.contains(&claim) && !disk.contains(&token), "{disk}");
@@ -423,5 +433,40 @@ mod tests {
             d.request(0).unwrap();
         }
         assert_eq!(d.collect(&first, "x", 1).unwrap(), Claim::Gone);
+    }
+
+    /// R3 (herdsman#501): a devices file that can't be read is an error, never "not paired".
+    #[test]
+    fn an_unreadable_store_is_an_error_not_unpaired() {
+        let d = scratch("unreadable");
+        let token = d.claim(&d.pair(0).unwrap(), "x", 0).unwrap().unwrap();
+        fs::write(&d.path, b"{ torn").unwrap();
+        assert!(d.find(&token, 1).is_err());
+    }
+
+    /// R18 (herdsman#342): parallel writes of one file each use a temp file of their own and rename it whole.
+    #[test]
+    fn parallel_writes_never_share_a_temp_file() {
+        let dir = std::env::temp_dir().join(format!("cooee-write-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        let path = dir.join("state.json");
+        std::thread::scope(|s| {
+            for i in 0..16 {
+                let path = &path;
+                s.spawn(move || {
+                    for j in 0..20 {
+                        write_private(path, format!("{i}-{j}").as_bytes()).unwrap();
+                    }
+                });
+            }
+        });
+        let last = fs::read_to_string(&path).unwrap();
+        assert!(last.split_once('-').is_some(), "{last}");
+        let left: Vec<_> = fs::read_dir(&dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name())
+            .collect();
+        assert_eq!(left, ["state.json"]);
     }
 }
