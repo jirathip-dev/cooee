@@ -181,7 +181,9 @@ test("row 7: an unpaired browser gets the app's shell: the composer off, a pair 
 });
 const viewport = (info) => (info.project.name === "390" ? { width: 390, height: 844 } : { width: 1440, height: 900 });
 
-test("rows 8 and 13: Settings opens at a section from its link, has an index, and says truly that alerts are off", async ({ page }, info) => {
+test("rows 8 and 13: Settings opens at a section from its link, has an index, and says truly that alerts are off", async ({ page, context }, info) => {
+  // Allowed but not subscribed: off (a CI browser denies notifications by default, which reads as blocked).
+  await context.grantPermissions(["notifications"]);
   await page.goto("/#settings/alerts");
   const sheet = page.locator("#sheet .sh");
   await expect(sheet.locator(".six a")).toHaveText(["sign-ins", "folders", "look", "alerts", "devices", "report"]);
