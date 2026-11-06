@@ -1,7 +1,7 @@
 # A 0.1.0 config.toml using every key that release reads. Never edited: a later release adds its own.
 port = 4747
 bind = "127.0.0.1"
-allowed_hosts = ["mac.tailnet.ts.net"]
+allowed_hosts = ["mac.tailnet.example"]
 roots = ["~/Projects", "/srv/work"]
 shed = "shed"
 shed_dir = "/tmp/shed"
