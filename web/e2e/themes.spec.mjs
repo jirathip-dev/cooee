@@ -46,8 +46,10 @@ test("remix farm with an agent, watch the preview reload on a save, keep it and 
   const theme = JSON.parse(readFileSync(file, "utf8"));
   theme.label = `${name} night`;
   theme.words.loading = "saddling up at night";
+  const reloaded = page.waitForEvent("load", { timeout: 15_000 });
   writeFileSync(file, JSON.stringify(theme));
-  await expect.poll(() => page.evaluate(() => window.before), { timeout: 15_000 }).toBeUndefined();
+  await reloaded;
+  expect(await page.evaluate(() => window.before)).toBeUndefined();
   await expect(list.locator("#ld .lw")).toContainText("saddling up at night");
 
   await page.getByRole("button", { name: "keep" }).click();
