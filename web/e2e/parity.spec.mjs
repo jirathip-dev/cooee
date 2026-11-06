@@ -8,8 +8,8 @@ import { expect, test } from "@playwright/test";
 
 const shot = (page, info, name, fullPage = false) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png`, fullPage });
 const config = () => fs.readFileSync(new URL("./.auth/code.config", import.meta.url), "utf8").trim();
-const cooee = (...args) => execFileSync("cargo", ["run", "--quiet", "--locked", "-p", "cooee", "--", ...args, "--config", config()],
-  { cwd: new URL("../..", import.meta.url).pathname, encoding: "utf8" });
+const bin = () => fs.readFileSync(new URL("./.auth/code.bin", import.meta.url), "utf8").trim();
+const cooee = (...args) => execFileSync(bin(), [...args, "--config", config()], { encoding: "utf8" });
 
 async function audit(page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);

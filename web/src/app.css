@@ -166,13 +166,14 @@ html[data-style=terminal] .swa{border-radius:4px}
 
 /* #21: the loading strip (thin, under the header, taps pass through; an old copy's age stays), the toast (one line
    under the header; an error wraps), ↻ spinning, the alert dot on ⚙, Settings' section index, the pairing code. */
-#ld{position:fixed;z-index:2;top:48px;left:0;right:0;margin:0;padding:2px 12px;pointer-events:none;font-size:var(--fs-meta);color:var(--mute);background:color-mix(in srgb,var(--card) 85%,transparent);border-top:2px solid var(--line)}
+#ld{position:fixed;z-index:2;top:48px;left:0;right:0;margin:0;padding:0 12px;pointer-events:none;text-align:right;font-size:var(--fs-meta);color:var(--mute);border-top:2px solid var(--line)}
+#ld span:not(:empty){display:inline-block;padding:0 6px;background:var(--card);border-radius:0 0 6px 6px}
 #ld.run{border-top-color:var(--l);animation:ldp 1.2s ease-in-out infinite}#ld:not(.run) .lw{display:none}
 @keyframes ldp{50%{border-top-color:var(--line)}}
 #toast{position:fixed;z-index:4;top:56px;left:12px;right:12px;max-width:60ch;margin:0 auto;padding:6px 12px;background:var(--bg);border:1px solid currentColor;border-radius:var(--r-row);font-size:var(--fs-meta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 #toast.r{white-space:normal;overflow-wrap:anywhere}
 .rfs{animation:spin 1s linear infinite}
-.gl[data-dot]{position:relative}.gl[data-dot]::after{content:"";position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--r)}
+.gl[data-dot]{background-image:radial-gradient(circle at calc(100% - 12px) 12px,var(--r) 4px,transparent 4.5px)!important}
 .six{display:flex;flex-wrap:wrap;gap:4px 12px;padding:4px 0}.six a{display:inline-flex;align-items:center;min-height:var(--hit)}
 #sheet .lrw{flex-wrap:wrap;padding:4px 0}#sheet .lrw .cn{min-height:var(--hit)}
 .code{margin:0;font:700 32px var(--mono);letter-spacing:.2em;text-align:center}
@@ -190,8 +191,8 @@ html[data-style=terminal] .swa{border-radius:4px}
 .th[data-mo=done] #st :is(svg,i){animation:mo-hop .8s ease-in-out 3}
 .th[data-mo=needs]{animation:mo-tint 2.4s ease-out 1}.th[data-mo=needs] #st :is(svg,i){animation:mo-pulse .8s ease-in-out 3}
 .th[data-mo=fail]{animation:mo-shake .4s ease-in-out 6}
-.mot{position:absolute;right:52px;top:calc(50% - .7em);font-style:normal;font-weight:700;font-size:var(--fs-meta);padding:0 4px;border-radius:4px;color:var(--bg);background:var(--g);white-space:nowrap;animation:mo-tag 2.4s ease-out 1 both}
-.th[data-mo=fail] .mot{background:var(--r)}
+.mot{position:absolute;right:52px;top:calc(50% - .7em);font-style:normal;font-weight:700;font-size:var(--fs-meta);padding:0 4px;border-radius:4px;color:var(--fg);background:var(--card);border:1px solid var(--g);white-space:nowrap;animation:mo-tag 2.4s ease-out 1 both}
+.th[data-mo=fail] .mot{border-color:var(--r)}
 @keyframes mo-hop{50%{translate:0 -4px}}@keyframes mo-shake{25%{translate:-2px 0}75%{translate:2px 0}}@keyframes mo-pulse{50%{scale:1.25}}
 @keyframes mo-tint{from{background:color-mix(in srgb,var(--r) 18%,var(--card))}}@keyframes mo-tag{0%{opacity:0}8%,85%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){#ld.run,.rfs,.th[data-mo],.th[data-mo] *{animation:none!important}}

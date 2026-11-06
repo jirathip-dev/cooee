@@ -5,20 +5,20 @@ Row numbers are #553's.
 
 | # | feature | cooee today | where | gap to build |
 |---|---|---|---|---|
-| 1 | Home Screen app, offline paint | partial | `web/src/manifest.webmanifest` (standalone, icons); `web/src/lib.rs:190` viewport; `web/src/sw.js:1` caches nothing | no zoom lock; no offline copy of the last page with its time |
-| 2 | Live stream, sync dot, gapless reconnect, no scroll jump | partial | `web/src/chat.js` `listen()` (SSE from `since=` cursor, `reset`), `keep()` (scroll held on a message); `web/src/app.css:41` `.dt` | the dot shows turn state, not the connection (amber/green); the thread list is not live |
-| 3 | Themed loading strip, "as of Xm ago" | missing | `web/src/chat.js` `open()` has a 300 ms skeleton only | the strip and its age |
-| 4 | Short self-clearing toasts | missing | errors are `alert()` (`chat.js` 🔔) or inline lines | a toast for every action's reply |
-| 5 | Pull to refresh, ↻, reload on resume | missing | SSE reopens only on error (`chat.js` `listen()`) | all three |
-| 6 | Pair by code approved on host; list and remove devices | partial | `cooee pair` prints a code typed on the phone (`crates/cooee/src/main.rs:136`, `web/src/lib.rs` `pair`); `cooee devices` / `devices rm` (`main.rs:154,161`) | phone-side request + `serve approve <code>`; device list and remove on the phone |
-| 7 | Unpaired devices read-only | partial | unpaired devices are redirected to `/pair` (`crates/cooee-server/src/lib.rs:147`) | a read-only view with the composer off and a pair hint |
-| 8 | Web push: enable, truthful status, test push, themed titles | partial | 🔔 enable (`chat.js`), `/push/key`, `/push/subscribe` (`cooee-server/src/lib.rs:630,647`), themed body (`web/src/look.rs` `push_body`) | status line ("alerts are on"), test push, unsubscribe |
+| 1 | Home Screen app, offline paint | built (#21, rows 1–14 PR) | sw.js network-first copy; chat.js keeps the newest slice; `touch-action:manipulation` | — |
+| 2 | Live stream, sync dot, gapless reconnect, no scroll jump | built (#21, rows 1–14 PR) | chat.js `sync()` on the stream's open/error/offline | — |
+| 3 | Themed loading strip, "as of Xm ago" | built (#21, rows 1–14 PR) | `#ld` (lib.rs `document`), chat.js `strip()` | — |
+| 4 | Short self-clearing toasts | built (#21, rows 1–14 PR) | chat.js `toast()` on every action | — |
+| 5 | Pull to refresh, ↻, reload on resume | built (#21, rows 1–14 PR) | chat.js `refresh()`: ↻ `#rf`, pull, resume after 30 s, `online` | — |
+| 6 | Pair by code approved on host; list and remove devices | built (#21, rows 1–14 PR) | devices.rs `request`/`approve`/`collect`; `/pair/request`, `/claim`, `/cancel`; `cooee pair <code>`; Settings → devices | — |
+| 7 | Unpaired devices read-only | built (#21, rows 1–14 PR) | `/pair` as the shell: look sheet, pair hint, composer off; reads stay 401 (q517) | — |
+| 8 | Web push: enable, truthful status, test push, themed titles | built (#21, rows 1–14 PR) | chat.js `alertState()` checks `/push/endpoints`; `/push/test`, `/push/unsubscribe` | — |
 | 9 | Push tap opens its thread; no push for open thread | done | `web/src/sw.js` `push` (skips a visible client on that thread) and `notificationclick` | — |
-| 10 | Themes as data: farm, kitchen, garden, terminal, moments | partial | `web/src/look.rs` (data-only themes, own themes from config), `web/themes/*` | `moments` is parsed but never played |
+| 10 | Themes as data: farm, kitchen, garden, terminal, moments | built (#21, rows 1–14 PR) | chat.js `moment()` on the thread bar, `html[data-moments]` | — |
 | 11 | Colour schemes: presets plus user files | done | `web/src/look.rs` `Looks::load` (12 built-in + `<config>/schemes/*.json`, contrast gate); `look.js` COLOURS | — |
-| 12 | Appearance per phone: theme, colours, pixel or ascii | partial | `web/src/look.js` (theme, mode, style modern/terminal, sprites on/off in localStorage) | ascii figures (sprites off shows a dot) |
-| 13 | Settings sheet: section index, deep links, alert dot | partial | `web/src/look.js` `settings()` (sign-ins, look) | section index, `#system/<section>` deep links, alert dot |
-| 14 | Report mode | missing | — | tap an element, note, send; host-side list |
+| 12 | Appearance per phone: theme, colours, pixel or ascii | built (#21, rows 1–14 PR) | look.js sprites on, ascii or off | — |
+| 13 | Settings sheet: section index, deep links, alert dot | built (#21, rows 1–14 PR) | look.js Settings index, `#settings/<section>`, ⚙ dot | — |
+| 14 | Report mode | built (#21, rows 1–14 PR) | chat.js `reportMode()`, `POST /report`, `cooee reports` | — |
 | 15 | Thread list per repo: unread dot, state, last line, badge | partial | `web/src/lib.rs` `row` and `threads` (folder cards, ● unread, state, last line) | unread badge; live updates |
 | 16 | Start by typing; auto title; retitle | partial | new-thread form (`web/src/lib.rs` `threads`), title from the first text (`cooee-server/src/hub.rs:370`) | retitle |
 | 17 | Swipe to archive, 5 s undo, restore | missing | only close (`cooee-server/src/lib.rs:419`) | archive, undo, restore, archived list |
@@ -41,4 +41,5 @@ Row numbers are #553's.
 | 34 | Harness pick at start; model/effort chip | partial | agent picker at start (`web/src/lib.rs` `agent`) | model/effort chip and its op |
 | 35 | Handoff chips, flow-back lines, pick-a-thread row | missing | — | chips, lines, the choice row |
 
-Totals: 4 done (9, 11, 21, 29), 18 partial, 13 missing.
+Totals at `51f92e8`: 4 done (9, 11, 21, 29), 18 partial, 13 missing. The rows 1–14 PR builds 1–8, 10 and 12–14
+(9 and 11 were done); rows 15–29 and 30–35 follow in their own PRs, after asking for their cap (q512).

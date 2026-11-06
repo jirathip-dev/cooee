@@ -58,11 +58,16 @@ taken under the thread's lock with the subscription, so nothing is lost or doubl
 
 ## Pairing and push (M2)
 
-Everything but `/pair` and the static files (manifest, icons, style, script, `sw.js`) needs a paired device: an
-unpaired page load goes to `/pair`, any other read or write gets 401. `cooee pair` prints a six-digit code (and its
+Everything but `/pair` (and `/pair/request`, `/pair/claim`, `/pair/cancel`) and the static files (manifest, icons,
+style, scripts, `sw.js`, the themes' files) needs a paired device: an unpaired page load goes to `/pair`, any other read
+or write gets 401. `/pair` is the app's shell for an unpaired browser (#21): the look sheet, a pair hint and the
+composer off, with no thread titles or messages. `cooee pair` prints a six-digit code (and its
 `/pair?code=` link as a QR code), good for 10 minutes and once; five wrong tries drop it. The browser that enters it
 gets a random token as an `HttpOnly`, `SameSite=Strict` cookie. `<data>/devices.json` (0600) keeps only SHA-256
-hashes. `cooee devices` lists the devices and `cooee devices rm <id>` unpairs one (its pushes stop too). On iPhone,
+hashes. The other way round, the phone asks for a code (`/pair/request`), shows it, and polls `/pair/claim` with the
+claim it was given; `cooee pair <code>` on the Mac approves it and the next poll gets the cookie (at most 4 open
+requests, 10 minutes each, only hashes kept). `cooee devices` lists the devices and `cooee devices rm <id>` unpairs one
+(its pushes stop too); Settings → devices does both from the phone (`GET /devices`, `POST /devices/remove`). On iPhone,
 add cooee to the Home Screen first and pair there: the app has its own cookies.
 
 Before that, every request's `Host` (and its `Origin`, when sent) must be localhost, the `bind` address or one of
@@ -73,7 +78,7 @@ Web push (RFC 8291 aes128gcm, VAPID per RFC 8292, sent with `curl`): the VAPID k
 macOS keychain (`security`, service `cooee`), else in `<data>/vapid.key` (0600). The thread list's 🔔 subscribes;
 subscriptions sit in `<data>/push.json` (0600), each tied to its device. A push goes out when an agent asks for an
 approval, a turn finishes while no page has the thread open, or an agent errors. Each one is a line about the thread:
-`{title, body, tag: <thread>, url: /t/<thread>, item}`. The service worker (push only, no cache) shows it under the
+`{title, body, tag: <thread>, url: /t/<thread>, item}`. The service worker (push, and a network-first copy of the pages and static files for offline) shows it under the
 thread's tag, so a newer push replaces the older one. It shows nothing while that thread is open in view. A tap opens
 the thread, and reading the thread past `item` closes it.
 
@@ -126,3 +131,15 @@ for the owner to run. `cooee doctor` checks the service, port, shed, push key an
 | `providers` | Claude Code, Codex, Gemini | The sign-ins: `[[providers]]` with `name`, `agent` (its ACP agent id), `login` and `status` (commands, as arrays). Setting it replaces the defaults. |
 | `theme` | `farm` | The theme a device shows until it picks its own ([themes.md](themes.md)); own themes and schemes live in `themes/` and `schemes/` beside the config file. |
 | `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |
+
+## The app shell (#21, herdsman#553 rows 1–14)
+
+Offline, the Home Screen app opens on the service worker's last copy of a page and the chat page on its newest slice
+(kept in `localStorage`), with "as of Xm ago" in the loading strip. A thread's sync dot is green while its event
+stream is open and amber while it reconnects. Every action answers with a short toast. ↻, a pull down from the top, the
+app coming back after 30 s or the network returning reload the page's data. Settings has an index and deep links
+(`#settings/<section>`): sign-ins, look, alerts (truthful: on only when the server keeps this browser's subscription for
+this device; `POST /push/test` alerts this device only, `POST /push/unsubscribe` turns it off), devices, and report
+mode (`POST /report` to `<data>/reports.jsonl`, listed by `cooee reports`). Sprites are `on`, `ascii` or `off`; a theme
+with moments plays them on the thread bar.
+
