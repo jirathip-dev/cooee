@@ -83,7 +83,8 @@ function strip(loading: boolean, now = false): void {
 strip(false);
 
 // Refresh: ↻, a pull down from the very top, the app coming back after 30 s away, or the network coming back. The
-// chat reloads its newest slice and stream (page.refresh); any other page (the thread list too) reloads.
+// chat reloads its newest slice and stream (page.refresh); any other page (the thread list too) loads again, once the
+// network answers.
 const page: { refresh: (() => Promise<unknown>) | null; top: () => boolean } = { refresh: null, top: () => true };
 let refreshing: Promise<unknown> | null = null;
 function refresh(): Promise<unknown> | null {
@@ -93,7 +94,12 @@ function refresh(): Promise<unknown> | null {
   strip(true);
   refreshing = (async () => {
     if (page.refresh) return page.refresh();
-    location.reload();
+    // A page loads again only when the network answers: the worker's copy (offline) just shows its age.
+    const r = await fetch(location.pathname);
+    if (!r.ok) throw await why(r);
+    const at = Number(r.headers.get("cooee-at"));
+    if (at) copyAt = at;
+    else location.reload();
   })()
     .catch((x) => toast(`couldn't refresh: ${message(x)}`, true))
     .finally(() => {
