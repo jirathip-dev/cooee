@@ -142,7 +142,7 @@ Selectors this UI answers to (from `web/e2e/*.spec.mjs`):
 | Folders | `/#settings/folders` → `roots` |
 | Look (style, sprites, theme, colours) | `/#settings/look` |
 | Devices | `/#settings/devices` |
-| Plugin manager | `/#settings/plugins` → `add a plugin` (its index lists `greet · the example plugin`) |
+| Plugin manager | `/#settings/plugins` → `#s-plugins-box` button `add a plugin` (its index lists `greet · the example plugin`) |
 | Report mode | `/#settings/report` |
 | Plugin tabs | `/p/hello`, `/p/other`, `/p/machines` |
 | First run (no agents, no roots) | `http://127.0.0.1:$((P + 3))/`, paired with the code in `$OUT/code.bare` |
