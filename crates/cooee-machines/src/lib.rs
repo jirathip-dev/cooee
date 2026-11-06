@@ -236,7 +236,8 @@ impl Machines {
                 if let Some(s) = stats {
                     // Only what is new: a shed that sends a sample again never doubles the chart.
                     let last = card.history.last().map_or(0, |s| s.at);
-                    card.history.extend(s.history.into_iter().filter(|s| s.at > last));
+                    card.history
+                        .extend(s.history.into_iter().filter(|s| s.at > last));
                     card.last_seen = Some(s.now.at);
                     card.now = Some(s.now);
                 } else {
