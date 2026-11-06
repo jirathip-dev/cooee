@@ -102,7 +102,7 @@ test.describe("on WebKit, as on the iPhone", () => {
     await page.evaluate(() => { window.kept = true; });
     for (const name of ["settings", "look"]) {
       await page.locator(`[data-open=${name}]`).first().click();
-      await expect(page.locator("#sheet")).toBeVisible();
+      await expect(page.locator("#sheet .sh")).toBeVisible();
       // Every frame from the tap: whether the sheet shows, and the page's background under it.
       await page.evaluate(() => {
         window.frames_ = [];

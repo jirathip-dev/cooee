@@ -132,7 +132,7 @@ impl Setup {
         let root = self.dir.join("root");
         fs::create_dir_all(&root).unwrap();
         // Each start its own id, as the page makes one: a repeated id adopts the thread it started.
-        let random = format!("r{}", self.shed.cli_log().len());
+        let random = format!("start-{}", self.shed.cli_log().len());
         let new = json!({ "agent": "fake-acp", "account": account, "folder": root, "text": "hi", "random_id": random });
         let (status, body) = self.cooee.post("/threads", &new);
         assert_eq!(status, 200, "{body}");
