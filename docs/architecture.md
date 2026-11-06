@@ -160,7 +160,7 @@ for the owner to run. `cooee doctor` checks the service, port, shed, push key an
 | `shed_dir` | shed's per-user server | shed's `--dir` (its socket `shed.sock` and state). |
 | `data` | `$XDG_DATA_HOME/cooee/<instance>`, else `~/.local/share/cooee/<instance>` | Where threads, devices and push subscriptions are stored. |
 | `providers` | Claude Code, Codex, Gemini | The sign-ins: `[[providers]]` with `name`, `agent` (its ACP agent id), `login`, `status` and `logout` (commands, as arrays), `install` and `home` (the CLI's config-folder variable; without it only the system default account). Setting it replaces the defaults. |
-| `theme` | `farm` | The theme a device shows until it picks its own ([themes.md](themes.md)); own themes and schemes live in `themes/` and `schemes/` beside the config file. |
+| `theme` | `farm` (when installed, else `terminal`) | The theme a device shows until it picks its own ([themes.md](themes.md)); installed theme packs and own schemes live in `themes/` and `schemes/` beside the config file, themes being built in `themes-dev/`. |
 | `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |
 | `plugin_index` | the built-in `plugins/index.toml` | The plugin index `cooee plugin add <name>` and Settings › Plugins list ([plugins.md](plugins.md)). |
 

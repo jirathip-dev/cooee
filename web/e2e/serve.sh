@@ -6,7 +6,7 @@
 # (docs/plugins/hello) runs twice, as plugins `hello` and `other`, on $PORT + 1 and + 2. A fresh instance runs on
 # $PORT + 3. The main instance runs with HOME at the temp folder, so Settings › Folders browses it. The machines plugin
 # runs in it on $PORT + 4, the fake shed answering for this machine (24 h of samples) and an `air` that is offline. Its
-# plugin index lists the example plugin as `greet`, in a git repo of its own.
+# plugin index lists the example plugin as `greet`, in a git repo of its own. farm, kitchen and garden are installed.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -132,6 +132,10 @@ module = "/tab.js"
 token = "machines-token-0123456789"
 EOF
 mkdir -p "$(dirname "${PAIR_CODE:?}")"
+# The first-party theme packs, added from their folders (#38: only the plain theme is built in).
+for t in farm kitchen garden; do
+  cargo run --quiet --locked -p cooee -- theme add "packs/themes/$t" --yes --config "$tmp/config.toml" >/dev/null
+done
 
 # A fresh instance on $PORT + 3: no agents in shed, no roots, a provider whose CLI is missing; its pairing code beside $PAIR_CODE (first-run.spec.mjs).
 printf '#!/bin/sh\necho "[]"\n' >"$tmp/bare-shed" && chmod +x "$tmp/bare-shed"
