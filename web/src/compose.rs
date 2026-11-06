@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use cooee_core::{AGENTS_FIX, Agent, ROOTS_FIX, Sheet, Summary};
+use cooee_core::{AGENTS_FIX, Account, Agent, ROOTS_FIX, Sheet, Status, Summary};
 use topcoat::{
     Result,
     view::{View, component, view},
@@ -497,6 +497,34 @@ pub async fn side(rows: Vec<Summary>, cur: String) -> Result<impl View> {
     })
 }
 
+/// One account in Settings › providers: `[provider] <who> ✓ signed in [sign out]`, or `signed out [sign in]`.
+#[component]
+async fn account_row(provider: String, a: Account, s: Status) -> Result<impl View> {
+    Ok(view! {
+        <div class="acr" data-provider=(provider.clone()) data-account=(a.name.clone())>
+            <span class="ptg">(provider.clone())</span>
+            <span class="sk">(a.shown(&s))</span>
+            if s.signed_in {
+                <span class="st g">"✓ signed in"</span>
+                <button type="button" class="sec sgo">"sign out"</button>
+            } else {
+                <span class="st m">"signed out"</span>
+                if a.dir.is_some() {
+                    <button type="button" class="sec sgo">"sign out"</button>
+                }
+                <button
+                    type="button"
+                    class="si"
+                    data-provider=(provider)
+                    data-account=(a.name.clone())
+                >
+                    "sign in"
+                </button>
+            }
+        </div>
+    })
+}
+
 /// Settings › providers (#48): one row per account, `[provider] <who> ✓ signed in [sign out]` or `signed out [sign
 /// in]`; `[+ account]` per installed provider; one row per provider that isn't installed, `[copy install]`. A
 /// sign-in's terminal opens under its row.
@@ -539,31 +567,7 @@ pub async fn providers_sheet(providers: Vec<Sheet>) -> Result<impl View> {
             <div class="top">
                 for sheet in installed {
                     for (a, s) in sheet.accounts.clone() {
-                        <div
-                            class="acr"
-                            data-provider=(sheet.provider.name.clone())
-                            data-account=(a.name.clone())
-                        >
-                            <span class="ptg">(sheet.provider.name.clone())</span>
-                            <span class="sk">(a.shown(&s))</span>
-                            if s.signed_in {
-                                <span class="st g">"✓ signed in"</span>
-                                <button type="button" class="sec sgo">"sign out"</button>
-                            } else {
-                                <span class="st m">"signed out"</span>
-                                if a.dir.is_some() {
-                                    <button type="button" class="sec sgo">"sign out"</button>
-                                }
-                                <button
-                                    type="button"
-                                    class="si"
-                                    data-provider=(sheet.provider.name.clone())
-                                    data-account=(a.name.clone())
-                                >
-                                    "sign in"
-                                </button>
-                            }
-                        </div>
+                        account_row(provider: sheet.provider.name.clone(), a: a, s: s)
                     }
                     if !sheet.provider.home.is_empty() {
                         <div

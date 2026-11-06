@@ -1211,6 +1211,7 @@ function chat(main: HTMLElement): void {
 
   function setState(t: Turn): void {
     if (t.state !== state) since = Date.now();
+    if (t.state !== state && ["done", "blocked", "error", "unconnected"].includes(t.state)) settled();
     state = t.state;
     note = t.note ?? "";
     const [st, wait, close] = [$("#st"), $("#wait"), $("#close")];
@@ -1254,10 +1255,24 @@ function chat(main: HTMLElement): void {
   }
 
   // Loads a slice: `q` is the query; `where` is "replace", "before" (older) or "after" (newer).
+  // The newest slice is kept on the device, so the thread opens offline on its last copy; a turn that settles
+  // after the page opened (a thread that connected behind it, #48) keeps it again.
+  const kept = `cooee.slice.${id}`;
+  const keepCopy = (s: Slice): void => {
+    try {
+      localStorage.setItem(kept, JSON.stringify({ ...s, at: Date.now() }));
+    } catch {
+      // Full: no copy.
+    }
+  };
+  const settled = (): void => {
+    fetch(`${api}/messages?before=${SLICE}`).then(
+      async (r) => r.ok && keepCopy(await r.json()),
+      () => {},
+    );
+  };
   const load = (q: string, where: "replace" | "before" | "after"): Promise<Slice> =>
     inOrder(async () => {
-      // The newest slice is kept on the device, so the thread opens offline on its last copy.
-      const kept = `cooee.slice.${id}`;
       const newest = where === "replace" && q === `before=${SLICE}`;
       const r = await fetch(`${api}/messages?${q}`).catch((x) => {
         if (newest && localStorage.getItem(kept)) return null;
@@ -1265,12 +1280,7 @@ function chat(main: HTMLElement): void {
       });
       if (r && !r.ok) throw await why(r);
       const s: Slice = r ? await r.json() : JSON.parse(localStorage.getItem(kept) ?? "null");
-      if (newest && r)
-        try {
-          localStorage.setItem(kept, JSON.stringify({ ...s, at: Date.now() }));
-        } catch {
-          // Full: no copy.
-        }
+      if (newest && r) keepCopy(s);
       if (where === "replace") {
         copyAt = r ? 0 : (s.at ?? 0);
         list.replaceChildren(render(s.items));
