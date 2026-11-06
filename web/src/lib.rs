@@ -636,7 +636,9 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
                 </button>
             </header>
             <main class="list">
-                <p class="hn">"This device isn't paired: threads and messages show once it is."</p>
+                <p class="hn">
+                    "This device isn't paired: threads and messages show once it is."
+                </p>
                 <form class="nf" method="post" action="/pair">
                     <div class="fh"><b>"pair this device"</b></div>
                     <p class="ds">
@@ -672,7 +674,9 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
                             <button type="button" id="ask-copy">"copy"</button>
                         </p>
                         <p class="ds">"waiting for the Mac…"</p>
-                        <button type="button" class="cn" id="ask-cancel">"cancel"</button>
+                        <button type="button" class="cn" id="ask-cancel">
+                            "cancel"
+                        </button>
                     </div>
                     <p class="err" id="ask-err" hidden=(true)></p>
                 </section>
