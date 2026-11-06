@@ -25,6 +25,7 @@ keeps them going while the phone is away; cooee talks to shed and pings the phon
 |---|---|---|---|
 | `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), paired devices, providers (status, redaction), the shed client; no HTTP | no workspace crate |
 | `cooee-web` | `web/` | the web UI in Topcoat (ADR 0001): pages, `chat.js`, `app.css`, the PWA manifest, the themes and schemes (`look.rs`, `look.js`, `themes/`, `schemes/`) | not the server or binary |
+| `cooee-machines` | `crates/cooee-machines` | the first-party plugin `machines` ([plugins.md](plugins.md)): machines' health from shed, its backend and tab module | core |
 | `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3) | core, web |
 | `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
 
