@@ -1,0 +1,128 @@
+<!doctype html><html lang=en data-tab=chat><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name=theme-color content="#0d1117">
+<title>cooee pairing: a paired device</title>
+<!-- #47 page 2: a paired device. A new device asked to pair: every paired device gets a push and this card at the top
+     of the list, the check word big, [approve with Face ID] (the passkey) and [decline]. Below the screen: the push,
+     what the card turns into, the QR sheet (settings › devices › pair a device), `cooee pair` on the Mac, and
+     settings › devices with its passkeys. Same query as ../look/look.js. -->
+<link rel=stylesheet href=../look/serve.css><link rel=stylesheet href=../look/cooee.css><link rel=stylesheet href=../look/look.css><link rel=stylesheet href=../look/modern.css><link rel=stylesheet href=pair.css>
+</head>
+<body class=v-l>
+<header><b>cooee</b><i id=dot class=g></i><button type=button aria-label="new thread">+</button><button type=button aria-label="look: theme and colours">◐</button><button type=button aria-label=settings>⚙</button></header>
+<main id=chat>
+<div class=clp>
+
+<section class=apc aria-label="a device asks to pair">
+<p class=aph><b>Pair a new device?</b><span class=m>just now</span></p>
+<p class=who>iPad · Safari, over your tailnet</p>
+<p class=cwl><span class=m>check word</span><b>maple otter</b></p>
+<div class=acts><button type=button>approve with Face ID</button><button type=button>decline</button></div>
+</section>
+
+<div class="fc k-l"><div class=fh><span class=fn><b>~/Projects/cooee</b><span class=ds>3 threads</span></span></div>
+<a class=tr href=#><i class=ud>●</i><span class=tt>Pairing redone: QR and passkeys</span><span class=ta>codex · 2m</span><span class=tp><b class="sta a" data-st=working data-tool=run></b>codex: $ cargo test -p cooee-pair</span></a>
+<a class=tr href=#><i class=ud></i><span class=tt>Push stops after pairing again</span><span class=ta>claude · 1h</span><span class=tp><b class="sta m" data-st=done></b>claude: Fixed: send uses the newest subscription.</span></a>
+<a class="tr rd" href=#><i class=ud></i><span class=tt>README: install over Tailscale</span><span class=ta>gemini · 1d</span><span class=tp><b class="sta m" data-st=done></b>gemini: Added the install section.</span></a>
+</div>
+</div>
+</main>
+
+<div class=pg>
+<section class=xs aria-label="the paired device's side">
+
+<div class=xc><p class=ch>the push</p>
+<div class=pn><img class=pi alt="" src=../look/icons/farm.png><div><p class=ph><b>cooee</b><span class=m>now</span></p><p><b>Pair a new device?</b></p><p>iPad · Safari · check word maple otter</p></div></div>
+<p class=xn>A tap opens cooee at the card. Every paired device gets it, whatever its push toggles.</p>
+</div>
+
+<div class=xc><p class=ch>approved (after Face ID)</p>
+<div class=pc data-k=g>
+<p class=et>✓ iPad paired</p>
+<p>It's in settings › devices. The other devices' cards cleared.</p>
+<div class=acts><button type=button>rename it</button><button type=button>done</button></div>
+</div></div>
+
+<div class=xc><p class=ch>declined</p>
+<div class=pc>
+<p class=et>Declined · iPad</p>
+<p>It won't be paired, and it sees “iPhone 16 said no”.</p>
+<div class=acts><button type=button>undo</button><span class=m>for 10 s</span></div>
+</div></div>
+
+<div class=xc><p class=ch>settings › devices › pair a device</p>
+<div class=pc>
+<span class=qrt><img alt="QR code: the link to pair with code 730 518" src=qr.svg></span>
+<p class="ctr">Scan it with the new device's Camera, or type the code there.</p>
+<p class=bc>730 518</p>
+<p class="m ctr">one use · expires in 9:41 · mac-mini.tail0c4e.ts.net</p>
+<div class="acts ctr"><button type=button>done</button><button type=button>new code</button></div>
+</div></div>
+
+<div class=xc><p class=ch>on the Mac: cooee pair</p>
+<pre class=tm><span class=p>$</span> cooee pair
+Scan it with the new device's Camera, or open the link and type the code.
+<span class=q>
+    █▀▀▀▀▀█   ▄█▀█▄▄▀█ ▀ ▄ ▀  █▀▀▀▀▀█
+    █ ███ █ █▀█▀ ▀▄ █▀▀▄█ █▄  █ ███ █
+    █ ▀▀▀ █ █▄ ▄██▄█▄ █ ▄▄  █ █ ▀▀▀ █
+    ▀▀▀▀▀▀▀ █ █▄▀ ▀▄▀ █ ▀▄█ █ ▀▀▀▀▀▀▀
+    █ █▀▀▀▀  ▀▀█ ▀▀▀ ▀▄▄▄▄▀▄▀ ██▀██▄▄
+    ▀█▀█  ▀▀█▄▄ ▀ ▄▀▀ ▀ ▀    ▄▄ █▄██▄
+    ▄██▀▀▀▀ ▀█▄▄▀ ▄█▄ ▀▀▄ ▀▀▄▀▄▀▀▀▄██
+    █▀█  █▀▀▄ ▄ █▄█ ▄▀▀█▄▄▀  ██ █▄█▀
+    ▀▄  ▀▀▀▀██▄▀▄ ▀ ██▀█▄▄▀██▀▄█▀▄▄ █
+    ▄▄▄▀▄ ▀█ █▄▀ █▀█▄█▄ ▀█▀▄▄████▄█
+    ▄▀█▄▀▀▀█▀▀▀▄▄█ █▀ ▄ ▀▀▀▄▄▀▄▄▀▀▄▀▄
+    █ ▀ █▀▀▄ ▀▄▄ ▀██▀ ▄ ▀█▄  █▀█▀███▄
+    ▀  ▀ ▀▀▀█▀▀  ▄▄▀█▀▄▄▄▄  █▀▀▀█ ▄▄█
+    █▀▀▀▀▀█ ▄▄▀   █▀▄ ▀ ▄█ ██ ▀ █▄██
+    █ ███ █ ██▄██ ▀▄▄ ▀ ▄▀ ▄██▀▀█▀ ▀▄
+    █ ▀▀▀ █ ▀█▄ █▀█ ▄  █▄▄▀ ▀▄▀▀▄██
+    ▀▀▀▀▀▀▀ ▀▀       ▀▀▀▀ ▀▀▀  ▀ ▀ ▀
+</span>
+code  482 913  (one use, 10 minutes)
+link  https://mac-mini.tail0c4e.ts.net/pair?code=482913
+waiting…  <b>✓ paired: iPad · Safari</b></pre>
+</div>
+
+<div class=xc><p class=ch>settings › devices, with passkeys</p>
+<div class=sl>
+<a class=sr href=#><span class=sk>iPhone 16</span><span class="sv g">this device</span><i class=cv></i></a>
+<a class=sr href=#><span class=sk>iPad · Safari</span><span class=sv>just now</span><i class=cv></i></a>
+<a class=sr href=#><span class=sk>MacBook Air · Safari</span><span class=sv>2d ago</span><i class=cv></i></a>
+<div class=sr><button type=button>pair a device</button></div>
+<p class=ch>passkeys</p>
+<div class="sr pkr"><span class=sk>iPhone 16 <small>· made 6 Nov · used today</small></span><button type=button>remove</button></div>
+<div class="sr pkr"><span class=sk>MacBook Air <small>· made 2 Nov</small></span><button type=button>remove</button></div>
+</div></div>
+
+<div class=xc><p class=ch>no passkey on this device</p>
+<section class=apc>
+<p class=aph><b>Pair a new device?</b><span class=m>1m ago</span></p>
+<p class=who>iPad · Safari, over your tailnet</p>
+<p class=cwl><span class=m>check word</span><b>maple otter</b></p>
+<p class=m>Approving needs a passkey. Save one on this device, or approve on iPhone 16.</p>
+<div class=acts><button type=button>save a passkey</button><button type=button>decline</button></div>
+</section></div>
+
+<div class=xc><p class=ch>approved elsewhere</p>
+<div class=pc>
+<p class=et>✓ iPad paired on iPhone 16</p>
+<p class=m>The card clears by itself on every other device.</p>
+</div></div>
+
+<div class=xc><p class=ch>the request ran out</p>
+<div class=pc>
+<p class=et>iPad's request expired</p>
+<p class=m>Nobody approved it in 5 minutes. It can ask again.</p>
+</div></div>
+
+</section>
+</div>
+<script type=module>
+import { T } from '../look/look.js';
+for (const i of document.querySelectorAll('.pi')) i.src = `../look/icons/${T}.png`;
+document.body.dataset.ready = 1;
+</script>
+</body></html>

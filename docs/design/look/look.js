@@ -8,14 +8,16 @@
 //   [data-w=<key>]                          a theme word (data-plain adds `· <plain>`)
 const q = new URLSearchParams(location.search);
 const mq = matchMedia('(prefers-color-scheme: dark)');
+// Data sits next to this file, so pages in other folders (docs/design/pair, #47) can import it.
+const at = f => new URL(f, import.meta.url);
 export const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'system';
 export const STYLE = q.get('style') || 'modern', SPRITES = q.get('sprites') !== 'off';
-export const theme = await fetch(`themes/${T}.json`).then(r => r.json());
+export const theme = await fetch(at(`themes/${T}.json`)).then(r => r.json());
 // Sprites off keeps the theme's words and moments and drops its art: `sprites` reads false for the page.
 const art = theme.sprites && SPRITES;
 export const NAMES = ['github-dark', 'solarized-dark', 'gruvbox', 'nord', 'dracula', 'farm', 'kitchen', 'garden-dark',
   'paper', 'farm-light', 'kitchen-light', 'garden-light'];
-export const S = Object.fromEntries(await Promise.all(NAMES.map(async n => [n, await fetch(`schemes/${n}.json`).then(r => r.json())])));
+export const S = Object.fromEntries(await Promise.all(NAMES.map(async n => [n, await fetch(at(`schemes/${n}.json`)).then(r => r.json())])));
 export const mode = () => MODE === 'system' ? (mq.matches ? 'dark' : 'light') : MODE;
 export const pick = m => q.get(m) || theme.scheme[m];
 // The plain words: what each state says in every theme, and all terminal says.
@@ -41,7 +43,7 @@ mq.addEventListener('change', paint);
 export const sprite = (id, cls = 'rsp') => !SPRITES && cls === 'rsp' ? '<i class=sd></i>' : art
   ? `<svg class=${cls} viewBox="${/^(loading|empty)$/.test(id) ? '0 0 132 100' : '0 0 24 24'}" aria-hidden=true><use href="#s-${id}"/></svg>` : '';
 if (art) {
-  const svg = await fetch(`sprites/${T}.svg`).then(r => r.text());
+  const svg = await fetch(at(`sprites/${T}.svg`)).then(r => r.text());
   document.body.insertAdjacentHTML('afterbegin', `<svg width=0 height=0 style="position:absolute" aria-hidden=true><defs>${svg.replace(/^[\s\S]*?<svg[^>]*>|<\/svg>\s*$/g, '')}</defs></svg>`);
 }
 export function fill(root = document) {
