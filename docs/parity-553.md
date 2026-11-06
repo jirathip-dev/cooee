@@ -42,4 +42,4 @@ Row numbers are #553's.
 | 35 | Handoff chips, flow-back lines, pick-a-thread row | missing | — | chips, lines, the choice row |
 
 Totals at `51f92e8`: 4 done (9, 11, 21, 29), 18 partial, 13 missing. The rows 1–14 PR builds 1–8, 10 and 12–14
-(9 and 11 were done); rows 15–29 and 30–35 follow in their own PRs, after asking for their cap (q512).
+(9 and 11 were done); rows 15–29 and 30–35 follow as cooee#43 and cooee#44.

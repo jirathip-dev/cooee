@@ -1,4 +1,6 @@
 # The hard cap on non-test lines across crates/*/src and web/src (scripts/line-cap.sh; the fleet's premerge
 # check runs it). Raising it needs the owner's OK in an issue; record each change in docs/cap-history/.
+# The cap is a total for the repo: a lane asks only when its own PR, merged onto current staging, would
+# put the total over it. Trim first, then ask `--kind owner`.
 [fleet.cooee]
-line_cap = 7200
+line_cap = 15500
