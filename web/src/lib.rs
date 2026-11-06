@@ -212,7 +212,7 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
             data-theme=(name)
             data-mode=(look.mode().map(str::to_owned))
             data-style=(look.style().to_owned())
-            data-sprites=(look.figs().to_owned())
+            data-figures=(look.figures().to_owned())
             data-moments=(if look.theme().moments { "on" } else { "off" })
         >
             <head>

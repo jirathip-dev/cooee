@@ -602,7 +602,7 @@ mod tests {
         };
         let t = thread();
         let (looks, _) = cooee_web::Looks::load(None, None);
-        let (farm, terminal) = (&looks.themes["farm"], &looks.themes["terminal"]);
+        let (farm, plain) = (&looks.themes["farm"], &looks.themes["plain"]);
         assert_eq!(
             note(&t, &chat, &approval(None), "working", true, farm),
             Some(n("at the gate · needs you · codex: Edit src/lib.rs", 3))
@@ -631,7 +631,7 @@ mod tests {
                 &turn("error", Some("rate limited")),
                 "working",
                 true,
-                terminal
+                plain
             ),
             Some(n("failed · codex: rate limited", 2))
         );

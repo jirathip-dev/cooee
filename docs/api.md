@@ -98,7 +98,7 @@ cooee's proxy, with its token, never the cookie). An event stream comes back as 
 
 ## The look
 
-The pick is the `cooee-look` cookie (`theme:kitchen/mode:dark/style:terminal/sprites:off/dark:nord/light:paper`, any
+The pick is the `cooee-look` cookie (`theme:kitchen/mode:dark/style:terminal/scene:on/figures:none/dark:nord/light:paper`, any
 keys unset), which `look.ts` writes. With no script, the look sheet's form posts `POST /look` (a form: `to`, the page
 to go back to, and the one key tapped), which sets the cookie and answers 303 to `to`. The themes' data is at
 `GET /look/{theme}/theme.json`, `sprites.svg` and `icon.png`.
