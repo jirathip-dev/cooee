@@ -230,15 +230,26 @@ test("row 22: the box grows with its text to 6 lines, then scrolls; send stays a
   expect(await b.evaluate((e) => e.clientHeight)).toBe(one);
 });
 
-test("row 23: the chat takes the visual viewport's height, so the composer sits on the keyboard", async ({ page }, info) => {
+test("row 23: when the keyboard covers the page (iOS: only the visual viewport shrinks), the composer sits on it", async ({ page }, info) => {
   await thread(page);
-  const size = page.viewportSize();
-  await page.setViewportSize({ width: size.width, height: size.height - 300 });
-  await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue("--vvh"))).toBe(`${size.height - 300}px`);
+  const { height } = page.viewportSize();
+  // The Home Screen app's keyboard: the visual viewport 300 px shorter, the page not.
+  const keyboard = (up) =>
+    page.evaluate((up) => {
+      if (up) Object.defineProperty(visualViewport, "height", { get: () => innerHeight - 300, configurable: true });
+      else delete visualViewport.height;
+      visualViewport.dispatchEvent(new Event("resize"));
+    }, up);
+  await keyboard(true);
+  expect(await page.evaluate(() => document.documentElement.style.getPropertyValue("--vvh"))).toBe(`${height - 300}px`);
   const composer = await page.locator("#composer").boundingBox();
-  expect(Math.round(composer.y + composer.height)).toBe(size.height - 300);
+  expect(Math.round(composer.y + composer.height)).toBe(height - 300);
   expect(await page.evaluate(() => scrollY)).toBe(0);
   await shot(page, info, "parity-23-keyboard");
+  await keyboard(false);
+  expect(await page.evaluate(() => document.documentElement.style.getPropertyValue("--vvh"))).toBe("");
+  const back = await page.locator("#composer").boundingBox();
+  expect(Math.round(back.y + back.height)).toBe(height);
 });
 
 test("row 25: [stop] says stopping… until the turn stops; the bar says offline, then nothing once back", async ({ page, context }, info) => {

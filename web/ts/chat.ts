@@ -1703,14 +1703,18 @@ function chat(main: HTMLElement): void {
 
   // The keyboard: where the browser doesn't shrink the page for it (iOS), the chat takes the visual viewport's
   // height, so the composer sits on the keyboard, and the page never scrolls away under it.
+  // Elsewhere the page itself shrinks, and 100dvh is right.
   const vv = window.visualViewport;
   if (vv) {
     const fit = (): void => {
-      document.documentElement.style.setProperty("--vvh", `${Math.round(vv.height)}px`);
+      const style = document.documentElement.style;
+      if (vv.height < innerHeight - 1) style.setProperty("--vvh", `${Math.round(vv.height)}px`);
+      else style.removeProperty("--vvh");
       if (scrollY) scrollTo(0, 0);
     };
     vv.addEventListener("resize", fit);
     vv.addEventListener("scroll", fit);
+    addEventListener("resize", fit);
     fit();
   }
 
