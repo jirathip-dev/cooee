@@ -244,11 +244,18 @@ async fn on_logins<T: Send + 'static>(
         .map_err(|e| HubError::Refused(e.to_string()))?
 }
 
-/// The plugin tabs: each one's name and label.
-fn tabs(cx: &Cx) -> Vec<(String, String)> {
+/// The plugins whose tab shows a dot (`POST /plugin/dot`), by name; kept in memory only.
+#[derive(Default)]
+struct Dots(std::sync::Mutex<std::collections::BTreeSet<String>>);
+
+/// The plugin tabs: each one's name, label and dot.
+fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
     let hub = app_context::<Arc<Hub>>(cx);
+    let dots = app_context::<Arc<Dots>>(cx).0.lock().map(|d| d.clone());
+    let dots = dots.unwrap_or_default();
     let tabs = hub.plugins().iter();
-    tabs.map(|p| (p.name.clone(), p.label.clone())).collect()
+    tabs.map(|p| (p.name.clone(), p.label.clone(), dots.contains(&p.name)))
+        .collect()
 }
 
 #[page("/")]
@@ -762,12 +769,15 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
         .body(Body::from(bytes))?)
 }
 
-/// `POST /plugin/push`: a line from a plugin; a tap opens its tab (at `#<path>`, when given).
+/// `POST /plugin/push`: a line from a plugin; a tap opens its tab (at `#<path>`, when given). A newer push of the same
+/// `tag` (default `plugin-<name>`) replaces the older one.
 #[derive(Deserialize)]
 struct PluginPush {
     text: String,
     #[serde(default)]
     path: String,
+    #[serde(default)]
+    tag: String,
 }
 
 #[route(POST "/plugin/push")]
@@ -784,12 +794,35 @@ async fn plugin_push(cx: &Cx, Json(b): Json<PluginPush>) -> Result<Response> {
     let note = Note {
         title: p.label.clone(),
         body: b.text.chars().take(120).collect(),
-        tag: format!("plugin-{}", p.name),
+        tag: if b.tag.is_empty() {
+            format!("plugin-{}", p.name)
+        } else {
+            b.tag
+        },
         url: format!("/p/{}{hash}", p.name),
         item: 0,
     };
     hub(cx).push().send(&note);
     Json(note).into_response(cx)
+}
+
+/// `POST /plugin/dot` `{"on": bool}`: shows or clears the dot on the plugin's tab.
+#[derive(Deserialize)]
+struct Dot {
+    on: bool,
+}
+
+#[route(POST "/plugin/dot")]
+async fn plugin_dot(cx: &Cx, Json(d): Json<Dot>) -> Result<Response> {
+    let name = request_context::<Caller>(cx).0.name.clone();
+    let dots = app_context::<Arc<Dots>>(cx);
+    let mut dots = dots.0.lock().map_err(|e| io::Error::other(e.to_string()))?;
+    if d.on {
+        dots.insert(name);
+    } else {
+        dots.remove(&name);
+    }
+    Json(d.on).into_response(cx)
 }
 
 /// `POST /plugin/card`: a plugin's choice card in a thread.
@@ -990,7 +1023,9 @@ pub fn router(
         .route(proxy)
         .route(plugin_push)
         .route(plugin_card)
+        .route(plugin_dot)
         .app_context(hub)
+        .app_context(Arc::new(Dots::default()))
         .app_context(logins)
         .app_context(Data(data.to_owned()))
         .build()

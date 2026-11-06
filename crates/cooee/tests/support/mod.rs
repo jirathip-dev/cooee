@@ -75,10 +75,17 @@ pub struct FakeShed {
 
 const CLI: &str = r#"#!/bin/sh
 # The fake `shed` CLI: `agents` lists one agent; `run` records its arguments and prints the terminal (it waits while
-# the gate `hold-run` is shut, and fails, as a slow start's CLI would, while `run-fails` is).
+# the gate `hold-run` is shut, and fails, as a slow start's CLI would, while `run-fails` is); `machine ls` prints
+# machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline.
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
+*" machine ls") cat "$(dirname "$0")/machines.json" 2>/dev/null || echo '[]' ;;
+*" machine stats"*)
+  m=$(printf '%s' "$*" | sed -n 's/.*--on \([^ ]*\).*/\1/p')
+  f="$(dirname "$0")/stats-${m:-local}.json"
+  cat "$f" || exit 1
+  if grep -q '"online":false' "$f"; then exit 1; fi ;;
 *" agents") echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
 *" run "*)
   while [ -e "$gates/hold-run" ]; do sleep 0.02; done
