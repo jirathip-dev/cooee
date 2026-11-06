@@ -24,7 +24,7 @@ if (form) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = new FormData(form), err = $("#new-err");
-    const body = { agent: f.get("agent"), folder: f.get("folder"), text: f.get("text"), random_id: rid() };
+    const body = { agent: f.get("agent"), account: f.get(`account:${f.get("agent")}`), folder: f.get("folder"), text: f.get("text"), random_id: rid() };
     form.querySelector("button[type=submit]").disabled = true;
     try { location.href = `/t/${(await post("/threads", body)).id}`; } catch (x) {
       err.textContent = x.message; err.hidden = false;
@@ -39,9 +39,10 @@ document.addEventListener("click", (e) => {
   b && navigator.clipboard?.writeText(b.dataset.copy).then(() => { b.textContent = "copied"; }, () => {});
 });
 
-// The sign-ins sheet: open on `#signins`. [sign in] starts the provider's own login in a shed terminal; its screen
-// (redacted by the server) is drawn every second with its links tappable, a code typed below goes to it, and once
-// it ends the provider's status is shown again.
+// The sign-ins sheet: open on `#signins`. [sign in] starts the provider's own login for that account in a shed
+// terminal ([+ account]: in a new account's folder); its screen (redacted by the server) is drawn every second with
+// its links tappable, a code typed below goes to it, and once it ends the sheet reloads with the accounts' state.
+// [sign out] (after a confirm) and [make default] reload it too.
 const sheet = $("#signins");
 if (sheet) {
   const open = () => { sheet.hidden = location.hash !== "#signins"; };
@@ -49,19 +50,17 @@ if (sheet) {
   open();
   for (const row of sheet.querySelectorAll(".pv")) {
     const api = `/logins/${row.dataset.provider}`, lg = $(".lg", row), out = $(".out", row), code = $("input", row);
-    const [state, signIn] = [$(".fh span", row), $(".si", row)], line = $(".pv > .ds", row);
     let timer = 0;
+    const say = (m) => {
+      let w = $(".wy", row);
+      if (!w) { w = document.createElement("p"); w.className = "ds wy"; $(".fh", row).after(w); }
+      w.textContent = m;
+    };
     const draw = (v) => {
-      if (v.state !== "running") {
-        clearInterval(timer); lg.hidden = true;
-        const s = v.status ?? { signed_in: false, line: "" };
-        state.className = s.signed_in ? "g" : "m";
-        state.textContent = s.signed_in ? "✓ signed in" : "signed out";
-        line.textContent = [v.why, s.line].filter(Boolean).join(" · ");
-        signIn.hidden = s.signed_in || !!s.install;
-        return;
-      }
-      state.className = "a"; state.textContent = "signing in"; lg.hidden = false; signIn.hidden = true;
+      if (v.state === "ended") { clearInterval(timer); location.reload(); }
+      if (v.state !== "running") return;
+      lg.hidden = false;
+      for (const b of row.querySelectorAll(".si, .ad")) b.hidden = true;
       out.replaceChildren();
       let rest = v.screen;
       for (const url of v.links) {
@@ -75,13 +74,23 @@ if (sheet) {
       out.append(rest);
     };
     const poll = async () => { const r = await fetch(api); if (r.ok) draw(await r.json()); };
-    signIn.onclick = async () => {
-      try { await post(api, null); } catch (x) { line.textContent = x.message; return; }
+    const start = async (body, state) => {
+      try { await post(api, body); } catch (x) { say(x.message); return; }
+      if (state) { state.className = "a"; state.textContent = "signing in"; }
       clearInterval(timer); timer = setInterval(poll, 1000); poll();
     };
+    const reload = (p) => p.then(() => location.reload(), (x) => say(x.message));
+    const add = $(".ad", row);
+    if (add) add.onclick = () => start({ new: true }, null);
+    for (const ac of row.querySelectorAll(".ac")) {
+      const account = ac.dataset.account, label = $("b", ac).textContent, [si, so, df] = [".si", ".sg", ".df"].map((c) => $(c, ac));
+      si.onclick = () => start({ account }, $(".fh span", ac));
+      if (so) so.onclick = () => confirm(`Sign ${label} out?${account ? " Its folder is removed." : ""}`) && reload(post(`${api}/signout`, { account }));
+      if (df) df.onclick = () => reload(post(`${api}/default`, { account }));
+    }
     $("form", row).onsubmit = async (e) => {
       e.preventDefault();
-      try { await post(`${api}/send`, { text: code.value }); code.value = ""; poll(); } catch (x) { line.textContent = x.message; }
+      try { await post(`${api}/send`, { text: code.value }); code.value = ""; poll(); } catch (x) { say(x.message); }
     };
     $(".cn", row).onclick = () => post(`${api}/cancel`, {}).then(poll, poll);
   }

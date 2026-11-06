@@ -143,7 +143,7 @@ fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_scr
     assert_eq!(v["why"], "the login command finished");
     assert_eq!(
         v["status"],
-        json!({ "signed_in": true, "line": "Signed in as owner@example.com", "install": null })
+        json!({ "signed_in": true, "line": "Signed in as owner@example.com", "install": null, "who": null, "usage": null })
     );
     // Exited: killed (already gone) and removed.
     assert_eq!(s.shed.calls("kill", &terminal).len(), 1);

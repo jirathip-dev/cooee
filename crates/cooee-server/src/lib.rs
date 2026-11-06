@@ -253,10 +253,44 @@ async fn home(cx: &Cx) -> Result<impl View> {
     ))
 }
 
+/// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account.
+#[derive(Deserialize, Default)]
+struct Start {
+    #[serde(default)]
+    account: Option<String>,
+    #[serde(default)]
+    new: bool,
+}
+
 #[route(POST "/logins/{id}")]
-async fn login_start(cx: &Cx) -> Result<Answer<()>> {
+async fn login_start(cx: &Cx, Json(s): Json<Option<Start>>) -> Result<Answer<()>> {
     let name = thread_id(cx);
-    Ok(Answer(on_logins(cx, move |l| l.start(&name)).await))
+    let s = s.unwrap_or_default();
+    Ok(Answer(
+        on_logins(cx, move |l| l.start(&name, s.account.as_deref(), s.new)).await,
+    ))
+}
+
+/// `POST /logins/{id}/signout` and `/default`: account `account` (empty: the system default).
+#[derive(Deserialize)]
+struct Pick {
+    account: String,
+}
+
+#[route(POST "/logins/{id}/signout")]
+async fn login_signout(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
+    let name = thread_id(cx);
+    Ok(Answer(
+        on_logins(cx, move |l| l.sign_out(&name, &p.account)).await,
+    ))
+}
+
+#[route(POST "/logins/{id}/default")]
+async fn login_default(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
+    let name = thread_id(cx);
+    Ok(Answer(
+        on_logins(cx, move |l| l.set_default(&name, &p.account)).await,
+    ))
 }
 
 #[route(GET "/logins/{id}")]
@@ -363,6 +397,9 @@ struct New {
     folder: PathBuf,
     text: String,
     random_id: String,
+    /// The agent's provider account (none: its default).
+    #[serde(default)]
+    account: Option<String>,
 }
 
 /// A new thread's id.
@@ -373,8 +410,17 @@ struct Created {
 
 #[route(POST "/threads")]
 async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
+    let logins = logins(cx);
     let id = blocking(cx, move |hub| {
-        hub.create(&new.agent, &new.folder, &new.text, &new.random_id)
+        let (account, env) = logins.home(&new.agent, new.account.as_deref())?;
+        let env = env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path()));
+        hub.create(
+            &new.agent,
+            &new.folder,
+            &new.text,
+            &new.random_id,
+            (&account, env),
+        )
     })
     .await;
     Ok(Answer(id.map(|id| Created { id })))
@@ -706,6 +752,8 @@ pub fn router(
         .route(login_view)
         .route(login_send)
         .route(login_cancel)
+        .route(login_signout)
+        .route(login_default)
         .page(tab)
         .route(frame)
         .route(proxy)
@@ -742,7 +790,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         eprintln!("cooee: refused {why}");
     }
     let theme = looks.themes[&looks.default].clone();
-    let logins = Logins::new(shed.clone(), config.providers.clone());
+    let logins = Logins::new(shed.clone(), config.providers.clone(), &data);
     let hub = Hub::open(
         shed,
         &data,

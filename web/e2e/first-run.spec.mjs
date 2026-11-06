@@ -41,7 +41,8 @@ test("first run: no agents and no roots show their fix lines with copy buttons, 
   await page.locator("#sheet").getByRole("link", { name: "providers" }).click();
   const row = page.locator('.pv[data-provider="codex"]');
   await expect(row.locator(".fh span")).toHaveText("not installed");
-  await expect(row).toContainText("no-such-codex isn't installed on this Mac");
+  await expect(row).toContainText("not installed on this Mac");
+  await expect(row.getByRole("button", { name: "+ account" })).toHaveCount(0);
   await expect(row.locator(".hn code")).toHaveText("npm install -g @openai/codex");
   await expect(row.getByRole("button", { name: "sign in" })).toBeHidden();
   await page.screenshot({ path: "../../ui-390/first-run-signins.png", fullPage: true });

@@ -35,6 +35,9 @@ pub struct Thread {
     /// The working folder.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub folder: Option<PathBuf>,
+    /// The provider account its agent runs with, as the header shows it (empty: no provider's agent).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub account: String,
     /// The shed terminal's name.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub terminal: String,

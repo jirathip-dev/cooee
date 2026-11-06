@@ -1,7 +1,8 @@
-//! cooee's core: configuration, threads, their store and chat, paired devices, provider sign-ins and the shed client. No HTTP.
+//! cooee's core: configuration, threads, their store and chat, paired devices, provider sign-ins and accounts and the shed client. No HTTP.
 
 #![forbid(unsafe_code)]
 
+mod accounts;
 mod chat;
 mod config;
 mod devices;
@@ -9,6 +10,7 @@ mod login;
 mod shed;
 mod store;
 
+pub use accounts::{Account, Accounts, Sheet};
 pub use chat::{Body, Change, Chat, Item, Summary, Turn};
 pub use config::{Config, ConfigError, Plugin, ROOTS_FIX};
 pub use devices::{Device, Devices, random, sha256, write_private};

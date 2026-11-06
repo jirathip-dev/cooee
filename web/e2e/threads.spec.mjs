@@ -11,6 +11,8 @@ test("thread list: renders, fits the width, no axe violations", async ({ page },
   await page.getByRole("link", { name: "new thread" }).click();
   await expect(page.locator("#new")).toBeVisible();
   await expect(page.getByRole("radio", { name: "fake-acp" })).toBeChecked();
+  // The account picker, the default (the system default here) preselected.
+  await expect(page.getByLabel("fake-acp account")).toHaveValue("");
   await page.screenshot({ path: `../../ui-${info.project.name}/threads-new.png`, fullPage: true });
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);

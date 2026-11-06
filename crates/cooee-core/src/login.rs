@@ -1,5 +1,5 @@
-//! Provider sign-ins: each provider's own login and status commands (config), its signed-in state, and what of
-//! a login terminal's screen may reach the page: tokens redacted, links found.
+//! Provider sign-ins: each provider's own login, logout and status commands (config), run for one account's config
+//! folder; its signed-in state, and what of a login terminal's screen may reach the page: tokens redacted, links found.
 
 use std::{
     env,
@@ -12,11 +12,11 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-/// A provider the sign-ins sheet lists: its CLI's own login command and a read-only status command.
+/// A provider the sign-ins sheet lists: its CLI's own login, logout and read-only status commands.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Provider {
-    /// Its name on the sheet (`claude`); also part of its login terminal's name.
+    /// Its name on the sheet (`claude`); also part of its login terminal's name and its accounts' folder.
     pub name: String,
     /// The ACP agent id it signs in (`claude-acp`), for the new-thread picker.
     pub agent: String,
@@ -27,79 +27,117 @@ pub struct Provider {
     /// The line that installs its CLI, shown when the login command isn't found.
     #[serde(default)]
     pub install: String,
+    /// The variable that points its CLI at a config folder (`CLAUDE_CONFIG_DIR`): each added account is one.
+    /// Without it the provider has only the system default account.
+    #[serde(default)]
+    pub home: String,
+    /// The logout command.
+    #[serde(default)]
+    pub logout: Vec<String>,
 }
 
 impl Provider {
     /// Claude Code, Codex and Gemini.
     #[must_use]
     pub fn defaults() -> Vec<Self> {
-        let p = |name: &str, agent: &str, login: &[&str], status: &[&str], npm: &str| Self {
+        let v = |a: &[&str]| a.iter().map(|s| (*s).to_owned()).collect();
+        let p = |name: &str,
+                 agent: &str,
+                 [login, status, logout]: [&[&str]; 3],
+                 npm: &str,
+                 home: &str| Self {
             name: name.to_owned(),
             agent: agent.to_owned(),
-            login: login.iter().map(|s| (*s).to_owned()).collect(),
-            status: status.iter().map(|s| (*s).to_owned()).collect(),
+            login: v(login),
+            status: v(status),
             install: format!("npm install -g {npm}"),
+            home: home.to_owned(),
+            logout: v(logout),
         };
+        let creds = "\"${GEMINI_CLI_HOME:-$HOME}/.gemini/oauth_creds.json\"";
         vec![
             p(
                 "claude",
                 "claude-acp",
-                &["claude", "auth", "login"],
-                &["claude", "auth", "status"],
+                [
+                    &["claude", "auth", "login"],
+                    &["claude", "auth", "status"],
+                    &["claude", "auth", "logout"],
+                ],
                 "@anthropic-ai/claude-code",
+                "CLAUDE_CONFIG_DIR",
             ),
             p(
                 "codex",
                 "codex-acp",
-                &["codex", "login", "--device-auth"],
-                &["codex", "login", "status"],
+                [
+                    &["codex", "login", "--device-auth"],
+                    &["codex", "login", "status"],
+                    &["codex", "logout"],
+                ],
                 "@openai/codex",
+                "CODEX_HOME",
             ),
             p(
                 "gemini",
                 "gemini",
-                &["gemini"],
-                &[
-                    "sh",
-                    "-c",
-                    "test -s \"$HOME/.gemini/oauth_creds.json\" && echo signed in with Google",
+                [
+                    &["gemini"],
+                    &[
+                        "sh",
+                        "-c",
+                        &format!("test -s {creds} && echo signed in with Google"),
+                    ],
+                    &["sh", "-c", &format!("rm -f {creds}")],
                 ],
                 "@google/gemini-cli",
+                "GEMINI_CLI_HOME",
             ),
         ]
     }
 
-    /// Runs the status command (10 s at most): signed in when it exits 0.
+    /// The variable and folder that point its CLI at the account in `home` (none for the system default).
     #[must_use]
-    pub fn check(&self) -> Status {
-        if let Some(bin) = self.login.first().filter(|b| !installed(b)) {
-            return Status {
-                signed_in: false,
-                line: format!("{bin} isn't installed on this Mac"),
-                install: Some(self.install.clone()),
-            };
+    pub fn env<'a>(&'a self, home: Option<&'a Path>) -> Option<(&'a str, &'a Path)> {
+        home.filter(|_| !self.home.is_empty())
+            .map(|dir| (self.home.as_str(), dir))
+    }
+
+    /// `cmd` for the account in `home`: `env <variable>=<folder> cmd…`, as is for the system default.
+    #[must_use]
+    pub fn with_home(&self, cmd: &[String], home: Option<&Path>) -> Vec<String> {
+        match self.env(home) {
+            Some((var, dir)) => [
+                vec!["env".to_owned(), format!("{var}={}", dir.display())],
+                cmd.to_vec(),
+            ]
+            .concat(),
+            None => cmd.to_vec(),
         }
-        let out = |signed_in, line: &str| Status {
-            install: None,
-            signed_in,
-            line: redact(&line.split_whitespace().collect::<Vec<_>>().join(" "))
-                .chars()
-                .take(80)
-                .collect(),
+    }
+
+    /// Whether its CLI (the login command's program) is missing.
+    #[must_use]
+    pub fn missing(&self) -> bool {
+        self.login.first().is_some_and(|b| !installed(b))
+    }
+
+    /// Runs `cmd` (10 s at most) for the account in `home`: whether it exited 0, its stdout and its stderr.
+    fn run(&self, cmd: &[String], home: Option<&Path>) -> Result<(bool, String, String), String> {
+        let Some((bin, args)) = cmd.split_first() else {
+            return Err("no command".to_owned());
         };
-        let Some((bin, args)) = self.status.split_first() else {
-            return out(false, "no status command");
-        };
-        let child = Command::new(bin)
+        let mut command = Command::new(bin);
+        if let Some((var, dir)) = self.env(home) {
+            command.env(var, dir);
+        }
+        let child = command
             .args(args)
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn();
-        let mut child = match child {
-            Ok(child) => child,
-            Err(e) => return out(false, &format!("{bin}: {e}")),
-        };
+        let mut child = child.map_err(|e| format!("{bin}: {e}"))?;
         let drain = |r: Option<Box<dyn Read + Send>>| {
             thread::spawn(move || {
                 let mut s = String::new();
@@ -117,7 +155,7 @@ impl Provider {
                 _ => {
                     let _ = child.kill();
                     let _ = child.wait();
-                    return out(false, "the status command timed out");
+                    return Err(format!("`{}` timed out", cmd.join(" ")));
                 }
             }
         };
@@ -125,10 +163,44 @@ impl Provider {
             stdout.join().unwrap_or_default(),
             stderr.join().unwrap_or_default(),
         );
-        // A JSON status (`claude auth status`): its `loggedIn`, as one plain line.
+        Ok((ok, stdout, stderr))
+    }
+
+    /// Runs the logout command for the account in `home`.
+    ///
+    /// # Errors
+    /// Its output on one line, redacted, when it fails or can't run.
+    pub fn sign_out(&self, home: Option<&Path>) -> Result<(), String> {
+        match self.run(&self.logout, home)? {
+            (true, ..) => Ok(()),
+            (false, out, err) => Err(one_line(if err.trim().is_empty() { &out } else { &err })),
+        }
+    }
+
+    /// Runs the status command (10 s at most) for the account in `home`: signed in when it exits 0.
+    #[must_use]
+    pub fn check(&self, home: Option<&Path>) -> Status {
+        let out = |signed_in, line: &str| Status {
+            install: None,
+            signed_in,
+            line: one_line(line),
+            who: None,
+            usage: None,
+        };
+        if self.missing() {
+            return Status {
+                install: Some(self.install.clone()),
+                ..out(false, "not installed on this Mac")
+            };
+        }
+        let (ok, stdout, stderr) = match self.run(&self.status, home) {
+            Ok(r) => r,
+            Err(e) => return out(false, &e),
+        };
+        // A JSON status (`claude auth status`): its `loggedIn` as one plain line, who, and usage when it says.
         if let Ok(v @ serde_json::Value::Object(_)) = serde_json::from_str(&stdout) {
             let who = v["email"].as_str().or(v["orgName"].as_str());
-            return match (v["loggedIn"].as_bool(), v["authMethod"].as_str(), who) {
+            let s = match (v["loggedIn"].as_bool(), v["authMethod"].as_str(), who) {
                 (Some(true), Some(how), Some(who)) => {
                     out(true, &format!("signed in · {how} ({who})"))
                 }
@@ -136,6 +208,11 @@ impl Provider {
                 (Some(true), None, _) => out(true, "signed in"),
                 (Some(false), ..) => out(false, "signed out"),
                 (None, ..) => out(ok, "status unknown"),
+            };
+            return Status {
+                who: who.map(one_line),
+                usage: v["usage"].as_str().map(one_line),
+                ..s
             };
         }
         out(
@@ -149,7 +226,7 @@ impl Provider {
     }
 }
 
-/// A provider's signed-in state, from its status command.
+/// An account's signed-in state, from its provider's status command.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Status {
     /// The status command exited 0.
@@ -158,6 +235,18 @@ pub struct Status {
     pub line: String,
     /// The install line, when the login command isn't found.
     pub install: Option<String>,
+    /// The email or org it is signed in as, when the status says.
+    pub who: Option<String>,
+    /// Its usage, when the status reports it.
+    pub usage: Option<String>,
+}
+
+/// `text` on one line, redacted, at most 80 characters.
+fn one_line(text: &str) -> String {
+    redact(&text.split_whitespace().collect::<Vec<_>>().join(" "))
+        .chars()
+        .take(80)
+        .collect()
 }
 
 /// Whether `bin` is a file, or one on `PATH` when it is a bare name.
@@ -266,40 +355,51 @@ mod tests {
             login: Vec::new(),
             status: vec!["sh".to_owned(), "-c".to_owned(), status.to_owned()],
             install: "npm install -g p".to_owned(),
+            home: "COOEE_TEST_HOME".to_owned(),
+            logout: Vec::new(),
         };
-        let s = p("echo '  Logged in\n  as owner'").check();
+        let s = p("echo '  Logged in\n  as owner'").check(None);
         assert_eq!((s.signed_in, s.line.as_str()), (true, "Logged in as owner"));
-        let s = p("echo not signed in >&2; exit 1").check();
+        let s = p("echo not signed in >&2; exit 1").check(None);
         assert_eq!((s.signed_in, s.line.as_str()), (false, "not signed in"));
         let s =
             p(r#"echo '{"loggedIn": true, "authMethod": "claude.ai", "email": "o@example.com"}'"#)
-                .check();
+                .check(None);
         assert_eq!(
             (s.signed_in, s.line.as_str()),
             (true, "signed in · claude.ai (o@example.com)")
         );
-        let s = p(r#"echo '{"loggedIn": false, "authMethod": "none"}'; exit 1"#).check();
+        assert_eq!(s.who.as_deref(), Some("o@example.com"));
+        // An account's status runs with its folder in the provider's variable.
+        let s = p(r#"echo "{\"loggedIn\": true, \"orgName\": \"Acme\", \"usage\": \"$COOEE_TEST_HOME 40% of the week\"}""#)
+            .check(Some(Path::new("/x/work")));
+        assert_eq!(
+            (s.line.as_str(), s.who.as_deref(), s.usage.as_deref()),
+            ("signed in", Some("Acme"), Some("/x/work 40% of the week"))
+        );
+        assert_eq!(p("echo \"$COOEE_TEST_HOME\"").check(None).line, "");
+        assert_eq!(
+            p("").with_home(&["c".to_owned()], Some(Path::new("/x/work"))),
+            ["env", "COOEE_TEST_HOME=/x/work", "c"]
+        );
+        let s = p(r#"echo '{"loggedIn": false, "authMethod": "none"}'; exit 1"#).check(None);
         assert_eq!((s.signed_in, s.line.as_str()), (false, "signed out"));
-        assert_eq!(p(r#"echo '{"a": 1}'"#).check().line, "status unknown");
+        assert_eq!(p(r#"echo '{"a": 1}'"#).check(None).line, "status unknown");
         let s = Provider {
             login: vec!["no-such-cooee-cli".to_owned()],
             ..p("exit 0")
         }
-        .check();
+        .check(None);
         assert_eq!(
             (s.signed_in, s.line.as_str(), s.install.as_deref()),
-            (
-                false,
-                "no-such-cooee-cli isn't installed on this Mac",
-                Some("npm install -g p")
-            )
+            (false, "not installed on this Mac", Some("npm install -g p"))
         );
         assert!(
             !Provider {
                 status: vec!["/no/such/cooee-bin".to_owned()],
                 ..p("")
             }
-            .check()
+            .check(None)
             .signed_in
         );
     }

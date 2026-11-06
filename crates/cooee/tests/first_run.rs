@@ -39,10 +39,18 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
         page.contains(r#"<button type="submit" disabled="">start</button>"#),
         "{page}"
     );
-    // codex's CLI is missing: its install line, its sign-in hidden.
+    // codex's CLI is missing: "not installed on this Mac" and its install line; no sign-in, no accounts.
     assert!(
-        page.contains(r#"<button type="button" class="si" hidden="">sign in</button></div><p class="ds">no-such-codex isn't installed on this Mac</p><p class="hn">on the Mac:<code>npm install -g @openai/codex</code>"#),
+        page.contains(r#"<b>codex</b><span class="m">not installed</span></div><p class="ds">not installed on this Mac</p><p class="hn">on the Mac:<code>npm install -g @openai/codex</code>"#),
         "{page}"
+    );
+    let codex = &page[page.find(r#"data-provider="codex""#).unwrap()..];
+    let codex = &codex[..codex.find(r#"class="lg""#).unwrap()];
+    assert!(
+        !codex.contains("sign in")
+            && !codex.contains("+ account")
+            && !codex.contains("class=\"ac\""),
+        "{codex}"
     );
 
     let out = Command::new(env!("CARGO_BIN_EXE_cooee"))

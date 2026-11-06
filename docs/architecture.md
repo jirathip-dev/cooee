@@ -77,15 +77,28 @@ approval, a turn finishes while no page has the thread open, or an agent errors.
 thread's tag, so a newer push replaces the older one. It shows nothing while that thread is open in view. A tap opens
 the thread, and reading the thread past `item` closes it.
 
-## Sign-ins (M3)
+## Sign-ins (M3) and accounts
 
 Each provider is one row of the `providers` table in the config: its name, the ACP agent it signs in, its CLI's own
-login command and a read-only status command. There is no provider-specific code beyond that table. The status
-command signs a provider in when it exits 0; its output, on one line and redacted, is the status line. Settings'
-sign-ins row opens the sign-ins card on the thread list: each provider's state, and `[sign in]` for a signed-out one. The new-thread
-picker marks each agent `✓` or `signed out`, with a link to the sheet.
+login, logout and read-only status commands, and the variable that points its CLI at a config folder (`home`:
+`CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `GEMINI_CLI_HOME`). There is no provider-specific code beyond that table. The
+status command signs an account in when it exits 0; its output, on one line and redacted, is the status line (a
+JSON status, as `claude auth status` prints, becomes a plain line, its email or org and any `usage` shown apart).
 
-`[sign in]` runs the login command in a plain shed terminal (terminal mode, not ACP; over the socket: `run`, then
+A provider's accounts are the system default login (`~/.claude` and so on, the first row) and the ones added in
+cooee: each a config folder `<data>/accounts/<provider>/<name>/` that the CLI gets through its variable, so the CLI
+keeps its own login there or in its keychain. cooee never reads or stores a token. `.cooee.json` beside the folders
+keeps only the provider's default account and when each login last succeeded. Settings' sign-ins row opens the
+sign-ins card on the thread list: per provider, each account's state (signed in, signed out, needs sign-in again),
+who it is, its last sign-in and usage, with `[sign in]`, `[sign out]` and `[make default]`; and `[+ account]`, which
+runs the login in a new folder (`.new-<name>`) that is listed only once the login exits 0 and the status says signed
+in, else removed. `[sign out]` (after a confirm) runs the logout for that folder, then removes it (the system
+default's is never removed). A provider whose CLI is missing says "not installed on this Mac" with its install line.
+The new-thread picker marks each agent by its default account, `✓` or `signed out` with a link to the sheet, and has
+an account picker, the default preselected; the thread's agent starts as `shed run --acp <agent> … -- env
+<variable>=<folder> <the agent's adapter>` (the system default: no `env`), and the thread's header names the account.
+
+`[sign in]` runs the login command (for an added account, `env <variable>=<folder> <login>`) in a plain shed terminal (terminal mode, not ACP; over the socket: `run`, then
 `resize` to 500 columns so a long link stays on one line), named `cooee-login-<provider>-<stamp>` and labelled
 `cooee-login=1`. The page reads its visible screen every second (`GET /logins/<provider>`), its links tappable; a
 code typed under it goes in with `send` then `keys enter`. A `wait` on the terminal ends when the command exits or
@@ -123,6 +136,6 @@ for the owner to run. `cooee doctor` checks the service, port, shed, push key an
 | `shed` | `shed` | The `shed` binary. |
 | `shed_dir` | shed's per-user server | shed's `--dir` (its socket `shed.sock` and state). |
 | `data` | `$XDG_DATA_HOME/cooee/<instance>`, else `~/.local/share/cooee/<instance>` | Where threads, devices and push subscriptions are stored. |
-| `providers` | Claude Code, Codex, Gemini | The sign-ins: `[[providers]]` with `name`, `agent` (its ACP agent id), `login` and `status` (commands, as arrays). Setting it replaces the defaults. |
+| `providers` | Claude Code, Codex, Gemini | The sign-ins: `[[providers]]` with `name`, `agent` (its ACP agent id), `login`, `status` and `logout` (commands, as arrays), `install` and `home` (the CLI's config-folder variable; without it only the system default account). Setting it replaces the defaults. |
 | `theme` | `farm` | The theme a device shows until it picks its own ([themes.md](themes.md)); own themes and schemes live in `themes/` and `schemes/` beside the config file. |
 | `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |

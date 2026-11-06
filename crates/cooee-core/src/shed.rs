@@ -71,6 +71,9 @@ pub struct Agent {
     pub id: String,
     /// The pinned version.
     pub version: String,
+    /// Its ACP adapter's command line.
+    #[serde(default)]
+    pub cmd: Vec<String>,
 }
 
 /// A shed server: its socket, and the CLI that talks to it.
@@ -372,7 +375,8 @@ impl Shed {
         self.cli(&["agents"])
     }
 
-    /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`).
+    /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`); with `env`, its
+    /// installed adapter runs as `env K=V <adapter>` (an account's config folder).
     ///
     /// # Errors
     /// [`ShedError::Cli`] when the CLI fails (e.g. the agent isn't installed or the name is taken).
@@ -382,12 +386,31 @@ impl Shed {
         agent: &str,
         cwd: &Path,
         labels: &BTreeMap<String, String>,
+        env: Option<(&str, &Path)>,
     ) -> Result<TerminalInfo, ShedError> {
         let cwd = cwd.to_string_lossy();
         let mut args = vec!["run", "--acp", agent, "--name", name, "--cwd", &cwd];
         let labels: Vec<String> = labels.iter().map(|(k, v)| format!("{k}={v}")).collect();
         for label in &labels {
             args.extend(["--label", label]);
+        }
+        let (var, cmd) = match env {
+            Some((k, dir)) => {
+                let installed = self.agents()?.into_iter().find(|a| a.id == agent);
+                let cmd = installed.map(|a| a.cmd).unwrap_or_default();
+                if cmd.is_empty() {
+                    return Err(ShedError::Cli {
+                        args: "agents".to_owned(),
+                        detail: format!("ACP agent {agent} is not installed"),
+                    });
+                }
+                (format!("{k}={}", dir.display()), cmd)
+            }
+            None => (String::new(), Vec::new()),
+        };
+        if !cmd.is_empty() {
+            args.extend(["--", "env", &var]);
+            args.extend(cmd.iter().map(String::as_str));
         }
         self.cli(&args)
     }
