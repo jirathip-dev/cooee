@@ -18,7 +18,9 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{AGENTS_FIX, Account, Agent, ROOTS_FIX, Sheet, Status, Summary, Thread, Turn};
+use cooee_core::{
+    AGENTS_FIX, Account, Agent, Profile, ROOTS_FIX, Sheet, Status, Summary, Thread, Turn,
+};
 pub use look::{Looks, Pair, Scheme, TOKENS, Theme, gate, plain};
 use sheet::{sheets, shown};
 pub use shown::Shown;
@@ -418,12 +420,12 @@ async fn nav(tabs: Vec<(String, String, bool)>, current: String) -> Result<impl 
 /// form (open when there are no threads, else behind `+`), each agent with its provider's state (no agents or no
 /// folders: the fix line instead); the
 /// sign-ins card (`#signins`, from Settings): each provider's accounts and their state, and its login's terminal (drawn by `chat.ts`); `tabs`: the
-/// plugins' names and labels.
+/// plugins' names and labels. With agent `profiles`, the form's profile picker.
 #[must_use]
 pub fn threads_page(
     cx: &Cx,
     rows: Vec<Summary>,
-    agents: Result<Vec<Agent>, String>,
+    (agents, profiles): (Result<Vec<Agent>, String>, Vec<Profile>),
     folders: Vec<(PathBuf, u8)>,
     providers: Vec<Sheet>,
     tabs: Vec<(String, String, bool)>,
@@ -433,6 +435,7 @@ pub fn threads_page(
         threads(
             rows: rows,
             agents: agents,
+            profiles: profiles,
             folders: folders,
             providers: providers,
             tabs: tabs
@@ -645,11 +648,67 @@ async fn folder_picker(folders: Vec<(PathBuf, u8)>) -> Result<impl View> {
     })
 }
 
+/// Each folder's last-used profile (its newest thread's, if it is still one to pick), by the folder as the form names
+/// it: the first folder's, and all of them as JSON.
+fn last_used(
+    rows: &[Summary],
+    profiles: &[Profile],
+    folders: &[(PathBuf, u8)],
+) -> (String, String) {
+    // Rows are newest first, their folders resolved.
+    let mut newest = BTreeMap::new();
+    for r in rows {
+        if r.profile.is_empty() || profiles.iter().any(|p| p.id() == r.profile) {
+            newest.entry(&r.folder).or_insert(&r.profile);
+        }
+    }
+    let last: BTreeMap<String, String> = folders
+        .iter()
+        .filter_map(|(f, _)| {
+            let p = newest.get(&f.canonicalize().ok()?)?;
+            Some((f.display().to_string(), (*p).clone()))
+        })
+        .collect();
+    let first = folders.first().map(|(f, _)| f.display().to_string());
+    let pick = first
+        .and_then(|f| last.get(&f).cloned())
+        .unwrap_or_default();
+    (pick, serde_json::to_string(&last).unwrap_or_default())
+}
+
+/// The new-thread form's agent profile picker: Plain, then each profile (a plugin's with its name), `pick`
+/// selected; `last` is each folder's last-used profile, as JSON, for `chat.ts` to pick as a folder is picked. A
+/// profile picked hides the agent picker, and one with its own folder the folder picker (CSS).
+#[component]
+async fn profile_picker(profiles: Vec<Profile>, pick: String, last: String) -> Result<impl View> {
+    Ok(view! {
+        <label class="pk">
+            <span class="lb">"profile"</span>
+            <select name="profile" data-last=(last)>
+                <option value="" selected=(pick.is_empty())>"Plain"</option>
+                for p in profiles {
+                    <option
+                        value=(p.id())
+                        selected=(p.id() == pick)
+                        data-folder=(p.folder.is_some())
+                    >
+                        (match &p.plugin {
+                            Some(by) => format!("{} · {by}", p.label),
+                            None => p.label.clone(),
+                        })
+                    </option>
+                }
+            </select>
+        </label>
+    })
+}
+
 #[component]
 async fn threads(
     cx: &Cx,
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
+    profiles: Vec<Profile>,
     folders: Vec<(PathBuf, u8)>,
     providers: Vec<Sheet>,
     tabs: Vec<(String, String, bool)>,
@@ -664,6 +723,7 @@ async fn threads(
         .rev()
         .map(|p| (p.provider.agent.clone(), p.accounts.clone()))
         .collect();
+    let (pick, by_folder) = last_used(&rows, &profiles, &folders);
     let cards = cards(rows);
     Ok(view! {
         document(
@@ -684,6 +744,9 @@ async fn threads(
                         <b>"new thread"</b>
                         <a class="gl" href="#" aria-label="close">"×"</a>
                     </div>
+                    if !profiles.is_empty() {
+                        profile_picker(profiles: profiles, pick: pick, last: by_folder)
+                    }
                     <fieldset class="ag">
                         <legend class="lb">"agent"</legend>
                         match agents {
@@ -869,12 +932,12 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
 
 /// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer.
 #[must_use]
-pub fn chat_page(cx: &Cx, thread: Thread, turn: Turn) -> impl View {
-    view! { cx => chat(thread: thread, turn: turn) }
+pub fn chat_page(cx: &Cx, thread: Thread, turn: Turn, profile: String) -> impl View {
+    view! { cx => chat(thread: thread, turn: turn, profile: profile) }
 }
 
 #[component]
-async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
+async fn chat(cx: &Cx, thread: Thread, turn: Turn, profile: String) -> Result<impl View> {
     let look = shown(cx);
     let [st, wait, pill] = [
         (state(&turn.state), false),
@@ -901,14 +964,18 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
                         <h1>(thread.title.clone())</h1>
                         <span class="ds">
                             <i class="dt"></i>
-                            (if thread.account.is_empty() {
-                                format!("{} · {folder} · ", thread.agent)
-                            } else {
-                                format!(
-                                    "{} · {} · {folder} · ",
-                                    thread.agent,
-                                    thread.account,
-                                )
+                            ({
+                                let parts = [
+                                    profile.as_str(),
+                                    &thread.agent,
+                                    &thread.account,
+                                    &folder,
+                                ];
+                                let parts: Vec<&str> = parts
+                                    .into_iter()
+                                    .filter(|p| !p.is_empty())
+                                    .collect();
+                                format!("{} · ", parts.join(" · "))
                             })
                             <span id="st" data-st=(state(&turn.state))>(st)</span>
                         </span>

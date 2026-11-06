@@ -11,8 +11,8 @@ use std::{
 };
 
 use cooee_core::{
-    Agent, Body, Change, Chat, Item, Plugin, Shed, ShedError, Store, StoreError, Summary, Thread,
-    Turn,
+    Agent, Body, Change, Chat, Item, Launch, Plugin, Shed, ShedError, Store, StoreError, Summary,
+    Thread, Turn,
     shed_proto::{self, ApprovalOption, Event},
 };
 use serde::Serialize;
@@ -99,6 +99,20 @@ pub enum Resume {
     Replay(Vec<Out>),
     /// The cursor is from another run or too old.
     Reset,
+}
+
+/// How a thread starts besides its agent, folder and first message: its account's label, its agent profile's id
+/// (empty: Plain), what its agent runs with, and the instructions sent before the first message.
+#[derive(Debug, Default)]
+pub struct Recipe {
+    /// The account's label, as the header shows it.
+    pub account: String,
+    /// The profile's id.
+    pub profile: String,
+    /// The account's folder, the profile's settings, env and policy.
+    pub launch: Launch,
+    /// Sent ahead of the first message, which is stored alone.
+    pub instructions: String,
 }
 
 /// The threads and the shed they run on.
@@ -525,9 +539,9 @@ impl Hub {
         Ok(path)
     }
 
-    /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, with `account`'s
-    /// config folder in `env` (none: the system default), then sends `text`. Returns the thread's id. A retry with
-    /// the same `random_id` (after a timeout, or a crash) adopts the thread it started and never starts another.
+    /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, as `recipe` says, then
+    /// sends `text`. Returns the thread's id. A retry with the same `random_id` (after a timeout, or a crash) adopts
+    /// the thread it started and never starts another.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a folder outside the roots or an empty message; [`HubError::Shed`] when the
@@ -538,12 +552,12 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        (account, env): (&str, Option<(&str, &Path)>),
+        recipe: &Recipe,
     ) -> Result<String, HubError> {
         let Some(folder) = self.allowed(folder) else {
             return Err(outside(folder));
         };
-        self.start(agent, &folder, text, random_id, (account, env))
+        self.start(agent, &folder, text, random_id, recipe)
     }
 
     /// [`Hub::create`] in a folder of cooee's own (a plugin's checkout), not checked against the roots.
@@ -556,7 +570,22 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        (account, env): (&str, Option<(&str, &Path)>),
+        recipe: &Recipe,
+    ) -> Result<String, HubError> {
+        let started = self.start_in(agent, folder, (text, random_id), recipe);
+        // The adapter's shell removes it as it starts; a start that never got that far leaves nothing either.
+        if let Some((file, _)) = &recipe.launch.secrets {
+            let _ = fs::remove_file(file);
+        }
+        started
+    }
+
+    fn start_in(
+        &self,
+        agent: &str,
+        folder: &Path,
+        (text, random_id): (&str, &str),
+        recipe: &Recipe,
     ) -> Result<String, HubError> {
         self.shed.hello()?;
         if text.trim().is_empty() {
@@ -592,7 +621,8 @@ impl Hub {
                         title,
                         agent: agent.to_owned(),
                         folder: Some(folder.to_owned()),
-                        account: account.to_owned(),
+                        account: recipe.account.clone(),
+                        profile: recipe.profile.clone(),
                         terminal: format!("cooee-{id}"),
                         random_id: random_id.to_owned(),
                         ..Thread::default()
@@ -613,7 +643,9 @@ impl Hub {
                 (format!("{LABEL}.thread"), id.clone()),
             ]);
             // A start that failed but came up anyway (a slow CLI) is kept, never started twice (herdsman#477).
-            if let Err(e) = self.shed.run_acp(&terminal, agent, folder, &labels, env)
+            if let Err(e) = self
+                .shed
+                .run_acp(&terminal, agent, folder, &labels, &recipe.launch)
                 && self.shed.get(&terminal).is_err()
             {
                 lock(&self.threads).remove(&id);
@@ -622,7 +654,7 @@ impl Hub {
             }
         }
         self.shed.ready(&terminal)?;
-        self.send(&id, text, random_id)?;
+        self.send_after(&id, text, random_id, &recipe.instructions)?;
         Ok(id)
     }
 
@@ -632,6 +664,17 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] for a closed thread or an empty message; [`HubError::Shed`] when shed fails.
     pub fn send(&self, id: &str, text: &str, random_id: &str) -> Result<Item, HubError> {
+        self.send_after(id, text, random_id, "")
+    }
+
+    /// [`Hub::send`] with `before` (a profile's instructions) ahead of `text` for the agent; only `text` is stored.
+    fn send_after(
+        &self,
+        id: &str,
+        text: &str,
+        random_id: &str,
+        before: &str,
+    ) -> Result<Item, HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
         let sent = live
@@ -648,7 +691,12 @@ impl Hub {
                 "the thread is closed or the message empty".to_owned(),
             ));
         }
-        self.shed.prompt(&live.meta.terminal, text)?;
+        let prompt = if before.trim().is_empty() {
+            text.to_owned()
+        } else {
+            format!("{}\n\n{text}", before.trim_end())
+        };
+        self.shed.prompt(&live.meta.terminal, &prompt)?;
         let body = Body::You {
             text: text.to_owned(),
             random_id: random_id.to_owned(),
@@ -814,6 +862,7 @@ impl Hub {
                     id: live.meta.id.clone(),
                     title: live.meta.title.clone(),
                     agent: live.meta.agent.clone(),
+                    profile: live.meta.profile.clone(),
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     state: live.chat.turn.state.clone(),
                     last: text.lines().last().unwrap_or("").chars().take(80).collect(),

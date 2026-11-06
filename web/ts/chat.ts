@@ -218,6 +218,7 @@ if (form) {
     const body = {
       agent,
       account: f.get(`account:${agent}`),
+      profile: f.get("profile"),
       folder: f.get("folder"),
       text: f.get("text"),
       random_id: form.dataset.rid,
@@ -231,6 +232,17 @@ if (form) {
     }
   });
 }
+
+// A folder picked picks its last-used agent profile (Plain when it has none).
+const pf = $<HTMLSelectElement>("select[name=profile]");
+if (pf && form)
+  form.addEventListener("change", (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.name !== "folder") return;
+    const last: Record<string, string> = JSON.parse(pf.dataset.last || "{}");
+    const id = last[t.value] ?? "";
+    if ([...pf.options].some((o) => o.value === id)) pf.value = id;
+  });
 
 // The folder picker: the search shows the folders whose name has it (up to 2 levels in), else the first level;
 // [+ new folder] makes one inside the folder picked, and picks it.

@@ -34,6 +34,10 @@ pub struct Provider {
     /// The logout command.
     #[serde(default)]
     pub logout: Vec<String>,
+    /// The variable its ACP adapter reads an extra settings file from and enforces, hooks included. Without it an
+    /// agent profile with `settings` can't start with its agent.
+    #[serde(default)]
+    pub settings: String,
 }
 
 impl Provider {
@@ -53,6 +57,7 @@ impl Provider {
             install: format!("npm install -g {npm}"),
             home: home.to_owned(),
             logout: v(logout),
+            settings: String::new(),
         };
         let creds = "\"${GEMINI_CLI_HOME:-$HOME}/.gemini/oauth_creds.json\"";
         vec![
@@ -357,6 +362,7 @@ mod tests {
             install: "npm install -g p".to_owned(),
             home: "COOEE_TEST_HOME".to_owned(),
             logout: Vec::new(),
+            settings: String::new(),
         };
         let s = p("echo '  Logged in\n  as owner'").check(None);
         assert_eq!((s.signed_in, s.line.as_str()), (true, "Logged in as owner"));

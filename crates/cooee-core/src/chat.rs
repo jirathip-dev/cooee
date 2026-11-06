@@ -103,6 +103,8 @@ pub struct Summary {
     pub title: String,
     /// The agent.
     pub agent: String,
+    /// Its agent profile's id (empty: Plain).
+    pub profile: String,
     /// The working folder.
     pub folder: PathBuf,
     /// The state: `working`, `blocked`, `done`, `error`, `ended` or empty.

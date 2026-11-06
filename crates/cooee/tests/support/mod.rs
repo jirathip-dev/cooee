@@ -76,7 +76,9 @@ pub struct FakeShed {
 const CLI: &str = r#"#!/bin/sh
 # The fake `shed` CLI: `agents` lists one agent; `run` records its arguments and prints the terminal (it waits while
 # the gate `hold-run` is shut, and fails, as a slow start's CLI would, while `run-fails` is); `machine ls` prints
-# machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline.
+# machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline. A `run`
+# with an adapter command after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables
+# in adapter.env.
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
@@ -90,7 +92,11 @@ case "$*" in
 *" run "*)
   while [ -e "$gates/hold-run" ]; do sleep 0.02; done
   [ -e "$gates/run-fails" ] && { echo 'fake shed: timed out' >&2; exit 1; }
-  while [ $# -gt 0 ]; do [ "$1" = --name ] && name=$2; shift; done
+  while [ $# -gt 0 ]; do
+    [ "$1" = --name ] && name=$2
+    [ "$1" = -- ] && { shift; PATH="$gates:$PATH" "$@" >/dev/null 2>&1; break; }
+    shift
+  done
   printf '{"name":"%s","labels":{},"cwd":"/","cmd":[],"keep":false,"state":"running","exit":null,"pid":1,"acp":"fake-acp"}\n' "$name" ;;
 *) echo "fake shed: $*" >&2; exit 2 ;;
 esac
@@ -103,6 +109,13 @@ impl FakeShed {
         let cli = dir.join("shed");
         fs::write(&cli, CLI).unwrap();
         fs::set_permissions(&cli, fs::Permissions::from_mode(0o755)).unwrap();
+        let adapter = dir.join("fake-acp");
+        fs::write(
+            &adapter,
+            "#!/bin/sh\nenv >\"$(dirname \"$0\")/adapter.env\"\n",
+        )
+        .unwrap();
+        fs::set_permissions(&adapter, fs::Permissions::from_mode(0o755)).unwrap();
         let socket = dir.join("shed.sock");
         let _ = fs::remove_file(&socket);
         let listener = UnixListener::bind(&socket).unwrap();
@@ -156,6 +169,11 @@ impl FakeShed {
     /// Terminal `name` is gone, as after a shed restart.
     pub fn vanish(&self, name: &str) {
         self.shared.lock().unwrap().gone.insert(name.to_owned());
+    }
+
+    /// The variables the fake adapter last ran with, as `env` printed them.
+    pub fn adapter_env(&self) -> String {
+        fs::read_to_string(self.dir.join("adapter.env")).unwrap_or_default()
     }
 
     /// The fake CLI's argument lines.

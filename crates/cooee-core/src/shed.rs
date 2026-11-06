@@ -4,6 +4,7 @@
 use std::{
     collections::BTreeMap,
     env,
+    fmt::Write as _,
     io::{self, BufRead, BufReader, Write},
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
@@ -79,6 +80,18 @@ pub struct Agent {
     /// Its ACP adapter's command line.
     #[serde(default)]
     pub cmd: Vec<String>,
+}
+
+/// What a thread's agent runs with besides its folder: variables on its adapter's command line, secret ones through
+/// a file (see [`Shed::run_acp`]), and shed's approval policy (none: shed's default, `ask`).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Launch {
+    /// `K=V` on the adapter's command line (an account's config folder, a profile's plain variables).
+    pub env: Vec<(String, String)>,
+    /// The file the secret variables pass through, and the variables.
+    pub secrets: Option<(PathBuf, Vec<(String, String)>)>,
+    /// `--policy`: `ask`, `allow` or `deny`.
+    pub policy: Option<String>,
 }
 
 /// A shed server: its socket, and the CLI that talks to it.
@@ -392,18 +405,20 @@ impl Shed {
         self.cli(&["agents"])
     }
 
-    /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`); with `env`, its
-    /// installed adapter runs as `env K=V <adapter>` (an account's config folder).
+    /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`) and `launch`: with
+    /// variables, its installed adapter runs as `env K=V… <adapter>`, and with secrets as `env K=V… sh -c '…' <file>
+    /// <adapter>`, the shell reading the secrets from `<file>` (mode 0600, written here) and removing it.
     ///
     /// # Errors
-    /// [`ShedError::Cli`] when the CLI fails (e.g. the agent isn't installed or the name is taken).
+    /// [`ShedError::Cli`] when the CLI fails (e.g. the agent isn't installed or the name is taken), or the secrets'
+    /// file can't be written.
     pub fn run_acp(
         &self,
         name: &str,
         agent: &str,
         cwd: &Path,
         labels: &BTreeMap<String, String>,
-        env: Option<(&str, &Path)>,
+        launch: &Launch,
     ) -> Result<TerminalInfo, ShedError> {
         let cwd = cwd.to_string_lossy();
         let mut args = vec!["run", "--acp", agent, "--name", name, "--cwd", &cwd];
@@ -411,23 +426,38 @@ impl Shed {
         for label in &labels {
             args.extend(["--label", label]);
         }
-        let (var, cmd) = match env {
-            Some((k, dir)) => {
-                let installed = self.agents()?.into_iter().find(|a| a.id == agent);
-                let cmd = installed.map(|a| a.cmd).unwrap_or_default();
-                if cmd.is_empty() {
-                    return Err(ShedError::Cli {
-                        args: "agents".to_owned(),
-                        detail: format!("ACP agent {agent} is not installed"),
-                    });
-                }
-                (format!("{k}={}", dir.display()), cmd)
+        if let Some(policy) = &launch.policy {
+            args.extend(["--policy", policy]);
+        }
+        let mut tail: Vec<String> = Vec::new();
+        if !launch.env.is_empty() || launch.secrets.is_some() {
+            let installed = self.agents()?.into_iter().find(|a| a.id == agent);
+            let cmd = installed.map(|a| a.cmd).unwrap_or_default();
+            if cmd.is_empty() {
+                return Err(ShedError::Cli {
+                    args: "agents".to_owned(),
+                    detail: format!("ACP agent {agent} is not installed"),
+                });
             }
-            None => (String::new(), Vec::new()),
-        };
-        if !cmd.is_empty() {
-            args.extend(["--", "env", &var]);
-            args.extend(cmd.iter().map(String::as_str));
+            tail.push("env".to_owned());
+            tail.extend(launch.env.iter().map(|(k, v)| format!("{k}={v}")));
+            if let Some((file, vars)) = &launch.secrets {
+                let q = |v: &str| format!("'{}'", v.replace('\'', r"'\''"));
+                let text = vars.iter().fold(String::new(), |mut t, (k, v)| {
+                    let _ = writeln!(t, "{k}={}", q(v));
+                    t
+                });
+                crate::write_private(file, text.as_bytes()).map_err(|e| ShedError::Cli {
+                    args: "run".to_owned(),
+                    detail: format!("{}: {e}", file.display()),
+                })?;
+                let read = r#"set -a; . "$0"; rm -f -- "$0"; set +a; exec "$@""#;
+                tail.extend(["sh".to_owned(), "-c".to_owned(), read.to_owned()]);
+                tail.push(file.to_string_lossy().into_owned());
+            }
+            tail.extend(cmd);
+            args.push("--");
+            args.extend(tail.iter().map(String::as_str));
         }
         self.cli(&args)
     }
