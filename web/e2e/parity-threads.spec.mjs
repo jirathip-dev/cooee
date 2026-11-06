@@ -40,7 +40,10 @@ test("row 15: a new reply shows on the open list (dot and badge, no reload); ope
   await page.clock.install();
   const id = await thread(page);
   // Read: the mark goes after 3 s.
+  const marked = () => page.waitForResponse((r) => r.url().endsWith(`/threads/${id}/read`));
+  let read = marked();
   await page.clock.runFor(3500);
+  await read;
   await page.goto("/");
   const row = page.locator(`.fc a.tr[data-id="${id}"]`);
   await expect(row).toHaveClass(/\brd\b/);
@@ -58,7 +61,9 @@ test("row 15: a new reply shows on the open list (dot and badge, no reload); ope
   await audit(page);
   await row.click();
   await page.waitForURL(/\/t\//);
+  read = marked();
   await page.clock.runFor(3500);
+  await read;
   await page.goto("/");
   await expect(row).toHaveClass(/\brd\b/);
   await expect(row.locator(".bd")).toHaveCount(0);
