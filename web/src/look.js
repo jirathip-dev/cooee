@@ -136,7 +136,8 @@
   function settings() {
     const row = (k, v) => `<button type="button" class="sr" data-open="look"><span class="sk">${k}</span><span class="sv">${v}</span><i class="cv">▸</i></button>`;
     const m = pick.mode || "system";
-    return `<p class="ch">look</p>${row("style", style())}${row("sprites", sprites() ? "on" : "off")}${row("theme", esc(theme().label))}
+    return `<p class="ch">sign-ins</p><a class="sr" href="/#signins" data-close><span class="sk">providers</span><i class="cv">▸</i></a>
+      <p class="ch">look</p>${row("style", style())}${row("sprites", sprites() ? "on" : "off")}${row("theme", esc(theme().label))}
       ${row("appearance", m === "system" ? `system · ${mode()} now` : m)}${row("colours", `dark ${label(scheme("dark"))} · light ${label(scheme("light"))}`)}`;
   }
 

@@ -23,9 +23,9 @@ keeps them going while the phone is away; cooee talks to shed and pings the phon
 
 | Crate | Path | Holds | May depend on |
 |---|---|---|---|
-| `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), paired devices, the shed client; no HTTP | no workspace crate |
+| `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), paired devices, providers (status, redaction), the shed client; no HTTP | no workspace crate |
 | `cooee-web` | `web/` | the web UI in Topcoat (ADR 0001): pages, `chat.js`, `app.css`, the PWA manifest, the themes and schemes (`look.rs`, `look.js`, `themes/`, `schemes/`) | not the server or binary |
-| `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2) | core, web |
+| `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3) | core, web |
 | `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
 
 `scripts/dep-direction.sh` enforces the last column in CI.
@@ -77,6 +77,24 @@ approval, a turn finishes while no page has the thread open, or an agent errors.
 thread's tag, so a newer push replaces the older one. It shows nothing while that thread is open in view. A tap opens
 the thread, and reading the thread past `item` closes it.
 
+## Sign-ins (M3)
+
+Each provider is one row of the `providers` table in the config: its name, the ACP agent it signs in, its CLI's own
+login command and a read-only status command. There is no provider-specific code beyond that table. The status
+command signs a provider in when it exits 0; its output, on one line and redacted, is the status line. Settings'
+sign-ins row opens the sign-ins card on the thread list: each provider's state, and `[sign in]` for a signed-out one. The new-thread
+picker marks each agent `✓` or `signed out`, with a link to the sheet.
+
+`[sign in]` runs the login command in a plain shed terminal (terminal mode, not ACP; over the socket: `run`, then
+`resize` to 500 columns so a long link stays on one line), named `cooee-login-<provider>-<stamp>` and labelled
+`cooee-login=1`. The page reads its visible screen every second (`GET /logins/<provider>`), its links tappable; a
+code typed under it goes in with `send` then `keys enter`. A `wait` on the terminal ends when the command exits or
+after 10 minutes; then the terminal is killed and removed, `[cancel]` does the same at once, and cooee removes any
+`cooee-login` terminals a previous run left. The screen is only ever read on demand: never stored, logged or kept
+in memory. Before it goes to the page, anything that looks like a token is replaced by `[redacted]`: a run of 20 or
+more token characters with both a letter and a digit, and in a link the values of `token`, `secret`, `password` and
+`key` parameters. The tokens themselves stay with the CLI.
+
 ## Plugins (M4)
 
 A plugin is a tab beside Chat: a backend of its own and a UI module it serves ([plugins.md](plugins.md)). The module
@@ -98,5 +116,6 @@ One TOML file, `$XDG_CONFIG_HOME/cooee/config.toml` (else `~/.config/cooee/confi
 | `shed` | `shed` | The `shed` binary. |
 | `shed_dir` | shed's per-user server | shed's `--dir` (its socket `shed.sock` and state). |
 | `data` | `$XDG_DATA_HOME/cooee`, else `~/.local/share/cooee` | Where threads are stored. |
+| `providers` | Claude Code, Codex, Gemini | The sign-ins: `[[providers]]` with `name`, `agent` (its ACP agent id), `login` and `status` (commands, as arrays). Setting it replaces the defaults. |
 | `theme` | `farm` | The theme a device shows until it picks its own ([themes.md](themes.md)); own themes and schemes live in `themes/` and `schemes/` beside the config file. |
 | `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |

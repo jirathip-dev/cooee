@@ -15,7 +15,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Agent, Summary, Thread, Turn};
+use cooee_core::{Agent, Provider, Status, Summary, Thread, Turn};
 pub use look::{Looks, Pair, Scheme, TOKENS, Theme, gate, plain};
 use topcoat::{
     Result,
@@ -332,17 +332,101 @@ async fn nav(tabs: Vec<(String, String)>, current: String) -> Result<impl View> 
     })
 }
 
-/// The thread list: one card per working folder, its 3 newest threads shown, the rest folded; and the new-thread
-/// form (open when there are no threads, else behind `+`). `tabs`: the plugins' names and labels.
+/// The thread list: one card per working folder, its 3 newest threads shown, the rest folded; the new-thread
+/// form (open when there are no threads, else behind `+`), each agent with its provider's state; the
+/// sign-ins card (`#signins`, from Settings): each provider's state, and its login's terminal (drawn by `chat.js`); `tabs`: the
+/// plugins' names and labels.
 #[must_use]
 pub fn threads_page(
     cx: &Cx,
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
     folders: Vec<PathBuf>,
+    providers: Vec<(Provider, Status)>,
     tabs: Vec<(String, String)>,
 ) -> impl View {
-    view! { cx => threads(rows: rows, agents: agents, folders: folders, tabs: tabs) }
+    view! {
+        cx =>
+        threads(
+            rows: rows,
+            agents: agents,
+            folders: folders,
+            providers: providers,
+            tabs: tabs
+        )
+    }
+}
+
+#[component]
+async fn provider(p: Provider, s: Status) -> Result<impl View> {
+    let (class, label) = if s.signed_in {
+        ("g", "✓ signed in")
+    } else {
+        ("m", "signed out")
+    };
+    Ok(view! {
+        <div class="pv" data-provider=(p.name.clone())>
+            <div class="fh">
+                <b>(p.name.clone())</b>
+                <span class=(class)>(label)</span>
+                <button type="button" class="si" hidden=(s.signed_in)>"sign in"</button>
+            </div>
+            <p class="ds">(s.line)</p>
+            <div class="lg" hidden=(true)>
+                <p class="ds">(format!("{} · shed terminal", p.login.join(" ")))</p>
+                <pre class="out"></pre>
+                <form class="tw">
+                    <input
+                        aria-label=(format!("the code from the {} sign-in page", p.name))
+                        placeholder="paste the code"
+                        autocomplete="off"
+                    >
+                    <button type="submit">"send"</button>
+                    <button type="button" class="cn">"cancel"</button>
+                </form>
+            </div>
+        </div>
+    })
+}
+
+#[component]
+async fn signins(providers: Vec<(Provider, Status)>) -> Result<impl View> {
+    Ok(view! {
+        <section class="nf" id="signins" hidden=(true)>
+            <div class="fh">
+                <b>"sign-ins"</b>
+                <a class="gl" href="#" aria-label="close sign-ins">"×"</a>
+            </div>
+            for (p, s) in providers {
+                provider(p: p, s: s)
+            }
+        </section>
+    })
+}
+
+/// One agent in the new-thread picker: signed in `✓`, or signed out with a link to the sign-ins card.
+#[component]
+async fn agent(id: String, first: bool, signed: Option<bool>) -> Result<impl View> {
+    Ok(view! {
+        <label>
+            <input type="radio" name="agent" value=(id.clone()) checked=(first)>
+            <span>(id.clone())</span>
+            match signed {
+                Some(true) => {
+                    <span class="g">"✓"</span>
+                }
+                Some(false) => {
+                    <span class="m">"signed out"</span>
+                }
+                None => {
+
+                }
+            }
+        </label>
+        if signed == Some(false) {
+            <a class="so" href="#signins">(format!("sign in {id}"))</a>
+        }
+    })
 }
 
 #[component]
@@ -350,9 +434,15 @@ async fn threads(
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
     folders: Vec<PathBuf>,
+    providers: Vec<(Provider, Status)>,
     tabs: Vec<(String, String)>,
 ) -> Result<impl View> {
     let empty = rows.is_empty();
+    let signed: BTreeMap<String, bool> = providers
+        .iter()
+        .rev()
+        .map(|(p, s)| (p.agent.clone(), s.signed_in))
+        .collect();
     let mut cards: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
     for r in rows {
         cards.entry(r.folder.clone()).or_default().push(r);
@@ -362,6 +452,7 @@ async fn threads(
             title: "cooee",
             header(home: true, tabs: tabs, current: String::new())
             <main class="list">
+                signins(providers: providers)
                 if empty {
                     <div class="emp">
                         <span data-s="empty"></span>
@@ -378,15 +469,11 @@ async fn threads(
                         match agents {
                             Ok(list) => {
                                 for (i, a) in list.into_iter().enumerate() {
-                                    <label>
-                                        <input
-                                            type="radio"
-                                            name="agent"
-                                            value=(a.id.clone())
-                                            checked=(i == 0)
-                                        >
-                                        <span>(a.id)</span>
-                                    </label>
+                                    agent(
+                                        id: a.id.clone(),
+                                        first: i == 0,
+                                        signed: signed.get(&a.id).copied()
+                                    )
                                 }
                             }
                             Err(e) => {

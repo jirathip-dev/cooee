@@ -1,5 +1,6 @@
 //! Test support: a fake shed server on a Unix socket (shed's JSON-RPC and events, with a scripted ACP agent per
-//! terminal), a fake `shed` CLI beside it, and a tiny HTTP client for `cooee serve`.
+//! terminal, and plain `run` terminals whose program really runs: its output is the screen), a fake `shed` CLI
+//! beside it, and a tiny HTTP client for `cooee serve`.
 
 #![allow(dead_code, reason = "each test file uses part of the support")]
 
@@ -10,9 +11,9 @@ use std::{
     net::TcpStream,
     os::unix::{fs::PermissionsExt, net::UnixListener},
     path::{Path, PathBuf},
-    process::{Child, Command, Stdio},
+    process::{Child, ChildStdin, Command, Stdio},
     sync::{
-        Arc, Mutex,
+        Arc, Condvar, Mutex,
         mpsc::{self, Receiver, Sender},
     },
     thread,
@@ -44,12 +45,30 @@ struct Shared {
     agents: BTreeMap<String, Sender<Input>>,
 }
 
+/// A plain terminal's program (`run`): its stdin, its output so far, its exit and whether its wait timed out.
+#[derive(Default)]
+struct Proc {
+    pid: u32,
+    stdin: Option<ChildStdin>,
+    screen: String,
+    exit: Option<i32>,
+    expired: bool,
+}
+
+/// The plain terminals, by name, with a signal for every change.
+#[derive(Default)]
+struct Procs {
+    by_name: Mutex<BTreeMap<String, Proc>>,
+    changed: Condvar,
+}
+
 /// A fake shed server in `dir` (`dir/shed.sock`, the CLI at `dir/shed`).
 #[derive(Clone)]
 pub struct FakeShed {
     pub dir: PathBuf,
     version: String,
     shared: Arc<Mutex<Shared>>,
+    procs: Arc<Procs>,
     /// Every request (method, params) in order.
     pub requests: Arc<Mutex<Vec<(String, Value)>>>,
 }
@@ -80,6 +99,7 @@ impl FakeShed {
             dir: dir.to_owned(),
             version: version.to_owned(),
             shared: Arc::default(),
+            procs: Arc::default(),
             requests: Arc::default(),
         };
         let server = shed.clone();
@@ -106,6 +126,106 @@ impl FakeShed {
             .filter(|(m, p)| m == "send" && p["name"] == name)
             .map(|(_, p)| p["text"].as_str().unwrap().to_owned())
             .collect()
+    }
+
+    /// The requests of `method` to terminal `name`, their params in order.
+    pub fn calls(&self, method: &str, name: &str) -> Vec<Value> {
+        self.requests
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|(m, p)| m == method && p["name"] == name)
+            .map(|(_, p)| p.clone())
+            .collect()
+    }
+
+    /// The names of the plain terminals `run` started.
+    pub fn runs(&self) -> Vec<String> {
+        self.procs.by_name.lock().unwrap().keys().cloned().collect()
+    }
+
+    /// Whether plain terminal `name`'s program has exited.
+    pub fn exited(&self, name: &str) -> bool {
+        self.procs.by_name.lock().unwrap()[name].exit.is_some()
+    }
+
+    /// The fake clock: plain terminal `name`'s pending `wait` times out now.
+    pub fn expire(&self, name: &str) {
+        let mut procs = self.procs.by_name.lock().unwrap();
+        procs.get_mut(name).unwrap().expired = true;
+        self.procs.changed.notify_all();
+    }
+
+    /// `run`: starts `cmd` in `cwd` for real, its stdout and stderr the screen, its stdin what `send`/`keys` type.
+    fn run(&self, params: &Value) -> Result<Value, RpcError> {
+        let name = params["name"].as_str().unwrap().to_owned();
+        let cmd: Vec<String> = serde_json::from_value(params["cmd"].clone()).unwrap();
+        let mut child = Command::new(&cmd[0])
+            .args(&cmd[1..])
+            .current_dir(params["cwd"].as_str().unwrap())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|e| RpcError::new(ErrorCode::SpawnFailed, e))?;
+        let proc = Proc {
+            pid: child.id(),
+            stdin: child.stdin.take(),
+            ..Proc::default()
+        };
+        self.procs
+            .by_name
+            .lock()
+            .unwrap()
+            .insert(name.clone(), proc);
+        let (procs, mut stdout, n) = (
+            Arc::clone(&self.procs),
+            child.stdout.take().unwrap(),
+            name.clone(),
+        );
+        thread::spawn(move || {
+            let mut buf = [0; 256];
+            while let Ok(len @ 1..) = stdout.read(&mut buf) {
+                let mut by_name = procs.by_name.lock().unwrap();
+                let text = String::from_utf8_lossy(&buf[..len]);
+                by_name.get_mut(&n).unwrap().screen.push_str(&text);
+            }
+            let code = child.wait().unwrap().code().unwrap_or(143);
+            procs.by_name.lock().unwrap().get_mut(&n).unwrap().exit = Some(code);
+            procs.changed.notify_all();
+        });
+        self.terminal(&name)
+    }
+
+    /// Types into plain terminal `name`, if it is one.
+    fn type_in(&self, name: &str, text: &str) -> bool {
+        let mut procs = self.procs.by_name.lock().unwrap();
+        let Some(proc) = procs.get_mut(name) else {
+            return false;
+        };
+        if let Some(stdin) = &mut proc.stdin {
+            let _ = stdin.write_all(text.as_bytes());
+        }
+        true
+    }
+
+    /// `wait` on plain terminal `name` with no pattern: until its program exits or the fake clock expires it.
+    fn wait_exit(&self, name: &str) -> Value {
+        let mut procs = self.procs.by_name.lock().unwrap();
+        loop {
+            let proc = &procs[name];
+            let outcome = match (proc.exit, proc.expired) {
+                (Some(_), _) => "exited",
+                (None, true) => "timeout",
+                (None, false) => {
+                    procs = self.procs.changed.wait(procs).unwrap();
+                    continue;
+                }
+            };
+            let mut t = Self::info(name, proc.exit.is_none(), None);
+            t["exit"] = json!(proc.exit);
+            return json!({ "outcome": outcome, "terminal": t });
+        }
     }
 
     fn emit(&self, name: &str, kind: EventKind) {
@@ -191,6 +311,19 @@ impl FakeShed {
                     }
                 }
                 "get" => self.terminal(&name),
+                "run" => self.run(&req.params),
+                "ls" => Ok(json!([])),
+                "resize" => Ok(json!({})),
+                "read" => {
+                    let procs = self.procs.by_name.lock().unwrap();
+                    Ok(json!({ "text": procs[&name].screen }))
+                }
+                "keys" => {
+                    assert_eq!(req.params["keys"], json!(["enter"]));
+                    self.type_in(&name, "\n");
+                    Ok(json!({}))
+                }
+                "wait" if req.params["output"].is_null() => Ok(self.wait_exit(&name)),
                 "wait" => self
                     .terminal(&name)
                     .map(|t| json!({ "outcome": "matched", "terminal": t })),
@@ -200,10 +333,18 @@ impl FakeShed {
                     self.terminal(&name)
                 }
                 "send" => {
-                    self.input(&name, req.params["text"].as_str().unwrap());
+                    let text = req.params["text"].as_str().unwrap();
+                    if !self.type_in(&name, text) {
+                        self.input(&name, text);
+                    }
                     Ok(json!({}))
                 }
                 "kill" => {
+                    let procs = self.procs.by_name.lock().unwrap();
+                    if let Some(p) = procs.get(&name).filter(|p| p.exit.is_none()) {
+                        let _ = Command::new("kill").arg(p.pid.to_string()).status();
+                    }
+                    drop(procs);
                     self.shared.lock().unwrap().stopped.insert(name.clone());
                     self.emit(&name, EventKind::Killed);
                     self.terminal(&name)
@@ -417,8 +558,8 @@ pub fn scratch(name: &str) -> PathBuf {
     dir
 }
 
-/// `cooee serve` on a free port with data in `dir/data`, the fake shed in `shed`, and the root `dir/root`; paired
-/// (`cookie` goes with every request).
+/// `cooee serve` on a free port with data in `dir/data`, the fake shed in `shed`, the root `dir/root`, its stderr
+/// in `dir/cooee.err` and no providers unless `extra` names some; paired (`cookie` goes with every request).
 pub struct Cooee {
     pub child: Child,
     pub addr: String,
@@ -437,8 +578,13 @@ impl Cooee {
         fs::create_dir_all(root.join("project")).unwrap();
         let config = dir.join("config.toml");
         let q = |p: &Path| format!("{:?}", p.to_string_lossy());
+        let providers = if extra.contains("[[providers]]") {
+            ""
+        } else {
+            "providers = []\n"
+        };
         let toml = format!(
-            "port = 0\nroots = [{}]\nshed = {}\nshed_dir = {}\ndata = {}\n{extra}",
+            "port = 0\nroots = [{}]\nshed = {}\nshed_dir = {}\ndata = {}\n{providers}{extra}",
             q(&root),
             q(&shed.join("shed")),
             q(shed),
@@ -450,6 +596,7 @@ impl Cooee {
             .arg("--config")
             .arg(&config)
             .stdout(Stdio::piped())
+            .stderr(fs::File::create(dir.join("cooee.err")).unwrap())
             .spawn()
             .unwrap();
         let mut line = String::new();

@@ -8,6 +8,8 @@ use std::{
 
 use serde::Deserialize;
 
+use crate::Provider;
+
 /// cooee's settings, read from `config.toml`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -26,6 +28,8 @@ pub struct Config {
     pub shed_dir: Option<PathBuf>,
     /// Where threads are stored; default `$XDG_DATA_HOME/cooee`, else `~/.local/share/cooee`.
     pub data: Option<PathBuf>,
+    /// The sign-ins sheet's providers (`[[providers]]`); default Claude Code, Codex and Gemini.
+    pub providers: Vec<Provider>,
     /// The theme a device shows until it picks its own (default farm).
     pub theme: Option<String>,
     /// The config file's folder, where the owner's own `themes/` and `schemes/` live (set by [`Config::load`]).
@@ -63,6 +67,7 @@ impl Default for Config {
             shed: PathBuf::from("shed"),
             shed_dir: None,
             data: None,
+            providers: Provider::defaults(),
             plugins: Vec::new(),
             theme: None,
             dir: None,
