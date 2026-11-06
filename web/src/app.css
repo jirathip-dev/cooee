@@ -163,3 +163,6 @@ html[data-style=terminal] .swa{border-radius:4px}
 .out{margin:0 0 8px;padding:8px;max-height:50vh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:13px var(--mono);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row)}
 .pv .tw{padding:0;background:none;border:0}.pv .cn{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
 .nf .so{align-self:center;min-height:var(--hit);display:inline-flex;align-items:center}
+.nf .fl{flex-direction:column;flex-wrap:nowrap;gap:0;max-height:40vh;overflow-y:auto}
+.nf .fl label{border:0;border-radius:0;border-top:1px solid var(--line);overflow-wrap:anywhere}.fl [data-d="1"]{padding-left:28px}.fl [data-d="2"]{padding-left:44px}
+#fq{flex:1;min-width:0}.lrw .sk{min-width:0;overflow-wrap:anywhere}

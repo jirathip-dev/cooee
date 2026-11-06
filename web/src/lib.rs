@@ -342,7 +342,7 @@ pub fn threads_page(
     cx: &Cx,
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
-    folders: Vec<PathBuf>,
+    folders: Vec<(PathBuf, u8)>,
     providers: Vec<(Provider, Status)>,
     tabs: Vec<(String, String)>,
 ) -> impl View {
@@ -454,20 +454,39 @@ async fn hint(why: &str, fix: &str, then: &str) -> Result<impl View> {
     })
 }
 
-/// The new-thread form's folder: a picker of `folders`, or the fix line when there are none.
+/// The new-thread form's folder: the roots and the folders 1 level inside them (and 2 levels, as `chat.js`'s search
+/// finds them), with [+ new folder]; or the fix line when there are none.
 #[component]
-async fn folder_picker(folders: Vec<PathBuf>) -> Result<impl View> {
+async fn folder_picker(folders: Vec<(PathBuf, u8)>) -> Result<impl View> {
     Ok(view! {
         if folders.is_empty() {
             <p class="lb">"folder"</p>
             hint(why: "no folders set · add", fix: ROOTS_FIX, then: "to config.toml")
         } else {
-            <label class="lb" for="folder">"folder"</label>
-            <select id="folder" name="folder">
-                for f in folders {
-                    <option value=(f.display().to_string())>(short(&f))</option>
+            <div class="fh">
+                <input
+                    id="fq"
+                    type="search"
+                    aria-label="search folders"
+                    placeholder="search folders"
+                    autocomplete="off"
+                >
+                <button type="button" id="mkdir">"+ new folder"</button>
+            </div>
+            <fieldset class="fl">
+                <legend class="lb">"folder"</legend>
+                for (i, (f, depth)) in folders.into_iter().enumerate() {
+                    <label data-d=(depth.to_string()) hidden=(depth > 1)>
+                        <input
+                            type="radio"
+                            name="folder"
+                            value=(f.display().to_string())
+                            checked=(i == 0)
+                        >
+                        (short(&f))
+                    </label>
                 }
-            </select>
+            </fieldset>
         }
     })
 }
@@ -476,7 +495,7 @@ async fn folder_picker(folders: Vec<PathBuf>) -> Result<impl View> {
 async fn threads(
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
-    folders: Vec<PathBuf>,
+    folders: Vec<(PathBuf, u8)>,
     providers: Vec<(Provider, Status)>,
     tabs: Vec<(String, String)>,
 ) -> Result<impl View> {
