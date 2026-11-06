@@ -23,6 +23,7 @@ type Turn = { text: string; state: "working" | "blocked" | "done" | "error" | "e
 
 | Call | Body | Answer |
 |---|---|---|
+| `GET /threads` | | the thread list's cards, `{folder, rows: {id, title, agent, folder, state, last, at, unread}[]}[]` (`folder`: `~/…` under home) |
 | `POST /threads` | `{agent, account?, folder, text, random_id}` | `{id}` |
 | `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor}` |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |

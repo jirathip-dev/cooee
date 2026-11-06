@@ -83,8 +83,7 @@ function strip(loading: boolean, now = false): void {
 strip(false);
 
 // Refresh: ↻, a pull down from the very top, the app coming back after 30 s away, or the network coming back. The
-// chat reloads its newest slice and stream (page.refresh); any other page (the thread list too) loads again, once the
-// network answers.
+// chat reloads its newest slice and stream (page.refresh); the thread list its cards; any other page reloads.
 const page: { refresh: (() => Promise<unknown>) | null; top: () => boolean } = { refresh: null, top: () => true };
 let refreshing: Promise<unknown> | null = null;
 function refresh(): Promise<unknown> | null {
@@ -94,12 +93,12 @@ function refresh(): Promise<unknown> | null {
   strip(true);
   refreshing = (async () => {
     if (page.refresh) return page.refresh();
-    // A page loads again only when the network answers: the worker's copy (offline) just shows its age.
-    const r = await fetch(location.pathname);
+    const list = $("main.list");
+    if (!list) return location.reload();
+    const r = await fetch("/threads");
     if (!r.ok) throw await why(r);
-    const at = Number(r.headers.get("cooee-at"));
-    if (at) copyAt = at;
-    else location.reload();
+    copyAt = Number(r.headers.get("cooee-at")) || 0;
+    drawCards(list, await r.json());
   })()
     .catch((x) => toast(`couldn't refresh: ${message(x)}`, true))
     .finally(() => {
@@ -110,6 +109,67 @@ function refresh(): Promise<unknown> | null {
   return refreshing;
 }
 $("#rf")?.addEventListener("click", refresh);
+
+// The thread list's cards from `GET /threads`, drawn as the server draws them (lib.rs `threads`).
+type Row = { id: string; title: string; agent: string; state: string; last: string; at: number; unread: boolean };
+type Card = { folder: string; rows: Row[] };
+const STATE: Record<string, string> = {
+  blocked: "needs",
+  working: "working",
+  error: "fail",
+  done: "done",
+  ended: "ended",
+};
+const age = (at: number): string => {
+  const s = Math.max(0, Math.floor(Date.now() / 1000) - Math.floor(at / 1000));
+  return s < 60
+    ? "now"
+    : s < 3600
+      ? `${Math.floor(s / 60)}m`
+      : s < 86400
+        ? `${Math.floor(s / 3600)}h`
+        : `${Math.floor(s / 86400)}d`;
+};
+function rowOf(r: Row): HTMLElement {
+  const a = make("a", r.unread ? "tr" : "tr rd") as HTMLAnchorElement;
+  const st = make("b");
+  const tp = make("span", "tp");
+  a.href = `/t/${r.id}`;
+  st.dataset.st = STATE[r.state] ?? "";
+  tp.append(st, r.last);
+  a.append(
+    make("i", "ud", r.unread ? "●" : ""),
+    make("span", "tt", r.title),
+    make("span", "ta", `${r.agent} · ${age(r.at)}`),
+    tp,
+  );
+  return a;
+}
+function drawCards(list: HTMLElement, cards: Card[]): void {
+  for (const e of list.querySelectorAll(":scope > .fc, :scope > .emp")) e.remove();
+  if (!cards.length) {
+    const emp = make("div", "emp");
+    const fig = make("span");
+    const w = make("p");
+    fig.dataset.s = "empty";
+    w.dataset.w = "empty-threads";
+    w.dataset.plain = "";
+    emp.append(fig, w);
+    list.insertBefore(emp, $("#new"));
+  }
+  for (const c of cards) {
+    const card = make("section", "fc");
+    const fh = make("div", "fh");
+    fh.append(make("b", "", c.folder), make("span", "ds", `${c.rows.length} threads`));
+    card.append(fh, ...c.rows.slice(0, 3).map(rowOf));
+    if (c.rows.length > 3) {
+      const more = make("details");
+      more.append(make("summary", "", `${c.rows.length - 3} older threads`), ...c.rows.slice(3).map(rowOf));
+      card.append(more);
+    }
+    list.append(card);
+  }
+}
 let pullY: number | null = null;
 let hiddenAt = 0;
 addEventListener(

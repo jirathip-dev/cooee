@@ -259,6 +259,30 @@ fn short(folder: &Path) -> String {
     }
 }
 
+/// A working folder's card on the thread list: the folder as shown (`~/x`) and its threads.
+#[derive(serde::Serialize)]
+pub struct Card {
+    /// The folder, `~/` for one under `$HOME`.
+    pub folder: String,
+    /// Its threads, in the list's order.
+    pub rows: Vec<Summary>,
+}
+
+/// The thread list's cards, one per working folder, by folder (`GET /threads` and the page draw the same).
+#[must_use]
+pub fn cards(rows: Vec<Summary>) -> Vec<Card> {
+    let mut by: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
+    for r in rows {
+        by.entry(r.folder.clone()).or_default().push(r);
+    }
+    by.into_iter()
+        .map(|(f, rows)| Card {
+            folder: short(&f),
+            rows,
+        })
+        .collect()
+}
+
 /// Now, in Unix ms.
 fn now() -> u64 {
     SystemTime::now()
@@ -640,10 +664,7 @@ async fn threads(
         .rev()
         .map(|p| (p.provider.agent.clone(), p.accounts.clone()))
         .collect();
-    let mut cards: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
-    for r in rows {
-        cards.entry(r.folder.clone()).or_default().push(r);
-    }
+    let cards = cards(rows);
     Ok(view! {
         document(
             title: "cooee",
@@ -699,10 +720,10 @@ async fn threads(
                     </div>
                     <p class="err" id="new-err" hidden=(true)></p>
                 </form>
-                for (folder, rows) in cards {
+                for Card { folder, rows } in cards {
                     <section class="fc">
                         <div class="fh">
-                            <b>(short(&folder))</b>
+                            <b>(folder)</b>
                             <span class="ds">(format!("{} threads", rows.len()))</span>
                         </div>
                         for r in rows.iter().take(3).cloned() {

@@ -421,6 +421,14 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
+/// `GET /threads`: the thread list's cards, as the page draws them (its refresh, docs/api.md).
+#[route(GET "/threads")]
+async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_web::Card>>> {
+    Ok(Answer(
+        blocking(cx, |hub| Ok(cooee_web::cards(hub.list()))).await,
+    ))
+}
+
 /// `POST /threads`: a new thread.
 #[derive(Deserialize)]
 struct New {
@@ -1171,6 +1179,7 @@ pub fn router(
         .route(report)
         .page(home)
         .page(chat)
+        .route(thread_list)
         .route(messages)
         .route(events)
         .route(create)
