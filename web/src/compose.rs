@@ -257,13 +257,21 @@ pub async fn composer(rows: Vec<Summary>, new: New, providers: Vec<Sheet>) -> Re
     Ok(view! {
         <form class="tw nc" id="nc" data-def=(def.unwrap_or_default())>
             if none {
-                hint(why: "no agents installed · on the Mac:", fix: AGENTS_FIX, then: "")
+                hint(
+                    why: "no agents installed · on the Mac:",
+                    fix: AGENTS_FIX,
+                    then: ""
+                )
             }
             if let Some(e) = err {
                 <p class="err">(e)</p>
             }
             if at.is_none() {
-                hint(why: "no folders set · add", fix: ROOTS_FIX, then: "to config.toml")
+                hint(
+                    why: "no folders set · add",
+                    fix: ROOTS_FIX,
+                    then: "to config.toml"
+                )
             }
             <div class="chips">
                 <button
@@ -324,7 +332,13 @@ async fn agent_sheet(
         .map(|s| (s.provider.name.clone(), s.provider.login.join(" ")))
         .collect();
     Ok(view! {
-        <div class="sh pop" id="sh-agent" popover="auto" role="dialog" aria-labelledby="sht-agent">
+        <div
+            class="sh pop"
+            id="sh-agent"
+            popover="auto"
+            role="dialog"
+            aria-labelledby="sht-agent"
+        >
             pop_head(which: "agent")
             <fieldset class="top">
                 <legend class="vh">"provider and account"</legend>
@@ -345,7 +359,11 @@ async fn agent_sheet(
                                     disabled=(!c.signed_in)
                                 >
                                 <span class="sk">
-                                    (if c.who.is_empty() { c.name.clone() } else { c.who.clone() })
+                                    (if c.who.is_empty() {
+                                        c.name.clone()
+                                    } else {
+                                        c.who.clone()
+                                    })
                                 </span>
                             </label>
                             if !c.signed_in {
@@ -368,7 +386,9 @@ async fn agent_sheet(
                     login_panel(provider: p, command: cmd)
                 }
                 <p class="lft">
-                    <a href="#settings/providers">"add an account or a provider in settings ›"</a>
+                    <a href="#settings/providers">
+                        "add an account or a provider in settings ›"
+                    </a>
                 </p>
             </fieldset>
         </div>
@@ -380,7 +400,13 @@ async fn agent_sheet(
 #[component]
 async fn folder_sheet(spots: Vec<Spot>, recent: usize) -> Result<impl View> {
     Ok(view! {
-        <div class="sh pop" id="sh-folder" popover="auto" role="dialog" aria-labelledby="sht-folder">
+        <div
+            class="sh pop"
+            id="sh-folder"
+            popover="auto"
+            role="dialog"
+            aria-labelledby="sht-folder"
+        >
             pop_head(which: "folder")
             <div class="top">
                 <div class="fq">
@@ -402,7 +428,11 @@ async fn folder_sheet(spots: Vec<Spot>, recent: usize) -> Result<impl View> {
                         if i == recent {
                             <p class="ch">"all folders"</p>
                         }
-                        <label class="sr pk" data-d=(s.depth.to_string()) hidden=(s.depth > 1)>
+                        <label
+                            class="sr pk"
+                            data-d=(s.depth.to_string())
+                            hidden=(s.depth > 1)
+                        >
                             <input
                                 type="radio"
                                 name="folder"
@@ -437,7 +467,11 @@ pub async fn side(rows: Vec<Summary>, cur: String) -> Result<impl View> {
     }
     Ok(view! {
         <aside class="side" aria-label="threads">
-            <a class="nw" href="/new" aria-current=(if cur == "new" { Some("page") } else { None })>
+            <a
+                class="nw"
+                href="/new"
+                aria-current=(if cur == "new" { Some("page") } else { None })
+            >
                 "+ new thread"
             </a>
             for (folder, list) in groups {
@@ -482,7 +516,12 @@ pub async fn providers_sheet(providers: Vec<Sheet>) -> Result<impl View> {
             aria-labelledby="sht-providers"
         >
             <div class="hd pvh">
-                <button type="button" class="gl" data-open="settings" aria-label="back to settings">
+                <button
+                    type="button"
+                    class="gl"
+                    data-open="settings"
+                    aria-label="back to settings"
+                >
                     "‹"
                 </button>
                 <b id="sht-providers">"providers"</b>
@@ -500,7 +539,11 @@ pub async fn providers_sheet(providers: Vec<Sheet>) -> Result<impl View> {
             <div class="top">
                 for sheet in installed {
                     for (a, s) in sheet.accounts.clone() {
-                        <div class="acr" data-provider=(sheet.provider.name.clone()) data-account=(a.name.clone())>
+                        <div
+                            class="acr"
+                            data-provider=(sheet.provider.name.clone())
+                            data-account=(a.name.clone())
+                        >
                             <span class="ptg">(sheet.provider.name.clone())</span>
                             <span class="sk">(a.shown(&s))</span>
                             if s.signed_in {
@@ -523,14 +566,20 @@ pub async fn providers_sheet(providers: Vec<Sheet>) -> Result<impl View> {
                         </div>
                     }
                     if !sheet.provider.home.is_empty() {
-                        <div class="acr add" data-provider=(sheet.provider.name.clone())>
+                        <div
+                            class="acr add"
+                            data-provider=(sheet.provider.name.clone())
+                        >
                             <span class="ptg">(sheet.provider.name.clone())</span>
                             <span class="sk"></span>
                             <button type="button" class="sec ad">"+ account"</button>
                         </div>
                     }
                     // How its last sign-in ended, when it didn't simply finish.
-                    if let Some(why) = sheet.why.clone().filter(|w| w != "the login command finished") {
+                    if let Some(why) = sheet
+                        .why
+                        .clone()
+                        .filter(|w| w != "the login command finished") {
                         <p class="ds wy">(why)</p>
                     }
                     login_panel(

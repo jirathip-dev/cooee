@@ -468,7 +468,9 @@ async fn threads(
                 <main class="list">
                     if empty {
                         <div class="emp">
-                            <span data-s="empty">(Unescaped::new_unchecked(figure))</span>
+                            <span data-s="empty">
+                                (Unescaped::new_unchecked(figure))
+                            </span>
                             <p data-w="empty-threads" data-plain="">
                                 (Unescaped::new_unchecked(words))
                             </p>
