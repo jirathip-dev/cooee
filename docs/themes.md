@@ -9,6 +9,7 @@ cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.
 |---|---|---|
 | `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words` |
 | `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
+| `scene.svg` | no | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned); built in, herdsman's Herd scenes (`docs/design/scene/build.mjs`). A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
 | `icon.png` | no | the tile in the look sheet, the favicon and the home-screen icon (else cooee's icon) |
 
 `words` maps cooee's state keys to the theme's words: `working needs done fail idle merged loading empty-threads`.
@@ -33,8 +34,14 @@ group tints, and the state colours at least ΔE2000 20 apart. A scheme that fail
 
 The server holds only the default theme (`theme` in `config.toml`, default `farm`). Each device keeps its own pick
 in its `cooee-look` cookie (#49): the theme, Appearance (`system`, `light` or `dark`; System follows the phone
-live), Style (`modern` or `terminal`), Sprites (`on`, `ascii` or `off`) and a scheme per mode. The server draws it from
+live), Style (`modern`, `terminal` or Scene: `list:scene`, which keeps the last of the other two for threads), Sprites (`on`, `ascii` or `off`) and a scheme per mode. The server draws it from
 the page's first byte (`web/src/shown.rs`), so there is no flash; `look.ts` applies a new pick in place. Both styles read the same tokens: a style sets only shape, radius, type and buttons.
+
+Scene (#34) draws the thread list as the theme's scene: a page per working folder, swiped sideways with a dot per
+page, each session a 132 × 100 sprite acting out its state (`working` `s-edit`, `needs`, `done`, `fail`, ended
+`s-merged`, else `s-idle`) over its name card (title, agent · age, the state's word); a tap opens the thread. Threads
+keep Modern or Terminal, whichever came last. Scene is offered only with Sprites `on` and a theme with sprites; in Scene
+the Sprites switch is greyed out ("scene needs sprites").
 
 ## Plugin tabs
 

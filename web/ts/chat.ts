@@ -157,6 +157,11 @@ function drawCards(list: HTMLElement, cards: Card[]): void {
     emp.append(fig, w);
     list.insertBefore(emp, $("#new"));
   }
+  const scn = $("#scene");
+  if (scn) {
+    drawScene(scn, cards);
+    return;
+  }
   for (const c of cards) {
     const card = make("section", "fc");
     const fh = make("div", "fh");
@@ -170,6 +175,81 @@ function drawCards(list: HTMLElement, cards: Card[]): void {
     list.append(card);
   }
 }
+
+// Scene (#34): the same cards as pages of sprites (lib.rs `scene`), redrawn whole so a refresh never leaves a copy;
+// the dot of the page in view; night on the strip (the scene's `#night`) from 19:00 to 07:00 on this device's clock.
+const POSE: Record<string, string> = { working: "edit", needs: "needs", done: "done", fail: "fail", ended: "merged" };
+const night = (): string => {
+  const h = new Date().getHours();
+  return h < 7 || h >= 19 ? "#night" : "";
+};
+function spriteOf(r: Row): HTMLElement {
+  const st = STATE[r.state] ?? "";
+  const a = make("a", r.unread ? "sb" : "sb rd") as HTMLAnchorElement;
+  const fig = make("span", "sf");
+  const card = make("span", "sn");
+  const w = make("span", `sw ${st}`);
+  a.href = `/t/${r.id}`;
+  a.dataset.id = r.id;
+  fig.dataset.s = POSE[st] ?? "idle";
+  w.dataset.w = st || "idle";
+  card.append(make("b", "", r.title), make("span", "", `${r.agent} · ${age(r.at)}`), w);
+  a.append(fig, card);
+  return a;
+}
+function dot(): void {
+  const pages = $("#scene .spg");
+  if (!pages) return;
+  const at = Math.round(pages.scrollLeft / (pages.clientWidth || 1));
+  for (const [i, d] of document.querySelectorAll("#scene .sdt a").entries())
+    if (i === at) d.setAttribute("aria-current", "page");
+    else d.removeAttribute("aria-current");
+}
+function light(): void {
+  const scn = $("#scene");
+  scn?.classList.toggle("night", !!night());
+  for (const img of document.querySelectorAll<HTMLImageElement>("#scene .sky")) {
+    const src = `${scn?.dataset.art}${night()}`;
+    if (img.getAttribute("src") !== src) img.src = src;
+  }
+}
+function drawScene(scn: HTMLElement, cards: Card[]): void {
+  const pages = $(".spg", scn);
+  const dots = $(".sdt", scn);
+  if (!pages || !dots) return;
+  const at = pages.scrollLeft;
+  pages.replaceChildren(
+    ...cards.map((c, i) => {
+      const p = make("section", "sp");
+      const sky = make("img", "sky") as HTMLImageElement;
+      const h = make("h2", "fh");
+      const field = make("div", "fld");
+      p.id = `sp-${i}`;
+      p.setAttribute("aria-label", c.folder);
+      sky.alt = "";
+      h.append(make("b", "", c.folder), make("span", "ds", `${c.rows.length} threads`));
+      field.append(...c.rows.map(spriteOf));
+      p.append(sky, h, field);
+      return p;
+    }),
+  );
+  dots.replaceChildren(
+    ...cards.map((c, i) => {
+      const d = make("a") as HTMLAnchorElement;
+      d.href = `#sp-${i}`;
+      d.setAttribute("aria-label", c.folder);
+      return d;
+    }),
+  );
+  dots.hidden = cards.length < 2;
+  pages.scrollLeft = at;
+  light();
+  dot();
+}
+$("#scene .spg")?.addEventListener("scroll", dot, { passive: true });
+light();
+setInterval(() => document.hidden || light(), 60000);
+
 let pullY: number | null = null;
 let hiddenAt = 0;
 addEventListener(

@@ -43,7 +43,7 @@ macro_rules! built {
 }
 
 /// The static routes: the manifest, the icons, the style sheet, the scripts and the service worker; and the look:
-/// `POST /look` (a pick with no script) and each theme's data at `/look/<theme>/{theme.json,sprites.svg,icon.png}`.
+/// `POST /look` (a pick with no script) and each theme's data at `/look/<theme>/{theme.json,sprites.svg,scene.svg,icon.png}`.
 ///
 /// # Panics
 ///
@@ -89,18 +89,22 @@ impl IntoResponse for Owned {
 path_param!(look);
 path_param!(file);
 
-/// A sprite sheet with its two-frame loop rule, since a `<use>` of another file takes that file's styles: frame 1 (`.kf1`,
-/// `.f1`) shows by default, and `--o1`/`--o2`, which the page animates, inherit into each sprite.
-fn with_frames(svg: &[u8]) -> Vec<u8> {
-    const RULE: &[u8] =
-        b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
+/// `svg` with a `<style>` rule first, since a `<use>` or `<img>` of another file takes that file's styles only.
+fn with_rule(svg: &[u8], rule: &[u8]) -> Vec<u8> {
     let at = svg
         .windows(4)
         .position(|w| w == b"<svg")
         .and_then(|i| svg[i..].iter().position(|&b| b == b'>').map(|j| i + j + 1))
         .unwrap_or(0);
-    [&svg[..at], RULE, &svg[at..]].concat()
+    [&svg[..at], rule, &svg[at..]].concat()
 }
+
+/// A sprite sheet's two-frame loop: frame 1 (`.kf1`, `.f1`) shows by default, and `--o1`/`--o2`, which the page
+/// animates, inherit into each sprite.
+const FRAMES: &[u8] = b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
+
+/// A scene's calm layers only (#34): herdsman's scenes draw each host-load level as a layer, and cooee has no load.
+const CALM: &[u8] = b"<style>.h-busy,.h-held,.l-overcast,.l-rain{display:none}</style>";
 
 #[route(GET "/look/{look}/{file}")]
 async fn look_file(cx: &Cx) -> Result<Owned> {
@@ -113,7 +117,11 @@ async fn look_file(cx: &Cx) -> Result<Owned> {
         "sprites.svg" => theme
             .sprite_sheet
             .as_deref()
-            .map(|b| Owned("image/svg+xml", with_frames(b))),
+            .map(|b| Owned("image/svg+xml", with_rule(b, FRAMES))),
+        "scene.svg" => theme
+            .scene
+            .as_deref()
+            .map(|b| Owned("image/svg+xml", with_rule(b, CALM))),
         "icon.png" => Some(theme.icon.clone().map_or_else(
             || Owned("image/svg+xml", include_bytes!("icon.svg").to_vec()),
             |b| Owned("image/png", b),
@@ -645,6 +653,86 @@ async fn folder_picker(folders: Vec<(PathBuf, u8)>) -> Result<impl View> {
     })
 }
 
+/// A state's pose in Scene (#34): its 132 × 100 sprite.
+fn pose(st: &str) -> &'static str {
+    match st {
+        "working" => "edit",
+        "needs" => "needs",
+        "done" => "done",
+        "fail" => "fail",
+        "ended" => "merged",
+        _ => "idle",
+    }
+}
+
+/// One session in Scene: its sprite acting out its state, and its name card (title, agent · age, the state's word);
+/// a tap opens it.
+#[component]
+async fn sprite(cx: &Cx, r: Summary) -> Result<impl View> {
+    let look = shown(cx);
+    let st = state(&r.state);
+    let key = if st.is_empty() { "idle" } else { st };
+    let (fig, word) = (look.s(pose(st)), look.w(key, false));
+    Ok(view! {
+        <a
+            class=(if r.unread { "sb" } else { "sb rd" })
+            href=(format!("/t/{}", r.id))
+            data-id=(r.id.clone())
+        >
+            <span class="sf" data-s=(pose(st))>(Unescaped::new_unchecked(fig))</span>
+            <span class="sn">
+                <b>(r.title)</b>
+                <span>(format!("{} · {}", r.agent, age(r.at)))</span>
+                <span class=(format!("sw {st}")) data-w=(key)>
+                    (Unescaped::new_unchecked(word))
+                </span>
+            </span>
+        </a>
+    })
+}
+
+/// Scene (#34): the thread list as the theme's scene, a page per working folder swiped sideways with a dot per page
+/// (a link with no script), each page the scene's strip over the sessions' sprites. `chat.ts` redraws it on refresh,
+/// marks the dot in view and switches the strip to night by the device's clock.
+#[component]
+async fn scene(cx: &Cx, cards: Vec<Card>) -> Result<impl View> {
+    let art = format!("/look/{}/scene.svg", shown(cx).name());
+    let dots: Vec<(usize, String)> = cards.iter().map(|c| c.folder.clone()).enumerate().collect();
+    Ok(view! {
+        <div class="scn" id="scene" data-art=(art.clone())>
+            <nav class="sdt" aria-label="pages" hidden=(dots.len() < 2)>
+                for (i, f) in dots {
+                    <a
+                        href=(format!("#sp-{i}"))
+                        aria-label=(f)
+                        aria-current=(if i == 0 { Some("page") } else { None })
+                    ></a>
+                }
+            </nav>
+            <div class="spg">
+                for (i, Card { folder, rows }) in cards.into_iter().enumerate() {
+                    <section
+                        class="sp"
+                        id=(format!("sp-{i}"))
+                        aria-label=(folder.clone())
+                    >
+                        <img class="sky" src=(art.clone()) alt="">
+                        <h2 class="fh">
+                            <b>(folder)</b>
+                            <span class="ds">(format!("{} threads", rows.len()))</span>
+                        </h2>
+                        <div class="fld">
+                            for r in rows {
+                                sprite(r: r)
+                            }
+                        </div>
+                    </section>
+                }
+            </div>
+        </div>
+    })
+}
+
 #[component]
 async fn threads(
     cx: &Cx,
@@ -720,26 +808,30 @@ async fn threads(
                     </div>
                     <p class="err" id="new-err" hidden=(true)></p>
                 </form>
-                for Card { folder, rows } in cards {
-                    <section class="fc">
-                        <div class="fh">
-                            <b>(folder)</b>
-                            <span class="ds">(format!("{} threads", rows.len()))</span>
-                        </div>
-                        for r in rows.iter().take(3).cloned() {
-                            row(r: r)
-                        }
-                        if rows.len() > 3 {
-                            <details>
-                                <summary>
-                                    (format!("{} older threads", rows.len() - 3))
-                                </summary>
-                                for r in rows.iter().skip(3).cloned() {
-                                    row(r: r)
-                                }
-                            </details>
-                        }
-                    </section>
+                if look.scene() {
+                    scene(cards: cards)
+                } else {
+                    for Card { folder, rows } in cards {
+                        <section class="fc">
+                            <div class="fh">
+                                <b>(folder)</b>
+                                <span class="ds">(format!("{} threads", rows.len()))</span>
+                            </div>
+                            for r in rows.iter().take(3).cloned() {
+                                row(r: r)
+                            }
+                            if rows.len() > 3 {
+                                <details>
+                                    <summary>
+                                        (format!("{} older threads", rows.len() - 3))
+                                    </summary>
+                                    for r in rows.iter().skip(3).cloned() {
+                                        row(r: r)
+                                    }
+                                </details>
+                            }
+                        </section>
+                    }
                 }
             </main>
         )

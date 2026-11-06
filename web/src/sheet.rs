@@ -73,9 +73,15 @@ async fn head(which: &str) -> Result<impl View> {
     })
 }
 
-/// A key's values as one radio group (`cur` checked).
+/// A key's values as one radio group (`cur` checked; `hide` not offered; `lock`: all greyed out).
 #[component]
-async fn seg(k: &str, list: Vec<&'static str>, cur: String) -> Result<impl View> {
+async fn seg(
+    k: &str,
+    list: Vec<&'static str>,
+    cur: String,
+    #[default] hide: &str,
+    #[default] lock: bool,
+) -> Result<impl View> {
     Ok(view! {
         <div class="seg" role="radiogroup" aria-label=(k)>
             for v in list {
@@ -87,6 +93,8 @@ async fn seg(k: &str, list: Vec<&'static str>, cur: String) -> Result<impl View>
                     data-k=(k)
                     data-v=(v)
                     aria-checked=(aria(v == cur))
+                    hidden=(v == hide)
+                    disabled=(lock)
                 >
                     (v)
                 </button>
@@ -162,7 +170,7 @@ async fn colours(cx: &Cx, m: &str, showing: String) -> Result<impl View> {
     })
 }
 
-/// The look sheet: STYLE, SPRITES, THEME, APPEARANCE and the dark and light COLOURS.
+/// The look sheet: STYLE (Scene only with sprites on, #34), SPRITES (greyed out in Scene), THEME, APPEARANCE and the dark and light COLOURS.
 #[component]
 async fn look_sheet(cx: &Cx) -> Result<impl View> {
     let look = shown(cx);
@@ -192,8 +200,9 @@ async fn look_sheet(cx: &Cx) -> Result<impl View> {
                     <span>"style"</span>
                     seg(
                         k: "style",
-                        list: vec!["modern", "terminal"],
-                        cur: look.style().to_owned()
+                        list: vec!["modern", "terminal", "scene"],
+                        cur: look.shape().to_owned(),
+                        hide: if look.art() { "" } else { "scene" }
                     )
                 </div>
                 <div class="lrw">
@@ -201,9 +210,11 @@ async fn look_sheet(cx: &Cx) -> Result<impl View> {
                     seg(
                         k: "sprites",
                         list: vec!["on", "ascii", "off"],
-                        cur: look.figs().to_owned()
+                        cur: look.figs().to_owned(),
+                        lock: look.scene()
                     )
                 </div>
+                <p class="lft" id="snd" hidden=(!look.scene())>"scene needs sprites"</p>
                 <p class="ch">"theme"</p>
                 <div class="lth" role="listbox" aria-label="theme">
                     for (n, label, on) in tiles {
@@ -299,7 +310,7 @@ async fn settings(cx: &Cx) -> Result<impl View> {
                     <i class="cv">"▸"</i>
                 </button>
                 <p class="ch" id="s-look">"look"</p>
-                look_row(k: "style", v: look.style().to_owned())
+                look_row(k: "style", v: look.shape().to_owned())
                 look_row(k: "sprites", v: look.figs().to_owned())
                 look_row(k: "theme", v: look.theme().label.clone())
                 look_row(k: "appearance", v: appearance)

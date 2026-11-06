@@ -1,6 +1,7 @@
 // cooee's look (docs/design/look) once the page is up. The server draws the device's pick from its `cooee-look`
-// cookie on the first byte (theme, mode system | light | dark, style modern | terminal, sprites on | ascii | off, and a
-// scheme per mode; unset: the theme's default), with every theme and scheme in `<script id="looks">`. This module
+// cookie on the first byte (theme, mode system | light | dark, style modern | terminal, list scene (Style's Scene, #34:
+// the thread list as the theme's scene, offered with sprites on only), sprites on | ascii | off, and a scheme per mode;
+// unset: the theme's default), with every theme and scheme in `<script id="looks">`. This module
 // keeps it live: a pick in the look sheet applies at once without a reload (the cookie keeps it), System follows
 // prefers-color-scheme, and elements added later are filled as they come, so chat.ts only names what it shows:
 //   [data-st=working|needs|done|fail|idle|ended]  a state: the sprite (data-tool=edit|read|run while working), the
@@ -30,7 +31,7 @@ interface Looks {
   themes: Record<string, Theme>;
   schemes: Record<string, Scheme>;
 }
-type Key = "theme" | "mode" | "style" | "sprites" | "dark" | "light";
+type Key = "theme" | "mode" | "style" | "list" | "sprites" | "dark" | "light";
 type Pick = Partial<Record<Key, string>>;
 type Mode = "dark" | "light";
 
@@ -98,6 +99,7 @@ const style = (): string => (pick.style === "terminal" ? "terminal" : "modern");
 const figs = (): string => (pick.sprites === "off" || pick.sprites === "ascii" ? pick.sprites : "on");
 const sprites = (): boolean => figs() !== "off";
 const art = (): boolean => theme().sprites && figs() === "on";
+const scene = (): boolean => pick.list === "scene" && art();
 const word = (k: string): string => theme().words[k] || PLAIN[k] || k;
 const url = (file: string): string => new URL(`/look/${name()}/${file}`, location.href).href;
 
@@ -204,7 +206,12 @@ function hold(change: () => void): void {
 }
 
 function set(k: Key, v: string | undefined): void {
-  if (k === "dark" || k === "light") {
+  const was = scene() && name();
+  if (k === "style" && v === "scene") pick.list = v;
+  else if (k === "style") {
+    delete pick.list;
+    if (v) pick.style = v;
+  } else if (k === "dark" || k === "light") {
     if (v === theme().scheme[k]) delete pick[k];
     else if (v) pick[k] = v;
     // A tap on the other mode's list shows it: Appearance switches to that mode.
@@ -216,7 +223,9 @@ function set(k: Key, v: string | undefined): void {
     .join("/");
   // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is newer than the iPhones cooee serves.
   document.cookie = `${COOKIE}=${value}; path=/; max-age=315360000; samesite=lax`;
-  hold(paint);
+  // Scene in or out, or another theme's scene: the thread list is drawn again by the server.
+  if ($("main.list") && (scene() && name()) !== was) location.reload();
+  else hold(paint);
 }
 
 // The sheets' marks: each key's current value checked, the theme's default schemes, the mode showing, and Settings'
@@ -226,7 +235,8 @@ function marks(): void {
   const now: Record<Key, string> = {
     theme: name(),
     mode: pick.mode || "system",
-    style: style(),
+    style: scene() ? "scene" : style(),
+    list: "",
     sprites: figs(),
     dark: scheme("dark"),
     light: scheme("light"),
@@ -234,6 +244,9 @@ function marks(): void {
   for (const b of document.querySelectorAll<HTMLElement>("#sheet [data-k][data-v]")) {
     const k = b.dataset.k as Key;
     const on = now[k] === b.dataset.v;
+    // Scene only with sprites on; in Scene the sprites switch is greyed out.
+    if (k === "style" && b.dataset.v === "scene") b.hidden = !art();
+    if (k === "sprites") b.toggleAttribute("disabled", scene());
     if (b.getAttribute("role") === "radio") {
       b.setAttribute("aria-checked", String(on));
       continue;
@@ -246,6 +259,8 @@ function marks(): void {
     }
     if (on) b.append(make("i", "tk", "✓"));
   }
+  const note = $("#snd");
+  if (note) note.hidden = !scene();
   for (const p of document.querySelectorAll<HTMLElement>("#sheet .ch[data-m]")) {
     $(".shw", p)?.remove();
     if (p.dataset.m === mode()) p.append(make("span", "shw", " · showing"));

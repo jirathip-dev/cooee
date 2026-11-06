@@ -10,7 +10,7 @@ use crate::look::{Looks, Scheme, Theme, plain};
 pub const COOKIE: &str = "cooee-look";
 
 /// The keys a pick has.
-const KEYS: [&str; 6] = ["theme", "mode", "style", "sprites", "dark", "light"];
+const KEYS: [&str; 7] = ["theme", "mode", "style", "list", "sprites", "dark", "light"];
 
 /// The state keys with a word (a key without one shows nothing).
 const STATES: [&str; 9] = [
@@ -161,6 +161,18 @@ impl<'a> Shown<'a> {
         }
     }
 
+    /// Style's value: Scene (#34) on the thread list, else [`Self::style`], which threads keep in Scene.
+    #[must_use]
+    pub fn shape(&self) -> &str {
+        if self.scene() { "scene" } else { self.style() }
+    }
+
+    /// The thread list draws as the theme's scene: picked, and offered (sprites on, a theme with sprites).
+    #[must_use]
+    pub fn scene(&self) -> bool {
+        self.get("list") == Some("scene") && self.art()
+    }
+
     /// `on`, `ascii` or `off`.
     #[must_use]
     pub fn figs(&self) -> &str {
@@ -198,7 +210,9 @@ impl<'a> Shown<'a> {
         }
     }
 
-    fn art(&self) -> bool {
+    /// Sprites show: the theme has them and the pick is `on` (Scene is offered only then).
+    #[must_use]
+    pub fn art(&self) -> bool {
         self.theme().sprites && self.figs() == "on"
     }
 
@@ -279,6 +293,11 @@ impl<'a> Shown<'a> {
             if self.mode().is_some_and(|m| m != k) {
                 pick.insert("mode".to_owned(), k.to_owned());
             }
+        } else if k == "style" && v == "scene" {
+            pick.insert("list".to_owned(), v.to_owned());
+        } else if k == "style" {
+            pick.remove("list");
+            pick.insert(k.to_owned(), v.to_owned());
         } else if KEYS.contains(&k) && !(k == "mode" && v == "system") {
             pick.insert(k.to_owned(), v.to_owned());
         } else {
@@ -366,5 +385,23 @@ mod tests {
         assert_eq!(s.with("light", "kitchen-light"), "mode:light/theme:kitchen");
         assert_eq!(s.with("mode", "system"), "theme:kitchen");
         assert_eq!(s.with("theme", "x</"), "mode:light");
+        // Scene keeps the threads' style; Modern or Terminal leaves it.
+        let scene = Shown::new(&looks, Some("cooee-look=style:terminal"));
+        assert_eq!(scene.with("style", "scene"), "list:scene/style:terminal");
+        let scene = Shown::new(&looks, Some("cooee-look=list:scene/style:terminal"));
+        assert_eq!(
+            (scene.scene(), scene.shape(), scene.style()),
+            (true, "scene", "terminal")
+        );
+        assert_eq!(scene.with("style", "modern"), "style:modern");
+        // Sprites ascii or off, or a theme without sprites, hide Scene.
+        for pick in [
+            "list:scene/sprites:ascii",
+            "list:scene/sprites:off",
+            "list:scene/theme:terminal",
+        ] {
+            let s = Shown::new(&looks, Some(&format!("cooee-look={pick}")));
+            assert_eq!((s.scene(), s.shape()), (false, "modern"), "{pick}");
+        }
     }
 }
