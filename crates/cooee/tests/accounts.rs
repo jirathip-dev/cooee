@@ -209,6 +209,11 @@ fn add_account_listed_only_on_success_default_and_thread_pick_spawn_with_its_fol
             && row.contains("make default"),
         "{row}"
     );
+    // The page's own data (the looks, #49) aside.
+    let (head, rest) = page
+        .split_once(r#"<script type="application/json" id="looks">"#)
+        .unwrap();
+    let page = format!("{head}{}", rest.split_once("</script>").unwrap().1);
     assert!(
         !page.contains("loggedIn") && !page.contains("{\""),
         "no raw JSON: {page}"

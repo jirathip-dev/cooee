@@ -46,8 +46,9 @@ pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
 
 /// The paths an unpaired browser may load: pairing and the static files (and the themes' files under `/look/`).
-const OPEN: [&str; 12] = [
+const OPEN: [&str; 13] = [
     "/pair",
+    "/look",
     "/look.js",
     "/pair/request",
     "/pair/claim",
@@ -70,7 +71,7 @@ fn now() -> u64 {
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
 
-/// cooee's own error: one plain sentence, marked so the page shows it (`chat.js` words any other failure itself).
+/// cooee's own error: one plain sentence, marked so the page shows it (`chat.ts` words any other failure itself).
 fn plain(status: u16, text: &str) -> Result<Response> {
     Ok(Response::builder()
         .status(status)

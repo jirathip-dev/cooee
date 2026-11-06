@@ -74,6 +74,16 @@ impl Theme {
             .map_or_else(|| plain(key), String::as_str)
     }
 
+    /// The default scheme for mode `m` (`dark` or `light`).
+    #[must_use]
+    pub fn scheme_for(&self, m: &str) -> &str {
+        if m == "light" {
+            &self.scheme.light
+        } else {
+            &self.scheme.dark
+        }
+    }
+
     /// A push's body: the theme word, the plain word, then the agent's line (`at the gate · needs you · codex: …`);
     /// a theme without its own word says the plain word once.
     #[must_use]
@@ -123,7 +133,7 @@ type Builtin = (
     &'static [u8],
 );
 
-const THEMES: [Builtin; 4] = [
+pub(crate) const THEMES: [Builtin; 4] = [
     builtin_theme!(
         "farm",
         Some(include_bytes!("../themes/farm/sprites.svg").as_slice())
@@ -139,7 +149,7 @@ const THEMES: [Builtin; 4] = [
     builtin_theme!("terminal", None),
 ];
 
-const SCHEMES: [(&str, &str); 12] = builtin_scheme!(
+pub(crate) const SCHEMES: [(&str, &str); 12] = builtin_scheme!(
     "github-dark",
     "solarized-dark",
     "gruvbox",

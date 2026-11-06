@@ -313,3 +313,45 @@ fn the_new_calls_need_a_paired_device_but_pairing_requests_do_not() {
         403
     );
 }
+
+#[test]
+fn the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it() {
+    // #49: the look sheet with no script posts the key tapped; the cookie it sets draws the next page from its first byte.
+    let (_dir, _shed, c) = setup("look", "");
+    let form = "to=%2Fpair&style=terminal";
+    let form_type = ("Content-Type", "application/x-www-form-urlencoded");
+    let (head, _) = c.raw("POST", "/look", &[form_type], form);
+    assert_eq!(status(&head), 303, "{head}");
+    assert!(head.contains("location: /pair"), "{head}");
+    let set = head
+        .lines()
+        .find_map(|l| l.strip_prefix("set-cookie: "))
+        .unwrap();
+    assert!(set.starts_with("cooee-look=style:terminal;"), "{set}");
+    let pick = "cooee-look=theme:kitchen/style:terminal/sprites:off/mode:dark";
+    let (_, page) = c.raw("GET", "/pair", &[("Cookie", pick)], "");
+    assert!(
+        page.contains(r#"<html lang="en" data-theme="kitchen" data-mode="dark" data-style="terminal" data-sprites="off""#),
+        "{page}"
+    );
+    assert!(
+        page.contains("<style id=\"scheme\">:root{") && page.contains("--bg:#1a1816;"),
+        "{page}"
+    );
+    // The sheet is server HTML, its keys checked for the pick.
+    assert!(
+        page.contains(r#"data-k="style" data-v="terminal" aria-checked="true""#),
+        "{page}"
+    );
+    // Back to this server only.
+    let (head, _) = c.raw(
+        "POST",
+        "/look",
+        &[form_type],
+        "to=%2F%2Fevil.example&theme=farm",
+    );
+    assert!(
+        head.contains("location: /\n") || head.ends_with("location: /"),
+        "{head}"
+    );
+}

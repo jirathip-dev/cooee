@@ -1,5 +1,5 @@
 # Every CI gate, locally (the ui gate needs `npm ci` in web/e2e once).
-check: fmt clippy test doc deny cap deps hygiene ui
+check: fmt clippy test doc deny cap deps hygiene ts ui
 
 fmt:
     cargo fmt --all --check
@@ -27,6 +27,11 @@ deps:
 
 hygiene:
     scripts/hygiene.sh
+
+# web/ts: tsc strict and Biome (blocking), then tsc-rs as a trial (needs `npm ci` in web once).
+ts:
+    cd web && npx tsc -p ts && npx tsc -p ts/tsconfig.sw.json && npx biome check ts
+    -cd web && npx tsc-rs -p ts && npx tsc-rs -p ts/tsconfig.sw.json
 
 # Playwright at 390 and 1440 px with axe; screenshots in ui-390/ and ui-1440/.
 ui:
