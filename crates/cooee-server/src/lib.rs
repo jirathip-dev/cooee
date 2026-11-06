@@ -161,6 +161,7 @@ impl Layer for Gate {
                 Some(d) => next.run(&cx.with(Paired(d)), body).await,
                 None if method(cx) == "GET"
                     && (path == "/"
+                        || path == "/new"
                         || path.starts_with("/t/")
                         || path.strip_prefix("/p/").is_some_and(|p| !p.contains('/'))) =>
                 {
@@ -265,8 +266,17 @@ fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
     .collect()
 }
 
-#[page("/")]
-async fn home(cx: &Cx) -> Result<impl View> {
+/// The thread list, what the composer needs and the providers, as last checked.
+async fn shell(
+    cx: &Cx,
+) -> Result<
+    (
+        Vec<cooee_core::Summary>,
+        cooee_web::New,
+        Vec<cooee_core::Sheet>,
+    ),
+    HubError,
+> {
     let providers = on_logins(cx, |l| Ok(l.statuses()));
     let rest = blocking(cx, |hub| {
         let agents = hub.agents();
@@ -274,14 +284,19 @@ async fn home(cx: &Cx) -> Result<impl View> {
     });
     let (providers, (rows, agents, folders)) =
         futures_util::future::try_join(providers, rest).await?;
-    Ok(cooee_web::threads_page(
-        cx,
-        rows,
-        agents,
-        folders,
-        providers,
-        tabs(cx),
-    ))
+    Ok((rows, cooee_web::New { agents, folders }, providers))
+}
+
+#[page("/")]
+async fn home(cx: &Cx) -> Result<impl View> {
+    let (rows, new, providers) = shell(cx).await?;
+    Ok(cooee_web::threads_page(cx, rows, new, providers, tabs(cx)))
+}
+
+#[page("/new")]
+async fn new_thread(cx: &Cx) -> Result<impl View> {
+    let (rows, new, providers) = shell(cx).await?;
+    Ok(cooee_web::new_page(cx, rows, new, providers, tabs(cx)))
 }
 
 /// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account.
@@ -302,7 +317,7 @@ async fn login_start(cx: &Cx, Json(s): Json<Option<Start>>) -> Result<Answer<()>
     ))
 }
 
-/// `POST /logins/{id}/signout` and `/default`: account `account` (empty: the system default).
+/// `POST /logins/{id}/signout`: account `account` (empty: the system default).
 #[derive(Deserialize)]
 struct Pick {
     account: String,
@@ -313,14 +328,6 @@ async fn login_signout(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
     let name = thread_id(cx);
     Ok(Answer(
         on_logins(cx, move |l| l.sign_out(&name, &p.account)).await,
-    ))
-}
-
-#[route(POST "/logins/{id}/default")]
-async fn login_default(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
-    let name = thread_id(cx);
-    Ok(Answer(
-        on_logins(cx, move |l| l.set_default(&name, &p.account)).await,
     ))
 }
 
@@ -351,10 +358,12 @@ async fn login_cancel(cx: &Cx) -> Result<Answer<()>> {
 #[page("/t/{id}")]
 async fn chat(cx: &Cx) -> Result<impl View> {
     let id = thread_id(cx);
-    let Ok((thread, turn)) = blocking(cx, move |hub| hub.thread(&id)).await else {
+    let Ok((thread, rows)) = blocking(cx, move |hub| Ok((hub.thread(&id)?, hub.list()))).await
+    else {
         return Err(not_found().into());
     };
-    Ok(cooee_web::chat_page(cx, thread, turn))
+    let providers = logins(cx).statuses();
+    Ok(cooee_web::chat_page(cx, thread, rows, providers))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -424,8 +433,9 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
 /// `GET /threads`: the thread list's cards, as the page draws them (its refresh, docs/api.md).
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_web::Card>>> {
+    let providers = logins(cx).statuses();
     Ok(Answer(
-        blocking(cx, |hub| Ok(cooee_web::cards(hub.list()))).await,
+        blocking(cx, move |hub| Ok(cooee_web::cards(hub.list(), &providers))).await,
     ))
 }
 
@@ -436,9 +446,13 @@ struct New {
     folder: PathBuf,
     text: String,
     random_id: String,
-    /// The agent's provider account (none: its default).
+    /// The agent's provider account (none: the system default).
     #[serde(default)]
     account: Option<String>,
+    /// Answer with the id at once and connect behind it (#48: the page opens the chat on send); else once the
+    /// agent took the first message.
+    #[serde(default)]
+    background: bool,
 }
 
 /// A new thread's id.
@@ -450,6 +464,21 @@ struct Created {
 #[route(POST "/threads")]
 async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     let logins = logins(cx);
+    if new.background {
+        let hub = hub(cx);
+        let id = tokio::task::spawn_blocking(move || {
+            let (account, env) = logins.home(&new.agent, new.account.as_deref())?;
+            let name = cooee_web::named(&new.agent, &logins.statuses());
+            hub.create_later(
+                (&new.agent, &name),
+                &new.folder,
+                (&new.text, &new.random_id),
+                (&account, env),
+            )
+        });
+        let id = id.await.map_err(|e| HubError::Refused(e.to_string()))?;
+        return Ok(Answer(id.map(|id| Created { id })));
+    }
     let id = blocking(cx, move |hub| {
         let (account, env) = logins.home(&new.agent, new.account.as_deref())?;
         let env = env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path()));
@@ -463,6 +492,21 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     })
     .await;
     Ok(Answer(id.map(|id| Created { id })))
+}
+
+/// `POST /threads/{id}/retry`: starts a thread whose start failed again, with its first message (#48).
+#[route(POST "/threads/{id}/retry")]
+async fn retry(cx: &Cx) -> Result<Answer<()>> {
+    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+    let done = tokio::task::spawn_blocking(move || {
+        let (thread, _) = hub.thread(&id)?;
+        let (_, env) = logins.home(&thread.agent, Some(&thread.account))?;
+        let name = cooee_web::named(&thread.agent, &logins.statuses());
+        hub.retry(&id, env, &name)
+    });
+    Ok(Answer(
+        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
+    ))
 }
 
 /// `?path=<folder>&hidden=1`: Settings › Folders.
@@ -1178,11 +1222,13 @@ pub fn router(
         .route(device_remove)
         .route(report)
         .page(home)
+        .page(new_thread)
         .page(chat)
         .route(thread_list)
         .route(messages)
         .route(events)
         .route(create)
+        .route(retry)
         .route(browse)
         .route(root)
         .route(new_folder)
@@ -1196,7 +1242,6 @@ pub fn router(
         .route(login_send)
         .route(login_cancel)
         .route(login_signout)
-        .route(login_default)
         .page(tab)
         .route(frame)
         .route(proxy)

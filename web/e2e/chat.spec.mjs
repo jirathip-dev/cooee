@@ -7,9 +7,9 @@ import { expect, test } from "@playwright/test";
 const shot = (page, info, name) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png` });
 
 async function start(page, text, base = "") {
-  await page.goto(`${base}/#new`);
+  await page.goto(`${base}/new`);
   await page.getByLabel("first message").fill(text);
-  await page.getByRole("button", { name: "start" }).click();
+  await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
 }
 

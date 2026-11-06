@@ -23,9 +23,10 @@ type Turn = { text: string; state: "working" | "blocked" | "done" | "error" | "e
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | the thread list's cards, `{folder, rows: {id, title, agent, folder, state, last, at, unread}[]}[]` (`folder`: `~/…` under home) |
-| `POST /threads` | `{agent, account?, folder, text, random_id}` | `{id}` |
-| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor}` |
+| `GET /threads` | | the thread list's cards, `{folder, rows: {id, title, agent, account, folder, state, last, at, unread}[]}[]` (`folder`: `~/…` under home; `agent`: its provider's name, never the agent's id) |
+| `POST /threads` | `{agent, account?, folder, text, random_id, background?}` | `{id}`, once the agent took the first message; with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
+| `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
+| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, pending?: {text, random_id}}` (`pending`: the first message while the thread connects) |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |
 | `POST /threads/{id}/send` | `{text, random_id}` (a retry with the same id is stored once) | `Item` |
 | `POST /threads/{id}/approve` | `{item, option}` | `Item` or `null` |
@@ -56,7 +57,6 @@ another run; load the newest slice again).
 | `POST /logins/{id}/send` | `{text}`: typed into the login's terminal | `null` |
 | `POST /logins/{id}/cancel` | `{}` | `null` |
 | `POST /logins/{id}/signout` | `{account}` | `null` |
-| `POST /logins/{id}/default` | `{account}` | `null` |
 
 ## Alerts, devices, reports
 

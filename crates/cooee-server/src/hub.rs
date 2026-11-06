@@ -76,6 +76,8 @@ struct Live {
     moved: u64,
     /// Its working turn was surfaced as stuck; the next shed event clears it.
     stuck: bool,
+    /// The first message of a start that answered at once ([`Hub::create_later`]), until shed takes it.
+    pending: Option<String>,
 }
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
@@ -91,6 +93,18 @@ pub struct Slice {
     pub turn: Turn,
     /// Resume the event stream after this (`<boot>.<seq>`).
     pub cursor: String,
+    /// The first message while its thread connects, not yet an item.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pending: Option<Pending>,
+}
+
+/// A thread's first message while it connects: its text and the start's id (the item it becomes has it).
+#[derive(Debug, Clone, Serialize)]
+pub struct Pending {
+    /// The message.
+    pub text: String,
+    /// The start's `random_id`.
+    pub random_id: String,
 }
 
 /// What a page subscription starts with: replayed events, or a reset (the page reloads its slice).
@@ -205,6 +219,7 @@ impl Live {
             tx: broadcast::channel(RING).0,
             moved: now(),
             stuck: false,
+            pending: None,
         }
     }
 
@@ -265,7 +280,11 @@ impl Hub {
         let store = Store::open(data)?;
         let mut threads = BTreeMap::new();
         for id in store.ids()? {
-            let meta = store.load(&id)?;
+            let mut meta = store.load(&id)?;
+            // Before #48 the system default login was stored by its label.
+            if meta.account == "System default" {
+                meta.account.clear();
+            }
             let chat = Chat::from_versions(store.items(&id)?);
             threads.insert(id, Arc::new(Mutex::new(Live::new(meta, chat))));
         }
@@ -559,71 +578,181 @@ impl Hub {
         (account, env): (&str, Option<(&str, &Path)>),
     ) -> Result<String, HubError> {
         self.shed.hello()?;
+        let (id, fresh) = self.admit(agent, folder, text, random_id, account)?;
+        self.connect(&id, (fresh, false), text, random_id, env)?;
+        Ok(id)
+    }
+
+    /// [`Hub::create`] that answers at once (#48): the thread is listed `connecting`, its first message pending,
+    /// and the agent starts behind it. A start that fails leaves it `unconnected` with why (`name`, the provider's
+    /// name, said for the agent's id), kept; [`Hub::retry`], or the same start again, starts it again.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a folder outside the roots or an empty message.
+    pub fn create_later(
+        self: &Arc<Self>,
+        (agent, name): (&str, &str),
+        folder: &Path,
+        (text, random_id): (&str, &str),
+        (account, env): (&str, Option<(String, PathBuf)>),
+    ) -> Result<String, HubError> {
+        let Some(folder) = self.allowed(folder) else {
+            return Err(outside(folder));
+        };
+        let (id, fresh) = self.admit(agent, &folder, text, random_id, account)?;
+        if fresh {
+            let live = self.live(&id)?;
+            lock(&live).pending = Some(text.to_owned());
+        }
+        self.retry(&id, env, name)?;
+        Ok(id)
+    }
+
+    /// Starts thread `id`'s agent again after its start failed (none failed, or one runs: nothing), and sends its
+    /// first message; as [`Hub::create_later`].
+    ///
+    /// # Errors
+    /// [`HubError::NoThread`]; [`HubError::Store`] when the state can't be published.
+    pub fn retry(
+        self: &Arc<Self>,
+        id: &str,
+        env: Option<(String, PathBuf)>,
+        name: &str,
+    ) -> Result<(), HubError> {
+        let live = self.live(id)?;
+        let (text, random_id, agent, fresh) = {
+            let mut l = lock(&live);
+            let Some(text) = l
+                .pending
+                .clone()
+                .filter(|_| l.chat.turn.state != "connecting")
+            else {
+                return Ok(());
+            };
+            // Never tried: its terminal starts; else it starts again only if it isn't running.
+            let fresh = l.chat.turn.state.is_empty();
+            "connecting".clone_into(&mut l.chat.turn.state);
+            l.chat.turn.note = None;
+            let turn = l.chat.turn.clone();
+            l.publish(self, vec![Change::State(turn)])?;
+            (text, l.meta.random_id.clone(), l.meta.agent.clone(), fresh)
+        };
+        let (hub, id, name) = (Arc::clone(self), id.to_owned(), name.to_owned());
+        thread::spawn(move || {
+            let env = env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path()));
+            let done = hub.shed.hello().map_err(HubError::from);
+            let done = done.and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, env));
+            let mut l = lock(&live);
+            match done {
+                // shed's events say more.
+                Ok(()) if l.chat.turn.state == "connecting" => {
+                    "working".clone_into(&mut l.chat.turn.state);
+                }
+                Ok(()) => return,
+                Err(e) => {
+                    "unconnected".clone_into(&mut l.chat.turn.state);
+                    l.chat.turn.note = Some(format!(
+                        "{name} stopped: {}",
+                        e.to_string().replace(&agent, &name)
+                    ));
+                }
+            }
+            let turn = l.chat.turn.clone();
+            if let Err(e) = l.publish(&hub, vec![Change::State(turn)]) {
+                eprintln!("cooee: {e}");
+            }
+        });
+        Ok(())
+    }
+
+    /// The thread start `random_id` opened (stored and listed before shed starts it: an event, an ask, that comes
+    /// before the start returns is applied, and a crash after the start is adopted on restart, herdsman#446, #509),
+    /// or a new one; and whether it is new.
+    fn admit(
+        &self,
+        agent: &str,
+        folder: &Path,
+        text: &str,
+        random_id: &str,
+        account: &str,
+    ) -> Result<(String, bool), HubError> {
         if text.trim().is_empty() {
             return Err(HubError::Refused("the first message is empty".to_owned()));
         }
-        let (id, terminal, adopted) = {
-            // Taken under the lock and counted up, so two threads started in one millisecond differ.
-            let mut last = lock(&self.last);
-            let started = self.all().into_iter().find_map(|l| {
-                let l = lock(&l);
-                let same = !random_id.is_empty() && l.meta.random_id == random_id;
-                same.then(|| (l.meta.id.clone(), l.meta.terminal.clone()))
-            });
-            if let Some((id, terminal)) = started {
-                (id, terminal, true)
-            } else {
-                {
-                    *last = (*last + 1).max(now());
-                    while lock(&self.threads).contains_key(&format!("t{:x}", *last)) {
-                        *last += 1;
-                    }
-                    let id = format!("t{:x}", *last);
-                    let title: String = text
-                        .trim()
-                        .lines()
-                        .next()
-                        .unwrap_or("")
-                        .chars()
-                        .take(60)
-                        .collect();
-                    let meta = Thread {
-                        id: id.clone(),
-                        title,
-                        agent: agent.to_owned(),
-                        folder: Some(folder.to_owned()),
-                        account: account.to_owned(),
-                        terminal: format!("cooee-{id}"),
-                        random_id: random_id.to_owned(),
-                        ..Thread::default()
-                    };
-                    // Stored and listed before shed starts it: an event (an ask) that comes before the start
-                    // returns is applied, and a crash after the start is adopted on restart (herdsman#446, #509).
-                    self.store.save(&meta)?;
-                    let terminal = meta.terminal.clone();
-                    let live = Live::new(meta, Chat::default());
-                    lock(&self.threads).insert(id.clone(), Arc::new(Mutex::new(live)));
-                    (id, terminal, false)
-                }
-            }
+        // Taken under the lock and counted up, so two threads started in one millisecond differ.
+        let mut last = lock(&self.last);
+        let started = self.all().into_iter().find_map(|l| {
+            let l = lock(&l);
+            let same = !random_id.is_empty() && l.meta.random_id == random_id;
+            same.then(|| l.meta.id.clone())
+        });
+        if let Some(id) = started {
+            return Ok((id, false));
+        }
+        *last = (*last + 1).max(now());
+        while lock(&self.threads).contains_key(&format!("t{:x}", *last)) {
+            *last += 1;
+        }
+        let id = format!("t{:x}", *last);
+        let title: String = text
+            .trim()
+            .lines()
+            .next()
+            .unwrap_or("")
+            .chars()
+            .take(60)
+            .collect();
+        let meta = Thread {
+            id: id.clone(),
+            title,
+            agent: agent.to_owned(),
+            folder: Some(folder.to_owned()),
+            account: account.to_owned(),
+            terminal: format!("cooee-{id}"),
+            random_id: random_id.to_owned(),
+            ..Thread::default()
         };
-        if !adopted {
+        self.store.save(&meta)?;
+        let live = Live::new(meta, Chat::default());
+        lock(&self.threads).insert(id.clone(), Arc::new(Mutex::new(live)));
+        Ok((id, true))
+    }
+
+    /// Starts thread `id`'s terminal when `fresh` (or, `keep`, when it doesn't run), waits for its session and
+    /// sends `text`. A start that failed but came up anyway (a slow CLI) is kept, never started twice
+    /// (herdsman#477); one that didn't come up is removed unless `keep`.
+    fn connect(
+        &self,
+        id: &str,
+        (fresh, keep): (bool, bool),
+        text: &str,
+        random_id: &str,
+        env: Option<(&str, &Path)>,
+    ) -> Result<(), HubError> {
+        let live = self.live(id)?;
+        let (terminal, agent, folder) = {
+            let l = lock(&live);
+            let folder = l.meta.folder.clone().unwrap_or_default();
+            (l.meta.terminal.clone(), l.meta.agent.clone(), folder)
+        };
+        if fresh || (keep && self.shed.get(&terminal).is_err()) {
             let labels = BTreeMap::from([
                 (LABEL.to_owned(), "1".to_owned()),
-                (format!("{LABEL}.thread"), id.clone()),
+                (format!("{LABEL}.thread"), id.to_owned()),
             ]);
-            // A start that failed but came up anyway (a slow CLI) is kept, never started twice (herdsman#477).
-            if let Err(e) = self.shed.run_acp(&terminal, agent, folder, &labels, env)
+            if let Err(e) = self.shed.run_acp(&terminal, &agent, &folder, &labels, env)
                 && self.shed.get(&terminal).is_err()
             {
-                lock(&self.threads).remove(&id);
-                self.store.remove(&id)?;
+                if !keep {
+                    lock(&self.threads).remove(id);
+                    self.store.remove(id)?;
+                }
                 return Err(e.into());
             }
         }
         self.shed.ready(&terminal)?;
-        self.send(&id, text, random_id)?;
-        Ok(id)
+        self.send(id, text, random_id)?;
+        Ok(())
     }
 
     /// Sends the owner's message: once per `random_id` (a retry of a stored send returns it again). The message
@@ -654,6 +783,9 @@ impl Hub {
             random_id: random_id.to_owned(),
         };
         let item = live.chat.push(now(), 0, body);
+        if live.meta.random_id == random_id {
+            live.pending = None;
+        }
         live.publish(self, vec![Change::Item(item.clone())])?;
         Ok(item)
     }
@@ -814,6 +946,7 @@ impl Hub {
                     id: live.meta.id.clone(),
                     title: live.meta.title.clone(),
                     agent: live.meta.agent.clone(),
+                    account: live.meta.account.clone(),
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     state: live.chat.turn.state.clone(),
                     last: text.lines().last().unwrap_or("").chars().take(80).collect(),
@@ -861,6 +994,10 @@ impl Hub {
             skipped_after: items.len() - to.max(from),
             turn: live.chat.turn.clone(),
             cursor: format!("{}.{}", self.boot, live.seq),
+            pending: live.pending.clone().map(|text| Pending {
+                text,
+                random_id: live.meta.random_id.clone(),
+            }),
         })
     }
 

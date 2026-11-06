@@ -53,6 +53,7 @@ fn glyph(st: &str) -> &'static str {
         "fail" => "✕",
         "idle" => "·",
         "ended" => "■",
+        "loading" => "↻",
         _ => "",
     }
 }
@@ -203,7 +204,7 @@ impl<'a> Shown<'a> {
     }
 
     fn svg(&self, id: &str, cls: &str) -> String {
-        let bx = if cls == "big" {
+        let bx = if cls == "big" || id == "loading" {
             "0 0 132 100"
         } else {
             "0 0 24 24"
@@ -227,20 +228,28 @@ impl<'a> Shown<'a> {
     }
 
     /// A state's mark (`[data-st]`): the sprite, ascii figure, glyph or dot, then the theme word (`plain`: and
-    /// `· plain word`).
+    /// `· plain word`). `loading` (a thread connecting, #48) is the theme's loading figure at line height and its
+    /// loading word, else `connecting`.
     #[must_use]
     pub fn st(&self, st: &str, plain: bool) -> String {
         if !STATES.contains(&st) {
             return String::new();
         }
         let id = if st == "working" { "edit" } else { st };
+        let loading = st == "loading";
         let mark = match self.figs() {
             "off" => "<i class=\"sd\"></i>".to_owned(),
+            "ascii" if loading => "<i class=\"rsa\">o.o</i> ".to_owned(),
             "ascii" => format!("<i class=\"rsa\">{}</i> ", esc(ascii(id))),
+            _ if self.art() && loading => self.svg(id, "rsp ld"),
             _ if self.art() => self.svg(id, "rsp"),
+            _ if loading => "<i class=\"sg ld\">↻</i> ".to_owned(),
             _ => format!("<i class=\"sg\">{}</i> ", glyph(st)),
         };
-        let said = self.word(st);
+        let said = match self.theme().words.get(st) {
+            None if loading => "connecting",
+            _ => self.word(st),
+        };
         format!(
             "{mark}<span class=\"thw\">{}</span>{}",
             esc(said),
@@ -336,6 +345,20 @@ mod tests {
                 .ends_with("<small class=\"pw\"> · needs you</small>")
         );
         assert_eq!(d.st("", false), "");
+        // A thread connecting (#48): the loading figure at line height and the theme's loading word, else
+        // `connecting`.
+        assert!(
+            d.st("loading", false).starts_with(
+                "<svg class=\"rsp ld\" viewBox=\"0 0 132 100\" aria-hidden=\"true\"><use href=\"/look/farm/sprites.svg#s-loading\">"
+            ) && d.st("loading", false).ends_with("<span class=\"thw\">saddling up</span>"),
+            "{}",
+            d.st("loading", false)
+        );
+        let t = Shown::new(&looks, Some("cooee-look=theme:terminal/sprites:ascii"));
+        assert_eq!(
+            t.st("loading", false),
+            "<i class=\"rsa\">o.o</i> <span class=\"thw\">connecting</span>"
+        );
     }
 
     #[test]

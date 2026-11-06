@@ -103,9 +103,12 @@ pub struct Summary {
     pub title: String,
     /// The agent.
     pub agent: String,
+    /// The provider account it runs with (empty: the system default).
+    pub account: String,
     /// The working folder.
     pub folder: PathBuf,
-    /// The state: `working`, `blocked`, `done`, `error`, `ended` or empty.
+    /// The state: `connecting`, `unconnected` (its start failed), `working`, `blocked`, `done`, `error`, `ended` or
+    /// empty.
     pub state: String,
     /// The last item's text, short.
     pub last: String,

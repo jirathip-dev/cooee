@@ -117,7 +117,7 @@ fn picker_lists_sub_folders_two_levels_deep_never_symlinks() {
     let row = |p: &Path, d: u8| {
         let hidden = if d > 1 { r#" hidden="""# } else { "" };
         format!(
-            r#"<label data-d="{d}"{hidden}><input type="radio" name="folder" value="{}""#,
+            r#"<label class="sr pk" data-d="{d}"{hidden}><input type="radio" name="folder" value="{}""#,
             p.display()
         )
     };
@@ -128,7 +128,10 @@ fn picker_lists_sub_folders_two_levels_deep_never_symlinks() {
     ] {
         assert!(page.contains(&row(&p, d)), "{}: {page}", p.display());
     }
-    assert!(page.contains("~/Projects/app/src</label>"), "{page}");
+    assert!(
+        page.contains(r#"<span class="sk">~/Projects/app/src</span>"#),
+        "{page}"
+    );
     assert!(page.contains(r#"id="fq" type="search""#), "{page}");
     assert!(!page.contains("Projects/out"), "{page}");
 }

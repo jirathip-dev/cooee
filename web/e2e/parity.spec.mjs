@@ -22,9 +22,9 @@ async function audit(page) {
 
 // A new thread whose turn is done, open.
 async function thread(page, text = "Say hello") {
-  await page.goto("/#new");
+  await page.goto("/new");
   await page.getByLabel("first message").fill(text);
-  await page.getByRole("button", { name: "start" }).click();
+  await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
 }
@@ -47,7 +47,8 @@ test("row 1: installable, no double-tap zoom, and offline it opens on its last c
   await context.setOffline(true);
   await page.clock.fastForward("10:00");
   await page.reload();
-  await expect(page.locator(".fc .tr").first()).toBeVisible();
+  // The list (from 1024 px, the sidebar).
+  await expect(page.locator(".fc .tr:visible, .side .sb:visible").first()).toBeVisible();
   await expect(page.locator("#ld")).toBeVisible();
   await expect(page.locator("#ld .ago")).toHaveText(/^as of 1\dm ago$/);
   await shot(page, info, "parity-1-offline");
@@ -151,7 +152,7 @@ test("row 6: a phone asks for a code, the Mac approves it, and the phone pairs; 
   await audit(page);
   expect(cooee("pair", code)).toContain("approved");
   await page.waitForURL(/\/$/);
-  await expect(page.locator("main.list")).toBeVisible();
+  await expect(page.locator("main.list:visible, .side:visible")).toBeVisible();
 
   await page.goto("/#settings/devices");
   const mine = page.locator("#s-devices-box .lrw").filter({ hasText: "this device" });
