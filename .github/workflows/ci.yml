@@ -71,7 +71,7 @@ jobs:
         working-directory: web/e2e
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
       - name: build
         run: cargo build --locked -p cooee
       - name: playwright (390, 1440, axe)

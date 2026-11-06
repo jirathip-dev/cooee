@@ -12,7 +12,8 @@ export default defineConfig({
   reporter: "list",
   use: { baseURL: `http://127.0.0.1:${port}` },
   projects: [
-    { name: "pair", testMatch: /pair\.setup\.mjs/, use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } } },
+    // WebKit, as on the owner's iPhone; the cookie it saves works in Chromium too.
+    { name: "pair", testMatch: /pair\.setup\.mjs/, use: { ...devices["iPhone 13"], colorScheme: "dark" } },
     { name: "390", dependencies: ["pair"], use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, storageState } },
     { name: "1440", dependencies: ["pair"], use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 }, storageState } },
   ],
