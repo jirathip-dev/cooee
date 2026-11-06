@@ -545,14 +545,17 @@ impl Cooee {
         body: &str,
     ) -> (String, String) {
         let mut stream = TcpStream::connect(&self.addr).unwrap();
-        write!(stream, "{method} {path} HTTP/1.0\r\n").unwrap();
+        // One write: a refusal sent before a late body arrives would reset the connection under the read.
+        let mut request = Vec::new();
+        write!(request, "{method} {path} HTTP/1.0\r\n").unwrap();
         if !headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("host")) {
-            write!(stream, "Host: {}\r\n", self.addr).unwrap();
+            write!(request, "Host: {}\r\n", self.addr).unwrap();
         }
         for (k, v) in headers {
-            write!(stream, "{k}: {v}\r\n").unwrap();
+            write!(request, "{k}: {v}\r\n").unwrap();
         }
-        write!(stream, "Content-Length: {}\r\n\r\n{body}", body.len()).unwrap();
+        write!(request, "Content-Length: {}\r\n\r\n{body}", body.len()).unwrap();
+        stream.write_all(&request).unwrap();
         let mut response = String::new();
         stream.read_to_string(&mut response).unwrap();
         let (head, body) = response.split_once("\r\n\r\n").unwrap();
