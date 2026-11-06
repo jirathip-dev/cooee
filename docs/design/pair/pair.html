@@ -1,0 +1,124 @@
+<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name=theme-color content="#0d1117">
+<title>cooee pairing: this device</title>
+<!-- #47 page 1: an unpaired device. The shell only (q528): the header is the name and the connection dot; no thread
+     data loads. The welcome (the theme's figure), the iOS hint (Safari only), three numbered steps, the code card (six
+     boxes), the other ways (ask to pair, sign in with passkey). Below the screen, every state it can show, one card
+     each. Same query as ../look/look.js (theme, mode, style, sprites, dark, light). -->
+<link rel=stylesheet href=../look/serve.css><link rel=stylesheet href=../look/cooee.css><link rel=stylesheet href=../look/look.css><link rel=stylesheet href=../look/modern.css><link rel=stylesheet href=pair.css>
+</head>
+<body>
+<svg width=0 height=0 style="position:absolute" aria-hidden=true><defs>
+<symbol id=i-share viewBox="0 0 20 24"><path d="M10 2v13M5.5 6.5 10 2l4.5 4.5M6.5 9.5H4a1 1 0 0 0-1 1V21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10.5a1 1 0 0 0-1-1h-2.5" fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round stroke-linejoin=round /></symbol>
+</defs></svg>
+<header><b>cooee</b><i id=dot class=g></i></header>
+<main class=pg>
+
+<section class=wel aria-label="pair this device">
+<div class=hero>
+<span data-s=empty data-cls=big data-if=sprites></span><img class=hic data-ifnot=sprites alt="" src=../look/icons/farm.png>
+<h1>pair this device</h1>
+<p>cooee runs on your Mac. Pair this device once and your threads show up here.</p>
+</div>
+
+<div class=hint>
+<svg class=shi aria-hidden=true><use href=#i-share /></svg>
+<div><p><b>Add cooee to your Home Screen first.</b></p>
+<p>Tap <svg class=shi aria-hidden=true><use href=#i-share /></svg> Share, then Add to Home Screen, and pair in the app it adds. Safari and the Home Screen app keep separate sign-ins.</p></div>
+</div>
+
+<ol class=steps>
+<li><b>Open cooee on your Mac or a paired phone</b><span>On the Mac run <code>cooee pair</code>. On a phone: settings › devices › pair a device.</span></li>
+<li><b>Scan its QR code with the Camera</b><span>cooee opens here with the code filled in and pairs at once.</span></li>
+<li><b>No camera? Approve instead</b><span>Tap ask to pair below, then approve on your paired phone with Face ID.</span></li>
+</ol>
+
+<form class=cdc>
+<p class=ch>or type the code</p>
+<div class=cb role=group aria-label="pairing code, 6 digits">
+<input inputmode=numeric autocomplete=one-time-code maxlength=6 aria-label="digit 1" class=f><input inputmode=numeric maxlength=1 aria-label="digit 2"><input inputmode=numeric maxlength=1 aria-label="digit 3"><input inputmode=numeric maxlength=1 aria-label="digit 4"><input inputmode=numeric maxlength=1 aria-label="digit 5"><input inputmode=numeric maxlength=1 aria-label="digit 6">
+</div>
+<p class=cdn>6 digits · good for 10 minutes · pairs on the sixth</p>
+<div class=go><button type=submit disabled>pair</button></div>
+<div class=alt>
+<div class=sr><span class=sk>no camera nearby?</span><button type=button>ask to pair</button></div>
+<div class=sr><span class=sk>paired here before?</span><button type=button class=q>sign in with passkey</button></div>
+</div>
+</form>
+</section>
+
+<section class=xs aria-label="every state of this screen">
+
+<div class=xc><p class=ch>typing</p>
+<div class=pc>
+<div class=cb><input value=4 aria-label="digit 1"><input value=8 aria-label="digit 2"><input value=2 aria-label="digit 3"><input class=f aria-label="digit 4"><input aria-label="digit 5"><input aria-label="digit 6"></div>
+<p class="m ctr">each digit moves on · paste fills all six · ⌫ goes back</p>
+</div></div>
+
+<div class=xc><p class=ch>from a QR</p>
+<div class=pc data-k=g>
+<div class="cb ok"><input value=4 aria-label="digit 1"><input value=8 aria-label="digit 2"><input value=2 aria-label="digit 3"><input value=9 aria-label="digit 4"><input value=1 aria-label="digit 5"><input value=3 aria-label="digit 6"></div>
+<p class=ctr><span class=et>pairing…</span></p>
+<p class="m ctr">the Camera opened <code>…/pair?code=482913</code>: the code is in, nothing to tap</p>
+</div></div>
+
+<div class=xc><p class=ch>paired · the passkey offer (the first device)</p>
+<div class=pc data-k=g>
+<p class=et>✓ paired · iPhone 16</p>
+<p><b>Save a passkey?</b> Face ID then signs this phone back in if Safari forgets it, and approves new devices.</p>
+<div class=acts><button type=button>save a passkey</button><button type=button>not now</button></div>
+<p class=m>later: settings › devices › passkeys</p>
+</div></div>
+
+<div class=xc><p class=ch>waiting for approval</p>
+<div class=pc data-k=a>
+<span data-s=loading data-cls=big data-if=sprites></span>
+<p class="et ctr">waiting for approval</p>
+<p class=cw>maple otter</p>
+<p class=ctr>Your paired devices got a request. Approve it where it shows <b>maple otter</b>.</p>
+<div class="acts ctr"><span class=m>expires in 4:52</span><button type=button>cancel</button></div>
+</div></div>
+
+<div class=xc><p class=ch>wrong code</p>
+<div class=pc data-k=r>
+<div class="cb r"><input value=4 aria-label="digit 1"><input value=8 aria-label="digit 2"><input value=2 aria-label="digit 3"><input value=9 aria-label="digit 4"><input value=3 aria-label="digit 5"><input value=1 aria-label="digit 6"></div>
+<p><span class=et>That code isn't right.</span> Check the six digits on your Mac or phone and type them again.</p>
+<p class=m>4 tries left this minute</p>
+</div></div>
+
+<div class=xc><p class=ch>expired or used code</p>
+<div class=pc data-k=r>
+<div class="cb dim"><input value=4 aria-label="digit 1"><input value=8 aria-label="digit 2"><input value=2 aria-label="digit 3"><input value=9 aria-label="digit 4"><input value=1 aria-label="digit 5"><input value=3 aria-label="digit 6"></div>
+<p><span class=et>That code has run out.</span> A code works once, for 10 minutes. Show a new one: <code>cooee pair</code>, or pair a device on your phone.</p>
+<div class=acts><button type=button>type a new code</button></div>
+</div></div>
+
+<div class=xc><p class=ch>approval declined</p>
+<div class=pc data-k=r>
+<p class=et>iPhone 16 said no.</p>
+<p>Your request to pair (maple otter) was declined. If that was a mistake, ask again.</p>
+<div class=acts><button type=button>ask again</button><button type=button>use a code</button></div>
+</div></div>
+
+<div class=xc><p class=ch>offline</p>
+<div class=pc data-k=r>
+<p class=et>Can't reach your Mac.</p>
+<p>Turn on Tailscale on this device, check that the Mac is awake, then try again.</p>
+<div class=acts><button type=button>try again</button><span class=m>tried 0:08 ago</span></div>
+</div></div>
+
+<div class=xc><p class=ch>too many tries</p>
+<div class=pc data-k=r>
+<div class="cb dim"><input disabled aria-label="digit 1"><input disabled aria-label="digit 2"><input disabled aria-label="digit 3"><input disabled aria-label="digit 4"><input disabled aria-label="digit 5"><input disabled aria-label="digit 6"></div>
+<p><span class=et>Too many tries.</span> Five wrong codes a minute is the limit. The boxes open again in 0:42.</p>
+</div></div>
+
+</section>
+</main>
+<script type=module>
+import { T } from '../look/look.js';
+for (const i of document.querySelectorAll('.hic')) i.src = `../look/icons/${T}.png`;
+document.body.dataset.ready = 1;
+</script>
+</body></html>
