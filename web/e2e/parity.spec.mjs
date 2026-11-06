@@ -6,6 +6,9 @@ import fs from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+// The full Chromium (new headless): the headless shell has no notifications, so row 8 would read as blocked.
+test.use({ channel: "chromium" });
+
 const shot = (page, info, name, fullPage = false) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png`, fullPage });
 const config = () => fs.readFileSync(new URL("./.auth/code.config", import.meta.url), "utf8").trim();
 const bin = () => fs.readFileSync(new URL("./.auth/code.bin", import.meta.url), "utf8").trim();
@@ -182,7 +185,7 @@ test("row 7: an unpaired browser gets the app's shell: the composer off, a pair 
 const viewport = (info) => (info.project.name === "390" ? { width: 390, height: 844 } : { width: 1440, height: 900 });
 
 test("rows 8 and 13: Settings opens at a section from its link, has an index, and says truly that alerts are off", async ({ page, context }, info) => {
-  // Allowed but not subscribed: off (a CI browser denies notifications by default, which reads as blocked).
+  // Allowed but not subscribed: off.
   await context.grantPermissions(["notifications"]);
   await page.goto("/#settings/alerts");
   const sheet = page.locator("#sheet .sh");
