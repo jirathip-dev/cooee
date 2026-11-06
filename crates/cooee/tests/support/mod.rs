@@ -76,9 +76,9 @@ pub struct FakeShed {
 const CLI: &str = r#"#!/bin/sh
 # The fake `shed` CLI: `agents` lists one agent; `run` records its arguments and prints the terminal (it waits while
 # the gate `hold-run` is shut, and fails, as a slow start's CLI would, while `run-fails` is); `machine ls` prints
-# machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline. A `run`
-# with an adapter command after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables
-# in adapter.env.
+# machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), its history after `--since`, exit 1
+# when offline. A `run` with an adapter command after `--` runs it, as the terminal would: the fake adapter `fake-acp`
+# notes its variables in adapter.env.
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
@@ -86,7 +86,15 @@ case "$*" in
 *" machine stats"*)
   m=$(printf '%s' "$*" | sed -n 's/.*--on \([^ ]*\).*/\1/p')
   f="$(dirname "$0")/stats-${m:-local}.json"
-  cat "$f" || exit 1
+  [ -e "$f" ] || exit 1
+  # Only the history after `--since`, as shed answers.
+  since=$(printf '%s' "$*" | sed -n 's/.*--since \([0-9]*\).*/\1/p')
+  awk -v since="${since:-0}" '{
+    n = split($0, p, /\{"at":/); if (n < 3) { print; next }
+    out = p[1] "{\"at\":" p[2]; sep = ""
+    for (i = 3; i <= n; i++) { e = p[i]; sub(/(,|\]\})$/, "", e); if (e + 0 > since) { out = out sep "{\"at\":" e; sep = "," } }
+    print out "]}"
+  }' "$f"
   if grep -q '"online":false' "$f"; then exit 1; fi ;;
 *" agents") echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
 *" run "*)
