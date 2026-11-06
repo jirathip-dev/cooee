@@ -17,6 +17,7 @@ import { extname, join } from 'node:path';
 
 const here = new URL('.', import.meta.url).pathname, root = join(here, '../../..');
 const [chrome, only] = process.argv.slice(2);
+const REV = 'r2'; // in every PNG name: a revised shot gets a new URL, so no viewer shows a cached older round
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png' };
 const srv = createServer((q, r) => {
   try {
@@ -102,7 +103,7 @@ await cmd('Page.enable');
 await cmd('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
 let fail = 0;
 for (const [page, screens] of Object.entries(PAGES)) for (const [suffix, look] of LOOKS) for (const [w, dpr] of [[390, 2], [1440, 1]]) {
-  const out = `${page}-${w}${suffix}.png`;
+  const out = `${page}-${w}${suffix}-${REV}.png`;
   if (only && !new RegExp(only).test(out)) continue;
   if (suffix && w === 1440 && `${page}${suffix}` !== 'chat-terminal-light') continue; // the other looks at 390 only, but the Terminal sidebar once
   const h0 = w < 1000 ? 844 : 900;

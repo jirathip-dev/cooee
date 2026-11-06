@@ -8,13 +8,14 @@ colour). `mock.js` builds `LOOK` the way the server does, and draws the one stat
 
 | page | screens | shots |
 |---|---|---|
-| `composer.html` | 1 the new-thread composer · 2 the agent sheet · 3 the folder sheet · 4 another folder: the chip on its last-used profile | `composer-390`, `composer-1440` |
-| `chat.html` | 4 the chat right after send, connecting · 5 connecting failed, with retry | `chat-390`, `chat-1440` |
-| `providers.html` | 6 Settings › providers | `providers-390`, `providers-1440` |
+| `composer.html` | 1 the new-thread composer · 2 the agent sheet · 3 the folder sheet · 4 another folder: the chip on its last-used profile | `composer-390-r2`, `composer-1440-r2` |
+| `chat.html` | 4 the chat right after send, connecting · 5 connecting failed, with retry | `chat-390-r2`, `chat-1440-r2` |
+| `providers.html` | 6 Settings › providers | `providers-390-r2`, `providers-1440-r2` |
 
 The main shots are farm, Modern, dark. Each page is also shot at 390 in `-kitchen-light`, `-garden-dark` and
 `-terminal-light` (the terminal theme in the Terminal style), and the chat once more at 1440 in `-terminal-light`
-for the Terminal sidebar: 16 PNGs in all. The 390 shots are DPR 2 and the 1440
+for the Terminal sidebar: 16 PNGs in all. Every name ends in the round (`-r2`, `REV` in `shoot.mjs`), so a revised
+shot never shows up as an older, cached copy. The 390 shots are DPR 2 and the 1440
 shots DPR 1, all under reduced motion. Each screen is one phone screen (844 px) or one desktop screen (900 px), stacked
 on the page under a caption.
 
