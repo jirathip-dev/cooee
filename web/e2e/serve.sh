@@ -93,14 +93,20 @@ token = "other-token-0123456789"
 EOF
 mkdir -p "$(dirname "${PAIR_CODE:?}")"
 
-# A fresh instance on $PORT + 3: no agents in shed, no roots; its pairing code beside $PAIR_CODE (first-run.spec.mjs).
+# A fresh instance on $PORT + 3: no agents in shed, no roots, a provider whose CLI is missing; its pairing code beside $PAIR_CODE (first-run.spec.mjs).
 printf '#!/bin/sh\necho "[]"\n' >"$tmp/bare-shed" && chmod +x "$tmp/bare-shed"
 cat >"$tmp/bare.toml" <<EOF
 port = $((PORT + 3))
 shed = "$tmp/bare-shed"
 shed_dir = "$tmp/shed"
 data = "$tmp/bare-data"
-providers = []
+
+[[providers]]
+name = "codex"
+agent = "codex-acp"
+login = ["no-such-codex", "login"]
+status = ["true"]
+install = "npm install -g @openai/codex"
 EOF
 cargo run --quiet --locked -p cooee -- pair --config "$tmp/bare.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE.bare"
 cargo run --quiet --locked -p cooee -- serve --config "$tmp/bare.toml" &

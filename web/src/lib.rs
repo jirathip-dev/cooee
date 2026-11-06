@@ -360,19 +360,28 @@ pub fn threads_page(
 
 #[component]
 async fn provider(p: Provider, s: Status) -> Result<impl View> {
-    let (class, label) = if s.signed_in {
-        ("g", "✓ signed in")
-    } else {
-        ("m", "signed out")
+    let (class, label) = match (s.signed_in, &s.install) {
+        (true, _) => ("g", "✓ signed in"),
+        (false, None) => ("m", "signed out"),
+        (false, Some(_)) => ("m", "not installed"),
     };
     Ok(view! {
         <div class="pv" data-provider=(p.name.clone())>
             <div class="fh">
                 <b>(p.name.clone())</b>
                 <span class=(class)>(label)</span>
-                <button type="button" class="si" hidden=(s.signed_in)>"sign in"</button>
+                <button
+                    type="button"
+                    class="si"
+                    hidden=(s.signed_in || s.install.is_some())
+                >
+                    "sign in"
+                </button>
             </div>
             <p class="ds">(s.line)</p>
+            if let Some(fix) = s.install.filter(|f| !f.is_empty()) {
+                hint(why: "on the Mac:", fix: fix.as_str(), then: "")
+            }
             <div class="lg" hidden=(true)>
                 <p class="ds">(format!("{} · shed terminal", p.login.join(" ")))</p>
                 <pre class="out"></pre>
@@ -432,7 +441,7 @@ async fn agent(id: String, first: bool, signed: Option<bool>) -> Result<impl Vie
 
 /// An empty picker's row instead: why, and the line that fixes it with its copy button (`chat.js`).
 #[component]
-async fn hint(why: &'static str, fix: &'static str, then: &'static str) -> Result<impl View> {
+async fn hint(why: &str, fix: &str, then: &str) -> Result<impl View> {
     Ok(view! {
         <p class="hn">
             (why)
@@ -472,6 +481,8 @@ async fn threads(
     tabs: Vec<(String, String)>,
 ) -> Result<impl View> {
     let empty = rows.is_empty();
+    // Start waits for an agent and a folder to pick.
+    let can_start = !folders.is_empty() && agents.as_ref().is_ok_and(|a| !a.is_empty());
     let signed: BTreeMap<String, bool> = providers
         .iter()
         .rev()
@@ -530,7 +541,7 @@ async fn threads(
                             aria-label="first message"
                             placeholder="message"
                         ></textarea>
-                        <button type="submit">"start"</button>
+                        <button type="submit" disabled=(!can_start)>"start"</button>
                     </div>
                     <p class="err" id="new-err" hidden=(true)></p>
                 </form>

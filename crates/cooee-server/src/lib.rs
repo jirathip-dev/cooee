@@ -19,7 +19,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Config, Device, Devices, Plugin};
+use cooee_core::{Config, Device, Devices, Plugin, ShedError};
 use futures_util::{Stream, StreamExt, stream};
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::error::RecvError;
@@ -66,10 +66,12 @@ fn now() -> u64 {
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
 
+/// cooee's own error: one plain sentence, marked so the page shows it (`chat.js` words any other failure itself).
 fn plain(status: u16, text: &str) -> Result<Response> {
     Ok(Response::builder()
         .status(status)
         .header("Content-Type", "text/plain; charset=utf-8")
+        .header("Cooee-Error", "1")
         .body(Body::from(text.to_owned()))?)
 }
 
@@ -193,13 +195,20 @@ impl<T: Serialize> IntoResponse for Answer<T> {
             Ok(value) => return Json(value).into_response(cx),
             Err(e @ HubError::NoThread(_)) => (404, e.to_string()),
             Err(e @ HubError::Refused(_)) => (400, e.to_string()),
+            // shed's own errors go to the log; the page gets a sentence.
+            Err(HubError::Shed(
+                e @ (ShedError::Rpc(_) | ShedError::Bad(_) | ShedError::Cli { .. }),
+            )) => {
+                eprintln!("cooee: {e}");
+                (
+                    502,
+                    "shed couldn't do that: run cooee doctor on the Mac.".to_owned(),
+                )
+            }
             Err(e @ HubError::Shed(_)) => (502, e.to_string()),
             Err(e @ HubError::Store(_)) => (500, e.to_string()),
         };
-        Ok(Response::builder()
-            .status(status)
-            .header("Content-Type", "text/plain; charset=utf-8")
-            .body(Body::from(body))?)
+        plain(status, &body)
     }
 }
 

@@ -8,9 +8,12 @@
 // A plugin tab hosts the plugin's sandboxed frame.
 const $ = (s, el = document) => el.querySelector(s);
 const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+// A failed answer as one plain sentence: cooee's own (marked `cooee-error`), else a general one, never raw JSON.
+const why = async (r) =>
+  new Error(r.headers.has("cooee-error") ? await r.text() : `cooee couldn't do that (error ${r.status}): reload and try again.`);
 const post = (url, body) =>
   fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
-    .then(async (r) => (r.ok ? r.json() : Promise.reject(new Error(await r.text()))));
+    .then(async (r) => (r.ok ? r.json() : Promise.reject(await why(r))));
 
 // The thread list's form: open on `#new`, start a thread, then open it.
 const form = $("#new");
@@ -55,7 +58,7 @@ if (sheet) {
         state.className = s.signed_in ? "g" : "m";
         state.textContent = s.signed_in ? "✓ signed in" : "signed out";
         line.textContent = [v.why, s.line].filter(Boolean).join(" · ");
-        signIn.hidden = s.signed_in;
+        signIn.hidden = s.signed_in || !!s.install;
         return;
       }
       state.className = "a"; state.textContent = "signing in"; lg.hidden = false; signIn.hidden = true;
@@ -100,12 +103,12 @@ if (bell && "PushManager" in window) (async () => {
     try {
       if ((await Notification.requestPermission()) !== "granted") throw new Error("notifications are off for this app");
       const r = await fetch("/push/key");
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw await why(r);
       const key = (await r.json()).key.replace(/-/g, "+").replace(/_/g, "/");
       const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: Uint8Array.from(atob(key), (c) => c.charCodeAt(0)) });
       const { endpoint, keys } = sub.toJSON();
       const ok = await fetch("/push/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint, ...keys }) });
-      if (!ok.ok) throw new Error(await ok.text());
+      if (!ok.ok) throw await why(ok);
       bell.hidden = true;
     } catch (x) { alert(`alerts failed: ${x.message}`); }
   };

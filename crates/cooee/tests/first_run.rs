@@ -1,5 +1,6 @@
 //! A fresh instance: with no agents in shed and no `roots`, the new-thread form says what to run instead of
-//! showing empty pickers, and `cooee doctor` warns about both; with one root, a thread starts in the root itself.
+//! showing empty pickers (and start waits), a provider whose CLI is missing shows its install line, and `cooee doctor`
+//! warns about both; with one root, a thread starts in the root itself.
 
 mod support;
 
@@ -14,7 +15,9 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
     let shed = FakeShed::start(&dir.join("shed"), version());
     // A shed with nothing installed: `shed agents` lists none.
     fs::write(shed.dir.join("shed"), "#!/bin/sh\necho '[]'\n").unwrap();
-    let cooee = Cooee::start_with(&dir, &shed.dir, "roots = []\n");
+    let codex = "[[providers]]\nname = \"codex\"\nagent = \"codex-acp\"\nlogin = [\"no-such-codex\"]\n\
+                 status = [\"true\"]\ninstall = \"npm install -g @openai/codex\"\n";
+    let cooee = Cooee::start_with(&dir, &shed.dir, &format!("roots = []\n{codex}"));
 
     let (status, page) = cooee.get("/");
     assert_eq!(status, 200, "{page}");
@@ -30,6 +33,15 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
     );
     assert!(
         !page.contains("<select") && !page.contains(r#"name="agent""#),
+        "{page}"
+    );
+    assert!(
+        page.contains(r#"<button type="submit" disabled="">start</button>"#),
+        "{page}"
+    );
+    // codex's CLI is missing: its install line, its sign-in hidden.
+    assert!(
+        page.contains(r#"<button type="button" class="si" hidden="">sign in</button></div><p class="ds">no-such-codex isn't installed on this Mac</p><p class="hn">on the Mac:<code>npm install -g @openai/codex</code>"#),
         "{page}"
     );
 
