@@ -184,7 +184,7 @@ const viewport = (info) => (info.project.name === "390" ? { width: 390, height: 
 test("rows 8 and 13: Settings opens at a section from its link, has an index, and says truly that alerts are off", async ({ page }, info) => {
   await page.goto("/#settings/alerts");
   const sheet = page.locator("#sheet .sh");
-  await expect(sheet.locator(".six a")).toHaveText(["sign-ins", "look", "alerts", "devices", "report"]);
+  await expect(sheet.locator(".six a")).toHaveText(["sign-ins", "folders", "look", "alerts", "devices", "report"]);
   await expect(sheet.locator("#s-alerts")).toBeInViewport();
   await expect(sheet.locator("#s-alerts-box")).toContainText(/alerts are off|can't show alerts/);
   if (await page.evaluate(() => "PushManager" in window)) {

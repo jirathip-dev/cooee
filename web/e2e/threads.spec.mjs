@@ -41,7 +41,7 @@ test("a failed start reads as one plain sentence, never the server's JSON error"
   await expect(page.locator("#new-err")).toHaveText("cooee couldn't do that (error 400): reload and try again.");
   // cooee's own refusal is shown as it is.
   await page.locator("#new input[name=agent]").first().check();
-  await page.locator("#folder").evaluate((s) => { s.options[0].value = "/"; });
+  await page.locator("#new input[name=folder]").first().evaluate((r) => { r.value = "/"; });
   await page.getByRole("button", { name: "start" }).click();
   await expect(page.locator("#new-err")).toHaveText("/ is not inside a configured root");
 });

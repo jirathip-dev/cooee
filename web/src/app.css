@@ -196,3 +196,6 @@ html[data-style=terminal] .swa{border-radius:4px}
 @keyframes mo-hop{50%{translate:0 -4px}}@keyframes mo-shake{25%{translate:-2px 0}75%{translate:2px 0}}@keyframes mo-pulse{50%{scale:1.25}}
 @keyframes mo-tint{from{background:color-mix(in srgb,var(--r) 18%,var(--card))}}@keyframes mo-tag{0%{opacity:0}8%,85%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){#ld.run,.rfs,.th[data-mo],.th[data-mo] *{animation:none!important}}
+.nf .fl{flex-direction:column;flex-wrap:nowrap;gap:0;max-height:40vh;overflow-y:auto}
+.nf .fl label{border:0;border-radius:0;border-top:1px solid var(--line);overflow-wrap:anywhere}.fl [data-d="1"]{padding-left:28px}.fl [data-d="2"]{padding-left:44px}
+#fq{flex:1;min-width:0}.lrw .sk{min-width:0;overflow-wrap:anywhere}

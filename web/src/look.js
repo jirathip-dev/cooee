@@ -8,7 +8,8 @@
 //                                                 theme word (data-plain adds `· plain word`)
 //   [data-w=<key>]                                a theme word (data-plain adds `· plain word`)
 //   [data-s=loading|empty]                        the theme's 132 × 100 figure (sprites off: none)
-//   [data-open=look|settings]                     opens the look sheet or Settings (#settings/<section> opens it there)
+//   [data-open=look|settings|folders]             opens the look sheet, Settings (#settings/<section> opens it there)
+//                                                 or Settings › Folders
 // Ascii draws a state as a 3-character figure and the big figures as text. A theme with moments sets
 // html[data-moments=on] (chat.js plays them). Settings fires `cooee-sheet` once drawn, for chat.js's sections.
 // A plugin tab (iframe[data-plugin]) gets the look as a message (`cooee-look`: CSS variables, style, sprites, words
@@ -116,8 +117,8 @@
   // The sheets: the look sheet (STYLE, SPRITES, THEME, APPEARANCE, COLOURS) and Settings.
   let open = "", sheet = null;
   const tick = (on) => (on ? '<i class="tk">✓</i>' : "");
-  const keys = (k, list, cur) => `<div class="seg" role="radiogroup" aria-label="${k}">${list.map((v) =>
-    `<button type="button" role="radio" data-k="${k}" data-v="${v}" aria-checked="${v === cur}">${v}</button>`).join("")}</div>`;
+  const keys = (k, list, cur, at = "k") => `<div class="seg" role="radiogroup" aria-label="${k}">${list.map((v) =>
+    `<button type="button" role="radio" data-${at}="${k}" data-v="${v}" aria-checked="${v === cur}">${v}</button>`).join("")}</div>`;
   const swatch = (s) => `<span class="swa" style="--sbg:${esc(s.tokens["--bg"])};--sfg:${esc(s.tokens["--fg"])};--sl:${esc(s.tokens["--l"])}"><b>Aa</b>${
     ["--g", "--a", "--r"].map((k) => `<i style="background:${esc(s.tokens[k])}"></i>`).join("")}</span>`;
   const label = (n) => esc(LOOK.schemes[n].label.toLowerCase());
@@ -139,13 +140,14 @@
       ${lists.join("")}<p class="lft">this device only · iOS keeps the icon it installed with</p>`;
   }
 
-  const SECTIONS = ["sign-ins", "look", "alerts", "devices", "report"];
+  const SECTIONS = ["sign-ins", "folders", "look", "alerts", "devices", "report"];
   function settings() {
     const row = (k, v) => `<button type="button" class="sr" data-open="look"><span class="sk">${k}</span><span class="sv">${v}</span><i class="cv">▸</i></button>`;
     const m = pick.mode || "system";
     const index = SECTIONS.map((s) => `<a href="#settings/${s}">${s}</a>`).join("");
     return `<nav class="six" aria-label="sections">${index}</nav>
       <p class="ch" id="s-sign-ins">sign-ins</p><a class="sr" href="/#signins" data-close><span class="sk">providers</span><i class="cv">▸</i></a>
+      <p class="ch" id="s-folders">folders</p><button type="button" class="sr" data-open="folders"><span class="sk">roots</span><i class="cv">▸</i></button>
       <p class="ch" id="s-look">look</p>${row("style", style())}${row("sprites", figs())}${row("theme", esc(theme().label))}
       ${row("appearance", m === "system" ? `system · ${mode()} now` : m)}${row("colours", `dark ${label(scheme("dark"))} · light ${label(scheme("light"))}`)}
       <p class="ch" id="s-alerts">alerts</p><div id="s-alerts-box"></div>
@@ -153,12 +155,42 @@
       <p class="ch" id="s-report">report</p><button type="button" class="sr" data-report><span class="sk">report a problem</span><i class="cv">▸</i></button>`;
   }
 
+  // Settings › Folders: the roots, each with [remove], and the Mac's folders from the home folder down (names only,
+  // hidden ones behind a toggle), the one shown with [add as root]. Closing it after a change reloads the page.
+  const fol = { path: "", hidden: false, at: null, err: "", changed: false };
+  const tilde = (p) => (fol.at && p.startsWith(fol.at.home) ? `~${p.slice(fol.at.home.length)}` : p);
+  async function folders(change) {
+    try {
+      const ok = async (r) => { if (!r.ok) throw new Error(await r.text()); return r.json(); };
+      if (change) {
+        await ok(await fetch("/roots", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(change) }));
+        fol.changed = true;
+      }
+      const q = [fol.path && `path=${encodeURIComponent(fol.path)}`, fol.hidden && "hidden=1"].filter(Boolean).join("&");
+      fol.at = await ok(await fetch(`/folders?${q}`));
+      fol.path = fol.at.path;
+      fol.err = "";
+    } catch (x) { fol.err = x.message; }
+    if (open === "folders") render();
+  }
+  function folderSheet() {
+    const a = fol.at, err = `<p class="err"${fol.err ? "" : " hidden"}>${esc(fol.err)}</p>`;
+    if (!a) return err;
+    const go = (p, k, more = "") => `<button type="button" class="sr" data-go="${esc(p)}"><span class="sk">${esc(k)}</span>${more}</button>`;
+    const roots = a.roots.map((r) => `<div class="lrw"><span class="sk">${esc(tilde(r))}</span><button type="button" data-rm="${esc(r)}">remove</button></div>`);
+    return `<p class="ch">roots</p>${roots.join("") || '<p class="lft">none yet: add a folder below</p>'}${err}
+      <p class="ch">browse</p><div class="lrw"><b class="sk">${esc(tilde(a.path))}</b>${a.roots.includes(a.path) ? "<small>root</small>"
+        : `<button type="button" data-add="${esc(a.path)}">add as root</button>`}</div>
+      <div class="lrw"><span>hidden folders</span>${keys("hidden", ["off", "on"], fol.hidden ? "on" : "off", "f")}</div>
+      ${a.path === a.home ? "" : go(a.path.replace(/\/[^/]*$/, ""), "‹ up")}${a.dirs.map((d) => go(`${a.path}/${d}`, d, '<i class="cv">▸</i>')).join("")}`;
+  }
+
   function render() {
     const top = sheet.querySelector(".top"), at = top?.scrollTop ?? 0;
     sheet.className = open === "look" ? "lks" : "set";
     sheet.innerHTML = `<div class="bd"></div><div class="sh" role="dialog" aria-modal="${open !== "look"}" aria-labelledby="sht">
       <div class="hd"><b id="sht">${open}</b><button type="button" class="gl" data-close aria-label="close">×</button></div>
-      <div class="top">${open === "look" ? lookSheet() : settings()}</div></div>`;
+      <div class="top">${open === "look" ? lookSheet() : open === "folders" ? folderSheet() : settings()}</div></div>`;
     sheet.querySelector(".top").scrollTop = at;
     for (const b of document.querySelectorAll("header [data-open]")) b.setAttribute("aria-pressed", b.dataset.open === open);
     dispatchEvent(new CustomEvent("cooee-sheet", { detail: open }));
@@ -166,6 +198,8 @@
 
   function show(which) {
     if (!sheet) { sheet = document.createElement("div"); sheet.id = "sheet"; document.body.append(sheet); }
+    if (open === "folders" && which !== "folders" && fol.changed) location.reload();
+    if (which === "folders") folders();
     open = which;
     sheet.hidden = !which;
     if (which) render();
@@ -184,10 +218,15 @@
   addEventListener("DOMContentLoaded", deep);
 
   addEventListener("click", (e) => {
-    const t = e.target.closest?.("[data-open],[data-close],[data-k],.bd");
+    const t = e.target.closest?.("[data-open],[data-close],[data-k],[data-f],[data-go],[data-add],[data-rm],.bd");
     if (!t) return;
-    if (t.dataset.open) show(open === t.dataset.open ? "" : t.dataset.open);
-    else if (t.dataset.k) set(t.dataset.k, t.dataset.v === "system" ? undefined : t.dataset.v);
+    const d = t.dataset;
+    if (d.open) show(open === d.open ? "" : d.open);
+    else if (d.k) set(d.k, d.v === "system" ? undefined : d.v);
+    else if (d.f) { fol.hidden = d.v === "on"; folders(); }
+    else if (d.go) { fol.path = d.go; folders(); }
+    else if (d.add) folders({ path: d.add });
+    else if (d.rm) { if (confirm(`Remove ${tilde(d.rm)} from the roots? Its folders and threads stay.`)) folders({ path: d.rm, remove: true }); }
     else show("");
   });
   addEventListener("keydown", (e) => { if (e.key === "Escape" && open) show(""); });

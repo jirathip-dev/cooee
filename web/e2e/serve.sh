@@ -4,11 +4,11 @@
 # pairing code (`cooee pair`) goes to $PAIR_CODE for pair.setup.mjs. One fake provider per viewport: its login prints
 # a link and reads a code (good-code signs it in), its status succeeds once signed in. The example plugin
 # (docs/plugins/hello) runs twice, as plugins `hello` and `other`, on $PORT + 1 and + 2. A fresh instance runs on
-# $PORT + 3.
+# $PORT + 3. The main instance runs with HOME at the temp folder, so Settings › Folders browses it.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
-mkdir -p "$tmp/shed" "$tmp/root/project" "$tmp/data/threads"
+mkdir -p "$tmp/shed" "$tmp/root/project/deep-src" "$tmp/data/threads" "$tmp/.hidden-folder"
 cargo build --quiet --locked -p cooee
 cargo test --quiet --locked -p cooee --test chat --no-run
 FAKE_SHED_DIR="$tmp/shed" FAKE_SHED_DELAY_MS=20 cargo test --quiet --locked -p cooee --test chat -- \
@@ -115,5 +115,6 @@ bare=$!
 echo "$tmp/config.toml" >"$PAIR_CODE.config"
 echo "$(cd "${CARGO_TARGET_DIR:-target}" && pwd)/debug/cooee" >"$PAIR_CODE.bin"
 cargo run --quiet --locked -p cooee -- pair --config "$tmp/config.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE"
-cargo run --quiet --locked -p cooee -- serve --config "$tmp/config.toml" &
+target=$(cargo metadata --format-version 1 --no-deps | node -pe 'JSON.parse(require("fs").readFileSync(0)).target_directory')
+HOME=$tmp "$target/debug/cooee" serve --config "$tmp/config.toml" &
 wait $!

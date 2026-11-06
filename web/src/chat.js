@@ -105,6 +105,30 @@ if (form) {
   });
 }
 
+// The folder picker: the search shows the folders whose name has it (up to 2 levels in), else the first level;
+// [+ new folder] makes one inside the folder picked, and picks it.
+const fq = $("#fq");
+if (fq) {
+  fq.oninput = () => {
+    const q = fq.value.trim().toLowerCase();
+    for (const l of form.querySelectorAll(".fl label")) l.hidden = q ? !l.textContent.trim().split("/").pop().toLowerCase().includes(q) : l.dataset.d > 1;
+  };
+  $("#mkdir").onclick = async () => {
+    const at = form.querySelector(".fl :checked").parentNode, label = at.textContent.trim(), err = $("#new-err");
+    const name = prompt(`New folder in ${label}:`);
+    if (!name) return;
+    try {
+      const row = at.cloneNode(true), input = $("input", row);
+      input.value = await post("/folders/new", { parent: $("input", at).value, name });
+      row.lastChild.textContent = `${label}/${name}`;
+      row.dataset.d = Math.min(2, Number(at.dataset.d) + 1);
+      row.hidden = false; err.hidden = true;
+      at.after(row);
+      input.checked = true;
+    } catch (x) { err.textContent = x.message; err.hidden = false; }
+  };
+}
+
 // An empty picker's hint: its copy button puts the fix line on the clipboard.
 document.addEventListener("click", (e) => {
   const b = e.target.closest?.("[data-copy]");
