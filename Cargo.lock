@@ -200,11 +200,14 @@ checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
 name = "cooee"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "cooee-core",
  "cooee-machines",
  "cooee-server",
+ "p256",
  "qrcode",
  "serde_json",
+ "sha2 0.11.1",
  "toml",
 ]
 
@@ -239,6 +242,7 @@ dependencies = [
  "futures-util",
  "hkdf 0.13.0",
  "p256",
+ "qrcode",
  "serde",
  "serde_json",
  "sha2 0.11.1",

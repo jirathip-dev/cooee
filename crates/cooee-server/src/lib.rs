@@ -9,6 +9,7 @@
 mod hub;
 mod login;
 mod manage;
+mod pairing;
 mod plugin;
 mod push;
 
@@ -20,8 +21,9 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Claim, Config, Device, Devices, Plugin, ShedError};
+use cooee_core::{Config, Device, Devices, Plugin, ShedError};
 use futures_util::{Stream, StreamExt, stream};
+use pairing::devices;
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::error::RecvError;
 use topcoat::{
@@ -30,7 +32,7 @@ use topcoat::{
     router::{
         Body, Layer, LayerFuture, Next, Path, Router,
         content::{
-            Form, Json,
+            Json,
             sse::{Event, KeepAlive, Sse, last_event_id},
         },
         error::not_found,
@@ -48,13 +50,16 @@ pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
 
 /// The paths an unpaired browser may load: pairing and the static files (and the themes' files under `/look/`).
-const OPEN: [&str; 13] = [
+const OPEN: [&str; 16] = [
     "/pair",
     "/look",
     "/look.js",
+    "/pair.js",
     "/pair/request",
     "/pair/claim",
     "/pair/cancel",
+    "/passkey/challenge",
+    "/passkey/signin",
     "/manifest.webmanifest",
     "/icon.svg",
     "/icon-192.png",
@@ -562,95 +567,6 @@ struct Read {
 async fn read(cx: &Cx, Json(r): Json<Read>) -> Result<Answer<()>> {
     let id = thread_id(cx);
     Ok(Answer(blocking(cx, move |hub| hub.read(&id, r.item)).await))
-}
-
-/// `?code=` (the QR code's link fills it in) and `?bad` after a wrong code.
-#[derive(Deserialize)]
-struct PairQuery {
-    code: Option<String>,
-    bad: Option<String>,
-}
-
-#[page("/pair")]
-async fn pairing(cx: &Cx) -> Result<impl View> {
-    let q: Option<PairQuery> = parse_query_params(cx).ok();
-    let (code, bad) = q.map_or((None, false), |q| (q.code, q.bad.is_some()));
-    Ok(cooee_web::pair_page(cx, code.unwrap_or_default(), bad))
-}
-
-/// `POST /pair`: the code `cooee pair` printed.
-#[derive(Deserialize)]
-struct PairForm {
-    code: String,
-}
-
-#[route(POST "/pair")]
-async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
-    let devices = Devices::new(&app_context::<Data>(cx).0);
-    let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
-    let token = tokio::task::spawn_blocking(move || devices.claim(&f.code, &agent, now()))
-        .await
-        .map_err(io::Error::other)??;
-    let Some(token) = token else {
-        return Ok(Response::builder()
-            .status(303)
-            .header("Location", "/pair?bad=1")
-            .body(Body::from(()))?);
-    };
-    Ok(Response::builder()
-        .status(303)
-        .header("Location", "/")
-        .header("Set-Cookie", cookie(cx, &token))
-        .body(Body::from(()))?)
-}
-
-/// The pairing cookie for `token` (`Secure` behind https).
-fn cookie(cx: &Cx, token: &str) -> String {
-    let secure = header(cx, "origin").is_some_and(|o| o.starts_with("https://"));
-    format!(
-        "{COOKIE}={token}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Strict{}",
-        if secure { "; Secure" } else { "" }
-    )
-}
-
-fn devices(cx: &Cx) -> Devices {
-    Devices::new(&app_context::<Data>(cx).0)
-}
-
-/// `POST /pair/request`: a code for the phone to show, approved on the Mac with `cooee pair <code>`.
-#[route(POST "/pair/request")]
-async fn pair_request(cx: &Cx) -> Result<Response> {
-    let devices = devices(cx);
-    let (code, claim) = tokio::task::spawn_blocking(move || devices.request(now())).await??;
-    Json(serde_json::json!({ "code": code, "claim": claim })).into_response(cx)
-}
-
-/// The phone's claim on its request.
-#[derive(Deserialize)]
-struct ClaimBody {
-    claim: String,
-}
-
-/// `POST /pair/claim`: 200 with the cookie once approved, 202 while it waits, 410 when the request is gone.
-#[route(POST "/pair/claim")]
-async fn pair_claim(cx: &Cx, Json(c): Json<ClaimBody>) -> Result<Response> {
-    let devices = devices(cx);
-    let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
-    let found = tokio::task::spawn_blocking(move || devices.collect(&c.claim, &agent, now()));
-    match found.await?? {
-        Claim::Paired(token) => Ok(Response::builder()
-            .header("Set-Cookie", cookie(cx, &token))
-            .body(Body::from(()))?),
-        Claim::Waiting => plain(202, "waiting for the Mac"),
-        Claim::Gone => plain(410, "That code expired: ask for a new one."),
-    }
-}
-
-#[route(POST "/pair/cancel")]
-async fn pair_cancel(cx: &Cx, Json(c): Json<ClaimBody>) -> Result<Response> {
-    let devices = devices(cx);
-    tokio::task::spawn_blocking(move || devices.cancel(&c.claim)).await??;
-    plain(200, "cancelled")
 }
 
 /// `GET /devices`: the paired devices, this one marked `me`.
@@ -1162,18 +1078,12 @@ pub fn router(
         devices: Devices::new(data),
         hub: Arc::clone(&hub),
     };
-    cooee_web::assets(Router::builder(), looks)
-        .layer(gate)
-        .page(pairing)
-        .route(pair)
+    pairing::routes(cooee_web::assets(Router::builder(), looks).layer(gate))
         .route(push_key)
         .route(push_subscribe)
         .route(push_unsubscribe)
         .route(push_endpoints)
         .route(push_test)
-        .route(pair_request)
-        .route(pair_claim)
-        .route(pair_cancel)
         .route(device_list)
         .route(device_remove)
         .route(report)
@@ -1211,6 +1121,7 @@ pub fn router(
         .app_context(logins)
         .app_context(manager)
         .app_context(Data(data.to_owned()))
+        .app_context(Arc::new(pairing::Pairing::default()))
         .build()
 }
 
