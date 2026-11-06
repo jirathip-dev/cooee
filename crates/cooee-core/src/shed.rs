@@ -61,6 +61,9 @@ impl ShedError {
     }
 }
 
+/// The fix for no installed agents, as the agent picker and `cooee doctor` print it.
+pub const AGENTS_FIX: &str = "shed agents add claude-acp";
+
 /// An installed ACP agent, as `shed agents` lists it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Agent {

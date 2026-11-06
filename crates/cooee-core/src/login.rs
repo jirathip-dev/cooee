@@ -2,7 +2,9 @@
 //! a login terminal's screen may reach the page: tokens redacted, links found.
 
 use std::{
+    env,
     io::Read,
+    path::Path,
     process::{Command, Stdio},
     thread,
     time::{Duration, Instant},
@@ -22,17 +24,21 @@ pub struct Provider {
     pub login: Vec<String>,
     /// The status command: exit 0 when signed in; its output is the status line.
     pub status: Vec<String>,
+    /// The line that installs its CLI, shown when the login command isn't found.
+    #[serde(default)]
+    pub install: String,
 }
 
 impl Provider {
     /// Claude Code, Codex and Gemini.
     #[must_use]
     pub fn defaults() -> Vec<Self> {
-        let p = |name: &str, agent: &str, login: &[&str], status: &[&str]| Self {
+        let p = |name: &str, agent: &str, login: &[&str], status: &[&str], npm: &str| Self {
             name: name.to_owned(),
             agent: agent.to_owned(),
             login: login.iter().map(|s| (*s).to_owned()).collect(),
             status: status.iter().map(|s| (*s).to_owned()).collect(),
+            install: format!("npm install -g {npm}"),
         };
         vec![
             p(
@@ -40,12 +46,14 @@ impl Provider {
                 "claude-acp",
                 &["claude", "auth", "login"],
                 &["claude", "auth", "status"],
+                "@anthropic-ai/claude-code",
             ),
             p(
                 "codex",
                 "codex-acp",
                 &["codex", "login", "--device-auth"],
                 &["codex", "login", "status"],
+                "@openai/codex",
             ),
             p(
                 "gemini",
@@ -56,6 +64,7 @@ impl Provider {
                     "-c",
                     "test -s \"$HOME/.gemini/oauth_creds.json\" && echo signed in with Google",
                 ],
+                "@google/gemini-cli",
             ),
         ]
     }
@@ -63,7 +72,15 @@ impl Provider {
     /// Runs the status command (10 s at most): signed in when it exits 0.
     #[must_use]
     pub fn check(&self) -> Status {
+        if let Some(bin) = self.login.first().filter(|b| !installed(b)) {
+            return Status {
+                signed_in: false,
+                line: format!("{bin} isn't installed on this Mac"),
+                install: Some(self.install.clone()),
+            };
+        }
         let out = |signed_in, line: &str| Status {
+            install: None,
             signed_in,
             line: redact(&line.split_whitespace().collect::<Vec<_>>().join(" "))
                 .chars()
@@ -108,6 +125,19 @@ impl Provider {
             stdout.join().unwrap_or_default(),
             stderr.join().unwrap_or_default(),
         );
+        // A JSON status (`claude auth status`): its `loggedIn`, as one plain line.
+        if let Ok(v @ serde_json::Value::Object(_)) = serde_json::from_str(&stdout) {
+            let who = v["email"].as_str().or(v["orgName"].as_str());
+            return match (v["loggedIn"].as_bool(), v["authMethod"].as_str(), who) {
+                (Some(true), Some(how), Some(who)) => {
+                    out(true, &format!("signed in · {how} ({who})"))
+                }
+                (Some(true), Some(how), None) => out(true, &format!("signed in · {how}")),
+                (Some(true), None, _) => out(true, "signed in"),
+                (Some(false), ..) => out(false, "signed out"),
+                (None, ..) => out(ok, "status unknown"),
+            };
+        }
         out(
             ok,
             if stdout.trim().is_empty() {
@@ -126,6 +156,17 @@ pub struct Status {
     pub signed_in: bool,
     /// Its output on one line, redacted, at most 80 characters.
     pub line: String,
+    /// The install line, when the login command isn't found.
+    pub install: Option<String>,
+}
+
+/// Whether `bin` is a file, or one on `PATH` when it is a bare name.
+fn installed(bin: &str) -> bool {
+    let path = Path::new(bin);
+    if path.components().count() > 1 {
+        return path.is_file();
+    }
+    env::var_os("PATH").is_some_and(|p| env::split_paths(&p).any(|d| d.join(bin).is_file()))
 }
 
 /// Whether `c` may be part of a token.
@@ -224,11 +265,35 @@ mod tests {
             agent: "a".to_owned(),
             login: Vec::new(),
             status: vec!["sh".to_owned(), "-c".to_owned(), status.to_owned()],
+            install: "npm install -g p".to_owned(),
         };
         let s = p("echo '  Logged in\n  as owner'").check();
         assert_eq!((s.signed_in, s.line.as_str()), (true, "Logged in as owner"));
         let s = p("echo not signed in >&2; exit 1").check();
         assert_eq!((s.signed_in, s.line.as_str()), (false, "not signed in"));
+        let s =
+            p(r#"echo '{"loggedIn": true, "authMethod": "claude.ai", "email": "o@example.com"}'"#)
+                .check();
+        assert_eq!(
+            (s.signed_in, s.line.as_str()),
+            (true, "signed in · claude.ai (o@example.com)")
+        );
+        let s = p(r#"echo '{"loggedIn": false, "authMethod": "none"}'; exit 1"#).check();
+        assert_eq!((s.signed_in, s.line.as_str()), (false, "signed out"));
+        assert_eq!(p(r#"echo '{"a": 1}'"#).check().line, "status unknown");
+        let s = Provider {
+            login: vec!["no-such-cooee-cli".to_owned()],
+            ..p("exit 0")
+        }
+        .check();
+        assert_eq!(
+            (s.signed_in, s.line.as_str(), s.install.as_deref()),
+            (
+                false,
+                "no-such-cooee-cli isn't installed on this Mac",
+                Some("npm install -g p")
+            )
+        );
         assert!(
             !Provider {
                 status: vec!["/no/such/cooee-bin".to_owned()],

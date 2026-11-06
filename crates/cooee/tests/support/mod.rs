@@ -558,8 +558,8 @@ pub fn scratch(name: &str) -> PathBuf {
     dir
 }
 
-/// `cooee serve` on a free port with data in `dir/data`, the fake shed in `shed`, the root `dir/root`, its stderr
-/// in `dir/cooee.err` and no providers unless `extra` names some; paired (`cookie` goes with every request).
+/// `cooee serve` on a free port with data in `dir/data`, the fake shed in `shed`, the root `dir/root` unless `extra`
+/// sets `roots`, its stderr in `dir/cooee.err` and no providers unless `extra` names some; paired (`cookie` goes with every request).
 pub struct Cooee {
     pub child: Child,
     pub addr: String,
@@ -621,13 +621,16 @@ impl Cooee {
         } else {
             "providers = []\n"
         };
+        let roots = if extra.contains("roots =") {
+            String::new()
+        } else {
+            format!("roots = [{}]\n", q(&root))
+        };
         let toml = format!(
             "port = 0
-roots = [{}]
-shed = {}
+{roots}shed = {}
 shed_dir = {}
 {providers}{extra}",
-            q(&root),
             q(&shed.join("shed")),
             q(shed),
         );

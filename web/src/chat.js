@@ -2,15 +2,18 @@
 // anchor (slices by id as the reader nears an edge), scroll kept on a message rather than pixels, live events over
 // SSE resumed from the last one seen, the outbox (sending → sent → failed, tap to retry), the per-thread draft in
 // IndexedDB, approvals that lock once tapped, and debounced read marks (which also close the thread's notifications).
-// Every page registers the service worker (sw.js, push only); the thread list's 🔔 turns alerts on.
+// Every page but pairing registers the service worker (sw.js, push only); the thread list's 🔔 turns alerts on.
 // States are theme keys (data-st) that look.js draws: the thread bar, the working pill (its sprite following the
 // running tool), the live line and a turn's end.
 // A plugin tab hosts the plugin's sandboxed frame.
 const $ = (s, el = document) => el.querySelector(s);
 const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+// A failed answer as one plain sentence: cooee's own (marked `cooee-error`), else a general one, never raw JSON.
+const why = async (r) =>
+  new Error(r.headers.has("cooee-error") ? await r.text() : `cooee couldn't do that (error ${r.status}): reload and try again.`);
 const post = (url, body) =>
   fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
-    .then(async (r) => (r.ok ? r.json() : Promise.reject(new Error(await r.text()))));
+    .then(async (r) => (r.ok ? r.json() : Promise.reject(await why(r))));
 
 // The thread list's form: open on `#new`, start a thread, then open it.
 const form = $("#new");
@@ -29,6 +32,12 @@ if (form) {
     }
   });
 }
+
+// An empty picker's hint: its copy button puts the fix line on the clipboard.
+document.addEventListener("click", (e) => {
+  const b = e.target.closest?.("[data-copy]");
+  b && navigator.clipboard?.writeText(b.dataset.copy).then(() => { b.textContent = "copied"; }, () => {});
+});
 
 // The sign-ins sheet: open on `#signins`. [sign in] starts the provider's own login in a shed terminal; its screen
 // (redacted by the server) is drawn every second with its links tappable, a code typed below goes to it, and once
@@ -49,7 +58,7 @@ if (sheet) {
         state.className = s.signed_in ? "g" : "m";
         state.textContent = s.signed_in ? "✓ signed in" : "signed out";
         line.textContent = [v.why, s.line].filter(Boolean).join(" · ");
-        signIn.hidden = s.signed_in;
+        signIn.hidden = s.signed_in || !!s.install;
         return;
       }
       state.className = "a"; state.textContent = "signing in"; lg.hidden = false; signIn.hidden = true;
@@ -78,7 +87,9 @@ if (sheet) {
   }
 }
 
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+// Not while pairing: a worker installing and claiming the page as the pair redirects can leave a home-screen app on
+// a bare background until a reload (the first run, #25).
+if ("serviceWorker" in navigator && location.pathname !== "/pair") navigator.serviceWorker.register("/sw.js").catch(() => {});
 // Closes thread `thread`'s notifications up to item `read`.
 const cleared = (thread, read) => navigator.serviceWorker?.ready.then((r) => r.active?.postMessage({ thread, read }));
 
@@ -92,12 +103,12 @@ if (bell && "PushManager" in window) (async () => {
     try {
       if ((await Notification.requestPermission()) !== "granted") throw new Error("notifications are off for this app");
       const r = await fetch("/push/key");
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) throw await why(r);
       const key = (await r.json()).key.replace(/-/g, "+").replace(/_/g, "/");
       const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: Uint8Array.from(atob(key), (c) => c.charCodeAt(0)) });
       const { endpoint, keys } = sub.toJSON();
       const ok = await fetch("/push/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint, ...keys }) });
-      if (!ok.ok) throw new Error(await ok.text());
+      if (!ok.ok) throw await why(ok);
       bell.hidden = true;
     } catch (x) { alert(`alerts failed: ${x.message}`); }
   };

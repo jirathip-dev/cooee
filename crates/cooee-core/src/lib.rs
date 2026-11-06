@@ -10,9 +10,9 @@ mod shed;
 mod store;
 
 pub use chat::{Body, Change, Chat, Item, Summary, Turn};
-pub use config::{Config, ConfigError, Plugin};
+pub use config::{Config, ConfigError, Plugin, ROOTS_FIX};
 pub use devices::{Device, Devices, random, sha256, write_private};
 pub use login::{Provider, Status, links, redact};
-pub use shed::{Agent, Shed, ShedError};
+pub use shed::{AGENTS_FIX, Agent, Shed, ShedError};
 pub use shed_proto;
 pub use store::{FORMAT, Message, Role, Store, StoreError, Thread};

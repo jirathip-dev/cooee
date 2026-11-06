@@ -31,3 +31,17 @@ test("installable: the manifest, its icons and the service worker load", async (
   expect(manifest.icons.map((i) => i.sizes)).toEqual(expect.arrayContaining(["192x192", "512x512"]));
   expect(await page.evaluate(async () => (await navigator.serviceWorker.ready).active.scriptURL)).toMatch(/\/sw\.js$/);
 });
+
+test("a failed start reads as one plain sentence, never the server's JSON error", async ({ page }) => {
+  await page.goto("/#new");
+  // No agent picked: the server refuses the request's JSON.
+  await page.locator("#new input[name=agent]").evaluateAll((rs) => rs.forEach((r) => { r.checked = false; }));
+  await page.getByLabel("first message").fill("hi");
+  await page.getByRole("button", { name: "start" }).click();
+  await expect(page.locator("#new-err")).toHaveText("cooee couldn't do that (error 400): reload and try again.");
+  // cooee's own refusal is shown as it is.
+  await page.locator("#new input[name=agent]").first().check();
+  await page.locator("#folder").evaluate((s) => { s.options[0].value = "/"; });
+  await page.getByRole("button", { name: "start" }).click();
+  await expect(page.locator("#new-err")).toHaveText("/ is not inside a configured root");
+});

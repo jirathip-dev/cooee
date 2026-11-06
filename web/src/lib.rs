@@ -15,7 +15,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Agent, Provider, Status, Summary, Thread, Turn};
+use cooee_core::{AGENTS_FIX, Agent, Provider, ROOTS_FIX, Status, Summary, Thread, Turn};
 pub use look::{Looks, Pair, Scheme, TOKENS, Theme, gate, plain};
 use topcoat::{
     Result,
@@ -333,7 +333,8 @@ async fn nav(tabs: Vec<(String, String)>, current: String) -> Result<impl View> 
 }
 
 /// The thread list: one card per working folder, its 3 newest threads shown, the rest folded; the new-thread
-/// form (open when there are no threads, else behind `+`), each agent with its provider's state; the
+/// form (open when there are no threads, else behind `+`), each agent with its provider's state (no agents or no
+/// folders: the fix line instead); the
 /// sign-ins card (`#signins`, from Settings): each provider's state, and its login's terminal (drawn by `chat.js`); `tabs`: the
 /// plugins' names and labels.
 #[must_use]
@@ -359,19 +360,28 @@ pub fn threads_page(
 
 #[component]
 async fn provider(p: Provider, s: Status) -> Result<impl View> {
-    let (class, label) = if s.signed_in {
-        ("g", "✓ signed in")
-    } else {
-        ("m", "signed out")
+    let (class, label) = match (s.signed_in, &s.install) {
+        (true, _) => ("g", "✓ signed in"),
+        (false, None) => ("m", "signed out"),
+        (false, Some(_)) => ("m", "not installed"),
     };
     Ok(view! {
         <div class="pv" data-provider=(p.name.clone())>
             <div class="fh">
                 <b>(p.name.clone())</b>
                 <span class=(class)>(label)</span>
-                <button type="button" class="si" hidden=(s.signed_in)>"sign in"</button>
+                <button
+                    type="button"
+                    class="si"
+                    hidden=(s.signed_in || s.install.is_some())
+                >
+                    "sign in"
+                </button>
             </div>
             <p class="ds">(s.line)</p>
+            if let Some(fix) = s.install.filter(|f| !f.is_empty()) {
+                hint(why: "on the Mac:", fix: fix.as_str(), then: "")
+            }
             <div class="lg" hidden=(true)>
                 <p class="ds">(format!("{} · shed terminal", p.login.join(" ")))</p>
                 <pre class="out"></pre>
@@ -429,6 +439,39 @@ async fn agent(id: String, first: bool, signed: Option<bool>) -> Result<impl Vie
     })
 }
 
+/// An empty picker's row instead: why, and the line that fixes it with its copy button (`chat.js`).
+#[component]
+async fn hint(why: &str, fix: &str, then: &str) -> Result<impl View> {
+    Ok(view! {
+        <p class="hn">
+            (why)
+            <code>(fix)</code>
+            (then)
+            <button type="button" data-copy=(fix) aria-label=(format!("copy {fix}"))>
+                "copy"
+            </button>
+        </p>
+    })
+}
+
+/// The new-thread form's folder: a picker of `folders`, or the fix line when there are none.
+#[component]
+async fn folder_picker(folders: Vec<PathBuf>) -> Result<impl View> {
+    Ok(view! {
+        if folders.is_empty() {
+            <p class="lb">"folder"</p>
+            hint(why: "no folders set · add", fix: ROOTS_FIX, then: "to config.toml")
+        } else {
+            <label class="lb" for="folder">"folder"</label>
+            <select id="folder" name="folder">
+                for f in folders {
+                    <option value=(f.display().to_string())>(short(&f))</option>
+                }
+            </select>
+        }
+    })
+}
+
 #[component]
 async fn threads(
     rows: Vec<Summary>,
@@ -438,6 +481,8 @@ async fn threads(
     tabs: Vec<(String, String)>,
 ) -> Result<impl View> {
     let empty = rows.is_empty();
+    // Start waits for an agent and a folder to pick.
+    let can_start = !folders.is_empty() && agents.as_ref().is_ok_and(|a| !a.is_empty());
     let signed: BTreeMap<String, bool> = providers
         .iter()
         .rev()
@@ -468,6 +513,13 @@ async fn threads(
                         <legend class="lb">"agent"</legend>
                         match agents {
                             Ok(list) => {
+                                if list.is_empty() {
+                                    hint(
+                                        why: "no agents installed · on the Mac:",
+                                        fix: AGENTS_FIX,
+                                        then: ""
+                                    )
+                                }
                                 for (i, a) in list.into_iter().enumerate() {
                                     agent(
                                         id: a.id.clone(),
@@ -481,12 +533,7 @@ async fn threads(
                             }
                         }
                     </fieldset>
-                    <label class="lb" for="folder">"folder"</label>
-                    <select id="folder" name="folder">
-                        for f in folders {
-                            <option value=(f.display().to_string())>(short(&f))</option>
-                        }
-                    </select>
+                    folder_picker(folders: folders)
                     <div class="tw">
                         <textarea
                             name="text"
@@ -494,7 +541,7 @@ async fn threads(
                             aria-label="first message"
                             placeholder="message"
                         ></textarea>
-                        <button type="submit">"start"</button>
+                        <button type="submit" disabled=(!can_start)>"start"</button>
                     </div>
                     <p class="err" id="new-err" hidden=(true)></p>
                 </form>

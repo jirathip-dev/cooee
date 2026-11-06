@@ -3,7 +3,8 @@
 # a throwaway config on $PORT, its data seeded with a thread of 1,000 messages, read up to #990, per viewport; a
 # pairing code (`cooee pair`) goes to $PAIR_CODE for pair.setup.mjs. One fake provider per viewport: its login prints
 # a link and reads a code (good-code signs it in), its status succeeds once signed in. The example plugin
-# (docs/plugins/hello) runs twice, as plugins `hello` and `other`, on $PORT + 1 and + 2.
+# (docs/plugins/hello) runs twice, as plugins `hello` and `other`, on $PORT + 1 and + 2. A fresh instance runs on
+# $PORT + 3.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -18,7 +19,7 @@ PORT=$hello COOEE=$cooee TOKEN=hello-token-0123456789 node docs/plugins/hello/se
 p1=$!
 PORT=$other COOEE=$cooee TOKEN=other-token-0123456789 node docs/plugins/hello/server.mjs &
 p2=$!
-trap 'kill "$fake" "$p1" "$p2" 2>/dev/null' EXIT INT TERM
+trap 'kill "$fake" "$p1" "$p2" ${bare:-} 2>/dev/null' EXIT INT TERM
 while [ ! -S "$tmp/shed/shed.sock" ]; do sleep 0.1; done
 
 # One 1,000-message thread per viewport project, so their read marks don't meet.
@@ -91,6 +92,25 @@ module = "/tab.js"
 token = "other-token-0123456789"
 EOF
 mkdir -p "$(dirname "${PAIR_CODE:?}")"
+
+# A fresh instance on $PORT + 3: no agents in shed, no roots, a provider whose CLI is missing; its pairing code beside $PAIR_CODE (first-run.spec.mjs).
+printf '#!/bin/sh\necho "[]"\n' >"$tmp/bare-shed" && chmod +x "$tmp/bare-shed"
+cat >"$tmp/bare.toml" <<EOF
+port = $((PORT + 3))
+shed = "$tmp/bare-shed"
+shed_dir = "$tmp/shed"
+data = "$tmp/bare-data"
+
+[[providers]]
+name = "codex"
+agent = "codex-acp"
+login = ["no-such-codex", "login"]
+status = ["true"]
+install = "npm install -g @openai/codex"
+EOF
+cargo run --quiet --locked -p cooee -- pair --config "$tmp/bare.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE.bare"
+cargo run --quiet --locked -p cooee -- serve --config "$tmp/bare.toml" &
+bare=$!
 cargo run --quiet --locked -p cooee -- pair --config "$tmp/config.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE"
 cargo run --quiet --locked -p cooee -- serve --config "$tmp/config.toml" &
 wait $!
