@@ -1,6 +1,6 @@
 // cooee's look (docs/design/look), a classic script in <head>, so a device's pick shows before the first paint. The
 // server puts `LOOK` (every theme and scheme, and its default theme) before this file. The pick is this device's
-// alone, in localStorage: theme, mode (system | light | dark), style (modern | terminal), sprites (on | off), and a
+// alone, in localStorage: theme, mode (system | light | dark), style (modern | terminal), sprites (on | ascii | off), and a
 // scheme per mode (unset: the theme's default). System follows prefers-color-scheme live. Elements are filled as
 // they are parsed or added, so pages and chat.js only name what they show:
 //   [data-st=working|needs|done|fail|idle|ended]  a state: the sprite (data-tool=edit|read|run while working), the
@@ -8,7 +8,10 @@
 //                                                 theme word (data-plain adds `· plain word`)
 //   [data-w=<key>]                                a theme word (data-plain adds `· plain word`)
 //   [data-s=loading|empty]                        the theme's 132 × 100 figure (sprites off: none)
-//   [data-open=look|settings|folders]             opens the look sheet, Settings or Settings › Folders
+//   [data-open=look|settings|folders]             opens the look sheet, Settings (#settings/<section> opens it there)
+//                                                 or Settings › Folders
+// Ascii draws a state as a 3-character figure and the big figures as text. A theme with moments sets
+// html[data-moments=on] (chat.js plays them). Settings fires `cooee-sheet` once drawn, for chat.js's sections.
 // A plugin tab (iframe[data-plugin]) gets the look as a message (`cooee-look`: CSS variables, style, sprites, words
 // and the theme's data URLs) when it asks (`cooee-look?`) and again on every change.
 (() => {
@@ -16,6 +19,8 @@
   const PLAIN = { working: "working", needs: "needs you", done: "done", fail: "failed", idle: "idle", ended: "ended",
     merged: "done", loading: "loading", "empty-threads": "no threads" };
   const GLYPH = { working: "✻", needs: "!", done: "✓", fail: "✕", idle: "·", ended: "■" };
+  const ASCII = { edit: "o_/", read: "o.o", run: "o>_", needs: "(!)", done: "\\o/", fail: "x_x", idle: "-.-", ended: "[ ]", merged: "\\o/",
+    loading: "( o.o )\n  ...", empty: "( -.- )\n  zzz" };
   const THEMES = ["farm", "kitchen", "garden", "terminal"];
   const SCHEMES = ["github-dark", "solarized-dark", "gruvbox", "nord", "dracula", "farm", "kitchen", "garden-dark", "paper",
     "farm-light", "kitchen-light", "garden-light"];
@@ -31,8 +36,9 @@
   const mode = () => (pick.mode === "light" || pick.mode === "dark" ? pick.mode : mq.matches ? "dark" : "light");
   const scheme = (m) => (LOOK.schemes[pick[m]]?.["color-scheme"] === m ? pick[m] : theme().scheme[m]);
   const style = () => (pick.style === "terminal" ? "terminal" : "modern");
-  const sprites = () => pick.sprites !== "off";
-  const art = () => theme().sprites && sprites();
+  const figs = () => (pick.sprites === "off" || pick.sprites === "ascii" ? pick.sprites : "on");
+  const sprites = () => figs() !== "off";
+  const art = () => theme().sprites && figs() === "on";
   const word = (k) => theme().words[k] || PLAIN[k] || k;
   const url = (file) => new URL(`/look/${name()}/${file}`, location).href;
 
@@ -45,13 +51,14 @@
     const st = e.dataset.st;
     if (st !== undefined) {
       const id = st === "working" ? e.dataset.tool || "edit" : st;
-      const mark = !sprites() ? '<i class="sd"></i>' : art() ? svg(id, "rsp") : `<i class="sg">${GLYPH[st] ?? ""}</i> `;
+      const mark = !sprites() ? '<i class="sd"></i>' : figs() === "ascii" ? `<i class="rsa">${esc(ASCII[id] ?? "")}</i> `
+        : art() ? svg(id, "rsp") : `<i class="sg">${GLYPH[st] ?? ""}</i> `;
       const w = word(st), plain = "plain" in e.dataset && w !== PLAIN[st] ? `<small class="pw"> · ${PLAIN[st]}</small>` : "";
       e.innerHTML = PLAIN[st] ? `${mark}<span class="thw">${esc(w)}</span>${plain}` : "";
     } else if (e.dataset.w) {
       const k = e.dataset.w, w = word(k);
       e.innerHTML = esc(w) + ("plain" in e.dataset && w !== PLAIN[k] ? `<small class="pw"> · ${PLAIN[k]}</small>` : "");
-    } else if (e.dataset.s) e.innerHTML = art() ? svg(e.dataset.s, "big") : "";
+    } else if (e.dataset.s) e.innerHTML = figs() === "ascii" ? `<i class="lsa">${esc(ASCII[e.dataset.s] ?? "")}</i>` : art() ? svg(e.dataset.s, "big") : "";
   }
   const fillAll = (root = document) => root.querySelectorAll(SEL).forEach(fill);
   new MutationObserver((ms) => {
@@ -64,7 +71,7 @@
   // The look as a plugin tab gets it.
   function forPlugin() {
     const t = theme();
-    return { type: "cooee-look", theme: name(), mode: mode(), style: style(), sprites: sprites() ? "on" : "off",
+    return { type: "cooee-look", theme: name(), mode: mode(), style: style(), sprites: figs(),
       vars: { ...LOOK.schemes[scheme(mode())].tokens }, words: { ...PLAIN, ...t.words },
       urls: { theme: url("theme.json"), sprites: t.sprites ? url("sprites.svg") : null, icon: url("icon.png") } };
   }
@@ -75,7 +82,7 @@
     const s = LOOK.schemes[scheme(mode())];
     for (const [k, v] of Object.entries(s.tokens)) html.style.setProperty(k, v);
     html.style.colorScheme = s["color-scheme"];
-    Object.assign(html.dataset, { theme: name(), mode: mode(), style: style(), sprites: sprites() ? "on" : "off" });
+    Object.assign(html.dataset, { theme: name(), mode: mode(), style: style(), sprites: figs(), moments: theme().moments ? "on" : "off" });
     document.querySelector("meta[name=theme-color]")?.setAttribute("content", s.tokens["--bg"]);
     for (const l of document.querySelectorAll("link[rel=icon],link[rel=apple-touch-icon]")) { l.href = url("icon.png"); l.type = ""; }
     fillAll();
@@ -127,19 +134,25 @@
         <div class="lsl" role="listbox" aria-label="${m} colours">${rows.join("")}</div>`;
     });
     return `<div class="lrw"><span>style</span>${keys("style", ["modern", "terminal"], style())}</div>
-      <div class="lrw"><span>sprites</span>${keys("sprites", ["on", "off"], sprites() ? "on" : "off")}</div>
+      <div class="lrw"><span>sprites</span>${keys("sprites", ["on", "ascii", "off"], figs())}</div>
       <p class="ch">theme</p><div class="lth" role="listbox" aria-label="theme">${tiles.join("")}</div>
       <p class="ch">appearance</p>${keys("mode", ["system", "light", "dark"], pick.mode || "system")}
       ${lists.join("")}<p class="lft">this device only · iOS keeps the icon it installed with</p>`;
   }
 
+  const SECTIONS = ["sign-ins", "folders", "look", "alerts", "devices", "report"];
   function settings() {
     const row = (k, v) => `<button type="button" class="sr" data-open="look"><span class="sk">${k}</span><span class="sv">${v}</span><i class="cv">▸</i></button>`;
     const m = pick.mode || "system";
-    return `<p class="ch">sign-ins</p><a class="sr" href="/#signins" data-close><span class="sk">providers</span><i class="cv">▸</i></a>
-      <p class="ch">folders</p><button type="button" class="sr" data-open="folders"><span class="sk">roots</span><i class="cv">▸</i></button>
-      <p class="ch">look</p>${row("style", style())}${row("sprites", sprites() ? "on" : "off")}${row("theme", esc(theme().label))}
-      ${row("appearance", m === "system" ? `system · ${mode()} now` : m)}${row("colours", `dark ${label(scheme("dark"))} · light ${label(scheme("light"))}`)}`;
+    const index = SECTIONS.map((s) => `<a href="#settings/${s}">${s}</a>`).join("");
+    return `<nav class="six" aria-label="sections">${index}</nav>
+      <p class="ch" id="s-sign-ins">sign-ins</p><a class="sr" href="/#signins" data-close><span class="sk">providers</span><i class="cv">▸</i></a>
+      <p class="ch" id="s-folders">folders</p><button type="button" class="sr" data-open="folders"><span class="sk">roots</span><i class="cv">▸</i></button>
+      <p class="ch" id="s-look">look</p>${row("style", style())}${row("sprites", figs())}${row("theme", esc(theme().label))}
+      ${row("appearance", m === "system" ? `system · ${mode()} now` : m)}${row("colours", `dark ${label(scheme("dark"))} · light ${label(scheme("light"))}`)}
+      <p class="ch" id="s-alerts">alerts</p><div id="s-alerts-box"></div>
+      <p class="ch" id="s-devices">devices</p><div id="s-devices-box"></div>
+      <p class="ch" id="s-report">report</p><button type="button" class="sr" data-report><span class="sk">report a problem</span><i class="cv">▸</i></button>`;
   }
 
   // Settings › Folders: the roots, each with [remove], and the Mac's folders from the home folder down (names only,
@@ -180,6 +193,7 @@
       <div class="top">${open === "look" ? lookSheet() : open === "folders" ? folderSheet() : settings()}</div></div>`;
     sheet.querySelector(".top").scrollTop = at;
     for (const b of document.querySelectorAll("header [data-open]")) b.setAttribute("aria-pressed", b.dataset.open === open);
+    dispatchEvent(new CustomEvent("cooee-sheet", { detail: open }));
   }
 
   function show(which) {
@@ -190,7 +204,18 @@
     sheet.hidden = !which;
     if (which) render();
     else for (const b of document.querySelectorAll("header [data-open]")) b.setAttribute("aria-pressed", "false");
+    if (!which && location.hash.startsWith("#settings")) history.replaceState(null, "", location.pathname + location.search);
   }
+  globalThis.cooeeSheet = show;
+  // A deep link: #settings, or #settings/<section> scrolled to that section.
+  function deep() {
+    const m = location.hash.match(/^#settings(?:\/([\w-]+))?$/);
+    if (!m) return;
+    if (open !== "settings") show("settings");
+    if (m[1]) sheet.querySelector(`#s-${m[1]}`)?.scrollIntoView({ block: "start" });
+  }
+  addEventListener("hashchange", deep);
+  addEventListener("DOMContentLoaded", deep);
 
   addEventListener("click", (e) => {
     const t = e.target.closest?.("[data-open],[data-close],[data-k],[data-f],[data-go],[data-add],[data-rm],.bd");

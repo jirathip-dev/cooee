@@ -8,6 +8,7 @@
 :root{--fs:15px;--fs-meta:13px;--fs-key:17px;--ctl:36px;--hit:44px;--r-card:16px;--r-row:12px;--r-pill:999px;--r-me:20px 20px 6px 20px;--sans:system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace;--font:var(--sans)}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:var(--fs)/1.4 var(--font)}
+html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 a{color:var(--link)}
 small,.ds,.ta,.ct,.lb{color:var(--mute);font-size:var(--fs-meta)}
 .m{color:var(--mute)}.a{color:var(--a)}.r{color:var(--r)}.g{color:var(--g)}
@@ -38,8 +39,7 @@ p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:
 .th{display:flex;align-items:center;gap:4px;min-height:52px;padding:0 4px;background:var(--card);border-bottom:1px solid var(--edge)}
 .th .bk{color:var(--link)}
 .tb{display:flex;flex-direction:column;min-width:0;flex:1}.tb h1,.tb .ds{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.dt{display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%;background:var(--g)}
-main[data-state=working] .dt,main[data-state=blocked] .dt{background:var(--a)}
+.dt{display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%;background:var(--a)}.dt[data-sync=on]{background:var(--g)}
 .tc{position:relative;overflow-anchor:none;flex:1;overflow-y:auto;list-style:none;margin:0;padding:12px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
 .tc.skeleton{background:repeating-linear-gradient(var(--bg) 0 56px,var(--card) 56px 64px)}
 .blk{max-width:100%;overflow-wrap:anywhere}
@@ -164,6 +164,39 @@ html[data-style=terminal] .swa{border-radius:4px}
 .pv .tw{padding:0;background:none;border:0}.pv .cn,.ac .sg,.ac .df{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
 .ac{padding-left:12px;border-left:2px solid var(--line);margin-bottom:8px}.ab{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.ab .ds{margin:0}
 .nf .so{align-self:center;min-height:var(--hit);display:inline-flex;align-items:center}
+
+/* #21: the loading strip (thin, under the header, taps pass through; an old copy's age stays), the toast (one line
+   under the header; an error wraps), ↻ spinning, the alert dot on ⚙, Settings' section index, the pairing code. */
+#ld{position:fixed;z-index:2;top:48px;left:0;right:0;margin:0;padding:0 12px;pointer-events:none;text-align:right;font-size:var(--fs-meta);color:var(--mute);border-top:2px solid var(--line)}
+#ld span:not(:empty){display:inline-block;padding:0 6px;background:var(--card);border-radius:0 0 6px 6px}
+#ld.run{border-top-color:var(--l);animation:ldp 1.2s ease-in-out infinite}#ld:not(.run) .lw{display:none}
+@keyframes ldp{50%{border-top-color:var(--line)}}
+#toast{position:fixed;z-index:4;top:56px;left:12px;right:12px;max-width:60ch;margin:0 auto;padding:6px 12px;background:var(--bg);border:1px solid currentColor;border-radius:var(--r-row);font-size:var(--fs-meta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+#toast.r{white-space:normal;overflow-wrap:anywhere}
+.rfs{animation:spin 1s linear infinite}
+.gl[data-dot]{background-image:radial-gradient(circle at calc(100% - 12px) 12px,var(--r) 4px,transparent 4.5px)!important}
+.six{display:flex;flex-wrap:wrap;gap:4px 12px;padding:4px 0}.six a{display:inline-flex;align-items:center;min-height:var(--hit)}
+#sheet .lrw{flex-wrap:wrap;padding:4px 0}#sheet .lrw .cn{min-height:var(--hit)}
+.code{margin:0;font:700 32px var(--mono);letter-spacing:.2em;text-align:center}
+.nf .cn{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
+/* Report mode: the tapped element outlined; the note box fixed at the bottom. */
+.rep .repo{outline:2px solid var(--r);outline-offset:-2px}
+.repf{position:fixed;z-index:4;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--r)}
+.repf input{flex:1;min-width:0;font:16px var(--font);color:var(--fg);background:var(--card);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:var(--hit)}
+/* Ascii figures: a state's 3 characters in the sprite's slot; the big figures as text. */
+.rsa{display:inline-block;min-width:3ch;font:var(--fs-meta)/1 var(--mono);font-style:normal;white-space:pre}
+.lsa{display:block;font:20px/1.2 var(--mono);font-style:normal;white-space:pre;color:var(--fg)}
+/* Moments on the thread bar, 2.4 s, silent: a turn done hops the sprite with the theme word as a tag, needs you
+   flashes the bar and pulses the sprite, a failed turn shakes it; reduced motion: still. */
+.th[data-mo]{position:relative}
+.th[data-mo=done] #st :is(svg,i){animation:mo-hop .8s ease-in-out 3}
+.th[data-mo=needs]{animation:mo-tint 2.4s ease-out 1}.th[data-mo=needs] #st :is(svg,i){animation:mo-pulse .8s ease-in-out 3}
+.th[data-mo=fail]{animation:mo-shake .4s ease-in-out 6}
+.mot{position:absolute;right:52px;top:calc(50% - .7em);font-style:normal;font-weight:700;font-size:var(--fs-meta);padding:0 4px;border-radius:4px;color:var(--fg);background:var(--card);border:1px solid var(--g);white-space:nowrap;animation:mo-tag 2.4s ease-out 1 both}
+.th[data-mo=fail] .mot{border-color:var(--r)}
+@keyframes mo-hop{50%{translate:0 -4px}}@keyframes mo-shake{25%{translate:-2px 0}75%{translate:2px 0}}@keyframes mo-pulse{50%{scale:1.25}}
+@keyframes mo-tint{from{background:color-mix(in srgb,var(--r) 18%,var(--card))}}@keyframes mo-tag{0%,100%{scale:0}8%,85%{scale:1}}
+@media (prefers-reduced-motion:reduce){#ld.run,.rfs,.th[data-mo],.th[data-mo] *{animation:none!important}}
 .nf .fl{flex-direction:column;flex-wrap:nowrap;gap:0;max-height:40vh;overflow-y:auto}
 .nf .fl label{border:0;border-radius:0;border-top:1px solid var(--line);overflow-wrap:anywhere}.fl [data-d="1"]{padding-left:28px}.fl [data-d="2"]{padding-left:44px}
 #fq{flex:1;min-width:0}.lrw .sk{min-width:0;overflow-wrap:anywhere}

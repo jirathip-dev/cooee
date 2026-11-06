@@ -15,7 +15,7 @@ use qrcode::{QrCode, render::unicode::Dense1x2};
 
 mod setup;
 
-const USAGE: &str = "usage: cooee <serve | pair | devices | devices rm <id> | install --port <p> | doctor \
+const USAGE: &str = "usage: cooee <serve | pair [<code>] | devices | reports | devices rm <id> | install --port <p> | doctor \
                      | setup [--port <p>] [--dry-run] [--yes]> [--instance <name>] [--config <file>] | cooee --version";
 
 /// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the exact version.
@@ -87,7 +87,12 @@ fn main() -> ExitCode {
         }
         ["serve"] => serve,
         ["pair"] => pair,
+        ["pair", code] => {
+            let code = (*code).to_owned();
+            return with_config(path.as_deref(), &instance, |config| approve(config, &code));
+        }
         ["devices"] => devices,
+        ["reports"] => reports,
         ["devices", "rm", id] => {
             let id = (*id).to_owned();
             return with_config(path.as_deref(), &instance, |config| remove(config, &id));
@@ -188,6 +193,55 @@ fn pair(config: &Config) -> Result<(), String> {
 fn devices(config: &Config) -> Result<(), String> {
     for d in devices_of(config)?.list().map_err(|e| e.to_string())? {
         println!("{}  {}", d.id, d.label);
+    }
+    Ok(())
+}
+
+/// Approves the code a phone shows (its Pair screen): the phone pairs.
+fn approve(config: &Config, code: &str) -> Result<(), String> {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX));
+    if devices_of(config)?
+        .approve(code, now)
+        .map_err(|e| e.to_string())?
+    {
+        println!("approved {code}: the phone pairs now");
+        Ok(())
+    } else {
+        Err(format!(
+            "no phone is showing {code} (codes last 10 minutes)"
+        ))
+    }
+}
+
+/// Lists the problems reported from the page (report mode), oldest first: when, the device, the page, the element
+/// and the note.
+fn reports(config: &Config) -> Result<(), String> {
+    let data = config
+        .data_dir()
+        .ok_or("no data folder: set `data` or HOME")?;
+    let text = match std::fs::read_to_string(data.join("reports.jsonl")) {
+        Ok(t) => t,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => return Err(e.to_string()),
+    };
+    for r in text
+        .lines()
+        .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
+    {
+        let s = |k: &str| r[k].as_str().unwrap_or_default().to_owned();
+        let at = r["at"].as_u64().unwrap_or(0) / 1000;
+        println!(
+            "{at}  {}  {}  {}\n    {}",
+            s("device"),
+            s("path"),
+            s("target"),
+            s("note")
+        );
+    }
+    if text.is_empty() {
+        println!("no reports");
     }
     Ok(())
 }

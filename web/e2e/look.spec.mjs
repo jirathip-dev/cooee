@@ -119,7 +119,7 @@ test("Settings: the look rows show the pick and open the look sheet", async ({ p
   await page.goto("/");
   await page.getByRole("button", { name: "settings" }).click();
   const rows = sheet(page).locator(".sr");
-  await expect(rows.locator(".sk")).toHaveText(["providers", "roots", "style", "sprites", "theme", "appearance", "colours"]);
+  await expect(rows.locator(".sk")).toHaveText(["providers", "roots", "style", "sprites", "theme", "appearance", "colours", "report a problem"]);
   await expect(rows.locator(".sv")).toHaveText(["modern", "on", "farm", "system · dark now", "dark farm · light farm"]);
   await shot(page, info, "settings-dark");
   await audit(page);

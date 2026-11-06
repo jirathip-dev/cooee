@@ -590,7 +590,7 @@ impl Cooee {
         Self::launch(dir, shed, config, "", Some((name.to_owned(), home)))
     }
 
-    fn command(&self) -> Command {
+    pub fn command(&self) -> Command {
         Self::command_for(&self.config, self.instance.as_ref())
     }
 

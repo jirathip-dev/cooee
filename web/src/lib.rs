@@ -202,7 +202,14 @@ async fn document(title: &str, #[default] child: Child<'_>) -> Result<impl View>
                 <script src="/look.js"></script>
                 <script type="module" src="/chat.js"></script>
             </head>
-            <body>(child)</body>
+            <body data-at=(now().to_string())>
+                (child)
+                <p id="ld" role="status" hidden=(true)>
+                    <span class="lw" data-w="loading"></span>
+                    <span class="ago"></span>
+                </p>
+                <p id="toast" role="status" hidden=(true)></p>
+            </body>
         </html>
     })
 }
@@ -217,12 +224,16 @@ fn short(folder: &Path) -> String {
     }
 }
 
+/// Now, in Unix ms.
+fn now() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
+}
+
 /// `now`, `5m`, `3h`, `2d` since `at` (Unix ms).
 fn age(at: u64) -> String {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| d.as_secs());
-    match now.saturating_sub(at / 1000) {
+    match (now() / 1000).saturating_sub(at / 1000) {
         s if s < 60 => "now".to_owned(),
         s if s < 3600 => format!("{}m", s / 60),
         s if s < 86_400 => format!("{}h", s / 3600),
@@ -263,6 +274,7 @@ async fn header(home: bool, tabs: Vec<(String, String)>, current: String) -> Res
                 <a class="brand" href="/">"cooee"</a>
             }
             nav(tabs: tabs, current: current)
+            <button type="button" class="gl" id="rf" aria-label="refresh">"↻"</button>
             <a
                 class="gl"
                 href=(if home { "#new" } else { "/#new" })
@@ -689,7 +701,9 @@ async fn plugin(tabs: Vec<(String, String)>, name: String, label: String) -> Res
     })
 }
 
-/// Pairing: the code `cooee pair` printed (`code` prefilled from its QR link; `bad` after a wrong one).
+/// Pairing, and the app's shell for an unpaired browser (#21): the look sheet, a pair hint and the composer off, no
+/// thread data. The code `cooee pair` printed (`code` prefilled from its QR link; `bad` after a wrong one), or a code
+/// asked for here and approved on the Mac.
 #[must_use]
 pub fn pair_page(cx: &Cx, code: String, bad: bool) -> impl View {
     view! { cx => pair(code: code, bad: bad) }
@@ -700,8 +714,22 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
     Ok(view! {
         document(
             title: "pair · cooee",
-            <header class="bar"><h1>"cooee"</h1></header>
+            <header class="bar">
+                <h1>"cooee"</h1>
+                <button
+                    type="button"
+                    class="gl"
+                    data-open="look"
+                    aria-label="look: theme and colours"
+                    aria-pressed="false"
+                >
+                    "◐"
+                </button>
+            </header>
             <main class="list">
+                <p class="hn">
+                    "This device isn't paired: threads and messages show once it is."
+                </p>
                 <form class="nf" method="post" action="/pair">
                     <div class="fh"><b>"pair this device"</b></div>
                     <p class="ds">
@@ -722,6 +750,35 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
                     <p class="err" hidden=(!bad)>
                         "That code is wrong or expired: run cooee pair again."
                     </p>
+                </form>
+                <section class="nf" id="ask">
+                    <div class="fh"><b>"or approve it on the Mac"</b></div>
+                    <p class="ds">
+                        "Ask for a code here, then approve it on the Mac with cooee pair and the code."
+                    </p>
+                    <button type="button" id="ask-go">"ask for a code"</button>
+                    <div id="ask-wait" hidden=(true)>
+                        <p class="code" id="ask-code"></p>
+                        <p class="hn">
+                            "on the Mac:"
+                            <code id="ask-cmd"></code>
+                            <button type="button" id="ask-copy">"copy"</button>
+                        </p>
+                        <p class="ds">"waiting for the Mac…"</p>
+                        <button type="button" class="cn" id="ask-cancel">
+                            "cancel"
+                        </button>
+                    </div>
+                    <p class="err" id="ask-err" hidden=(true)></p>
+                </section>
+                <form class="tw" id="locked">
+                    <textarea
+                        rows="1"
+                        aria-label="message"
+                        placeholder="pair this device to send"
+                        disabled=(true)
+                    ></textarea>
+                    <button type="submit" disabled=(true)>"send"</button>
                 </form>
             </main>
         )
