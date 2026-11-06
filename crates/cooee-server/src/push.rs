@@ -9,7 +9,7 @@ use std::{
     process::{Command, Stdio},
     sync::{Arc, Mutex, PoisonError},
     thread,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use aes_gcm::{
@@ -192,6 +192,41 @@ fn account(data: &Path) -> String {
     format!("vapid-{}", &hash[..16])
 }
 
+/// How long a `security` call may take: past it, an unseen keychain prompt (after a rebuild) is an error, not a
+/// wait for ever (herdsman#548).
+const KEYCHAIN: Duration = Duration::from_secs(5);
+
+/// Runs `security` with `input` on its stdin, for [`KEYCHAIN`] at most: whether it succeeded, and its stdout.
+fn security(args: &[&str], input: &str) -> io::Result<(bool, String)> {
+    let mut child = Command::new("security")
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()?;
+    child
+        .stdin
+        .take()
+        .map(|mut i| i.write_all(input.as_bytes()));
+    let deadline = Instant::now() + KEYCHAIN;
+    while child.try_wait()?.is_none() {
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "the keychain didn't answer in 5 s: unlock it, or allow cooee in Keychain Access",
+            ));
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+    let out = child.wait_with_output()?;
+    Ok((
+        out.status.success(),
+        String::from_utf8_lossy(&out.stdout).trim().to_owned(),
+    ))
+}
+
 /// The VAPID key already stored for `data`, if any.
 fn find_key(data: &Path) -> io::Result<Option<String>> {
     if cfg!(target_os = "macos") {
@@ -203,11 +238,8 @@ fn find_key(data: &Path) -> io::Result<Option<String>> {
             &account(data),
             "-w",
         ];
-        let out = Command::new("security").args(find).output()?;
-        return Ok(out
-            .status
-            .success()
-            .then(|| String::from_utf8_lossy(&out.stdout).trim().to_owned()));
+        let (found, key) = security(&find, "")?;
+        return Ok(found.then_some(key));
     }
     match std::fs::read_to_string(data.join("vapid.key")) {
         Ok(k) => Ok(Some(k.trim().to_owned())),
@@ -224,16 +256,9 @@ fn stored_key(data: &Path) -> io::Result<String> {
     if cfg!(target_os = "macos") {
         let k = B64.encode(new_key()?.to_bytes());
         // `-i` reads the command from stdin, so the key never shows in a process list.
-        let mut add = Command::new("security")
-            .arg("-i")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::null())
-            .spawn()?;
-        if let Some(mut stdin) = add.stdin.take() {
-            let a = account(data);
-            writeln!(stdin, "add-generic-password -U -s cooee -a {a} -w {k}")?;
-        }
-        if !add.wait()?.success() {
+        let a = account(data);
+        let add = format!("add-generic-password -U -s cooee -a {a} -w {k}\n");
+        if !security(&["-i"], &add)?.0 {
             return Err(io::Error::other(
                 "can't store the VAPID key in the keychain",
             ));
@@ -438,7 +463,7 @@ mod tests {
             .map(|i| {
                 let code = devices.pair(i).unwrap();
                 let token = devices.claim(&code, "x", i).unwrap().unwrap();
-                devices.find(&token, i).unwrap().id
+                devices.find(&token, i).unwrap().unwrap().id
             })
             .collect();
         let (hits, got) = mpsc::channel();

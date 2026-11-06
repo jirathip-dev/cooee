@@ -9,6 +9,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
     thread,
+    time::Duration,
 };
 
 use cooee_core::{
@@ -54,6 +55,9 @@ pub struct Logins {
     providers: Vec<Provider>,
     accounts: Accounts,
     live: Mutex<BTreeMap<String, Login>>,
+    /// Every provider's accounts and their status as last checked: a page load never runs a status command
+    /// itself (herdsman#337). Checked at start, every 30 s, and after a login, sign-out or new default.
+    sheets: Mutex<Vec<Sheet>>,
 }
 
 impl Logins {
@@ -65,6 +69,15 @@ impl Logins {
             providers,
             accounts: Accounts::new(data),
             live: Mutex::new(BTreeMap::new()),
+            sheets: Mutex::new(Vec::new()),
+        });
+        logins.check();
+        let checker = Arc::clone(&logins);
+        thread::spawn(move || {
+            loop {
+                thread::sleep(Duration::from_secs(30));
+                checker.check();
+            }
         });
         let shed = logins.shed.clone();
         thread::spawn(move || {
@@ -96,10 +109,21 @@ impl Logins {
         }
     }
 
-    /// Every provider with its accounts' status, checked in parallel.
+    /// Every provider with its accounts' status, as last checked, and how its last login ended.
     #[must_use]
     pub fn statuses(&self) -> Vec<Sheet> {
-        thread::scope(|s| {
+        let mut sheets = lock(&self.sheets).clone();
+        for sheet in &mut sheets {
+            if let Some(Login::Ended(why, _)) = lock(&self.live).get(&sheet.provider.name) {
+                sheet.why = Some(why.clone());
+            }
+        }
+        sheets
+    }
+
+    /// Checks every provider's accounts' status again, in parallel.
+    fn check(&self) {
+        let sheets = thread::scope(|s| {
             let checks: Vec<_> = self
                 .providers
                 .iter()
@@ -121,18 +145,15 @@ impl Logins {
                     if p.missing() {
                         accounts.truncate(1);
                     }
-                    let why = match lock(&self.live).get(&p.name) {
-                        Some(Login::Ended(why, _)) => Some(why.clone()),
-                        _ => None,
-                    };
                     Sheet {
                         provider: p.clone(),
                         accounts,
-                        why,
+                        why: None,
                     }
                 })
                 .collect()
-        })
+        });
+        *lock(&self.sheets) = sheets;
     }
 
     /// Starts provider `name`'s login command in a new shed terminal (a running one is kept): for account
@@ -224,6 +245,7 @@ impl Logins {
         } else if ok && !signed_in {
             "the login command finished, but the account isn't signed in".clone_into(&mut why);
         }
+        self.check();
         let mut live = lock(&self.live);
         if matches!(live.get(name), Some(Login::Running(t)) if t == terminal) {
             let account = if new && !signed_in { "" } else { account };
@@ -303,6 +325,7 @@ impl Logins {
                 .remove(name, account)
                 .map_err(|e| HubError::Refused(e.to_string()))?;
         }
+        self.check();
         out.map_err(|e| HubError::Refused(format!("{} sign-out: {e}", a.label())))
     }
 
@@ -315,7 +338,9 @@ impl Logins {
         self.account(name, account)?;
         self.accounts
             .set_default(name, account)
-            .map_err(|e| HubError::Refused(e.to_string()))
+            .map_err(|e| HubError::Refused(e.to_string()))?;
+        self.check();
+        Ok(())
     }
 
     /// What a thread of ACP agent `agent` runs with: its account's label (empty for an agent no provider signs

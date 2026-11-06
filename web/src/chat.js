@@ -32,12 +32,16 @@ function toast(text, bad) {
 }
 $("#toast")?.addEventListener("click", (e) => { e.currentTarget.hidden = true; });
 
-// The loading strip: thin, under the header, never in the way of a tap; `at` (an old copy's time) adds its age.
+// The loading strip: thin, under the header, never in the way of a tap, and only once a load takes 300 ms (a quick
+// one shows nothing); `at` (an old copy's time) adds its age.
 const ago = (at) => { const m = Math.round((Date.now() - at) / 60000); return m < 1 ? "just now" : m < 120 ? `${m}m ago` : `${Math.round(m / 60)}h ago`; };
 let copyAt = Date.now() - Number(document.body.dataset.at) > 120000 ? Number(document.body.dataset.at) : 0;
-function strip(loading) {
+let stripTimer = 0;
+function strip(loading, now) {
   const s = $("#ld");
   if (!s) return;
+  clearTimeout(stripTimer);
+  if (loading && !now) { stripTimer = setTimeout(() => strip(true, true), 300); return; }
   s.hidden = !loading && !copyAt;
   s.classList.toggle("run", loading);
   $(".ago", s).textContent = copyAt ? `as of ${ago(copyAt)}` : "";
@@ -96,7 +100,9 @@ if (form) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = new FormData(form), err = $("#new-err");
-    const body = { agent: f.get("agent"), account: f.get(`account:${f.get("agent")}`), folder: f.get("folder"), text: f.get("text"), random_id: rid() };
+    // One id per start until it succeeds, so a retry after a timeout adopts the thread it started.
+    form.dataset.rid ||= rid();
+    const body = { agent: f.get("agent"), account: f.get(`account:${f.get("agent")}`), folder: f.get("folder"), text: f.get("text"), random_id: form.dataset.rid };
     form.querySelector("button[type=submit]").disabled = true;
     try { location.href = `/t/${(await post("/threads", body)).id}`; } catch (x) {
       err.textContent = x.message; err.hidden = false;

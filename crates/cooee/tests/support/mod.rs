@@ -74,9 +74,11 @@ pub struct FakeShed {
 }
 
 const CLI: &str = r#"#!/bin/sh
-# The fake `shed` CLI: `agents` lists one agent; `run` records its arguments and prints the terminal; `machine ls`
-# prints machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline.
-printf '%s\n' "$*" >>"$(dirname "$0")/cli.log"
+# The fake `shed` CLI: `agents` lists one agent; `run` records its arguments and prints the terminal (it waits while
+# the gate `hold-run` is shut, and fails, as a slow start's CLI would, while `run-fails` is); `machine ls` prints
+# machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline.
+gates=$(dirname "$0")
+printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
 *" machine ls") cat "$(dirname "$0")/machines.json" 2>/dev/null || echo '[]' ;;
 *" machine stats"*)
@@ -86,6 +88,8 @@ case "$*" in
   if grep -q '"online":false' "$f"; then exit 1; fi ;;
 *" agents") echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
 *" run "*)
+  while [ -e "$gates/hold-run" ]; do sleep 0.02; done
+  [ -e "$gates/run-fails" ] && { echo 'fake shed: timed out' >&2; exit 1; }
   while [ $# -gt 0 ]; do [ "$1" = --name ] && name=$2; shift; done
   printf '{"name":"%s","labels":{},"cwd":"/","cmd":[],"keep":false,"state":"running","exit":null,"pid":1,"acp":"fake-acp"}\n' "$name" ;;
 *) echo "fake shed: $*" >&2; exit 2 ;;
@@ -117,6 +121,41 @@ impl FakeShed {
             }
         });
         shed
+    }
+
+    /// Shuts (`true`) or opens gate `name`: `hold-run` and `run-fails` for the CLI's `run`, `hold-ready` (the
+    /// session-ready `wait` waits), `ready-timeout` (it times out) and `hang-send` (every `send` waits).
+    pub fn gate(&self, name: &str, shut: bool) {
+        let path = self.dir.join(name);
+        if shut {
+            fs::write(path, "").unwrap();
+        } else {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    fn hold(&self, gate: &str) {
+        while self.dir.join(gate).exists() {
+            thread::sleep(Duration::from_millis(20));
+        }
+    }
+
+    /// Terminal `name`'s agent asks before an edit, as it might while it starts.
+    pub fn ask(&self, name: &str) {
+        let option = |id: &str| ApprovalOption {
+            id: id.to_owned(),
+            name: id.to_owned(),
+            kind: String::new(),
+        };
+        let tool = "Edit early.rs".to_owned();
+        let options = vec![option("allow"), option("reject")];
+        self.emit(name, EventKind::ApprovalRequest { tool, options });
+        self.report(name, "blocked", Some("Edit early.rs"));
+    }
+
+    /// Terminal `name` is gone, as after a shed restart.
+    pub fn vanish(&self, name: &str) {
+        self.shared.lock().unwrap().gone.insert(name.to_owned());
     }
 
     /// The fake CLI's argument lines.
@@ -294,6 +333,28 @@ impl FakeShed {
         Ok(Self::info(name, running, s.reported.get(name).cloned()))
     }
 
+    /// The session-ready `wait`: held while `hold-ready` is shut, timed out while `ready-timeout` is.
+    fn ready_wait(&self, name: &str) -> Result<Value, RpcError> {
+        self.hold("hold-ready");
+        let outcome = if self.dir.join("ready-timeout").exists() {
+            "timeout"
+        } else {
+            "matched"
+        };
+        let t = self.terminal(name)?;
+        Ok(json!({ "outcome": outcome, "terminal": t }))
+    }
+
+    /// `send`: held while `hang-send` is shut; refused for a terminal that is gone.
+    fn send(&self, name: &str, text: &str) -> Result<Value, RpcError> {
+        self.hold("hang-send");
+        self.terminal(name)?;
+        if !self.type_in(name, text) {
+            self.input(name, text);
+        }
+        Ok(json!({}))
+    }
+
     fn serve(&self, conn: std::os::unix::net::UnixStream) {
         let mut writer = conn.try_clone().unwrap();
         let mut lines = BufReader::new(conn).lines();
@@ -332,21 +393,13 @@ impl FakeShed {
                     Ok(json!({}))
                 }
                 "wait" if req.params["output"].is_null() => Ok(self.wait_exit(&name)),
-                "wait" => self
-                    .terminal(&name)
-                    .map(|t| json!({ "outcome": "matched", "terminal": t })),
+                "wait" => self.ready_wait(&name),
                 "state" => {
                     let note = req.params["note"].as_str();
                     self.report(&name, req.params["state"].as_str().unwrap(), note);
                     self.terminal(&name)
                 }
-                "send" => {
-                    let text = req.params["text"].as_str().unwrap();
-                    if !self.type_in(&name, text) {
-                        self.input(&name, text);
-                    }
-                    Ok(json!({}))
-                }
+                "send" => self.send(&name, req.params["text"].as_str().unwrap()),
                 "kill" => {
                     let procs = self.procs.by_name.lock().unwrap();
                     if let Some(p) = procs.get(&name).filter(|p| p.exit.is_none()) {
@@ -584,8 +637,13 @@ impl Cooee {
 
     /// [`Cooee::start`] with more config lines.
     pub fn start_with(dir: &Path, shed: &Path, extra: &str) -> Self {
+        Self::start_env(dir, shed, extra, &[])
+    }
+
+    /// [`Cooee::start_with`] with these variables set for `cooee serve`.
+    pub fn start_env(dir: &Path, shed: &Path, extra: &str, env: &[(&str, &str)]) -> Self {
         let data = format!("data = {:?}\n{extra}", dir.join("data").to_string_lossy());
-        Self::launch(dir, shed, dir.join("config.toml"), &data, None)
+        Self::launch(dir, shed, dir.join("config.toml"), &data, None, env)
     }
 
     /// `cooee serve --instance <name>` with `HOME` at `dir/home`: its config at the instance's default path, its
@@ -594,7 +652,7 @@ impl Cooee {
         let home = dir.join("home");
         let config = home.join(".config/cooee").join(name).join("config.toml");
         fs::create_dir_all(config.parent().unwrap()).unwrap();
-        Self::launch(dir, shed, config, "", Some((name.to_owned(), home)))
+        Self::launch(dir, shed, config, "", Some((name.to_owned(), home)), &[])
     }
 
     pub fn command(&self) -> Command {
@@ -620,6 +678,7 @@ impl Cooee {
         config: PathBuf,
         extra: &str,
         instance: Option<(String, PathBuf)>,
+        env: &[(&str, &str)],
     ) -> Self {
         let root = dir.join("root");
         fs::create_dir_all(root.join("project")).unwrap();
@@ -645,6 +704,7 @@ shed_dir = {}
         fs::write(&config, toml).unwrap();
         let mut child = Self::command_for(&config, instance.as_ref())
             .arg("serve")
+            .envs(env.iter().copied())
             .stdout(Stdio::piped())
             .stderr(fs::File::create(dir.join("cooee.err")).unwrap())
             .spawn()

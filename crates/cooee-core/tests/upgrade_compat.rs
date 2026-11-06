@@ -1,6 +1,6 @@
 //! Upgrade compatibility: every release's thread files in `tests/fixtures/upgrade/<version>/` still load, and nothing
 //! in them is lost when this build reads and writes them back. A release that changes the format adds its own
-//! fixture folder; old ones are never edited.
+//! fixture folder; old ones are never edited. Each release's `config.toml` loads too.
 
 use std::{env, fs, path::Path};
 
@@ -38,4 +38,21 @@ fn every_earlier_release_loads_without_losing_data() {
         }
     }
     assert!(checked >= 2, "fixtures missing under {}", root.display());
+}
+
+/// R2 (herdsman#539): every release's `config.toml` still loads, so an upgrade never stops the service on a key it
+/// used to read. A release that retires a key must keep reading it (with a warning) before this test passes again.
+#[test]
+fn every_earlier_release_config_loads() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/upgrade");
+    let mut checked = 0;
+    for release in fs::read_dir(&root).unwrap() {
+        let config = release.unwrap().path().join("config.toml");
+        if config.exists() {
+            let c = cooee_core::Config::load(&config).unwrap_or_else(|e| panic!("{e}"));
+            assert_eq!(c.port, 4747, "{}", config.display());
+            checked += 1;
+        }
+    }
+    assert!(checked >= 1, "no config fixture under {}", root.display());
 }
