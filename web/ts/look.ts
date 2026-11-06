@@ -83,6 +83,9 @@ const read = (): Pick => {
     const [k, v] = kv.split(":");
     if (k && v) pick[k as Key] = v;
   }
+  // A theme being built shows in its preview's frames (`?preview=<name>`).
+  const preview = new URLSearchParams(location.search).get("preview");
+  if (preview) pick.theme = `dev.${preview}`;
   return pick;
 };
 let pick = read();
@@ -430,3 +433,11 @@ document.addEventListener("visibilitychange", () => {
 });
 html.dataset.mode = mode();
 marks();
+// A theme's live preview (/themes/dev/<name>) reloads on each save.
+const building = $("[data-preview]")?.dataset.preview;
+if (building) {
+  const saves = new EventSource(`/themes/dev/${building}/events`);
+  saves.addEventListener("saved", () => location.reload());
+  // [keep] moves it away: no reload races the form.
+  addEventListener("submit", () => saves.close());
+}

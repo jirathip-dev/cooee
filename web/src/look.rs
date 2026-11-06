@@ -1,7 +1,8 @@
-//! Themes and colour schemes on herdsman's data-only theme contract (docs/themes.md): a theme is a folder of data
-//! (`theme.json`, optional `sprites.svg` and `icon.png`), a scheme one JSON file of tokens. The built-in ones ship in
-//! the binary; the owner's own come from `<config dir>/themes/<name>/` and `<config dir>/schemes/<name>.json`. Every
-//! scheme passes herdsman's contrast gate, or it is refused.
+//! Themes and colour schemes on herdsman's data-only theme contract (docs/themes.md): a theme is a pack, a folder of
+//! data (`theme.json`, optional `sprites.svg`, `scene.svg`, `icon.png` and `schemes/`), a scheme one JSON file of
+//! tokens. Only the plain theme and the schemes ship in the binary; packs come from `<config dir>/themes/<name>/`
+//! (installed or kept), the ones being built from `<config dir>/themes-dev/<name>/`, and own schemes from
+//! `<config dir>/schemes/<name>.json`. Every pack passes the theme gate ([`read_pack`]), or it is refused.
 
 use std::{collections::BTreeMap, fs, path::Path};
 
@@ -41,6 +42,9 @@ pub struct Theme {
     /// Plays the row moments.
     #[serde(default)]
     pub moments: bool,
+    /// The Scene's layers: element ids in `scene.svg` (`viewBox="0 0 390 320"`); none: no scene.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub scene: Vec<String>,
     /// The theme's word per state key (`working needs done fail idle merged loading empty-threads`); a missing key
     /// says the plain word.
     #[serde(default)]
@@ -51,6 +55,9 @@ pub struct Theme {
     /// `icon.png`, the home-screen icon and favicon.
     #[serde(skip)]
     pub icon: Option<Vec<u8>>,
+    /// `scene.svg`, when it has a scene.
+    #[serde(skip)]
+    pub scene_art: Option<Vec<u8>>,
 }
 
 /// The plain word for a state key: what every theme says beside its own word, and all the terminal theme says.
@@ -106,6 +113,10 @@ pub struct Looks {
     pub themes: BTreeMap<String, Theme>,
     /// By file name.
     pub schemes: BTreeMap<String, Scheme>,
+    /// The themes being built in `themes-dev/`, each with the ways it fails the theme gate (none: it passes, and it
+    /// shows as theme `dev.<name>`).
+    #[serde(skip)]
+    pub dev: BTreeMap<String, Vec<String>>,
 }
 
 macro_rules! builtin_theme {
@@ -133,21 +144,8 @@ type Builtin = (
     &'static [u8],
 );
 
-pub(crate) const THEMES: [Builtin; 4] = [
-    builtin_theme!(
-        "farm",
-        Some(include_bytes!("../themes/farm/sprites.svg").as_slice())
-    ),
-    builtin_theme!(
-        "kitchen",
-        Some(include_bytes!("../themes/kitchen/sprites.svg").as_slice())
-    ),
-    builtin_theme!(
-        "garden",
-        Some(include_bytes!("../themes/garden/sprites.svg").as_slice())
-    ),
-    builtin_theme!("terminal", None),
-];
+/// The plain theme, the only built-in one.
+const THEMES: [Builtin; 1] = [builtin_theme!("terminal", None)];
 
 pub(crate) const SCHEMES: [(&str, &str); 12] = builtin_scheme!(
     "github-dark",
@@ -173,9 +171,10 @@ fn valid_name(name: &str) -> bool {
 }
 
 impl Looks {
-    /// The built-in themes and schemes, then the owner's own from `config_dir` (an own one of the same name
-    /// replaces a built-in). `default` is the server's default theme (else farm). Returns why each own file was
-    /// refused (unreadable, invalid, failing the gate, a theme naming an unknown scheme, a missing sprite sheet).
+    /// The built-in theme and schemes, then the owner's own from `config_dir`: schemes, the packs in `themes/` (an own
+    /// one of the same name replaces a built-in; a pack's own schemes join the rest) and the ones in `themes-dev/`.
+    /// `default` is the server's default theme (else farm, when it is installed, else plain). Returns why each own
+    /// file was refused (unreadable, invalid, failing the gate).
     ///
     /// # Panics
     ///
@@ -183,10 +182,7 @@ impl Looks {
     #[must_use]
     pub fn load(config_dir: Option<&Path>, default: Option<&str>) -> (Self, Vec<String>) {
         let mut refused = Vec::new();
-        let mut schemes: BTreeMap<String, Scheme> = SCHEMES
-            .iter()
-            .map(|(n, json)| ((*n).to_owned(), serde_json::from_str(json).expect(n)))
-            .collect();
+        let mut schemes = builtin_schemes();
         let mut themes: BTreeMap<String, Theme> = THEMES
             .iter()
             .map(|(n, json, sprites, icon)| {
@@ -196,6 +192,7 @@ impl Looks {
                 ((*n).to_owned(), t)
             })
             .collect();
+        let mut dev = BTreeMap::new();
         if let Some(dir) = config_dir {
             for (name, path) in entries(&dir.join("schemes"), &mut refused) {
                 let Some(name) = name.strip_suffix(".json") else {
@@ -208,30 +205,201 @@ impl Looks {
                 }
             }
             for (name, path) in entries(&dir.join("themes"), &mut refused) {
-                match read_theme(&path, &schemes) {
-                    Ok(t) if valid_name(&name) => drop(themes.insert(name, t)),
-                    Ok(_) => refused.push(format!("{}: not a-z, 0-9 and -", path.display())),
-                    Err(e) => refused.push(format!("{}: {e}", path.display())),
+                match read_pack(&path, &schemes) {
+                    _ if !valid_name(&name) => {
+                        refused.push(format!("{}: not a-z, 0-9 and -", path.display()));
+                    }
+                    Ok((t, own)) => {
+                        schemes.extend(own);
+                        themes.insert(name, t);
+                    }
+                    Err(e) => refused.push(format!("{}: {}", path.display(), e.join("; "))),
+                }
+            }
+            for (name, path) in entries(&dir.join("themes-dev"), &mut refused) {
+                let pack = read_pack(&path, &schemes).map(|(mut t, own)| {
+                    // Its own schemes as `dev.<name>.<scheme>`, out of the way of the installed ones.
+                    for (n, s) in own {
+                        let key = format!("dev.{name}.{n}");
+                        for p in [&mut t.scheme.dark, &mut t.scheme.light] {
+                            if *p == n {
+                                p.clone_from(&key);
+                            }
+                        }
+                        schemes.insert(key, s);
+                    }
+                    themes.insert(format!("dev.{name}"), t);
+                });
+                if valid_name(&name) {
+                    dev.insert(name, pack.err().unwrap_or_default());
                 }
             }
         }
+        let fallback = if themes.contains_key("farm") {
+            "farm"
+        } else {
+            "terminal"
+        };
         let default = match default {
             Some(d) if themes.contains_key(d) => d.to_owned(),
             Some(d) => {
-                refused.push(format!("theme = {d:?}: no such theme, showing farm"));
-                "farm".to_owned()
+                refused.push(format!("theme = {d:?}: no such theme, showing {fallback}"));
+                fallback.to_owned()
             }
-            None => "farm".to_owned(),
+            None => fallback.to_owned(),
         };
         (
             Self {
                 default,
                 themes,
                 schemes,
+                dev,
             },
             refused,
         )
     }
+}
+
+fn builtin_schemes() -> BTreeMap<String, Scheme> {
+    SCHEMES
+        .iter()
+        .map(|(n, json)| ((*n).to_owned(), serde_json::from_str(json).expect(n)))
+        .collect()
+}
+
+/// The state keys a theme may word.
+pub const WORDS: [&str; 9] = [
+    "working",
+    "needs",
+    "done",
+    "fail",
+    "idle",
+    "ended",
+    "merged",
+    "loading",
+    "empty-threads",
+];
+
+/// The symbols `sprites.svg` must hold: `s-<state>`.
+pub const SPRITES: [&str; 10] = [
+    "edit", "read", "run", "idle", "done", "needs", "merged", "fail", "loading", "empty",
+];
+
+/// The Scene's art size, as herdsman's `scene.svg`.
+pub const SCENE: &str = "0 0 390 320";
+
+/// Pack file `name`, if it is there; one over its size limit fails the gate.
+fn file(dir: &Path, name: &str, fails: &mut Vec<String>) -> Option<Vec<u8>> {
+    let bytes = fs::read(dir.join(name)).ok()?;
+    let max = match name {
+        "sprites.svg" => 512,
+        "scene.svg" | "icon.png" => 256,
+        _ => 16,
+    };
+    if bytes.len() > max << 10 {
+        fails.push(format!(
+            "{name}: {} KiB (max {max} KiB)",
+            bytes.len().div_ceil(1024)
+        ));
+    }
+    Some(bytes)
+}
+
+/// The theme gate (`cooee theme check`, CI, and every load): the pack in `dir` as a theme with its own schemes, or
+/// every way it fails: `theme.json`, the word keys, each scheme's mode and contrast (WCAG AA, as herdsman's gate), the
+/// sprites' required states, the scene's size and layers, and the files' sizes. Its theme may name its own schemes
+/// or one of `schemes`.
+///
+/// # Errors
+///
+/// Every check that fails, one line each.
+pub fn read_pack(
+    dir: &Path,
+    schemes: &BTreeMap<String, Scheme>,
+) -> Result<(Theme, BTreeMap<String, Scheme>), Vec<String>> {
+    let mut fails = Vec::new();
+    let json = file(dir, "theme.json", &mut fails).ok_or(vec!["theme.json: missing".to_owned()])?;
+    let mut t: Theme =
+        serde_json::from_slice(&json).map_err(|e| vec![format!("theme.json: {e}")])?;
+    for k in t.words.keys().filter(|k| !WORDS.contains(&k.as_str())) {
+        fails.push(format!("words.{k}: not one of {}", WORDS.join(" ")));
+    }
+    let mut own = BTreeMap::new();
+    for (name, path) in entries(&dir.join("schemes"), &mut fails) {
+        let Some(n) = name.strip_suffix(".json") else {
+            continue;
+        };
+        let _ = file(dir, &format!("schemes/{name}"), &mut fails);
+        match read_scheme(&path).and_then(|s| gate(&s).map(|()| s)) {
+            Ok(s) if valid_name(n) => drop(own.insert(n.to_owned(), s)),
+            Ok(_) => fails.push(format!("schemes/{name}: not a-z, 0-9 and -")),
+            Err(e) => fails.push(format!("schemes/{name}: {e}")),
+        }
+    }
+    for (mode, name) in [("dark", &t.scheme.dark), ("light", &t.scheme.light)] {
+        match own.get(name).or_else(|| schemes.get(name)) {
+            Some(s) if s.color_scheme != mode => {
+                fails.push(format!("scheme.{mode} {name:?} is not a {mode} scheme"));
+            }
+            Some(s) => {
+                if let Err(e) = gate(s) {
+                    fails.push(format!("scheme.{mode} {name:?} {e}"));
+                }
+            }
+            None => fails.push(format!("scheme.{mode} {name:?}: no such scheme")),
+        }
+    }
+    if t.sprites {
+        let svg = file(dir, "sprites.svg", &mut fails);
+        let text = String::from_utf8_lossy(svg.as_deref().unwrap_or_default());
+        let missing: Vec<String> = SPRITES
+            .iter()
+            .filter(|s| !text.contains(&format!("id=\"s-{s}\"")))
+            .map(|s| format!("s-{s}"))
+            .collect();
+        if svg.is_none() {
+            fails.push("sprites.svg: missing (theme.json says sprites)".to_owned());
+        } else if !missing.is_empty() {
+            fails.push(format!("sprites.svg: no {}", missing.join(", ")));
+        }
+        t.sprite_sheet = svg;
+    }
+    if !t.scene.is_empty() {
+        let svg = file(dir, "scene.svg", &mut fails);
+        let text = String::from_utf8_lossy(svg.as_deref().unwrap_or_default());
+        let view = text
+            .split_once("viewBox=\"")
+            .and_then(|(_, v)| v.split_once('"'))
+            .map(|(v, _)| v);
+        if svg.is_none() {
+            fails.push("scene.svg: missing (theme.json says scene)".to_owned());
+        } else if view != Some(SCENE) {
+            fails.push(format!("scene.svg: viewBox {view:?}, not {SCENE:?}"));
+        }
+        for l in t
+            .scene
+            .iter()
+            .filter(|l| !text.contains(&format!("id=\"{l}\"")))
+        {
+            fails.push(format!("scene.svg: no layer {l:?}"));
+        }
+        t.scene_art = svg;
+    }
+    t.icon = file(dir, "icon.png", &mut fails);
+    if fails.is_empty() {
+        Ok((t, own))
+    } else {
+        Err(fails)
+    }
+}
+
+/// The theme gate on the pack in `dir`, with the built-in schemes: what `cooee theme check` and CI run.
+///
+/// # Errors
+///
+/// Every check that fails.
+pub fn check(dir: &Path) -> Result<(), Vec<String>> {
+    read_pack(dir, &builtin_schemes()).map(drop)
 }
 
 /// A folder's entries by name, sorted; a missing folder has none.
@@ -262,24 +430,6 @@ fn read_scheme(path: &Path) -> Result<Scheme, String> {
         ));
     }
     Ok(s)
-}
-
-fn read_theme(dir: &Path, schemes: &BTreeMap<String, Scheme>) -> Result<Theme, String> {
-    let text = fs::read_to_string(dir.join("theme.json")).map_err(|e| e.to_string())?;
-    let mut t: Theme = serde_json::from_str(&text).map_err(|e| e.to_string())?;
-    for (mode, name) in [("dark", &t.scheme.dark), ("light", &t.scheme.light)] {
-        match schemes.get(name) {
-            Some(s) if s.color_scheme == mode => {}
-            Some(_) => return Err(format!("scheme.{mode} {name:?} is not a {mode} scheme")),
-            None => return Err(format!("scheme.{mode} {name:?}: no such scheme")),
-        }
-    }
-    if t.sprites {
-        t.sprite_sheet =
-            Some(fs::read(dir.join("sprites.svg")).map_err(|e| format!("sprites.svg: {e}"))?);
-    }
-    t.icon = fs::read(dir.join("icon.png")).ok();
-    Ok(t)
 }
 
 /// The tokens every scheme sets: the ones the gate checks.
@@ -455,38 +605,161 @@ mod tests {
         dir
     }
 
+    fn packs() -> std::path::PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../packs")
+    }
+
     #[test]
-    fn builtins_load_and_pass_the_gate() {
+    fn only_plain_is_built_in_and_the_first_party_packs_load_installed() {
         let (looks, refused) = Looks::load(None, None);
+        assert_eq!(refused, Vec::<String>::new());
+        assert_eq!(looks.default, "terminal");
+        assert_eq!(looks.themes.keys().collect::<Vec<_>>(), ["terminal"]);
+        assert_eq!(looks.schemes.len(), 12);
+        for (name, s) in &looks.schemes {
+            assert_eq!(gate(s), Ok(()), "{name}");
+        }
+        // packs/ as a config folder: its themes/ are the first-party packs, installed.
+        let (looks, refused) = Looks::load(Some(&packs()), None);
         assert_eq!(refused, Vec::<String>::new());
         assert_eq!(looks.default, "farm");
         assert_eq!(
             looks.themes.keys().collect::<Vec<_>>(),
             ["farm", "garden", "kitchen", "terminal"]
         );
-        assert_eq!(looks.schemes.len(), 12);
-        for (name, s) in &looks.schemes {
-            assert_eq!(gate(s), Ok(()), "{name}");
-        }
-        for (name, t) in &looks.themes {
-            assert_eq!(looks.schemes[&t.scheme.dark].color_scheme, "dark", "{name}");
-            assert_eq!(
-                looks.schemes[&t.scheme.light].color_scheme, "light",
-                "{name}"
-            );
-            assert_eq!(t.sprites, t.sprite_sheet.is_some(), "{name}");
-            if let Some(svg) = &t.sprite_sheet {
-                let svg = String::from_utf8_lossy(svg);
-                for id in [
-                    "edit", "read", "run", "idle", "done", "needs", "merged", "fail", "loading",
-                    "empty",
-                ] {
-                    assert!(svg.contains(&format!("id=\"s-{id}\"")), "{name}: s-{id}");
-                }
-            }
-        }
+        assert!(
+            looks
+                .themes
+                .values()
+                .all(|t| t.sprites == t.sprite_sheet.is_some())
+        );
         assert_eq!(looks.themes["farm"].word("needs"), "at the gate");
         assert_eq!(looks.themes["terminal"].word("needs"), "needs you");
+    }
+
+    #[test]
+    fn the_theme_gate_passes_the_first_party_packs_and_the_starter() {
+        let mut dirs: Vec<_> = fs::read_dir(packs().join("themes"))
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .collect();
+        dirs.push(packs().join("starter"));
+        assert_eq!(dirs.len(), 4, "{dirs:?}");
+        for dir in dirs {
+            assert_eq!(check(&dir), Ok(()), "{}", dir.display());
+        }
+    }
+
+    /// farm's pack, copied to a fresh folder and changed by `edit`.
+    fn farm_with(name: &str, edit: impl FnOnce(&Path)) -> std::path::PathBuf {
+        let dir = tmp(name);
+        for f in ["theme.json", "sprites.svg", "icon.png"] {
+            fs::copy(packs().join("themes/farm").join(f), dir.join(f)).unwrap();
+        }
+        edit(&dir);
+        dir
+    }
+
+    fn set(dir: &Path, key: &str, value: serde_json::Value) {
+        let path = dir.join("theme.json");
+        let mut t: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        t[key] = value;
+        fs::write(path, t.to_string()).unwrap();
+    }
+
+    #[test]
+    fn the_theme_gate_fails_a_missing_state_low_contrast_an_oversize_scene_and_more() {
+        let fails = |dir: &Path| check(dir).unwrap_err().join("\n");
+        let gone = farm_with("gate-state", |d| {
+            let svg = fs::read_to_string(d.join("sprites.svg")).unwrap();
+            fs::write(
+                d.join("sprites.svg"),
+                svg.replace("id=\"s-needs\"", "id=\"x\""),
+            )
+            .unwrap();
+        });
+        assert_eq!(fails(&gone), "sprites.svg: no s-needs");
+        let murky = farm_with("gate-contrast", |d| {
+            let mut s: Scheme = serde_json::from_str(SCHEMES[0].1).unwrap();
+            s.tokens.insert("--fg".to_owned(), "#30363d".to_owned());
+            fs::create_dir_all(d.join("schemes")).unwrap();
+            fs::write(
+                d.join("schemes/murky.json"),
+                serde_json::to_string(&s).unwrap(),
+            )
+            .unwrap();
+            set(
+                d,
+                "scheme",
+                serde_json::json!({"dark": "murky", "light": "paper"}),
+            );
+        });
+        let got = fails(&murky);
+        assert!(
+            got.starts_with("schemes/murky.json: fails the contrast gate: --fg on --bg 1."),
+            "{got}"
+        );
+        assert!(
+            got.ends_with("scheme.dark \"murky\": no such scheme"),
+            "{got}"
+        );
+        let scene = |view: &str| {
+            format!(
+                "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{view}\"><g id=\"sky\"/></svg>"
+            )
+        };
+        let big = farm_with("gate-scene", |d| {
+            set(d, "scene", serde_json::json!(["sky", "ground"]));
+            fs::write(d.join("scene.svg"), scene("0 0 800 600")).unwrap();
+        });
+        assert_eq!(
+            fails(&big),
+            "scene.svg: viewBox Some(\"0 0 800 600\"), not \"0 0 390 320\"\nscene.svg: no layer \"ground\""
+        );
+        // The right size with every layer passes, and serves.
+        fs::write(
+            big.join("scene.svg"),
+            scene(SCENE).replace("/>", "/><g id=\"ground\"/>"),
+        )
+        .unwrap();
+        assert_eq!(check(&big), Ok(()));
+        let odd = farm_with("gate-words", |d| {
+            set(d, "words", serde_json::json!({"needs": "x", "horses": "y"}));
+            fs::write(d.join("icon.png"), vec![0; 300 << 10]).unwrap();
+        });
+        assert_eq!(
+            fails(&odd),
+            format!(
+                "words.horses: not one of {}\nicon.png: 300 KiB (max 256 KiB)",
+                WORDS.join(" ")
+            )
+        );
+    }
+
+    #[test]
+    fn a_theme_being_built_shows_as_dev_with_its_own_schemes_or_its_failures() {
+        let dir = tmp("dev");
+        let sea = dir.join("themes-dev/sea");
+        fs::create_dir_all(sea.join("schemes")).unwrap();
+        fs::write(
+            sea.join("theme.json"),
+            r#"{"label":"sea","scheme":{"dark":"deep","light":"paper"}}"#,
+        )
+        .unwrap();
+        fs::write(sea.join("schemes/deep.json"), SCHEMES[3].1).unwrap();
+        fs::create_dir_all(dir.join("themes-dev/bad")).unwrap();
+        fs::write(dir.join("themes-dev/bad/theme.json"), "{").unwrap();
+        let (looks, refused) = Looks::load(Some(&dir), None);
+        assert_eq!(refused, Vec::<String>::new());
+        assert_eq!(looks.themes["dev.sea"].scheme.dark, "dev.sea.deep");
+        assert!(looks.schemes.contains_key("dev.sea.deep") && !looks.schemes.contains_key("deep"));
+        assert_eq!(looks.dev["sea"], Vec::<String>::new());
+        assert!(
+            looks.dev["bad"][0].starts_with("theme.json: "),
+            "{:?}",
+            looks.dev
+        );
+        assert!(!looks.themes.contains_key("dev.bad"));
     }
 
     #[test]
@@ -559,14 +832,14 @@ mod tests {
         .unwrap();
         let (looks, refused) = Looks::load(Some(&dir), Some("nope"));
         assert!(!looks.themes.contains_key("bare"));
-        assert_eq!(looks.default, "farm");
+        assert_eq!(looks.default, "terminal");
         assert!(refused[0].contains("sprites.svg"), "{refused:?}");
         assert!(refused[1].contains("no such theme"), "{refused:?}");
     }
 
     #[test]
     fn push_body_says_the_theme_word_and_the_plain_word() {
-        let (looks, _) = Looks::load(None, None);
+        let (looks, _) = Looks::load(Some(&packs()), None);
         assert_eq!(
             looks.themes["farm"].push_body("needs", "codex: Edit src/pair.rs?"),
             "at the gate · needs you · codex: Edit src/pair.rs?"

@@ -2,7 +2,7 @@
 //! are the defaults) resolved against the looks, so the server draws the theme and scheme on the first byte. The
 //! marks (`[data-st]`, `[data-w]`, `[data-s]`) are drawn here as `look.ts` draws the ones a page adds later.
 
-use std::{collections::BTreeMap, fmt::Write as _};
+use std::{collections::BTreeMap, fmt::Write as _, sync::Arc};
 
 use crate::look::{Looks, Scheme, Theme, plain};
 
@@ -26,8 +26,8 @@ const STATES: [&str; 9] = [
 ];
 
 /// A device's pick against the looks.
-pub struct Shown<'a> {
-    looks: &'a Looks,
+pub struct Shown {
+    looks: Arc<Looks>,
     pick: BTreeMap<String, String>,
 }
 
@@ -83,10 +83,10 @@ fn declaration(k: &str, v: &str) -> Option<String> {
     (safe(name, "-_") && safe(v, "#-_.,()% ")).then(|| format!("{k}:{v};"))
 }
 
-impl<'a> Shown<'a> {
+impl Shown {
     /// The pick in `cookie` (the `Cookie` header's value, or none).
     #[must_use]
-    pub fn new(looks: &'a Looks, cookie: Option<&str>) -> Self {
+    pub fn new(looks: Arc<Looks>, cookie: Option<&str>) -> Self {
         let value = cookie
             .into_iter()
             .flat_map(|c| c.split(';'))
@@ -99,6 +99,19 @@ impl<'a> Shown<'a> {
             .map(|(k, v)| (k.to_owned(), v.to_owned()))
             .collect();
         Self { looks, pick }
+    }
+
+    /// The looks it picks from.
+    #[must_use]
+    pub fn looks(&self) -> &Looks {
+        &self.looks
+    }
+
+    /// The same pick showing theme `dev.<name>`, being built in `themes-dev/`, when it passes the gate.
+    #[must_use]
+    pub fn preview(mut self, name: &str) -> Self {
+        self.pick.insert("theme".to_owned(), format!("dev.{name}"));
+        self
     }
 
     fn get(&self, k: &str) -> Option<&str> {
@@ -298,15 +311,17 @@ impl<'a> Shown<'a> {
 mod tests {
     use super::*;
 
-    fn looks() -> Looks {
-        Looks::load(None, None).0
+    /// The built-in looks and the first-party packs, as installed.
+    fn looks() -> Arc<Looks> {
+        let packs = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../packs");
+        Arc::new(Looks::load(Some(&packs), None).0)
     }
 
     #[test]
     fn the_cookie_picks_the_theme_scheme_style_and_sprites() {
         let looks = looks();
         let cookie = "cooee=abc; cooee-look=theme:kitchen/style:terminal/sprites:off/mode:dark";
-        let s = Shown::new(&looks, Some(cookie));
+        let s = Shown::new(looks.clone(), Some(cookie));
         assert_eq!(
             (s.name(), s.style(), s.figs(), s.mode()),
             ("kitchen", "terminal", "off", Some("dark"))
@@ -319,7 +334,7 @@ mod tests {
             "<i class=\"sd\"></i><span class=\"thw\">the bell</span>"
         );
         // No pick: the default theme, System with both schemes.
-        let d = Shown::new(&looks, None);
+        let d = Shown::new(looks.clone(), None);
         assert_eq!(
             (d.name(), d.style(), d.figs(), d.mode()),
             ("farm", "modern", "on", None)
@@ -341,7 +356,10 @@ mod tests {
     #[test]
     fn a_bad_pick_falls_back_and_cant_break_out() {
         let looks = looks();
-        let s = Shown::new(&looks, Some("cooee-look=theme:nope/dark:paper/sprites:x"));
+        let s = Shown::new(
+            looks.clone(),
+            Some("cooee-look=theme:nope/dark:paper/sprites:x"),
+        );
         assert_eq!(s.name(), "farm");
         // A light scheme isn't a dark pick.
         assert_eq!(s.scheme("dark"), "farm");
@@ -356,7 +374,7 @@ mod tests {
     #[test]
     fn a_tap_gives_the_next_cookie() {
         let looks = looks();
-        let s = Shown::new(&looks, Some("cooee-look=theme:kitchen/mode:light"));
+        let s = Shown::new(looks.clone(), Some("cooee-look=theme:kitchen/mode:light"));
         assert_eq!(
             s.with("style", "terminal"),
             "mode:light/style:terminal/theme:kitchen"
