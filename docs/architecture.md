@@ -163,6 +163,11 @@ for the owner to run. `cooee doctor` checks the service, port, shed, push key an
 | `theme` | `farm` | The theme a device shows until it picks its own ([themes.md](themes.md)); own themes and schemes live in `themes/` and `schemes/` beside the config file. |
 | `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |
 | `plugin_index` | the built-in `plugins/index.toml` | The plugin index `cooee plugin add <name>` and Settings › Plugins list ([plugins.md](plugins.md)). |
+| `[perf] slow_ms` | `250` | A request taking this many ms or more is a `warn` line in `<data>/perf.log` and on stderr (#53). |
+
+`cooee serve` times every request (method, route pattern, status), every shed call (method, socket or CLI) and each
+prompt's first reply chunk (thread, agent) into `<data>/perf.log`, one JSON line each, never a prompt or a token;
+`cooee perf [--minutes 60]` prints p50/p95/max of each as a table.
 
 ## The app shell (#21, herdsman#553 rows 1–14)
 

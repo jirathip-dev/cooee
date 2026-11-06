@@ -37,7 +37,7 @@ use topcoat::{
         page, parse_query_params, path_param,
         request::{headers, method, uri},
         response::{IntoResponse, Response},
-        route,
+        route, try_endpoint,
     },
     view::View,
 };
@@ -174,6 +174,26 @@ impl Layer for Gate {
                     "pair this device first: run `cooee pair` on the machine",
                 ),
             }
+        })
+    }
+}
+
+/// Times every request (#53): its method, route pattern, status and duration go to `perf.log`.
+struct Timing;
+
+impl Layer for Timing {
+    fn path(&self) -> Option<&Path> {
+        None
+    }
+
+    fn handle<'a>(&'a self, cx: &'a Cx, body: Body, next: Next<'a>) -> LayerFuture<'a> {
+        Box::pin(async move {
+            let start = std::time::Instant::now();
+            let response = next.run(cx, body).await.into_response(cx)?;
+            let route = try_endpoint(cx).map_or("(none)", |e| e.path().as_str());
+            let status = response.status().as_u16();
+            cooee_core::perf::request(method(cx).as_str(), route, status, start);
+            Ok(response)
         })
     }
 }
@@ -1163,6 +1183,7 @@ pub fn router(
         hub: Arc::clone(&hub),
     };
     cooee_web::assets(Router::builder(), looks)
+        .layer(Timing)
         .layer(gate)
         .page(pairing)
         .route(pair)
@@ -1234,6 +1255,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     let data = config
         .data_dir()
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
+    cooee_core::perf::init(&data, config.perf.slow_ms)?;
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
     let (looks, refused) = cooee_web::Looks::load(config.dir.as_deref(), config.theme.as_deref());
     for why in refused {
