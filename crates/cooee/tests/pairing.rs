@@ -354,4 +354,15 @@ fn the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it() {
         head.contains("location: /\n") || head.ends_with("location: /"),
         "{head}"
     );
+    // A browser drops the tab, so `/\t/evil.example` would become `//evil.example`.
+    let (head, _) = c.raw(
+        "POST",
+        "/look",
+        &[form_type],
+        "to=%2F%09%2Fevil.example&theme=farm",
+    );
+    assert!(
+        head.contains("location: /\n") || head.ends_with("location: /"),
+        "{head}"
+    );
 }

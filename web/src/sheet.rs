@@ -370,7 +370,11 @@ pub async fn look_set(cx: &Cx, Form(t): Form<Tap>) -> Result<Response> {
         .find_map(|(k, v)| Some(look.with(k, v.as_deref()?)))
         .unwrap_or_default();
     // Back to a page of this server only.
-    let to = if t.to.starts_with('/') && !t.to.starts_with("//") && !t.to.contains('\\') {
+    let to = if t.to.starts_with('/')
+        && !t.to.starts_with("//")
+        && !t.to.contains('\\')
+        && !t.to.chars().any(char::is_control)
+    {
         t.to.as_str()
     } else {
         "/"
