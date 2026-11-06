@@ -4,7 +4,8 @@
 # pairing code (`cooee pair`) goes to $PAIR_CODE for pair.setup.mjs. One fake provider per viewport: its login prints
 # a link and reads a code (good-code signs it in), its status succeeds once signed in. The example plugin
 # (docs/plugins/hello) runs twice, as plugins `hello` and `other`, on $PORT + 1 and + 2. A fresh instance runs on
-# $PORT + 3. The main instance runs with HOME at the temp folder, so Settings › Folders browses it.
+# $PORT + 3. The main instance runs with HOME at the temp folder, so Settings › Folders browses it. The machines plugin
+# runs in it on $PORT + 4, the fake shed answering for this machine (24 h of samples) and an `air` that is offline.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -21,6 +22,19 @@ PORT=$other COOEE=$cooee TOKEN=other-token-0123456789 node docs/plugins/hello/se
 p2=$!
 trap 'kill "$fake" "$p1" "$p2" ${bare:-} 2>/dev/null' EXIT INT TERM
 while [ ! -S "$tmp/shed/shed.sock" ]; do sleep 0.1; done
+
+# The machines plugin's shed answers: a sample a minute for 24 h, swinging, and the Air offline for 40 minutes.
+now=$(date +%s)
+echo '[{"name":"air","target":"air.local"}]' >"$tmp/shed/machines.json"
+printf '{"machine":"air","online":false,"last_seen":%s}\n' $((now - 2400)) >"$tmp/shed/stats-air.json"
+awk -v now="$now" 'function s(t, i) {
+    return sprintf("{\"at\":%d,\"load_per_cpu\":%.2f,\"mem_pressure_pct\":%d,\"swap_used_mb\":%d,\"disk_free_mb\":%d,\"cpus\":10,\"uptime_s\":%d,\"terminals\":{\"working\":2,\"blocked\":1,\"exited\":4}}",
+      t, 0.3 + 0.25 * sin(i / 90), 55 + 15 * sin(i / 200), 512 + i % 300, 61440 - i, 86400 + i * 60)
+  }
+  BEGIN {
+    h = ""; for (i = 1; i < 1440; i++) h = h (i > 1 ? "," : "") s(now - 86400 + i * 60, i)
+    print substr(s(now, 1440), 1, length(s(now, 1440)) - 1) ",\"history\":[" h "]}"
+  }' >"$tmp/shed/stats-local.json"
 
 # One 1,000-message thread per viewport project, so their read marks don't meet.
 for id in long-390 long-1440; do
@@ -92,6 +106,13 @@ label = "Other"
 url = "http://127.0.0.1:$other"
 module = "/tab.js"
 token = "other-token-0123456789"
+
+[[plugins]]
+name = "machines"
+label = "Machines"
+url = "http://127.0.0.1:$((PORT + 4))"
+module = "/tab.js"
+token = "machines-token-0123456789"
 EOF
 mkdir -p "$(dirname "${PAIR_CODE:?}")"
 
