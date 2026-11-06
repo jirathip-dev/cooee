@@ -1,4 +1,4 @@
-//! cooee's core: configuration, threads, their store and chat, paired devices, provider sign-ins and accounts and the shed client. No HTTP.
+//! cooee's core: configuration, threads, their store and chat, paired devices, provider sign-ins and accounts, installed plugins and the shed client. No HTTP.
 
 #![forbid(unsafe_code)]
 
@@ -7,6 +7,7 @@ mod chat;
 mod config;
 mod devices;
 mod login;
+pub mod plugins;
 mod shed;
 mod store;
 

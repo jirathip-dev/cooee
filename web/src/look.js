@@ -140,7 +140,7 @@
       ${lists.join("")}<p class="lft">this device only · iOS keeps the icon it installed with</p>`;
   }
 
-  const SECTIONS = ["sign-ins", "folders", "look", "alerts", "devices", "report"];
+  const SECTIONS = ["sign-ins", "folders", "look", "alerts", "devices", "plugins", "report"];
   function settings() {
     const row = (k, v) => `<button type="button" class="sr" data-open="look"><span class="sk">${k}</span><span class="sv">${v}</span><i class="cv">▸</i></button>`;
     const m = pick.mode || "system";
@@ -152,6 +152,7 @@
       ${row("appearance", m === "system" ? `system · ${mode()} now` : m)}${row("colours", `dark ${label(scheme("dark"))} · light ${label(scheme("light"))}`)}
       <p class="ch" id="s-alerts">alerts</p><div id="s-alerts-box"></div>
       <p class="ch" id="s-devices">devices</p><div id="s-devices-box"></div>
+      <p class="ch" id="s-plugins">plugins</p><div id="s-plugins-box"></div>
       <p class="ch" id="s-report">report</p><button type="button" class="sr" data-report><span class="sk">report a problem</span><i class="cv">▸</i></button>`;
   }
 

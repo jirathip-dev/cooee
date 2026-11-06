@@ -120,6 +120,13 @@ runs in a sandboxed frame (an opaque origin with a strict Content-Security-Polic
 through the page around it and cooee's proxy (`/p/<name>/api/…`), which adds the plugin's token and drops the device's
 cookie. The backend posts pushes and choice cards back with that token; the owner's answer to a card goes to it.
 
+Plugins are installed like lazy.nvim's (#37): a git repo with a `cooee-plugin.toml`, added from the built-in index
+(`plugins/index.toml`) or by URL with `cooee plugin add` or Settings › Plugins. Each commit builds in its own folder
+and goes live only after its backend served its first tab's module; `plugins.lock` pins it and keeps the build before
+to roll back to. `cooee serve` runs every enabled backend as its child (`cooee-server/src/manage.rs`): restarts with
+backoff, 5 crashes in 10 minutes turn it off with an alert. [improve] puts an agent on a branch of the plugin's
+checkout; approving builds and swaps it in the same way.
+
 ## Configuration
 
 One TOML file per instance, `$XDG_CONFIG_HOME/cooee/<instance>/config.toml` (else `~/.config/cooee/<instance>/…`, or
@@ -144,6 +151,7 @@ for the owner to run. `cooee doctor` checks the service, port, shed, push key an
 | `providers` | Claude Code, Codex, Gemini | The sign-ins: `[[providers]]` with `name`, `agent` (its ACP agent id), `login`, `status` and `logout` (commands, as arrays), `install` and `home` (the CLI's config-folder variable; without it only the system default account). Setting it replaces the defaults. |
 | `theme` | `farm` | The theme a device shows until it picks its own ([themes.md](themes.md)); own themes and schemes live in `themes/` and `schemes/` beside the config file. |
 | `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |
+| `plugin_index` | the built-in `plugins/index.toml` | The plugin index `cooee plugin add <name>` and Settings › Plugins list ([plugins.md](plugins.md)). |
 
 ## The app shell (#21, herdsman#553 rows 1–14)
 

@@ -189,7 +189,7 @@ test("rows 8 and 13: Settings opens at a section from its link, has an index, an
   await context.grantPermissions(["notifications"]);
   await page.goto("/#settings/alerts");
   const sheet = page.locator("#sheet .sh");
-  await expect(sheet.locator(".six a")).toHaveText(["sign-ins", "folders", "look", "alerts", "devices", "report"]);
+  await expect(sheet.locator(".six a")).toHaveText(["sign-ins", "folders", "look", "alerts", "devices", "plugins", "report"]);
   await expect(sheet.locator("#s-alerts")).toBeInViewport();
   await expect(sheet.locator("#s-alerts-box")).toContainText(/alerts are off|can't show alerts/);
   if (await page.evaluate(() => "PushManager" in window)) {

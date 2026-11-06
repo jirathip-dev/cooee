@@ -200,3 +200,6 @@ html[data-style=terminal] .swa{border-radius:4px}
 .nf .fl{flex-direction:column;flex-wrap:nowrap;gap:0;max-height:40vh;overflow-y:auto}
 .nf .fl label{border:0;border-radius:0;border-top:1px solid var(--line);overflow-wrap:anywhere}.fl [data-d="1"]{padding-left:28px}.fl [data-d="2"]{padding-left:44px}
 #fq{flex:1;min-width:0}.lrw .sk{min-width:0;overflow-wrap:anywhere}
+.pga{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.plg{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.4 var(--mono);max-height:40vh;overflow:auto;margin:8px 0;padding:8px;background:var(--bg);border-radius:var(--r-row)}
+#s-plugins-box form input{flex:1;min-width:0;font:16px var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:var(--hit)}

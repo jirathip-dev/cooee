@@ -101,7 +101,7 @@ pub struct Hub {
     roots: Mutex<Vec<PathBuf>>,
     /// The config file the roots are saved in.
     config: Option<PathBuf>,
-    plugins: Vec<Plugin>,
+    plugins: Mutex<Vec<Plugin>>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
     /// The stamp of the newest thread id handed out.
@@ -259,7 +259,7 @@ impl Hub {
             theme,
             roots: Mutex::new(roots),
             config,
-            plugins,
+            plugins: Mutex::new(plugins),
             boot: format!("{:x}", now()),
             threads: Mutex::new(threads),
             last: Mutex::new(0),
@@ -473,10 +473,25 @@ impl Hub {
         random_id: &str,
         (account, env): (&str, Option<(&str, &Path)>),
     ) -> Result<String, HubError> {
-        self.shed.hello()?;
         let Some(folder) = self.allowed(folder) else {
             return Err(outside(folder));
         };
+        self.start(agent, &folder, text, random_id, (account, env))
+    }
+
+    /// [`Hub::create`] in a folder of cooee's own (a plugin's checkout), not checked against the roots.
+    ///
+    /// # Errors
+    /// As [`Hub::create`].
+    pub fn start(
+        &self,
+        agent: &str,
+        folder: &Path,
+        text: &str,
+        random_id: &str,
+        (account, env): (&str, Option<(&str, &Path)>),
+    ) -> Result<String, HubError> {
+        self.shed.hello()?;
         if text.trim().is_empty() {
             return Err(HubError::Refused("the first message is empty".to_owned()));
         }
@@ -494,7 +509,7 @@ impl Hub {
             (LABEL.to_owned(), "1".to_owned()),
             (format!("{LABEL}.thread"), id.clone()),
         ]);
-        self.shed.run_acp(&terminal, agent, &folder, &labels, env)?;
+        self.shed.run_acp(&terminal, agent, folder, &labels, env)?;
         let title: String = text
             .trim()
             .lines()
@@ -507,7 +522,7 @@ impl Hub {
             id: id.clone(),
             title,
             agent: agent.to_owned(),
-            folder: Some(folder),
+            folder: Some(folder.to_owned()),
             account: account.to_owned(),
             terminal: terminal.clone(),
             ..Thread::default()
@@ -576,11 +591,11 @@ impl Hub {
             Body::Approval {
                 plugin: Some(name), ..
             } => self
-                .plugins
-                .iter()
+                .plugins()
+                .into_iter()
                 .find(|p| &p.name == name)
                 .ok_or_else(|| io::Error::other("no longer configured"))
-                .and_then(|p| crate::plugin::answer(p, id, item, option))
+                .and_then(|p| crate::plugin::answer(&p, id, item, option))
                 .map_err(|e| HubError::Refused(format!("plugin {name}: {e}"))),
             _ => return self.shed_approve(&mut live, tapped, option),
         };
@@ -793,10 +808,15 @@ impl Hub {
         Ok((resume, live.tx.subscribe()))
     }
 
-    /// The configured plugins.
+    /// The plugins: the config's own and the installed ones' tabs.
     #[must_use]
-    pub fn plugins(&self) -> &[Plugin] {
-        &self.plugins
+    pub fn plugins(&self) -> Vec<Plugin> {
+        lock(&self.plugins).clone()
+    }
+
+    /// Replaces the plugins (the supervisor, as plugins are installed or removed).
+    pub fn set_plugins(&self, plugins: Vec<Plugin>) {
+        *lock(&self.plugins) = plugins;
     }
 
     /// The push subscriptions and key.
