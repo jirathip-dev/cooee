@@ -66,6 +66,9 @@ pub enum Body {
         /// The option shed reports chosen (the tap, or the bridge's policy).
         #[serde(default, skip_serializing_if = "Option::is_none")]
         chosen: Option<String>,
+        /// A plugin's choice card: the plugin that asked, which gets the answer instead of shed.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        plugin: Option<String>,
     },
     /// The agent's plan.
     Plan {
@@ -272,14 +275,21 @@ impl Chat {
                     options,
                     tapped: None,
                     chosen: None,
+                    plugin: None,
                 };
                 vec![Change::Item(self.push(at, seq, body))]
             }
             EventKind::Approved { option } => {
-                let open = self
-                    .items
-                    .iter()
-                    .find(|i| matches!(i.body, Body::Approval { chosen: None, .. }));
+                let open = self.items.iter().find(|i| {
+                    matches!(
+                        i.body,
+                        Body::Approval {
+                            chosen: None,
+                            plugin: None,
+                            ..
+                        }
+                    )
+                });
                 let item = open.map(|i| i.id).and_then(|id| {
                     self.update(id, seq, |b| {
                         if let Body::Approval { chosen, .. } = b {
@@ -338,5 +348,37 @@ impl Chat {
                 *tapped = Some(option.to_owned());
             }
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn approval(plugin: Option<&str>) -> Body {
+        Body::Approval {
+            tool: "Ship it?".to_owned(),
+            options: Vec::new(),
+            tapped: None,
+            chosen: None,
+            plugin: plugin.map(str::to_owned),
+        }
+    }
+
+    #[test]
+    fn shed_answers_its_own_approval_never_a_plugins_card() {
+        let mut chat = Chat::default();
+        let card = chat.push(1, 0, approval(Some("drover"))).id;
+        let ask = chat.push(2, 1, approval(None)).id;
+        let option = "allow".to_owned();
+        chat.apply(3, 2, EventKind::Approved { option });
+        let chosen = |id| match &chat.items.iter().find(|i| i.id == id).unwrap().body {
+            Body::Approval { chosen, .. } => chosen.clone(),
+            _ => None,
+        };
+        assert_eq!(
+            (chosen(card), chosen(ask)),
+            (None, Some("allow".to_owned()))
+        );
     }
 }

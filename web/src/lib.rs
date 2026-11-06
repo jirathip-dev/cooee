@@ -1,7 +1,7 @@
 //! cooee's web UI in Topcoat (docs/decisions/0001-ui-framework.md), in the Modern style: the thread list and the
 //! chat page (server-rendered), the pairing page, the chat's script (`chat.js`: the window of items, SSE, the outbox,
 //! drafts and turning alerts on), the style sheet and the installable PWA: its manifest, icons and the service worker
-//! (`sw.js`: push only, nothing cached), and the look (`look.rs` themes and schemes, `look.js` applying a device's
+//! (`sw.js`: push only, nothing cached), plugin tabs (`chat.js` hosts a plugin's sandboxed frame), and the look (`look.rs` themes and schemes, `look.js` applying a device's
 //! pick before the first paint, its look sheet and Settings).
 
 #![forbid(unsafe_code)]
@@ -124,6 +124,9 @@ async fn look_file(cx: &Cx) -> Result<Owned> {
     Ok(found.ok_or_else(not_found)?)
 }
 
+/// The plugin API inside a plugin's frame (`frame.js`): the server puts it before the plugin's module.
+pub const FRAME_JS: &str = include_str!("frame.js");
+
 /// A fixed file served with its content type.
 struct Static(&'static str, &'static [u8]);
 
@@ -240,9 +243,9 @@ fn state(state: &str) -> &'static str {
 }
 
 /// The header: the app's name (the heading on the thread list, with the 🔔 that turns alerts on; else a link to
-/// it), `+`, the look sheet and Settings.
+/// it), the plugin tabs (`current` open), `+`, the look sheet and Settings.
 #[component]
-async fn header(home: bool) -> Result<impl View> {
+async fn header(home: bool, tabs: Vec<(String, String)>, current: String) -> Result<impl View> {
     Ok(view! {
         <header class="bar">
             if home {
@@ -259,6 +262,7 @@ async fn header(home: bool) -> Result<impl View> {
             } else {
                 <a class="brand" href="/">"cooee"</a>
             }
+            nav(tabs: tabs, current: current)
             <a
                 class="gl"
                 href=(if home { "#new" } else { "/#new" })
@@ -306,9 +310,32 @@ async fn row(r: Summary) -> Result<impl View> {
     })
 }
 
+/// Chat and the plugin tabs (`(name, label)`), when there are any; `current` is the open one (`""`: Chat).
+#[component]
+async fn nav(tabs: Vec<(String, String)>, current: String) -> Result<impl View> {
+    Ok(view! {
+        if !tabs.is_empty() {
+            <nav class="tabs" aria-label="tabs">
+                <a href="/" class=(if current.is_empty() { "on" } else { "" })>
+                    "Chat"
+                </a>
+                for (name, label) in tabs {
+                    <a
+                        href=(format!("/p/{name}"))
+                        class=(if name == current { "on" } else { "" })
+                    >
+                        (label)
+                    </a>
+                }
+            </nav>
+        }
+    })
+}
+
 /// The thread list: one card per working folder, its 3 newest threads shown, the rest folded; the new-thread
-/// form (open when there are no threads, else behind `+`), each agent with its provider's state; and the
-/// sign-ins card (`#signins`, from Settings): each provider's state, and its login's terminal (drawn by `chat.js`).
+/// form (open when there are no threads, else behind `+`), each agent with its provider's state; the
+/// sign-ins card (`#signins`, from Settings): each provider's state, and its login's terminal (drawn by `chat.js`); `tabs`: the
+/// plugins' names and labels.
 #[must_use]
 pub fn threads_page(
     cx: &Cx,
@@ -316,10 +343,17 @@ pub fn threads_page(
     agents: Result<Vec<Agent>, String>,
     folders: Vec<PathBuf>,
     providers: Vec<(Provider, Status)>,
+    tabs: Vec<(String, String)>,
 ) -> impl View {
     view! {
         cx =>
-        threads(rows: rows, agents: agents, folders: folders, providers: providers)
+        threads(
+            rows: rows,
+            agents: agents,
+            folders: folders,
+            providers: providers,
+            tabs: tabs
+        )
     }
 }
 
@@ -401,6 +435,7 @@ async fn threads(
     agents: Result<Vec<Agent>, String>,
     folders: Vec<PathBuf>,
     providers: Vec<(Provider, Status)>,
+    tabs: Vec<(String, String)>,
 ) -> Result<impl View> {
     let empty = rows.is_empty();
     let signed: BTreeMap<String, bool> = providers
@@ -415,7 +450,7 @@ async fn threads(
     Ok(view! {
         document(
             title: "cooee",
-            header(home: true)
+            header(home: true, tabs: tabs, current: String::new())
             <main class="list">
                 signins(providers: providers)
                 if empty {
@@ -489,6 +524,33 @@ async fn threads(
     })
 }
 
+/// Plugin `name`'s tab: its module runs in a sandboxed frame that `chat.js` hosts.
+#[must_use]
+pub fn plugin_page(cx: &Cx, tabs: Vec<(String, String)>, name: String, label: String) -> impl View {
+    view! { cx => plugin(tabs: tabs, name: name, label: label) }
+}
+
+#[component]
+async fn plugin(tabs: Vec<(String, String)>, name: String, label: String) -> Result<impl View> {
+    let title = format!("{label} · cooee");
+    Ok(view! {
+        document(
+            title: title.as_str(),
+            <main class="pt">
+                header(home: false, tabs: tabs, current: name.clone())
+                <h1 class="vh">(label.clone())</h1>
+                <iframe
+                    class="pf"
+                    title=(label)
+                    sandbox="allow-scripts"
+                    data-plugin=(name.clone())
+                    data-src=(format!("/p/{name}/frame"))
+                ></iframe>
+            </main>
+        )
+    })
+}
+
 /// Pairing: the code `cooee pair` printed (`code` prefilled from its QR link; `bad` after a wrong one).
 #[must_use]
 pub fn pair_page(cx: &Cx, code: String, bad: bool) -> impl View {
@@ -548,7 +610,7 @@ async fn chat(thread: Thread, turn: Turn) -> Result<impl View> {
                 data-read=(thread.read.unwrap_or(0).to_string())
                 data-state=(turn.state.clone())
             >
-                header(home: false)
+                header(home: false, tabs: Vec::new(), current: String::new())
                 <div class="th">
                     <a class="gl bk" href="/" aria-label="back to threads">"‹"</a>
                     <div class="tb">

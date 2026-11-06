@@ -95,6 +95,13 @@ in memory. Before it goes to the page, anything that looks like a token is repla
 more token characters with both a letter and a digit, and in a link the values of `token`, `secret`, `password` and
 `key` parameters. The tokens themselves stay with the CLI.
 
+## Plugins (M4)
+
+A plugin is a tab beside Chat: a backend of its own and a UI module it serves ([plugins.md](plugins.md)). The module
+runs in a sandboxed frame (an opaque origin with a strict Content-Security-Policy) and reaches only its own backend,
+through the page around it and cooee's proxy (`/p/<name>/api/…`), which adds the plugin's token and drops the device's
+cookie. The backend posts pushes and choice cards back with that token; the owner's answer to a card goes to it.
+
 ## Configuration
 
 One TOML file, `$XDG_CONFIG_HOME/cooee/config.toml` (else `~/.config/cooee/config.toml`, or `cooee serve --config
@@ -111,3 +118,4 @@ One TOML file, `$XDG_CONFIG_HOME/cooee/config.toml` (else `~/.config/cooee/confi
 | `data` | `$XDG_DATA_HOME/cooee`, else `~/.local/share/cooee` | Where threads are stored. |
 | `providers` | Claude Code, Codex, Gemini | The sign-ins: `[[providers]]` with `name`, `agent` (its ACP agent id), `login` and `status` (commands, as arrays). Setting it replaces the defaults. |
 | `theme` | `farm` | The theme a device shows until it picks its own ([themes.md](themes.md)); own themes and schemes live in `themes/` and `schemes/` beside the config file. |
+| `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |
