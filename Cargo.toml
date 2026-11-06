@@ -25,7 +25,7 @@ qrcode = { version = "=0.14.1", default-features = false }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
 # shed's API types, pinned to a shed merge commit; the hello needs the exact shed version.
-shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "9a4f32a811bf4e68641d0ddb9b20c84f07fcf8ef" }
+shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "8bac04fdb8542ef496c614b47126d85c50a7892e" }
 futures-util = { version = "=0.3.34", default-features = false }
 thiserror = "=2.0.21"
 # Pinned exactly (ADR 0001): Topcoat is pre-1.0 and its minors break.

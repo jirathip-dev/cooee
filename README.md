@@ -12,6 +12,21 @@ phone when they need you.
 
 A cooee is the bush call you use to reach someone far off.
 
+## Quick start
+
+On a Mac with [Rust](https://rustup.rs) and [Tailscale](https://tailscale.com/download) (signed in):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jirathip-dev/cooee/main/scripts/install.sh | sh
+```
+
+or `./scripts/install.sh` from a clone. It installs cooee, then `cooee setup` installs shed at the pinned version and
+its service, writes the config (asks for the folders threads may use, default `~/Projects`), adds Claude's ACP agent
+(asks about Codex and Gemini), starts cooee's service, runs `tailscale serve`, checks it all with `cooee doctor` and
+prints a pairing code to open on your phone. Run it again any time: finished steps are skipped. `--dry-run` prints
+every command and writes nothing; `--yes` takes the defaults. A second instance:
+`cooee setup --instance cooee-drover --port 4748`.
+
 ## The three projects
 
 | Project | Role |

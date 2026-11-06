@@ -139,6 +139,7 @@ dependencies = [
  "cooee-server",
  "qrcode",
  "serde_json",
+ "toml",
 ]
 
 [[package]]
@@ -1392,7 +1393,7 @@ dependencies = [
 [[package]]
 name = "shed-proto"
 version = "0.0.0"
-source = "git+https://github.com/jirathip-dev/shed?rev=9a4f32a811bf4e68641d0ddb9b20c84f07fcf8ef#9a4f32a811bf4e68641d0ddb9b20c84f07fcf8ef"
+source = "git+https://github.com/jirathip-dev/shed?rev=8bac04fdb8542ef496c614b47126d85c50a7892e#8bac04fdb8542ef496c614b47126d85c50a7892e"
 dependencies = [
  "serde",
  "serde_json",
