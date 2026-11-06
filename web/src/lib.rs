@@ -923,6 +923,7 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
                         "×"
                     </button>
                 </div>
+                <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
                 <ol
                     class="tc"
                     id="msgs"

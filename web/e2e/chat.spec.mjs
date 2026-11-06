@@ -46,7 +46,7 @@ test("each event kind renders: reply, tool call, plan, approval, state, stop", a
   const taps = [];
   page.on("request", (r) => { if (r.url().endsWith("/approve")) taps.push(r); });
   await ask.getByRole("button", { name: "Allow", exact: true }).dblclick();
-  await expect(ask.locator(".ans")).toHaveText("✓ Allow");
+  await expect(ask.locator(".ans")).toHaveText(/^✓ Allow · .+ · \d{1,2}:\d\d/);
   expect(taps).toHaveLength(1);
   await expect(msgs.locator(".blk.ai").last()).toContainText("Edited.");
 
