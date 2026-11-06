@@ -1,5 +1,5 @@
 //! Web push (herdsman's `webpush.rs`): an RFC 8291 aes128gcm body and an ES256 VAPID JWT (RFC 8292), sent by
-//! `curl` with the body on stdin. The VAPID key is made once and kept in the macOS keychain, else in
+//! `curl` with the body on stdin. The VAPID key is made once and kept in the macOS keychain (one per data folder), else in
 //! `<data>/vapid.key` (0600); the subscriptions are in `<data>/push.json` (0600), each tied to a paired device, so
 //! unpairing it stops its pushes.
 
@@ -186,14 +186,42 @@ pub fn jwt(k: &SecretKey, endpoint: &str, now: u64) -> String {
     format!("{msg}.{}", B64.encode(sig.to_bytes()))
 }
 
+/// The keychain account of data folder `data`'s key, so two instances never share one.
+fn account(data: &Path) -> String {
+    let hash = cooee_core::sha256(data.as_os_str().as_encoded_bytes());
+    format!("vapid-{}", &hash[..16])
+}
+
+/// The VAPID key already stored for `data`, if any.
+fn find_key(data: &Path) -> io::Result<Option<String>> {
+    if cfg!(target_os = "macos") {
+        let find = [
+            "find-generic-password",
+            "-s",
+            "cooee",
+            "-a",
+            &account(data),
+            "-w",
+        ];
+        let out = Command::new("security").args(find).output()?;
+        return Ok(out
+            .status
+            .success()
+            .then(|| String::from_utf8_lossy(&out.stdout).trim().to_owned()));
+    }
+    match std::fs::read_to_string(data.join("vapid.key")) {
+        Ok(k) => Ok(Some(k.trim().to_owned())),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(e),
+    }
+}
+
 /// The stored VAPID key (base64url), made on first use: the keychain on macOS, else a 0600 file.
 fn stored_key(data: &Path) -> io::Result<String> {
+    if let Some(k) = find_key(data)? {
+        return Ok(k);
+    }
     if cfg!(target_os = "macos") {
-        let find = ["find-generic-password", "-s", "cooee", "-a", "vapid", "-w"];
-        let out = Command::new("security").args(find).output()?;
-        if out.status.success() {
-            return Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned());
-        }
         let k = B64.encode(new_key()?.to_bytes());
         // `-i` reads the command from stdin, so the key never shows in a process list.
         let mut add = Command::new("security")
@@ -202,7 +230,8 @@ fn stored_key(data: &Path) -> io::Result<String> {
             .stdout(Stdio::null())
             .spawn()?;
         if let Some(mut stdin) = add.stdin.take() {
-            writeln!(stdin, "add-generic-password -U -s cooee -a vapid -w {k}")?;
+            let a = account(data);
+            writeln!(stdin, "add-generic-password -U -s cooee -a {a} -w {k}")?;
         }
         if !add.wait()?.success() {
             return Err(io::Error::other(
@@ -211,16 +240,9 @@ fn stored_key(data: &Path) -> io::Result<String> {
         }
         return Ok(k);
     }
-    let path = data.join("vapid.key");
-    match std::fs::read_to_string(&path) {
-        Ok(k) => Ok(k.trim().to_owned()),
-        Err(e) if e.kind() == io::ErrorKind::NotFound => {
-            let k = B64.encode(new_key()?.to_bytes());
-            write_private(&path, k.as_bytes())?;
-            Ok(k)
-        }
-        Err(e) => Err(e),
-    }
+    let k = B64.encode(new_key()?.to_bytes());
+    write_private(&data.join("vapid.key"), k.as_bytes())?;
+    Ok(k)
 }
 
 impl Push {
@@ -242,6 +264,14 @@ impl Push {
             .map_err(|_| io::Error::other("the stored VAPID key is not a P-256 key"))?;
         *key = Some(k.clone());
         Ok(k)
+    }
+
+    /// Whether the VAPID key exists yet (it is made when a phone first asks for it).
+    ///
+    /// # Errors
+    /// When the keychain or the key file can't be read.
+    pub fn has_key(&self) -> io::Result<bool> {
+        Ok(find_key(&self.data)?.is_some())
     }
 
     /// The VAPID public key, base64url: the page subscribes with it.

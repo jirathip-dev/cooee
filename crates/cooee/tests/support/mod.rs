@@ -565,6 +565,8 @@ pub struct Cooee {
     pub addr: String,
     pub config: PathBuf,
     pub cookie: String,
+    /// Run as `--instance <name>` with `HOME` here and no `--config`, if set.
+    pub instance: Option<(String, PathBuf)>,
 }
 
 impl Cooee {
@@ -574,9 +576,45 @@ impl Cooee {
 
     /// [`Cooee::start`] with more config lines.
     pub fn start_with(dir: &Path, shed: &Path, extra: &str) -> Self {
+        let data = format!("data = {:?}\n{extra}", dir.join("data").to_string_lossy());
+        Self::launch(dir, shed, dir.join("config.toml"), &data, None)
+    }
+
+    /// `cooee serve --instance <name>` with `HOME` at `dir/home`: its config at the instance's default path, its
+    /// data in the instance's default folder.
+    pub fn start_instance(dir: &Path, shed: &Path, name: &str) -> Self {
+        let home = dir.join("home");
+        let config = home.join(".config/cooee").join(name).join("config.toml");
+        fs::create_dir_all(config.parent().unwrap()).unwrap();
+        Self::launch(dir, shed, config, "", Some((name.to_owned(), home)))
+    }
+
+    fn command(&self) -> Command {
+        Self::command_for(&self.config, self.instance.as_ref())
+    }
+
+    fn command_for(config: &Path, instance: Option<&(String, PathBuf)>) -> Command {
+        let mut c = Command::new(env!("CARGO_BIN_EXE_cooee"));
+        match instance {
+            Some((name, home)) => c
+                .args(["--instance", name])
+                .env("HOME", home)
+                .env_remove("XDG_CONFIG_HOME")
+                .env_remove("XDG_DATA_HOME"),
+            None => c.arg("--config").arg(config),
+        };
+        c
+    }
+
+    fn launch(
+        dir: &Path,
+        shed: &Path,
+        config: PathBuf,
+        extra: &str,
+        instance: Option<(String, PathBuf)>,
+    ) -> Self {
         let root = dir.join("root");
         fs::create_dir_all(root.join("project")).unwrap();
-        let config = dir.join("config.toml");
         let q = |p: &Path| format!("{:?}", p.to_string_lossy());
         let providers = if extra.contains("[[providers]]") {
             ""
@@ -584,17 +622,18 @@ impl Cooee {
             "providers = []\n"
         };
         let toml = format!(
-            "port = 0\nroots = [{}]\nshed = {}\nshed_dir = {}\ndata = {}\n{providers}{extra}",
+            "port = 0
+roots = [{}]
+shed = {}
+shed_dir = {}
+{providers}{extra}",
             q(&root),
             q(&shed.join("shed")),
             q(shed),
-            q(&dir.join("data")),
         );
         fs::write(&config, toml).unwrap();
-        let mut child = Command::new(env!("CARGO_BIN_EXE_cooee"))
+        let mut child = Self::command_for(&config, instance.as_ref())
             .arg("serve")
-            .arg("--config")
-            .arg(&config)
             .stdout(Stdio::piped())
             .stderr(fs::File::create(dir.join("cooee.err")).unwrap())
             .spawn()
@@ -613,20 +652,16 @@ impl Cooee {
             addr,
             config,
             cookie: String::new(),
+            instance,
         };
         let token = cooee.pair().expect("pairing");
         cooee.cookie = format!("cooee={token}");
         cooee
     }
 
-    /// Runs `cooee <args> --config <ours>`; its stdout, which must succeed.
+    /// Runs `cooee <args>` on our config or instance; its stdout, which must succeed.
     pub fn cli(&self, args: &[&str]) -> String {
-        let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
-            .args(args)
-            .arg("--config")
-            .arg(&self.config)
-            .output()
-            .unwrap();
+        let out = self.command().args(args).output().unwrap();
         assert!(out.status.success(), "{out:?}");
         String::from_utf8(out.stdout).unwrap()
     }
@@ -661,14 +696,17 @@ impl Cooee {
         body: &str,
     ) -> (String, String) {
         let mut stream = TcpStream::connect(&self.addr).unwrap();
-        write!(stream, "{method} {path} HTTP/1.0\r\n").unwrap();
+        // One write: a refusal sent before a late body arrives would reset the connection under the read.
+        let mut request = Vec::new();
+        write!(request, "{method} {path} HTTP/1.0\r\n").unwrap();
         if !headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("host")) {
-            write!(stream, "Host: {}\r\n", self.addr).unwrap();
+            write!(request, "Host: {}\r\n", self.addr).unwrap();
         }
         for (k, v) in headers {
-            write!(stream, "{k}: {v}\r\n").unwrap();
+            write!(request, "{k}: {v}\r\n").unwrap();
         }
-        write!(stream, "Content-Length: {}\r\n\r\n{body}", body.len()).unwrap();
+        write!(request, "Content-Length: {}\r\n\r\n{body}", body.len()).unwrap();
+        stream.write_all(&request).unwrap();
         let mut response = String::new();
         stream.read_to_string(&mut response).unwrap();
         let (head, body) = response.split_once("\r\n\r\n").unwrap();
