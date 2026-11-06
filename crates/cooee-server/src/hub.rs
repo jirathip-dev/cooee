@@ -296,6 +296,7 @@ impl Hub {
                     let r = t.reported.unwrap_or(shed_proto::Reported {
                         state: String::new(),
                         note: None,
+                        state_source: None,
                     });
                     live.chat.turn.state = r.state;
                     live.chat.turn.note = r.note;
