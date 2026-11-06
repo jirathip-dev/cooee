@@ -20,7 +20,8 @@ pub struct Config {
     pub bind: IpAddr,
     /// The names requests may come to besides localhost and `bind` (the Tailscale name), matched exactly.
     pub allowed_hosts: Vec<String>,
-    /// The folders a thread may work in: each root and the folders right inside it, nothing outside them.
+    /// The folders a thread may work in: each root and the folders right inside it, nothing outside them (`~/x`:
+    /// under `$HOME`).
     pub roots: Vec<PathBuf>,
     /// The `shed` binary (default `shed`, found on `PATH`).
     pub shed: PathBuf,
@@ -78,6 +79,9 @@ impl Default for Config {
         }
     }
 }
+
+/// The fix for an empty `roots`, as the folder picker and `cooee doctor` print it.
+pub const ROOTS_FIX: &str = r#"roots = ["~/Projects"]"#;
 
 /// Why the config file couldn't be read.
 #[derive(Debug, thiserror::Error)]
@@ -143,8 +147,17 @@ impl Config {
             path: path.to_owned(),
             source,
         })?;
+        let home = env::var_os("HOME").map(PathBuf::from);
+        let roots = config
+            .roots
+            .iter()
+            .map(|r| match (r.strip_prefix("~"), &home) {
+                (Ok(rest), Some(home)) => home.join(rest),
+                _ => r.clone(),
+            });
         Ok(Self {
             dir: path.parent().map(Path::to_owned),
+            roots: roots.collect(),
             ..config
         })
     }
@@ -170,6 +183,19 @@ mod tests {
         assert!(
             e.contains("unknown field `prot`") && e.contains("port"),
             "{e}"
+        );
+    }
+
+    #[test]
+    fn roots_under_home_are_expanded() {
+        let path = env::temp_dir().join(format!("cooee-roots-{}.toml", std::process::id()));
+        fs::write(&path, r#"roots = ["~/Projects", "~", "/srv/~x"]"#).unwrap();
+        let roots = Config::load(&path).unwrap().roots;
+        fs::remove_file(&path).unwrap();
+        let home = PathBuf::from(env::var_os("HOME").unwrap());
+        assert_eq!(
+            roots,
+            [home.join("Projects"), home, PathBuf::from("/srv/~x")]
         );
     }
 

@@ -26,6 +26,8 @@ test("an unpaired browser is sent to pairing; the code pairs it", async ({ page,
   await page.screenshot({ path: "../../ui-390/pair.png", fullPage: true });
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
+  // No service worker installs while pairing, to claim the page as the pair redirects.
+  expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0);
 
   const code = fs.readFileSync(new URL("./.auth/code", import.meta.url), "utf8").trim();
   expect(code).toMatch(/^\d{6}$/);

@@ -29,6 +29,7 @@ h1{font-size:inherit;margin:0}
 .tp{grid-column:2/4;font-size:var(--fs-meta);color:var(--mute);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.tp b{font-weight:400;margin-right:1ch}
 details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute);cursor:pointer}
 .nf{display:flex;flex-direction:column;gap:6px;padding-bottom:12px}.nf[hidden]{display:none}
+p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;color:var(--mute)}.hn code{font-family:var(--mono);color:var(--fg);overflow-wrap:anywhere}
 .nf fieldset{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .nf fieldset label{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 12px;border:1px solid var(--edge);border-radius:var(--r-pill)}
 .nf select{max-width:100%}

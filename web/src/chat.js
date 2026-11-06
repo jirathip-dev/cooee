@@ -2,7 +2,7 @@
 // anchor (slices by id as the reader nears an edge), scroll kept on a message rather than pixels, live events over
 // SSE resumed from the last one seen, the outbox (sending → sent → failed, tap to retry), the per-thread draft in
 // IndexedDB, approvals that lock once tapped, and debounced read marks (which also close the thread's notifications).
-// Every page registers the service worker (sw.js, push only); the thread list's 🔔 turns alerts on.
+// Every page but pairing registers the service worker (sw.js, push only); the thread list's 🔔 turns alerts on.
 // States are theme keys (data-st) that look.js draws: the thread bar, the working pill (its sprite following the
 // running tool), the live line and a turn's end.
 // A plugin tab hosts the plugin's sandboxed frame.
@@ -29,6 +29,12 @@ if (form) {
     }
   });
 }
+
+// An empty picker's hint: its copy button puts the fix line on the clipboard.
+document.addEventListener("click", (e) => {
+  const b = e.target.closest?.("[data-copy]");
+  b && navigator.clipboard?.writeText(b.dataset.copy).then(() => { b.textContent = "copied"; }, () => {});
+});
 
 // The sign-ins sheet: open on `#signins`. [sign in] starts the provider's own login in a shed terminal; its screen
 // (redacted by the server) is drawn every second with its links tappable, a code typed below goes to it, and once
@@ -78,7 +84,9 @@ if (sheet) {
   }
 }
 
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+// Not while pairing: a worker installing and claiming the page as the pair redirects can leave a home-screen app on
+// a bare background until a reload (the first run, #25).
+if ("serviceWorker" in navigator && location.pathname !== "/pair") navigator.serviceWorker.register("/sw.js").catch(() => {});
 // Closes thread `thread`'s notifications up to item `read`.
 const cleared = (thread, read) => navigator.serviceWorker?.ready.then((r) => r.active?.postMessage({ thread, read }));
 

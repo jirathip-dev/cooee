@@ -10,7 +10,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Config, Devices, Shed};
+use cooee_core::{AGENTS_FIX, Config, Devices, ROOTS_FIX, Shed};
 use qrcode::{QrCode, render::unicode::Dense1x2};
 
 const USAGE: &str = "usage: cooee <serve | pair | devices | devices rm <id> | install --port <p> | doctor> \
@@ -293,8 +293,16 @@ fn doctor(config: &Config) -> Result<(), String> {
     check(up, format!("listening on port {port}"));
     let shed = Shed::new(config.shed.clone(), config.shed_dir.clone());
     match shed.hello() {
-        Ok(()) => check(true, format!("shed at {}", shed.socket.display())),
+        Ok(()) => {
+            check(true, format!("shed at {}", shed.socket.display()));
+            if shed.agents().is_ok_and(|a| a.is_empty()) {
+                println!("warn no agents installed in shed\n     fix: {AGENTS_FIX}");
+            }
+        }
         Err(e) => check(false, format!("shed: {e}\n     install: {SHED_INSTALL}")),
+    }
+    if config.roots.is_empty() {
+        println!("warn no roots configured\n     fix: add {ROOTS_FIX} to config.toml");
     }
     let data = config.data_dir().ok_or("no data folder")?;
     match cooee_server::Push::new(&data).has_key() {
