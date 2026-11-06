@@ -155,10 +155,12 @@ impl Chat {
         self.items.iter().map(|i| i.seq).max().unwrap_or(0)
     }
 
+    /// Adds or replaces `item`. `items` stay sorted by id, so each lookup is a binary search: folding a long
+    /// history is never quadratic (herdsman#447), and a repeated id is one row.
     fn put(&mut self, item: Item) -> Item {
-        match self.items.iter_mut().rev().find(|i| i.id == item.id) {
-            Some(old) => old.clone_from(&item),
-            None => self.items.push(item.clone()),
+        match self.items.binary_search_by_key(&item.id, |i| i.id) {
+            Ok(at) => self.items[at].clone_from(&item),
+            Err(at) => self.items.insert(at, item.clone()),
         }
         item
     }
@@ -171,7 +173,8 @@ impl Chat {
 
     /// Replaces item `id`'s body; `None` when there is no such item.
     pub fn update(&mut self, id: u64, seq: u64, f: impl FnOnce(&mut Body)) -> Option<Item> {
-        let item = self.items.iter_mut().rev().find(|i| i.id == id)?;
+        let at = self.items.binary_search_by_key(&id, |i| i.id).ok()?;
+        let item = &mut self.items[at];
         f(&mut item.body);
         item.seq = item.seq.max(seq);
         Some(item.clone())
@@ -380,5 +383,45 @@ mod tests {
             (chosen(card), chosen(ask)),
             (None, Some("allow".to_owned()))
         );
+    }
+
+    /// R6 (herdsman#447): folding 30,000 stored versions of 1,000 rows (a thread's load) takes under 300 ms: each
+    /// version finds its row by binary search, never by a scan.
+    #[test]
+    fn r6_folding_a_long_log_is_within_budget() {
+        let versions: Vec<Item> = (0..30)
+            .flat_map(|v| {
+                (1..=1000).map(move |id| Item {
+                    id,
+                    at: id,
+                    seq: v * 1000 + id,
+                    body: Body::Agent {
+                        text: format!("reply {id} v{v}"),
+                        stop_reason: "end_turn".to_owned(),
+                    },
+                })
+            })
+            .collect();
+        let at = std::time::Instant::now();
+        let chat = Chat::from_versions(versions);
+        let took = at.elapsed();
+        assert_eq!((chat.items.len(), chat.seq()), (1000, 30_000));
+        assert!(took < std::time::Duration::from_millis(300), "{took:?}");
+    }
+
+    /// R16 (herdsman#516): versions repeating one id fold into one row, however often they repeat.
+    #[test]
+    fn a_repeated_id_is_one_row() {
+        let you = |text: &str| Item {
+            id: 7,
+            at: 1,
+            seq: 0,
+            body: Body::You {
+                text: text.to_owned(),
+                random_id: "r".to_owned(),
+            },
+        };
+        let chat = Chat::from_versions((0..5).map(|i| you(&format!("v{i}"))).collect());
+        assert_eq!(chat.items, [you("v4")]);
     }
 }

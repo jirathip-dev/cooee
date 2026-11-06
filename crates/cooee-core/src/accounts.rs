@@ -241,4 +241,20 @@ mod tests {
         assert!(a.get("claude", "../x").is_none());
         fs::remove_dir_all(&data).unwrap();
     }
+
+    /// R19 (herdsman#333, #477): a new account's folder left by a login whose cooee died is no lock: the next
+    /// login takes the next name, and a failed one cleans up only its own.
+    #[test]
+    fn a_dead_logins_leftover_folder_never_blocks_a_new_account() {
+        let data = std::env::temp_dir().join(format!("cooee-accounts-dead-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&data);
+        let a = Accounts::new(&data);
+        fs::create_dir_all(data.join("accounts/claude/.new-account-2")).unwrap();
+        let (name, dir) = a.pending("claude").unwrap();
+        assert_eq!((name.as_str(), dir.is_dir()), ("account-3", true));
+        a.adopt("claude", "account-3", 1).unwrap();
+        let names: Vec<String> = a.list("claude").into_iter().map(|a| a.name).collect();
+        assert_eq!(names, ["", "account-3"]);
+        fs::remove_dir_all(&data).unwrap();
+    }
 }
