@@ -94,7 +94,7 @@ for (const w of [390, 1440]) {
   await page.goto(`/t/long-${w}`);
   await shot("chat", page.getByLabel("message", { exact: true }));
   await page.goto("/#settings/sign-ins");
-  await shot("settings", page.locator("#sheet .sh .six"));
+  await shot("settings", page.locator("#sheet .sh:popover-open .six"));
   await page.goto("/p/hello");
   await shot("plugin-hello", page.locator("iframe.pf"));
   await page.goto("/p/machines");
@@ -116,7 +116,7 @@ Selectors this UI answers to (from `web/e2e/*.spec.mjs`):
   (lands on `/t/<id>`)
 - chat (`/t/<id>`): `message` field (exact), button `send`; seeded threads `long-390` and `long-1440`
   (1,000 messages, read up to #990)
-- settings sheet: `#sheet .sh`, its index `.six a` (sign-ins, folders, look, alerts, devices, plugins, report)
+- settings sheet: the open popover `#sheet .sh:popover-open`, its index `.six a` (sign-ins, folders, look, alerts, devices, plugins, report)
 - sign-ins: `.pv[data-provider="fake-390"]` (or `fake-1440`), button `sign in`, the code field
   `the code from the fake-390 sign-in page`, `good-code` signs in
 - plugin tab: `iframe.pf`; drive inside it with a frame locator
