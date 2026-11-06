@@ -19,7 +19,7 @@ Query parameters are the look's: `?theme=…&mode=…&style=…&sprites=…`. Se
 PNGs (390 at DPR 2, 1440 at DPR 1, full height, reduced motion) and runs the look's gate-2 audit on each. One
 addition to the audit: the code boxes, a shown code and the check word are `--fs-code` (32 px), herdsman's own
 pairing-code size. **All 11 pass.** `qr.svg` is a real QR (the `qrcode` crate cooee already uses) of
-`https://mac-mini.tail0c4e.ts.net/pair?code=730518`; the terminal QR is the crate's `Dense1x2` text, as
+`https://mac.tailnet.example/pair?code=730518`; the terminal QR is the crate's `Dense1x2` text, as
 `cooee pair` prints today.
 
 **Data:** illustrative. Device names, the tailnet name, codes and the check word are made up.
