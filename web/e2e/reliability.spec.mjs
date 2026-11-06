@@ -3,7 +3,6 @@
 // on the iPhone) R4 the composer flush on a shrunk viewport with no page jump, R25 no flash when a sheet closes.
 import { expect, test } from "@playwright/test";
 
-const webkit = ({ browserName }) => browserName === "webkit";
 
 // A new thread whose turn is done, open.
 async function thread(page, text = "Say hello") {
@@ -15,7 +14,7 @@ async function thread(page, text = "Say hello") {
 }
 
 test.describe("on every browser", () => {
-  test.skip(webkit, "the WebKit project runs the iPhone audits only");
+  test.skip(({ browserName }) => browserName === "webkit", "the WebKit project runs the iPhone audits only");
 
   test("R5: a slow load shows the thin strip only after 300 ms, and the page stays tappable", async ({ page }) => {
     await page.clock.install();
@@ -76,7 +75,7 @@ test.describe("on every browser", () => {
 });
 
 test.describe("on WebKit, as on the iPhone", () => {
-  test.skip((o) => !webkit(o), "WebKit only");
+  test.skip(({ browserName }) => browserName !== "webkit", "WebKit only");
 
   test("R4: with the keyboard up (a shrunk viewport) the composer sits flush on it and the page never jumps", async ({ page }) => {
     await thread(page);
