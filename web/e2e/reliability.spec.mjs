@@ -113,7 +113,7 @@ test.describe("on WebKit, as on the iPhone", () => {
         };
         requestAnimationFrame(look);
       });
-      await page.locator("#sheet .sh:popover-open [data-close]").click();
+      await page.locator("#sheet .sh:popover-open [data-close]").first().click();
       await expect.poll(() => page.evaluate(() => window.frames_.length)).toBe(60);
       const frames = await page.evaluate(() => window.frames_);
       const shown = frames.map((f) => f.sheet);
