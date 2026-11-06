@@ -234,7 +234,9 @@ impl Machines {
                 card.online = stats.is_some();
                 card.error = answer.as_ref().err().filter(|e| !e.is_empty()).cloned();
                 if let Some(s) = stats {
-                    card.history.extend(s.history);
+                    // Only what is new: a shed that sends a sample again never doubles the chart.
+                    let last = card.history.last().map_or(0, |s| s.at);
+                    card.history.extend(s.history.into_iter().filter(|s| s.at > last));
                     card.last_seen = Some(s.now.at);
                     card.now = Some(s.now);
                 } else {
