@@ -1,0 +1,244 @@
+//! A provider's accounts: the system default login (`~/.claude`, …) and the ones added in cooee, each a config folder
+//! `<data>/accounts/<provider>/<name>/` that its CLI gets through the provider's variable (`CLAUDE_CONFIG_DIR`, …).
+//! The CLI keeps its own login there or in its keychain; cooee never reads or stores a token. Beside the folders,
+//! `.cooee.json` keeps only the provider's default account and when each one's login last succeeded.
+
+use std::{
+    collections::BTreeMap,
+    fs, io,
+    path::{Path, PathBuf},
+};
+
+use serde::{Deserialize, Serialize};
+
+use crate::{Provider, Status, write_private};
+
+/// A provider as the sign-ins sheet and the new-thread picker show it.
+#[derive(Debug, Clone)]
+pub struct Sheet {
+    /// The provider.
+    pub provider: Provider,
+    /// Its accounts, the system default first, each with its status.
+    pub accounts: Vec<(Account, Status)>,
+    /// How its last login ended.
+    pub why: Option<String>,
+}
+
+/// One account of a provider.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Account {
+    /// Its name; empty for the system default.
+    pub name: String,
+    /// Its config folder; none for the system default.
+    #[serde(skip)]
+    pub dir: Option<PathBuf>,
+    /// New threads use it.
+    pub default: bool,
+    /// When a login in cooee last succeeded for it (ms since the epoch).
+    pub signed_in_at: Option<u64>,
+}
+
+impl Account {
+    /// Its name as the page shows it.
+    #[must_use]
+    pub fn label(&self) -> &str {
+        if self.name.is_empty() {
+            "System default"
+        } else {
+            &self.name
+        }
+    }
+}
+
+/// `.cooee.json`: the default account and the last successful logins, by name.
+#[derive(Default, Serialize, Deserialize)]
+struct Meta {
+    #[serde(default)]
+    default: String,
+    #[serde(default)]
+    signed_in: BTreeMap<String, u64>,
+}
+
+/// The accounts under `<data>/accounts`.
+#[derive(Debug, Clone)]
+pub struct Accounts {
+    root: PathBuf,
+}
+
+/// Fit for a folder name: `a-z 0-9 -`, not empty.
+fn safe(name: &str) -> bool {
+    !name.is_empty()
+        && name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+}
+
+impl Accounts {
+    /// The accounts in `data`.
+    #[must_use]
+    pub fn new(data: &Path) -> Self {
+        Self {
+            root: data.join("accounts"),
+        }
+    }
+
+    fn meta(&self, provider: &str) -> Meta {
+        let path = self.root.join(provider).join(".cooee.json");
+        fs::read(path)
+            .ok()
+            .and_then(|b| serde_json::from_slice(&b).ok())
+            .unwrap_or_default()
+    }
+
+    fn save(&self, provider: &str, meta: &Meta) -> io::Result<()> {
+        let json = serde_json::to_vec(meta).map_err(io::Error::other)?;
+        write_private(&self.root.join(provider).join(".cooee.json"), &json)
+    }
+
+    /// Provider `provider`'s accounts: the system default first, then the added ones by name.
+    #[must_use]
+    pub fn list(&self, provider: &str) -> Vec<Account> {
+        let meta = self.meta(provider);
+        let mut names: Vec<String> = fs::read_dir(self.root.join(provider))
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
+            .filter_map(|e| e.file_name().into_string().ok())
+            .filter(|n| safe(n))
+            .collect();
+        names.sort();
+        let names = std::iter::once(String::new()).chain(names);
+        let known = |n: &String| n.is_empty() || self.root.join(provider).join(n).is_dir();
+        let default = Some(&meta.default).filter(|n| known(n)).cloned();
+        names
+            .map(|name| Account {
+                dir: (!name.is_empty()).then(|| self.root.join(provider).join(&name)),
+                default: default.as_ref().map_or(name.is_empty(), |d| *d == name),
+                signed_in_at: meta.signed_in.get(&name).copied(),
+                name,
+            })
+            .collect()
+    }
+
+    /// Account `name` of `provider` (empty: the system default).
+    #[must_use]
+    pub fn get(&self, provider: &str, name: &str) -> Option<Account> {
+        self.list(provider).into_iter().find(|a| a.name == name)
+    }
+
+    /// The account new threads of `provider` use.
+    #[must_use]
+    pub fn default(&self, provider: &str) -> Account {
+        let mut list = self.list(provider);
+        let i = list.iter().position(|a| a.default).unwrap_or(0);
+        list.swap_remove(i)
+    }
+
+    /// Makes account `name` (one of [`Accounts::list`]) the default of `provider`.
+    ///
+    /// # Errors
+    /// When `.cooee.json` can't be written.
+    pub fn set_default(&self, provider: &str, name: &str) -> io::Result<()> {
+        let meta = Meta {
+            default: name.to_owned(),
+            ..self.meta(provider)
+        };
+        self.save(provider, &meta)
+    }
+
+    /// Notes that a login for account `name` of `provider` succeeded at `at`.
+    ///
+    /// # Errors
+    /// When `.cooee.json` can't be written.
+    pub fn signed_in(&self, provider: &str, name: &str, at: u64) -> io::Result<()> {
+        let mut meta = self.meta(provider);
+        meta.signed_in.insert(name.to_owned(), at);
+        self.save(provider, &meta)
+    }
+
+    /// A new account's name (`account-2`, …) and its folder while the login runs, `.new-<name>` (hidden from
+    /// [`Accounts::list`] until [`Accounts::adopt`]).
+    ///
+    /// # Errors
+    /// When the folder can't be made.
+    pub fn pending(&self, provider: &str) -> io::Result<(String, PathBuf)> {
+        let dir = self.root.join(provider);
+        let free = |n: &String| !dir.join(n).exists() && !dir.join(format!(".new-{n}")).exists();
+        let name = (2..=u16::MAX)
+            .map(|i| format!("account-{i}"))
+            .find(free)
+            .ok_or_else(|| io::Error::other("no free account name"))?;
+        let path = dir.join(format!(".new-{name}"));
+        fs::create_dir_all(&path)?;
+        Ok((name, path))
+    }
+
+    /// Lists new account `name` (from [`Accounts::pending`]) under its own name, its login succeeded at `at`.
+    ///
+    /// # Errors
+    /// When the folder can't be renamed.
+    pub fn adopt(&self, provider: &str, name: &str, at: u64) -> io::Result<()> {
+        let dir = self.root.join(provider);
+        fs::rename(dir.join(format!(".new-{name}")), dir.join(name))?;
+        self.signed_in(provider, name, at)
+    }
+
+    /// Removes the folder of new account `name` whose login failed.
+    pub fn drop_pending(&self, provider: &str, name: &str) {
+        let _ = fs::remove_dir_all(self.root.join(provider).join(format!(".new-{name}")));
+    }
+
+    /// Removes added account `name`'s folder (the system default's is never touched), and its notes.
+    ///
+    /// # Errors
+    /// When the folder or `.cooee.json` can't be changed.
+    pub fn remove(&self, provider: &str, name: &str) -> io::Result<()> {
+        let mut meta = self.meta(provider);
+        meta.signed_in.remove(name);
+        if !name.is_empty() && safe(name) {
+            fs::remove_dir_all(self.root.join(provider).join(name))?;
+            if meta.default == name {
+                meta.default.clear();
+            }
+        }
+        self.save(provider, &meta)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn system_first_a_new_account_listed_once_adopted_default_and_removal() {
+        let data = std::env::temp_dir().join(format!("cooee-accounts-{}", std::process::id()));
+        let a = Accounts::new(&data);
+        let names = |a: &Accounts| -> Vec<String> {
+            a.list("claude").into_iter().map(|a| a.name).collect()
+        };
+        assert_eq!(names(&a), [""]);
+        assert!(a.default("claude").default && a.default("claude").dir.is_none());
+
+        let (name, dir) = a.pending("claude").unwrap();
+        assert_eq!((name.as_str(), dir.is_dir()), ("account-2", true));
+        assert_eq!(names(&a), [""], "a pending account isn't listed");
+        assert_eq!(a.pending("claude").unwrap().0, "account-3");
+        a.drop_pending("claude", "account-3");
+        a.adopt("claude", "account-2", 7).unwrap();
+        assert_eq!(names(&a), ["", "account-2"]);
+        let work = a.get("claude", "account-2").unwrap();
+        assert_eq!(work.signed_in_at, Some(7));
+        assert_eq!(work.dir, Some(data.join("accounts/claude/account-2")));
+
+        a.set_default("claude", "account-2").unwrap();
+        assert_eq!(a.default("claude").name, "account-2");
+        assert!(!a.get("claude", "").unwrap().default);
+        a.remove("claude", "account-2").unwrap();
+        assert!(!data.join("accounts/claude/account-2").exists());
+        assert_eq!(names(&a), [""]);
+        assert_eq!(a.default("claude").name, "");
+        assert!(a.get("claude", "../x").is_none());
+        fs::remove_dir_all(&data).unwrap();
+    }
+}

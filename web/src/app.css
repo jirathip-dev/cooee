@@ -161,7 +161,8 @@ html[data-style=terminal] .swa{border-radius:4px}
 @media (prefers-reduced-motion:reduce){.chc.busy::after,.rsp,.big{animation:none}}
 .pv{border-top:1px solid var(--line)}.pv .fh b{margin-right:auto}.pv .ds{margin:0 0 8px;overflow-wrap:anywhere}
 .out{margin:0 0 8px;padding:8px;max-height:50vh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:13px var(--mono);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row)}
-.pv .tw{padding:0;background:none;border:0}.pv .cn{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
+.pv .tw{padding:0;background:none;border:0}.pv .cn,.ac .sg,.ac .df{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
+.ac{padding-left:12px;border-left:2px solid var(--line);margin-bottom:8px}.ab{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.ab .ds{margin:0}
 .nf .so{align-self:center;min-height:var(--hit);display:inline-flex;align-items:center}
 .nf .fl{flex-direction:column;flex-wrap:nowrap;gap:0;max-height:40vh;overflow-y:auto}
 .nf .fl label{border:0;border-radius:0;border-top:1px solid var(--line);overflow-wrap:anywhere}.fl [data-d="1"]{padding-left:28px}.fl [data-d="2"]{padding-left:44px}

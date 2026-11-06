@@ -68,12 +68,14 @@ data = "$tmp/data"
 [[providers]]
 name = "fake-390"
 agent = "fake-acp"
+home = "FAKE_HOME"
 login = ["$tmp/login-390.sh"]
 status = ["$tmp/status-390.sh"]
 
 [[providers]]
 name = "fake-1440"
 agent = "other-acp"
+home = "FAKE_HOME"
 login = ["$tmp/login-1440.sh"]
 status = ["$tmp/status-1440.sh"]
 

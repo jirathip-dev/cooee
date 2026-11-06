@@ -1,5 +1,6 @@
 // Sign-ins against the fake shed (web/e2e/serve.sh), which runs a fake login program per viewport: the sheet starts
-// it, shows its screen with the link tappable, types the code in, and shows the provider signed in.
+// it for the system default account, shows its screen with the link tappable, types the code in, and shows the
+// account signed in; [+ account] is offered beside it.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -9,7 +10,10 @@ test("sign-ins: the provider's own login, its link tappable, a code typed in, th
   await page.getByRole("button", { name: "settings" }).click();
   await page.locator("#sheet").getByRole("link", { name: "providers" }).click();
   await expect(page.locator("#sheet")).toBeHidden();
-  const row = page.locator(`.pv[data-provider="${name}"]`), state = row.locator(".fh span");
+  const row = page.locator(`.pv[data-provider="${name}"]`), account = row.locator('.ac[data-account=""]');
+  const state = account.locator(".fh span");
+  await expect(account.locator(".fh b")).toHaveText("System default");
+  await expect(row.getByRole("button", { name: "+ account" })).toBeVisible();
   await expect(state).toHaveText("signed out");
   await expect(row).toContainText("Not signed in");
   await row.getByRole("button", { name: "sign in" }).click();
@@ -33,4 +37,6 @@ test("sign-ins: the provider's own login, its link tappable, a code typed in, th
   await expect(row).toContainText("Signed in as owner@example.com");
   await expect(row.locator(".out")).toBeHidden();
   await expect(row.getByRole("button", { name: "sign in" })).toBeHidden();
+  await expect(account.getByRole("button", { name: "sign out" })).toBeVisible();
+  await expect(account).toContainText("default for new threads");
 });

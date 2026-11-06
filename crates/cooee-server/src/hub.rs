@@ -459,8 +459,8 @@ impl Hub {
         Ok(path)
     }
 
-    /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, then sends `text`.
-    /// Returns the thread's id.
+    /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, with `account`'s
+    /// config folder in `env` (none: the system default), then sends `text`. Returns the thread's id.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a folder outside the roots or an empty message; [`HubError::Shed`] when the
@@ -471,6 +471,7 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
+        (account, env): (&str, Option<(&str, &Path)>),
     ) -> Result<String, HubError> {
         self.shed.hello()?;
         let Some(folder) = self.allowed(folder) else {
@@ -493,7 +494,7 @@ impl Hub {
             (LABEL.to_owned(), "1".to_owned()),
             (format!("{LABEL}.thread"), id.clone()),
         ]);
-        self.shed.run_acp(&terminal, agent, &folder, &labels)?;
+        self.shed.run_acp(&terminal, agent, &folder, &labels, env)?;
         let title: String = text
             .trim()
             .lines()
@@ -507,6 +508,7 @@ impl Hub {
             title,
             agent: agent.to_owned(),
             folder: Some(folder),
+            account: account.to_owned(),
             terminal: terminal.clone(),
             ..Thread::default()
         };

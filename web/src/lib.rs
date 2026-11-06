@@ -15,7 +15,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{AGENTS_FIX, Agent, Provider, ROOTS_FIX, Status, Summary, Thread, Turn};
+use cooee_core::{AGENTS_FIX, Account, Agent, ROOTS_FIX, Sheet, Status, Summary, Thread, Turn};
 pub use look::{Looks, Pair, Scheme, TOKENS, Theme, gate, plain};
 use topcoat::{
     Result,
@@ -335,7 +335,7 @@ async fn nav(tabs: Vec<(String, String)>, current: String) -> Result<impl View> 
 /// The thread list: one card per working folder, its 3 newest threads shown, the rest folded; the new-thread
 /// form (open when there are no threads, else behind `+`), each agent with its provider's state (no agents or no
 /// folders: the fix line instead); the
-/// sign-ins card (`#signins`, from Settings): each provider's state, and its login's terminal (drawn by `chat.js`); `tabs`: the
+/// sign-ins card (`#signins`, from Settings): each provider's accounts and their state, and its login's terminal (drawn by `chat.js`); `tabs`: the
 /// plugins' names and labels.
 #[must_use]
 pub fn threads_page(
@@ -343,7 +343,7 @@ pub fn threads_page(
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
     folders: Vec<(PathBuf, u8)>,
-    providers: Vec<(Provider, Status)>,
+    providers: Vec<Sheet>,
     tabs: Vec<(String, String)>,
 ) -> impl View {
     view! {
@@ -358,29 +358,79 @@ pub fn threads_page(
     }
 }
 
+/// One account's row: its state, who it is, its last sign-in and usage, and [sign in], [sign out], [default].
 #[component]
-async fn provider(p: Provider, s: Status) -> Result<impl View> {
-    let (class, label) = match (s.signed_in, &s.install) {
+async fn account(a: Account, s: Status) -> Result<impl View> {
+    let (class, label) = match (s.signed_in, a.signed_in_at) {
         (true, _) => ("g", "✓ signed in"),
+        (false, Some(_)) => ("m", "needs sign-in again"),
         (false, None) => ("m", "signed out"),
-        (false, Some(_)) => ("m", "not installed"),
     };
+    let seen = a.signed_in_at.map(|at| match age(at).as_str() {
+        "now" => "last sign-in just now".to_owned(),
+        ago => format!("last sign-in {ago} ago"),
+    });
+    let line = [s.who.or(Some(s.line)), seen, s.usage];
+    let line: Vec<String> = line
+        .into_iter()
+        .flatten()
+        .filter(|l| !l.is_empty())
+        .collect();
+    Ok(view! {
+        <div class="ac" data-account=(a.name.clone())>
+            <div class="fh">
+                <b>(a.label())</b>
+                <span class=(class)>(label)</span>
+            </div>
+            <p class="ds">(line.join(" · "))</p>
+            <div class="ab">
+                <button type="button" class="si" hidden=(s.signed_in)>"sign in"</button>
+                if s.signed_in || a.dir.is_some() {
+                    <button type="button" class="sg">"sign out"</button>
+                }
+                if a.default {
+                    <span class="ds">"default for new threads"</span>
+                } else {
+                    <button type="button" class="df">"make default"</button>
+                }
+            </div>
+        </div>
+    })
+}
+
+/// One provider on the sign-ins card: its accounts (the system default first) and [+ account], or the install line
+/// when its CLI is missing; the login terminal (drawn by `chat.js`).
+#[component]
+async fn provider(sheet: Sheet) -> Result<impl View> {
+    let p = sheet.provider;
+    let install = sheet.accounts.first().and_then(|(_, s)| s.install.clone());
+    let add = install.is_none() && !p.home.is_empty();
     Ok(view! {
         <div class="pv" data-provider=(p.name.clone())>
             <div class="fh">
                 <b>(p.name.clone())</b>
-                <span class=(class)>(label)</span>
-                <button
-                    type="button"
-                    class="si"
-                    hidden=(s.signed_in || s.install.is_some())
-                >
-                    "sign in"
-                </button>
+                if install.is_some() {
+                    <span class="m">"not installed"</span>
+                }
+                if add {
+                    <button type="button" class="ad">"+ account"</button>
+                }
             </div>
-            <p class="ds">(s.line)</p>
-            if let Some(fix) = s.install.filter(|f| !f.is_empty()) {
-                hint(why: "on the Mac:", fix: fix.as_str(), then: "")
+            if let Some(why) = sheet.why {
+                <p class="ds wy">(why)</p>
+            }
+            match install {
+                Some(fix) => {
+                    <p class="ds">"not installed on this Mac"</p>
+                    if !fix.is_empty() {
+                        hint(why: "on the Mac:", fix: fix.as_str(), then: "")
+                    }
+                }
+                None => {
+                    for (a, s) in sheet.accounts {
+                        account(a: a, s: s)
+                    }
+                }
             }
             <div class="lg" hidden=(true)>
                 <p class="ds">(format!("{} · shed terminal", p.login.join(" ")))</p>
@@ -400,23 +450,32 @@ async fn provider(p: Provider, s: Status) -> Result<impl View> {
 }
 
 #[component]
-async fn signins(providers: Vec<(Provider, Status)>) -> Result<impl View> {
+async fn signins(providers: Vec<Sheet>) -> Result<impl View> {
     Ok(view! {
         <section class="nf" id="signins" hidden=(true)>
             <div class="fh">
                 <b>"sign-ins"</b>
                 <a class="gl" href="#" aria-label="close sign-ins">"×"</a>
             </div>
-            for (p, s) in providers {
-                provider(p: p, s: s)
+            for sheet in providers {
+                provider(sheet: sheet)
             }
         </section>
     })
 }
 
-/// One agent in the new-thread picker: signed in `✓`, or signed out with a link to the sign-ins card.
+/// One agent in the new-thread picker: its default account signed in `✓`, or signed out with a link to the
+/// sign-ins card; and the account picker, the default preselected.
 #[component]
-async fn agent(id: String, first: bool, signed: Option<bool>) -> Result<impl View> {
+async fn agent(
+    id: String,
+    first: bool,
+    accounts: Option<Vec<(Account, Status)>>,
+) -> Result<impl View> {
+    let signed = accounts.as_ref().and_then(|list| {
+        let default = list.iter().find(|(a, _)| a.default);
+        default.map(|(_, s)| s.signed_in)
+    });
     Ok(view! {
         <label>
             <input type="radio" name="agent" value=(id.clone()) checked=(first)>
@@ -433,6 +492,19 @@ async fn agent(id: String, first: bool, signed: Option<bool>) -> Result<impl Vie
                 }
             }
         </label>
+        if let Some(list) = accounts {
+            <select name=(format!("account:{id}")) aria-label=(format!("{id} account"))>
+                for (a, s) in list {
+                    <option value=(a.name.clone()) selected=(a.default)>
+                        (if s.signed_in {
+                            a.label().to_owned()
+                        } else {
+                            format!("{} · signed out", a.label())
+                        })
+                    </option>
+                }
+            </select>
+        }
         if signed == Some(false) {
             <a class="so" href="#signins">(format!("sign in {id}"))</a>
         }
@@ -496,16 +568,16 @@ async fn threads(
     rows: Vec<Summary>,
     agents: Result<Vec<Agent>, String>,
     folders: Vec<(PathBuf, u8)>,
-    providers: Vec<(Provider, Status)>,
+    providers: Vec<Sheet>,
     tabs: Vec<(String, String)>,
 ) -> Result<impl View> {
     let empty = rows.is_empty();
     // Start waits for an agent and a folder to pick.
     let can_start = !folders.is_empty() && agents.as_ref().is_ok_and(|a| !a.is_empty());
-    let signed: BTreeMap<String, bool> = providers
+    let accounts: BTreeMap<String, Vec<(Account, Status)>> = providers
         .iter()
         .rev()
-        .map(|(p, s)| (p.agent.clone(), s.signed_in))
+        .map(|p| (p.provider.agent.clone(), p.accounts.clone()))
         .collect();
     let mut cards: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
     for r in rows {
@@ -543,7 +615,7 @@ async fn threads(
                                     agent(
                                         id: a.id.clone(),
                                         first: i == 0,
-                                        signed: signed.get(&a.id).copied()
+                                        accounts: accounts.get(&a.id).cloned()
                                     )
                                 }
                             }
@@ -683,7 +755,15 @@ async fn chat(thread: Thread, turn: Turn) -> Result<impl View> {
                         <h1>(thread.title.clone())</h1>
                         <span class="ds">
                             <i class="dt"></i>
-                            (format!("{} · {folder} · ", thread.agent))
+                            (if thread.account.is_empty() {
+                                format!("{} · {folder} · ", thread.agent)
+                            } else {
+                                format!(
+                                    "{} · {} · {folder} · ",
+                                    thread.agent,
+                                    thread.account,
+                                )
+                            })
                             <span id="st" data-st=(state(&turn.state))></span>
                         </span>
                     </div>
