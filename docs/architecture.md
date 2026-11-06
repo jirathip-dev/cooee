@@ -25,6 +25,7 @@ keeps them going while the phone is away; cooee talks to shed and pings the phon
 |---|---|---|---|
 | `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), paired devices, providers (status, redaction), the shed client; no HTTP | no workspace crate |
 | `cooee-web` | `web/` | the web UI, HTML-first (ADR 0001, #49): server-rendered pages and sheets, strict TypeScript in `web/ts` stripped by `build.rs` (oxc; no Node to build) only where script is needed, `app.css`, the PWA manifest, the themes and schemes (`look.rs`, `shown.rs`, `themes/`, `schemes/`); its script calls only `docs/api.md` | not the server or binary |
+| `cooee-machines` | `crates/cooee-machines` | the first-party plugin `machines` ([plugins.md](plugins.md)): machines' health from shed, its backend and tab module | core |
 | `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3) | core, web |
 | `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
 
@@ -50,6 +51,14 @@ no method for them). Everything else goes over shed's socket, one connection per
 cancels are framed `send`s, as `shed send|approve|cancel` do. One `events` stream (label `cooee=1`) feeds every thread;
 after a restart cooee re-attaches each open thread to its terminal by name and replays from the last event it applied.
 
+A new thread is stored and listed before shed starts its agent, so an ask that comes during the start is shown, and its
+`random_id` is kept: a retried start (after a timeout or a crash) adopts that thread and never starts a second
+terminal; a start whose CLI failed while the terminal came up anyway is kept too. Each socket call gives up after 10 s
+(a `wait` gets its own timeout on top), so one stuck call never holds its thread; a message or answer to a terminal
+that is gone gets "Not delivered" (410). A working turn with no shed event for 30 minutes shows as needs-you, with a
+push, until its next event. Page loads run no command: the installed agents and the sign-ins' status are checked at
+start and every 30 s (the sign-ins also after a login, sign-out or new default), and pages read that.
+
 Each shed event maps to items through one exhaustive `match` (`cooee-core/src/chat.rs`). The page gets them over SSE
 (`/threads/<id>/events`), each with id `<run>.<seq>`; a thread keeps its last 4,096 page events, so a page that
 reconnects with `Last-Event-ID` gets exactly what it missed, and one from another run or too far behind gets `reset`
@@ -63,7 +72,8 @@ style, scripts, `sw.js`, `POST /look`, the themes' files) needs a paired device:
 or write gets 401. `/pair` is the app's shell for an unpaired browser (#21): the look sheet, a pair hint and the
 composer off, with no thread titles or messages. `cooee pair` prints a six-digit code (and its
 `/pair?code=` link as a QR code), good for 10 minutes and once; five wrong tries drop it. The browser that enters it
-gets a random token as an `HttpOnly`, `SameSite=Strict` cookie. `<data>/devices.json` (0600) keeps only SHA-256
+gets a random token as an `HttpOnly`, `SameSite=Strict` cookie. A `devices.json` that can't be read gets 503, never
+taken for "not paired". `<data>/devices.json` (0600) keeps only SHA-256
 hashes. The other way round, the phone asks for a code (`/pair/request`), shows it, and polls `/pair/claim` with the
 claim it was given; `cooee pair <code>` on the Mac approves it and the next poll gets the cookie (at most 4 open
 requests, 10 minutes each, only hashes kept). `cooee devices` lists the devices and `cooee devices rm <id>` unpairs one
@@ -75,7 +85,8 @@ Before that, every request's `Host` (and its `Origin`, when sent) must be localh
 keep `bind` on 127.0.0.1, run `tailscale serve --bg 4747`, and put the machine's Tailscale name in `allowed_hosts`.
 
 Web push (RFC 8291 aes128gcm, VAPID per RFC 8292, sent with `curl`): the VAPID key is made once and kept in the
-macOS keychain (`security`, service `cooee`), else in `<data>/vapid.key` (0600). The thread list's 🔔 subscribes;
+macOS keychain (`security`, service `cooee`; a call that takes over 5 s, as an unseen prompt after a rebuild would,
+is an error), else in `<data>/vapid.key` (0600). The thread list's 🔔 subscribes;
 subscriptions sit in `<data>/push.json` (0600), each tied to its device. A push goes out when an agent asks for an
 approval, a turn finishes while no page has the thread open, or an agent errors. Each one is a line about the thread:
 `{title, body, tag: <thread>, url: /t/<thread>, item}`. The service worker (push, and a network-first copy of the pages and static files for offline) shows it under the
@@ -120,6 +131,13 @@ runs in a sandboxed frame (an opaque origin with a strict Content-Security-Polic
 through the page around it and cooee's proxy (`/p/<name>/api/…`), which adds the plugin's token and drops the device's
 cookie. The backend posts pushes and choice cards back with that token; the owner's answer to a card goes to it.
 
+Plugins are installed like lazy.nvim's (#37): a git repo with a `cooee-plugin.toml`, added from the built-in index
+(`plugins/index.toml`) or by URL with `cooee plugin add` or Settings › Plugins. Each commit builds in its own folder
+and goes live only after its backend served its first tab's module; `plugins.lock` pins it and keeps the build before
+to roll back to. `cooee serve` runs every enabled backend as its child (`cooee-server/src/manage.rs`): restarts with
+backoff, 5 crashes in 10 minutes turn it off with an alert. [improve] puts an agent on a branch of the plugin's
+checkout; approving builds and swaps it in the same way.
+
 ## Configuration
 
 One TOML file per instance, `$XDG_CONFIG_HOME/cooee/<instance>/config.toml` (else `~/.config/cooee/<instance>/…`, or
@@ -144,6 +162,7 @@ for the owner to run. `cooee doctor` checks the service, port, shed, push key an
 | `providers` | Claude Code, Codex, Gemini | The sign-ins: `[[providers]]` with `name`, `agent` (its ACP agent id), `login`, `status` and `logout` (commands, as arrays), `install` and `home` (the CLI's config-folder variable; without it only the system default account). Setting it replaces the defaults. |
 | `theme` | `farm` | The theme a device shows until it picks its own ([themes.md](themes.md)); own themes and schemes live in `themes/` and `schemes/` beside the config file. |
 | `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |
+| `plugin_index` | the built-in `plugins/index.toml` | The plugin index `cooee plugin add <name>` and Settings › Plugins list ([plugins.md](plugins.md)). |
 
 ## The app shell (#21, herdsman#553 rows 1–14)
 

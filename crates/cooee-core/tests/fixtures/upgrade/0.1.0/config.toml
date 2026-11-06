@@ -1,0 +1,25 @@
+# A 0.1.0 config.toml using every key that release reads. Never edited: a later release adds its own.
+port = 4747
+bind = "127.0.0.1"
+allowed_hosts = ["mac.tailnet.example"]
+roots = ["~/Projects", "/srv/work"]
+shed = "shed"
+shed_dir = "/tmp/shed"
+data = "/tmp/cooee-data"
+theme = "farm"
+
+[[providers]]
+name = "Claude Code"
+agent = "claude-acp"
+login = ["claude", "auth", "login"]
+status = ["claude", "auth", "status"]
+logout = ["claude", "auth", "logout"]
+install = "npm install -g @anthropic-ai/claude-code"
+home = "CLAUDE_CONFIG_DIR"
+
+[[plugins]]
+name = "hello"
+label = "Hello"
+url = "http://127.0.0.1:4748"
+module = "/tab.js"
+token = "hello-token-0123456789"

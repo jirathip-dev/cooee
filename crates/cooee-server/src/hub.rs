@@ -19,13 +19,19 @@ use serde::Serialize;
 use serde_json::json;
 use tokio::sync::broadcast;
 
-use crate::push::{Push, note};
+use crate::push::{Note, Push, note};
 
 /// How many page events a thread keeps for a reconnecting page.
 const RING: usize = 4096;
 
 /// The label every cooee terminal carries.
 const LABEL: &str = "cooee";
+
+/// A working turn with no shed event for this long is surfaced as needs-you (herdsman#444), in milliseconds.
+const STUCK: u64 = 30 * 60 * 1000;
+
+/// How often the installed agents are checked again and stuck turns looked for.
+const TICK: Duration = Duration::from_secs(30);
 
 /// Why a thread action failed.
 #[derive(Debug, thiserror::Error)]
@@ -66,6 +72,10 @@ struct Live {
     tx: broadcast::Sender<Out>,
     /// The state the last published change left (a push goes on a change of state only).
     was: String,
+    /// When its last shed event came (or it was loaded), in Unix milliseconds.
+    moved: u64,
+    /// Its working turn was surfaced as stuck; the next shed event clears it.
+    stuck: bool,
 }
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
@@ -101,7 +111,9 @@ pub struct Hub {
     roots: Mutex<Vec<PathBuf>>,
     /// The config file the roots are saved in.
     config: Option<PathBuf>,
-    plugins: Vec<Plugin>,
+    plugins: Mutex<Vec<Plugin>>,
+    /// `shed agents`, as last checked: a page load never runs the CLI itself (herdsman#337).
+    agents: Mutex<Result<Vec<Agent>, String>>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
     /// The stamp of the newest thread id handed out.
@@ -182,6 +194,20 @@ fn refused(path: &Path, e: &io::Error) -> HubError {
 }
 
 impl Live {
+    fn new(meta: Thread, chat: Chat) -> Self {
+        Self {
+            applied: chat.seq(),
+            was: chat.turn.state.clone(),
+            meta,
+            chat,
+            seq: 0,
+            ring: VecDeque::new(),
+            tx: broadcast::channel(RING).0,
+            moved: now(),
+            stuck: false,
+        }
+    }
+
     fn emit(&mut self, event: &'static str, data: String) {
         self.seq += 1;
         let out = Out {
@@ -241,31 +267,31 @@ impl Hub {
         for id in store.ids()? {
             let meta = store.load(&id)?;
             let chat = Chat::from_versions(store.items(&id)?);
-            let live = Live {
-                applied: chat.seq(),
-                was: chat.turn.state.clone(),
-                meta,
-                chat,
-                seq: 0,
-                ring: VecDeque::new(),
-                tx: broadcast::channel(RING).0,
-            };
-            threads.insert(id, Arc::new(Mutex::new(live)));
+            threads.insert(id, Arc::new(Mutex::new(Live::new(meta, chat))));
         }
         let hub = Arc::new(Self {
+            agents: Mutex::new(shed.agents().map_err(|e| e.to_string())),
             shed,
             store,
             push: Push::new(data),
             theme,
             roots: Mutex::new(roots),
             config,
-            plugins,
+            plugins: Mutex::new(plugins),
             boot: format!("{:x}", now()),
             threads: Mutex::new(threads),
             last: Mutex::new(0),
         });
         let follower = Arc::clone(&hub);
         thread::spawn(move || follower.follow());
+        let ticker = Arc::clone(&hub);
+        thread::spawn(move || {
+            loop {
+                thread::sleep(TICK);
+                *lock(&ticker.agents) = ticker.shed.agents().map_err(|e| e.to_string());
+                ticker.watch(now());
+            }
+        });
         Ok(hub)
     }
 
@@ -356,18 +382,58 @@ impl Hub {
             return;
         }
         live.applied = event.seq;
-        let changes = live.chat.apply(now(), event.seq, event.kind);
+        live.moved = now();
+        let mut changes = Vec::new();
+        if live.stuck {
+            // It moves again: back to working (a state event below says more).
+            live.stuck = false;
+            "working".clone_into(&mut live.chat.turn.state);
+            live.chat.turn.note = None;
+            changes.push(Change::State(live.chat.turn.clone()));
+        }
+        changes.extend(live.chat.apply(now(), event.seq, event.kind));
         if let Err(e) = live.publish(self, changes) {
             eprintln!("cooee: {e}");
         }
     }
 
-    /// The installed ACP agents.
+    /// Surfaces each working turn with no shed event for 30 minutes before `now` as needs-you, once: the thread
+    /// shows blocked with a note, and a push says so.
+    pub fn watch(&self, now: u64) {
+        for live in self.all() {
+            let mut live = lock(&live);
+            if live.stuck || live.chat.turn.state != "working" || now < live.moved + STUCK {
+                continue;
+            }
+            live.stuck = true;
+            "blocked".clone_into(&mut live.chat.turn.state);
+            live.chat.turn.note = Some("no progress for 30 minutes".to_owned());
+            let said = format!("{}: no progress for 30 minutes", live.meta.agent);
+            self.push.send(&Note {
+                title: live.meta.title.clone(),
+                body: self
+                    .theme
+                    .push_body("needs", &said)
+                    .chars()
+                    .take(120)
+                    .collect(),
+                tag: live.meta.id.clone(),
+                url: format!("/t/{}", live.meta.id),
+                item: live.chat.items.last().map_or(0, |i| i.id),
+            });
+            let turn = live.chat.turn.clone();
+            if let Err(e) = live.publish(self, vec![Change::State(turn)]) {
+                eprintln!("cooee: {e}");
+            }
+        }
+    }
+
+    /// The installed ACP agents, as last checked.
     ///
     /// # Errors
-    /// [`HubError::Shed`] when `shed agents` fails.
-    pub fn agents(&self) -> Result<Vec<Agent>, HubError> {
-        Ok(self.shed.agents()?)
+    /// Why `shed agents` failed, when it did.
+    pub fn agents(&self) -> Result<Vec<Agent>, String> {
+        lock(&self.agents).clone()
     }
 
     /// The folders a thread may work in, with their depth: each root (0), then the folders inside it (1) and inside
@@ -460,7 +526,8 @@ impl Hub {
     }
 
     /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, with `account`'s
-    /// config folder in `env` (none: the system default), then sends `text`. Returns the thread's id.
+    /// config folder in `env` (none: the system default), then sends `text`. Returns the thread's id. A retry with
+    /// the same `random_id` (after a timeout, or a crash) adopts the thread it started and never starts another.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a folder outside the roots or an empty message; [`HubError::Shed`] when the
@@ -473,56 +540,87 @@ impl Hub {
         random_id: &str,
         (account, env): (&str, Option<(&str, &Path)>),
     ) -> Result<String, HubError> {
-        self.shed.hello()?;
         let Some(folder) = self.allowed(folder) else {
             return Err(outside(folder));
         };
+        self.start(agent, &folder, text, random_id, (account, env))
+    }
+
+    /// [`Hub::create`] in a folder of cooee's own (a plugin's checkout), not checked against the roots.
+    ///
+    /// # Errors
+    /// As [`Hub::create`].
+    pub fn start(
+        &self,
+        agent: &str,
+        folder: &Path,
+        text: &str,
+        random_id: &str,
+        (account, env): (&str, Option<(&str, &Path)>),
+    ) -> Result<String, HubError> {
+        self.shed.hello()?;
         if text.trim().is_empty() {
             return Err(HubError::Refused("the first message is empty".to_owned()));
         }
-        let id = {
+        let (id, terminal, adopted) = {
             // Taken under the lock and counted up, so two threads started in one millisecond differ.
             let mut last = lock(&self.last);
-            *last = (*last + 1).max(now());
-            while lock(&self.threads).contains_key(&format!("t{:x}", *last)) {
-                *last += 1;
+            let started = self.all().into_iter().find_map(|l| {
+                let l = lock(&l);
+                let same = !random_id.is_empty() && l.meta.random_id == random_id;
+                same.then(|| (l.meta.id.clone(), l.meta.terminal.clone()))
+            });
+            if let Some((id, terminal)) = started {
+                (id, terminal, true)
+            } else {
+                {
+                    *last = (*last + 1).max(now());
+                    while lock(&self.threads).contains_key(&format!("t{:x}", *last)) {
+                        *last += 1;
+                    }
+                    let id = format!("t{:x}", *last);
+                    let title: String = text
+                        .trim()
+                        .lines()
+                        .next()
+                        .unwrap_or("")
+                        .chars()
+                        .take(60)
+                        .collect();
+                    let meta = Thread {
+                        id: id.clone(),
+                        title,
+                        agent: agent.to_owned(),
+                        folder: Some(folder.to_owned()),
+                        account: account.to_owned(),
+                        terminal: format!("cooee-{id}"),
+                        random_id: random_id.to_owned(),
+                        ..Thread::default()
+                    };
+                    // Stored and listed before shed starts it: an event (an ask) that comes before the start
+                    // returns is applied, and a crash after the start is adopted on restart (herdsman#446, #509).
+                    self.store.save(&meta)?;
+                    let terminal = meta.terminal.clone();
+                    let live = Live::new(meta, Chat::default());
+                    lock(&self.threads).insert(id.clone(), Arc::new(Mutex::new(live)));
+                    (id, terminal, false)
+                }
             }
-            format!("t{:x}", *last)
         };
-        let terminal = format!("cooee-{id}");
-        let labels = BTreeMap::from([
-            (LABEL.to_owned(), "1".to_owned()),
-            (format!("{LABEL}.thread"), id.clone()),
-        ]);
-        self.shed.run_acp(&terminal, agent, &folder, &labels, env)?;
-        let title: String = text
-            .trim()
-            .lines()
-            .next()
-            .unwrap_or("")
-            .chars()
-            .take(60)
-            .collect();
-        let meta = Thread {
-            id: id.clone(),
-            title,
-            agent: agent.to_owned(),
-            folder: Some(folder),
-            account: account.to_owned(),
-            terminal: terminal.clone(),
-            ..Thread::default()
-        };
-        self.store.save(&meta)?;
-        let live = Live {
-            meta,
-            chat: Chat::default(),
-            applied: 0,
-            seq: 0,
-            ring: VecDeque::new(),
-            tx: broadcast::channel(RING).0,
-            was: String::new(),
-        };
-        lock(&self.threads).insert(id.clone(), Arc::new(Mutex::new(live)));
+        if !adopted {
+            let labels = BTreeMap::from([
+                (LABEL.to_owned(), "1".to_owned()),
+                (format!("{LABEL}.thread"), id.clone()),
+            ]);
+            // A start that failed but came up anyway (a slow CLI) is kept, never started twice (herdsman#477).
+            if let Err(e) = self.shed.run_acp(&terminal, agent, folder, &labels, env)
+                && self.shed.get(&terminal).is_err()
+            {
+                lock(&self.threads).remove(&id);
+                self.store.remove(&id)?;
+                return Err(e.into());
+            }
+        }
         self.shed.ready(&terminal)?;
         self.send(&id, text, random_id)?;
         Ok(id)
@@ -576,11 +674,11 @@ impl Hub {
             Body::Approval {
                 plugin: Some(name), ..
             } => self
-                .plugins
-                .iter()
+                .plugins()
+                .into_iter()
                 .find(|p| &p.name == name)
                 .ok_or_else(|| io::Error::other("no longer configured"))
-                .and_then(|p| crate::plugin::answer(p, id, item, option))
+                .and_then(|p| crate::plugin::answer(&p, id, item, option))
                 .map_err(|e| HubError::Refused(format!("plugin {name}: {e}"))),
             _ => return self.shed_approve(&mut live, tapped, option),
         };
@@ -793,10 +891,15 @@ impl Hub {
         Ok((resume, live.tx.subscribe()))
     }
 
-    /// The configured plugins.
+    /// The plugins: the config's own and the installed ones' tabs.
     #[must_use]
-    pub fn plugins(&self) -> &[Plugin] {
-        &self.plugins
+    pub fn plugins(&self) -> Vec<Plugin> {
+        lock(&self.plugins).clone()
+    }
+
+    /// Replaces the plugins (the supervisor, as plugins are installed or removed).
+    pub fn set_plugins(&self, plugins: Vec<Plugin>) {
+        *lock(&self.plugins) = plugins;
     }
 
     /// The push subscriptions and key.
@@ -815,5 +918,119 @@ impl Hub {
 impl From<HubError> for io::Error {
     fn from(e: HubError) -> Self {
         io::Error::other(e.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Instant;
+
+    use cooee_core::shed_proto::{EventKind, Reported};
+
+    use super::*;
+
+    /// A hub over `dir`'s data with no shed (its follower retries in the background, harmlessly).
+    fn hub(dir: &Path) -> Arc<Hub> {
+        let shed = Shed::new(dir.join("no-shed"), Some(dir.join("no-shed-dir")));
+        let (looks, _) = cooee_web::Looks::load(None, None);
+        let theme = looks.themes[&looks.default].clone();
+        Hub::open(
+            shed,
+            &dir.join("data"),
+            (Vec::new(), None),
+            theme,
+            Vec::new(),
+        )
+        .unwrap()
+    }
+
+    fn scratch(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("cooee-hub-{name}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join("data/threads")).unwrap();
+        dir
+    }
+
+    /// Thread `id` on terminal `cooee-<id>`, with `lines` as its items file.
+    fn seed(dir: &Path, id: &str, lines: &str) {
+        let threads = dir.join("data/threads");
+        let meta = json!({ "format": 1, "thread": { "id": id, "title": id, "messages": [], "terminal": format!("cooee-{id}") } });
+        fs::write(threads.join(format!("{id}.json")), meta.to_string()).unwrap();
+        fs::write(threads.join(format!("{id}.jsonl")), lines).unwrap();
+    }
+
+    fn event(id: &str, seq: u64, kind: EventKind) -> Event {
+        Event {
+            seq,
+            name: format!("cooee-{id}"),
+            labels: BTreeMap::new(),
+            kind,
+        }
+    }
+
+    /// R6 (herdsman#447): a thread of 1,000 messages written as 30,000 versions serves its requests (a slice, the
+    /// list, the page's thread) in under 300 ms: none is quadratic in the log. (The fold at load: cooee-core `chat`.)
+    #[test]
+    fn r6_requests_over_a_long_log_are_within_budget() {
+        let dir = scratch("budget");
+        let mut lines = String::new();
+        for v in 0..30 {
+            for id in 1..=1000 {
+                let line = json!({ "id": id, "at": id, "seq": v * 1000 + id, "kind": "agent", "text": format!("reply {id} v{v}"), "stop_reason": "end_turn" });
+                lines += &line.to_string();
+                lines.push('\n');
+            }
+        }
+        seed(&dir, "long", &lines);
+        let hub = hub(&dir);
+        let at = Instant::now();
+        let slice = hub.slice("long", Some(500), 50, 50).unwrap();
+        let newest = hub.slice("long", None, 500, 0).unwrap();
+        let rows = hub.list();
+        hub.thread("long").unwrap();
+        let took = at.elapsed();
+        assert_eq!((slice.items.len(), slice.skipped_before), (101, 449));
+        assert_eq!(
+            slice.items[0].body,
+            Body::Agent {
+                text: "reply 450 v29".into(),
+                stop_reason: "end_turn".into()
+            }
+        );
+        assert_eq!((newest.items.len(), rows.len()), (500, 1));
+        assert!(took < Duration::from_millis(300), "{took:?}");
+    }
+
+    /// R15 (herdsman#444, #445, #493, #534): a working turn with no shed event for 30 minutes (a fake clock) is
+    /// surfaced as needs-you, once; its next event puts it back to working.
+    #[test]
+    fn r15_a_turn_idle_30_minutes_is_surfaced_as_needs_you() {
+        let dir = scratch("stuck");
+        seed(&dir, "idle", "");
+        let hub = hub(&dir);
+        let working = Reported {
+            state: "working".to_owned(),
+            note: None,
+            state_source: None,
+        };
+        hub.apply(event("idle", 1, EventKind::State(working)));
+        let state = |hub: &Hub| hub.thread("idle").unwrap().1;
+        let t0 = now();
+        hub.watch(t0 + STUCK - 60_000);
+        assert_eq!(state(&hub).state, "working");
+        let (_, rx) = hub.subscribe("idle", "").unwrap();
+        hub.watch(t0 + STUCK + 1);
+        let turn = state(&hub);
+        assert_eq!(
+            (turn.state.as_str(), turn.note.as_deref()),
+            ("blocked", Some("no progress for 30 minutes"))
+        );
+        // Once: a second look sends nothing more.
+        hub.watch(t0 + 2 * STUCK);
+        assert_eq!(rx.len(), 1);
+        // On the list too.
+        assert_eq!(hub.list()[0].state, "blocked");
+        hub.apply(event("idle", 2, EventKind::Text { text: "w".into() }));
+        assert_eq!(state(&hub).state, "working");
     }
 }

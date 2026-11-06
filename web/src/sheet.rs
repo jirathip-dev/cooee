@@ -1,7 +1,7 @@
 //! The sheets (#49): the look sheet, Settings and Settings › Folders as server-rendered popovers in `#sheet`, so they
 //! open with no script. The look sheet is a form: with no script a key posts the pick (`POST /look` sets the cookie
 //! and goes back); `look.ts` applies it in place instead and keeps the marks in step. `chat.ts` fills Settings'
-//! alerts and devices and `look.ts` Settings › Folders, from the JSON API.
+//! alerts, devices and plugins, and `look.ts` Settings › Folders, from the JSON API.
 
 use std::sync::Arc;
 
@@ -45,7 +45,9 @@ where
     names
 }
 
-const SECTIONS: [&str; 6] = ["sign-ins", "folders", "look", "alerts", "devices", "report"];
+const SECTIONS: [&str; 7] = [
+    "sign-ins", "folders", "look", "alerts", "devices", "plugins", "report",
+];
 
 fn aria(on: bool) -> &'static str {
     if on { "true" } else { "false" }
@@ -302,6 +304,8 @@ async fn settings(cx: &Cx) -> Result<impl View> {
                 <div id="s-alerts-box"></div>
                 <p class="ch" id="s-devices">"devices"</p>
                 <div id="s-devices-box"></div>
+                <p class="ch" id="s-plugins">"plugins"</p>
+                <div id="s-plugins-box"></div>
                 <p class="ch" id="s-report">"report"</p>
                 <button type="button" class="sr" data-report=(true)>
                     <span class="sk">"report a problem"</span>

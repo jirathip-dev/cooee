@@ -47,6 +47,9 @@ pub struct Thread {
     /// The thread was closed: its terminal is killed and removed.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub closed: bool,
+    /// The page's id for the start that made it, so a retried start adopts this thread instead of starting another.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub random_id: String,
 }
 
 /// One message in a thread.
@@ -209,6 +212,24 @@ impl Store {
             .and_then(|()| file.sync_all())
             .map_err(io_err(&tmp))?;
         Ok((tmp, path))
+    }
+
+    /// Removes thread `id`'s files (a start that never ran); files already gone are fine.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if the id is invalid or a file can't be removed.
+    pub fn remove(&self, id: &str) -> Result<(), StoreError> {
+        let path = self.path(id)?;
+        let lock = self.lock(id);
+        let _held = lock.lock().unwrap_or_else(PoisonError::into_inner);
+        for file in [path.with_extension("jsonl"), path] {
+            match fs::remove_file(&file) {
+                Err(e) if e.kind() != io::ErrorKind::NotFound => return Err(io_err(&file)(e)),
+                _ => {}
+            }
+        }
+        Ok(())
     }
 
     /// Appends `item` as one line to thread `id`'s items and fsyncs it.

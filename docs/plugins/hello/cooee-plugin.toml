@@ -1,0 +1,11 @@
+# The example plugin's manifest (docs/plugins.md): `cooee plugin add <its git URL>` builds and runs it.
+name = "hello"
+version = "0.1.0"
+build = "node --check server.mjs"
+run = "TOKEN=$COOEE_PLUGIN_TOKEN exec node server.mjs"
+needs = ["node"]
+
+[[tabs]]
+name = "hello"
+label = "Hello"
+module = "/tab.js"

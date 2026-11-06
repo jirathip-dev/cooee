@@ -68,7 +68,7 @@ p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:
 .pill{position:absolute;bottom:100%;left:50%;transform:translate(-50%,-8px);display:flex;align-items:center;gap:1ch;padding:4px 4px 4px 12px;background:var(--card);border:1px solid var(--edge);border-radius:var(--r-pill);color:var(--mute);white-space:nowrap}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media (max-width:599px){.bar{flex-wrap:wrap}.tabs{order:9;flex-basis:100%}}
-.tabs{display:flex;gap:4px}.tabs a{display:inline-grid;place-items:center;min-height:44px;padding:0 10px;border-radius:999px;color:var(--fg);text-decoration:none}.tabs a.on{background:var(--bg);font-weight:600}
+.tabs{display:flex;gap:4px}.tabs a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 10px;border-radius:999px;color:var(--fg);text-decoration:none}.tabs a.on{background:var(--bg);font-weight:600}.tabs .dot{color:var(--r);font-style:normal;font-size:.7em;margin-left:4px}
 .pt{display:flex;flex-direction:column;height:100dvh}.pf{flex:1;width:100%;border:0;background:var(--bg)}
 [hidden]{display:none!important}
 
@@ -202,3 +202,6 @@ html[data-style=terminal] .swa{border-radius:4px}
 .nf .fl{flex-direction:column;flex-wrap:nowrap;gap:0;max-height:40vh;overflow-y:auto}
 .nf .fl label{border:0;border-radius:0;border-top:1px solid var(--line);overflow-wrap:anywhere}.fl [data-d="1"]{padding-left:28px}.fl [data-d="2"]{padding-left:44px}
 #fq{flex:1;min-width:0}.lrw .sk{min-width:0;overflow-wrap:anywhere}
+.pga{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.plg{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.4 var(--mono);max-height:40vh;overflow:auto;margin:8px 0;padding:8px;background:var(--bg);border-radius:var(--r-row)}
+#s-plugins-box form input{flex:1;min-width:0;font:16px var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:var(--hit)}

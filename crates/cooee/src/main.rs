@@ -16,7 +16,8 @@ use qrcode::{QrCode, render::unicode::Dense1x2};
 mod setup;
 
 const USAGE: &str = "usage: cooee <serve | pair [<code>] | devices | reports | devices rm <id> | install --port <p> | doctor \
-                     | setup [--port <p>] [--dry-run] [--yes]> [--instance <name>] [--config <file>] | cooee --version";
+                     | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
+                     | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list> [--instance <name>] [--config <file>] | cooee --version";
 
 /// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the exact version.
 const SHED_CARGO: [&str; 8] = [
@@ -26,7 +27,7 @@ const SHED_CARGO: [&str; 8] = [
     "--git",
     "https://github.com/jirathip-dev/shed",
     "--rev",
-    "8bac04fdb8542ef496c614b47126d85c50a7892e",
+    "1956535985c2d778a70b53a051cf25b4ee598300",
     "shed",
 ];
 
@@ -53,11 +54,12 @@ fn main() -> ExitCode {
         let at = args.iter().position(|a| a == name);
         at.map(|i| args.remove(i)).is_some()
     };
-    let (dry_run, yes) = (switch("--dry-run"), switch("--yes"));
-    let (Ok(instance), Ok(config), Ok(port)) = (
+    let (dry_run, yes, purge) = (switch("--dry-run"), switch("--yes"), switch("--purge"));
+    let (Ok(instance), Ok(config), Ok(port), Ok(rev)) = (
         flag(&mut args, "--instance"),
         flag(&mut args, "--config"),
         flag(&mut args, "--port"),
+        flag(&mut args, "--rev"),
     ) else {
         eprintln!("{USAGE}");
         return ExitCode::from(2);
@@ -98,6 +100,13 @@ fn main() -> ExitCode {
             return with_config(path.as_deref(), &instance, |config| remove(config, &id));
         }
         ["doctor"] => doctor,
+        ["plugin", rest @ ..] => {
+            let rest: Vec<String> = rest.iter().map(|a| (*a).to_owned()).collect();
+            let rest: Vec<&str> = rest.iter().map(String::as_str).collect();
+            return with_config(path.as_deref(), &instance, |config| {
+                plugin(config, &rest, rev.as_deref(), yes, purge)
+            });
+        }
         ["install"] => {
             let Some(port) = port.and_then(|p| p.parse().ok()) else {
                 eprintln!("{USAGE}");
@@ -157,9 +166,21 @@ fn finish(result: Result<(), String>) -> ExitCode {
     }
 }
 
+/// Serves the instance; a `[[plugins]]` entry named `machines` is the first-party machines plugin, run here.
 fn serve(config: &Config) -> Result<(), String> {
+    let machines = config.plugins.iter().find(|p| p.name == "machines");
     cooee_server::serve(config, |addr| {
         println!("cooee: listening on http://{addr}");
+        let Some(p) = machines else { return };
+        let ip = if addr.ip().is_unspecified() {
+            Ipv4Addr::LOCALHOST.into()
+        } else {
+            addr.ip()
+        };
+        let (shed, dir) = (config.shed.clone(), config.shed_dir.clone());
+        if let Err(e) = cooee_machines::start(p, shed, dir, SocketAddr::new(ip, addr.port())) {
+            eprintln!("cooee: plugin machines at {}: {e}", p.url);
+        }
     })
     .map_err(|e| e.to_string())
 }
@@ -253,6 +274,92 @@ fn remove(config: &Config, id: &str) -> Result<(), String> {
     } else {
         Err(format!("no device {id}"))
     }
+}
+
+/// Shows `plan`'s confirm; goes on with `--yes` or a `y` typed.
+fn confirm(plan: &cooee_server::Plan, yes: bool) -> Result<(), String> {
+    println!("{}", plan.text);
+    if yes {
+        return Ok(());
+    }
+    print!("go ahead? [y/N] ");
+    let _ = std::io::Write::flush(&mut std::io::stdout());
+    let mut answer = String::new();
+    let _ = std::io::stdin().read_line(&mut answer);
+    match answer.trim() {
+        "y" | "yes" => Ok(()),
+        _ => Err("nothing changed".to_owned()),
+    }
+}
+
+/// `cooee plugin add|update|remove|list` (docs/plugins.md).
+fn plugin(
+    config: &Config,
+    args: &[&str],
+    rev: Option<&str>,
+    yes: bool,
+    purge: bool,
+) -> Result<(), String> {
+    let m = cooee_server::Manager::new(config).map_err(|e| e.to_string())?;
+    let e = |e: std::io::Error| e.to_string();
+    match args {
+        ["add", source] => {
+            let plan = m.plan(source, rev).map_err(e)?;
+            confirm(&plan, yes)?;
+            m.add(&plan).map_err(e)?;
+            println!("added {}: cooee serve runs it", plan.manifest.name);
+        }
+        ["update", names @ ..] => {
+            let all: Vec<String> = match names {
+                [] => m
+                    .installed()
+                    .map_err(e)?
+                    .into_iter()
+                    .map(|l| l.name)
+                    .collect(),
+                _ => names.iter().map(|n| (*n).to_owned()).collect(),
+            };
+            for name in all {
+                let plan = m.plan_update(&name).map_err(e)?;
+                if m.installed()
+                    .map_err(e)?
+                    .iter()
+                    .any(|l| l.name == name && l.commit == plan.commit)
+                {
+                    println!("{name}: up to date");
+                    continue;
+                }
+                confirm(&plan, yes)?;
+                m.update(&plan)
+                    .map_err(|x| format!("{name}: {x}; the old build keeps running"))?;
+                println!("updated {name} to {}", &plan.commit[..7]);
+            }
+        }
+        ["remove", name] => {
+            m.remove(name, purge).map_err(e)?;
+            let kept = if purge {
+                ""
+            } else {
+                " (its checkout stays: --purge removes it)"
+            };
+            println!("removed {name}{kept}");
+        }
+        ["list"] => {
+            for r in m.list().map_err(e)? {
+                let l = &r.locked;
+                let source = if l.listed { "index" } else { "url" };
+                println!(
+                    "{}  {}  {}  {source}  {}",
+                    l.name,
+                    l.version,
+                    &l.commit[..7],
+                    r.state
+                );
+            }
+        }
+        _ => return Err(USAGE.to_owned()),
+    }
+    Ok(())
 }
 
 /// This machine's tailnet name (`tailscale status`), if Tailscale is up.

@@ -291,7 +291,11 @@ fn state(state: &str) -> &'static str {
 /// The header: the app's name (the heading on the thread list, with the 🔔 that turns alerts on; else a link to
 /// it), the plugin tabs (`current` open), `+`, the look sheet and Settings.
 #[component]
-async fn header(home: bool, tabs: Vec<(String, String)>, current: String) -> Result<impl View> {
+async fn header(
+    home: bool,
+    tabs: Vec<(String, String, bool)>,
+    current: String,
+) -> Result<impl View> {
     Ok(view! {
         <header class="bar">
             if home {
@@ -360,21 +364,25 @@ async fn row(cx: &Cx, r: Summary) -> Result<impl View> {
     })
 }
 
-/// Chat and the plugin tabs (`(name, label)`), when there are any; `current` is the open one (`""`: Chat).
+/// Chat and the plugin tabs (`(name, label, dot)`), when there are any; `current` is the open one (`""`: Chat).
 #[component]
-async fn nav(tabs: Vec<(String, String)>, current: String) -> Result<impl View> {
+async fn nav(tabs: Vec<(String, String, bool)>, current: String) -> Result<impl View> {
     Ok(view! {
         if !tabs.is_empty() {
             <nav class="tabs" aria-label="tabs">
                 <a href="/" class=(if current.is_empty() { "on" } else { "" })>
                     "Chat"
                 </a>
-                for (name, label) in tabs {
+                for (name, label, dot) in tabs {
                     <a
                         href=(format!("/p/{name}"))
                         class=(if name == current { "on" } else { "" })
                     >
                         (label)
+                        if dot {
+                            <i class="dot" aria-hidden="true">"●"</i>
+                            <span class="vh">" (needs you)"</span>
+                        }
                     </a>
                 }
             </nav>
@@ -394,7 +402,7 @@ pub fn threads_page(
     agents: Result<Vec<Agent>, String>,
     folders: Vec<(PathBuf, u8)>,
     providers: Vec<Sheet>,
-    tabs: Vec<(String, String)>,
+    tabs: Vec<(String, String, bool)>,
 ) -> impl View {
     view! {
         cx =>
@@ -620,7 +628,7 @@ async fn threads(
     agents: Result<Vec<Agent>, String>,
     folders: Vec<(PathBuf, u8)>,
     providers: Vec<Sheet>,
-    tabs: Vec<(String, String)>,
+    tabs: Vec<(String, String, bool)>,
 ) -> Result<impl View> {
     let empty = rows.is_empty();
     let look = shown(cx);
@@ -719,12 +727,21 @@ async fn threads(
 
 /// Plugin `name`'s tab: its module runs in a sandboxed frame that `chat.ts` hosts.
 #[must_use]
-pub fn plugin_page(cx: &Cx, tabs: Vec<(String, String)>, name: String, label: String) -> impl View {
+pub fn plugin_page(
+    cx: &Cx,
+    tabs: Vec<(String, String, bool)>,
+    name: String,
+    label: String,
+) -> impl View {
     view! { cx => plugin(tabs: tabs, name: name, label: label) }
 }
 
 #[component]
-async fn plugin(tabs: Vec<(String, String)>, name: String, label: String) -> Result<impl View> {
+async fn plugin(
+    tabs: Vec<(String, String, bool)>,
+    name: String,
+    label: String,
+) -> Result<impl View> {
     let title = format!("{label} · cooee");
     Ok(view! {
         document(

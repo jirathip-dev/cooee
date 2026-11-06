@@ -18,6 +18,54 @@ token = "a-long-random-secret"    # shared with the backend; at least 16 charact
 
 `cooee serve` refuses to start when an entry breaks a rule (no token, two plugins of one name, …).
 
+## Installing plugins
+
+A plugin can also be installed, like a lazy.nvim plugin: a git repo with `cooee-plugin.toml` at its root.
+
+```toml
+name = "hello"                                      # its folder and lock entry: lowercase letters, digits and -
+version = "0.1.0"
+build = "node --check server.mjs"                   # run with sh -c in the checkout
+run = "TOKEN=$COOEE_PLUGIN_TOKEN exec node server.mjs"  # the backend: gets PORT, COOEE_PLUGIN_TOKEN and COOEE
+needs = ["node"]                                    # optional: tools it needs on PATH
+
+[[tabs]]                                            # one or more; each becomes a [[plugins]] entry
+name = "hello"
+label = "Hello"
+module = "/tab.js"
+```
+
+- `cooee plugin add <name | git-url> [--rev R] [--yes]` clones it into `<data>/plugins/<name>/repo`, shows what it will
+  run (the URL, the commit, the exact build and run commands, and "not reviewed" when it isn't in the index) and asks
+  to go ahead. Then it builds the commit in `builds/<commit>`, runs the backend on a spare port until it serves its
+  first tab's module (the health check), writes the tabs' `[[plugins]]` entries with a fresh token to
+  `<data>/plugins/plugins.toml` (read with the config's own) and records it in `<data>/plugins.lock` (name, URL,
+  commit, port; JSON).
+- `cooee plugin update [<name>] [--yes]` fetches the index's pinned commit (for a plugin added by URL, the latest on its
+  default branch), confirms, builds it in a new folder and switches only once the build and the health check pass;
+  otherwise the old one keeps running. The build before stays, to roll back to.
+- `cooee plugin remove <name> [--purge]` stops it and removes its entries; its folder stays unless `--purge`.
+- `cooee plugin list`: name, version, commit, source (index or url) and state.
+
+`cooee serve` runs each enabled plugin's backend as its child (no launchd job per plugin) on its port, with its output
+in `<data>/plugins/<name>/plugin.log` (its builds' too). A backend that exits restarts after 1 s, then 2, 4 and 8; the
+5th crash within 10 minutes turns the plugin off, with an alert. Settings › Plugins on the phone does the same as the
+CLI: each plugin's on/off, [update], [logs], [roll back] and [remove], and [+ add] with the index or a URL. Adding and
+updating show the same confirm, which holds only for the commit it showed.
+
+**The index** is `plugins/index.toml` in cooee's repo (`[[plugin]]`: `name`, `url`, pinned `commit`, `description`,
+and `first_party`), built in; `plugin_index` in the config points at another. Adding or moving an entry is a normal
+reviewed PR.
+
+**[improve]** opens a thread with the first agent in shed (its provider's default account) in the plugin's checkout,
+on a `cooee-improve` branch. [approve] commits the branch, builds it and swaps it in (the tab's frame reloads) with
+the build before kept for [roll back]; a failed build leaves the old one running. A first-party plugin says "improve
+via an issue" instead: it changes through cooee's own issue → review flow.
+
+**Safety.** Every tab runs in its sandboxed frame with its plugin's own token, and reaches only its own backend; no
+plugin can read cooee's data folder through the API. Its backend runs as the owner on the Mac, so adding, updating and
+improving are owner-only: the CLI on the Mac, or a paired device (a plugin's token is refused), after a confirm.
+
 ## How a tab runs
 
 - `/p/<name>` is the tab: cooee's bar with the tabs, and a frame. The frame's page, `/p/<name>/frame`, is the
@@ -43,16 +91,40 @@ token = "a-long-random-secret"    # shared with the backend; at least 16 charact
 
 The backend authenticates with the same token (`Authorization: Bearer <token>`); any other call is refused (401).
 
-- `POST /plugin/push` `{"text": "…", "path": "lane/3"}`: a push to every paired device, titled with the tab's label;
-  a tap opens `/p/<name>#lane/3` (`path` is optional). It answers with the notification sent.
+- `POST /plugin/push` `{"text": "…", "path": "lane/3", "tag": "lane"}`: a push to every paired device, titled with
+  the tab's label; a tap opens `/p/<name>#lane/3` (`path` is optional). A newer push of the same `tag` (optional,
+  default `plugin-<name>`) replaces the older one. It answers with the notification sent.
+- `POST /plugin/dot` `{"on": true}`: a dot on the plugin's tab (`false` clears it), until cooee restarts.
 - `POST /plugin/card` `{"thread": "<id>", "text": "Ship it?", "options": ["yes", "no"]}`: a choice card in a
   thread, pushed like an approval. The owner's tap goes back to the backend as `POST /cooee/choice`
   `{"thread", "item", "option"}` (with the token); a 2xx marks the card answered, anything else lets it be tapped
   again.
 
+## First-party plugin: machines
+
+`crates/cooee-machines`, built into cooee: the health of the machines shed runs on. A `[[plugins]]` entry named
+`machines` turns it on for that instance, and `cooee serve` runs its backend itself at the entry's `url`:
+
+```toml
+[[plugins]]
+name = "machines"
+label = "Machines"
+url = "http://127.0.0.1:4801"     # a free port; cooee listens there for the plugin
+module = "/tab.js"
+token = "another-long-random-secret"
+```
+
+Once a minute it asks shed (never SSH itself): `shed machine ls`, then `shed machine stats` for this machine and
+`shed --on <m> machine stats` for each added one (shed answers offline within 5 s). Each card shows online or offline
+with when it was last seen, load per CPU, memory pressure, swap, free disk and shed's terminals by state; each number
+has a 24 h sparkline, and a tap opens its chart. Only the samples newer than the last kept one are asked for. A
+machine going offline, under 10 GB of free disk or at 90 % memory pressure or more sends one push (tag `machine`, a
+tap opens `#<machine>`) when its set of problems changes, and the tab shows a dot while any machine has one.
+
 ## Example
 
-`docs/plugins/hello/` is a plugin in about 30 lines, used by the tests (`web/e2e/plugins.spec.mjs`). Run it with
+`docs/plugins/hello/` is a plugin in about 30 lines, used by the tests (`web/e2e/plugins.spec.mjs`; its manifest by
+`web/e2e/plugin-manager.spec.mjs`). Run it with
 `PORT=4800 COOEE=http://127.0.0.1:4747 TOKEN=a-long-random-secret node docs/plugins/hello/server.mjs` and the entry
 above.
 
