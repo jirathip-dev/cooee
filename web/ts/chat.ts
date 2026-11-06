@@ -111,8 +111,17 @@ function refresh(): Promise<unknown> | null {
 $("#rf")?.addEventListener("click", refresh);
 
 // The thread list's cards from `GET /threads`, drawn as the server draws them (lib.rs `threads`).
-type Row = { id: string; title: string; agent: string; state: string; last: string; at: number; unread: boolean };
-type Card = { folder: string; rows: Row[] };
+type Row = {
+  id: string;
+  title: string;
+  agent: string;
+  state: string;
+  last: string;
+  at: number;
+  unread: boolean;
+  workflow?: { role: string; round: string };
+};
+type Card = { folder: string; rows: Row[]; done?: Row[] };
 const STATE: Record<string, string> = {
   blocked: "needs",
   working: "working",
@@ -140,7 +149,11 @@ function rowOf(r: Row): HTMLElement {
   a.append(
     make("i", "ud", r.unread ? "●" : ""),
     make("span", "tt", r.title),
-    make("span", "ta", `${r.agent} · ${age(r.at)}`),
+    make(
+      "span",
+      "ta",
+      r.workflow ? `${r.workflow.role} · round ${r.workflow.round} · ${age(r.at)}` : `${r.agent} · ${age(r.at)}`,
+    ),
     tp,
   );
   return a;
@@ -161,8 +174,12 @@ function drawCards(list: HTMLElement, cards: Card[]): void {
     const card = make("section", "fc");
     const fh = make("div", "fh");
     fh.append(make("b", "", c.folder), make("span", "ds", `${c.rows.length} threads`));
-    card.append(fh, ...c.rows.slice(0, 3).map(rowOf));
-    if (c.rows.length > 3) {
+    card.append(fh, ...c.rows.slice(0, c.done ? undefined : 3).map(rowOf));
+    if (c.done?.length) {
+      const done = make("details");
+      done.append(make("summary", "", `${c.done.length} done today`), ...c.done.map(rowOf));
+      card.append(done);
+    } else if (!c.done && c.rows.length > 3) {
       const more = make("details");
       more.append(make("summary", "", `${c.rows.length - 3} older threads`), ...c.rows.slice(3).map(rowOf));
       card.append(more);
