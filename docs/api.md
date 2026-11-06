@@ -70,6 +70,18 @@ another run; load the newest slice again).
 | `POST /devices/remove` | `{id}` | text |
 | `POST /report` | `{note, path, target, html, look, viewport}` | text |
 
+## Plugins (Settings › Plugins)
+
+| Call | Body | Answer |
+|---|---|---|
+| `GET /plugins` | | `{installed: {name, version, commit, listed, state, enabled, first_party, improving?, previous?, tabs}[], index: {name, description}[], jobs: {name: text}, issues}` |
+| `GET /plugins/log?name=N` | | the plugin's log, text |
+| `POST /plugins/plan` | `{source}` or `{name, at}` | `{commit, text}`: what would run, to confirm |
+| `POST /plugins/add`, `/plugins/update` | the plan's body and its `commit` (a confirm holds for that commit only) | a JSON string (`"installing"`, …) |
+| `POST /plugins/enable` | `{name, on}` | a JSON string |
+| `POST /plugins/improve` | `{name, text}` | `{thread}` |
+| `POST /plugins/approve`, `/plugins/rollback`, `/plugins/remove` | `{name}` | a JSON string |
+
 ## Pairing (no cookie needed)
 
 | Call | Body | Answer |

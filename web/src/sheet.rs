@@ -217,7 +217,11 @@ async fn look_sheet(cx: &Cx) -> Result<impl View> {
                             data-v=(n.clone())
                             aria-selected=(aria(on))
                         >
-                            <img alt="" src=(format!("/look/{n}/icon.png"))>
+                            <img
+                                alt=""
+                                loading="lazy"
+                                src=(format!("/look/{n}/icon.png"))
+                            >
                             <span>(label)</span>
                             if on {
                                 <i class="tk">"✓"</i>
