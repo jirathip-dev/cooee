@@ -1,0 +1,15 @@
+{
+  "name": "cooee-web-checks",
+  "private": true,
+  "type": "module",
+  "description": "CI's checkers for web/ts (#49): tsc strict, Biome, and tsc-rs as a trial. cargo build needs none of this.",
+  "scripts": {
+    "check": "tsc -p ts && tsc -p ts/tsconfig.sw.json && biome check ts",
+    "trial": "tsc-rs -p ts && tsc-rs -p ts/tsconfig.sw.json"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.5",
+    "tsc-rs": "0.8.0",
+    "typescript": "7.0.2"
+  }
+}

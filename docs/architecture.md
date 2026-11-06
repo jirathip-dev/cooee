@@ -24,7 +24,7 @@ keeps them going while the phone is away; cooee talks to shed and pings the phon
 | Crate | Path | Holds | May depend on |
 |---|---|---|---|
 | `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), paired devices, providers (status, redaction), the shed client; no HTTP | no workspace crate |
-| `cooee-web` | `web/` | the web UI in Topcoat (ADR 0001): pages, `chat.js`, `app.css`, the PWA manifest, the themes and schemes (`look.rs`, `look.js`, `themes/`, `schemes/`) | not the server or binary |
+| `cooee-web` | `web/` | the web UI, HTML-first (ADR 0001, #49): server-rendered pages and sheets, strict TypeScript in `web/ts` stripped by `build.rs` (oxc; no Node to build) only where script is needed, `app.css`, the PWA manifest, the themes and schemes (`look.rs`, `shown.rs`, `themes/`, `schemes/`); its script calls only `docs/api.md` | not the server or binary |
 | `cooee-machines` | `crates/cooee-machines` | the first-party plugin `machines` ([plugins.md](plugins.md)): machines' health from shed, its backend and tab module | core |
 | `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3) | core, web |
 | `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
@@ -68,7 +68,7 @@ taken under the thread's lock with the subscription, so nothing is lost or doubl
 ## Pairing and push (M2)
 
 Everything but `/pair` (and `/pair/request`, `/pair/claim`, `/pair/cancel`) and the static files (manifest, icons,
-style, scripts, `sw.js`, the themes' files) needs a paired device: an unpaired page load goes to `/pair`, any other read
+style, scripts, `sw.js`, `POST /look`, the themes' files) needs a paired device: an unpaired page load goes to `/pair`, any other read
 or write gets 401. `/pair` is the app's shell for an unpaired browser (#21): the look sheet, a pair hint and the
 composer off, with no thread titles or messages. `cooee pair` prints a six-digit code (and its
 `/pair?code=` link as a QR code), good for 10 minutes and once; five wrong tries drop it. The browser that enters it

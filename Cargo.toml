@@ -29,6 +29,8 @@ serde_json = "=1.0.154"
 shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "1956535985c2d778a70b53a051cf25b4ee598300" }
 futures-util = { version = "=0.3.34", default-features = false }
 thiserror = "=2.0.21"
+# web/build.rs strips the types from web/ts (#49): oxc's parser, TypeScript transform and codegen.
+oxc = { version = "=0.157.0", default-features = false, features = ["codegen", "semantic", "transformer"] }
 # Pinned exactly (ADR 0001): Topcoat is pre-1.0 and its minors break.
 topcoat = { version = "=0.11.0", default-features = false, features = ["serve", "sse"] }
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "net", "sync"] }

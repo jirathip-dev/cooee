@@ -48,8 +48,9 @@ pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
 
 /// The paths an unpaired browser may load: pairing and the static files (and the themes' files under `/look/`).
-const OPEN: [&str; 12] = [
+const OPEN: [&str; 13] = [
     "/pair",
+    "/look",
     "/look.js",
     "/pair/request",
     "/pair/claim",
@@ -72,7 +73,7 @@ fn now() -> u64 {
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
 
-/// cooee's own error: one plain sentence, marked so the page shows it (`chat.js` words any other failure itself).
+/// cooee's own error: one plain sentence, marked so the page shows it (`chat.ts` words any other failure itself).
 fn plain(status: u16, text: &str) -> Result<Response> {
     Ok(Response::builder()
         .status(status)
@@ -418,6 +419,14 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
         }
     });
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
+}
+
+/// `GET /threads`: the thread list's cards, as the page draws them (its refresh, docs/api.md).
+#[route(GET "/threads")]
+async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_web::Card>>> {
+    Ok(Answer(
+        blocking(cx, |hub| Ok(cooee_web::cards(hub.list()))).await,
+    ))
 }
 
 /// `POST /threads`: a new thread.
@@ -1170,6 +1179,7 @@ pub fn router(
         .route(report)
         .page(home)
         .page(chat)
+        .route(thread_list)
         .route(messages)
         .route(events)
         .route(create)
