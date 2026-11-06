@@ -284,7 +284,87 @@ async function fillDevices() {
     return row;
   }));
 }
-addEventListener("cooee-sheet", (e) => { if (e.detail === "settings") { fillAlerts(); fillDevices(); } });
+// Settings' plugins section (docs/plugins.md): each installed plugin with its version, commit, source and state, on/off,
+// [update], [logs], [improve] (or "improve via an issue" for a first-party one), [roll back] and [remove]; [+ add]
+// lists the index, or takes a git URL ("not reviewed"). Adding, updating and approving show what will run, to confirm.
+let plugAdd = false, plugPoll = 0;
+async function plugDo(path, body, then) {
+  try { const r = await post(`/plugins/${path}`, body); if (then) await then(r); else toast(r); } catch (x) { toast(x.message, true); }
+  fillPlugins();
+}
+const plugPlan = (body, act) => plugDo("plan", body, async (plan) => {
+  if (act === "update" && plan.commit === body.at) return toast(`${body.name} is up to date`);
+  if (!confirm(`${act === "add" ? "Add" : "Update to"} this?\n\n${plan.text}`)) return;
+  toast(await post(`/plugins/${act}`, { ...body, commit: plan.commit }));
+});
+async function fillPlugins() {
+  const box = $("#s-plugins-box");
+  if (!box) return;
+  const r = await fetch("/plugins").catch(() => null);
+  if (!r?.ok) return box.replaceChildren(make("p", "ds", "plugins show when online"));
+  const { installed, index, jobs, issues } = await r.json();
+  const btn = (text, label, f) => { const b = make("button", "cn", text); b.type = "button"; b.setAttribute("aria-label", label); b.onclick = f; return b; };
+  const rows = installed.map((p) => {
+    const head = make("div", "lrw"), acts = make("div", "pga"), log = make("pre", "plg");
+    head.append(make("span", "", `${p.name} · ${p.version} · ${p.commit.slice(0, 7)} · ${p.listed ? "index" : "not reviewed"}`), make("span", "ds", p.state));
+    const seg = make("div", "seg");
+    seg.setAttribute("role", "radiogroup");
+    seg.setAttribute("aria-label", `${p.name} on or off`);
+    for (const on of [true, false]) {
+      const b = btn(on ? "on" : "off", `${p.name} ${on ? "on" : "off"}`, () => plugDo("enable", { name: p.name, on }));
+      b.className = "";
+      b.setAttribute("role", "radio");
+      b.setAttribute("aria-checked", p.enabled === on);
+      seg.append(b);
+    }
+    log.hidden = true;
+    acts.append(seg, btn("update", `update ${p.name}`, () => plugPlan({ name: p.name, at: p.commit }, "update")),
+      btn("logs", `logs of ${p.name}`, async () => { log.hidden = !log.hidden; if (!log.hidden) log.textContent = await (await fetch(`/plugins/log?name=${encodeURIComponent(p.name)}`)).text(); }));
+    if (p.first_party) {
+      const a = make("a", "", "improve via an issue");
+      a.href = issues;
+      a.target = "_blank";
+      acts.append(a);
+    } else if (p.improving) {
+      const a = make("a", "", "its chat");
+      a.href = `/t/${p.improving}`;
+      acts.append(a, btn("approve", `approve ${p.name}'s improvement`, () => {
+        if (confirm(`Build ${p.name}'s cooee-improve branch and swap it in? The build running now stays, to roll back to.`)) plugDo("approve", { name: p.name });
+      }));
+    } else {
+      acts.append(btn("improve", `improve ${p.name}`, () => {
+        const text = prompt(`What should change in ${p.name}? An agent works on a branch of its checkout; nothing runs until you approve.`);
+        if (text !== null) plugDo("improve", { name: p.name, text }, (t) => { location.href = `/t/${t.thread}`; });
+      }));
+    }
+    if (p.previous) acts.append(btn("roll back", `roll back ${p.name}`, () => { if (confirm(`Go back to ${p.name} ${p.previous.slice(0, 7)}?`)) plugDo("rollback", { name: p.name }); }));
+    acts.append(btn("remove", `remove ${p.name}`, () => { if (confirm(`Remove ${p.name}? Its tabs go; its checkout stays on the Mac.`)) plugDo("remove", { name: p.name }); }));
+    return [head, acts, log];
+  });
+  const busy = Object.entries(jobs).filter(([n]) => !installed.some((p) => p.name === n)).map(([n, j]) => make("p", j.startsWith("failed") ? "err" : "ds", `${n}: ${j}`));
+  const add = btn(plugAdd ? "close" : "+ add", plugAdd ? "close the plugin list" : "add a plugin", () => { plugAdd = !plugAdd; fillPlugins(); });
+  const more = [];
+  if (plugAdd) {
+    for (const l of index) {
+      const row = make("div", "lrw"), have = installed.some((p) => p.name === l.name);
+      row.append(make("span", "", `${l.name} · ${l.description}`), have ? make("span", "ds", "installed") : btn("add", `add ${l.name}`, () => plugPlan({ source: l.name }, "add")));
+      more.push(row);
+    }
+    const form = make("form", "lrw"), url = make("input");
+    url.setAttribute("aria-label", "git URL");
+    url.placeholder = "https://github.com/you/plugin";
+    form.append(url, btn("add by URL", "add by URL", () => {}));
+    form.onsubmit = (e) => { e.preventDefault(); if (url.value.trim()) plugPlan({ source: url.value.trim() }, "add"); };
+    form.lastChild.type = "submit";
+    more.push(form, make("p", "ds", "not reviewed: a plugin from a URL isn't in cooee's index, and its backend runs as you on this Mac"));
+  }
+  box.replaceChildren(...rows.flat(), ...busy, add, ...more);
+  clearTimeout(plugPoll);
+  // While a job runs or a backend is starting, the section follows it.
+  const settling = Object.values(jobs).some((j) => j.endsWith("…")) || installed.some((p) => ["starting", "not running"].includes(p.state));
+  if (settling && box.isConnected) plugPoll = setTimeout(fillPlugins, 1500);
+}
+addEventListener("cooee-sheet", (e) => { if (e.detail === "settings") { fillAlerts(); fillDevices(); fillPlugins(); } });
 
 // Report mode (Settings → report a problem, or `/report` sent in a thread): the next tap picks an element, outlined;
 // the note box at the bottom sends it with the page, the element and the look; `cooee reports` lists them.
@@ -390,6 +470,14 @@ if (frame) {
   new MutationObserver(theme).observe(document.documentElement, { attributes: true });
   matchMedia("(prefers-color-scheme: light)").addEventListener("change", theme);
   frame.src = frame.dataset.src + location.hash;
+  // An installed plugin's update, roll back or improvement reloads just this tab's frame.
+  let built = "";
+  setInterval(async () => {
+    const r = await fetch("/plugins").catch(() => null);
+    const p = r?.ok && (await r.json()).installed.find((p) => p.tabs.includes(frame.dataset.plugin));
+    if (p && built && p.commit !== built) frame.src = frame.dataset.src + location.hash;
+    if (p) built = p.commit;
+  }, 5000);
 }
 
 const main = $("main.chat");

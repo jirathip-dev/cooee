@@ -5,7 +5,8 @@
 # a link and reads a code (good-code signs it in), its status succeeds once signed in. The example plugin
 # (docs/plugins/hello) runs twice, as plugins `hello` and `other`, on $PORT + 1 and + 2. A fresh instance runs on
 # $PORT + 3. The main instance runs with HOME at the temp folder, so Settings › Folders browses it. The machines plugin
-# runs in it on $PORT + 4, the fake shed answering for this machine (24 h of samples) and an `air` that is offline.
+# runs in it on $PORT + 4, the fake shed answering for this machine (24 h of samples) and an `air` that is offline. Its
+# plugin index lists the example plugin as `greet`, in a git repo of its own.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -72,12 +73,28 @@ done
 mkdir -p "$tmp/schemes"
 sed 's/"Nord"/"Sea"/' web/schemes/nord.json >"$tmp/schemes/sea.json"
 
+# An installable plugin (#37): the example plugin as `greet`, a git repo of its own, in an index of one.
+mkdir -p "$tmp/greet"
+cp docs/plugins/hello/server.mjs docs/plugins/hello/tab.js "$tmp/greet/"
+sed 's/"hello"/"greet"/; s/"Hello"/"Greet"/' docs/plugins/hello/cooee-plugin.toml >"$tmp/greet/cooee-plugin.toml"
+git -C "$tmp/greet" init -q -b main
+git -C "$tmp/greet" add -A
+git -C "$tmp/greet" -c user.name=e2e -c user.email=e2e@localhost commit -qm greet
+cat >"$tmp/index.toml" <<EOF
+[[plugin]]
+name = "greet"
+url = "$tmp/greet"
+commit = "$(git -C "$tmp/greet" rev-parse HEAD)"
+description = "the example plugin"
+EOF
+
 cat >"$tmp/config.toml" <<EOF
 port = ${PORT:?}
 roots = ["$tmp/root"]
 shed = "$tmp/shed/shed"
 shed_dir = "$tmp/shed"
 data = "$tmp/data"
+plugin_index = "$tmp/index.toml"
 
 [[providers]]
 name = "fake-390"

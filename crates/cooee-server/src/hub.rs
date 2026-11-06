@@ -111,7 +111,7 @@ pub struct Hub {
     roots: Mutex<Vec<PathBuf>>,
     /// The config file the roots are saved in.
     config: Option<PathBuf>,
-    plugins: Vec<Plugin>,
+    plugins: Mutex<Vec<Plugin>>,
     /// `shed agents`, as last checked: a page load never runs the CLI itself (herdsman#337).
     agents: Mutex<Result<Vec<Agent>, String>>,
     boot: String,
@@ -277,7 +277,7 @@ impl Hub {
             theme,
             roots: Mutex::new(roots),
             config,
-            plugins,
+            plugins: Mutex::new(plugins),
             boot: format!("{:x}", now()),
             threads: Mutex::new(threads),
             last: Mutex::new(0),
@@ -540,10 +540,25 @@ impl Hub {
         random_id: &str,
         (account, env): (&str, Option<(&str, &Path)>),
     ) -> Result<String, HubError> {
-        self.shed.hello()?;
         let Some(folder) = self.allowed(folder) else {
             return Err(outside(folder));
         };
+        self.start(agent, &folder, text, random_id, (account, env))
+    }
+
+    /// [`Hub::create`] in a folder of cooee's own (a plugin's checkout), not checked against the roots.
+    ///
+    /// # Errors
+    /// As [`Hub::create`].
+    pub fn start(
+        &self,
+        agent: &str,
+        folder: &Path,
+        text: &str,
+        random_id: &str,
+        (account, env): (&str, Option<(&str, &Path)>),
+    ) -> Result<String, HubError> {
+        self.shed.hello()?;
         if text.trim().is_empty() {
             return Err(HubError::Refused("the first message is empty".to_owned()));
         }
@@ -576,7 +591,7 @@ impl Hub {
                         id: id.clone(),
                         title,
                         agent: agent.to_owned(),
-                        folder: Some(folder.clone()),
+                        folder: Some(folder.to_owned()),
                         account: account.to_owned(),
                         terminal: format!("cooee-{id}"),
                         random_id: random_id.to_owned(),
@@ -598,7 +613,7 @@ impl Hub {
                 (format!("{LABEL}.thread"), id.clone()),
             ]);
             // A start that failed but came up anyway (a slow CLI) is kept, never started twice (herdsman#477).
-            if let Err(e) = self.shed.run_acp(&terminal, agent, &folder, &labels, env)
+            if let Err(e) = self.shed.run_acp(&terminal, agent, folder, &labels, env)
                 && self.shed.get(&terminal).is_err()
             {
                 lock(&self.threads).remove(&id);
@@ -659,11 +674,11 @@ impl Hub {
             Body::Approval {
                 plugin: Some(name), ..
             } => self
-                .plugins
-                .iter()
+                .plugins()
+                .into_iter()
                 .find(|p| &p.name == name)
                 .ok_or_else(|| io::Error::other("no longer configured"))
-                .and_then(|p| crate::plugin::answer(p, id, item, option))
+                .and_then(|p| crate::plugin::answer(&p, id, item, option))
                 .map_err(|e| HubError::Refused(format!("plugin {name}: {e}"))),
             _ => return self.shed_approve(&mut live, tapped, option),
         };
@@ -876,10 +891,15 @@ impl Hub {
         Ok((resume, live.tx.subscribe()))
     }
 
-    /// The configured plugins.
+    /// The plugins: the config's own and the installed ones' tabs.
     #[must_use]
-    pub fn plugins(&self) -> &[Plugin] {
-        &self.plugins
+    pub fn plugins(&self) -> Vec<Plugin> {
+        lock(&self.plugins).clone()
+    }
+
+    /// Replaces the plugins (the supervisor, as plugins are installed or removed).
+    pub fn set_plugins(&self, plugins: Vec<Plugin>) {
+        *lock(&self.plugins) = plugins;
     }
 
     /// The push subscriptions and key.
