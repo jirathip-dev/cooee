@@ -316,19 +316,44 @@ impl Push {
         self.store(&all)
     }
 
-    /// Sends `note` to every paired device's subscriptions, in the background: a 404/410 or an unpaired device
-    /// drops the subscription; other failures are logged.
-    pub fn send(&self, note: &Note) {
-        let push = self.clone();
+    /// Drops the subscription at `endpoint` if it is `device`'s; whether there was one.
+    ///
+    /// # Errors
+    /// When it can't be stored.
+    pub fn unsubscribe(&self, device: &str, endpoint: &str) -> io::Result<bool> {
+        let _g = LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut all = self.load();
+        let n = all.len();
+        all.retain(|s| s.device != device || s.endpoint != endpoint);
+        self.store(&all)?;
+        Ok(all.len() < n)
+    }
+
+    /// `device`'s subscriptions' endpoints.
+    #[must_use]
+    pub fn endpoints(&self, device: &str) -> Vec<String> {
+        let subs = self.load().into_iter().filter(|s| s.device == device);
+        subs.map(|s| s.endpoint).collect()
+    }
+
+    /// Sends `note` to every paired device's subscriptions (only `to`'s, if set), in the background: a 404/410 or an
+    /// unpaired device drops the subscription; other failures are logged.
+    pub fn send_to(&self, to: Option<&str>, note: &Note) {
+        let (push, to) = (self.clone(), to.map(str::to_owned));
         let payload = serde_json::to_vec(note).unwrap_or_default();
         thread::spawn(move || {
-            if let Err(e) = push.deliver(&payload) {
+            if let Err(e) = push.deliver(to.as_deref(), &payload) {
                 eprintln!("cooee: push: {e}");
             }
         });
     }
 
-    fn deliver(&self, payload: &[u8]) -> io::Result<()> {
+    /// [`Push::send_to`] every device.
+    pub fn send(&self, note: &Note) {
+        self.send_to(None, note);
+    }
+
+    fn deliver(&self, to: Option<&str>, payload: &[u8]) -> io::Result<()> {
         let paired: Vec<String> = Devices::new(&self.data)
             .list()?
             .into_iter()
@@ -337,7 +362,7 @@ impl Push {
         let all = self.load();
         let (live, mut gone): (Vec<Sub>, Vec<Sub>) =
             all.into_iter().partition(|s| paired.contains(&s.device));
-        for s in &live {
+        for s in live.iter().filter(|s| to.is_none_or(|d| d == s.device)) {
             let key = self.vapid()?;
             let one = || -> io::Result<u16> {
                 let salt: [u8; 16] = random(16)?.try_into().unwrap_or_default();
@@ -401,6 +426,58 @@ mod tests {
     use cooee_core::{Item, Turn};
 
     use super::*;
+
+    /// A test push (`send_to` one device) reaches only that device's endpoint; unsubscribing drops only its own.
+    #[test]
+    fn a_push_to_one_device_reaches_only_its_endpoint() {
+        use std::{net::TcpListener, sync::mpsc};
+        let dir = std::env::temp_dir().join(format!("cooee-push-to-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let devices = Devices::new(&dir);
+        let ids: Vec<String> = (0..2)
+            .map(|i| {
+                let code = devices.pair(i).unwrap();
+                let token = devices.claim(&code, "x", i).unwrap().unwrap();
+                devices.find(&token, i).unwrap().id
+            })
+            .collect();
+        let (hits, got) = mpsc::channel();
+        let push = Push::new(&dir);
+        // The key in memory, so the test never touches the keychain.
+        *push.key.lock().unwrap() = Some(new_key().unwrap());
+        for id in &ids {
+            let l = TcpListener::bind("127.0.0.1:0").unwrap();
+            let endpoint = format!("https://127.0.0.1:{}/x", l.local_addr().unwrap().port());
+            let (hits, id2) = (hits.clone(), id.clone());
+            thread::spawn(move || {
+                for c in l.incoming() {
+                    drop(c);
+                    hits.send(id2.clone()).unwrap();
+                }
+            });
+            push.subscribe(Sub {
+                device: id.clone(),
+                endpoint,
+                p256dh: "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4".into(),
+                auth: "BTBZMqHH6r4Tts7J_aSIgg".into(),
+            })
+            .unwrap();
+        }
+        push.deliver(Some(&ids[1]), b"{}").unwrap();
+        // Delivery is in order and done: device 0's endpoint, first in the file, would have been reached first.
+        let first = got.recv_timeout(std::time::Duration::from_secs(5)).unwrap();
+        assert_eq!(first, ids[1]);
+        assert!(got.try_iter().all(|d| d == ids[1]));
+
+        let theirs = push.endpoints(&ids[0]).remove(0);
+        assert!(
+            !push.unsubscribe(&ids[1], &theirs).unwrap(),
+            "not this device's"
+        );
+        assert!(push.unsubscribe(&ids[0], &theirs).unwrap());
+        assert_eq!(push.endpoints(&ids[0]), Vec::<String>::new());
+        assert_eq!(push.endpoints(&ids[1]).len(), 1);
+    }
 
     /// RFC 8291 appendix A.
     #[test]

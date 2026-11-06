@@ -19,7 +19,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Config, Device, Devices, Plugin, ShedError};
+use cooee_core::{Claim, Config, Device, Devices, Plugin, ShedError};
 use futures_util::{Stream, StreamExt, stream};
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::error::RecvError;
@@ -45,9 +45,13 @@ pub use hub::{Hub, HubError, Out, Resume, Slice};
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
 
-/// The paths an unpaired browser may load: pairing and the static files.
-const OPEN: [&str; 8] = [
+/// The paths an unpaired browser may load: pairing and the static files (and the themes' files under `/look/`).
+const OPEN: [&str; 12] = [
     "/pair",
+    "/look.js",
+    "/pair/request",
+    "/pair/claim",
+    "/pair/cancel",
     "/manifest.webmanifest",
     "/icon.svg",
     "/icon-192.png",
@@ -123,7 +127,7 @@ impl Layer for Gate {
                 return plain(403, "forbidden: foreign Host or Origin");
             }
             let path = uri(cx).path();
-            if OPEN.contains(&path) {
+            if OPEN.contains(&path) || path.starts_with("/look/") {
                 return next.run(cx, body).await;
             }
             if path.starts_with("/plugin/") {
@@ -467,16 +471,92 @@ async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
             .header("Location", "/pair?bad=1")
             .body(Body::from(()))?);
     };
-    let secure = header(cx, "origin").is_some_and(|o| o.starts_with("https://"));
-    let cookie = format!(
-        "{COOKIE}={token}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Strict{}",
-        if secure { "; Secure" } else { "" }
-    );
     Ok(Response::builder()
         .status(303)
         .header("Location", "/")
-        .header("Set-Cookie", cookie)
+        .header("Set-Cookie", cookie(cx, &token))
         .body(Body::from(()))?)
+}
+
+/// The pairing cookie for `token` (`Secure` behind https).
+fn cookie(cx: &Cx, token: &str) -> String {
+    let secure = header(cx, "origin").is_some_and(|o| o.starts_with("https://"));
+    format!(
+        "{COOKIE}={token}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Strict{}",
+        if secure { "; Secure" } else { "" }
+    )
+}
+
+fn devices(cx: &Cx) -> Devices {
+    Devices::new(&app_context::<Data>(cx).0)
+}
+
+/// `POST /pair/request`: a code for the phone to show, approved on the Mac with `cooee pair <code>`.
+#[route(POST "/pair/request")]
+async fn pair_request(cx: &Cx) -> Result<Response> {
+    let devices = devices(cx);
+    let (code, claim) = tokio::task::spawn_blocking(move || devices.request(now())).await??;
+    Json(serde_json::json!({ "code": code, "claim": claim })).into_response(cx)
+}
+
+/// The phone's claim on its request.
+#[derive(Deserialize)]
+struct ClaimBody {
+    claim: String,
+}
+
+/// `POST /pair/claim`: 200 with the cookie once approved, 202 while it waits, 410 when the request is gone.
+#[route(POST "/pair/claim")]
+async fn pair_claim(cx: &Cx, Json(c): Json<ClaimBody>) -> Result<Response> {
+    let devices = devices(cx);
+    let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
+    let found = tokio::task::spawn_blocking(move || devices.collect(&c.claim, &agent, now()));
+    match found.await?? {
+        Claim::Paired(token) => Ok(Response::builder()
+            .header("Set-Cookie", cookie(cx, &token))
+            .body(Body::from(()))?),
+        Claim::Waiting => plain(202, "waiting for the Mac"),
+        Claim::Gone => plain(410, "That code expired: ask for a new one."),
+    }
+}
+
+#[route(POST "/pair/cancel")]
+async fn pair_cancel(cx: &Cx, Json(c): Json<ClaimBody>) -> Result<Response> {
+    let devices = devices(cx);
+    tokio::task::spawn_blocking(move || devices.cancel(&c.claim)).await??;
+    plain(200, "cancelled")
+}
+
+/// `GET /devices`: the paired devices, this one marked `me`.
+#[route(GET "/devices")]
+async fn device_list(cx: &Cx) -> Result<Response> {
+    let (devices, me) = (devices(cx), request_context::<Paired>(cx).0.id.clone());
+    let list = tokio::task::spawn_blocking(move || devices.list()).await??;
+    let list: Vec<_> = list
+        .into_iter()
+        .map(|d| {
+            serde_json::json!({ "id": d.id, "label": d.label, "created": d.created, "used": d.used, "me": d.id == me })
+        })
+        .collect();
+    Json(list).into_response(cx)
+}
+
+/// A device to unpair.
+#[derive(Deserialize)]
+struct DeviceId {
+    id: String,
+}
+
+/// `POST /devices/remove`: unpairs a device (its pushes stop too).
+#[route(POST "/devices/remove")]
+async fn device_remove(cx: &Cx, Json(d): Json<DeviceId>) -> Result<Response> {
+    let devices = devices(cx);
+    let id = d.id.clone();
+    if tokio::task::spawn_blocking(move || devices.remove(&id)).await?? {
+        plain(200, &format!("removed {}", d.id))
+    } else {
+        plain(404, &format!("No device {}.", d.id))
+    }
 }
 
 /// The data folder.
@@ -660,6 +740,87 @@ async fn push_subscribe(cx: &Cx, Json(s): Json<Subscribe>) -> Result<Response> {
     }
 }
 
+/// A subscription to drop.
+#[derive(Deserialize)]
+struct Endpoint {
+    endpoint: String,
+}
+
+#[route(POST "/push/unsubscribe")]
+async fn push_unsubscribe(cx: &Cx, Json(e): Json<Endpoint>) -> Result<Response> {
+    let (hub, me) = (hub(cx), request_context::<Paired>(cx).0.id.clone());
+    match tokio::task::spawn_blocking(move || hub.push().unsubscribe(&me, &e.endpoint)).await? {
+        Ok(_) => plain(200, "alerts off"),
+        Err(e) => plain(500, &e.to_string()),
+    }
+}
+
+/// `GET /push/endpoints`: this device's subscriptions, so the page says truly whether alerts are on.
+#[route(GET "/push/endpoints")]
+async fn push_endpoints(cx: &Cx) -> Result<Response> {
+    let me = &request_context::<Paired>(cx).0.id;
+    Json(hub(cx).push().endpoints(me)).into_response(cx)
+}
+
+/// `POST /push/test`: "alerts are on" to this device only.
+#[route(POST "/push/test")]
+async fn push_test(cx: &Cx) -> Result<Response> {
+    let (hub, me) = (hub(cx), request_context::<Paired>(cx).0.id.clone());
+    if hub.push().endpoints(&me).is_empty() {
+        return plain(400, "Alerts are off on this device: turn them on first.");
+    }
+    let note = Note {
+        title: "cooee".to_owned(),
+        body: "alerts are on".to_owned(),
+        tag: "test".to_owned(),
+        url: "/".to_owned(),
+        item: 0,
+    };
+    hub.push().send_to(Some(&me), &note);
+    plain(200, "test alert sent")
+}
+
+/// `POST /report`: a problem reported from the page (report mode): the note and the element it is about.
+#[derive(Deserialize, Serialize)]
+struct Report {
+    note: String,
+    #[serde(default)]
+    path: String,
+    #[serde(default)]
+    target: String,
+    #[serde(default)]
+    html: String,
+    #[serde(default)]
+    look: String,
+    #[serde(default)]
+    viewport: String,
+}
+
+/// Appends the report to `<data>/reports.jsonl`, with when and which device; `cooee reports` lists them.
+#[route(POST "/report")]
+async fn report(cx: &Cx, Json(r): Json<Report>) -> Result<Response> {
+    if r.note.trim().is_empty() {
+        return plain(400, "A report needs a note.");
+    }
+    let cut = |s: &str, n| s.chars().take(n).collect::<String>();
+    let line = serde_json::json!({
+        "at": now(), "device": request_context::<Paired>(cx).0.id, "note": cut(&r.note, 2000),
+        "path": cut(&r.path, 300), "target": cut(&r.target, 300), "html": cut(&r.html, 600),
+        "look": cut(&r.look, 200), "viewport": cut(&r.viewport, 40),
+    });
+    let file = app_context::<Data>(cx).0.join("reports.jsonl");
+    tokio::task::spawn_blocking(move || {
+        use std::io::Write as _;
+        let mut f = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(file)?;
+        writeln!(f, "{line}")
+    })
+    .await??;
+    plain(200, "report sent")
+}
+
 /// The web UI (with `looks`, its themes and schemes), the threads' API over `hub`, the providers' `logins` and pairing, behind the gate: requests must name `bind`, localhost
 /// or one of `allowed_hosts`; devices are paired in `data`.
 #[must_use]
@@ -692,6 +853,15 @@ pub fn router(
         .route(pair)
         .route(push_key)
         .route(push_subscribe)
+        .route(push_unsubscribe)
+        .route(push_endpoints)
+        .route(push_test)
+        .route(pair_request)
+        .route(pair_claim)
+        .route(pair_cancel)
+        .route(device_list)
+        .route(device_remove)
+        .route(report)
         .page(home)
         .page(chat)
         .route(messages)

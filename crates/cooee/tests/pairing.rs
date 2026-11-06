@@ -74,6 +74,19 @@ fn unpaired_reads_and_writes_are_refused() {
     }
     let (head, _) = c.raw("GET", "/", &[], "");
     assert!(head.contains("location: /pair"), "{head}");
+    // The shell (#21 row 7): the app's frame with the composer off and a pair hint, no thread data; the look loads.
+    let (head, page) = c.raw("GET", "/pair", &[], "");
+    assert_eq!(status(&head), 200);
+    assert!(
+        page.contains("isn't paired")
+            && page.contains(r#"placeholder="pair this device to send" disabled"#),
+        "{page}"
+    );
+    assert_eq!(status(&c.raw("GET", "/look.js", &[], "").0), 200);
+    assert_eq!(
+        status(&c.raw("GET", "/look/farm/theme.json", &[], "").0),
+        200
+    );
 }
 
 #[test]
@@ -157,4 +170,146 @@ fn push_subscriptions_are_checked_and_tied_to_the_device() {
         serde_json::from_str(&fs::read_to_string(dir.join("data/devices.json")).unwrap()).unwrap();
     assert_eq!(subs[0]["device"], devices["devices"][0]["id"]);
     assert_eq!(subs[0]["endpoint"], "https://push.example.com/x");
+}
+
+/// `POST path` with `body` and no cookie: the status and headers, and the body.
+fn open_post(c: &Cooee, path: &str, body: &Value) -> (String, String) {
+    let json = ("Content-Type", "application/json");
+    c.raw("POST", path, &[json], &body.to_string())
+}
+
+#[test]
+fn a_phone_asks_for_a_code_and_the_mac_approves_it() {
+    let (_dir, _shed, c) = setup("approve", "");
+    let (head, body) = open_post(&c, "/pair/request", &json!({}));
+    assert_eq!(status(&head), 200, "{head}");
+    let r: Value = serde_json::from_str(&body).unwrap();
+    let (code, claim) = (r["code"].as_str().unwrap(), json!({ "claim": r["claim"] }));
+    assert_eq!(status(&open_post(&c, "/pair/claim", &claim).0), 202);
+
+    // A code no phone shows is refused; the phone's own pairs it, once.
+    let wrong = c.command().args(["pair", "000000x"]).output().unwrap();
+    assert!(!wrong.status.success());
+    assert!(c.cli(&["pair", code]).contains("approved"));
+    let (head, _) = open_post(&c, "/pair/claim", &claim);
+    assert_eq!(status(&head), 200, "{head}");
+    let token = head
+        .lines()
+        .find_map(|l| l.strip_prefix("set-cookie: cooee="))
+        .map(|c| c.split(';').next().unwrap().to_owned())
+        .unwrap();
+    let (head, _) = c.raw("GET", "/", &[("Cookie", &format!("cooee={token}"))], "");
+    assert_eq!(status(&head), 200, "{head}");
+    assert_eq!(status(&open_post(&c, "/pair/claim", &claim).0), 410);
+
+    // Cancelled: gone.
+    let (_, body) = open_post(&c, "/pair/request", &json!({}));
+    let claim = json!({ "claim": serde_json::from_str::<Value>(&body).unwrap()["claim"] });
+    assert_eq!(status(&open_post(&c, "/pair/cancel", &claim).0), 200);
+    assert_eq!(status(&open_post(&c, "/pair/claim", &claim).0), 410);
+}
+
+#[test]
+fn devices_are_listed_and_removed_from_the_phone() {
+    let (_dir, _shed, c) = setup("devices-web", "");
+    let other = c.pair().unwrap();
+    let list = c.json("/devices");
+    let list = list.as_array().unwrap();
+    assert_eq!(list.len(), 2);
+    let me: Vec<bool> = list.iter().map(|d| d["me"].as_bool().unwrap()).collect();
+    assert_eq!(me, [true, false]);
+    let (code, body) = c.post("/devices/remove", &json!({ "id": list[1]["id"] }));
+    assert_eq!(code, 200, "{body}");
+    let (head, _) = c.raw(
+        "GET",
+        "/devices",
+        &[("Cookie", &format!("cooee={other}"))],
+        "",
+    );
+    assert_eq!(status(&head), 401, "the removed device is unpaired");
+    assert_eq!(c.json("/devices").as_array().unwrap().len(), 1);
+    assert_eq!(c.post("/devices/remove", &json!({ "id": "nope" })).0, 404);
+}
+
+#[test]
+fn alerts_status_test_and_off_are_this_devices() {
+    let (_dir, _shed, c) = setup("alerts", "");
+    let (code, body) = c.post("/push/test", &json!({}));
+    assert_eq!(code, 400, "no subscription yet: {body}");
+    let endpoint = "https://push.example.com/mine";
+    let sub = json!({ "endpoint": endpoint, "p256dh": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4", "auth": "BTBZMqHH6r4Tts7J_aSIgg" });
+    assert_eq!(c.post("/push/subscribe", &sub).0, 200);
+    assert_eq!(c.json("/push/endpoints"), json!([endpoint]));
+    // Another device sees none of it and can't turn it off.
+    let other = format!("cooee={}", c.pair().unwrap());
+    let (_, body) = c.raw("GET", "/push/endpoints", &[("Cookie", &other)], "");
+    assert_eq!(body, "[]");
+    let off = json!({ "endpoint": endpoint }).to_string();
+    let json_type = ("Content-Type", "application/json");
+    c.raw(
+        "POST",
+        "/push/unsubscribe",
+        &[json_type, ("Cookie", &other)],
+        &off,
+    );
+    assert_eq!(c.json("/push/endpoints"), json!([endpoint]));
+    assert_eq!(
+        c.post("/push/unsubscribe", &json!({ "endpoint": endpoint }))
+            .0,
+        200
+    );
+    assert_eq!(c.json("/push/endpoints"), json!([]));
+}
+
+#[test]
+fn a_report_is_kept_and_listed() {
+    let (_dir, _shed, c) = setup("report", "");
+    assert_eq!(c.post("/report", &json!({ "note": " " })).0, 400);
+    assert!(c.cli(&["reports"]).contains("no reports"));
+    let r = json!({ "note": "the toast runs off", "path": "/t/x", "target": "main > p#toast", "html": "<p>" });
+    let (code, body) = c.post("/report", &r);
+    assert_eq!(code, 200, "{body}");
+    let out = c.cli(&["reports"]);
+    assert!(
+        out.contains("the toast runs off")
+            && out.contains("main > p#toast")
+            && out.contains("/t/x"),
+        "{out}"
+    );
+}
+
+#[test]
+fn the_new_calls_need_a_paired_device_but_pairing_requests_do_not() {
+    let (_dir, _shed, c) = setup("gate21", "");
+    for path in ["/devices", "/push/endpoints"] {
+        assert_eq!(status(&c.raw("GET", path, &[], "").0), 401, "{path}");
+    }
+    for path in [
+        "/devices/remove",
+        "/push/test",
+        "/push/unsubscribe",
+        "/report",
+    ] {
+        assert_eq!(
+            status(
+                &open_post(
+                    &c,
+                    path,
+                    &json!({ "id": "x", "endpoint": "x", "note": "x" })
+                )
+                .0
+            ),
+            401,
+            "{path}"
+        );
+    }
+    assert_eq!(status(&open_post(&c, "/pair/request", &json!({})).0), 200);
+    let foreign = [
+        ("Host", "evil.example"),
+        ("Content-Type", "application/json"),
+    ];
+    assert_eq!(
+        status(&c.raw("POST", "/pair/request", &foreign, "{}").0),
+        403
+    );
 }

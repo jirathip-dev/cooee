@@ -1,6 +1,8 @@
 //! Paired devices (herdsman's `devices.rs`): `cooee pair` opens a six-digit code for 10 minutes; the browser that
 //! enters it gets a random token as its cookie. Only SHA-256 hashes of codes and tokens are kept, in
-//! `<data>/devices.json` (mode 0600). Five wrong codes drop the open one.
+//! `<data>/devices.json` (mode 0600). Five wrong codes drop the open one. The other way round (#21): a phone asks for a
+//! code, shows it, and `cooee pair <code>` on the Mac approves it; the phone then collects its token with the claim it
+//! was given.
 
 use std::{
     fmt::Write as _,
@@ -41,6 +43,53 @@ struct File {
     /// The open code's hash and when it was made.
     code: Option<(String, u64)>,
     misses: u32,
+    requests: Vec<Request>,
+}
+
+/// A phone's open request: its code's and claim's hashes, when it was made, and whether the Mac approved it.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Request {
+    code: String,
+    claim: String,
+    at: u64,
+    approved: bool,
+}
+
+/// Open requests kept at once; a newer one drops the oldest.
+const REQUESTS: usize = 4;
+
+/// What a phone's claim finds: its request gone (expired, cancelled or never made), still waiting, or its token.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Claim {
+    /// No such request.
+    Gone,
+    /// Not approved yet.
+    Waiting,
+    /// Approved: the new device's token.
+    Paired(String),
+}
+
+/// A six-digit code.
+fn six() -> io::Result<String> {
+    let b = random(4)?;
+    Ok(format!(
+        "{:06}",
+        u32::from_be_bytes([b[0], b[1], b[2], b[3]]) % 1_000_000
+    ))
+}
+
+impl File {
+    /// Adds a device for `agent`; its token.
+    fn add(&mut self, token: &str, agent: &str, now: u64) {
+        let hash = sha256(token.as_bytes());
+        self.devices.push(Device {
+            id: hash[..8].to_owned(),
+            label: label(agent).to_owned(),
+            hash,
+            created: now,
+            used: now,
+        });
+    }
 }
 
 /// The paired devices of one data folder.
@@ -150,11 +199,7 @@ impl Devices {
     /// # Errors
     /// When the file can't be read or written.
     pub fn pair(&self, now: u64) -> io::Result<String> {
-        let b = random(4)?;
-        let code = format!(
-            "{:06}",
-            u32::from_be_bytes([b[0], b[1], b[2], b[3]]) % 1_000_000
-        );
+        let code = six()?;
         self.change(|f| {
             f.code = Some((sha256(code.as_bytes()), now));
             f.misses = 0;
@@ -180,16 +225,79 @@ impl Devices {
                 }
                 return Ok(None);
             }
-            let hash = sha256(token.as_bytes());
             f.code = None;
-            f.devices.push(Device {
-                id: hash[..8].to_owned(),
-                label: label(agent).to_owned(),
-                hash,
-                created: now,
-                used: now,
-            });
+            f.add(&token, agent, now);
             Ok(Some(token.clone()))
+        })
+    }
+
+    /// A phone's request, good for 10 minutes: the code it shows and the claim it collects its token with.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn request(&self, now: u64) -> io::Result<(String, String)> {
+        let (code, claim) = (six()?, hex(&random(32)?));
+        self.change(|f| {
+            f.requests.retain(|r| r.at + CODE_TTL > now);
+            if f.requests.len() >= REQUESTS {
+                f.requests.remove(0);
+            }
+            f.requests.push(Request {
+                code: sha256(code.as_bytes()),
+                claim: sha256(claim.as_bytes()),
+                at: now,
+                approved: false,
+            });
+            Ok(())
+        })?;
+        Ok((code, claim))
+    }
+
+    /// Approves the open request showing `code` (`cooee pair <code>`); whether there was one.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn approve(&self, code: &str, now: u64) -> io::Result<bool> {
+        let hash = sha256(code.trim().as_bytes());
+        self.change(|f| {
+            f.requests.retain(|r| r.at + CODE_TTL > now);
+            let found = f
+                .requests
+                .iter_mut()
+                .find(|r| !r.approved && same(&r.code, &hash));
+            Ok(found.map(|r| r.approved = true).is_some())
+        })
+    }
+
+    /// The phone's claim: its token once approved (once), else whether it still waits.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn collect(&self, claim: &str, agent: &str, now: u64) -> io::Result<Claim> {
+        let (hash, token) = (sha256(claim.as_bytes()), hex(&random(32)?));
+        self.change(|f| {
+            f.requests.retain(|r| r.at + CODE_TTL > now);
+            let Some(i) = f.requests.iter().position(|r| same(&r.claim, &hash)) else {
+                return Ok(Claim::Gone);
+            };
+            if !f.requests[i].approved {
+                return Ok(Claim::Waiting);
+            }
+            f.requests.remove(i);
+            f.add(&token, agent, now);
+            Ok(Claim::Paired(token.clone()))
+        })
+    }
+
+    /// Drops the phone's request.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn cancel(&self, claim: &str) -> io::Result<()> {
+        let hash = sha256(claim.as_bytes());
+        self.change(|f| {
+            f.requests.retain(|r| !same(&r.claim, &hash));
+            Ok(())
         })
     }
 
@@ -286,5 +394,34 @@ mod tests {
         }
         // Too many misses dropped the code: even the right one fails now.
         assert_eq!(d.claim(&code, "x", 1).unwrap(), None);
+    }
+
+    #[test]
+    fn a_request_waits_for_approval_then_pairs_once() {
+        let d = scratch("request");
+        let (code, claim) = d.request(0).unwrap();
+        assert_eq!(d.collect(&claim, "iPhone", 1).unwrap(), Claim::Waiting);
+        assert!(!d.approve("not-it", 1).unwrap());
+        assert!(d.approve(&code, 1).unwrap());
+        let Claim::Paired(token) = d.collect(&claim, "Mozilla/5.0 (iPhone)", 2).unwrap() else {
+            panic!("not paired");
+        };
+        assert_eq!(d.find(&token, 3).unwrap().label, "iPhone");
+        assert_eq!(d.collect(&claim, "x", 3).unwrap(), Claim::Gone);
+        let disk = fs::read_to_string(&d.path).unwrap();
+        assert!(!disk.contains(&claim) && !disk.contains(&token), "{disk}");
+
+        // Expired, cancelled, and a fifth request dropping the oldest.
+        let (code, claim) = d.request(0).unwrap();
+        assert!(!d.approve(&code, CODE_TTL).unwrap());
+        assert_eq!(d.collect(&claim, "x", CODE_TTL).unwrap(), Claim::Gone);
+        let (_, claim) = d.request(0).unwrap();
+        d.cancel(&claim).unwrap();
+        assert_eq!(d.collect(&claim, "x", 1).unwrap(), Claim::Gone);
+        let first = d.request(0).unwrap().1;
+        for _ in 0..REQUESTS {
+            d.request(0).unwrap();
+        }
+        assert_eq!(d.collect(&first, "x", 1).unwrap(), Claim::Gone);
     }
 }

@@ -111,6 +111,8 @@ EOF
 cargo run --quiet --locked -p cooee -- pair --config "$tmp/bare.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE.bare"
 cargo run --quiet --locked -p cooee -- serve --config "$tmp/bare.toml" &
 bare=$!
+# The config's path, so a spec can approve a phone's code (`cooee pair <code>`) and list reports.
+echo "$tmp/config.toml" >"$PAIR_CODE.config"
 cargo run --quiet --locked -p cooee -- pair --config "$tmp/config.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE"
 cargo run --quiet --locked -p cooee -- serve --config "$tmp/config.toml" &
 wait $!
