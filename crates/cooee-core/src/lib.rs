@@ -12,7 +12,7 @@ mod store;
 
 pub use accounts::{Account, Accounts, Sheet};
 pub use chat::{Body, Change, Chat, Item, Summary, Turn};
-pub use config::{Config, ConfigError, Plugin, ROOTS_FIX};
+pub use config::{Config, ConfigError, Plugin, ROOTS_FIX, save_roots};
 pub use devices::{Device, Devices, random, sha256, write_private};
 pub use login::{Provider, Status, links, redact};
 pub use shed::{AGENTS_FIX, Agent, Shed, ShedError};

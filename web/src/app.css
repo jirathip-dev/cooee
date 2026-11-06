@@ -164,3 +164,6 @@ html[data-style=terminal] .swa{border-radius:4px}
 .pv .tw{padding:0;background:none;border:0}.pv .cn,.ac .sg,.ac .df{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
 .ac{padding-left:12px;border-left:2px solid var(--line);margin-bottom:8px}.ab{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.ab .ds{margin:0}
 .nf .so{align-self:center;min-height:var(--hit);display:inline-flex;align-items:center}
+.nf .fl{flex-direction:column;flex-wrap:nowrap;gap:0;max-height:40vh;overflow-y:auto}
+.nf .fl label{border:0;border-radius:0;border-top:1px solid var(--line);overflow-wrap:anywhere}.fl [data-d="1"]{padding-left:28px}.fl [data-d="2"]{padding-left:44px}
+#fq{flex:1;min-width:0}.lrw .sk{min-width:0;overflow-wrap:anywhere}

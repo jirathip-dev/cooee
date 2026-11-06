@@ -82,9 +82,9 @@ fn with_one_root_and_nothing_in_it_a_thread_starts_in_the_root() {
     );
 
     let (_, page) = cooee.get("/");
-    let option = format!(r#"<option value="{}">"#, root.display());
+    let option = format!(r#"name="folder" value="{}" checked="#, root.display());
     assert!(
-        page.contains(&option) && page.matches("<option").count() == 1,
+        page.contains(&option) && page.matches(r#"name="folder""#).count() == 1,
         "{page}"
     );
     let new = json!({ "agent": "fake-acp", "folder": root, "text": "hi", "random_id": "r0" });
