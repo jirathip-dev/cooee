@@ -227,7 +227,7 @@ impl Manager {
     }
 
     fn build_dir(&self, name: &str, commit: &str) -> PathBuf {
-        self.dir(name).join("builds").join(commit)
+        plugins::build_dir(&self.data, name, commit)
     }
 
     /// The plugin's log: its builds' and its backend's output.
@@ -370,6 +370,14 @@ impl Manager {
             m.run,
             tabs.join(", ")
         );
+        if !m.profiles.is_empty() {
+            let labels: Vec<String> = m
+                .profiles
+                .iter()
+                .map(|p| format!("{} ({})", p.label, p.agent))
+                .collect();
+            let _ = write!(text, "\nagent profiles: {}", labels.join(", "));
+        }
         if !m.needs.is_empty() {
             let _ = write!(text, "\nneeds: {}", m.needs.join(", "));
         }
