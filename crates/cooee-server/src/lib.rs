@@ -1264,7 +1264,7 @@ async fn theme_act(cx: &Cx, Form(a): Form<ThemeAct>) -> Result<Response> {
                 Err(why) if !a.thread.is_empty() => {
                     let text = format!("[keep] {why}\n\nFix these; I'll tap keep again.");
                     let rid = format!("keep-{}", now());
-                    let sent = hub.send(&a.thread, &text, &rid).map_err(|e| e.to_string());
+                    let sent = hub.send(&a.thread, &text, &rid, &[]).map_err(|e| e.to_string());
                     sent.map(|_| format!("/t/{}", a.thread))
                 }
                 Err(why) => Err(why.to_string()),
