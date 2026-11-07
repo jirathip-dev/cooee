@@ -1,0 +1,66 @@
+
+Running 3 tests using 2 workers
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (2.4s)
+  ✘  3 [1440] › parity-threads.spec.mjs:166:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain (6.5s)
+  ✘  2 [390] › parity-threads.spec.mjs:166:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain (6.5s)
+
+
+  1) [390] › parity-threads.spec.mjs:166:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.blk.ai').last().locator('.md a.ref')
+    Expected: 1
+    Received: 0
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" locator('.blk.ai').last().locator('.md a.ref') with timeout 5000ms
+      - waiting for locator('.blk.ai').last().locator('.md a.ref')
+        14 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      168 |   await thread(page, `echo see **${target}**, not \`${target}\` x${target}`);
+      169 |   const reply = page.locator(".blk.ai").last();
+    > 170 |   await expect(reply.locator(".md a.ref")).toHaveCount(1);
+          |                                            ^
+      171 |   await expect(reply.locator(".md strong a.ref")).toHaveText(target);
+      172 |   await expect(reply.locator(".md code")).toHaveText(target);
+      173 |   await reply.locator("a.ref").click();
+        at /Users/jirathip/.herdr/worktrees/cooee/issue-43/web/e2e/parity-threads.spec.mjs:170:44
+
+    Error Context: test-results/parity-threads-row-18-a-th-fc2fa-read-in-code-it-stays-plain-390/error-context.md
+
+  2) [1440] › parity-threads.spec.mjs:166:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.blk.ai').last().locator('.md a.ref')
+    Expected: 1
+    Received: 0
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" locator('.blk.ai').last().locator('.md a.ref') with timeout 5000ms
+      - waiting for locator('.blk.ai').last().locator('.md a.ref')
+        14 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      168 |   await thread(page, `echo see **${target}**, not \`${target}\` x${target}`);
+      169 |   const reply = page.locator(".blk.ai").last();
+    > 170 |   await expect(reply.locator(".md a.ref")).toHaveCount(1);
+          |                                            ^
+      171 |   await expect(reply.locator(".md strong a.ref")).toHaveText(target);
+      172 |   await expect(reply.locator(".md code")).toHaveText(target);
+      173 |   await reply.locator("a.ref").click();
+        at /Users/jirathip/.herdr/worktrees/cooee/issue-43/web/e2e/parity-threads.spec.mjs:170:44
+
+    Error Context: test-results/parity-threads-row-18-a-th-fc2fa-read-in-code-it-stays-plain-1440/error-context.md
+
+  2 failed
+    [390] › parity-threads.spec.mjs:166:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain 
+    [1440] › parity-threads.spec.mjs:166:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain 
+  1 passed (40.5s)

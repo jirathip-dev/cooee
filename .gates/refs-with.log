@@ -1,0 +1,8 @@
+
+Running 3 tests using 2 workers
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (3.2s)
+  ✓  2 [390] › parity-threads.spec.mjs:166:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain (2.7s)
+  ✓  3 [1440] › parity-threads.spec.mjs:166:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain (3.0s)
+
+  3 passed (33.0s)

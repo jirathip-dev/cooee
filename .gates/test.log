@@ -1,0 +1,335 @@
+cargo test --workspace --locked
+   Compiling cooee-web v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-43/web)
+   Compiling cooee-server v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-43/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-43/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.87s
+     Running unittests src/main.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/cooee-762cbcab4dc52533)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/accounts.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/accounts-6aa5132cd8105eeb)
+
+running 1 test
+test add_account_listed_only_on_success_default_and_thread_pick_spawn_with_its_folder_sign_out_removes_it ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.52s
+
+     Running tests/chat.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/chat-53f6e8e994787b35)
+
+running 10 tests
+test fake_shed_server ... ignored, a server for web/e2e, not a test
+test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+test closing_a_thread_kills_and_removes_its_terminal ... ok
+test a_shed_of_another_version_is_refused_naming_both_versions ... ok
+test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+test scene_draws_one_sprite_per_session_on_a_page_per_folder ... ok
+test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+
+test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.36s
+
+     Running tests/cli.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/cli-758da64552f7b111)
+
+running 4 tests
+test version ... ok
+test listening_beyond_localhost_needs_allowed_hosts ... ok
+test unknown_args_and_config_keys_fail ... ok
+test serve_listens_on_localhost_at_the_configured_port ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests/first_run.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/first_run-b8f7f9668c3c3fd5)
+
+running 2 tests
+test with_one_root_and_nothing_in_it_a_thread_starts_in_the_root ... ok
+test no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.22s
+
+     Running tests/folders.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/folders-93b5100cca4772e0)
+
+running 5 tests
+test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+test browse_lists_only_folders_inside_home ... ok
+test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+test add_and_remove_root_persists_in_the_config ... ok
+test picker_lists_sub_folders_two_levels_deep_never_symlinks ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.87s
+
+     Running tests/instances.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/instances-8b7c1638908c4d5f)
+
+running 3 tests
+test install_writes_a_plist_and_prints_the_commands ... ok
+test doctor_reports_a_missing_shed ... ok
+test two_instances_never_see_each_others_threads_or_devices ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests/login.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/login-0e8d81119a37624c)
+
+running 2 tests
+test a_login_left_for_10_minutes_is_killed_and_removed ... ok
+test login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.09s
+
+     Running tests/machines.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/machines-58d6ffeb7372101b)
+
+running 1 test
+test the_machines_tab_shows_each_machine_and_a_dot_while_one_is_offline ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.73s
+
+     Running tests/model.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/model-3f444d3967d695d1)
+
+running 1 test
+test row_34_a_thread_starts_on_its_pick_and_the_chips_change_it ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.49s
+
+     Running tests/pairing.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/pairing-b4b8ffa51c6d6d90)
+
+running 11 tests
+test the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it ... ok
+test a_report_is_kept_and_listed ... ok
+test a_phone_asks_for_a_code_and_the_mac_approves_it ... ok
+test a_foreign_host_or_origin_is_refused_even_paired ... ok
+test the_new_calls_need_a_paired_device_but_pairing_requests_do_not ... ok
+test devices_are_listed_and_removed_from_the_phone ... ok
+test alerts_status_test_and_off_are_this_devices ... ok
+test pair_use_remove_and_only_the_hash_on_disk ... ok
+test push_subscriptions_are_checked_and_tied_to_the_device ... ok
+test a_wrong_code_does_not_pair ... ok
+test unpaired_reads_and_writes_are_refused ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.07s
+
+     Running tests/perf.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/perf-184a0577c66dcd0f)
+
+running 4 tests
+test cooee_perf_turns_a_log_into_the_table ... ok
+test requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn ... ok
+test first_token_is_logged_once_per_prompt_and_nothing_private_is ... ok
+test a_fast_request_under_the_default_threshold_is_debug_only ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.13s
+
+     Running tests/plugin_manager.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/plugin_manager-0ebc84740c239076)
+
+running 6 tests
+test add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it ... ok
+test only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issue ... ok
+test an_index_plugin_has_no_warning_and_a_url_plugin_is_not_reviewed ... ok
+test a_failed_update_keeps_the_old_build_and_a_good_one_swaps_in ... ok
+test remove_stops_it_and_keeps_the_checkout_unless_purged ... ok
+test improve_makes_a_branch_an_approval_builds_and_swaps_it_in_and_it_rolls_back ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.88s
+
+     Running tests/plugins.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/plugins-a85ca75533df2e7c)
+
+running 13 tests
+test a_plugin_with_no_token_configured_does_not_start ... ok
+test the_docs_show_the_example_plugin_the_ui_tests_run ... ok
+test a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab ... ok
+test row_35_handoff_chips_flow_back_lines_and_pick_a_thread ... ok
+test row_30_choice_rows_recommended_first_other_text_and_who_and_when ... ok
+test a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin ... ok
+test row_31_a_conductors_answer_takes_one_change_from_the_owner ... ok
+test a_backends_event_stream_comes_through_the_proxy ... ok
+test row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale ... ok
+test a_plugin_without_its_token_is_refused ... ok
+test row_33_a_secrets_value_reaches_its_plugin_only ... ok
+test the_proxy_sends_the_plugins_own_token_and_never_the_cookie ... ok
+test the_tab_frames_the_module_in_a_sandbox ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.49s
+
+     Running tests/profiles.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/profiles-b99e927b1f2bab1c)
+
+running 2 tests
+test a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_it ... ok
+test plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.62s
+
+     Running tests/reliability.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/reliability-84d6ba081e556054)
+
+running 12 tests
+test r13_malformed_input_or_config_is_denied_with_a_reason ... ok
+test r10_an_ask_made_during_the_start_is_listed_and_answerable ... ok
+test r14_a_crash_between_start_and_send_is_recovered_once ... ok
+test r17_paths_in_text_are_never_files_served ... ok
+test r16_a_repeated_id_is_one_row_however_often_it_is_refreshed ... ok
+test agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list ... ok
+test r21_an_answer_to_a_gone_session_says_not_delivered ... ok
+test r11_a_slow_start_is_adopted_once ... ok
+test r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch ... ok
+test r1_a_hung_keychain_is_a_clear_error_within_5_s_and_blocks_nothing ... ok
+test r7_page_loads_run_no_subprocess ... ok
+test r20_a_stuck_delivery_never_holds_the_next_one ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 21.95s
+
+     Running tests/setup.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/setup-dc5d712ca6223e31)
+
+running 5 tests
+test install_sh_checks_its_tools_then_installs_cooee_and_runs_setup ... ok
+test dry_run_writes_nothing_and_prints_every_command ... ok
+test a_doctor_failure_stops_with_its_fix ... ok
+test an_existing_config_keeps_its_keys ... ok
+test a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.16s
+
+     Running tests/shed_pool.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/shed_pool-e301ce57fde6100b)
+
+running 4 tests
+test a_request_that_was_sent_is_never_resent ... ok
+test sequential_calls_share_one_connection_and_one_hello ... ok
+test a_call_after_a_restart_reconnects_and_succeeds ... ok
+test another_version_after_a_restart_is_a_version_error ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/threads.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/threads-1e3ea657ac5586b4)
+
+running 4 tests
+test the_list_counts_unseen_replies_and_archives_apart ... ok
+test files_are_stored_served_as_images_only_and_named_to_the_agent ... ok
+test a_thread_is_renamed_and_keeps_its_name_over_a_restart ... ok
+test a_message_queued_during_a_turn_goes_as_it_ends_and_one_steered_goes_at_once ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.62s
+
+     Running tests/workflow.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/workflow-178c225191df5430)
+
+running 3 tests
+test finished_lanes_fold_under_done_today_and_go_once_their_tool_removes_them ... ok
+test a_lane_is_listed_with_its_labels_and_the_chips_filter_the_one_list ... ok
+test a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.50s
+
+     Running unittests src/lib.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/cooee_core-03a1a8e89a5c0526)
+
+running 30 tests
+test chat::tests::shed_answers_its_own_approval_never_a_plugins_card ... ok
+test chat::tests::a_repeated_id_is_one_row ... ok
+test chat::tests::a_conductors_answer_may_be_changed_for_its_window_only ... ok
+test config::tests::missing_file_gives_defaults ... ok
+test config::tests::port_from_toml_unknown_key_rejected ... ok
+test config::tests::roots_under_home_are_expanded ... ok
+test login::tests::finds_links_without_trailing_punctuation ... ok
+test login::tests::picks_fill_the_providers_words ... ok
+test chat::tests::r6_folding_a_long_log_is_within_budget ... ok
+test login::tests::redacts_tokens_keeps_words_paths_codes_and_links ... ok
+test plugins::tests::a_manifest_needs_a_name_and_a_tab ... ok
+test accounts::tests::a_dead_logins_leftover_folder_never_blocks_a_new_account ... ok
+test plugins::tests::the_built_in_index_parses ... ok
+test profiles::tests::a_secret_inline_or_a_bad_policy_is_refused_naming_the_key_only ... ok
+test config::tests::saving_roots_keeps_the_other_lines ... ok
+test plugins::tests::entries_round_trip ... ok
+test profiles::tests::secrets_are_read_from_their_files_and_plain_values_kept ... ok
+test store::tests::bad_ids_and_newer_formats_are_refused ... ok
+test accounts::tests::system_first_a_new_account_listed_once_adopted_default_and_removal ... ok
+test store::tests::crash_child ... ignored, the child process of crash_between_temp_write_and_rename_keeps_old_file
+test store::tests::item_lines_append_and_a_torn_last_line_is_skipped ... ok
+test devices::tests::an_unreadable_store_is_an_error_not_unpaired ... ok
+test store::tests::crash_between_temp_write_and_rename_keeps_old_file ... ok
+test store::tests::save_then_load_round_trips_and_leaves_no_temp ... ok
+test devices::tests::expired_and_guessed_codes_are_refused ... ok
+test devices::tests::pair_use_remove_and_only_hashes_on_disk ... ok
+test login::tests::status_from_the_exit_code_and_output ... ok
+test devices::tests::a_request_waits_for_approval_then_pairs_once ... ok
+test devices::tests::parallel_writes_never_share_a_temp_file ... ok
+test store::tests::concurrent_saves_of_one_thread_never_tear ... ok
+
+test result: ok. 29 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 3.57s
+
+     Running tests/upgrade_compat.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/upgrade_compat-8f0e695071163e4e)
+
+running 2 tests
+test every_earlier_release_config_loads ... ok
+test every_earlier_release_loads_without_losing_data ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src/lib.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/cooee_machines-881431ba5f0c6c3a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/machines.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/machines-07d27864d3a261fe)
+
+running 5 tests
+test a_card_shows_load_memory_swap_disk_and_terminals ... ok
+test online_and_offline_with_last_seen ... ok
+test the_backend_answers_only_with_the_plugin_token ... ok
+test an_alert_is_pushed_once_per_state_and_the_tab_dot_follows ... ok
+test the_24_h_history_is_asked_for_once_then_only_what_is_new ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.05s
+
+     Running unittests src/lib.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/cooee_server-d14570cd05621b8e)
+
+running 10 tests
+test manage::tests::backoff_doubles_and_the_fifth_crash_in_ten_minutes_turns_it_off ... ok
+test push::tests::a_push_for_each_trigger_and_none_otherwise ... ok
+test hub::tests::r15_a_turn_idle_30_minutes_is_surfaced_as_needs_you ... ok
+test push::tests::encrypt_matches_rfc_8291_vector ... ok
+test push::tests::jwt_is_signed_by_the_key_for_the_endpoint_origin ... ok
+test hub::tests::prune_drops_only_the_workflow_sessions_shed_no_longer_lists ... ok
+test push::tests::a_push_to_one_device_reaches_only_its_endpoint ... ok
+test hub::tests::the_agent_list_is_refreshed_at_most_once_a_minute ... ok
+test hub::tests::r6_requests_over_a_long_log_are_within_budget ... ok
+test manage::tests::the_supervisor_restarts_a_crashing_backend_then_turns_it_off_with_an_alert ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.43s
+
+     Running unittests src/lib.rs (/Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-43/target/debug/deps/cooee_web-621e4eb233197bd2)
+
+running 10 tests
+test shown::tests::each_figures_value_draws_a_state_and_the_big_figure ... ok
+test shown::tests::a_bad_pick_falls_back_and_cant_break_out ... ok
+test look::tests::gate_numbers_match_herdsmans ... ok
+test shown::tests::the_cookie_picks_the_theme_scheme_style_and_figures ... ok
+test look::tests::push_body_says_the_theme_word_and_the_plain_word ... ok
+test shown::tests::terminal_is_plain_and_scene_needs_sprites ... ok
+test shown::tests::a_tap_gives_the_next_cookie ... ok
+test look::tests::a_theme_with_sprites_needs_its_sheet ... ok
+test look::tests::own_themes_and_schemes_load_and_a_failing_scheme_is_refused ... ok
+test look::tests::builtins_load_and_pass_the_gate ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests cooee_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests cooee_machines
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests cooee_server
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests cooee_web
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

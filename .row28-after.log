@@ -1,0 +1,8 @@
+
+Running 3 tests using 2 workers
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (1.0s)
+  ✓  3 [390] › parity-threads.spec.mjs:345:3 › touch › row 28: a long press on a reply opens copy, copy as markdown and quote; quote puts > lines in the box (3.1s)
+  ✓  2 [1440] › parity-threads.spec.mjs:345:3 › touch › row 28: a long press on a reply opens copy, copy as markdown and quote; quote puts > lines in the box (3.4s)
+
+  3 passed (12.1s)

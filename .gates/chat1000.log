@@ -1,0 +1,166 @@
+
+Running 7 tests using 5 workers
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (2.5s)
+  ✘  2 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (14.5s)
+  ✘  5 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (14.3s)
+  ✘  3 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (14.7s)
+  ✘  6 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (14.3s)
+  ✘  4 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (15.0s)
+  ✘  7 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (5.6s)
+
+
+  1) [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   212,
+    + ]
+
+      175 |   expect(await anchor()).toEqual(before);
+      176 |   // Neither the scrolling nor the keyboard made a task over 50 ms.
+    > 177 |   expect(await page.evaluate(() => window.longTasks.filter((d) => d > 50))).toEqual([]);
+          |                                                                             ^
+      178 | });
+      179 |
+        at /Users/jirathip/.herdr/worktrees/cooee/issue-43/web/e2e/chat.spec.mjs:177:77
+
+    Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-390/error-context.md
+
+  2) [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 6
+
+    - Array []
+    + Array [
+    +   81,
+    +   56,
+    +   60,
+    +   118,
+    + ]
+
+      175 |   expect(await anchor()).toEqual(before);
+      176 |   // Neither the scrolling nor the keyboard made a task over 50 ms.
+    > 177 |   expect(await page.evaluate(() => window.longTasks.filter((d) => d > 50))).toEqual([]);
+          |                                                                             ^
+      178 | });
+      179 |
+        at /Users/jirathip/.herdr/worktrees/cooee/issue-43/web/e2e/chat.spec.mjs:177:77
+
+    Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-390-repeat1/error-context.md
+
+  3) [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 6
+
+    - Array []
+    + Array [
+    +   67,
+    +   160,
+    +   61,
+    +   67,
+    + ]
+
+      175 |   expect(await anchor()).toEqual(before);
+      176 |   // Neither the scrolling nor the keyboard made a task over 50 ms.
+    > 177 |   expect(await page.evaluate(() => window.longTasks.filter((d) => d > 50))).toEqual([]);
+          |                                                                             ^
+      178 | });
+      179 |
+        at /Users/jirathip/.herdr/worktrees/cooee/issue-43/web/e2e/chat.spec.mjs:177:77
+
+    Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-390-repeat2/error-context.md
+
+  4) [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 6
+
+    - Array []
+    + Array [
+    +   74,
+    +   95,
+    +   117,
+    +   76,
+    + ]
+
+      175 |   expect(await anchor()).toEqual(before);
+      176 |   // Neither the scrolling nor the keyboard made a task over 50 ms.
+    > 177 |   expect(await page.evaluate(() => window.longTasks.filter((d) => d > 50))).toEqual([]);
+          |                                                                             ^
+      178 | });
+      179 |
+        at /Users/jirathip/.herdr/worktrees/cooee/issue-43/web/e2e/chat.spec.mjs:177:77
+
+    Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-1440/error-context.md
+
+  5) [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   87,
+    + ]
+
+      175 |   expect(await anchor()).toEqual(before);
+      176 |   // Neither the scrolling nor the keyboard made a task over 50 ms.
+    > 177 |   expect(await page.evaluate(() => window.longTasks.filter((d) => d > 50))).toEqual([]);
+          |                                                                             ^
+      178 | });
+      179 |
+        at /Users/jirathip/.herdr/worktrees/cooee/issue-43/web/e2e/chat.spec.mjs:177:77
+
+    Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-1440-repeat1/error-context.md
+
+  6) [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.unread + li')
+    Expected substring: "#991"
+    Received string:    "fake-acp#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('.unread + li') with timeout 5000ms
+      - waiting for locator('.unread + li')
+        14 × locator resolved to <li data-id="1000" class="blk ai" data-at="1700060000000">…</li>
+           - unexpected value "fake-acp#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two"
+
+
+      137 |   // Opened at the first unread message, with the bar there.
+      138 |   await expect(page.locator("#msgs .unread")).toBeVisible();
+    > 139 |   await expect(page.locator(".unread + li")).toContainText("#991");
+          |                                              ^
+      140 |   await shot(page, info, "chat-long");
+      141 |
+      142 |   const list = page.locator("#msgs");
+        at /Users/jirathip/.herdr/worktrees/cooee/issue-43/web/e2e/chat.spec.mjs:139:46
+
+    Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-1440-repeat2/error-context.md
+
+  6 failed
+    [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+    [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+    [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+    [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+    [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+    [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+  1 passed (37.9s)
