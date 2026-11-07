@@ -79,6 +79,10 @@ start and every 30 s). It opens as a normal chat with its role, round and a link
 show as messages, the reply box and [stop] reach its terminal, and only its tool closes it. Its turns end without a
 push (approvals and errors still push).
 
+herdsman's lanes (its impl, review and fix agents) are what fill this list: each runs as a shed ACP session labelled by
+its source (the tool), `group` its repo, `item` its issue, with its `role` and `round`. So a lane is opened as a chat in
+cooee core, never in a cooee-drover tab; those show the queue, asks and fleets ([Plugins](#plugins-m4)).
+
 ## Pairing and push (M2)
 
 Everything but `/pair` (and `/pair/request`, `/pair/claim`, `/pair/cancel`) and the static files (manifest, icons,
@@ -151,6 +155,18 @@ and goes live only after its backend served its first tab's module; `plugins.loc
 to roll back to. `cooee serve` runs every enabled backend as its child (`cooee-server/src/manage.rs`): restarts with
 backoff, 5 crashes in 10 minutes turn it off with an alert. [improve] puts an agent on a branch of the plugin's
 checkout; approving builds and swaps it in the same way.
+
+**cooee-drover** ([jirathip-dev/cooee-drover](https://github.com/jirathip-dev/cooee-drover), in the index) is the
+plugin that adds the fleet tabs: Queue, Asks and Fleets. Data flows one way:
+
+```text
+cooee → cooee-drover → herdsman /api/v1
+```
+
+cooee proxies the tab (`/p/cooee-drover/api/…`); cooee-drover passes each call through to herdsman's `/api/v1` and
+reimplements nothing; herdsman is the engine: queue, drive, lanes, reviews, gates and merge. herdsman is to be
+renamed drover ([herdsman#456](https://github.com/jirathip-dev/herdsman/issues/456)). The lanes themselves are not in
+these tabs: they are shed sessions, shown as chats under Workflow (above).
 
 ## Configuration
 
