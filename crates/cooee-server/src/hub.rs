@@ -12,8 +12,8 @@ use std::{
 };
 
 use cooee_core::{
-    Agent, Body, Card, Change, Chat, Item, Launch, Plugin, Shed, ShedError, Store, StoreError,
-    Summary, Thread, Turn, Workflow,
+    Agent, Body, Card, Change, Chat, Item, Launch, Plugin, Queued, Shed, ShedError, Store,
+    StoreError, Summary, Thread, Turn, Workflow,
     shed_proto::{self, ApprovalOption, Event, TerminalInfo},
 };
 use serde::{Deserialize, Serialize};
@@ -95,6 +95,8 @@ pub struct Slice {
     pub turn: Turn,
     /// Resume the event stream after this (`<boot>.<seq>`).
     pub cursor: String,
+    /// The messages queued for the turns after this one.
+    pub queue: Vec<Queued>,
     /// The oldest config card that waits (#553 row 32), wherever it is.
     pub waiting: Option<Item>,
 }
@@ -124,6 +126,14 @@ pub struct CardSpec {
     /// Who gave that answer (default: the plugin's label).
     #[serde(default)]
     pub by: Option<String>,
+}
+
+/// A file sent with a message: its name on the phone and its bytes.
+pub struct Upload {
+    /// The name it had (only its safe characters are kept).
+    pub name: String,
+    /// Its bytes.
+    pub data: Vec<u8>,
 }
 
 /// What a page subscription starts with: replayed events, or a reset (the page reloads its slice).
@@ -156,6 +166,8 @@ pub struct Recipe {
 pub struct Hub {
     shed: Shed,
     store: Store,
+    /// `<data>/files/<thread>/`: the files sent with messages.
+    files: PathBuf,
     push: Push,
     /// The server's default theme, whose words a push says.
     theme: cooee_web::Theme,
@@ -324,6 +336,7 @@ impl Hub {
             agents: Mutex::new(shed.agents().map_err(|e| e.to_string())),
             shed,
             store,
+            files: data.join("files"),
             push: Push::new(data),
             theme,
             roots: Mutex::new(roots),
@@ -519,14 +532,41 @@ impl Hub {
                 let body = Body::You {
                     text: prompt.clone(),
                     random_id: String::new(),
+                    files: Vec::new(),
                 };
                 changes.push(Change::Item(live.chat.push(now(), event.seq, body)));
             }
         }
         changes.extend(live.chat.apply(now(), event.seq, event.kind));
-        if let Err(e) = live.publish(self, changes) {
+        if let Err(e) = live
+            .publish(self, changes)
+            .map_err(HubError::from)
+            .and_then(|()| self.drain(&mut live))
+        {
             eprintln!("cooee: {e}");
         }
+    }
+
+    /// Between turns, sends the first queued message (the next one goes as that turn ends).
+    fn drain(&self, live: &mut Live) -> Result<(), HubError> {
+        let between = !matches!(
+            live.chat.turn.state.as_str(),
+            "working" | "blocked" | "ended"
+        );
+        if !between || live.meta.queue.is_empty() || live.meta.closed {
+            return Ok(());
+        }
+        let next = live.meta.queue.remove(0);
+        self.queued(live)?;
+        self.deliver(live, next, "").map(drop)
+    }
+
+    /// Saves the queue and tells the pages.
+    fn queued(&self, live: &mut Live) -> Result<(), HubError> {
+        self.store.save(&live.meta)?;
+        let data = json!(live.meta.queue).to_string();
+        live.emit("queue", data);
+        Ok(())
     }
 
     /// Surfaces each working turn with no shed event for 30 minutes before `now` as needs-you, once: the thread
@@ -774,56 +814,209 @@ impl Hub {
             }
         }
         self.shed.ready(&terminal)?;
-        self.send_after(&id, text, random_id, &recipe.instructions)?;
+        self.send_after(&id, text, random_id, &[], &recipe.instructions)?;
         Ok(id)
     }
 
-    /// Sends the owner's message: once per `random_id` (a retry of a stored send returns it again). The message
-    /// is stored only once shed took it.
+    /// Sends the owner's message with its `files`: once per `random_id` (a retry of a stored send returns it
+    /// again). The message is stored only once shed took it; the agent gets the files' paths under its text.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a closed thread or an empty message; [`HubError::Shed`] when shed fails.
-    pub fn send(&self, id: &str, text: &str, random_id: &str) -> Result<Item, HubError> {
-        self.send_after(id, text, random_id, "")
+    pub fn send(
+        &self,
+        id: &str,
+        text: &str,
+        random_id: &str,
+        files: &[Upload],
+    ) -> Result<Item, HubError> {
+        self.send_after(id, text, random_id, files, "")
     }
 
-    /// [`Hub::send`] with `before` (a profile's instructions) ahead of `text` for the agent; only `text` is stored.
+    /// [`Hub::send`] with `before` (a profile's instructions) ahead of the text for the agent; only the text is stored.
     fn send_after(
         &self,
         id: &str,
         text: &str,
         random_id: &str,
+        files: &[Upload],
         before: &str,
     ) -> Result<Item, HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
-        let sent = live
-            .chat
-            .items
-            .iter()
-            .rev()
-            .find(|i| matches!(&i.body, Body::You { random_id: r, .. } if r == random_id));
-        if let Some(item) = sent {
-            return Ok(item.clone());
+        if let Some(item) = Self::sent(&live, random_id) {
+            return Ok(item);
         }
-        if live.meta.closed || text.trim().is_empty() {
+        let q = self.take(&live, text, random_id, files)?;
+        self.deliver(&mut live, q, before)
+    }
+
+    /// The stored message `random_id`, if it was sent.
+    fn sent(live: &Live, random_id: &str) -> Option<Item> {
+        let mine = |i: &&Item| matches!(&i.body, Body::You { random_id: r, .. } if r == random_id);
+        live.chat.items.iter().rev().find(mine).cloned()
+    }
+
+    /// A message to send or queue, its files stored.
+    fn take(
+        &self,
+        live: &Live,
+        text: &str,
+        random_id: &str,
+        files: &[Upload],
+    ) -> Result<Queued, HubError> {
+        if live.meta.closed || (text.trim().is_empty() && files.is_empty()) {
             return Err(HubError::Refused(
                 "the thread is closed or the message empty".to_owned(),
             ));
         }
-        let prompt = if before.trim().is_empty() {
-            text.to_owned()
-        } else {
-            format!("{}\n\n{text}", before.trim_end())
-        };
-        self.shed.prompt(&live.meta.terminal, &prompt)?;
-        let body = Body::You {
+        let dir = self.files.join(&live.meta.id);
+        fs::create_dir_all(&dir).map_err(|e| refused(&dir, &e))?;
+        let stamp = now();
+        let mut names = Vec::new();
+        for (i, f) in files.iter().enumerate() {
+            let base = f.name.rsplit(['/', '\\']).next().unwrap_or_default();
+            let safe: String = base
+                .chars()
+                .map(|c| {
+                    if c.is_ascii_alphanumeric() || "._-".contains(c) {
+                        c
+                    } else {
+                        '_'
+                    }
+                })
+                .take(80)
+                .collect();
+            let name = format!("{stamp}-{i}-{}", safe.trim_start_matches('.'));
+            let path = dir.join(&name);
+            fs::write(&path, &f.data).map_err(|e| refused(&path, &e))?;
+            names.push(name);
+        }
+        Ok(Queued {
             text: text.to_owned(),
             random_id: random_id.to_owned(),
+            files: names,
+        })
+    }
+
+    /// Sends `q` to the agent, `before` ahead of it, then stores and publishes it.
+    fn deliver(&self, live: &mut Live, q: Queued, before: &str) -> Result<Item, HubError> {
+        let mut prompt = if before.trim().is_empty() {
+            q.text.clone()
+        } else {
+            format!("{}\n\n{}", before.trim_end(), q.text)
+        };
+        if !q.files.is_empty() {
+            prompt.push_str("\n\nAttached files:");
+            for name in &q.files {
+                let path = self.files.join(&live.meta.id).join(name);
+                prompt.push_str("\n- ");
+                prompt.push_str(&path.to_string_lossy());
+            }
+        }
+        self.shed.prompt(&live.meta.terminal, prompt.trim())?;
+        let body = Body::You {
+            text: q.text,
+            random_id: q.random_id,
+            files: q.files,
         };
         let item = live.chat.push(now(), 0, body);
         live.publish(self, vec![Change::Item(item.clone())])?;
         Ok(item)
+    }
+
+    /// Queues the owner's message for when the turn ends (between turns it goes at once); once per `random_id`.
+    /// Returns the queue.
+    ///
+    /// # Errors
+    /// As [`Hub::send`].
+    pub fn queue(
+        &self,
+        id: &str,
+        text: &str,
+        random_id: &str,
+        files: &[Upload],
+    ) -> Result<Vec<Queued>, HubError> {
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        let have = live.meta.queue.iter().any(|q| q.random_id == random_id);
+        if !have && Self::sent(&live, random_id).is_none() {
+            let q = self.take(&live, text, random_id, files)?;
+            live.meta.queue.push(q);
+            self.queued(&mut live)?;
+            self.drain(&mut live)?;
+        }
+        Ok(live.meta.queue.clone())
+    }
+
+    /// Takes queued message `random_id` out of the queue; with `now`, sends it into the turn in progress (steers).
+    /// Returns the queue.
+    ///
+    /// # Errors
+    /// As [`Hub::send`]; [`HubError::Refused`] when it isn't queued.
+    pub fn unqueue(&self, id: &str, random_id: &str, now: bool) -> Result<Vec<Queued>, HubError> {
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        let Some(at) = live
+            .meta
+            .queue
+            .iter()
+            .position(|q| q.random_id == random_id)
+        else {
+            return Err(HubError::Refused(
+                "that message isn't queued any more".to_owned(),
+            ));
+        };
+        let q = live.meta.queue.remove(at);
+        self.queued(&mut live)?;
+        if now {
+            self.deliver(&mut live, q, "")?;
+        }
+        Ok(live.meta.queue.clone())
+    }
+
+    /// Renames the thread.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for an empty title.
+    pub fn retitle(&self, id: &str, title: &str) -> Result<(), HubError> {
+        let title: String = title.trim().chars().take(80).collect();
+        if title.is_empty() {
+            return Err(HubError::Refused("a title can't be empty".to_owned()));
+        }
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        live.meta.title = title;
+        Ok(self.store.save(&live.meta)?)
+    }
+
+    /// Archives the thread (`on`) or restores it.
+    ///
+    /// # Errors
+    /// [`HubError::Store`] when it can't be saved.
+    pub fn archive(&self, id: &str, on: bool) -> Result<(), HubError> {
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        live.meta.archived = on;
+        Ok(self.store.save(&live.meta)?)
+    }
+
+    /// File `name` sent in thread `id`: its path, if it is one of that thread's.
+    ///
+    /// # Errors
+    /// [`HubError::NoThread`] for no such thread or file.
+    pub fn file(&self, id: &str, name: &str) -> Result<PathBuf, HubError> {
+        self.live(id)?;
+        let plain = !name.starts_with('.')
+            && name
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || "._-".contains(c));
+        let path = self.files.join(id).join(name);
+        if plain && path.is_file() {
+            Ok(path)
+        } else {
+            Err(HubError::NoThread(format!("{id}/{name}")))
+        }
     }
 
     /// `by`'s answer to approval `item`: sent once (stored first) to shed, or to the plugin whose card it is (then
@@ -1082,6 +1275,12 @@ impl Hub {
                     Body::Approval { tool, .. } => tool,
                     Body::Plan { .. } => "plan",
                 });
+                let read = live.meta.read.unwrap_or(0);
+                let from = live.chat.items.partition_point(|i| i.id <= read);
+                let unseen = live.chat.items[from..]
+                    .iter()
+                    .filter(|i| !matches!(i.body, Body::You { .. }))
+                    .count();
                 let waiting = live.chat.items.iter().find_map(|i| match &i.body {
                     Body::Approval { tool, .. } if waits(&i.body) => {
                         Some(format!("{tool} waiting"))
@@ -1099,7 +1298,9 @@ impl Hub {
                         text.lines().last().unwrap_or("").chars().take(80).collect()
                     }),
                     at: last.map_or(0, |i| i.at),
-                    unread: last.is_some_and(|i| live.meta.read.is_none_or(|r| r < i.id)),
+                    unread: unseen > 0,
+                    unseen,
+                    archived: live.meta.archived,
                     workflow: live.meta.workflow.clone(),
                 }
             })
@@ -1143,6 +1344,7 @@ impl Hub {
             skipped_after: items.len() - to.max(from),
             turn: live.chat.turn.clone(),
             cursor: format!("{}.{}", self.boot, live.seq),
+            queue: live.meta.queue.clone(),
             waiting: items.iter().find(|i| waits(&i.body)).cloned(),
         })
     }
