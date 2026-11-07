@@ -12,6 +12,7 @@ publish.workspace = true
 cooee-core.workspace = true
 cooee-machines.workspace = true
 cooee-server.workspace = true
+cooee-web.workspace = true
 qrcode.workspace = true
 serde_json.workspace = true
 toml.workspace = true

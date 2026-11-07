@@ -203,6 +203,7 @@ dependencies = [
  "cooee-core",
  "cooee-machines",
  "cooee-server",
+ "cooee-web",
  "qrcode",
  "serde_json",
  "toml",

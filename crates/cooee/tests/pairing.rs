@@ -3,7 +3,7 @@
 
 mod support;
 
-use std::fs;
+use std::{fs, path::Path};
 
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
@@ -84,7 +84,7 @@ fn unpaired_reads_and_writes_are_refused() {
     );
     assert_eq!(status(&c.raw("GET", "/look.js", &[], "").0), 200);
     assert_eq!(
-        status(&c.raw("GET", "/look/farm/theme.json", &[], "").0),
+        status(&c.raw("GET", "/look/plain/theme.json", &[], "").0),
         200
     );
 }
@@ -317,7 +317,15 @@ fn the_new_calls_need_a_paired_device_but_pairing_requests_do_not() {
 #[test]
 fn the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it() {
     // #49: the look sheet with no script posts the key tapped; the cookie it sets draws the next page from its first byte.
-    let (_dir, _shed, c) = setup("look", "");
+    // kitchen, installed beside the config (#38: only plain is built in).
+    let dir = scratch("look");
+    let kitchen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/themes/kitchen");
+    fs::create_dir_all(dir.join("themes/kitchen")).unwrap();
+    for f in ["theme.json", "sprites.svg", "icon.png"] {
+        fs::copy(kitchen.join(f), dir.join("themes/kitchen").join(f)).unwrap();
+    }
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let c = Cooee::start(&dir, &shed.dir);
     let form = "to=%2Fpair&style=terminal";
     let form_type = ("Content-Type", "application/x-www-form-urlencoded");
     let (head, _) = c.raw("POST", "/look", &[form_type], form);
