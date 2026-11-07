@@ -7,8 +7,8 @@
 # $PORT + 3. The main instance runs with HOME at the temp folder, so Settings › Folders browses it. The machines plugin
 # runs in it on $PORT + 4, the fake shed answering for this machine (24 h of samples) and an `air` that is offline. Its
 # plugin index lists the example plugin as `greet`, in a git repo of its own. The terminal plugin runs on $PORT + 5, its
-# shells `/bin/sh -l` in the fake shed. One agent profile, `reviewer`, sits beside
-# the main config (#40).
+# shells `/bin/sh -l` in the fake shed. farm, kitchen and garden are installed. One agent profile, `reviewer`, sits
+# beside the main config (#40).
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -146,6 +146,10 @@ module = "/tab.js"
 token = "terminal-token-0123456789"
 EOF
 mkdir -p "$(dirname "${PAIR_CODE:?}")" "$tmp/profiles"
+# The first-party theme packs, added from their folders (#38: only the plain theme is built in).
+for t in farm kitchen garden; do
+  cargo run --quiet --locked -p cooee -- theme add "packs/themes/$t" --yes --config "$tmp/config.toml" >/dev/null
+done
 
 # An agent profile (#40) for the main instance: its instructions go ahead of the first message.
 echo 'Be brief.' >"$tmp/profiles/reviewer.md"

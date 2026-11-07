@@ -14,14 +14,14 @@ mod shown;
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
-    sync::Arc,
+    sync::{Arc, PoisonError, RwLock},
     time::{SystemTime, UNIX_EPOCH},
 };
 
 use cooee_core::{
     AGENTS_FIX, Account, Agent, Profile, ROOTS_FIX, Sheet, Status, Summary, Thread, Turn,
 };
-pub use look::{Looks, Pair, Scheme, TOKENS, Theme, gate, plain};
+pub use look::{Looks, Pair, SPRITES, Scheme, TOKENS, Theme, WORDS, check, gate, plain, read_pack};
 use sheet::{sheets, shown};
 pub use shown::Shown;
 use topcoat::{
@@ -46,18 +46,10 @@ macro_rules! built {
 }
 
 /// The static routes: the manifest, the icons, the style sheet, the scripts and the service worker; the look:
-/// `POST /look` (a pick with no script) and each theme's data at `/look/<theme>/{theme.json,sprites.svg,scene.svg,icon.png}`;
-/// and `POST /list`, the thread list's chip.
-///
-/// # Panics
-///
-/// Never: [`Looks`] always serialises.
+/// `POST /look` (a pick with no script) and each theme's data at
+/// `/look/<theme>/{theme.json,sprites.svg,scene.svg,icon.png}`; and `POST /list`, the thread list's chip.
 #[must_use]
-pub fn assets(builder: RouterBuilder, looks: Looks) -> RouterBuilder {
-    // In a <script> element: no `</` may end it.
-    let json = serde_json::to_string(&looks)
-        .expect("looks serialise")
-        .replace("</", "<\\/");
+pub fn assets(builder: RouterBuilder, looks: Arc<LookAssets>) -> RouterBuilder {
     builder
         .route(manifest)
         .route(icon)
@@ -72,13 +64,68 @@ pub fn assets(builder: RouterBuilder, looks: Looks) -> RouterBuilder {
         .route(sheet::look_set)
         .route(list_set)
         .route(look_file)
-        .app_context(Arc::new(LookAssets { looks, json }))
+        .app_context(looks)
 }
 
-/// The looks, and their JSON for the pages' `<script id="looks">`, once at start.
-struct LookAssets {
-    looks: Looks,
-    json: String,
+/// The looks cooee serves, and their JSON for the pages' `<script id="looks">`: loaded at start and again when a
+/// theme is added, removed or kept, or one in `themes-dev/` is saved.
+pub struct LookAssets {
+    dir: Option<PathBuf>,
+    /// The index's theme packs, for Settings › look › + theme.
+    index: Vec<cooee_core::plugins::Listed>,
+    default: Option<String>,
+    now: RwLock<(Arc<Looks>, Arc<str>)>,
+}
+
+impl LookAssets {
+    /// The looks of config folder `dir` with the server's `default` theme ([`Looks::load`]) and the `index`'s theme
+    /// packs, and why own files were refused.
+    #[must_use]
+    pub fn load(
+        dir: Option<&Path>,
+        default: Option<&str>,
+        index: Vec<cooee_core::plugins::Listed>,
+    ) -> (Arc<Self>, Vec<String>) {
+        let assets = Self {
+            dir: dir.map(Path::to_owned),
+            index,
+            default: default.map(str::to_owned),
+            now: RwLock::new((Arc::new(Looks::load(None, None).0), "{}".into())),
+        };
+        let refused = assets.reload();
+        (Arc::new(assets), refused)
+    }
+
+    /// Loads the looks again; returns why own files were refused.
+    ///
+    /// # Panics
+    ///
+    /// Never: [`Looks`] always serialises.
+    pub fn reload(&self) -> Vec<String> {
+        let (looks, refused) = Looks::load(self.dir.as_deref(), self.default.as_deref());
+        // In a <script> element: no `</` may end it.
+        let json = serde_json::to_string(&looks)
+            .expect("looks serialise")
+            .replace("</", "<\\/");
+        *self.now.write().unwrap_or_else(PoisonError::into_inner) = (Arc::new(looks), json.into());
+        refused
+    }
+
+    /// The looks now.
+    #[must_use]
+    pub fn looks(&self) -> Arc<Looks> {
+        Arc::clone(&self.now.read().unwrap_or_else(PoisonError::into_inner).0)
+    }
+
+    fn json(&self) -> Arc<str> {
+        Arc::clone(&self.now.read().unwrap_or_else(PoisonError::into_inner).1)
+    }
+
+    /// The config folder, where `themes/` and `themes-dev/` are.
+    #[must_use]
+    pub fn dir(&self) -> Option<&Path> {
+        self.dir.as_deref()
+    }
 }
 
 /// A file made at start, served with its content type.
@@ -115,8 +162,8 @@ const CALM: &[u8] = b"<style>.h-busy,.h-held,.l-overcast,.l-rain{display:none}</
 
 #[route(GET "/look/{look}/{file}")]
 async fn look_file(cx: &Cx) -> Result<Owned> {
-    let theme = app_context::<Arc<LookAssets>>(cx)
-        .looks
+    let looks = app_context::<Arc<LookAssets>>(cx).looks();
+    let theme = looks
         .themes
         .get(path_param::<Look>(cx))
         .ok_or_else(not_found)?;
@@ -126,7 +173,7 @@ async fn look_file(cx: &Cx) -> Result<Owned> {
             .as_deref()
             .map(|b| Owned("image/svg+xml", with_rule(b, FRAMES))),
         "scene.svg" => theme
-            .scene
+            .scene_art
             .as_deref()
             .map(|b| Owned("image/svg+xml", with_rule(b, CALM))),
         "icon.png" => Some(theme.icon.clone().map_or_else(
@@ -235,7 +282,7 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
         .get("--bg")
         .cloned();
     let ico = format!("/look/{name}/icon.png");
-    let json = app_context::<Arc<LookAssets>>(cx).json.clone();
+    let json = app_context::<Arc<LookAssets>>(cx).json().to_string();
     Ok(view! {
         <!DOCTYPE html>
         <html
@@ -1459,7 +1506,7 @@ async fn code_card(state: PairState) -> Result<impl View> {
             if bad.is_empty() && digits.len() == 6 {
                 <p class="cdn"><span class="et g">"pairing…"</span></p>
             }
-            refused(bad: bad, left: state.left, wait: state.wait)
+            refusal(bad: bad, left: state.left, wait: state.wait)
             <p class="cdn">"6 digits · good for 10 minutes · pairs on the sixth"</p>
             <div class="go"><button type="submit" disabled=(off)>"pair"</button></div>
             <div class="alt">
@@ -1485,7 +1532,7 @@ async fn code_card(state: PairState) -> Result<impl View> {
 
 /// Why the last code was refused: `wrong` (with the tries `left`), `expired`, or `limit` (for `wait` seconds).
 #[component]
-async fn refused(bad: String, left: u32, wait: u64) -> Result<impl View> {
+async fn refusal(bad: String, left: u32, wait: u64) -> Result<impl View> {
     let tries = format!(
         "{left} {} left this minute",
         if left == 1 { "try" } else { "tries" }
@@ -1539,6 +1586,76 @@ async fn refused(bad: String, left: u32, wait: u64) -> Result<impl View> {
     })
 }
 
+/// `[keep]`: theme `name` from `themes-dev/` into the installed ones, once it passes the theme gate (else the failures
+/// go to `thread`, its chat).
+#[component]
+async fn keep(name: String, thread: String) -> Result<impl View> {
+    Ok(view! {
+        <form method="post" action="/themes/keep" class="kp">
+            <input type="hidden" name="name" value=(name)>
+            <input type="hidden" name="thread" value=(thread)>
+            <button type="submit">"keep"</button>
+        </form>
+    })
+}
+
+/// The live preview of theme `name` in `themes-dev/`: its gate's `fails`, `[keep]`, and the thread list, its chat
+/// (`thread`) and its scene as they look in it; `look.ts` reloads it on each save.
+#[must_use]
+pub fn preview_page(cx: &Cx, name: String, fails: Vec<String>, thread: String) -> impl View {
+    view! { cx => preview(name: name, fails: fails, thread: thread) }
+}
+
+#[component]
+async fn preview(cx: &Cx, name: String, fails: Vec<String>, thread: String) -> Result<impl View> {
+    let looks = app_context::<Arc<LookAssets>>(cx).looks();
+    let art = looks
+        .themes
+        .get(&format!("dev.{name}"))
+        .is_some_and(|t| t.scene_art.is_some());
+    let back = if thread.is_empty() {
+        "/".to_owned()
+    } else {
+        format!("/t/{thread}")
+    };
+    let in_chat = format!("/t/{thread}?preview={name}");
+    let title = format!("preview {name}");
+    Ok(view! {
+        document(
+            title: title.as_str(),
+            <main class="prv" data-preview=(name.clone()) aria-label="preview">
+                <div class="th">
+                    <a class="gl bk" href=(back) aria-label="back to the chat">"‹"</a>
+                    <h1>(format!("preview · {name}"))</h1>
+                    keep(name: name.clone(), thread: thread.clone())
+                </div>
+                if fails.is_empty() {
+                    <p class="prg">"passes the theme gate · reloads on each save"</p>
+                    <div class="prf">
+                        <iframe title="thread list" src=(format!("/?preview={name}"))></iframe>
+                        if !thread.is_empty() {
+                            <iframe title="chat" src=(in_chat)></iframe>
+                        }
+                        if art {
+                            <img
+                                alt="scene"
+                                src=(format!("/look/dev.{name}/scene.svg"))
+                            >
+                        }
+                    </div>
+                } else {
+                    <p class="prg">"fails the theme gate · reloads on each save"</p>
+                    <ul class="prx">
+                        for f in fails {
+                            <li>(f)</li>
+                        }
+                    </ul>
+                }
+            </main>
+        )
+    })
+}
+
 /// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer; `ids` are the threads a
 /// ref in it may open (#84).
 #[must_use]
@@ -1573,6 +1690,36 @@ async fn pick(id: String, name: &str, list: Vec<String>, now: String) -> Result<
     })
 }
 
+/// The theme a thread in `folder` builds in `themes-dev/`, for its preview and [keep].
+fn dev_theme(cx: &Cx, folder: Option<&Path>) -> Option<String> {
+    app_context::<Arc<LookAssets>>(cx)
+        .dir()
+        .map(|d| d.join("themes-dev"))
+        .zip(folder)
+        .filter(|(dev, f)| f.parent() == Some(dev.as_path()))
+        .and_then(|(_, f)| f.file_name()?.to_str().map(str::to_owned))
+}
+
+/// A theme thread's preview link and [keep], for a thread in `themes-dev/`.
+#[component]
+async fn dev_bar(cx: &Cx, thread: String, folder: Option<PathBuf>) -> Result<impl View> {
+    Ok(view! {
+        if let Some(name) = dev_theme(cx, folder.as_deref()) {
+            <div class="tdv">
+                <a href=(format!("/themes/dev/{name}?thread={thread}"))>
+                    (format!("preview {name}"))
+                </a>
+                keep(name: name, thread: thread)
+            </div>
+        }
+    })
+}
+
+/// `url`, when it is a web link.
+fn web_url(url: &str) -> Option<String> {
+    (url.starts_with("https://") || url.starts_with("http://")).then(|| url.to_owned())
+}
+
 #[component]
 async fn chat(
     cx: &Cx,
@@ -1593,10 +1740,7 @@ async fn chat(
     let ended = thread.closed || turn.state == "ended";
     // A Workflow session (#33): its role and round, and a link to what it works on; its tool closes it.
     let workflow = thread.workflow.clone();
-    let link = workflow
-        .as_ref()
-        .map(|w| w.url.clone())
-        .filter(|u| u.starts_with("https://") || u.starts_with("http://"));
+    let link = workflow.as_ref().and_then(|w| web_url(&w.url));
     Ok(view! {
         document(
             title: thread.title.as_str(),
@@ -1647,6 +1791,7 @@ async fn chat(
                     </button>
                     rename(title: thread.title.clone())
                 </div>
+                dev_bar(thread: thread.id.clone(), folder: thread.folder.clone())
                 <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
                 <ol
                     class="tc"

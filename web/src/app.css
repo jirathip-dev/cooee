@@ -267,6 +267,15 @@ html[data-style=terminal] .swa{border-radius:4px}
 html[data-style=terminal] .bt{background:none;color:var(--l);font-weight:400;padding:0 1ch}
 html[data-style=terminal] .bt::before{content:"["}html[data-style=terminal] .bt::after{content:"]"}
 html[data-style=terminal] :is(.acts,.alt) .q,html[data-style=terminal] .acts button+button{background:none;color:var(--l);box-shadow:none}
+/* #38 theme packs: Settings › look › themes (native forms), a theme thread's bar and its live preview. */
+.thm{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:var(--hit);border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none}
+.thn{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.thm .thx{flex-basis:100%}.thx{border-bottom:1px solid var(--line)}.thm .thx{border:0}
+.thf{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 0 12px}.thf span{flex:1 1 100%;color:var(--mute);font-size:var(--fs-meta)}
+.thf input{flex:1 1 14ch;min-width:0;font:16px var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:var(--hit)}
+.tdv{display:flex;align-items:center;gap:12px;margin:0;padding:0 12px;border-bottom:1px solid var(--line)}.tdv a{color:var(--link);display:inline-flex;align-items:center;min-height:var(--hit)}
+.tds{color:var(--mute);font-size:var(--fs-meta)}.prv{max-width:100ch;margin:0 auto}.prv .th h1{flex:1}.prg{margin:12px;color:var(--mute);font-size:var(--fs-meta)}.prx{margin:0 12px}
+.prf{display:grid;gap:12px;padding:0 12px 12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
+.prf iframe,.prf img{width:100%;height:70dvh;border:1px solid var(--edge);border-radius:var(--r-card);background:var(--bg)}.prf img{height:auto}
 /* #43, herdsman#553 rows 15–29. The list: a row's unread badge, a swipe's slide, the archived threads. */
 .bd{display:inline-block;margin-left:6px;padding:0 6px;border-radius:var(--r-pill);background:var(--link);color:var(--bg);font-size:11px;font-weight:700;line-height:1.5}
 .fc a.tr{transition:transform .15s}

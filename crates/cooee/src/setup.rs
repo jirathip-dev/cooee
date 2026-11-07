@@ -106,6 +106,7 @@ impl Setup {
         let updated = self.shed()?;
         self.shed_service(&gui, updated)?;
         let (config, changed) = self.config(path)?;
+        self.themes(&config)?;
         self.agents(&config)?;
         self.service(&config, path, &gui, changed)?;
         self.tailnet(config.port)?;
@@ -240,6 +241,48 @@ impl Setup {
             }
         };
         Ok((config, changed))
+    }
+
+    /// The first-party theme packs asked for (default: all of them) from the index, the installed ones skipped.
+    fn themes(&self, config: &Config) -> Result<(), String> {
+        let e = |e: io::Error| e.to_string();
+        let t = match cooee_server::Themes::new(config) {
+            Err(_) if self.dry_run => {
+                println!("themes:\n  would ask which first-party themes to install");
+                return Ok(());
+            }
+            t => t.map_err(e)?,
+        };
+        let have: Vec<String> = t.list().map_err(e)?.into_iter().map(|p| p.name).collect();
+        let first: Vec<&str> = t
+            .index()
+            .iter()
+            .filter(|l| l.first_party && !have.contains(&l.name))
+            .map(|l| l.name.as_str())
+            .collect();
+        if step("themes", first.is_empty()) {
+            return Ok(());
+        }
+        let all = first.join(" ");
+        let want = self.ask(&format!("themes to install, or none [{all}]:"), &all);
+        for name in want
+            .split([' ', ','])
+            .filter(|n| !n.is_empty() && *n != "none")
+        {
+            if !first.contains(&name) {
+                return Err(format!("theme {name}: not one of {all}"));
+            }
+            if self.dry_run {
+                println!("  would install theme {name}");
+                continue;
+            }
+            // One that can't be fetched now (offline) is no reason to stop.
+            match t.plan(name, None).and_then(|p| t.add(&p)) {
+                Ok(()) => println!("  installed theme {name}"),
+                Err(why) => println!("  theme {name}: {why}\n  later: cooee theme add {name}"),
+            }
+        }
+        Ok(())
     }
 
     /// Claude's ACP agent in shed, and Codex's and Gemini's if asked for.

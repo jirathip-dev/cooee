@@ -102,8 +102,20 @@ impl Mac {
     }
 
     fn cooee(&self, args: &[&str]) -> Output {
-        Command::new(BIN)
+        self.cooee_typing(args, None)
+    }
+
+    /// `cooee <args>` with `input` typed in (none: no input). Git never reaches GitHub: the theme index's repo is a
+    /// missing folder here, unless the config names an index of its own.
+    fn cooee_typing(&self, args: &[&str], input: Option<&str>) -> Output {
+        let mut child = Command::new(BIN)
             .args(args)
+            .env("GIT_CONFIG_COUNT", "1")
+            .env(
+                "GIT_CONFIG_KEY_0",
+                format!("url.{}/offline/.insteadOf", self.home.display()),
+            )
+            .env("GIT_CONFIG_VALUE_0", "https://github.com/")
             .env("HOME", &self.home)
             .env(
                 "PATH",
@@ -112,9 +124,20 @@ impl Mac {
             .env("XDG_RUNTIME_DIR", self.home.join("Library/Caches/shed"))
             .env_remove("XDG_CONFIG_HOME")
             .env_remove("XDG_DATA_HOME")
-            .stdin(Stdio::null())
-            .output()
-            .unwrap()
+            .stdin(if input.is_some() {
+                Stdio::piped()
+            } else {
+                Stdio::null()
+            })
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        if let Some(input) = input {
+            let mut stdin = child.stdin.take().unwrap();
+            std::io::Write::write_all(&mut stdin, input.as_bytes()).unwrap();
+        }
+        child.wait_with_output().unwrap()
     }
 
     /// The logged commands that change something, then the log is emptied.
@@ -331,6 +354,92 @@ fn an_existing_config_keeps_its_keys() {
         fs::read_to_string(mac.config()).unwrap(),
         format!("allowed_hosts = [\"mac.tailnet.example\"]\n{old}")
     );
+}
+
+#[test]
+fn setup_installs_the_first_party_themes_chosen_from_the_index() {
+    let mac = Mac::new("su-themes", false);
+    // An index whose first-party packs (and one that isn't) are folders of a local repo.
+    let repo = mac.home.join("packs.git");
+    fs::create_dir_all(&repo).unwrap();
+    let packs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/themes");
+    for t in ["farm", "kitchen", "garden"] {
+        fs::create_dir_all(repo.join(t)).unwrap();
+        for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
+            fs::copy(packs.join(t).join(f), repo.join(t).join(f)).unwrap();
+        }
+    }
+    let git = |args: &[&str]| {
+        let out = Command::new("git")
+            .arg("-C")
+            .arg(&repo)
+            .args(["-c", "user.name=t", "-c", "user.email=t@t"])
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(out.status.success(), "{out:?}");
+        String::from_utf8(out.stdout).unwrap().trim().to_owned()
+    };
+    git(&["init", "--quiet", "-b", "main"]);
+    git(&["add", "-A"]);
+    git(&["commit", "--quiet", "-m", "packs"]);
+    let commit = git(&["rev-parse", "HEAD"]);
+    let entry = |name: &str, first: bool| {
+        format!(
+            "[[theme]]\nname = \"{name}\"\nurl = {:?}\npath = \"{name}\"\ncommit = \"{commit}\"\n\
+             description = \"x\"\nfirst_party = {first}\n\n",
+            repo.display().to_string()
+        )
+    };
+    let index = mac.home.join("index.toml");
+    let text = entry("farm", true) + &entry("kitchen", true) + &entry("garden", false);
+    fs::write(&index, text).unwrap();
+    fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
+    fs::write(
+        mac.config(),
+        format!(
+            "port = {}\nroots = [\"/srv\"]\nplugin_index = {:?}\n",
+            mac.port,
+            index.display().to_string()
+        ),
+    )
+    .unwrap();
+    // Asked which (farm and kitchen are first-party), kitchen is typed; no Codex, no Gemini.
+    let args = ["setup", "--port", &mac.port.to_string()];
+    let out = mac.cooee_typing(&args, Some("kitchen\n\n\n"));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{out:?}");
+    assert!(
+        stdout.contains(
+            "themes:\n  themes to install, or none [farm kitchen]:\n  installed theme kitchen\n"
+        ),
+        "{stdout}"
+    );
+    let themes = mac.config().parent().unwrap().join("themes");
+    assert_eq!(
+        files(&themes),
+        [
+            "kitchen/icon.png",
+            "kitchen/scene.svg",
+            "kitchen/sprites.svg",
+            "kitchen/theme.json"
+        ]
+    );
+    let lock: serde_json::Value = serde_json::from_slice(
+        &fs::read(mac.home.join(".local/share/cooee/cooee/themes.lock")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        lock,
+        serde_json::json!([{ "name": "kitchen", "source": "index", "commit": commit, "listed": true }])
+    );
+    // The default is all of them: farm, the one left.
+    let out = mac.setup(&["--yes"]);
+    assert!(out.status.success(), "{out:?}");
+    assert!(String::from_utf8_lossy(&out.stdout).contains("installed theme farm\n"));
+    assert!(themes.join("farm/theme.json").exists() && !themes.join("garden").exists());
+    let out = mac.setup(&["--yes"]);
+    assert!(String::from_utf8_lossy(&out.stdout).contains("themes: done, skipped\n"));
 }
 
 #[test]
