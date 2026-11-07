@@ -186,6 +186,6 @@ stream is open and amber while it reconnects. Every action answers with a short 
 app coming back after 30 s or the network returning reload the page's data. Settings has an index and deep links
 (`#settings/<section>`): sign-ins, look, alerts (truthful: on only when the server keeps this browser's subscription for
 this device; `POST /push/test` alerts this device only, `POST /push/unsubscribe` turns it off), devices, and report
-mode (`POST /report` to `<data>/reports.jsonl`, listed by `cooee reports`). Sprites are `on`, `ascii` or `off`; a theme
+mode (`POST /report` to `<data>/reports.jsonl`, listed by `cooee reports`). Figures are `sprite`, `ascii` or `none` (#35); a theme
 with moments plays them on the thread bar.
 
