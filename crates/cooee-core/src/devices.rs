@@ -27,7 +27,7 @@ const MISSES: u32 = 5;
 /// One paired browser.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Device {
-    /// The first 8 hex digits of its token's hash: what `cooee devices rm` takes.
+    /// The first 8 hex digits of its token's hash (an approved request's: its claim's): what `cooee devices rm` takes.
     pub id: String,
     /// What it is (`iPhone`, `Android`, `Mac`, …), from its user agent.
     pub label: String,
@@ -136,12 +136,12 @@ impl File {
         self.asks.retain(|r| r.at + ASK_TTL > now);
     }
 
-    /// Adds a device for `agent`; its token.
-    fn add(&mut self, token: &str, agent: &str, now: u64) {
+    /// Adds a device with `token`, named `label` (its id: `id`, else from the token's hash).
+    fn add(&mut self, token: &str, id: Option<String>, label: &str, now: u64) {
         let hash = sha256(token.as_bytes());
         self.devices.push(Device {
-            id: hash[..8].to_owned(),
-            label: label(agent).to_owned(),
+            id: id.unwrap_or_else(|| hash[..8].to_owned()),
+            label: label.to_owned(),
             hash,
             created: now,
             used: now,
@@ -287,7 +287,7 @@ impl Devices {
                 return Ok(None);
             }
             f.code = None;
-            f.add(&token, agent, now);
+            f.add(&token, None, label(agent), now);
             Ok(Some(token.clone()))
         })
     }
@@ -368,7 +368,7 @@ impl Devices {
     ///
     /// # Errors
     /// When the file can't be read or written.
-    pub fn collect(&self, claim: &str, agent: &str, now: u64) -> io::Result<Claim> {
+    pub fn collect(&self, claim: &str, now: u64) -> io::Result<Claim> {
         let (hash, token) = (sha256(claim.as_bytes()), hex(&random(32)?));
         self.change(|f| {
             f.expire(now);
@@ -382,8 +382,8 @@ impl Devices {
                     Ok(Claim::Declined(by))
                 }
                 Some((true, _)) => {
-                    f.asks.remove(i);
-                    f.add(&token, agent, now);
+                    let r = f.asks.remove(i);
+                    f.add(&token, Some(r.claim[..8].to_owned()), &r.label, now);
                     Ok(Claim::Paired(token.clone()))
                 }
             }
@@ -454,8 +454,24 @@ impl Devices {
     pub fn restore(&self, agent: &str, now: u64) -> io::Result<String> {
         let token = hex(&random(32)?);
         self.change(|f| {
-            f.add(&token, agent, now);
+            f.add(&token, None, label(agent), now);
             Ok(token.clone())
+        })
+    }
+
+    /// Renames device `id`, or the approved request `id` the device it becomes then takes; whether there was one.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn rename(&self, id: &str, to: &str) -> io::Result<bool> {
+        self.change(|f| {
+            let approved =
+                |r: &&mut Request| matches!(r.answer, Some((true, _))) && r.claim[..8] == *id;
+            let label = match f.devices.iter_mut().find(|d| d.id == id) {
+                Some(d) => Some(&mut d.label),
+                None => f.asks.iter_mut().find(approved).map(|r| &mut r.label),
+            };
+            Ok(label.map(|l| to.clone_into(l)).is_some())
         })
     }
 
@@ -563,7 +579,7 @@ mod tests {
         let d = scratch("request");
         let (word, claim) = d.ask("Mozilla/5.0 (iPad)", 0).unwrap();
         assert_eq!(word.split(' ').count(), 2);
-        assert_eq!(d.collect(&claim, "x", 1).unwrap(), Claim::Waiting);
+        assert_eq!(d.collect(&claim, 1).unwrap(), Claim::Waiting);
         let open = d.asking(1).unwrap();
         assert_eq!(
             (open[0].word.as_str(), open[0].label.as_str()),
@@ -572,11 +588,20 @@ mod tests {
         assert!(!d.answer("deadbeef", true, "iPhone", 1).unwrap());
         assert!(d.answer(&open[0].id, true, "iPhone", 1).unwrap());
         assert_eq!(d.asking(1).unwrap(), []);
-        let Claim::Paired(token) = d.collect(&claim, "Mozilla/5.0 (iPad)", 2).unwrap() else {
+        // Renamed on the approving device before and after the new one picks it up; its id is the request's.
+        assert!(d.rename(&open[0].id, "Kim's iPad").unwrap());
+        let Claim::Paired(token) = d.collect(&claim, 2).unwrap() else {
             panic!("not paired");
         };
+        let found = d.find(&token, 3).unwrap().unwrap();
+        assert_eq!(
+            (found.id.as_str(), found.label.as_str()),
+            (open[0].id.as_str(), "Kim's iPad")
+        );
+        assert!(d.rename(&open[0].id, "iPad").unwrap());
         assert_eq!(d.find(&token, 3).unwrap().unwrap().label, "iPad");
-        assert_eq!(d.collect(&claim, "x", 3).unwrap(), Claim::Gone);
+        assert!(!d.rename("deadbeef", "x").unwrap());
+        assert_eq!(d.collect(&claim, 3).unwrap(), Claim::Gone);
         let disk = fs::read_to_string(&d.path).unwrap();
         assert!(!disk.contains(&claim) && !disk.contains(&token), "{disk}");
 
@@ -586,23 +611,23 @@ mod tests {
         assert!(d.answer(&id, false, "iPhone", 1).unwrap());
         assert!(!d.answer(&id, true, "iPhone", 1).unwrap(), "answered once");
         assert_eq!(
-            d.collect(&claim, "x", 2).unwrap(),
+            d.collect(&claim, 2).unwrap(),
             Claim::Declined("iPhone".into())
         );
-        assert_eq!(d.collect(&claim, "x", 2).unwrap(), Claim::Gone);
+        assert_eq!(d.collect(&claim, 2).unwrap(), Claim::Gone);
 
         // Expired after 5 minutes, cancelled, and a fifth request dropping the oldest.
         let (_, claim) = d.ask("x", 0).unwrap();
         assert_eq!(d.asking(ASK_TTL).unwrap(), []);
-        assert_eq!(d.collect(&claim, "x", ASK_TTL).unwrap(), Claim::Gone);
+        assert_eq!(d.collect(&claim, ASK_TTL).unwrap(), Claim::Gone);
         let (_, claim) = d.ask("x", 0).unwrap();
         d.cancel(&claim).unwrap();
-        assert_eq!(d.collect(&claim, "x", 1).unwrap(), Claim::Gone);
+        assert_eq!(d.collect(&claim, 1).unwrap(), Claim::Gone);
         let first = d.ask("x", 0).unwrap().1;
         for _ in 0..REQUESTS {
             d.ask("x", 0).unwrap();
         }
-        assert_eq!(d.collect(&first, "x", 1).unwrap(), Claim::Gone);
+        assert_eq!(d.collect(&first, 1).unwrap(), Claim::Gone);
     }
 
     /// R3 (herdsman#501): a devices file that can't be read is an error, never "not paired".

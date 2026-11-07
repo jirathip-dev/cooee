@@ -365,21 +365,28 @@ if (list) {
         if (!undone) post("/pair/answer", { id: a.id, yes: false }).catch(() => {});
         c.remove();
       }, 10000);
-      c.replaceChildren(
-        make("p", "et", `Declined · ${a.label}`),
-        make("p", "", "It won't be paired, and it sees that you said no."),
-        acts([
-          "undo",
-          () => {
-            undone = true;
-            clearTimeout(timer);
-            delete c.dataset.done;
-            c.replaceWith(card(a));
-            c.remove();
-          },
-          "q",
-        ]),
-      );
+      c.className = "pc";
+      const sees = make("p", "", "It won't be paired, and it sees that you said no.");
+      fetch("/devices")
+        .then((r) => (r.ok ? r.json() : []))
+        .then((ds: { label: string; me: boolean }[]) => {
+          const mine = ds.find((d) => d.me);
+          if (mine) sees.textContent = `It won't be paired, and it sees “${mine.label} said no”.`;
+        })
+        .catch(() => {});
+      const row = acts([
+        "undo",
+        () => {
+          undone = true;
+          clearTimeout(timer);
+          delete c.dataset.done;
+          c.replaceWith(card(a));
+          c.remove();
+        },
+        "q",
+      ]);
+      row.append(make("span", "m", "for 10 s"));
+      c.replaceChildren(make("p", "et", `Declined · ${a.label}`), sees, row);
     };
     const approve = async (): Promise<void> => {
       err.textContent = "";
@@ -391,10 +398,36 @@ if (list) {
         return;
       }
       c.dataset.done = "1";
+      c.className = "pc";
+      c.dataset.k = "g";
+      const title = make("p", "et", `✓ ${a.label} paired`);
+      const rename = (): void => {
+        const box = make("div", "oth");
+        const name = make("input") as HTMLInputElement;
+        name.value = a.label;
+        name.maxLength = 40;
+        name.setAttribute("aria-label", "its name");
+        const save = make("button", "", "save") as HTMLButtonElement;
+        save.type = "button";
+        save.onclick = async () => {
+          err.textContent = "";
+          try {
+            title.textContent = `✓ ${await post("/devices/rename", { id: a.id, label: name.value })} paired`;
+            box.replaceWith(row);
+          } catch (x) {
+            err.textContent = x instanceof Error ? x.message : String(x);
+          }
+        };
+        box.append(name, save);
+        row.replaceWith(box);
+        name.focus();
+      };
+      const row = acts(["rename it", rename], ["done", () => c.remove()]);
       c.replaceChildren(
-        make("p", "et", `✓ ${a.label} paired`),
+        title,
         make("p", "", "It's in settings › devices. The other devices' cards cleared."),
-        acts(["done", () => c.remove()]),
+        row,
+        err,
       );
     };
     c.append(head, make("p", "who", `${a.label}, over your tailnet`), word);

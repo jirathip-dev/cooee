@@ -1007,7 +1007,7 @@ async fn pair(cx: &Cx, state: PairState) -> Result<impl View> {
                         </span>
                     }
                     <p class="et ctr">"waiting for approval"</p>
-                    <p class="cw" id="ask-word"></p>
+                    <p class="ckw" id="ask-word"></p>
                     <p class="ctr">
                         "Your paired devices got a request. Approve it where it shows "
                         <b id="ask-word2"></b>

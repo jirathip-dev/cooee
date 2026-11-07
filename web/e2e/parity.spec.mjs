@@ -171,6 +171,8 @@ test("row 6 (#47): a new device asks, a paired one approves with its passkey (a 
   await expect(ipad.locator("#ask-word")).toHaveText(/^[a-z]+ [a-z]+$/);
   const word = (await ipad.locator("#ask-word").textContent()).trim();
   await expect(ipad.locator("#ask-wait")).toContainText("waiting for approval");
+  // The check word is plain text on the card, not the chat's tool bar.
+  await expect(ipad.locator("#ask-word")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await shot(ipad, info, "pair-waiting", true);
   await audit(ipad);
 
@@ -181,8 +183,16 @@ test("row 6 (#47): a new device asks, a paired one approves with its passkey (a 
   await audit(phone);
   await card.getByRole("button", { name: /^approve with/ }).click();
   await expect(card).toContainText("It's in settings › devices.");
+  await expect(card).toHaveAttribute("data-k", "g");
   await ipad.waitForURL(/\/$/);
   await expect(ipad.locator("main.list")).toBeVisible();
+  // [rename it]: the new device's row in settings takes the name.
+  await card.getByRole("button", { name: "rename it" }).click();
+  await card.getByRole("textbox", { name: "its name" }).fill("Kim's iPad");
+  await card.getByRole("button", { name: "save" }).click();
+  await expect(card.locator(".et")).toHaveText("✓ Kim's iPad paired");
+  const named = await (await ipad.request.get("/devices")).json();
+  expect(named.find((d) => d.me).label).toBe("Kim's iPad");
 
   // Declined: the card can be undone for 10 s, then the new device hears who said no.
   const [, other] = await onLocalhost(browser, info, baseURL, false);
@@ -194,6 +204,7 @@ test("row 6 (#47): a new device asks, a paired one approves with its passkey (a 
   const card2 = phone.getByRole("group", { name: new RegExp(`asks to pair: ${word2}$`) });
   await card2.getByRole("button", { name: "decline" }).click();
   await expect(card2).toContainText("Declined");
+  await expect(card2).toContainText("for 10 s");
   await phone.clock.runFor(10500);
   await expect(other.locator("#ask-no")).toContainText("said no.");
   await expect(other.locator("#ask-no")).toContainText(`(${word2}) was declined`);

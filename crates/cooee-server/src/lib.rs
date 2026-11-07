@@ -637,6 +637,31 @@ async fn device_remove(cx: &Cx, Json(d): Json<DeviceId>) -> Result<Response> {
     }
 }
 
+/// A device's new name.
+#[derive(Deserialize)]
+struct Rename {
+    id: String,
+    label: String,
+}
+
+/// `POST /devices/rename`: names a device (or the one an approved request becomes).
+#[route(POST "/devices/rename")]
+async fn device_rename(cx: &Cx, Json(r): Json<Rename>) -> Result<Response> {
+    let (devices, label) = (
+        devices(cx),
+        r.label.trim().chars().take(40).collect::<String>(),
+    );
+    if label.is_empty() {
+        return plain(400, "Give it a name.");
+    }
+    let to = label.clone();
+    if tokio::task::spawn_blocking(move || devices.rename(&r.id, &to)).await?? {
+        plain(200, &label)
+    } else {
+        plain(404, "That device isn't paired any more.")
+    }
+}
+
 /// The data folder.
 struct Data(PathBuf);
 
@@ -1148,6 +1173,7 @@ pub fn router(
         .route(push_test)
         .route(device_list)
         .route(device_remove)
+        .route(device_rename)
         .route(report)
         .page(home)
         .page(chat)

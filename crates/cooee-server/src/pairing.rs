@@ -223,8 +223,7 @@ struct ClaimBody {
 /// `POST /pair/claim`: 200 with the cookie once approved, 202 while it waits, 403 declined, 410 when it is gone.
 #[route(POST "/pair/claim")]
 async fn pair_claim(cx: &Cx, Json(c): Json<ClaimBody>) -> Result<Response> {
-    let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
-    match store(cx, move |d| d.collect(&c.claim, &agent, now())).await? {
+    match store(cx, move |d| d.collect(&c.claim, now())).await? {
         Claim::Paired(token) => Ok(Response::builder()
             .header("Set-Cookie", cookie(cx, &token))
             .body(Body::from(()))?),
