@@ -90,6 +90,16 @@ test("Use a folder… in a chat: its later turns run in the folder, the chat say
   await page.waitForURL(/\/t\//);
   await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
   await expect(page.locator(".th .ds")).toContainText("scratch");
+  // Beside the agents the messages keep the design's centred column, at most 100ch wide.
+  const [inner, ch100] = await page.locator("#msgs").evaluate((el) => {
+    const s = getComputedStyle(el), p = document.createElement("div");
+    p.style.width = "100ch";
+    el.append(p);
+    const w = p.getBoundingClientRect().width;
+    p.remove();
+    return [el.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight), w];
+  });
+  expect(inner).toBeLessThanOrEqual(ch100 + 1);
   await page.getByRole("button", { name: "folder: scratch ▾" }).click();
   await page.getByLabel("search folders").fill("project");
   await page.locator("#ufs").getByRole("radio", { name: /^project( |$)/ }).check();

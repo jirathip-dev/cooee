@@ -28,7 +28,7 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
     );
     // Nothing to send with: no composer.
     assert!(
-        !page.contains("<select") && !page.contains(r#"name="text""#),
+        !page.contains("<select") && !page.contains(r#"<form id="new">"#),
         "{page}"
     );
     // codex's CLI is missing: "not installed on this Mac" and its install line; no sign-in, no accounts.
