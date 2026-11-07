@@ -1,0 +1,20 @@
+
+Running 15 tests using 2 workers
+
+  ✓   1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (1.1s)
+  ✓   3 [1440] › cards.spec.mjs:39:1 › row 30: choice rows, the recommended first, an other box, and the ✓ line says who and when (1.3s)
+  ✓   2 [390] › cards.spec.mjs:39:1 › row 30: choice rows, the recommended first, an other box, and the ✓ line says who and when (1.5s)
+  ✓   4 [1440] › cards.spec.mjs:60:1 › row 31: a conductor's answer keeps [change]; the owner's pick replaces it (1.1s)
+  ✓   5 [390] › cards.spec.mjs:60:1 › row 31: a conductor's answer keeps [change]; the owner's pick replaces it (1.2s)
+  ✓   6 [1440] › cards.spec.mjs:81:1 › row 32: a config card shows its diff, the bar says it waits, [apply] settles it (1.1s)
+  ✓   7 [390] › cards.spec.mjs:81:1 › row 32: a config card shows its diff, the bar says it waits, [apply] settles it (1.2s)
+  ✓   8 [1440] › cards.spec.mjs:102:1 › row 33: a secret card's field is masked; saved, the line names only the secret (877ms)
+  ✓   9 [390] › cards.spec.mjs:102:1 › row 33: a secret card's field is masked; saved, the line names only the secret (993ms)
+  ✓  10 [1440] › cards.spec.mjs:117:1 › row 34: the composer's model and effort chips; a pick is kept and said in the thread (708ms)
+  ✓  11 [390] › cards.spec.mjs:117:1 › row 34: the composer's model and effort chips; a pick is kept and said in the thread (700ms)
+  ✓  12 [1440] › cards.spec.mjs:128:1 › row 35: handoff chips open the other thread; a line flows back; a pick-a-thread row (1.2s)
+  ✓  13 [390] › cards.spec.mjs:128:1 › row 35: handoff chips open the other thread; a line flows back; a pick-a-thread row (1.1s)
+  ✓  14 [1440] › cards.spec.mjs:147:1 › #84: the header shows the id; a whole-word ref opens that thread and back returns; code, partial and unknown stay plain (1.3s)
+  ✓  15 [390] › cards.spec.mjs:147:1 › #84: the header shows the id; a whole-word ref opens that thread and back returns; code, partial and unknown stay plain (1.3s)
+
+  15 passed (14.1s)

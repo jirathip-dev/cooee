@@ -1,0 +1,41 @@
+Refreshing checks status every 60 seconds. Press Ctrl+C to quit.
+
+msrv (macos-latest)	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621446	
+msrv (ubuntu-latest)	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621547	
+no-node	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621534	
+stable (macos-latest)	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621435	
+stable (ubuntu-latest)	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621530	
+ts	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621287	
+ui	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621526	
+Refreshing checks status every 60 seconds. Press Ctrl+C to quit.
+
+msrv (macos-latest)	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621446	
+msrv (ubuntu-latest)	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621547	
+stable (macos-latest)	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621435	
+no-node	pass	30s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621534	
+stable (ubuntu-latest)	pass	1m4s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621530	
+ts	pass	10s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621287	
+ui	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621526	
+Refreshing checks status every 60 seconds. Press Ctrl+C to quit.
+
+msrv (macos-latest)	pass	1m58s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621446	
+msrv (ubuntu-latest)	pass	1m25s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621547	
+no-node	pass	30s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621534	
+stable (macos-latest)	pass	1m29s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621435	
+stable (ubuntu-latest)	pass	1m4s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621530	
+ts	pass	10s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621287	
+ui	pending	0	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621526	
+msrv (macos-latest)	pass	1m58s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621446	
+msrv (ubuntu-latest)	pass	1m25s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621547	
+no-node	pass	30s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621534	
+stable (macos-latest)	pass	1m29s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621435	
+stable (ubuntu-latest)	pass	1m4s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621530	
+ts	pass	10s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621287	
+ui	pass	2m34s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621526	
+msrv (macos-latest)	pass	1m58s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621446	
+msrv (ubuntu-latest)	pass	1m25s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621547	
+no-node	pass	30s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621534	
+stable (macos-latest)	pass	1m29s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621435	
+stable (ubuntu-latest)	pass	1m4s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621530	
+ts	pass	10s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621287	
+ui	pass	2m34s	https://github.com/jirathip-dev/cooee/actions/runs/42360814652/job/128368621526	

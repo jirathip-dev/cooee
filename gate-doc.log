@@ -1,0 +1,12 @@
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+    Checking cooee-core v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-84/crates/cooee-core)
+   Compiling cooee-web v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-84/web)
+ Documenting cooee-core v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-84/crates/cooee-core)
+    Checking cooee-machines v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-84/crates/cooee-machines)
+ Documenting cooee-machines v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-84/crates/cooee-machines)
+ Documenting cooee-web v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-84/web)
+    Checking cooee-server v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-84/crates/cooee-server)
+ Documenting cooee-server v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-84/crates/cooee-server)
+ Documenting cooee v0.1.0 (/Users/jirathip/.herdr/worktrees/cooee/issue-84/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.21s
+   Generated /Users/jirathip/.cache/herdsman/target/.scratch/cooee-impl-84/target/doc/cooee/index.html and 4 other files
