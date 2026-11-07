@@ -1,0 +1,108 @@
+/* #86 chat-first, on web/src/app.css (the shared tokens and blocks): tokens only, no raw colour (Scene's block at the
+   end is #34's, copied until it merges). New class names: cfm the two panes, ags the agents, agr an agent's row, av an
+   avatar, sth/str its side threads, xm a folded agent exchange, blk.in a message from another agent, rt the routine
+   line, fo the folder chip, ufs the Use a folder… sheet, hi a new chat's hello. */
+.cf{display:flex;flex-direction:column;height:100dvh}
+.cfm{display:grid;grid-template-columns:340px minmax(0,1fr);flex:1;min-height:0}
+.ags{display:flex;flex-direction:column;gap:2px;overflow-y:auto;padding:4px 8px 12px;border-right:1px solid var(--edge)}
+.ags .ch{margin:8px 8px 4px}
+.cf .chat{height:auto;min-height:0;max-width:none;margin:0;position:relative}
+.cf .tc{padding-inline:max(12px,calc((100% - 100ch)/2))}
+.cf .th .bk{display:none}
+/* An agent: avatar, name and age, then the state and the last line. The current one is tinted. */
+.agr{display:grid;grid-template-columns:44px minmax(0,1fr) auto;column-gap:8px;align-items:center;min-height:60px;padding:6px 8px;border-radius:var(--r-row);color:var(--fg);text-decoration:none}
+.agr .av{grid-row:span 2}
+.an{font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.agr.rd .an{font-weight:400}
+.agr .tp{grid-column:2/4}
+.agr[aria-current],.str[aria-current]{background:color-mix(in srgb,var(--l) 14%,var(--card))}
+.av{display:inline-grid;place-items:center;flex:none;width:40px;height:40px;border-radius:50%;background:color-mix(in srgb,var(--av) 22%,var(--card));color:var(--av);font:700 var(--fs-meta)/1 var(--font);font-style:normal;letter-spacing:.02em}
+.av.s{width:24px;height:24px;font-size:9px}
+.av.l{width:64px;height:64px;font-size:var(--fs-key)}
+/* The agent's other chats, under it; `+ new chat` is a side thread with this agent, nothing to pick. */
+.sth{display:flex;flex-direction:column;margin:0 0 4px 52px}
+.str{display:flex;align-items:center;gap:8px;min-height:var(--hit);padding:0 8px;border-radius:var(--r-row);color:var(--fg);text-decoration:none}
+.str span:first-child{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.str.nw,.agn{color:var(--link)}
+.agn{display:flex;align-items:center;min-height:var(--hit);margin-top:8px;padding:0 8px;border-top:1px solid var(--line);text-decoration:none}
+/* The thread bar: the agent's avatar before its name. */
+.th>.av{margin:0 4px 0 8px}
+/* The folder chip, first of the composer's chips: scratch, or the folder the chat runs in. */
+.fo{min-height:32px;padding:0 12px;font:var(--fs-meta) var(--font);color:var(--fg);background:var(--bg);box-shadow:inset 0 0 0 1px var(--edge);max-width:50%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mc{overflow-x:auto;scrollbar-width:none;padding-bottom:4px}.mc>*{flex:none}
+/* An exchange with other agents, folded to one line in the sender's chat; it opens to show each message. */
+.xm{padding:0;background:var(--card);border:1px solid var(--edge);border-radius:var(--r-row)}
+.xm summary{gap:8px;padding:0 12px;color:var(--fg);list-style:none}.xm summary::-webkit-details-marker{display:none}
+.xm summary::after{content:"▸";color:var(--mute)}.xm[open] summary::after{content:"▾"}
+.xm .xt{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.avs{display:inline-flex;gap:2px}
+.xl{list-style:none;margin:0;padding:0 12px 4px;border-top:1px solid var(--line)}
+.xl li{display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:8px;padding:8px 0}.xl li+li{border-top:1px solid var(--line)}
+.xl .md{grid-column:2}.xl .k{font-weight:600}.xl .k .ct{font-weight:400}
+.xm .chip{display:inline-block;margin:0 12px 12px}
+/* A message from another agent, in the receiving chat: on the left, its avatar and name, the `from` chip (#44 row 35). */
+.blk.in{align-self:flex-start;max-width:85%;padding:8px 12px;background:var(--card);border:1px solid var(--edge);border-radius:6px var(--r-card) var(--r-card) var(--r-card)}
+.blk.in .k{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.blk.in .chip{display:inline-block;margin-top:8px}
+/* The routine line: a tool call that made a routine (#75), editable in Settings › routines. */
+.rt{align-self:center;display:flex;flex-wrap:wrap;align-items:center;gap:0 1ch;min-height:var(--hit);max-width:100%;padding:4px 16px;background:var(--card);border:1px solid var(--edge);border-radius:var(--r-card);font-size:var(--fs-meta);color:var(--mute)}
+.rt b{color:var(--fg)}.rt .gy{color:var(--g);font-size:var(--fs-key)}
+.rt a{display:inline-flex;align-items:center;min-height:var(--hit);color:var(--link);text-decoration:none}
+/* A new chat: nothing picked, the composer ready. */
+.hi{margin:auto;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:36ch;text-align:center;color:var(--mute)}
+.hi b{color:var(--fg);font-size:var(--fs-key)}.hi p{margin:0}
+/* Use a folder…: a sheet from the bottom on a phone, from 1000 px a 420 px panel over the folder chip. */
+.ufs{position:absolute;z-index:3;left:0;right:0;bottom:0;display:flex;flex-direction:column;max-height:72%;background:var(--bg);border-top:1px solid var(--edge);border-radius:20px 20px 0 0;box-shadow:0 -8px 48px #0006}
+.uscr{position:absolute;z-index:2;inset:0;background:var(--scrim)}
+.ufs .hd{display:flex;align-items:center;min-height:52px;padding:0 4px 0 16px}.ufs .hd b{flex:1;font-size:var(--fs-key)}
+.ufs .top{flex:1;overflow:auto;padding:0 16px 16px}
+.ufs input{width:100%;font:16px/1.4 var(--font);color:var(--fg);background:var(--card);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:var(--hit)}
+.ufs .fr{display:flex;align-items:center;gap:8px;min-height:var(--hit);border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none}
+.ufs .fr span{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ufs .fr .ds{flex:none;max-width:45%}.ufs .fr[data-d="1"]{padding-left:16px}
+@media (min-width:1000px){
+  .uscr{display:none}
+  .ufs{left:12px;right:auto;bottom:100px;width:380px;max-height:70%;border:1px solid var(--edge);border-radius:var(--r-card)}
+}
+
+/* Terminal: square avatars, the current row a bar on its left, the exchange and the other agent's message as cards with
+   a --c bar, the routine line plain. */
+html[data-style=terminal] .av{border-radius:var(--r-card);font-family:var(--mono)}
+html[data-style=terminal] .agr[aria-current],html[data-style=terminal] .str[aria-current]{background:var(--card);box-shadow:inset 3px 0 var(--l)}
+html[data-style=terminal] .an{font-weight:400}
+html[data-style=terminal] .xm,html[data-style=terminal] .blk.in{align-self:stretch;max-width:none;border:0;border-left:3px solid var(--c);border-radius:var(--r-card)}
+html[data-style=terminal] .rt{border:0;background:none;padding:0}
+html[data-style=terminal] .rt a::before{content:"["}html[data-style=terminal] .rt a::after{content:"]"}
+html[data-style=terminal] .fo{background:none;box-shadow:none;color:var(--l)}
+html[data-style=terminal] .ufs{border-radius:var(--r-card) var(--r-card) 0 0}
+@media (min-width:1000px){html[data-style=terminal] .ufs{border-radius:var(--r-card)}}
+
+/* The 390 shots: each phone screen in turn on one page, a caption between them. */
+@media (max-width:999px){
+  .cf{height:auto}.cfm{display:block}.ags{border:0;overflow:visible}
+  .cf .chat{min-height:844px}.cf .th .bk{display:inline-flex}
+  .ph1440,[data-twin] :is(.ufs,.uscr){display:none}
+  .cap{margin:0;padding:8px 16px;font-size:var(--fs-meta);color:var(--mute);background:var(--card);border-block:1px solid var(--edge)}
+}
+@media (min-width:1000px){.cap,.ph390{display:none}}
+
+/* #34 Scene (issue-34's app.css block, copied): the agents as the theme's scene. */
+.scn{--pa:linear-gradient(var(--card),var(--bg));margin:0 -8px}
+[data-theme=farm] .scn{--pa:linear-gradient(#a9b06c,#7f8f50 40vh,#4c6340)}
+[data-theme=kitchen] .scn{--pa:repeating-conic-gradient(#4a3f38 0 25%,#41372f 0 50%) 0 0/24px 24px}
+[data-theme=garden] .scn{--pa:repeating-linear-gradient(90deg,#8a5a34 0 46px,#7a4e2c 46px 48px)}
+.spg{display:flex;overflow:auto hidden;scroll-snap-type:x mandatory;scrollbar-width:none}
+.sp{flex:0 0 100%;min-width:0;scroll-snap-align:start;background:var(--pa);padding-bottom:12px}
+.sky{display:block;width:100%;height:min(calc(100vw * .5),max(120px,22vh));object-fit:cover;object-position:50% 100%}
+@media (min-width:1000px){.sky{height:170px}}
+.sp .fh{margin:0;padding:0 12px;font-size:var(--fs);background:#1f2a38f0;color:#f4ecd8}.sp .fh .ds{color:#f4ecd8}
+.fld{display:flex;flex-wrap:wrap;justify-content:center;align-items:start;gap:8px;padding-top:8px}
+.sb{flex:0 0 156px;display:flex;flex-direction:column;align-items:center;min-width:0;color:inherit;text-decoration:none}
+.sn{display:flex;flex-direction:column;max-width:156px;margin-top:-4px;padding:4px 8px;border-radius:8px;background:#f4ecd8;color:#3a332e;font-size:var(--fs-meta);line-height:1.3;text-align:center;box-shadow:0 1px 3px #0004}
+.sn>*{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sb.rd .sn b{font-weight:400}
+.sn .sw{color:#5d554d}.sn .sw.needs,.sn .sw.fail{color:#b3261e;font-weight:600}.sn .sw.working{color:#2f6b32}
+.sb:has(.sw.needs) .sn{background:#f6d9d3}
+/* #86 on Scene: the current agent's card ringed, and its chats as chips under the scene. */
+.sb[aria-current] .sn{box-shadow:0 0 0 3px #1f2a38,0 1px 3px #0004}
+.scc{display:flex;flex-wrap:wrap;gap:8px;padding:12px 4px 4px}
+.scc .chip{display:inline-flex;align-items:center;min-height:var(--hit);padding:0 12px}
+.scc .chip[aria-current]{background:color-mix(in srgb,var(--l) 14%,var(--card));color:var(--fg);font-weight:600}

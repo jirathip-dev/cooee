@@ -1,19 +1,21 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-test("thread list: renders, fits the width, no axe violations", async ({ page }, info) => {
-  await page.goto("/");
+test("agents: the list renders, fits the width, no axe violations; + opens a new chat with nothing to pick", async ({ page }, info) => {
+  await page.goto("/?list");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("cooee");
-  await expect(page.locator(".fc .tr").first()).toBeVisible();
+  await expect(page.locator(".ags .agr").first()).toBeVisible();
+  await expect(page.locator(".ags .agr .av").first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
-  await page.screenshot({ path: `../../ui-${info.project.name}/threads.png`, fullPage: true });
-  await page.getByRole("link", { name: "new thread" }).click();
+  await page.screenshot({ path: `../../ui-${info.project.name}/agents.png`, fullPage: true });
+  await page.getByRole("link", { name: "new chat" }).first().click();
+  await page.waitForURL(/\/new\?/);
   await expect(page.locator("#new")).toBeVisible();
-  await expect(page.getByRole("radio", { name: "fake-acp" })).toBeChecked();
-  // The account picker, the default (the system default here) preselected.
-  await expect(page.getByLabel("fake-acp account")).toHaveValue("");
-  await page.screenshot({ path: `../../ui-${info.project.name}/threads-new.png`, fullPage: true });
+  await expect(page.locator(".hi")).toContainText("New chat with");
+  await expect(page.getByRole("button", { name: "folder: scratch ▾" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "message", exact: true })).toBeFocused();
+  await page.screenshot({ path: `../../ui-${info.project.name}/new-chat.png`, fullPage: true });
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 });
@@ -35,15 +37,16 @@ test("installable: the manifest, its icons and the service worker load", async (
 });
 
 test("a failed start reads as one plain sentence, never the server's JSON error", async ({ page }) => {
-  await page.goto("/#new");
-  // No agent picked: the server refuses the request's JSON.
-  await page.locator("#new input[name=agent]").evaluateAll((rs) => rs.forEach((r) => { r.checked = false; }));
-  await page.getByLabel("first message").fill("hi");
-  await page.getByRole("button", { name: "start" }).click();
+  await page.goto("/new");
+  // No message field: the server refuses the request's JSON.
+  await page.locator("#new textarea").evaluate((t) => { t.name = "x"; });
+  await page.getByLabel("message", { exact: true }).fill("hi");
+  await page.getByRole("button", { name: "send" }).click();
   await expect(page.locator("#new-err")).toHaveText("cooee couldn't do that (error 400): reload and try again.");
   // cooee's own refusal is shown as it is.
-  await page.locator("#new input[name=agent]").first().check();
-  await page.locator("#new input[name=folder]").first().evaluate((r) => { r.value = "/"; });
-  await page.getByRole("button", { name: "start" }).click();
+  await page.goto("/new");
+  await page.locator("#new input[name=folder]").nth(1).evaluate((r) => { r.value = "/"; r.checked = true; });
+  await page.getByLabel("message", { exact: true }).fill("hi");
+  await page.getByRole("button", { name: "send" }).click();
   await expect(page.locator("#new-err")).toHaveText("/ is not inside a configured root");
 });

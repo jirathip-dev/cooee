@@ -96,7 +96,7 @@ function strip(loading: boolean, now = false): void {
 strip(false);
 
 // Refresh: ↻, a pull down from the very top, the app coming back after 30 s away, or the network coming back. The
-// chat reloads its newest slice and stream (page.refresh); the thread list its cards; any other page reloads.
+// chat reloads its newest slice and stream (page.refresh); the agents list is drawn again; any other page reloads.
 const page: { refresh: (() => Promise<unknown>) | null; top: () => boolean } = { refresh: null, top: () => true };
 let refreshing: Promise<unknown> | null = null;
 function refresh(): Promise<unknown> | null {
@@ -106,12 +106,14 @@ function refresh(): Promise<unknown> | null {
   strip(true);
   refreshing = (async () => {
     if (page.refresh) return page.refresh();
-    const list = $("main.list");
-    if (!list) return location.reload();
-    const r = await fetch("/threads");
+    // The agents list is drawn again in place from the page (no reload: a navigation away is never raced).
+    const now = $(".ags");
+    if (!now) return location.reload();
+    const r = await fetch(location.href);
     if (!r.ok) throw await why(r);
     copyAt = Number(r.headers.get("cooee-at")) || 0;
-    drawCards(list, await r.json());
+    const next = new DOMParser().parseFromString(await r.text(), "text/html").querySelector(".ags");
+    if (next) now.replaceWith(next);
   })()
     .catch((x) => toast(`couldn't refresh: ${message(x)}`, true))
     .finally(() => {
@@ -123,83 +125,6 @@ function refresh(): Promise<unknown> | null {
 }
 $("#rf")?.addEventListener("click", refresh);
 
-// The thread list's cards from `GET /threads`, drawn as the server draws them (lib.rs `threads`).
-type Row = {
-  id: string;
-  title: string;
-  agent: string;
-  state: string;
-  last: string;
-  at: number;
-  unread: boolean;
-  workflow?: { role: string; round: string };
-};
-type Card = { folder: string; rows: Row[]; done?: Row[] };
-const STATE: Record<string, string> = {
-  blocked: "needs",
-  working: "working",
-  error: "fail",
-  done: "done",
-  ended: "ended",
-};
-const age = (at: number): string => {
-  const s = Math.max(0, Math.floor(Date.now() / 1000) - Math.floor(at / 1000));
-  return s < 60
-    ? "now"
-    : s < 3600
-      ? `${Math.floor(s / 60)}m`
-      : s < 86400
-        ? `${Math.floor(s / 3600)}h`
-        : `${Math.floor(s / 86400)}d`;
-};
-function rowOf(r: Row): HTMLElement {
-  const a = make("a", r.unread ? "tr" : "tr rd") as HTMLAnchorElement;
-  const st = make("b");
-  const tp = make("span", "tp");
-  a.href = `/t/${r.id}`;
-  st.dataset.st = STATE[r.state] ?? "";
-  tp.append(st, r.last);
-  a.append(
-    make("i", "ud", r.unread ? "●" : ""),
-    make("span", "tt", r.title),
-    make(
-      "span",
-      "ta",
-      r.workflow ? `${r.workflow.role} · round ${r.workflow.round} · ${age(r.at)}` : `${r.agent} · ${age(r.at)}`,
-    ),
-    tp,
-  );
-  return a;
-}
-function drawCards(list: HTMLElement, cards: Card[]): void {
-  for (const e of list.querySelectorAll(":scope > .fc, :scope > .emp")) e.remove();
-  if (!cards.length) {
-    const emp = make("div", "emp");
-    const fig = make("span");
-    const w = make("p");
-    fig.dataset.s = "empty";
-    w.dataset.w = "empty-threads";
-    w.dataset.plain = "";
-    emp.append(fig, w);
-    list.insertBefore(emp, $("#new"));
-  }
-  for (const c of cards) {
-    const card = make("section", "fc");
-    const fh = make("div", "fh");
-    fh.append(make("b", "", c.folder), make("span", "ds", `${c.rows.length} threads`));
-    card.append(fh, ...c.rows.slice(0, c.done ? undefined : 3).map(rowOf));
-    if (c.done?.length) {
-      const done = make("details");
-      done.append(make("summary", "", `${c.done.length} done today`), ...c.done.map(rowOf));
-      card.append(done);
-    } else if (!c.done && c.rows.length > 3) {
-      const more = make("details");
-      more.append(make("summary", "", `${c.rows.length - 3} older threads`), ...c.rows.slice(3).map(rowOf));
-      card.append(more);
-    }
-    list.append(card);
-  }
-}
 let pullY: number | null = null;
 let hiddenAt = 0;
 addEventListener(
@@ -230,7 +155,7 @@ addEventListener("pageshow", (e) => {
   if (e.persisted) refresh();
 });
 
-// The thread list's form (open on `#new`, by CSS): start a thread, then open it.
+// A new chat (#86): sent with nothing picked (its own scratch folder, or the folder picked), then opened.
 const form = $<HTMLFormElement>("#new");
 const say = (e: HTMLElement | null, text: string): void => {
   if (!e) return;
@@ -239,19 +164,18 @@ const say = (e: HTMLElement | null, text: string): void => {
 };
 if (form) {
   const start = $<HTMLButtonElement>("button[type=submit]", form);
+  const text = $<HTMLTextAreaElement>("textarea", form);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = new FormData(form);
-    const agent = f.get("agent");
     // One id per start until it succeeds, so a retry after a timeout adopts the thread it started.
     form.dataset.rid ||= rid();
     const body = {
-      agent,
-      account: f.get(`account:${agent}`),
+      agent: f.get("agent") ?? "",
       profile: f.get("profile"),
-      model: f.get(`model:${agent}`) ?? "",
-      effort: f.get(`effort:${agent}`) ?? "",
-      folder: f.get("folder"),
+      model: f.get("model") ?? "",
+      effort: f.get("effort") ?? "",
+      folder: f.get("folder") || null,
       text: f.get("text"),
       random_id: form.dataset.rid,
     };
@@ -263,55 +187,66 @@ if (form) {
       if (start) start.disabled = false;
     }
   });
+  text?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) form.requestSubmit();
+  });
+  text?.focus();
 }
 
-// A folder picked picks its last-used agent profile (Plain when it has none).
-const pf = $<HTMLSelectElement>("select[name=profile]");
-if (pf && form)
-  form.addEventListener("change", (e) => {
-    const t = e.target as HTMLInputElement;
-    if (t.name !== "folder") return;
-    const last: Record<string, string> = JSON.parse(pf.dataset.last || "{}");
-    const id = last[t.value] ?? "";
-    if ([...pf.options].some((o) => o.value === id)) pf.value = id;
-  });
-
-// The folder picker: the search shows the folders whose name has it (up to 2 levels in), else the first level;
-// [+ new folder] makes one inside the folder picked, and picks it.
+// Use a folder… (#86): the search shows the folders whose name has it (up to 2 levels in), else the first level; a
+// pick names the chip, and in a chat attaches the folder (its later turns run there).
+const ufs = $("#ufs");
 const fq = $<HTMLInputElement>("#fq");
-if (fq && form) {
+if (fq && ufs)
   fq.oninput = () => {
     const q = fq.value.trim().toLowerCase();
-    for (const l of form.querySelectorAll<HTMLElement>(".fl label")) {
-      const base = l.textContent?.trim().split("/").pop()?.toLowerCase() ?? "";
+    for (const l of ufs.querySelectorAll<HTMLElement>(".fl label[data-d]")) {
+      const base = l.firstChild?.nextSibling?.textContent?.trim().split("/").pop()?.toLowerCase() ?? "";
       l.hidden = q ? !base.includes(q) : Number(l.dataset.d) > 1;
     }
   };
-  const mkdir = $<HTMLButtonElement>("#mkdir");
-  if (mkdir)
-    mkdir.onclick = async () => {
-      const at = form.querySelector(".fl :checked")?.parentElement;
-      const parent = at && $<HTMLInputElement>("input", at);
-      if (!at || !parent) return;
-      const label = at.textContent?.trim() ?? "";
-      const name = prompt(`New folder in ${label}:`);
-      if (!name) return;
-      try {
-        const row = at.cloneNode(true) as HTMLElement;
-        const input = $<HTMLInputElement>("input", row);
-        if (!input) return;
-        input.value = await post<string>("/folders/new", { parent: parent.value, name });
-        if (row.lastChild) row.lastChild.textContent = `${label}/${name}`;
-        row.dataset.d = String(Math.min(2, Number(at.dataset.d) + 1));
-        row.hidden = false;
-        say($("#new-err"), "");
-        at.after(row);
-        input.checked = true;
-      } catch (x) {
-        say($("#new-err"), message(x));
-      }
-    };
-}
+// [+ new folder] makes one inside the folder picked, and picks it.
+const mkdir = $<HTMLButtonElement>("#mkdir");
+if (mkdir && ufs)
+  mkdir.onclick = async () => {
+    const at = ufs.querySelector(".fl :checked")?.parentElement;
+    const parent = at && $<HTMLInputElement>("input", at);
+    if (!at || !parent?.value) return toast("pick a folder to make one in", true);
+    const label = at.firstChild?.nextSibling?.textContent ?? "";
+    const name = prompt(`New folder in ${label}:`);
+    if (!name) return;
+    try {
+      const row = at.cloneNode(true) as HTMLElement;
+      const input = $<HTMLInputElement>("input", row);
+      if (!input) return;
+      input.value = await post<string>("/folders/new", { parent: parent.value, name });
+      if (input.nextSibling) input.nextSibling.textContent = `${label}/${name}`;
+      row.lastElementChild?.replaceChildren();
+      row.dataset.d = String(Math.min(2, Number(at.dataset.d) + 1));
+      row.hidden = false;
+      at.after(row);
+      input.checked = true;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    } catch (x) {
+      toast(message(x), true);
+    }
+  };
+ufs?.addEventListener("change", async (e) => {
+  const t = e.target as HTMLInputElement;
+  if (t.name !== "folder") return;
+  const chip = $(".fo");
+  const name = t.value ? (t.value.split("/").pop() ?? t.value) : "scratch";
+  ufs.hidePopover();
+  const thread = $(".chat[data-thread]")?.dataset.thread;
+  if (thread)
+    try {
+      await post(`/threads/${thread}/folder`, { folder: t.value });
+    } catch (x) {
+      toast(message(x), true);
+      return;
+    }
+  if (chip) chip.textContent = `folder: ${name} ▾`;
+});
 
 // An empty picker's hint: its copy button puts the fix line on the clipboard.
 document.addEventListener("click", (e) => {
@@ -924,7 +859,7 @@ if (frame) {
   }, 5000);
 }
 
-const main = $("main.chat");
+const main = $(".chat[data-thread]");
 if (main) chat(main);
 
 function chat(main: HTMLElement): void {

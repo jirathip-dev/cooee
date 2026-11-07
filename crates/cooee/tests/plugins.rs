@@ -533,12 +533,8 @@ fn row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale() {
         c1["id"]
     );
     let row = |list: &Value| -> Value {
-        let rows = list
-            .as_array()
-            .unwrap()
-            .iter()
-            .flat_map(|c| c["rows"].as_array().unwrap().clone());
-        rows.into_iter().find(|r| r["id"] == id).unwrap()
+        let rows = list.as_array().unwrap().iter();
+        rows.into_iter().find(|r| r["id"] == id).unwrap().clone()
     };
     assert_eq!(row(&s.cooee.json("/threads"))["last"], "config c1 waiting");
 

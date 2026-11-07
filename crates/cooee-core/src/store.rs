@@ -62,6 +62,9 @@ pub struct Thread {
     /// Where a session a tool started came from (a Workflow item, #33); none: the owner's own chat.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workflow: Option<Workflow>,
+    /// Sent ahead of the next message after a folder was attached (#86): the agent started again there.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub handover: String,
 }
 
 /// A session a tool started, as its shed labels say (#33): `source` (the tool), `group` (its repo), `item`

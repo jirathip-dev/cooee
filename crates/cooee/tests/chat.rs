@@ -113,8 +113,11 @@ fn new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply() {
     assert_eq!(kinds, ["you", "agent"]);
     let (status, page) = s.cooee.get("/");
     assert_eq!(status, 200);
+    // Its agent in the sidebar opens it, with the last line.
     assert!(
-        page.contains("Say hello") && page.contains("fake-acp"),
+        page.contains(&format!(r#"href="/t/{id}""#))
+            && page.contains("Hello")
+            && page.contains("fake-acp"),
         "{page}"
     );
     let (status, page) = s.cooee.get(&format!("/t/{id}"));

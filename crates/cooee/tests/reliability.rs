@@ -70,15 +70,11 @@ fn prompts(shed: &FakeShed, id: &str) -> Vec<String> {
         .collect()
 }
 
-/// The thread ids the thread list links to, each once per card.
+/// The thread ids `GET /threads` lists.
 fn listed(cooee: &Cooee) -> Vec<String> {
-    let (status, page) = cooee.get("/");
-    assert_eq!(status, 200, "{page}");
-    let ids = page.split("class=\"tr").skip(1).filter_map(|card| {
-        let at = card.find("href=\"/t/")? + 9;
-        Some(card[at..].split('"').next()?.to_owned())
-    });
-    ids.collect()
+    let rows = cooee.json("/threads");
+    let ids = rows.as_array().unwrap().iter();
+    ids.map(|r| r["id"].as_str().unwrap().to_owned()).collect()
 }
 
 /// A POST that may never get its answer (the server is killed under it).

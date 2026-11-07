@@ -160,6 +160,8 @@ pub struct Hub {
     /// The server's default theme, whose words a push says.
     theme: cooee_web::Theme,
     roots: Mutex<Vec<PathBuf>>,
+    /// Where each chat with no folder gets its own, `<data>/scratch/<id>` (#86).
+    scratch: PathBuf,
     /// The config file the roots are saved in.
     config: Option<PathBuf>,
     plugins: Mutex<Vec<Plugin>>,
@@ -327,6 +329,7 @@ impl Hub {
             push: Push::new(data),
             theme,
             roots: Mutex::new(roots),
+            scratch: data.join("scratch"),
             config,
             plugins: Mutex::new(plugins),
             boot: format!("{:x}", now()),
@@ -657,8 +660,8 @@ impl Hub {
         Ok(path)
     }
 
-    /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, as `recipe` says, then
-    /// sends `text`. Returns the thread's id. A retry with the same `random_id` (after a timeout, or a crash) adopts
+    /// Starts a thread: ACP agent `agent` in `folder` (inside a root; none: a scratch folder of its own, #86) as a
+    /// new shed terminal, as `recipe` says, then sends `text`. Returns the thread's id. A retry with the same `random_id` (after a timeout, or a crash) adopts
     /// the thread it started and never starts another.
     ///
     /// # Errors
@@ -667,15 +670,16 @@ impl Hub {
     pub fn create(
         &self,
         agent: &str,
-        folder: &Path,
+        folder: Option<&Path>,
         text: &str,
         random_id: &str,
         recipe: &Recipe,
     ) -> Result<String, HubError> {
-        let Some(folder) = self.allowed(folder) else {
-            return Err(outside(folder));
+        let folder = match folder {
+            Some(f) => Some(self.allowed(f).ok_or_else(|| outside(f))?),
+            None => None,
         };
-        self.start(agent, &folder, text, random_id, recipe)
+        self.launch(agent, folder.as_deref(), text, random_id, recipe)
     }
 
     /// [`Hub::create`] in a folder of cooee's own (a plugin's checkout), not checked against the roots.
@@ -686,6 +690,17 @@ impl Hub {
         &self,
         agent: &str,
         folder: &Path,
+        text: &str,
+        random_id: &str,
+        recipe: &Recipe,
+    ) -> Result<String, HubError> {
+        self.launch(agent, Some(folder), text, random_id, recipe)
+    }
+
+    fn launch(
+        &self,
+        agent: &str,
+        folder: Option<&Path>,
         text: &str,
         random_id: &str,
         recipe: &Recipe,
@@ -701,7 +716,7 @@ impl Hub {
     fn start_in(
         &self,
         agent: &str,
-        folder: &Path,
+        folder: Option<&Path>,
         (text, random_id): (&str, &str),
         recipe: &Recipe,
     ) -> Result<String, HubError> {
@@ -709,7 +724,7 @@ impl Hub {
         if text.trim().is_empty() {
             return Err(HubError::Refused("the first message is empty".to_owned()));
         }
-        let (id, terminal, adopted) = {
+        let (id, terminal, folder, adopted) = {
             // Taken under the lock and counted up, so two threads started in one millisecond differ.
             let mut last = lock(&self.last);
             let started = self.all().into_iter().find_map(|l| {
@@ -718,7 +733,7 @@ impl Hub {
                 same.then(|| (l.meta.id.clone(), l.meta.terminal.clone()))
             });
             if let Some((id, terminal)) = started {
-                (id, terminal, true)
+                (id, terminal, PathBuf::new(), true)
             } else {
                 {
                     *last = (*last + 1).max(now());
@@ -726,6 +741,13 @@ impl Hub {
                         *last += 1;
                     }
                     let id = format!("t{:x}", *last);
+                    let folder = if let Some(f) = folder {
+                        f.to_owned()
+                    } else {
+                        let dir = self.scratch.join(&id);
+                        fs::create_dir_all(&dir).map_err(|e| refused(&dir, &e))?;
+                        dir
+                    };
                     let title: String = text
                         .trim()
                         .lines()
@@ -738,7 +760,7 @@ impl Hub {
                         id: id.clone(),
                         title,
                         agent: agent.to_owned(),
-                        folder: Some(folder.to_owned()),
+                        folder: Some(folder.clone()),
                         account: recipe.account.clone(),
                         profile: recipe.profile.clone(),
                         terminal: format!("cooee-{id}"),
@@ -753,7 +775,7 @@ impl Hub {
                     let terminal = meta.terminal.clone();
                     let live = Live::new(meta, Chat::default());
                     lock(&self.threads).insert(id.clone(), Arc::new(Mutex::new(live)));
-                    (id, terminal, false)
+                    (id, terminal, folder, false)
                 }
             }
         };
@@ -765,7 +787,7 @@ impl Hub {
             // A start that failed but came up anyway (a slow CLI) is kept, never started twice (herdsman#477).
             if let Err(e) = self
                 .shed
-                .run_acp(&terminal, agent, folder, &labels, &recipe.launch)
+                .run_acp(&terminal, agent, &folder, &labels, &recipe.launch)
                 && self.shed.get(&terminal).is_err()
             {
                 lock(&self.threads).remove(&id);
@@ -785,6 +807,75 @@ impl Hub {
     /// [`HubError::Refused`] for a closed thread or an empty message; [`HubError::Shed`] when shed fails.
     pub fn send(&self, id: &str, text: &str, random_id: &str) -> Result<Item, HubError> {
         self.send_after(id, text, random_id, "")
+    }
+
+    /// "Use a folder…" (#86): thread `id`'s later turns run in `folder` (inside a root). shed fixes a session's folder
+    /// when it starts, so its agent starts again there as `recipe` says, and the next message carries a hand-over:
+    /// the profile's instructions, where it was and its last turns. The chat says so; the old terminal is closed.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a folder outside the roots, or a closed or Workflow thread; [`HubError::Shed`]
+    /// when the agent can't start there (the thread stays where it was).
+    pub fn attach(&self, id: &str, folder: &Path, recipe: &Recipe) -> Result<Item, HubError> {
+        let folder = self.allowed(folder).ok_or_else(|| outside(folder))?;
+        let live = self.live(id)?;
+        let (agent, old) = {
+            let l = lock(&live);
+            if l.meta.closed || l.meta.workflow.is_some() {
+                return Err(HubError::Refused(
+                    "only an open chat of your own can move".to_owned(),
+                ));
+            }
+            (l.meta.agent.clone(), l.meta.terminal.clone())
+        };
+        let terminal = format!("cooee-{id}-{:x}", now());
+        let labels = BTreeMap::from([
+            (LABEL.to_owned(), "1".to_owned()),
+            (format!("{LABEL}.thread"), id.to_owned()),
+        ]);
+        let started = self
+            .shed
+            .run_acp(&terminal, &agent, &folder, &labels, &recipe.launch)
+            .map_err(HubError::from)
+            .and_then(|_| Ok(self.shed.ready(&terminal)?));
+        if let Some((file, _)) = &recipe.launch.secrets {
+            let _ = fs::remove_file(file);
+        }
+        started?;
+        let mut live = lock(&live);
+        let was = live.meta.folder.clone().unwrap_or_default();
+        let turns: Vec<String> = live
+            .chat
+            .items
+            .iter()
+            .filter_map(|i| match &i.body {
+                Body::You { text, .. } => Some(format!("Owner: {text}")),
+                Body::Agent { text, .. } => Some(format!("You: {text}")),
+                _ => None,
+            })
+            .collect();
+        let last = turns[turns.len().saturating_sub(6)..].join("\n\n");
+        let handover = format!(
+            "{}\n\nThis chat moved from {} to {}, where you now run; what it made before is still there. Its last turns:\n\n{last}",
+            recipe.instructions.trim_end(),
+            was.display(),
+            folder.display()
+        );
+        handover.trim_start().clone_into(&mut live.meta.handover);
+        live.meta.terminal = terminal;
+        live.meta.folder = Some(folder.clone());
+        self.store.save(&live.meta)?;
+        let text = format!(
+            "now in {} · later turns run here",
+            cooee_web::short(&folder)
+        );
+        let item = live.chat.push(now(), 0, Body::Note { text });
+        live.publish(self, vec![Change::Item(item.clone())])?;
+        drop(live);
+        if let Err(e) = self.shed.close(&old) {
+            eprintln!("cooee: {e}");
+        }
+        Ok(item)
     }
 
     /// [`Hub::send`] with `before` (a profile's instructions) ahead of `text` for the agent; only `text` is stored.
@@ -811,12 +902,21 @@ impl Hub {
                 "the thread is closed or the message empty".to_owned(),
             ));
         }
+        let before = if before.trim().is_empty() {
+            live.meta.handover.clone()
+        } else {
+            before.to_owned()
+        };
         let prompt = if before.trim().is_empty() {
             text.to_owned()
         } else {
             format!("{}\n\n{text}", before.trim_end())
         };
         self.shed.prompt(&live.meta.terminal, &prompt)?;
+        if !live.meta.handover.is_empty() {
+            live.meta.handover.clear();
+            self.store.save(&live.meta)?;
+        }
         let body = Body::You {
             text: text.to_owned(),
             random_id: random_id.to_owned(),

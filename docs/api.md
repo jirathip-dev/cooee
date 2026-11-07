@@ -26,9 +26,10 @@ type Turn = { text: string; state: "working" | "blocked" | "done" | "error" | "e
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | the thread list's cards under the device's chip, `{folder, rows: Row[], done?: Row[]}[]`; `Row` is `{id, title, agent, folder, state, last, at, unread, workflow?: {source, group, item, role, round, url}}` (`folder`: `~/…` under home; a Workflow source's card has `done`, its finished sessions, and `folder` is the source) |
-| `POST /list` | a form: `list` (`all`, `chats` or `workflow`) | 303 to `/`, keeping the chip in the `cooee-list` cookie |
-| `POST /threads` | `{agent, account?, model?, effort?, folder, text, random_id}` | `{id}` |
+| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, profile, folder, state, last, at, unread, workflow?: {source, group, item, role, round, url}}` |
+| `POST /threads` | `{agent, account?, profile?, model?, effort?, folder?, text, random_id}` (no `folder`: a scratch folder of its own, `<data>/scratch/<id>`, #86) | `{id}` |
+| `POST /threads/{id}/folder` | `{folder}` (a root or inside one): "Use a folder…"; its agent starts again there and the next message carries a hand-over | the `note` it adds |
+| `POST /agents` | a form: `name`, `profile` (`""`: Plain on the first installed agent) | 303 to its new chat; the agent is saved as `<config>/profiles/<name>.toml` |
 | `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, waiting: Item \| null}` (`waiting`: the oldest config card that waits) |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |
 | `POST /threads/{id}/send` | `{text, random_id}` (a retry with the same id is stored once) | `Item` |
