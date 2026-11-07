@@ -1186,7 +1186,9 @@ async fn dev_bar(cx: &Cx, thread: String, folder: Option<PathBuf>) -> Result<imp
     Ok(view! {
         if let Some(name) = dev_theme(cx, folder.as_deref()) {
             <div class="tdv">
-                <a href=(format!("/themes/dev/{name}?thread={thread}"))>(format!("preview {name}"))</a>
+                <a href=(format!("/themes/dev/{name}?thread={thread}"))>
+                    (format!("preview {name}"))
+                </a>
                 keep(name: name, thread: thread)
             </div>
         }
