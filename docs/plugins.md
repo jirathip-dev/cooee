@@ -35,6 +35,10 @@ label = "Hello"
 module = "/tab.js"
 ```
 
+A plugin may also bring agent profiles, `[[profiles]]` with the fields of an owner's profile
+([architecture.md](architecture.md#agent-profiles-40)), their paths in its checkout. The add and update confirm lists
+them; they are offered in the new-thread form while the plugin is installed and on.
+
 - `cooee plugin add <name | git-url> [--rev R] [--yes]` clones it into `<data>/plugins/<name>/repo`, shows what it will
   run (the URL, the commit, the exact build and run commands, and "not reviewed" when it isn't in the index) and asks
   to go ahead. Then it builds the commit in `builds/<commit>`, runs the backend on a spare port until it serves its

@@ -34,6 +34,8 @@ p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:
 .nf fieldset{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .nf fieldset label{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 12px;border:1px solid var(--edge);border-radius:var(--r-pill)}
 .nf select{max-width:100%}
+.nf .pk{display:flex;flex-direction:column;gap:4px}
+.nf:has(.pk option:checked:not([value=""])) .ag,.nf:has(.pk option[data-folder]:checked) :is(.fl,.fh:has(#fq)){display:none}
 .nf select,.nf input,textarea{font:16px/1.4 var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:44px}
 .chat{display:flex;flex-direction:column;height:100dvh;max-width:100ch;margin:0 auto}
 .th{display:flex;align-items:center;gap:4px;min-height:52px;padding:0 4px;background:var(--card);border-bottom:1px solid var(--edge)}
