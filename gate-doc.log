@@ -1,0 +1,10 @@
+    Checking cooee-core v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-26/crates/cooee-core)
+ Documenting cooee-core v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-26/crates/cooee-core)
+    Checking cooee-web v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-26/web)
+ Documenting cooee-web v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-26/web)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-26/crates/cooee-server)
+ Documenting cooee-server v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-26/crates/cooee-server)
+ Documenting cooee v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-26/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.42s
+   Generated /Users/jkmacmini/.cache/herdsman/target/cooee/doc/cooee/index.html and 3 other files
+doc exit 0

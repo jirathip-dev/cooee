@@ -1,0 +1,49 @@
+shed 8bac04f:
+  would run: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 8bac04fdb8542ef496c614b47126d85c50a7892e shed
+shed service dev.shed.serve:
+  would run: shed install
+  would run: launchctl kickstart -k gui/501/dev.shed.serve
+config /Users/jkmacmini/.config/cooee/cooee-drover/config.toml:
+  would write /Users/jkmacmini/.config/cooee/cooee-drover/config.toml:
+port = 4748
+allowed_hosts = ["jirathips-mac-mini.tail8c3301.ts.net"]
+roots = ["~/Projects"]
+
+agents:
+  would run: shed agents add claude-acp
+cooee service dev.cooee.cooee-drover:
+  would write /Users/jkmacmini/Library/LaunchAgents/dev.cooee.cooee-drover.plist:
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>dev.cooee.cooee-drover</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/jkmacmini/.cache/herdsman/target/cooee/debug/cooee</string>
+    <string>serve</string>
+    <string>--instance</string>
+    <string>cooee-drover</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/jkmacmini/.local/share/mise/installs/node/24/bin:/Users/jkmacmini/.local/share/mise/shims:/Users/jkmacmini/.cargo/bin:/Users/jkmacmini/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Users/jkmacmini/.hermes/hermes-agent/venv/bin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/jkmacmini/.local/share/cooee/cooee-drover/cooee.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/jkmacmini/.local/share/cooee/cooee-drover/cooee.log</string>
+</dict>
+</plist>
+
+  would run: launchctl bootstrap gui/501 /Users/jkmacmini/Library/LaunchAgents/dev.cooee.cooee-drover.plist
+tailscale serve 4748:
+  would run: tailscale serve --bg --https=4748 http://127.0.0.1:4748
+would run: cooee doctor, then cooee pair
+exit 0

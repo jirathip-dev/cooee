@@ -1,0 +1,14 @@
+warning[license-not-encountered]: license was not encountered
+   ┌─ /Users/jkmacmini/.herdr/worktrees/cooee/issue-26/deny.toml:12:64
+   │
+12 │ allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Unicode-DFS-2016"]
+   │                                                                ━━━ unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ┌─ /Users/jkmacmini/.herdr/worktrees/cooee/issue-26/deny.toml:12:86
+   │
+12 │ allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Unicode-DFS-2016"]
+   │                                                                                      ━━━━━━━━━━━━━━━━ unmatched license allowance
+
+advisories ok, bans ok, licenses ok, sources ok
+deny exit 0
