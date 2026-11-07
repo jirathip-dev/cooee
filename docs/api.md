@@ -101,6 +101,22 @@ another run; load the newest slice again).
 | `POST /plugins/improve` | `{name, text}` | `{thread}` |
 | `POST /plugins/approve`, `/plugins/rollback`, `/plugins/remove` | `{name}` | a JSON string |
 
+## Theme packs (Settings › look › themes, [docs/themes.md](themes.md))
+
+Native forms (`application/x-www-form-urlencoded`); each answers with a redirect, or a 409 with the reason as text.
+
+| Call | Body | Answer |
+|---|---|---|
+| `POST /themes/add` | `source`: the index's name or a git URL | 303 to `/#settings/look` |
+| `POST /themes/remove` | `name` | 303 to `/#settings/look` |
+| `POST /themes/new`, `/themes/remix` | `name`, `text`, and for remix `from` | 303 to the agent's chat, `/t/<id>` |
+| `POST /themes/keep` | `name`, `thread` | 303 to `/#settings/look`; failing the gate, to the chat, where the failures were sent |
+| `POST /themes/publish` | `name` | 200, text: where its git repo is |
+| `GET /themes/dev/<name>?thread=<id>` | | the live preview page |
+| `GET /themes/dev/<name>/events` | | SSE: `saved` each time a file of the theme changes (the looks reloaded) |
+
+A page with `?preview=<name>` shows the theme being built in `themes-dev/<name>/`.
+
 ## Pairing (no cookie needed)
 
 | Call | Body | Answer |

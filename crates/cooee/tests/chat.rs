@@ -4,7 +4,11 @@
 
 mod support;
 
-use std::{fs, path::PathBuf, thread};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    thread,
+};
 
 use serde_json::{Value, json};
 use support::{Cooee, Events, FakeShed, Sse, is_item, scratch, version};
@@ -16,7 +20,22 @@ struct Setup {
 }
 
 fn setup(name: &str) -> Setup {
+    setup_with(name, &[])
+}
+
+/// [`setup`] with first-party theme packs installed beside the config (#38: only plain is built in).
+fn setup_with(name: &str, themes: &[&str]) -> Setup {
     let dir = scratch(name);
+    for t in themes {
+        let pack = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../packs/themes")
+            .join(t);
+        fs::create_dir_all(dir.join("themes").join(t)).unwrap();
+        for f in fs::read_dir(pack).unwrap() {
+            let f = f.unwrap();
+            fs::copy(f.path(), dir.join("themes").join(t).join(f.file_name())).unwrap();
+        }
+    }
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
     Setup { dir, shed, cooee }
@@ -295,7 +314,7 @@ fn closing_a_thread_kills_and_removes_its_terminal() {
 #[test]
 fn scene_draws_the_agents_as_sprites_and_the_current_ones_chats_as_chips() {
     // #34 on #86: Style's Scene draws the agents sidebar as the theme's scene; chats keep the style chosen before it.
-    let s = setup("scene");
+    let s = setup_with("scene", &["farm", "kitchen"]);
     let ids = [s.create("one"), s.create("two")];
     let page = |path: &str, pick: &str| {
         let cookie = format!("{}; cooee-look={pick}", s.cooee.cookie);

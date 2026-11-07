@@ -1,0 +1,7 @@
+{
+  "label": "new theme",
+  "scheme": { "dark": "github-dark", "light": "paper" },
+  "sprites": true,
+  "moments": false,
+  "words": {}
+}
