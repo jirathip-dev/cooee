@@ -253,11 +253,12 @@ test("switching style or figures keeps the scroll position", async ({ page }, in
     l.scrollTop += r.getBoundingClientRect().top - l.getBoundingClientRect().top + r.offsetHeight / 2;
   });
   // The first row in view, and how much of it is above the list's top edge (its share of the row's height): a
-  // switch restyles every row, so the same row stays first in view, cut at the same share.
+  // switch restyles every row, so the same row stays first in view, cut at the same share to the pixel (scrollTop
+  // snaps to whole pixels, so a short row's share may move by a pixel's worth).
   const view = () => list.evaluate((l) => {
     const top = l.getBoundingClientRect().top, r = [...l.children].find((r) => r.getBoundingClientRect().bottom > top);
     const b = r.getBoundingClientRect();
-    return { id: r.dataset.id, cut: Math.round(((top - b.top) / b.height) * 50) / 50 };
+    return { id: r.dataset.id, cut: (top - b.top) / b.height, h: b.height };
   });
   const before = await view();
   expect(before.cut).toBeGreaterThan(0);
@@ -267,7 +268,9 @@ test("switching style or figures keeps the scroll position", async ({ page }, in
     await tap(page, k, v);
     // The switch did move the rows: the thread's height changed.
     if (k === "style") expect(await list.evaluate((l) => l.scrollHeight)).not.toBe(height);
-    expect(await view(), `${k} ${v}`).toEqual(before);
+    const now = await view();
+    expect(now.id, `${k} ${v}`).toBe(before.id);
+    expect(Math.abs(now.cut - before.cut) * now.h, `${k} ${v}`).toBeLessThanOrEqual(1);
   }
 });
 
