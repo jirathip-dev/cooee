@@ -65,6 +65,7 @@ pub fn assets(builder: RouterBuilder, looks: Looks) -> RouterBuilder {
         .route(icon_512)
         .route(style)
         .route(script)
+        .route(md_js)
         .route(worker)
         .route(look_js)
         .route(sheet::look_set)
@@ -197,6 +198,14 @@ async fn script() -> Result<Static> {
     ))
 }
 
+#[route(GET "/md.js")]
+async fn md_js() -> Result<Static> {
+    Ok(Static(
+        "text/javascript; charset=utf-8",
+        built!("md.js").as_bytes(),
+    ))
+}
+
 #[route(GET "/look.js")]
 async fn look_js() -> Result<Static> {
     Ok(Static(
@@ -303,6 +312,15 @@ pub struct Card {
     pub done: Option<Vec<Summary>>,
 }
 
+/// The thread list as `GET /threads` and the page draw it: the cards, and the archived threads apart.
+#[derive(serde::Serialize)]
+pub struct Listed {
+    /// The cards under the chip (`cards`).
+    pub cards: Vec<Card>,
+    /// The archived threads, newest first.
+    pub archived: Vec<Summary>,
+}
+
 /// The cookie that keeps the thread list's chip: `chats` or `workflow` (else All).
 const LIST: &str = "cooee-list";
 
@@ -384,6 +402,16 @@ pub fn cards(rows: Vec<Summary>, list: &str) -> Vec<Card> {
         "chats" => chats.collect(),
         "workflow" => workflow.collect(),
         _ => chats.chain(workflow).collect(),
+    }
+}
+
+/// The thread list under chip `list`: its cards, and the archived threads apart.
+#[must_use]
+pub fn listed(rows: Vec<Summary>, list: &str) -> Listed {
+    let (archived, rows): (Vec<_>, Vec<_>) = rows.into_iter().partition(|r| r.archived);
+    Listed {
+        cards: cards(rows, list),
+        archived,
     }
 }
 
@@ -488,10 +516,21 @@ async fn row(cx: &Cx, r: Summary) -> Result<impl View> {
     let href = format!("/t/{}", r.id);
     let meta = meta(&r);
     Ok(view! {
-        <a class=(if r.unread { "tr" } else { "tr rd" }) href=(href)>
+        <a
+            class=(if r.unread { "tr" } else { "tr rd" })
+            href=(href)
+            data-id=(r.id.clone())
+        >
             <i class="ud">(if r.unread { "●" } else { "" })</i>
             <span class="tt">(r.title)</span>
-            <span class="ta">(meta)</span>
+            <span class="ta">
+                (meta)
+                if r.unseen > 0 {
+                    <b class="bd" aria-label=(format!("{} unread", r.unseen))>
+                        (r.unseen.to_string())
+                    </b>
+                }
+            </span>
             <span class="tp">
                 <b data-st=(st)>(mark)</b>
                 (r.last)
@@ -979,7 +1018,7 @@ async fn threads(
     let open = rows.iter().all(|r| r.workflow.is_some());
     let list = chip(cx);
     let (chosen, by_folder) = last_used(&rows, &profiles, &folders);
-    let cards = cards(rows, list);
+    let Listed { cards, archived } = listed(rows, list);
     let empty = cards.is_empty();
     let look = shown(cx);
     let (figure, words) = (look.s("empty"), look.w("empty-threads", true));
@@ -1069,8 +1108,119 @@ async fn threads(
                         card(c: c)
                     }
                 }
+                shelf(rows: archived)
             </main>
         )
+    })
+}
+
+/// The rename box the thread bar's title opens (`chat.ts`).
+#[component]
+async fn rename(title: String) -> Result<impl View> {
+    Ok(view! {
+        <form id="rt" class="rt" popover="auto" aria-label="rename the thread">
+            <input
+                name="title"
+                aria-label="thread title"
+                value=(title)
+                maxlength="80"
+                required=(true)
+            >
+            <button type="submit">"rename"</button>
+        </form>
+    })
+}
+
+/// The archived threads, folded, each with [restore] (`chat.ts`).
+#[component]
+async fn shelf(rows: Vec<Summary>) -> Result<impl View> {
+    Ok(view! {
+        if !rows.is_empty() {
+            <details class="fc arc">
+                <summary>(format!("{} archived", rows.len()))</summary>
+                for r in rows {
+                    <div class="arw">
+                        <a href=(format!("/t/{}", r.id))>(r.title.clone())</a>
+                        <button
+                            type="button"
+                            class="cn"
+                            data-restore=(r.id.clone())
+                            aria-label=(format!("restore {}", r.title))
+                        >
+                            "restore"
+                        </button>
+                    </div>
+                }
+            </details>
+        }
+    })
+}
+
+/// A thread's foot: the model and effort chips, the working pill, the queued messages, the picked files, the
+/// composer; the long-press menu and the image viewer (`chat.ts`).
+#[component]
+async fn foot(
+    who: String,
+    ended: bool,
+    pill: Unescaped<String>,
+    choices: (Vec<String>, Vec<String>),
+    now: (String, String),
+) -> Result<impl View> {
+    Ok(view! {
+        if !ended && (!choices.0.is_empty() || !choices.1.is_empty()) {
+            <div class="mc">
+                pick(id: "model".to_owned(), name: "model", list: choices.0, now: now.0)
+                pick(
+                    id: "effort".to_owned(),
+                    name: "effort",
+                    list: choices.1,
+                    now: now.1
+                )
+            </div>
+        }
+        <div class="cmp">
+            <div class="pill" id="pill" hidden=(true)>
+                <span id="pst" data-st="working" data-plain="">(pill)</span>
+                <span id="el">"0:00"</span>
+                <button type="button" class="stop">"stop"</button>
+            </div>
+            <ul class="qu" id="queue" aria-label="queued messages" hidden=(true)></ul>
+            <div class="fis" id="picked" hidden=(true)></div>
+            <form class="tw" id="composer">
+                <label class="gl att" hidden=(ended)>
+                    "📎"
+                    <input
+                        type="file"
+                        id="files"
+                        class="vh"
+                        multiple=(true)
+                        aria-label="attach files"
+                    >
+                </label>
+                <textarea
+                    id="box"
+                    rows="1"
+                    aria-label="message"
+                    placeholder=(format!("message {who}"))
+                    disabled=(ended)
+                ></textarea>
+                <button type="submit" disabled=(ended)>"send"</button>
+            </form>
+        </div>
+        <div
+            id="menu"
+            class="mn"
+            popover="manual"
+            role="menu"
+            aria-label="message actions"
+        >
+            <button type="button" role="menuitem" data-m="copy">"copy"</button>
+            <button type="button" role="menuitem" data-m="md">
+                "copy as markdown"
+            </button>
+            <button type="button" role="menuitem" data-m="quote">"quote"</button>
+        </div>
+        <div id="viewer" class="vw" popover="auto" aria-label="image"><img alt=""></div>
     })
 }
 
@@ -1269,11 +1419,21 @@ async fn chat(
                     <a class="gl bk" href="/" aria-label="back">"‹"</a>
                     <div class="tb">
                         <div class="tn">
-                            <h1>(thread.title.clone())</h1>
+                            <h1>
+                                <button
+                                    type="button"
+                                    class="ttl"
+                                    popovertarget="rt"
+                                    aria-label=(format!("{} · rename", thread.title))
+                                >
+                                    (thread.title.clone())
+                                </button>
+                            </h1>
                             <small>(thread.id.clone())</small>
                         </div>
                         <span class="ds">
                             <i class="dt"></i>
+                            <span id="net"></span>
                             (byline(&thread, &profile, &folder))
                             <span id="st" data-st=(state(&turn.state))>(st)</span>
                             if let Some(url) = link {
@@ -1291,6 +1451,7 @@ async fn chat(
                     >
                         "×"
                     </button>
+                    rename(title: thread.title.clone())
                 </div>
                 <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
                 <ol
@@ -1303,37 +1464,13 @@ async fn chat(
                 <p class="tlv" id="wait" hidden=(true)>
                     <span data-st="needs" data-plain="">(wait)</span>
                 </p>
-                if !ended && (!choices.0.is_empty() || !choices.1.is_empty()) {
-                    <div class="mc">
-                        pick(
-                            id: "model".to_owned(),
-                            name: "model",
-                            list: choices.0,
-                            now: thread.model.clone()
-                        )
-                        pick(
-                            id: "effort".to_owned(),
-                            name: "effort",
-                            list: choices.1,
-                            now: thread.effort.clone()
-                        )
-                    </div>
-                }
-                <form class="tw" id="composer">
-                    <div class="pill" id="pill" hidden=(true)>
-                        <span id="pst" data-st="working" data-plain="">(pill)</span>
-                        <span id="el">"0:00"</span>
-                        <button type="button" class="stop">"stop"</button>
-                    </div>
-                    <textarea
-                        id="box"
-                        rows="1"
-                        aria-label="message"
-                        placeholder=(format!("message {}", thread.agent))
-                        disabled=(ended)
-                    ></textarea>
-                    <button type="submit" disabled=(ended)>"send"</button>
-                </form>
+                foot(
+                    who: thread.agent.clone(),
+                    ended: ended,
+                    pill: pill,
+                    choices: choices,
+                    now: (thread.model.clone(), thread.effort.clone())
+                )
             </main>
         )
     })

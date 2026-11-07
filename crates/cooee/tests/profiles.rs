@@ -135,7 +135,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     assert_eq!(s.shed.sent(&terminal), ["\x1e{\"prompt\":\"hi\"}\n"]);
     let chat = s.cooee.get(&format!("/t/{id}")).1;
     assert!(
-        chat.contains("<i class=\"dt\"></i>fake-acp · System default · "),
+        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>fake-acp · System default · "),
         "{chat}"
     );
 
@@ -195,7 +195,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     );
     assert_eq!(s.shed.cli_log().matches(" run ").count(), runs);
     assert_eq!(
-        s.cooee.json("/threads").as_array().unwrap().len(),
+        s.cooee.json("/threads")["cards"].as_array().unwrap().len(),
         1,
         "one card, two threads"
     );

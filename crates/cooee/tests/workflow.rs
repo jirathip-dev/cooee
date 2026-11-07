@@ -24,7 +24,7 @@ fn labels<'a>(item: &'a str, role: &'a str, round: &'a str) -> [(&'a str, &'a st
 /// The workflow cards' rows and folded rows of `GET /threads`, waiting until there are `n` sessions.
 fn workflow(cooee: &Cooee, n: usize) -> (Vec<Value>, Vec<Value>) {
     for _ in 0..250 {
-        let cards = cooee.json("/threads");
+        let cards = cooee.json("/threads")["cards"].clone();
         let (mut rows, mut done) = (Vec::new(), Vec::new());
         for c in cards
             .as_array()
@@ -117,7 +117,7 @@ fn a_lane_is_listed_with_its_labels_and_the_chips_filter_the_one_list() {
         page.contains(r#"value="workflow" aria-checked="true""#),
         "{page}"
     );
-    let cards = cooee.json("/threads");
+    let cards = cooee.json("/threads")["cards"].clone();
     assert!(
         cards
             .as_array()
@@ -133,7 +133,7 @@ fn a_lane_is_listed_with_its_labels_and_the_chips_filter_the_one_list() {
         !page.contains("cooee #33") && page.contains("My own chat"),
         "{page}"
     );
-    let cards = cooee.json("/threads");
+    let cards = cooee.json("/threads")["cards"].clone();
     assert!(
         cards
             .as_array()
