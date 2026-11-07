@@ -28,7 +28,7 @@ test("a profile is an agent: listed, a new chat with it runs as it, its bar says
   const own = `prof-${info.project.name}`;
   await page.getByRole("button", { name: "folder: scratch ▾" }).click();
   await page.getByLabel("search folders").fill(own);
-  await page.getByRole("radio", { name: new RegExp(`^~/root/project/${own}`) }).check();
+  await page.getByRole("radio", { name: new RegExp(`^${own}`) }).check();
   await page.getByLabel("message", { exact: true }).fill("hi");
   await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);

@@ -240,7 +240,7 @@ html[data-style=terminal] .swa{border-radius:4px}
 @media (min-width:1000px){.ufs{inset:auto auto 112px 352px;width:380px;border-radius:var(--r-card);box-shadow:0 8px 48px #0006}.ufs::backdrop{background:none}}
 .ufs .fl{display:flex;flex-direction:column;margin:0;padding:0;border:0}
 .ufs .fl label{display:flex;align-items:center;gap:8px;min-height:44px;border-top:1px solid var(--line);overflow-wrap:anywhere}.ufs .fl label .ds{margin-left:auto}
-.ufs .fl [type=radio]{position:absolute;opacity:0;pointer-events:none}.ufs .fl label:has(:checked)::after{content:"✓";color:var(--link)}
+.ufs .fl label{position:relative}.ufs .fl [type=radio]{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0}.ufs .fl label:has(:checked)::after{content:"✓";color:var(--link)}
 .ufs .fl label:has(:focus-visible){outline:2px solid var(--link)}.ufs .fl [data-d="0"]{min-height:36px;margin-top:8px;font-size:var(--fs-meta);font-weight:600;color:var(--mute);border:0}
 #fq{margin:4px 0 8px}.ufs>.ds{margin:8px 0}
 html[data-style=terminal] .av{border-radius:4px}
