@@ -16,7 +16,8 @@ test("Workflow: the chip filters the list and a running impl lane opens as a cha
   await expect(chips.getByRole("radio", { name: "All" })).toHaveAttribute("aria-checked", "true");
   const lane = page.locator(".fc .tr", { hasText: "cooee #33" });
   await expect(lane).toContainText("impl · round 1");
-  await expect(page.locator(".fc .tr", { hasText: "Long thread" }).first()).toBeVisible();
+  // Listed, perhaps under "older threads" once other tests have started threads in its folder.
+  await expect(page.locator(".fc .tr", { hasText: "Long thread" }).first()).toBeAttached();
 
   await chips.getByRole("radio", { name: "Workflow" }).click();
   await expect(chips.getByRole("radio", { name: "Workflow" })).toHaveAttribute("aria-checked", "true");
