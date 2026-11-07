@@ -1,0 +1,8 @@
+
+Running 3 tests using 2 workers
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (1.2s)
+  ✓  3 [1440] › parity.spec.mjs:245:1 › row 14: report mode: tap an element, add a note, send; cooee reports lists it (731ms)
+  ✓  2 [390] › parity.spec.mjs:245:1 › row 14: report mode: tap an element, add a note, send; cooee reports lists it (934ms)
+
+  3 passed (30.9s)

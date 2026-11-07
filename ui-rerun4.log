@@ -1,0 +1,10 @@
+
+Running 5 tests using 2 workers
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (2.1s)
+  ✓  2 [1440] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it (3.5s)
+  ✓  3 [390] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it (3.8s)
+  ✓  4 [1440] › folders.spec.mjs:54:1 › new-thread picker: search finds a sub-folder, [+ new folder] makes one in a root and picks it (2.4s)
+  ✓  5 [390] › folders.spec.mjs:54:1 › new-thread picker: search finds a sub-folder, [+ new folder] makes one in a root and picks it (2.3s)
+
+  5 passed (15.7s)

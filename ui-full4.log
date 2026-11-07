@@ -1,0 +1,126 @@
+
+Running 101 tests using 6 workers
+
+  ✓    1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (863ms)
+  ✓    6 [390] › look.spec.mjs:38:1 › a device's pick shows from the first frame, and stays on this device only (915ms)
+  ✓    4 [390] › cards.spec.mjs:39:1 › row 30: choice rows, the recommended first, an other box, and the ✓ line says who and when (1.9s)
+  ✓    3 [390] › first-run.spec.mjs:9:1 › first run: no agents and no roots show their fix lines with copy buttons, never empty pickers (2.6s)
+  ✓    2 [390] › chat.spec.mjs:21:1 › each event kind renders: reply, tool call, plan, approval, state, stop (3.2s)
+  ✓    7 [390] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it (3.2s)
+  ✓    9 [390] › cards.spec.mjs:60:1 › row 31: a conductor's answer keeps [change]; the owner's pick replaces it (1.6s)
+  ✓    8 [390] › look.spec.mjs:70:1 › the look sheet: style, figures, theme, appearance and colours apply at once and stay (2.9s)
+  ✓   10 [390] › machines.spec.mjs:7:1 › the machines tab: a card per machine, a chart on tap, the Air offline and the tab's dot (1.3s)
+  ✓   14 [390] › look.spec.mjs:109:1 › System follows the phone's mode live (306ms)
+  ✓    5 [390] › login.spec.mjs:7:1 › sign-ins: the provider's own login, its link tappable, a code typed in, then signed in (4.4s)
+  ✓   12 [390] › folders.spec.mjs:54:1 › new-thread picker: search finds a sub-folder, [+ new folder] makes one in a root and picks it (1.2s)
+  ✓   13 [390] › cards.spec.mjs:81:1 › row 32: a config card shows its diff, the bar says it waits, [apply] settles it (1.6s)
+  ✓   16 [390] › look.spec.mjs:124:1 › Settings: the look rows show the pick and open the look sheet (1.1s)
+  ✓   15 [390] › nojs.spec.mjs:9:1 › with no script the look sheet, Settings and the new-thread folder picker open (1.9s)
+  ✓   19 [390] › cards.spec.mjs:102:1 › row 33: a secret card's field is masked; saved, the line names only the secret (1.1s)
+  ✓   18 [390] › plugins.spec.mjs:9:1 › the example plugin's tab: proxied calls with its token, its stream, a push and a choice card (2.1s)
+  ✓   21 [390] › reliability.spec.mjs:19:3 › on every browser › R5: a slow load shows the thin strip only after 300 ms, and the page stays tappable (862ms)
+  ✓   23 [390] › plugins.spec.mjs:47:1 › a plugin reaches only its own backend: not another plugin's, not cooee's storage or page (192ms)
+  ✓   22 [390] › cards.spec.mjs:117:1 › row 34: the composer's model and effort chips; a pick is kept and said in the thread (1.5s)
+  ✓   25 [390] › threads.spec.mjs:4:1 › thread list: renders, fits the width, no axe violations (1.6s)
+  ✓   27 [390] › threads.spec.mjs:21:1 › installable: the manifest, its icons and the service worker load (229ms)
+  ✓   28 [390] › threads.spec.mjs:37:1 › a failed start reads as one plain sentence, never the server's JSON error (939ms)
+  ✓   17 [390] › plugin-manager.spec.mjs:15:1 › Settings › Plugins: add from the index after a confirm, it runs with its tab and log, then remove (5.2s)
+  ✓   26 [390] › cards.spec.mjs:128:1 › row 35: handoff chips open the other thread; a line flows back; a pick-a-thread row (2.2s)
+  ✓   24 [390] › reliability.spec.mjs:44:3 › on every browser › R16: refreshed 5 times, each row is drawn once and the list keeps one card per thread (3.2s)
+  ✓   30 [390] › reliability.spec.mjs:67:3 › on every browser › R17: paths and image words in a message stay text: no image, no file fetched (580ms)
+  -   33 [390] › reliability.spec.mjs:81:3 › on WebKit, as on the iPhone › R4: with the keyboard up (a shrunk viewport) the composer sits flush on it and the page never jumps
+  -   34 [390] › reliability.spec.mjs:101:3 › on WebKit, as on the iPhone › R25: closing a sheet goes from sheet to page in one step: no frame flashes, the page never reloads
+  ✓   31 [390] › parity.spec.mjs:34:1 › row 1: installable, no double-tap zoom, and offline it opens on its last copy with its time (1.6s)
+  ✓   32 [390] › push.spec.mjs:24:1 › two pushes for a thread show one notification; none while it is open; reading it clears it (1.9s)
+  ✓   29 [390] › workflow.spec.mjs:12:1 › Workflow: the chip filters the list and a running impl lane opens as a chat (3.0s)
+  ✓   36 [390] › parity.spec.mjs:61:1 › row 2: the sync dot is green while the stream is open, amber when it drops, green again with no rows missing (787ms)
+  ✓   35 [1440] › cards.spec.mjs:39:1 › row 30: choice rows, the recommended first, an other box, and the ✓ line says who and when (2.0s)
+  -   40 [1440] › first-run.spec.mjs:9:1 › first run: no agents and no roots show their fix lines with copy buttons, never empty pickers
+  ✓   38 [1440] › cards.spec.mjs:60:1 › row 31: a conductor's answer keeps [change]; the owner's pick replaces it (1.9s)
+  ✓   37 [390] › parity.spec.mjs:77:1 › rows 3 and 5: ↻ spins while the thin strip shows and the page stays tappable; a pull and coming back reload too (2.6s)
+  ✓   43 [390] › parity.spec.mjs:108:1 › row 5: the app coming back after 30 s away reloads; under 30 s it doesn't (958ms)
+  ✓   42 [1440] › cards.spec.mjs:81:1 › row 32: a config card shows its diff, the bar says it waits, [apply] settles it (1.9s)
+  ✓   41 [1440] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it (3.5s)
+  ✓   44 [390] › parity.spec.mjs:125:1 › row 4: an action's toast is one short line on screen, then it clears (1.1s)
+  ✓   39 [1440] › chat.spec.mjs:21:1 › each event kind renders: reply, tool call, plan, approval, state, stop (4.1s)
+  ✓   46 [1440] › folders.spec.mjs:54:1 › new-thread picker: search finds a sub-folder, [+ new folder] makes one in a root and picks it (1.6s)
+  ✓   45 [1440] › cards.spec.mjs:102:1 › row 33: a secret card's field is masked; saved, the line names only the secret (1.8s)
+  ✓   20 [390] › look.spec.mjs:137:1 › each Style × Figures combination renders at 390 (14.6s)
+  ✓   51 [390] › look.spec.mjs:178:1 › the ascii figures' two frames alternate (203ms)
+  ✓   50 [1440] › cards.spec.mjs:117:1 › row 34: the composer's model and effort chips; a pick is kept and said in the thread (1.6s)
+  ✓   47 [390] › parity.spec.mjs:142:1 › row 6: a phone asks for a code, the Mac approves it, and the phone pairs; Settings lists and removes devices (3.6s)
+  ✓   53 [1440] › cards.spec.mjs:128:1 › row 35: handoff chips open the other thread; a line flows back; a pick-a-thread row (5.1s)
+  ✓   54 [390] › parity.spec.mjs:166:1 › row 7: an unpaired browser gets the app's shell: the composer off, a pair hint, no thread data (4.8s)
+  ✓   11 [390] › chat.spec.mjs:71:1 › a reconnect mid-stream loses and doubles no text (22.6s)
+  ✓   52 [390] › look.spec.mjs:198:1 › the look sheet lists Scene only with sprites, and plain only ASCII or None (5.9s)
+  ✓   55 [1440] › look.spec.mjs:38:1 › a device's pick shows from the first frame, and stays on this device only (1.1s)
+  ✓   49 [1440] › login.spec.mjs:7:1 › sign-ins: the provider's own login, its link tappable, a code typed in, then signed in (8.2s)
+  ✓   58 [390] › look.spec.mjs:232:1 › switching style or figures keeps the scroll position (1.1s)
+  ✓   57 [390] › chat.spec.mjs:109:1 › a failed send shows retry, and the retry sends it (1.2s)
+  ✓   56 [390] › parity.spec.mjs:187:1 › rows 8 and 13: Settings opens at a section from its link, has an index, and says truly that alerts are off (1.7s)
+  ✓   61 [390] › look.spec.mjs:261:1 › a plugin tab gets the theme's variables, data URLs, style and figures, and every change (1.2s)
+  ✓   60 [1440] › machines.spec.mjs:7:1 › the machines tab: a card per machine, a chart on tap, the Air offline and the tab's dot (1.4s)
+  -   64 [1440] › plugin-manager.spec.mjs:15:1 › Settings › Plugins: add from the index after a confirm, it runs with its tab and log, then remove
+  ✓   63 [390] › parity.spec.mjs:208:1 › row 10: a theme with moments plays one when a turn ends live; terminal plays none (1.6s)
+  ✓   62 [390] › chat.spec.mjs:123:1 › the draft survives a reload (2.0s)
+  ✓   59 [1440] › look.spec.mjs:70:1 › the look sheet: style, figures, theme, appearance and colours apply at once and stay (3.3s)
+  ✓   69 [1440] › look.spec.mjs:109:1 › System follows the phone's mode live (417ms)
+  ✓   67 [390] › parity.spec.mjs:231:1 › row 12: ascii figures replace the sprites and stay (1.5s)
+  ✓   66 [1440] › nojs.spec.mjs:9:1 › with no script the look sheet, Settings and the new-thread folder picker open (2.2s)
+  ✓   65 [1440] › plugins.spec.mjs:9:1 › the example plugin's tab: proxied calls with its token, its stream, a push and a choice card (2.7s)
+  ✓   73 [1440] › plugins.spec.mjs:47:1 › a plugin reaches only its own backend: not another plugin's, not cooee's storage or page (119ms)
+  ✓   70 [1440] › look.spec.mjs:124:1 › Settings: the look rows show the pick and open the look sheet (1.1s)
+  -   75 [1440] › look.spec.mjs:137:1 › each Style × Figures combination renders at 390
+  ✓   76 [1440] › look.spec.mjs:178:1 › the ascii figures' two frames alternate (131ms)
+  ✓   72 [1440] › reliability.spec.mjs:19:3 › on every browser › R5: a slow load shows the thin strip only after 300 ms, and the page stays tappable (734ms)
+  ✓   71 [390] › parity.spec.mjs:245:1 › row 14: report mode: tap an element, add a note, send; cooee reports lists it (1.1s)
+  ✓   74 [1440] › threads.spec.mjs:4:1 › thread list: renders, fits the width, no axe violations (962ms)
+  ✓   80 [1440] › threads.spec.mjs:21:1 › installable: the manifest, its icons and the service worker load (155ms)
+  ✓   81 [1440] › threads.spec.mjs:37:1 › a failed start reads as one plain sentence, never the server's JSON error (1.0s)
+  ✓   77 [1440] › look.spec.mjs:198:1 › the look sheet lists Scene only with sprites, and plain only ASCII or None (3.2s)
+  ✓   78 [1440] › reliability.spec.mjs:44:3 › on every browser › R16: refreshed 5 times, each row is drawn once and the list keeps one card per thread (3.5s)
+  ✓   79 [1440] › workflow.spec.mjs:12:1 › Workflow: the chip filters the list and a running impl lane opens as a chat (3.5s)
+  ✓   84 [1440] › reliability.spec.mjs:67:3 › on every browser › R17: paths and image words in a message stay text: no image, no file fetched (597ms)
+  -   85 [1440] › reliability.spec.mjs:81:3 › on WebKit, as on the iPhone › R4: with the keyboard up (a shrunk viewport) the composer sits flush on it and the page never jumps
+  -   86 [1440] › reliability.spec.mjs:101:3 › on WebKit, as on the iPhone › R25: closing a sheet goes from sheet to page in one step: no frame flashes, the page never reloads
+  ✓   82 [1440] › parity.spec.mjs:34:1 › row 1: installable, no double-tap zoom, and offline it opens on its last copy with its time (1.4s)
+  ✓   83 [1440] › look.spec.mjs:232:1 › switching style or figures keeps the scroll position (1.2s)
+  ✓   87 [1440] › parity.spec.mjs:61:1 › row 2: the sync dot is green while the stream is open, amber when it drops, green again with no rows missing (848ms)
+  ✓   88 [1440] › look.spec.mjs:261:1 › a plugin tab gets the theme's variables, data URLs, style and figures, and every change (1.1s)
+  ✓   89 [1440] › push.spec.mjs:24:1 › two pushes for a thread show one notification; none while it is open; reading it clears it (1.4s)
+  ✓   90 [1440] › parity.spec.mjs:77:1 › rows 3 and 5: ↻ spins while the thin strip shows and the page stays tappable; a pull and coming back reload too (2.4s)
+  ✓   48 [1440] › chat.spec.mjs:71:1 › a reconnect mid-stream loses and doubles no text (27.0s)
+  ✓   68 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (17.7s)
+  ✓   91 [1440] › parity.spec.mjs:108:1 › row 5: the app coming back after 30 s away reloads; under 30 s it doesn't (8.3s)
+  ✓   92 [1440] › chat.spec.mjs:109:1 › a failed send shows retry, and the retry sends it (8.0s)
+  ✓   93 [1440] › parity.spec.mjs:125:1 › row 4: an action's toast is one short line on screen, then it clears (5.4s)
+  ✓   94 [1440] › chat.spec.mjs:123:1 › the draft survives a reload (1.9s)
+  ✓   95 [1440] › parity.spec.mjs:142:1 › row 6: a phone asks for a code, the Mac approves it, and the phone pairs; Settings lists and removes devices (3.1s)
+  ✓   97 [1440] › parity.spec.mjs:166:1 › row 7: an unpaired browser gets the app's shell: the composer off, a pair hint, no thread data (939ms)
+  ✓   98 [1440] › parity.spec.mjs:187:1 › rows 8 and 13: Settings opens at a section from its link, has an index, and says truly that alerts are off (1.5s)
+  ✓   99 [1440] › parity.spec.mjs:208:1 › row 10: a theme with moments plays one when a turn ends live; terminal plays none (1.2s)
+  ✓  100 [1440] › parity.spec.mjs:231:1 › row 12: ascii figures replace the sprites and stay (793ms)
+  ✘  101 [1440] › parity.spec.mjs:245:1 › row 14: report mode: tap an element, add a note, send; cooee reports lists it (708ms)
+  ✓   96 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (10.0s)
+
+
+  1) [1440] › parity.spec.mjs:245:1 › row 14: report mode: tap an element, add a note, send; cooee reports lists it 
+
+    Error: spawnSync /Users/jkmacmini/.cache/herdsman/target/.scratch/cooee-impl-44/target/debug/cooee ENOENT
+
+      13 | const config = () => fs.readFileSync(new URL("./.auth/code.config", import.meta.url), "utf8").trim();
+      14 | const bin = () => fs.readFileSync(new URL("./.auth/code.bin", import.meta.url), "utf8").trim();
+    > 15 | const cooee = (...args) => execFileSync(bin(), [...args, "--config", config()], { encoding: "utf8" });
+         |                            ^
+      16 |
+      17 | async function audit(page) {
+      18 |   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+        at cooee (/Users/jkmacmini/.herdr/worktrees/cooee/issue-44/web/e2e/parity.spec.mjs:15:28)
+        at /Users/jkmacmini/.herdr/worktrees/cooee/issue-44/web/e2e/parity.spec.mjs:257:18
+
+    Error Context: test-results/parity-row-14-report-mode--d85fc-send-cooee-reports-lists-it-1440/error-context.md
+
+  1 failed
+    [1440] › parity.spec.mjs:245:1 › row 14: report mode: tap an element, add a note, send; cooee reports lists it 
+  7 skipped
+  93 passed (1.2m)

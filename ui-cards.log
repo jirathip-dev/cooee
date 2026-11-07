@@ -1,0 +1,16 @@
+
+Running 11 tests using 2 workers
+
+  ✓   1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (17.6s)
+  ✓   3 [390] › cards.spec.mjs:38:1 › row 30: choice rows, the recommended first, an other box, and the ✓ line says who and when (18.6s)
+  ✓   2 [1440] › cards.spec.mjs:38:1 › row 30: choice rows, the recommended first, an other box, and the ✓ line says who and when (21.1s)
+  ✓   4 [390] › cards.spec.mjs:59:1 › row 31: a conductor's answer keeps [change]; the owner's pick replaces it (14.7s)
+  ✓   5 [1440] › cards.spec.mjs:59:1 › row 31: a conductor's answer keeps [change]; the owner's pick replaces it (15.6s)
+  ✓   6 [390] › cards.spec.mjs:80:1 › row 32: a config card shows its diff, the bar says it waits, [apply] settles it (10.7s)
+  ✓   7 [1440] › cards.spec.mjs:80:1 › row 32: a config card shows its diff, the bar says it waits, [apply] settles it (11.1s)
+  ✓   8 [390] › cards.spec.mjs:101:1 › row 33: a secret card's field is masked; saved, the line names only the secret (10.2s)
+  ✓   9 [1440] › cards.spec.mjs:101:1 › row 33: a secret card's field is masked; saved, the line names only the secret (11.3s)
+  ✓  10 [390] › cards.spec.mjs:116:1 › row 35: handoff chips open the other thread; a line flows back; a pick-a-thread row (11.6s)
+  ✓  11 [1440] › cards.spec.mjs:116:1 › row 35: handoff chips open the other thread; a line flows back; a pick-a-thread row (12.3s)
+
+  11 passed (2.6m)

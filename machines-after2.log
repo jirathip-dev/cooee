@@ -1,0 +1,8 @@
+
+Running 3 tests using 1 worker
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (1.1s)
+  ✓  2 [1440] › aa-wait.spec.mjs:2:1 › wait past one machines poll (1.1m)
+  ✓  3 [1440] › machines.spec.mjs:7:1 › the machines tab: a card per machine, a chart on tap, the Air offline and the tab's dot (1.9s)
+
+  3 passed (1.2m)

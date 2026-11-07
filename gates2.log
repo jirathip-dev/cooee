@@ -1,0 +1,34 @@
+exit 0 : cargo fmt --all --check
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-44/crates/cooee-server)
+    Checking cooee v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-44/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.63s
+exit 0 : cargo clippy --workspace --all-targets --locked -- -D warnings
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-44/crates/cooee-server)
+ Documenting cooee-server v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-44/crates/cooee-server)
+ Documenting cooee v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-44/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.31s
+   Generated /Users/jkmacmini/.cache/herdsman/target/cooee/doc/cooee/index.html and 4 other files
+exit 0 : env RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --no-deps --locked
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-44/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-44/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.71s
+     Running tests/plugins.rs (/Users/jkmacmini/.cache/herdsman/target/cooee/debug/deps/plugins-a85ca75533df2e7c)
+
+running 13 tests
+test the_docs_show_the_example_plugin_the_ui_tests_run ... ok
+test a_plugin_with_no_token_configured_does_not_start ... ok
+test the_tab_frames_the_module_in_a_sandbox ... ok
+test a_plugin_without_its_token_is_refused ... ok
+test a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab ... ok
+test a_backends_event_stream_comes_through_the_proxy ... ok
+test the_proxy_sends_the_plugins_own_token_and_never_the_cookie ... ok
+test row_31_a_conductors_answer_takes_one_change_from_the_owner ... ok
+test row_30_choice_rows_recommended_first_other_text_and_who_and_when ... ok
+test a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin ... ok
+test row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale ... ok
+test row_33_a_secrets_value_reaches_its_plugin_only ... ok
+test row_35_handoff_chips_flow_back_lines_and_pick_a_thread ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.89s
+
+exit 0 : cargo test -p cooee --test plugins --locked

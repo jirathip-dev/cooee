@@ -1,0 +1,45 @@
+
+Running 9 tests using 6 workers
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (1.6s)
+  ✓  3 [390] › machines.spec.mjs:7:1 › the machines tab: a card per machine, a chart on tap, the Air offline and the tab's dot (3.1s)
+  ✓  4 [390] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it (3.7s)
+  -  8 [1440] › look.spec.mjs:136:1 › all four Style × Sprites combinations render at 390
+  ✓  9 [1440] › machines.spec.mjs:7:1 › the machines tab: a card per machine, a chart on tap, the Air offline and the tab's dot (1.9s)
+  ✓  2 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (8.9s)
+  ✘  5 [1440] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it (8.2s)
+  ✓  7 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (9.5s)
+  ✓  6 [390] › look.spec.mjs:136:1 › all four Style × Sprites combinations render at 390 (9.7s)
+
+
+  1) [1440] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it 
+
+    Error: expect(locator).toBeAttached() failed
+
+    Locator: getByRole('radio', { name: '~/shed', exact: true })
+    Expected: attached
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeAttached" getByRole('radio', { name: '~/shed', exact: true }) with timeout 5000ms
+      - waiting for getByRole('radio', { name: '~/shed', exact: true })
+        - waiting for "http://127.0.0.1:41789/" navigation to finish...
+        - navigated to "http://127.0.0.1:41789/"
+
+
+      43 |   await page.waitForLoadState("load");
+      44 |   await page.goto("/#new");
+    > 45 |   await expect(page.getByRole("radio", { name: `~/${folder}`, exact: true })).toBeAttached();
+         |                                                                               ^
+      46 |
+      47 |   await page.getByRole("button", { name: "settings" }).click();
+      48 |   await page.locator("#sheet").getByRole("button", { name: "roots" }).click();
+        at /Users/jkmacmini/.herdr/worktrees/cooee/issue-44/web/e2e/folders.spec.mjs:45:79
+
+    Error Context: test-results/folders-Settings-›-Folders-6a2fe-me-add-a-root-and-remove-it-1440/error-context.md
+
+  1 failed
+    [1440] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it 
+  1 skipped
+  7 passed (18.1s)
