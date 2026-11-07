@@ -604,7 +604,8 @@ mod tests {
             item,
         };
         let t = thread();
-        let (looks, _) = cooee_web::Looks::load(None, None);
+        let packs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs");
+        let (looks, _) = cooee_web::Looks::load(Some(&packs), None);
         let (farm, plain) = (&looks.themes["farm"], &looks.themes["plain"]);
         assert_eq!(
             note(&t, &chat, &approval(None), "working", true, farm),

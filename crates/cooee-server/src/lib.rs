@@ -12,6 +12,7 @@ mod manage;
 mod passkey;
 mod plugin;
 mod push;
+mod themes;
 
 use std::{
     io,
@@ -48,6 +49,7 @@ pub use hub::{CardSpec, Hub, HubError, Listing, Out, Recipe, Resume, Slice, Uplo
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
+pub use themes::{Pack, Pinned, Themes, stamp};
 
 /// The paths an unpaired browser may load: pairing and the static files (and the themes' files under `/look/`).
 const OPEN: [&str; 14] = [
@@ -1149,11 +1151,6 @@ fn improve(
     text: &str,
 ) -> Result<String, HubError> {
     let (repo, manifest) = m.improve(name).map_err(refused)?;
-    let agents = hub.agents().map_err(refused)?;
-    let agent = agents.first().ok_or_else(|| {
-        HubError::Refused("No agents in shed: run cooee doctor on the Mac.".to_owned())
-    })?;
-    let (account, launch) = logins.home(&agent.id, None)?;
     let ask = if text.trim().is_empty() {
         "Ask me what to change."
     } else {
@@ -1167,14 +1164,174 @@ fn improve(
         manifest.build
     );
     let rid = format!("improve-{name}-{}", now());
+    let thread = agent_thread(hub, logins, &repo, &prompt, &rid)?;
+    m.improving(name, Some(thread.clone())).map_err(refused)?;
+    Ok(thread)
+}
+
+/// A thread with the first agent in shed (its default account) in `folder`, starting with `prompt`.
+fn agent_thread(
+    hub: &Hub,
+    logins: &Logins,
+    folder: &std::path::Path,
+    prompt: &str,
+    rid: &str,
+) -> Result<String, HubError> {
+    let agents = hub.agents().map_err(refused)?;
+    let agent = agents.first().ok_or_else(|| {
+        HubError::Refused("No agents in shed: run cooee doctor on the Mac.".to_owned())
+    })?;
+    let (account, launch) = logins.home(&agent.id, None)?;
     let recipe = Recipe {
         account,
         launch,
         ..Recipe::default()
     };
-    let thread = hub.start(&agent.id, &repo, &prompt, &rid, &recipe)?;
-    m.improving(name, Some(thread.clone())).map_err(refused)?;
-    Ok(thread)
+    hub.start(&agent.id, folder, prompt, rid, &recipe)
+}
+
+fn themes(cx: &Cx) -> Arc<Themes> {
+    Arc::clone(app_context::<Arc<Themes>>(cx))
+}
+
+fn looks(cx: &Cx) -> Arc<cooee_web::LookAssets> {
+    Arc::clone(app_context::<Arc<cooee_web::LookAssets>>(cx))
+}
+
+/// `POST /themes/<action>`, Settings › look › themes' forms and a theme thread's `[keep]` (no script): `add`
+/// (`source`), `remove` and `publish` (`name`), `new` and `remix` (`name`, `from`, `text`), `keep` (`name`, `thread`).
+#[derive(Deserialize, Default)]
+#[serde(default)]
+struct ThemeAct {
+    name: String,
+    source: String,
+    from: String,
+    text: String,
+    thread: String,
+}
+
+/// What the agent building theme `name` is told, before the owner's `text`.
+fn theme_prompt(name: &str, text: &str) -> String {
+    let ask = if text.trim().is_empty() {
+        "Ask me what it should look like."
+    } else {
+        text.trim()
+    };
+    format!(
+        "Theme {name}: {ask}\n\nYou're building the cooee theme {name}: this folder is its pack \
+         (docs/themes.md in cooee's repo). theme.json has label, scheme {{dark, light}} (scheme names), sprites, \
+         moments, words (keys: {}) and optionally scene (element ids in scene.svg, viewBox at most \"0 0 400 320\"; scene.svg is needed with sprites). \
+         sprites.svg holds <symbol>s {} (each s-<state>). Your own colour schemes go in schemes/<name>.json (label, \
+         color-scheme, tokens {}), each passing WCAG AA. My phone shows a live preview that reloads on each save. \
+         When I tap [keep], cooee runs the theme gate and lists here anything to fix.",
+        cooee_web::WORDS.join(" "),
+        cooee_web::SPRITES.map(|s| format!("s-{s}")).join(" "),
+        cooee_web::TOKENS.join(" ")
+    )
+}
+
+#[route(POST "/themes/{id}")]
+async fn theme_act(cx: &Cx, Form(a): Form<ThemeAct>) -> Result<Response> {
+    let (act, t, hub, logins, looks) = (thread_id(cx), themes(cx), hub(cx), logins(cx), looks(cx));
+    let done = tokio::task::spawn_blocking(move || {
+        let e = |e: io::Error| e.to_string();
+        let back = "/#settings/look".to_owned();
+        let done = match act.as_str() {
+            "add" => t.plan(&a.source, None).and_then(|p| t.add(&p)).map_err(e).map(|()| back),
+            "remove" => t.remove(&a.name).map_err(e).map(|()| back),
+            "publish" => t.publish(&a.name).map_err(e).map(|(dir, commit)| {
+                format!(
+                    "{} is a git repo now, at {}: {}. Push it (gh repo create --source {2} --push), then \
+                     propose it for cooee's plugins/index.toml by PR.",
+                    a.name,
+                    &commit[..7],
+                    dir.display()
+                )
+            }),
+            "new" | "remix" => {
+                let from = (act == "remix").then_some(a.from.as_str());
+                let dir = t.start(&a.name, from).map_err(e)?;
+                let rid = format!("theme-{}-{}", a.name, now());
+                let prompt = theme_prompt(&a.name, &a.text);
+                let thread = agent_thread(&hub, &logins, &dir, &prompt, &rid);
+                if thread.is_err() {
+                    let _ = std::fs::remove_dir_all(&dir);
+                }
+                thread.map(|id| format!("/t/{id}")).map_err(|e| e.to_string())
+            }
+            "keep" => match t.keep(&a.name) {
+                Ok(()) => Ok(back),
+                Err(why) if !a.thread.is_empty() => {
+                    let text = format!("[keep] {why}\n\nFix these; I'll tap keep again.");
+                    let rid = format!("keep-{}", now());
+                    let sent = hub.send(&a.thread, &text, &rid, &[]).map_err(|e| e.to_string());
+                    sent.map(|_| format!("/t/{}", a.thread))
+                }
+                Err(why) => Err(why.to_string()),
+            },
+            _ => Err(format!("no theme action {act}")),
+        };
+        looks.reload();
+        done
+    });
+    match done.await? {
+        Ok(to) if to.starts_with('/') => Ok(Response::builder()
+            .status(303)
+            .header("Location", to)
+            .body(Body::from(()))?),
+        // `publish` says where its repo is.
+        Ok(said) => plain(200, &said),
+        Err(why) => plain(409, &why),
+    }
+}
+
+/// `GET /themes/dev/<name>`: the live preview of a theme being built (`?thread=`: its chat too), its gate's result
+/// and `[keep]`.
+#[derive(Deserialize)]
+struct PreviewQuery {
+    thread: Option<String>,
+}
+
+#[page("/themes/dev/{id}")]
+async fn preview(cx: &Cx) -> Result<impl View> {
+    let name = thread_id(cx);
+    let looks = looks(cx);
+    let fails = tokio::task::spawn_blocking(move || {
+        looks.reload();
+        looks.looks().dev.get(&name).cloned()
+    });
+    let fails = fails.await?.ok_or_else(not_found)?;
+    let q: Option<PreviewQuery> = parse_query_params(cx).ok();
+    let thread = q.and_then(|q| q.thread).unwrap_or_default();
+    Ok(cooee_web::preview_page(cx, thread_id(cx), fails, thread))
+}
+
+/// `GET /themes/dev/<name>/events`: a `saved` event each time a file of the theme changes, after the looks reload.
+#[route(GET "/themes/dev/{id}/events")]
+async fn theme_saves(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>>> {
+    let name = thread_id(cx);
+    let looks = looks(cx);
+    if !looks.looks().dev.contains_key(&name) {
+        return Err(not_found().into());
+    }
+    let dir = themes(cx).dev_dir(&name);
+    let was = stamp(&dir);
+    let saves = stream::unfold((dir, was, looks), |(dir, was, looks)| async move {
+        loop {
+            tokio::time::sleep(Duration::from_millis(500)).await;
+            let now = stamp(&dir);
+            // Kept or gone: nothing more to preview.
+            if !dir.exists() {
+                return None;
+            }
+            if now != was {
+                looks.reload();
+                let saved = Event::new().event("saved").data("{}");
+                return Some((Ok(saved), (dir, now, looks)));
+            }
+        }
+    });
+    Ok(Sse::new(saves).keep_alive(KeepAlive::new()))
 }
 
 #[route(POST "/plugins/{id}")]
@@ -1456,11 +1613,11 @@ async fn report(cx: &Cx, Json(r): Json<Report>) -> Result<Response> {
 #[must_use]
 pub fn router(
     hub: Arc<Hub>,
-    (logins, manager): (Arc<Logins>, Arc<Manager>),
+    (logins, manager, themes): (Arc<Logins>, Arc<Manager>, Arc<Themes>),
     (data, config): (&std::path::Path, Option<&std::path::Path>),
     bind: IpAddr,
     allowed_hosts: &[String],
-    looks: cooee_web::Looks,
+    looks: Arc<cooee_web::LookAssets>,
 ) -> Router {
     let mut names: Vec<String> = ["localhost", "127.0.0.1", "[::1]"]
         .map(str::to_owned)
@@ -1535,11 +1692,15 @@ pub fn router(
         .route(plugin_log)
         .route(plugin_act)
         .route(plugin_dot)
+        .route(theme_act)
+        .page(preview)
+        .route(theme_saves)
         .app_context(hub)
         .app_context(Arc::new(Dots::default()))
         .app_context(Arc::new(Unlocks::default()))
         .app_context(logins)
         .app_context(manager)
+        .app_context(themes)
         .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))
         .build()
 }
@@ -1566,11 +1727,32 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
     cooee_core::perf::init(&data, config.perf.slow_ms)?;
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
-    let (looks, refused) = cooee_web::Looks::load(config.dir.as_deref(), config.theme.as_deref());
+    let themes = Themes::new(config)?;
+    let (looks, refused) = cooee_web::LookAssets::load(
+        config.dir.as_deref(),
+        config.theme.as_deref(),
+        themes.index().to_vec(),
+    );
     for why in refused {
         eprintln!("cooee: refused {why}");
     }
-    let theme = looks.themes[&looks.default].clone();
+    // A theme added, removed or saved anywhere (the CLI, an agent) shows within a second.
+    if let Some(dir) = config.dir.clone() {
+        let looks = Arc::clone(&looks);
+        std::thread::spawn(move || {
+            let seen =
+                || stamp(&dir.join("themes")) ^ stamp(&dir.join("themes-dev")).rotate_left(1);
+            let mut was = seen();
+            loop {
+                std::thread::sleep(Duration::from_secs(1));
+                if seen() != was {
+                    was = seen();
+                    looks.reload();
+                }
+            }
+        });
+    }
+    let theme = looks.looks().themes[&looks.looks().default].clone();
     let logins = Logins::new(shed.clone(), config.providers.clone(), &data);
     let hub = Hub::open(
         shed,
@@ -1581,7 +1763,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     )?;
     let router = router(
         Arc::clone(&hub),
-        (logins, Arc::clone(&manager)),
+        (logins, Arc::clone(&manager), Arc::new(themes)),
         (&data, config.dir.as_deref()),
         config.bind,
         &config.allowed_hosts,

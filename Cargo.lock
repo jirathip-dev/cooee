@@ -205,6 +205,7 @@ dependencies = [
  "cooee-machines",
  "cooee-server",
  "cooee-terminal",
+ "cooee-web",
  "p256",
  "qrcode",
  "serde_json",
