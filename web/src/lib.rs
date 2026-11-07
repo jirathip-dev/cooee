@@ -925,7 +925,11 @@ async fn threads(
                         <a class="gl" href="#" aria-label="close">"×"</a>
                     </div>
                     if !profiles.is_empty() {
-                        profile_picker(profiles: profiles, chosen: chosen, last: by_folder)
+                        profile_picker(
+                            profiles: profiles,
+                            chosen: chosen,
+                            last: by_folder
+                        )
                     }
                     <fieldset class="ag">
                         <legend class="lb">"agent"</legend>
