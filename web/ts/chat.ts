@@ -1039,6 +1039,29 @@ function chat(main: HTMLElement): void {
   };
   const el = make;
   const md = (row: HTMLElement): HTMLElement => $(".md", row) as HTMLElement;
+  // Thread refs (#84): a whole-word id of a thread cooee knows opens it; code spans and unknown ids stay plain.
+  const known = new Set((main.dataset.ids ?? "").split(" "));
+  const refs = (text: string): (string | Node)[] =>
+    text.split(/(```[\s\S]*?```|`[^`\n]*`)/).flatMap((part, i) =>
+      i % 2
+        ? [part]
+        : part.split(/(?<![\w-])(t[0-9a-z]+)(?![\w-])/).map((w, j) => {
+            if (j % 2 === 0 || !known.has(w)) return w;
+            const a = el("a", "ref", w) as HTMLAnchorElement;
+            a.href = `/t/${w}`;
+            return a;
+          }),
+    );
+  const withRefs = (tag: string, cls: string, s: string): HTMLElement => {
+    const e = el(tag, cls);
+    e.append(...refs(s));
+    return e;
+  };
+  // Back goes to the thread a ref or chip came from, else to the list.
+  const from = document.referrer ? new URL(document.referrer) : null;
+  const bk = $<HTMLAnchorElement>(".th .bk");
+  if (bk && from?.origin === location.origin && from.pathname.startsWith("/t/") && from.pathname !== location.pathname)
+    bk.href = from.pathname;
   // A config card that waits (#553 row 32): the bar under the header names it, wherever it is; a tap brings it in.
   const cw = $("#cw") as HTMLButtonElement;
   function waiting(it?: Item | null): void {
@@ -1108,10 +1131,10 @@ function chat(main: HTMLElement): void {
     row.dataset.at = String(it.at);
     if (it.kind === "you") {
       row.className = "blk me";
-      row.append(el("div", "md", it.text), el("span", "ct", time(it.at)));
+      row.append(withRefs("div", "md", it.text), el("span", "ct", time(it.at)));
     } else if (it.kind === "agent") {
       row.className = "blk ai";
-      row.append(el("b", "k", agent), el("div", "md", it.text));
+      row.append(el("b", "k", agent), withRefs("div", "md", it.text));
       if (it.stop_reason !== "end_turn") row.append(el("span", "ct", it.stop_reason));
     } else if (it.kind === "tool") {
       const s = it.status;
@@ -1127,7 +1150,7 @@ function chat(main: HTMLElement): void {
       row.append(el("span", "k", "tool"), el("span", "cmd", it.title), ts);
     } else if (it.kind === "approval") {
       row.className = `blk ap ${it.form ?? ""}`;
-      row.append(el("b", "k", it.plugin ?? agent), el("div", "md", it.tool));
+      row.append(el("b", "k", it.plugin ?? agent), withRefs("div", "md", it.tool));
       if (it.form === "secret") row.append(el("p", "m", `secret ${it.detail}`));
       if (it.form === "config" && it.detail) {
         const pre = el("pre", "diff");
@@ -1146,7 +1169,11 @@ function chat(main: HTMLElement): void {
             : it.form === "config"
               ? `${it.tool} ${it.chosen === "apply" ? "applied" : "discarded"}`
               : `✓ ${name}`);
-        const ans = el("p", "ans", [said, it.by, it.answered ? time(it.answered) : ""].filter(Boolean).join(" · "));
+        const ans = withRefs(
+          "p",
+          "ans",
+          [said, it.by, it.answered ? time(it.answered) : ""].filter(Boolean).join(" · "),
+        );
         row.append(ans);
         if (it.until && Date.now() < it.until) {
           const change = el("button", "chg", "change") as HTMLButtonElement;
@@ -1161,7 +1188,7 @@ function chat(main: HTMLElement): void {
       row.className = "qs ln";
       const chip = el("a", "chip", `${it.out ? "continued in" : "from"} ${it.title}`) as HTMLAnchorElement;
       chip.href = `/t/${encodeURIComponent(it.thread)}`;
-      if (it.text) row.append(`${it.text} `);
+      if (it.text) row.append(...refs(it.text), " ");
       row.append(chip);
     } else if (it.kind === "plan") {
       row.className = "blk plan";
@@ -1209,6 +1236,8 @@ function chat(main: HTMLElement): void {
     } else {
       for (const o of it.options)
         chc.append(button(o.name, () => approve(row, it.id, o.id), o.kind === "recommended" ? "rec" : ""));
+      // A ref in an option's label opens its thread from a link after the buttons (a link can't sit inside one).
+      chc.append(...it.options.flatMap((o) => refs(o.name).filter((n) => typeof n !== "string")));
       if (it.plugin && !it.form) {
         const f = field("other", "text", (v) => approve(row, it.id, v));
         f.append(button("send", () => f.requestSubmit()));
