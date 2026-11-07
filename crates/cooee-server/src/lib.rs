@@ -42,7 +42,7 @@ use topcoat::{
     view::View,
 };
 
-pub use hub::{CardSpec, Hub, HubError, Launch, Listing, Out, Resume, Slice, Upload};
+pub use hub::{CardSpec, Hub, HubError, Listing, Out, Recipe, Resume, Slice, Upload};
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
@@ -278,7 +278,7 @@ async fn home(cx: &Cx) -> Result<impl View> {
     Ok(cooee_web::threads_page(
         cx,
         rows,
-        agents,
+        (agents, profiles(cx)),
         folders,
         providers,
         tabs(cx),
@@ -355,8 +355,13 @@ async fn chat(cx: &Cx) -> Result<impl View> {
     let Ok((thread, turn)) = blocking(cx, move |hub| hub.thread(&id)).await else {
         return Err(not_found().into());
     };
+    let profile = profiles(cx).into_iter().find(|p| p.id() == thread.profile);
+    let label = match profile {
+        Some(p) => p.label,
+        None => thread.profile.clone(),
+    };
     let choices = logins(cx).choices(&thread.agent);
-    Ok(cooee_web::chat_page(cx, thread, turn, choices))
+    Ok(cooee_web::chat_page(cx, thread, turn, label, choices))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -443,6 +448,9 @@ struct New {
     /// The agent's provider account (none: its default).
     #[serde(default)]
     account: Option<String>,
+    /// The agent profile's id (none or empty: Plain, with `agent` and `account`).
+    #[serde(default)]
+    profile: Option<String>,
     /// The model and effort (#553 row 34; empty: the agent's default).
     #[serde(default)]
     model: String,
@@ -459,17 +467,38 @@ struct Created {
 #[route(POST "/threads")]
 async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     let logins = logins(cx);
+    let data = app_context::<Data>(cx);
+    let (data, config) = (data.0.clone(), data.1.clone());
     let id = blocking(cx, move |hub| {
-        let (account, env) = logins.home(&new.agent, new.account.as_deref())?;
-        let words = logins.picks(&new.agent, &new.model, &new.effort)?;
-        let launch = Launch {
-            account: &account,
-            env: env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path())),
-            model: &new.model,
-            effort: &new.effort,
-            words,
+        let (agent, folder, mut recipe) = match new.profile.as_deref().filter(|p| !p.is_empty()) {
+            None => {
+                let (account, launch) = logins.home(&new.agent, new.account.as_deref())?;
+                let recipe = Recipe {
+                    account,
+                    launch,
+                    ..Recipe::default()
+                };
+                (new.agent, new.folder, recipe)
+            }
+            Some(id) => {
+                let p =
+                    cooee_core::profiles::find(config.as_deref(), &data, id).map_err(refused)?;
+                let (account, launch, instructions) = logins.profile(&p, &data)?;
+                let recipe = Recipe {
+                    account,
+                    profile: p.id(),
+                    launch,
+                    instructions,
+                    ..Recipe::default()
+                };
+                (p.agent, p.folder.unwrap_or(new.folder), recipe)
+            }
         };
-        hub.create(&new.agent, &new.folder, &new.text, &new.random_id, &launch)
+        recipe
+            .launch
+            .pick(logins.picks(&agent, &new.model, &new.effort)?);
+        (recipe.model, recipe.effort) = (new.model, new.effort);
+        hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)
     })
     .await;
     Ok(Answer(id.map(|id| Created { id })))
@@ -845,8 +874,14 @@ async fn device_remove(cx: &Cx, Json(d): Json<DeviceId>) -> Result<Response> {
     }
 }
 
-/// The data folder.
-struct Data(PathBuf);
+/// The data folder, and the config's folder (its `profiles/`).
+struct Data(PathBuf, Option<PathBuf>);
+
+/// The agent profiles to pick from (Plain aside).
+fn profiles(cx: &Cx) -> Vec<cooee_core::Profile> {
+    let data = app_context::<Data>(cx);
+    cooee_core::profiles::list(data.1.as_deref(), &data.0)
+}
 
 path_param!(name);
 path_param!(rest);
@@ -1023,8 +1058,7 @@ fn improve(
     let agent = agents.first().ok_or_else(|| {
         HubError::Refused("No agents in shed: run cooee doctor on the Mac.".to_owned())
     })?;
-    let (account, env) = logins.home(&agent.id, None)?;
-    let env = env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path()));
+    let (account, launch) = logins.home(&agent.id, None)?;
     let ask = if text.trim().is_empty() {
         "Ask me what to change."
     } else {
@@ -1038,12 +1072,12 @@ fn improve(
         manifest.build
     );
     let rid = format!("improve-{name}-{}", now());
-    let launch = Launch {
-        account: &account,
-        env,
-        ..Launch::default()
+    let recipe = Recipe {
+        account,
+        launch,
+        ..Recipe::default()
     };
-    let thread = hub.start(&agent.id, &repo, &prompt, &rid, &launch)?;
+    let thread = hub.start(&agent.id, &repo, &prompt, &rid, &recipe)?;
     m.improving(name, Some(thread.clone())).map_err(refused)?;
     Ok(thread)
 }
@@ -1328,7 +1362,7 @@ async fn report(cx: &Cx, Json(r): Json<Report>) -> Result<Response> {
 pub fn router(
     hub: Arc<Hub>,
     (logins, manager): (Arc<Logins>, Arc<Manager>),
-    data: &std::path::Path,
+    (data, config): (&std::path::Path, Option<&std::path::Path>),
     bind: IpAddr,
     allowed_hosts: &[String],
     looks: cooee_web::Looks,
@@ -1407,7 +1441,7 @@ pub fn router(
         .app_context(Arc::new(Dots::default()))
         .app_context(logins)
         .app_context(manager)
-        .app_context(Data(data.to_owned()))
+        .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))
         .build()
 }
 
@@ -1448,7 +1482,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     let router = router(
         Arc::clone(&hub),
         (logins, Arc::clone(&manager)),
-        &data,
+        (&data, config.dir.as_deref()),
         config.bind,
         &config.allowed_hosts,
         looks,

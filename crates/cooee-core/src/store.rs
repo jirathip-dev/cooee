@@ -38,6 +38,9 @@ pub struct Thread {
     /// The provider account its agent runs with, as the header shows it (empty: no provider's agent).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub account: String,
+    /// Its agent profile's id (empty: Plain), fixed for its life.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub profile: String,
     /// The shed terminal's name.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub terminal: String,

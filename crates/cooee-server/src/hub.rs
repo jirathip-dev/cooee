@@ -12,8 +12,8 @@ use std::{
 };
 
 use cooee_core::{
-    Agent, Body, Card, Change, Chat, Item, Plugin, Queued, Shed, ShedError, Store, StoreError,
-    Summary, Thread, Turn, Workflow,
+    Agent, Body, Card, Change, Chat, Item, Launch, Plugin, Queued, Shed, ShedError, Store,
+    StoreError, Summary, Thread, Turn, Workflow,
     shed_proto::{self, ApprovalOption, Event, TerminalInfo},
 };
 use serde::{Deserialize, Serialize};
@@ -101,22 +101,6 @@ pub struct Slice {
     pub waiting: Option<Item>,
 }
 
-/// How a thread's agent starts: its account (as the header names it) and that account's folder (`env`), and the
-/// model and effort picked (#553 row 34) with the `words` that start it on them.
-#[derive(Debug, Default)]
-pub struct Launch<'a> {
-    /// The account's label.
-    pub account: &'a str,
-    /// The provider's variable and the account's folder.
-    pub env: Option<(&'a str, &'a Path)>,
-    /// The model (empty: the agent's default).
-    pub model: &'a str,
-    /// The effort (empty: the agent's default).
-    pub effort: &'a str,
-    /// The words for the model and effort (`Provider::picks`).
-    pub words: Vec<String>,
-}
-
 /// A plugin's card (`POST /plugin/card`, docs/plugins.md).
 #[derive(Debug, Deserialize)]
 pub struct CardSpec {
@@ -158,6 +142,24 @@ pub enum Resume {
     Replay(Vec<Out>),
     /// The cursor is from another run or too old.
     Reset,
+}
+
+/// How a thread starts besides its agent, folder and first message: its account's label, its agent profile's id
+/// (empty: Plain), what its agent runs with, and the instructions sent before the first message.
+#[derive(Debug, Default)]
+pub struct Recipe {
+    /// The account's label, as the header shows it.
+    pub account: String,
+    /// The profile's id.
+    pub profile: String,
+    /// The account's folder, the profile's settings, env and policy.
+    pub launch: Launch,
+    /// Sent ahead of the first message, which is stored alone.
+    pub instructions: String,
+    /// The model picked (#553 row 34; empty: the agent's default), its words in `launch`.
+    pub model: String,
+    /// The effort picked, as `model`.
+    pub effort: String,
 }
 
 /// The threads and the shed they run on.
@@ -556,7 +558,7 @@ impl Hub {
         }
         let next = live.meta.queue.remove(0);
         self.queued(live)?;
-        self.deliver(live, next).map(drop)
+        self.deliver(live, next, "").map(drop)
     }
 
     /// Saves the queue and tells the pages.
@@ -695,9 +697,9 @@ impl Hub {
         Ok(path)
     }
 
-    /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, with `account`'s
-    /// config folder in `env` (none: the system default), then sends `text`. Returns the thread's id. A retry with
-    /// the same `random_id` (after a timeout, or a crash) adopts the thread it started and never starts another.
+    /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, as `recipe` says, then
+    /// sends `text`. Returns the thread's id. A retry with the same `random_id` (after a timeout, or a crash) adopts
+    /// the thread it started and never starts another.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a folder outside the roots or an empty message; [`HubError::Shed`] when the
@@ -708,12 +710,12 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        launch: &Launch<'_>,
+        recipe: &Recipe,
     ) -> Result<String, HubError> {
         let Some(folder) = self.allowed(folder) else {
             return Err(outside(folder));
         };
-        self.start(agent, &folder, text, random_id, launch)
+        self.start(agent, &folder, text, random_id, recipe)
     }
 
     /// [`Hub::create`] in a folder of cooee's own (a plugin's checkout), not checked against the roots.
@@ -726,7 +728,22 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        launch: &Launch<'_>,
+        recipe: &Recipe,
+    ) -> Result<String, HubError> {
+        let started = self.start_in(agent, folder, (text, random_id), recipe);
+        // The adapter's shell removes it as it starts; a start that never got that far leaves nothing either.
+        if let Some((file, _)) = &recipe.launch.secrets {
+            let _ = fs::remove_file(file);
+        }
+        started
+    }
+
+    fn start_in(
+        &self,
+        agent: &str,
+        folder: &Path,
+        (text, random_id): (&str, &str),
+        recipe: &Recipe,
     ) -> Result<String, HubError> {
         self.shed.hello()?;
         if text.trim().is_empty() {
@@ -762,10 +779,11 @@ impl Hub {
                         title,
                         agent: agent.to_owned(),
                         folder: Some(folder.to_owned()),
-                        account: launch.account.to_owned(),
+                        account: recipe.account.clone(),
+                        profile: recipe.profile.clone(),
                         terminal: format!("cooee-{id}"),
-                        model: launch.model.to_owned(),
-                        effort: launch.effort.to_owned(),
+                        model: recipe.model.clone(),
+                        effort: recipe.effort.clone(),
                         random_id: random_id.to_owned(),
                         ..Thread::default()
                     };
@@ -785,13 +803,10 @@ impl Hub {
                 (format!("{LABEL}.thread"), id.clone()),
             ]);
             // A start that failed but came up anyway (a slow CLI) is kept, never started twice (herdsman#477).
-            if let Err(e) = self.shed.run_acp(
-                &terminal,
-                agent,
-                folder,
-                &labels,
-                (launch.env, &launch.words),
-            ) && self.shed.get(&terminal).is_err()
+            if let Err(e) = self
+                .shed
+                .run_acp(&terminal, agent, folder, &labels, &recipe.launch)
+                && self.shed.get(&terminal).is_err()
             {
                 lock(&self.threads).remove(&id);
                 self.store.remove(&id)?;
@@ -799,7 +814,7 @@ impl Hub {
             }
         }
         self.shed.ready(&terminal)?;
-        self.send(&id, text, random_id, &[])?;
+        self.send_after(&id, text, random_id, &[], &recipe.instructions)?;
         Ok(id)
     }
 
@@ -815,13 +830,25 @@ impl Hub {
         random_id: &str,
         files: &[Upload],
     ) -> Result<Item, HubError> {
+        self.send_after(id, text, random_id, files, "")
+    }
+
+    /// [`Hub::send`] with `before` (a profile's instructions) ahead of the text for the agent; only the text is stored.
+    fn send_after(
+        &self,
+        id: &str,
+        text: &str,
+        random_id: &str,
+        files: &[Upload],
+        before: &str,
+    ) -> Result<Item, HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
         if let Some(item) = Self::sent(&live, random_id) {
             return Ok(item);
         }
         let q = self.take(&live, text, random_id, files)?;
-        self.deliver(&mut live, q)
+        self.deliver(&mut live, q, before)
     }
 
     /// The stored message `random_id`, if it was sent.
@@ -872,9 +899,13 @@ impl Hub {
         })
     }
 
-    /// Sends `q` to the agent, then stores and publishes it.
-    fn deliver(&self, live: &mut Live, q: Queued) -> Result<Item, HubError> {
-        let mut prompt = q.text.clone();
+    /// Sends `q` to the agent, `before` ahead of it, then stores and publishes it.
+    fn deliver(&self, live: &mut Live, q: Queued, before: &str) -> Result<Item, HubError> {
+        let mut prompt = if before.trim().is_empty() {
+            q.text.clone()
+        } else {
+            format!("{}\n\n{}", before.trim_end(), q.text)
+        };
         if !q.files.is_empty() {
             prompt.push_str("\n\nAttached files:");
             for name in &q.files {
@@ -939,7 +970,7 @@ impl Hub {
         let q = live.meta.queue.remove(at);
         self.queued(&mut live)?;
         if now {
-            self.deliver(&mut live, q)?;
+            self.deliver(&mut live, q, "")?;
         }
         Ok(live.meta.queue.clone())
     }
@@ -1260,6 +1291,7 @@ impl Hub {
                     id: live.meta.id.clone(),
                     title: live.meta.title.clone(),
                     agent: live.meta.agent.clone(),
+                    profile: live.meta.profile.clone(),
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     state: live.chat.turn.state.clone(),
                     last: waiting.unwrap_or_else(|| {
