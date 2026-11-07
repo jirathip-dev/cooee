@@ -19,20 +19,20 @@ Row numbers are #553's.
 | 12 | Appearance per phone: theme, colours, pixel or ascii | built (#21, rows 1–14 PR) | look.ts sprites on, ascii or off | — |
 | 13 | Settings sheet: section index, deep links, alert dot | built (#21, rows 1–14 PR) | look.ts Settings index, `#settings/<section>`, ⚙ dot | — |
 | 14 | Report mode | built (#21, rows 1–14 PR) | chat.ts `reportMode()`, `POST /report`, `cooee reports` | — |
-| 15 | Thread list per repo: unread dot, state, last line, badge | partial | `web/src/lib.rs` `row` and `threads` (folder cards, ● unread, state, last line) | unread badge; live updates |
-| 16 | Start by typing; auto title; retitle | partial | new-thread form (`web/src/lib.rs` `threads`), title from the first text (`cooee-server/src/hub.rs:370`) | retitle |
-| 17 | Swipe to archive, 5 s undo, restore | missing | only close (`cooee-server/src/lib.rs:419`) | archive, undo, restore, archived list |
-| 18 | Message blocks: colours, markdown, system lines, folded tool runs | partial | `web/ts/chat.ts` `fill()` (you/agent/tool/plan/system rows) | markdown (text is plain); folding runs of tools |
-| 19 | Fenced code blocks with copy | missing | — | code blocks and [copy] |
-| 20 | Several attachments, thumbnails, image viewer | missing | — | files on send, storage, `GET` by name, viewer |
-| 21 | Instant send: sending…/✓, red retry | done | `web/ts/chat.ts` `deliver()` (sending → sent, failed · tap to retry) | — |
-| 22 | Growing composer, pinned send, follow-scroll | partial | follow-scroll (`chat.ts` `stuck` + ResizeObserver) | the box growing to 6 lines then scrolling |
-| 23 | iOS keyboard: composer on the keyboard, page never jumps | partial | `interactive-widget=resizes-content` (`web/src/lib.rs:190`), anchor kept on resize (`chat.ts`) | unverified in the Home Screen app; visualViewport fallback |
-| 24 | Back button, edge swipe, side-by-side ≥1000 px | partial | ‹ back link (`web/src/lib.rs` `chat`) | edge swipe; list + chat side by side |
-| 25 | Working pill with timer and [stop]; reconnecting/offline | partial | `#pill` with timer and stop (`web/src/lib.rs` `chat`, `chat.ts` `setState`) | "stopping…"; reconnecting/offline states |
-| 26 | Queue or steer during a turn; edit/remove queued | missing | — | queue, steer, unqueue |
-| 27 | Per-thread drafts, picked files included | partial | IndexedDB draft per thread (`chat.ts` `draft`) | picked files (after row 20) |
-| 28 | Long-press menu: copy, copy as markdown, quote | missing | — | the menu |
+| 15 | Thread list per repo: unread dot, state, last line, badge | built (#43) | `web/src/lib.rs` `row` (● and the unseen count's badge), `chat.ts` `cardsNow` every 5 s, the app badge | — |
+| 16 | Start by typing; auto title; retitle | built (#43) | title from the first line (`hub.rs` `start`); the thread bar's title opens rename (`POST /threads/{id}/title`) | — |
+| 17 | Swipe to archive, 5 s undo, restore | built (#43) | `chat.ts` swipe on a row, the toast's [undo]; the archived list with [restore] (`POST /threads/{id}/archive`) | — |
+| 18 | Message blocks: colours, markdown, system lines, folded tool runs | built (#43) | `web/ts/md.ts` (agent text only; settled blocks while streaming); `chat.ts` `fold()`, `▸ N commands` | — |
+| 19 | Fenced code blocks with copy | built (#43) | `md.ts` `code` (language, [copy] on chat.ts's data-copy) | — |
+| 20 | Several attachments, thumbnails, image viewer | built (#43) | 📎 in the composer, `files` on send (`<data>/files/<thread>/`), `GET /threads/{id}/files/{name}`, the viewer popover (back closes it) | — |
+| 21 | Instant send: sending…/✓, red retry | built (#43) | `chat.ts` `deliver()` (sending… → ✓, not sent · [retry]; kept through a reload of the slice) | — |
+| 22 | Growing composer, pinned send, follow-scroll | built (#43) | `chat.ts` `grow()` to 6 lines (`#box` max-height), then it scrolls | — |
+| 23 | iOS keyboard: composer on the keyboard, page never jumps | built (#43) | `chat.ts` sets `--vvh` from `visualViewport` (`.chat` height), the page kept at the top | owner's check in the Home Screen app |
+| 24 | Back button, edge swipe, side-by-side ≥1000 px | moved to #48 | ‹ back link (`web/src/lib.rs` `chat`) | #48 |
+| 25 | Working pill with timer and [stop]; reconnecting/offline | built (#43) | [stop] says stopping… until the turn stops; `#net` says reconnecting… or offline | — |
+| 26 | Queue or steer during a turn; edit/remove queued | built (#43) | `POST /threads/{id}/queue`, `/steer`, `/unqueue`; the server sends the next as a turn ends (`hub.rs` `drain`) | — |
+| 27 | Per-thread drafts, picked files included | built (#43) | the IndexedDB draft keeps the picked files | — |
+| 28 | Long-press menu: copy, copy as markdown, quote | built (#43) | `#menu` popover on a long press or right click | — |
 | 29 | Sticky thread header; older messages on scroll | done | `.th` above the scrolling list; slices by id with preload (`chat.ts` `load`, `preload`) | — |
 | 30 | Choice rows, "other" box, answered ✓ line | built (#44) | chat.ts `choices()`: recommended first, an "other" box on plugin cards; the ✓ line has `by` (the device) and when (hub `approve`) | — |
 | 31 | Conductor-answered asks keep [change] 30 min | built (#44) | `/plugin/card` `answered`/`by`: [change] until `until` (core `Chat::tap`) | — |
@@ -43,3 +43,6 @@ Row numbers are #553's.
 
 Totals at `51f92e8`: 4 done (9, 11, 21, 29), 18 partial, 13 missing. The rows 1–14 PR builds 1–8, 10 and 12–14
 (9 and 11 were done); rows 15–29 and 30–35 follow as cooee#43 and cooee#44.
+
+Rows 15–29 (but 24, moved to #48) are built in cooee#43; its tests are `web/e2e/parity-threads.spec.mjs` (a 390 px shot per row
+in `docs/screens/43`), `web/e2e/md.spec.mjs` and `crates/cooee/tests/threads.rs`.

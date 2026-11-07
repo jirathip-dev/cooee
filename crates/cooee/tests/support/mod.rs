@@ -601,6 +601,22 @@ impl FakeShed {
         let read = "Read src/lib.rs";
         Some(if prompt.contains("approve") {
             self.approval(name, rx)
+        } else if prompt.contains("markdown") {
+            // Streamed a line at a time, then the whole reply.
+            let mut events: Vec<EventKind> = MARKDOWN.split_inclusive('\n').map(text).collect();
+            events.push(reply(MARKDOWN, "end_turn"));
+            (events, "end_turn")
+        } else if prompt.contains("commands") {
+            let mut events = Vec::new();
+            for (id, title) in [
+                ("k1", "$ cargo fmt"),
+                ("k2", "$ cargo clippy"),
+                ("k3", "$ cargo test"),
+            ] {
+                events.extend([tool(id, title, "in_progress"), tool(id, title, "completed")]);
+            }
+            events.push(reply("Ran 3 commands.", "end_turn"));
+            (events, "end_turn")
         } else if prompt.contains("tool") {
             let events = [
                 tool("c1", read, "pending"),
@@ -640,6 +656,8 @@ impl FakeShed {
                 while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
             }
             (vec![reply(&format!("streamed {n} words"), stop)], stop)
+        } else if let Some(said) = prompt.strip_prefix("echo ") {
+            (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("exit") {
             self.shared.lock().unwrap().stopped.insert(name.to_owned());
             self.emit(name, EventKind::Exited { code: Some(1) });
@@ -689,6 +707,29 @@ impl FakeShed {
         )
     }
 }
+
+/// The `markdown` turn's reply: a heading, inline marks, a link, a 3-column table, a fenced block, a list and raw
+/// HTML (which stays text).
+pub const MARKDOWN: &str = "## Build report
+
+The **build** passed on *staging*: see [the run](https://example.com/run/1) and `cargo test`.
+
+| crate | tests | time |
+|---|---:|---|
+| cooee-core | 42 | 1.2 s |
+| cooee-server | 17 | 3.4 s |
+
+```rust
+fn main() {
+    println!(\"hello\");
+}
+```
+
+- fmt is clean
+- clippy is clean
+
+<script>alert(1)</script>
+";
 
 fn text(t: &str) -> EventKind {
     EventKind::Text { text: t.to_owned() }

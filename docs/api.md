@@ -9,7 +9,7 @@ A failure is a status ≥ 400. When the body is cooee's own sentence, the answer
 
 ```ts
 type Item = { id: number; at: number; seq?: number } & (
-  | { kind: "you"; text: string; random_id: string }
+  | { kind: "you"; text: string; random_id: string; files?: string[] }
   | { kind: "agent"; text: string; stop_reason: string }
   | { kind: "tool"; call: string; title: string; status: string; ended?: number }
   | { kind: "approval"; tool: string; options: { id: string; name: string; kind: string }[]; tapped?: string; chosen?: string; plugin?: string;
@@ -20,19 +20,28 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "ended"; text: string }
 );
 type Turn = { text: string; state: "working" | "blocked" | "done" | "error" | "ended" | ""; note?: string };
+type Queued = { text: string; random_id: string; files?: string[] };
+type Row = { id; title; agent; folder; state; last; at; unread: boolean; unseen: number; archived: boolean };
+type File = { name: string; data: string }; // data: the bytes in base64
 ```
 
 ## Threads
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | the thread list's cards under the device's chip, `{folder, rows: Row[], done?: Row[]}[]`; `Row` is `{id, title, agent, account, folder, state, last, at, unread, workflow?: {source, group, item, role, round, url}}` (`folder`: `~/…` under home; `agent`: its provider's name, never the agent's id; a Workflow source's card has `done`, its finished sessions, and `folder` is the source) |
+| `GET /threads` | | the thread list under the device's chip: `{cards: {folder, rows: Row[], done?: Row[]}[], archived: Row[]}`; `Row` is `{id, title, agent, account, folder, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}}` (`folder`: `~/…` under home; `agent`: its provider's name, never the agent's id; `unseen`: the agent's items past the read mark; a Workflow source's card has `done`, its finished sessions, and `folder` is the source) |
 | `POST /list` | a form: `list` (`all`, `chats` or `workflow`) | 303 to `/`, keeping the chip in the `cooee-list` cookie |
 | `POST /threads` | `{agent, account?, model?, effort?, folder?, text, random_id, background?}` | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
 | `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
-| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, waiting: Item \| null, pending?: {text, random_id}}` (`waiting`: the oldest config card that waits; `pending`: the first message while the thread connects) |
+| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, queue: Queued[], waiting: Item \| null, pending?: {text, random_id}}` (`waiting`: the oldest config card that waits; `pending`: the first message while the thread connects) |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |
-| `POST /threads/{id}/send` | `{text, random_id}` (a retry with the same id is stored once) | `Item` |
+| `POST /threads/{id}/send` | `{text, random_id, files?: File[]}` (a retry with the same id is stored once; the agent gets the files' paths under the text) | `Item` |
+| `POST /threads/{id}/queue` | as `send`: held until the turn in progress ends, then sent (between turns: at once) | `Queued[]` |
+| `POST /threads/{id}/steer` | `{random_id}`: a queued message sent into the turn now | `Queued[]` |
+| `POST /threads/{id}/unqueue` | `{random_id}`: a queued message taken back | `Queued[]` |
+| `GET /threads/{id}/files/{name}` | | a file sent in the thread: images as themselves, anything else as a download (`sandbox`, `nosniff`) |
+| `POST /threads/{id}/title` | `{title}` | `null` |
+| `POST /threads/{id}/archive` | `{on}`: archive it, or restore it | `null` |
 | `POST /threads/{id}/approve` | `{item, option, value?}` (a plugin card's option may be free text; `value`: a secret card's, sent to its plugin only) | `Item` or `null` |
 | `POST /threads/{id}/model` | `{model, effort}` (`""`: the default; only what its provider offers) | the `note` it adds |
 | `POST /threads/{id}/cancel` | `{}` | `null` |
@@ -40,7 +49,7 @@ type Turn = { text: string; state: "working" | "blocked" | "done" | "error" | "e
 | `POST /threads/{id}/read` | `{item}`: read up to this id | `null` |
 
 The event stream's events, each with an id `<boot>.<seq>` to resume after: `item` (an `Item`, new or changed), `text`
-(`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), and `reset` (`{}`: too far behind or
+(`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), `queue` (the `Queued[]` now), and `reset` (`{}`: too far behind or
 another run; load the newest slice again).
 
 ## Folders

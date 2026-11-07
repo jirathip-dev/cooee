@@ -146,7 +146,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     assert_eq!(s.shed.sent(&terminal), ["\x1e{\"prompt\":\"hi\"}\n"]);
     let chat = s.cooee.get(&format!("/t/{id}")).1;
     assert!(
-        chat.contains("<i class=\"dt\"></i>fake · main login · "),
+        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>fake · main login · "),
         "{chat}"
     );
 
@@ -189,7 +189,10 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let items = s.cooee.json(&format!("/threads/{id}/messages"));
     assert_eq!(items["items"][0]["text"], "hi", "{items}");
     let chat = s.cooee.get(&format!("/t/{id}")).1;
-    assert!(chat.contains("<i class=\"dt\"></i>Coder · "), "{chat}");
+    assert!(
+        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Coder · "),
+        "{chat}"
+    );
     // The folder's last-used profile is picked next time it is picked; scratch (no folder) stays on Plain.
     let root = format!(
         r#"value="{}" data-last="p:coder""#,
@@ -208,7 +211,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     );
     assert_eq!(s.shed.cli_log().matches(" run ").count(), runs);
     assert_eq!(
-        s.cooee.json("/threads").as_array().unwrap().len(),
+        s.cooee.json("/threads")["cards"].as_array().unwrap().len(),
         1,
         "one card, two threads"
     );
@@ -284,7 +287,7 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
         s.cooee
             .get(&format!("/t/{id}"))
             .1
-            .contains("<i class=\"dt\"></i>Conductor · ")
+            .contains("<i class=\"dt\"></i><span id=\"net\"></span>Conductor · ")
     );
 
     s.cooee.cli(&["plugin", "remove", "plug"]);

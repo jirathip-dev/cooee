@@ -33,7 +33,7 @@ details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute
 .hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;color:var(--mute)}.hn code{font-family:var(--mono);color:var(--fg);overflow-wrap:anywhere}
 .nf input,textarea,.lgf input{font:16px/1.4 var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:44px}
 .nc:has(input[name=pick][data-folder]:checked) #chip-folder{display:none}
-.chat{display:flex;flex-direction:column;height:100dvh;max-width:100ch;margin:0 auto}
+.chat{display:flex;flex-direction:column;height:var(--vvh,100dvh);max-width:100ch;margin:0 auto}
 .th{display:flex;align-items:center;gap:4px;min-height:52px;padding:0 4px;background:var(--card);border-bottom:1px solid var(--edge)}
 .th .bk{color:var(--link)}
 .tb{display:flex;flex-direction:column;min-width:0;flex:1}.tb h1,.tb .ds{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
@@ -42,7 +42,6 @@ details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute
 .tc{position:relative;overflow-anchor:none;flex:1;overflow-y:auto;list-style:none;margin:0;padding:12px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
 .tc.skeleton{background:repeating-linear-gradient(var(--bg) 0 56px,var(--card) 56px 64px)}
 .blk{max-width:100%;overflow-wrap:anywhere}
-.md{white-space:pre-wrap}
 .blk.me{align-self:flex-end;max-width:85%;padding:8px 12px;background:color-mix(in srgb,var(--l) 14%,var(--card));border:1px solid var(--edge);border-radius:var(--r-me)}
 .blk.me .ct{display:block;text-align:right;color:var(--fg)}
 .blk.me.sending{opacity:.6}.blk.me.failed{border-color:var(--r)}
@@ -72,7 +71,7 @@ details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute
 .te{align-self:center;display:flex;flex-wrap:wrap;align-items:center;gap:0 1ch;font-size:var(--fs-meta);color:var(--mute)}
 .tw{position:relative;display:flex;align-items:flex-end;gap:8px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--edge)}
 .tw textarea,.tw input{flex:1;min-width:0;resize:none}
-.pill{position:absolute;bottom:100%;left:50%;transform:translate(-50%,-8px);display:flex;align-items:center;gap:1ch;padding:4px 4px 4px 12px;background:var(--card);border:1px solid var(--edge);border-radius:var(--r-pill);color:var(--mute);white-space:nowrap}
+.cmp{position:relative}.pill{position:absolute;bottom:100%;left:50%;transform:translate(-50%,-8px);display:flex;align-items:center;gap:1ch;padding:4px 4px 4px 12px;background:var(--card);border:1px solid var(--edge);border-radius:var(--r-pill);color:var(--mute);white-space:nowrap}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media (max-width:599px){.bar{flex-wrap:wrap}.tabs{order:9;flex-basis:100%}}
 .tabs{display:flex;gap:4px}.tabs a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 10px;border-radius:999px;color:var(--fg);text-decoration:none}.tabs a.on{background:var(--bg);font-weight:600}.tabs .dot{color:var(--r);font-style:normal;font-size:.7em;margin-left:4px}
@@ -140,9 +139,9 @@ details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute
 /* Terminal: herdsman's look. Monospace 13 / 11 px, [bracket] keys 28 px high (a ≥ 44 px tap), 6 px radii, blocks as
    cards with a coloured bar on their left, folder cards with a bar on top, the current key of a row filled. */
 html[data-style=terminal]{--fs:13px;--fs-meta:11px;--fs-key:13px;--ctl:28px;--r-card:6px;--r-row:6px;--r-pill:6px;--r-me:6px;--font:var(--mono)}
-html[data-style=terminal] button:not(.pick,.sr){position:relative;background:none;color:var(--l);font-weight:400;padding:0 1ch;box-shadow:none;text-transform:lowercase}
-html[data-style=terminal] button:not(.pick,.sr,.seg button)::before{content:"["}
-html[data-style=terminal] button:not(.pick,.sr,.seg button)::after{content:"]"}
+html[data-style=terminal] button:not(.pick,.sr,.ttl){position:relative;background:none;color:var(--l);font-weight:400;padding:0 1ch;box-shadow:none;text-transform:lowercase}
+html[data-style=terminal] button:not(.pick,.sr,.ttl,.seg button)::before{content:"["}
+html[data-style=terminal] button:not(.pick,.sr,.ttl,.seg button)::after{content:"]"}
 html[data-style=terminal] .gl{color:var(--l)}
 html[data-style=terminal] .gl:not(button)::before{content:"["}html[data-style=terminal] .gl:not(button)::after{content:"]"}
 html[data-style=terminal] .bar,html[data-style=terminal] .th,html[data-style=terminal] .tw{background:var(--bg);border-color:var(--line)}
@@ -229,7 +228,7 @@ html[data-style=terminal]{--r-ctl:6px}
 html[data-style=terminal] .sec,html[data-style=terminal] .chip{background:none;box-shadow:none}
 
 /* The shell: the header across the top, then the page. */
-body.app{display:flex;flex-direction:column;height:100dvh}
+body.app{display:flex;flex-direction:column;height:var(--vvh,100dvh)}
 .app>.bar{flex:none}
 .shell{flex:1;min-height:0;display:flex}
 .shell>main{flex:1;min-width:0;height:auto}
@@ -240,7 +239,7 @@ body.app{display:flex;flex-direction:column;height:100dvh}
    the column's upper third. */
 .nt{display:flex;flex-direction:column;height:100dvh;max-width:100ch;margin:0 auto}
 .ntsp{flex:1}.nt .nc~.ntsp{display:none}
-.nc{flex-wrap:wrap;align-items:center}
+.nc{flex-wrap:wrap;align-items:center}#composer.nc{align-items:flex-end}
 .nc>.hn,.nc>.err{flex-basis:100%}
 .chips{display:flex;gap:8px;flex-basis:100%;min-width:0}
 .chip{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:max-content;flex:0 1 auto;padding:0 12px;border:0;background:var(--bg);color:var(--fg);font-weight:400;box-shadow:inset 0 0 0 1px var(--edge)}
@@ -301,6 +300,49 @@ html[data-style=terminal] .cfl{border:0;border-left:3px solid var(--r);border-ra
 html[data-style=terminal] .ptg{min-width:7ch;padding:0;background:none;color:var(--p);text-align:left}
 .acr.add .sk,.acr.ni .sk{color:var(--mute)}
 .sh .hd.pvh{padding-left:4px}
+/* #43, herdsman#553 rows 15–29. The list: a row's unread badge, a swipe's slide, the archived threads. */
+.bd{display:inline-block;margin-left:6px;padding:0 6px;border-radius:var(--r-pill);background:var(--link);color:var(--bg);font-size:11px;font-weight:700;line-height:1.5}
+.fc a.tr{transition:transform .15s}
+.arc>summary{padding:0}.arw{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:var(--hit);border-top:1px solid var(--line)}.arw a{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.arw .cn,.qc button{min-height:36px;padding:0 12px;background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
+#toast button{min-height:28px;margin-left:8px;padding:0 10px}
+/* The thread bar's title renames it; the rename box. */
+.th .ttl{display:block;max-width:100%;min-height:0;padding:0;background:none;color:var(--fg);font-weight:600;text-align:left;border-radius:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.rt{display:none;gap:8px;width:min(92vw,420px);margin:auto;padding:12px;color:var(--fg);background:var(--card);border:1px solid var(--edge);border-radius:var(--r-card)}.rt:popover-open{display:flex}
+.rt input{flex:1;min-width:0;font:16px var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:var(--hit)}
+/* Markdown in a reply (md.ts): tables and code scroll sideways inside the message, never widening the page. */
+.pl,.md .tl{white-space:pre-wrap}
+.md>:first-child{margin-top:0}.md>:last-child{margin-bottom:0}
+.md :is(p,ul,ol,blockquote,h1,h2,h3,h4,h5,h6,.tbl,.cb){margin:0 0 8px}
+.md :is(h1,h2,h3,h4,h5,h6){font-size:1em;font-weight:700}.md h1{font-size:1.2em}.md h2{font-size:1.1em}
+.md :is(ul,ol){padding-left:1.4em}
+.md blockquote{padding-left:10px;border-left:3px solid var(--edge);color:var(--mute)}
+.md code{font:.92em var(--mono);padding:0 3px;background:var(--bg);border-radius:4px}
+.md hr{border:0;border-top:1px solid var(--edge)}
+.tbl{max-width:100%;overflow-x:auto}
+.md table{border-collapse:collapse;overflow-wrap:normal}.md :is(th,td){padding:4px 8px;border:1px solid var(--edge);text-align:left;white-space:nowrap}
+.cb{background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row)}
+.cbh{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px 0 10px;font-size:var(--fs-meta);color:var(--mute);border-bottom:1px solid var(--line)}
+.cbh .cp{min-height:28px;padding:0 10px;background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
+.cb pre{margin:0;padding:8px 10px;overflow-x:auto}.cb code{display:block;padding:0;background:none;white-space:pre;overflow-wrap:normal}
+/* A run of tool calls folded under one row; files on a message, the picked ones, the viewer. */
+.fold{align-self:flex-start}.fold button{min-height:var(--hit);padding:0 12px;background:none;color:var(--mute);font:13px var(--mono)}
+.tc>.fd{display:none}
+.fis{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.fi img{display:block;width:72px;height:72px;object-fit:cover;border-radius:8px}
+.fi:not(.im){display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 8px;border:1px solid var(--edge);border-radius:var(--r-row);overflow-wrap:anywhere}
+#picked{margin:0;padding:8px 12px 0;background:var(--card);border-top:1px solid var(--edge)}
+.fpk{position:relative}.fpk button{position:absolute;top:-6px;right:-6px;width:24px;min-height:24px;padding:0;border-radius:50%}.fpk:not(:has(img)) button{position:static}
+.att{flex:none;cursor:pointer}
+#box{max-height:calc(6lh + 18px);overflow-y:auto}
+.vw{display:none;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#000e;align-items:center;justify-content:center}.vw:popover-open{display:flex}
+.vw img{max-width:100%;max-height:100%;object-fit:contain}
+/* Queued messages above the composer; the long-press menu. */
+.qu{list-style:none;margin:0;padding:6px 12px;display:flex;flex-direction:column;gap:6px;background:var(--card);border-top:1px solid var(--edge)}
+.qc{display:flex;align-items:center;gap:8px}.qt{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--mute)}
+.blk.me,.blk.ai{-webkit-touch-callout:none}
+.mn{display:none;position:fixed;inset:auto;margin:0;padding:4px;flex-direction:column;min-width:200px;color:var(--fg);background:var(--card);border:1px solid var(--edge);border-radius:var(--r-row);box-shadow:0 8px 32px #0006}.mn:popover-open{display:flex}
+.mn button{min-height:var(--hit);background:none;color:var(--fg);font-weight:400;text-align:left;border-radius:var(--r-row)}
 /* #34 Scene: the thread list as the theme's scene (herdsman's Herd): a page per folder, swiped sideways (scroll-snap),
    its dots on top; each page the scene's strip, the folder's bar, then each session's 132 × 100 sprite in a 156 px slot
    with its name card. The pasture (--pa) and the cards' colours are herdsman's, so they read on any scheme. */
