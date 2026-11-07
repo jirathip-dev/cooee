@@ -34,6 +34,9 @@ pub enum Body {
         text: String,
         /// The page's id for the send, so a retried send is stored once.
         random_id: String,
+        /// The files sent with it, by their stored names (`GET /threads/<id>/files/<name>`).
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        files: Vec<String>,
     },
     /// The agent's whole reply to a turn.
     Agent {
@@ -158,6 +161,10 @@ pub struct Summary {
     pub at: u64,
     /// Whether it has items the owner hasn't seen.
     pub unread: bool,
+    /// How many: the agent's items past the owner's read mark (the row's badge).
+    pub unseen: usize,
+    /// Archived: listed apart until restored.
+    pub archived: bool,
     /// A session a tool started (#33): its labels.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow: Option<crate::Workflow>,
@@ -276,11 +283,12 @@ impl Chat {
     /// Applies shed event `seq` of this thread's terminal at time `at`.
     pub fn apply(&mut self, at: u64, seq: u64, event: EventKind) -> Vec<Change> {
         match event {
-            // Not shown: the start, resources and the agent's mode; the prompt is stored when it is sent.
+            // Not shown: the start, resources, the agent's mode and session; the prompt is stored when it is sent.
             EventKind::Started
             | EventKind::Resources(_)
             | EventKind::Mode { .. }
-            | EventKind::Turn { .. } => Vec::new(),
+            | EventKind::Turn { .. }
+            | EventKind::Session(_) => Vec::new(),
             EventKind::State(r) => vec![self.state(&r.state, r.note)],
             EventKind::Text { text } => {
                 self.turn.text.push_str(&text);
@@ -515,6 +523,7 @@ mod tests {
             body: Body::You {
                 text: text.to_owned(),
                 random_id: "r".to_owned(),
+                files: Vec::new(),
             },
         };
         let chat = Chat::from_versions((0..5).map(|i| you(&format!("v{i}"))).collect());

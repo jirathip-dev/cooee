@@ -540,7 +540,10 @@ fn row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale() {
             .flat_map(|c| c["rows"].as_array().unwrap().clone());
         rows.into_iter().find(|r| r["id"] == id).unwrap()
     };
-    assert_eq!(row(&s.cooee.json("/threads"))["last"], "config c1 waiting");
+    assert_eq!(
+        row(&s.cooee.json("/threads")["cards"])["last"],
+        "config c1 waiting"
+    );
 
     let line = "config c1 applied by owner, backup kept, doctor ✓";
     *s.a.choice.lock().unwrap() = Some((200, json!({ "line": line })));

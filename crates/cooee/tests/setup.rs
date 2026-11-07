@@ -16,7 +16,7 @@ use std::{
 use support::{FakeShed, scratch, version};
 
 const BIN: &str = env!("CARGO_BIN_EXE_cooee");
-const REV: &str = "1956535985c2d778a70b53a051cf25b4ee598300";
+const REV: &str = "f026a4d35a2705e560a52515da8e3a5d32e4d659";
 
 const FAKES: &[(&str, &str)] = &[
     (
@@ -176,6 +176,26 @@ fn files(dir: &Path) -> Vec<String> {
     all
 }
 
+/// The owner's terminal plugin (#28) as setup adds it for an instance on `port`: port + 1000, with the 64 hex digit
+/// token written in `config`.
+fn terminal(port: u16, config: &str) -> String {
+    let token = config
+        .rsplit_once("token = \"")
+        .unwrap()
+        .1
+        .split('"')
+        .next()
+        .unwrap();
+    assert!(
+        token.len() == 64 && token.bytes().all(|b| b.is_ascii_hexdigit()),
+        "{token}"
+    );
+    format!(
+        "\n[[plugins]]\nname = \"terminal\"\nlabel = \"Terminal\"\nurl = \"http://127.0.0.1:{}\"\nmodule = \"/tab.js\"\ntoken = \"{token}\"\n",
+        port + 1000
+    )
+}
+
 #[test]
 fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
     let mac = Mac::new("su-fresh", false);
@@ -203,10 +223,12 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
             format!("tailscale serve --bg --https={port} http://127.0.0.1:{port}"),
         ]
     );
+    let config = fs::read_to_string(mac.config()).unwrap();
     assert_eq!(
-        fs::read_to_string(mac.config()).unwrap(),
+        config,
         format!(
-            "port = {port}\nallowed_hosts = [\"mac.tailnet.example\"]\nroots = [\"~/Projects\"]\n"
+            "port = {port}\nallowed_hosts = [\"mac.tailnet.example\"]\nroots = [\"~/Projects\"]\n{}",
+            terminal(port, &config)
         )
     );
     assert!(
@@ -227,7 +249,7 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
     assert!(out.status.success(), "{out:?}");
     assert_eq!(mac.changes(), Vec::<String>::new());
     for step in [
-        "shed 1956535",
+        "shed f026a4d",
         "shed service dev.shed.serve",
         &format!("config {}", mac.config().display()),
         "agents",
@@ -308,12 +330,14 @@ fn an_existing_config_keeps_its_keys() {
     let out = mac.setup(&["--yes"]);
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{out:?}");
+    let config = fs::read_to_string(mac.config()).unwrap();
+    let old = format!("{old}{}", terminal(mac.port, &config));
     assert_eq!(
-        fs::read_to_string(mac.config()).unwrap(),
+        config,
         format!("allowed_hosts = [\"mac.tailnet.example\"]\n{old}")
     );
     assert!(
-        stdout.contains("note: kept its keys; adding allowed_hosts"),
+        stdout.contains("adding allowed_hosts = [\"mac.tailnet.example\"], the terminal plugin\n"),
         "{stdout}"
     );
 

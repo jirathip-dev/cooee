@@ -9,7 +9,7 @@ A failure is a status ≥ 400. When the body is cooee's own sentence, the answer
 
 ```ts
 type Item = { id: number; at: number; seq?: number } & (
-  | { kind: "you"; text: string; random_id: string }
+  | { kind: "you"; text: string; random_id: string; files?: string[] }
   | { kind: "agent"; text: string; stop_reason: string }
   | { kind: "tool"; call: string; title: string; status: string; ended?: number }
   | { kind: "approval"; tool: string; options: { id: string; name: string; kind: string }[]; tapped?: string; chosen?: string; plugin?: string;
@@ -20,18 +20,27 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "ended"; text: string }
 );
 type Turn = { text: string; state: "working" | "blocked" | "done" | "error" | "ended" | ""; note?: string };
+type Queued = { text: string; random_id: string; files?: string[] };
+type Row = { id; title; agent; folder; state; last; at; unread: boolean; unseen: number; archived: boolean };
+type File = { name: string; data: string }; // data: the bytes in base64
 ```
 
 ## Threads
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | the thread list's cards under the device's chip, `{folder, rows: Row[], done?: Row[]}[]`; `Row` is `{id, title, agent, folder, state, last, at, unread, workflow?: {source, group, item, role, round, url}}` (`folder`: `~/…` under home; a Workflow source's card has `done`, its finished sessions, and `folder` is the source) |
+| `GET /threads` | | the thread list under the device's chip: `{cards: {folder, rows: Row[], done?: Row[]}[], archived: Row[]}`; `Row` is `{id, title, agent, folder, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}}` (`folder`: `~/…` under home; `unseen`: the agent's items past the read mark; a Workflow source's card has `done`, its finished sessions, and `folder` is the source) |
 | `POST /list` | a form: `list` (`all`, `chats` or `workflow`) | 303 to `/`, keeping the chip in the `cooee-list` cookie |
 | `POST /threads` | `{agent, account?, model?, effort?, folder, text, random_id}` | `{id}` |
-| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, waiting: Item \| null}` (`waiting`: the oldest config card that waits) |
+| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, queue: Queued[], waiting: Item \| null}` (`waiting`: the oldest config card that waits) |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |
-| `POST /threads/{id}/send` | `{text, random_id}` (a retry with the same id is stored once) | `Item` |
+| `POST /threads/{id}/send` | `{text, random_id, files?: File[]}` (a retry with the same id is stored once; the agent gets the files' paths under the text) | `Item` |
+| `POST /threads/{id}/queue` | as `send`: held until the turn in progress ends, then sent (between turns: at once) | `Queued[]` |
+| `POST /threads/{id}/steer` | `{random_id}`: a queued message sent into the turn now | `Queued[]` |
+| `POST /threads/{id}/unqueue` | `{random_id}`: a queued message taken back | `Queued[]` |
+| `GET /threads/{id}/files/{name}` | | a file sent in the thread: images as themselves, anything else as a download (`sandbox`, `nosniff`) |
+| `POST /threads/{id}/title` | `{title}` | `null` |
+| `POST /threads/{id}/archive` | `{on}`: archive it, or restore it | `null` |
 | `POST /threads/{id}/approve` | `{item, option, value?}` (a plugin card's option may be free text; `value`: a secret card's, sent to its plugin only) | `Item` or `null` |
 | `POST /threads/{id}/model` | `{model, effort}` (`""`: the default; only what its provider offers) | the `note` it adds |
 | `POST /threads/{id}/cancel` | `{}` | `null` |
@@ -39,7 +48,7 @@ type Turn = { text: string; state: "working" | "blocked" | "done" | "error" | "e
 | `POST /threads/{id}/read` | `{item}`: read up to this id | `null` |
 
 The event stream's events, each with an id `<boot>.<seq>` to resume after: `item` (an `Item`, new or changed), `text`
-(`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), and `reset` (`{}`: too far behind or
+(`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), `queue` (the `Queued[]` now), and `reset` (`{}`: too far behind or
 another run; load the newest slice again).
 
 ## Folders
@@ -74,6 +83,9 @@ another run; load the newest slice again).
 | `POST /push/test` | `{}` | text |
 | `GET /devices` | | `{id, label, created, used, me}[]` |
 | `POST /devices/remove` | `{id}` | text |
+| `POST /passkey/options` | `{}` | `{challenge, id}`: a challenge for this device's passkey ceremony (2 minutes, once), its passkey's credential id or `null` |
+| `POST /passkey/register` | `{id, client, auth, key}` (base64url: the credential id, `clientDataJSON`, `getAuthenticatorData()`, `getPublicKey()`) | text; the device's first passkey, which unlocks it |
+| `POST /passkey/unlock` | `{id, client, auth, sig}` (`authenticatorData`, the DER `signature`) | text; 403 with why when it doesn't check out |
 | `POST /report` | `{note, path, target, html, look, viewport}` | text |
 
 ## Plugins (Settings › Plugins)
@@ -115,7 +127,8 @@ A page with `?preview=<name>` shows the theme being built in `themes-dev/<name>/
 ## Plugin tabs
 
 A plugin's frame asks the page, which calls `GET` or `POST /p/{name}/api/{path}` (the plugin's own backend through
-cooee's proxy, with its token, never the cookie). An event stream comes back as SSE messages of `{event, data}`.
+cooee's proxy, with its token, never the cookie). An event stream comes back as SSE messages of `{event, data}`. The
+`terminal` tab's calls need the device unlocked with its passkey: else 403 `locked` (header `Cooee-Locked: 1`).
 
 ## The look
 

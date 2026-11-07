@@ -9,6 +9,7 @@
 mod hub;
 mod login;
 mod manage;
+mod passkey;
 mod plugin;
 mod push;
 mod themes;
@@ -23,13 +24,14 @@ use std::{
 
 use cooee_core::{Claim, Config, Device, Devices, Plugin, ShedError};
 use futures_util::{Stream, StreamExt, stream};
+use passkey::Unlocks;
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::error::RecvError;
 use topcoat::{
     Result,
     context::{Cx, app_context, request_context},
     router::{
-        Body, Layer, LayerFuture, Next, Path, Router,
+        Body, BodyLimit, Layer, LayerFuture, Next, Path, Router,
         content::{
             Form, Json,
             sse::{Event, KeepAlive, Sse, last_event_id},
@@ -43,14 +45,14 @@ use topcoat::{
     view::View,
 };
 
-pub use hub::{CardSpec, Hub, HubError, Listing, Out, Recipe, Resume, Slice};
+pub use hub::{CardSpec, Hub, HubError, Listing, Out, Recipe, Resume, Slice, Upload};
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
 pub use themes::{Pack, Pinned, Themes, stamp};
 
 /// The paths an unpaired browser may load: pairing and the static files (and the themes' files under `/look/`).
-const OPEN: [&str; 13] = [
+const OPEN: [&str; 14] = [
     "/pair",
     "/look",
     "/look.js",
@@ -63,6 +65,7 @@ const OPEN: [&str; 13] = [
     "/icon-512.png",
     "/app.css",
     "/chat.js",
+    "/md.js",
     "/sw.js",
 ];
 
@@ -458,12 +461,13 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
-/// `GET /threads`: the thread list's cards under the device's chip, as the page draws them (its refresh, docs/api.md).
+/// `GET /threads`: the thread list's cards under the device's chip and its archived threads, as the page draws them
+/// (docs/api.md).
 #[route(GET "/threads")]
-async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_web::Card>>> {
+async fn thread_list(cx: &Cx) -> Result<Answer<cooee_web::Listed>> {
     let list = cooee_web::chip(cx);
     Ok(Answer(
-        blocking(cx, move |hub| Ok(cooee_web::cards(hub.list(), list))).await,
+        blocking(cx, move |hub| Ok(cooee_web::listed(hub.list(), list))).await,
     ))
 }
 
@@ -578,19 +582,141 @@ async fn new_folder(cx: &Cx, Json(f): Json<Folder>) -> Result<Answer<PathBuf>> {
     ))
 }
 
-/// `POST /threads/{id}/send`.
+/// `POST /threads/{id}/send` and `/queue`: the text and its files.
 #[derive(Deserialize)]
 struct Message {
     text: String,
     random_id: String,
+    #[serde(default)]
+    files: Vec<File>,
+}
+
+/// A file sent with a message, its bytes in base64.
+#[derive(Deserialize)]
+struct File {
+    name: String,
+    data: String,
+}
+
+impl Message {
+    fn uploads(&self) -> Result<Vec<Upload>, HubError> {
+        use base64::Engine as _;
+        let b64 = base64::engine::general_purpose::STANDARD;
+        let decode = |f: &File| b64.decode(&f.data).map(|data| (f.name.clone(), data));
+        self.files
+            .iter()
+            .map(|f| decode(f).map(|(name, data)| Upload { name, data }))
+            .collect::<Result<_, _>>()
+            .map_err(|e| HubError::Refused(format!("a file isn't base64: {e}")))
+    }
 }
 
 #[route(POST "/threads/{id}/send")]
 async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item>> {
     let id = thread_id(cx);
     Ok(Answer(
-        blocking(cx, move |hub| hub.send(&id, &m.text, &m.random_id)).await,
+        blocking(cx, move |hub| {
+            hub.send(&id, &m.text, &m.random_id, &m.uploads()?)
+        })
+        .await,
     ))
+}
+
+#[route(POST "/threads/{id}/queue")]
+async fn queue(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<Vec<cooee_core::Queued>>> {
+    let id = thread_id(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.queue(&id, &m.text, &m.random_id, &m.uploads()?)
+        })
+        .await,
+    ))
+}
+
+/// `POST /threads/{id}/unqueue` and `/steer`: a queued message.
+#[derive(Deserialize)]
+struct Queued {
+    random_id: String,
+}
+
+#[route(POST "/threads/{id}/unqueue")]
+async fn unqueue(cx: &Cx, Json(q): Json<Queued>) -> Result<Answer<Vec<cooee_core::Queued>>> {
+    let id = thread_id(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| hub.unqueue(&id, &q.random_id, false)).await,
+    ))
+}
+
+#[route(POST "/threads/{id}/steer")]
+async fn steer(cx: &Cx, Json(q): Json<Queued>) -> Result<Answer<Vec<cooee_core::Queued>>> {
+    let id = thread_id(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| hub.unqueue(&id, &q.random_id, true)).await,
+    ))
+}
+
+/// `POST /threads/{id}/title`.
+#[derive(Deserialize)]
+struct Title {
+    title: String,
+}
+
+#[route(POST "/threads/{id}/title")]
+async fn retitle(cx: &Cx, Json(t): Json<Title>) -> Result<Answer<()>> {
+    let id = thread_id(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| hub.retitle(&id, &t.title)).await,
+    ))
+}
+
+/// `POST /threads/{id}/archive`: `on` archives it, else it is restored.
+#[derive(Deserialize)]
+struct Archive {
+    on: bool,
+}
+
+#[route(POST "/threads/{id}/archive")]
+async fn archive(cx: &Cx, Json(a): Json<Archive>) -> Result<Answer<()>> {
+    let id = thread_id(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| hub.archive(&id, a.on)).await,
+    ))
+}
+
+/// `GET /threads/{id}/files/{name}`: a file sent in the thread. Only images show as themselves; anything else
+/// downloads, and nothing runs (`sandbox`, `nosniff`).
+#[route(GET "/threads/{id}/files/{name}")]
+async fn thread_file(cx: &Cx) -> Result<Response> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    let found = blocking(cx, move |hub| hub.file(&id, &name)).await;
+    let Ok(path) = found else {
+        return plain(404, "No such file.");
+    };
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or_default();
+    let kind = match ext.to_ascii_lowercase().as_str() {
+        "png" => Some("image/png"),
+        "jpg" | "jpeg" => Some("image/jpeg"),
+        "gif" => Some("image/gif"),
+        "webp" => Some("image/webp"),
+        "heic" => Some("image/heic"),
+        "avif" => Some("image/avif"),
+        _ => None,
+    };
+    let bytes = tokio::task::spawn_blocking(move || std::fs::read(path)).await??;
+    let r = Response::builder()
+        .header("Content-Type", kind.unwrap_or("application/octet-stream"))
+        .header("X-Content-Type-Options", "nosniff")
+        .header("Content-Security-Policy", "sandbox")
+        .header("Cache-Control", "private, max-age=31536000, immutable");
+    let r = if kind.is_none() {
+        r.header("Content-Disposition", "attachment")
+    } else {
+        r
+    };
+    Ok(r.body(Body::from(bytes))?)
 }
 
 /// `POST /threads/{id}/approve`: a choice, an "other" text, or a secret card's `value` (passed to its plugin only).
@@ -781,6 +907,54 @@ async fn device_remove(cx: &Cx, Json(d): Json<DeviceId>) -> Result<Response> {
     }
 }
 
+/// `POST /passkey/options`: a challenge for this device's passkey ceremony, and its passkey's id once it has one
+/// (none: the page registers one).
+#[route(POST "/passkey/options")]
+async fn passkey_options(cx: &Cx) -> Result<Response> {
+    let me = &request_context::<Paired>(cx).0;
+    let challenge = app_context::<Arc<Unlocks>>(cx).challenge(&me.id, now())?;
+    let id = me.passkey.as_ref().map(|p| p.id.clone());
+    let challenge = base64::Engine::encode(&base64::prelude::BASE64_URL_SAFE_NO_PAD, challenge);
+    Json(serde_json::json!({ "challenge": challenge, "id": id })).into_response(cx)
+}
+
+/// `POST /passkey/register` (the device's first passkey) and `/passkey/unlock`: either unlocks the gated tab for
+/// [`passkey::IDLE`]; each unlock goes to `<data>/terminal.log` with the time and device.
+#[route(POST "/passkey/{rest}")]
+async fn passkey_check(cx: &Cx, Json(p): Json<passkey::Proof>) -> Result<Response> {
+    let me = request_context::<Paired>(cx).0.clone();
+    let (unlocks, host) = (
+        app_context::<Arc<Unlocks>>(cx),
+        header(cx, "host").unwrap_or_default(),
+    );
+    let checked = match (path_param::<Rest>(cx), &me.passkey) {
+        ("register", None) => match unlocks.register(&me.id, host, &p, now()) {
+            Ok(pk) => {
+                let (devices, id) = (devices(cx), me.id.clone());
+                if tokio::task::spawn_blocking(move || devices.set_passkey(&id, pk)).await?? {
+                    unlocks.unlock(&me.id, now());
+                    Ok(())
+                } else {
+                    Err("this device has a passkey already".to_owned())
+                }
+            }
+            Err(e) => Err(e),
+        },
+        ("unlock", Some(pk)) => unlocks.assert(&me.id, pk, host, &p, now()),
+        ("register", Some(_)) => Err("this device has a passkey already".to_owned()),
+        ("unlock", None) => Err("register this device's passkey first".to_owned()),
+        _ => return Err(not_found().into()),
+    };
+    if let Err(why) = checked {
+        return plain(403, &format!("Not unlocked: {why}."));
+    }
+    let line = serde_json::json!({ "at": now(), "device": me.id, "event": "unlock" });
+    let file = app_context::<Data>(cx).0.join("terminal.log");
+    tokio::task::spawn_blocking(move || cooee_core::append_line(&file, &line.to_string()))
+        .await??;
+    plain(200, "unlocked")
+}
+
 /// The data folder, and the config's folder (its `profiles/`).
 struct Data(PathBuf, Option<PathBuf>);
 
@@ -844,10 +1018,24 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
     let target = uri.path_and_query().map_or("/", |t| t.as_str());
     let target = target.strip_prefix(&prefix).unwrap_or(target).to_owned();
     let method = method(cx).to_string();
-    let pass: Vec<(&str, String)> = ["content-type", "accept", "last-event-id"]
+    let mut pass: Vec<(&str, String)> = ["content-type", "accept", "last-event-id"]
         .into_iter()
         .filter_map(|h| Some((h, header(cx, h)?.to_owned())))
         .collect();
+    // The gated tab: only an unlocked device's calls get through, and each counts as use; the backend learns which
+    // device (it refuses calls without one).
+    let me = request_context::<Paired>(cx).0.id.clone();
+    let unlocks = Arc::clone(app_context::<Arc<Unlocks>>(cx));
+    let gated = p.name == passkey::GATED;
+    if gated {
+        if !unlocks.touch(&me, now()) {
+            return Ok(Response::builder()
+                .status(403)
+                .header("Cooee-Locked", "1")
+                .body(Body::from("locked"))?);
+        }
+        pass.push(("cooee-device", me.clone()));
+    }
     let reply = tokio::task::spawn_blocking(move || {
         let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
         let timeout = Some(Duration::from_secs(30));
@@ -864,7 +1052,9 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
     {
         reply.body.get_ref().set_read_timeout(None)?;
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        std::thread::spawn(move || plugin::events(reply, |e| tx.send(e).is_ok()));
+        // A locked device's stream ends at its next event.
+        let open = move || !gated || unlocks.open(&me, now());
+        std::thread::spawn(move || plugin::events(reply, |e| open() && tx.send(e).is_ok()));
         let stream = stream::unfold(rx, |mut rx| async move {
             let e = rx.recv().await?;
             Some((Result::<Event>::Ok(relay(e)), rx))
@@ -1447,6 +1637,8 @@ pub fn router(
     cooee_web::assets(Router::builder(), looks)
         .layer(Timing)
         .layer(gate)
+        // A message's photos come as base64.
+        .layer(BodyLimit::max(64 << 20).at("/threads"))
         .page(pairing)
         .route(pair)
         .route(push_key)
@@ -1459,6 +1651,8 @@ pub fn router(
         .route(pair_cancel)
         .route(device_list)
         .route(device_remove)
+        .route(passkey_options)
+        .route(passkey_check)
         .route(report)
         .page(home)
         .page(chat)
@@ -1470,6 +1664,12 @@ pub fn router(
         .route(root)
         .route(new_folder)
         .route(send)
+        .route(queue)
+        .route(unqueue)
+        .route(steer)
+        .route(retitle)
+        .route(archive)
+        .route(thread_file)
         .route(approve)
         .route(cancel)
         .route(model)
@@ -1497,6 +1697,7 @@ pub fn router(
         .route(theme_saves)
         .app_context(hub)
         .app_context(Arc::new(Dots::default()))
+        .app_context(Arc::new(Unlocks::default()))
         .app_context(logins)
         .app_context(manager)
         .app_context(themes)
