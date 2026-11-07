@@ -9,7 +9,7 @@ const pickOn = (context, url, pick) =>
   context.addCookies([{ name: "cooee-look", value: Object.entries(pick).map(([k, v]) => `${k}:${v}`).join("/"), url }]);
 // The list as the server has it: each folder's thread ids, in order.
 const listed = async (page) =>
-  (await (await page.request.get("/threads")).json()).map((c) => ({ folder: c.folder, ids: c.rows.concat(c.done ?? []).map((r) => r.id) }));
+  (await (await page.request.get("/threads")).json()).cards.map((c) => ({ folder: c.folder, ids: c.rows.concat(c.done ?? []).map((r) => r.id) }));
 // The scene as drawn: each page's folder and its sprites' ids.
 const drawn = (page) =>
   page.locator("#scene .sp").evaluateAll((ps) =>
