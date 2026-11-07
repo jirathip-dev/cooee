@@ -488,6 +488,23 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
     );
     assert_eq!(c.json("/pair/asks"), json!([]));
     assert!(c.cli(&["devices"]).contains("iPad"));
+    // The devices list says who approved it; the passkey is the approver's, not the iPad's.
+    let ipad = |path: &str| -> Value {
+        serde_json::from_str(&c.raw("GET", path, &[("Cookie", &cookie)], "").1).unwrap()
+    };
+    let me = ipad("/devices");
+    let me = me
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|d| d["me"] == true)
+        .unwrap();
+    assert_eq!(
+        (me["label"].as_str(), me["by"].as_str()),
+        (Some("iPad"), Some("browser"))
+    );
+    assert_eq!(ipad("/passkeys")[0]["mine"], false);
+    assert_eq!(c.json("/passkeys")[0]["mine"], true);
 }
 
 #[test]
@@ -530,6 +547,13 @@ fn a_passkey_signs_a_device_back_in_and_can_be_removed() {
         200
     );
     assert_ne!(c.json("/passkeys")[0]["used"], 0);
+    // The passkey is now the signed-in browser's (its approve card offers approving), no more the old cookie's.
+    let mine = |cookie: &str| {
+        let (_, body) = c.raw("GET", "/passkeys", &[("Cookie", cookie)], "");
+        serde_json::from_str::<Value>(&body).unwrap()[0]["mine"].clone()
+    };
+    assert_eq!(mine(&cookie), true);
+    assert_eq!(c.json("/passkeys")[0]["mine"], false);
     // A challenge is good once; another passkey is refused.
     assert_eq!(status(&open_post(&c, "/passkey/signin", &signed).0), 403);
     let (head, body) = open_post(

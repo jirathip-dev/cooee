@@ -671,7 +671,7 @@ async fn device_list(cx: &Cx) -> Result<Response> {
     let list: Vec<_> = list
         .into_iter()
         .map(|d| {
-            serde_json::json!({ "id": d.id, "label": d.label, "created": d.created, "used": d.used, "me": d.id == me })
+            serde_json::json!({ "id": d.id, "label": d.label, "created": d.created, "used": d.used, "me": d.id == me, "by": d.by })
         })
         .collect();
     Json(list).into_response(cx)

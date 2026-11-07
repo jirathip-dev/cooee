@@ -435,6 +435,7 @@ async fn passkey_add(cx: &Cx, Json(p): Json<NewPasskey>) -> Result<Response> {
         id: p.id,
         key: B64.encode(point),
         label: request_context::<Paired>(cx).0.label.clone(),
+        device: request_context::<Paired>(cx).0.id.clone(),
         created: now(),
         used: 0,
     };
@@ -442,13 +443,15 @@ async fn passkey_add(cx: &Cx, Json(p): Json<NewPasskey>) -> Result<Response> {
     plain(200, "passkey saved")
 }
 
-/// `GET /passkeys`: every passkey: its id, the device that made it, when it was made and last used.
+/// `GET /passkeys`: every passkey: its id, the device that made it (and whether that is this one), when it was made
+/// and last used.
 #[route(GET "/passkeys")]
 async fn passkey_list(cx: &Cx) -> Result<Response> {
+    let me = request_context::<Paired>(cx).0.id.clone();
     let list: Vec<_> = store(cx, Devices::passkeys)
         .await?
         .into_iter()
-        .map(|k| serde_json::json!({ "id": k.id, "label": k.label, "created": k.created, "used": k.used }))
+        .map(|k| serde_json::json!({ "id": k.id, "label": k.label, "created": k.created, "used": k.used, "mine": k.device == me }))
         .collect();
     Json(list).into_response(cx)
 }
@@ -471,11 +474,12 @@ async fn passkey_remove(cx: &Cx, Json(p): Json<PasskeyId>) -> Result<Response> {
 /// `POST /passkey/signin`: a device that lost its cookie signs back in with its passkey: paired again.
 #[route(POST "/passkey/signin")]
 async fn passkey_signin(cx: &Cx, Json(a): Json<Assertion>) -> Result<Response> {
+    let id = a.id.clone();
     if let Err(why) = assert(cx, a).await? {
         return plain(403, why);
     }
     let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
-    let token = store(cx, move |d| d.restore(&agent, now())).await?;
+    let token = store(cx, move |d| d.restore(&agent, &id, now())).await?;
     Ok(Response::builder()
         .header("Set-Cookie", cookie(cx, &token))
         .body(Body::from(()))?)

@@ -8,7 +8,7 @@ import { $, make } from "./look.js";
 
 type Assertion = { id: string; client: string; auth: string; sig: string };
 type Asking = { id: string; word: string; label: string; at: number };
-type Key = { id: string; label: string; created: number; used: number };
+type Key = { id: string; label: string; created: number; used: number; mine: boolean };
 
 async function post<T = string>(url: string, body: unknown): Promise<T> {
   const r = await fetch(url, {
@@ -330,27 +330,55 @@ if (list) {
     top.prepend(card);
   }
 
-  // Requests to pair: a card each while it waits; one answered elsewhere or run out goes by itself.
+  // Requests to pair: a card each while it waits. One that leaves the list was approved elsewhere (its device is
+  // there, with who approved it) or ran out (5 min); else (cancelled, declined elsewhere) it goes a poll later.
   const cards = new Map<string, HTMLElement>();
   let keys: boolean | null = null;
+  let other = "another one";
   async function asks(): Promise<void> {
     if (document.hidden) return;
     const r = await fetch("/pair/asks").catch(() => null);
     if (!r?.ok) return;
     const open: Asking[] = await r.json();
-    for (const [id, card] of cards)
-      if (!open.some((a) => a.id === id) && !card.dataset.done) {
-        card.remove();
+    const left = [...cards].filter(([id, c]) => !open.some((a) => a.id === id) && !c.dataset.done);
+    if (left.length) {
+      const d = await fetch("/devices").catch(() => null);
+      const ds: { id: string; label: string; by: string }[] = d?.ok ? await d.json() : [];
+      for (const [id, c] of left) {
+        const dev = ds.find((x) => x.id === id);
+        const title = dev
+          ? `✓ ${dev.label} paired${dev.by ? ` on ${dev.by}` : ""}`
+          : Date.now() - Number(c.dataset.at) > 290000
+            ? `${c.dataset.label}'s request expired`
+            : "";
+        if (!title && !c.dataset.seen) {
+          c.dataset.seen = "1";
+          continue;
+        }
         cards.delete(id);
+        if (!title) {
+          c.remove();
+          continue;
+        }
+        c.className = "pc";
+        c.replaceChildren(
+          make("p", "et", title),
+          make("p", "m", dev ? "The card clears by itself." : "Nobody approved it in 5 minutes. It can ask again."),
+        );
+        setTimeout(() => c.remove(), 10000);
       }
+    }
     if (open.length && keys === null) {
       const k = await fetch("/passkeys").catch(() => null);
-      keys = k?.ok ? ((await k.json()) as Key[]).length > 0 : null;
+      const list: Key[] | null = k?.ok ? await k.json() : null;
+      keys = list ? list.some((x) => x.mine) : null;
+      other = list?.find((x) => !x.mine)?.label ?? other;
     }
     for (const a of open) if (!cards.has(a.id)) cards.set(a.id, card(a));
   }
   function card(a: Asking): HTMLElement {
     const c = make("div", "apc");
+    Object.assign(c.dataset, { at: String(a.at), label: a.label });
     c.setAttribute("role", "group");
     c.setAttribute("aria-label", `${a.label} asks to pair: ${a.word}`);
     const head = make("p", "aph");
@@ -431,7 +459,7 @@ if (list) {
     };
     c.append(head, make("p", "who", `${a.label}, over your tailnet`), word);
     if (keys === false || !canPasskey) {
-      c.append(make("p", "m", "Approving needs a passkey. Save one on this device, or approve on another one."));
+      c.append(make("p", "m", `Approving needs a passkey. Save one on this device, or approve on ${other}.`));
       if (canPasskey)
         c.append(
           acts(

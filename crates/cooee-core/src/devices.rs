@@ -37,6 +37,9 @@ pub struct Device {
     pub created: u64,
     /// When it was last seen (to the hour), in Unix milliseconds.
     pub used: u64,
+    /// The device that approved its request, if one did.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub by: String,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -103,6 +106,9 @@ pub struct Passkey {
     pub key: String,
     /// The label of the device that made it.
     pub label: String,
+    /// The id of the device that made it (the one it signed back in, after a sign-in).
+    #[serde(default)]
+    pub device: String,
     /// When it was made, in Unix milliseconds.
     pub created: u64,
     /// When it was last used, in Unix milliseconds (0: never).
@@ -136,8 +142,8 @@ impl File {
         self.asks.retain(|r| r.at + ASK_TTL > now);
     }
 
-    /// Adds a device with `token`, named `label` (its id: `id`, else from the token's hash).
-    fn add(&mut self, token: &str, id: Option<String>, label: &str, now: u64) {
+    /// Adds a device with `token`, named `label` (its id: `id`, else from the token's hash); the device.
+    fn add(&mut self, token: &str, id: Option<String>, label: &str, now: u64) -> &mut Device {
         let hash = sha256(token.as_bytes());
         self.devices.push(Device {
             id: id.unwrap_or_else(|| hash[..8].to_owned()),
@@ -145,7 +151,9 @@ impl File {
             hash,
             created: now,
             used: now,
+            by: String::new(),
         });
+        self.devices.last_mut().expect("just pushed")
     }
 }
 
@@ -381,9 +389,10 @@ impl Devices {
                     f.asks.remove(i);
                     Ok(Claim::Declined(by))
                 }
-                Some((true, _)) => {
+                Some((true, by)) => {
                     let r = f.asks.remove(i);
-                    f.add(&token, Some(r.claim[..8].to_owned()), &r.label, now);
+                    f.add(&token, Some(r.claim[..8].to_owned()), &r.label, now)
+                        .by = by;
                     Ok(Claim::Paired(token.clone()))
                 }
             }
@@ -447,14 +456,17 @@ impl Devices {
         })
     }
 
-    /// Pairs the browser behind `agent` after a passkey sign-in: its new token.
+    /// Pairs the browser behind `agent` after a sign-in with `passkey`, which is then its: its new token.
     ///
     /// # Errors
     /// When the file can't be read or written.
-    pub fn restore(&self, agent: &str, now: u64) -> io::Result<String> {
+    pub fn restore(&self, agent: &str, passkey: &str, now: u64) -> io::Result<String> {
         let token = hex(&random(32)?);
         self.change(|f| {
-            f.add(&token, None, label(agent), now);
+            let id = f.add(&token, None, label(agent), now).id.clone();
+            for k in f.passkeys.iter_mut().filter(|k| k.id == passkey) {
+                k.device.clone_from(&id);
+            }
             Ok(token.clone())
         })
     }

@@ -72,12 +72,12 @@ another run; load the newest slice again).
 | `POST /push/unsubscribe` | `{endpoint}` | text |
 | `GET /push/endpoints` | | this device's endpoints, `string[]` |
 | `POST /push/test` | `{}` | text |
-| `GET /devices` | | `{id, label, created, used, me}[]` |
+| `GET /devices` | | `{id, label, created, used, me, by}[]`: `by`, the device that approved its request (empty if none) |
 | `POST /devices/remove` | `{id}` | text |
 | `POST /devices/pair` | `{}` | `{code, link, svg, host}`: a new code (dropping the open one), its link and the link as a QR code |
 | `GET /pair/asks` | | the requests to pair still waiting, `{id, word, label, at}[]` |
 | `POST /pair/answer` | `{id, yes, passkey?}`: approving needs a passkey's `{id, client, auth, sig}` | text; 403 for a bad passkey, 410 when it's gone |
-| `GET /passkeys` | | `{id, label, created, used}[]` |
+| `GET /passkeys` | | `{id, label, created, used, mine}[]`: `mine`, made on (or signed back in to) this device |
 | `POST /passkeys` | `{id, key, client, auth}`: `navigator.credentials.create`'s id, `getPublicKey()` (P-256), client and authenticator data | text |
 | `POST /passkeys/remove` | `{id}` | text |
 | `POST /report` | `{note, path, target, html, look, viewport}` | text |
