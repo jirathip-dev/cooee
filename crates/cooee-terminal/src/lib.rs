@@ -169,7 +169,10 @@ impl Terminal {
     fn act(&self, name: &str, method: Method, mut params: Value) -> Result<Value, Refused> {
         self.owned(name)?;
         params["terminal"] = name.into();
-        let _: Value = self.shed.call(method, params).map_err(|e| shed_error(&e))?;
+        let _: Value = self
+            .shed
+            .call(method, &params)
+            .map_err(|e| shed_error(&e))?;
         Ok(json!({}))
     }
 
@@ -254,7 +257,7 @@ impl Terminal {
                 let read = json!({ "name": name()?, "history": true });
                 let r: ReadResult = self
                     .shed
-                    .call(Method::Read, read)
+                    .call(Method::Read, &read)
                     .map_err(|e| shed_error(&e))?;
                 Ok(done(json!({ "text": r.text })))
             }

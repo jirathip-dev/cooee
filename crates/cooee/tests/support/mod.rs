@@ -8,8 +8,12 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     env, fs,
     io::{BufRead, BufReader, Read, Write},
+    net::Shutdown,
     net::TcpStream,
-    os::unix::{fs::PermissionsExt, net::UnixListener},
+    os::unix::{
+        fs::PermissionsExt,
+        net::{UnixListener, UnixStream},
+    },
     path::{Path, PathBuf},
     process::{Child, ChildStdin, Command, Stdio},
     sync::{
@@ -73,11 +77,14 @@ pub struct FakeShed {
     procs: Arc<Procs>,
     /// Every request (method, params) in order.
     pub requests: Arc<Mutex<Vec<(String, Value)>>>,
+    /// The open connections (shut by [`FakeShed::stop`]), how many were accepted and how many are served.
+    conns: Arc<Mutex<(Vec<UnixStream>, usize, usize)>>,
 }
 
 const CLI: &str = r#"#!/bin/sh
-# The fake `shed` CLI: `agents` lists one agent; `run` records its arguments and prints the terminal (it waits while
-# the gate `hold-run` is shut, and fails, as a slow start's CLI would, while `run-fails` is); `machine ls` prints
+# The fake `shed` CLI: `agents` lists one agent (it fails while the gate `agents-fails` is shut); `run` records its
+# arguments and prints the terminal (it waits while the gate `hold-run` is shut, and fails, as a slow start's CLI
+# would, while `run-fails` is); `machine ls` prints
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
 # after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env.
@@ -91,7 +98,8 @@ case "$*" in
   [ -e "$f" ] || exit 1
   if [ -e "$f.sent" ]; then sed 's/,"history":\[[^]]*\]//' "$f"; else cat "$f"; : >"$f.sent"; fi
   if grep -q '"online":false' "$f"; then exit 1; fi ;;
-*" agents") echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
+*" agents") [ -e "$gates/agents-fails" ] && { echo 'fake shed: agents down' >&2; exit 1; }
+  echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
 *" run "*)
   while [ -e "$gates/hold-run" ]; do sleep 0.02; done
   [ -e "$gates/run-fails" ] && { echo 'fake shed: timed out' >&2; exit 1; }
@@ -128,19 +136,48 @@ impl FakeShed {
             shared: Arc::default(),
             procs: Arc::default(),
             requests: Arc::default(),
+            conns: Arc::default(),
         };
         let server = shed.clone();
         thread::spawn(move || {
             for conn in listener.incoming().flatten() {
+                let mut conns = server.conns.lock().unwrap();
+                conns.0.push(conn.try_clone().unwrap());
+                conns.1 += 1;
+                conns.2 += 1;
+                drop(conns);
                 let server = server.clone();
-                thread::spawn(move || server.serve(conn));
+                thread::spawn(move || {
+                    server.serve(conn);
+                    server.conns.lock().unwrap().2 -= 1;
+                });
             }
         });
         shed
     }
 
+    /// How many connections it accepted.
+    pub fn connects(&self) -> usize {
+        self.conns.lock().unwrap().1
+    }
+
+    /// Kills this server, as a shed restart does: its socket is gone and every connection closed (returns once each
+    /// is, so none with an event stream open).
+    pub fn stop(&self) {
+        let _ = fs::remove_file(self.dir.join("shed.sock"));
+        let conns = std::mem::take(&mut self.conns.lock().unwrap().0);
+        for conn in &conns {
+            let _ = conn.shutdown(Shutdown::Both);
+        }
+        drop(conns);
+        while self.conns.lock().unwrap().2 > 0 {
+            thread::sleep(Duration::from_millis(5));
+        }
+    }
+
     /// Shuts (`true`) or opens gate `name`: `hold-run` and `run-fails` for the CLI's `run`, `hold-ready` (the
-    /// session-ready `wait` waits), `ready-timeout` (it times out) and `hang-send` (every `send` waits).
+    /// session-ready `wait` waits), `ready-timeout` (it times out), `hang-send` (every `send` waits) and `hangup` (a
+    /// request is recorded, then its connection closed unanswered).
     pub fn gate(&self, name: &str, shut: bool) {
         let path = self.dir.join(name);
         if shut {
@@ -434,9 +471,11 @@ impl FakeShed {
         shown.map(|t| json!([run(t)])).collect()
     }
 
-    /// `screen.watch`: the whole screen, then the rows that changed, until the terminal's program exits or it is
-    /// killed.
-    fn watch(&self, name: &str, writer: &mut std::os::unix::net::UnixStream) {
+    /// `screen.watch` (request `id`): its answer, the whole screen, then the rows that changed, until the terminal's
+    /// program exits or it is killed.
+    fn watch(&self, id: Value, params: &Value, writer: &mut UnixStream) {
+        let name = params["terminal"].as_str().unwrap();
+        writeln!(writer, "{}", json!(Response::ok(id, json!({})))).unwrap();
         let (mut sent, mut seq) = (Vec::<Value>::new(), 0);
         loop {
             let rows = self.rows(name);
@@ -485,7 +524,7 @@ impl FakeShed {
         json!({})
     }
 
-    fn serve(&self, conn: std::os::unix::net::UnixStream) {
+    fn serve(&self, conn: UnixStream) {
         let mut writer = conn.try_clone().unwrap();
         let mut lines = BufReader::new(conn).lines();
         while let Some(Ok(line)) = lines.next() {
@@ -494,6 +533,10 @@ impl FakeShed {
                 .lock()
                 .unwrap()
                 .push((req.method.clone(), req.params.clone()));
+            if self.dir.join("hangup").exists() {
+                let _ = writer.shutdown(Shutdown::Both);
+                return;
+            }
             let id = req.id.clone().unwrap_or_default();
             let name = req.params["name"].as_str().unwrap_or("").to_owned();
             let result = match req.method.as_str() {
@@ -513,13 +556,7 @@ impl FakeShed {
                 "run" => self.run(&req.params),
                 "ls" => Ok(self.ls(&req.params["labels"])),
                 "resize" | "terminal.resize" => Ok(json!({})),
-                "screen.watch" => {
-                    let t = req.params["terminal"].as_str().unwrap().to_owned();
-                    let ok = Response::ok(id, json!({}));
-                    writeln!(writer, "{}", json!(ok)).unwrap();
-                    self.watch(&t, &mut writer);
-                    return;
-                }
+                "screen.watch" => return self.watch(id, &req.params, &mut writer),
                 "terminal.input" | "terminal.keys" => Ok(self.type_keys(&req.params)),
                 "read" => {
                     let procs = self.procs.by_name.lock().unwrap();
