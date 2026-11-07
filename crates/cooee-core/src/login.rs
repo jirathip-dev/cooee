@@ -34,6 +34,10 @@ pub struct Provider {
     /// The logout command.
     #[serde(default)]
     pub logout: Vec<String>,
+    /// The variable its ACP adapter reads an extra settings file from and enforces, hooks included. Without it an
+    /// agent profile with `settings` can't start with its agent.
+    #[serde(default)]
+    pub settings: String,
     /// The models a thread may pick (#553 row 34).
     #[serde(default)]
     pub models: Vec<String>,

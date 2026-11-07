@@ -6,11 +6,13 @@
 # (docs/plugins/hello) runs twice, as plugins `hello` and `other`, on $PORT + 1 and + 2. A fresh instance runs on
 # $PORT + 3. The main instance runs with HOME at the temp folder, so Settings › Folders browses it. The machines plugin
 # runs in it on $PORT + 4, the fake shed answering for this machine (24 h of samples) and an `air` that is offline. Its
-# plugin index lists the example plugin as `greet`, in a git repo of its own.
+# plugin index lists the example plugin as `greet`, in a git repo of its own. One agent profile, `reviewer`, sits beside
+# the main config (#40).
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
-mkdir -p "$tmp/shed" "$tmp/root/project/deep-src" "$tmp/data/threads" "$tmp/.hidden-folder"
+mkdir -p "$tmp/shed" "$tmp/root/project/deep-src" "$tmp/root/project/prof-390" "$tmp/root/project/prof-1440" \
+  "$tmp/data/threads" "$tmp/.hidden-folder"
 cargo build --quiet --locked -p cooee
 cargo test --quiet --locked -p cooee --test chat --no-run
 FAKE_SHED_DIR="$tmp/shed" FAKE_SHED_DELAY_MS=20 FAKE_SHED_LANES=1 cargo test --quiet --locked -p cooee --test chat -- \
@@ -135,11 +137,21 @@ url = "http://127.0.0.1:$((PORT + 4))"
 module = "/tab.js"
 token = "machines-token-0123456789"
 EOF
-mkdir -p "$(dirname "${PAIR_CODE:?}")"
+mkdir -p "$(dirname "${PAIR_CODE:?}")" "$tmp/profiles"
+
+# An agent profile (#40) for the main instance: its instructions go ahead of the first message.
+echo 'Be brief.' >"$tmp/profiles/reviewer.md"
+cat >"$tmp/profiles/reviewer.toml" <<EOF
+name = "reviewer"
+label = "Reviewer"
+agent = "fake-acp"
+instructions = "reviewer.md"
+EOF
 
 # A fresh instance on $PORT + 3: no agents in shed, no roots, a provider whose CLI is missing; its pairing code beside $PAIR_CODE (first-run.spec.mjs).
 printf '#!/bin/sh\necho "[]"\n' >"$tmp/bare-shed" && chmod +x "$tmp/bare-shed"
-cat >"$tmp/bare.toml" <<EOF
+mkdir -p "$tmp/bare"
+cat >"$tmp/bare/bare.toml" <<EOF
 port = $((PORT + 3))
 shed = "$tmp/bare-shed"
 shed_dir = "$tmp/shed"
@@ -152,8 +164,8 @@ login = ["no-such-codex", "login"]
 status = ["true"]
 install = "npm install -g @openai/codex"
 EOF
-cargo run --quiet --locked -p cooee -- pair --config "$tmp/bare.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE.bare"
-cargo run --quiet --locked -p cooee -- serve --config "$tmp/bare.toml" &
+cargo run --quiet --locked -p cooee -- pair --config "$tmp/bare/bare.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE.bare"
+cargo run --quiet --locked -p cooee -- serve --config "$tmp/bare/bare.toml" &
 bare=$!
 # The config's and the binary's paths, so a spec can approve a phone's code (`cooee pair <code>`) and list reports.
 echo "$tmp/config.toml" >"$PAIR_CODE.config"
