@@ -4,6 +4,7 @@
 use std::{
     collections::BTreeMap,
     env,
+    fmt::Write as _,
     io::{self, BufRead, BufReader, Write},
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
@@ -79,6 +80,38 @@ pub struct Agent {
     /// Its ACP adapter's command line.
     #[serde(default)]
     pub cmd: Vec<String>,
+}
+
+/// What a thread's agent runs with besides its folder: variables on its adapter's command line, secret ones through
+/// a file (see [`Shed::run_acp`]), and shed's approval policy (none: shed's default, `ask`).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Launch {
+    /// `K=V` on the adapter's command line (an account's config folder, a profile's plain variables).
+    pub env: Vec<(String, String)>,
+    /// The file the secret variables pass through, and the variables.
+    pub secrets: Option<(PathBuf, Vec<(String, String)>)>,
+    /// `--policy`: `ask`, `allow` or `deny`.
+    pub policy: Option<String>,
+    /// Words after the adapter's command (a model or effort pick's).
+    pub args: Vec<String>,
+}
+
+impl Launch {
+    /// Adds a model or effort's `words` (#553 row 34): a `NAME=value` word goes to `env`, any other to `args`.
+    pub fn pick(&mut self, words: Vec<String>) {
+        for w in words {
+            match w.split_once('=') {
+                Some((k, v))
+                    if !k.is_empty()
+                        && k.bytes()
+                            .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_') =>
+                {
+                    self.env.push((k.to_owned(), v.to_owned()));
+                }
+                _ => self.args.push(w),
+            }
+        }
+    }
 }
 
 /// A shed server: its socket, and the CLI that talks to it.
@@ -403,19 +436,21 @@ impl Shed {
         self.cli(&["agents"])
     }
 
-    /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`); with `env` or `picks`,
-    /// its installed adapter runs as `env K=V… <adapter> args…` (an account's config folder; a model or effort's
-    /// `NAME=value` words go before the adapter, the others after it).
+    /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`) and `launch`: with
+    /// variables or args, its installed adapter runs as `env K=V… <adapter> args…`, and with secrets as `env K=V… sh
+    /// -c '…' <file> <adapter> args…`, the shell reading the secrets from `<file>` (mode 0600, written here) and
+    /// removing it.
     ///
     /// # Errors
-    /// [`ShedError::Cli`] when the CLI fails (e.g. the agent isn't installed or the name is taken).
+    /// [`ShedError::Cli`] when the CLI fails (e.g. the agent isn't installed or the name is taken), or the secrets'
+    /// file can't be written.
     pub fn run_acp(
         &self,
         name: &str,
         agent: &str,
         cwd: &Path,
         labels: &BTreeMap<String, String>,
-        (env, picks): (Option<(&str, &Path)>, &[String]),
+        launch: &Launch,
     ) -> Result<TerminalInfo, ShedError> {
         let cwd = cwd.to_string_lossy();
         let mut args = vec!["run", "--acp", agent, "--name", name, "--cwd", &cwd];
@@ -423,22 +458,11 @@ impl Shed {
         for label in &labels {
             args.extend(["--label", label]);
         }
-        let mut vars: Vec<String> = env
-            .map(|(k, dir)| format!("{k}={}", dir.display()))
-            .into_iter()
-            .collect();
-        let is_var = |w: &String| {
-            w.split_once('=').is_some_and(|(k, _)| {
-                !k.is_empty()
-                    && k.bytes()
-                        .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_')
-            })
-        };
-        let (more, after): (Vec<&String>, Vec<&String>) = picks.iter().partition(|w| is_var(w));
-        vars.extend(more.into_iter().cloned());
-        let cmd = if vars.is_empty() && after.is_empty() {
-            Vec::new()
-        } else {
+        if let Some(policy) = &launch.policy {
+            args.extend(["--policy", policy]);
+        }
+        let mut tail: Vec<String> = Vec::new();
+        if !launch.env.is_empty() || launch.secrets.is_some() || !launch.args.is_empty() {
             let installed = self.agents()?.into_iter().find(|a| a.id == agent);
             let cmd = installed.map(|a| a.cmd).unwrap_or_default();
             if cmd.is_empty() {
@@ -447,13 +471,26 @@ impl Shed {
                     detail: format!("ACP agent {agent} is not installed"),
                 });
             }
-            cmd
-        };
-        if !cmd.is_empty() {
-            args.extend(["--", "env"]);
-            args.extend(vars.iter().map(String::as_str));
-            args.extend(cmd.iter().map(String::as_str));
-            args.extend(after.iter().map(|w| w.as_str()));
+            tail.push("env".to_owned());
+            tail.extend(launch.env.iter().map(|(k, v)| format!("{k}={v}")));
+            if let Some((file, vars)) = &launch.secrets {
+                let q = |v: &str| format!("'{}'", v.replace('\'', r"'\''"));
+                let text = vars.iter().fold(String::new(), |mut t, (k, v)| {
+                    let _ = writeln!(t, "{k}={}", q(v));
+                    t
+                });
+                crate::write_private(file, text.as_bytes()).map_err(|e| ShedError::Cli {
+                    args: "run".to_owned(),
+                    detail: format!("{}: {e}", file.display()),
+                })?;
+                let read = r#"set -a; . "$0"; rm -f -- "$0"; set +a; exec "$@""#;
+                tail.extend(["sh".to_owned(), "-c".to_owned(), read.to_owned()]);
+                tail.push(file.to_string_lossy().into_owned());
+            }
+            tail.extend(cmd);
+            tail.extend(launch.args.iter().cloned());
+            args.push("--");
+            args.extend(tail.iter().map(String::as_str));
         }
         self.cli(&args)
     }
