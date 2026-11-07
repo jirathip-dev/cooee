@@ -24,29 +24,39 @@ use cooee_core::Sheet;
 use crate::{
     LookAssets,
     compose::providers_sheet,
-    look::{SCHEMES, Scheme, THEMES},
+    look::{SCHEMES, Scheme},
     shown::{COOKIE, Shown},
 };
 
-/// The device's pick for this request.
-pub fn shown(cx: &Cx) -> Shown<'_> {
-    let looks = &app_context::<Arc<LookAssets>>(cx).looks;
-    Shown::new(
+/// The device's pick for this request (`?preview=<name>`: showing that theme in `themes-dev/`).
+pub fn shown(cx: &Cx) -> Shown {
+    let looks = app_context::<Arc<LookAssets>>(cx).looks();
+    let look = Shown::new(
         looks,
         headers(cx).get("cookie").and_then(|v| v.to_str().ok()),
-    )
+    );
+    let preview = uri(cx)
+        .query()
+        .and_then(|q| q.split('&').find_map(|kv| kv.strip_prefix("preview=")));
+    match preview {
+        Some(name) => look.preview(name),
+        None => look,
+    }
 }
 
-/// Built-in themes and schemes in the design's order, then the owner's own by name.
+/// Built-in themes and schemes in the design's order, then the owner's own by name; none being built (`dev.`).
 fn sorted<'a, T>(all: impl Iterator<Item = (&'a String, &'a T)>, order: &[&str]) -> Vec<&'a String>
 where
     T: 'a,
 {
-    let mut names: Vec<&String> = all.map(|(n, _)| n).collect();
+    let mut names: Vec<&String> = all.map(|(n, _)| n).filter(|n| !n.contains('.')).collect();
     let rank = |n: &str| order.iter().position(|o| *o == n).unwrap_or(99);
     names.sort_by(|a, b| rank(a).cmp(&rank(b)).then(a.cmp(b)));
     names
 }
+
+/// The themes in the design's order (the first-party packs, then plain).
+const ORDER: [&str; 4] = ["farm", "kitchen", "garden", "plain"];
 
 const SECTIONS: [&str; 7] = [
     "sign-ins", "folders", "look", "alerts", "devices", "plugins", "report",
@@ -127,7 +137,7 @@ async fn swatch(s: Scheme) -> Result<impl View> {
 #[component]
 async fn colours(cx: &Cx, m: &str, showing: String) -> Result<impl View> {
     let look = shown(cx);
-    let looks = &app_context::<Arc<LookAssets>>(cx).looks;
+    let looks = look.looks();
     let rows: Vec<(String, Scheme, bool, bool)> =
         sorted(looks.schemes.iter(), &SCHEMES.map(|s| s.0))
             .into_iter()
@@ -179,13 +189,13 @@ async fn colours(cx: &Cx, m: &str, showing: String) -> Result<impl View> {
 #[component]
 async fn look_sheet(cx: &Cx) -> Result<impl View> {
     let look = shown(cx);
-    let looks = &app_context::<Arc<LookAssets>>(cx).looks;
+    let looks = look.looks();
     let to = uri(cx)
         .path_and_query()
         .map_or("/", |p| p.as_str())
         .to_owned();
     let showing = look.mode().unwrap_or("dark").to_owned();
-    let tiles: Vec<(String, String, bool)> = sorted(looks.themes.iter(), &THEMES.map(|t| t.0))
+    let tiles: Vec<(String, String, bool)> = sorted(looks.themes.iter(), &ORDER)
         .into_iter()
         .map(|n| (n.clone(), looks.themes[n].label.clone(), n == look.name()))
         .collect();
@@ -272,6 +282,115 @@ async fn look_row(k: &str, v: String) -> Result<impl View> {
     })
 }
 
+/// A form posting `name` to `/themes/<act>`, its one button saying `act`.
+#[component]
+async fn theme_button(act: &'static str, name: String) -> Result<impl View> {
+    Ok(view! {
+        <form method="post" action=(format!("/themes/{act}"))>
+            <input type="hidden" name="name" value=(name)>
+            <button type="submit">(act)</button>
+        </form>
+    })
+}
+
+/// A form starting a theme in `themes-dev/` with an agent: `[new theme]` (`from` empty) or `[remix]` of `from`.
+#[component]
+async fn theme_start(from: String) -> Result<impl View> {
+    let act = if from.is_empty() { "new" } else { "remix" };
+    Ok(view! {
+        <form method="post" action=(format!("/themes/{act}")) class="thf">
+            <input type="hidden" name="from" value=(from)>
+            <input
+                name="name"
+                required=(true)
+                pattern="[a-z0-9\\-]+"
+                aria-label="the new theme's name"
+                placeholder="name: a-z, 0-9, -"
+            >
+            <input
+                name="text"
+                aria-label="what it should look like"
+                placeholder="what it should look like"
+            >
+            <button type="submit">"start with an agent"</button>
+        </form>
+    })
+}
+
+/// Settings › look › themes (#38): the installed packs, each with `[remix]`, `[remove]` and (not the index's)
+/// `[publish]`; the ones being built, each to its preview; `[+ theme]` from the index or a URL; `[new theme]`. Native
+/// forms.
+#[component]
+async fn themes(cx: &Cx) -> Result<impl View> {
+    let assets = app_context::<Arc<LookAssets>>(cx);
+    let looks = assets.looks();
+    let listed = |n: &str| assets.index.iter().any(|l| l.name == n);
+    let installed: Vec<(String, String, bool)> = sorted(looks.themes.iter(), &ORDER)
+        .into_iter()
+        .filter(|n| *n != "plain")
+        .map(|n| (n.clone(), looks.themes[n].label.clone(), listed(n)))
+        .collect();
+    let more: Vec<(String, String)> = assets
+        .index
+        .iter()
+        .filter(|l| !looks.themes.contains_key(&l.name))
+        .map(|l| (l.name.clone(), l.description.clone()))
+        .collect();
+    let dev: Vec<(String, bool)> = looks
+        .dev
+        .iter()
+        .map(|(n, f)| (n.clone(), f.is_empty()))
+        .collect();
+    Ok(view! {
+        <p class="ch" id="s-themes">"themes"</p>
+        for (n, label, first) in installed {
+            <div class="thm">
+                <span class="thn">(label)</span>
+                if !first {
+                    theme_button(act: "publish", name: n.clone())
+                }
+                theme_button(act: "remove", name: n.clone())
+                <details class="thx">
+                    <summary>"remix"</summary>
+                    theme_start(from: n)
+                </details>
+            </div>
+        }
+        for (n, passes) in dev {
+            <a class="thm" href=(format!("/themes/dev/{n}"))>
+                <span class="thn">(format!("{n} · being built"))</span>
+                <small class="tds">
+                    (if passes { "passes the gate" } else { "fails the gate" })
+                </small>
+                <i class="cv">"▸"</i>
+            </a>
+        }
+        <details class="thx">
+            <summary>"+ theme"</summary>
+            for (n, about) in more {
+                <form method="post" action="/themes/add" class="thf">
+                    <input type="hidden" name="source" value=(n.clone())>
+                    <span>(about)</span>
+                    <button type="submit">(format!("add {n}"))</button>
+                </form>
+            }
+            <form method="post" action="/themes/add" class="thf">
+                <input
+                    name="source"
+                    required=(true)
+                    aria-label="a theme's git URL"
+                    placeholder="git URL"
+                >
+                <button type="submit">"add · not reviewed"</button>
+            </form>
+        </details>
+        <details class="thx">
+            <summary>"new theme"</summary>
+            theme_start(from: String::new())
+        </details>
+    })
+}
+
 /// Settings: its index, sign-ins, folders, the look's rows, alerts, devices and report.
 #[component]
 async fn settings(cx: &Cx) -> Result<impl View> {
@@ -324,6 +443,7 @@ async fn settings(cx: &Cx) -> Result<impl View> {
                 look_row(k: "theme", v: look.theme().label.clone())
                 look_row(k: "appearance", v: appearance)
                 look_row(k: "colours", v: both)
+                themes()
                 <p class="ch" id="s-alerts">"alerts"</p>
                 <div id="s-alerts-box"></div>
                 <p class="ch" id="s-devices">"devices"</p>

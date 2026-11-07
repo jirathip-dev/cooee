@@ -3,25 +3,52 @@
 cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.md`), as the #7 design
 (`docs/design/look/`) draws it. A theme is a folder of data and a scheme is a JSON file. Neither holds code.
 
-## A theme: `themes/<name>/`
+## A theme pack: `themes/<name>/`
+
+A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` is built in;
+`farm`, `kitchen` and `garden` are first-party packs in `packs/themes/`, listed in the curated index.
 
 | File | Required | What it is |
 |---|---|---|
-| `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words` |
+| `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, and `scene` (the Scene's layers: element ids in `scene.svg`) |
 | `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
-| `scene.svg` | no | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned); built in, herdsman's Herd scenes (`docs/design/scene/build.mjs`). A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
+| `scene.svg` | when `sprites` or `scene` | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned), its `viewBox` at most 400 × 320 (the first-party packs carry herdsman's Herd scenes, `docs/design/scene/build.mjs`: 390 × 320 or 392 × 188), holding each layer `scene` names. A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
+| `schemes/<name>.json` | no | the pack's own colour schemes (below); its `theme.json` may name them |
 | `icon.png` | no | the tile in the look sheet, the favicon and the home-screen icon (else cooee's icon) |
 
-`words` maps cooee's state keys to the theme's words: `working needs done fail idle merged loading empty-threads`.
-A missing key says the plain word (`working`, `needs you`, `done`, `failed`, …). The theme words dress cooee's own
-state words and figures, never what you or an agent wrote, and never a control. Where there is room (the working
-pill, the live line, a turn's end, push text), the plain word follows the theme word: `at the gate · needs you`.
+`words` maps cooee's state keys to the theme's words: `working needs done fail idle ended merged loading
+empty-threads`. A missing key says the plain word (`working`, `needs you`, `done`, `failed`, …). The theme words dress
+cooee's own state words and figures, never what you or an agent wrote, and never a control. Where there is room (the
+working pill, the live line, a turn's end, push text), the plain word follows the theme word: `at the gate · needs you`.
 
-Built in: `farm`, `kitchen`, `garden` and `plain` (`web/themes/`; `plain` was `terminal` before #35, and a saved
-`terminal` pick or `theme = "terminal"` shows `plain`). Your own go in `<config dir>/themes/<name>/`,
-where the config dir is the folder holding `config.toml`. One with a built-in's name replaces it. A theme naming an
-unknown scheme, or a scheme of the wrong mode, is refused, and so is one with `sprites` but no `sprites.svg`.
-`cooee serve` prints why.
+**The theme gate** checks a pack: `theme.json` parses; its word keys are state keys; every scheme it holds or names is
+of the right mode and passes the contrast gate (WCAG AA, below); `sprites.svg` holds every required state; `scene.svg`
+is at most 400 × 320 with every layer; and no file is too big (`sprites.svg` 512 KiB, `scene.svg` and `icon.png` 256 KiB, the
+rest 16 KiB). `cooee theme check <path>...` runs it (CI runs it on `packs/`), and so does every load: `cooee serve`
+refuses a pack that fails it, and prints why.
+
+## Installing, removing and building themes
+
+- `cooee theme add <name | git-url | path> [--rev R] [--yes]` copies a pack into `<config dir>/themes/<name>/` once it
+  passes the gate, and pins it in `<data>/themes.lock` (name, source, commit). A name is the index's pack, at its
+  pinned commit; a git URL or a folder that isn't in the index shows "not reviewed" and asks first. `cooee theme
+  remove <name>` and `cooee theme list` do the rest. `cooee serve` shows a change within a second, no restart.
+- **The index** is `plugins/index.toml`'s `[[theme]]` entries: `name`, `url`, `path` (the pack's folder in the repo),
+  the pinned `commit`, `description`, `first_party`. Adding one is a normal reviewed PR.
+- `cooee setup` asks which first-party themes to install; the default is all of them.
+- **Settings › look › themes** on the phone lists the installed packs, each with [remove] and [remix] (and [publish]
+  for one not from the index), the ones being built, [+ theme] (the index or a git URL) and [new theme].
+- **[new theme]** or **[remix]** makes `<config dir>/themes-dev/<name>/` (from `packs/starter/`, the plain words and
+  placeholder sprites and scene, or a copy of the remixed pack) and opens a chat with the first agent in shed there. The chat
+  links to the live preview, `/themes/dev/<name>`: the thread list, the chat and the scene in the theme, reloaded on
+  each save (and the gate's failures while it fails). **[keep]** runs the gate: a pass moves the pack into `themes/`;
+  a failure lists what to fix in the chat, for the agent. **[publish]** makes a kept pack a git repo of its own, to
+  push and propose for the index.
+- There is no mixing in settings: Appearance stays Style, Theme, Figures and Colours. To mix, [remix] makes a new
+  pack that borrows the parts (the agent copies them), which then passes the gate.
+
+An own folder in `themes/` (not added by `cooee theme add`) loads too; one with a built-in's name replaces it. `plain` was `terminal` before #35: a
+saved `terminal` pick or `theme = "terminal"` shows `plain`. A theme naming an unknown scheme, or a scheme of the wrong mode, is refused.
 
 ## A scheme: `schemes/<name>.json`
 
@@ -33,7 +60,8 @@ group tints, and the state colours at least ΔE2000 20 apart. A scheme that fail
 
 ## The pick
 
-The server holds only the default theme (`theme` in `config.toml`, default `farm`). Each device keeps its own pick
+The server holds only the default theme (`theme` in `config.toml`; default `farm` when it is installed, else
+`plain`). Each device keeps its own pick
 in its `cooee-look` cookie (#49), four choices (#35): Style (`modern`, `terminal` or `scene`), Theme, Figures
 (`sprite`, `ascii` or `none`) and Colours (Appearance `system`, `light` or `dark`, System following the phone live,
 and a scheme per mode). The server draws it from the page's first byte (`web/src/shown.rs`), so there is no flash;

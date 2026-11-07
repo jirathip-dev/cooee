@@ -18,7 +18,9 @@ mod setup;
 const USAGE: &str = "usage: cooee <serve | pair [<code>] | devices | reports | devices rm <id> | install --port <p> | doctor \
                      | perf [--minutes <n>] \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
-                     | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list> [--instance <name>] [--config <file>] | cooee --version";
+                     | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list \
+                     | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
+                     | theme check <path>...> [--instance <name>] [--config <file>] | cooee --version";
 
 /// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the exact version.
 const SHED_CARGO: [&str; 8] = [
@@ -114,6 +116,11 @@ fn main() -> ExitCode {
             let rest: Vec<&str> = rest.iter().map(String::as_str).collect();
             return with_config(path.as_deref(), &instance, |config| {
                 plugin(config, &rest, rev.as_deref(), yes, purge)
+            });
+        }
+        ["theme", rest @ ..] => {
+            return with_config(path.as_deref(), &instance, |config| {
+                theme(config, rest, rev.as_deref(), yes)
             });
         }
         ["install"] => {
@@ -313,9 +320,9 @@ fn remove(config: &Config, id: &str) -> Result<(), String> {
     }
 }
 
-/// Shows `plan`'s confirm; goes on with `--yes` or a `y` typed.
-fn confirm(plan: &cooee_server::Plan, yes: bool) -> Result<(), String> {
-    println!("{}", plan.text);
+/// Shows a confirm's `text`; goes on with `--yes` or a `y` typed.
+fn confirm(text: &str, yes: bool) -> Result<(), String> {
+    println!("{text}");
     if yes {
         return Ok(());
     }
@@ -342,7 +349,7 @@ fn plugin(
     match args {
         ["add", source] => {
             let plan = m.plan(source, rev).map_err(e)?;
-            confirm(&plan, yes)?;
+            confirm(&plan.text, yes)?;
             m.add(&plan).map_err(e)?;
             println!("added {}: cooee serve runs it", plan.manifest.name);
         }
@@ -366,7 +373,7 @@ fn plugin(
                     println!("{name}: up to date");
                     continue;
                 }
-                confirm(&plan, yes)?;
+                confirm(&plan.text, yes)?;
                 m.update(&plan)
                     .map_err(|x| format!("{name}: {x}; the old build keeps running"))?;
                 println!("updated {name} to {}", &plan.commit[..7]);
@@ -392,6 +399,59 @@ fn plugin(
                     &l.commit[..7],
                     r.state
                 );
+            }
+        }
+        _ => return Err(USAGE.to_owned()),
+    }
+    Ok(())
+}
+
+/// `cooee theme add|remove|list|check` (docs/themes.md).
+fn theme(config: &Config, args: &[&str], rev: Option<&str>, yes: bool) -> Result<(), String> {
+    if let ["check", paths @ ..] = args {
+        let mut failed = 0;
+        for p in paths {
+            match cooee_web::check(Path::new(p)) {
+                Ok(()) => println!("ok   {p}"),
+                Err(fails) => {
+                    failed += 1;
+                    println!("FAIL {p}\n     {}", fails.join("\n     "));
+                }
+            }
+        }
+        return match (paths.len(), failed) {
+            (0, _) => Err(USAGE.to_owned()),
+            (_, 0) => Ok(()),
+            _ => Err(format!("{failed} theme(s) fail the theme gate")),
+        };
+    }
+    let t = cooee_server::Themes::new(config).map_err(|e| e.to_string())?;
+    let e = |e: std::io::Error| e.to_string();
+    match args {
+        ["add", source] => {
+            let pack = t.plan(source, rev).map_err(e)?;
+            if pack.listed {
+                println!("{}", pack.text);
+            } else {
+                confirm(&pack.text, yes)?;
+            }
+            t.add(&pack).map_err(e)?;
+            println!("added {}: pick it in Settings › look", pack.name);
+        }
+        ["remove", name] => {
+            t.remove(name).map_err(e)?;
+            println!("removed {name}");
+        }
+        ["list"] => {
+            let packs = t.list().map_err(e)?;
+            if packs.is_empty() {
+                println!(
+                    "no themes installed: plain is built in; `cooee theme add <name>` adds one"
+                );
+            }
+            for p in packs {
+                let commit = p.commit.get(..7).unwrap_or("-");
+                println!("{}  {}  {commit}", p.name, p.source);
             }
         }
         _ => return Err(USAGE.to_owned()),
