@@ -32,6 +32,8 @@ fn row_34_a_thread_starts_on_its_pick_and_the_chips_change_it() {
         .to_owned();
     let log = shed.cli_log();
     let line = log.lines().rfind(|l| l.contains(" run ")).unwrap();
+    // The adapter's command line comes from the hub's list, not another `shed agents` (#55).
+    assert_eq!(log.matches(" agents\n").count(), 1, "{log}");
     assert!(
         line.ends_with(" -- env FAKE_MODEL=opus fake-acp --effort high"),
         "{line}"

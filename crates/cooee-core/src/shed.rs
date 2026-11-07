@@ -437,9 +437,9 @@ impl Shed {
     }
 
     /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`) and `launch`: with
-    /// variables or args, its installed adapter runs as `env K=V… <adapter> args…`, and with secrets as `env K=V… sh
-    /// -c '…' <file> <adapter> args…`, the shell reading the secrets from `<file>` (mode 0600, written here) and
-    /// removing it.
+    /// variables or args, its installed adapter `cmd` (as `shed agents` lists it) runs as `env K=V… <adapter>
+    /// args…`, and with secrets as `env K=V… sh -c '…' <file> <adapter> args…`, the shell reading the secrets from
+    /// `<file>` (mode 0600, written here) and removing it.
     ///
     /// # Errors
     /// [`ShedError::Cli`] when the CLI fails (e.g. the agent isn't installed or the name is taken), or the secrets'
@@ -447,7 +447,7 @@ impl Shed {
     pub fn run_acp(
         &self,
         name: &str,
-        agent: &str,
+        (agent, cmd): (&str, &[String]),
         cwd: &Path,
         labels: &BTreeMap<String, String>,
         launch: &Launch,
@@ -463,8 +463,6 @@ impl Shed {
         }
         let mut tail: Vec<String> = Vec::new();
         if !launch.env.is_empty() || launch.secrets.is_some() || !launch.args.is_empty() {
-            let installed = self.agents()?.into_iter().find(|a| a.id == agent);
-            let cmd = installed.map(|a| a.cmd).unwrap_or_default();
             if cmd.is_empty() {
                 return Err(ShedError::Cli {
                     args: "agents".to_owned(),
@@ -487,7 +485,7 @@ impl Shed {
                 tail.extend(["sh".to_owned(), "-c".to_owned(), read.to_owned()]);
                 tail.push(file.to_string_lossy().into_owned());
             }
-            tail.extend(cmd);
+            tail.extend(cmd.iter().cloned());
             tail.extend(launch.args.iter().cloned());
             args.push("--");
             args.extend(tail.iter().map(String::as_str));
