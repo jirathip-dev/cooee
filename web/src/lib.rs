@@ -260,12 +260,11 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
 
 /// The chat header: the agent's name, the title (an agent's ongoing chat is titled by its name; a side thread by
 /// its own, its agent first in the line), and the line before its state: a Workflow session's role and round, else
-/// profile (Plain), agent, account, model and folder.
+/// profile (Plain), agent, account and model (the folder follows it, drawn apart so Use a folder… can change it).
 fn bar(
     thread: &Thread,
     mate: Option<&(usize, String, bool)>,
     profile: &str,
-    folder: &str,
 ) -> (String, String, String) {
     let (name, title, by) = match mate {
         Some((_, n, true)) => (n.clone(), n.clone(), ""),
@@ -276,18 +275,11 @@ fn bar(
         return (name, title, format!("{} · round {} · ", w.role, w.round));
     }
     let profile = if profile.is_empty() { "Plain" } else { profile };
-    let line = [
-        by,
-        profile,
-        &thread.agent,
-        &thread.account,
-        &thread.model,
-        folder,
-    ]
-    .into_iter()
-    .filter(|s| !s.is_empty())
-    .flat_map(|s| [s, " · "])
-    .collect();
+    let line = [by, profile, &thread.agent, &thread.account, &thread.model]
+        .into_iter()
+        .filter(|s| !s.is_empty())
+        .flat_map(|s| [s, " · "])
+        .collect();
     (name, title, line)
 }
 
@@ -701,7 +693,7 @@ async fn chat(
     ]
     .map(|(st, plain)| Unescaped::new_unchecked(look.st(st, plain)));
     let folder = places.2.as_deref().map_or("scratch".to_owned(), short);
-    let (name, title, said) = bar(&thread, mate.as_ref(), &profile, &folder);
+    let (name, title, said) = bar(&thread, mate.as_ref(), &profile);
     let ended = thread.closed || turn.state == "ended";
     // A Workflow session (#33): its role and round, and a link to what it works on; its tool closes it.
     let workflow = thread.workflow.clone();
@@ -731,6 +723,10 @@ async fn chat(
                     <span class="ds">
                         <i class="dt"></i>
                         (said)
+                        if thread.workflow.is_none() {
+                            <span id="bf">(folder)</span>
+                            " · "
+                        }
                         <span id="st" data-st=(state(&turn.state))>(st)</span>
                         if let Some(url) = link {
                             " · "

@@ -59,7 +59,11 @@ test("Use a folder…: search finds a sub-folder, [+ new folder] makes one in a 
   const panel = page.locator("#ufs");
   await expect(panel).toBeVisible();
   await expect(panel.getByRole("radio", { name: /^scratch/ })).toBeChecked();
-  const deep = panel.getByRole("radio", { name: /^~\/root\/project\/deep-src/ });
+  // Search first, then scratch; a root heads its group and its folders show by name.
+  await expect(panel.locator(".fl > :not(legend)").first()).toHaveAttribute("id", "fq");
+  await expect(panel.locator('label[title="~/root"]')).toHaveText("~/root");
+  await expect(panel.locator('label[title="~/root/project"]')).toHaveText(/^project/);
+  const deep = panel.getByRole("radio", { name: /^deep-src/ });
   const root = panel.getByRole("radio", { name: /^~\/root( |$)/ });
   await expect(deep).toBeHidden();
   await page.getByLabel("search folders").fill("deep");
@@ -88,9 +92,11 @@ test("Use a folder… in a chat: its later turns run in the folder, the chat say
   await expect(page.locator(".th .ds")).toContainText("scratch");
   await page.getByRole("button", { name: "folder: scratch ▾" }).click();
   await page.getByLabel("search folders").fill("project");
-  await page.locator("#ufs").getByRole("radio", { name: /^~\/root\/project( |$)/ }).check();
-  await expect(page.locator("#msgs .qs").last()).toHaveText("now in ~/root/project · later turns run here");
+  await page.locator("#ufs").getByRole("radio", { name: /^project( |$)/ }).check();
+  await expect(page.locator("#msgs .qs").last()).toHaveText(/^now in ~\/root\/project · later turns run here · \d\d?:\d\d/);
   await expect(page.getByRole("button", { name: "folder: project ▾" })).toBeVisible();
+  // The thread bar names the folder at once, as the chip does.
+  await expect(page.locator("#bf")).toHaveText("~/root/project");
   await shot(page, info, "chat-folder-attached");
   // A reload draws the folder; scratch is no way back.
   await page.reload();

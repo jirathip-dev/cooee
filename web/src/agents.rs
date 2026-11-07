@@ -3,7 +3,7 @@
 //! nothing picked (it runs in a scratch folder of its own) and "Use a folder…" attaches a root's folder at any time.
 //! From 1000 px the sidebar sits beside the pane; on a phone it is the home screen and a chat its own screen.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use cooee_core::{AGENTS_FIX, Agent, Profile, ROOTS_FIX, Sheet, Summary, Thread, Turn};
 use topcoat::{
@@ -384,10 +384,11 @@ pub(crate) async fn folder_chip(
     rows: Vec<Summary>,
     now: Option<PathBuf>,
 ) -> Result<impl View> {
-    let label = now.as_deref().map_or("scratch".to_owned(), |f| {
+    let name = |f: &Path| {
         f.file_name()
             .map_or(short(f), |n| n.to_string_lossy().into_owned())
-    });
+    };
+    let label = now.as_deref().map_or("scratch".to_owned(), name);
     let count = |f: &PathBuf| {
         let f = f.canonicalize().unwrap_or_else(|_| f.clone());
         match rows.iter().filter(|r| r.folder == f).count() {
@@ -401,6 +402,7 @@ pub(crate) async fn folder_chip(
         .map(|(f, d)| (f.clone(), *d, count(f)))
         .collect();
     let scratch = now.is_none();
+    let list_empty = list.is_empty();
     Ok(view! {
         <button type="button" class="fo" popovertarget="ufs">
             (format!("folder: {label} ▾"))
@@ -426,6 +428,21 @@ pub(crate) async fn folder_chip(
             </div>
             <fieldset class="fl">
                 <legend class="vh">"folder"</legend>
+                if list.is_empty() {
+                    hint(
+                        why: "no folders set · add",
+                        fix: ROOTS_FIX,
+                        then: "to config.toml"
+                    )
+                } else {
+                    <input
+                        id="fq"
+                        type="search"
+                        aria-label="search folders"
+                        placeholder="search folders"
+                        autocomplete="off"
+                    >
+                }
                 <label>
                     <input
                         type="radio"
@@ -437,33 +454,20 @@ pub(crate) async fn folder_chip(
                     "scratch"
                     <span class="ds">"this chat's own"</span>
                 </label>
-                if list.is_empty() {
-                    hint(
-                        why: "no folders set · add",
-                        fix: ROOTS_FIX,
-                        then: "to config.toml"
-                    )
-                } else {
-                    <div class="fh">
-                        <input
-                            id="fq"
-                            type="search"
-                            aria-label="search folders"
-                            placeholder="search folders"
-                            autocomplete="off"
-                        >
-                        <button type="button" id="mkdir">"+ new folder"</button>
-                    </div>
-                }
+                // A root heads its group (`~/Projects`); the folders in it show by name.
                 for (f, depth, n) in list {
-                    <label data-d=(depth.to_string()) hidden=(depth > 1)>
+                    <label
+                        data-d=(depth.to_string())
+                        hidden=(depth > 1)
+                        title=(short(&f))
+                    >
                         <input
                             type="radio"
                             name="folder"
                             value=(f.display().to_string())
                             checked=(now.as_ref() == Some(&f))
                         >
-                        (short(&f))
+                        (if depth == 0 { short(&f) } else { name(&f) })
                         <span class="ds">(n)</span>
                     </label>
                 }
@@ -471,6 +475,9 @@ pub(crate) async fn folder_chip(
             <p class="ds">
                 "Later turns run in the folder you pick. What the chat made in scratch stays there."
             </p>
+            if !list_empty {
+                <button type="button" id="mkdir">"+ new folder"</button>
+            }
         </div>
     })
 }
@@ -677,7 +684,8 @@ async fn hello(
                             }
                             <span class="ds">
                                 <i class="dt" data-sync="on"></i>
-                                (format!("{} · {} · scratch", m.name, m.profile))
+                                (format!("{} · {} · ", m.name, m.profile))
+                                <span id="bf">"scratch"</span>
                             </span>
                         </div>
                     </div>

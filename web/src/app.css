@@ -205,8 +205,8 @@ html[data-style=terminal] .swa{border-radius:4px}
 @keyframes mo-hop{50%{translate:0 -4px}}@keyframes mo-shake{25%{translate:-2px 0}75%{translate:2px 0}}@keyframes mo-pulse{50%{scale:1.25}}
 @keyframes mo-tint{from{background:color-mix(in srgb,var(--r) 18%,var(--card))}}@keyframes mo-tag{0%,100%{scale:0}8%,85%{scale:1}}
 @media (prefers-reduced-motion:reduce){#ld.run,.rfs,.th[data-mo],.th[data-mo] *{animation:none!important}}
-.fl [data-d="1"]{padding-left:28px}.fl [data-d="2"]{padding-left:44px}
-#fq{flex:1;min-width:0}.lrw .sk{min-width:0;overflow-wrap:anywhere}
+.fl [data-d="1"]{padding-left:16px}.fl [data-d="2"]{padding-left:32px}
+.lrw .sk{min-width:0;overflow-wrap:anywhere}
 .pga{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .plg{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.4 var(--mono);max-height:40vh;overflow:auto;margin:8px 0;padding:8px;background:var(--bg);border-radius:var(--r-row)}
 #s-plugins-box form input{flex:1;min-width:0;font:16px var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:var(--hit)}
@@ -240,7 +240,9 @@ html[data-style=terminal] .swa{border-radius:4px}
 @media (min-width:1000px){.ufs{inset:auto auto 112px 352px;width:380px;border-radius:var(--r-card);box-shadow:0 8px 48px #0006}.ufs::backdrop{background:none}}
 .ufs .fl{display:flex;flex-direction:column;margin:0;padding:0;border:0}
 .ufs .fl label{display:flex;align-items:center;gap:8px;min-height:44px;border-top:1px solid var(--line);overflow-wrap:anywhere}.ufs .fl label .ds{margin-left:auto}
-.ufs .fh:has(#fq){margin:4px 0 8px}#mkdir{flex:none}.ufs>.ds{margin:8px 0 0}
+.ufs .fl [type=radio]{position:absolute;opacity:0;pointer-events:none}.ufs .fl label:has(:checked)::after{content:"✓";color:var(--link)}
+.ufs .fl label:has(:focus-visible){outline:2px solid var(--link)}.ufs .fl [data-d="0"]{min-height:36px;margin-top:8px;font-size:var(--fs-meta);font-weight:600;color:var(--mute);border:0}
+#fq{margin:4px 0 8px}.ufs>.ds{margin:8px 0}
 html[data-style=terminal] .av{border-radius:4px}
 html[data-style=terminal] :is(.agr,.str).on{background:none;border-radius:0;box-shadow:inset 3px 0 var(--l)}
 html[data-style=terminal] .fo::before,html[data-style=terminal] .fo::after{content:none}

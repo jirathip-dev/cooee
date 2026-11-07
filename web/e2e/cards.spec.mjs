@@ -118,7 +118,7 @@ test("row 34: the composer's model and effort chips; a pick is kept and said in 
   const id = await thread(page, `Row 34 ${info.project.name}`);
   await expect(page.getByLabel("model", { exact: true })).toHaveValue("");
   await page.getByLabel("effort", { exact: true }).selectOption("low");
-  await expect(page.locator(".qs", { hasText: "effort low" })).toHaveText("model default · effort low from the next start");
+  await expect(page.locator(".qs", { hasText: "effort low" })).toHaveText(/^model default · effort low from the next start · \d\d?:\d\d/);
   await audit(page);
   await shot(page, info, "parity-34-chip");
   await page.goto(`/t/${id}`);

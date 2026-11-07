@@ -225,15 +225,15 @@ if (mkdir && ufs)
     const at = ufs.querySelector(".fl :checked")?.parentElement;
     const parent = at && $<HTMLInputElement>("input", at);
     if (!at || !parent?.value) return toast("pick a folder to make one in", true);
-    const label = at.firstChild?.nextSibling?.textContent ?? "";
-    const name = prompt(`New folder in ${label}:`);
+    const name = prompt(`New folder in ${at.title}:`);
     if (!name) return;
     try {
       const row = at.cloneNode(true) as HTMLElement;
       const input = $<HTMLInputElement>("input", row);
       if (!input) return;
       input.value = await post<string>("/folders/new", { parent: parent.value, name });
-      if (input.nextSibling) input.nextSibling.textContent = `${label}/${name}`;
+      if (input.nextSibling) input.nextSibling.textContent = name;
+      row.title = `${at.title}/${name}`;
       row.lastElementChild?.replaceChildren();
       row.dataset.d = String(Math.min(2, Number(at.dataset.d) + 1));
       row.hidden = false;
@@ -259,6 +259,8 @@ ufs?.addEventListener("change", async (e) => {
       return;
     }
   if (chip) chip.textContent = `folder: ${name} ▾`;
+  const bf = $("#bf");
+  if (bf) bf.textContent = t.value ? (t.parentElement?.title ?? name) : "scratch";
 });
 
 // An empty picker's hint: its copy button puts the fix line on the clipboard.
@@ -1084,7 +1086,7 @@ function chat(main: HTMLElement): void {
       row.append(ol);
     } else {
       row.className = "qs";
-      row.textContent = it.text;
+      row.textContent = `${it.text} · ${time(it.at)}`;
     }
     return row;
   }

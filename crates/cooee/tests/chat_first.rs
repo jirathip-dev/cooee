@@ -177,7 +177,10 @@ fn an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_p
         page.contains("<h1>second</h1>") && page.contains("fake-acp · Plain · fake-acp · "),
         "{page}"
     );
-    assert!(page.contains("scratch · "), "{page}");
+    assert!(
+        page.contains(r#"<span id="bf">scratch</span> · "#),
+        "{page}"
+    );
 }
 
 /// `+ new agent`: a name and the profile it starts from, saved as a profile of its own; its new chat opens.
