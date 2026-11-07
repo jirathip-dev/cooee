@@ -1,0 +1,75 @@
+$ cooee theme list
+exit=0
+$ cooee theme check packs/themes/* packs/starter
+ok   packs/themes/farm
+ok   packs/themes/garden
+ok   packs/themes/kitchen
+ok   packs/starter
+exit=0
+$ cooee theme check f-state
+FAIL /Users/jkmacmini/.cache/herdsman/target/.scratch/cooee-verify-38-r1/cli/f-state
+     sprites.svg: no s-needs
+cooee: 1 theme(s) fail the theme gate
+exit=1
+$ cooee theme check f-contrast
+FAIL /Users/jkmacmini/.cache/herdsman/target/.scratch/cooee-verify-38-r1/cli/f-contrast
+     schemes/murk.json: fails the contrast gate: --fg on --bg 1.00 (min 4.5); --mute on --bg 1.00 (min 4.5); --l on --bg 1.00 (min 4.5); --link on --bg 1.00 (min 4.5); --fk-l on --bg 1.00 (min 4.5); --fk-p on --bg 1.00 (min 4.5); --fk-c on --bg 1.00 (min 4.5); --fk-g on --bg 1.00 (min 4.5); --fk-a on --bg 1.00 (min 4.5); --g on --bg 1.00 (min 3); --a on --bg 1.00 (min 3); --r on --bg 1.00 (min 3); --fg on --card 1.24 (min 4.5); --mute on --card 1.24 (min 4.5); --l on --card 1.24 (min 4.5); --link on --card 1.24 (min 4.5); --fk-l on --card 1.24 (min 4.5); --fk-p on --card 1.24 (min 4.5); --fk-c on --card 1.24 (min 4.5); --fk-g on --card 1.24 (min 4.5); --fk-a on --card 1.24 (min 4.5); --g on --card 1.24 (min 3); --a on --card 1.24 (min 3); --r on --card 1.24 (min 3); --bg on --l 1.00 (min 4.5); --fg on the needs-you card 1.00 (min 4.5); --mute on the needs-you card 1.00 (min 4.5); --l on the needs-you card 1.00 (min 4.5); --r on the needs-you card 1.00 (min 3); --r on a red group header 1.00 (min 3); --a on an amber group header 1.00 (min 3); ΔE2000 --g ↔ --a 0.00 (min 20); ΔE2000 --a ↔ --r 0.00 (min 20); ΔE2000 --g ↔ --r 0.00 (min 20); ΔE2000 --l ↔ --g 0.00 (min 20); ΔE2000 --l ↔ --a 0.00 (min 20); ΔE2000 --l ↔ --r 0.00 (min 20); ΔE2000 --link ↔ --g 0.00 (min 20); ΔE2000 --link ↔ --a 0.00 (min 20); ΔE2000 --link ↔ --r 0.00 (min 20)
+     scheme.dark "murk": no such scheme
+cooee: 1 theme(s) fail the theme gate
+exit=1
+$ cooee theme check f-scene
+FAIL /Users/jkmacmini/.cache/herdsman/target/.scratch/cooee-verify-38-r1/cli/f-scene
+     scene.svg: viewBox Some("0 0 2000 2000"), not "0 0 390 320"
+cooee: 1 theme(s) fail the theme gate
+exit=1
+$ cooee theme add farm --yes   (default index, GitHub at the pinned commit)
+theme farm from https://github.com/jirathip-dev/cooee (packs/themes/farm) at ca91141bb0532083ef623168913162dabf53848a
+added farm: pick it in Settings › look
+exit=0
+$ cooee theme add packs/themes/garden (no --yes, answering n)
+theme garden from /Users/jkmacmini/.herdr/worktrees/cooee/verify-38-r1/packs/themes/garden at HEAD
+not reviewed: this theme isn't in cooee's index; look at its files before you add it
+go ahead? [y/N] cooee: nothing changed
+exit=1
+$ cooee theme add packs/themes/garden --yes
+theme garden from /Users/jkmacmini/.herdr/worktrees/cooee/verify-38-r1/packs/themes/garden at HEAD
+not reviewed: this theme isn't in cooee's index; look at its files before you add it
+added garden: pick it in Settings › look
+exit=0
+$ cooee theme add f-state --yes
+theme f-state from /Users/jkmacmini/.cache/herdsman/target/.scratch/cooee-verify-38-r1/cli/f-state at HEAD
+not reviewed: this theme isn't in cooee's index; look at its files before you add it
+cooee: it fails the theme gate:
+  sprites.svg: no s-needs
+exit=1
+$ cooee theme list
+farm  index  ca91141
+garden  /Users/jkmacmini/.herdr/worktrees/cooee/verify-38-r1/packs/themes/garden  044bea0
+exit=0
+$ cat data/themes.lock
+[
+  {
+    "name": "farm",
+    "source": "index",
+    "commit": "ca91141bb0532083ef623168913162dabf53848a",
+    "listed": true
+  },
+  {
+    "name": "garden",
+    "source": "/Users/jkmacmini/.herdr/worktrees/cooee/verify-38-r1/packs/themes/garden",
+    "commit": "044bea00ce9d78a0eb998ee283f7af2391c060f6",
+    "listed": false
+  }
+]
+farm
+garden
+$ cooee theme remove garden
+removed garden
+exit=0
+$ cooee theme remove nope
+cooee: nope isn't installed
+exit=1
+$ cooee theme list
+farm  index  ca91141
+exit=0
+farm

@@ -1,0 +1,64 @@
+390 themes rows: ["farm","kitchen","garden"]
+390 buttons on farm: ["publish","remove","remix",""]
+390 look-themes ok
+390 plus-theme ok
+390 +theme text: "+ theme\nadd · not reviewed"
+390 after remove: ["farm","garden"]
+390 add status: 303 -> http://127.0.0.1:41660/#settings/look
+390 after add: ["farm","garden","kitchen"]
+390 remix-form ok
+390 chat url: http://127.0.0.1:41660/t/t1a1b3c01031
+390 dev folder: ["icon.png","sprites.svg","theme.json"]
+390 farm copied same: true
+390 chat first lines: "Theme night-390: farm at night\n\nYou're building the cooee theme night-390: this folder is its pack (docs/themes.md in cooee's repo). theme.json has label, scheme {dark, light} (scheme names), sprites, moments, words (keys: working needs done fail idle ended merged loading empty-threads) and optional"
+390 remix-chat ok
+390 gate: passes the theme gate · reloads on each save
+390 scene img: 0
+390 preview ok
+390 after bad save: fails the theme gate · reloads on each save ["sprites.svg: no s-needs"]
+390 preview-fails ok
+390 keep (failing) -> http://127.0.0.1:41660/t/t1a1b3c01031
+390 chat tail: " --mute --l --link --g --a --r --p --c --fk-l --fk-p --fk-c --fk-g --fk-a), each passing WCAG AA. My phone shows a live preview that reloads on each save. When I tap [keep], cooee runs the theme gate and lists here anything to fix.\n09:04 AM\nfake-acp\nHello\n[keep] it fails the theme gate:\n  sprites.svg: no s-needs\n\nFix these; I'll tap keep again.\n09:04 AM\nfake-acp\nHello\nin the stable · done\n09:04 AM"
+390 installed? false
+390 keep-blocked ok
+390 after fix: passes the theme gate · reloads on each save
+390 frame loading word: saddling up by moonlight
+390 after keep: ["farm","garden","kitchen","night-390 night"] installed: true dev gone: true
+390 kept ok
+390 html theme: night-390
+390 html theme on /: night-390
+390 threads-in-new-theme ok
+390 new folder: ["sprites.svg","theme.json"]
+390 starter gate: passes the theme gate · reloads on each save
+390 new-theme-preview ok
+390 dup remix: 409 "a theme named fresh is there already"
+390 dup-remix ok
+390 publish: 200 "night-390 is a git repo now, at f68b5ee: /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.Hw5teUmpOH/themes/night-390. Push it (gh repo create --source /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.Hw5teUmpOH/themes/night-390 --push), then propose it for cooee's plugins/index.toml by PR."
+390 publish ok
+1440 themes rows: ["farm","garden","kitchen","night-390 night","fresh · being built"]
+1440 buttons on farm: ["publish","remove","remix",""]
+1440 look-themes ok
+1440 plus-theme ok
+1440 +theme text: "+ theme\nadd · not reviewed"
+1440 remix-form ok
+1440 chat url: http://127.0.0.1:41660/t/t1a1b3c039fa
+1440 dev folder: ["icon.png","sprites.svg","theme.json"]
+1440 farm copied same: true
+1440 chat first lines: "Theme night-1440: farm at night\n\nYou're building the cooee theme night-1440: this folder is its pack (docs/themes.md in cooee's repo). theme.json has label, scheme {dark, light} (scheme names), sprites, moments, words (keys: working needs done fail idle ended merged loading empty-threads) and option"
+1440 remix-chat ok
+1440 gate: passes the theme gate · reloads on each save
+1440 scene img: 0
+1440 preview ok
+1440 after bad save: fails the theme gate · reloads on each save ["sprites.svg: no s-needs"]
+1440 preview-fails ok
+1440 keep (failing) -> http://127.0.0.1:41660/t/t1a1b3c039fa
+1440 chat tail: " --mute --l --link --g --a --r --p --c --fk-l --fk-p --fk-c --fk-g --fk-a), each passing WCAG AA. My phone shows a live preview that reloads on each save. When I tap [keep], cooee runs the theme gate and lists here anything to fix.\n09:04 AM\nfake-acp\nHello\n[keep] it fails the theme gate:\n  sprites.svg: no s-needs\n\nFix these; I'll tap keep again.\n09:04 AM\nfake-acp\nHello\nin the stable · done\n09:04 AM"
+1440 installed? false
+1440 keep-blocked ok
+1440 after fix: passes the theme gate · reloads on each save
+1440 frame loading word: saddling up by moonlight
+1440 after keep: ["farm","garden","kitchen","night-1440 night","night-390 night","fresh · being built"] installed: true dev gone: true
+1440 kept ok
+1440 html theme: night-1440
+1440 html theme on /: night-1440
+1440 threads-in-new-theme ok
