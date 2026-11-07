@@ -9,7 +9,7 @@ use std::{
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
     process::Command,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -135,6 +135,17 @@ struct Conn {
 
 impl Conn {
     fn call<R: DeserializeOwned>(&mut self, method: Method, params: Value) -> Result<R, ShedError> {
+        let start = Instant::now();
+        let result = self.exchange(method, params);
+        crate::perf::shed(method.name(), "socket", start);
+        result
+    }
+
+    fn exchange<R: DeserializeOwned>(
+        &mut self,
+        method: Method,
+        params: Value,
+    ) -> Result<R, ShedError> {
         self.id += 1;
         let mut line = serde_json::to_vec(&Request::new(self.id, method, params))
             .map_err(|e| ShedError::Bad(e.to_string()))?;
@@ -493,11 +504,10 @@ impl Shed {
             args: args.join(" "),
             detail,
         };
-        let out = cmd
-            .arg("--json")
-            .args(args)
-            .output()
-            .map_err(|e| fail(format!("{}: {e}", self.bin.display())))?;
+        let start = Instant::now();
+        let out = cmd.arg("--json").args(args).output();
+        crate::perf::shed(args.first().copied().unwrap_or_default(), "cli", start);
+        let out = out.map_err(|e| fail(format!("{}: {e}", self.bin.display())))?;
         if !out.status.success() {
             return Err(fail(String::from_utf8_lossy(&out.stderr).trim().to_owned()));
         }

@@ -47,6 +47,22 @@ pub struct Config {
     /// The instance's name (`cooee serve --instance`, default `cooee`): its own config, data folder and pairing.
     #[serde(skip)]
     pub instance: String,
+    /// Timing (`[perf]`).
+    pub perf: Perf,
+}
+
+/// `[perf]`: how cooee times itself (#53).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Perf {
+    /// A request taking this many milliseconds or more is logged as slow (default 250).
+    pub slow_ms: u64,
+}
+
+impl Default for Perf {
+    fn default() -> Self {
+        Self { slow_ms: 250 }
+    }
 }
 
 /// A plugin: a tab whose page is an ES module served by the plugin's own backend, which cooee reaches with the
@@ -84,6 +100,7 @@ impl Default for Config {
             dir: None,
             path: None,
             instance: "cooee".to_owned(),
+            perf: Perf::default(),
         }
     }
 }

@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{Arc, Mutex, MutexGuard, PoisonError},
     thread,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use cooee_core::{
@@ -80,6 +80,8 @@ struct Live {
     moved: u64,
     /// Its working turn was surfaced as stuck; the next shed event clears it.
     stuck: bool,
+    /// When its last prompt was sent, until the reply's first chunk came (#53).
+    sent: Option<Instant>,
 }
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
@@ -256,6 +258,7 @@ impl Live {
             tx: broadcast::channel(RING).0,
             moved: now(),
             stuck: false,
+            sent: None,
         }
     }
 
@@ -524,6 +527,14 @@ impl Hub {
             }
         }
         changes.extend(live.chat.apply(now(), event.seq, event.kind));
+        let chunk = changes.iter().any(|c| match c {
+            Change::Text(_) => true,
+            Change::Item(i) => matches!(i.body, Body::Agent { .. }),
+            Change::State(_) => false,
+        });
+        if let Some(sent) = live.sent.take_if(|_| chunk) {
+            cooee_core::perf::first_token(&live.meta.id, &live.meta.agent, sent);
+        }
         if let Err(e) = live.publish(self, changes) {
             eprintln!("cooee: {e}");
         }
@@ -795,6 +806,7 @@ impl Hub {
         random_id: &str,
         before: &str,
     ) -> Result<Item, HubError> {
+        let start = Instant::now();
         let live = self.live(id)?;
         let mut live = lock(&live);
         let sent = live
@@ -817,6 +829,7 @@ impl Hub {
             format!("{}\n\n{text}", before.trim_end())
         };
         self.shed.prompt(&live.meta.terminal, &prompt)?;
+        live.sent = Some(start);
         let body = Body::You {
             text: text.to_owned(),
             random_id: random_id.to_owned(),
