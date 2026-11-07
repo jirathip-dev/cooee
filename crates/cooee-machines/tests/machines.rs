@@ -209,6 +209,12 @@ fn the_24_h_history_is_asked_for_once_then_only_what_is_new() {
     assert_eq!(card.history.len(), 1439);
     assert_eq!(card.history[0].at, NOW - DAY + 120);
     assert_eq!(card.history.last().unwrap().at, NOW);
+
+    // A shed that answers the whole day again: nothing kept twice.
+    answer(&dir, "local", &first);
+    let card = m.poll(NOW + 120).remove(0);
+    assert_eq!(card.history.len(), 1438);
+    assert_eq!(card.history.last().unwrap().at, NOW);
 }
 
 /// A fake cooee: every POST's path and body; it answers `status`.

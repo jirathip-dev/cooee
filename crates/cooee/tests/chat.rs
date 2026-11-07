@@ -293,6 +293,66 @@ fn closing_a_thread_kills_and_removes_its_terminal() {
 }
 
 #[test]
+fn scene_draws_one_sprite_per_session_on_a_page_per_folder() {
+    // #34: Style's Scene draws the thread list as the theme's scene; threads keep the style chosen before it.
+    let s = setup("scene");
+    let ids = [s.create("one"), s.create("two")];
+    let other = json!({ "agent": "fake-acp", "folder": s.dir.join("root"), "text": "three", "random_id": "scene-root" });
+    let (status, body) = s.cooee.post("/threads", &other);
+    assert_eq!(status, 200, "{body}");
+    let third = serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let page = |pick: &str| {
+        let cookie = format!("{}; cooee-look={pick}", s.cooee.cookie);
+        s.cooee.raw("GET", "/", &[("Cookie", &cookie)], "").1
+    };
+    let scene = page("scene:on/style:terminal");
+    assert!(scene.contains(r#"data-style="terminal""#), "{scene}");
+    assert_eq!(
+        scene.matches(r#"<section class="sp""#).count(),
+        2,
+        "{scene}"
+    );
+    assert_eq!(scene.matches("<nav class=\"sdt\"").count(), 1, "{scene}");
+    assert_eq!(scene.matches(r##"<a href="#sp-"##).count(), 2, "{scene}");
+    assert_eq!(scene.matches(r#"<a class="sb"#).count(), 3, "{scene}");
+    for id in ids.iter().chain([&third]) {
+        let tap = format!(r#"href="/t/{id}" data-id="{id}""#);
+        assert_eq!(scene.matches(&tap).count(), 1, "{id}: {scene}");
+    }
+    assert!(scene.contains("/look/farm/sprites.svg#s-"), "{scene}");
+    assert!(!scene.contains(r#"<section class="fc""#), "{scene}");
+    // Scene is checked; Figures stays live (ASCII or None leave Scene, amendment A).
+    assert!(
+        scene.contains(r#"data-v="scene" aria-checked="true""#),
+        "{scene}"
+    );
+    // Figures ASCII or None, or a theme with no sprites (plain): no Scene, the cards, and Scene not offered.
+    for pick in [
+        "scene:on/figures:ascii",
+        "scene:on/figures:none",
+        "scene:on/theme:plain",
+    ] {
+        let list = page(pick);
+        assert!(!list.contains(r#"id="scene""#), "{pick}");
+        assert!(list.contains(r#"<section class="fc""#), "{pick}");
+        let v = list.find(r#"data-v="scene""#).unwrap();
+        let at = list[..v].rfind("<button").unwrap();
+        let tag = &list[at..v];
+        assert!(tag.contains("hidden"), "{pick}: {tag}");
+    }
+    // The scene's art, its calm layers only (cooee has no host load).
+    let (status, art) = s.cooee.get("/look/kitchen/scene.svg");
+    assert_eq!(status, 200);
+    assert!(
+        art.contains(".h-busy,.h-held,.l-overcast,.l-rain{display:none}"),
+        "{art}"
+    );
+}
+
+#[test]
 fn a_shed_of_another_version_is_refused_naming_both_versions() {
     let dir = scratch("version");
     let shed = FakeShed::start(&dir.join("shed"), "9.9.9");

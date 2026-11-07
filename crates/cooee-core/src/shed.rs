@@ -9,7 +9,7 @@ use std::{
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
     process::Command,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -135,6 +135,17 @@ struct Conn {
 
 impl Conn {
     fn call<R: DeserializeOwned>(&mut self, method: Method, params: Value) -> Result<R, ShedError> {
+        let start = Instant::now();
+        let result = self.exchange(method, params);
+        crate::perf::shed(method.name(), "socket", start);
+        result
+    }
+
+    fn exchange<R: DeserializeOwned>(
+        &mut self,
+        method: Method,
+        params: Value,
+    ) -> Result<R, ShedError> {
         self.id += 1;
         let mut line = serde_json::to_vec(&Request::new(self.id, method, params))
             .map_err(|e| ShedError::Bad(e.to_string()))?;
@@ -426,9 +437,9 @@ impl Shed {
     }
 
     /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`) and `launch`: with
-    /// variables or args, its installed adapter runs as `env K=V… <adapter> args…`, and with secrets as `env K=V… sh
-    /// -c '…' <file> <adapter> args…`, the shell reading the secrets from `<file>` (mode 0600, written here) and
-    /// removing it.
+    /// variables or args, its installed adapter `cmd` (as `shed agents` lists it) runs as `env K=V… <adapter>
+    /// args…`, and with secrets as `env K=V… sh -c '…' <file> <adapter> args…`, the shell reading the secrets from
+    /// `<file>` (mode 0600, written here) and removing it.
     ///
     /// # Errors
     /// [`ShedError::Cli`] when the CLI fails (e.g. the agent isn't installed or the name is taken), or the secrets'
@@ -436,7 +447,7 @@ impl Shed {
     pub fn run_acp(
         &self,
         name: &str,
-        agent: &str,
+        (agent, cmd): (&str, &[String]),
         cwd: &Path,
         labels: &BTreeMap<String, String>,
         launch: &Launch,
@@ -452,8 +463,6 @@ impl Shed {
         }
         let mut tail: Vec<String> = Vec::new();
         if !launch.env.is_empty() || launch.secrets.is_some() || !launch.args.is_empty() {
-            let installed = self.agents()?.into_iter().find(|a| a.id == agent);
-            let cmd = installed.map(|a| a.cmd).unwrap_or_default();
             if cmd.is_empty() {
                 return Err(ShedError::Cli {
                     args: "agents".to_owned(),
@@ -476,7 +485,7 @@ impl Shed {
                 tail.extend(["sh".to_owned(), "-c".to_owned(), read.to_owned()]);
                 tail.push(file.to_string_lossy().into_owned());
             }
-            tail.extend(cmd);
+            tail.extend(cmd.iter().cloned());
             tail.extend(launch.args.iter().cloned());
             args.push("--");
             args.extend(tail.iter().map(String::as_str));
@@ -493,11 +502,10 @@ impl Shed {
             args: args.join(" "),
             detail,
         };
-        let out = cmd
-            .arg("--json")
-            .args(args)
-            .output()
-            .map_err(|e| fail(format!("{}: {e}", self.bin.display())))?;
+        let start = Instant::now();
+        let out = cmd.arg("--json").args(args).output();
+        crate::perf::shed(args.first().copied().unwrap_or_default(), "cli", start);
+        let out = out.map_err(|e| fail(format!("{}: {e}", self.bin.display())))?;
         if !out.status.success() {
             return Err(fail(String::from_utf8_lossy(&out.stderr).trim().to_owned()));
         }

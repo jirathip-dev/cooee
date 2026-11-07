@@ -504,6 +504,8 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
                                         (n, m.name, ongoing)
                                     },
                                 ),
+                                // Every thread's id, so a ref to one in the chat opens it (#84).
+                                ids: rows.iter().map(|r| r.id.clone()).collect(),
                                 places: (list, rows, folder),
                                 choices: choices
                             )

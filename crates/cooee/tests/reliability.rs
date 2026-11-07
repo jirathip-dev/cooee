@@ -183,6 +183,65 @@ fn r7_page_loads_run_no_subprocess() {
     assert_eq!(calls(), before);
 }
 
+/// #55: the agent list is the hub's: page loads and a start on a listed agent read it; an agent it lacks runs
+/// `shed agents` once, then the list serves; a failed refresh keeps the list (logged), and with none the page says
+/// why. (Once a minute in the background, on a fake clock: cooee-server `hub`.)
+#[test]
+fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
+    let dir = scratch("agents-cache");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    shed.gate("agents-fails", true);
+    let s = Setup {
+        cooee: Cooee::start(&dir, &shed.dir),
+        dir,
+        shed,
+    };
+    let lists = || {
+        let log = s.shed.cli_log();
+        log.lines().filter(|l| l.ends_with(" agents")).count()
+    };
+    let page = s.cooee.get("/").1;
+    assert!(
+        page.contains(r#"<p class="err">"#) && page.contains("agents down"),
+        "{page}"
+    );
+    s.shed.gate("agents-fails", false);
+    for _ in 0..10 {
+        assert!(s.cooee.get("/").1.contains("agents down"));
+    }
+    assert_eq!(lists(), 1, "{}", s.shed.cli_log());
+
+    // An agent the list lacks: one refresh, then the list serves pages and starts.
+    let (code, body) = s.cooee.post("/threads", &start(&s, "hi", "c1"));
+    assert_eq!(code, 200, "{body}");
+    assert_eq!(lists(), 2);
+    for _ in 0..10 {
+        let page = s.cooee.get("/").1;
+        assert!(
+            page.contains("fake-acp") && !page.contains("agents down"),
+            "{page}"
+        );
+    }
+    assert_eq!(s.cooee.post("/threads", &start(&s, "again", "c2")).0, 200);
+    assert_eq!(lists(), 2, "{}", s.shed.cli_log());
+
+    // A failed refresh keeps the list, and says so in the log.
+    s.shed.gate("agents-fails", true);
+    let ghost = json!({ "agent": "ghost-acp", "folder": s.dir.join("root/project"), "text": "hi", "random_id": "c3" });
+    s.cooee.post("/threads", &ghost);
+    assert_eq!(lists(), 3);
+    let err = fs::read_to_string(s.dir.join("cooee.err")).unwrap();
+    assert!(
+        err.contains("cooee: kept the agent list: ") && err.contains("agents down"),
+        "{err}"
+    );
+    let page = s.cooee.get("/").1;
+    assert!(
+        page.contains("fake-acp") && !page.contains("agents down"),
+        "{page}"
+    );
+}
+
 /// R10 (herdsman#446): an ask the agent makes while its start is still running is listed and answerable.
 #[test]
 fn r10_an_ask_made_during_the_start_is_listed_and_answerable() {
@@ -242,7 +301,6 @@ fn r11_a_slow_start_is_adopted_once() {
     assert_eq!(listed(&s.cooee), first);
 
     // The CLI gave up, but the terminal runs: kept, never started again.
-    s.shed.gate("run-fails", true);
     let (status, body) = s.cooee.post("/threads", &start(&s, "hello", "r11b"));
     assert_eq!(status, 200, "{body}");
     s.shed.gate("run-fails", false);

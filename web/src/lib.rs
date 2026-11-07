@@ -44,7 +44,7 @@ macro_rules! built {
 }
 
 /// The static routes: the manifest, the icons, the style sheet, the scripts and the service worker; the look:
-/// `POST /look` (a pick with no script) and each theme's data at `/look/<theme>/{theme.json,sprites.svg,icon.png}`;
+/// `POST /look` (a pick with no script) and each theme's data at `/look/<theme>/{theme.json,sprites.svg,scene.svg,icon.png}`;
 ///
 /// # Panics
 ///
@@ -90,18 +90,22 @@ impl IntoResponse for Owned {
 path_param!(look);
 path_param!(file);
 
-/// A sprite sheet with its two-frame loop rule, since a `<use>` of another file takes that file's styles: frame 1 (`.kf1`,
-/// `.f1`) shows by default, and `--o1`/`--o2`, which the page animates, inherit into each sprite.
-fn with_frames(svg: &[u8]) -> Vec<u8> {
-    const RULE: &[u8] =
-        b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
+/// `svg` with a `<style>` rule first, since a `<use>` or `<img>` of another file takes that file's styles only.
+fn with_rule(svg: &[u8], rule: &[u8]) -> Vec<u8> {
     let at = svg
         .windows(4)
         .position(|w| w == b"<svg")
         .and_then(|i| svg[i..].iter().position(|&b| b == b'>').map(|j| i + j + 1))
         .unwrap_or(0);
-    [&svg[..at], RULE, &svg[at..]].concat()
+    [&svg[..at], rule, &svg[at..]].concat()
 }
+
+/// A sprite sheet's two-frame loop: frame 1 (`.kf1`, `.f1`) shows by default, and `--o1`/`--o2`, which the page
+/// animates, inherit into each sprite.
+const FRAMES: &[u8] = b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
+
+/// A scene's calm layers only (#34): herdsman's scenes draw each host-load level as a layer, and cooee has no load.
+const CALM: &[u8] = b"<style>.h-busy,.h-held,.l-overcast,.l-rain{display:none}</style>";
 
 #[route(GET "/look/{look}/{file}")]
 async fn look_file(cx: &Cx) -> Result<Owned> {
@@ -114,7 +118,11 @@ async fn look_file(cx: &Cx) -> Result<Owned> {
         "sprites.svg" => theme
             .sprite_sheet
             .as_deref()
-            .map(|b| Owned("image/svg+xml", with_frames(b))),
+            .map(|b| Owned("image/svg+xml", with_rule(b, FRAMES))),
+        "scene.svg" => theme
+            .scene
+            .as_deref()
+            .map(|b| Owned("image/svg+xml", with_rule(b, CALM))),
         "icon.png" => Some(theme.icon.clone().map_or_else(
             || Owned("image/svg+xml", include_bytes!("icon.svg").to_vec()),
             |b| Owned("image/png", b),
@@ -212,7 +220,7 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
             lang="en"
             data-theme=(name)
             data-mode=(look.mode().map(str::to_owned))
-            data-style=(look.style().to_owned())
+            data-style=(look.shape().to_owned())
             data-figures=(look.figures().to_owned())
             data-moments=(if look.theme().moments { "on" } else { "off" })
         >
@@ -683,6 +691,7 @@ async fn chat(
     mate: Option<(usize, String, bool)>,
     places: agents::Places,
     choices: (Vec<String>, Vec<String>),
+    ids: Vec<String>,
 ) -> Result<impl View> {
     let look = shown(cx);
     let [st, wait, pill] = [
@@ -707,6 +716,7 @@ async fn chat(
             data-agent=(name.clone())
             data-read=(thread.read.unwrap_or(0).to_string())
             data-state=(turn.state.clone())
+            data-ids=(ids.join(" "))
         >
             <div class="th">
                 <a class="gl bk" href="/?list" aria-label="back to agents">"‹"</a>
@@ -714,7 +724,10 @@ async fn chat(
                     agents::avatar(name: name.clone(), n: n, big: false)
                 }
                 <div class="tb">
-                    <h1>(title)</h1>
+                    <div class="tn">
+                        <h1>(title)</h1>
+                        <small>(thread.id.clone())</small>
+                    </div>
                     <span class="ds">
                         <i class="dt"></i>
                         (said)
