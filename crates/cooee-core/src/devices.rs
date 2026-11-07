@@ -37,6 +37,18 @@ pub struct Device {
     pub created: u64,
     /// When it was last seen (to the hour), in Unix milliseconds.
     pub used: u64,
+    /// Its passkey (Face ID on iPhone), registered on first use of a tab that needs one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub passkey: Option<Passkey>,
+}
+
+/// A device's passkey credential: its id and its P-256 public key, both base64url.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Passkey {
+    /// The credential id.
+    pub id: String,
+    /// The public key, as an uncompressed SEC1 point.
+    pub key: String,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -91,6 +103,7 @@ impl File {
             hash,
             created: now,
             used: now,
+            passkey: None,
         });
     }
 }
@@ -126,6 +139,19 @@ pub fn random(n: usize) -> io::Result<Vec<u8>> {
     let mut b = vec![0; n];
     fs::File::open("/dev/urandom")?.read_exact(&mut b)?;
     Ok(b)
+}
+
+/// Appends `line` and a newline to `path` (made 0600 if new).
+///
+/// # Errors
+/// When the file can't be opened or written.
+pub fn append_line(path: &Path, line: &str) -> io::Result<()> {
+    fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .mode(0o600)
+        .open(path)?
+        .write_all(format!("{line}\n").as_bytes())
 }
 
 /// Replaces `path` with `bytes`, mode 0600: a temp file of its own (named by process and write, so concurrent
@@ -338,6 +364,20 @@ impl Devices {
     /// When the file can't be read.
     pub fn list(&self) -> io::Result<Vec<Device>> {
         Ok(self.load()?.devices)
+    }
+
+    /// Gives device `id` its passkey, unless it has one already; whether it was set.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn set_passkey(&self, id: &str, passkey: Passkey) -> io::Result<bool> {
+        self.change(|f| {
+            let found = f
+                .devices
+                .iter_mut()
+                .find(|d| d.id == id && d.passkey.is_none());
+            Ok(found.map(|d| d.passkey = Some(passkey)).is_some())
+        })
     }
 
     /// Unpairs device `id`; whether there was one.

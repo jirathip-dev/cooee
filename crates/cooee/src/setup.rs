@@ -195,12 +195,36 @@ impl Setup {
             let root = self.ask("folders for threads [~/Projects]:", "~/Projects");
             add.push(format!("roots = [{root:?}]"));
         }
-        if !step(&format!("config {}", path.display()), add.is_empty()) {
+        // The owner's terminal plugin (#28), on the instance's port + 1000 with a token of its own.
+        let plugins = keys.get("plugins").and_then(toml::Value::as_array);
+        let has = plugins.is_some_and(|a| {
+            a.iter()
+                .any(|p| p.get("name").and_then(toml::Value::as_str) == Some(cooee_terminal::NAME))
+        });
+        let plugin = if has {
+            String::new()
+        } else {
+            let at = port
+                .checked_add(1000)
+                .ok_or("no port + 1000 for the terminal plugin")?;
+            let token = cooee_core::sha256(&cooee_core::random(32).map_err(|e| e.to_string())?);
+            format!(
+                "\n[[plugins]]\nname = \"terminal\"\nlabel = \"Terminal\"\nurl = \"http://127.0.0.1:{at}\"\n\
+                 module = \"/tab.js\"\ntoken = \"{token}\"\n"
+            )
+        };
+        let changed = !add.is_empty() || !plugin.is_empty();
+        if !step(&format!("config {}", path.display()), !changed) {
             if !text.is_empty() {
-                println!("  note: kept its keys; adding {}", add.join(", "));
+                let what = add.iter().map(String::as_str);
+                let what: Vec<&str> = what
+                    .chain((!has).then_some("the terminal plugin"))
+                    .collect();
+                println!("  note: kept its keys; adding {}", what.join(", "));
             }
-            // Top-level keys go first: after a `[table]` they would belong to it.
-            let new = format!("{}\n{text}", add.join("\n"));
+            // Top-level keys go first: after a `[table]` they would belong to it. The plugin goes last.
+            let head: String = add.iter().flat_map(|k| [k.as_str(), "\n"]).collect();
+            let new = format!("{head}{text}{plugin}");
             self.write(path, &new, || {
                 fs::create_dir_all(path.parent().unwrap_or(path)).map_err(|e| e.to_string())?;
                 fs::write(path, &new).map_err(|e| e.to_string())
@@ -215,7 +239,7 @@ impl Setup {
                 ..Config::default()
             }
         };
-        Ok((config, !add.is_empty()))
+        Ok((config, changed))
     }
 
     /// Claude's ACP agent in shed, and Codex's and Gemini's if asked for.

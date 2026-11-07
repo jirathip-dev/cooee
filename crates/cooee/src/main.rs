@@ -28,7 +28,7 @@ const SHED_CARGO: [&str; 8] = [
     "--git",
     "https://github.com/jirathip-dev/shed",
     "--rev",
-    "1956535985c2d778a70b53a051cf25b4ee598300",
+    "f026a4d35a2705e560a52515da8e3a5d32e4d659",
     "shed",
 ];
 
@@ -175,11 +175,21 @@ fn finish(result: Result<(), String>) -> ExitCode {
     }
 }
 
-/// Serves the instance; a `[[plugins]]` entry named `machines` is the first-party machines plugin, run here.
+/// Serves the instance; `[[plugins]]` entries named `machines` and `terminal` are the first-party plugins, run here.
 fn serve(config: &Config) -> Result<(), String> {
     let machines = config.plugins.iter().find(|p| p.name == "machines");
+    let terminal = config
+        .plugins
+        .iter()
+        .find(|p| p.name == cooee_terminal::NAME);
     cooee_server::serve(config, |addr| {
         println!("cooee: listening on http://{addr}");
+        if let (Some(p), Some(data)) = (terminal, config.data_dir()) {
+            let shed = Shed::new(config.shed.clone(), config.shed_dir.clone());
+            if let Err(e) = cooee_terminal::start(p, shed, &data) {
+                eprintln!("cooee: plugin terminal at {}: {e}", p.url);
+            }
+        }
         let Some(p) = machines else { return };
         let ip = if addr.ip().is_unspecified() {
             Ipv4Addr::LOCALHOST.into()

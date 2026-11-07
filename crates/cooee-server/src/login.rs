@@ -197,6 +197,8 @@ impl Logins {
             idle_after: None,
             cmd: provider.with_home(&provider.login, home.as_deref()),
             acp: None,
+            resume: None,
+            mcp_servers: Vec::new(),
         };
         if let Err(e) = self.shed.run(&run) {
             if new {

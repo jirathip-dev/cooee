@@ -89,6 +89,9 @@ improving are owner-only: the CLI on the Mac, or a paired device (a plugin's tok
   - The theme: cooee's CSS variables (`--bg`, `--fg`, `--card`, `--edge`, `--mute`, `--link`, `--g`, `--a`, `--r`,
     …) are set on the frame's root, so `background: var(--card)` matches the app.
   - The tab's URL hash (`/p/<name>#lane/3`) is the frame's `location.hash`.
+  - `await cooee.unlock()`: shows cooee's own "Unlock with Face ID" button over the tab and resolves once the device
+    is unlocked with its passkey (the `terminal` tab's gate; a stream that ends for good, such as a locked tab's, sends
+    `closed`).
 - cooee calls the backend over HTTP/1.0, one connection per call, and passes on only the content type, `Accept` and
   `Last-Event-ID`. An event stream should send a comment now and then so a closed tab is noticed.
 
@@ -137,6 +140,40 @@ with when it was last seen, load per CPU, memory pressure, swap, free disk and s
 has a 24 h sparkline, and a tap opens its chart. Only the samples newer than the last kept one are asked for. A
 machine going offline, under 10 GB of free disk or at 90 % memory pressure or more sends one push (tag `machine`, a
 tap opens `#<machine>`) when its set of problems changes, and the tab shows a dot while any machine has one.
+
+## First-party plugin: terminal
+
+`crates/cooee-terminal`, built into cooee: a real shell on the Mac from the phone, for the owner-only commands a chat
+hands over (setup, keychain, `launchctl` …), instead of an SSH app. `cooee setup` adds its entry to each instance
+(`cooee` and `cooee-drover`) on the instance's port + 1000 with a fresh token:
+
+```toml
+[[plugins]]
+name = "terminal"
+label = "Terminal"
+url = "http://127.0.0.1:5747"
+module = "/tab.js"
+token = "a-third-long-random-secret"
+```
+
+- **Shells:** [+ shell] starts `$SHELL -l` in `~`, as the owner, in a shed terminal labelled `cooee.owner=1`, so it
+  outlives the page and cooee. The list has the owner's shells, then the agents' terminals (every other shed
+  terminal but sign-ins), which can be watched but never typed into (403). [close] ends a shell's whole process tree.
+- **View:** shed keeps the screen (`screen.watch`); the backend streams its updates (rows of coloured runs) as
+  `screen` events, and the tab draws them as a monospace grid in the theme's colours. Pinch zooms the font, and the
+  shell is resized to fit; [earlier lines] shows the scrollback. No terminal emulator runs on the phone.
+- **Input:** the keyboard's text goes in as text (Thai too), in order; the key bar at the tab's foot, on the keyboard
+  while it is open: Esc, Ctrl (sticky for the next letter), Tab, ↑ ↓ ← →, ^C, paste and ↑ history (the lines typed
+  here, to type again).
+- **Gate:** the device's passkey (Face ID) opens the tab, registered on first use; 10 minutes without a touch or key
+  lock it (blurred, no input) until Face ID again, and the shells keep running ([architecture.md](architecture.md#plugins-m4)).
+- **Insert text:** `POST /insert` `{"text"}` (through the tab's proxy) types into the shell used last, else the
+  newest, else a new one, and never presses Enter: trailing line ends go, a `\` continuation joins its lines and any
+  other line end becomes `; `. It answers `{"terminal"}`.
+
+Its other calls: `GET /list`, `POST /shell`, `GET /watch?t=<name>` (the stream), `POST /input` `{terminal, text}`,
+`/keys` `{terminal, keys}` (shed's key names), `/resize` `{terminal, cols, rows}`, `/close` `{terminal}`,
+`/scrollback` `{terminal}` and `/seen` (use, which keeps the unlock alive).
 
 ## Example
 

@@ -6,10 +6,11 @@
 # (docs/plugins/hello) runs twice, as plugins `hello` and `other`, on $PORT + 1 and + 2. A fresh instance runs on
 # $PORT + 3. The main instance runs with HOME at the temp folder, so Settings › Folders browses it. The machines plugin
 # runs in it on $PORT + 4, the fake shed answering for this machine (24 h of samples) and an `air` that is offline. Its
-# plugin index lists the example plugin as `greet`, in a git repo of its own. The 390 provider has two more accounts,
-# `work` and `lab` (signed in, their email `<name>@example.com`), last used for a new thread in root/project and
-# root/other (#48); a start in root/slow-<viewport> waits while the spec holds it, one in root/bad-<viewport> fails.
-# One agent profile, `reviewer`, sits beside the main config (#40).
+# plugin index lists the example plugin as `greet`, in a git repo of its own. The terminal plugin runs on $PORT + 5, its
+# shells `/bin/sh -l` in the fake shed. The 390 provider has two more accounts, `work` and `lab` (signed in, their email
+# `<name>@example.com`), last used for a new thread in root/project and root/other (#48); a start in
+# root/slow-<viewport> waits while the spec holds it, one in root/bad-<viewport> fails. One agent profile, `reviewer`,
+# sits beside the main config (#40).
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -149,6 +150,13 @@ label = "Machines"
 url = "http://127.0.0.1:$((PORT + 4))"
 module = "/tab.js"
 token = "machines-token-0123456789"
+
+[[plugins]]
+name = "terminal"
+label = "Terminal"
+url = "http://127.0.0.1:$((PORT + 5))"
+module = "/tab.js"
+token = "terminal-token-0123456789"
 EOF
 mkdir -p "$(dirname "${PAIR_CODE:?}")" "$tmp/profiles"
 
@@ -186,5 +194,5 @@ echo "$tmp/shed" >"$PAIR_CODE.shed"
 echo "$(cd "${CARGO_TARGET_DIR:-target}" && pwd)/debug/cooee" >"$PAIR_CODE.bin"
 cargo run --quiet --locked -p cooee -- pair --config "$tmp/config.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE"
 target=$(cargo metadata --format-version 1 --no-deps | node -pe 'JSON.parse(require("fs").readFileSync(0)).target_directory')
-HOME=$tmp "$target/debug/cooee" serve --config "$tmp/config.toml" &
+HOME=$tmp SHELL=/bin/sh "$target/debug/cooee" serve --config "$tmp/config.toml" &
 wait $!
