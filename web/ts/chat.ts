@@ -1151,6 +1151,8 @@ function chat(main: HTMLElement): void {
     } else {
       for (const o of it.options)
         chc.append(button(o.name, () => approve(row, it.id, o.id), o.kind === "recommended" ? "rec" : ""));
+      // A ref in an option's label opens its thread from a link after the buttons (a link can't sit inside one).
+      chc.append(...it.options.flatMap((o) => refs(o.name).filter((n) => typeof n !== "string")));
       if (it.plugin && !it.form) {
         const f = field("other", "text", (v) => approve(row, it.id, v));
         f.append(button("send", () => f.requestSubmit()));

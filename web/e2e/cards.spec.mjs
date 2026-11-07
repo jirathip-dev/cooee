@@ -149,12 +149,14 @@ test("#84: the header shows the id; a whole-word ref opens that thread and back 
   const source = await thread(page, `Refs source ${info.project.name}`);
   await expect(page.locator(".th .tn small")).toHaveText(source);
   await plugin(page, "/plugin/line", { thread: source, from: target, text: `see ${target}, not \`${target}\` x${target} t0ffff` });
-  await card(page, { thread: source, text: `Ship ${target}?`, options: ["yes", "no"] });
+  await card(page, { thread: source, text: `Ship ${target}?`, options: [`take ${target}`, "no"] });
   const line = page.locator(".ln", { hasText: "see" });
   await expect(line.locator("a.ref")).toHaveCount(1);
   await expect(line.locator("a.ref")).toHaveText(target);
   await expect(line).toContainText(`\`${target}\` x${target} t0ffff`);
-  await expect(page.locator(".blk.ap a.ref")).toHaveText(target);
+  await expect(page.locator(".blk.ap .md a.ref")).toHaveText(target);
+  await expect(page.locator(".blk.ap .chc a.ref")).toHaveText(target);
+  await expect(page.locator(".blk.ap .chc").getByRole("button", { name: `take ${target}` })).toBeVisible();
   await audit(page);
   await shot(page, info, "refs-header");
   await line.locator("a.ref").click();
