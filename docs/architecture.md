@@ -67,15 +67,14 @@ taken under the thread's lock with the subscription, so nothing is lost or doubl
 
 ## Workflow (#33)
 
-The thread list is one list from two sources, filtered by the chips All · Chats · Workflow (kept per device in the
-`cooee-list` cookie; a tap posts `POST /list`, so it needs no script). **Chats** are the sessions the owner starts.
-**Workflow** is any ACP session another tool started in shed, known only by its labels: `source` (the tool),
+`GET /threads` lists threads from two sources. **Chats** are the sessions the owner starts, listed by agent in the
+sidebar (#86: each agent's oldest open chat is its ongoing one, the rest its side threads). **Workflow** is any ACP
+session another tool started in shed, known only by its labels: `source` (the tool),
 `group` (its repo), `item` (`#issue`), `role`, `round` and an optional `url`; one carrying a `cooee…` label is
 cooee's own. cooee's one `events` stream follows every terminal: a new session's first event lists it (and at
 start, `shed ls` lists the ones already running, replayed from shed's kept events), stored like a thread as
-`w-<terminal>` so its rows outlive a restart. Its card is per source: needs-you first, then working, then the newest;
-the finished (`done`, `ended`) fold under "done today", and a session goes once shed no longer lists it (checked at
-start and every 30 s). It opens as a normal chat with its role, round and a link to its `url`; the tool's prompts
+`w-<terminal>` so its rows outlive a restart. drover's Workflow tab shows them, never the agents sidebar; a session
+goes once shed no longer lists it (checked at start and every 30 s). It opens as a normal chat with its role, round and a link to its `url`; the tool's prompts
 show as messages, the reply box and [stop] reach its terminal, and only its tool closes it. Its turns end without a
 push (approvals and errors still push).
 

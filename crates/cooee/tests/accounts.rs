@@ -229,11 +229,11 @@ fn add_account_listed_only_on_success_default_and_thread_pick_spawn_with_its_fol
         .cooee
         .post("/logins/fake/default", &json!({ "account": "account-2" }));
     assert_eq!(status, 200, "{body}");
+    let page = s.page();
+    let row = &page[page.find(r#"data-account="account-2""#).unwrap()..];
     assert!(
-        s.page()
-            .contains(r#"<option value="account-2" selected="">account-2</option>"#),
-        "{}",
-        s.page()
+        row[..row.find("</div></div>").unwrap()].contains("default for new threads"),
+        "{row}"
     );
     let (id, line) = s.thread(None);
     assert!(
@@ -271,7 +271,7 @@ fn add_account_listed_only_on_success_default_and_thread_pick_spawn_with_its_fol
     let page = s.page();
     assert!(
         !page.contains(r#"data-account="account-2""#)
-            && page.contains(r#"<option value="" selected="">"#),
+            && page.contains(r#"<span class="ds">default for new threads</span>"#),
         "{page}"
     );
 

@@ -12,6 +12,25 @@ fn run_line<'a>(log: &'a str, name: &str) -> &'a str {
         .unwrap_or_else(|| panic!("no run of {name}: {log}"))
 }
 
+/// A new chat with no folder; its id.
+fn start(cooee: &Cooee, rid: &str) -> String {
+    let new = json!({ "agent": "fake-acp", "text": "Say hello", "random_id": rid });
+    let (status, body) = cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = serde_json::from_str::<Value>(&body).unwrap()["id"].clone();
+    id.as_str().unwrap().to_owned()
+}
+
+/// The terminal thread `id` moved to.
+fn moved_to(log: &str, id: &str) -> String {
+    let moved = log.lines().find_map(|l| {
+        let name = l.split("--name ").nth(1)?.split(' ').next()?;
+        name.starts_with(&format!("cooee-{id}-"))
+            .then(|| name.to_owned())
+    });
+    moved.unwrap_or_else(|| panic!("no second start: {log}"))
+}
+
 #[test]
 fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns() {
     let dir = scratch("chat-first");
@@ -19,13 +38,7 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
     let cooee = Cooee::start(&dir, &shed.dir);
 
     // No folder in the request at all.
-    let new = |rid: &str| json!({ "agent": "fake-acp", "text": "Say hello", "random_id": rid });
-    let (status, body) = cooee.post("/threads", &new("a"));
-    assert_eq!(status, 200, "{body}");
-    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let id = start(&cooee, "a");
     let own = dir.join("data/scratch").join(&id);
     assert!(own.is_dir(), "{}", own.display());
     let log = shed.cli_log();
@@ -40,11 +53,7 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
     events.until(|e| is_item(e, "agent"));
 
     // A second chat gets another scratch folder.
-    let (_, body) = cooee.post("/threads", &new("b"));
-    let other = serde_json::from_str::<Value>(&body).unwrap()["id"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let other = start(&cooee, "b");
     assert_ne!(other, id);
     assert!(dir.join("data/scratch").join(&other).is_dir());
 
@@ -79,14 +88,7 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
         "{note}"
     );
     let log = shed.cli_log();
-    let moved = log
-        .lines()
-        .find_map(|l| {
-            let name = l.split("--name ").nth(1)?.split(' ').next()?;
-            name.starts_with(&format!("cooee-{id}-"))
-                .then(|| name.to_owned())
-        })
-        .unwrap_or_else(|| panic!("no second start: {log}"));
+    let moved = moved_to(&log, &id);
     let run = run_line(&log, &moved);
     assert!(
         run.contains(&format!("--cwd {} ", project.display())),
@@ -94,18 +96,18 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
     );
     assert!(run.contains(&format!("--label cooee.thread={id}")), "{run}");
     // The old terminal is closed.
-    assert!(!shed.calls("kill", &format!("cooee-{id}")).is_empty());
+    assert_eq!(shed.calls("kill", &format!("cooee-{id}")).len(), 1);
 
     // The next message goes to the agent in the new folder, after the hand-over; the one after that alone.
-    let send = |text: &str, rid: &str| {
+    let say = |text: &str, rid: &str| {
         let (status, body) = cooee.post(
             &format!("/threads/{id}/send"),
             &json!({ "text": text, "random_id": rid }),
         );
         assert_eq!(status, 200, "{body}");
     };
-    send("and now?", "r1");
-    send("again", "r2");
+    say("and now?", "r1");
+    say("again", "r2");
     let sent = shed.sent(&moved);
     assert_eq!(sent.len(), 2, "{sent:?}");
     let handover = &sent[0];
@@ -129,4 +131,86 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
         .map(|i| i["text"].as_str().unwrap())
         .collect();
     assert_eq!(you, ["Say hello", "and now?", "again"]);
+}
+
+/// The sidebar: an agent's oldest open chat is its ongoing one (a tap opens it); its other chats are side threads,
+/// listed under it when it is the agent on show, with `+ new chat`; a new chat with it opens with nothing picked.
+#[test]
+fn an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_picked() {
+    let dir = scratch("chat-first-side");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start(&dir, &shed.dir);
+    let (_, page) = cooee.get("/new?agent=fake-acp");
+    assert!(
+        page.contains(r#"<input type="hidden" name="agent" value="fake-acp">"#)
+            && page.contains("New chat with fake-acp")
+            && page.contains(r#"name="folder" value="" checked="">scratch"#)
+            && page.contains(
+                r#"<button type="button" class="fo" popovertarget="ufs">folder: scratch ▾</button>"#
+            ),
+        "{page}"
+    );
+    let start = |text: &str| {
+        let new = json!({ "agent": "fake-acp", "text": text, "random_id": text });
+        let (_, body) = cooee.post("/threads", &new);
+        let id = serde_json::from_str::<Value>(&body).unwrap()["id"].clone();
+        id.as_str().unwrap().to_owned()
+    };
+    let ongoing = start("first");
+    let side = start("second");
+    let (_, home) = cooee.get("/?list");
+    let nav = &home[home.find(r#"<nav class="ags""#).unwrap()..];
+    assert!(
+        nav.contains(&format!(r#"href="/t/{ongoing}""#)) && !nav.contains(&side),
+        "{nav}"
+    );
+    let (_, page) = cooee.get(&format!("/t/{side}"));
+    let nav = &page[page.find(r#"<nav class="ags""#).unwrap()..];
+    assert!(
+        nav.contains(&format!(
+            r#"<a class="str on" href="/t/{side}"><span class="tt">second</span>"#
+        )) && nav.contains(r#"<a class="str nw" href="/new?agent=fake-acp">+ new chat</a>"#),
+        "{nav}"
+    );
+    // The side thread's bar: its title, its agent before the rest; in its scratch folder.
+    assert!(
+        page.contains("<h1>second</h1>") && page.contains("fake-acp · Plain · fake-acp · "),
+        "{page}"
+    );
+    assert!(page.contains("scratch · "), "{page}");
+}
+
+/// `+ new agent`: a name and the profile it starts from, saved as a profile of its own; its new chat opens.
+#[test]
+fn a_new_agent_is_saved_as_a_profile_and_listed() {
+    let dir = scratch("chat-first-agent");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start(&dir, &shed.dir);
+    let form = [
+        ("Content-Type", "application/x-www-form-urlencoded"),
+        ("Cookie", cooee.cookie.as_str()),
+    ];
+    let (head, _) = cooee.raw("POST", "/agents", &form, "name=Account+Manager&profile=");
+    assert!(
+        head.contains(" 303") && head.contains("/new?profile=account-manager"),
+        "{head}"
+    );
+    let file = dir.join("profiles/account-manager.toml");
+    assert_eq!(
+        std::fs::read_to_string(&file).unwrap(),
+        "name = \"account-manager\"\nlabel = \"Account Manager\"\nagent = \"fake-acp\"\n"
+    );
+    let (_, page) = cooee.get("/new?profile=account-manager");
+    assert!(
+        page.contains(r#"<span class="tt">Account Manager</span>"#)
+            && page.contains(r#"<i class="av" style="--av:var(--link)" aria-hidden="true">AM</i>"#)
+            && page.contains(r#"<input type="hidden" name="profile" value="account-manager">"#),
+        "{page}"
+    );
+    // A name taken is refused, and nothing is written over.
+    let (head, body) = cooee.raw("POST", "/agents", &form, "name=account+manager");
+    assert!(
+        head.contains(" 400") && body.contains("already"),
+        "{head}{body}"
+    );
 }

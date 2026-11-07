@@ -26,9 +26,14 @@ fn two_instances_never_see_each_others_threads_or_devices() {
     let share = dir.join("home/.local/share/cooee");
     assert!(share.join("cooee").is_dir());
     assert!(share.join("cooee-drover").is_dir());
-    assert!(a.get("/").1.contains("Only on a"));
+    let id = serde_json::from_str::<serde_json::Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let link = format!(r#"href="/t/{id}""#);
+    assert!(a.get("/").1.contains(&link));
     let (status, page) = b.get("/");
-    assert!(status == 200 && !page.contains("Only on a"), "{page}");
+    assert!(status == 200 && !page.contains(&link), "{page}");
 
     let (devices_a, devices_b) = (a.cli(&["devices"]), b.cli(&["devices"]));
     assert_eq!(

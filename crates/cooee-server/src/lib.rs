@@ -265,23 +265,86 @@ fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
     .collect()
 }
 
-#[page("/")]
-async fn home(cx: &Cx) -> Result<impl View> {
+/// The sidebar's and a new chat's data (#86).
+async fn side(cx: &Cx) -> Result<cooee_web::Side> {
     let providers = on_logins(cx, |l| Ok(l.statuses()));
-    let rest = blocking(cx, |hub| {
-        let agents = hub.agents();
-        Ok((hub.list(), agents, hub.folders()))
-    });
+    let rest = blocking(cx, |hub| Ok((hub.list(), hub.agents(), hub.folders())));
     let (providers, (rows, agents, folders)) =
         futures_util::future::try_join(providers, rest).await?;
-    Ok(cooee_web::threads_page(
-        cx,
+    Ok(cooee_web::Side {
         rows,
-        (agents, profiles(cx)),
-        folders,
+        profiles: profiles(cx),
+        agents,
         providers,
-        tabs(cx),
+        folders,
+        tabs: tabs(cx),
+    })
+}
+
+/// `?list` keeps a phone on the agents list.
+#[derive(Deserialize)]
+struct Home {
+    list: Option<String>,
+}
+
+#[page("/")]
+async fn home(cx: &Cx) -> Result<impl View> {
+    let list = parse_query_params::<Home>(cx).is_ok_and(|q| q.list.is_some());
+    let pane = cooee_web::Pane::Home { list };
+    Ok(cooee_web::page(cx, side(cx).await?, pane))
+}
+
+/// `/new?agent=<ACP id>` (Plain) or `?profile=<id>`: a new chat with that agent.
+#[derive(Deserialize)]
+struct NewChat {
+    agent: Option<String>,
+    profile: Option<String>,
+}
+
+#[page("/new")]
+async fn new_chat(cx: &Cx) -> Result<impl View> {
+    let q = parse_query_params::<NewChat>(cx).ok();
+    let key = match q {
+        Some(NewChat {
+            profile: Some(p), ..
+        }) => format!("profile={p}"),
+        Some(NewChat { agent: Some(a), .. }) => format!("agent={a}"),
+        _ => String::new(),
+    };
+    Ok(cooee_web::page(
+        cx,
+        side(cx).await?,
+        cooee_web::Pane::New { key },
     ))
+}
+
+/// `POST /agents` (a form): `+ new agent`, a name and the profile it starts from (empty: Plain on the first
+/// installed agent); saved as a profile of its own, then its new chat opens.
+#[derive(Deserialize)]
+struct NewAgent {
+    name: String,
+    #[serde(default)]
+    profile: String,
+}
+
+#[route(POST "/agents")]
+async fn new_agent(cx: &Cx, Form(a): Form<NewAgent>) -> Result<Response> {
+    let data = app_context::<Data>(cx);
+    let (data, config) = (data.0.clone(), data.1.clone());
+    let made = blocking(cx, move |hub| {
+        let first = hub.agents().ok().and_then(|a| a.into_iter().next());
+        let agent = first.map(|a| a.id).unwrap_or_default();
+        let config = config.ok_or_else(|| refused("there is no config folder for profiles"))?;
+        cooee_core::profiles::create(&config, &data, &a.name, &a.profile, &agent).map_err(refused)
+    })
+    .await;
+    match made {
+        Ok(p) => Ok(Response::builder()
+            .status(303)
+            .header("Location", format!("/new?profile={}", p.id()))
+            .body(Body::from(()))?),
+        Err(e) => plain(400, &e.to_string()),
+    }
 }
 
 /// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account.
@@ -360,7 +423,16 @@ async fn chat(cx: &Cx) -> Result<impl View> {
         None => thread.profile.clone(),
     };
     let choices = logins(cx).choices(&thread.agent);
-    Ok(cooee_web::chat_page(cx, thread, turn, label, choices))
+    let scratch = app_context::<Data>(cx).0.join("scratch");
+    let folder = thread.folder.clone().filter(|f| !f.starts_with(&scratch));
+    let pane = cooee_web::Pane::Chat {
+        thread: Box::new(thread),
+        turn,
+        profile: label,
+        folder,
+        choices,
+    };
+    Ok(cooee_web::page(cx, side(cx).await?, pane))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -427,13 +499,10 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
-/// `GET /threads`: the thread list's cards under the device's chip, as the page draws them (its refresh, docs/api.md).
+/// `GET /threads`: every thread's row, newest first (docs/api.md).
 #[route(GET "/threads")]
-async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_web::Card>>> {
-    let list = cooee_web::chip(cx);
-    Ok(Answer(
-        blocking(cx, move |hub| Ok(cooee_web::cards(hub.list(), list))).await,
-    ))
+async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
+    Ok(Answer(blocking(cx, |hub| Ok(hub.list())).await))
 }
 
 /// `POST /threads`: a new thread.
@@ -1316,10 +1385,12 @@ pub fn router(
         .route(report)
         .page(home)
         .page(chat)
+        .page(new_chat)
         .route(thread_list)
         .route(messages)
         .route(events)
         .route(create)
+        .route(new_agent)
         .route(attach)
         .route(browse)
         .route(root)

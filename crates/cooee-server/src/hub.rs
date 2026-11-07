@@ -741,13 +741,12 @@ impl Hub {
                         *last += 1;
                     }
                     let id = format!("t{:x}", *last);
-                    let folder = match folder {
-                        Some(f) => f.to_owned(),
-                        None => {
-                            let dir = self.scratch.join(&id);
-                            fs::create_dir_all(&dir).map_err(|e| refused(&dir, &e))?;
-                            dir
-                        }
+                    let folder = if let Some(f) = folder {
+                        f.to_owned()
+                    } else {
+                        let dir = self.scratch.join(&id);
+                        fs::create_dir_all(&dir).map_err(|e| refused(&dir, &e))?;
+                        dir
                     };
                     let title: String = text
                         .trim()
@@ -856,14 +855,13 @@ impl Hub {
             })
             .collect();
         let last = turns[turns.len().saturating_sub(6)..].join("\n\n");
-        live.meta.handover = format!(
+        let handover = format!(
             "{}\n\nThis chat moved from {} to {}, where you now run; what it made before is still there. Its last turns:\n\n{last}",
             recipe.instructions.trim_end(),
             was.display(),
             folder.display()
-        )
-        .trim_start()
-        .to_owned();
+        );
+        handover.trim_start().clone_into(&mut live.meta.handover);
         live.meta.terminal = terminal;
         live.meta.folder = Some(folder.clone());
         self.store.save(&live.meta)?;

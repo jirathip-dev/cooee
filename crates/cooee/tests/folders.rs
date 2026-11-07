@@ -128,7 +128,7 @@ fn picker_lists_sub_folders_two_levels_deep_never_symlinks() {
     ] {
         assert!(page.contains(&row(&p, d)), "{}: {page}", p.display());
     }
-    assert!(page.contains("~/Projects/app/src</label>"), "{page}");
+    assert!(page.contains("~/Projects/app/src<span"), "{page}");
     assert!(page.contains(r#"id="fq" type="search""#), "{page}");
     assert!(!page.contains("Projects/out"), "{page}");
 }
