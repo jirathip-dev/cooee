@@ -1,5 +1,5 @@
 # Every CI gate, locally (the ui gate needs `npm ci` in web/e2e once).
-check: fmt clippy test doc deny cap deps hygiene ts ui
+check: fmt clippy test doc deny cap deps hygiene themes ts ui
 
 fmt:
     cargo fmt --all --check
@@ -27,6 +27,10 @@ deps:
 
 hygiene:
     scripts/hygiene.sh
+
+# The theme gate (docs/themes.md) on the first-party packs and the starter.
+themes:
+    cargo run --quiet --locked -p cooee -- theme check packs/themes/* packs/starter
 
 # web/ts: tsc strict and Biome (blocking), then tsc-rs as a trial (needs `npm ci` in web once).
 ts:
