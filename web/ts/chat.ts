@@ -1951,11 +1951,11 @@ function chat(main: HTMLElement): void {
   const menu = $("#menu");
   let pressed: HTMLElement | null = null;
   let hold = 0;
+  let held = false;
   let holdAt = [0, 0];
   const press = (row: HTMLElement, x: number, y: number): void => {
     if (!menu) return;
     pressed = row;
-    // Under the finger or pointer, so its release lands inside it (else that release would dismiss it).
     menu.style.left = `${Math.max(8, Math.min(x - 16, innerWidth - 216))}px`;
     menu.style.top = `${Math.max(8, Math.min(y - 16, innerHeight - 168))}px`;
     if (!menu.matches(":popover-open")) menu.showPopover();
@@ -1976,7 +1976,10 @@ function chat(main: HTMLElement): void {
       clearTimeout(hold);
       if (!row || !t) return;
       holdAt = [t.clientX, t.clientY];
-      hold = setTimeout(() => press(row, t.clientX, t.clientY), 500);
+      hold = setTimeout(() => {
+        held = true;
+        press(row, t.clientX, t.clientY);
+      }, 500);
     },
     { passive: true },
   );
@@ -1988,7 +1991,21 @@ function chat(main: HTMLElement): void {
     },
     { passive: true },
   );
-  for (const ev of ["touchend", "touchcancel"]) list.addEventListener(ev, () => clearTimeout(hold), { passive: true });
+  // The release of a press that opened the menu clicks nothing under the finger.
+  list.addEventListener("touchend", (e) => {
+    clearTimeout(hold);
+    if (held) e.preventDefault();
+    held = false;
+  });
+  list.addEventListener("touchcancel", () => clearTimeout(hold), { passive: true });
+  // A manual popover: a touch's release lands on the reply it pressed, which would light-dismiss an auto one.
+  // A press elsewhere, or Esc, closes it.
+  document.addEventListener("pointerdown", (e) => {
+    if (menu?.matches(":popover-open") && !menu.contains(e.target as Node)) menu.hidePopover();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && menu?.matches(":popover-open")) menu.hidePopover();
+  });
   menu?.addEventListener("click", (e) => {
     const m = (e.target as Element).closest?.<HTMLElement>("[data-m]")?.dataset.m;
     const row = pressed;

@@ -366,6 +366,14 @@ test.describe("touch", () => {
     await reply.click({ button: "right" });
     await menu.getByRole("menuitem", { name: "quote" }).click();
     await expect(box(page)).toHaveValue("> Hello\n\n");
+    // Esc or a press elsewhere closes it.
+    await reply.click({ button: "right" });
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeHidden();
+    await reply.click({ button: "right" });
+    await expect(menu).toBeVisible();
+    await page.mouse.click(2, 400);
+    await expect(menu).toBeHidden();
   });
 });
 

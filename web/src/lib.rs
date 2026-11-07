@@ -1210,7 +1210,7 @@ async fn foot(
         <div
             id="menu"
             class="mn"
-            popover="auto"
+            popover="manual"
             role="menu"
             aria-label="message actions"
         >
