@@ -981,12 +981,7 @@ async fn foot(
     Ok(view! {
         if !ended && (!choices.0.is_empty() || !choices.1.is_empty()) {
             <div class="mc">
-                pick(
-                    id: "model".to_owned(),
-                    name: "model",
-                    list: choices.0,
-                    now: now.0
-                )
+                pick(id: "model".to_owned(), name: "model", list: choices.0, now: now.0)
                 pick(
                     id: "effort".to_owned(),
                     name: "effort",
