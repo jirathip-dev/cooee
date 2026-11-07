@@ -1120,7 +1120,7 @@ if (frame) {
   // The passkey gate (#28): the ceremony runs here, never in the sandboxed frame. The first time, this device
   // registers its passkey; then each unlock signs a fresh challenge. The tap is on this page's own button.
   const lock = document.createElement("button");
-  lock.className = "pk";
+  lock.className = "pkl";
   lock.hidden = true;
   lock.textContent = "Unlock with Face ID";
   frame.after(lock);

@@ -75,7 +75,7 @@ details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media (max-width:599px){.bar{flex-wrap:wrap}.tabs{order:9;flex-basis:100%;min-width:0;overflow-x:auto;scrollbar-width:none}}
 .tabs{display:flex;gap:4px}.tabs a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 10px;border-radius:999px;color:var(--fg);text-decoration:none}.tabs a.on{background:var(--bg);font-weight:600}.tabs .dot{color:var(--r);font-style:normal;font-size:.7em;margin-left:4px}
-.pt{display:flex;flex-direction:column;height:100dvh;position:relative}.pk{position:absolute;top:45%;left:50%;transform:translateX(-50%)}.pf{flex:1;width:100%;border:0;background:var(--bg)}
+.pt{display:flex;flex-direction:column;height:100dvh;position:relative}.pkl{position:absolute;top:45%;left:50%;transform:translateX(-50%)}.pf{flex:1;width:100%;border:0;background:var(--bg)}
 [hidden]{display:none!important}
 
 /* A state (shown.rs, look.ts): the sprite, the glyph or the dot, then the theme word in the state's colour and `· plain` muted.
