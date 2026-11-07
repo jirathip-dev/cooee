@@ -12,7 +12,8 @@ test("the machines tab: a card per machine, a chart on tap, the Air offline and 
   await expect(here.locator(".seen")).toHaveText("online");
   await expect(here.locator("summary").filter({ hasText: "disk free" })).toContainText("GB");
   await expect(here.locator(".tm")).toHaveText("terminals: 1 blocked · 4 exited · 2 working");
-  await expect(here.locator("svg.sp polyline").first()).toHaveAttribute("points", /^(\S+ ){1439}\S+$/);
+  // 24 h at a sample a minute, less the ones that aged out while the suite ran (the plugin polls every minute).
+  await expect(here.locator("svg.sp polyline").first()).toHaveAttribute("points", /^(\S+ ){1400,1439}\S+$/);
   await expect(air.locator(".seen")).toHaveText(/^offline · last seen 4\d min ago$/);
   // The dot: the plugin has told cooee by now; the header is drawn with the page.
   await expect.poll(async () => { await page.reload(); return page.getByRole("link", { name: "Machines (needs you)" }).count(); }).toBe(1);

@@ -79,7 +79,8 @@ const CLI: &str = r#"#!/bin/sh
 # The fake `shed` CLI: `agents` lists one agent; `run` records its arguments and prints the terminal (it waits while
 # the gate `hold-run` is shut, and fails, as a slow start's CLI would, while `run-fails` is; in a folder named <f>,
 # it waits while `hold-in-<f>` is shut, and its session never comes up while `fails-in-<f>` is); `machine ls` prints
-# machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline.
+# machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; after the
+# first, with its history empty, as shed answers `--since` the last sample it sent.
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
@@ -87,7 +88,7 @@ case "$*" in
 *" machine stats"*)
   m=$(printf '%s' "$*" | sed -n 's/.*--on \([^ ]*\).*/\1/p')
   f="$(dirname "$0")/stats-${m:-local}.json"
-  cat "$f" || exit 1
+  if [ -e "$f.sent" ]; then sed 's/"history":\[[^]]*\]/"history":[]/' "$f"; else cat "$f" && touch "$f.sent"; fi || exit 1
   if grep -q '"online":false' "$f"; then exit 1; fi ;;
 *" agents") echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
 *" run "*)
