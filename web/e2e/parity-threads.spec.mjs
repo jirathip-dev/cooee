@@ -340,27 +340,33 @@ test("row 27: the draft keeps its text and picked files across a reload", async 
   await shot(page, info, "parity-27-draft");
 });
 
-test("row 28: a long press on a reply opens copy, copy as markdown and quote; quote puts > lines in the box", async ({ page, context }, info) => {
-  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.clock.install();
-  await thread(page);
-  const reply = page.locator(".blk.ai").last();
-  // A press held 500 ms.
-  await reply.evaluate((r) => {
-    const t = [new Touch({ identifier: 1, target: r, clientX: 60, clientY: r.getBoundingClientRect().top + 10 })];
-    r.dispatchEvent(new TouchEvent("touchstart", { touches: t, bubbles: true }));
+test.describe("touch", () => {
+  test.use({ hasTouch: true });
+  test("row 28: a long press on a reply opens copy, copy as markdown and quote; quote puts > lines in the box", async ({ page, context }, info) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.clock.install();
+    await thread(page);
+    const reply = page.locator(".blk.ai").last();
+    // A real touch held 600 ms, then lifted: the menu stays open after the release.
+    const b = await reply.boundingBox();
+    const at = [{ x: b.x + 30, y: b.y + 10 }];
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: at });
+    await page.clock.runFor(600);
+    const menu = page.locator("#menu");
+    await expect(menu).toBeVisible();
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await page.clock.runFor(100);
+    await expect(menu).toBeVisible();
+    await shot(page, info, "parity-28-menu");
+    await audit(page);
+    await menu.getByRole("menuitem", { name: "copy as markdown" }).click();
+    await expect(menu).toBeHidden();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("Hello");
+    await reply.click({ button: "right" });
+    await menu.getByRole("menuitem", { name: "quote" }).click();
+    await expect(box(page)).toHaveValue("> Hello\n\n");
   });
-  await page.clock.runFor(600);
-  const menu = page.locator("#menu");
-  await expect(menu).toBeVisible();
-  await shot(page, info, "parity-28-menu");
-  await audit(page);
-  await menu.getByRole("menuitem", { name: "copy as markdown" }).click();
-  await expect(menu).toBeHidden();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("Hello");
-  await reply.click({ button: "right" });
-  await menu.getByRole("menuitem", { name: "quote" }).click();
-  await expect(box(page)).toHaveValue("> Hello\n\n");
 });
 
 test("row 29: the thread bar stays put while scrolling to the top loads older messages", async ({ page }, info) => {
