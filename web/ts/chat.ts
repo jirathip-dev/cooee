@@ -137,8 +137,9 @@ type Row = {
   at: number;
   unread: boolean;
   unseen: number;
+  workflow?: { role: string; round: string };
 };
-type Card = { folder: string; rows: Row[] };
+type Card = { folder: string; rows: Row[]; done?: Row[] };
 type Listed = { cards: Card[]; archived: Row[] };
 async function cardsNow(): Promise<void> {
   const list = $("main.list");
@@ -172,7 +173,11 @@ function rowOf(r: Row): HTMLElement {
   const a = make("a", r.unread ? "tr" : "tr rd") as HTMLAnchorElement;
   const st = make("b");
   const tp = make("span", "tp");
-  const ta = make("span", "ta", `${r.agent} · ${age(r.at)}`);
+  const ta = make(
+    "span",
+    "ta",
+    r.workflow ? `${r.workflow.role} · round ${r.workflow.round} · ${age(r.at)}` : `${r.agent} · ${age(r.at)}`,
+  );
   a.href = `/t/${r.id}`;
   a.dataset.id = r.id;
   st.dataset.st = STATE[r.state] ?? "";
@@ -205,8 +210,13 @@ function drawCards(list: HTMLElement, { cards, archived }: Listed): void {
     const card = make("section", "fc");
     const fh = make("div", "fh");
     fh.append(make("b", "", c.folder), make("span", "ds", `${c.rows.length} threads`));
-    card.append(fh, ...c.rows.slice(0, 3).map(rowOf));
-    if (c.rows.length > 3) {
+    card.append(fh, ...c.rows.slice(0, c.done ? undefined : 3).map(rowOf));
+    if (c.done?.length) {
+      const done = make("details") as HTMLDetailsElement;
+      done.append(make("summary", "", `${c.done.length} done today`), ...c.done.map(rowOf));
+      done.open = open.has(c.folder);
+      card.append(done);
+    } else if (!c.done && c.rows.length > 3) {
       const more = make("details") as HTMLDetailsElement;
       more.append(make("summary", "", `${c.rows.length - 3} older threads`), ...c.rows.slice(3).map(rowOf));
       more.open = open.has(c.folder);

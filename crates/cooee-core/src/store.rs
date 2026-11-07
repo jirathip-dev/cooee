@@ -6,7 +6,7 @@
 //! files from `tests/fixtures/upgrade/<version>/`.
 
 use std::{
-    collections::HashMap,
+    collections::{BTreeMap, HashMap},
     fs::{self, File},
     io::{self, Write},
     os::unix::fs::FileExt,
@@ -56,6 +56,9 @@ pub struct Thread {
     /// The owner's messages queued during a turn, sent in order as each turn ends.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub queue: Vec<Queued>,
+    /// Where a session a tool started came from (a Workflow item, #33); none: the owner's own chat.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workflow: Option<Workflow>,
 }
 
 /// A message queued during a turn.
@@ -69,6 +72,50 @@ pub struct Queued {
     /// Its files' stored names.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<String>,
+}
+
+/// A session a tool started, as its shed labels say (#33): `source` (the tool), `group` (its repo), `item`
+/// (`#issue`), `role`, `round` and an optional `url`. Any tool may set them; cooee names none.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Workflow {
+    /// The tool that started it.
+    pub source: String,
+    /// What it works on (a repo).
+    #[serde(default)]
+    pub group: String,
+    /// Which item of it (`#33`).
+    #[serde(default)]
+    pub item: String,
+    /// Its role (`impl`, `rev`, …).
+    #[serde(default)]
+    pub role: String,
+    /// Its round.
+    #[serde(default)]
+    pub round: String,
+    /// A link to what it works on.
+    #[serde(default)]
+    pub url: String,
+}
+
+impl Workflow {
+    /// The session's labels as a Workflow item: one with a `source` that cooee didn't start itself.
+    #[must_use]
+    pub fn from_labels(labels: &BTreeMap<String, String>) -> Option<Self> {
+        if labels.keys().any(|k| k.starts_with("cooee")) {
+            return None;
+        }
+        let get = |k: &str| labels.get(k).cloned().unwrap_or_default();
+        let source = get("source");
+        (!source.is_empty()).then(|| Self {
+            source,
+            group: get("group"),
+            item: get("item"),
+            role: get("role"),
+            round: get("round"),
+            url: get("url"),
+        })
+    }
 }
 
 /// One message in a thread.

@@ -422,11 +422,13 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
-/// `GET /threads`: the thread list's cards and its archived threads, as the page draws them (docs/api.md).
+/// `GET /threads`: the thread list's cards under the device's chip and its archived threads, as the page draws them
+/// (docs/api.md).
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<cooee_web::Listed>> {
+    let list = cooee_web::chip(cx);
     Ok(Answer(
-        blocking(cx, |hub| Ok(cooee_web::listed(hub.list()))).await,
+        blocking(cx, move |hub| Ok(cooee_web::listed(hub.list(), list))).await,
     ))
 }
 
