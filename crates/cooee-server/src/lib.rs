@@ -426,11 +426,12 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
-/// `GET /threads`: the thread list's cards, as the page draws them (its refresh, docs/api.md).
+/// `GET /threads`: the thread list's cards under the device's chip, as the page draws them (its refresh, docs/api.md).
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_web::Card>>> {
+    let list = cooee_web::chip(cx);
     Ok(Answer(
-        blocking(cx, |hub| Ok(cooee_web::cards(hub.list()))).await,
+        blocking(cx, move |hub| Ok(cooee_web::cards(hub.list(), list))).await,
     ))
 }
 

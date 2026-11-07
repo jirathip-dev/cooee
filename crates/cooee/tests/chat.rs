@@ -315,7 +315,27 @@ fn fake_shed_server() {
     let Some(dir) = std::env::var_os("FAKE_SHED_DIR") else {
         return;
     };
-    let _shed = FakeShed::start(PathBuf::from(dir).as_path(), version());
+    let shed = FakeShed::start(PathBuf::from(dir).as_path(), version());
+    // Workflow sessions another tool started (#33): an impl lane at work, a rev lane that asks, a finished one.
+    if std::env::var_os("FAKE_SHED_LANES").is_some() {
+        let lane = |name: &str, item: &str, role: &str, prompt: &str| {
+            let url = format!("https://github.com/o/cooee/issues/{}", &item[1..]);
+            let labels = [
+                ("source", "drover"),
+                ("group", "cooee"),
+                ("item", item),
+                ("role", role),
+                ("round", "1"),
+                ("url", url.as_str()),
+            ];
+            shed.lane(name, &labels);
+            shed.report(name, "working", None);
+            shed.input(name, &format!("\x1e{}\n", json!({ "prompt": prompt })));
+        };
+        lane("lane-impl", "#33", "impl", "hang on");
+        lane("lane-rev", "#31", "rev", "approve it");
+        lane("lane-done", "#30", "fix", "use a tool");
+    }
     loop {
         thread::park();
     }

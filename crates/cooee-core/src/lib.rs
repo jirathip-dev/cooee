@@ -20,4 +20,4 @@ pub use login::{Provider, Status, links, redact};
 pub use profiles::Profile;
 pub use shed::{AGENTS_FIX, Agent, Launch, Shed, ShedError};
 pub use shed_proto;
-pub use store::{FORMAT, Message, Role, Store, StoreError, Thread};
+pub use store::{FORMAT, Message, Role, Store, StoreError, Thread, Workflow};

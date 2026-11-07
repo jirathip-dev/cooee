@@ -29,6 +29,7 @@ use topcoat::{
     context::{Cx, app_context},
     router::{
         Body, RouterBuilder,
+        content::Form,
         error::not_found,
         path_param,
         response::{IntoResponse, Response},
@@ -44,8 +45,9 @@ macro_rules! built {
     };
 }
 
-/// The static routes: the manifest, the icons, the style sheet, the scripts and the service worker; and the look:
-/// `POST /look` (a pick with no script) and each theme's data at `/look/<theme>/{theme.json,sprites.svg,icon.png}`.
+/// The static routes: the manifest, the icons, the style sheet, the scripts and the service worker; the look:
+/// `POST /look` (a pick with no script) and each theme's data at `/look/<theme>/{theme.json,sprites.svg,icon.png}`;
+/// and `POST /list`, the thread list's chip.
 ///
 /// # Panics
 ///
@@ -66,6 +68,7 @@ pub fn assets(builder: RouterBuilder, looks: Looks) -> RouterBuilder {
         .route(worker)
         .route(look_js)
         .route(sheet::look_set)
+        .route(list_set)
         .route(look_file)
         .app_context(Arc::new(LookAssets { looks, json }))
 }
@@ -214,7 +217,7 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
             data-theme=(name)
             data-mode=(look.mode().map(str::to_owned))
             data-style=(look.style().to_owned())
-            data-sprites=(look.figs().to_owned())
+            data-figures=(look.figures().to_owned())
             data-moments=(if look.theme().moments { "on" } else { "off" })
         >
             <head>
@@ -261,28 +264,100 @@ fn short(folder: &Path) -> String {
     }
 }
 
-/// A working folder's card on the thread list: the folder as shown (`~/x`) and its threads.
+/// A card on the thread list: a working folder (`~/x`) and its chats, or a Workflow source and its sessions.
 #[derive(serde::Serialize)]
 pub struct Card {
-    /// The folder, `~/` for one under `$HOME`.
+    /// The folder, `~/` for one under `$HOME`; or the source.
     pub folder: String,
     /// Its threads, in the list's order.
     pub rows: Vec<Summary>,
+    /// A source's card: its finished sessions, folded under "done today".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub done: Option<Vec<Summary>>,
 }
 
-/// The thread list's cards, one per working folder, by folder (`GET /threads` and the page draw the same).
+/// The cookie that keeps the thread list's chip: `chats` or `workflow` (else All).
+const LIST: &str = "cooee-list";
+
+/// The device's chip: `all`, `chats` or `workflow`.
 #[must_use]
-pub fn cards(rows: Vec<Summary>) -> Vec<Card> {
-    let mut by: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
-    for r in rows {
-        by.entry(r.folder.clone()).or_default().push(r);
+pub fn chip(cx: &Cx) -> &'static str {
+    let cookie = topcoat::router::request::headers(cx)
+        .get("cookie")
+        .and_then(|v| v.to_str().ok());
+    let value = cookie
+        .into_iter()
+        .flat_map(|c| c.split(';'))
+        .find_map(|c| c.trim().strip_prefix(LIST)?.strip_prefix('='));
+    match value {
+        Some("chats") => "chats",
+        Some("workflow") => "workflow",
+        _ => "all",
     }
-    by.into_iter()
-        .map(|(f, rows)| Card {
-            folder: short(&f),
+}
+
+/// `POST /list`: the chip tapped.
+#[derive(serde::Deserialize)]
+struct Chip {
+    list: String,
+}
+
+/// Keeps the chip tapped for this device and goes back to the list.
+#[route(POST "/list")]
+async fn list_set(Form(c): Form<Chip>) -> Result<Response> {
+    let value = if matches!(c.list.as_str(), "chats" | "workflow") {
+        c.list.as_str()
+    } else {
+        "all"
+    };
+    Ok(Response::builder()
+        .status(303)
+        .header("Location", "/")
+        .header(
+            "Set-Cookie",
+            format!("{LIST}={value}; Path=/; Max-Age=315360000; SameSite=Lax"),
+        )
+        .body(Body::from(()))?)
+}
+
+/// The thread list's cards under chip `list` (`GET /threads` and the page draw the same): Chats, one per working
+/// folder, by folder; then Workflow, one per source, needs-you first, then working, then the newest, the finished
+/// ones folded.
+#[must_use]
+pub fn cards(rows: Vec<Summary>, list: &str) -> Vec<Card> {
+    let mut by: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
+    let mut sources: BTreeMap<String, Vec<Summary>> = BTreeMap::new();
+    for r in rows {
+        match &r.workflow {
+            Some(w) => sources.entry(w.source.clone()).or_default().push(r),
+            None => by.entry(r.folder.clone()).or_default().push(r),
+        }
+    }
+    let chats = by.into_iter().map(|(f, rows)| Card {
+        folder: short(&f),
+        rows,
+        done: None,
+    });
+    let workflow = sources.into_iter().map(|(source, mut rows)| {
+        rows.sort_by_key(|r| match r.state.as_str() {
+            "blocked" => 0,
+            "working" => 1,
+            _ => 2,
+        });
+        let (done, rows) = rows
+            .into_iter()
+            .partition(|r| matches!(r.state.as_str(), "done" | "ended"));
+        Card {
+            folder: source,
             rows,
-        })
-        .collect()
+            done: Some(done),
+        }
+    });
+    match list {
+        "chats" => chats.collect(),
+        "workflow" => workflow.collect(),
+        _ => chats.chain(workflow).collect(),
+    }
 }
 
 /// Now, in Unix ms.
@@ -376,7 +451,10 @@ async fn row(cx: &Cx, r: Summary) -> Result<impl View> {
     let st = state(&r.state);
     let mark = Unescaped::new_unchecked(shown(cx).st(st, false));
     let href = format!("/t/{}", r.id);
-    let meta = format!("{} · {}", r.agent, age(r.at));
+    let meta = match &r.workflow {
+        Some(w) => format!("{} · round {} · {}", w.role, w.round, age(r.at)),
+        None => format!("{} · {}", r.agent, age(r.at)),
+    };
     Ok(view! {
         <a class=(if r.unread { "tr" } else { "tr rd" }) href=(href)>
             <i class="ud">(if r.unread { "●" } else { "" })</i>
@@ -417,7 +495,7 @@ async fn nav(tabs: Vec<(String, String, bool)>, current: String) -> Result<impl 
 }
 
 /// The thread list: one card per working folder, its 3 newest threads shown, the rest folded; the new-thread
-/// form (open when there are no threads, else behind `+`), each agent with its provider's state (no agents or no
+/// form (open when the owner has no chats, else behind `+`), each agent with its provider's state (no agents or no
 /// folders: the fix line instead); the
 /// sign-ins card (`#signins`, from Settings): each provider's accounts and their state, and its login's terminal (drawn by `chat.ts`); `tabs`: the
 /// plugins' names and labels. With agent `profiles`, the form's profile picker.
@@ -703,6 +781,65 @@ async fn profile_picker(profiles: Vec<Profile>, pick: String, last: String) -> R
     })
 }
 
+/// The chips over the one list (#33): All · Chats · Workflow, `list` on; a tap posts `POST /list`.
+#[component]
+async fn chips(list: &'static str) -> Result<impl View> {
+    Ok(view! {
+        <form class="seg" id="chips" method="post" action="/list" aria-label="show">
+            for (v, label) in [
+                ("all", "All"),
+                ("chats", "Chats"),
+                ("workflow", "Workflow"),
+            ] {
+                <button
+                    type="submit"
+                    role="radio"
+                    name="list"
+                    value=(v)
+                    aria-checked=(if v == list { "true" } else { "false" })
+                >
+                    (label)
+                </button>
+            }
+        </form>
+    })
+}
+
+/// One card: a folder's 3 newest chats, the rest folded; or a source's sessions, the finished ones folded.
+#[component]
+async fn card(c: Card) -> Result<impl View> {
+    let Card { folder, rows, done } = c;
+    let shown = if done.is_some() { rows.len() } else { 3 };
+    Ok(view! {
+        <section class="fc">
+            <div class="fh">
+                <b>(folder)</b>
+                <span class="ds">(format!("{} threads", rows.len()))</span>
+            </div>
+            for r in rows.iter().take(shown).cloned() {
+                row(r: r)
+            }
+            if let Some(done) = done {
+                if !done.is_empty() {
+                    <details>
+                        <summary>(format!("{} done today", done.len()))</summary>
+                        for r in done {
+                            row(r: r)
+                        }
+                    </details>
+                }
+            } else if rows.len() > 3 {
+                <details>
+                    <summary>(format!("{} older threads", rows.len() - 3))</summary>
+                    for r in rows.iter().skip(3).cloned() {
+                        row(r: r)
+                    }
+                </details>
+            }
+        </section>
+    })
+}
+
 #[component]
 async fn threads(
     cx: &Cx,
@@ -713,7 +850,12 @@ async fn threads(
     providers: Vec<Sheet>,
     tabs: Vec<(String, String, bool)>,
 ) -> Result<impl View> {
-    let empty = rows.is_empty();
+    // Open until the owner has a chat of their own (Workflow sessions aren't theirs).
+    let open = rows.iter().all(|r| r.workflow.is_some());
+    let list = chip(cx);
+    let (pick, by_folder) = last_used(&rows, &profiles, &folders);
+    let cards = cards(rows, list);
+    let empty = cards.is_empty();
     let look = shown(cx);
     let (figure, words) = (look.s("empty"), look.w("empty-threads", true));
     // Start waits for an agent and a folder to pick.
@@ -723,8 +865,6 @@ async fn threads(
         .rev()
         .map(|p| (p.provider.agent.clone(), p.accounts.clone()))
         .collect();
-    let (pick, by_folder) = last_used(&rows, &profiles, &folders);
-    let cards = cards(rows);
     Ok(view! {
         document(
             title: "cooee",
@@ -739,7 +879,7 @@ async fn threads(
                         </p>
                     </div>
                 }
-                <form class=(if empty { "nf" } else { "nf shut" }) id="new">
+                <form class=(if open { "nf" } else { "nf shut" }) id="new">
                     <div class="fh">
                         <b>"new thread"</b>
                         <a class="gl" href="#" aria-label="close">"×"</a>
@@ -783,26 +923,9 @@ async fn threads(
                     </div>
                     <p class="err" id="new-err" hidden=(true)></p>
                 </form>
-                for Card { folder, rows } in cards {
-                    <section class="fc">
-                        <div class="fh">
-                            <b>(folder)</b>
-                            <span class="ds">(format!("{} threads", rows.len()))</span>
-                        </div>
-                        for r in rows.iter().take(3).cloned() {
-                            row(r: r)
-                        }
-                        if rows.len() > 3 {
-                            <details>
-                                <summary>
-                                    (format!("{} older threads", rows.len() - 3))
-                                </summary>
-                                for r in rows.iter().skip(3).cloned() {
-                                    row(r: r)
-                                }
-                            </details>
-                        }
-                    </section>
+                chips(list: list)
+                for c in cards {
+                    card(c: c)
                 }
             </main>
         )
@@ -947,6 +1070,12 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn, profile: String) -> Result<im
     .map(|(st, plain)| Unescaped::new_unchecked(look.st(st, plain)));
     let folder = thread.folder.as_deref().map(short).unwrap_or_default();
     let ended = thread.closed || turn.state == "ended";
+    // A Workflow session (#33): its role and round, and a link to what it works on; its tool closes it.
+    let workflow = thread.workflow.clone();
+    let link = workflow
+        .as_ref()
+        .map(|w| w.url.clone())
+        .filter(|u| u.starts_with("https://") || u.starts_with("http://"));
     Ok(view! {
         document(
             title: thread.title.as_str(),
@@ -964,7 +1093,9 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn, profile: String) -> Result<im
                         <h1>(thread.title.clone())</h1>
                         <span class="ds">
                             <i class="dt"></i>
-                            ({
+                            (if let Some(w) = &workflow {
+                                format!("{} · round {} · ", w.role, w.round)
+                            } else {
                                 let parts = [
                                     profile.as_str(),
                                     &thread.agent,
@@ -978,13 +1109,17 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn, profile: String) -> Result<im
                                 format!("{} · ", parts.join(" · "))
                             })
                             <span id="st" data-st=(state(&turn.state))>(st)</span>
+                            if let Some(url) = link {
+                                " · "
+                                <a href=(url)>"issue & PR"</a>
+                            }
                         </span>
                     </div>
                     <button
                         type="button"
                         id="close"
                         class="gl"
-                        hidden=(ended)
+                        hidden=(ended || workflow.is_some())
                         aria-label="close the thread"
                     >
                         "×"

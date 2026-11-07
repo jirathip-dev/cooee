@@ -115,6 +115,9 @@ pub struct Summary {
     pub at: u64,
     /// Whether it has items the owner hasn't seen.
     pub unread: bool,
+    /// A session a tool started (#33): its labels.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub workflow: Option<crate::Workflow>,
 }
 
 /// What applying an event changed, for the page.
