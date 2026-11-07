@@ -12,7 +12,7 @@ A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` 
 |---|---|---|
 | `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, and `scene` (the Scene's layers: element ids in `scene.svg`) |
 | `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
-| `scene.svg` | when `scene` | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned), its `viewBox` at most 400 × 320 (the first-party packs carry herdsman's Herd scenes, `docs/design/scene/build.mjs`: 390 × 320 or 392 × 188), holding each layer `scene` names. A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
+| `scene.svg` | when `sprites` or `scene` | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned), its `viewBox` at most 400 × 320 (the first-party packs carry herdsman's Herd scenes, `docs/design/scene/build.mjs`: 390 × 320 or 392 × 188), holding each layer `scene` names. A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
 | `schemes/<name>.json` | no | the pack's own colour schemes (below); its `theme.json` may name them |
 | `icon.png` | no | the tile in the look sheet, the favicon and the home-screen icon (else cooee's icon) |
 
@@ -39,7 +39,7 @@ refuses a pack that fails it, and prints why.
 - **Settings › look › themes** on the phone lists the installed packs, each with [remove] and [remix] (and [publish]
   for one not from the index), the ones being built, [+ theme] (the index or a git URL) and [new theme].
 - **[new theme]** or **[remix]** makes `<config dir>/themes-dev/<name>/` (from `packs/starter/`, the plain words and
-  placeholder sprites, or a copy of the remixed pack) and opens a chat with the first agent in shed there. The chat
+  placeholder sprites and scene, or a copy of the remixed pack) and opens a chat with the first agent in shed there. The chat
   links to the live preview, `/themes/dev/<name>`: the thread list, the chat and the scene in the theme, reloaded on
   each save (and the gate's failures while it fails). **[keep]** runs the gate: a pass moves the pack into `themes/`;
   a failure lists what to fix in the chat, for the agent. **[publish]** makes a kept pack a git repo of its own, to

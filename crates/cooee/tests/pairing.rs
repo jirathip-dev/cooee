@@ -321,7 +321,7 @@ fn the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it() {
     let dir = scratch("look");
     let kitchen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/themes/kitchen");
     fs::create_dir_all(dir.join("themes/kitchen")).unwrap();
-    for f in ["theme.json", "sprites.svg", "icon.png"] {
+    for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
         fs::copy(kitchen.join(f), dir.join("themes/kitchen").join(f)).unwrap();
     }
     let shed = FakeShed::start(&dir.join("shed"), version());

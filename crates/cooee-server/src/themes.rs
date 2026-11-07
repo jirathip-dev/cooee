@@ -16,8 +16,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::hub::lock;
 
-/// The starter pack `[new theme]` begins from: the plain words and placeholder sprites.
-const STARTER: [(&str, &str); 2] = [
+/// The starter pack `[new theme]` begins from: the plain words, placeholder sprites and scene.
+const STARTER: [(&str, &str); 3] = [
     (
         "theme.json",
         include_str!("../../../packs/starter/theme.json"),
@@ -25,6 +25,10 @@ const STARTER: [(&str, &str); 2] = [
     (
         "sprites.svg",
         include_str!("../../../packs/starter/sprites.svg"),
+    ),
+    (
+        "scene.svg",
+        include_str!("../../../packs/starter/scene.svg"),
     ),
 ];
 

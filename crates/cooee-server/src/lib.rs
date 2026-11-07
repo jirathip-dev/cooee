@@ -1030,7 +1030,7 @@ fn theme_prompt(name: &str, text: &str) -> String {
     format!(
         "Theme {name}: {ask}\n\nYou're building the cooee theme {name}: this folder is its pack \
          (docs/themes.md in cooee's repo). theme.json has label, scheme {{dark, light}} (scheme names), sprites, \
-         moments, words (keys: {}) and optionally scene (element ids in scene.svg, viewBox \"0 0 390 320\"). \
+         moments, words (keys: {}) and optionally scene (element ids in scene.svg, viewBox at most \"0 0 400 320\"; scene.svg is needed with sprites). \
          sprites.svg holds <symbol>s {} (each s-<state>). Your own colour schemes go in schemes/<name>.json (label, \
          color-scheme, tokens {}), each passing WCAG AA. My phone shows a live preview that reloads on each save. \
          When I tap [keep], cooee runs the theme gate and lists here anything to fix.",

@@ -39,7 +39,7 @@ fn packs() -> PathBuf {
 /// farm's pack copied to `to`, its `s-needs` gone when `broken`.
 fn farm_at(to: &Path, broken: bool) {
     fs::create_dir_all(to).unwrap();
-    for f in ["theme.json", "sprites.svg", "icon.png"] {
+    for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
         fs::copy(packs().join("themes/farm").join(f), to.join(f)).unwrap();
     }
     if broken {
@@ -166,6 +166,8 @@ fn check_passes_the_first_party_packs_and_fails_a_broken_one() {
 #[test]
 fn add_remove_and_list_with_the_lock() {
     let s = setup("th-add");
+    let (_, list) = s.run(&["theme", "list"]);
+    assert!(list.starts_with("no themes installed"), "{list}");
     let (ok, out) = s.run(&["theme", "add", "farm"]);
     assert!(ok, "{out}");
     assert!(!out.contains("not reviewed"), "{out}");
@@ -377,6 +379,18 @@ fn remix_preview_keep_and_publish_from_the_phone() {
         "{said}"
     );
     assert_eq!(s.lock()[1]["commit"], json!(commit));
+
+    // [new theme] from the starter keeps as it is, with the Scene art its sprites need.
+    let (status, to) = s.act("new", "name=fresh");
+    assert_eq!(status, 303, "{to}");
+    let thread = to.strip_prefix("/t/").unwrap();
+    let body = format!("name=fresh&thread={thread}");
+    assert_eq!(s.act("keep", &body), (303, "/#settings/look".to_owned()));
+    let (status, art) = s.cooee.get("/look/fresh/scene.svg");
+    assert!(
+        status == 200 && art.contains("id=\"night\""),
+        "{status} {art}"
+    );
 
     // A name taken or not a theme's is refused.
     assert_eq!(s.act("new", "name=sea-farm").0, 409);

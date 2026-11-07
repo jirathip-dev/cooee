@@ -338,7 +338,7 @@ fn setup_installs_the_first_party_themes_chosen_from_the_index() {
     let packs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/themes");
     for t in ["farm", "kitchen", "garden"] {
         fs::create_dir_all(repo.join(t)).unwrap();
-        for f in ["theme.json", "sprites.svg", "icon.png"] {
+        for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
             fs::copy(packs.join(t).join(f), repo.join(t).join(f)).unwrap();
         }
     }
@@ -393,6 +393,7 @@ fn setup_installs_the_first_party_themes_chosen_from_the_index() {
         files(&themes),
         [
             "kitchen/icon.png",
+            "kitchen/scene.svg",
             "kitchen/sprites.svg",
             "kitchen/theme.json"
         ]

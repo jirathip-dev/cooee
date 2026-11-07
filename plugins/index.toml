@@ -16,7 +16,7 @@ description = "drover's queue, asks and fleets tabs over herdsman's API"
 name = "farm"
 url = "https://github.com/jirathip-dev/cooee"
 path = "packs/themes/farm"
-commit = "ca91141bb0532083ef623168913162dabf53848a"
+commit = "9fba319226d86c7e4c286cb67f219fb9afba2f08"
 description = "horses on the trail, at the gate, in the stable"
 first_party = true
 
@@ -24,7 +24,7 @@ first_party = true
 name = "kitchen"
 url = "https://github.com/jirathip-dev/cooee"
 path = "packs/themes/kitchen"
-commit = "ca91141bb0532083ef623168913162dabf53848a"
+commit = "9fba319226d86c7e4c286cb67f219fb9afba2f08"
 description = "chefs at the pass, the bell when one needs you"
 first_party = true
 
@@ -32,6 +32,6 @@ first_party = true
 name = "garden"
 url = "https://github.com/jirathip-dev/cooee"
 path = "packs/themes/garden"
-commit = "ca91141bb0532083ef623168913162dabf53848a"
+commit = "9fba319226d86c7e4c286cb67f219fb9afba2f08"
 description = "plants being tended, thirsty when one needs you"
 first_party = true

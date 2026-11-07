@@ -433,7 +433,13 @@ fn theme(config: &Config, args: &[&str], rev: Option<&str>, yes: bool) -> Result
             println!("removed {name}");
         }
         ["list"] => {
-            for p in t.list().map_err(e)? {
+            let packs = t.list().map_err(e)?;
+            if packs.is_empty() {
+                println!(
+                    "no themes installed: plain is built in; `cooee theme add <name>` adds one"
+                );
+            }
+            for p in packs {
                 let commit = p.commit.get(..7).unwrap_or("-");
                 println!("{}  {}  {commit}", p.name, p.source);
             }

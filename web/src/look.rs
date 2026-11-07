@@ -42,7 +42,7 @@ pub struct Theme {
     /// Plays the row moments.
     #[serde(default)]
     pub moments: bool,
-    /// The Scene's layers: element ids in `scene.svg` (`viewBox="0 0 390 320"`); none: no scene.
+    /// The Scene's layers: element ids in `scene.svg` (`viewBox` at most 400 × 320); none: no scene.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scene: Vec<String>,
     /// The theme's word per state key (`working needs done fail idle merged loading empty-threads`); a missing key
@@ -409,14 +409,18 @@ pub fn read_pack(
         .split_whitespace()
         .filter_map(|n| n.parse().ok())
         .collect();
+    // Sprites offer Scene (Figures), so a pack with sprites needs its art too.
     if svg.is_none() {
-        if !t.scene.is_empty() {
-            fails.push("scene.svg: missing (theme.json says scene)".to_owned());
+        if t.sprites || !t.scene.is_empty() {
+            let why = if t.sprites { "sprites" } else { "scene" };
+            fails.push(format!("scene.svg: missing (theme.json says {why})"));
         }
     } else if !matches!(size[..], [_, _, w, h] if w <= SCENE.0 && h <= SCENE.1) {
         fails.push(format!(
-            "scene.svg: viewBox {view:?}, over {} × {}",
-            SCENE.0, SCENE.1
+            "scene.svg: viewBox {:?}, over {} × {}",
+            view.unwrap_or("missing"),
+            SCENE.0,
+            SCENE.1
         ));
     }
     for l in t
@@ -718,7 +722,7 @@ mod tests {
     /// farm's pack, copied to a fresh folder and changed by `edit`.
     fn farm_with(name: &str, edit: impl FnOnce(&Path)) -> std::path::PathBuf {
         let dir = tmp(name);
-        for f in ["theme.json", "sprites.svg", "icon.png"] {
+        for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
             fs::copy(packs().join("themes/farm").join(f), dir.join(f)).unwrap();
         }
         edit(&dir);
@@ -744,6 +748,11 @@ mod tests {
             .unwrap();
         });
         assert_eq!(fails(&gone), "sprites.svg: no s-needs");
+        // Sprites offer Scene, so their pack needs its scene art.
+        let bare = farm_with("gate-bare", |d| {
+            fs::remove_file(d.join("scene.svg")).unwrap();
+        });
+        assert_eq!(fails(&bare), "scene.svg: missing (theme.json says sprites)");
         let murky = farm_with("gate-contrast", |d| {
             let mut s: Scheme = serde_json::from_str(SCHEMES[0].1).unwrap();
             s.tokens.insert("--fg".to_owned(), "#30363d".to_owned());
@@ -779,7 +788,7 @@ mod tests {
         });
         assert_eq!(
             fails(&big),
-            "scene.svg: viewBox Some(\"0 0 800 600\"), over 400 × 320\nscene.svg: no layer \"ground\""
+            "scene.svg: viewBox \"0 0 800 600\", over 400 × 320\nscene.svg: no layer \"ground\""
         );
         // The right size with every layer passes, and serves.
         fs::write(
