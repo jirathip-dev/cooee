@@ -163,6 +163,17 @@ test("row 18: a reply's markdown renders (table, code, link, raw HTML as text); 
   await expect(fold).toHaveText("▾ 3 commands");
 });
 
+test("row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain", async ({ page }) => {
+  const target = await thread(page);
+  await thread(page, `echo see **${target}**, not \`${target}\` x${target}`);
+  const reply = page.locator(".blk.ai").last();
+  await expect(reply.locator(".md a.ref")).toHaveCount(1);
+  await expect(reply.locator(".md strong a.ref")).toHaveText(target);
+  await expect(reply.locator(".md code")).toHaveText(target);
+  await reply.locator("a.ref").click();
+  await page.waitForURL(`/t/${target}`);
+});
+
 test("row 19: a code block's [copy] puts its code on the clipboard", async ({ page, context }, info) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await thread(page, "markdown again");

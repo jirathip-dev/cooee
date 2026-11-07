@@ -649,6 +649,8 @@ impl FakeShed {
                 while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
             }
             (vec![reply(&format!("streamed {n} words"), stop)], stop)
+        } else if let Some(said) = prompt.strip_prefix("echo ") {
+            (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("exit") {
             self.shared.lock().unwrap().stopped.insert(name.to_owned());
             self.emit(name, EventKind::Exited { code: Some(1) });

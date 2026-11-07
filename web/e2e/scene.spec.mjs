@@ -78,8 +78,9 @@ test("refreshed 5 times, Scene keeps one sprite per session", async ({ page, con
     await expect(page.locator("#rf")).not.toHaveClass(/rfs/);
     const ids = (await drawn(page)).flatMap((p) => p.ids);
     expect(new Set(ids).size).toBe(ids.length);
-    // Other tests add threads meanwhile: every sprite is a session the server lists, once.
-    const all = (await listed(page)).flatMap((p) => p.ids);
+    // Other tests add (and archive) threads meanwhile: every sprite is a session the server lists, once.
+    const { cards, archived } = await (await page.request.get("/threads")).json();
+    const all = [...cards.flatMap((c) => c.rows.concat(c.done ?? [])), ...archived].map((r) => r.id);
     expect(ids.every((id) => all.includes(id))).toBe(true);
   }
   await expect(page.locator("#scene .sdt a")).toHaveCount((await drawn(page)).length);

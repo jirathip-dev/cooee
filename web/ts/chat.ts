@@ -1230,12 +1230,16 @@ function chat(main: HTMLElement): void {
             return a;
           }),
     );
-  // The same in rendered markdown: its text outside code and links.
-  const linkRefs = (root: DocumentFragment): DocumentFragment => {
+  // The same in rendered markdown `src`: its text outside code and links, walked only when it names a known id.
+  const linkRefs = (root: DocumentFragment, src: string): DocumentFragment => {
+    if (!src.match(/(?<![\w-])t[0-9a-z]+(?![\w-])/g)?.some((w) => known.has(w))) return root;
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const texts: Text[] = [];
     while (w.nextNode()) if (!w.currentNode.parentElement?.closest("code, a")) texts.push(w.currentNode as Text);
-    for (const x of texts) x.replaceWith(...refs(x.data));
+    for (const x of texts) {
+      const parts = refs(x.data);
+      if (parts.some((n) => typeof n !== "string")) x.replaceWith(...parts);
+    }
     return root;
   };
   const withRefs = (tag: string, cls: string, s: string): HTMLElement => {
@@ -1326,7 +1330,7 @@ function chat(main: HTMLElement): void {
       row.className = "blk ai";
       raw.set(row, it.text);
       const box = el("div", "md");
-      box.append(linkRefs(markdown(it.text)));
+      box.append(linkRefs(markdown(it.text), it.text));
       row.append(el("b", "k", agent), box);
       if (it.stop_reason !== "end_turn") row.append(el("span", "ct", it.stop_reason));
     } else if (it.kind === "tool") {
