@@ -96,7 +96,7 @@ function strip(loading: boolean, now = false): void {
 strip(false);
 
 // Refresh: ↻, a pull down from the very top, the app coming back after 30 s away, or the network coming back. The
-// chat reloads its newest slice and stream (page.refresh); any other page reloads.
+// chat reloads its newest slice and stream (page.refresh); the agents list is drawn again; any other page reloads.
 const page: { refresh: (() => Promise<unknown>) | null; top: () => boolean } = { refresh: null, top: () => true };
 let refreshing: Promise<unknown> | null = null;
 function refresh(): Promise<unknown> | null {
@@ -106,7 +106,14 @@ function refresh(): Promise<unknown> | null {
   strip(true);
   refreshing = (async () => {
     if (page.refresh) return page.refresh();
-    location.reload();
+    // The agents list is drawn again in place from the page (no reload: a navigation away is never raced).
+    const now = $(".ags");
+    if (!now) return location.reload();
+    const r = await fetch(location.href);
+    if (!r.ok) throw await why(r);
+    copyAt = Number(r.headers.get("cooee-at")) || 0;
+    const next = new DOMParser().parseFromString(await r.text(), "text/html").querySelector(".ags");
+    if (next) now.replaceWith(next);
   })()
     .catch((x) => toast(`couldn't refresh: ${message(x)}`, true))
     .finally(() => {
