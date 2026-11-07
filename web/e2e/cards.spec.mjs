@@ -86,6 +86,9 @@ test("row 32: a config card shows its diff, the bar says it waits, [apply] settl
   await expect(row.locator(".diff .r")).toHaveText("-max_impl = 2");
   await expect(row.locator(".diff .g")).toHaveText("+max_impl = 3");
   await expect(page.locator("#cw")).toHaveText("config c1 waiting");
+  // The bar keeps its own look: not the pairing check word's big centred type (#47).
+  await expect(page.locator("#cw")).toHaveCSS("text-align", "left");
+  await expect(page.locator("#cw")).toHaveCSS("font-weight", "400");
   await audit(page);
   await shot(page, info, "parity-32-config");
   // Opened again, the bar is there from the first slice.

@@ -790,12 +790,13 @@ shed_dir = {}
     /// `cooee pair`, then its code entered as a browser would: the new device's token, if it paired.
     pub fn pair(&self) -> Option<String> {
         let out = self.cli(&["pair"]);
-        let code = out
+        let code: String = out
             .lines()
-            .next()?
-            .strip_prefix("code: ")?
-            .split(' ')
-            .next()?;
+            .find_map(|l| l.strip_prefix("code  "))?
+            .chars()
+            .take(7)
+            .filter(char::is_ascii_digit)
+            .collect();
         let (head, _) = self.raw(
             "POST",
             "/pair",

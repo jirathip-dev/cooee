@@ -164,13 +164,13 @@ login = ["no-such-codex", "login"]
 status = ["true"]
 install = "npm install -g @openai/codex"
 EOF
-cargo run --quiet --locked -p cooee -- pair --config "$tmp/bare/bare.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE.bare"
+cargo run --quiet --locked -p cooee -- pair --config "$tmp/bare/bare.toml" | sed -n 's/^code  \([0-9]*\) \([0-9]*\).*/\1\2/p' >"$PAIR_CODE.bare"
 cargo run --quiet --locked -p cooee -- serve --config "$tmp/bare/bare.toml" &
 bare=$!
 # The config's and the binary's paths, so a spec can approve a phone's code (`cooee pair <code>`) and list reports.
 echo "$tmp/config.toml" >"$PAIR_CODE.config"
 echo "$(cd "${CARGO_TARGET_DIR:-target}" && pwd)/debug/cooee" >"$PAIR_CODE.bin"
-cargo run --quiet --locked -p cooee -- pair --config "$tmp/config.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE"
+cargo run --quiet --locked -p cooee -- pair --config "$tmp/config.toml" | sed -n 's/^code  \([0-9]*\) \([0-9]*\).*/\1\2/p' >"$PAIR_CODE"
 target=$(cargo metadata --format-version 1 --no-deps | node -pe 'JSON.parse(require("fs").readFileSync(0)).target_directory')
 HOME=$tmp "$target/debug/cooee" serve --config "$tmp/config.toml" &
 wait $!

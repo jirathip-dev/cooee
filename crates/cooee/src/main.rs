@@ -4,6 +4,7 @@
 
 use std::{
     env, fs,
+    io::{IsTerminal, Write},
     net::{Ipv4Addr, SocketAddr, TcpStream},
     path::{Path, PathBuf},
     process::{Command, ExitCode},
@@ -15,7 +16,7 @@ use qrcode::{QrCode, render::unicode::Dense1x2};
 
 mod setup;
 
-const USAGE: &str = "usage: cooee <serve | pair [<code>] | devices | reports | devices rm <id> | install --port <p> | doctor \
+const USAGE: &str = "usage: cooee <serve | pair | devices | reports | devices rm <id> | install --port <p> | doctor \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list> [--instance <name>] [--config <file>] | cooee --version";
 
@@ -89,10 +90,6 @@ fn main() -> ExitCode {
         }
         ["serve"] => serve,
         ["pair"] => pair,
-        ["pair", code] => {
-            let code = (*code).to_owned();
-            return with_config(path.as_deref(), &instance, |config| approve(config, &code));
-        }
         ["devices"] => devices,
         ["reports"] => reports,
         ["devices", "rm", id] => {
@@ -192,21 +189,44 @@ fn devices_of(config: &Config) -> Result<Devices, String> {
     Ok(Devices::new(&data))
 }
 
-/// Prints a new pairing code, the link to enter it at and that link as a QR code.
+/// Prints a new pairing code, the link to enter it at and that link as a QR code; in a terminal, then waits for it
+/// to be used (Ctrl-C leaves the code open until it runs out).
 fn pair(config: &Config) -> Result<(), String> {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX));
-    let code = devices_of(config)?.pair(now).map_err(|e| e.to_string())?;
+    let now = || {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
+    };
+    let devices = devices_of(config)?;
+    let had = devices.list().map_err(|e| e.to_string())?.len();
+    let code = devices.pair(now()).map_err(|e| e.to_string())?;
     // Behind `tailscale serve --https=<port>` the phone uses https, the first allowed name and the port; else this
     // machine itself.
     let url = match config.allowed_hosts.first() {
         Some(host) => format!("https://{host}:{}/pair?code={code}", config.port),
         None => format!("http://127.0.0.1:{}/pair?code={code}", config.port),
     };
-    println!("code: {code} (for 10 minutes)\nopen {url}");
+    println!("Scan it with the new device's Camera, or open the link and type the code.");
     if let Ok(qr) = QrCode::new(&url) {
         println!("{}", qr.render::<Dense1x2>().quiet_zone(true).build());
+    }
+    println!(
+        "code  {} {}  (one use, 10 minutes)\nlink  {url}",
+        &code[..3],
+        &code[3..]
+    );
+    if !std::io::stdout().is_terminal() {
+        return Ok(());
+    }
+    print!("waiting…  ");
+    let _ = std::io::stdout().flush();
+    let until = now() + 10 * 60 * 1000;
+    while now() < until && devices.code_open(now()).unwrap_or(false) {
+        std::thread::sleep(Duration::from_secs(1));
+    }
+    match devices.list().map_err(|e| e.to_string())?.get(had) {
+        Some(d) => println!("✓ paired: {}", d.label),
+        None => println!("the code ran out: run cooee pair again"),
     }
     Ok(())
 }
@@ -216,24 +236,6 @@ fn devices(config: &Config) -> Result<(), String> {
         println!("{}  {}", d.id, d.label);
     }
     Ok(())
-}
-
-/// Approves the code a phone shows (its Pair screen): the phone pairs.
-fn approve(config: &Config, code: &str) -> Result<(), String> {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX));
-    if devices_of(config)?
-        .approve(code, now)
-        .map_err(|e| e.to_string())?
-    {
-        println!("approved {code}: the phone pairs now");
-        Ok(())
-    } else {
-        Err(format!(
-            "no phone is showing {code} (codes last 10 minutes)"
-        ))
-    }
 }
 
 /// Lists the problems reported from the page (report mode), oldest first: when, the device, the page, the element

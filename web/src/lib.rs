@@ -62,6 +62,7 @@ pub fn assets(builder: RouterBuilder, looks: Looks) -> RouterBuilder {
         .route(manifest)
         .route(icon)
         .route(icon_192)
+        .route(pair_js)
         .route(icon_512)
         .route(style)
         .route(script)
@@ -189,6 +190,14 @@ async fn script() -> Result<Static> {
     ))
 }
 
+#[route(GET "/pair.js")]
+async fn pair_js() -> Result<Static> {
+    Ok(Static(
+        "text/javascript; charset=utf-8",
+        built!("pair.js").as_bytes(),
+    ))
+}
+
 #[route(GET "/look.js")]
 async fn look_js() -> Result<Static> {
     Ok(Static(
@@ -238,6 +247,7 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
                 </script>
                 <script type="module" src="/look.js"></script>
                 <script type="module" src="/chat.js"></script>
+                <script type="module" src="/pair.js"></script>
             </head>
             <body data-at=(now().to_string())>
                 (child)
@@ -1013,88 +1023,274 @@ async fn plugin(
     })
 }
 
-/// Pairing, and the app's shell for an unpaired browser (#21): the look sheet, a pair hint and the composer off, no
-/// thread data. The code `cooee pair` printed (`code` prefilled from its QR link; `bad` after a wrong one), or a code
-/// asked for here and approved on the Mac.
-#[must_use]
-pub fn pair_page(cx: &Cx, code: String, bad: bool) -> impl View {
-    view! { cx => pair(code: code, bad: bad) }
+/// What the pairing page shows besides the welcome: the code (prefilled from a QR link), why the last one was
+/// refused (`wrong` with the tries `left`, `expired`, or `limit` for `wait` seconds), whether a passkey can sign in,
+/// and, in Safari on an iPhone or iPad, the Home Screen hint (`Some(true)`: iOS 26, Share is in the ⋯ menu).
+#[derive(Debug, Clone, Default)]
+pub struct PairState {
+    /// Six digits from the QR link.
+    pub code: Option<String>,
+    /// Why the last code was refused.
+    pub bad: Option<String>,
+    /// Wrong codes this address may still type this minute.
+    pub left: u32,
+    /// Seconds until the boxes open again.
+    pub wait: u64,
+    /// Whether this cooee has a passkey.
+    pub passkeys: bool,
+    /// Safari on iOS (iOS 26 or later).
+    pub ios: Option<bool>,
 }
 
+/// Pairing, and all an unpaired browser sees (q528: the shell, no thread data): the theme's figure and why, the iOS
+/// Home Screen hint, three numbered steps, the six code boxes (`pair.ts` moves between them and sends the sixth), the
+/// other ways (ask to pair, sign in with a passkey) and the states `pair.ts` shows (waiting, declined, offline).
+#[must_use]
+pub fn pair_page(cx: &Cx, state: PairState) -> impl View {
+    view! { cx => pair(state: state) }
+}
+
+/// The share icon (iOS), drawn in the text colour.
+const SHARE: &str = r#"<svg class="shi" viewBox="0 0 20 24" aria-hidden="true"><path d="M10 2v13M5.5 6.5 10 2l4.5 4.5M6.5 9.5H4a1 1 0 0 0-1 1V21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10.5a1 1 0 0 0-1-1h-2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>"#;
+
 #[component]
-async fn pair(code: String, bad: bool) -> Result<impl View> {
+async fn pair(cx: &Cx, state: PairState) -> Result<impl View> {
+    let waiting = shown(cx).s("loading");
     Ok(view! {
         document(
             title: "pair · cooee",
             <header class="bar">
                 <h1>"cooee"</h1>
-                <button
-                    type="button"
-                    class="gl"
-                    data-open="look"
-                    popovertarget="sh-look"
-                    aria-label="look: theme and colours"
-                    aria-pressed="false"
-                >
-                    "◐"
-                </button>
+                <i class="cdot" id="cdot" role="img" aria-label="connected"></i>
             </header>
-            <main class="list">
-                <p class="hn">
-                    "This device isn't paired: threads and messages show once it is."
-                </p>
-                <form class="nf" method="post" action="/pair">
-                    <div class="fh"><b>"pair this device"</b></div>
-                    <p class="ds">
-                        "Run cooee pair on your machine and enter the code it prints. On a phone, add cooee to the Home Screen first and pair there."
+            <main class="list pg">
+                <section class="wel" aria-label="pair this device">
+                    welcome(ios: state.ios)
+                    code_card(state: state)
+                </section>
+                <section
+                    class="pc"
+                    data-k="a"
+                    id="ask-wait"
+                    hidden=(true)
+                    aria-live="polite"
+                >
+                    if !waiting.is_empty() {
+                        <span class="big" data-s="loading">
+                            (Unescaped::new_unchecked(waiting))
+                        </span>
+                    }
+                    <p class="et ctr">"waiting for approval"</p>
+                    <p class="ckw" id="ask-word"></p>
+                    <p class="ctr">
+                        "Your paired devices got a request. Approve it where it shows "
+                        <b id="ask-word2"></b>
+                        "."
                     </p>
-                    <div class="tw">
-                        <input
-                            name="code"
-                            aria-label="pairing code"
-                            inputmode="numeric"
-                            autocomplete="one-time-code"
-                            maxlength="6"
-                            required=(true)
-                            value=(code)
-                        >
-                        <button type="submit">"pair"</button>
-                    </div>
-                    <p class="err" hidden=(!bad)>
-                        "That code is wrong or expired: run cooee pair again."
-                    </p>
-                </form>
-                <section class="nf" id="ask">
-                    <div class="fh"><b>"or approve it on the Mac"</b></div>
-                    <p class="ds">
-                        "Ask for a code here, then approve it on the Mac with cooee pair and the code."
-                    </p>
-                    <button type="button" id="ask-go">"ask for a code"</button>
-                    <div id="ask-wait" hidden=(true)>
-                        <p class="code" id="ask-code"></p>
-                        <p class="hn">
-                            "on the Mac:"
-                            <code id="ask-cmd"></code>
-                            <button type="button" id="ask-copy">"copy"</button>
-                        </p>
-                        <p class="ds">"waiting for the Mac…"</p>
-                        <button type="button" class="cn" id="ask-cancel">
+                    <div class="acts ctr">
+                        <span class="m" id="ask-left"></span>
+                        <button type="button" class="q" id="ask-cancel">
                             "cancel"
                         </button>
                     </div>
-                    <p class="err" id="ask-err" hidden=(true)></p>
                 </section>
-                <form class="tw" id="locked">
-                    <textarea
-                        rows="1"
-                        aria-label="message"
-                        placeholder="pair this device to send"
-                        disabled=(true)
-                    ></textarea>
-                    <button type="submit" disabled=(true)>"send"</button>
-                </form>
+                <section class="pc" data-k="r" id="ask-no" hidden=(true) role="alert">
+                    <p class="et" id="ask-by"></p>
+                    <p id="ask-why"></p>
+                    <div class="acts">
+                        <button type="button" id="ask-again">"ask again"</button>
+                        <a class="bt q" href="/pair">"use a code"</a>
+                    </div>
+                </section>
+                <section class="pc" data-k="r" id="offline" hidden=(true) role="alert">
+                    <p class="et">"Can't reach your Mac."</p>
+                    <p>
+                        "Turn on Tailscale on this device, check that the Mac is awake, then try again."
+                    </p>
+                    <div class="acts">
+                        <button type="button" id="retry">"try again"</button>
+                        <span class="m" id="tried"></span>
+                    </div>
+                </section>
             </main>
         )
+    })
+}
+
+/// The welcome: the theme's figure (its icon when there is none), why, the iOS hint and the three steps.
+#[component]
+async fn welcome(cx: &Cx, ios: Option<bool>) -> Result<impl View> {
+    let look = shown(cx);
+    let figure = look.s("empty");
+    let ico = format!("/look/{}/icon.png", look.name());
+    Ok(view! {
+        <div class="hero">
+            if figure.is_empty() {
+                <img class="hic" alt="" src=(ico)>
+            } else {
+                <span data-s="empty">(Unescaped::new_unchecked(figure))</span>
+            }
+            <h2>"pair this device"</h2>
+            <p>
+                "cooee runs on your Mac. Pair this device once and your threads show up here."
+            </p>
+        </div>
+        if let Some(newer) = ios {
+            <div class="hint">
+                (Unescaped::new_unchecked(SHARE))
+                <div>
+                    <p><b>"Add cooee to your Home Screen first."</b></p>
+                    <p>
+                        "Tap "
+                        (Unescaped::new_unchecked(SHARE))
+                        (if newer { " Share (in the ⋯ menu)" } else { " Share" })
+                        ", then Add to Home Screen, and pair in the app it adds. Safari and the Home Screen app keep separate sign-ins."
+                    </p>
+                </div>
+            </div>
+        }
+        <ol class="steps">
+            <li>
+                <b>"Open cooee on your Mac or a paired phone"</b>
+                <span>
+                    "On the Mac run "
+                    <code>"cooee pair"</code>
+                    ". On a phone: settings › devices › pair a device."
+                </span>
+            </li>
+            <li>
+                <b>"Scan its QR code with the Camera"</b>
+                <span>
+                    "cooee opens here with the code filled in and pairs at once."
+                </span>
+            </li>
+            <li>
+                <b>"No camera? Approve instead"</b>
+                <span>
+                    "Tap ask to pair below, then approve on your paired phone with Face ID."
+                </span>
+            </li>
+        </ol>
+    })
+}
+
+/// The code card: six boxes (filled from a QR link), why the last code was refused, [pair] and the other ways.
+#[component]
+async fn code_card(state: PairState) -> Result<impl View> {
+    let bad = state.bad.clone().unwrap_or_default();
+    let digits: Vec<char> = state.code.clone().unwrap_or_default().chars().collect();
+    let boxes = match bad.as_str() {
+        "wrong" => "cb r",
+        "expired" | "limit" => "cb dim",
+        _ if digits.len() == 6 => "cb ok",
+        _ => "cb",
+    };
+    let off = bad == "limit";
+    Ok(view! {
+        <form class="cdc" id="code" method="post" action="/pair">
+            <p class="ch">"or type the code"</p>
+            <div class=(boxes) role="group" aria-label="pairing code, 6 digits">
+                for i in 0..6usize {
+                    <input
+                        name=(if i == 0 {
+                            "code".to_owned()
+                        } else {
+                            format!("d{}", i + 1)
+                        })
+                        inputmode="numeric"
+                        autocomplete=(if i == 0 { "one-time-code" } else { "off" })
+                        maxlength=(if i == 0 { "6" } else { "1" })
+                        aria-label=(format!("digit {}", i + 1))
+                        disabled=(off)
+                        autofocus=(i == 0 && bad == "wrong")
+                        value=(if bad.is_empty() {
+                            digits.get(i).map(char::to_string).unwrap_or_default()
+                        } else {
+                            String::new()
+                        })
+                    >
+                }
+            </div>
+            if bad.is_empty() && digits.len() == 6 {
+                <p class="cdn"><span class="et g">"pairing…"</span></p>
+            }
+            refused(bad: bad, left: state.left, wait: state.wait)
+            <p class="cdn">"6 digits · good for 10 minutes · pairs on the sixth"</p>
+            <div class="go"><button type="submit" disabled=(off)>"pair"</button></div>
+            <div class="alt">
+                <div class="lrw">
+                    <span class="sk">"no camera nearby?"</span>
+                    <button type="button" id="ask-go">"ask to pair"</button>
+                </div>
+                if state.passkeys {
+                    <div class="lrw">
+                        <span class="sk">"paired here before?"</span>
+                        <button type="button" class="q" id="pk-go">
+                            "sign in with passkey"
+                        </button>
+                    </div>
+                }
+            </div>
+            <div class="pc" data-k="r" role="alert" id="pk-err" hidden=(true)>
+                <p class="et"></p>
+            </div>
+        </form>
+    })
+}
+
+/// Why the last code was refused: `wrong` (with the tries `left`), `expired`, or `limit` (for `wait` seconds).
+#[component]
+async fn refused(bad: String, left: u32, wait: u64) -> Result<impl View> {
+    let tries = format!(
+        "{left} {} left this minute",
+        if left == 1 { "try" } else { "tries" }
+    );
+    Ok(view! {
+        match bad.as_str() {
+            "wrong" => {
+                <div class="pc" data-k="r" role="alert">
+                    <p>
+                        <span class="et">"That code isn't right."</span>
+                        " Check the six digits on your Mac or phone and type them again."
+                    </p>
+                    <p class="m">(tries)</p>
+                </div>
+            }
+            "expired" => {
+                <div class="pc" data-k="r" role="alert">
+                    <p>
+                        <span class="et">"That code has run out."</span>
+                        " A code works once, for 10 minutes. Show a new one: "
+                        <code>"cooee pair"</code>
+                        ", or pair a device on your phone."
+                    </p>
+                    <div class="acts">
+                        <a class="bt" href="/pair">"type a new code"</a>
+                    </div>
+                </div>
+            }
+            "limit" => {
+                <div
+                    class="pc"
+                    data-k="r"
+                    role="alert"
+                    id="limit"
+                    data-wait=(wait.to_string())
+                >
+                    <p>
+                        <span class="et">"Too many tries."</span>
+                        " Five wrong codes a minute is the limit. The boxes open again in "
+                        <span class="tm">
+                            (format!("{}:{:02}", wait / 60, wait % 60))
+                        </span>
+                        "."
+                    </p>
+                </div>
+            }
+            _ => {
+
+            }
+        }
     })
 }
 

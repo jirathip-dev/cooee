@@ -194,7 +194,7 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
     assert!(
         stdout.contains("doctor:\nok   service dev.cooee.cooee loaded")
             && stdout.contains(&format!(
-                "open https://mac.tailnet.example:{port}/pair?code="
+                "link  https://mac.tailnet.example:{port}/pair?code="
             )),
         "{stdout}"
     );
@@ -216,7 +216,10 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
             "{step} not skipped in {stdout}"
         );
     }
-    assert!(stdout.contains("pair your phone:\ncode: "), "{stdout}");
+    assert!(
+        stdout.contains("pair your phone:\nScan it") && stdout.contains("\ncode  "),
+        "{stdout}"
+    );
 }
 
 #[test]
@@ -269,7 +272,7 @@ fn a_doctor_failure_stops_with_its_fix() {
         stderr.contains(&format!("doctor: 1 check(s) failed:\n{fail}\n")),
         "{stderr}"
     );
-    assert!(!stdout.contains("code: "), "{stdout}");
+    assert!(!stdout.contains("code  "), "{stdout}");
 }
 
 #[test]
