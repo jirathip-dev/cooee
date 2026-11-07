@@ -1266,6 +1266,7 @@ mod tests {
             name: format!("cooee-{id}"),
             labels: BTreeMap::new(),
             kind,
+            replay: false,
         }
     }
 

@@ -206,13 +206,13 @@ impl FakeShed {
             .collect()
     }
 
-    /// The requests of `method` to terminal `name`, their params in order.
+    /// The requests of `method` to terminal `name` (`name` or `terminal` in the params), their params in order.
     pub fn calls(&self, method: &str, name: &str) -> Vec<Value> {
         self.requests
             .lock()
             .unwrap()
             .iter()
-            .filter(|(m, p)| m == method && p["name"] == name)
+            .filter(|(m, p)| m == method && (p["name"] == name || p["terminal"] == name))
             .map(|(_, p)| p.clone())
             .collect()
     }
@@ -237,6 +237,15 @@ impl FakeShed {
     /// `run`: starts `cmd` in `cwd` for real, its stdout and stderr the screen, its stdin what `send`/`keys` type.
     fn run(&self, params: &Value) -> Result<Value, RpcError> {
         let name = params["name"].as_str().unwrap().to_owned();
+        // The owner's shells (#28) are listed by `ls`, with their labels.
+        if params["labels"]["cooee.owner"] == "1" {
+            let labels = serde_json::from_value(params["labels"].clone()).unwrap();
+            self.shared
+                .lock()
+                .unwrap()
+                .lanes
+                .insert(name.clone(), labels);
+        }
         let cmd: Vec<String> = serde_json::from_value(params["cmd"].clone()).unwrap();
         let mut child = Command::new(&cmd[0])
             .args(&cmd[1..])
@@ -267,6 +276,7 @@ impl FakeShed {
                 let mut by_name = procs.by_name.lock().unwrap();
                 let text = String::from_utf8_lossy(&buf[..len]);
                 by_name.get_mut(&n).unwrap().screen.push_str(&text);
+                procs.changed.notify_all();
             }
             let code = child.wait().unwrap().code().unwrap_or(143);
             procs.by_name.lock().unwrap().get_mut(&n).unwrap().exit = Some(code);
@@ -316,6 +326,7 @@ impl FakeShed {
             name: name.to_owned(),
             labels,
             kind,
+            replay: false,
         };
         s.subs.retain(|tx| tx.send(event.clone()).is_ok());
         s.ring.push(event);
@@ -354,6 +365,7 @@ impl FakeShed {
             idle_after: None,
             resources: None,
             acp: Some("fake-acp".to_owned()),
+            session: None,
         })
     }
 
@@ -405,6 +417,74 @@ impl FakeShed {
         Ok(json!({}))
     }
 
+    /// Terminal `name`'s screen as rows: a plain terminal's last 24 output lines, else a line naming it. A line
+    /// starting `ok` is one bold green run (shed's colours), any other one default run.
+    fn rows(&self, name: &str) -> Vec<Value> {
+        let procs = self.procs.by_name.lock().unwrap();
+        let text = procs
+            .get(name)
+            .map_or(format!("agent {name}"), |p| p.screen.clone());
+        let lines: Vec<&str> = text.lines().collect();
+        let run = |t: &str| {
+            let ok = t.starts_with("ok");
+            json!({ "text": t, "fg": if ok { json!(2) } else { Value::Null }, "bg": null, "bold": ok,
+                    "italic": false, "underline": false, "inverse": false })
+        };
+        let shown = lines[lines.len().saturating_sub(24)..].iter();
+        shown.map(|t| json!([run(t)])).collect()
+    }
+
+    /// `screen.watch`: the whole screen, then the rows that changed, until the terminal's program exits or it is
+    /// killed.
+    fn watch(&self, name: &str, writer: &mut std::os::unix::net::UnixStream) {
+        let (mut sent, mut seq) = (Vec::<Value>::new(), 0);
+        loop {
+            let rows = self.rows(name);
+            let changed: Vec<Value> = (0..24)
+                .filter(|&i| seq == 0 || rows.get(i) != sent.get(i))
+                .map(|i| json!({ "row": i, "runs": rows.get(i).cloned().unwrap_or(json!([])) }))
+                .collect();
+            if !changed.is_empty() {
+                seq += 1;
+                let cursor = [rows.len().min(23), 0];
+                let u = json!({ "seq": seq, "full": seq == 1, "rows": 24, "cols": 80, "cursor": cursor,
+                                "scrollback": 0, "lines": changed });
+                if writeln!(writer, "{u}").is_err() {
+                    return;
+                }
+                sent = rows;
+            }
+            let procs = self.procs.by_name.lock().unwrap();
+            let exited = procs.get(name).is_some_and(|p| p.exit.is_some());
+            if exited || self.shared.lock().unwrap().stopped.contains(name) {
+                return;
+            }
+            drop(
+                self.procs
+                    .changed
+                    .wait_timeout(procs, Duration::from_millis(200))
+                    .unwrap(),
+            );
+        }
+    }
+
+    /// `terminal.input` (its text) or `terminal.keys` (`enter` and `ctrl+c`; other keys type nothing).
+    fn type_keys(&self, params: &Value) -> Value {
+        let t = params["terminal"].as_str().unwrap();
+        if let Some(text) = params["text"].as_str() {
+            self.type_in(t, text);
+        }
+        for k in params["keys"].as_array().into_iter().flatten() {
+            let bytes = match k.as_str().unwrap() {
+                "enter" => "\n",
+                "ctrl+c" => "\x03",
+                _ => "",
+            };
+            self.type_in(t, bytes);
+        }
+        json!({})
+    }
+
     fn serve(&self, conn: std::os::unix::net::UnixStream) {
         let mut writer = conn.try_clone().unwrap();
         let mut lines = BufReader::new(conn).lines();
@@ -432,7 +512,15 @@ impl FakeShed {
                 "get" => self.terminal(&name),
                 "run" => self.run(&req.params),
                 "ls" => Ok(self.ls(&req.params["labels"])),
-                "resize" => Ok(json!({})),
+                "resize" | "terminal.resize" => Ok(json!({})),
+                "screen.watch" => {
+                    let t = req.params["terminal"].as_str().unwrap().to_owned();
+                    let ok = Response::ok(id, json!({}));
+                    writeln!(writer, "{}", json!(ok)).unwrap();
+                    self.watch(&t, &mut writer);
+                    return;
+                }
+                "terminal.input" | "terminal.keys" => Ok(self.type_keys(&req.params)),
                 "read" => {
                     let procs = self.procs.by_name.lock().unwrap();
                     Ok(json!({ "text": procs[&name].screen }))

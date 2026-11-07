@@ -276,11 +276,12 @@ impl Chat {
     /// Applies shed event `seq` of this thread's terminal at time `at`.
     pub fn apply(&mut self, at: u64, seq: u64, event: EventKind) -> Vec<Change> {
         match event {
-            // Not shown: the start, resources and the agent's mode; the prompt is stored when it is sent.
+            // Not shown: the start, resources, the agent's mode and session; the prompt is stored when it is sent.
             EventKind::Started
             | EventKind::Resources(_)
             | EventKind::Mode { .. }
-            | EventKind::Turn { .. } => Vec::new(),
+            | EventKind::Turn { .. }
+            | EventKind::Session(_) => Vec::new(),
             EventKind::State(r) => vec![self.state(&r.state, r.note)],
             EventKind::Text { text } => {
                 self.turn.text.push_str(&text);

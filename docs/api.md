@@ -74,6 +74,9 @@ another run; load the newest slice again).
 | `POST /push/test` | `{}` | text |
 | `GET /devices` | | `{id, label, created, used, me}[]` |
 | `POST /devices/remove` | `{id}` | text |
+| `POST /passkey/options` | `{}` | `{challenge, id}`: a challenge for this device's passkey ceremony (2 minutes, once), its passkey's credential id or `null` |
+| `POST /passkey/register` | `{id, client, auth, key}` (base64url: the credential id, `clientDataJSON`, `getAuthenticatorData()`, `getPublicKey()`) | text; the device's first passkey, which unlocks it |
+| `POST /passkey/unlock` | `{id, client, auth, sig}` (`authenticatorData`, the DER `signature`) | text; 403 with why when it doesn't check out |
 | `POST /report` | `{note, path, target, html, look, viewport}` | text |
 
 ## Plugins (Settings › Plugins)
@@ -99,7 +102,8 @@ another run; load the newest slice again).
 ## Plugin tabs
 
 A plugin's frame asks the page, which calls `GET` or `POST /p/{name}/api/{path}` (the plugin's own backend through
-cooee's proxy, with its token, never the cookie). An event stream comes back as SSE messages of `{event, data}`.
+cooee's proxy, with its token, never the cookie). An event stream comes back as SSE messages of `{event, data}`. The
+`terminal` tab's calls need the device unlocked with its passkey: else 403 `locked` (header `Cooee-Locked: 1`).
 
 ## The look
 
