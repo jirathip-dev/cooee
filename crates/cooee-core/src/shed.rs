@@ -5,7 +5,7 @@ use std::{
     collections::BTreeMap,
     env,
     fmt::Write as _,
-    io::{self, BufRead, BufReader, Write},
+    io::{self, BufRead, BufReader, ErrorKind, Write},
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
     process::Command,
@@ -17,8 +17,8 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 use shed_proto::{
     ErrorCode, Event, EventsParams, Hello, KeysParams, LsParams, Method, ReadParams, ReadResult,
-    Reported, Request, ResizeParams, Response, RpcError, RunParams, SendParams, StateParams,
-    Target, TerminalInfo, WaitOutcome, WaitParams, WaitResult,
+    Reported, Request, ResizeParams, Response, RpcError, RunParams, ScreenUpdate, SendParams,
+    StateParams, Target, TerminalInfo, WaitOutcome, WaitParams, WaitResult, WatchParams,
 };
 
 /// Why a call to shed failed.
@@ -287,8 +287,56 @@ impl Shed {
         }
     }
 
-    fn call<R: DeserializeOwned>(&self, method: Method, params: &Value) -> Result<R, ShedError> {
+    /// One request, on a pooled connection.
+    ///
+    /// # Errors
+    /// [`ShedError`] when the call fails.
+    pub fn call<R: DeserializeOwned>(
+        &self,
+        method: Method,
+        params: &Value,
+    ) -> Result<R, ShedError> {
         self.with(|conn| conn.call(method, params.clone()))
+    }
+
+    /// Streams terminal `name`'s screen (`screen.watch`) on a connection of its own: the whole screen first, then
+    /// the rows that change. A quiet `tick` yields `None`, so the caller can check its own client is still there; the
+    /// iterator ends when the program's PTY closes.
+    ///
+    /// # Errors
+    /// [`ShedError`] when the watch can't start.
+    pub fn watch(
+        &self,
+        name: &str,
+        tick: Duration,
+    ) -> Result<impl Iterator<Item = Option<ScreenUpdate>>, ShedError> {
+        let mut conn = self.connect()?;
+        let watch = WatchParams {
+            terminal: name.into(),
+            since: None,
+        };
+        let _: Value = conn.call(Method::ScreenWatch, json!(watch))?;
+        conn.writer
+            .set_read_timeout(Some(tick))
+            .map_err(conn.io())?;
+        // Kept across ticks: a tick may land mid-line.
+        let mut line = String::new();
+        Ok(std::iter::from_fn(move || {
+            loop {
+                match conn.reader.read_line(&mut line) {
+                    Ok(0) => return None,
+                    Ok(_) => {
+                        if let Ok(u) = serde_json::from_str(&std::mem::take(&mut line)) {
+                            return Some(Some(u));
+                        }
+                    }
+                    Err(e) if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) => {
+                        return Some(None);
+                    }
+                    Err(_) => return None,
+                }
+            }
+        }))
     }
 
     /// Checks the server answers and runs this version.

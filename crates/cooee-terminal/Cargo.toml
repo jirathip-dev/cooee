@@ -1,0 +1,16 @@
+[package]
+name = "cooee-terminal"
+description = "cooee's first-party plugin `terminal`: the owner's shells on the Mac, through shed."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+cooee-core.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

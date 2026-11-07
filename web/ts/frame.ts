@@ -13,11 +13,13 @@ type FromPage = {
 declare var cooee: {
   fetch(path: string, init?: { method?: string; type?: string; body?: string }): Promise<Answer>;
   events(path: string, on: (e: Heard) => void): () => void;
+  unlock(): Promise<void>;
 };
 {
   let n = 0;
   const waiting = new Map<number | undefined, (a: Answer) => void>();
   const streams = new Map<number | undefined, (e: Heard) => void>();
+  let unlocked = (): void => {};
   addEventListener("message", (e) => {
     if (e.source !== parent) return;
     const m: FromPage = e.data ?? {};
@@ -27,6 +29,7 @@ declare var cooee: {
       waiting.get(m.id)?.(m as Answer);
       waiting.delete(m.id);
     } else if (m.op === "event") streams.get(m.id)?.({ event: m.event ?? "", data: m.data });
+    else if (m.op === "unlocked") unlocked();
   });
   globalThis.cooee = Object.freeze({
     // `{status, ok, type, text}` of `path` on this plugin's backend.
@@ -46,5 +49,11 @@ declare var cooee: {
         parent.postMessage({ op: "close", id }, "*");
       };
     },
+    // Shows cooee's own "Unlock with Face ID" over the tab (a gated tab answered 403); resolves once unlocked.
+    unlock: () =>
+      new Promise<void>((ok) => {
+        unlocked = ok;
+        parent.postMessage({ op: "unlock" }, "*");
+      }),
   });
 }
