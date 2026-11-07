@@ -1,0 +1,20 @@
+== shed run lines (last 4)
+--dir $T/shed --json run --acp fake-acp --name cooee-t1a1b3c8941f --cwd /private$T/root/project --label cooee=1 --label cooee.thread=t1a1b3c8941f
+--dir $T/shed --json run --acp fake-acp --name cooee-t1a1b3c8998a --cwd /private$T/root/project --label cooee=1 --label cooee.thread=t1a1b3c8998a
+--dir $T/shed --json run --acp fake-acp --name cooee-t1a1b3c89eef --cwd /private$T/root/project --label cooee=1 --label cooee.thread=t1a1b3c89eef --policy allow -- env MODE=review sh -c set -a; . "$0"; rm -f -- "$0"; set +a; exec "$@" $T/data/secrets/.run-e07b6def80bf433087d6a811546a17fe2ab01f9897549b81d9a48296d50b5b5f fake-acp
+== adapter.env (fake-acp, last run) relevant vars
+MODE=review
+API_KEY=<TOKEN>
+== API_KEY equals the secret file's value:
+yes
+== secrets dir after spawn:
+.
+..
+API_KEY
+== files containing the secret (expect only data/secrets/API_KEY and the leak.toml the owner wrote, adapter.env from the fake adapter):
+$T/data/secrets/API_KEY
+$T/profiles/leak.toml
+$T/shed/adapter.env
+== leak profile logged by file, not value:
+3:cooee: $T/profiles/leak.toml: profile leak: env T: a variable name, and a secret as `secret:<NAME>`, never inline
+4:cooee: $T/profiles/leak.toml: profile leak: env T: a variable name, and a secret as `secret:<NAME>`, never inline

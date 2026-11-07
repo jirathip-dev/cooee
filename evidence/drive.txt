@@ -1,0 +1,20 @@
+[390] picker options: ["Plain","With env","Guarded","Reviewer","Drover conductor · drover"]
+[390] agent picker visible with plugin profile: false
+[390] after Guarded start, url: http://127.0.0.1:41253/#new
+[390] lines with 'guard': ["Guarded","this profile's guard can't run with fake-acp: its ACP adapter has no settings variable"]
+[390] plain header: "fake-acp · System default · /private/var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.AiJlpCuc7E/root/project · in the stable"
+[390] plain first bubble: "plain hi\n09:13 AM"
+[390] plain thread page has a profile select: 0
+[390] plugin header: "Drover conductor · fake-acp · System default · /private/var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.AiJlpCuc7E/root/project · in the stable"
+[390] plugin first bubble: "go\n09:13 AM"
+[390] plugin thread page has a profile select: 0
+[390] env header: "With env · fake-acp · System default · /private/var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.AiJlpCuc7E/root/project · in the stable"
+[390] env first bubble: "env hi\n09:13 AM"
+[390] env thread page has a profile select: 0
+[1440] picker options: ["Plain","With env","Guarded","Reviewer","Drover conductor · drover"]
+[1440] agent picker visible with plugin profile: false
+[1440] after Guarded start, url: http://127.0.0.1:41253/#new
+[1440] lines with 'guard': ["Guarded","this profile's guard can't run with fake-acp: its ACP adapter has no settings variable"]
+[390] picker after plugin removed: ["Plain","With env","Guarded","Reviewer"]
+[390] POST /threads drover/conductor after removal: 400 no profile drover/conductor
+exit=0

@@ -1,0 +1,9 @@
+
+Running 3 tests using 2 workers
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (1.1s)
+  ✓  3 [390] › profiles.spec.mjs:17:1 › the profile picker: Plain first, a profile hides the agents, its thread says its label, a folder picks its last (1.6s)
+  ✓  2 [1440] › profiles.spec.mjs:17:1 › the profile picker: Plain first, a profile hides the agents, its thread says its label, a folder picks its last (1.8s)
+
+  3 passed (9.0s)
+exit=0
