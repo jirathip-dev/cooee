@@ -39,7 +39,7 @@ use topcoat::{
         page, parse_query_params, path_param,
         request::{headers, method, uri},
         response::{IntoResponse, Response},
-        route,
+        route, try_endpoint,
     },
     view::View,
 };
@@ -179,6 +179,29 @@ impl Layer for Gate {
                     "pair this device first: run `cooee pair` on the machine",
                 ),
             }
+        })
+    }
+}
+
+/// Times every request (#53): its method, route pattern, status and duration go to `perf.log`.
+struct Timing;
+
+impl Layer for Timing {
+    fn path(&self) -> Option<&Path> {
+        None
+    }
+
+    fn handle<'a>(&'a self, cx: &'a Cx, body: Body, next: Next<'a>) -> LayerFuture<'a> {
+        Box::pin(async move {
+            let start = std::time::Instant::now();
+            let response = next.run(cx, body).await.into_response(cx)?;
+            let route = try_endpoint(cx).map_or("(none)", |e| match e.path().as_str() {
+                "" => "/",
+                p => p,
+            });
+            let status = response.status().as_u16();
+            cooee_core::perf::request(method(cx).as_str(), route, status, start);
+            Ok(response)
         })
     }
 }
@@ -356,7 +379,13 @@ async fn login_cancel(cx: &Cx) -> Result<Answer<()>> {
 #[page("/t/{id}")]
 async fn chat(cx: &Cx) -> Result<impl View> {
     let id = thread_id(cx);
-    let Ok((thread, turn)) = blocking(cx, move |hub| hub.thread(&id)).await else {
+    // With every thread's id, so a ref to one in the chat opens it (#84).
+    let Ok((thread, turn, ids)) = blocking(cx, move |hub| {
+        let (thread, turn) = hub.thread(&id)?;
+        Ok((thread, turn, hub.list().into_iter().map(|t| t.id).collect()))
+    })
+    .await
+    else {
         return Err(not_found().into());
     };
     let profile = profiles(cx).into_iter().find(|p| p.id() == thread.profile);
@@ -365,7 +394,7 @@ async fn chat(cx: &Cx) -> Result<impl View> {
         None => thread.profile.clone(),
     };
     let choices = logins(cx).choices(&thread.agent);
-    Ok(cooee_web::chat_page(cx, thread, turn, label, choices))
+    Ok(cooee_web::chat_page(cx, thread, turn, label, choices, ids))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -1199,55 +1228,59 @@ pub fn router(
         devices: Devices::new(data),
         hub: Arc::clone(&hub),
     };
-    pairing::routes(cooee_web::assets(Router::builder(), looks).layer(gate))
-        .route(push_key)
-        .route(push_subscribe)
-        .route(push_unsubscribe)
-        .route(push_endpoints)
-        .route(push_test)
-        .route(device_list)
-        .route(device_remove)
-        .route(device_rename)
-        .route(report)
-        .page(home)
-        .page(chat)
-        .route(thread_list)
-        .route(messages)
-        .route(events)
-        .route(create)
-        .route(browse)
-        .route(root)
-        .route(new_folder)
-        .route(send)
-        .route(approve)
-        .route(cancel)
-        .route(model)
-        .route(close)
-        .route(read)
-        .route(login_start)
-        .route(login_view)
-        .route(login_send)
-        .route(login_cancel)
-        .route(login_signout)
-        .route(login_default)
-        .page(tab)
-        .route(frame)
-        .route(proxy)
-        .route(plugin_push)
-        .route(plugin_card)
-        .route(plugin_handoff)
-        .route(plugin_line)
-        .route(plugin_list)
-        .route(plugin_log)
-        .route(plugin_act)
-        .route(plugin_dot)
-        .app_context(hub)
-        .app_context(Arc::new(Dots::default()))
-        .app_context(logins)
-        .app_context(manager)
-        .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))
-        .app_context(Arc::new(pairing::Pairing::default()))
-        .build()
+    pairing::routes(
+        cooee_web::assets(Router::builder(), looks)
+            .layer(Timing)
+            .layer(gate),
+    )
+    .route(push_key)
+    .route(push_subscribe)
+    .route(push_unsubscribe)
+    .route(push_endpoints)
+    .route(push_test)
+    .route(device_list)
+    .route(device_remove)
+    .route(device_rename)
+    .route(report)
+    .page(home)
+    .page(chat)
+    .route(thread_list)
+    .route(messages)
+    .route(events)
+    .route(create)
+    .route(browse)
+    .route(root)
+    .route(new_folder)
+    .route(send)
+    .route(approve)
+    .route(cancel)
+    .route(model)
+    .route(close)
+    .route(read)
+    .route(login_start)
+    .route(login_view)
+    .route(login_send)
+    .route(login_cancel)
+    .route(login_signout)
+    .route(login_default)
+    .page(tab)
+    .route(frame)
+    .route(proxy)
+    .route(plugin_push)
+    .route(plugin_card)
+    .route(plugin_handoff)
+    .route(plugin_line)
+    .route(plugin_list)
+    .route(plugin_log)
+    .route(plugin_act)
+    .route(plugin_dot)
+    .app_context(hub)
+    .app_context(Arc::new(Dots::default()))
+    .app_context(logins)
+    .app_context(manager)
+    .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))
+    .app_context(Arc::new(pairing::Pairing::default()))
+    .build()
 }
 
 /// Opens the threads (`config`'s data folder and shed) and the looks (the built-in and own themes and schemes), and
@@ -1270,6 +1303,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     let data = config
         .data_dir()
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
+    cooee_core::perf::init(&data, config.perf.slow_ms)?;
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
     let (looks, refused) = cooee_web::Looks::load(config.dir.as_deref(), config.theme.as_deref());
     for why in refused {

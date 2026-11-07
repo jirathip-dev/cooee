@@ -33,9 +33,21 @@ every command and writes nothing; `--yes` takes the defaults. A second instance:
 |---|---|
 | **cooee** (this repo) | The app: chat, threads, phone pairing, push, provider logins, plugin tabs. |
 | **shed** (was berth) | The runtime: runs agents in terminals or as ACP sessions, headless, across machines. |
-| **drover** (was herdsman) | The coding workflow: issue queue, lanes, review gates, merge. A CLI plus an API; its tabs become a cooee plugin. |
+| **cooee-drover** | The plugin that adds herdsman's tabs (Queue, Asks, Fleets) to cooee. A bridge: it reimplements nothing. |
+| **herdsman** (to be renamed drover, herdsman#456) | The coding workflow engine: issue queue, drive, lanes, reviews, gates, merge. A CLI plus an API (`/api/v1`). |
 
-cooee works without drover. drover moves its board into cooee as a plugin once cooee is in daily use.
+cooee works without cooee-drover and herdsman.
+
+### How it fits
+
+```text
+cooee → cooee-drover → herdsman /api/v1
+```
+
+cooee is the app. Its Queue, Asks and Fleets tabs come from the cooee-drover plugin, which passes every call through
+to herdsman's API; herdsman holds the queue and runs the lanes. Each lane is an agent session in shed, so it shows in
+cooee's own thread list under Workflow and opens as a normal chat, not in a plugin tab. Details:
+[docs/architecture.md](docs/architecture.md) (Plugins, Workflow).
 
 ## Owner decisions (2026-11-05)
 
@@ -57,8 +69,7 @@ cooee works without drover. drover moves its board into cooee as a plugin once c
 - **M3:** provider logins from the phone.
 - **M4:** the plugin seam: a tab = a UI module + a backend URL.
 
-Later: agent profiles (a name, a provider, a folder, instructions, skills: research, health coach…), then drover's
-tabs as a plugin.
+Later: agent profiles (a name, a provider, a folder, instructions, skills: research, health coach…).
 
 ## Licence
 

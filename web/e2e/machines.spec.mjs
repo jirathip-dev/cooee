@@ -12,8 +12,9 @@ test("the machines tab: a card per machine, a chart on tap, the Air offline and 
   await expect(here.locator(".seen")).toHaveText("online");
   await expect(here.locator("summary").filter({ hasText: "disk free" })).toContainText("GB");
   await expect(here.locator(".tm")).toHaveText("terminals: 1 blocked · 4 exited · 2 working");
-  // A day's samples a minute apart, once each (the fake shed sends history once, as --since would); the oldest age out a minute at a time while the suite runs.
-  await expect(here.locator("svg.sp polyline").first()).toHaveAttribute("points", /^(\S+ ){1429,1439}\S+$/);
+  // A point a minute for 24 h: serve.sh dates the fake day once, so a minute's samples fall out of 24 h per minute
+  // the run has taken; a day kept twice (2878) never passes.
+  await expect(here.locator("svg.sp polyline").first()).toHaveAttribute("points", /^(\S+ ){1420,1439}\S+$/);
   await expect(air.locator(".seen")).toHaveText(/^offline · last seen 4\d min ago$/);
   // The dot: the plugin has told cooee by now; the header is drawn with the page.
   await expect.poll(async () => { await page.reload(); return page.getByRole("link", { name: "Machines (needs you)" }).count(); }).toBe(1);
