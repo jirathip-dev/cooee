@@ -170,6 +170,8 @@ pub struct Recipe {
 pub struct Hub {
     shed: Shed,
     store: Store,
+    /// `<data>/scratch`: a thread started with no folder runs in its own folder here, named by its id (#48).
+    scratch: PathBuf,
     push: Push,
     /// The server's default theme, whose words a push says.
     theme: cooee_web::Theme,
@@ -343,6 +345,7 @@ impl Hub {
             agents: Mutex::new(shed.agents().map_err(|e| e.to_string())),
             shed,
             store,
+            scratch: data.join("scratch"),
             push: Push::new(data),
             theme,
             roots: Mutex::new(roots),
@@ -603,6 +606,14 @@ impl Hub {
         out
     }
 
+    /// `folder`, resolved, if it is a root or inside one; none (empty) stays empty: the thread's scratch folder.
+    fn place(&self, folder: &Path) -> Result<PathBuf, HubError> {
+        if folder.as_os_str().is_empty() {
+            return Ok(PathBuf::new());
+        }
+        self.allowed(folder).ok_or_else(|| outside(folder))
+    }
+
     /// `folder`, resolved, if it is a root or inside one.
     fn allowed(&self, folder: &Path) -> Option<PathBuf> {
         let folder = folder.canonicalize().ok()?;
@@ -676,7 +687,7 @@ impl Hub {
         Ok(path)
     }
 
-    /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, as `recipe` says, then
+    /// Starts a thread: ACP agent `agent` in `folder` (inside a root; empty: its own scratch folder) as a new shed terminal, as `recipe` says, then
     /// sends `text`. Returns the thread's id. A retry with the same `random_id` (after a timeout, or a crash) adopts
     /// the thread it started and never starts another.
     ///
@@ -691,9 +702,7 @@ impl Hub {
         random_id: &str,
         recipe: &Recipe,
     ) -> Result<String, HubError> {
-        let Some(folder) = self.allowed(folder) else {
-            return Err(outside(folder));
-        };
+        let folder = self.place(folder)?;
         self.start(agent, &folder, text, random_id, recipe)
     }
 
@@ -743,9 +752,7 @@ impl Hub {
         (text, random_id): (&str, &str),
         recipe: Recipe,
     ) -> Result<String, HubError> {
-        let Some(folder) = self.allowed(folder) else {
-            return Err(outside(folder));
-        };
+        let folder = self.place(folder)?;
         let (id, fresh) = self.admit(agent, &folder, text, random_id, &recipe)?;
         if fresh {
             let live = self.live(&id)?;
@@ -852,7 +859,7 @@ impl Hub {
             id: id.clone(),
             title,
             agent: agent.to_owned(),
-            folder: Some(folder.to_owned()),
+            folder: Some(folder.to_owned()).filter(|f| !f.as_os_str().is_empty()),
             account: recipe.account.clone(),
             profile: recipe.profile.clone(),
             model: recipe.model.clone(),
@@ -881,8 +888,16 @@ impl Hub {
         let live = self.live(id)?;
         let (terminal, agent, folder) = {
             let l = lock(&live);
-            let folder = l.meta.folder.clone().unwrap_or_default();
+            let folder = l.meta.folder.clone();
             (l.meta.terminal.clone(), l.meta.agent.clone(), folder)
+        };
+        // No folder: its own scratch folder, made on its first start.
+        let folder = if let Some(f) = folder {
+            f
+        } else {
+            let dir = self.scratch.join(id);
+            fs::create_dir_all(&dir).map_err(|e| refused(&dir, &e))?;
+            dir
         };
         if fresh || (keep && self.shed.get(&terminal).is_err()) {
             let labels = BTreeMap::from([

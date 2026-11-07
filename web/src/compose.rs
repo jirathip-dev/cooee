@@ -1,7 +1,8 @@
 //! The new thread (#48): a composer with one row of chips, `[<provider> · <account> ▾] [<folder> ▾]`, each opening
 //! its sheet (a popover of radios in the form, so it opens with no script). The agent chip starts at the pick (an
-//! agent profile, #40, or Plain's provider and account) last used in the chosen folder, from the thread store. Also the sidebar (from 1024 px) and Settings › providers, the
-//! flat list of accounts.
+//! agent profile, #40, or Plain's provider and account) last used in the chosen folder, from the thread store. The
+//! folder is optional: with none picked (`scratch`) the thread runs in its own scratch folder, and the agent chip
+//! starts at the pick last used overall. Also Settings › providers, the flat list of accounts.
 
 use std::{
     collections::BTreeMap,
@@ -11,11 +12,10 @@ use std::{
 use cooee_core::{AGENTS_FIX, Account, Agent, Profile, ROOTS_FIX, Sheet, Status, Summary};
 use topcoat::{
     Result,
-    context::Cx,
     view::{View, component, view},
 };
 
-use crate::{age, short, state};
+use crate::short;
 
 /// A provider's name for ACP agent `agent` (`claude` for `claude-acp`): never the agent's id on screen.
 #[must_use]
@@ -273,8 +273,8 @@ async fn pop_head(which: &str) -> Result<impl View> {
     })
 }
 
-/// The new-thread composer (`/new`, and `/` from 1024 px): the chip row, the box and [send], and the chips'
-/// sheets. No agents or no folders: the line that fixes it, and send waits.
+/// The new-thread composer (`/new`): the chip row, the box and [send], and the chips' sheets; the folder starts at
+/// none (`scratch`). No agents: the line that fixes it, and send waits; no folders: the line that adds one.
 #[component]
 pub async fn composer(rows: Vec<Summary>, new: New, providers: Vec<Sheet>) -> Result<impl View> {
     let New {
@@ -290,17 +290,11 @@ pub async fn composer(rows: Vec<Summary>, new: New, providers: Vec<Sheet>) -> Re
     let picks = choices(profiles, &installed, &providers);
     let (by, def) = last_used(&rows, &picks);
     let (spots, recent) = spots(&rows, folders, &by, &picks);
-    let at = spots.first().map(|s| s.path.clone());
-    let pick = spots.first().and_then(|s| s.last.clone()).or(def.clone());
+    let pick = def.clone();
     let chosen = picks.iter().find(|c| Some(c.key()) == pick);
     let chip = chosen.map_or("no agent".to_owned(), Choice::said);
     let to = chosen.map_or(String::new(), |c| c.name.clone());
-    let can = chosen.is_some() && at.is_some();
-    let place = at.as_deref().map(short).unwrap_or_default();
-    let base = at
-        .as_deref()
-        .and_then(Path::file_name)
-        .map_or_else(|| place.clone(), |n| n.to_string_lossy().into_owned());
+    let can = chosen.is_some();
     Ok(view! {
         <form class="tw nc" id="nc" data-def=(def.unwrap_or_default())>
             if none {
@@ -313,7 +307,7 @@ pub async fn composer(rows: Vec<Summary>, new: New, providers: Vec<Sheet>) -> Re
             if let Some(e) = err {
                 <p class="err">(e)</p>
             }
-            if at.is_none() {
+            if spots.is_empty() {
                 hint(
                     why: "no folders set · add",
                     fix: ROOTS_FIX,
@@ -336,10 +330,10 @@ pub async fn composer(rows: Vec<Summary>, new: New, providers: Vec<Sheet>) -> Re
                     class="chip"
                     id="chip-folder"
                     popovertarget="sh-folder"
-                    aria-label=(format!("folder: {place}"))
-                    title=(place.clone())
+                    aria-label="folder: scratch"
+                    title="scratch"
                 >
-                    <span>(base)</span>
+                    <span>"scratch"</span>
                     <i aria-hidden="true">"▾"</i>
                 </button>
             </div>
@@ -466,8 +460,8 @@ async fn agent_sheet(
     })
 }
 
-/// The folder sheet: search and [+ new folder], then the recent folders (each with the pick last used there) and
-/// the roots and one level in (two levels when searching), the first checked.
+/// The folder sheet: search and [+ new folder], then `scratch` (none: the thread's own folder; checked), the recent
+/// folders (each with the pick last used there) and the roots and one level in (two levels when searching).
 #[component]
 async fn folder_sheet(spots: Vec<Spot>, recent: usize) -> Result<impl View> {
     Ok(view! {
@@ -492,6 +486,12 @@ async fn folder_sheet(spots: Vec<Spot>, recent: usize) -> Result<impl View> {
                 </div>
                 <fieldset class="fl">
                     <legend class="vh">"folder"</legend>
+                    <label class="sr pk" data-d="0">
+                        <input type="radio" name="folder" value="" checked=(true)>
+                        <span class="sk">"scratch"</span>
+                        <span class="sv">"this thread's own"</span>
+                        <i class="tk" aria-hidden="true">"✓"</i>
+                    </label>
                     for (i, s) in spots.into_iter().enumerate() {
                         if i == 0 && recent > 0 {
                             <p class="ch">"recent"</p>
@@ -509,7 +509,6 @@ async fn folder_sheet(spots: Vec<Spot>, recent: usize) -> Result<impl View> {
                                 name="folder"
                                 value=(s.path.display().to_string())
                                 data-last=(s.last.unwrap_or_default())
-                                checked=(i == 0)
                             >
                             <span class="sk">(short(&s.path))</span>
                             if !s.said.is_empty() {
@@ -521,55 +520,6 @@ async fn folder_sheet(spots: Vec<Spot>, recent: usize) -> Result<impl View> {
                 </fieldset>
             </div>
         </div>
-    })
-}
-
-/// The sidebar (from 1024 px): [+ new thread] (`cur` `new`: the composer's own page), then a folder per project,
-/// the folders by their newest thread, each foldable: its rows (the state dot, the title, the age), the open
-/// thread's (`cur`) marked; under the device's chip (#33), as the list is.
-#[component]
-pub async fn side(cx: &Cx, rows: Vec<Summary>, cur: String) -> Result<impl View> {
-    let list = crate::chip(cx);
-    let mut groups: Vec<(PathBuf, Vec<Summary>)> = Vec::new();
-    for r in rows {
-        if (list == "chats" && r.workflow.is_some()) || (list == "workflow" && r.workflow.is_none())
-        {
-            continue;
-        }
-        match groups.iter_mut().find(|(f, _)| *f == r.folder) {
-            Some((_, list)) => list.push(r),
-            None => groups.push((r.folder.clone(), vec![r])),
-        }
-    }
-    Ok(view! {
-        <aside class="side" aria-label="threads">
-            <a
-                class="nw"
-                href="/new"
-                aria-current=(if cur == "new" { Some("page") } else { None })
-            >
-                "+ new thread"
-            </a>
-            for (folder, list) in groups {
-                <details class="fg" open=(true) data-f=(folder.display().to_string())>
-                    <summary title=(short(&folder))>
-                        <b>(short(&folder))</b>
-                        <span class="ds">(list.len().to_string())</span>
-                    </summary>
-                    for r in list {
-                        <a
-                            class=(if r.unread { "sb" } else { "sb rd" })
-                            href=(format!("/t/{}", r.id))
-                            aria-current=(if r.id == cur { Some("page") } else { None })
-                        >
-                            <i class="sd" data-sb=(state(&r.state))></i>
-                            <span class="tt">(r.title.clone())</span>
-                            <span class="ta">(age(r.at))</span>
-                        </a>
-                    }
-                </details>
-            }
-        </aside>
     })
 }
 

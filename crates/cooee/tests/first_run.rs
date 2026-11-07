@@ -19,7 +19,7 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
                  status = [\"true\"]\ninstall = \"npm install -g @openai/codex\"\n";
     let cooee = Cooee::start_with(&dir, &shed.dir, &format!("roots = []\n{codex}"));
 
-    let (status, page) = cooee.get("/");
+    let (status, page) = cooee.get("/new");
     assert_eq!(status, 200, "{page}");
     assert!(
         page.contains("no agents installed · on the Mac:<code>shed agents add claude-acp</code>")
@@ -74,13 +74,13 @@ fn with_one_root_and_nothing_in_it_a_thread_starts_in_the_root() {
         &format!("roots = [{:?}]\n", root.to_string_lossy()),
     );
 
-    let (_, page) = cooee.get("/");
-    let option = format!(
-        r#"name="folder" value="{}" data-last="" checked="#,
-        root.display()
-    );
+    // The root, after scratch (no folder, picked).
+    let (_, page) = cooee.get("/new");
+    let option = format!(r#"name="folder" value="{}" data-last="">"#, root.display());
     assert!(
-        page.contains(&option) && page.matches(r#"name="folder""#).count() == 1,
+        page.contains(r#"name="folder" value="" checked="""#)
+            && page.contains(&option)
+            && page.matches(r#"name="folder""#).count() == 2,
         "{page}"
     );
     let new = json!({ "agent": "fake-acp", "folder": root, "text": "hi", "random_id": "r0" });

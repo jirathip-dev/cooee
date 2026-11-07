@@ -1,5 +1,6 @@
-// The new thread (#48, docs/design/new-thread): the composer is a chip row, a box and [send]; the agent chip starts
-// at the provider and account last used in the folder (serve.sh: root/project last used work@, root/other lab@);
+// The new thread (#48, docs/design/new-thread): the composer is a chip row, a box and [send]; the folder chip starts
+// at scratch (no folder: the thread's own) and the agent chip at the pick last used overall, then at the provider and
+// account last used in the folder picked (serve.sh: root/project last used work@, root/other lab@);
 // send opens the chat at once with the theme's loading line, which the reply replaces, and a failed connect shows
 // inline with [retry]; Settings › providers is one flat list. Every control is on the design's one size scale, in
 // each theme, checked as the design's shoot.mjs checks its mockup. Shots: ui-<viewport>/new-*.png.
@@ -21,8 +22,8 @@ const look = (context, baseURL, value) =>
 
 // The design's audit (docs/design/new-thread/shoot.mjs), on the page: no sideways scroll; at 390 the composer fits one
 // screen; every chip, button and one-line input is --ctl tall with the --r-ctl radius and --fs text (inputs 16 px);
-// every sheet and Settings row is --row; the sidebar from 1024 px (320 px, its rows --ctl) and the header's [+] below
-// it; and no dev text (an agent id, `System default`).
+// every sheet and Settings row is --row; the header's [+] at every width (no sidebar); and no dev text (an agent id,
+// `System default`).
 function audit(composer) {
   const bad = [], W = innerWidth, cs = getComputedStyle(document.documentElement);
   const px = (k) => parseFloat(cs.getPropertyValue(k)), CTL = px("--ctl"), RC = px("--r-ctl"), FS = px("--fs"), ROW = px("--row");
@@ -33,10 +34,9 @@ function audit(composer) {
   if (composer && W < 1000 && document.documentElement.scrollHeight > innerHeight) bad.push(`composer scrolls: ${document.documentElement.scrollHeight} > ${innerHeight}`);
   const dev = document.body.innerText.match(/\b[\w-]+-acp\b|system default/i);
   if (dev) bad.push(`dev text "${dev[0]}"`);
-  const side = document.querySelector(".side"), plus = document.querySelector(".bar .np");
-  if (side && W >= 1024 !== Boolean(shown(side))) bad.push(`sidebar ${shown(side) ? "shown" : "hidden"} at ${W}`);
-  if (side && W >= 1024 && !near(side.getBoundingClientRect().width, 320)) bad.push(`sidebar ${side.getBoundingClientRect().width}px, not 320`);
-  if (plus && W >= 1024 === Boolean(shown(plus))) bad.push(`header [+] ${shown(plus) ? "shown" : "hidden"} at ${W}`);
+  if (document.querySelector(".side")) bad.push("a sidebar");
+  const plus = document.querySelector(".bar .np");
+  if (plus && !shown(plus)) bad.push(`header [+] hidden at ${W}`);
   for (const e of document.querySelectorAll("body *")) {
     if (!shown(e)) continue;
     const r = e.getBoundingClientRect(), s = getComputedStyle(e);
@@ -46,7 +46,6 @@ function audit(composer) {
       const want = e.matches("input,textarea,select") ? 16 : FS;
       if (!near(parseFloat(s.fontSize), want)) bad.push(`text ${s.fontSize}, not ${want} · ${name(e)}`);
     }
-    if (e.matches(".side :is(.nw, .sb, summary)") && !near(r.height, CTL)) bad.push(`sidebar row ${r.height}px, not --ctl ${CTL} · ${name(e)}`);
     if (e.matches(".pk, .acr") && !near(r.height, ROW)) bad.push(`row ${r.height}px, not --row ${ROW} · ${name(e)}`);
     if (e.matches(".pk .sk, .acr .sk") && !near(parseFloat(s.fontSize), FS)) bad.push(`row text ${s.fontSize}, not --fs ${FS} · ${name(e)}`);
   }
@@ -70,7 +69,7 @@ for (const [theme, value] of Object.entries(LOOKS))
     // Only the chips, the box and send: no radios, account selects or folder list on the card.
     await expect(nc.locator(":is(button, textarea, input, select, a):visible")).toHaveCount(4);
     await expect(nc.getByRole("button", { name: /^agent: / })).toBeVisible();
-    await expect(nc.getByRole("button", { name: /^folder: / })).toBeVisible();
+    await expect(nc.getByRole("button", { name: "folder: scratch" })).toHaveText(/^scratch/);
     expect(await page.evaluate(audit, true)).toEqual([]);
     await shot(page, info, `composer-${theme}`);
     // The agent sheet: the agent profiles (#40), then each provider's accounts, a signed-out one muted with [sign in].
@@ -86,6 +85,8 @@ for (const [theme, value] of Object.entries(LOOKS))
     await page.locator("#chip-folder").click();
     const folder = page.locator("#sh-folder");
     await expect(folder).toBeVisible();
+    await expect(folder.locator(".pk").first()).toContainText("scratch");
+    await expect(folder.locator(".pk").first().locator("input")).toBeChecked();
     await expect(folder.locator(".ch").first()).toHaveText("recent");
     expect(await page.evaluate(audit, false)).toEqual([]);
     await shot(page, info, `folder-${theme}`);
@@ -118,6 +119,24 @@ test("the agent chip starts at the account last used in the folder picked", asyn
   await expect(chip).toHaveText(/^fake-390 · lab@example\.com/);
   await pick("~/root");
   await expect(chip).toHaveText(/^fake-390 · work@example\.com/);
+  // Back to scratch (no folder): the newest pick overall again.
+  await pick("scratch");
+  await expect(folder).toHaveText(/^scratch/);
+  await expect(chip).toHaveText(/^fake-390 · work@example\.com/);
+});
+
+test("with no folder picked the thread runs in its own scratch folder, listed as scratch", async ({ page }, info) => {
+  await page.goto("/new");
+  await expect(page.locator("#chip-folder")).toHaveText(/^scratch/);
+  const text = `Scratch start ${info.project.name}`;
+  await page.getByLabel("first message").fill(text);
+  await page.getByRole("button", { name: "send" }).click();
+  await page.waitForURL(/\/t\//);
+  await expect(page.locator(".tb .ds")).toContainText(" · scratch · ");
+  await expect(page.locator("#msgs .blk.ai").first()).toContainText("Hello");
+  await page.goto("/");
+  const card = page.locator(".fc", { has: page.locator(".fh b", { hasText: /^scratch$/ }) });
+  await expect(card.locator(".tr", { hasText: text })).toBeAttached();
 });
 
 test("send opens the chat at once with the loading line, which the reply replaces", async ({ page }, info) => {
@@ -140,7 +159,6 @@ test("send opens the chat at once with the loading line, which the reply replace
     await expect(page.locator("#st")).toHaveAttribute("data-st", "loading");
     await expect(page.locator("#st")).toHaveText("saddling up");
     await expect(page.locator(".tb .ds")).toContainText(`${who} · `);
-    if (info.project.name === "1440") await expect(page.locator(".side [aria-current] .sd")).toHaveAttribute("data-sb", "loading");
     expect(await page.evaluate(audit, false)).toEqual([]);
     await shot(page, info, "chat-connecting");
     await axe(page);

@@ -28,7 +28,7 @@ Row numbers are #553's.
 | 21 | Instant send: sending…/✓, red retry | done | `web/ts/chat.ts` `deliver()` (sending → sent, failed · tap to retry) | — |
 | 22 | Growing composer, pinned send, follow-scroll | partial | follow-scroll (`chat.ts` `stuck` + ResizeObserver) | the box growing to 6 lines then scrolling |
 | 23 | iOS keyboard: composer on the keyboard, page never jumps | partial | `interactive-widget=resizes-content` (`web/src/lib.rs:190`), anchor kept on resize (`chat.ts`) | unverified in the Home Screen app; visualViewport fallback |
-| 24 | Back button, edge swipe, side-by-side ≥1000 px | partial | ‹ back link (`web/src/lib.rs` `chat`); the sidebar beside the chat or composer from 1024 px, as #48's approved design draws it (`web/src/compose.rs` `side`) | edge swipe |
+| 24 | Back button, edge swipe, side-by-side ≥1000 px | partial | ‹ back link (`web/src/lib.rs` `chat`) | edge swipe; list + chat side by side |
 | 25 | Working pill with timer and [stop]; reconnecting/offline | partial | `#pill` with timer and stop (`web/src/lib.rs` `chat`, `chat.ts` `setState`) | "stopping…"; reconnecting/offline states |
 | 26 | Queue or steer during a turn; edit/remove queued | missing | — | queue, steer, unqueue |
 | 27 | Per-thread drafts, picked files included | partial | IndexedDB draft per thread (`chat.ts` `draft`) | picked files (after row 20) |

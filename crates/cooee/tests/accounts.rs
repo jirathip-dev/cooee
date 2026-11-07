@@ -125,7 +125,7 @@ impl Setup {
     }
 
     fn page(&self) -> String {
-        self.cooee.get("/").1
+        self.cooee.get("/new").1
     }
 
     /// Starts a thread on `fake-acp` with `account` (none: the default); returns its id and its `shed run` line.

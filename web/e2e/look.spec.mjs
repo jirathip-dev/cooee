@@ -175,16 +175,10 @@ test("each Style × Figures combination renders at 390", async ({ page, context,
   }
 });
 
-// From 1024 px the sidebar (#48) stands in for the list and its figures, so the wide project looks just under it.
-async function list(page) {
-  if (page.viewportSize().width >= 1024) await page.setViewportSize({ width: 1000, height: 900 });
-  await page.goto("/");
-}
-
 test("the ascii figures' two frames alternate", async ({ page, context, baseURL }) => {
   await page.emulateMedia({ colorScheme: "dark", reducedMotion: "no-preference" });
   await pickOn(context, baseURL, { figures: "ascii" });
-  await list(page);
+  await page.goto("/");
   const fig = page.locator(".tp .rsa").first();
   await expect(fig.locator("b")).toHaveCount(2);
   // The frames' opacity at a time on the loop's clock (its animation paused there, so no real time passes).
@@ -202,7 +196,7 @@ test("the ascii figures' two frames alternate", async ({ page, context, baseURL 
 });
 
 test("the look sheet lists Scene only with sprites, and plain only ASCII or None", async ({ page }, info) => {
-  await list(page);
+  await page.goto("/");
   await page.getByRole("button", { name: "look: theme and colours" }).click();
   const radios = (k) => sheet(page).getByRole("radiogroup", { name: k }).getByRole("radio");
   await expect(radios("style")).toHaveText(["modern", "terminal", "scene"]);

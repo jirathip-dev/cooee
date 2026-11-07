@@ -295,8 +295,10 @@ async fn shell(
 
 #[page("/")]
 async fn home(cx: &Cx) -> Result<impl View> {
-    let (rows, new, providers) = shell(cx).await?;
-    Ok(cooee_web::threads_page(cx, rows, new, providers, tabs(cx)))
+    let providers = on_logins(cx, |l| Ok(l.statuses()));
+    let rows = blocking(cx, |hub| Ok(hub.list()));
+    let (providers, rows) = futures_util::future::try_join(providers, rows).await?;
+    Ok(cooee_web::threads_page(cx, rows, providers, tabs(cx)))
 }
 
 #[page("/new")]
@@ -364,8 +366,7 @@ async fn login_cancel(cx: &Cx) -> Result<Answer<()>> {
 #[page("/t/{id}")]
 async fn chat(cx: &Cx) -> Result<impl View> {
     let id = thread_id(cx);
-    let Ok((thread, rows)) = blocking(cx, move |hub| Ok((hub.thread(&id)?, hub.list()))).await
-    else {
+    let Ok(thread) = blocking(cx, move |hub| hub.thread(&id)).await else {
         return Err(not_found().into());
     };
     let profile = profiles(cx)
@@ -377,9 +378,7 @@ async fn chat(cx: &Cx) -> Result<impl View> {
     };
     let choices = logins(cx).choices(&thread.0.agent);
     let providers = logins(cx).statuses();
-    Ok(cooee_web::chat_page(
-        cx, thread, rows, providers, label, choices,
-    ))
+    Ok(cooee_web::chat_page(cx, thread, providers, label, choices))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -463,6 +462,8 @@ async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_web::Card>>> {
 #[derive(Deserialize)]
 struct New {
     agent: String,
+    /// None or empty: the thread's own scratch folder (#48).
+    #[serde(default)]
     folder: PathBuf,
     text: String,
     random_id: String,

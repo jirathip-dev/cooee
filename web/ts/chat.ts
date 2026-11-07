@@ -1,6 +1,6 @@
 // cooee's pages, where a browser needs script (the rest is server HTML: the sheets, the composer and its chips'
-// sheets, Settings › providers, the sidebar). The new thread (#48): a pick in a chip's sheet sets the chip, a folder
-// moves the agent chip to that folder's last pick, and send opens the chat at once. The chat: a window of about 9 screens of items around an anchor (slices by id as the reader nears an edge),
+// sheets, Settings › providers). The new thread (#48): a pick in a chip's sheet sets the chip, a folder moves the
+// agent chip to that folder's last pick (scratch, no folder: the last pick overall), and send opens the chat at once. The chat: a window of about 9 screens of items around an anchor (slices by id as the reader nears an edge),
 // scroll kept on a message rather than pixels, live events over SSE resumed from the last one seen, the outbox
 // (sending → sent → failed, tap to retry), the per-thread draft in IndexedDB, approvals that lock once tapped, and
 // debounced read marks (which also close the thread's notifications). Every page but pairing registers the service
@@ -321,7 +321,7 @@ if (nc) {
 }
 
 // The folder sheet: the search shows the folders whose name has it (up to 2 levels in), else the first level;
-// [+ new folder] makes one inside the folder picked, and picks it.
+// [+ new folder] makes one inside the folder picked (scratch picked: inside the first root), and picks it.
 const fq = $<HTMLInputElement>("#fq");
 const fl = $(".fl");
 if (fq && fl && nc) {
@@ -335,7 +335,9 @@ if (fq && fl && nc) {
   const mkdir = $<HTMLButtonElement>("#mkdir");
   if (mkdir)
     mkdir.onclick = async () => {
-      const parent = $<HTMLInputElement>("input[name=folder]:checked", fl);
+      const parent =
+        $<HTMLInputElement>("input[name=folder]:checked:not([value=''])", fl) ??
+        $<HTMLInputElement>("input[name=folder]:not([value=''])", fl);
       const at = parent?.parentElement;
       if (!at || !parent) return;
       const label = $(".sk", at)?.textContent?.trim() ?? "";
@@ -464,19 +466,6 @@ document.addEventListener("click", (e) => {
       (x) => tell(row, message(x)),
     );
 });
-
-// The sidebar's folders: a fold is kept on the device.
-const folds: string[] = JSON.parse(localStorage.getItem("cooee.folds") ?? "[]");
-for (const d of document.querySelectorAll<HTMLDetailsElement>(".side .fg")) {
-  if (folds.includes(d.dataset.f ?? "")) d.open = false;
-  d.addEventListener("toggle", () => {
-    const f = d.dataset.f ?? "";
-    const kept = folds.filter((x) => x !== f);
-    if (!d.open) kept.push(f);
-    folds.splice(0, folds.length, ...kept);
-    localStorage.setItem("cooee.folds", JSON.stringify(kept));
-  });
-}
 
 // Not while pairing: a worker installing and claiming the page as the pair redirects can leave a home-screen app on
 // a bare background until a reload (the first run, #25).
@@ -1326,8 +1315,6 @@ function chat(main: HTMLElement): void {
     note = t.note ?? "";
     const [st, wait, close] = [$("#st"), $("#wait"), $("#close")];
     if (st) st.dataset.st = KEY[state] ?? "";
-    const dot = $<HTMLElement>(".side [aria-current] .sd");
-    if (dot) dot.dataset.sb = KEY[state] ?? "";
     main.dataset.state = state;
     if (wait) wait.hidden = state !== "blocked";
     if (state === "ended") {

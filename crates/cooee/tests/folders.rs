@@ -79,7 +79,7 @@ fn add_and_remove_root_persists_in_the_config() {
         text.contains(r#""~/Projects"]"#) && text.contains("shed_dir = "),
         "{text}"
     );
-    let (_, page) = cooee.get("/");
+    let (_, page) = cooee.get("/new");
     let sub = format!(
         r#"name="folder" value="{}""#,
         projects.join("app").display()
@@ -104,7 +104,7 @@ fn add_and_remove_root_persists_in_the_config() {
             .unwrap()
             .contains("Projects")
     );
-    let (_, page) = cooee.get("/");
+    let (_, page) = cooee.get("/new");
     assert!(!page.contains("Projects"), "{page}");
 }
 
@@ -113,7 +113,7 @@ fn picker_lists_sub_folders_two_levels_deep_never_symlinks() {
     let (home, _shed, cooee) = start("folders-picker");
     let projects = home.join("Projects");
     cooee.post("/roots", &json!({ "path": projects }));
-    let (_, page) = cooee.get("/");
+    let (_, page) = cooee.get("/new");
     let row = |p: &Path, d: u8| {
         let hidden = if d > 1 { r#" hidden="""# } else { "" };
         format!(

@@ -6,6 +6,11 @@ profiles (#40), and from 1024 px a sidebar that's always there (§ 7). The pages
 colour). `mock.js` builds `LOOK` the way the server does, and draws the one state look.js doesn't have yet (loading).
 `side.html` is the sidebar, one copy that `mock.js` puts in each page's `<aside class="side">`.
 
+**Amended after approval (q766, after #86):** the sidebar (§ 7) is not built in #48; #86 builds the agents sidebar,
+and desktop keeps the list and the chat as they were. The folder chip is optional: it starts at `scratch` (no folder:
+the thread runs in its own `<data>/scratch/<id>`, listed and said as `scratch`), with `scratch` the folder sheet's
+first row, and the agent chip then starts at the pick last used overall.
+
 | page | screens | shots |
 |---|---|---|
 | `composer.html` | 1 the new-thread composer · 2 the agent sheet · 3 the folder sheet · 4 another folder: the chip on its last-used profile | `composer-390-r2`, `composer-1440-r2` |

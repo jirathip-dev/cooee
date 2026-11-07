@@ -10,7 +10,6 @@ const axe = async (page) => {
 };
 
 test("Workflow: the chip filters the list and a running impl lane opens as a chat", async ({ page }, info) => {
-  test.skip(info.project.name !== "390", "the list is the phone's; from 1024 px the sidebar lists the threads (#48)");
   await page.goto("/");
   const chips = page.locator("#chips");
   await expect(chips.getByRole("radio", { name: "All" })).toHaveAttribute("aria-checked", "true");
@@ -55,19 +54,4 @@ test("Workflow: the chip filters the list and a running impl lane opens as a cha
   await page.goto("/");
   await chips.getByRole("radio", { name: "All" }).click();
   await expect(chips.getByRole("radio", { name: "All" })).toHaveAttribute("aria-checked", "true");
-});
-
-test("Workflow from 1024 px: the sidebar lists the lanes beside the chats, and one opens as a chat (#48)", async ({ page }, info) => {
-  test.skip(info.project.name !== "1440", "the sidebar is the desktop's");
-  await page.goto("/");
-  const side = page.locator(".side");
-  await expect(side.locator(".sb", { hasText: "Long thread" }).first()).toBeVisible();
-  await side.locator(".sb", { hasText: "cooee #33" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("cooee #33");
-  await expect(page.locator(".th .ds")).toContainText("impl · round 1");
-  await expect(page.getByRole("link", { name: "issue & PR" })).toHaveAttribute("href", "https://github.com/o/cooee/issues/33");
-  await expect(side.locator(".sb[aria-current=page]")).toContainText("cooee #33");
-  await expect(page.locator("#close")).toBeHidden();
-  await shot(page, info, "workflow-chat");
-  await axe(page);
 });

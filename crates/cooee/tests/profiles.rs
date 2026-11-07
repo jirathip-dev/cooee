@@ -190,8 +190,13 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     assert_eq!(items["items"][0]["text"], "hi", "{items}");
     let chat = s.cooee.get(&format!("/t/{id}")).1;
     assert!(chat.contains("<i class=\"dt\"></i>Coder · "), "{chat}");
-    // The folder's last-used profile is picked next time.
-    assert_eq!(s.picked(), "p:coder");
+    // The folder's last-used profile is picked next time it is picked; scratch (no folder) stays on Plain.
+    let root = format!(
+        r#"value="{}" data-last="p:coder""#,
+        s.dir.join("root").display()
+    );
+    assert!(s.cooee.get("/new").1.contains(&root));
+    assert_eq!(s.picked(), "fake-acp/");
 
     // A guard its agent can't run: refused, nothing started.
     let runs = s.shed.cli_log().matches(" run ").count();

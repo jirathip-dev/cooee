@@ -4,8 +4,7 @@ import { expect, test } from "@playwright/test";
 test("thread list: renders, fits the width, no axe violations", async ({ page }, info) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("cooee");
-  // The list (from 1024 px, the sidebar beside the composer).
-  await expect(page.locator(".fc .tr:visible, .side .sb:visible").first()).toBeVisible();
+  await expect(page.locator(".fc .tr").first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: `../../ui-${info.project.name}/threads.png`, fullPage: true });

@@ -179,7 +179,8 @@ fn r7_page_loads_run_no_subprocess() {
     let before = calls();
     assert_eq!(before.1, "checked\n", "checked once, at start");
     for _ in 0..5 {
-        let (code, page) = cooee.get("/");
+        assert_eq!(cooee.get("/").0, 200);
+        let (code, page) = cooee.get("/new");
         assert!(
             code == 200 && page.contains(r#"data-agent="fake-acp""#),
             "{page}"
@@ -538,4 +539,28 @@ fn a_failed_background_start_says_why_and_a_retry_sends_once() {
     s.cooee.post(&format!("/threads/{id}/retry"), &json!({}));
     thread::sleep(Duration::from_millis(200));
     assert_eq!((runs(&s.shed), prompts(&s.shed, &id).len()), (1, 1));
+}
+
+/// #48: a start with no folder runs in the thread's own scratch folder, `<data>/scratch/<id>`, made for it; it is kept
+/// with no folder and said as `scratch` (the list's card, the thread's bar), never as its path.
+#[test]
+fn a_start_with_no_folder_runs_in_its_own_scratch_folder() {
+    let s = setup("scratch");
+    let new =
+        json!({ "agent": "fake-acp", "text": "hi", "random_id": "scratch", "background": true });
+    let (status, body) = s.cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = id_of(&body);
+    until("the first message went", || {
+        prompts(&s.shed, &id).len() == 1
+    });
+    let dir = s.dir.join("data/scratch").join(&id);
+    assert!(dir.is_dir(), "{}", dir.display());
+    let cwd = format!("--cwd {}", dir.display());
+    assert!(s.shed.cli_log().contains(&cwd), "{}", s.shed.cli_log());
+    let (_, list) = s.cooee.get("/");
+    assert!(list.contains("<b>scratch</b>"), "{list}");
+    let (_, page) = s.cooee.get(&format!("/t/{id}"));
+    assert!(page.contains(" · scratch · "), "{page}");
+    assert!(!page.contains("data/scratch"), "{page}");
 }

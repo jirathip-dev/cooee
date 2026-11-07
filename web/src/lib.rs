@@ -19,8 +19,8 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use compose::composer;
 pub use compose::{New, named, who};
-use compose::{composer, side};
 use cooee_core::{Sheet, Summary, Thread, Turn};
 pub use look::{Looks, Pair, Scheme, TOKENS, Theme, gate, plain};
 use sheet::{sheets, shown};
@@ -274,8 +274,12 @@ fn byline(thread: &Thread, (runs, profile): (&str, &str), folder: &str) -> Strin
         .collect()
 }
 
-/// `~/x` for a folder under `$HOME` (as spelled, or resolved: a thread keeps its folder resolved).
+/// `~/x` for a folder under `$HOME` (as spelled, or resolved: a thread keeps its folder resolved); none (empty):
+/// `scratch`, a thread's own folder (#48).
 fn short(folder: &Path) -> String {
+    if folder.as_os_str().is_empty() {
+        return "scratch".to_owned();
+    }
     let home = std::env::var_os("HOME").map(PathBuf::from);
     let real = home.as_deref().and_then(|h| h.canonicalize().ok());
     let under = |h: &Path| folder.strip_prefix(h).ok();
@@ -524,17 +528,16 @@ async fn nav(tabs: Vec<(String, String, bool)>, current: String) -> Result<impl 
     })
 }
 
-/// The thread list (`/`): one card per working folder, its 3 newest threads shown, the rest folded; from 1024 px
-/// the sidebar is the list and the composer is beside it. `tabs`: the plugins' names and labels.
+/// The thread list (`/`): one card per working folder, its 3 newest threads shown, the rest folded. `tabs`: the
+/// plugins' names and labels.
 #[must_use]
 pub fn threads_page(
     cx: &Cx,
     rows: Vec<Summary>,
-    new: New,
     providers: Vec<Sheet>,
     tabs: Vec<(String, String, bool)>,
 ) -> impl View {
-    view! { cx => threads(rows: rows, new: new, providers: providers, tabs: tabs) }
+    view! { cx => threads(rows: rows, providers: providers, tabs: tabs) }
 }
 
 /// The chips over the one list (#33): All · Chats · Workflow, `list` on; a tap posts `POST /list`.
@@ -600,12 +603,11 @@ async fn card(c: Card) -> Result<impl View> {
 async fn threads(
     cx: &Cx,
     rows: Vec<Summary>,
-    new: New,
     providers: Vec<Sheet>,
     tabs: Vec<(String, String, bool)>,
 ) -> Result<impl View> {
     let list = chip(cx);
-    let cards = cards(rows.clone(), &providers, list);
+    let cards = cards(rows, &providers, list);
     let empty = cards.is_empty();
     let look = shown(cx);
     let (figure, words) = (look.s("empty"), look.w("empty-threads", true));
@@ -615,7 +617,6 @@ async fn threads(
             providers: providers.clone(),
             header(home: true, tabs: tabs, current: String::new())
             <div class="shell">
-                side(rows: rows.clone(), cur: "new".to_owned())
                 <main class="list">
                     if empty {
                         <div class="emp">
@@ -632,12 +633,6 @@ async fn threads(
                     for c in cards {
                         card(c: c)
                     }
-                </main>
-                <main class="nt home">
-                    <div class="th"><div class="tb"><h2>"new thread"</h2></div></div>
-                    <div class="sp"></div>
-                    composer(rows: rows, new: new, providers: providers)
-                    <div class="sp"></div>
                 </main>
             </div>
         )
@@ -669,7 +664,6 @@ async fn new_thread(
             providers: providers.clone(),
             header(home: false, tabs: tabs, current: String::new(), new: true)
             <div class="shell">
-                side(rows: rows.clone(), cur: "new".to_owned())
                 <main class="nt">
                     <div class="th">
                         <a class="gl bk" href="/" aria-label="back to threads">"‹"</a>
@@ -805,14 +799,12 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
     })
 }
 
-/// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer; from 1024 px the
-/// sidebar beside it. The bar names the provider and the account (`providers`), or its agent `profile`'s label, never
+/// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer. The bar names the provider and the account (`providers`), or its agent `profile`'s label, never
 /// the agent's id.
 #[must_use]
 pub fn chat_page(
     cx: &Cx,
     (thread, turn): (Thread, Turn),
-    rows: Vec<Summary>,
     providers: Vec<Sheet>,
     profile: String,
     choices: (Vec<String>, Vec<String>),
@@ -822,7 +814,6 @@ pub fn chat_page(
         chat(
             thread: thread,
             turn: turn,
-            rows: rows,
             providers: providers,
             profile: profile,
             choices: choices
@@ -865,7 +856,6 @@ async fn chat(
     cx: &Cx,
     thread: Thread,
     turn: Turn,
-    rows: Vec<Summary>,
     providers: Vec<Sheet>,
     profile: String,
     choices: (Vec<String>, Vec<String>),
@@ -877,7 +867,7 @@ async fn chat(
         ("working", true),
     ]
     .map(|(st, plain)| Unescaped::new_unchecked(look.st(st, plain)));
-    let folder = thread.folder.as_deref().map(short).unwrap_or_default();
+    let folder = short(thread.folder.as_deref().unwrap_or(Path::new("")));
     let ended = thread.closed || turn.state == "ended";
     let name = named(&thread.agent, &providers);
     let runs = compose::said(
@@ -896,7 +886,6 @@ async fn chat(
             providers: providers,
             header(home: false, tabs: Vec::new(), current: String::new())
             <div class="shell">
-                side(rows: rows, cur: thread.id.clone())
                 <main
                     class="chat"
                     data-thread=(thread.id.clone())

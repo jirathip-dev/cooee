@@ -227,24 +227,12 @@ html[data-style=terminal]{--r-ctl:6px}
 .sec{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
 html[data-style=terminal] .sec,html[data-style=terminal] .chip{background:none;box-shadow:none}
 
-/* The shell: the header across the top, then the page. From 1024 px the sidebar is always there on the left and the
-   page beside it: the composer, a chat, or on `/` the composer (the sidebar is the list). A chat's thread bar, items
-   and composer span the column, their content 100ch wide in its middle; [‹] goes, and so does the header's [+].
-   Below 1024 px nothing changes. */
+/* The shell: the header across the top, then the page. */
 body.app{display:flex;flex-direction:column;height:100dvh}
 .app>.bar{flex:none}
 .shell{flex:1;min-height:0;display:flex}
 .shell>main{flex:1;min-width:0;height:auto}
 .shell>.list{overflow-y:auto;overscroll-behavior:contain;align-self:stretch;margin:0 auto}
-.side,.nt.home{display:none}
-@media (min-width:1024px){
-  .side{display:flex;flex-direction:column;flex:none;width:320px;overflow-y:auto;overscroll-behavior:contain;padding:12px 8px 16px;border-right:1px solid var(--edge)}
-  .app .np,.shell .th .bk{display:none}
-  .shell>.list{display:none}.shell>.nt.home{display:flex}
-  .shell>:is(.chat,.nt){max-width:none;margin:0}
-  .shell>.chat>:is(.th,.tc,.tw){padding-inline:max(12px,(100% - 100ch) / 2)}
-  .shell>.nt>.th{padding-inline:max(12px,(100% - 720px) / 2)}
-}
 
 /* The new-thread view (`/new`): the thread bar, an empty space, and the composer: the chip row, then the box and
    [send]. On a phone the composer sits at the bottom, where the chat's will be; from 1024 px it is a 720 px card in
@@ -292,28 +280,6 @@ label.pk{cursor:pointer}
 .pk.so .sk,.pk.so>label{color:var(--mute);cursor:default}
 .fl [data-d="1"]{padding-left:16px}.fl [data-d="2"]{padding-left:32px}
 .fq{display:flex;gap:8px;padding:4px 0 8px}.fq input{flex:1;min-width:0;color:var(--fg);background:var(--card);border:1px solid var(--edge)}
-
-/* The sidebar: [+ new thread] (ringed on the composer's own page), then a folder per project, newest thread first:
-   ▾ the folder, its thread count; a row is the state dot (amber working or connecting, red needs you or failed,
-   muted done), the title (bold while unread) and the age. A tap on a folder folds it. Every row is --ctl tall. */
-.nw{display:flex;align-items:center;justify-content:center;flex:none;height:var(--ctl);border-radius:var(--r-ctl);background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge);font-size:var(--fs);font-weight:600;text-decoration:none}
-.nw[aria-current]{box-shadow:inset 0 0 0 2px var(--l)}
-.fg{padding-top:12px}
-.fg>summary{gap:8px;min-height:var(--ctl);height:var(--ctl);padding:0 8px;font-size:var(--fs-meta);list-style:none}
-.fg>summary::-webkit-details-marker{display:none}
-.fg>summary::before{content:"▸";flex:none;width:8px}.fg[open]>summary::before{content:"▾"}
-.fg>summary b{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600;color:var(--fg)}
-.sb{display:flex;align-items:center;gap:8px;height:var(--ctl);padding:0 8px;border-radius:var(--r-row);color:var(--fg);font-size:var(--fs);text-decoration:none}
-.sb .tt{flex:1;min-width:0}.sb.rd .tt{font-weight:400;color:var(--mute)}
-.sb .ta{flex:none}
-.sb .sd{flex:none;margin:0;color:var(--mute)}
-.sd:is([data-sb=working],[data-sb=loading]){color:var(--a)}.sd:is([data-sb=needs],[data-sb=fail]){color:var(--r)}
-.sb[aria-current]{background:color-mix(in srgb,var(--fg) 8%,transparent)}
-html[data-style=terminal] .nw{justify-content:flex-start;padding:0 1ch;background:none;box-shadow:none;color:var(--l);font-weight:400}
-html[data-style=terminal] .nw::before{content:"["}html[data-style=terminal] .nw::after{content:"]"}
-html[data-style=terminal] .nw[aria-current]{align-self:flex-start;background:var(--l);color:var(--bg)}
-html[data-style=terminal] .fg>summary b{color:var(--link);font-weight:400}
-html[data-style=terminal] .sb[aria-current]{box-shadow:inset 3px 0 var(--l)}
 
 /* The chat right after send: your message, then the state line where the reply will come, in the theme's loading
    word: `[sprite] saddling up · connecting claude · jk@work.com`. The reply replaces it. A failed connect puts the

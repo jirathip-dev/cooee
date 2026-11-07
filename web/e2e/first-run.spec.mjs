@@ -19,7 +19,9 @@ test("first run: no agents and no roots show their fix lines with copy buttons, 
 
   const form = page.locator("#nc");
   await expect(form).toBeVisible();
-  await expect(form.locator("input[type=radio]")).toHaveCount(0);
+  // Only scratch (no folder: the thread's own), picked; no agent or folder to pick.
+  await expect(form.locator("input[type=radio]")).toHaveCount(1);
+  await expect(form.locator("input[name=folder][value='']")).toBeChecked();
   const agents = form.locator(".hn").first(), folders = form.locator(".hn").last();
   await expect(agents).toContainText("no agents installed · on the Mac:");
   await expect(agents.locator("code")).toHaveText("shed agents add claude-acp");
