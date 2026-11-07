@@ -216,11 +216,11 @@ impl Machines {
                     ..Card::default()
                 });
                 card.history.retain(|s| s.at + DAY > now);
-                let since = card
+                let after = card
                     .history
                     .last()
-                    .map_or(now.saturating_sub(DAY), |s| s.at)
-                    .to_string();
+                    .map_or(now.saturating_sub(DAY), |s| s.at);
+                let since = after.to_string();
                 let mut args = vec!["machine", "stats", "--since", &since];
                 if let Some(on) = &on {
                     args.splice(0..0, ["--on", on.as_str()]);
@@ -234,7 +234,9 @@ impl Machines {
                 card.online = stats.is_some();
                 card.error = answer.as_ref().err().filter(|e| !e.is_empty()).cloned();
                 if let Some(s) = stats {
-                    card.history.extend(s.history);
+                    // Only what is new, should a shed answer more than was asked for.
+                    let new = s.history.into_iter().filter(|s| s.at > after);
+                    card.history.extend(new);
                     card.last_seen = Some(s.now.at);
                     card.now = Some(s.now);
                 } else {

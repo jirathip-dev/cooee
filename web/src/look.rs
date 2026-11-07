@@ -51,6 +51,9 @@ pub struct Theme {
     /// `icon.png`, the home-screen icon and favicon.
     #[serde(skip)]
     pub icon: Option<Vec<u8>>,
+    /// `scene.svg`, Scene's backdrop (#34).
+    #[serde(skip)]
+    pub scene: Option<Vec<u8>>,
 }
 
 /// The plain word for a state key: what every theme says beside its own word, and all the plain theme says.
@@ -111,12 +114,21 @@ pub struct Looks {
 }
 
 macro_rules! builtin_theme {
-    ($name:literal, $sprites:expr) => {
+    ($name:literal, $sprites:expr, $scene:expr) => {
         (
             $name,
             include_str!(concat!("../themes/", $name, "/theme.json")),
             $sprites,
             include_bytes!(concat!("../themes/", $name, "/icon.png")).as_slice(),
+            $scene,
+        )
+    };
+    // A theme with art: its sprite sheet and scene.
+    ($name:literal) => {
+        builtin_theme!(
+            $name,
+            Some(include_bytes!(concat!("../themes/", $name, "/sprites.svg")).as_slice()),
+            Some(include_bytes!(concat!("../themes/", $name, "/scene.svg")).as_slice())
         )
     };
 }
@@ -127,28 +139,20 @@ macro_rules! builtin_scheme {
     };
 }
 
-/// A built-in theme: its name, `theme.json`, `sprites.svg` and `icon.png`.
+/// A built-in theme: its name, `theme.json`, `sprites.svg`, `icon.png` and `scene.svg`.
 type Builtin = (
     &'static str,
     &'static str,
     Option<&'static [u8]>,
     &'static [u8],
+    Option<&'static [u8]>,
 );
 
 pub(crate) const THEMES: [Builtin; 4] = [
-    builtin_theme!(
-        "farm",
-        Some(include_bytes!("../themes/farm/sprites.svg").as_slice())
-    ),
-    builtin_theme!(
-        "kitchen",
-        Some(include_bytes!("../themes/kitchen/sprites.svg").as_slice())
-    ),
-    builtin_theme!(
-        "garden",
-        Some(include_bytes!("../themes/garden/sprites.svg").as_slice())
-    ),
-    builtin_theme!("plain", None),
+    builtin_theme!("farm"),
+    builtin_theme!("kitchen"),
+    builtin_theme!("garden"),
+    builtin_theme!("plain", None, None),
 ];
 
 /// The ASCII figures (herdsman#335), the same in every theme: per state (`edit read run` while working), and the
@@ -217,10 +221,11 @@ impl Looks {
             .collect();
         let mut themes: BTreeMap<String, Theme> = THEMES
             .iter()
-            .map(|(n, json, sprites, icon)| {
+            .map(|(n, json, sprites, icon, scene)| {
                 let mut t: Theme = serde_json::from_str(json).expect(n);
                 t.sprite_sheet = sprites.map(<[u8]>::to_vec);
                 t.icon = Some(icon.to_vec());
+                t.scene = scene.map(<[u8]>::to_vec);
                 ((*n).to_owned(), t)
             })
             .collect();
@@ -308,6 +313,7 @@ fn read_theme(dir: &Path, schemes: &BTreeMap<String, Scheme>) -> Result<Theme, S
             Some(fs::read(dir.join("sprites.svg")).map_err(|e| format!("sprites.svg: {e}"))?);
     }
     t.icon = fs::read(dir.join("icon.png")).ok();
+    t.scene = fs::read(dir.join("scene.svg")).ok();
     Ok(t)
 }
 
@@ -504,6 +510,7 @@ mod tests {
                 "{name}"
             );
             assert_eq!(t.sprites, t.sprite_sheet.is_some(), "{name}");
+            assert_eq!(t.sprites, t.scene.is_some(), "{name}");
             if let Some(svg) = &t.sprite_sheet {
                 let svg = String::from_utf8_lossy(svg);
                 for id in [
