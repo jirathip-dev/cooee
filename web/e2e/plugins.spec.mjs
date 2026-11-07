@@ -7,9 +7,9 @@ import { expect, test } from "@playwright/test";
 const frameOf = (page, name) => page.frames().find((f) => f.url().includes(`/p/${name}/frame`));
 
 test("the example plugin's tab: proxied calls with its token, its stream, a push and a choice card", async ({ page, context }, info) => {
-  await page.goto("/#new");
-  await page.getByLabel("first message").fill("Say hello");
-  await page.getByRole("button", { name: "start" }).click();
+  await page.goto("/new");
+  await page.getByLabel("message", { exact: true }).fill("Say hello");
+  await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   const thread = new URL(page.url()).pathname.split("/")[2];
 

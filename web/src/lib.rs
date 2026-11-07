@@ -19,7 +19,7 @@ use std::{
 };
 
 pub use agents::{Mate, Pane, Side, page};
-use cooee_core::{Account, Sheet, Status, Summary, Thread, Turn};
+use cooee_core::{Account, Sheet, Status, Thread, Turn};
 pub use look::{Looks, Pair, Scheme, TOKENS, Theme, gate, plain};
 use sheet::{sheets, shown};
 pub use shown::Shown;
@@ -283,11 +283,18 @@ fn bar(
     (name, title, line)
 }
 
-/// `~/x` for a folder under `$HOME`.
+/// `~/x` for a folder under `$HOME` (as given, or resolved: a folder a chat works in is stored resolved).
 #[must_use]
 pub fn short(folder: &Path) -> String {
     let home = std::env::var_os("HOME").map(PathBuf::from);
-    match home.as_deref().and_then(|h| folder.strip_prefix(h).ok()) {
+    let homes = home
+        .iter()
+        .flat_map(|h| [h.clone(), h.canonicalize().unwrap_or_default()]);
+    let homes = homes.filter(|h| h.has_root());
+    let rest = homes
+        .into_iter()
+        .find_map(|h| folder.strip_prefix(h).ok().map(Path::to_path_buf));
+    match rest {
         Some(rest) if rest.as_os_str().is_empty() => "~".to_owned(),
         Some(rest) => format!("~/{}", rest.display()),
         None => folder.display().to_string(),
@@ -350,9 +357,7 @@ async fn header(
             }
             nav(tabs: tabs, current: current)
             <button type="button" class="gl" id="rf" aria-label="refresh">"↻"</button>
-            <a class="gl" href=(new) aria-label="new chat">
-                "+"
-            </a>
+            <a class="gl" href=(new) aria-label="new chat">"+"</a>
             <button
                 type="button"
                 class="gl"
@@ -546,7 +551,12 @@ async fn plugin(
         document(
             title: title.as_str(),
             <main class="pt">
-                header(home: false, tabs: tabs, current: name.clone(), new: "/new".to_owned())
+                header(
+                    home: false,
+                    tabs: tabs,
+                    current: name.clone(),
+                    new: "/new".to_owned()
+                )
                 <h1 class="vh">(label.clone())</h1>
                 <iframe
                     class="pf"
@@ -671,7 +681,7 @@ async fn chat(
     turn: Turn,
     profile: String,
     mate: Option<(usize, String, bool)>,
-    places: (Vec<(PathBuf, u8)>, Vec<Summary>, Option<PathBuf>),
+    places: agents::Places,
     choices: (Vec<String>, Vec<String>),
 ) -> Result<impl View> {
     let look = shown(cx);
@@ -691,85 +701,73 @@ async fn chat(
         .map(|w| w.url.clone())
         .filter(|u| u.starts_with("https://") || u.starts_with("http://"));
     Ok(view! {
-            <main
-                class="chat"
-                data-thread=(thread.id.clone())
-                data-agent=(name.clone())
-                data-read=(thread.read.unwrap_or(0).to_string())
-                data-state=(turn.state.clone())
-            >
-                <div class="th">
-                    <a class="gl bk" href="/?list" aria-label="back to agents">"‹"</a>
-                    if let Some((n, _, _)) = mate {
-                        agents::avatar(name: name.clone(), n: n, big: false)
-                    }
-                    <div class="tb">
-                        <h1>(title)</h1>
-                        <span class="ds">
-                            <i class="dt"></i>
-                            (said)
-                            <span id="st" data-st=(state(&turn.state))>(st)</span>
-                            if let Some(url) = link {
-                                " · "
-                                <a href=(url)>"issue & PR"</a>
-                            }
-                        </span>
-                    </div>
-                    <button
-                        type="button"
-                        id="close"
-                        class="gl"
-                        hidden=(ended || workflow.is_some())
-                        aria-label="close the thread"
-                    >
-                        "×"
-                    </button>
-                </div>
-                <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
-                <ol
-                    class="tc"
-                    id="msgs"
-                    tabindex="0"
-                    aria-label="messages"
-                    aria-live="polite"
-                ></ol>
-                <p class="tlv" id="wait" hidden=(true)>
-                    <span data-st="needs" data-plain="">(wait)</span>
-                </p>
-                if !ended {
-                    <div class="mc">
-                        if thread.workflow.is_none() {
-                            agents::folder_chip(list: places.0, rows: places.1, now: places.2)
-                        }
-                        pick(
-                            id: "model".to_owned(),
-                            name: "model",
-                            list: choices.0,
-                            now: thread.model.clone()
-                        )
-                        pick(
-                            id: "effort".to_owned(),
-                            name: "effort",
-                            list: choices.1,
-                            now: thread.effort.clone()
-                        )
-                    </div>
+        <div
+            class="chat"
+            data-thread=(thread.id.clone())
+            data-agent=(name.clone())
+            data-read=(thread.read.unwrap_or(0).to_string())
+            data-state=(turn.state.clone())
+        >
+            <div class="th">
+                <a class="gl bk" href="/?list" aria-label="back to agents">"‹"</a>
+                if let Some((n, _, _)) = mate {
+                    agents::avatar(name: name.clone(), n: n, big: false)
                 }
-                <form class="tw" id="composer">
-                    <div class="pill" id="pill" hidden=(true)>
-                        <span id="pst" data-st="working" data-plain="">(pill)</span>
-                        <span id="el">"0:00"</span>
-                        <button type="button" class="stop">"stop"</button>
-                    </div>
-                    <textarea
-                        id="box"
-                        rows="1"
-                        aria-label="message"
-                        placeholder=(format!("message {name}"))
-                        disabled=(ended)
-                    ></textarea>
-                    <button type="submit" disabled=(ended)>"send"</button>
-                </form>
-            </main>
+                <div class="tb">
+                    <h1>(title)</h1>
+                    <span class="ds">
+                        <i class="dt"></i>
+                        (said)
+                        <span id="st" data-st=(state(&turn.state))>(st)</span>
+                        if let Some(url) = link {
+                            " · "
+                            <a href=(url)>"issue & PR"</a>
+                        }
+                    </span>
+                </div>
+                <button
+                    type="button"
+                    id="close"
+                    class="gl"
+                    hidden=(ended || workflow.is_some())
+                    aria-label="close the thread"
+                >
+                    "×"
+                </button>
+            </div>
+            <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
+            <ol
+                class="tc"
+                id="msgs"
+                tabindex="0"
+                aria-label="messages"
+                aria-live="polite"
+            ></ol>
+            <p class="tlv" id="wait" hidden=(true)>
+                <span data-st="needs" data-plain="">(wait)</span>
+            </p>
+            if !ended {
+                agents::chips(
+                    places: thread.workflow.is_none().then_some(places),
+                    choices: choices,
+                    now: (thread.model.clone(), thread.effort.clone())
+                )
+            }
+            <form class="tw" id="composer">
+                <div class="pill" id="pill" hidden=(true)>
+                    <span id="pst" data-st="working" data-plain="">(pill)</span>
+                    <span id="el">"0:00"</span>
+                    <button type="button" class="stop">"stop"</button>
+                </div>
+                <textarea
+                    id="box"
+                    rows="1"
+                    aria-label="message"
+                    placeholder=(format!("message {name}"))
+                    disabled=(ended)
+                ></textarea>
+                <button type="submit" disabled=(ended)>"send"</button>
+            </form>
+        </div>
     })
 }

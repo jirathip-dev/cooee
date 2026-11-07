@@ -6,9 +6,9 @@ import { expect, test } from "@playwright/test";
 
 // A new thread whose turn is done, open.
 async function thread(page, text = "Say hello") {
-  await page.goto("/#new");
-  await page.getByLabel("first message").fill(text);
-  await page.getByRole("button", { name: "start" }).click();
+  await page.goto("/new");
+  await page.getByLabel("message", { exact: true }).fill(text);
+  await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
 }
@@ -53,12 +53,12 @@ test.describe("on every browser", () => {
     expect(await ids()).toEqual(before);
     const mine = new URL(page.url()).pathname;
     await page.goto("/");
-    // Other tests add threads meanwhile, so the order may change: never a card twice, this thread's once.
-    const cards = () => page.locator(".fc .tr").evaluateAll((a) => a.map((e) => e.getAttribute("href")));
+    // Other tests add threads meanwhile, so the order may change: never a row twice, this thread's once.
+    const rows = async () => (await (await page.request.get("/threads")).json()).map((r) => `/t/${r.id}`);
     for (let i = 0; i < 5; i++) {
       await page.getByRole("button", { name: "refresh" }).click();
-      await expect(page.locator("#rf")).not.toHaveClass(/rfs/);
-      const hrefs = await cards();
+      await expect(page.locator(".ags .agr").first()).toBeVisible();
+      const hrefs = await rows();
       expect(new Set(hrefs).size).toBe(hrefs.length);
       expect(hrefs.filter((h) => h === mine)).toEqual([mine]);
     }

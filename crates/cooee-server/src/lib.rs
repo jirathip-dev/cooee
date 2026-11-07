@@ -546,6 +546,9 @@ fn recipe(
     let (account, profile) = (account.map(str::to_owned), profile.to_owned());
     move || {
         let (agent, folder, mut recipe) = if profile.is_empty() {
+            if agent.is_empty() {
+                return Err(HubError::Refused("pick an agent or a profile".to_owned()));
+            }
             let (account, launch) = logins.home(&agent, account.as_deref())?;
             let recipe = Recipe {
                 account,

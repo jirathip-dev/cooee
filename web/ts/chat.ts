@@ -193,9 +193,35 @@ const fq = $<HTMLInputElement>("#fq");
 if (fq && ufs)
   fq.oninput = () => {
     const q = fq.value.trim().toLowerCase();
-    for (const l of ufs.querySelectorAll<HTMLElement>(".fl label[data-d]:not([data-d='0'])")) {
+    for (const l of ufs.querySelectorAll<HTMLElement>(".fl label[data-d]")) {
       const base = l.firstChild?.nextSibling?.textContent?.trim().split("/").pop()?.toLowerCase() ?? "";
       l.hidden = q ? !base.includes(q) : Number(l.dataset.d) > 1;
+    }
+  };
+// [+ new folder] makes one inside the folder picked, and picks it.
+const mkdir = $<HTMLButtonElement>("#mkdir");
+if (mkdir && ufs)
+  mkdir.onclick = async () => {
+    const at = ufs.querySelector(".fl :checked")?.parentElement;
+    const parent = at && $<HTMLInputElement>("input", at);
+    if (!at || !parent?.value) return toast("pick a folder to make one in", true);
+    const label = at.firstChild?.nextSibling?.textContent ?? "";
+    const name = prompt(`New folder in ${label}:`);
+    if (!name) return;
+    try {
+      const row = at.cloneNode(true) as HTMLElement;
+      const input = $<HTMLInputElement>("input", row);
+      if (!input) return;
+      input.value = await post<string>("/folders/new", { parent: parent.value, name });
+      if (input.nextSibling) input.nextSibling.textContent = `${label}/${name}`;
+      row.lastElementChild?.replaceChildren();
+      row.dataset.d = String(Math.min(2, Number(at.dataset.d) + 1));
+      row.hidden = false;
+      at.after(row);
+      input.checked = true;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    } catch (x) {
+      toast(message(x), true);
     }
   };
 ufs?.addEventListener("change", async (e) => {
@@ -204,7 +230,7 @@ ufs?.addEventListener("change", async (e) => {
   const chip = $(".fo");
   const name = t.value ? (t.value.split("/").pop() ?? t.value) : "scratch";
   ufs.hidePopover();
-  const thread = $("main.chat")?.dataset.thread;
+  const thread = $(".chat[data-thread]")?.dataset.thread;
   if (thread)
     try {
       await post(`/threads/${thread}/folder`, { folder: t.value });
@@ -826,7 +852,7 @@ if (frame) {
   }, 5000);
 }
 
-const main = $("main.chat");
+const main = $(".chat[data-thread]");
 if (main) chat(main);
 
 function chat(main: HTMLElement): void {

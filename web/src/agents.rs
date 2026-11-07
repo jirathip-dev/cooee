@@ -164,37 +164,51 @@ async fn sidebar(
     let look = shown(cx);
     // A new agent needs one to run: none installed, none to add.
     let can_add = !mates.is_empty();
-    let rows: Vec<(usize, Mate, String, String, bool)> = mates
+    // An agent's row says its latest: its newest chat's state, line and age; bold while any chat is unread.
+    let rows: Vec<(usize, Mate, Option<Summary>, bool, bool)> = mates
         .into_iter()
         .enumerate()
         .map(|(n, m)| {
-            let first = m.chats.first();
-            let st = state(first.map_or("", |c| c.state.as_str()));
-            let mark = look.st(st, false);
+            let latest = m.chats.iter().max_by_key(|c| c.at).cloned();
+            let unread = m.chats.iter().any(|c| c.unread);
             let on = m.key == current;
-            (n, m, st.to_owned(), mark, on)
+            (n, m, latest, unread, on)
         })
         .collect();
     Ok(view! {
         <nav class="ags" aria-label="agents">
             <p class="lb">"agents"</p>
-            for (n, m, st, mark, on) in rows {
+            for (n, m, latest, unread, on) in rows {
                 <a
-                    class=(match (on, m.chats.first().is_some_and(|c| c.unread)) {
+                    class=(match (on, unread) {
                         (true, _) => "agr on",
                         (false, true) => "agr ud",
                         _ => "agr",
                     })
                     href=(href(&m))
-                    aria-current=((on && m.chats.first().is_some_and(|c| c.id == open))
-                        .then(|| "page".to_owned()))
+                    aria-current=((on && m.chats.first().is_some_and(|c| c.id == open)).then(
+                        || "page".to_owned(),
+                    ))
                 >
                     avatar(name: m.name.clone(), n: n, big: false)
                     <span class="tt">(m.name.clone())</span>
-                    <span class="ta">(m.chats.first().map(|c| age(c.at)).unwrap_or_default())</span>
+                    <span class="ta">
+                        (latest.as_ref().map(|c| age(c.at)).unwrap_or_default())
+                    </span>
                     <span class="tp">
-                        <b data-st=(st)>(Unescaped::new_unchecked(mark))</b>
-                        (m.chats.first().map(|c| c.last.clone()).unwrap_or_default())
+                        <b
+                            data-st=(state(
+                                latest.as_ref().map_or("", |c| c.state.as_str()),
+                            ))
+                        >
+                            (Unescaped::new_unchecked(
+                                look.st(
+                                    state(latest.as_ref().map_or("", |c| c.state.as_str())),
+                                    false,
+                                ),
+                            ))
+                        </b>
+                        (latest.map(|c| c.last).unwrap_or_default())
                     </span>
                 </a>
                 if on {
@@ -208,7 +222,9 @@ async fn sidebar(
                                 <span class="ta">(age(c.at))</span>
                             </a>
                         }
-                        <a class="str nw" href=(format!("/new?{}", m.key))>"+ new chat"</a>
+                        <a class="str nw" href=(format!("/new?{}", m.key))>
+                            "+ new chat"
+                        </a>
                     </div>
                 }
             }
@@ -216,7 +232,13 @@ async fn sidebar(
                 <details class="nwa">
                     <summary>"+ new agent"</summary>
                     <form method="post" action="/agents">
-                        <input name="name" aria-label="name" placeholder="name" required=(true) autocomplete="off">
+                        <input
+                            name="name"
+                            aria-label="name"
+                            placeholder="name"
+                            required=(true)
+                            autocomplete="off"
+                        >
                         <label class="pk">
                             <span class="lb">"profile"</span>
                             <select name="profile">
@@ -261,8 +283,16 @@ pub(crate) async fn folder_chip(
         .collect();
     let scratch = now.is_none();
     Ok(view! {
-        <button type="button" class="fo" popovertarget="ufs">(format!("folder: {label} ▾"))</button>
-        <div class="ufs" id="ufs" popover="auto" role="dialog" aria-label="Use a folder">
+        <button type="button" class="fo" popovertarget="ufs">
+            (format!("folder: {label} ▾"))
+        </button>
+        <div
+            class="ufs"
+            id="ufs"
+            popover="auto"
+            role="dialog"
+            aria-label="Use a folder"
+        >
             <div class="fh">
                 <b>"Use a folder…"</b>
                 <button
@@ -277,29 +307,74 @@ pub(crate) async fn folder_chip(
             </div>
             <fieldset class="fl">
                 <legend class="vh">"folder"</legend>
-                <label data-d="0">
-                    <input type="radio" name="folder" value="" checked=(scratch) disabled=(!scratch)>
+                <label>
+                    <input
+                        type="radio"
+                        name="folder"
+                        value=""
+                        checked=(scratch)
+                        disabled=(!scratch)
+                    >
                     "scratch"
                     <span class="ds">"this chat's own"</span>
                 </label>
                 if list.is_empty() {
-                    hint(why: "no folders set · add", fix: ROOTS_FIX, then: "to config.toml")
+                    hint(
+                        why: "no folders set · add",
+                        fix: ROOTS_FIX,
+                        then: "to config.toml"
+                    )
                 } else {
-                    <input
-                        id="fq"
-                        type="search"
-                        aria-label="search folders"
-                        placeholder="search folders"
-                        autocomplete="off"
-                    >
+                    <div class="fh">
+                        <input
+                            id="fq"
+                            type="search"
+                            aria-label="search folders"
+                            placeholder="search folders"
+                            autocomplete="off"
+                        >
+                        <button type="button" id="mkdir">"+ new folder"</button>
+                    </div>
                 }
                 for (f, depth, n) in list {
-                    <label data-d=(depth.to_string()) hidden=(depth > 1)><input type="radio" name="folder" value=(f.display().to_string()) checked=(now.as_ref() == Some(&f))>(short(&f))<span class="ds">(n)</span></label>
+                    <label data-d=(depth.to_string()) hidden=(depth > 1)>
+                        <input
+                            type="radio"
+                            name="folder"
+                            value=(f.display().to_string())
+                            checked=(now.as_ref() == Some(&f))
+                        >
+                        (short(&f))
+                        <span class="ds">(n)</span>
+                    </label>
                 }
             </fieldset>
             <p class="ds">
                 "Later turns run in the folder you pick. What the chat made in scratch stays there."
             </p>
+        </div>
+    })
+}
+
+/// The folders a chat may use (with their depth), the threads (to count the chats in each), and the chat's folder
+/// (none: its scratch folder).
+pub(crate) type Places = (Vec<(PathBuf, u8)>, Vec<Summary>, Option<PathBuf>);
+
+/// The composer's chips: the folder (`places`: the folders, the threads and the chat's folder; none for a
+/// Workflow session, whose folder is its tool's), then the model and effort (`now` picked).
+#[component]
+pub(crate) async fn chips(
+    places: Option<Places>,
+    choices: (Vec<String>, Vec<String>),
+    now: (String, String),
+) -> Result<impl View> {
+    Ok(view! {
+        <div class="mc">
+            if let Some((list, rows, folder)) = places {
+                folder_chip(list: list, rows: rows, now: folder)
+            }
+            pick(id: "model".to_owned(), name: "model", list: choices.0, now: now.0)
+            pick(id: "effort".to_owned(), name: "effort", list: choices.1, now: now.1)
         </div>
     })
 }
@@ -384,8 +459,8 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
             title: title.as_str(),
             <div class="app">
                 header(home: home, tabs: tabs, current: String::new(), new: new)
-                <div class="cfm" data-show=(show)>
-                    <div class="sd">
+                <main class="cfm" data-show=(show)>
+                    <div class="sdb">
                         if home {
                             signins(providers: providers.clone())
                         }
@@ -402,19 +477,27 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
                                 thread: *thread,
                                 turn: turn,
                                 profile: profile,
-                                mate: mate.map(|(n, m)| {
-                                    let ongoing = m.chats.first().is_some_and(|c| c.id == open);
-                                    (n, m.name, ongoing)
-                                }),
+                                mate: mate.map(
+                                    |(n, m)| {
+                                        let ongoing = m.chats.first().is_some_and(|c| c.id == open);
+                                        (n, m.name, ongoing)
+                                    },
+                                ),
                                 places: (list, rows, folder),
                                 choices: choices
                             )
                         }
                         _ => {
-                            hello(mate: mate, agents: agents, providers: providers, places: (list, rows))
+                            hello(
+                                home: home,
+                                mate: mate,
+                                agents: agents,
+                                providers: providers,
+                                places: (list, rows)
+                            )
                         }
                     }
-                </div>
+                </main>
             </div>
         )
     })
@@ -424,6 +507,7 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
 /// agent installed (or `shed agents` failing): what to run instead.
 #[component]
 async fn hello(
+    home: bool,
     mate: Option<(usize, Mate)>,
     agents: Result<Vec<Agent>, String>,
     providers: Vec<Sheet>,
@@ -439,7 +523,7 @@ async fn hello(
         (p.provider.models.clone(), p.provider.efforts.clone())
     });
     Ok(view! {
-        <main class="chat hip">
+        <div class="chat hip">
             match mate {
                 None => {
                     <div class="tc">
@@ -448,17 +532,28 @@ async fn hello(
                                 <p class="err">(e)</p>
                             }
                             None => {
-                                hint(why: "no agents installed · on the Mac:", fix: AGENTS_FIX, then: "")
+                                hint(
+                                    why: "no agents installed · on the Mac:",
+                                    fix: AGENTS_FIX,
+                                    then: ""
+                                )
                             }
                         }
                     </div>
                 }
                 Some((n, m)) => {
                     <div class="th">
-                        <a class="gl bk" href="/?list" aria-label="back to agents">"‹"</a>
+                        <a class="gl bk" href="/?list" aria-label="back to agents">
+                            "‹"
+                        </a>
                         avatar(name: m.name.clone(), n: n, big: false)
                         <div class="tb">
-                            <h1>"New chat"</h1>
+                            // On the home page the header's "cooee" is the page's heading.
+                            if home {
+                                <h2>"New chat"</h2>
+                            } else {
+                                <h1>"New chat"</h1>
+                            }
                             <span class="ds">
                                 <i class="dt" data-sync="on"></i>
                                 (format!("{} · {} · scratch", m.name, m.profile))
@@ -473,7 +568,9 @@ async fn hello(
                                 "It starts in a scratch folder of its own. Use a folder… whenever this should work in a repo."
                             </p>
                             if signed_out {
-                                <a class="so" href="/#signins">(format!("sign in {}", m.agent))</a>
+                                <a class="so" href="/#signins">
+                                    (format!("sign in {}", m.agent))
+                                </a>
                             }
                         </div>
                     </div>
@@ -486,11 +583,11 @@ async fn hello(
                                 <input type="hidden" name="agent" value=(m.agent.clone())>
                             }
                         }
-                        <div class="mc">
-                            folder_chip(list: places.0, rows: places.1, now: None)
-                            pick(id: "model".to_owned(), name: "model", list: choices.0, now: String::new())
-                            pick(id: "effort".to_owned(), name: "effort", list: choices.1, now: String::new())
-                        </div>
+                        chips(
+                            places: Some((places.0, places.1, None)),
+                            choices: choices,
+                            now: (String::new(), String::new())
+                        )
                         <div class="tw">
                             <textarea
                                 name="text"
@@ -504,6 +601,6 @@ async fn hello(
                     </form>
                 }
             }
-        </main>
+        </div>
     })
 }

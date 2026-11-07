@@ -26,9 +26,9 @@ async function audit(page) {
 
 // A thread that waits on you, as the design's shots show.
 async function blocked(page) {
-  await page.goto("/#new");
-  await page.getByLabel("first message").fill("approve an edit");
-  await page.getByRole("button", { name: "start" }).click();
+  await page.goto("/new");
+  await page.getByLabel("message", { exact: true }).fill("approve an edit");
+  await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await expect(page.locator(".blk.ap")).toBeVisible();
 }
@@ -55,8 +55,7 @@ test("a device's pick shows from the first frame, and stays on this device only"
   await expect.poll(() => page.evaluate(() => window.first)).toMatchObject({ bg: "#1a1816", style: "terminal" });
   await expect(page.locator("#st")).toHaveText("needs you");
   await expect(page.locator("#st .sd")).toBeVisible();
-  await page.goto("/");
-  await expect(page.locator(".tp [data-st=needs]").first()).toHaveText("needs you");
+  await page.goto("/?list");
   await expect(page.locator(".tp .rsp")).toHaveCount(0);
   // Another device (a fresh context) keeps the server's default: farm, Modern, sprites.
   const other = await browser.newPage();

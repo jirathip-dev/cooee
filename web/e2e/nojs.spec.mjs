@@ -1,12 +1,12 @@
-// HTML-first (#49): with script off, the sheets and the new-thread form still open, as server HTML: the look sheet (a
-// key posts the pick, and the page comes back drawn in it), Settings, and the new-thread folder picker.
+// HTML-first (#49): with script off, the sheets and a new chat still open, as server HTML: the look sheet (a key
+// posts the pick, and the page comes back drawn in it), Settings, and Use a folder… (#86).
 import { expect, test } from "@playwright/test";
 
 test.use({ javaScriptEnabled: false });
 
 const shot = (page, info, name) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png` });
 
-test("with no script the look sheet, Settings and the new-thread folder picker open", async ({ page }, info) => {
+test("with no script the look sheet, Settings and Use a folder… open", async ({ page }, info) => {
   await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
   await page.goto("/");
   const open = page.locator("#sheet .sh:popover-open");
@@ -33,9 +33,10 @@ test("with no script the look sheet, Settings and the new-thread folder picker o
   await page.keyboard.press("Escape");
   await expect(open).toHaveCount(0);
 
-  await page.goto("/#new");
+  await page.goto("/new");
   await expect(page.locator("#new")).toBeVisible();
   await expect(page.locator("#new input[name=folder]").first()).toBeChecked();
-  await expect(page.getByRole("radio", { name: "~/root", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "folder: scratch ▾" }).click();
+  await expect(page.getByRole("radio", { name: /^~\/root( |$)/ })).toBeVisible();
   await shot(page, info, "nojs-new");
 });
