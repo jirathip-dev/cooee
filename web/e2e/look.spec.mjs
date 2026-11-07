@@ -26,9 +26,9 @@ async function audit(page) {
 
 // A thread that waits on you, as the design's shots show.
 async function blocked(page) {
-  await page.goto("/#new");
+  await page.goto("/new");
   await page.getByLabel("first message").fill("approve an edit");
-  await page.getByRole("button", { name: "start" }).click();
+  await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await expect(page.locator(".blk.ap")).toBeVisible();
 }

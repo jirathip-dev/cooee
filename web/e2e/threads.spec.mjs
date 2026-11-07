@@ -8,11 +8,10 @@ test("thread list: renders, fits the width, no axe violations", async ({ page },
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: `../../ui-${info.project.name}/threads.png`, fullPage: true });
-  await page.getByRole("link", { name: "new thread" }).click();
-  await expect(page.locator("#new")).toBeVisible();
-  await expect(page.getByRole("radio", { name: "fake-acp" })).toBeChecked();
-  // The account picker, the default (the system default here) preselected.
-  await expect(page.getByLabel("fake-acp account")).toHaveValue("");
+  await page.goto("/new");
+  await expect(page.locator("#nc")).toBeVisible();
+  // The provider and account last used in the folder (or its agent profile's label, #40), never the agent's id.
+  await expect(page.locator("#chip-agent")).toHaveText(/^(fake-390 · \S+@example\.com|Reviewer)/);
   await page.screenshot({ path: `../../ui-${info.project.name}/threads-new.png`, fullPage: true });
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
@@ -35,15 +34,17 @@ test("installable: the manifest, its icons and the service worker load", async (
 });
 
 test("a failed start reads as one plain sentence, never the server's JSON error", async ({ page }) => {
-  await page.goto("/#new");
+  await page.goto("/new");
   // No agent picked: the server refuses the request's JSON.
-  await page.locator("#new input[name=agent]").evaluateAll((rs) => rs.forEach((r) => { r.checked = false; }));
+  const picks = page.locator("#nc input[name=pick]");
+  const was = await picks.evaluateAll((rs) => rs.findIndex((r) => r.checked));
+  await picks.evaluateAll((rs) => rs.forEach((r) => { r.checked = false; }));
   await page.getByLabel("first message").fill("hi");
-  await page.getByRole("button", { name: "start" }).click();
+  await page.getByRole("button", { name: "send" }).click();
   await expect(page.locator("#new-err")).toHaveText("cooee couldn't do that (error 400): reload and try again.");
   // cooee's own refusal is shown as it is.
-  await page.locator("#new input[name=agent]").first().check();
-  await page.locator("#new input[name=folder]").first().evaluate((r) => { r.value = "/"; });
-  await page.getByRole("button", { name: "start" }).click();
+  await picks.nth(was).evaluate((r) => { r.checked = true; });
+  await page.locator("#nc input[name=folder]").first().evaluate((r) => { r.value = "/"; });
+  await page.getByRole("button", { name: "send" }).click();
   await expect(page.locator("#new-err")).toHaveText("/ is not inside a configured root");
 });

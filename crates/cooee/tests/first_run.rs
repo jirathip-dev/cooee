@@ -19,7 +19,7 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
                  status = [\"true\"]\ninstall = \"npm install -g @openai/codex\"\n";
     let cooee = Cooee::start_with(&dir, &shed.dir, &format!("roots = []\n{codex}"));
 
-    let (status, page) = cooee.get("/");
+    let (status, page) = cooee.get("/new");
     assert_eq!(status, 200, "{page}");
     assert!(
         page.contains("no agents installed · on the Mac:<code>shed agents add claude-acp</code>")
@@ -31,26 +31,19 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
             && page.contains(r#"data-copy="roots = [&quot;~/Projects&quot;]""#),
         "{page}"
     );
+    assert!(!page.contains(r#"name="pick""#), "{page}");
     assert!(
-        !page.contains("<select") && !page.contains(r#"name="agent""#),
+        page.contains(r#"<button type="submit" disabled="">send</button>"#),
+        "{page}"
+    );
+    // codex's CLI is missing: one row, `not installed` and [copy install]; no sign-in, no accounts.
+    assert!(
+        page.contains(r#"<div class="acr ni"><span class="ptg">codex</span><span class="sk">not installed</span><button type="button" class="sec" data-copy="npm install -g @openai/codex" aria-label="copy npm install -g @openai/codex">copy install</button></div>"#),
         "{page}"
     );
     assert!(
-        page.contains(r#"<button type="submit" disabled="">start</button>"#),
+        !page.contains("sign in") && !page.contains("+ account"),
         "{page}"
-    );
-    // codex's CLI is missing: "not installed on this Mac" and its install line; no sign-in, no accounts.
-    assert!(
-        page.contains(r#"<b>codex</b><span class="m">not installed</span></div><p class="ds">not installed on this Mac</p><p class="hn">on the Mac:<code>npm install -g @openai/codex</code>"#),
-        "{page}"
-    );
-    let codex = &page[page.find(r#"data-provider="codex""#).unwrap()..];
-    let codex = &codex[..codex.find(r#"class="lg""#).unwrap()];
-    assert!(
-        !codex.contains("sign in")
-            && !codex.contains("+ account")
-            && !codex.contains("class=\"ac\""),
-        "{codex}"
     );
 
     let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
@@ -81,10 +74,13 @@ fn with_one_root_and_nothing_in_it_a_thread_starts_in_the_root() {
         &format!("roots = [{:?}]\n", root.to_string_lossy()),
     );
 
-    let (_, page) = cooee.get("/");
-    let option = format!(r#"name="folder" value="{}" checked="#, root.display());
+    // The root, after scratch (no folder, picked).
+    let (_, page) = cooee.get("/new");
+    let option = format!(r#"name="folder" value="{}" data-last="">"#, root.display());
     assert!(
-        page.contains(&option) && page.matches(r#"name="folder""#).count() == 1,
+        page.contains(r#"name="folder" value="" checked="""#)
+            && page.contains(&option)
+            && page.matches(r#"name="folder""#).count() == 2,
         "{page}"
     );
     let new = json!({ "agent": "fake-acp", "folder": root, "text": "hi", "random_id": "r0" });

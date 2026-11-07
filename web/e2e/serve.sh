@@ -6,13 +6,17 @@
 # (docs/plugins/hello) runs twice, as plugins `hello` and `other`, on $PORT + 1 and + 2. A fresh instance runs on
 # $PORT + 3. The main instance runs with HOME at the temp folder, so Settings › Folders browses it. The machines plugin
 # runs in it on $PORT + 4, the fake shed answering for this machine (24 h of samples) and an `air` that is offline. Its
-# plugin index lists the example plugin as `greet`, in a git repo of its own. One agent profile, `reviewer`, sits beside
-# the main config (#40).
+# plugin index lists the example plugin as `greet`, in a git repo of its own. The 390 provider has two more accounts,
+# `work` and `lab` (signed in, their email `<name>@example.com`), last used for a new thread in root/project and
+# root/other (#48); a start in root/slow-<viewport> waits while the spec holds it, one in root/bad-<viewport> fails.
+# One agent profile, `reviewer`, sits beside the main config (#40).
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
-mkdir -p "$tmp/shed" "$tmp/root/project/deep-src" "$tmp/root/project/prof-390" "$tmp/root/project/prof-1440" \
-  "$tmp/data/threads" "$tmp/.hidden-folder"
+mkdir -p "$tmp/shed" "$tmp/root/project/deep-src" "$tmp/data/threads" "$tmp/.hidden-folder" "$tmp/root/other" \
+  "$tmp/root/slow-390" "$tmp/root/slow-1440" "$tmp/root/bad-390" "$tmp/root/bad-1440" \
+  "$tmp/root/project/prof-390" "$tmp/root/project/prof-1440" \
+  "$tmp/data/accounts/fake-390/work" "$tmp/data/accounts/fake-390/lab"
 cargo build --quiet --locked -p cooee
 cargo test --quiet --locked -p cooee --test chat --no-run
 FAKE_SHED_DIR="$tmp/shed" FAKE_SHED_DELAY_MS=20 FAKE_SHED_LANES=1 cargo test --quiet --locked -p cooee --test chat -- \
@@ -54,6 +58,14 @@ for id in long-390 long-1440; do
   }' >"$tmp/data/threads/$id.jsonl"
 done
 
+# The last pick per folder (#48): closed threads, newer than the long ones, older than any a spec starts.
+for t in project:work:1750000000000 other:lab:1749990000000; do
+  f=${t%%:*} rest=${t#*:}
+  printf '{"format":1,"thread":{"id":"pick-%s","title":"Picked %s","messages":[],"agent":"fake-acp","folder":"%s","account":"%s","terminal":"cooee-pick-%s","closed":true}}\n' \
+    "$f" "$f" "$tmp/root/$f" "${rest%%:*}" "$f" >"$tmp/data/threads/pick-$f.json"
+  printf '{"id":1,"at":%s,"kind":"you","text":"hi","random_id":"pick-%s"}\n' "${rest#*:}" "$f" >"$tmp/data/threads/pick-$f.jsonl"
+done
+
 for v in 390 1440; do
   cat >"$tmp/login-$v.sh" <<EOF
 #!/bin/sh
@@ -65,6 +77,7 @@ read code
 EOF
   cat >"$tmp/status-$v.sh" <<EOF
 #!/bin/sh
+[ -n "\${FAKE_HOME:-}" ] && { echo "{\\"loggedIn\\": true, \\"email\\": \\"\$(basename "\$FAKE_HOME")@example.com\\"}"; exit 0; }
 test -f "$tmp/signed-in-$v" || { echo 'Not signed in'; exit 1; }
 echo 'Signed in as owner@example.com'
 EOF
@@ -169,6 +182,7 @@ cargo run --quiet --locked -p cooee -- serve --config "$tmp/bare/bare.toml" &
 bare=$!
 # The config's and the binary's paths, so a spec can approve a phone's code (`cooee pair <code>`) and list reports.
 echo "$tmp/config.toml" >"$PAIR_CODE.config"
+echo "$tmp/shed" >"$PAIR_CODE.shed"
 echo "$(cd "${CARGO_TARGET_DIR:-target}" && pwd)/debug/cooee" >"$PAIR_CODE.bin"
 cargo run --quiet --locked -p cooee -- pair --config "$tmp/config.toml" | sed -n 's/^code: \([0-9]*\).*/\1/p' >"$PAIR_CODE"
 target=$(cargo metadata --format-version 1 --no-deps | node -pe 'JSON.parse(require("fs").readFileSync(0)).target_directory')

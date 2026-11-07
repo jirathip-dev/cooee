@@ -1,0 +1,64 @@
+<!doctype html><html lang=en data-screens="providers:6 · settings › providers: one flat list, a row per account, one line per provider that isn't installed"><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name=theme-color content="#0f1a13">
+<title>settings › providers · cooee (#48 mockup)</title>
+<!-- #48 screen 6: Settings › providers replaces the sign-ins card (#signins) and its nested provider › account blocks:
+     one row per account, [+ account] per installed provider, one row per provider that isn't installed. No default
+     for new threads: the composer's chip remembers the last pick per folder. A sign-in keeps today's terminal panel,
+     opened under its row. Behind the sheet is `/`: the list on a phone; from 1024 px the sidebar (the list) and the
+     composer. app.css and look.js are the app's own (web/src/), new.css this design's additions, side.html the sidebar. -->
+<link rel=stylesheet href=/web/src/app.css><link rel=stylesheet href=new.css>
+<script src=mock.js></script><script src=/web/src/look.js></script>
+</head>
+<body class="app">
+<header class="bar">
+  <h1>cooee</h1>
+  <button type="button" class="gl" id="rf" aria-label="refresh">↻</button>
+  <a class="gl np" href="/new" aria-label="new thread">+</a>
+  <button type="button" class="gl" data-open="look" aria-label="look: theme and colours" aria-pressed="false">◐</button>
+  <button type="button" class="gl" data-open="settings" aria-label="settings" aria-pressed="true">⚙</button>
+</header>
+<div class="shell">
+<aside class="side" data-cur="new"></aside>
+<main class="list">
+  <section class="fc">
+    <div class="fh"><b>~/Projects/cooee</b><span class="ds">3 threads</span></div>
+    <a class="tr" href="#"><i class="ud">●</i><span class="tt">Push stops after I pair my phone again</span><span class="ta">claude · 2m</span><span class="tp"><b data-st="working" data-tool="run"></b>$ cargo test -p cooee-server</span></a>
+    <a class="tr rd" href="#"><i class="ud"></i><span class="tt">README: install over Tailscale</span><span class="ta">gemini · 1h</span><span class="tp"><b data-st="done"></b>Added the install section.</span></a>
+  </section>
+  <section class="fc">
+    <div class="fh"><b>~/Projects/shed</b><span class="ds">1 thread</span></div>
+    <a class="tr rd" href="#"><i class="ud"></i><span class="tt">ACP sessions survive a restart</span><span class="ta">gemini · 1d</span><span class="tp"><b data-st="done"></b>Pushed 3 commits.</span></a>
+  </section>
+</main>
+<main class="nt home">
+  <div class="th"><div class="tb"><h1>new thread</h1></div></div>
+  <div class="sp"></div>
+  <form class="tw nc">
+    <div class="chips">
+      <button type="button" class="chip" aria-haspopup="dialog" aria-label="agent: claude · jk@work.com"><span>claude · jk@work.com</span><i>▾</i></button>
+      <button type="button" class="chip" aria-haspopup="dialog" aria-label="folder: ~/Projects/cooee" title="~/Projects/cooee"><span>cooee</span><i>▾</i></button>
+    </div>
+    <textarea rows="1" aria-label="first message" placeholder="message claude"></textarea>
+    <button type="submit">send</button>
+  </form>
+  <div class="sp"></div>
+</main>
+</div>
+<div id="sheet" class="set">
+  <div class="bd"></div>
+  <div class="sh" role="dialog" aria-modal="true" aria-labelledby="sht">
+    <div class="hd pvh"><button type="button" class="gl" aria-label="back to settings">‹</button><b id="sht">providers</b><button type="button" class="gl" aria-label="close">×</button></div>
+    <div class="top">
+      <div class="acr"><span class="ptg">claude</span><span class="sk">jk@work.com</span><span class="st g">✓ signed in</span><button type="button" class="sec">sign out</button></div>
+      <div class="acr"><span class="ptg">claude</span><span class="sk">me@home.example</span><span class="st g">✓ signed in</span><button type="button" class="sec">sign out</button></div>
+      <div class="acr add"><span class="ptg">claude</span><span class="sk"></span><button type="button" class="sec">+ account</button></div>
+      <div class="acr"><span class="ptg">gemini</span><span class="sk">me@home.example</span><span class="st g">✓ signed in</span><button type="button" class="sec">sign out</button></div>
+      <div class="acr"><span class="ptg">gemini</span><span class="sk">lab</span><span class="st m">signed out</span><button type="button">sign in</button></div>
+      <div class="acr add"><span class="ptg">gemini</span><span class="sk"></span><button type="button" class="sec">+ account</button></div>
+      <div class="acr ni"><span class="ptg">codex</span><span class="sk">not installed</span><button type="button" class="sec" data-copy="npm install -g @openai/codex" aria-label="copy npm install -g @openai/codex">copy install</button></div>
+      <p class="lft">sign-ins stay with each provider's CLI; cooee never stores a token</p>
+    </div>
+  </div>
+</div>
+</body></html>

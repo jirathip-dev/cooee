@@ -26,10 +26,11 @@ type Turn = { text: string; state: "working" | "blocked" | "done" | "error" | "e
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | the thread list's cards under the device's chip, `{folder, rows: Row[], done?: Row[]}[]`; `Row` is `{id, title, agent, folder, state, last, at, unread, workflow?: {source, group, item, role, round, url}}` (`folder`: `~/…` under home; a Workflow source's card has `done`, its finished sessions, and `folder` is the source) |
+| `GET /threads` | | the thread list's cards under the device's chip, `{folder, rows: Row[], done?: Row[]}[]`; `Row` is `{id, title, agent, account, folder, state, last, at, unread, workflow?: {source, group, item, role, round, url}}` (`folder`: `~/…` under home; `agent`: its provider's name, never the agent's id; a Workflow source's card has `done`, its finished sessions, and `folder` is the source) |
 | `POST /list` | a form: `list` (`all`, `chats` or `workflow`) | 303 to `/`, keeping the chip in the `cooee-list` cookie |
-| `POST /threads` | `{agent, account?, model?, effort?, folder, text, random_id}` | `{id}` |
-| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, waiting: Item \| null}` (`waiting`: the oldest config card that waits) |
+| `POST /threads` | `{agent, account?, model?, effort?, folder?, text, random_id, background?}` | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
+| `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
+| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, waiting: Item \| null, pending?: {text, random_id}}` (`waiting`: the oldest config card that waits; `pending`: the first message while the thread connects) |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |
 | `POST /threads/{id}/send` | `{text, random_id}` (a retry with the same id is stored once) | `Item` |
 | `POST /threads/{id}/approve` | `{item, option, value?}` (a plugin card's option may be free text; `value`: a secret card's, sent to its plugin only) | `Item` or `null` |
@@ -61,7 +62,6 @@ another run; load the newest slice again).
 | `POST /logins/{id}/send` | `{text}`: typed into the login's terminal | `null` |
 | `POST /logins/{id}/cancel` | `{}` | `null` |
 | `POST /logins/{id}/signout` | `{account}` | `null` |
-| `POST /logins/{id}/default` | `{account}` | `null` |
 
 ## Alerts, devices, reports
 

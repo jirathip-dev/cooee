@@ -113,10 +113,8 @@ fn new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply() {
     assert_eq!(kinds, ["you", "agent"]);
     let (status, page) = s.cooee.get("/");
     assert_eq!(status, 200);
-    assert!(
-        page.contains("Say hello") && page.contains("fake-acp"),
-        "{page}"
-    );
+    assert!(page.contains("Say hello"), "{page}");
+    assert!(s.cooee.get("/new").1.contains(r#"data-agent="fake-acp""#));
     let (status, page) = s.cooee.get(&format!("/t/{id}"));
     assert!(
         status == 200 && page.contains(&format!("data-thread=\"{id}\"")),

@@ -161,6 +161,7 @@ impl Layer for Gate {
                 Some(d) => next.run(&cx.with(Paired(d)), body).await,
                 None if method(cx) == "GET"
                     && (path == "/"
+                        || path == "/new"
                         || path.starts_with("/t/")
                         || path.strip_prefix("/p/").is_some_and(|p| !p.contains('/'))) =>
                 {
@@ -265,8 +266,17 @@ fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
     .collect()
 }
 
-#[page("/")]
-async fn home(cx: &Cx) -> Result<impl View> {
+/// The thread list, what the composer needs and the providers, as last checked.
+async fn shell(
+    cx: &Cx,
+) -> Result<
+    (
+        Vec<cooee_core::Summary>,
+        cooee_web::New,
+        Vec<cooee_core::Sheet>,
+    ),
+    HubError,
+> {
     let providers = on_logins(cx, |l| Ok(l.statuses()));
     let rest = blocking(cx, |hub| {
         let agents = hub.agents();
@@ -274,14 +284,27 @@ async fn home(cx: &Cx) -> Result<impl View> {
     });
     let (providers, (rows, agents, folders)) =
         futures_util::future::try_join(providers, rest).await?;
-    Ok(cooee_web::threads_page(
-        cx,
-        rows,
-        (agents, profiles(cx)),
+    let profiles = profiles(cx);
+    let new = cooee_web::New {
+        agents,
+        profiles,
         folders,
-        providers,
-        tabs(cx),
-    ))
+    };
+    Ok((rows, new, providers))
+}
+
+#[page("/")]
+async fn home(cx: &Cx) -> Result<impl View> {
+    let providers = on_logins(cx, |l| Ok(l.statuses()));
+    let rows = blocking(cx, |hub| Ok(hub.list()));
+    let (providers, rows) = futures_util::future::try_join(providers, rows).await?;
+    Ok(cooee_web::threads_page(cx, rows, providers, tabs(cx)))
+}
+
+#[page("/new")]
+async fn new_thread(cx: &Cx) -> Result<impl View> {
+    let (rows, new, providers) = shell(cx).await?;
+    Ok(cooee_web::new_page(cx, rows, new, providers, tabs(cx)))
 }
 
 /// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account.
@@ -302,7 +325,7 @@ async fn login_start(cx: &Cx, Json(s): Json<Option<Start>>) -> Result<Answer<()>
     ))
 }
 
-/// `POST /logins/{id}/signout` and `/default`: account `account` (empty: the system default).
+/// `POST /logins/{id}/signout`: account `account` (empty: the system default).
 #[derive(Deserialize)]
 struct Pick {
     account: String,
@@ -313,14 +336,6 @@ async fn login_signout(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
     let name = thread_id(cx);
     Ok(Answer(
         on_logins(cx, move |l| l.sign_out(&name, &p.account)).await,
-    ))
-}
-
-#[route(POST "/logins/{id}/default")]
-async fn login_default(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
-    let name = thread_id(cx);
-    Ok(Answer(
-        on_logins(cx, move |l| l.set_default(&name, &p.account)).await,
     ))
 }
 
@@ -351,16 +366,19 @@ async fn login_cancel(cx: &Cx) -> Result<Answer<()>> {
 #[page("/t/{id}")]
 async fn chat(cx: &Cx) -> Result<impl View> {
     let id = thread_id(cx);
-    let Ok((thread, turn)) = blocking(cx, move |hub| hub.thread(&id)).await else {
+    let Ok(thread) = blocking(cx, move |hub| hub.thread(&id)).await else {
         return Err(not_found().into());
     };
-    let profile = profiles(cx).into_iter().find(|p| p.id() == thread.profile);
+    let profile = profiles(cx)
+        .into_iter()
+        .find(|p| p.id() == thread.0.profile);
     let label = match profile {
         Some(p) => p.label,
-        None => thread.profile.clone(),
+        None => thread.0.profile.clone(),
     };
-    let choices = logins(cx).choices(&thread.agent);
-    Ok(cooee_web::chat_page(cx, thread, turn, label, choices))
+    let choices = logins(cx).choices(&thread.0.agent);
+    let providers = logins(cx).statuses();
+    Ok(cooee_web::chat_page(cx, thread, providers, label, choices))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -430,9 +448,13 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
 /// `GET /threads`: the thread list's cards under the device's chip, as the page draws them (its refresh, docs/api.md).
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_web::Card>>> {
+    let providers = logins(cx).statuses();
     let list = cooee_web::chip(cx);
     Ok(Answer(
-        blocking(cx, move |hub| Ok(cooee_web::cards(hub.list(), list))).await,
+        blocking(cx, move |hub| {
+            Ok(cooee_web::cards(hub.list(), &providers, list))
+        })
+        .await,
     ))
 }
 
@@ -440,12 +462,18 @@ async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_web::Card>>> {
 #[derive(Deserialize)]
 struct New {
     agent: String,
+    /// None or empty: the thread's own scratch folder (#48).
+    #[serde(default)]
     folder: PathBuf,
     text: String,
     random_id: String,
-    /// The agent's provider account (none: its default).
+    /// The agent's provider account (none: the system default).
     #[serde(default)]
     account: Option<String>,
+    /// Answer with the id at once and connect behind it (#48: the page opens the chat on send); else once the
+    /// agent took the first message.
+    #[serde(default)]
+    background: bool,
     /// The agent profile's id (none or empty: Plain, with `agent` and `account`).
     #[serde(default)]
     profile: Option<String>,
@@ -466,40 +494,89 @@ struct Created {
 async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     let logins = logins(cx);
     let data = app_context::<Data>(cx);
-    let (data, config) = (data.0.clone(), data.1.clone());
-    let id = blocking(cx, move |hub| {
-        let (agent, folder, mut recipe) = match new.profile.as_deref().filter(|p| !p.is_empty()) {
-            None => {
-                let (account, launch) = logins.home(&new.agent, new.account.as_deref())?;
-                let recipe = Recipe {
-                    account,
-                    launch,
-                    ..Recipe::default()
-                };
-                (new.agent, new.folder, recipe)
-            }
-            Some(id) => {
-                let p =
-                    cooee_core::profiles::find(config.as_deref(), &data, id).map_err(refused)?;
-                let (account, launch, instructions) = logins.profile(&p, &data)?;
-                let recipe = Recipe {
-                    account,
-                    profile: p.id(),
-                    launch,
-                    instructions,
-                    ..Recipe::default()
-                };
-                (p.agent, p.folder.unwrap_or(new.folder), recipe)
-            }
-        };
-        recipe
-            .launch
-            .pick(logins.picks(&agent, &new.model, &new.effort)?);
-        (recipe.model, recipe.effort) = (new.model, new.effort);
-        hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)
-    })
-    .await;
+    let (data, config, hub) = (data.0.clone(), data.1.clone(), hub(cx));
+    let id = tokio::task::spawn_blocking(move || {
+        let profile = new.profile.as_deref().unwrap_or_default();
+        let picked = (new.model, new.effort);
+        let (agent, folder, recipe) = recipe(
+            &logins,
+            (&data, config.as_deref()),
+            (&new.agent, new.account.as_deref(), profile),
+            new.folder,
+            picked,
+        )?;
+        if !new.background {
+            return hub.create(&agent, &folder, &new.text, &new.random_id, &recipe);
+        }
+        let name = cooee_web::named(&agent, &logins.statuses());
+        hub.create_later(
+            (&agent, &name),
+            &folder,
+            (&new.text, &new.random_id),
+            recipe,
+        )
+    });
+    let id = id.await.map_err(|e| HubError::Refused(e.to_string()))?;
     Ok(Answer(id.map(|id| Created { id })))
+}
+
+/// `POST /threads/{id}/retry`: starts a thread whose start failed again, with its first message (#48).
+#[route(POST "/threads/{id}/retry")]
+async fn retry(cx: &Cx) -> Result<Answer<()>> {
+    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+    let data = app_context::<Data>(cx);
+    let (data, config) = (data.0.clone(), data.1.clone());
+    let done = tokio::task::spawn_blocking(move || {
+        let (t, _) = hub.thread(&id)?;
+        let (_, _, recipe) = recipe(
+            &logins,
+            (&data, config.as_deref()),
+            (&t.agent, Some(&t.account), &t.profile),
+            PathBuf::new(),
+            (t.model, t.effort),
+        )?;
+        let name = cooee_web::named(&t.agent, &logins.statuses());
+        hub.retry(&id, recipe, &name)
+    });
+    Ok(Answer(
+        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
+    ))
+}
+
+/// How a thread of `agent` starts in `folder`: Plain with `account`, or as agent profile `profile` (non-empty: its
+/// agent, and its folder if it has one), on the model and effort `picked`. Returns its agent and folder too.
+fn recipe(
+    logins: &Logins,
+    (data, config): (&std::path::Path, Option<&std::path::Path>),
+    (agent, account, profile): (&str, Option<&str>, &str),
+    folder: PathBuf,
+    picked: (String, String),
+) -> Result<(String, PathBuf, Recipe), HubError> {
+    let (agent, folder, mut recipe) = if profile.is_empty() {
+        let (account, launch) = logins.home(agent, account)?;
+        let recipe = Recipe {
+            account,
+            launch,
+            ..Recipe::default()
+        };
+        (agent.to_owned(), folder, recipe)
+    } else {
+        let p = cooee_core::profiles::find(config, data, profile).map_err(refused)?;
+        let (account, launch, instructions) = logins.profile(&p, data)?;
+        let recipe = Recipe {
+            account,
+            profile: p.id(),
+            launch,
+            instructions,
+            ..Recipe::default()
+        };
+        (p.agent, p.folder.unwrap_or(folder), recipe)
+    };
+    recipe
+        .launch
+        .pick(logins.picks(&agent, &picked.0, &picked.1)?);
+    (recipe.model, recipe.effort) = picked;
+    Ok((agent, folder, recipe))
 }
 
 /// `?path=<folder>&hidden=1`: Settings › Folders.
@@ -1274,11 +1351,13 @@ pub fn router(
         .route(device_remove)
         .route(report)
         .page(home)
+        .page(new_thread)
         .page(chat)
         .route(thread_list)
         .route(messages)
         .route(events)
         .route(create)
+        .route(retry)
         .route(browse)
         .route(root)
         .route(new_folder)
@@ -1293,7 +1372,6 @@ pub fn router(
         .route(login_send)
         .route(login_cancel)
         .route(login_signout)
-        .route(login_default)
         .page(tab)
         .route(frame)
         .route(proxy)

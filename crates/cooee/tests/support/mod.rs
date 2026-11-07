@@ -77,7 +77,8 @@ pub struct FakeShed {
 
 const CLI: &str = r#"#!/bin/sh
 # The fake `shed` CLI: `agents` lists one agent; `run` records its arguments and prints the terminal (it waits while
-# the gate `hold-run` is shut, and fails, as a slow start's CLI would, while `run-fails` is); `machine ls` prints
+# the gate `hold-run` is shut, and fails, as a slow start's CLI would, while `run-fails` is; in a folder named <f>,
+# it waits while `hold-in-<f>` is shut, and its session never comes up while `fails-in-<f>` is); `machine ls` prints
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
 # after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env.
@@ -93,13 +94,17 @@ case "$*" in
   if grep -q '"online":false' "$f"; then exit 1; fi ;;
 *" agents") echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
 *" run "*)
-  while [ -e "$gates/hold-run" ]; do sleep 0.02; done
-  [ -e "$gates/run-fails" ] && { echo 'fake shed: timed out' >&2; exit 1; }
   while [ $# -gt 0 ]; do
     [ "$1" = --name ] && name=$2
-    [ "$1" = -- ] && { shift; PATH="$gates:$PATH" "$@" >/dev/null 2>&1; break; }
+    [ "$1" = --cwd ] && cwd=$2
+    [ "$1" = -- ] && { shift; break; }
     shift
   done
+  f=${cwd:+${cwd##*/}}
+  while [ -e "$gates/hold-run" ] || [ -e "$gates/hold-in-${f:-/}" ]; do sleep 0.02; done
+  [ -e "$gates/run-fails" ] && { echo 'fake shed: timed out' >&2; exit 1; }
+  [ -e "$gates/fails-in-${f:-/}" ] && touch "$gates/ready-timeout-$name"
+  [ $# -gt 0 ] && PATH="$gates:$PATH" "$@" >/dev/null 2>&1
   printf '{"name":"%s","labels":{},"cwd":"/","cmd":[],"keep":false,"state":"running","exit":null,"pid":1,"acp":"fake-acp"}\n' "$name" ;;
 *) echo "fake shed: $*" >&2; exit 2 ;;
 esac
@@ -383,10 +388,12 @@ impl FakeShed {
         json!(listed.collect::<Vec<_>>())
     }
 
-    /// The session-ready `wait`: held while `hold-ready` is shut, timed out while `ready-timeout` is.
+    /// The session-ready `wait`: held while `hold-ready` is shut, timed out while `ready-timeout` (or, for this
+    /// terminal only, `ready-timeout-<name>`) is.
     fn ready_wait(&self, name: &str) -> Result<Value, RpcError> {
         self.hold("hold-ready");
-        let outcome = if self.dir.join("ready-timeout").exists() {
+        let timeout = ["ready-timeout".to_owned(), format!("ready-timeout-{name}")];
+        let outcome = if timeout.iter().any(|g| self.dir.join(g).exists()) {
             "timeout"
         } else {
             "matched"

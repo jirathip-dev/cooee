@@ -45,7 +45,7 @@ pub struct View {
     pub links: Vec<String>,
     /// How the last login ended.
     pub why: Option<String>,
-    /// The status of the account it was for (else the default), once no login runs.
+    /// The status of the account it was for (else the system default), once no login runs.
     pub status: Option<Status>,
 }
 
@@ -56,7 +56,7 @@ pub struct Logins {
     accounts: Accounts,
     live: Mutex<BTreeMap<String, Login>>,
     /// Every provider's accounts and their status as last checked: a page load never runs a status command
-    /// itself (herdsman#337). Checked at start, every 30 s, and after a login, sign-out or new default.
+    /// itself (herdsman#337). Checked at start, every 30 s, and after a login or sign-out.
     sheets: Mutex<Vec<Sheet>>,
 }
 
@@ -273,16 +273,13 @@ impl Logins {
             Some(Login::Ended(why, account)) => (Some(why.clone()), account.clone()),
             _ => (None, String::new()),
         };
-        let account = self
-            .accounts
-            .get(name, &account)
-            .unwrap_or_else(|| self.accounts.default(name));
+        let home = self.accounts.get(name, &account).and_then(|a| a.dir);
         Ok(View {
             state: if why.is_some() { "ended" } else { "none" },
             screen: String::new(),
             links: Vec::new(),
             why,
-            status: Some(provider.check(account.dir.as_deref())),
+            status: Some(provider.check(home.as_deref())),
         })
     }
 
@@ -326,26 +323,13 @@ impl Logins {
                 .map_err(|e| HubError::Refused(e.to_string()))?;
         }
         self.check();
-        out.map_err(|e| HubError::Refused(format!("{} sign-out: {e}", a.label())))
+        let who = if account.is_empty() { name } else { account };
+        out.map_err(|e| HubError::Refused(format!("{who} sign-out: {e}")))
     }
 
-    /// Makes `account` provider `name`'s default for new threads.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for an unknown account, or when it can't be saved.
-    pub fn set_default(&self, name: &str, account: &str) -> Result<(), HubError> {
-        self.provider(name)?;
-        self.account(name, account)?;
-        self.accounts
-            .set_default(name, account)
-            .map_err(|e| HubError::Refused(e.to_string()))?;
-        self.check();
-        Ok(())
-    }
-
-    /// What a thread of ACP agent `agent` runs with: its account's label (empty for an agent no provider signs
-    /// in), and its config folder in the provider's variable (none for the system default). `account` none: the
-    /// default.
+    /// What a thread of ACP agent `agent` runs with: its account's name (empty for the system default, or an agent
+    /// no provider signs in), and its config folder in the provider's variable (none for the system default). `account` none:
+    /// the system default.
     ///
     /// # Errors
     /// [`HubError::Refused`] for an account the agent's provider doesn't have.
@@ -353,17 +337,14 @@ impl Logins {
         let Some(p) = self.providers.iter().find(|p| p.agent == agent) else {
             return Ok((String::new(), Launch::default()));
         };
-        let a = match account {
-            Some(name) => self.account(&p.name, name)?,
-            None => self.accounts.default(&p.name),
-        };
+        let a = self.account(&p.name, account.unwrap_or_default())?;
         let env = p.env(a.dir.as_deref()).into_iter();
         let env = env.map(|(var, dir)| (var.to_owned(), dir.display().to_string()));
         let launch = Launch {
             env: env.collect(),
             ..Launch::default()
         };
-        Ok((a.label().to_owned(), launch))
+        Ok((a.name, launch))
     }
 
     /// What a thread of agent profile `p` runs with: its account's label and [`Launch`] (the account's folder, the

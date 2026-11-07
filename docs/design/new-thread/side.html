@@ -1,0 +1,25 @@
+<!-- #48: the desktop sidebar (1024 px and wider), one copy for every page; mock.js puts it in <aside class="side">.
+     [+ new thread] on top, then the threads by project folder, newest first, each folder a <details> (open: ▾).
+     A row: the state dot, the title (bold while unread), the age. The page's own row has aria-current. -->
+<a class="nw" href="/new" data-id="new">+ new thread</a>
+<nav aria-label="threads">
+  <details class="fg" open>
+    <summary title="~/Projects/cooee"><b>~/Projects/cooee</b><span class="ds" data-only="composer profile folder profiled providers">3</span><span class="ds" data-only="connecting failed">4</span></summary>
+    <a class="sb" href="#" data-id="t9" data-only="connecting"><i class="sd" data-sb="loading"></i><span class="tt">Push stops after I pair my phone again</span><span class="ta">now</span></a>
+    <a class="sb" href="#" data-id="t9" data-only="failed"><i class="sd" data-sb="fail"></i><span class="tt">Push stops after I pair my phone again</span><span class="ta">now</span></a>
+    <a class="sb" href="#"><i class="sd" data-sb="working"></i><span class="tt">Thread list jumps on refresh</span><span class="ta">2m</span></a>
+    <a class="sb rd" href="#"><i class="sd" data-sb="done"></i><span class="tt">README: install over Tailscale</span><span class="ta">1h</span></a>
+    <a class="sb rd" href="#"><i class="sd" data-sb="done"></i><span class="tt">Settings index jumps on iPad</span><span class="ta">1d</span></a>
+  </details>
+  <details class="fg" open>
+    <summary title="~/Projects/herdsman"><b>~/Projects/herdsman</b><span class="ds">2</span></summary>
+    <a class="sb" href="#"><i class="sd" data-sb="needs"></i><span class="tt">Land mode for premerge checks</span><span class="ta">12m</span></a>
+    <a class="sb rd" href="#"><i class="sd" data-sb="done"></i><span class="tt">Weekly ship notes</span><span class="ta">4d</span></a>
+  </details>
+  <details class="fg">
+    <summary title="~/Projects/shed"><b>~/Projects/shed</b><span class="ds">2</span></summary>
+  </details>
+  <details class="fg">
+    <summary title="~/Work/site"><b>~/Work/site</b><span class="ds">1</span></summary>
+  </details>
+</nav>

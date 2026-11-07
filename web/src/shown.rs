@@ -210,7 +210,7 @@ impl<'a> Shown<'a> {
     }
 
     fn svg(&self, id: &str, cls: &str) -> String {
-        let bx = if cls == "big" {
+        let bx = if cls == "big" || id == "loading" {
             "0 0 132 100"
         } else {
             "0 0 24 24"
@@ -234,17 +234,26 @@ impl<'a> Shown<'a> {
     }
 
     /// A state's mark (`[data-st]`): the sprite or ascii figure, then the theme word (`plain`: and `· plain word`);
-    /// with no figures, a dot and the plain word.
+    /// with no figures, a dot and the plain word. `loading` (a thread connecting, #48) is the theme's loading figure
+    /// at line height and its loading word, else `connecting`.
     #[must_use]
     pub fn st(&self, st: &str, plain: bool) -> String {
         if !STATES.contains(&st) {
             return String::new();
         }
         let id = if st == "working" { "edit" } else { st };
+        let loading = st == "loading";
+        let word = match self.theme().words.get(st) {
+            None if loading => "connecting",
+            _ => self.word(st),
+        };
         let (mark, said) = match self.figures() {
+            "none" if loading => ("<i class=\"sd\"></i>".to_owned(), "connecting"),
             "none" => ("<i class=\"sd\"></i>".to_owned(), crate::look::plain(st)),
-            "ascii" => (format!("{} ", ascii(id, "rsa")), self.word(st)),
-            _ => (self.svg(id, "rsp"), self.word(st)),
+            "ascii" if loading => (format!("{} ", ascii("read", "rsa")), word),
+            "ascii" => (format!("{} ", ascii(id, "rsa")), word),
+            _ if loading => (self.svg(id, "rsp ld"), word),
+            _ => (self.svg(id, "rsp"), word),
         };
         format!(
             "{mark}<span class=\"thw\">{}</span>{}",
@@ -351,6 +360,20 @@ mod tests {
                 .ends_with("<small class=\"pw\"> · needs you</small>")
         );
         assert_eq!(d.st("", false), "");
+        // A thread connecting (#48): the loading figure at line height and the theme's loading word, else
+        // `connecting`.
+        assert!(
+            d.st("loading", false).starts_with(
+                "<svg class=\"rsp ld\" viewBox=\"0 0 132 100\" aria-hidden=\"true\"><use href=\"/look/farm/sprites.svg#s-loading\">"
+            ) && d.st("loading", false).ends_with("<span class=\"thw\">saddling up</span>"),
+            "{}",
+            d.st("loading", false)
+        );
+        let t = Shown::new(&looks, Some("cooee-look=theme:plain/figures:ascii"));
+        assert_eq!(
+            t.st("loading", false),
+            "<i class=\"rsa\" aria-hidden=\"true\"><b>o.o</b><b>o.-</b></i> <span class=\"thw\">connecting</span>"
+        );
     }
 
     #[test]
