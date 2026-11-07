@@ -42,7 +42,7 @@ use topcoat::{
     view::View,
 };
 
-pub use hub::{CardSpec, Hub, HubError, Launch, Listing, Out, Resume, Slice};
+pub use hub::{CardSpec, Hub, HubError, Listing, Out, Recipe, Resume, Slice};
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
@@ -284,7 +284,13 @@ async fn shell(
     });
     let (providers, (rows, agents, folders)) =
         futures_util::future::try_join(providers, rest).await?;
-    Ok((rows, cooee_web::New { agents, folders }, providers))
+    let profiles = profiles(cx);
+    let new = cooee_web::New {
+        agents,
+        profiles,
+        folders,
+    };
+    Ok((rows, new, providers))
 }
 
 #[page("/")]
@@ -362,9 +368,18 @@ async fn chat(cx: &Cx) -> Result<impl View> {
     else {
         return Err(not_found().into());
     };
+    let profile = profiles(cx)
+        .into_iter()
+        .find(|p| p.id() == thread.0.profile);
+    let label = match profile {
+        Some(p) => p.label,
+        None => thread.0.profile.clone(),
+    };
     let choices = logins(cx).choices(&thread.0.agent);
     let providers = logins(cx).statuses();
-    Ok(cooee_web::chat_page(cx, thread, rows, providers, choices))
+    Ok(cooee_web::chat_page(
+        cx, thread, rows, providers, label, choices,
+    ))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -458,6 +473,9 @@ struct New {
     /// agent took the first message.
     #[serde(default)]
     background: bool,
+    /// The agent profile's id (none or empty: Plain, with `agent` and `account`).
+    #[serde(default)]
+    profile: Option<String>,
     /// The model and effort (#553 row 34; empty: the agent's default).
     #[serde(default)]
     model: String,
@@ -474,41 +492,30 @@ struct Created {
 #[route(POST "/threads")]
 async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     let logins = logins(cx);
-    if new.background {
-        let hub = hub(cx);
-        let id = tokio::task::spawn_blocking(move || {
-            let (account, env) = logins.home(&new.agent, new.account.as_deref())?;
-            let name = cooee_web::named(&new.agent, &logins.statuses());
-            let launch = Launch {
-                account: &account,
-                env: env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path())),
-                model: &new.model,
-                effort: &new.effort,
-                words: logins.picks(&new.agent, &new.model, &new.effort)?,
-            };
-            hub.create_later(
-                (&new.agent, &name),
-                &new.folder,
-                (&new.text, &new.random_id),
-                &launch,
-            )
-        });
-        let id = id.await.map_err(|e| HubError::Refused(e.to_string()))?;
-        return Ok(Answer(id.map(|id| Created { id })));
-    }
-    let id = blocking(cx, move |hub| {
-        let (account, env) = logins.home(&new.agent, new.account.as_deref())?;
-        let words = logins.picks(&new.agent, &new.model, &new.effort)?;
-        let launch = Launch {
-            account: &account,
-            env: env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path())),
-            model: &new.model,
-            effort: &new.effort,
-            words,
-        };
-        hub.create(&new.agent, &new.folder, &new.text, &new.random_id, &launch)
-    })
-    .await;
+    let data = app_context::<Data>(cx);
+    let (data, config, hub) = (data.0.clone(), data.1.clone(), hub(cx));
+    let id = tokio::task::spawn_blocking(move || {
+        let profile = new.profile.as_deref().unwrap_or_default();
+        let picked = (new.model, new.effort);
+        let (agent, folder, recipe) = recipe(
+            &logins,
+            (&data, config.as_deref()),
+            (&new.agent, new.account.as_deref(), profile),
+            new.folder,
+            picked,
+        )?;
+        if !new.background {
+            return hub.create(&agent, &folder, &new.text, &new.random_id, &recipe);
+        }
+        let name = cooee_web::named(&agent, &logins.statuses());
+        hub.create_later(
+            (&agent, &name),
+            &folder,
+            (&new.text, &new.random_id),
+            recipe,
+        )
+    });
+    let id = id.await.map_err(|e| HubError::Refused(e.to_string()))?;
     Ok(Answer(id.map(|id| Created { id })))
 }
 
@@ -516,16 +523,59 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
 #[route(POST "/threads/{id}/retry")]
 async fn retry(cx: &Cx) -> Result<Answer<()>> {
     let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+    let data = app_context::<Data>(cx);
+    let (data, config) = (data.0.clone(), data.1.clone());
     let done = tokio::task::spawn_blocking(move || {
-        let (thread, _) = hub.thread(&id)?;
-        let (_, env) = logins.home(&thread.agent, Some(&thread.account))?;
-        let words = logins.picks(&thread.agent, &thread.model, &thread.effort)?;
-        let name = cooee_web::named(&thread.agent, &logins.statuses());
-        hub.retry(&id, (env, words), &name)
+        let (t, _) = hub.thread(&id)?;
+        let (_, _, recipe) = recipe(
+            &logins,
+            (&data, config.as_deref()),
+            (&t.agent, Some(&t.account), &t.profile),
+            PathBuf::new(),
+            (t.model, t.effort),
+        )?;
+        let name = cooee_web::named(&t.agent, &logins.statuses());
+        hub.retry(&id, recipe, &name)
     });
     Ok(Answer(
         done.await.map_err(|e| HubError::Refused(e.to_string()))?,
     ))
+}
+
+/// How a thread of `agent` starts in `folder`: Plain with `account`, or as agent profile `profile` (non-empty: its
+/// agent, and its folder if it has one), on the model and effort `picked`. Returns its agent and folder too.
+fn recipe(
+    logins: &Logins,
+    (data, config): (&std::path::Path, Option<&std::path::Path>),
+    (agent, account, profile): (&str, Option<&str>, &str),
+    folder: PathBuf,
+    picked: (String, String),
+) -> Result<(String, PathBuf, Recipe), HubError> {
+    let (agent, folder, mut recipe) = if profile.is_empty() {
+        let (account, launch) = logins.home(agent, account)?;
+        let recipe = Recipe {
+            account,
+            launch,
+            ..Recipe::default()
+        };
+        (agent.to_owned(), folder, recipe)
+    } else {
+        let p = cooee_core::profiles::find(config, data, profile).map_err(refused)?;
+        let (account, launch, instructions) = logins.profile(&p, data)?;
+        let recipe = Recipe {
+            account,
+            profile: p.id(),
+            launch,
+            instructions,
+            ..Recipe::default()
+        };
+        (p.agent, p.folder.unwrap_or(folder), recipe)
+    };
+    recipe
+        .launch
+        .pick(logins.picks(&agent, &picked.0, &picked.1)?);
+    (recipe.model, recipe.effort) = picked;
+    Ok((agent, folder, recipe))
 }
 
 /// `?path=<folder>&hidden=1`: Settings › Folders.
@@ -776,8 +826,14 @@ async fn device_remove(cx: &Cx, Json(d): Json<DeviceId>) -> Result<Response> {
     }
 }
 
-/// The data folder.
-struct Data(PathBuf);
+/// The data folder, and the config's folder (its `profiles/`).
+struct Data(PathBuf, Option<PathBuf>);
+
+/// The agent profiles to pick from (Plain aside).
+fn profiles(cx: &Cx) -> Vec<cooee_core::Profile> {
+    let data = app_context::<Data>(cx);
+    cooee_core::profiles::list(data.1.as_deref(), &data.0)
+}
 
 path_param!(name);
 path_param!(rest);
@@ -954,8 +1010,7 @@ fn improve(
     let agent = agents.first().ok_or_else(|| {
         HubError::Refused("No agents in shed: run cooee doctor on the Mac.".to_owned())
     })?;
-    let (account, env) = logins.home(&agent.id, None)?;
-    let env = env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path()));
+    let (account, launch) = logins.home(&agent.id, None)?;
     let ask = if text.trim().is_empty() {
         "Ask me what to change."
     } else {
@@ -969,12 +1024,12 @@ fn improve(
         manifest.build
     );
     let rid = format!("improve-{name}-{}", now());
-    let launch = Launch {
-        account: &account,
-        env,
-        ..Launch::default()
+    let recipe = Recipe {
+        account,
+        launch,
+        ..Recipe::default()
     };
-    let thread = hub.start(&agent.id, &repo, &prompt, &rid, &launch)?;
+    let thread = hub.start(&agent.id, &repo, &prompt, &rid, &recipe)?;
     m.improving(name, Some(thread.clone())).map_err(refused)?;
     Ok(thread)
 }
@@ -1259,7 +1314,7 @@ async fn report(cx: &Cx, Json(r): Json<Report>) -> Result<Response> {
 pub fn router(
     hub: Arc<Hub>,
     (logins, manager): (Arc<Logins>, Arc<Manager>),
-    data: &std::path::Path,
+    (data, config): (&std::path::Path, Option<&std::path::Path>),
     bind: IpAddr,
     allowed_hosts: &[String],
     looks: cooee_web::Looks,
@@ -1331,7 +1386,7 @@ pub fn router(
         .app_context(Arc::new(Dots::default()))
         .app_context(logins)
         .app_context(manager)
-        .app_context(Data(data.to_owned()))
+        .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))
         .build()
 }
 
@@ -1372,7 +1427,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     let router = router(
         Arc::clone(&hub),
         (logins, Arc::clone(&manager)),
-        &data,
+        (&data, config.dir.as_deref()),
         config.bind,
         &config.allowed_hosts,
         looks,

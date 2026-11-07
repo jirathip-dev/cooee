@@ -39,6 +39,9 @@ pub struct Thread {
     /// #48 its label, `System default` for that one).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub account: String,
+    /// Its agent profile's id (empty: Plain), fixed for its life.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub profile: String,
     /// The shed terminal's name.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub terminal: String,

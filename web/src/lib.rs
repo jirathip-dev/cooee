@@ -261,11 +261,12 @@ async fn document(
 }
 
 /// The chat header's line before its state: a Workflow session's role and round, else who it runs as (`runs`:
-/// provider · account), the model and the folder.
-fn byline(thread: &Thread, runs: &str, folder: &str) -> String {
+/// provider · account, or its agent `profile`'s label), the model and the folder.
+fn byline(thread: &Thread, (runs, profile): (&str, &str), folder: &str) -> String {
     if let Some(w) = &thread.workflow {
         return format!("{} · round {} · ", w.role, w.round);
     }
+    let runs = if profile.is_empty() { runs } else { profile };
     [runs, &thread.model, folder]
         .into_iter()
         .filter(|s| !s.is_empty())
@@ -805,13 +806,15 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
 }
 
 /// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer; from 1024 px the
-/// sidebar beside it. The bar names the provider and the account (`providers`), never the agent's id.
+/// sidebar beside it. The bar names the provider and the account (`providers`), or its agent `profile`'s label, never
+/// the agent's id.
 #[must_use]
 pub fn chat_page(
     cx: &Cx,
     (thread, turn): (Thread, Turn),
     rows: Vec<Summary>,
     providers: Vec<Sheet>,
+    profile: String,
     choices: (Vec<String>, Vec<String>),
 ) -> impl View {
     view! {
@@ -821,6 +824,7 @@ pub fn chat_page(
             turn: turn,
             rows: rows,
             providers: providers,
+            profile: profile,
             choices: choices
         )
     }
@@ -863,6 +867,7 @@ async fn chat(
     turn: Turn,
     rows: Vec<Summary>,
     providers: Vec<Sheet>,
+    profile: String,
     choices: (Vec<String>, Vec<String>),
 ) -> Result<impl View> {
     let look = shown(cx);
@@ -906,7 +911,7 @@ async fn chat(
                             <h1>(thread.title.clone())</h1>
                             <span class="ds">
                                 <i class="dt"></i>
-                                (byline(&thread, &runs, &folder))
+                                (byline(&thread, (&runs, &profile), &folder))
                                 <span id="st" data-st=(state(&turn.state))>(st)</span>
                                 if let Some(url) = link {
                                     " · "

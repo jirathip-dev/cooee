@@ -32,6 +32,7 @@ details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute
 .nf{display:flex;flex-direction:column;gap:6px;padding-bottom:12px}.nf[hidden]{display:none}
 .hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;color:var(--mute)}.hn code{font-family:var(--mono);color:var(--fg);overflow-wrap:anywhere}
 .nf input,textarea,.lgf input{font:16px/1.4 var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:44px}
+.nc:has(input[name=pick][data-folder]:checked) #chip-folder{display:none}
 .chat{display:flex;flex-direction:column;height:100dvh;max-width:100ch;margin:0 auto}
 .th{display:flex;align-items:center;gap:4px;min-height:52px;padding:0 4px;background:var(--card);border-bottom:1px solid var(--edge)}
 .th .bk{color:var(--link)}

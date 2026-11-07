@@ -238,8 +238,8 @@ const say = (e: HTMLElement | null, text: string): void => {
   e.hidden = !text;
 };
 
-// The composer: each chip's sheet is a popover of radios in the form. A pick sets its chip and closes the sheet; a
-// folder moves the agent chip to the pick last used there (else the newest overall); send starts the thread in the
+// The composer: each chip's sheet is a popover of radios in the form. A tap closes the sheet, a pick sets its chip; a
+// folder moves the agent chip to the pick last used there (else Plain's newest overall); send starts the thread in the
 // background and opens its chat at once.
 const nc = $<HTMLFormElement>("#nc");
 if (nc) {
@@ -276,8 +276,11 @@ if (nc) {
       choose(t.dataset.last || nc.dataset.def);
       folderChip();
     } else if (t.name === "pick") agentChip();
-    else return;
-    t.closest<HTMLElement>("[popover]")?.hidePopover();
+  });
+  // A tap on a sheet's row closes it, the row already picked too.
+  nc.addEventListener("click", (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.type === "radio") t.closest<HTMLElement>("[popover]")?.hidePopover();
   });
   for (const p of nc.querySelectorAll<HTMLElement>("[popover]"))
     p.addEventListener("toggle", (e) => {
@@ -299,6 +302,7 @@ if (nc) {
     const body = {
       agent: p?.dataset.agent,
       account: p?.dataset.account,
+      profile: p?.dataset.profile ?? "",
       model: f.get(`model:${p?.dataset.agent}`) ?? "",
       effort: f.get(`effort:${p?.dataset.agent}`) ?? "",
       folder: f.get("folder"),

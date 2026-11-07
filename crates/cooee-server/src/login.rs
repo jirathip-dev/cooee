@@ -13,7 +13,7 @@ use std::{
 };
 
 use cooee_core::{
-    Account, Accounts, Provider, Shed, Sheet, Status, links, redact,
+    Account, Accounts, Launch, Profile, Provider, Shed, Sheet, Status, links, redact,
     shed_proto::{RunParams, WaitOutcome},
 };
 use serde::Serialize;
@@ -328,24 +328,68 @@ impl Logins {
     }
 
     /// What a thread of ACP agent `agent` runs with: its account's name (empty for the system default, or an agent
-    /// no provider signs in), and the variable and config folder (none for the system default). `account` none:
+    /// no provider signs in), and its config folder in the provider's variable (none for the system default). `account` none:
     /// the system default.
     ///
     /// # Errors
     /// [`HubError::Refused`] for an account the agent's provider doesn't have.
-    pub fn home(
-        &self,
-        agent: &str,
-        account: Option<&str>,
-    ) -> Result<(String, Option<(String, PathBuf)>), HubError> {
+    pub fn home(&self, agent: &str, account: Option<&str>) -> Result<(String, Launch), HubError> {
         let Some(p) = self.providers.iter().find(|p| p.agent == agent) else {
-            return Ok((String::new(), None));
+            return Ok((String::new(), Launch::default()));
         };
         let a = self.account(&p.name, account.unwrap_or_default())?;
-        let env = p
-            .env(a.dir.as_deref())
-            .map(|(var, dir)| (var.to_owned(), dir.to_owned()));
-        Ok((a.name, env))
+        let env = p.env(a.dir.as_deref()).into_iter();
+        let env = env.map(|(var, dir)| (var.to_owned(), dir.display().to_string()));
+        let launch = Launch {
+            env: env.collect(),
+            ..Launch::default()
+        };
+        Ok((a.name, launch))
+    }
+
+    /// What a thread of agent profile `p` runs with: its account's label and [`Launch`] (the account's folder, the
+    /// settings file in the provider's `settings` variable, the env, its secrets read from `data` through a file
+    /// there, the policy), and its instructions. A profile its agent can't run as written is refused: settings
+    /// with no `settings` variable (its guard can't run) or MCP servers (shed starts sessions without them).
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] as above, for an unknown account, a missing secret or an unreadable file.
+    pub fn profile(&self, p: &Profile, data: &Path) -> Result<(String, Launch, String), HubError> {
+        let refused = |why: String| HubError::Refused(why);
+        let (account, mut launch) = self.home(&p.agent, p.account.as_deref())?;
+        if let Some(settings) = &p.settings {
+            let var = self.providers.iter().find(|v| v.agent == p.agent);
+            let var = var.map(|v| v.settings.as_str()).filter(|v| !v.is_empty());
+            let Some(var) = var else {
+                return Err(refused(format!(
+                    "this profile's guard can't run with {}: its ACP adapter has no settings variable",
+                    p.agent
+                )));
+            };
+            launch
+                .env
+                .push((var.to_owned(), settings.display().to_string()));
+        }
+        if p.mcp.is_some() {
+            return Err(refused(format!(
+                "this profile's MCP servers can't run with {}: shed starts ACP sessions without them",
+                p.agent
+            )));
+        }
+        let (plain, secret) = p.env(data).map_err(refused)?;
+        launch.env.extend(plain);
+        if !secret.is_empty() {
+            let name = cooee_core::random(16).map_err(|e| refused(e.to_string()))?;
+            let name = cooee_core::sha256(&name);
+            launch.secrets = Some((data.join("secrets").join(format!(".run-{name}")), secret));
+        }
+        launch.policy.clone_from(&p.policy);
+        let instructions = match &p.instructions {
+            Some(f) => std::fs::read_to_string(f)
+                .map_err(|e| refused(format!("profile {}: {}: {e}", p.name, f.display())))?,
+            None => String::new(),
+        };
+        Ok((account, launch, instructions))
     }
 
     /// The models and efforts `agent`'s provider offers (#553 row 34).

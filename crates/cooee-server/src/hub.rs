@@ -12,8 +12,8 @@ use std::{
 };
 
 use cooee_core::{
-    Agent, Body, Card, Change, Chat, Item, Plugin, Shed, ShedError, Store, StoreError, Summary,
-    Thread, Turn, Workflow,
+    Agent, Body, Card, Change, Chat, Item, Launch, Plugin, Shed, ShedError, Store, StoreError,
+    Summary, Thread, Turn, Workflow,
     shed_proto::{self, ApprovalOption, Event, TerminalInfo},
 };
 use serde::{Deserialize, Serialize};
@@ -113,22 +113,6 @@ pub struct Pending {
     pub random_id: String,
 }
 
-/// How a thread's agent starts: its account (as the header names it) and that account's folder (`env`), and the
-/// model and effort picked (#553 row 34) with the `words` that start it on them.
-#[derive(Debug, Default)]
-pub struct Launch<'a> {
-    /// The account's label.
-    pub account: &'a str,
-    /// The provider's variable and the account's folder.
-    pub env: Option<(&'a str, &'a Path)>,
-    /// The model (empty: the agent's default).
-    pub model: &'a str,
-    /// The effort (empty: the agent's default).
-    pub effort: &'a str,
-    /// The words for the model and effort (`Provider::picks`).
-    pub words: Vec<String>,
-}
-
 /// A plugin's card (`POST /plugin/card`, docs/plugins.md).
 #[derive(Debug, Deserialize)]
 pub struct CardSpec {
@@ -162,6 +146,24 @@ pub enum Resume {
     Replay(Vec<Out>),
     /// The cursor is from another run or too old.
     Reset,
+}
+
+/// How a thread starts besides its agent, folder and first message: its account's label, its agent profile's id
+/// (empty: Plain), what its agent runs with, and the instructions sent before the first message.
+#[derive(Debug, Default)]
+pub struct Recipe {
+    /// The account's label, as the header shows it.
+    pub account: String,
+    /// The profile's id.
+    pub profile: String,
+    /// The account's folder, the profile's settings, env and policy.
+    pub launch: Launch,
+    /// Sent ahead of the first message, which is stored alone.
+    pub instructions: String,
+    /// The model picked (#553 row 34; empty: the agent's default), its words in `launch`.
+    pub model: String,
+    /// The effort picked, as `model`.
+    pub effort: String,
 }
 
 /// The threads and the shed they run on.
@@ -674,9 +676,9 @@ impl Hub {
         Ok(path)
     }
 
-    /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, with `account`'s
-    /// config folder in `env` (none: the system default), then sends `text`. Returns the thread's id. A retry with
-    /// the same `random_id` (after a timeout, or a crash) adopts the thread it started and never starts another.
+    /// Starts a thread: ACP agent `agent` in `folder` (inside a root) as a new shed terminal, as `recipe` says, then
+    /// sends `text`. Returns the thread's id. A retry with the same `random_id` (after a timeout, or a crash) adopts
+    /// the thread it started and never starts another.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a folder outside the roots or an empty message; [`HubError::Shed`] when the
@@ -687,12 +689,12 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        launch: &Launch<'_>,
+        recipe: &Recipe,
     ) -> Result<String, HubError> {
         let Some(folder) = self.allowed(folder) else {
             return Err(outside(folder));
         };
-        self.start(agent, &folder, text, random_id, launch)
+        self.start(agent, &folder, text, random_id, recipe)
     }
 
     /// [`Hub::create`] in a folder of cooee's own (a plugin's checkout), not checked against the roots.
@@ -705,18 +707,26 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        launch: &Launch<'_>,
+        recipe: &Recipe,
+    ) -> Result<String, HubError> {
+        let started = self.start_in(agent, folder, (text, random_id), recipe);
+        // The adapter's shell removes it as it starts; a start that never got that far leaves nothing either.
+        if let Some((file, _)) = &recipe.launch.secrets {
+            let _ = fs::remove_file(file);
+        }
+        started
+    }
+
+    fn start_in(
+        &self,
+        agent: &str,
+        folder: &Path,
+        (text, random_id): (&str, &str),
+        recipe: &Recipe,
     ) -> Result<String, HubError> {
         self.shed.hello()?;
-        let picked = (launch.account, launch.model, launch.effort);
-        let (id, fresh) = self.admit(agent, folder, text, random_id, picked)?;
-        self.connect(
-            &id,
-            (fresh, false),
-            text,
-            random_id,
-            (launch.env, &launch.words),
-        )?;
+        let (id, fresh) = self.admit(agent, folder, text, random_id, recipe)?;
+        self.connect(&id, (fresh, false), text, random_id, recipe)?;
         Ok(id)
     }
 
@@ -731,33 +741,26 @@ impl Hub {
         (agent, name): (&str, &str),
         folder: &Path,
         (text, random_id): (&str, &str),
-        launch: &Launch<'_>,
+        recipe: Recipe,
     ) -> Result<String, HubError> {
         let Some(folder) = self.allowed(folder) else {
             return Err(outside(folder));
         };
-        let picked = (launch.account, launch.model, launch.effort);
-        let (id, fresh) = self.admit(agent, &folder, text, random_id, picked)?;
+        let (id, fresh) = self.admit(agent, &folder, text, random_id, &recipe)?;
         if fresh {
             let live = self.live(&id)?;
             lock(&live).pending = Some(text.to_owned());
         }
-        let env = launch.env.map(|(k, dir)| (k.to_owned(), dir.to_owned()));
-        self.retry(&id, (env, launch.words.clone()), name)?;
+        self.retry(&id, recipe, name)?;
         Ok(id)
     }
 
     /// Starts thread `id`'s agent again after its start failed (none failed, or one runs: nothing), and sends its
-    /// first message; as [`Hub::create_later`] (`env` and `words` as [`Launch`]'s).
+    /// first message; as [`Hub::create_later`].
     ///
     /// # Errors
     /// [`HubError::NoThread`]; [`HubError::Store`] when the state can't be published.
-    pub fn retry(
-        self: &Arc<Self>,
-        id: &str,
-        (env, words): (Option<(String, PathBuf)>, Vec<String>),
-        name: &str,
-    ) -> Result<(), HubError> {
+    pub fn retry(self: &Arc<Self>, id: &str, recipe: Recipe, name: &str) -> Result<(), HubError> {
         let live = self.live(id)?;
         let (text, random_id, agent, fresh) = {
             let mut l = lock(&live);
@@ -778,10 +781,13 @@ impl Hub {
         };
         let (hub, id, name) = (Arc::clone(self), id.to_owned(), name.to_owned());
         thread::spawn(move || {
-            let env = env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path()));
             let done = hub.shed.hello().map_err(HubError::from);
-            let done = done
-                .and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, (env, &words)));
+            let done =
+                done.and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, &recipe));
+            // As in [`Hub::start`].
+            if let Some((file, _)) = &recipe.launch.secrets {
+                let _ = fs::remove_file(file);
+            }
             let mut l = lock(&live);
             match done {
                 // shed's events say more.
@@ -814,7 +820,7 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        (account, model, effort): (&str, &str, &str),
+        recipe: &Recipe,
     ) -> Result<(String, bool), HubError> {
         if text.trim().is_empty() {
             return Err(HubError::Refused("the first message is empty".to_owned()));
@@ -847,9 +853,10 @@ impl Hub {
             title,
             agent: agent.to_owned(),
             folder: Some(folder.to_owned()),
-            account: account.to_owned(),
-            model: model.to_owned(),
-            effort: effort.to_owned(),
+            account: recipe.account.clone(),
+            profile: recipe.profile.clone(),
+            model: recipe.model.clone(),
+            effort: recipe.effort.clone(),
             terminal: format!("cooee-{id}"),
             random_id: random_id.to_owned(),
             ..Thread::default()
@@ -869,7 +876,7 @@ impl Hub {
         (fresh, keep): (bool, bool),
         text: &str,
         random_id: &str,
-        (env, words): (Option<(&str, &Path)>, &[String]),
+        recipe: &Recipe,
     ) -> Result<(), HubError> {
         let live = self.live(id)?;
         let (terminal, agent, folder) = {
@@ -884,7 +891,7 @@ impl Hub {
             ]);
             if let Err(e) = self
                 .shed
-                .run_acp(&terminal, &agent, &folder, &labels, (env, words))
+                .run_acp(&terminal, &agent, &folder, &labels, &recipe.launch)
                 && self.shed.get(&terminal).is_err()
             {
                 if !keep {
@@ -895,7 +902,7 @@ impl Hub {
             }
         }
         self.shed.ready(&terminal)?;
-        self.send(id, text, random_id)?;
+        self.send_after(id, text, random_id, &recipe.instructions)?;
         Ok(())
     }
 
@@ -905,6 +912,17 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] for a closed thread or an empty message; [`HubError::Shed`] when shed fails.
     pub fn send(&self, id: &str, text: &str, random_id: &str) -> Result<Item, HubError> {
+        self.send_after(id, text, random_id, "")
+    }
+
+    /// [`Hub::send`] with `before` (a profile's instructions) ahead of `text` for the agent; only `text` is stored.
+    fn send_after(
+        &self,
+        id: &str,
+        text: &str,
+        random_id: &str,
+        before: &str,
+    ) -> Result<Item, HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
         let sent = live
@@ -921,7 +939,12 @@ impl Hub {
                 "the thread is closed or the message empty".to_owned(),
             ));
         }
-        self.shed.prompt(&live.meta.terminal, text)?;
+        let prompt = if before.trim().is_empty() {
+            text.to_owned()
+        } else {
+            format!("{}\n\n{text}", before.trim_end())
+        };
+        self.shed.prompt(&live.meta.terminal, &prompt)?;
         let body = Body::You {
             text: text.to_owned(),
             random_id: random_id.to_owned(),
@@ -1201,6 +1224,7 @@ impl Hub {
                     title: live.meta.title.clone(),
                     agent: live.meta.agent.clone(),
                     account: live.meta.account.clone(),
+                    profile: live.meta.profile.clone(),
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     state: live.chat.turn.state.clone(),
                     last: waiting.unwrap_or_else(|| {

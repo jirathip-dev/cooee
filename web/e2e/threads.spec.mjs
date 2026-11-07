@@ -11,8 +11,8 @@ test("thread list: renders, fits the width, no axe violations", async ({ page },
   await page.screenshot({ path: `../../ui-${info.project.name}/threads.png`, fullPage: true });
   await page.goto("/new");
   await expect(page.locator("#nc")).toBeVisible();
-  // The provider and account last used in the folder, never the agent's id.
-  await expect(page.locator("#chip-agent")).toHaveText(/^fake-390 · \S+@example\.com/);
+  // The provider and account last used in the folder (or its agent profile's label, #40), never the agent's id.
+  await expect(page.locator("#chip-agent")).toHaveText(/^(fake-390 · \S+@example\.com|Reviewer)/);
   await page.screenshot({ path: `../../ui-${info.project.name}/threads-new.png`, fullPage: true });
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);

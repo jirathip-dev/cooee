@@ -73,13 +73,13 @@ for (const [theme, value] of Object.entries(LOOKS))
     await expect(nc.getByRole("button", { name: /^folder: / })).toBeVisible();
     expect(await page.evaluate(audit, true)).toEqual([]);
     await shot(page, info, `composer-${theme}`);
-    // The agent sheet: each provider's accounts, a signed-out one muted with [sign in].
+    // The agent sheet: the agent profiles (#40), then each provider's accounts, a signed-out one muted with [sign in].
     await page.locator("#chip-agent").click();
     const agent = page.locator("#sh-agent");
     await expect(agent).toBeVisible();
     await expect(page.locator("#chip-agent")).toHaveAttribute("aria-expanded", "true");
-    await expect(agent.locator(".ch")).toHaveText(["fake-390"]);
-    await expect(agent.locator(".pk .sk")).toHaveText(["main login", "lab@example.com", "work@example.com"]);
+    await expect(agent.locator(".ch")).toHaveText(["profiles", "fake-390"]);
+    await expect(agent.locator(".pk .sk")).toHaveText(["Reviewer", "main login", "lab@example.com", "work@example.com"]);
     expect(await page.evaluate(audit, false)).toEqual([]);
     await shot(page, info, `agent-${theme}`);
     await page.keyboard.press("Escape");

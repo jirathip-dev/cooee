@@ -1,6 +1,6 @@
 //! The new thread (#48): a composer with one row of chips, `[<provider> · <account> ▾] [<folder> ▾]`, each opening
-//! its sheet (a popover of radios in the form, so it opens with no script). The agent chip starts at the pick last
-//! used in the chosen folder, from the thread store. Also the sidebar (from 1024 px) and Settings › providers, the
+//! its sheet (a popover of radios in the form, so it opens with no script). The agent chip starts at the pick (an
+//! agent profile, #40, or Plain's provider and account) last used in the chosen folder, from the thread store. Also the sidebar (from 1024 px) and Settings › providers, the
 //! flat list of accounts.
 
 use std::{
@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use cooee_core::{AGENTS_FIX, Account, Agent, ROOTS_FIX, Sheet, Status, Summary};
+use cooee_core::{AGENTS_FIX, Account, Agent, Profile, ROOTS_FIX, Sheet, Status, Summary};
 use topcoat::{
     Result,
     context::Cx,
@@ -53,7 +53,8 @@ pub(crate) fn said(name: &str, who: &str) -> String {
     }
 }
 
-/// What a new thread may run with: an installed agent and one of its provider's accounts.
+/// What a new thread may run with: an agent profile (`profile`, its id; `who`, its label; `folder`, whether it has
+/// its own), or Plain: an installed agent and one of its provider's accounts.
 #[derive(Clone)]
 struct Choice {
     agent: String,
@@ -61,18 +62,47 @@ struct Choice {
     name: String,
     who: String,
     signed_in: bool,
+    profile: String,
+    folder: bool,
 }
 
 impl Choice {
     fn key(&self) -> String {
-        format!("{}/{}", self.agent, self.account)
+        if self.profile.is_empty() {
+            format!("{}/{}", self.agent, self.account)
+        } else {
+            format!("p:{}", self.profile)
+        }
+    }
+
+    /// As its chip says it: a profile's label, else `<provider> · <account>`.
+    fn said(&self) -> String {
+        if self.profile.is_empty() {
+            said(&self.name, &self.who)
+        } else {
+            self.who.clone()
+        }
     }
 }
 
-/// Every installed agent's accounts, by agent: an agent whose provider's CLI isn't installed is left out, one no
-/// provider signs in is one pick.
-fn choices(agents: &[Agent], providers: &[Sheet]) -> Vec<Choice> {
-    let mut out = Vec::new();
+/// The agent `profiles` (a plugin's with its name), then every installed agent's accounts, by agent: an agent whose
+/// provider's CLI isn't installed is left out, one no provider signs in is one pick.
+fn choices(profiles: Vec<Profile>, agents: &[Agent], providers: &[Sheet]) -> Vec<Choice> {
+    let mut out: Vec<Choice> = profiles
+        .into_iter()
+        .map(|p| Choice {
+            name: named(&p.agent, providers),
+            who: match &p.plugin {
+                Some(by) => format!("{} · {by}", p.label),
+                None => p.label.clone(),
+            },
+            signed_in: true,
+            profile: p.id(),
+            folder: p.folder.is_some(),
+            account: p.account.unwrap_or_default(),
+            agent: p.agent,
+        })
+        .collect();
     for agent in agents {
         let name = named(&agent.id, providers);
         match providers.iter().find(|s| s.provider.agent == agent.id) {
@@ -83,6 +113,8 @@ fn choices(agents: &[Agent], providers: &[Sheet]) -> Vec<Choice> {
                 name: name.clone(),
                 who: a.shown(st),
                 signed_in: st.signed_in,
+                profile: String::new(),
+                folder: false,
             })),
             None => out.push(Choice {
                 agent: agent.id.clone(),
@@ -90,6 +122,8 @@ fn choices(agents: &[Agent], providers: &[Sheet]) -> Vec<Choice> {
                 name,
                 who: String::new(),
                 signed_in: true,
+                profile: String::new(),
+                folder: false,
             }),
         }
     }
@@ -101,29 +135,37 @@ fn same(folder: &Path) -> PathBuf {
     folder.canonicalize().unwrap_or_else(|_| folder.to_owned())
 }
 
-/// The pick last used in each folder (`rows` newest first) and overall, among `choices` signed in; with none used,
-/// the first signed in (else the first).
+/// The pick last used in each folder (`rows` newest first), among `choices` signed in, and Plain's last used overall
+/// (a profile is a folder's own); with none used, Plain's first signed in (else its first).
 fn last_used(rows: &[Summary], choices: &[Choice]) -> (BTreeMap<PathBuf, String>, Option<String>) {
     let mut by = BTreeMap::new();
     let mut overall = None;
     for r in rows {
-        let ok = choices
-            .iter()
-            .any(|c| c.signed_in && c.agent == r.agent && c.account == r.account);
-        if ok {
-            let key = format!("{}/{}", r.agent, r.account);
+        // A profile's thread by its profile, Plain's by its agent and account.
+        let used = choices.iter().find(|c| {
+            let same = !r.profile.is_empty() || (c.agent == r.agent && c.account == r.account);
+            c.signed_in && c.profile == r.profile && same
+        });
+        if let Some(c) = used {
+            let key = c.key();
             by.entry(same(&r.folder)).or_insert_with(|| key.clone());
-            overall.get_or_insert(key);
+            if c.profile.is_empty() {
+                overall.get_or_insert(key);
+            }
         }
     }
-    let first = choices.iter().find(|c| c.signed_in).or(choices.first());
+    let mut plain = choices.iter().filter(|c| c.profile.is_empty());
+    let first = plain.clone().find(|c| c.signed_in).or(plain.next());
     (by, overall.or_else(|| first.map(Choice::key)))
 }
 
-/// What the composer needs: the installed agents (or why shed couldn't list them) and the folders with their depth.
+/// What the composer needs: the installed agents (or why shed couldn't list them), the agent profiles and the folders
+/// with their depth.
 pub struct New {
     /// `shed agents`, as last checked.
     pub agents: Result<Vec<Agent>, String>,
+    /// The agent profiles to pick from (Plain aside).
+    pub profiles: Vec<Profile>,
     /// The roots and the folders inside them (depth 0 to 2).
     pub folders: Vec<(PathBuf, u8)>,
 }
@@ -154,7 +196,7 @@ fn spots(
             path,
             depth,
             last,
-            said: c.map(|c| said(&c.name, &c.who)).unwrap_or_default(),
+            said: c.map(Choice::said).unwrap_or_default(),
         }
     };
     let mut rest: Vec<(PathBuf, u8, PathBuf)> = folders
@@ -235,19 +277,23 @@ async fn pop_head(which: &str) -> Result<impl View> {
 /// sheets. No agents or no folders: the line that fixes it, and send waits.
 #[component]
 pub async fn composer(rows: Vec<Summary>, new: New, providers: Vec<Sheet>) -> Result<impl View> {
-    let New { agents, folders } = new;
+    let New {
+        agents,
+        profiles,
+        folders,
+    } = new;
     let (installed, err) = match agents {
         Ok(found) => (found, None),
         Err(e) => (Vec::new(), Some(e)),
     };
     let none = installed.is_empty() && err.is_none();
-    let picks = choices(&installed, &providers);
+    let picks = choices(profiles, &installed, &providers);
     let (by, def) = last_used(&rows, &picks);
     let (spots, recent) = spots(&rows, folders, &by, &picks);
     let at = spots.first().map(|s| s.path.clone());
     let pick = spots.first().and_then(|s| s.last.clone()).or(def.clone());
     let chosen = picks.iter().find(|c| Some(c.key()) == pick);
-    let chip = chosen.map_or("no agent".to_owned(), |c| said(&c.name, &c.who));
+    let chip = chosen.map_or("no agent".to_owned(), Choice::said);
     let to = chosen.map_or(String::new(), |c| c.name.clone());
     let can = chosen.is_some() && at.is_some();
     let place = at.as_deref().map(short).unwrap_or_default();
@@ -311,20 +357,25 @@ pub async fn composer(rows: Vec<Summary>, new: New, providers: Vec<Sheet>) -> Re
     })
 }
 
-/// The agent sheet: each installed provider's accounts (a signed-out one muted, with [sign in]), `pick` checked,
-/// and their sign-in terminals.
+/// The agent sheet: the agent profiles, then each installed provider's accounts (a signed-out one muted, with [sign
+/// in]), `pick` checked, and their sign-in terminals.
 #[component]
 async fn agent_sheet(
     picks: Vec<Choice>,
     providers: Vec<Sheet>,
     pick: Option<String>,
 ) -> Result<impl View> {
-    // The accounts by provider, in the agents' order.
+    // The profiles (no agent), then the accounts by provider, in the agents' order.
     let mut sections: Vec<(String, String, Vec<Choice>)> = Vec::new();
     for c in picks {
+        let (agent, name) = if c.profile.is_empty() {
+            (c.agent.clone(), c.name.clone())
+        } else {
+            (String::new(), "profiles".to_owned())
+        };
         match sections.last_mut() {
-            Some((agent, _, them)) if *agent == c.agent => them.push(c),
-            _ => sections.push((c.agent.clone(), c.name.clone(), vec![c])),
+            Some((a, _, them)) if *a == agent => them.push(c),
+            _ => sections.push((agent, name, vec![c])),
         }
     }
     // Its model and effort picks (#553 row 34), under its accounts.
@@ -366,8 +417,10 @@ async fn agent_sheet(
                                     value=(c.key())
                                     data-agent=(c.agent.clone())
                                     data-account=(c.account.clone())
+                                    data-profile=(c.profile.clone())
+                                    data-folder=(c.folder)
                                     data-name=(c.name.clone())
-                                    data-label=(said(&c.name, &c.who))
+                                    data-label=(c.said())
                                     checked=(Some(c.key()) == pick)
                                     disabled=(!c.signed_in)
                                 >
