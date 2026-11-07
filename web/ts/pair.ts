@@ -383,7 +383,6 @@ if (list) {
           c.replaceWith(card(a));
           c.remove();
         },
-        "q",
       ]);
       row.append(make("span", "m", "for 10 s"));
       c.replaceChildren(make("p", "et", `Declined · ${a.label}`), sees, row);
@@ -497,29 +496,30 @@ function pairBox(): void {
     };
     show();
     const t = setInterval(() => (box.isConnected ? show() : clearInterval(t)), 1000);
+    const row = acts(
+      [
+        "done",
+        () => {
+          clearInterval(t);
+          box.replaceChildren(open);
+        },
+      ],
+      [
+        "new code",
+        () => {
+          clearInterval(t);
+          open.click();
+        },
+      ],
+    );
+    row.classList.add("ctr");
     const panel = make("div", "pc");
     panel.append(
       tile,
       make("p", "ctr", "Scan it with the new device's Camera, or type the code there."),
       make("p", "bc", `${r.code.slice(0, 3)} ${r.code.slice(3)}`),
       left,
-      acts(
-        [
-          "done",
-          () => {
-            clearInterval(t);
-            box.replaceChildren(open);
-          },
-          "q",
-        ],
-        [
-          "new code",
-          () => {
-            clearInterval(t);
-            open.click();
-          },
-        ],
-      ),
+      row,
     );
     box.replaceChildren(panel);
   };

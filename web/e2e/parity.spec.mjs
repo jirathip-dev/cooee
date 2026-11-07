@@ -210,6 +210,10 @@ test("row 6 (#47): a new device asks, a paired one approves with its passkey (a 
   await expect(other.locator("#ask-no")).toContainText(`(${word2}) was declined`);
   await shot(other, info, "pair-declined", true);
   await audit(other);
+  // [use a code] goes back to the six boxes (a red card is no look picker).
+  await other.locator("#ask-no").getByRole("link", { name: "use a code" }).click();
+  await expect(other.getByLabel("digit 1")).toBeVisible();
+  await expect(other.locator("#ask-no")).toBeHidden();
 
   // Settings lists the devices and the passkey; the new device removes itself and goes back to pairing.
   await ipad.goto("/#settings/devices");

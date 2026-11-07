@@ -93,6 +93,9 @@ test("a QR link pairs at once and the list offers a passkey; the used code then 
   await again.waitForURL(/bad=expired/);
   await expect(again.locator("#code > .pc:not([hidden])")).toContainText("That code has run out.");
   await shots(again, "pair-expired");
+  await again.getByRole("link", { name: "type a new code" }).click();
+  await again.waitForURL(/\/pair$/);
+  await expect(again.getByLabel("digit 1")).toBeVisible();
   await context.close();
 });
 

@@ -60,8 +60,8 @@ echo "doctor exit=$?"
 
 ## Drive
 
-Every page but `/pair` needs a paired browser: fill the code from `$OUT/code` into the `pairing code` field, press
-`pair`, keep the cookie. A code pairs once: the script saves the cookie to `$OUT/state.json` for reuse.
+Every page but `/pair` needs a paired browser: type the code from `$OUT/code` into the six boxes (from `digit 1`; the sixth
+sends it), keep the cookie. A code pairs once: the script saves the cookie to `$OUT/state.json` for reuse.
 
 The script below pairs, then opens each screen at 390 and 1440 px and screenshots it once its ready element shows.
 It runs from `web/e2e` so `@playwright/test` resolves. Add the PR's own steps after the screen it touches.
@@ -75,9 +75,9 @@ const browser = await chromium.launch();
 const pair = await browser.newPage({ baseURL: base });
 await pair.goto("/");
 console.log("unpaired / ->", new URL(pair.url()).pathname);
-await pair.getByLabel("pairing code").fill(fs.readFileSync(`${out}/code`, "utf8").trim());
-await pair.getByRole("button", { name: "pair" }).click();
-await pair.waitForURL(/\/$/, { waitUntil: "commit" });
+await pair.getByLabel("digit 1").click();
+await pair.keyboard.type(fs.readFileSync(`${out}/code`, "utf8").trim());
+await pair.waitForURL(/\/(\?paired)?$/, { waitUntil: "commit" });
 await pair.context().storageState({ path: `${out}/state.json` });
 console.log("paired ->", new URL(pair.url()).pathname);
 for (const w of [390, 1440]) {
