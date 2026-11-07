@@ -440,7 +440,9 @@ async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_web::Card>>> {
 #[derive(Deserialize)]
 struct New {
     agent: String,
-    folder: PathBuf,
+    /// None: a scratch folder of its own (#86).
+    #[serde(default)]
+    folder: Option<PathBuf>,
     text: String,
     random_id: String,
     /// The agent's provider account (none: its default).
@@ -462,44 +464,83 @@ struct Created {
     id: String,
 }
 
-#[route(POST "/threads")]
-async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
+/// What a thread of `agent` (as Plain with `account`, or as `profile`) runs with on a model and effort: its agent,
+/// the profile's own folder, and its [`Recipe`].
+fn recipe(
+    cx: &Cx,
+    (agent, account, profile): (String, Option<&str>, &str),
+    (on, effort): (String, String),
+) -> impl FnOnce() -> Result<(String, Option<PathBuf>, Recipe), HubError> + Send + 'static {
     let logins = logins(cx);
     let data = app_context::<Data>(cx);
     let (data, config) = (data.0.clone(), data.1.clone());
-    let id = blocking(cx, move |hub| {
-        let (agent, folder, mut recipe) = match new.profile.as_deref().filter(|p| !p.is_empty()) {
-            None => {
-                let (account, launch) = logins.home(&new.agent, new.account.as_deref())?;
-                let recipe = Recipe {
-                    account,
-                    launch,
-                    ..Recipe::default()
-                };
-                (new.agent, new.folder, recipe)
-            }
-            Some(id) => {
-                let p =
-                    cooee_core::profiles::find(config.as_deref(), &data, id).map_err(refused)?;
-                let (account, launch, instructions) = logins.profile(&p, &data)?;
-                let recipe = Recipe {
-                    account,
-                    profile: p.id(),
-                    launch,
-                    instructions,
-                    ..Recipe::default()
-                };
-                (p.agent, p.folder.unwrap_or(new.folder), recipe)
-            }
+    let (account, profile) = (account.map(str::to_owned), profile.to_owned());
+    move || {
+        let (agent, folder, mut recipe) = if profile.is_empty() {
+            let (account, launch) = logins.home(&agent, account.as_deref())?;
+            let recipe = Recipe {
+                account,
+                launch,
+                ..Recipe::default()
+            };
+            (agent, None, recipe)
+        } else {
+            let p =
+                cooee_core::profiles::find(config.as_deref(), &data, &profile).map_err(refused)?;
+            let (account, launch, instructions) = logins.profile(&p, &data)?;
+            let recipe = Recipe {
+                account,
+                profile: p.id(),
+                launch,
+                instructions,
+                ..Recipe::default()
+            };
+            (p.agent, p.folder, recipe)
         };
-        recipe
-            .launch
-            .pick(logins.picks(&agent, &new.model, &new.effort)?);
-        (recipe.model, recipe.effort) = (new.model, new.effort);
-        hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)
+        recipe.launch.pick(logins.picks(&agent, &on, &effort)?);
+        (recipe.model, recipe.effort) = (on, effort);
+        Ok((agent, folder, recipe))
+    }
+}
+
+#[route(POST "/threads")]
+async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
+    let profile = new.profile.clone().unwrap_or_default();
+    let who = (new.agent.clone(), new.account.as_deref(), profile.as_str());
+    let made = recipe(cx, who, (new.model.clone(), new.effort.clone()));
+    let id = blocking(cx, move |hub| {
+        let (agent, own, recipe) = made()?;
+        let folder = own.or(new.folder);
+        hub.create(
+            &agent,
+            folder.as_deref(),
+            &new.text,
+            &new.random_id,
+            &recipe,
+        )
     })
     .await;
     Ok(Answer(id.map(|id| Created { id })))
+}
+
+/// `POST /threads/{id}/folder`: "Use a folder…" (#86).
+#[derive(Deserialize)]
+struct Attach {
+    folder: PathBuf,
+}
+
+#[route(POST "/threads/{id}/folder")]
+async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Item>> {
+    let id = thread_id(cx);
+    let Ok((t, _)) = hub(cx).thread(&id) else {
+        return Err(not_found().into());
+    };
+    // The account as the thread shows it: the system default's label, else its name.
+    let account = Some(t.account.as_str()).map(|a| if a == "System default" { "" } else { a });
+    let made = recipe(cx, (t.agent, account, &t.profile), (t.model, t.effort));
+    Ok(Answer(
+        blocking(cx, move |hub| hub.attach(&id, &a.folder, &made()?.2)).await,
+    ))
 }
 
 /// `?path=<folder>&hidden=1`: Settings › Folders.
@@ -1279,6 +1320,7 @@ pub fn router(
         .route(messages)
         .route(events)
         .route(create)
+        .route(attach)
         .route(browse)
         .route(root)
         .route(new_folder)

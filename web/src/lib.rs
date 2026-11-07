@@ -274,7 +274,8 @@ fn byline(thread: &Thread, profile: &str, folder: &str) -> String {
 }
 
 /// `~/x` for a folder under `$HOME`.
-fn short(folder: &Path) -> String {
+#[must_use]
+pub fn short(folder: &Path) -> String {
     let home = std::env::var_os("HOME").map(PathBuf::from);
     match home.as_deref().and_then(|h| folder.strip_prefix(h).ok()) {
         Some(rest) if rest.as_os_str().is_empty() => "~".to_owned(),
