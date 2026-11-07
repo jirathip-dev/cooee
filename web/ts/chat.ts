@@ -154,6 +154,8 @@ const age = (at: number): string => {
         ? `${Math.floor(s / 3600)}h`
         : `${Math.floor(s / 86400)}d`;
 };
+const meta = (r: Row): string =>
+  r.workflow ? `${r.workflow.role} · round ${r.workflow.round} · ${age(r.at)}` : `${r.agent} · ${age(r.at)}`;
 function rowOf(r: Row): HTMLElement {
   const a = make("a", r.unread ? "tr" : "tr rd") as HTMLAnchorElement;
   const st = make("b");
@@ -161,16 +163,7 @@ function rowOf(r: Row): HTMLElement {
   a.href = `/t/${r.id}`;
   st.dataset.st = STATE[r.state] ?? "";
   tp.append(st, r.last);
-  a.append(
-    make("i", "ud", r.unread ? "●" : ""),
-    make("span", "tt", r.title),
-    make(
-      "span",
-      "ta",
-      r.workflow ? `${r.workflow.role} · round ${r.workflow.round} · ${age(r.at)}` : `${r.agent} · ${age(r.at)}`,
-    ),
-    tp,
-  );
+  a.append(make("i", "ud", r.unread ? "●" : ""), make("span", "tt", r.title), make("span", "ta", meta(r)), tp);
   return a;
 }
 function drawCards(list: HTMLElement, cards: Card[]): void {
@@ -184,6 +177,11 @@ function drawCards(list: HTMLElement, cards: Card[]): void {
     w.dataset.plain = "";
     emp.append(fig, w);
     list.prepend(emp);
+  }
+  const scn = $("#scene");
+  if (scn) {
+    drawScene(scn, cards);
+    return;
   }
   for (const c of cards) {
     const card = make("section", "fc");
@@ -202,6 +200,81 @@ function drawCards(list: HTMLElement, cards: Card[]): void {
     list.append(card);
   }
 }
+
+// Scene (#34): the same cards as pages of sprites (lib.rs `scene`), redrawn whole so a refresh never leaves a copy;
+// the dot of the page in view; night on the strip (the scene's `#night`) from 19:00 to 07:00 on this device's clock.
+const POSE: Record<string, string> = { working: "edit", needs: "needs", done: "done", fail: "fail", ended: "merged" };
+const night = (): string => {
+  const h = new Date().getHours();
+  return h < 7 || h >= 19 ? "#night" : "";
+};
+function spriteOf(r: Row): HTMLElement {
+  const st = STATE[r.state] ?? "";
+  const a = make("a", r.unread ? "sb" : "sb rd") as HTMLAnchorElement;
+  const fig = make("span", "sf");
+  const card = make("span", "sn");
+  const w = make("span", `sw ${st}`);
+  a.href = `/t/${r.id}`;
+  a.dataset.id = r.id;
+  fig.dataset.s = POSE[st] ?? "idle";
+  w.dataset.w = st || "idle";
+  card.append(make("b", "", r.title), make("span", "", meta(r)), w);
+  a.append(fig, card);
+  return a;
+}
+function dot(): void {
+  const pages = $("#scene .spg");
+  if (!pages) return;
+  const at = Math.round(pages.scrollLeft / (pages.clientWidth || 1));
+  for (const [i, d] of document.querySelectorAll("#scene .sdt a").entries())
+    if (i === at) d.setAttribute("aria-current", "page");
+    else d.removeAttribute("aria-current");
+}
+function light(): void {
+  const scn = $("#scene");
+  scn?.classList.toggle("night", !!night());
+  for (const img of document.querySelectorAll<HTMLImageElement>("#scene .sky")) {
+    const src = `${scn?.dataset.art}${night()}`;
+    if (img.getAttribute("src") !== src) img.src = src;
+  }
+}
+function drawScene(scn: HTMLElement, cards: Card[]): void {
+  const pages = $(".spg", scn);
+  const dots = $(".sdt", scn);
+  if (!pages || !dots) return;
+  const at = pages.scrollLeft;
+  pages.replaceChildren(
+    ...cards.map((c, i) => {
+      const p = make("section", "sp");
+      const sky = make("img", "sky") as HTMLImageElement;
+      const h = make("h2", "fh");
+      const field = make("div", "fld");
+      p.id = `sp-${i}`;
+      p.setAttribute("aria-label", c.folder);
+      sky.alt = "";
+      h.append(make("b", "", c.folder), make("span", "ds", `${c.rows.length} threads`));
+      field.append(...c.rows.concat(c.done ?? []).map(spriteOf));
+      p.append(sky, h, field);
+      return p;
+    }),
+  );
+  dots.replaceChildren(
+    ...cards.map((c, i) => {
+      const d = make("a") as HTMLAnchorElement;
+      d.href = `#sp-${i}`;
+      d.setAttribute("aria-label", c.folder);
+      return d;
+    }),
+  );
+  dots.hidden = cards.length < 2;
+  pages.scrollLeft = at;
+  light();
+  dot();
+}
+$("#scene .spg")?.addEventListener("scroll", dot, { passive: true });
+light();
+setInterval(() => document.hidden || light(), 60000);
+
 let pullY: number | null = null;
 let hiddenAt = 0;
 addEventListener(
@@ -1013,6 +1086,29 @@ function chat(main: HTMLElement): void {
   };
   const el = make;
   const md = (row: HTMLElement): HTMLElement => $(".md", row) as HTMLElement;
+  // Thread refs (#84): a whole-word id of a thread cooee knows opens it; code spans and unknown ids stay plain.
+  const known = new Set((main.dataset.ids ?? "").split(" "));
+  const refs = (text: string): (string | Node)[] =>
+    text.split(/(```[\s\S]*?```|`[^`\n]*`)/).flatMap((part, i) =>
+      i % 2
+        ? [part]
+        : part.split(/(?<![\w-])(t[0-9a-z]+)(?![\w-])/).map((w, j) => {
+            if (j % 2 === 0 || !known.has(w)) return w;
+            const a = el("a", "ref", w) as HTMLAnchorElement;
+            a.href = `/t/${w}`;
+            return a;
+          }),
+    );
+  const withRefs = (tag: string, cls: string, s: string): HTMLElement => {
+    const e = el(tag, cls);
+    e.append(...refs(s));
+    return e;
+  };
+  // Back goes to the thread a ref or chip came from, else to the list.
+  const from = document.referrer ? new URL(document.referrer) : null;
+  const bk = $<HTMLAnchorElement>(".th .bk");
+  if (bk && from?.origin === location.origin && from.pathname.startsWith("/t/") && from.pathname !== location.pathname)
+    bk.href = from.pathname;
   // A config card that waits (#553 row 32): the bar under the header names it, wherever it is; a tap brings it in.
   const cw = $("#cw") as HTMLButtonElement;
   function waiting(it?: Item | null): void {
@@ -1129,10 +1225,10 @@ function chat(main: HTMLElement): void {
     row.dataset.at = String(it.at);
     if (it.kind === "you") {
       row.className = "blk me";
-      row.append(el("div", "md", it.text), el("span", "ct", time(it.at)));
+      row.append(withRefs("div", "md", it.text), el("span", "ct", time(it.at)));
     } else if (it.kind === "agent") {
       row.className = "blk ai";
-      row.append(el("b", "k", agent), el("div", "md", it.text));
+      row.append(el("b", "k", agent), withRefs("div", "md", it.text));
       if (it.stop_reason !== "end_turn") row.append(el("span", "ct", it.stop_reason));
     } else if (it.kind === "tool") {
       const s = it.status;
@@ -1148,7 +1244,7 @@ function chat(main: HTMLElement): void {
       row.append(el("span", "k", "tool"), el("span", "cmd", it.title), ts);
     } else if (it.kind === "approval") {
       row.className = `blk ap ${it.form ?? ""}`;
-      row.append(el("b", "k", it.plugin ?? agent), el("div", "md", it.tool));
+      row.append(el("b", "k", it.plugin ?? agent), withRefs("div", "md", it.tool));
       if (it.form === "secret") row.append(el("p", "m", `secret ${it.detail}`));
       if (it.form === "config" && it.detail) {
         const pre = el("pre", "diff");
@@ -1167,7 +1263,11 @@ function chat(main: HTMLElement): void {
             : it.form === "config"
               ? `${it.tool} ${it.chosen === "apply" ? "applied" : "discarded"}`
               : `✓ ${name}`);
-        const ans = el("p", "ans", [said, it.by, it.answered ? time(it.answered) : ""].filter(Boolean).join(" · "));
+        const ans = withRefs(
+          "p",
+          "ans",
+          [said, it.by, it.answered ? time(it.answered) : ""].filter(Boolean).join(" · "),
+        );
         row.append(ans);
         if (it.until && Date.now() < it.until) {
           const change = el("button", "chg", "change") as HTMLButtonElement;
@@ -1182,7 +1282,7 @@ function chat(main: HTMLElement): void {
       row.className = "qs ln";
       const chip = el("a", "chip", `${it.out ? "continued in" : "from"} ${it.title}`) as HTMLAnchorElement;
       chip.href = `/t/${encodeURIComponent(it.thread)}`;
-      if (it.text) row.append(`${it.text} `);
+      if (it.text) row.append(...refs(it.text), " ");
       row.append(chip);
     } else if (it.kind === "plan") {
       row.className = "blk plan";
@@ -1230,6 +1330,8 @@ function chat(main: HTMLElement): void {
     } else {
       for (const o of it.options)
         chc.append(button(o.name, () => approve(row, it.id, o.id), o.kind === "recommended" ? "rec" : ""));
+      // A ref in an option's label opens its thread from a link after the buttons (a link can't sit inside one).
+      chc.append(...it.options.flatMap((o) => refs(o.name).filter((n) => typeof n !== "string")));
       if (it.plugin && !it.form) {
         const f = field("other", "text", (v) => approve(row, it.id, v));
         f.append(button("send", () => f.requestSubmit()));

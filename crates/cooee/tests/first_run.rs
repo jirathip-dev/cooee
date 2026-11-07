@@ -38,7 +38,7 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
     );
     // codex's CLI is missing: one row, `not installed` and [copy install]; no sign-in, no accounts.
     assert!(
-        page.contains(r#"<div class="acr ni"><span class="ptg">codex</span><span class="sk">not installed</span><button type="button" class="sec" data-copy="npm install -g @openai/codex" aria-label="copy npm install -g @openai/codex">copy install</button></div>"#),
+        page.contains(r#"<div class="acr ni"><span class="ptg">codex</span><span class="sk">not installed</span><button type="button" class="sec" data-copy="npm install -g @openai/codex" title="npm install -g @openai/codex">copy install</button></div>"#),
         "{page}"
     );
     assert!(
