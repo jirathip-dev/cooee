@@ -1,0 +1,3178 @@
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request less than a minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  * clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (macos-latest) (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (ubuntu-latest) (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  * install
+  * build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* msrv (ubuntu-latest) (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request less than a minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  * clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (macos-latest) (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (ubuntu-latest) (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  * install
+  * build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* msrv (ubuntu-latest) (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request less than a minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (macos-latest) (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (ubuntu-latest) (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  * install
+  * build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* msrv (ubuntu-latest) (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request less than a minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (macos-latest) (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (ubuntu-latest) (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  * install
+  * build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* msrv (ubuntu-latest) (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (macos-latest) (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (ubuntu-latest) (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  * install
+  * build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* msrv (ubuntu-latest) (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (macos-latest) (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  * install
+  * build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* msrv (ubuntu-latest) (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (macos-latest) (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  * install
+  * build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* msrv (ubuntu-latest) (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (macos-latest) (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  * test
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  * build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+* stable (macos-latest) (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  * Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* msrv (macos-latest) (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  * Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 1 minute ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 3 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 3 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  * playwright (390, 1440, axe)
+  * Run actions/upload-artifact@v4
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 3 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* ui (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  X playwright (390, 1440, axe)
+  ✓ Run actions/upload-artifact@v4
+  ✓ Run actions/upload-artifact@v4
+  - Post Run actions/setup-node@v4
+  - Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+
+X issue-34 ci jirathip-dev/cooee#66 · 42338266592
+Triggered via pull_request about 3 minutes ago
+
+JOBS
+✓ no-node in 27s (ID 128300012275)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 1m43s (ID 128300012434)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 1m27s (ID 128300012440)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m1s (ID 128300012485)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+X ui in 3m9s (ID 128300012521)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  X playwright (390, 1440, axe)
+  ✓ Run actions/upload-artifact@v4
+  ✓ Run actions/upload-artifact@v4
+  - Post Run actions/setup-node@v4
+  - Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (ubuntu-latest) in 1m17s (ID 128300012534)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 128300012561)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+no-node: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+no-node: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ts: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+ts: .github#1
+

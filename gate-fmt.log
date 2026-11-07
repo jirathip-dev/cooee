@@ -1,0 +1,4 @@
+cargo fmt --all --check
+topcoat fmt --check $(git ls-files 'crates/*.rs' 'web/*.rs')
+sh: topcoat: command not found
+error: recipe `fmt` failed on line 6 with exit code 127

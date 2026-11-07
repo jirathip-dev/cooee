@@ -1,0 +1,4 @@
+cf41239bf9f7172eff1f8616a7353f1fc27e55b3 msrv (ubuntu-latest)= msrv (macos-latest)= stable (ubuntu-latest)= stable (macos-latest)= ts= no-node= ui=
+cf41239bf9f7172eff1f8616a7353f1fc27e55b3 msrv (ubuntu-latest)= msrv (macos-latest)= stable (ubuntu-latest)= stable (macos-latest)= ts=SUCCESS no-node=SUCCESS ui=
+cf41239bf9f7172eff1f8616a7353f1fc27e55b3 msrv (ubuntu-latest)=SUCCESS msrv (macos-latest)=SUCCESS stable (ubuntu-latest)=SUCCESS stable (macos-latest)=SUCCESS ts=SUCCESS no-node=SUCCESS ui=
+cf41239bf9f7172eff1f8616a7353f1fc27e55b3 msrv (ubuntu-latest)=SUCCESS msrv (macos-latest)=SUCCESS stable (ubuntu-latest)=SUCCESS stable (macos-latest)=SUCCESS ts=SUCCESS no-node=SUCCESS ui=SUCCESS
