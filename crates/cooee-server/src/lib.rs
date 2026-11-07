@@ -43,7 +43,7 @@ use topcoat::{
     view::View,
 };
 
-pub use hub::{Hub, HubError, Listing, Out, Resume, Slice};
+pub use hub::{CardSpec, Hub, HubError, Launch, Listing, Out, Resume, Slice};
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
@@ -356,7 +356,8 @@ async fn chat(cx: &Cx) -> Result<impl View> {
     let Ok((thread, turn)) = blocking(cx, move |hub| hub.thread(&id)).await else {
         return Err(not_found().into());
     };
-    Ok(cooee_web::chat_page(cx, thread, turn))
+    let choices = logins(cx).choices(&thread.agent);
+    Ok(cooee_web::chat_page(cx, thread, turn, choices))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -442,6 +443,11 @@ struct New {
     /// The agent's provider account (none: its default).
     #[serde(default)]
     account: Option<String>,
+    /// The model and effort (#553 row 34; empty: the agent's default).
+    #[serde(default)]
+    model: String,
+    #[serde(default)]
+    effort: String,
 }
 
 /// A new thread's id.
@@ -455,14 +461,15 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     let logins = logins(cx);
     let id = blocking(cx, move |hub| {
         let (account, env) = logins.home(&new.agent, new.account.as_deref())?;
-        let env = env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path()));
-        hub.create(
-            &new.agent,
-            &new.folder,
-            &new.text,
-            &new.random_id,
-            (&account, env),
-        )
+        let words = logins.picks(&new.agent, &new.model, &new.effort)?;
+        let launch = Launch {
+            account: &account,
+            env: env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path())),
+            model: &new.model,
+            effort: &new.effort,
+            words,
+        };
+        hub.create(&new.agent, &new.folder, &new.text, &new.random_id, &launch)
     })
     .await;
     Ok(Answer(id.map(|id| Created { id })))
@@ -528,18 +535,46 @@ async fn send(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<cooee_core::Item
     ))
 }
 
-/// `POST /threads/{id}/approve`.
+/// `POST /threads/{id}/approve`: a choice, an "other" text, or a secret card's `value` (passed to its plugin only).
 #[derive(Deserialize)]
 struct Approve {
     item: u64,
     option: String,
+    #[serde(default)]
+    value: Option<String>,
 }
 
 #[route(POST "/threads/{id}/approve")]
 async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Answer<Option<cooee_core::Item>>> {
     let id = thread_id(cx);
+    let by = request_context::<Paired>(cx).0.label.clone();
     Ok(Answer(
-        blocking(cx, move |hub| hub.approve(&id, a.item, &a.option)).await,
+        blocking(cx, move |hub| {
+            hub.approve(&id, a.item, &a.option, a.value.as_deref(), &by)
+        })
+        .await,
+    ))
+}
+
+/// `POST /threads/{id}/model` `{model, effort}`: the composer's chip (#553 row 34; empty: the default).
+#[derive(Deserialize)]
+struct ModelPick {
+    #[serde(default)]
+    model: String,
+    #[serde(default)]
+    effort: String,
+}
+
+#[route(POST "/threads/{id}/model")]
+async fn model(cx: &Cx, Json(p): Json<ModelPick>) -> Result<Answer<cooee_core::Item>> {
+    let (id, logins) = (thread_id(cx), logins(cx));
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let agent = hub.thread(&id)?.0.agent;
+            logins.picks(&agent, &p.model, &p.effort)?;
+            hub.pick(&id, &p.model, &p.effort)
+        })
+        .await,
     ))
 }
 
@@ -894,7 +929,12 @@ fn agent_thread(
     })?;
     let (account, env) = logins.home(&agent.id, None)?;
     let env = env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path()));
-    hub.start(&agent.id, folder, prompt, rid, (&account, env))
+    let launch = Launch {
+        account: &account,
+        env,
+        ..Launch::default()
+    };
+    hub.start(&agent.id, folder, prompt, rid, &launch)
 }
 
 fn themes(cx: &Cx) -> Arc<Themes> {
@@ -1161,22 +1201,43 @@ async fn plugin_dot(cx: &Cx, Json(d): Json<Dot>) -> Result<Response> {
     Json(d.on).into_response(cx)
 }
 
-/// `POST /plugin/card`: a plugin's choice card in a thread.
-#[derive(Deserialize)]
-struct Card {
-    thread: String,
-    text: String,
-    options: Vec<String>,
+/// `POST /plugin/card`: a plugin's card in a thread ([`CardSpec`]).
+#[route(POST "/plugin/card")]
+async fn plugin_card(cx: &Cx, Json(c): Json<CardSpec>) -> Result<Answer<cooee_core::Item>> {
+    let p = request_context::<Caller>(cx).0.clone();
+    Ok(Answer(blocking(cx, move |hub| hub.card(&p, c)).await))
 }
 
-#[route(POST "/plugin/card")]
-async fn plugin_card(cx: &Cx, Json(c): Json<Card>) -> Result<Answer<cooee_core::Item>> {
-    let name = request_context::<Caller>(cx).0.name.clone();
+/// `POST /plugin/handoff` `{from, to, text}`: `from` shows `continued in` `to`, which gets `text` `from` it; `POST
+/// /plugin/line` `{thread, from, text}`: a line flowing back into `thread` from thread `from` (#553 row 35).
+#[derive(Deserialize)]
+struct Handoff {
+    #[serde(alias = "thread")]
+    to: String,
+    from: String,
+    text: String,
+}
+
+#[route(POST "/plugin/handoff")]
+async fn plugin_handoff(cx: &Cx, Json(h): Json<Handoff>) -> Result<Answer<cooee_core::Item>> {
     Ok(Answer(
         blocking(cx, move |hub| {
-            hub.card(&c.thread, &name, &c.text, &c.options)
+            hub.link(&h.from, &h.to, "", true)?;
+            hub.link(&h.to, &h.from, &h.text, false)
         })
         .await,
+    ))
+}
+
+#[route(POST "/plugin/line")]
+async fn plugin_line(cx: &Cx, Json(h): Json<Handoff>) -> Result<Answer<cooee_core::Item>> {
+    if h.text.trim().is_empty() {
+        return Ok(Answer(Err(HubError::Refused(
+            "a line needs text".to_owned(),
+        ))));
+    }
+    Ok(Answer(
+        blocking(cx, move |hub| hub.link(&h.to, &h.from, &h.text, false)).await,
     ))
 }
 
@@ -1347,6 +1408,7 @@ pub fn router(
         .route(send)
         .route(approve)
         .route(cancel)
+        .route(model)
         .route(close)
         .route(read)
         .route(login_start)
@@ -1360,6 +1422,8 @@ pub fn router(
         .route(proxy)
         .route(plugin_push)
         .route(plugin_card)
+        .route(plugin_handoff)
+        .route(plugin_line)
         .route(plugin_list)
         .route(plugin_log)
         .route(plugin_act)

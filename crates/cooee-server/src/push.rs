@@ -591,6 +591,7 @@ mod tests {
                     tapped: tapped.map(str::to_owned),
                     chosen: None,
                     plugin: None,
+                    card: cooee_core::Card::default(),
                 },
             })
         };
