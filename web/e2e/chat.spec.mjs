@@ -132,10 +132,6 @@ test("1,000 messages: a window around the anchor, no long tasks, the anchor kept
   await page.addInitScript(() => {
     window.longTasks = [];
     new PerformanceObserver((l) => window.longTasks.push(...l.getEntries().map((e) => e.duration))).observe({ type: "longtask" });
-    // DIAG #94 (reverted): when, in which step, and attributed to what.
-    window.diag = [];
-    new PerformanceObserver((l) => window.diag.push(...l.getEntries().map((e) => ["lt", window.step, Math.round(e.startTime), Math.round(e.duration), Math.round(performance.now()), JSON.stringify(e.attribution?.map((a) => [a.name, a.containerType, a.containerSrc, a.containerName]))]))).observe({ type: "longtask" });
-    new PerformanceObserver((l) => window.diag.push(...l.getEntries().filter((e) => e.blockingDuration > 0).map((e) => ["loaf", window.step, Math.round(e.startTime), Math.round(e.duration), Math.round(e.blockingDuration), Math.round(e.renderStart ? e.startTime + e.duration - e.renderStart : 0), Math.round(e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0), JSON.stringify(e.scripts.map((s) => [s.invoker, s.sourceURL.split("/").pop(), s.sourceFunctionName, s.sourceCharPosition, Math.round(s.duration), Math.round(s.forcedStyleAndLayoutDuration), Math.round(s.pauseDuration)]))]))).observe({ type: "long-animation-frame" });
   });
   await page.goto(`/t/long-${info.project.name}`);
   // Opened at the first unread message, with the bar there.
@@ -151,7 +147,7 @@ test("1,000 messages: a window around the anchor, no long tasks, the anchor kept
   });
   const minId = () => list.evaluate((l) => Math.min(...[...l.children].filter((r) => r.dataset.id).map((r) => +r.dataset.id)));
   // Long tasks are counted from the first paint on: scrolling through the thread and the keyboard.
-  await page.evaluate(() => { window.longTasks = []; window.step = `reset@${Math.round(performance.now())}`; });
+  await page.evaluate(() => { window.longTasks = []; });
   // Each older slice is held until the row in view is recorded, so the prepend happens after it.
   const held = [];
   await page.route(/\/messages\?around=/, (route) => held.push(route));
@@ -159,7 +155,6 @@ test("1,000 messages: a window around the anchor, no long tasks, the anchor kept
     const first = await minId();
     await list.evaluate((l) => { l.scrollTop = Math.max(1, l.clientHeight * 1.5); });
     await expect.poll(() => held.length).toBeGreaterThan(0);
-    await page.evaluate((i) => { window.step = `slice${i}`; }, i);
     const before = await anchor();
     await held.shift().continue();
     await expect.poll(minId).toBeLessThan(first);
@@ -173,13 +168,11 @@ test("1,000 messages: a window around the anchor, no long tasks, the anchor kept
   expect(await list.locator("li").count()).toBeLessThan(200);
 
   // The keyboard opening (a shorter viewport) keeps the anchor.
-  await page.evaluate(() => { window.step = "kbd"; });
   const size = page.viewportSize();
   const before = await anchor();
   await page.setViewportSize({ width: size.width, height: size.height - 300 });
   await page.waitForTimeout(100);
   expect(await anchor()).toEqual(before);
-  for (const d of await page.evaluate(() => window.diag)) console.log(`DIAG94 ${info.project.name} ${JSON.stringify(d)}`);
   // Neither the scrolling nor the keyboard made a task over 50 ms.
   expect(await page.evaluate(() => window.longTasks.filter((d) => d > 50))).toEqual([]);
 });
