@@ -76,8 +76,9 @@ pub struct FakeShed {
 }
 
 const CLI: &str = r#"#!/bin/sh
-# The fake `shed` CLI: `agents` lists one agent; `run` records its arguments and prints the terminal (it waits while
-# the gate `hold-run` is shut, and fails, as a slow start's CLI would, while `run-fails` is); `machine ls` prints
+# The fake `shed` CLI: `agents` lists one agent (it fails while the gate `agents-fails` is shut); `run` records its
+# arguments and prints the terminal (it waits while the gate `hold-run` is shut, and fails, as a slow start's CLI
+# would, while `run-fails` is); `machine ls` prints
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
 # after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env.
@@ -91,7 +92,8 @@ case "$*" in
   [ -e "$f" ] || exit 1
   if [ -e "$f.sent" ]; then sed 's/,"history":\[[^]]*\]//' "$f"; else cat "$f"; : >"$f.sent"; fi
   if grep -q '"online":false' "$f"; then exit 1; fi ;;
-*" agents") echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
+*" agents") [ -e "$gates/agents-fails" ] && { echo 'fake shed: agents down' >&2; exit 1; }
+  echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
 *" run "*)
   while [ -e "$gates/hold-run" ]; do sleep 0.02; done
   [ -e "$gates/run-fails" ] && { echo 'fake shed: timed out' >&2; exit 1; }
