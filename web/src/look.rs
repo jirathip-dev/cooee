@@ -347,6 +347,7 @@ pub fn read_pack(
     schemes: &BTreeMap<String, Scheme>,
 ) -> Result<(Theme, BTreeMap<String, Scheme>), Vec<String>> {
     let mut fails = Vec::new();
+    links(dir, "", &mut fails);
     let json = file(dir, "theme.json", &mut fails).ok_or(vec!["theme.json: missing".to_owned()])?;
     let mut t: Theme =
         serde_json::from_slice(&json).map_err(|e| vec![format!("theme.json: {e}")])?;
@@ -429,6 +430,24 @@ pub fn read_pack(
 /// Every check that fails.
 pub fn check(dir: &Path) -> Result<(), Vec<String>> {
     read_pack(dir, &builtin_schemes()).map(drop)
+}
+
+/// Every symlink in the pack fails the gate: a pack's files are its own, never ones it points at.
+fn links(dir: &Path, at: &str, fails: &mut Vec<String>) {
+    for e in fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .filter_map(Result::ok)
+    {
+        let name = format!("{at}{}", e.file_name().to_string_lossy());
+        match e.file_type() {
+            Ok(t) if t.is_symlink() => {
+                fails.push(format!("{name}: a symlink (a pack holds files only)"));
+            }
+            Ok(t) if t.is_dir() && name != ".git" => links(&e.path(), &format!("{name}/"), fails),
+            _ => {}
+        }
+    }
 }
 
 /// A folder's entries by name, sorted; a missing folder has none.

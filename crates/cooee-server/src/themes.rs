@@ -89,7 +89,7 @@ fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
     Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
 }
 
-/// Copies folder `from` into `to` (made), all but `.git`.
+/// Copies folder `from` into `to` (made), all but `.git`; a symlink is refused, never followed.
 fn copy(from: &Path, to: &Path) -> io::Result<()> {
     fs::create_dir_all(to)?;
     for e in fs::read_dir(from)? {
@@ -97,7 +97,14 @@ fn copy(from: &Path, to: &Path) -> io::Result<()> {
         if e.file_name() == ".git" {
             continue;
         }
-        if e.file_type()?.is_dir() {
+        let t = e.file_type()?;
+        if t.is_symlink() {
+            return Err(other(format!(
+                "{}: a symlink (a pack holds files only)",
+                e.path().display()
+            )));
+        }
+        if t.is_dir() {
             copy(&e.path(), &to.join(e.file_name()))?;
         } else {
             fs::copy(e.path(), to.join(e.file_name()))?;

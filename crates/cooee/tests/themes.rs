@@ -233,6 +233,32 @@ fn add_remove_and_list_with_the_lock() {
     assert!(!ok && out.contains("farm isn't installed"), "{out}");
 }
 
+#[test]
+fn a_pack_with_a_symlink_is_never_installed_or_served() {
+    let s = setup("th-link");
+    let secret = s.dir.join("secret.txt");
+    fs::write(&secret, "TOP-SECRET").unwrap();
+    let evil = s.dir.join("evil.git");
+    farm_at(&evil, false);
+    fs::remove_file(evil.join("icon.png")).unwrap();
+    std::os::unix::fs::symlink(&secret, evil.join("icon.png")).unwrap();
+    let (ok, out) = s.run(&["theme", "check", &evil.display().to_string()]);
+    assert!(!ok && out.contains("icon.png: a symlink"), "{out}");
+    // From a folder: refused, not followed.
+    let (ok, out) = s.run(&["theme", "add", &evil.display().to_string(), "--yes"]);
+    assert!(!ok && out.contains("icon.png: a symlink"), "{out}");
+    // From a git URL: the archive keeps the link, so the gate refuses it.
+    git(&evil, &["init", "--quiet", "-b", "main"]);
+    git(&evil, &["add", "-A"]);
+    git(&evil, &["commit", "--quiet", "-m", "evil"]);
+    let url = format!("file://{}", evil.display());
+    let (ok, out) = s.run(&["theme", "add", &url, "--yes"]);
+    assert!(!ok && out.contains("icon.png: a symlink"), "{out}");
+    assert!(!s.dir.join("themes/evil").exists());
+    let (code, body) = s.cooee.get("/look/evil/icon.png");
+    assert!(code != 200 && !body.contains("TOP-SECRET"), "{code} {body}");
+}
+
 /// Reads `path`'s SSE stream until an event named `name`.
 fn wait_for_event(s: &Setup, path: &str, name: &str, then: impl FnOnce()) {
     let mut stream = TcpStream::connect(&s.cooee.addr).unwrap();
