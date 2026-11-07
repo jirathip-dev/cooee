@@ -177,7 +177,7 @@ fn a_qr_code_is_prefilled_and_pairs_at_once() {
     // The Camera opens the link: the six boxes are filled in and say so; the page sends them itself.
     let (_, page) = c.raw("GET", &format!("/pair?code={pin}"), &[], "");
     assert!(
-        page.contains(r#"class="cb ok""#) && page.contains("pairing…"),
+        page.contains(r#"class="cbx ok""#) && page.contains("pairing…"),
         "{page}"
     );
     for d in pin.chars() {

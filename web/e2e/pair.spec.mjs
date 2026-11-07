@@ -131,48 +131,62 @@ function authenticator(base) {
 }
 const IPAD = { "user-agent": "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) Version/18.0 Mobile/15E148 Safari/604.1" };
 
-test("the approve card: no passkey on this device, approved elsewhere, and a request that ran out", async ({ page, browser, baseURL }) => {
-  // Another paired device (B) holds the only passkey.
-  const b = await browser.newContext(unpaired);
-  const bPage = await b.newPage();
-  await bPage.goto(`/pair?code=${newCode()}`);
-  await bPage.waitForURL(/\/$/);
+/// A browser paired now from a QR link, on the thread list.
+async function paired(browser) {
+  const context = await browser.newContext(unpaired);
+  const page = await context.newPage();
+  await page.goto(`/pair?code=${newCode()}`);
+  await page.waitForURL(/\/$/);
+  return { context, page };
+}
+
+test("the approve card: no passkey on this device, approved elsewhere, and a request that ran out", async ({ browser, baseURL }) => {
+  // This device (A) has no passkey; another paired device (B) holds the only new one.
+  const { context: a, page } = await paired(browser);
+  const { context: b } = await paired(browser);
   const challenge = async () => (await (await b.request.post("/passkey/challenge", { data: {} })).json()).challenge;
   const key = authenticator(baseURL);
   expect((await b.request.post("/passkeys", { data: key.create(await challenge()) })).status()).toBe(200);
-  const bLabel = (await (await b.request.get("/devices")).json()).find((d) => d.me).label;
+  const me = async (ctx) => (await (await ctx.request.get("/devices")).json()).find((d) => d.me);
+  const bLabel = (await me(b)).label;
+  // Removed after, by B, newest first so that B goes last.
+  const mine = [(await me(b)).id, (await me(a)).id];
   const c = await browser.newContext(unpaired);
   try {
-    const { claim } = await (await c.request.post("/pair/request", { headers: IPAD, data: {} })).json();
-    await page.goto("/");
-    const card = page.locator("#pairing .apc");
-    await expect(card).toContainText(`Approving needs a passkey. Save one on this device, or approve on ${bLabel}.`);
+    // Other specs may leave requests open on this server: the cards here are found by their check word.
+    const { claim, word } = await (await c.request.post("/pair/request", { headers: IPAD, data: {} })).json();
+    await page.reload();
+    const card = page.getByRole("group", { name: `iPad asks to pair: ${word}` });
+    // It names a device that has one (another spec's may be first).
+    const holder = (await (await a.request.get("/passkeys")).json()).find((k) => !k.mine).label;
+    await expect(card).toContainText(`Approving needs a passkey. Save one on this device, or approve on ${holder}.`);
     await expect(card.getByRole("button", { name: "save a passkey" })).toBeVisible();
     await expect(card.getByRole("button", { name: /^approve/ })).toHaveCount(0);
     await shots(page, "approve-no-passkey");
 
     // B approves with its passkey, the iPad collects its cookie: the card here says so.
-    const [ask] = await (await b.request.get("/pair/asks")).json();
+    const ask = (await (await b.request.get("/pair/asks")).json()).find((x) => x.word === word);
+    mine.push(ask.id);
     const answer = await b.request.post("/pair/answer", { data: { id: ask.id, yes: true, passkey: key.get(await challenge()) } });
     expect(answer.status()).toBe(200);
     expect((await c.request.post("/pair/claim", { data: { claim } })).status()).toBe(200);
-    await expect(page.locator("#pairing .pc")).toContainText(`✓ iPad paired on ${bLabel}`);
+    await expect(card).toContainText(`✓ iPad paired on ${bLabel}`);
     await shots(page, "approve-elsewhere");
 
     // A request nobody answers leaves the list after 5 minutes: the card says it ran out.
     const late = await browser.newContext(unpaired);
-    const { claim: again } = await (await late.request.post("/pair/request", { headers: IPAD, data: {} })).json();
-    await expect(page.locator("#pairing .apc")).toBeVisible();
+    const r = await (await late.request.post("/pair/request", { headers: IPAD, data: {} })).json();
+    const lateCard = page.getByRole("group", { name: `iPad asks to pair: ${r.word}` });
+    await expect(lateCard).toHaveClass("apc");
     await page.clock.setFixedTime(Date.now() + 6 * 60_000);
-    await late.request.post("/pair/cancel", { data: { claim: again } });
-    await expect(page.locator("#pairing .pc").last()).toContainText("iPad's request expired");
-    await expect(page.locator("#pairing .pc").last()).toContainText("Nobody approved it in 5 minutes. It can ask again.");
+    await late.request.post("/pair/cancel", { data: { claim: r.claim } });
+    await expect(lateCard).toContainText("iPad's request expired");
+    await expect(lateCard).toContainText("Nobody approved it in 5 minutes. It can ask again.");
     await late.close();
   } finally {
     await b.request.post("/passkeys/remove", { data: { id: key.id } });
-    const ds = await (await page.request.get("/devices")).json();
-    for (const d of ds.filter((d) => !d.me && (d.label === "iPad" || d.label === bLabel)))
-      await page.request.post("/devices/remove", { data: { id: d.id } });
+    for (const id of mine.reverse()) expect((await b.request.post("/devices/remove", { data: { id } })).status()).toBe(200);
+    await a.close();
     await b.close();
     await c.close();
   }
