@@ -1336,7 +1336,7 @@ async fn pair(cx: &Cx, state: PairState) -> Result<impl View> {
                     </p>
                     <div class="acts ctr">
                         <span class="m" id="ask-left"></span>
-                        <button type="button" class="q" id="ask-cancel">
+                        <button type="button" id="ask-cancel">
                             "cancel"
                         </button>
                     </div>
