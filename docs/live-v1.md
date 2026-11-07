@@ -25,5 +25,5 @@ later the same way with its own port and `[[plugins]]` entries.
 | 4 | See a tool row, and approve one tool. | |
 | 5 | Turn on notifications, lock the phone, get a push when the agent needs you, tap it into the thread. | |
 | 6 | Do a provider login from the phone (M3). | |
-| 7 | Switch Style and Sprites in Appearance. | |
+| 7 | Switch Style and Figures in Appearance. | |
 | 8 | Type Thai in the composer and send it. | |

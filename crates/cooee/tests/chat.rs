@@ -305,7 +305,7 @@ fn scene_draws_one_sprite_per_session_on_a_page_per_folder() {
         let cookie = format!("{}; cooee-look={pick}", s.cooee.cookie);
         s.cooee.raw("GET", "/", &[("Cookie", &cookie)], "").1
     };
-    let scene = page("list:scene/style:terminal");
+    let scene = page("scene:on/style:terminal");
     assert!(scene.contains(r#"data-style="terminal""#), "{scene}");
     assert_eq!(
         scene.matches(r#"<section class="sp""#).count(),
@@ -321,24 +321,23 @@ fn scene_draws_one_sprite_per_session_on_a_page_per_folder() {
     }
     assert!(scene.contains("/look/farm/sprites.svg#s-"), "{scene}");
     assert!(!scene.contains(r#"<section class="fc""#), "{scene}");
-    // In Scene the sprites switch is greyed out; Scene is checked.
-    for v in ["on", "ascii", "off"] {
-        let key = format!(r#"data-k="sprites" data-v="{v}""#);
-        let at = scene.find(&key).unwrap();
-        let tag = &scene[at..at + scene[at..].find('>').unwrap()];
-        assert!(tag.contains("disabled"), "{tag}");
-    }
+    // Scene is checked; Figures stays live (ASCII or None leave Scene, amendment A).
     assert!(
         scene.contains(r#"data-v="scene" aria-checked="true""#),
         "{scene}"
     );
-    // Sprites ascii or a theme with no sprites: no Scene, the cards, and Scene not offered.
-    for pick in ["list:scene/sprites:ascii", "list:scene/theme:terminal"] {
+    // Figures ASCII or None, or a theme with no sprites (plain): no Scene, the cards, and Scene not offered.
+    for pick in [
+        "scene:on/figures:ascii",
+        "scene:on/figures:none",
+        "scene:on/theme:plain",
+    ] {
         let list = page(pick);
         assert!(!list.contains(r#"id="scene""#), "{pick}");
         assert!(list.contains(r#"<section class="fc""#), "{pick}");
-        let at = list.find(r#"data-v="scene""#).unwrap();
-        let tag = &list[at..at + list[at..].find('>').unwrap()];
+        let v = list.find(r#"data-v="scene""#).unwrap();
+        let at = list[..v].rfind("<button").unwrap();
+        let tag = &list[at..v];
         assert!(tag.contains("hidden"), "{pick}: {tag}");
     }
     // The scene's art, its calm layers only (cooee has no host load).
@@ -376,7 +375,27 @@ fn fake_shed_server() {
     let Some(dir) = std::env::var_os("FAKE_SHED_DIR") else {
         return;
     };
-    let _shed = FakeShed::start(PathBuf::from(dir).as_path(), version());
+    let shed = FakeShed::start(PathBuf::from(dir).as_path(), version());
+    // Workflow sessions another tool started (#33): an impl lane at work, a rev lane that asks, a finished one.
+    if std::env::var_os("FAKE_SHED_LANES").is_some() {
+        let lane = |name: &str, item: &str, role: &str, prompt: &str| {
+            let url = format!("https://github.com/o/cooee/issues/{}", &item[1..]);
+            let labels = [
+                ("source", "drover"),
+                ("group", "cooee"),
+                ("item", item),
+                ("role", role),
+                ("round", "1"),
+                ("url", url.as_str()),
+            ];
+            shed.lane(name, &labels);
+            shed.report(name, "working", None);
+            shed.input(name, &format!("\x1e{}\n", json!({ "prompt": prompt })));
+        };
+        lane("lane-impl", "#33", "impl", "hang on");
+        lane("lane-rev", "#31", "rev", "approve it");
+        lane("lane-done", "#30", "fix", "use a tool");
+    }
     loop {
         thread::park();
     }

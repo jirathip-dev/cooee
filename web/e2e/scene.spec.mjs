@@ -1,6 +1,6 @@
 // Scene (#34): Style's third value draws the thread list as the theme's scene: one sprite per session on a page per
 // folder (swiped, a dot per page), a tap opens the thread in the style chosen before, refreshes never copy a sprite,
-// the sprites switch is greyed out in it and Scene is offered only with sprites; and the audit at 390 in each theme.
+// Scene is offered only with Figures Sprite (ASCII, None or the plain theme hide it); and the audit at 390 in each theme.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -9,7 +9,7 @@ const pickOn = (context, url, pick) =>
   context.addCookies([{ name: "cooee-look", value: Object.entries(pick).map(([k, v]) => `${k}:${v}`).join("/"), url }]);
 // The list as the server has it: each folder's thread ids, in order.
 const listed = async (page) =>
-  (await (await page.request.get("/threads")).json()).map((c) => ({ folder: c.folder, ids: c.rows.map((r) => r.id) }));
+  (await (await page.request.get("/threads")).json()).map((c) => ({ folder: c.folder, ids: c.rows.concat(c.done ?? []).map((r) => r.id) }));
 // The scene as drawn: each page's folder and its sprites' ids.
 const drawn = (page) =>
   page.locator("#scene .sp").evaluateAll((ps) =>
@@ -38,7 +38,7 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test("Scene draws one sprite per session on a page per folder; a dot turns the page; a tap opens the thread", async ({ page, context, baseURL }) => {
-  await pickOn(context, baseURL, { style: "terminal", list: "scene" });
+  await pickOn(context, baseURL, { style: "terminal", scene: "on" });
   await page.goto("/");
   await expect(page.locator(".fc")).toHaveCount(0);
   // Other tests add threads meanwhile: the page drawn between two equal lists.
@@ -71,7 +71,7 @@ test("Scene draws one sprite per session on a page per folder; a dot turns the p
 });
 
 test("refreshed 5 times, Scene keeps one sprite per session", async ({ page, context, baseURL }) => {
-  await pickOn(context, baseURL, { list: "scene" });
+  await pickOn(context, baseURL, { scene: "on" });
   await page.goto("/");
   for (let i = 0; i < 5; i++) {
     await page.getByRole("button", { name: "refresh" }).click();
@@ -85,29 +85,28 @@ test("refreshed 5 times, Scene keeps one sprite per session", async ({ page, con
   await expect(page.locator("#scene .sdt a")).toHaveCount((await drawn(page)).length);
 });
 
-test("in Scene the sprites switch is greyed out; ascii, off or a theme with no sprites hide Scene", async ({ page }, info) => {
+test("Scene is offered only with Figures Sprite; ASCII, None or the plain theme hide it", async ({ page }, info) => {
   await page.goto("/");
   await page.getByRole("button", { name: "look: theme and colours" }).click();
   const scene = sheet(page).locator('[data-k=style][data-v=scene]');
   await scene.click();
-  // The list is drawn again as the scene; the sheet says why the switch is off.
+  // The list is drawn again as the scene.
   await expect(page.locator("#scene")).toBeVisible();
   await page.getByRole("button", { name: "look: theme and colours" }).click();
   await expect(scene).toHaveAttribute("aria-checked", "true");
-  for (const v of ["on", "ascii", "off"]) await expect(sheet(page).locator(`[data-k=sprites][data-v=${v}]`)).toBeDisabled();
-  await expect(sheet(page).getByText("scene needs sprites")).toBeVisible();
   await page.screenshot({ path: `../../ui-${info.project.name}/scene-look.png` });
-  // Modern again: the cards, the switch back.
+  // Modern again: the cards.
   await sheet(page).locator('[data-k=style][data-v=modern]').click();
   await expect(page.locator("#scene")).toHaveCount(0);
   await expect(page.locator(".fc").first()).toBeVisible();
   await page.getByRole("button", { name: "look: theme and colours" }).click();
-  await expect(sheet(page).locator("[data-k=sprites][data-v=ascii]")).toBeEnabled();
-  await sheet(page).locator("[data-k=sprites][data-v=ascii]").click();
-  await expect(scene).toBeHidden();
-  await sheet(page).locator("[data-k=sprites][data-v=on]").click();
+  for (const f of ["ascii", "none"]) {
+    await sheet(page).locator(`[data-k=figures][data-v=${f}]`).click();
+    await expect(scene).toBeHidden();
+  }
+  await sheet(page).locator("[data-k=figures][data-v=sprite]").click();
   await expect(scene).toBeVisible();
-  await sheet(page).locator("[data-k=theme][data-v=terminal]").click();
+  await sheet(page).locator("[data-k=theme][data-v=plain]").click();
   await expect(scene).toBeHidden();
   await sheet(page).locator("[data-k=theme][data-v=farm]").click();
   await page.keyboard.press("Escape");
@@ -118,7 +117,7 @@ for (const theme of ["farm", "kitchen", "garden"])
     test(`Scene's audit at 390: ${theme}, ${mode}`, async ({ page, context, baseURL }, info) => {
       test.skip(info.project.name !== "390", "the audit is at 390");
       await clock(page, false);
-      await pickOn(context, baseURL, { theme, mode, list: "scene" });
+      await pickOn(context, baseURL, { theme, mode, scene: "on" });
       await page.goto("/");
       await expect(page.locator("#scene .sb").first()).toBeVisible();
       await expect.poll(() => page.locator("#scene .sky").first().evaluate((i) => i.complete && i.naturalWidth > 0)).toBe(true);
@@ -131,7 +130,7 @@ for (const theme of ["farm", "kitchen", "garden"])
 test("farm's Scene at night: the strip's night from 19:00 on this device's clock", async ({ page, context, baseURL }, info) => {
   test.skip(info.project.name !== "390", "the audit is at 390");
   await clock(page, true);
-  await pickOn(context, baseURL, { list: "scene" });
+  await pickOn(context, baseURL, { scene: "on" });
   await page.goto("/");
   await expect(page.locator("#scene")).toHaveClass(/night/);
   await expect(page.locator("#scene .sky").first()).toHaveAttribute("src", "/look/farm/scene.svg#night");

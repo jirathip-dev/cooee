@@ -56,7 +56,7 @@ pub struct Theme {
     pub scene: Option<Vec<u8>>,
 }
 
-/// The plain word for a state key: what every theme says beside its own word, and all the terminal theme says.
+/// The plain word for a state key: what every theme says beside its own word, and all the plain theme says.
 #[must_use]
 pub fn plain(key: &str) -> &str {
     match key {
@@ -109,6 +109,8 @@ pub struct Looks {
     pub themes: BTreeMap<String, Theme>,
     /// By file name.
     pub schemes: BTreeMap<String, Scheme>,
+    /// The ASCII figures, for `look.ts`.
+    pub ascii: &'static [(&'static str, [&'static str; 2])],
 }
 
 macro_rules! builtin_theme {
@@ -150,7 +152,23 @@ pub(crate) const THEMES: [Builtin; 4] = [
     builtin_theme!("farm"),
     builtin_theme!("kitchen"),
     builtin_theme!("garden"),
-    builtin_theme!("terminal", None, None),
+    builtin_theme!("plain", None, None),
+];
+
+/// The ASCII figures (herdsman#335), the same in every theme: per state (`edit read run` while working), and the
+/// 132 × 100 `loading` and `empty`, two frames each that CSS swaps.
+pub const ASCII: [(&str, [&str; 2]); 11] = [
+    ("edit", ["~o=", "=o~"]),
+    ("read", ["o.o", "o.-"]),
+    ("run", ["o>_", "o> "]),
+    ("needs", ["(!)", "[!]"]),
+    ("done", ["\\o/", "|o|"]),
+    ("merged", ["\\o/", "-o-"]),
+    ("fail", ["x_x", "x.x"]),
+    ("idle", ["-.-", "-_-"]),
+    ("ended", ["[ ]", "[_]"]),
+    ("loading", ["( o.o )\n  ...", "( o.O )\n  .. "]),
+    ("empty", ["( -.- )\n  z  ", "( -.- )\n  zZ "]),
 ];
 
 pub(crate) const SCHEMES: [(&str, &str); 12] = builtin_scheme!(
@@ -177,6 +195,16 @@ fn valid_name(name: &str) -> bool {
 }
 
 impl Looks {
+    /// Theme `name`, or `plain` for the old `terminal` theme (#35) unless the owner has a theme of that name.
+    #[must_use]
+    pub fn renamed<'a, T>(themes: &BTreeMap<String, T>, name: &'a str) -> &'a str {
+        if name == "terminal" && !themes.contains_key(name) {
+            "plain"
+        } else {
+            name
+        }
+    }
+
     /// The built-in themes and schemes, then the owner's own from `config_dir` (an own one of the same name
     /// replaces a built-in). `default` is the server's default theme (else farm). Returns why each own file was
     /// refused (unreadable, invalid, failing the gate, a theme naming an unknown scheme, a missing sprite sheet).
@@ -220,7 +248,7 @@ impl Looks {
                 }
             }
         }
-        let default = match default {
+        let default = match default.map(|d| Self::renamed(&themes, d)) {
             Some(d) if themes.contains_key(d) => d.to_owned(),
             Some(d) => {
                 refused.push(format!("theme = {d:?}: no such theme, showing farm"));
@@ -233,6 +261,7 @@ impl Looks {
                 default,
                 themes,
                 schemes,
+                ascii: &ASCII,
             },
             refused,
         )
@@ -468,7 +497,7 @@ mod tests {
         assert_eq!(looks.default, "farm");
         assert_eq!(
             looks.themes.keys().collect::<Vec<_>>(),
-            ["farm", "garden", "kitchen", "terminal"]
+            ["farm", "garden", "kitchen", "plain"]
         );
         assert_eq!(looks.schemes.len(), 12);
         for (name, s) in &looks.schemes {
@@ -493,7 +522,9 @@ mod tests {
             }
         }
         assert_eq!(looks.themes["farm"].word("needs"), "at the gate");
-        assert_eq!(looks.themes["terminal"].word("needs"), "needs you");
+        assert_eq!(looks.themes["plain"].word("needs"), "needs you");
+        // #35: a config's old `theme = "terminal"` is plain.
+        assert_eq!(Looks::load(None, Some("terminal")).0.default, "plain");
     }
 
     #[test]
@@ -583,7 +614,7 @@ mod tests {
             "at the pass · done · claude: Fixed."
         );
         assert_eq!(
-            looks.themes["terminal"].push_body("needs", "codex: Edit?"),
+            looks.themes["plain"].push_body("needs", "codex: Edit?"),
             "needs you · codex: Edit?"
         );
     }

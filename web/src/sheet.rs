@@ -73,19 +73,23 @@ async fn head(which: &str) -> Result<impl View> {
     })
 }
 
-/// A key's values as one radio group (`cur` checked; `hide` not offered; `lock`: all greyed out).
+/// A key's values as one radio group (`cur` checked); one not in `shown` is hidden (`look.ts` shows it once offered).
 #[component]
 async fn seg(
     k: &str,
     list: Vec<&'static str>,
     cur: String,
-    #[default] hide: &str,
-    #[default] lock: bool,
+    #[default] shown: Option<Vec<&'static str>>,
 ) -> Result<impl View> {
+    let list: Vec<(&str, bool)> = list
+        .into_iter()
+        .map(|v| (v, shown.as_ref().is_some_and(|s| !s.contains(&v))))
+        .collect();
     Ok(view! {
         <div class="seg" role="radiogroup" aria-label=(k)>
-            for v in list {
+            for (v, hidden) in list {
                 <button
+                    hidden=(hidden)
                     type="submit"
                     role="radio"
                     name=(k)
@@ -93,8 +97,6 @@ async fn seg(
                     data-k=(k)
                     data-v=(v)
                     aria-checked=(aria(v == cur))
-                    hidden=(v == hide)
-                    disabled=(lock)
                 >
                     (v)
                 </button>
@@ -170,7 +172,7 @@ async fn colours(cx: &Cx, m: &str, showing: String) -> Result<impl View> {
     })
 }
 
-/// The look sheet: STYLE (Scene only with sprites on, #34), SPRITES (greyed out in Scene), THEME, APPEARANCE and the dark and light COLOURS.
+/// The look sheet: STYLE, FIGURES (Scene and Sprite only where offered), THEME, APPEARANCE and the dark and light COLOURS.
 #[component]
 async fn look_sheet(cx: &Cx) -> Result<impl View> {
     let look = shown(cx);
@@ -201,20 +203,19 @@ async fn look_sheet(cx: &Cx) -> Result<impl View> {
                     seg(
                         k: "style",
                         list: vec!["modern", "terminal", "scene"],
-                        cur: look.shape().to_owned(),
-                        hide: if look.art() { "" } else { "scene" }
+                        cur: look.style().to_owned(),
+                        shown: Some(look.styles())
                     )
                 </div>
                 <div class="lrw">
-                    <span>"sprites"</span>
+                    <span>"figures"</span>
                     seg(
-                        k: "sprites",
-                        list: vec!["on", "ascii", "off"],
-                        cur: look.figs().to_owned(),
-                        lock: look.scene()
+                        k: "figures",
+                        list: vec!["sprite", "ascii", "none"],
+                        cur: look.figures().to_owned(),
+                        shown: Some(look.figure_list())
                     )
                 </div>
-                <p class="lft" id="snd" hidden=(!look.scene())>"scene needs sprites"</p>
                 <p class="ch">"theme"</p>
                 <div class="lth" role="listbox" aria-label="theme">
                     for (n, label, on) in tiles {
@@ -310,8 +311,8 @@ async fn settings(cx: &Cx) -> Result<impl View> {
                     <i class="cv">"▸"</i>
                 </button>
                 <p class="ch" id="s-look">"look"</p>
-                look_row(k: "style", v: look.shape().to_owned())
-                look_row(k: "sprites", v: look.figs().to_owned())
+                look_row(k: "style", v: look.style().to_owned())
+                look_row(k: "figures", v: look.figures().to_owned())
                 look_row(k: "theme", v: look.theme().label.clone())
                 look_row(k: "appearance", v: appearance)
                 look_row(k: "colours", v: both)
@@ -360,7 +361,7 @@ struct Tap {
     theme: Option<String>,
     mode: Option<String>,
     style: Option<String>,
-    sprites: Option<String>,
+    figures: Option<String>,
     dark: Option<String>,
     light: Option<String>,
 }
@@ -371,7 +372,7 @@ pub async fn look_set(cx: &Cx, Form(t): Form<Tap>) -> Result<Response> {
         ("theme", &t.theme),
         ("mode", &t.mode),
         ("style", &t.style),
-        ("sprites", &t.sprites),
+        ("figures", &t.figures),
         ("dark", &t.dark),
         ("light", &t.light),
     ];

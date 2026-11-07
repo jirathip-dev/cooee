@@ -111,8 +111,17 @@ function refresh(): Promise<unknown> | null {
 $("#rf")?.addEventListener("click", refresh);
 
 // The thread list's cards from `GET /threads`, drawn as the server draws them (lib.rs `threads`).
-type Row = { id: string; title: string; agent: string; state: string; last: string; at: number; unread: boolean };
-type Card = { folder: string; rows: Row[] };
+type Row = {
+  id: string;
+  title: string;
+  agent: string;
+  state: string;
+  last: string;
+  at: number;
+  unread: boolean;
+  workflow?: { role: string; round: string };
+};
+type Card = { folder: string; rows: Row[]; done?: Row[] };
 const STATE: Record<string, string> = {
   blocked: "needs",
   working: "working",
@@ -130,6 +139,8 @@ const age = (at: number): string => {
         ? `${Math.floor(s / 3600)}h`
         : `${Math.floor(s / 86400)}d`;
 };
+const meta = (r: Row): string =>
+  r.workflow ? `${r.workflow.role} · round ${r.workflow.round} · ${age(r.at)}` : `${r.agent} · ${age(r.at)}`;
 function rowOf(r: Row): HTMLElement {
   const a = make("a", r.unread ? "tr" : "tr rd") as HTMLAnchorElement;
   const st = make("b");
@@ -137,12 +148,7 @@ function rowOf(r: Row): HTMLElement {
   a.href = `/t/${r.id}`;
   st.dataset.st = STATE[r.state] ?? "";
   tp.append(st, r.last);
-  a.append(
-    make("i", "ud", r.unread ? "●" : ""),
-    make("span", "tt", r.title),
-    make("span", "ta", `${r.agent} · ${age(r.at)}`),
-    tp,
-  );
+  a.append(make("i", "ud", r.unread ? "●" : ""), make("span", "tt", r.title), make("span", "ta", meta(r)), tp);
   return a;
 }
 function drawCards(list: HTMLElement, cards: Card[]): void {
@@ -166,8 +172,12 @@ function drawCards(list: HTMLElement, cards: Card[]): void {
     const card = make("section", "fc");
     const fh = make("div", "fh");
     fh.append(make("b", "", c.folder), make("span", "ds", `${c.rows.length} threads`));
-    card.append(fh, ...c.rows.slice(0, 3).map(rowOf));
-    if (c.rows.length > 3) {
+    card.append(fh, ...c.rows.slice(0, c.done ? undefined : 3).map(rowOf));
+    if (c.done?.length) {
+      const done = make("details");
+      done.append(make("summary", "", `${c.done.length} done today`), ...c.done.map(rowOf));
+      card.append(done);
+    } else if (!c.done && c.rows.length > 3) {
       const more = make("details");
       more.append(make("summary", "", `${c.rows.length - 3} older threads`), ...c.rows.slice(3).map(rowOf));
       card.append(more);
@@ -193,7 +203,7 @@ function spriteOf(r: Row): HTMLElement {
   a.dataset.id = r.id;
   fig.dataset.s = POSE[st] ?? "idle";
   w.dataset.w = st || "idle";
-  card.append(make("b", "", r.title), make("span", "", `${r.agent} · ${age(r.at)}`), w);
+  card.append(make("b", "", r.title), make("span", "", meta(r)), w);
   a.append(fig, card);
   return a;
 }
@@ -228,7 +238,7 @@ function drawScene(scn: HTMLElement, cards: Card[]): void {
       p.setAttribute("aria-label", c.folder);
       sky.alt = "";
       h.append(make("b", "", c.folder), make("span", "ds", `${c.rows.length} threads`));
-      field.append(...c.rows.map(spriteOf));
+      field.append(...c.rows.concat(c.done ?? []).map(spriteOf));
       p.append(sky, h, field);
       return p;
     }),
