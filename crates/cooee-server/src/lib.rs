@@ -190,7 +190,10 @@ impl Layer for Timing {
         Box::pin(async move {
             let start = std::time::Instant::now();
             let response = next.run(cx, body).await.into_response(cx)?;
-            let route = try_endpoint(cx).map_or("(none)", |e| e.path().as_str());
+            let route = try_endpoint(cx).map_or("(none)", |e| match e.path().as_str() {
+                "" => "/",
+                p => p,
+            });
             let status = response.status().as_u16();
             cooee_core::perf::request(method(cx).as_str(), route, status, start);
             Ok(response)
