@@ -79,6 +79,10 @@ start and every 30 s). It opens as a normal chat with its role, round and a link
 show as messages, the reply box and [stop] reach its terminal, and only its tool closes it. Its turns end without a
 push (approvals and errors still push).
 
+herdsman's lanes (its impl, review and fix agents) are what fill this list: each runs as a shed ACP session labelled by
+its source (the tool), `group` its repo, `item` its issue, with its `role` and `round`. So a lane is opened as a chat in
+cooee core, never in a cooee-drover tab; those show the queue, asks and fleets ([Plugins](#plugins-m4)).
+
 ## Pairing and push (M2)
 
 Everything but `/pair` (and `/pair/request`, `/pair/claim`, `/pair/cancel`) and the static files (manifest, icons,
@@ -152,6 +156,18 @@ to roll back to. `cooee serve` runs every enabled backend as its child (`cooee-s
 backoff, 5 crashes in 10 minutes turn it off with an alert. [improve] puts an agent on a branch of the plugin's
 checkout; approving builds and swaps it in the same way.
 
+**cooee-drover** ([jirathip-dev/cooee-drover](https://github.com/jirathip-dev/cooee-drover), in the index) is the
+plugin that adds the fleet tabs: Queue, Asks and Fleets. Data flows one way:
+
+```text
+cooee → cooee-drover → herdsman /api/v1
+```
+
+cooee proxies the tab (`/p/cooee-drover/api/…`); cooee-drover passes each call through to herdsman's `/api/v1` and
+reimplements nothing; herdsman is the engine: queue, drive, lanes, reviews, gates and merge. herdsman is to be
+renamed drover ([herdsman#456](https://github.com/jirathip-dev/herdsman/issues/456)). The lanes themselves are not in
+these tabs: they are shed sessions, shown as chats under Workflow (above).
+
 ## Configuration
 
 One TOML file per instance, `$XDG_CONFIG_HOME/cooee/<instance>/config.toml` (else `~/.config/cooee/<instance>/…`, or
@@ -177,6 +193,11 @@ for the owner to run. `cooee doctor` checks the service, port, shed, push key an
 | `theme` | `farm` (when installed, else `terminal`) | The theme a device shows until it picks its own ([themes.md](themes.md)); installed theme packs and own schemes live in `themes/` and `schemes/` beside the config file, themes being built in `themes-dev/`. |
 | `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |
 | `plugin_index` | the built-in `plugins/index.toml` | The plugin index `cooee plugin add <name>` and Settings › Plugins list ([plugins.md](plugins.md)). |
+| `[perf] slow_ms` | `250` | A request taking this many ms or more is a `warn` line in `<data>/perf.log` and on stderr (#53). |
+
+`cooee serve` times every request (method, route pattern, status), every shed call (method, socket or CLI) and each
+prompt's first reply chunk (thread, agent) into `<data>/perf.log`, one JSON line each, never a prompt or a token;
+`cooee perf [--minutes 60]` prints p50/p95/max of each as a table.
 
 ## Agent profiles (#40)
 

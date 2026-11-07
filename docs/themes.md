@@ -12,7 +12,7 @@ A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` 
 |---|---|---|
 | `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, and `scene` (the Scene's layers: element ids in `scene.svg`) |
 | `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
-| `scene.svg` | when `scene` | the Scene's art, `viewBox="0 0 390 320"` as herdsman's, holding each layer's id |
+| `scene.svg` | when `scene` | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned), its `viewBox` at most 400 × 320 (the first-party packs carry herdsman's Herd scenes, `docs/design/scene/build.mjs`: 390 × 320 or 392 × 188), holding each layer `scene` names. A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
 | `schemes/<name>.json` | no | the pack's own colour schemes (below); its `theme.json` may name them |
 | `icon.png` | no | the tile in the look sheet, the favicon and the home-screen icon (else cooee's icon) |
 
@@ -23,7 +23,7 @@ working pill, the live line, a turn's end, push text), the plain word follows th
 
 **The theme gate** checks a pack: `theme.json` parses; its word keys are state keys; every scheme it holds or names is
 of the right mode and passes the contrast gate (WCAG AA, below); `sprites.svg` holds every required state; `scene.svg`
-is 390 × 320 with every layer; and no file is too big (`sprites.svg` 512 KiB, `scene.svg` and `icon.png` 256 KiB, the
+is at most 400 × 320 with every layer; and no file is too big (`sprites.svg` 512 KiB, `scene.svg` and `icon.png` 256 KiB, the
 rest 16 KiB). `cooee theme check <path>...` runs it (CI runs it on `packs/`), and so does every load: `cooee serve`
 refuses a pack that fails it, and prints why.
 
@@ -73,6 +73,11 @@ and a scheme per mode). The server draws it from the page's first byte (`web/src
   or `none`, and starts on `ascii`.
 - **Scene** is offered only with `sprite`. With `ascii` or `none` the look sheet doesn't list it, and a device on
   Scene shows its last Modern or Terminal pick (the cookie keeps it: `style:terminal/scene:on`).
+
+Scene (#34) draws the thread list as the theme's scene: a page per working folder, swiped sideways with a dot per
+page, each session a 132 × 100 sprite acting out its state (`working` `s-edit`, `needs`, `done`, `fail`, ended
+`s-merged`, else `s-idle`) over its name card (title, agent · age, the state's word); a tap opens the thread. Threads
+keep Modern or Terminal, whichever came last. Scene is offered only with Figures `sprite` (so never with plain).
 
 ## Plugin tabs
 

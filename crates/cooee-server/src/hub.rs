@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{Arc, Mutex, MutexGuard, PoisonError},
     thread,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use cooee_core::{
@@ -36,6 +36,8 @@ const CHANGE: u64 = 30 * 60 * 1000;
 
 /// How often the installed agents are checked again and stuck turns looked for.
 const TICK: Duration = Duration::from_secs(30);
+/// How long the agent list is kept before the background refreshes it (#55), in milliseconds.
+const AGENTS_FOR: u64 = 60_000;
 
 /// Why a thread action failed.
 #[derive(Debug, thiserror::Error)]
@@ -80,6 +82,8 @@ struct Live {
     moved: u64,
     /// Its working turn was surfaced as stuck; the next shed event clears it.
     stuck: bool,
+    /// When its last prompt was sent, until the reply's first chunk came (#53).
+    sent: Option<Instant>,
 }
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
@@ -163,8 +167,8 @@ pub struct Hub {
     /// The config file the roots are saved in.
     config: Option<PathBuf>,
     plugins: Mutex<Vec<Plugin>>,
-    /// `shed agents`, as last checked: a page load never runs the CLI itself (herdsman#337).
-    agents: Mutex<Result<Vec<Agent>, String>>,
+    /// `shed agents`, as last checked, and when: a page load never runs the CLI itself (herdsman#337).
+    agents: Mutex<(Result<Vec<Agent>, String>, u64)>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
     /// The stamp of the newest thread id handed out.
@@ -256,6 +260,7 @@ impl Live {
             tx: broadcast::channel(RING).0,
             moved: now(),
             stuck: false,
+            sent: None,
         }
     }
 
@@ -321,7 +326,7 @@ impl Hub {
             threads.insert(id, Arc::new(Mutex::new(Live::new(meta, chat))));
         }
         let hub = Arc::new(Self {
-            agents: Mutex::new(shed.agents().map_err(|e| e.to_string())),
+            agents: Mutex::new((shed.agents().map_err(|e| e.to_string()), now())),
             shed,
             store,
             push: Push::new(data),
@@ -339,7 +344,7 @@ impl Hub {
         thread::spawn(move || {
             loop {
                 thread::sleep(TICK);
-                *lock(&ticker.agents) = ticker.shed.agents().map_err(|e| e.to_string());
+                ticker.refresh(now(), false);
                 ticker.watch(now());
                 let at = now();
                 if let Ok(terminals) = ticker.shed.ls(BTreeMap::new()) {
@@ -524,6 +529,14 @@ impl Hub {
             }
         }
         changes.extend(live.chat.apply(now(), event.seq, event.kind));
+        let chunk = changes.iter().any(|c| match c {
+            Change::Text(_) => true,
+            Change::Item(i) => matches!(i.body, Body::Agent { .. }),
+            Change::State(_) => false,
+        });
+        if let Some(sent) = live.sent.take_if(|_| chunk) {
+            cooee_core::perf::first_token(&live.meta.id, &live.meta.agent, sent);
+        }
         if let Err(e) = live.publish(self, changes) {
             eprintln!("cooee: {e}");
         }
@@ -565,7 +578,37 @@ impl Hub {
     /// # Errors
     /// Why `shed agents` failed, when it did.
     pub fn agents(&self) -> Result<Vec<Agent>, String> {
-        lock(&self.agents).clone()
+        lock(&self.agents).0.clone()
+    }
+
+    /// Runs `shed agents` again when the list is a minute old at `at`, or `now`; the list is never locked while the
+    /// CLI runs. A failure keeps the list already had (logged), else it is the list's error.
+    fn refresh(&self, at: u64, now: bool) {
+        if !now && at.saturating_sub(lock(&self.agents).1) < AGENTS_FOR {
+            return;
+        }
+        let fresh = self.shed.agents().map_err(|e| e.to_string());
+        let mut agents = lock(&self.agents);
+        agents.1 = at;
+        match fresh {
+            Err(e) if agents.0.is_ok() => eprintln!("cooee: kept the agent list: {e}"),
+            fresh => agents.0 = fresh,
+        }
+    }
+
+    /// Agent `id`'s adapter command, from the list as last checked; an id it lacks refreshes it once (#55). Empty
+    /// when shed doesn't list it.
+    fn adapter(&self, id: &str) -> Vec<String> {
+        let find = || {
+            let agents = self.agents().ok()?;
+            agents.into_iter().find(|a| a.id == id).map(|a| a.cmd)
+        };
+        find()
+            .or_else(|| {
+                self.refresh(now(), true);
+                find()
+            })
+            .unwrap_or_default()
     }
 
     /// The folders a thread may work in, with their depth: each root (0), then the folders inside it (1) and inside
@@ -763,10 +806,13 @@ impl Hub {
                 (format!("{LABEL}.thread"), id.clone()),
             ]);
             // A start that failed but came up anyway (a slow CLI) is kept, never started twice (herdsman#477).
-            if let Err(e) = self
-                .shed
-                .run_acp(&terminal, agent, folder, &labels, &recipe.launch)
-                && self.shed.get(&terminal).is_err()
+            if let Err(e) = self.shed.run_acp(
+                &terminal,
+                (agent, &self.adapter(agent)),
+                folder,
+                &labels,
+                &recipe.launch,
+            ) && self.shed.get(&terminal).is_err()
             {
                 lock(&self.threads).remove(&id);
                 self.store.remove(&id)?;
@@ -795,6 +841,7 @@ impl Hub {
         random_id: &str,
         before: &str,
     ) -> Result<Item, HubError> {
+        let start = Instant::now();
         let live = self.live(id)?;
         let mut live = lock(&live);
         let sent = live
@@ -817,6 +864,7 @@ impl Hub {
             format!("{}\n\n{text}", before.trim_end())
         };
         self.shed.prompt(&live.meta.terminal, &prompt)?;
+        live.sent = Some(start);
         let body = Body::You {
             text: text.to_owned(),
             random_id: random_id.to_owned(),
@@ -1219,7 +1267,12 @@ mod tests {
 
     /// A hub over `dir`'s data with no shed (its follower retries in the background, harmlessly).
     fn hub(dir: &Path) -> Arc<Hub> {
-        let shed = Shed::new(dir.join("no-shed"), Some(dir.join("no-shed-dir")));
+        hub_on(dir, dir.join("no-shed"))
+    }
+
+    /// [`hub`] with `bin` as the shed CLI.
+    fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
+        let shed = Shed::new(bin, Some(dir.join("no-shed-dir")));
         let (looks, _) = cooee_web::Looks::load(None, None);
         let theme = looks.themes[&looks.default].clone();
         Hub::open(
@@ -1320,6 +1373,34 @@ mod tests {
         assert_eq!(hub.list()[0].state, "blocked");
         hub.apply(event("idle", 2, EventKind::Text { text: "w".into() }));
         assert_eq!(state(&hub).state, "working");
+    }
+
+    /// #55: however often the agent list is read, `shed agents` runs once a minute (a fake clock); a failed run
+    /// keeps the list.
+    #[test]
+    fn the_agent_list_is_refreshed_at_most_once_a_minute() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = scratch("agents");
+        let (bin, runs) = (dir.join("shed"), dir.join("runs"));
+        let cli = format!(
+            "#!/bin/sh\necho run >>{runs:?}\n[ -e {:?} ] && exit 1\necho '[{{\"id\":\"a\",\"version\":\"1\"}}]'\n",
+            dir.join("fails")
+        );
+        fs::write(&bin, cli).unwrap();
+        fs::set_permissions(&bin, fs::Permissions::from_mode(0o755)).unwrap();
+        let hub = hub_on(&dir, bin);
+        let count = || fs::read_to_string(&runs).unwrap().lines().count();
+        let t0 = now();
+        for i in 0..10 {
+            hub.refresh(t0 + i * 6_000, false);
+            assert_eq!(hub.agents().unwrap()[0].id, "a");
+        }
+        assert_eq!(count(), 1);
+        hub.refresh(t0 + AGENTS_FOR, false);
+        assert_eq!(count(), 2);
+        fs::write(dir.join("fails"), "").unwrap();
+        hub.refresh(t0 + 2 * AGENTS_FOR, false);
+        assert_eq!((count(), hub.agents().unwrap()[0].id.as_str()), (3, "a"));
     }
 
     /// #33: a Workflow session whose terminal shed no longer lists is dropped (its files too); one that moved since

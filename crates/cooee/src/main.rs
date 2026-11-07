@@ -16,6 +16,7 @@ use qrcode::{QrCode, render::unicode::Dense1x2};
 mod setup;
 
 const USAGE: &str = "usage: cooee <serve | pair [<code>] | devices | reports | devices rm <id> | install --port <p> | doctor \
+                     | perf [--minutes <n>] \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
@@ -57,11 +58,12 @@ fn main() -> ExitCode {
         at.map(|i| args.remove(i)).is_some()
     };
     let (dry_run, yes, purge) = (switch("--dry-run"), switch("--yes"), switch("--purge"));
-    let (Ok(instance), Ok(config), Ok(port), Ok(rev)) = (
+    let (Ok(instance), Ok(config), Ok(port), Ok(rev), Ok(minutes)) = (
         flag(&mut args, "--instance"),
         flag(&mut args, "--config"),
         flag(&mut args, "--port"),
         flag(&mut args, "--rev"),
+        flag(&mut args, "--minutes"),
     ) else {
         eprintln!("{USAGE}");
         return ExitCode::from(2);
@@ -97,6 +99,13 @@ fn main() -> ExitCode {
         }
         ["devices"] => devices,
         ["reports"] => reports,
+        ["perf"] => {
+            let Ok(minutes) = minutes.map_or(Ok(60), |m| m.parse::<u64>()) else {
+                eprintln!("{USAGE}");
+                return ExitCode::from(2);
+            };
+            return with_config(path.as_deref(), &instance, |config| perf(config, minutes));
+        }
         ["devices", "rm", id] => {
             let id = (*id).to_owned();
             return with_config(path.as_deref(), &instance, |config| remove(config, &id));
@@ -110,10 +119,8 @@ fn main() -> ExitCode {
             });
         }
         ["theme", rest @ ..] => {
-            let rest: Vec<String> = rest.iter().map(|a| (*a).to_owned()).collect();
-            let rest: Vec<&str> = rest.iter().map(String::as_str).collect();
             return with_config(path.as_deref(), &instance, |config| {
-                theme(config, &rest, rev.as_deref(), yes)
+                theme(config, rest, rev.as_deref(), yes)
             });
         }
         ["install"] => {
@@ -273,6 +280,24 @@ fn reports(config: &Config) -> Result<(), String> {
     if text.is_empty() {
         println!("no reports");
     }
+    Ok(())
+}
+
+/// Prints p50/p95/max per route, shed method and first token over the last `minutes` of `perf.log` (#53).
+fn perf(config: &Config, minutes: u64) -> Result<(), String> {
+    let data = config
+        .data_dir()
+        .ok_or("no data folder: set `data` or HOME")?;
+    let text = match fs::read_to_string(data.join(cooee_core::perf::FILE)) {
+        Ok(t) => t,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => return Err(e.to_string()),
+    };
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX));
+    let since = now.saturating_sub(minutes.saturating_mul(60_000));
+    print!("{}", cooee_core::perf::table(&text, since));
     Ok(())
 }
 

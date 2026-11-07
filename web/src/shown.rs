@@ -171,6 +171,23 @@ impl Shown {
         }
     }
 
+    /// The shape pages take: Modern or Terminal; in Scene (#34) only the thread list is the scene, the rest keeps the
+    /// Modern or Terminal pick it falls back to.
+    #[must_use]
+    pub fn shape(&self) -> &str {
+        if self.get("style") == Some("terminal") {
+            "terminal"
+        } else {
+            "modern"
+        }
+    }
+
+    /// The thread list draws as the theme's scene (#34): Style Scene, offered with sprites only.
+    #[must_use]
+    pub fn scene(&self) -> bool {
+        self.style() == "scene"
+    }
+
     /// The styles offered: Scene only with sprites.
     #[must_use]
     pub fn styles(&self) -> Vec<&'static str> {
@@ -437,7 +454,10 @@ mod tests {
         assert_eq!(scene.styles(), ["modern", "terminal", "scene"]);
         let tapped = scene.with("style", "scene");
         assert_eq!(tapped, "scene:on/style:terminal");
-        assert_eq!(s(&tapped).style(), "scene");
+        assert_eq!(
+            (s(&tapped).style(), s(&tapped).scene(), s(&tapped).shape()),
+            ("scene", true, "terminal")
+        );
         for f in ["ascii", "none"] {
             let off = s(&format!("{tapped}/figures:{f}"));
             assert_eq!(

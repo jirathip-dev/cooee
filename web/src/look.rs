@@ -122,12 +122,13 @@ pub struct Looks {
 }
 
 macro_rules! builtin_theme {
-    ($name:literal, $sprites:expr) => {
+    ($name:literal, $sprites:expr, $scene:expr) => {
         (
             $name,
             include_str!(concat!("../themes/", $name, "/theme.json")),
             $sprites,
             include_bytes!(concat!("../themes/", $name, "/icon.png")).as_slice(),
+            $scene,
         )
     };
 }
@@ -138,16 +139,17 @@ macro_rules! builtin_scheme {
     };
 }
 
-/// A built-in theme: its name, `theme.json`, `sprites.svg` and `icon.png`.
+/// A built-in theme: its name, `theme.json`, `sprites.svg`, `icon.png` and `scene.svg`.
 type Builtin = (
     &'static str,
     &'static str,
     Option<&'static [u8]>,
     &'static [u8],
+    Option<&'static [u8]>,
 );
 
 /// The plain theme, the only built-in one.
-const THEMES: [Builtin; 1] = [builtin_theme!("plain", None)];
+const THEMES: [Builtin; 1] = [builtin_theme!("plain", None, None)];
 
 /// The ASCII figures (herdsman#335), the same in every theme: per state (`edit read run` while working), and the
 /// 132 × 100 `loading` and `empty`, two frames each that CSS swaps.
@@ -213,10 +215,11 @@ impl Looks {
         let mut schemes = builtin_schemes();
         let mut themes: BTreeMap<String, Theme> = THEMES
             .iter()
-            .map(|(n, json, sprites, icon)| {
+            .map(|(n, json, sprites, icon, scene)| {
                 let mut t: Theme = serde_json::from_str(json).expect(n);
                 t.sprite_sheet = sprites.map(<[u8]>::to_vec);
                 t.icon = Some(icon.to_vec());
+                t.scene_art = scene.map(<[u8]>::to_vec);
                 ((*n).to_owned(), t)
             })
             .collect();
@@ -314,8 +317,8 @@ pub const SPRITES: [&str; 10] = [
     "edit", "read", "run", "idle", "done", "needs", "merged", "fail", "loading", "empty",
 ];
 
-/// The Scene's art size, as herdsman's `scene.svg`.
-pub const SCENE: &str = "0 0 390 320";
+/// The largest Scene art, width × height of its `viewBox` (herdsman's scenes are 390 × 320 and 392 × 188).
+pub const SCENE: (f64, f64) = (400.0, 320.0);
 
 /// Pack file `name`, if it is there; one over its size limit fails the gate.
 fn file(dir: &Path, name: &str, fails: &mut Vec<String>) -> Option<Vec<u8>> {
@@ -394,27 +397,36 @@ pub fn read_pack(
         }
         t.sprite_sheet = svg;
     }
-    if !t.scene.is_empty() {
-        let svg = file(dir, "scene.svg", &mut fails);
-        let text = String::from_utf8_lossy(svg.as_deref().unwrap_or_default());
-        let view = text
-            .split_once("viewBox=\"")
-            .and_then(|(_, v)| v.split_once('"'))
-            .map(|(v, _)| v);
-        if svg.is_none() {
+    // Scene's art (#34): herdsman's scenes are 390 × 320 or 392 × 188, drawn at the page's width.
+    let svg = file(dir, "scene.svg", &mut fails);
+    let text = String::from_utf8_lossy(svg.as_deref().unwrap_or_default());
+    let view = text
+        .split_once("viewBox=\"")
+        .and_then(|(_, v)| v.split_once('"'))
+        .map(|(v, _)| v);
+    let size: Vec<f64> = view
+        .unwrap_or_default()
+        .split_whitespace()
+        .filter_map(|n| n.parse().ok())
+        .collect();
+    if svg.is_none() {
+        if !t.scene.is_empty() {
             fails.push("scene.svg: missing (theme.json says scene)".to_owned());
-        } else if view != Some(SCENE) {
-            fails.push(format!("scene.svg: viewBox {view:?}, not {SCENE:?}"));
         }
-        for l in t
-            .scene
-            .iter()
-            .filter(|l| !text.contains(&format!("id=\"{l}\"")))
-        {
-            fails.push(format!("scene.svg: no layer {l:?}"));
-        }
-        t.scene_art = svg;
+    } else if !matches!(size[..], [_, _, w, h] if w <= SCENE.0 && h <= SCENE.1) {
+        fails.push(format!(
+            "scene.svg: viewBox {view:?}, over {} × {}",
+            SCENE.0, SCENE.1
+        ));
     }
+    for l in t
+        .scene
+        .iter()
+        .filter(|l| !text.contains(&format!("id=\"{l}\"")))
+    {
+        fails.push(format!("scene.svg: no layer {l:?}"));
+    }
+    t.scene_art = svg;
     t.icon = file(dir, "icon.png", &mut fails);
     if fails.is_empty() {
         Ok((t, own))
@@ -681,6 +693,9 @@ mod tests {
                 .values()
                 .all(|t| t.sprites == t.sprite_sheet.is_some())
         );
+        for (name, t) in &looks.themes {
+            assert_eq!(t.sprites, t.scene_art.is_some(), "{name}");
+        }
         assert_eq!(looks.themes["farm"].word("needs"), "at the gate");
         assert_eq!(looks.themes["plain"].word("needs"), "needs you");
         // #35: a config's old `theme = "terminal"` is plain.
@@ -764,12 +779,12 @@ mod tests {
         });
         assert_eq!(
             fails(&big),
-            "scene.svg: viewBox Some(\"0 0 800 600\"), not \"0 0 390 320\"\nscene.svg: no layer \"ground\""
+            "scene.svg: viewBox Some(\"0 0 800 600\"), over 400 × 320\nscene.svg: no layer \"ground\""
         );
         // The right size with every layer passes, and serves.
         fs::write(
             big.join("scene.svg"),
-            scene(SCENE).replace("/>", "/><g id=\"ground\"/>"),
+            scene("0 0 390 320").replace("/>", "/><g id=\"ground\"/>"),
         )
         .unwrap();
         assert_eq!(check(&big), Ok(()));
