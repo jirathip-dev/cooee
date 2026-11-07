@@ -44,6 +44,12 @@ pub struct Thread {
     /// The shed terminal's name.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub terminal: String,
+    /// The model its agent runs on (#553 row 34; empty: the agent's default).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub model: String,
+    /// The effort, as `model`.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub effort: String,
     /// The newest item id the owner has seen.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub read: Option<u64>,

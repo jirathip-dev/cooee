@@ -17,12 +17,25 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "you"; text: string; random_id: string }
   | { kind: "agent"; text: string; stop_reason: string }
   | { kind: "tool"; call: string; title: string; status: string; ended?: number }
-  | { kind: "approval"; tool: string; options: Option[]; tapped?: string; chosen?: string; plugin?: string }
+  | ({ kind: "approval"; tool: string; options: Option[]; tapped?: string; chosen?: string; plugin?: string } & Form)
   | { kind: "plan"; entries: { content: string; status: string }[] }
+  | { kind: "link"; text: string; thread: string; title: string; out?: boolean }
+  | { kind: "note"; text: string }
   | { kind: "ended"; text: string }
 );
+// Who answered and when, and a plugin card's form (#553 rows 30-33).
+type Form = { by?: string; answered?: number; form?: string; detail?: string; line?: string; until?: number };
+type Choice = Extract<Item, { kind: "approval" }>;
 type Turn = { text: string; state: string; note?: string };
-type Slice = { items: Item[]; skipped_before: number; skipped_after: number; turn: Turn; cursor: string; at?: number };
+type Slice = {
+  items: Item[];
+  skipped_before: number;
+  skipped_after: number;
+  turn: Turn;
+  cursor: string;
+  at?: number;
+  waiting?: Item | null;
+};
 
 const rid = (): string => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 const message = (x: unknown): string => (x instanceof Error ? x.message : String(x));
@@ -236,6 +249,8 @@ if (form) {
       agent,
       account: f.get(`account:${agent}`),
       profile: f.get("profile"),
+      model: f.get(`model:${agent}`) ?? "",
+      effort: f.get(`effort:${agent}`) ?? "",
       folder: f.get("folder"),
       text: f.get("text"),
       random_id: form.dataset.rid,
@@ -951,6 +966,20 @@ function chat(main: HTMLElement): void {
   };
   const el = make;
   const md = (row: HTMLElement): HTMLElement => $(".md", row) as HTMLElement;
+  // A config card that waits (#553 row 32): the bar under the header names it, wherever it is; a tap brings it in.
+  const cw = $("#cw") as HTMLButtonElement;
+  function waiting(it?: Item | null): void {
+    if (it?.kind === "approval" && it.form === "config" && !it.chosen && !it.line) {
+      cw.textContent = `${it.tool} waiting`;
+      cw.dataset.id = String(it.id);
+      cw.hidden = false;
+    } else if (!it || cw.dataset.id === String(it.id)) cw.hidden = true;
+  }
+  cw.onclick = async () => {
+    const at = cw.dataset.id ?? "";
+    if (!rowOf(at)) await load(`around=${at}&before=${SLICE / 2}&after=${SLICE}`, "replace");
+    rowOf(at)?.scrollIntoView({ block: "center" });
+  };
 
   // Scroll is kept on a message: the first row in view and its offset are restored after any change of layout.
   function keep(change: () => void): void {
@@ -1024,24 +1053,43 @@ function chat(main: HTMLElement): void {
       }
       row.append(el("span", "k", "tool"), el("span", "cmd", it.title), ts);
     } else if (it.kind === "approval") {
-      row.className = "blk ap";
+      row.className = `blk ap ${it.form ?? ""}`;
       row.append(el("b", "k", it.plugin ?? agent), el("div", "md", it.tool));
-      const chosen = it.chosen ?? it.tapped;
-      if (chosen && it.chosen) {
-        const o = it.options.find((o) => o.id === chosen);
-        row.append(el("p", "ans", `✓ ${o ? o.name : chosen}`));
-      } else {
-        const chc = el("div", "chc");
-        for (const o of it.options) {
-          const b = el("button", "", o.name) as HTMLButtonElement;
-          b.type = "button";
-          b.disabled = !!chosen;
-          b.onclick = () => approve(row, it.id, o.id);
-          chc.append(b);
-        }
-        if (chosen) chc.classList.add("busy");
-        row.append(chc);
+      if (it.form === "secret") row.append(el("p", "m", `secret ${it.detail}`));
+      if (it.form === "config" && it.detail) {
+        const pre = el("pre", "diff");
+        for (const l of it.detail.split("\n"))
+          pre.append(el("span", l.startsWith("+") ? "g" : l.startsWith("-") ? "r" : "", `${l}\n`));
+        row.append(pre);
       }
+      if (it.chosen) {
+        // The ✓ line: what was picked (or the plugin's own line), by whom and when; a conductor's answer keeps
+        // [change] for its 30 minutes.
+        const name = it.options.find((o) => o.id === it.chosen)?.name ?? it.chosen;
+        const said =
+          it.line ??
+          (it.form === "secret"
+            ? `secret ${it.detail} ${it.chosen === "save" ? "set ✓" : "dismissed"}`
+            : it.form === "config"
+              ? `${it.tool} ${it.chosen === "apply" ? "applied" : "discarded"}`
+              : `✓ ${name}`);
+        const ans = el("p", "ans", [said, it.by, it.answered ? time(it.answered) : ""].filter(Boolean).join(" · "));
+        row.append(ans);
+        if (it.until && Date.now() < it.until) {
+          const change = el("button", "chg", "change") as HTMLButtonElement;
+          change.type = "button";
+          change.onclick = () => change.replaceWith(choices(row, it));
+          ans.after(change);
+        }
+      } else if (it.line) row.append(el("p", "ans st", it.line));
+      else row.append(choices(row, it));
+    } else if (it.kind === "link") {
+      // A handoff or a line from another thread: its chip opens that thread (#553 row 35).
+      row.className = "qs ln";
+      const chip = el("a", "chip", `${it.out ? "continued in" : "from"} ${it.title}`) as HTMLAnchorElement;
+      chip.href = `/t/${encodeURIComponent(it.thread)}`;
+      if (it.text) row.append(`${it.text} `);
+      row.append(chip);
     } else if (it.kind === "plan") {
       row.className = "blk plan";
       const ol = el("ol");
@@ -1054,18 +1102,65 @@ function chat(main: HTMLElement): void {
     return row;
   }
 
-  // A tap locks the row's buttons (spinner) until the server answers; the server sends it to shed once.
-  async function approve(row: HTMLElement, item: number, option: string): Promise<void> {
+  // An open card's answers: a button per choice (the recommended one first), and on a plugin's card an "other"
+  // box; a secret card is a masked field with [save] and [dismiss]. Locked once tapped.
+  function choices(row: HTMLElement, it: Choice): HTMLElement {
+    const chc = el("div", "chc");
+    const button = (text: string, then: () => void, cls = ""): HTMLButtonElement => {
+      const b = el("button", cls, text) as HTMLButtonElement;
+      b.type = "button";
+      b.onclick = then;
+      return b;
+    };
+    const field = (label: string, type: string, then: (v: string) => void): HTMLFormElement => {
+      const f = el("form", "oth") as HTMLFormElement;
+      const v = el("input") as HTMLInputElement;
+      Object.assign(v, { type, autocomplete: "off", required: true, placeholder: label });
+      v.setAttribute("aria-label", label);
+      f.onsubmit = (e) => {
+        e.preventDefault();
+        then(v.value);
+        v.value = "";
+      };
+      f.append(v);
+      return f;
+    };
+    if (it.form === "secret") {
+      const f = field(`value of ${it.detail}`, "password", (v) => approve(row, it.id, "save", v));
+      const save = button("save", () => f.requestSubmit());
+      f.append(
+        save,
+        button("dismiss", () => approve(row, it.id, "dismiss")),
+      );
+      chc.append(f);
+    } else {
+      for (const o of it.options)
+        chc.append(button(o.name, () => approve(row, it.id, o.id), o.kind === "recommended" ? "rec" : ""));
+      if (it.plugin && !it.form) {
+        const f = field("other", "text", (v) => approve(row, it.id, v));
+        f.append(button("send", () => f.requestSubmit()));
+        chc.append(f);
+      }
+    }
+    if (it.tapped) {
+      chc.classList.add("busy");
+      for (const b of chc.querySelectorAll<HTMLButtonElement | HTMLInputElement>("button, input")) b.disabled = true;
+    }
+    return chc;
+  }
+
+  // A tap locks the row's answers (spinner) until the server answers; the server sends it to shed once.
+  async function approve(row: HTMLElement, item: number, option: string, value?: string): Promise<void> {
     const chc = $(".chc", row);
     if (!chc) return;
     const lock = (on: boolean): void => {
       chc.classList.toggle("busy", on);
-      for (const b of chc.querySelectorAll("button")) b.disabled = on;
+      for (const b of chc.querySelectorAll<HTMLButtonElement | HTMLInputElement>("button, input")) b.disabled = on;
     };
     lock(true);
     // The answer comes back over the event stream (tapped, then chosen), never older than what is shown.
     try {
-      await post(`${api}/approve`, { item, option });
+      await post(`${api}/approve`, { item, option, value });
     } catch (x) {
       toast(message(x), true);
       lock(false);
@@ -1074,6 +1169,7 @@ function chat(main: HTMLElement): void {
 
   // An item, new or changed: replaced in place, appended at the newest end, or counted beyond the window.
   function put(it: Item): void {
+    if (it.kind === "approval" && it.form === "config") waiting(it);
     const row = rowOf(it.id);
     if (row) {
       keep(() => fill(row, it));
@@ -1185,6 +1281,7 @@ function chat(main: HTMLElement): void {
         cursor = s.cursor;
         if (s.turn.text && after === 0) text(s.turn.text);
         setState(s.turn);
+        waiting(s.waiting);
         return s;
       }
       const have = new Set(ids());
@@ -1433,6 +1530,12 @@ function chat(main: HTMLElement): void {
   box.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(e);
   });
+  // The model and effort chips (#553 row 34): a pick is kept on the thread, which says from when it applies.
+  for (const s of document.querySelectorAll<HTMLSelectElement>(".mc select"))
+    s.onchange = () => {
+      const pick = (n: string): string => $<HTMLSelectElement>(`#${n}`)?.value ?? "";
+      post(`${api}/model`, { model: pick("model"), effort: pick("effort") }).catch((x) => toast(message(x), true));
+    };
   const stop = $("#pill .stop");
   if (stop) stop.onclick = cancel;
   const close = $("#close");

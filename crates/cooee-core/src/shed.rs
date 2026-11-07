@@ -92,6 +92,26 @@ pub struct Launch {
     pub secrets: Option<(PathBuf, Vec<(String, String)>)>,
     /// `--policy`: `ask`, `allow` or `deny`.
     pub policy: Option<String>,
+    /// Words after the adapter's command (a model or effort pick's).
+    pub args: Vec<String>,
+}
+
+impl Launch {
+    /// Adds a model or effort's `words` (#553 row 34): a `NAME=value` word goes to `env`, any other to `args`.
+    pub fn pick(&mut self, words: Vec<String>) {
+        for w in words {
+            match w.split_once('=') {
+                Some((k, v))
+                    if !k.is_empty()
+                        && k.bytes()
+                            .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_') =>
+                {
+                    self.env.push((k.to_owned(), v.to_owned()));
+                }
+                _ => self.args.push(w),
+            }
+        }
+    }
 }
 
 /// A shed server: its socket, and the CLI that talks to it.
@@ -406,8 +426,9 @@ impl Shed {
     }
 
     /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`) and `launch`: with
-    /// variables, its installed adapter runs as `env K=V… <adapter>`, and with secrets as `env K=V… sh -c '…' <file>
-    /// <adapter>`, the shell reading the secrets from `<file>` (mode 0600, written here) and removing it.
+    /// variables or args, its installed adapter runs as `env K=V… <adapter> args…`, and with secrets as `env K=V… sh
+    /// -c '…' <file> <adapter> args…`, the shell reading the secrets from `<file>` (mode 0600, written here) and
+    /// removing it.
     ///
     /// # Errors
     /// [`ShedError::Cli`] when the CLI fails (e.g. the agent isn't installed or the name is taken), or the secrets'
@@ -430,7 +451,7 @@ impl Shed {
             args.extend(["--policy", policy]);
         }
         let mut tail: Vec<String> = Vec::new();
-        if !launch.env.is_empty() || launch.secrets.is_some() {
+        if !launch.env.is_empty() || launch.secrets.is_some() || !launch.args.is_empty() {
             let installed = self.agents()?.into_iter().find(|a| a.id == agent);
             let cmd = installed.map(|a| a.cmd).unwrap_or_default();
             if cmd.is_empty() {
@@ -456,6 +477,7 @@ impl Shed {
                 tail.push(file.to_string_lossy().into_owned());
             }
             tail.extend(cmd);
+            tail.extend(launch.args.iter().cloned());
             args.push("--");
             args.extend(tail.iter().map(String::as_str));
         }

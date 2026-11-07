@@ -254,6 +254,25 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
     })
 }
 
+/// The chat header's line before its state: a Workflow session's role and round, else profile, agent, account, model and
+/// folder.
+fn byline(thread: &Thread, profile: &str, folder: &str) -> String {
+    if let Some(w) = &thread.workflow {
+        return format!("{} · round {} · ", w.role, w.round);
+    }
+    [
+        profile,
+        &thread.agent,
+        &thread.account,
+        &thread.model,
+        folder,
+    ]
+    .into_iter()
+    .filter(|s| !s.is_empty())
+    .flat_map(|s| [s, " · "])
+    .collect()
+}
+
 /// `~/x` for a folder under `$HOME`.
 fn short(folder: &Path) -> String {
     let home = std::env::var_os("HOME").map(PathBuf::from);
@@ -634,6 +653,7 @@ async fn agent(
     id: String,
     first: bool,
     accounts: Option<Vec<(Account, Status)>>,
+    choices: (Vec<String>, Vec<String>),
 ) -> Result<impl View> {
     let signed = accounts.as_ref().and_then(|list| {
         let default = list.iter().find(|(a, _)| a.default);
@@ -668,6 +688,18 @@ async fn agent(
                 }
             </select>
         }
+        pick(
+            id: format!("model:{id}"),
+            name: "model",
+            list: choices.0,
+            now: String::new()
+        )
+        pick(
+            id: format!("effort:{id}"),
+            name: "effort",
+            list: choices.1,
+            now: String::new()
+        )
         if signed == Some(false) {
             <a class="so" href="#signins">(format!("sign in {id}"))</a>
         }
@@ -748,26 +780,26 @@ fn last_used(
         })
         .collect();
     let first = folders.first().map(|(f, _)| f.display().to_string());
-    let pick = first
+    let chosen = first
         .and_then(|f| last.get(&f).cloned())
         .unwrap_or_default();
-    (pick, serde_json::to_string(&last).unwrap_or_default())
+    (chosen, serde_json::to_string(&last).unwrap_or_default())
 }
 
-/// The new-thread form's agent profile picker: Plain, then each profile (a plugin's with its name), `pick`
+/// The new-thread form's agent profile picker: Plain, then each profile (a plugin's with its name), `chosen`
 /// selected; `last` is each folder's last-used profile, as JSON, for `chat.ts` to pick as a folder is picked. A
 /// profile picked hides the agent picker, and one with its own folder the folder picker (CSS).
 #[component]
-async fn profile_picker(profiles: Vec<Profile>, pick: String, last: String) -> Result<impl View> {
+async fn profile_picker(profiles: Vec<Profile>, chosen: String, last: String) -> Result<impl View> {
     Ok(view! {
         <label class="pk">
             <span class="lb">"profile"</span>
             <select name="profile" data-last=(last)>
-                <option value="" selected=(pick.is_empty())>"Plain"</option>
+                <option value="" selected=(chosen.is_empty())>"Plain"</option>
                 for p in profiles {
                     <option
                         value=(p.id())
-                        selected=(p.id() == pick)
+                        selected=(p.id() == chosen)
                         data-folder=(p.folder.is_some())
                     >
                         (match &p.plugin {
@@ -853,7 +885,7 @@ async fn threads(
     // Open until the owner has a chat of their own (Workflow sessions aren't theirs).
     let open = rows.iter().all(|r| r.workflow.is_some());
     let list = chip(cx);
-    let (pick, by_folder) = last_used(&rows, &profiles, &folders);
+    let (chosen, by_folder) = last_used(&rows, &profiles, &folders);
     let cards = cards(rows, list);
     let empty = cards.is_empty();
     let look = shown(cx);
@@ -864,6 +896,14 @@ async fn threads(
         .iter()
         .rev()
         .map(|p| (p.provider.agent.clone(), p.accounts.clone()))
+        .collect();
+    let picks: BTreeMap<String, (Vec<String>, Vec<String>)> = providers
+        .iter()
+        .rev()
+        .map(|p| {
+            let p = &p.provider;
+            (p.agent.clone(), (p.models.clone(), p.efforts.clone()))
+        })
         .collect();
     Ok(view! {
         document(
@@ -885,7 +925,7 @@ async fn threads(
                         <a class="gl" href="#" aria-label="close">"×"</a>
                     </div>
                     if !profiles.is_empty() {
-                        profile_picker(profiles: profiles, pick: pick, last: by_folder)
+                        profile_picker(profiles: profiles, chosen: chosen, last: by_folder)
                     }
                     <fieldset class="ag">
                         <legend class="lb">"agent"</legend>
@@ -902,7 +942,8 @@ async fn threads(
                                     agent(
                                         id: a.id.clone(),
                                         first: i == 0,
-                                        accounts: accounts.get(&a.id).cloned()
+                                        accounts: accounts.get(&a.id).cloned(),
+                                        choices: picks.get(&a.id).cloned().unwrap_or_default()
                                     )
                                 }
                             }
@@ -1055,12 +1096,41 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
 
 /// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer.
 #[must_use]
-pub fn chat_page(cx: &Cx, thread: Thread, turn: Turn, profile: String) -> impl View {
-    view! { cx => chat(thread: thread, turn: turn, profile: profile) }
+pub fn chat_page(
+    cx: &Cx,
+    thread: Thread,
+    turn: Turn,
+    profile: String,
+    choices: (Vec<String>, Vec<String>),
+) -> impl View {
+    view! { cx => chat(thread: thread, turn: turn, profile: profile, choices: choices) }
+}
+
+/// A model or effort select (#553 row 34): `name`'s choices, `default` first, `now` selected.
+#[component]
+async fn pick(id: String, name: &str, list: Vec<String>, now: String) -> Result<impl View> {
+    Ok(view! {
+        if !list.is_empty() {
+            <select name=(id.clone()) id=(id) aria-label=(name)>
+                <option value="">(format!("{name}: default"))</option>
+                for m in list {
+                    <option value=(m.clone()) selected=(m == now)>
+                        (format!("{name}: {m}"))
+                    </option>
+                }
+            </select>
+        }
+    })
 }
 
 #[component]
-async fn chat(cx: &Cx, thread: Thread, turn: Turn, profile: String) -> Result<impl View> {
+async fn chat(
+    cx: &Cx,
+    thread: Thread,
+    turn: Turn,
+    profile: String,
+    choices: (Vec<String>, Vec<String>),
+) -> Result<impl View> {
     let look = shown(cx);
     let [st, wait, pill] = [
         (state(&turn.state), false),
@@ -1093,21 +1163,7 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn, profile: String) -> Result<im
                         <h1>(thread.title.clone())</h1>
                         <span class="ds">
                             <i class="dt"></i>
-                            (if let Some(w) = &workflow {
-                                format!("{} · round {} · ", w.role, w.round)
-                            } else {
-                                let parts = [
-                                    profile.as_str(),
-                                    &thread.agent,
-                                    &thread.account,
-                                    &folder,
-                                ];
-                                let parts: Vec<&str> = parts
-                                    .into_iter()
-                                    .filter(|p| !p.is_empty())
-                                    .collect();
-                                format!("{} · ", parts.join(" · "))
-                            })
+                            (byline(&thread, &profile, &folder))
                             <span id="st" data-st=(state(&turn.state))>(st)</span>
                             if let Some(url) = link {
                                 " · "
@@ -1125,6 +1181,7 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn, profile: String) -> Result<im
                         "×"
                     </button>
                 </div>
+                <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
                 <ol
                     class="tc"
                     id="msgs"
@@ -1135,6 +1192,22 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn, profile: String) -> Result<im
                 <p class="tlv" id="wait" hidden=(true)>
                     <span data-st="needs" data-plain="">(wait)</span>
                 </p>
+                if !ended && (!choices.0.is_empty() || !choices.1.is_empty()) {
+                    <div class="mc">
+                        pick(
+                            id: "model".to_owned(),
+                            name: "model",
+                            list: choices.0,
+                            now: thread.model.clone()
+                        )
+                        pick(
+                            id: "effort".to_owned(),
+                            name: "effort",
+                            list: choices.1,
+                            now: thread.effort.clone()
+                        )
+                    </div>
+                }
                 <form class="tw" id="composer">
                     <div class="pill" id="pill" hidden=(true)>
                         <span id="pst" data-st="working" data-plain="">(pill)</span>
