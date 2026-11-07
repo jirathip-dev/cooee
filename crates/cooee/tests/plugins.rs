@@ -16,10 +16,12 @@ use std::{
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
 
-/// A plugin backend on a free port: every request's head (request line and lowercased headers) and body.
+/// A plugin backend on a free port: every request's head (request line and lowercased headers) and body. Its
+/// next answer to `/cooee/choice` is `choice`'s, when set.
 struct Backend {
     port: u16,
     seen: Arc<Mutex<Vec<(String, String)>>>,
+    choice: Arc<Mutex<Option<(u16, Value)>>>,
 }
 
 impl Backend {
@@ -27,13 +29,23 @@ impl Backend {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let port = listener.local_addr().unwrap().port();
         let seen = Arc::new(Mutex::new(Vec::new()));
-        let log = Arc::clone(&seen);
+        let choice = Arc::new(Mutex::new(None));
+        let (log, next) = (Arc::clone(&seen), Arc::clone(&choice));
         thread::spawn(move || {
             for stream in listener.incoming().flatten() {
-                answer(stream, &log);
+                answer(stream, &log, &next);
             }
         });
-        Self { port, seen }
+        Self { port, seen, choice }
+    }
+
+    /// The `/cooee/choice` bodies it was sent.
+    fn choices(&self) -> Vec<Value> {
+        self.seen()
+            .into_iter()
+            .filter(|(h, _)| h.starts_with("post /cooee/choice "))
+            .map(|(_, b)| serde_json::from_str(&b).unwrap())
+            .collect()
     }
 
     fn seen(&self) -> Vec<(String, String)> {
@@ -41,7 +53,11 @@ impl Backend {
     }
 }
 
-fn answer(stream: TcpStream, log: &Mutex<Vec<(String, String)>>) {
+fn answer(
+    stream: TcpStream,
+    log: &Mutex<Vec<(String, String)>>,
+    choice: &Mutex<Option<(u16, Value)>>,
+) {
     let mut r = BufReader::new(stream);
     let (mut head, mut line) = (String::new(), String::new());
     while r.read_line(&mut line).unwrap() > 2 {
@@ -58,6 +74,16 @@ fn answer(stream: TcpStream, log: &Mutex<Vec<(String, String)>>) {
     log.lock()
         .unwrap()
         .push((head, String::from_utf8(body).unwrap()));
+    if path == "/cooee/choice"
+        && let Some((code, v)) = choice.lock().unwrap().take()
+    {
+        let mut s = r.into_inner();
+        let _ = write!(
+            s,
+            "HTTP/1.0 {code} X\r\nContent-Type: application/json\r\n\r\n{v}"
+        );
+        return;
+    }
     let (kind, text) = match path.as_str() {
         "/tab.js" => (
             "text/javascript",
@@ -322,7 +348,7 @@ fn a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin() {
     assert!(sent[0].0.contains(TOKEN_A), "{}", sent[0].0);
     assert_eq!(
         serde_json::from_str::<Value>(&sent[0].1).unwrap(),
-        json!({ "thread": id, "item": a["id"], "option": "yes" })
+        json!({ "thread": id, "item": a["id"], "option": "yes", "by": me(&s) })
     );
     assert!(
         choices(&s.b).is_empty(),
@@ -381,4 +407,256 @@ fn a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab() {
         200
     );
     assert!(!s.cooee.get("/").1.contains("class=\"dot\""));
+}
+
+/// This device's label, as an answer's `by` names it.
+fn me(s: &Setup) -> String {
+    let devices = s.cooee.json("/devices");
+    let me = devices.as_array().unwrap().iter().find(|d| d["me"] == true);
+    me.unwrap()["label"].as_str().unwrap().to_owned()
+}
+
+/// A new thread's id.
+fn new_thread(s: &Setup, text: &str) -> String {
+    let random = format!("r-{text}");
+    let new = json!({ "agent": "fake-acp", "folder": s.dir.join("root/project"), "text": text, "random_id": random });
+    let (code, body) = s.cooee.post("/threads", &new);
+    assert_eq!(code, 200, "{body}");
+    serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned()
+}
+
+impl Setup {
+    /// Plugin a's card: its status and answer.
+    fn card(&self, card: &Value) -> (u16, Value) {
+        let (code, body) = self.as_backend("/plugin/card", &format!("Bearer {TOKEN_A}"), card);
+        (code, serde_json::from_str(&body).unwrap_or(Value::Null))
+    }
+
+    /// The owner's answer to `item` in `thread`.
+    fn tap(&self, thread: &str, answer: &Value) -> Value {
+        let (code, body) = self
+            .cooee
+            .post(&format!("/threads/{thread}/approve"), answer);
+        assert_eq!(code, 200, "{body}");
+        serde_json::from_str(&body).unwrap()
+    }
+}
+
+/// #553 row 30: the recommended choice comes first and says so; the "other" box's text goes to the plugin like a
+/// choice; the answer keeps who (this device) and when.
+#[test]
+fn row_30_choice_rows_recommended_first_other_text_and_who_and_when() {
+    let s = setup("card-30");
+    let id = new_thread(&s, "Say hello");
+    let (code, card) = s.card(
+        &json!({ "thread": id, "text": "Which first?", "options": ["#43", "#44"], "recommend": "#44" }),
+    );
+    assert_eq!(code, 200, "{card}");
+    assert_eq!(
+        card["options"],
+        json!([{ "id": "#44", "name": "#44", "kind": "recommended" }, { "id": "#43", "name": "#43", "kind": "" }])
+    );
+    let answer = s.tap(
+        &id,
+        &json!({ "item": card["id"], "option": "neither: #48 first" }),
+    );
+    assert_eq!(
+        s.a.choices(),
+        [json!({ "thread": id, "item": card["id"], "option": "neither: #48 first", "by": me(&s) })]
+    );
+    assert_eq!(
+        (&answer["chosen"], &answer["by"]),
+        (&json!("neither: #48 first"), &json!(me(&s)))
+    );
+    assert!(answer["answered"].as_u64().unwrap() >= card["at"].as_u64().unwrap());
+}
+
+/// #553 row 31: a card the conductor answered itself shows its answer with [change] for 30 minutes; the owner's
+/// change goes to the plugin, and is the last.
+#[test]
+fn row_31_a_conductors_answer_takes_one_change_from_the_owner() {
+    let s = setup("card-31");
+    let id = new_thread(&s, "Say hello");
+    let (_, card) = s.card(&json!({
+        "thread": id, "text": "answered q12 for #44: split", "options": ["split", "keep"],
+        "answered": "split", "by": "conductor-t6"
+    }));
+    assert_eq!(
+        (&card["chosen"], &card["by"]),
+        (&json!("split"), &json!("conductor-t6"))
+    );
+    let at = card["answered"].as_u64().unwrap();
+    assert_eq!(card["until"].as_u64(), Some(at + 30 * 60 * 1000));
+    assert!(
+        s.a.choices().is_empty(),
+        "the conductor's own answer isn't sent back"
+    );
+
+    let changed = s.tap(&id, &json!({ "item": card["id"], "option": "keep" }));
+    assert_eq!(
+        (&changed["chosen"], &changed["by"], &changed["until"]),
+        (&json!("keep"), &json!(me(&s)), &Value::Null)
+    );
+    let again = s.tap(&id, &json!({ "item": card["id"], "option": "split" }));
+    assert_eq!(again["chosen"], "keep");
+    assert_eq!(
+        s.a.choices(),
+        [json!({ "thread": id, "item": card["id"], "option": "keep", "by": me(&s) })]
+    );
+}
+
+/// #553 row 32: a config card carries its diff and waits (the slice and the thread list say so); [apply] settles
+/// it with the plugin's line; a plugin's 409 leaves it stale, with no buttons.
+#[test]
+fn row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale() {
+    let s = setup("card-32");
+    let id = new_thread(&s, "Say hello");
+    let no_diff = json!({ "thread": id, "text": "config c1", "form": "config" });
+    assert_eq!(s.card(&no_diff).0, 400);
+    let diff = "-max_impl = 2\n+max_impl = 3";
+    let (_, c1) =
+        s.card(&json!({ "thread": id, "text": "config c1", "form": "config", "detail": diff }));
+    assert_eq!(
+        c1["options"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|o| &o["id"])
+            .collect::<Vec<_>>(),
+        ["apply", "discard"]
+    );
+    assert_eq!(
+        s.cooee.json(&format!("/threads/{id}/messages"))["waiting"]["id"],
+        c1["id"]
+    );
+    let row = |list: &Value| -> Value {
+        let rows = list
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|c| c["rows"].as_array().unwrap().clone());
+        rows.into_iter().find(|r| r["id"] == id).unwrap()
+    };
+    assert_eq!(
+        row(&s.cooee.json("/threads")["cards"])["last"],
+        "config c1 waiting"
+    );
+
+    let line = "config c1 applied by owner, backup kept, doctor ✓";
+    *s.a.choice.lock().unwrap() = Some((200, json!({ "line": line })));
+    let applied = s.tap(&id, &json!({ "item": c1["id"], "option": "apply" }));
+    assert_eq!(
+        (&applied["chosen"], &applied["line"]),
+        (&json!("apply"), &json!(line))
+    );
+    assert!(s.cooee.json(&format!("/threads/{id}/messages"))["waiting"].is_null());
+
+    let (_, c2) =
+        s.card(&json!({ "thread": id, "text": "config c2", "form": "config", "detail": diff }));
+    *s.a.choice.lock().unwrap() = Some((409, json!({ "line": "stale: fleet.toml changed since" })));
+    let stale = s.tap(&id, &json!({ "item": c2["id"], "option": "apply" }));
+    assert_eq!(
+        (&stale["chosen"], &stale["line"]),
+        (&Value::Null, &json!("stale: fleet.toml changed since"))
+    );
+    assert!(s.cooee.json(&format!("/threads/{id}/messages"))["waiting"].is_null());
+    assert_eq!(
+        s.tap(&id, &json!({ "item": c2["id"], "option": "apply" }))["line"],
+        stale["line"]
+    );
+    assert_eq!(s.a.choices().len(), 2, "a stale card takes no second tap");
+}
+
+/// #553 row 33: a secret card's value goes to its plugin and nowhere else: not the item, not the thread's files.
+#[test]
+fn row_33_a_secrets_value_reaches_its_plugin_only() {
+    let s = setup("card-33");
+    let id = new_thread(&s, "Say hello");
+    let no_name = json!({ "thread": id, "text": "for the bot", "form": "secret" });
+    assert_eq!(s.card(&no_name).0, 400);
+    let (_, card) = s.card(
+        &json!({ "thread": id, "text": "for the bot", "form": "secret", "detail": "BOT_TOKEN" }),
+    );
+    let value = "v4lue-only-the-plugin-sees";
+    let saved = s.tap(
+        &id,
+        &json!({ "item": card["id"], "option": "save", "value": value }),
+    );
+    assert_eq!(
+        (&saved["chosen"], &saved["detail"]),
+        (&json!("save"), &json!("BOT_TOKEN"))
+    );
+    assert_eq!(s.a.choices()[0]["value"], value);
+    for f in std::fs::read_dir(s.dir.join("data/threads")).unwrap() {
+        let text = std::fs::read_to_string(f.unwrap().path()).unwrap();
+        assert!(!text.contains(value));
+    }
+    assert!(
+        !s.cooee
+            .get(&format!("/threads/{id}/messages"))
+            .1
+            .contains(value)
+    );
+}
+
+/// #553 row 35: a handoff puts `continued in` in the source and the text `from` it in the target; a line flows
+/// back; a pick-a-thread card offers the other open threads.
+#[test]
+fn row_35_handoff_chips_flow_back_lines_and_pick_a_thread() {
+    let s = setup("card-35");
+    let (t5, t6) = (
+        new_thread(&s, "Plan the week"),
+        new_thread(&s, "Fix the build"),
+    );
+    let auth = format!("Bearer {TOKEN_A}");
+    let handoff = json!({ "from": t5, "to": t6, "text": "take the build" });
+    let (code, body) = s.as_backend("/plugin/handoff", &auth, &handoff);
+    assert_eq!(code, 200, "{body}");
+    let last = |id: &str| {
+        s.cooee.json(&format!("/threads/{id}/messages"))["items"]
+            .as_array()
+            .unwrap()
+            .last()
+            .cloned()
+            .unwrap()
+    };
+    let link = |v: Value| {
+        (
+            v["kind"].clone(),
+            v["text"].clone(),
+            v["thread"].clone(),
+            v["title"].clone(),
+            v["out"].clone(),
+        )
+    };
+    assert_eq!(
+        link(last(&t5)),
+        link(
+            json!({ "kind": "link", "text": "", "thread": t6, "title": "Fix the build", "out": true })
+        )
+    );
+    assert_eq!(
+        link(last(&t6)),
+        link(
+            json!({ "kind": "link", "text": "take the build", "thread": t5, "title": "Plan the week", "out": false })
+        )
+    );
+    let flow = json!({ "thread": t5, "from": t6, "text": "filed #61: build cache" });
+    assert_eq!(s.as_backend("/plugin/line", &auth, &flow).0, 200);
+    assert_eq!(
+        link(last(&t5)),
+        link(
+            json!({ "kind": "link", "text": "filed #61: build cache", "thread": t6, "title": "Fix the build", "out": false })
+        )
+    );
+
+    let (_, pick) =
+        s.card(&json!({ "thread": t5, "text": "Continue in which thread?", "form": "thread" }));
+    assert_eq!(
+        pick["options"],
+        json!([{ "id": t6, "name": "Fix the build", "kind": "" }])
+    );
 }

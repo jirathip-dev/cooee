@@ -261,6 +261,18 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
     })
 }
 
+/// The chat header's line before its state: a Workflow session's role and round, else agent, account, model and folder.
+fn byline(thread: &Thread, folder: &str) -> String {
+    if let Some(w) = &thread.workflow {
+        return format!("{} · round {} · ", w.role, w.round);
+    }
+    [&thread.agent, &thread.account, &thread.model, folder]
+        .into_iter()
+        .filter(|s| !s.is_empty())
+        .flat_map(|s| [s, " · "])
+        .collect()
+}
+
 /// `~/x` for a folder under `$HOME`.
 fn short(folder: &Path) -> String {
     let home = std::env::var_os("HOME").map(PathBuf::from);
@@ -670,6 +682,7 @@ async fn agent(
     id: String,
     first: bool,
     accounts: Option<Vec<(Account, Status)>>,
+    choices: (Vec<String>, Vec<String>),
 ) -> Result<impl View> {
     let signed = accounts.as_ref().and_then(|list| {
         let default = list.iter().find(|(a, _)| a.default);
@@ -704,6 +717,18 @@ async fn agent(
                 }
             </select>
         }
+        pick(
+            id: format!("model:{id}"),
+            name: "model",
+            list: choices.0,
+            now: String::new()
+        )
+        pick(
+            id: format!("effort:{id}"),
+            name: "effort",
+            list: choices.1,
+            now: String::new()
+        )
         if signed == Some(false) {
             <a class="so" href="#signins">(format!("sign in {id}"))</a>
         }
@@ -844,6 +869,14 @@ async fn threads(
         .rev()
         .map(|p| (p.provider.agent.clone(), p.accounts.clone()))
         .collect();
+    let picks: BTreeMap<String, (Vec<String>, Vec<String>)> = providers
+        .iter()
+        .rev()
+        .map(|p| {
+            let p = &p.provider;
+            (p.agent.clone(), (p.models.clone(), p.efforts.clone()))
+        })
+        .collect();
     Ok(view! {
         document(
             title: "cooee",
@@ -878,7 +911,8 @@ async fn threads(
                                     agent(
                                         id: a.id.clone(),
                                         first: i == 0,
-                                        accounts: accounts.get(&a.id).cloned()
+                                        accounts: accounts.get(&a.id).cloned(),
+                                        choices: picks.get(&a.id).cloned().unwrap_or_default()
                                     )
                                 }
                             }
@@ -934,11 +968,33 @@ async fn shelf(rows: Vec<Summary>) -> Result<impl View> {
     })
 }
 
-/// A thread's foot: the working pill, the queued messages, the picked files, the composer; the long-press menu and
-/// the image viewer (`chat.ts`).
+/// A thread's foot: the model and effort chips, the working pill, the queued messages, the picked files, the
+/// composer; the long-press menu and the image viewer (`chat.ts`).
 #[component]
-async fn foot(who: String, ended: bool, pill: Unescaped<String>) -> Result<impl View> {
+async fn foot(
+    who: String,
+    ended: bool,
+    pill: Unescaped<String>,
+    choices: (Vec<String>, Vec<String>),
+    now: (String, String),
+) -> Result<impl View> {
     Ok(view! {
+        if !ended && (!choices.0.is_empty() || !choices.1.is_empty()) {
+            <div class="mc">
+                pick(
+                    id: "model".to_owned(),
+                    name: "model",
+                    list: choices.0,
+                    now: now.0
+                )
+                pick(
+                    id: "effort".to_owned(),
+                    name: "effort",
+                    list: choices.1,
+                    now: now.1
+                )
+            </div>
+        }
         <div class="cmp">
             <div class="pill" id="pill" hidden=(true)>
                 <span id="pst" data-st="working" data-plain="">(pill)</span>
@@ -1108,12 +1164,39 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
 
 /// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer.
 #[must_use]
-pub fn chat_page(cx: &Cx, thread: Thread, turn: Turn) -> impl View {
-    view! { cx => chat(thread: thread, turn: turn) }
+pub fn chat_page(
+    cx: &Cx,
+    thread: Thread,
+    turn: Turn,
+    choices: (Vec<String>, Vec<String>),
+) -> impl View {
+    view! { cx => chat(thread: thread, turn: turn, choices: choices) }
+}
+
+/// A model or effort select (#553 row 34): `name`'s choices, `default` first, `now` selected.
+#[component]
+async fn pick(id: String, name: &str, list: Vec<String>, now: String) -> Result<impl View> {
+    Ok(view! {
+        if !list.is_empty() {
+            <select name=(id.clone()) id=(id) aria-label=(name)>
+                <option value="">(format!("{name}: default"))</option>
+                for m in list {
+                    <option value=(m.clone()) selected=(m == now)>
+                        (format!("{name}: {m}"))
+                    </option>
+                }
+            </select>
+        }
+    })
 }
 
 #[component]
-async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
+async fn chat(
+    cx: &Cx,
+    thread: Thread,
+    turn: Turn,
+    choices: (Vec<String>, Vec<String>),
+) -> Result<impl View> {
     let look = shown(cx);
     let [st, wait, pill] = [
         (state(&turn.state), false),
@@ -1156,17 +1239,7 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
                         <span class="ds">
                             <i class="dt"></i>
                             <span id="net"></span>
-                            (if let Some(w) = &workflow {
-                                format!("{} · round {} · ", w.role, w.round)
-                            } else if thread.account.is_empty() {
-                                format!("{} · {folder} · ", thread.agent)
-                            } else {
-                                format!(
-                                    "{} · {} · {folder} · ",
-                                    thread.agent,
-                                    thread.account,
-                                )
-                            })
+                            (byline(&thread, &folder))
                             <span id="st" data-st=(state(&turn.state))>(st)</span>
                             if let Some(url) = link {
                                 " · "
@@ -1199,6 +1272,7 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
                         <button type="submit">"rename"</button>
                     </form>
                 </div>
+                <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
                 <ol
                     class="tc"
                     id="msgs"
@@ -1209,7 +1283,13 @@ async fn chat(cx: &Cx, thread: Thread, turn: Turn) -> Result<impl View> {
                 <p class="tlv" id="wait" hidden=(true)>
                     <span data-st="needs" data-plain="">(wait)</span>
                 </p>
-                foot(who: thread.agent.clone(), ended: ended, pill: pill)
+                foot(
+                    who: thread.agent.clone(),
+                    ended: ended,
+                    pill: pill,
+                    choices: choices,
+                    now: (thread.model.clone(), thread.effort.clone())
+                )
             </main>
         )
     })
