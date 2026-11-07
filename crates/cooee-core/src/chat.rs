@@ -34,6 +34,9 @@ pub enum Body {
         text: String,
         /// The page's id for the send, so a retried send is stored once.
         random_id: String,
+        /// The files sent with it, by their stored names (`GET /threads/<id>/files/<name>`).
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        files: Vec<String>,
     },
     /// The agent's whole reply to a turn.
     Agent {
@@ -158,6 +161,10 @@ pub struct Summary {
     pub at: u64,
     /// Whether it has items the owner hasn't seen.
     pub unread: bool,
+    /// How many: the agent's items past the owner's read mark (the row's badge).
+    pub unseen: usize,
+    /// Archived: listed apart until restored.
+    pub archived: bool,
     /// A session a tool started (#33): its labels.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow: Option<crate::Workflow>,
@@ -515,6 +522,7 @@ mod tests {
             body: Body::You {
                 text: text.to_owned(),
                 random_id: "r".to_owned(),
+                files: Vec::new(),
             },
         };
         let chat = Chat::from_versions((0..5).map(|i| you(&format!("v{i}"))).collect());

@@ -62,6 +62,7 @@ pub fn assets(builder: RouterBuilder, looks: Looks) -> RouterBuilder {
         .route(icon_512)
         .route(style)
         .route(script)
+        .route(md_js)
         .route(worker)
         .route(look_js)
         .route(sheet::look_set)
@@ -190,6 +191,14 @@ async fn script() -> Result<Static> {
     Ok(Static(
         "text/javascript; charset=utf-8",
         built!("chat.js").as_bytes(),
+    ))
+}
+
+#[route(GET "/md.js")]
+async fn md_js() -> Result<Static> {
+    Ok(Static(
+        "text/javascript; charset=utf-8",
+        built!("md.js").as_bytes(),
     ))
 }
 
@@ -672,6 +681,109 @@ async fn pick(id: String, name: &str, list: Vec<String>, now: String) -> Result<
     })
 }
 
+/// The rename box the thread bar's title opens (`chat.ts`).
+#[component]
+async fn rename(title: String) -> Result<impl View> {
+    Ok(view! {
+        <form id="rt" class="rt" popover="auto" aria-label="rename the thread">
+            <input
+                name="title"
+                aria-label="thread title"
+                value=(title)
+                maxlength="80"
+                required=(true)
+            >
+            <button type="submit">"rename"</button>
+        </form>
+    })
+}
+
+/// The archived threads, folded, each with [restore] (`chat.ts`).
+#[component]
+pub(crate) async fn shelf(rows: Vec<cooee_core::Summary>) -> Result<impl View> {
+    Ok(view! {
+        if !rows.is_empty() {
+            <details class="arc">
+                <summary>(format!("{} archived", rows.len()))</summary>
+                for r in rows {
+                    <div class="arw">
+                        <a href=(format!("/t/{}", r.id))>(r.title.clone())</a>
+                        <button
+                            type="button"
+                            class="cn"
+                            data-restore=(r.id.clone())
+                            aria-label=(format!("restore {}", r.title))
+                        >
+                            "restore"
+                        </button>
+                    </div>
+                }
+            </details>
+        }
+    })
+}
+
+/// A thread's foot: the folder, model and effort chips (none once it ended), the working pill, the queued messages,
+/// the picked files, the composer; the long-press menu and the image viewer (`chat.ts`).
+#[component]
+async fn foot(
+    who: String,
+    ended: bool,
+    pill: Unescaped<String>,
+    places: Option<agents::Places>,
+    choices: (Vec<String>, Vec<String>),
+    now: (String, String),
+) -> Result<impl View> {
+    Ok(view! {
+        if !ended {
+            agents::chips(places: places, choices: choices, now: now)
+        }
+        <div class="cmp">
+            <div class="pill" id="pill" hidden=(true)>
+                <span id="pst" data-st="working" data-plain="">(pill)</span>
+                <span id="el">"0:00"</span>
+                <button type="button" class="stop">"stop"</button>
+            </div>
+            <ul class="qu" id="queue" aria-label="queued messages" hidden=(true)></ul>
+            <div class="fis" id="picked" hidden=(true)></div>
+            <form class="tw" id="composer">
+                <label class="gl att" hidden=(ended)>
+                    "📎"
+                    <input
+                        type="file"
+                        id="files"
+                        class="vh"
+                        multiple=(true)
+                        aria-label="attach files"
+                    >
+                </label>
+                <textarea
+                    id="box"
+                    rows="1"
+                    aria-label="message"
+                    placeholder=(format!("message {who}"))
+                    disabled=(ended)
+                ></textarea>
+                <button type="submit" disabled=(ended)>"send"</button>
+            </form>
+        </div>
+        <div
+            id="menu"
+            class="mn"
+            popover="manual"
+            role="menu"
+            aria-label="message actions"
+        >
+            <button type="button" role="menuitem" data-m="copy">"copy"</button>
+            <button type="button" role="menuitem" data-m="md">
+                "copy as markdown"
+            </button>
+            <button type="button" role="menuitem" data-m="quote">"quote"</button>
+        </div>
+        <div id="viewer" class="vw" popover="auto" aria-label="image"><img alt=""></div>
+    })
+}
+
 /// One thread (the pane of `/t/{id}`): its bar (its agent's avatar and name, the title of a side thread), the
 /// items (drawn by `chat.ts`), the working pill, and the composer with the folder, model and effort chips.
 #[component]
@@ -695,6 +807,7 @@ async fn chat(
     let folder = places.2.as_deref().map_or("scratch".to_owned(), short);
     let (name, title, said) = bar(&thread, mate.as_ref(), &profile);
     let ended = thread.closed || turn.state == "ended";
+    let renamable = !matches!(mate, Some((_, _, true)));
     // A Workflow session (#33): its role and round, and a link to what it works on; its tool closes it.
     let workflow = thread.workflow.clone();
     let link = workflow
@@ -717,11 +830,26 @@ async fn chat(
                 }
                 <div class="tb">
                     <div class="tn">
-                        <h1>(title)</h1>
+                        // A side thread's title renames it (#43); an agent's ongoing chat goes by its name.
+                        if renamable {
+                            <h1>
+                                <button
+                                    type="button"
+                                    class="ttl"
+                                    popovertarget="rt"
+                                    aria-label=(format!("{title} · rename"))
+                                >
+                                    (title.clone())
+                                </button>
+                            </h1>
+                        } else {
+                            <h1>(title.clone())</h1>
+                        }
                         <small>(thread.id.clone())</small>
                     </div>
                     <span class="ds">
                         <i class="dt"></i>
+                        <span id="net"></span>
                         (said)
                         if thread.workflow.is_none() {
                             <span id="bf">(folder)</span>
@@ -743,6 +871,9 @@ async fn chat(
                 >
                     "×"
                 </button>
+                if renamable {
+                    rename(title: title.clone())
+                }
             </div>
             <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
             <ol
@@ -755,28 +886,14 @@ async fn chat(
             <p class="tlv" id="wait" hidden=(true)>
                 <span data-st="needs" data-plain="">(wait)</span>
             </p>
-            if !ended {
-                agents::chips(
-                    places: thread.workflow.is_none().then_some(places),
-                    choices: choices,
-                    now: (thread.model.clone(), thread.effort.clone())
-                )
-            }
-            <form class="tw" id="composer">
-                <div class="pill" id="pill" hidden=(true)>
-                    <span id="pst" data-st="working" data-plain="">(pill)</span>
-                    <span id="el">"0:00"</span>
-                    <button type="button" class="stop">"stop"</button>
-                </div>
-                <textarea
-                    id="box"
-                    rows="1"
-                    aria-label="message"
-                    placeholder=(format!("message {name}"))
-                    disabled=(ended)
-                ></textarea>
-                <button type="submit" disabled=(ended)>"send"</button>
-            </form>
+            foot(
+                who: name.clone(),
+                ended: ended,
+                pill: pill,
+                places: thread.workflow.is_none().then_some(places),
+                choices: choices,
+                now: (thread.model.clone(), thread.effort.clone())
+            )
         </div>
     })
 }

@@ -1,5 +1,5 @@
-//! The shed client: shed's JSON-RPC over its Unix socket, one connection per request, each starting with the
-//! exact-version `hello` (ACP terminals for threads, plain ones for logins); and the `shed` CLI for what the socket doesn't offer (`agents`, `run --acp`).
+//! The shed client: shed's JSON-RPC over its Unix socket, on a small pool of reused connections, each new one starting
+//! with the exact-version `hello` (ACP terminals for threads, plain ones for logins); and the `shed` CLI for what the socket doesn't offer (`agents`, `run --acp`).
 
 use std::{
     collections::BTreeMap,
@@ -9,6 +9,7 @@ use std::{
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
     process::Command,
+    sync::{Arc, Mutex, MutexGuard, PoisonError},
     time::{Duration, Instant},
 };
 
@@ -67,6 +68,9 @@ impl ShedError {
 /// waiting for ever (herdsman#548). A `wait` gets its own timeout on top.
 const CALL: Duration = Duration::from_secs(10);
 
+/// How many idle, helloed connections a [`Shed`] keeps for reuse (#54).
+const POOL: usize = 4;
+
 /// The fix for no installed agents, as the agent picker and `cooee doctor` print it.
 pub const AGENTS_FIX: &str = "shed agents add claude-acp";
 
@@ -123,14 +127,19 @@ pub struct Shed {
     pub bin: PathBuf,
     /// shed's `--dir`, if not the per-user default.
     pub dir: Option<PathBuf>,
+    /// Idle connections past the hello, shared by clones.
+    pool: Arc<Mutex<Vec<Conn>>>,
 }
 
 /// One connection, past the hello.
+#[derive(Debug)]
 struct Conn {
     reader: BufReader<UnixStream>,
     writer: UnixStream,
     path: PathBuf,
     id: u64,
+    /// Requests fully written.
+    sent: u64,
 }
 
 impl Conn {
@@ -151,6 +160,7 @@ impl Conn {
             .map_err(|e| ShedError::Bad(e.to_string()))?;
         line.push(b'\n');
         self.writer.write_all(&line).map_err(self.io())?;
+        self.sent += 1;
         let response: Response = serde_json::from_str(&self.line()?.unwrap_or_default())
             .map_err(|e| ShedError::Bad(e.to_string()))?;
         match (response.result, response.error) {
@@ -201,7 +211,45 @@ impl Shed {
                 .join("Library/Caches/shed/shed.sock"),
             None => var("XDG_RUNTIME_DIR").unwrap_or_default().join("shed.sock"),
         };
-        Self { socket, bin, dir }
+        Self {
+            socket,
+            bin,
+            dir,
+            pool: Arc::default(),
+        }
+    }
+
+    fn idle(&self) -> MutexGuard<'_, Vec<Conn>> {
+        self.pool.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// Runs `f` on an idle connection, else a new one, and keeps the connection for reuse unless it broke. When an
+    /// idle one broke before `f` sent anything (shed restarted since), the pool is dropped and `f` runs once more on
+    /// a new connection, whose hello checks the version again; a request that was sent is never resent (#24 R14).
+    fn with<R>(
+        &self,
+        mut f: impl FnMut(&mut Conn) -> Result<R, ShedError>,
+    ) -> Result<R, ShedError> {
+        let idle = self.idle().pop();
+        let pooled = idle.is_some();
+        let mut conn = match idle {
+            Some(conn) => conn,
+            None => self.connect()?,
+        };
+        let sent = conn.sent;
+        let mut result = f(&mut conn);
+        if pooled && conn.sent == sent && matches!(result, Err(ShedError::Io { .. })) {
+            self.idle().clear();
+            conn = self.connect()?;
+            result = f(&mut conn);
+        }
+        if matches!(result, Ok(_) | Err(ShedError::Rpc(_))) {
+            let mut idle = self.idle();
+            if idle.len() < POOL {
+                idle.push(conn);
+            }
+        }
+        result
     }
 
     fn connect(&self) -> Result<Conn, ShedError> {
@@ -222,6 +270,7 @@ impl Shed {
             writer,
             path: self.socket.clone(),
             id: 0,
+            sent: 0,
         };
         let ours = Hello::ours();
         let version = |theirs| ShedError::Version {
@@ -238,8 +287,8 @@ impl Shed {
         }
     }
 
-    fn call<R: DeserializeOwned>(&self, method: Method, params: Value) -> Result<R, ShedError> {
-        self.connect()?.call(method, params)
+    fn call<R: DeserializeOwned>(&self, method: Method, params: &Value) -> Result<R, ShedError> {
+        self.with(|conn| conn.call(method, params.clone()))
     }
 
     /// Checks the server answers and runs this version.
@@ -255,7 +304,7 @@ impl Shed {
     /// # Errors
     /// [`ShedError`] when the call fails (`no_such_terminal` when it's gone).
     pub fn get(&self, name: &str) -> Result<TerminalInfo, ShedError> {
-        self.call(Method::Get, json!(Target { name: name.into() }))
+        self.call(Method::Get, &json!(Target { name: name.into() }))
     }
 
     /// Waits up to a minute for ACP terminal `name`'s session to be ready for a prompt.
@@ -284,7 +333,6 @@ impl Shed {
     /// # Errors
     /// [`ShedError`] when either call fails.
     pub fn prompt(&self, name: &str, text: &str) -> Result<(), ShedError> {
-        let mut conn = self.connect()?;
         let report = Reported {
             state: "working".to_owned(),
             note: None,
@@ -294,8 +342,10 @@ impl Shed {
             name: name.into(),
             report,
         };
-        let _: TerminalInfo = conn.call(Method::State, json!(state))?;
-        conn.input(name, &json!({ "prompt": text }))
+        self.with(|conn| {
+            let _: TerminalInfo = conn.call(Method::State, json!(state))?;
+            conn.input(name, &json!({ "prompt": text }))
+        })
     }
 
     /// Answers the oldest permission request of ACP terminal `name` with `option` (`shed approve`).
@@ -303,7 +353,7 @@ impl Shed {
     /// # Errors
     /// [`ShedError`] when the call fails.
     pub fn approve(&self, name: &str, option: &str) -> Result<(), ShedError> {
-        self.connect()?.input(name, &json!({ "approve": option }))
+        self.with(|conn| conn.input(name, &json!({ "approve": option })))
     }
 
     /// Cancels ACP terminal `name`'s turn (`shed cancel`).
@@ -311,7 +361,7 @@ impl Shed {
     /// # Errors
     /// [`ShedError`] when the call fails.
     pub fn cancel(&self, name: &str) -> Result<(), ShedError> {
-        self.connect()?.input(name, &json!("cancel"))
+        self.with(|conn| conn.input(name, &json!("cancel")))
     }
 
     /// Kills terminal `name` if it runs, then removes it; a terminal already gone is fine.
@@ -320,7 +370,7 @@ impl Shed {
     /// [`ShedError`] when a call fails otherwise.
     pub fn close(&self, name: &str) -> Result<(), ShedError> {
         for method in [Method::Kill, Method::Rm] {
-            match self.call::<TerminalInfo>(method, json!(Target { name: name.into() })) {
+            match self.call::<TerminalInfo>(method, &json!(Target { name: name.into() })) {
                 Err(e) if e.no_such_terminal() => return Ok(()),
                 r => r.map(drop)?,
             }
@@ -333,7 +383,7 @@ impl Shed {
     /// # Errors
     /// [`ShedError`] when the call fails (e.g. the program can't start or the name is taken).
     pub fn run(&self, params: &RunParams) -> Result<TerminalInfo, ShedError> {
-        self.call(Method::Run, json!(params))
+        self.call(Method::Run, &json!(params))
     }
 
     /// The terminals carrying every one of `labels`.
@@ -341,7 +391,7 @@ impl Shed {
     /// # Errors
     /// [`ShedError`] when the call fails.
     pub fn ls(&self, labels: BTreeMap<String, String>) -> Result<Vec<TerminalInfo>, ShedError> {
-        self.call(Method::Ls, json!(LsParams { labels }))
+        self.call(Method::Ls, &json!(LsParams { labels }))
     }
 
     /// Resizes terminal `name`.
@@ -354,7 +404,7 @@ impl Shed {
             rows,
             cols,
         };
-        self.call::<Value>(Method::Resize, json!(resize)).map(drop)
+        self.call::<Value>(Method::Resize, &json!(resize)).map(drop)
     }
 
     /// Terminal `name`'s visible screen as plain text.
@@ -367,7 +417,7 @@ impl Shed {
             lines: None,
             history: false,
         };
-        Ok(self.call::<ReadResult>(Method::Read, json!(read))?.text)
+        Ok(self.call::<ReadResult>(Method::Read, &json!(read))?.text)
     }
 
     /// Types `text` into terminal `name`, then presses enter (`shed send`, `shed keys enter`).
@@ -375,17 +425,18 @@ impl Shed {
     /// # Errors
     /// [`ShedError`] when either call fails.
     pub fn type_line(&self, name: &str, text: &str) -> Result<(), ShedError> {
-        let mut conn = self.connect()?;
         let send = SendParams {
             name: name.into(),
             text: text.into(),
         };
-        let _: Value = conn.call(Method::Send, json!(send))?;
         let keys = KeysParams {
             name: name.into(),
             keys: vec!["enter".to_owned()],
         };
-        conn.call::<Value>(Method::Keys, json!(keys)).map(drop)
+        self.with(|conn| {
+            let _: Value = conn.call(Method::Send, json!(send))?;
+            conn.call::<Value>(Method::Keys, json!(keys)).map(drop)
+        })
     }
 
     /// Waits until terminal `name`'s program exits or `timeout` seconds pass.

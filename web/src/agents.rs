@@ -70,7 +70,11 @@ impl Side {
             )
         });
         let mut mates: Vec<Mate> = plain.chain(profiles).collect();
-        for r in self.rows.iter().filter(|r| r.workflow.is_none()) {
+        for r in self
+            .rows
+            .iter()
+            .filter(|r| r.workflow.is_none() && !r.archived)
+        {
             let key = key(&r.agent, &r.profile);
             let at = if let Some(at) = mates.iter().position(|m| m.key == key) {
                 at
@@ -147,17 +151,35 @@ pub(crate) async fn avatar(name: String, n: usize, big: bool) -> Result<impl Vie
 /// How many side threads show under the agent on show; the older fold.
 const SIDE: usize = 5;
 
-/// A side thread's row: its title and age.
+/// A side thread's row: its title, age and unread count (#43).
 #[component]
 async fn side_row(c: Summary, open: String) -> Result<impl View> {
     Ok(view! {
         <a
-            class=(if c.id == open { "str on" } else { "str" })
+            class=(match (c.id == open, c.unread) {
+                (true, _) => "str on",
+                (false, true) => "str ud",
+                _ => "str",
+            })
             href=(format!("/t/{}", c.id))
+            data-id=(c.id.clone())
         >
             <span class="tt">(c.title)</span>
-            <span class="ta">(age(c.at))</span>
+            <span class="ta">
+                (age(c.at))
+                badge(n: c.unseen)
+            </span>
         </a>
+    })
+}
+
+/// The count of messages not seen yet (#43), when there are any.
+#[component]
+async fn badge(n: usize) -> Result<impl View> {
+    Ok(view! {
+        if n > 0 {
+            <b class="bd" aria-label=(format!("{n} unread"))>(n.to_string())</b>
+        }
     })
 }
 
@@ -175,6 +197,7 @@ async fn sidebar(
     cx: &Cx,
     mates: Vec<Mate>,
     profiles: Vec<Profile>,
+    archived: Vec<Summary>,
     current: String,
     open: String,
 ) -> Result<impl View> {
@@ -206,6 +229,7 @@ async fn sidebar(
                             _ => "agr",
                         })
                         href=(href(&m))
+                        data-id=(m.chats.first().map(|c| c.id.clone()))
                         aria-current=((on
                                 && m.chats.first().is_some_and(|c| c.id == open)).then(
                             || "page".to_owned(),
@@ -215,6 +239,7 @@ async fn sidebar(
                         <span class="tt">(m.name.clone())</span>
                         <span class="ta">
                             (latest.as_ref().map(|c| age(c.at)).unwrap_or_default())
+                            badge(n: m.chats.iter().map(|c| c.unseen).sum())
                         </span>
                         <span class="tp">
                             <b
@@ -254,6 +279,7 @@ async fn sidebar(
                     }
                 }
             }
+            super::shelf(rows: archived)
             if can_add {
                 new_agent(profiles: profiles)
             }
@@ -593,6 +619,11 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
                         sidebar(
                             mates: mates.clone(),
                             profiles: profiles,
+                            archived: rows
+                                .iter()
+                                .filter(|r| r.archived && r.workflow.is_none())
+                                .cloned()
+                                .collect(),
                             current: if home { String::new() } else { current },
                             open: open.clone()
                         )

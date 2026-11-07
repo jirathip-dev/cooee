@@ -168,13 +168,13 @@ fn an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_p
     let nav = &page[page.find(r#"<nav class="ags""#).unwrap()..];
     assert!(
         nav.contains(&format!(
-            r#"<a class="str on" href="/t/{side}"><span class="tt">second</span>"#
+            r#"<a class="str on" href="/t/{side}" data-id="{side}"><span class="tt">second</span>"#
         )) && nav.contains(r#"<a class="str nw" href="/new?agent=fake-acp">+ new chat</a>"#),
         "{nav}"
     );
     // The side thread's bar: its title, its agent before the rest; in its scratch folder.
     assert!(
-        page.contains("<h1>second</h1>") && page.contains("fake-acp · Plain · fake-acp · "),
+        page.contains(">second</button></h1>") && page.contains("fake-acp · Plain · fake-acp · "),
         "{page}"
     );
     assert!(

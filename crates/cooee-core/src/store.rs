@@ -59,12 +59,31 @@ pub struct Thread {
     /// The page's id for the start that made it, so a retried start adopts this thread instead of starting another.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub random_id: String,
+    /// Archived: listed apart, under the thread list's archived threads, until restored.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub archived: bool,
+    /// The owner's messages queued during a turn, sent in order as each turn ends.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub queue: Vec<Queued>,
     /// Where a session a tool started came from (a Workflow item, #33); none: the owner's own chat.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workflow: Option<Workflow>,
     /// Sent ahead of the next message after a folder was attached (#86): the agent started again there.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub handover: String,
+}
+
+/// A message queued during a turn.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Queued {
+    /// The text.
+    pub text: String,
+    /// The page's id for the send: the item it becomes keeps it.
+    pub random_id: String,
+    /// Its files' stored names.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub files: Vec<String>,
 }
 
 /// A session a tool started, as its shed labels say (#33): `source` (the tool), `group` (its repo), `item`

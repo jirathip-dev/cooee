@@ -30,8 +30,10 @@ test("Scene draws a sprite per agent on one page; a tap opens its chat, ringed, 
   await page.goto("/?list");
   await expect(page.locator(".ags .agr")).toHaveCount(0);
   await expect(page.locator("#scene .sp")).toHaveCount(1);
-  expect(await page.locator("#scene .sb .sn b").allTextContents()).toEqual(rows);
-  await expect(page.locator("#scene .fh .ds")).toHaveText(`${rows.length} agents`);
+  // Other tests add agents meanwhile: every agent listed is a sprite, and the bar counts the sprites.
+  const names = await page.locator("#scene .sb .sn b").allTextContents();
+  expect(names).toEqual(expect.arrayContaining(rows));
+  await expect(page.locator("#scene .fh .ds")).toHaveText(`${names.length} agents`);
   // Each sprite acts out its state with the theme's art.
   const pose = await page.locator("#scene .sb .sf use").first().getAttribute("href");
   expect(pose).toMatch(/^\/look\/farm\/sprites\.svg#s-(edit|needs|done|fail|merged|idle)$/);
@@ -65,7 +67,8 @@ test("refreshed 5 times, Scene keeps one sprite per agent", async ({ page, conte
     await expect(page.locator("#scene")).toHaveCount(1);
     const keys = await hrefs(page.locator("#scene .sb"));
     expect(new Set(keys).size).toBe(keys.length);
-    expect(keys.length).toBe(want);
+    // Other tests add agents meanwhile, never take one away.
+    expect(keys.length).toBeGreaterThanOrEqual(want);
   }
 });
 

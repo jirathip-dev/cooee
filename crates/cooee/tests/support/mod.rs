@@ -8,8 +8,12 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     env, fs,
     io::{BufRead, BufReader, Read, Write},
+    net::Shutdown,
     net::TcpStream,
-    os::unix::{fs::PermissionsExt, net::UnixListener},
+    os::unix::{
+        fs::PermissionsExt,
+        net::{UnixListener, UnixStream},
+    },
     path::{Path, PathBuf},
     process::{Child, ChildStdin, Command, Stdio},
     sync::{
@@ -73,6 +77,8 @@ pub struct FakeShed {
     procs: Arc<Procs>,
     /// Every request (method, params) in order.
     pub requests: Arc<Mutex<Vec<(String, Value)>>>,
+    /// The open connections (shut by [`FakeShed::stop`]), how many were accepted and how many are served.
+    conns: Arc<Mutex<(Vec<UnixStream>, usize, usize)>>,
 }
 
 const CLI: &str = r#"#!/bin/sh
@@ -130,19 +136,48 @@ impl FakeShed {
             shared: Arc::default(),
             procs: Arc::default(),
             requests: Arc::default(),
+            conns: Arc::default(),
         };
         let server = shed.clone();
         thread::spawn(move || {
             for conn in listener.incoming().flatten() {
+                let mut conns = server.conns.lock().unwrap();
+                conns.0.push(conn.try_clone().unwrap());
+                conns.1 += 1;
+                conns.2 += 1;
+                drop(conns);
                 let server = server.clone();
-                thread::spawn(move || server.serve(conn));
+                thread::spawn(move || {
+                    server.serve(conn);
+                    server.conns.lock().unwrap().2 -= 1;
+                });
             }
         });
         shed
     }
 
+    /// How many connections it accepted.
+    pub fn connects(&self) -> usize {
+        self.conns.lock().unwrap().1
+    }
+
+    /// Kills this server, as a shed restart does: its socket is gone and every connection closed (returns once each
+    /// is, so none with an event stream open).
+    pub fn stop(&self) {
+        let _ = fs::remove_file(self.dir.join("shed.sock"));
+        let conns = std::mem::take(&mut self.conns.lock().unwrap().0);
+        for conn in &conns {
+            let _ = conn.shutdown(Shutdown::Both);
+        }
+        drop(conns);
+        while self.conns.lock().unwrap().2 > 0 {
+            thread::sleep(Duration::from_millis(5));
+        }
+    }
+
     /// Shuts (`true`) or opens gate `name`: `hold-run` and `run-fails` for the CLI's `run`, `hold-ready` (the
-    /// session-ready `wait` waits), `ready-timeout` (it times out) and `hang-send` (every `send` waits).
+    /// session-ready `wait` waits), `ready-timeout` (it times out), `hang-send` (every `send` waits) and `hangup` (a
+    /// request is recorded, then its connection closed unanswered).
     pub fn gate(&self, name: &str, shut: bool) {
         let path = self.dir.join(name);
         if shut {
@@ -407,7 +442,7 @@ impl FakeShed {
         Ok(json!({}))
     }
 
-    fn serve(&self, conn: std::os::unix::net::UnixStream) {
+    fn serve(&self, conn: UnixStream) {
         let mut writer = conn.try_clone().unwrap();
         let mut lines = BufReader::new(conn).lines();
         while let Some(Ok(line)) = lines.next() {
@@ -416,6 +451,10 @@ impl FakeShed {
                 .lock()
                 .unwrap()
                 .push((req.method.clone(), req.params.clone()));
+            if self.dir.join("hangup").exists() {
+                let _ = writer.shutdown(Shutdown::Both);
+                return;
+            }
             let id = req.id.clone().unwrap_or_default();
             let name = req.params["name"].as_str().unwrap_or("").to_owned();
             let result = match req.method.as_str() {
@@ -555,6 +594,22 @@ impl FakeShed {
         let read = "Read src/lib.rs";
         Some(if prompt.contains("approve") {
             self.approval(name, rx)
+        } else if prompt.contains("markdown") {
+            // Streamed a line at a time, then the whole reply.
+            let mut events: Vec<EventKind> = MARKDOWN.split_inclusive('\n').map(text).collect();
+            events.push(reply(MARKDOWN, "end_turn"));
+            (events, "end_turn")
+        } else if prompt.contains("commands") {
+            let mut events = Vec::new();
+            for (id, title) in [
+                ("k1", "$ cargo fmt"),
+                ("k2", "$ cargo clippy"),
+                ("k3", "$ cargo test"),
+            ] {
+                events.extend([tool(id, title, "in_progress"), tool(id, title, "completed")]);
+            }
+            events.push(reply("Ran 3 commands.", "end_turn"));
+            (events, "end_turn")
         } else if prompt.contains("tool") {
             let events = [
                 tool("c1", read, "pending"),
@@ -594,6 +649,8 @@ impl FakeShed {
                 while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
             }
             (vec![reply(&format!("streamed {n} words"), stop)], stop)
+        } else if let Some(said) = prompt.strip_prefix("echo ") {
+            (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("exit") {
             self.shared.lock().unwrap().stopped.insert(name.to_owned());
             self.emit(name, EventKind::Exited { code: Some(1) });
@@ -643,6 +700,29 @@ impl FakeShed {
         )
     }
 }
+
+/// The `markdown` turn's reply: a heading, inline marks, a link, a 3-column table, a fenced block, a list and raw
+/// HTML (which stays text).
+pub const MARKDOWN: &str = "## Build report
+
+The **build** passed on *staging*: see [the run](https://example.com/run/1) and `cargo test`.
+
+| crate | tests | time |
+|---|---:|---|
+| cooee-core | 42 | 1.2 s |
+| cooee-server | 17 | 3.4 s |
+
+```rust
+fn main() {
+    println!(\"hello\");
+}
+```
+
+- fmt is clean
+- clippy is clean
+
+<script>alert(1)</script>
+";
 
 fn text(t: &str) -> EventKind {
     EventKind::Text { text: t.to_owned() }

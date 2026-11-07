@@ -137,7 +137,9 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     assert_eq!(s.shed.sent(&terminal), ["\x1e{\"prompt\":\"hi\"}\n"]);
     let chat = s.cooee.get(&format!("/t/{id}")).1;
     assert!(
-        chat.contains("<i class=\"dt\"></i>Plain · fake-acp · System default · "),
+        chat.contains(
+            "<i class=\"dt\"></i><span id=\"net\"></span>Plain · fake-acp · System default · "
+        ),
         "{chat}"
     );
 
