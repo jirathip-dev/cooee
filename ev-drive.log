@@ -1,0 +1,79 @@
+
+=== 390 px ===
+BAD  default html: {"theme":"farm","style":"modern","figures":"sprite","moments":"on","mode":"dark"} (want {"theme":"farm","style":"modern","figures":"sprite","moments":"on"})
+  list marks, figures sprite: ["svg at the gate"]
+OK   figures sprite: html: "sprite"
+  chat #wait/#st, figures sprite: "at the gate · needs you" "at the gate"
+  list marks, figures ascii: ["ascii[(!)|[!]] at the gate"]
+OK   figures ascii: html: "ascii"
+  chat #wait/#st, figures ascii: "(!)\n[!]\n at the gate · needs you" "(!)\n[!]\n at the gate"
+  list marks, figures none: ["dot(rgb(255, 125, 110)) needs you"]
+OK   figures none: html: "none"
+  chat #wait/#st, figures none: "needs you" "needs you"
+OK   sprite: style radios: ["modern","terminal","scene"]
+OK   sprite: figures radios: ["sprite","ascii","none"]
+OK   scene: html style: "scene"
+OK   ascii: style radios: ["modern","terminal"]
+OK   ascii: falls back to terminal: "terminal"
+OK   ascii: hidden not in a11y list: ["modern","terminal"]
+OK   none: style radios: ["modern","terminal"]
+  cookie: figures:none/style:terminal/scene:on
+OK   plain: figures radios: ["ascii","none"]
+OK   plain: style radios: ["modern","terminal"]
+OK   plain: html figures: "ascii"
+OK   plain: style falls back: "terminal"
+OK   plain+ascii checked: "ascii"
+BAD  plain reload html: {"theme":"plain","style":"terminal","figures":"ascii","moments":"off","mode":"dark"} (want {"theme":"plain","style":"terminal","figures":"ascii","moments":"off"})
+OK   plain reload: figures radios: ["ascii","none"]
+OK   plain reload: style radios: ["modern","terminal"]
+  settings rows: ["providers\n▸","roots\n▸","style\nterminal\n▸","figures\nascii\n▸","theme\nplain\n▸","appearance\nsystem · dark now\n▸","colours\ndark github · light paper\n▸","report a problem\n▸"]
+  ascii frames @100/700/1300 ms: [["(!)=1","[!]=0"],["(!)=0","[!]=1"],["(!)=1","[!]=0"]]
+BAD  saved terminal: html: {"theme":"plain","style":"modern","figures":"ascii","moments":"off","mode":"dark"} (want {"theme":"plain","style":"modern","figures":"ascii","moments":"off"})
+OK   saved terminal: theme tile: "plain"
+  saved terminal figures radios: ["ascii","none"]
+  cookie after a tap: theme:plain/figures:sprite/mode:dark
+  plugin got: [{"type":"cooee-look","theme":"farm","style":"modern","figures":"sprite"}]
+  plugin after plain: {"theme":"plain","style":"modern","figures":"ascii"}
+
+=== 1440 px ===
+BAD  default html: {"theme":"farm","style":"modern","figures":"sprite","moments":"on","mode":"dark"} (want {"theme":"farm","style":"modern","figures":"sprite","moments":"on"})
+  list marks, figures sprite: ["svg at the gate","svg at the gate"]
+OK   figures sprite: html: "sprite"
+  chat #wait/#st, figures sprite: "at the gate · needs you" "at the gate"
+  list marks, figures ascii: ["ascii[(!)|[!]] at the gate","ascii[(!)|[!]] at the gate"]
+OK   figures ascii: html: "ascii"
+  chat #wait/#st, figures ascii: "(!)\n[!]\n at the gate · needs you" "(!)\n[!]\n at the gate"
+  list marks, figures none: ["dot(rgb(255, 125, 110)) needs you","dot(rgb(255, 125, 110)) needs you"]
+OK   figures none: html: "none"
+  chat #wait/#st, figures none: "needs you" "needs you"
+OK   sprite: style radios: ["modern","terminal","scene"]
+OK   sprite: figures radios: ["sprite","ascii","none"]
+OK   scene: html style: "scene"
+OK   ascii: style radios: ["modern","terminal"]
+OK   ascii: falls back to terminal: "terminal"
+OK   ascii: hidden not in a11y list: ["modern","terminal"]
+OK   none: style radios: ["modern","terminal"]
+  cookie: figures:none/style:terminal/scene:on
+OK   plain: figures radios: ["ascii","none"]
+OK   plain: style radios: ["modern","terminal"]
+OK   plain: html figures: "ascii"
+OK   plain: style falls back: "terminal"
+OK   plain+ascii checked: "ascii"
+BAD  plain reload html: {"theme":"plain","style":"terminal","figures":"ascii","moments":"off","mode":"dark"} (want {"theme":"plain","style":"terminal","figures":"ascii","moments":"off"})
+OK   plain reload: figures radios: ["ascii","none"]
+OK   plain reload: style radios: ["modern","terminal"]
+  settings rows: ["providers\n▸","roots\n▸","style\nterminal\n▸","figures\nascii\n▸","theme\nplain\n▸","appearance\nsystem · dark now\n▸","colours\ndark github · light paper\n▸","report a problem\n▸"]
+  ascii frames @100/700/1300 ms: [["(!)=1","[!]=0"],["(!)=0","[!]=1"],["(!)=1","[!]=0"]]
+BAD  saved terminal: html: {"theme":"plain","style":"modern","figures":"ascii","moments":"off","mode":"dark"} (want {"theme":"plain","style":"modern","figures":"ascii","moments":"off"})
+OK   saved terminal: theme tile: "plain"
+  saved terminal figures radios: ["ascii","none"]
+  cookie after a tap: theme:plain/figures:sprite/mode:dark
+  plugin got: [{"type":"cooee-look","theme":"farm","style":"modern","figures":"sprite"}]
+  plugin after plain: {"theme":"plain","style":"modern","figures":"ascii"}
+
+=== no script, 390 ===
+  style radios: ["modern","terminal","scene"]
+  cookie: figures:ascii html: {"theme":"farm","style":"modern","figures":"ascii","moments":"on"}
+  style radios after ascii: ["modern","terminal"]
+
+6 BAD

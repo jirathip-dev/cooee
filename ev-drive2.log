@@ -1,0 +1,14 @@
+needs sprite: #wait html: <span data-st="needs" data-plain=""><svg class="rsp" viewBox="0 0 24 24" aria-hidden="true"><use href="/look/farm/sprites.svg#s-needs"></use></svg><span class="thw">at the gate</span><small class="pw"> · needs you</small></span>
+needs ascii: #wait html: <span data-st="needs" data-plain=""><i class="rsa" aria-hidden="true"><b>(!)</b><b>[!]</b></i> <span class="thw">at the gate</span><small class="pw"> · needs you</small></span>
+needs none: #wait html: <span data-st="needs" data-plain=""><i class="sd"></i><span class="thw">needs you</span></span>
+  #wait now: "needs you"
+list sprite: ["done: svg in the stable","needs: svg at the gate","needs: svg at the gate"]
+list ascii: ["done: ascii[\\o/||o|] in the stable","needs: ascii[(!)|[!]] at the gate","needs: ascii[(!)|[!]] at the gate"]
+list none: ["done: dot(rgb(127, 208, 106)) done","needs: dot(rgb(255, 125, 110)) needs you","needs: dot(rgb(255, 125, 110)) needs you"]
+list plain default: ["done: ascii[\\o/||o|] done","needs: ascii[(!)|[!]] needs you","needs: ascii[(!)|[!]] needs you"]
+390 empty sprite: ["empty <svg class=\"big\" viewBox=\"0 0 132 100\" aria-hidden=\"true\"><use href=\"/look/farm/sprites.svg#s-empty\"></use></svg>"]
+390 empty ascii: ["empty <i class=\"lsa\" aria-hidden=\"true\"><b>( -.- )\n  z  </b><b>( -.- )\n  zZ </b></i>"]
+390 empty none: ["empty "]
+1440 empty sprite: ["empty <svg class=\"big\" viewBox=\"0 0 132 100\" aria-hidden=\"true\"><use href=\"/look/farm/sprites.svg#s-empty\"></use></svg>"]
+1440 empty ascii: ["empty <i class=\"lsa\" aria-hidden=\"true\"><b>( -.- )\n  z  </b><b>( -.- )\n  zZ </b></i>"]
+1440 empty none: ["empty "]
