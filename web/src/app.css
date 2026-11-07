@@ -216,6 +216,7 @@ html[data-style=terminal] .swa{border-radius:4px}
 .cfm{flex:1;min-height:0;display:flex}
 .sdb{flex:1;min-width:0;overflow-y:auto;overscroll-behavior:contain}
 .cfm .chat{flex:1;min-width:0;height:auto;max-width:none;margin:0;overflow:hidden}
+.cfm .tc{padding-inline:max(12px,calc((100% - 100ch)/2))}
 @media (max-width:999px){.app[data-show=pane]:not(:has(#signins:target)) :is(.tabs,.sdb),.app:is([data-show=list],:has(#signins:target)) .chat{display:none}}
 @media (min-width:1000px){.sdb{flex:none;width:340px;border-right:1px solid var(--edge)}.cfm .th .bk:not([data-ref]){display:none}}
 .ags{display:flex;flex-direction:column;padding:8px}.ags>.lb{margin:8px;font-weight:600}
