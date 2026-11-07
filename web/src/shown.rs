@@ -1,16 +1,18 @@
 //! What a device shows (#49): its pick from the `cooee-look` cookie (`theme:kitchen/style:terminal/…`; unset keys
-//! are the defaults) resolved against the looks, so the server draws the theme and scheme on the first byte. The
+//! are the defaults) resolved against the looks (#35: Style, Theme, Figures and Colours), so the server draws the theme and scheme on the first byte. The
 //! marks (`[data-st]`, `[data-w]`, `[data-s]`) are drawn here as `look.ts` draws the ones a page adds later.
 
 use std::{collections::BTreeMap, fmt::Write as _, sync::Arc};
 
-use crate::look::{Looks, Scheme, Theme, plain};
+use crate::look::{ASCII, Looks, Scheme, Theme, plain};
 
 /// The cookie that keeps a device's pick.
 pub const COOKIE: &str = "cooee-look";
 
-/// The keys a pick has.
-const KEYS: [&str; 6] = ["theme", "mode", "style", "sprites", "dark", "light"];
+/// The keys a pick has (`scene:on` is Style Scene over the `style` it falls back to).
+const KEYS: [&str; 7] = [
+    "theme", "mode", "style", "scene", "figures", "dark", "light",
+];
 
 /// The state keys with a word (a key without one shows nothing).
 const STATES: [&str; 9] = [
@@ -45,32 +47,17 @@ pub fn esc(s: &str) -> String {
     out
 }
 
-fn glyph(st: &str) -> &'static str {
-    match st {
-        "working" => "✻",
-        "needs" => "!",
-        "done" => "✓",
-        "fail" => "✕",
-        "idle" => "·",
-        "ended" => "■",
-        _ => "",
-    }
-}
-
-fn ascii(id: &str) -> &'static str {
-    match id {
-        "edit" => "o_/",
-        "read" => "o.o",
-        "run" => "o>_",
-        "needs" => "(!)",
-        "done" | "merged" => "\\o/",
-        "fail" => "x_x",
-        "idle" => "-.-",
-        "ended" => "[ ]",
-        "loading" => "( o.o )\n  ...",
-        "empty" => "( -.- )\n  zzz",
-        _ => "",
-    }
+/// A state's ASCII figure, its two frames in `<b>`s (`cls`: `rsa` in a row, `lsa` the big one).
+fn ascii(id: &str, cls: &str) -> String {
+    let frames = ASCII
+        .iter()
+        .find(|(k, _)| *k == id)
+        .map_or(["", ""], |f| f.1);
+    format!(
+        "<i class=\"{cls}\" aria-hidden=\"true\"><b>{}</b><b>{}</b></i>",
+        esc(frames[0]),
+        esc(frames[1])
+    )
 }
 
 /// A token as a CSS declaration, when it can't break out of the rule.
@@ -95,6 +82,14 @@ impl Shown {
         let pick = value
             .split('/')
             .filter_map(|kv| kv.split_once(':'))
+            .map(|(k, v)| match (k, v) {
+                // The Sprites switch before #35.
+                ("sprites", "on") => ("figures", "sprite"),
+                ("sprites", "off") => ("figures", "none"),
+                ("sprites", v) => ("figures", v),
+                ("theme", t) => ("theme", Looks::renamed(&looks.themes, t)),
+                kv => kv,
+            })
             .filter(|(k, _)| KEYS.contains(k))
             .map(|(k, v)| (k.to_owned(), v.to_owned()))
             .collect();
@@ -164,23 +159,39 @@ impl Shown {
         &self.looks.schemes[name]
     }
 
-    /// `modern` or `terminal`.
+    /// `modern`, `terminal` or `scene` (with sprites only; else the Modern or Terminal pick it falls back to).
     #[must_use]
     pub fn style(&self) -> &str {
-        if self.get("style") == Some("terminal") {
+        if self.get("scene") == Some("on") && self.figures() == "sprite" {
+            "scene"
+        } else if self.get("style") == Some("terminal") {
             "terminal"
         } else {
             "modern"
         }
     }
 
-    /// `on`, `ascii` or `off`.
+    /// The styles offered: Scene only with sprites.
     #[must_use]
-    pub fn figs(&self) -> &str {
-        match self.get("sprites") {
-            Some(f @ ("ascii" | "off")) => f,
-            _ => "on",
+    pub fn styles(&self) -> Vec<&'static str> {
+        let n = if self.figures() == "sprite" { 3 } else { 2 };
+        ["modern", "terminal", "scene"][..n].to_vec()
+    }
+
+    /// `sprite`, `ascii` or `none`: the pick's, else `sprite`; a theme without sprites (plain) has `ascii` instead.
+    #[must_use]
+    pub fn figures(&self) -> &str {
+        match self.get("figures") {
+            Some(f @ ("ascii" | "none")) => f,
+            _ if self.theme().sprites => "sprite",
+            _ => "ascii",
         }
+    }
+
+    /// The figures offered: a theme without sprites has no `sprite`.
+    #[must_use]
+    pub fn figure_list(&self) -> Vec<&'static str> {
+        ["sprite", "ascii", "none"][usize::from(!self.theme().sprites)..].to_vec()
     }
 
     /// The pick's Appearance: `system`, `dark` or `light`.
@@ -211,10 +222,6 @@ impl Shown {
         }
     }
 
-    fn art(&self) -> bool {
-        self.theme().sprites && self.figs() == "on"
-    }
-
     fn svg(&self, id: &str, cls: &str) -> String {
         let bx = if cls == "big" {
             "0 0 132 100"
@@ -239,21 +246,19 @@ impl Shown {
         }
     }
 
-    /// A state's mark (`[data-st]`): the sprite, ascii figure, glyph or dot, then the theme word (`plain`: and
-    /// `· plain word`).
+    /// A state's mark (`[data-st]`): the sprite or ascii figure, then the theme word (`plain`: and `· plain word`);
+    /// with no figures, a dot and the plain word.
     #[must_use]
     pub fn st(&self, st: &str, plain: bool) -> String {
         if !STATES.contains(&st) {
             return String::new();
         }
         let id = if st == "working" { "edit" } else { st };
-        let mark = match self.figs() {
-            "off" => "<i class=\"sd\"></i>".to_owned(),
-            "ascii" => format!("<i class=\"rsa\">{}</i> ", esc(ascii(id))),
-            _ if self.art() => self.svg(id, "rsp"),
-            _ => format!("<i class=\"sg\">{}</i> ", glyph(st)),
+        let (mark, said) = match self.figures() {
+            "none" => ("<i class=\"sd\"></i>".to_owned(), crate::look::plain(st)),
+            "ascii" => (format!("{} ", ascii(id, "rsa")), self.word(st)),
+            _ => (self.svg(id, "rsp"), self.word(st)),
         };
-        let said = self.word(st);
         format!(
             "{mark}<span class=\"thw\">{}</span>{}",
             esc(said),
@@ -271,9 +276,9 @@ impl Shown {
     /// The theme's 132 × 100 figure (`[data-s]`).
     #[must_use]
     pub fn s(&self, k: &str) -> String {
-        match self.figs() {
-            "ascii" => format!("<i class=\"lsa\">{}</i>", esc(ascii(k))),
-            _ if self.art() => self.svg(k, "big"),
+        match self.figures() {
+            "ascii" => ascii(k, "lsa"),
+            "sprite" => self.svg(k, "big"),
             _ => String::new(),
         }
     }
@@ -291,6 +296,14 @@ impl Shown {
             }
             if self.mode().is_some_and(|m| m != k) {
                 pick.insert("mode".to_owned(), k.to_owned());
+            }
+        } else if k == "style" {
+            // Scene keeps the Modern or Terminal pick to fall back to.
+            if v == "scene" {
+                pick.insert("scene".to_owned(), "on".to_owned());
+            } else {
+                pick.remove("scene");
+                pick.insert(k.to_owned(), v.to_owned());
             }
         } else if KEYS.contains(&k) && !(k == "mode" && v == "system") {
             pick.insert(k.to_owned(), v.to_owned());
@@ -318,26 +331,28 @@ mod tests {
     }
 
     #[test]
-    fn the_cookie_picks_the_theme_scheme_style_and_sprites() {
+    fn the_cookie_picks_the_theme_scheme_style_and_figures() {
         let looks = looks();
-        let cookie = "cooee=abc; cooee-look=theme:kitchen/style:terminal/sprites:off/mode:dark";
+        let cookie = "cooee=abc; cooee-look=theme:kitchen/style:terminal/figures:none/mode:dark";
         let s = Shown::new(looks.clone(), Some(cookie));
         assert_eq!(
-            (s.name(), s.style(), s.figs(), s.mode()),
-            ("kitchen", "terminal", "off", Some("dark"))
+            (s.name(), s.style(), s.figures(), s.mode()),
+            ("kitchen", "terminal", "none", Some("dark"))
         );
         assert!(s.css().starts_with(":root{"), "{}", s.css());
         assert!(s.css().contains("--bg:#1a1816;"), "{}", s.css());
         assert!(!s.css().contains("@media"));
+        // Figures none: a dot and the plain word, never the theme's.
         assert_eq!(
-            s.st("needs", false),
-            "<i class=\"sd\"></i><span class=\"thw\">the bell</span>"
+            s.st("needs", true),
+            "<i class=\"sd\"></i><span class=\"thw\">needs you</span>"
         );
+        assert_eq!(s.s("empty"), "");
         // No pick: the default theme, System with both schemes.
         let d = Shown::new(looks.clone(), None);
         assert_eq!(
-            (d.name(), d.style(), d.figs(), d.mode()),
-            ("farm", "modern", "on", None)
+            (d.name(), d.style(), d.figures(), d.mode()),
+            ("farm", "modern", "sprite", None)
         );
         assert!(
             d.css()
@@ -363,12 +378,74 @@ mod tests {
         assert_eq!(s.name(), "farm");
         // A light scheme isn't a dark pick.
         assert_eq!(s.scheme("dark"), "farm");
-        assert_eq!(s.figs(), "on");
+        assert_eq!(s.figures(), "sprite");
         assert_eq!(declaration("--x", "red;}</style>"), None);
         assert_eq!(
             esc("<a href=\"x\">'&"),
             "&#60;a href=&#34;x&#34;&#62;&#39;&#38;"
         );
+    }
+
+    #[test]
+    fn each_figures_value_draws_a_state_and_the_big_figure() {
+        let looks = looks();
+        let on = |pick: &str| {
+            Shown::new(looks.clone(), Some(&format!("cooee-look={pick}"))).st("working", true)
+        };
+        assert!(on("").starts_with("<svg class=\"rsp\""), "{}", on(""));
+        assert!(on("").contains("/look/farm/sprites.svg#s-edit"));
+        assert_eq!(
+            on("figures:ascii"),
+            "<i class=\"rsa\" aria-hidden=\"true\"><b>~o=</b><b>=o~</b></i> <span class=\"thw\">on the trail</span>\
+             <small class=\"pw\"> · working</small>"
+        );
+        assert_eq!(
+            on("figures:none"),
+            "<i class=\"sd\"></i><span class=\"thw\">working</span>"
+        );
+        let big = Shown::new(looks.clone(), Some("cooee-look=figures:ascii")).s("loading");
+        assert_eq!(
+            big,
+            "<i class=\"lsa\" aria-hidden=\"true\"><b>( o.o )\n  ...</b><b>( o.O )\n  .. </b></i>"
+        );
+        // Every figure has two frames that differ, one per state a page names.
+        for (id, [a, b]) in ASCII {
+            assert!(!a.is_empty() && a != b, "{id}");
+        }
+    }
+
+    #[test]
+    fn terminal_is_plain_and_scene_needs_sprites() {
+        let looks = looks();
+        let s = |pick: &str| Shown::new(looks.clone(), Some(&format!("cooee-look={pick}")));
+        // A saved `terminal` theme (and the Sprites switch) before #35.
+        let old = s("theme:terminal/sprites:off");
+        assert_eq!((old.name(), old.figures()), ("plain", "none"));
+        assert_eq!(
+            old.with("mode", "dark"),
+            "figures:none/mode:dark/theme:plain"
+        );
+        assert_eq!(s("sprites:on").figures(), "sprite");
+        // plain has no sprites: ASCII by default, Figures offers ASCII or None, and no Scene.
+        let plain = s("theme:plain/figures:sprite/scene:on");
+        assert_eq!((plain.figures(), plain.style()), ("ascii", "modern"));
+        assert_eq!(plain.figure_list(), ["ascii", "none"]);
+        assert_eq!(plain.styles(), ["modern", "terminal"]);
+        assert_eq!(s("").figure_list(), ["sprite", "ascii", "none"]);
+        // Scene with sprites; ASCII or None hides it and falls back to the Modern or Terminal pick.
+        let scene = s("style:terminal");
+        assert_eq!(scene.styles(), ["modern", "terminal", "scene"]);
+        let tapped = scene.with("style", "scene");
+        assert_eq!(tapped, "scene:on/style:terminal");
+        assert_eq!(s(&tapped).style(), "scene");
+        for f in ["ascii", "none"] {
+            let off = s(&format!("{tapped}/figures:{f}"));
+            assert_eq!(
+                (off.style(), off.styles()),
+                ("terminal", vec!["modern", "terminal"])
+            );
+        }
+        assert_eq!(s(&tapped).with("style", "modern"), "style:modern");
     }
 
     #[test]

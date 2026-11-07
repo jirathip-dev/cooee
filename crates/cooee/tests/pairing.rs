@@ -84,7 +84,7 @@ fn unpaired_reads_and_writes_are_refused() {
     );
     assert_eq!(status(&c.raw("GET", "/look.js", &[], "").0), 200);
     assert_eq!(
-        status(&c.raw("GET", "/look/terminal/theme.json", &[], "").0),
+        status(&c.raw("GET", "/look/plain/theme.json", &[], "").0),
         200
     );
 }
@@ -336,11 +336,37 @@ fn the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it() {
         .find_map(|l| l.strip_prefix("set-cookie: "))
         .unwrap();
     assert!(set.starts_with("cooee-look=style:terminal;"), "{set}");
-    let pick = "cooee-look=theme:kitchen/style:terminal/sprites:off/mode:dark";
+    let pick = "cooee-look=theme:kitchen/style:terminal/figures:none/mode:dark";
     let (_, page) = c.raw("GET", "/pair", &[("Cookie", pick)], "");
     assert!(
-        page.contains(r#"<html lang="en" data-theme="kitchen" data-mode="dark" data-style="terminal" data-sprites="off""#),
+        page.contains(r#"<html lang="en" data-theme="kitchen" data-mode="dark" data-style="terminal" data-figures="none""#),
         "{page}"
+    );
+    // #35: Figures none hides Scene from Style (still in the page for `look.ts`, not listed); Sprite stays offered.
+    assert!(
+        page.contains(r#"<button hidden="" type="submit" role="radio" name="style" value="scene""#),
+        "{page}"
+    );
+    assert!(
+        page.contains(r#"<button type="submit" role="radio" name="figures" value="sprite""#),
+        "{page}"
+    );
+    // A saved `terminal` theme is plain, which has no sprites: ASCII, and Sprite not offered.
+    let (_, plain) = c.raw(
+        "GET",
+        "/pair",
+        &[("Cookie", "cooee-look=theme:terminal")],
+        "",
+    );
+    assert!(
+        plain.contains(r#"data-theme="plain" data-style="modern" data-figures="ascii""#),
+        "{plain}"
+    );
+    assert!(
+        plain.contains(
+            r#"<button hidden="" type="submit" role="radio" name="figures" value="sprite""#
+        ),
+        "{plain}"
     );
     assert!(
         page.contains("<style id=\"scheme\">:root{") && page.contains("--bg:#1a1816;"),

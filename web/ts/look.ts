@@ -1,13 +1,13 @@
 // cooee's look (docs/design/look) once the page is up. The server draws the device's pick from its `cooee-look`
-// cookie on the first byte (theme, mode system | light | dark, style modern | terminal, sprites on | ascii | off, and a
-// scheme per mode; unset: the theme's default), with every theme and scheme in `<script id="looks">`. This module
+// cookie on the first byte (theme, mode system | light | dark, style modern | terminal | scene, figures sprite | ascii |
+// none, and a scheme per mode; unset: the theme's default; #35), with every theme and scheme in `<script id="looks">`. This module
 // keeps it live: a pick in the look sheet applies at once without a reload (the cookie keeps it), System follows
 // prefers-color-scheme, and elements added later are filled as they come, so chat.ts only names what it shows:
-//   [data-st=working|needs|done|fail|idle|ended]  a state: the sprite (data-tool=edit|read|run while working), the
-//                                                 glyph (a theme without sprites) or the dot (sprites off), then the
-//                                                 theme word (data-plain adds `· plain word`)
+//   [data-st=working|needs|done|fail|idle|ended]  a state: the sprite (data-tool=edit|read|run while working) or the
+//                                                 ascii figure, then the theme word (data-plain adds `· plain word`);
+//                                                 figures none: a dot and the plain word
 //   [data-w=<key>]                                a theme word (data-plain adds `· plain word`)
-//   [data-s=loading|empty]                        the theme's 132 × 100 figure (sprites off: none)
+//   [data-s=loading|empty]                        the theme's 132 × 100 figure (figures none: none)
 //   [data-open=look|settings|folders]             opens that sheet (#settings/<section> opens Settings there)
 // The sheets are server-rendered popovers in #sheet (they open with no script); this keeps their marks in step, fills
 // Settings › Folders from /folders, and fires `cooee-sheet` when one opens, for chat.ts's sections. A plugin tab
@@ -29,8 +29,9 @@ interface Looks {
   default: string;
   themes: Record<string, Theme>;
   schemes: Record<string, Scheme>;
+  ascii: [string, [string, string]][];
 }
-type Key = "theme" | "mode" | "style" | "sprites" | "dark" | "light";
+type Key = "theme" | "mode" | "style" | "scene" | "figures" | "dark" | "light";
 type Pick = Partial<Record<Key, string>>;
 type Mode = "dark" | "light";
 
@@ -59,20 +60,7 @@ const PLAIN: Record<string, string> = {
   loading: "loading",
   "empty-threads": "no threads",
 };
-const GLYPH: Record<string, string> = { working: "✻", needs: "!", done: "✓", fail: "✕", idle: "·", ended: "■" };
-const ASCII: Record<string, string> = {
-  edit: "o_/",
-  read: "o.o",
-  run: "o>_",
-  needs: "(!)",
-  done: "\\o/",
-  fail: "x_x",
-  idle: "-.-",
-  ended: "[ ]",
-  merged: "\\o/",
-  loading: "( o.o )\n  ...",
-  empty: "( -.- )\n  zzz",
-};
+const ASCII = Object.fromEntries(LOOK.ascii);
 const SEL = "[data-st],[data-w],[data-s]";
 
 // The pick, as the cookie keeps it: `theme:kitchen/style:terminal`.
@@ -81,7 +69,10 @@ const read = (): Pick => {
   const pick: Pick = {};
   for (const kv of raw.slice(COOKIE.length + 1).split("/")) {
     const [k, v] = kv.split(":");
-    if (k && v) pick[k as Key] = v;
+    // The Sprites switch and the terminal theme before #35.
+    if (k === "sprites" && v) pick.figures = v === "on" ? "sprite" : v === "off" ? "none" : v;
+    else if (k === "theme" && v === "terminal" && !LOOK.themes.terminal) pick.theme = "plain";
+    else if (k && v) pick[k as Key] = v;
   }
   // A theme being built shows in its preview's frames (`?preview=<name>`).
   const preview = new URLSearchParams(location.search).get("preview");
@@ -97,10 +88,12 @@ const scheme = (m: Mode): string => {
   const p = pick[m];
   return p && LOOK.schemes[p]?.["color-scheme"] === m ? p : theme().scheme[m];
 };
-const style = (): string => (pick.style === "terminal" ? "terminal" : "modern");
-const figs = (): string => (pick.sprites === "off" || pick.sprites === "ascii" ? pick.sprites : "on");
-const sprites = (): boolean => figs() !== "off";
-const art = (): boolean => theme().sprites && figs() === "on";
+// Figures sprite | ascii | none (a theme without sprites: ascii | none); Scene only with sprites, else the Modern or
+// Terminal pick under it.
+const figs = (): string =>
+  pick.figures === "ascii" || pick.figures === "none" ? pick.figures : theme().sprites ? "sprite" : "ascii";
+const style = (): string =>
+  pick.scene === "on" && figs() === "sprite" ? "scene" : pick.style === "terminal" ? "terminal" : "modern";
 const word = (k: string): string => theme().words[k] || PLAIN[k] || k;
 const url = (file: string): string => new URL(`/look/${name()}/${file}`, location.href).href;
 
@@ -109,25 +102,23 @@ const svg = (id: string, cls: string): string => {
   return `<svg class="${cls}" viewBox="${box}" aria-hidden="true"><use href="/look/${name()}/sprites.svg#s-${id}"/></svg>`;
 };
 
+const ascii = (id: string, cls: string): string =>
+  `<i class="${cls}" aria-hidden="true">${(ASCII[id] ?? ["", ""]).map((f) => `<b>${esc(f)}</b>`).join("")}</i>`;
+
 function fill(e: HTMLElement): void {
   const { st, w, s } = e.dataset;
   const plainOf = (k: string, said: string): string =>
     "plain" in e.dataset && said !== PLAIN[k] ? `<small class="pw"> · ${PLAIN[k]}</small>` : "";
   if (st !== undefined) {
     const id = st === "working" ? e.dataset.tool || "edit" : st;
-    const mark = !sprites()
-      ? '<i class="sd"></i>'
-      : figs() === "ascii"
-        ? `<i class="rsa">${esc(ASCII[id] ?? "")}</i> `
-        : art()
-          ? svg(id, "rsp")
-          : `<i class="sg">${GLYPH[st] ?? ""}</i> `;
-    const said = word(st);
+    const mark =
+      figs() === "none" ? '<i class="sd"></i>' : figs() === "ascii" ? `${ascii(id, "rsa")} ` : svg(id, "rsp");
+    const said = figs() === "none" ? (PLAIN[st] ?? "") : word(st);
     e.innerHTML = PLAIN[st] ? `${mark}<span class="thw">${esc(said)}</span>${plainOf(st, said)}` : "";
   } else if (w) {
     e.innerHTML = esc(word(w)) + plainOf(w, word(w));
   } else if (s) {
-    e.innerHTML = figs() === "ascii" ? `<i class="lsa">${esc(ASCII[s] ?? "")}</i>` : art() ? svg(s, "big") : "";
+    e.innerHTML = figs() === "ascii" ? ascii(s, "lsa") : figs() === "sprite" ? svg(s, "big") : "";
   }
 }
 const fillAll = (root: ParentNode = document): void => {
@@ -154,7 +145,7 @@ function forPlugin(): object {
     theme: name(),
     mode: mode(),
     style: style(),
-    sprites: figs(),
+    figures: figs(),
     vars: { ...LOOK.schemes[scheme(mode())]?.tokens },
     words: { ...PLAIN, ...t.words },
     urls: { theme: url("theme.json"), sprites: t.sprites ? url("sprites.svg") : null, icon: url("icon.png") },
@@ -176,7 +167,7 @@ function paint(): void {
     theme: name(),
     mode: mode(),
     style: style(),
-    sprites: figs(),
+    figures: figs(),
     moments: theme().moments ? "on" : "off",
   });
   $("meta[name=theme-color]")?.setAttribute("content", s.tokens["--bg"] ?? "");
@@ -212,8 +203,12 @@ function set(k: Key, v: string | undefined): void {
     else if (v) pick[k] = v;
     // A tap on the other mode's list shows it: Appearance switches to that mode.
     if (k !== mode()) pick.mode = k;
-  } else if (v === undefined) delete pick[k];
-  else pick[k] = v;
+  } else if (k === "style" && v === "scene") pick.scene = "on";
+  else if (v === undefined) delete pick[k];
+  else {
+    if (k === "style") delete pick.scene;
+    pick[k] = v;
+  }
   const value = Object.entries(pick)
     .map(([k, v]) => `${k}:${v}`)
     .join("/");
@@ -230,7 +225,8 @@ function marks(): void {
     theme: name(),
     mode: pick.mode || "system",
     style: style(),
-    sprites: figs(),
+    scene: "",
+    figures: figs(),
     dark: scheme("dark"),
     light: scheme("light"),
   };
@@ -239,6 +235,8 @@ function marks(): void {
     const on = now[k] === b.dataset.v;
     if (b.getAttribute("role") === "radio") {
       b.setAttribute("aria-checked", String(on));
+      // Not offered, so not listed: Scene without sprites, Sprite on a theme without them.
+      b.hidden = (b.dataset.v === "scene" && figs() !== "sprite") || (b.dataset.v === "sprite" && !theme().sprites);
       continue;
     }
     b.setAttribute("aria-selected", String(on));
@@ -255,7 +253,7 @@ function marks(): void {
   }
   const values: Record<string, string> = {
     style: now.style,
-    sprites: now.sprites,
+    figures: now.figures,
     theme: theme().label,
     appearance: now.mode === "system" ? `system · ${mode()} now` : now.mode,
     colours: `dark ${label(now.dark)} · light ${label(now.light)}`,

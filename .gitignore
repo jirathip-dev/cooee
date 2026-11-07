@@ -6,3 +6,4 @@ node_modules/
 /ui-390/
 /ui-1440/
 /web/e2e/.auth/
+/.verify/

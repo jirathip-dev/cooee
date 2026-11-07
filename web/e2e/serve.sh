@@ -13,7 +13,7 @@ tmp=$(mktemp -d)
 mkdir -p "$tmp/shed" "$tmp/root/project/deep-src" "$tmp/data/threads" "$tmp/.hidden-folder"
 cargo build --quiet --locked -p cooee
 cargo test --quiet --locked -p cooee --test chat --no-run
-FAKE_SHED_DIR="$tmp/shed" FAKE_SHED_DELAY_MS=20 cargo test --quiet --locked -p cooee --test chat -- \
+FAKE_SHED_DIR="$tmp/shed" FAKE_SHED_DELAY_MS=20 FAKE_SHED_LANES=1 cargo test --quiet --locked -p cooee --test chat -- \
   --ignored --exact fake_shed_server >/dev/null &
 fake=$!
 hello=$((PORT + 1)) other=$((PORT + 2)) cooee="http://127.0.0.1:$PORT"

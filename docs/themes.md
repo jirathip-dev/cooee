@@ -5,7 +5,7 @@ cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.
 
 ## A theme pack: `themes/<name>/`
 
-A theme is one coherent pack: a folder, or a folder of a git repo. Only `terminal` (the plain theme) is built in;
+A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` is built in;
 `farm`, `kitchen` and `garden` are first-party packs in `packs/themes/`, listed in the curated index.
 
 | File | Required | What it is |
@@ -44,11 +44,11 @@ refuses a pack that fails it, and prints why.
   each save (and the gate's failures while it fails). **[keep]** runs the gate: a pass moves the pack into `themes/`;
   a failure lists what to fix in the chat, for the agent. **[publish]** makes a kept pack a git repo of its own, to
   push and propose for the index.
-- There is no mixing in settings: Appearance stays Style, Theme, Sprites and Colours. To mix, [remix] makes a new
+- There is no mixing in settings: Appearance stays Style, Theme, Figures and Colours. To mix, [remix] makes a new
   pack that borrows the parts (the agent copies them), which then passes the gate.
 
-An own folder in `themes/` (not added by `cooee theme add`) loads too; one with a built-in's name replaces it. A theme
-naming an unknown scheme, or a scheme of the wrong mode, is refused.
+An own folder in `themes/` (not added by `cooee theme add`) loads too; one with a built-in's name replaces it. `plain` was `terminal` before #35: a
+saved `terminal` pick or `theme = "terminal"` shows `plain`. A theme naming an unknown scheme, or a scheme of the wrong mode, is refused.
 
 ## A scheme: `schemes/<name>.json`
 
@@ -61,20 +61,29 @@ group tints, and the state colours at least ΔE2000 20 apart. A scheme that fail
 ## The pick
 
 The server holds only the default theme (`theme` in `config.toml`; default `farm` when it is installed, else
-`terminal`). Each device keeps its own pick
-in its `cooee-look` cookie (#49): the theme, Appearance (`system`, `light` or `dark`; System follows the phone
-live), Style (`modern` or `terminal`), Sprites (`on`, `ascii` or `off`) and a scheme per mode. The server draws it from
-the page's first byte (`web/src/shown.rs`), so there is no flash; `look.ts` applies a new pick in place. Both styles read the same tokens: a style sets only shape, radius, type and buttons.
+`plain`). Each device keeps its own pick
+in its `cooee-look` cookie (#49), four choices (#35): Style (`modern`, `terminal` or `scene`), Theme, Figures
+(`sprite`, `ascii` or `none`) and Colours (Appearance `system`, `light` or `dark`, System following the phone live,
+and a scheme per mode). The server draws it from the page's first byte (`web/src/shown.rs`), so there is no flash;
+`look.ts` applies a new pick in place. Both styles read the same tokens: a style sets only shape, radius, type and buttons.
+
+- **Figures:** `sprite` is the theme's `sprites.svg`; `ascii` is cooee's ASCII figures (herdsman#335: one small
+  drawing per state, two frames), the same in every theme, monospaced and in the scheme's colours; `none` is a
+  coloured dot and the plain word (`working`, `needs you`, `done`). A theme without sprites (plain) offers `ascii`
+  or `none`, and starts on `ascii`.
+- **Scene** is offered only with `sprite`. With `ascii` or `none` the look sheet doesn't list it, and a device on
+  Scene shows its last Modern or Terminal pick (the cookie keeps it: `style:terminal/scene:on`).
 
 ## Plugin tabs
 
 A plugin tab (`<iframe data-plugin>`, M4) posts `{type: "cooee-look?"}` to its parent. It gets back, and again on
-every change, `{type: "cooee-look", theme, mode, style, sprites, vars, words, urls}`. `vars` holds the scheme's CSS
+every change, `{type: "cooee-look", theme, mode, style, figures, vars, words, urls}` (`style` and `figures` as
+above; #35 replaced `sprites`). `vars` holds the scheme's CSS
 variables. `urls` holds the theme's data: `theme` (`/look/<name>/theme.json`), `sprites` (`/look/<name>/sprites.svg`,
 or `null`) and `icon`.
 
 ## Push text
 
 `Theme::push_body(key, line)` gives the body of a push: the theme word, the plain word, then the agent's line, as in
-`at the gate · needs you · codex: Edit src/pair.rs?`. The terminal theme says `needs you · …`. Push uses
+`at the gate · needs you · codex: Edit src/pair.rs?`. The plain theme says `needs you · …`. Push uses
 the server's default theme (`theme` in `config.toml`), because a device's own pick never leaves that device.
