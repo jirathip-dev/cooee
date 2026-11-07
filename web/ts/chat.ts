@@ -11,10 +11,11 @@
 // running tool), the live line and a turn's end.
 // A plugin tab hosts the plugin's sandboxed frame (frame.ts is the frame's side).
 import { $, make, show } from "./look.js";
+import { render as markdown, settled } from "./md.js";
 
 type Option = { id: string; name: string; kind: string };
 type Item = { id: number; at: number; seq?: number } & (
-  | { kind: "you"; text: string; random_id: string }
+  | { kind: "you"; text: string; random_id: string; files?: string[] }
   | { kind: "agent"; text: string; stop_reason: string }
   | { kind: "tool"; call: string; title: string; status: string; ended?: number }
   | ({ kind: "approval"; tool: string; options: Option[]; tapped?: string; chosen?: string; plugin?: string } & Form)
@@ -27,12 +28,14 @@ type Item = { id: number; at: number; seq?: number } & (
 type Form = { by?: string; answered?: number; form?: string; detail?: string; line?: string; until?: number };
 type Choice = Extract<Item, { kind: "approval" }>;
 type Turn = { text: string; state: string; note?: string };
+type Queued = { text: string; random_id: string; files?: string[] };
 type Slice = {
   items: Item[];
   skipped_before: number;
   skipped_after: number;
   turn: Turn;
   cursor: string;
+  queue?: Queued[];
   at?: number;
   waiting?: Item | null;
 };
@@ -55,16 +58,26 @@ async function post<T = unknown>(url: string, body: unknown): Promise<T> {
 }
 
 // A toast: one short line under the header that clears itself (an error stays longer and may wrap); a tap clears it.
-// It is a manual popover, so it shows over an open sheet too.
+// It is a manual popover, so it shows over an open sheet too. `act` adds a button (undo) and keeps it 5 s.
 let toastTimer = 0;
-function toast(text: string, bad = false): void {
+function toast(text: string, bad = false, act?: [string, () => unknown]): void {
   const t = $("#toast");
   if (!t) return;
   t.textContent = text;
   t.className = bad ? "r" : "g";
+  if (act) {
+    const b = make("button", "", act[0]) as HTMLButtonElement;
+    b.type = "button";
+    b.onclick = (e) => {
+      e.stopPropagation();
+      hide(t);
+      act[1]();
+    };
+    t.append(" ", b);
+  }
   if (!t.matches(":popover-open")) t.showPopover();
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => hide(t), bad ? 6000 : 2500);
+  toastTimer = setTimeout(() => hide(t), act ? 5000 : bad ? 6000 : 2500);
 }
 const hide = (t: HTMLElement): void => {
   if (t.matches(":popover-open")) t.hidePopover();
@@ -106,12 +119,8 @@ function refresh(): Promise<unknown> | null {
   strip(true);
   refreshing = (async () => {
     if (page.refresh) return page.refresh();
-    const list = $("main.list");
-    if (!list) return location.reload();
-    const r = await fetch("/threads");
-    if (!r.ok) throw await why(r);
-    copyAt = Number(r.headers.get("cooee-at")) || 0;
-    drawCards(list, await r.json());
+    if (!$("main.list")) return location.reload();
+    return cardsNow();
   })()
     .catch((x) => toast(`couldn't refresh: ${message(x)}`, true))
     .finally(() => {
@@ -123,7 +132,8 @@ function refresh(): Promise<unknown> | null {
 }
 $("#rf")?.addEventListener("click", refresh);
 
-// The thread list's cards from `GET /threads`, drawn as the server draws them (lib.rs `threads`).
+// The thread list's cards and archived threads from `GET /threads`, drawn as the server draws them (lib.rs
+// `threads`); the list follows them every 5 s while it shows, and the app's badge counts the unread threads.
 type Row = {
   id: string;
   title: string;
@@ -132,9 +142,22 @@ type Row = {
   last: string;
   at: number;
   unread: boolean;
+  unseen: number;
   workflow?: { role: string; round: string };
 };
 type Card = { folder: string; rows: Row[]; done?: Row[] };
+type Listed = { cards: Card[]; archived: Row[] };
+async function cardsNow(): Promise<void> {
+  const list = $("main.list");
+  const r = await fetch("/threads");
+  if (!r.ok) throw await why(r);
+  copyAt = Number(r.headers.get("cooee-at")) || 0;
+  if (list) drawCards(list, await r.json());
+}
+const badge = (): void => {
+  const n = document.querySelectorAll("main.list .fc a.tr:not(.rd)").length;
+  if ("setAppBadge" in navigator) (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {});
+};
 const STATE: Record<string, string> = {
   blocked: "needs",
   working: "working",
@@ -158,13 +181,24 @@ function rowOf(r: Row): HTMLElement {
   const a = make("a", r.unread ? "tr" : "tr rd") as HTMLAnchorElement;
   const st = make("b");
   const tp = make("span", "tp");
+  const ta = make("span", "ta", meta(r));
   a.href = `/t/${r.id}`;
+  a.dataset.id = r.id;
   st.dataset.st = STATE[r.state] ?? "";
   tp.append(st, r.last);
-  a.append(make("i", "ud", r.unread ? "●" : ""), make("span", "tt", r.title), make("span", "ta", meta(r)), tp);
+  if (r.unseen > 0) {
+    const bd = make("b", "bd", String(r.unseen));
+    bd.setAttribute("aria-label", `${r.unseen} unread`);
+    ta.append(bd);
+  }
+  a.append(make("i", "ud", r.unread ? "●" : ""), make("span", "tt", r.title), ta, tp);
   return a;
 }
-function drawCards(list: HTMLElement, cards: Card[]): void {
+function drawCards(list: HTMLElement, { cards, archived }: Listed): void {
+  // A folded list that was open stays open.
+  const key = (d: Element): string =>
+    d.classList.contains("arc") ? "arc" : ($(".fh b", d.closest(".fc") ?? d)?.textContent ?? "");
+  const open = new Set([...list.querySelectorAll("details[open]")].map(key));
   for (const e of list.querySelectorAll(":scope > .fc, :scope > .emp")) e.remove();
   if (!cards.length) {
     const emp = make("div", "emp");
@@ -187,16 +221,90 @@ function drawCards(list: HTMLElement, cards: Card[]): void {
     fh.append(make("b", "", c.folder), make("span", "ds", `${c.rows.length} threads`));
     card.append(fh, ...c.rows.slice(0, c.done ? undefined : 3).map(rowOf));
     if (c.done?.length) {
-      const done = make("details");
+      const done = make("details") as HTMLDetailsElement;
       done.append(make("summary", "", `${c.done.length} done today`), ...c.done.map(rowOf));
+      done.open = open.has(c.folder);
       card.append(done);
     } else if (!c.done && c.rows.length > 3) {
-      const more = make("details");
+      const more = make("details") as HTMLDetailsElement;
       more.append(make("summary", "", `${c.rows.length - 3} older threads`), ...c.rows.slice(3).map(rowOf));
+      more.open = open.has(c.folder);
       card.append(more);
     }
     list.append(card);
   }
+  if (archived.length) {
+    const arc = make("details", "fc arc") as HTMLDetailsElement;
+    const sum = make("summary", "", `${archived.length} archived`);
+    arc.append(sum);
+    arc.open = open.has("arc");
+    for (const r of archived) {
+      const row = make("div", "arw");
+      const a = make("a", "", r.title) as HTMLAnchorElement;
+      const b = make("button", "cn", "restore") as HTMLButtonElement;
+      a.href = `/t/${r.id}`;
+      b.type = "button";
+      b.dataset.restore = r.id;
+      b.setAttribute("aria-label", `restore ${r.title}`);
+      row.append(a, b);
+      arc.append(row);
+    }
+    list.append(arc);
+  }
+  badge();
+}
+
+// A row swiped left is archived, with 5 s to undo; an archived one's [restore] brings it back.
+let swipe: { row: HTMLElement; x: number; y: number; dx: number } | null = null;
+const shelf = (id: string, on: boolean): Promise<void> => post(`/threads/${id}/archive`, { on }).then(cardsNow);
+const threadList = $("main.list");
+if (threadList) {
+  threadList.addEventListener(
+    "touchstart",
+    (e) => {
+      const row = (e.target as Element).closest?.<HTMLElement>(".fc a.tr");
+      const t = e.touches[0];
+      swipe = row && t ? { row, x: t.clientX, y: t.clientY, dx: 0 } : null;
+    },
+    { passive: true },
+  );
+  threadList.addEventListener(
+    "touchmove",
+    (e) => {
+      const t = e.touches[0];
+      if (!swipe || !t) return;
+      swipe.dx = Math.min(0, t.clientX - swipe.x);
+      // Up or down is a scroll.
+      if (Math.abs(t.clientY - swipe.y) > Math.abs(swipe.dx)) swipe.dx = 0;
+      swipe.row.style.transform = swipe.dx ? `translateX(${swipe.dx}px)` : "";
+    },
+    { passive: true },
+  );
+  threadList.addEventListener("touchend", () => {
+    const s = swipe;
+    swipe = null;
+    const id = s?.row.dataset.id;
+    if (!s || !id) return;
+    s.row.style.transform = "";
+    if (s.dx > -80) return;
+    const title = $(".tt", s.row)?.textContent ?? "the thread";
+    shelf(id, true).then(
+      () => toast(`archived ${title}`, false, ["undo", () => shelf(id, false).catch((x) => toast(message(x), true))]),
+      (x) => toast(message(x), true),
+    );
+  });
+  threadList.addEventListener("click", (e) => {
+    const id = (e.target as Element).closest?.<HTMLElement>("[data-restore]")?.dataset.restore;
+    if (id)
+      shelf(id, false).then(
+        () => toast("restored"),
+        (x) => toast(message(x), true),
+      );
+  });
+  setInterval(() => {
+    if (!document.hidden && !swipe && !refreshing) cardsNow().catch(() => {});
+  }, 5000);
+  badge();
 }
 
 // Scene (#34): the same cards as pages of sprites (lib.rs `scene`), redrawn whole so a refresh never leaves a copy;
@@ -992,6 +1100,76 @@ function chat(main: HTMLElement): void {
   };
   const el = make;
   const md = (row: HTMLElement): HTMLElement => $(".md", row) as HTMLElement;
+  // A row's text as it came (the long-press menu's copy as markdown and quote).
+  const raw = new WeakMap<Element, string>();
+  const fileUrl = (name: string): string => `${api}/files/${encodeURIComponent(name)}`;
+  const IMAGE = /\.(png|jpe?g|gif|webp|heic|avif)$/i;
+  // A message's files: an image as a thumbnail that opens the viewer, anything else as its name to download.
+  const thumbs = (files: [string, string][]): HTMLElement => {
+    const box = el("div", "fis");
+    for (const [name, url] of files) {
+      const a = el("a", IMAGE.test(name) ? "fi im" : "fi", IMAGE.test(name) ? undefined : name) as HTMLAnchorElement;
+      a.href = url;
+      if (IMAGE.test(name)) {
+        const img = el("img") as HTMLImageElement;
+        img.src = url;
+        img.alt = name;
+        img.loading = "lazy";
+        a.append(img);
+      } else a.download = name;
+      box.append(a);
+    }
+    return box;
+  };
+  // The stored name less its stamp: `1730000000000-0-photo.jpg` is photo.jpg.
+  const shown = (name: string): string => name.replace(/^\d+-\d+-/, "");
+
+  // Runs of 2 or more tool calls fold under one row, `▸ 3 commands`; one opened stays open as the run grows.
+  const opened = new Set<string>();
+  function fold(): void {
+    // Most changes (a chunk of text, a slice of replies) have nothing to fold: no walk.
+    if (!list.querySelector(":scope > .run, :scope > .fold")) return;
+    const used = new Set<Element>();
+    let run: HTMLElement[] = [];
+    const close = (): void => {
+      const first = run[0];
+      const prev = first?.previousElementSibling as HTMLElement | null | undefined;
+      const head = prev?.classList.contains("fold") ? prev : null;
+      if (first && run.length > 1) {
+        const key = first.dataset.id ?? "";
+        const open = opened.has(key);
+        const h = head ?? el("li", "fold");
+        if (!head) {
+          const b = el("button") as HTMLButtonElement;
+          b.type = "button";
+          h.append(b);
+          list.insertBefore(h, first);
+        }
+        h.dataset.key = key;
+        const b = $("button", h);
+        if (b) {
+          b.textContent = `${open ? "▾" : "▸"} ${run.length} commands`;
+          b.setAttribute("aria-expanded", String(open));
+        }
+        used.add(h);
+        for (const r of run) r.classList.toggle("fd", !open);
+      } else for (const r of run) r.classList.remove("fd");
+      run = [];
+    };
+    for (const c of [...list.children] as HTMLElement[]) {
+      if (c.classList.contains("fold")) continue;
+      if (c.classList.contains("run")) run.push(c);
+      else close();
+    }
+    close();
+    for (const h of list.querySelectorAll(":scope > .fold")) if (!used.has(h)) h.remove();
+  }
+  list.addEventListener("click", (e) => {
+    const key = (e.target as Element).closest?.<HTMLElement>(".fold")?.dataset.key;
+    if (key === undefined) return;
+    if (!opened.delete(key)) opened.add(key);
+    keep(() => {});
+  });
   // Thread refs (#84): a whole-word id of a thread cooee knows opens it; code spans and unknown ids stay plain.
   const known = new Set((main.dataset.ids ?? "").split(" "));
   const refs = (text: string): (string | Node)[] =>
@@ -1005,6 +1183,18 @@ function chat(main: HTMLElement): void {
             return a;
           }),
     );
+  // The same in rendered markdown `src`: its text outside code and links, walked only when it names a known id.
+  const linkRefs = (root: DocumentFragment, src: string): DocumentFragment => {
+    if (!src.match(/(?<![\w-])t[0-9a-z]+(?![\w-])/g)?.some((w) => known.has(w))) return root;
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const texts: Text[] = [];
+    while (w.nextNode()) if (!w.currentNode.parentElement?.closest("code, a")) texts.push(w.currentNode as Text);
+    for (const x of texts) {
+      const parts = refs(x.data);
+      if (parts.some((n) => typeof n !== "string")) x.replaceWith(...parts);
+    }
+    return root;
+  };
   const withRefs = (tag: string, cls: string, s: string): HTMLElement => {
     const e = el(tag, cls);
     e.append(...refs(s));
@@ -1036,6 +1226,7 @@ function chat(main: HTMLElement): void {
     const anchor = rows().find((r) => r.offsetTop + r.offsetHeight > list.scrollTop);
     const offset = anchor ? anchor.offsetTop - list.scrollTop : 0;
     change();
+    fold();
     if (stick && after === 0) list.scrollTop = list.scrollHeight;
     else if (anchor?.isConnected) list.scrollTop = anchor.offsetTop - offset;
   }
@@ -1084,10 +1275,16 @@ function chat(main: HTMLElement): void {
     row.dataset.at = String(it.at);
     if (it.kind === "you") {
       row.className = "blk me";
-      row.append(withRefs("div", "md", it.text), el("span", "ct", time(it.at)));
+      raw.set(row, it.text);
+      row.append(withRefs("div", "md pl", it.text));
+      if (it.files?.length) row.append(thumbs(it.files.map((n) => [shown(n), fileUrl(n)])));
+      row.append(el("span", "ct", `${time(it.at)} ✓`));
     } else if (it.kind === "agent") {
       row.className = "blk ai";
-      row.append(el("b", "k", agent), withRefs("div", "md", it.text));
+      raw.set(row, it.text);
+      const box = el("div", "md");
+      box.append(linkRefs(markdown(it.text), it.text));
+      row.append(el("b", "k", agent), box);
       if (it.stop_reason !== "end_turn") row.append(el("span", "ct", it.stop_reason));
     } else if (it.kind === "tool") {
       const s = it.status;
@@ -1103,7 +1300,7 @@ function chat(main: HTMLElement): void {
       row.append(el("span", "k", "tool"), el("span", "cmd", it.title), ts);
     } else if (it.kind === "approval") {
       row.className = `blk ap ${it.form ?? ""}`;
-      row.append(el("b", "k", it.plugin ?? agent), withRefs("div", "md", it.tool));
+      row.append(el("b", "k", it.plugin ?? agent), withRefs("div", "md pl", it.tool));
       if (it.form === "secret") row.append(el("p", "m", `secret ${it.detail}`));
       if (it.form === "config" && it.detail) {
         const pre = el("pre", "diff");
@@ -1252,6 +1449,10 @@ function chat(main: HTMLElement): void {
     markRead();
   }
 
+  // The reply so far: its whole blocks rendered as they settle (up to its last blank line outside a code fence),
+  // each once; the open tail as plain text, so a half-typed table or fence never shows broken.
+  let liveText = "";
+  let liveAt = 0;
   function text(chunk: string): void {
     if (after > 0) return;
     keep(() => {
@@ -1262,10 +1463,22 @@ function chat(main: HTMLElement): void {
         const stop = el("button", "stop", "stop") as HTMLButtonElement;
         stop.type = "button";
         stop.onclick = cancel;
-        live.append(el("b", "k", agent), el("div", "md"), stop);
+        const box = el("div", "md");
+        box.append(el("span", "tl"));
+        live.append(el("b", "k", agent), box, stop);
         list.append(live);
+        liveText = "";
+        liveAt = 0;
       }
-      md(live).textContent += chunk;
+      liveText += chunk;
+      const box = md(live);
+      const tail = $(".tl", box) as HTMLElement;
+      const at = settled(liveText);
+      if (at > liveAt) {
+        box.insertBefore(markdown(liveText.slice(liveAt, at)), tail);
+        liveAt = at;
+      }
+      tail.textContent = liveText.slice(liveAt);
     });
   }
 
@@ -1277,6 +1490,7 @@ function chat(main: HTMLElement): void {
     if (st) st.dataset.st = KEY[state] ?? "";
     main.dataset.state = state;
     if (pill) pill.hidden = state !== "working";
+    if (state !== "working") stopping(false);
     if (wait) wait.hidden = state !== "blocked";
     if (state === "ended") {
       const send = $<HTMLButtonElement>("#composer button[type=submit]");
@@ -1329,13 +1543,18 @@ function chat(main: HTMLElement): void {
         }
       if (where === "replace") {
         copyAt = r ? 0 : (s.at ?? 0);
-        list.replaceChildren(render(s.items));
+        // The outbox's rows (sending, failed) stay, unless the server has them.
+        const stored = new Set(s.items.map((it) => (it.kind === "you" ? it.random_id : "")));
+        const outbox = [...list.querySelectorAll<HTMLElement>(":scope > [data-rid]")];
+        list.replaceChildren(render(s.items), ...outbox.filter((r) => !stored.has(r.dataset.rid ?? "")));
         live = null;
         before = s.skipped_before;
         after = s.skipped_after;
         cursor = s.cursor;
+        fold();
         if (s.turn.text && after === 0) text(s.turn.text);
         setState(s.turn);
+        drawQueue(s.queue ?? []);
         waiting(s.waiting);
         return s;
       }
@@ -1385,10 +1604,15 @@ function chat(main: HTMLElement): void {
     return s;
   }
 
-  // The sync dot: amber until the stream is open, green while it is, amber again when it drops.
+  // The sync dot: amber until the stream is open, green while it is, amber again when it drops, with a word:
+  // reconnecting (it was open), or offline.
+  let wasOpen = false;
   const sync = (on: boolean): void => {
     const dot = $(".dt");
+    const net = $("#net");
     if (dot) dot.dataset.sync = on ? "on" : "off";
+    wasOpen ||= on;
+    if (net) net.textContent = on ? "" : !navigator.onLine ? "offline · " : wasOpen ? "reconnecting… · " : "";
   };
   addEventListener("offline", () => sync(false));
   function listen(): void {
@@ -1399,6 +1623,7 @@ function chat(main: HTMLElement): void {
     stream.onopen = () => sync(true);
     stream.addEventListener("item", (e) => put(JSON.parse(e.data)));
     stream.addEventListener("text", (e) => text(JSON.parse(e.data).text));
+    stream.addEventListener("queue", (e) => drawQueue(JSON.parse(e.data)));
     stream.addEventListener("state", (e) => {
       const t: Turn = JSON.parse(e.data);
       moment(t.state);
@@ -1486,10 +1711,24 @@ function chat(main: HTMLElement): void {
     }
   }
 
-  // The outbox: a row per send, `sending` until the server stored it, `failed` with tap-to-retry.
-  function deliver(row: HTMLElement, text: string, random: string): void {
+  // A message's files for the API: each one's name and its bytes in base64.
+  const payload = (files: File[]): Promise<{ name: string; data: string }[]> =>
+    Promise.all(
+      files.map(
+        (f) =>
+          new Promise<{ name: string; data: string }>((ok, no) => {
+            const r = new FileReader();
+            r.onload = () => ok({ name: f.name, data: String(r.result).replace(/^[^,]*,/, "") });
+            r.onerror = () => no(r.error);
+            r.readAsDataURL(f);
+          }),
+      ),
+    );
+
+  // The outbox: a row per send, `sending…` until the server stored it (then ✓), `failed` with tap-to-retry.
+  function deliver(row: HTMLElement, text: string, random: string, files: File[]): void {
     row.className = "blk me sending";
-    inOrder(() => post<Item>(`${api}/send`, { text, random_id: random })).then(
+    inOrder(async () => post<Item>(`${api}/send`, { text, random_id: random, files: await payload(files) })).then(
       (it) => {
         if (!row.dataset.rid) return;
         delete row.dataset.rid;
@@ -1497,46 +1736,298 @@ function chat(main: HTMLElement): void {
       },
       () => {
         row.className = "blk me failed";
+        const ct = $(".ct", row);
+        if (ct) ct.textContent = "not sent";
         const retry = el("button", "retry", "failed · tap to retry") as HTMLButtonElement;
         retry.type = "button";
         retry.onclick = () => {
           retry.remove();
-          deliver(row, text, random);
+          if (ct) ct.textContent = "sending…";
+          deliver(row, text, random, files);
         };
         row.append(retry);
       },
     );
   }
 
+  // The files picked for the next message, shown above the box with [×].
+  let picked: File[] = [];
+  let urls: string[] = [];
+  function drawPicked(): void {
+    const box = $("#picked");
+    if (!box) return;
+    for (const u of urls) URL.revokeObjectURL(u);
+    urls = picked.map((f) => URL.createObjectURL(f));
+    box.hidden = !picked.length;
+    box.replaceChildren(
+      ...picked.map((f, i) => {
+        const chip = el("span", "fi pk", IMAGE.test(f.name) ? undefined : f.name);
+        if (IMAGE.test(f.name)) {
+          const img = el("img") as HTMLImageElement;
+          img.src = urls[i] ?? "";
+          img.alt = f.name;
+          chip.append(img);
+        }
+        const x = el("button", "", "×") as HTMLButtonElement;
+        x.type = "button";
+        x.setAttribute("aria-label", `remove ${f.name}`);
+        x.onclick = () => {
+          picked.splice(i, 1);
+          drawPicked();
+          draft.changed();
+        };
+        chip.append(x);
+        return chip;
+      }),
+    );
+  }
+  const filesIn = $<HTMLInputElement>("#files");
+  if (filesIn)
+    filesIn.onchange = () => {
+      picked.push(...(filesIn.files ?? []));
+      filesIn.value = "";
+      drawPicked();
+      draft.changed();
+    };
+
+  // Messages queued during a turn (the server sends each as a turn ends): [send now] steers it into the turn in
+  // progress, [edit] takes it back into the box, [×] drops it.
+  function drawQueue(queue: Queued[]): void {
+    const q = $("#queue");
+    if (!q) return;
+    q.hidden = !queue.length;
+    const act = (label: string, name: string, f: () => Promise<unknown>): HTMLButtonElement => {
+      const b = el("button", "cn", label) as HTMLButtonElement;
+      b.type = "button";
+      b.setAttribute("aria-label", name);
+      b.onclick = () => f().catch((x) => toast(message(x), true));
+      return b;
+    };
+    q.replaceChildren(
+      ...queue.map((m) => {
+        const li = el("li", "qc");
+        const files = m.files?.length ? ` · ${m.files.length} file${m.files.length > 1 ? "s" : ""}` : "";
+        const take = (path: string): Promise<void> =>
+          post<Queued[]>(`${api}/${path}`, { random_id: m.random_id }).then(drawQueue);
+        li.append(
+          el("span", "qt", `queued · ${m.text}${files}`),
+          act("send now", `send now: ${m.text}`, () => take("steer")),
+          act("edit", `edit: ${m.text}`, async () => {
+            await take("unqueue");
+            box.value = box.value ? `${box.value}\n${m.text}` : m.text;
+            grow();
+            draft.changed();
+            box.focus();
+          }),
+          act("×", `remove: ${m.text}`, () => take("unqueue")),
+        );
+        return li;
+      }),
+    );
+  }
+
   async function send(e: Event): Promise<void> {
     e.preventDefault();
     const value = box.value.trim();
-    if (!value || box.disabled) return;
+    const files = picked;
+    if ((!value && !files.length) || box.disabled) return;
     if (value === "/report") {
       box.value = "";
       return reportMode();
     }
-    if (after > 0) await open();
     const random = rid();
+    box.value = "";
+    picked = [];
+    drawPicked();
+    grow();
+    draft.save(true);
+    // During a turn it waits for the turn to end.
+    if (state === "working" || state === "blocked") {
+      try {
+        drawQueue(
+          await post<Queued[]>(`${api}/queue`, { text: value, random_id: random, files: await payload(files) }),
+        );
+      } catch (x) {
+        box.value = value;
+        picked = files;
+        drawPicked();
+        toast(message(x), true);
+      }
+      return;
+    }
+    if (after > 0) await open();
     const row = el("li", "blk me");
     row.dataset.rid = random;
-    row.append(el("div", "md", value));
+    row.append(el("div", "md pl", value));
+    if (files.length) row.append(thumbs(files.map((f, i) => [f.name, urls[i] ?? URL.createObjectURL(f)])));
+    row.append(el("span", "ct", "sending…"));
     keep(() => list.insertBefore(row, live));
     list.scrollTop = list.scrollHeight;
-    box.value = "";
-    draft.save(true);
-    deliver(row, value, random);
+    deliver(row, value, random, files);
   }
 
+  // [stop]: `stopping…` until the turn is no longer working.
+  function stopping(on: boolean): void {
+    const b = $<HTMLButtonElement>("#pill .stop");
+    if (!b) return;
+    b.textContent = on ? "stopping…" : "stop";
+    b.disabled = on;
+  }
   function cancel(): void {
-    post(`${api}/cancel`, {}).then(
-      () => toast("stopping…"),
-      (x) => toast(message(x), true),
-    );
+    stopping(true);
+    post(`${api}/cancel`, {}).catch((x) => {
+      stopping(false);
+      toast(message(x), true);
+    });
   }
 
-  // The draft: kept per thread in IndexedDB, written 1 s after typing stops and when the page hides; newest wins.
-  type Draft = { text: string; at: number };
+  // The box grows with its text up to 6 lines (the style sheet's max-height), then scrolls.
+  function grow(): void {
+    box.style.height = "auto";
+    box.style.height = `${box.scrollHeight + 2}px`;
+  }
+
+  // The keyboard: where the browser doesn't shrink the page for it (iOS), the chat takes the visual viewport's
+  // height, so the composer sits on the keyboard, and the page never scrolls away under it.
+  // Elsewhere the page itself shrinks, and 100dvh is right.
+  const vv = window.visualViewport;
+  if (vv) {
+    const fit = (): void => {
+      const style = document.documentElement.style;
+      if (vv.height < innerHeight - 1) style.setProperty("--vvh", `${Math.round(vv.height)}px`);
+      else style.removeProperty("--vvh");
+      if (scrollY) scrollTo(0, 0);
+    };
+    vv.addEventListener("resize", fit);
+    vv.addEventListener("scroll", fit);
+    addEventListener("resize", fit);
+    fit();
+  }
+
+  // A long press (or right click) on a message: copy, copy as markdown, quote (as `> ` lines in the box).
+  const menu = $("#menu");
+  let pressed: HTMLElement | null = null;
+  let hold = 0;
+  let held = false;
+  let holdAt = [0, 0];
+  const press = (row: HTMLElement, x: number, y: number): void => {
+    if (!menu) return;
+    pressed = row;
+    menu.style.left = `${Math.max(8, Math.min(x - 16, innerWidth - 216))}px`;
+    menu.style.top = `${Math.max(8, Math.min(y - 16, innerHeight - 168))}px`;
+    if (!menu.matches(":popover-open")) menu.showPopover();
+  };
+  const bubble = (t: EventTarget | null): HTMLElement | null =>
+    (t as Element).closest?.<HTMLElement>(".blk.ai:not(.live), .blk.me[data-id]") ?? null;
+  list.addEventListener("contextmenu", (e) => {
+    const row = bubble(e.target);
+    if (!row) return;
+    e.preventDefault();
+    press(row, e.clientX, e.clientY);
+  });
+  list.addEventListener(
+    "touchstart",
+    (e) => {
+      const row = bubble(e.target);
+      const t = e.touches[0];
+      clearTimeout(hold);
+      if (!row || !t) return;
+      holdAt = [t.clientX, t.clientY];
+      hold = setTimeout(() => {
+        held = true;
+        press(row, t.clientX, t.clientY);
+      }, 500);
+    },
+    { passive: true },
+  );
+  list.addEventListener(
+    "touchmove",
+    (e) => {
+      const t = e.touches[0];
+      if (t && Math.hypot(t.clientX - (holdAt[0] ?? 0), t.clientY - (holdAt[1] ?? 0)) > 10) clearTimeout(hold);
+    },
+    { passive: true },
+  );
+  // The release of a press that opened the menu clicks nothing under the finger.
+  list.addEventListener("touchend", (e) => {
+    clearTimeout(hold);
+    if (held) e.preventDefault();
+    held = false;
+  });
+  list.addEventListener("touchcancel", () => clearTimeout(hold), { passive: true });
+  // A manual popover: a touch's release lands on the reply it pressed, which would light-dismiss an auto one.
+  // A press elsewhere, or Esc, closes it.
+  document.addEventListener("pointerdown", (e) => {
+    if (menu?.matches(":popover-open") && !menu.contains(e.target as Node)) menu.hidePopover();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && menu?.matches(":popover-open")) menu.hidePopover();
+  });
+  menu?.addEventListener("click", (e) => {
+    const m = (e.target as Element).closest?.<HTMLElement>("[data-m]")?.dataset.m;
+    const row = pressed;
+    if (!m || !row) return;
+    menu.hidePopover();
+    const said = raw.get(row) ?? md(row).textContent ?? "";
+    if (m === "quote") {
+      const lines = said.split("\n").map((l) => `> ${l}`);
+      box.value = `${box.value ? `${box.value.trimEnd()}\n` : ""}${lines.join("\n")}\n\n`;
+      grow();
+      draft.changed();
+      box.focus();
+      return;
+    }
+    // biome-ignore lint/performance/useDomNodeTextContent: the copy keeps the rendered line breaks.
+    navigator.clipboard?.writeText(m === "md" ? said : md(row).innerText).then(
+      () => toast("copied"),
+      () => toast("couldn't copy", true),
+    );
+  });
+
+  // The image viewer: a thumbnail opens it full size; back (or a tap, or Esc) closes it.
+  const viewer = $("#viewer");
+  const shot = viewer && $<HTMLImageElement>("img", viewer);
+  list.addEventListener("click", (e) => {
+    const a = (e.target as Element).closest?.<HTMLAnchorElement>("a.fi.im");
+    if (!a || !viewer || !shot) return;
+    e.preventDefault();
+    shot.src = a.href;
+    shot.alt = $("img", a)?.getAttribute("alt") ?? "";
+    viewer.showPopover();
+    history.pushState({ viewer: true }, "");
+  });
+  viewer?.addEventListener("click", () => history.back());
+  viewer?.addEventListener("toggle", (e) => {
+    if ((e as ToggleEvent).newState === "closed" && history.state?.viewer) history.back();
+  });
+  addEventListener("popstate", () => {
+    if (viewer?.matches(":popover-open")) viewer.hidePopover();
+  });
+
+  // Rename: the title opens a box with it.
+  const rt = $<HTMLFormElement>("#rt");
+  if (rt)
+    rt.onsubmit = async (e) => {
+      e.preventDefault();
+      const title = String(new FormData(rt).get("title") ?? "").trim();
+      try {
+        await post(`${api}/title`, { title });
+      } catch (x) {
+        return toast(message(x), true);
+      }
+      const b = $(".th .ttl");
+      if (b) {
+        b.textContent = title;
+        b.setAttribute("aria-label", `${title} · rename`);
+      }
+      document.title = title;
+      rt.hidePopover();
+      toast("renamed");
+    };
+
+  // The draft: kept per thread in IndexedDB with its picked files, written 1 s after typing stops and when the page
+  // hides; newest wins.
+  type Draft = { text: string; at: number; files?: File[] };
   const draft = (() => {
     const db = new Promise<IDBDatabase>((ok, no) => {
       const r = indexedDB.open("cooee", 1);
@@ -1558,8 +2049,11 @@ function chat(main: HTMLElement): void {
     return {
       async load(): Promise<void> {
         const d = await get();
-        if (!d || box.value) return;
+        if (!d || box.value || picked.length) return;
         box.value = d.text;
+        picked = d.files ?? [];
+        drawPicked();
+        grow();
         at = d.at;
       },
       changed(): void {
@@ -1570,14 +2064,17 @@ function chat(main: HTMLElement): void {
       async save(now = false): Promise<void> {
         clearTimeout(timer);
         if (now) at = Date.now();
-        const mine: Draft = { text: box.value, at };
+        const mine: Draft = { text: box.value, at, files: picked };
         const old = await get();
         if (!old || old.at <= mine.at) await tx("readwrite", (s) => s.put(mine, id)).catch(() => {});
       },
     };
   })();
 
-  box.addEventListener("input", () => draft.changed());
+  box.addEventListener("input", () => {
+    grow();
+    draft.changed();
+  });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") draft.save();
   });

@@ -91,7 +91,7 @@ const acts = (...buttons: [string, () => void, string?][]): HTMLElement => {
 // ---- The pairing page.
 const form = $<HTMLFormElement>("#code");
 if (form) {
-  const boxes = [...form.querySelectorAll<HTMLInputElement>(".cb input")];
+  const boxes = [...form.querySelectorAll<HTMLInputElement>(".cbx input")];
   const go = $<HTMLButtonElement>("button[type=submit]", form);
   const code = (): string => boxes.map((b) => b.value).join("");
   const ready = (): boolean => /^\d{6}$/.test(code());
@@ -171,7 +171,7 @@ if (form) {
     if (ready()) send();
   });
   // A QR link's code: it sends itself.
-  if (form.querySelector(".cb.ok") && ready()) send();
+  if (form.querySelector(".cbx.ok") && ready()) send();
 
   // Too many tries: the boxes open again when the minute is up.
   const limit = $("#limit");

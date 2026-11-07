@@ -43,7 +43,7 @@ test("the welcome: the figure, three steps and six boxes, nothing else; dark and
   const page = await (await browser.newContext(unpaired)).newPage();
   await page.goto("/pair");
   await expect(page.locator(".steps li")).toHaveCount(3);
-  await expect(page.locator(".cb input")).toHaveCount(6);
+  await expect(page.locator(".cbx input")).toHaveCount(6);
   await expect(page.getByRole("button", { name: "pair", exact: true })).toBeDisabled();
   await expect(page.locator(".hint")).toHaveCount(0);
   await shots(page, "pair-dark", "dark");
