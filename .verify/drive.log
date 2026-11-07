@@ -1,0 +1,56 @@
+unpaired / -> /pair
+paired -> /
+390 threads ok
+390 All: chip=All rows=[Long thread | Long thread | cooee #31 | cooee #33 | ]
+390 All: lane meta= impl · round 1 · now
+390 workflow ok
+390 Workflow: chip=Workflow open rows=[cooee #31 | cooee #33] metas=[rev · round 1 · now | impl · round 1 · now]
+390 Workflow: card head= drover
+2 threads fold= [ '1 done today' ] fold rows visible= false
+390 overflow px= 0
+390 after reload: chip=Workflow rows=[cooee #31 | cooee #33 | ]
+390 workflow-done ok
+390 done fold row= ●
+cooee #30
+fix · round 1 · now
+in the stableRead it.
+390 chats ok
+390 Chats: chip=Chats cards= ~/root/project rows=[Long thread | Long thread]
+390 GET /threads (Chats cookie): [{"folder":"~/root/project","rows":[{"id":"long-1440","title":"Long thread","agent":"fake-acp","folder":"/var/folders/4k/fbv06j2j5bbd3h4wgbwk1ccm0000gn/T/tmp.nRdZRM1v6h/root/project","state":"","last":"#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed tw","at":17000600000
+390 workflow-chat ok
+390 lane chat: url=/t/w-lane-impl h1=cooee #33 ds=impl · round 1 · on the trail · issue & PR
+390 lane chat: link=https://github.com/o/cooee/issues/33 close hidden=true stop visible=true reply enabled=true
+390 lane chat msgs: "hang on\n07:01 AM\ntool\ncargo test\n⋯\nfake-acp\nw0 \nstop"
+390 workflow-rev ok
+390 rev lane msgs: "approve it\n07:01 AM\ntool\nEdit src/lib.rs\n⋯\nfake-acp\nEdit src/lib.rs\nAllow\nAlways allow\nReject"
+390 new ok
+390 chat ok
+1440 threads ok
+1440 All: chip=All rows=[Long thread | Long thread | cooee #31 | cooee #33 | ]
+1440 All: lane meta= impl · round 1 · now
+1440 workflow ok
+1440 Workflow: chip=Workflow open rows=[cooee #31 | cooee #33] metas=[rev · round 1 · now | impl · round 1 · now]
+1440 Workflow: card head= drover
+2 threads fold= [ '1 done today' ] fold rows visible= false
+1440 overflow px= 0
+1440 after reload: chip=Workflow rows=[cooee #31 | cooee #33 | ]
+1440 workflow-done ok
+1440 done fold row= ●
+cooee #30
+fix · round 1 · now
+in the stableRead it.
+1440 chats ok
+1440 Chats: chip=Chats cards= ~/root/project rows=[Long thread | Long thread]
+1440 GET /threads (Chats cookie): [{"folder":"~/root/project","rows":[{"id":"long-1440","title":"Long thread","agent":"fake-acp","folder":"/var/folders/4k/fbv06j2j5bbd3h4wgbwk1ccm0000gn/T/tmp.nRdZRM1v6h/root/project","state":"","last":"#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed tw","at":17000600000
+1440 workflow-chat ok
+1440 lane chat: url=/t/w-lane-impl h1=cooee #33 ds=impl · round 1 · on the trail · issue & PR
+1440 lane chat: link=https://github.com/o/cooee/issues/33 close hidden=true stop visible=true reply enabled=true
+1440 lane chat msgs: "hang on\n07:01 AM\ntool\ncargo test\n⋯\nfake-acp\nw0 \nstop"
+1440 workflow-rev ok
+1440 rev lane msgs: "approve it\n07:01 AM\ntool\nEdit src/lib.rs\n⋯\nfake-acp\nEdit src/lib.rs\nAllow\nAlways allow\nReject"
+1440 new ok
+1440 chat ok
+390 phone: before stop st= on the trail
+390 phone: after stop st= in the stable msgs= "hang on\n07:01 AM\ntool\ncargo test\n✕ cancelled\nfake-acp\nw0 \ncancelled\nin the stable · done\n07:02 AM · 1 min · 1 tool"
+390 phone: mid-stream st= on the trail msgs= "hang on\n07:01 AM\ntool\ncargo test\n✕ cancelled\nfake-acp\nw0 \ncancelled\nslow 6\n07:02 AM\nfake-acp\nw0 w1 w2 w3 w4 w5 \nstop"
+390 phone: after reply st= in the stable msgs= "hang on\n07:01 AM\ntool\ncargo test\n✕ cancelled\nfake-acp\nw0 \ncancelled\nslow 6\n07:02 AM\nfake-acp\nstreamed 6 words\nhello from verify\n07:02 AM\nfake-acp\nHello\nin the stable · done\n07:02 AM"

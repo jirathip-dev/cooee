@@ -1,0 +1,34 @@
+error[E0609]: no field `workflow` on type `Summary`
+   --> web/src/lib.rs:452:25
+    |
+452 |     let meta = match &r.workflow {
+    |                         ^^^^^^^^ unknown field
+    |
+    = note: available fields are: `id`, `title`, `agent`, `folder`, `state` ... and 3 others
+
+error[E0609]: no field `workflow` on type `&Summary`
+   --> web/src/lib.rs:795:38
+    |
+795 |     let open = rows.iter().all(|r| r.workflow.is_some());
+    |                                      ^^^^^^^^ unknown field
+    |
+    = note: available fields are: `id`, `title`, `agent`, `folder`, `state` ... and 3 others
+
+error[E0609]: no field `workflow` on type `cooee_core::Thread`
+    --> web/src/lib.rs:1011:27
+     |
+1011 |     let workflow = thread.workflow.clone();
+     |                           ^^^^^^^^ unknown field
+     |
+     = note: available fields are: `id`, `title`, `messages`, `agent`, `folder` ... and 5 others
+
+error[E0609]: no field `workflow` on type `Summary`
+   --> web/src/lib.rs:329:18
+    |
+329 |         match &r.workflow {
+    |                  ^^^^^^^^ unknown field
+    |
+    = note: available fields are: `id`, `title`, `agent`, `folder`, `state` ... and 3 others
+
+For more information about this error, try `rustc --explain E0609`.
+error: could not compile `cooee-web` (lib) due to 4 previous errors

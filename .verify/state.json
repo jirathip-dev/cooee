@@ -1,0 +1,15 @@
+{
+  "cookies": [
+    {
+      "name": "cooee",
+      "value": "3f78b0848b928fc89166c9825fb3e53be47eea375657f7f43398b8f7cb512e0e",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": 1825545747.974642,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Strict"
+    }
+  ],
+  "origins": []
+}
