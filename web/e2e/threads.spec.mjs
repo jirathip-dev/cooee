@@ -10,8 +10,9 @@ test("thread list: renders, fits the width, no axe violations", async ({ page },
   await page.screenshot({ path: `../../ui-${info.project.name}/threads.png`, fullPage: true });
   await page.goto("/new");
   await expect(page.locator("#nc")).toBeVisible();
-  // The provider and account last used in the folder (or its agent profile's label, #40), never the agent's id.
-  await expect(page.locator("#chip-agent")).toHaveText(/^(fake-390 · \S+@example\.com|Reviewer)/);
+  // The provider and account last used (or its agent profile's label, #40), never the agent's id; once login.spec has
+  // signed in the main login, the seeded threads with no account count as its.
+  await expect(page.locator("#chip-agent")).toHaveText(/^(fake-390 · (\S+@example\.com|main login)|Reviewer)/);
   await page.screenshot({ path: `../../ui-${info.project.name}/threads-new.png`, fullPage: true });
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);

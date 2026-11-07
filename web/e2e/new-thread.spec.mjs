@@ -101,6 +101,10 @@ for (const [theme, value] of Object.entries(LOOKS))
 test("the agent chip starts at the account last used in the folder picked", async ({ page }, info) => {
   await page.goto("/new");
   const chip = page.locator("#chip-agent"), folder = page.locator("#chip-folder");
+  // The newest pick overall, what scratch (no folder) starts at: once login.spec signs in the main login, the seeded
+  // threads with no account make it that.
+  await expect(chip).toHaveText(/^fake-390 · /);
+  const overall = await chip.locator("span").textContent();
   const pick = async (p) => {
     await folder.click();
     await page.locator("#sh-folder label", { has: page.locator(".sk", { hasText: new RegExp(`^${p}$`) }) }).click();
@@ -123,11 +127,11 @@ test("the agent chip starts at the account last used in the folder picked", asyn
   await page.locator("#sh-agent label", { hasText: "lab@example.com" }).click();
   await expect(chip).toHaveText(/^fake-390 · lab@example\.com/);
   await pick("~/root");
-  await expect(chip).toHaveText(/^fake-390 · work@example\.com/);
+  await expect(chip.locator("span")).toHaveText(overall);
   // Back to scratch (no folder): the newest pick overall again.
   await pick("scratch");
   await expect(folder).toHaveText(/^scratch/);
-  await expect(chip).toHaveText(/^fake-390 · work@example\.com/);
+  await expect(chip.locator("span")).toHaveText(overall);
 });
 
 test("with no folder picked the thread runs in its own scratch folder, listed as scratch", async ({ page }, info) => {
