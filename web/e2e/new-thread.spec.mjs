@@ -22,7 +22,7 @@ const look = (context, baseURL, value) =>
 
 // The design's audit (docs/design/new-thread/shoot.mjs), on the page: no sideways scroll; at 390 the composer fits one
 // screen; every chip, button and one-line input is --ctl tall with the --r-ctl radius and --fs text (inputs 16 px);
-// every sheet and Settings row is --row; the header's [+] at every width (no sidebar); and no dev text (an agent id,
+// every sheet and Settings row is --row; chips have no border; sheet rows line up with the title; the header's [+] at every width (no sidebar); and no dev text (an agent id,
 // `System default`).
 function audit(composer) {
   const bad = [], W = innerWidth, cs = getComputedStyle(document.documentElement);
@@ -46,6 +46,11 @@ function audit(composer) {
       const want = e.matches("input,textarea,select") ? 16 : FS;
       if (!near(parseFloat(s.fontSize), want)) bad.push(`text ${s.fontSize}, not ${want} · ${name(e)}`);
     }
+    // A chip's edge is its one inset ring (none in Terminal, a bracket key), never a border on top of it.
+    if (e.matches(".chip") && s.borderTopWidth !== "0px") bad.push(`chip border ${s.borderTopWidth} · ${name(e)}`);
+    // A sheet's rows and headings line up with its title, flat (no fieldset inset, no depth indent).
+    const t = e.matches(".pop :is(.pk, .ch)") && e.closest(".pop").querySelector("b[id^=sht-]");
+    if (t && !near(r.left, t.getBoundingClientRect().left)) bad.push(`row at x=${r.left}, title at x=${t.getBoundingClientRect().left} · ${name(e)}`);
     if (e.matches(".pk, .acr") && !near(r.height, ROW)) bad.push(`row ${r.height}px, not --row ${ROW} · ${name(e)}`);
     if (e.matches(".pk .sk, .acr .sk") && !near(parseFloat(s.fontSize), FS)) bad.push(`row text ${s.fontSize}, not --fs ${FS} · ${name(e)}`);
   }

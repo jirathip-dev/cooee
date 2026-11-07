@@ -243,7 +243,7 @@ body.app{display:flex;flex-direction:column;height:100dvh}
 .nc{flex-wrap:wrap;align-items:center}
 .nc>.hn,.nc>.err{flex-basis:100%}
 .chips{display:flex;gap:8px;flex-basis:100%;min-width:0}
-.chip{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:max-content;flex:0 1 auto;padding:0 12px;background:var(--bg);color:var(--fg);font-weight:400;box-shadow:inset 0 0 0 1px var(--edge)}
+.chip{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:max-content;flex:0 1 auto;padding:0 12px;border:0;background:var(--bg);color:var(--fg);font-weight:400;box-shadow:inset 0 0 0 1px var(--edge)}
 .chip>span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .chip>i{font-style:normal;color:var(--mute)}
 .chip[aria-expanded=true]{box-shadow:inset 0 0 0 2px var(--l)}
@@ -261,7 +261,7 @@ html[data-style=terminal] .chip>i{color:inherit;margin-left:1ch}
 .pop{position:fixed;inset:auto 0 0;width:auto;height:auto;max-width:none;max-height:80%;margin:0;padding:0;overflow:visible;color:inherit;flex-direction:column;background:var(--bg);border:0;border-top:1px solid var(--edge);border-radius:20px 20px 0 0;text-align:left}
 .pop:popover-open{display:flex}
 .pop::backdrop{background:var(--scrim)}
-.pop fieldset{border:0;margin:0;min-width:0}
+.pop fieldset{border:0;margin:0;padding:0;min-width:0}
 .pop select{margin:8px 8px 0 0;color:var(--fg);background:var(--bg);border:1px solid var(--edge)}
 @media (min-width:1024px){
   .pop::backdrop{background:none}
@@ -279,7 +279,6 @@ label.pk{cursor:pointer}
 .pk .sv{margin-left:auto}
 .pk .tk{display:none;margin-left:8px;flex:none}.pk:has(:checked) .tk{display:inline}
 .pk.so .sk,.pk.so>label{color:var(--mute);cursor:default}
-.fl [data-d="1"]{padding-left:16px}.fl [data-d="2"]{padding-left:32px}
 .fq{display:flex;gap:8px;padding:4px 0 8px}.fq input{flex:1;min-width:0;color:var(--fg);background:var(--card);border:1px solid var(--edge)}
 
 /* The chat right after send: your message, then the state line where the reply will come, in the theme's loading
