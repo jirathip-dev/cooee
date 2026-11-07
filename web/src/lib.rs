@@ -46,7 +46,7 @@ macro_rules! built {
 }
 
 /// The static routes: the manifest, the icons, the style sheet, the scripts and the service worker; the look:
-/// `POST /look` (a pick with no script) and each theme's data at `/look/<theme>/{theme.json,sprites.svg,icon.png}`;
+/// `POST /look` (a pick with no script) and each theme's data at `/look/<theme>/{theme.json,sprites.svg,scene.svg,icon.png}`;
 /// and `POST /list`, the thread list's chip.
 ///
 /// # Panics
@@ -95,18 +95,22 @@ impl IntoResponse for Owned {
 path_param!(look);
 path_param!(file);
 
-/// A sprite sheet with its two-frame loop rule, since a `<use>` of another file takes that file's styles: frame 1 (`.kf1`,
-/// `.f1`) shows by default, and `--o1`/`--o2`, which the page animates, inherit into each sprite.
-fn with_frames(svg: &[u8]) -> Vec<u8> {
-    const RULE: &[u8] =
-        b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
+/// `svg` with a `<style>` rule first, since a `<use>` or `<img>` of another file takes that file's styles only.
+fn with_rule(svg: &[u8], rule: &[u8]) -> Vec<u8> {
     let at = svg
         .windows(4)
         .position(|w| w == b"<svg")
         .and_then(|i| svg[i..].iter().position(|&b| b == b'>').map(|j| i + j + 1))
         .unwrap_or(0);
-    [&svg[..at], RULE, &svg[at..]].concat()
+    [&svg[..at], rule, &svg[at..]].concat()
 }
+
+/// A sprite sheet's two-frame loop: frame 1 (`.kf1`, `.f1`) shows by default, and `--o1`/`--o2`, which the page
+/// animates, inherit into each sprite.
+const FRAMES: &[u8] = b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
+
+/// A scene's calm layers only (#34): herdsman's scenes draw each host-load level as a layer, and cooee has no load.
+const CALM: &[u8] = b"<style>.h-busy,.h-held,.l-overcast,.l-rain{display:none}</style>";
 
 #[route(GET "/look/{look}/{file}")]
 async fn look_file(cx: &Cx) -> Result<Owned> {
@@ -119,7 +123,11 @@ async fn look_file(cx: &Cx) -> Result<Owned> {
         "sprites.svg" => theme
             .sprite_sheet
             .as_deref()
-            .map(|b| Owned("image/svg+xml", with_frames(b))),
+            .map(|b| Owned("image/svg+xml", with_rule(b, FRAMES))),
+        "scene.svg" => theme
+            .scene
+            .as_deref()
+            .map(|b| Owned("image/svg+xml", with_rule(b, CALM))),
         "icon.png" => Some(theme.icon.clone().map_or_else(
             || Owned("image/svg+xml", include_bytes!("icon.svg").to_vec()),
             |b| Owned("image/png", b),
@@ -225,7 +233,7 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
             lang="en"
             data-theme=(name)
             data-mode=(look.mode().map(str::to_owned))
-            data-style=(look.style().to_owned())
+            data-style=(look.shape().to_owned())
             data-figures=(look.figures().to_owned())
             data-moments=(if look.theme().moments { "on" } else { "off" })
         >
@@ -493,15 +501,20 @@ async fn header(
     })
 }
 
+/// A row's line under the title: agent · age, or a Workflow session's role · round · age.
+fn meta(r: &Summary) -> String {
+    match &r.workflow {
+        Some(w) => format!("{} · round {} · {}", w.role, w.round, age(r.at)),
+        None => format!("{} · {}", r.agent, age(r.at)),
+    }
+}
+
 #[component]
 async fn row(cx: &Cx, r: Summary) -> Result<impl View> {
     let st = state(&r.state);
     let mark = Unescaped::new_unchecked(shown(cx).st(st, false));
     let href = format!("/t/{}", r.id);
-    let meta = match &r.workflow {
-        Some(w) => format!("{} · round {} · {}", w.role, w.round, age(r.at)),
-        None => format!("{} · {}", r.agent, age(r.at)),
-    };
+    let meta = meta(&r);
     Ok(view! {
         <a
             class=(if r.unread { "tr" } else { "tr rd" })
@@ -797,6 +810,86 @@ async fn folder_picker(folders: Vec<(PathBuf, u8)>) -> Result<impl View> {
     })
 }
 
+/// A state's pose in Scene (#34): its 132 × 100 sprite.
+fn pose(st: &str) -> &'static str {
+    match st {
+        "working" => "edit",
+        "needs" => "needs",
+        "done" => "done",
+        "fail" => "fail",
+        "ended" => "merged",
+        _ => "idle",
+    }
+}
+
+/// One session in Scene: its sprite acting out its state, and its name card (title, [`meta`], the state's word);
+/// a tap opens it.
+#[component]
+async fn sprite(cx: &Cx, r: Summary) -> Result<impl View> {
+    let look = shown(cx);
+    let st = state(&r.state);
+    let key = if st.is_empty() { "idle" } else { st };
+    let (fig, word, meta) = (look.s(pose(st)), look.w(key, false), meta(&r));
+    Ok(view! {
+        <a
+            class=(if r.unread { "sb" } else { "sb rd" })
+            href=(format!("/t/{}", r.id))
+            data-id=(r.id.clone())
+        >
+            <span class="sf" data-s=(pose(st))>(Unescaped::new_unchecked(fig))</span>
+            <span class="sn">
+                <b>(r.title)</b>
+                <span>(meta)</span>
+                <span class=(format!("sw {st}")) data-w=(key)>
+                    (Unescaped::new_unchecked(word))
+                </span>
+            </span>
+        </a>
+    })
+}
+
+/// Scene (#34): the thread list as the theme's scene, a page per working folder swiped sideways with a dot per page
+/// (a link with no script), each page the scene's strip over the sessions' sprites. `chat.ts` redraws it on refresh,
+/// marks the dot in view and switches the strip to night by the device's clock.
+#[component]
+async fn scene(cx: &Cx, cards: Vec<Card>) -> Result<impl View> {
+    let art = format!("/look/{}/scene.svg", shown(cx).name());
+    let dots: Vec<(usize, String)> = cards.iter().map(|c| c.folder.clone()).enumerate().collect();
+    Ok(view! {
+        <div class="scn" id="scene" data-art=(art.clone())>
+            <nav class="sdt" aria-label="pages" hidden=(dots.len() < 2)>
+                for (i, f) in dots {
+                    <a
+                        href=(format!("#sp-{i}"))
+                        aria-label=(f)
+                        aria-current=(if i == 0 { Some("page") } else { None })
+                    ></a>
+                }
+            </nav>
+            <div class="spg">
+                for (i, Card { folder, rows, done }) in cards.into_iter().enumerate() {
+                    <section
+                        class="sp"
+                        id=(format!("sp-{i}"))
+                        aria-label=(folder.clone())
+                    >
+                        <img class="sky" src=(art.clone()) alt="">
+                        <h2 class="fh">
+                            <b>(folder)</b>
+                            <span class="ds">(format!("{} threads", rows.len()))</span>
+                        </h2>
+                        <div class="fld">
+                            for r in rows.into_iter().chain(done.into_iter().flatten()) {
+                                sprite(r: r)
+                            }
+                        </div>
+                    </section>
+                }
+            </div>
+        </div>
+    })
+}
+
 /// Each folder's last-used profile (its newest thread's, if it is still one to pick), by the folder as the form names
 /// it: the first folder's, and all of them as JSON.
 fn last_used(
@@ -1008,12 +1101,33 @@ async fn threads(
                     <p class="err" id="new-err" hidden=(true)></p>
                 </form>
                 chips(list: list)
-                for c in cards {
-                    card(c: c)
+                if look.scene() {
+                    scene(cards: cards)
+                } else {
+                    for c in cards {
+                        card(c: c)
+                    }
                 }
                 shelf(rows: archived)
             </main>
         )
+    })
+}
+
+/// The rename box the thread bar's title opens (`chat.ts`).
+#[component]
+async fn rename(title: String) -> Result<impl View> {
+    Ok(view! {
+        <form id="rt" class="rt" popover="auto" aria-label="rename the thread">
+            <input
+                name="title"
+                aria-label="thread title"
+                value=(title)
+                maxlength="80"
+                required=(true)
+            >
+            <button type="submit">"rename"</button>
+        </form>
     })
 }
 
@@ -1231,7 +1345,8 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
     })
 }
 
-/// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer.
+/// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer; `ids` are the threads a
+/// ref in it may open (#84).
 #[must_use]
 pub fn chat_page(
     cx: &Cx,
@@ -1239,8 +1354,12 @@ pub fn chat_page(
     turn: Turn,
     profile: String,
     choices: (Vec<String>, Vec<String>),
+    ids: Vec<String>,
 ) -> impl View {
-    view! { cx => chat(thread: thread, turn: turn, profile: profile, choices: choices) }
+    view! {
+        cx =>
+        chat(thread: thread, turn: turn, profile: profile, choices: choices, ids: ids)
+    }
 }
 
 /// A model or effort select (#553 row 34): `name`'s choices, `default` first, `now` selected.
@@ -1267,6 +1386,7 @@ async fn chat(
     turn: Turn,
     profile: String,
     choices: (Vec<String>, Vec<String>),
+    ids: Vec<String>,
 ) -> Result<impl View> {
     let look = shown(cx);
     let [st, wait, pill] = [
@@ -1292,21 +1412,25 @@ async fn chat(
                 data-agent=(thread.agent.clone())
                 data-read=(thread.read.unwrap_or(0).to_string())
                 data-state=(turn.state.clone())
+                data-ids=(ids.join(" "))
             >
                 header(home: false, tabs: Vec::new(), current: String::new())
                 <div class="th">
-                    <a class="gl bk" href="/" aria-label="back to threads">"‹"</a>
+                    <a class="gl bk" href="/" aria-label="back">"‹"</a>
                     <div class="tb">
-                        <h1>
-                            <button
-                                type="button"
-                                class="ttl"
-                                popovertarget="rt"
-                                aria-label=(format!("{} · rename", thread.title))
-                            >
-                                (thread.title.clone())
-                            </button>
-                        </h1>
+                        <div class="tn">
+                            <h1>
+                                <button
+                                    type="button"
+                                    class="ttl"
+                                    popovertarget="rt"
+                                    aria-label=(format!("{} · rename", thread.title))
+                                >
+                                    (thread.title.clone())
+                                </button>
+                            </h1>
+                            <small>(thread.id.clone())</small>
+                        </div>
                         <span class="ds">
                             <i class="dt"></i>
                             <span id="net"></span>
@@ -1327,21 +1451,7 @@ async fn chat(
                     >
                         "×"
                     </button>
-                    <form
-                        id="rt"
-                        class="rt"
-                        popover="auto"
-                        aria-label="rename the thread"
-                    >
-                        <input
-                            name="title"
-                            aria-label="thread title"
-                            value=(thread.title.clone())
-                            maxlength="80"
-                            required=(true)
-                        >
-                        <button type="submit">"rename"</button>
-                    </form>
+                    rename(title: thread.title.clone())
                 </div>
                 <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
                 <ol

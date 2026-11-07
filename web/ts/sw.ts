@@ -33,9 +33,17 @@ sw.addEventListener("fetch", (e) => {
   );
 });
 
+// Push and read marks change the notifications one event at a time, in the order they came: two pushes close
+// together show the newer, and a read mark never closes a push that came after it.
+let turn: Promise<unknown> = Promise.resolve();
+const inTurn = (f: () => Promise<unknown>): Promise<unknown> => {
+  turn = turn.then(f, f);
+  return turn;
+};
+
 sw.addEventListener("push", (e) =>
   e.waitUntil(
-    (async () => {
+    inTurn(async () => {
       const n: Push | null = e.data ? e.data.json() : null;
       if (!n) return;
       const open = await sw.clients.matchAll({ type: "window", includeUncontrolled: true });
@@ -43,7 +51,7 @@ sw.addEventListener("push", (e) =>
         c.visibilityState === "visible" && new URL(c.url).pathname === new URL(n.url, c.url).pathname;
       if (open.some(here)) return;
       await sw.registration.showNotification(n.title, { body: n.body, tag: n.tag, data: n, icon: "/icon-192.png" });
-    })(),
+    }),
   ),
 );
 
@@ -62,8 +70,10 @@ sw.addEventListener("message", (e) => {
   const { thread, read } = e.data ?? {};
   if (!thread) return;
   e.waitUntil(
-    sw.registration.getNotifications({ tag: thread }).then((ns) => {
-      for (const n of ns) if ((n.data?.item ?? 0) <= read) n.close();
-    }),
+    inTurn(() =>
+      sw.registration.getNotifications({ tag: thread }).then((ns) => {
+        for (const n of ns) if ((n.data?.item ?? 0) <= read) n.close();
+      }),
+    ),
   );
 });

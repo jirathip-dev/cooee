@@ -201,20 +201,34 @@ test("the look sheet lists Scene only with sprites, and plain only ASCII or None
   const radios = (k) => sheet(page).getByRole("radiogroup", { name: k }).getByRole("radio");
   await expect(radios("style")).toHaveText(["modern", "terminal", "scene"]);
   await expect(radios("figures")).toHaveText(["sprite", "ascii", "none"]);
+  // Scene in or out redraws the thread list (#34), which closes the sheet: open it again once the list is drawn.
+  const again = async () => {
+    if (!(await sheet(page).count())) await page.getByRole("button", { name: "look: theme and colours" }).click();
+  };
   await tap(page, "style", "terminal");
   await tap(page, "style", "scene");
-  await expect(page.locator("html")).toHaveAttribute("data-style", "scene");
+  await expect(page.locator("#scene")).toBeVisible();
+  // Scene changes only the list: pages keep the Terminal pick's shape.
+  await expect(page.locator("html")).toHaveAttribute("data-style", "terminal");
   // ASCII or None hides Scene, and the device goes back to its Terminal pick.
   for (const f of ["ascii", "none"]) {
+    await again();
     await tap(page, "figures", f);
+    await expect(page.locator("#scene")).toHaveCount(0);
+    await again();
     await expect(radios("style")).toHaveText(["modern", "terminal"]);
     await expect(page.locator("html")).toHaveAttribute("data-style", "terminal");
     await expect(sheet(page).locator('[data-k=style][data-v=terminal]')).toHaveAttribute("aria-checked", "true");
   }
   // plain: no sprites, so Figures offers ASCII or None, and there is no Scene; it starts on ASCII.
   await tap(page, "figures", "sprite");
+  await expect(page.locator("#scene")).toBeVisible();
+  await again();
   await expect(radios("style")).toHaveText(["modern", "terminal", "scene"]);
   await tap(page, "theme", "plain");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "plain");
+  await expect(page.locator("#scene")).toHaveCount(0);
+  await again();
   await expect(radios("figures")).toHaveText(["ascii", "none"]);
   await expect(radios("style")).toHaveText(["modern", "terminal"]);
   await expect(page.locator("html")).toHaveAttribute("data-figures", "ascii");
