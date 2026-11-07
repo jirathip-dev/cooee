@@ -26,6 +26,7 @@ keeps them going while the phone is away; cooee talks to shed and pings the phon
 | `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), paired devices, providers (status, redaction), the shed client; no HTTP | no workspace crate |
 | `cooee-web` | `web/` | the web UI, HTML-first (ADR 0001, #49): server-rendered pages and sheets, strict TypeScript in `web/ts` stripped by `build.rs` (oxc; no Node to build) only where script is needed, `app.css`, the PWA manifest, the themes and schemes (`look.rs`, `shown.rs`, `themes/`, `schemes/`); its script calls only `docs/api.md` | not the server or binary |
 | `cooee-machines` | `crates/cooee-machines` | the first-party plugin `machines` ([plugins.md](plugins.md)): machines' health from shed, its backend and tab module | core |
+| `cooee-terminal` | `crates/cooee-terminal` | the first-party plugin `terminal` ([plugins.md](plugins.md)): the owner's shells through shed, its backend and tab module | core |
 | `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3) | core, web |
 | `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
 
@@ -163,6 +164,15 @@ and goes live only after its backend served its first tab's module; `plugins.loc
 to roll back to. `cooee serve` runs every enabled backend as its child (`cooee-server/src/manage.rs`): restarts with
 backoff, 5 crashes in 10 minutes turn it off with an alert. [improve] puts an agent on a branch of the plugin's
 checkout; approving builds and swaps it in the same way.
+
+**The passkey gate (#28).** The `terminal` tab runs commands on the Mac, so a paired cookie is not enough: the device
+needs its passkey (WebAuthn, Face ID on iPhone), registered on its first use of the tab. The ceremony runs in cooee's
+page (`/passkey/options`, then `/passkey/register` or `/passkey/unlock`), never in the sandboxed frame; cooee checks it
+(`cooee-server/src/passkey.rs`: ES256 only, this host's origin and relying party, user verified) and keeps the
+credential in the device's entry in `devices.json`. An unlock lives in memory and lasts while the tab is used: each
+proxied call counts, and 10 minutes without one locks it (403 `locked`; an open stream ends at its next event) until
+Face ID again. The proxy names the device to the backend (`Cooee-Device`), which refuses any call without it. Every
+unlock and every shell started goes to `<data>/terminal.log` with the time and device; keystrokes never do.
 
 **cooee-drover** ([jirathip-dev/cooee-drover](https://github.com/jirathip-dev/cooee-drover), in the index) is the
 plugin that adds the fleet tabs: Queue, Asks and Fleets. Data flows one way:

@@ -9,7 +9,7 @@ use std::{
 };
 
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
-use cooee_core::{Claim, Devices, Passkey, random};
+use cooee_core::{Claim, Credential, Devices, random};
 use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -431,7 +431,7 @@ async fn passkey_add(cx: &Cx, Json(p): Json<NewPasskey>) -> Result<Response> {
     if p.id.is_empty() || p.id.len() > 512 {
         return plain(400, "That passkey has no id.");
     }
-    let key = Passkey {
+    let key = Credential {
         id: p.id,
         key: B64.encode(point),
         label: request_context::<Paired>(cx).0.label.clone(),

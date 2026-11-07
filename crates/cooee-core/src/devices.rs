@@ -40,6 +40,18 @@ pub struct Device {
     /// The device that approved its request, if one did.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub by: String,
+    /// Its passkey (Face ID on iPhone), registered on first use of a tab that needs one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub passkey: Option<Passkey>,
+}
+
+/// A device's passkey credential: its id and its P-256 public key, both base64url.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Passkey {
+    /// The credential id.
+    pub id: String,
+    /// The public key, as an uncompressed SEC1 point.
+    pub key: String,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -50,7 +62,7 @@ struct File {
     code: Option<(String, u64)>,
     misses: u32,
     asks: Vec<Request>,
-    passkeys: Vec<Passkey>,
+    passkeys: Vec<Credential>,
 }
 
 /// A new device's open request to pair: its claim's hash, the check word it shows, what it is, when it asked and the
@@ -97,9 +109,10 @@ pub struct Asking {
     pub at: u64,
 }
 
-/// A passkey (`WebAuthn`, ES256): its credential id, public key and the device that made it.
+/// A passkey that signs a device back in and approves new ones (`WebAuthn`, ES256): its credential id, public key
+/// and the device that made it. The terminal's unlock key is a device's own [`Passkey`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Passkey {
+pub struct Credential {
     /// The credential id, base64url.
     pub id: String,
     /// The uncompressed P-256 public key, base64url.
@@ -152,6 +165,7 @@ impl File {
             created: now,
             used: now,
             by: String::new(),
+            passkey: None,
         });
         self.devices.last_mut().expect("just pushed")
     }
@@ -188,6 +202,19 @@ pub fn random(n: usize) -> io::Result<Vec<u8>> {
     let mut b = vec![0; n];
     fs::File::open("/dev/urandom")?.read_exact(&mut b)?;
     Ok(b)
+}
+
+/// Appends `line` and a newline to `path` (made 0600 if new).
+///
+/// # Errors
+/// When the file can't be opened or written.
+pub fn append_line(path: &Path, line: &str) -> io::Result<()> {
+    fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .mode(0o600)
+        .open(path)?
+        .write_all(format!("{line}\n").as_bytes())
 }
 
 /// Replaces `path` with `bytes`, mode 0600: a temp file of its own (named by process and write, so concurrent
@@ -415,7 +442,7 @@ impl Devices {
     ///
     /// # Errors
     /// When the file can't be read.
-    pub fn passkeys(&self) -> io::Result<Vec<Passkey>> {
+    pub fn passkeys(&self) -> io::Result<Vec<Credential>> {
         Ok(self.load()?.passkeys)
     }
 
@@ -423,7 +450,7 @@ impl Devices {
     ///
     /// # Errors
     /// When the file can't be read or written.
-    pub fn add_passkey(&self, key: Passkey) -> io::Result<()> {
+    pub fn add_passkey(&self, key: Credential) -> io::Result<()> {
         self.change(|f| {
             f.passkeys.retain(|k| k.id != key.id);
             f.passkeys.push(key);
@@ -518,6 +545,20 @@ impl Devices {
     /// When the file can't be read.
     pub fn list(&self) -> io::Result<Vec<Device>> {
         Ok(self.load()?.devices)
+    }
+
+    /// Gives device `id` its passkey, unless it has one already; whether it was set.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn set_passkey(&self, id: &str, passkey: Passkey) -> io::Result<bool> {
+        self.change(|f| {
+            let found = f
+                .devices
+                .iter_mut()
+                .find(|d| d.id == id && d.passkey.is_none());
+            Ok(found.map(|d| d.passkey = Some(passkey)).is_some())
+        })
     }
 
     /// Unpairs device `id`; whether there was one.

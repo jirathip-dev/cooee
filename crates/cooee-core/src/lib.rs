@@ -16,7 +16,10 @@ mod store;
 pub use accounts::{Account, Accounts, Sheet};
 pub use chat::{Body, Card, Change, Chat, Item, Summary, Turn};
 pub use config::{Config, ConfigError, Perf, Plugin, ROOTS_FIX, save_roots};
-pub use devices::{Asking, Claim, Device, Devices, Passkey, label, random, sha256, write_private};
+pub use devices::{
+    Asking, Claim, Credential, Device, Devices, Passkey, append_line, label, random, sha256,
+    write_private,
+};
 pub use login::{Provider, Status, links, redact};
 pub use profiles::Profile;
 pub use shed::{AGENTS_FIX, Agent, Launch, Shed, ShedError};
