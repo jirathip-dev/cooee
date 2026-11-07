@@ -221,7 +221,7 @@ html[data-style=terminal] .swa{border-radius:4px}
 .ags{display:flex;flex-direction:column;padding:8px}.ags>.lb{margin:8px;font-weight:600}
 .agr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;column-gap:12px;align-items:center;padding:8px;border-radius:var(--r-row);color:var(--fg);text-decoration:none}
 .agr .av{grid-row:span 2}.agr .tt{font-weight:400}.agr.ud .tt{font-weight:700}.agr .tp{grid-column:2/4}
-.agr.on,.str.on{background:color-mix(in srgb,var(--l) 12%,var(--bg))}
+.agr.on,.str.on{background:color-mix(in srgb,var(--l) 8%,var(--bg))}
 .av{display:inline-flex;align-items:center;justify-content:center;flex:none;width:40px;height:40px;border-radius:50%;font:700 13px/1 var(--font);font-style:normal;color:var(--fg);background:color-mix(in srgb,var(--av) 30%,var(--bg))}
 .big-av{width:64px;height:64px;font-size:20px}
 .sth{display:flex;flex-direction:column;padding-left:52px}

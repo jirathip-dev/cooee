@@ -50,3 +50,23 @@ test("a failed start reads as one plain sentence, never the server's JSON error"
   await page.getByRole("button", { name: "send" }).click();
   await expect(page.locator("#new-err")).toHaveText("/ is not inside a configured root");
 });
+
+test("the current agent's row reads at AA while its chat works, on the light themes", async ({ page, context, baseURL }, info) => {
+  test.skip(info.project.name !== "1440", "the sidebar shows beside a chat from 1000 px");
+  const r = await page.request.post("/agents", { form: { name: `Busy ${info.project.name}`, profile: "" }, maxRedirects: 0 });
+  await page.goto(r.headers().location);
+  await page.getByLabel("message", { exact: true }).fill("hang on");
+  await page.getByRole("button", { name: "send" }).click();
+  await page.waitForURL(/\/t\//);
+  await expect(page.locator("#pill")).toBeVisible();
+  const row = page.locator(".ags .agr.on");
+  for (const theme of ["farm", "kitchen", "garden"]) {
+    await context.addCookies([{ name: "cooee-look", value: `theme:${theme}/mode:light`, url: baseURL }]);
+    await page.reload();
+    await expect(row.locator('[data-st="working"]')).toBeVisible();
+    const { violations } = await new AxeBuilder({ page }).include(".ags").withRules(["color-contrast"]).analyze();
+    expect(violations.map((v) => `${theme} ${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
+  }
+  await page.locator("#pill .stop").click();
+  await expect(page.locator("#pill")).toBeHidden();
+});
