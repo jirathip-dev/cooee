@@ -144,6 +144,23 @@ pub(crate) async fn avatar(name: String, n: usize, big: bool) -> Result<impl Vie
     })
 }
 
+/// How many side threads show under the agent on show; the older fold.
+const SIDE: usize = 5;
+
+/// A side thread's row: its title and age.
+#[component]
+async fn side_row(c: Summary, open: String) -> Result<impl View> {
+    Ok(view! {
+        <a
+            class=(if c.id == open { "str on" } else { "str" })
+            href=(format!("/t/{}", c.id))
+        >
+            <span class="tt">(c.title)</span>
+            <span class="ta">(age(c.at))</span>
+        </a>
+    })
+}
+
 /// Where a tap on an agent goes: its ongoing chat, else a new one.
 fn href(m: &Mate) -> String {
     m.chats
@@ -213,14 +230,18 @@ async fn sidebar(
                 </a>
                 if on {
                     <div class="sth">
-                        for c in m.chats.iter().skip(1).cloned() {
-                            <a
-                                class=(if c.id == open { "str on" } else { "str" })
-                                href=(format!("/t/{}", c.id))
-                            >
-                                <span class="tt">(c.title)</span>
-                                <span class="ta">(age(c.at))</span>
-                            </a>
+                        for c in m.chats.iter().skip(1).take(SIDE).cloned() {
+                            side_row(c: c, open: open.clone())
+                        }
+                        if m.chats.len() > SIDE + 1 {
+                            <details>
+                                <summary>
+                                    (format!("{} older chats", m.chats.len() - SIDE - 1))
+                                </summary>
+                                for c in m.chats.iter().skip(SIDE + 1).cloned() {
+                                    side_row(c: c, open: open.clone())
+                                }
+                            </details>
                         }
                         <a class="str nw" href=(format!("/new?{}", m.key))>
                             "+ new chat"
@@ -457,9 +478,9 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
     Ok(view! {
         document(
             title: title.as_str(),
-            <div class="app">
+            <div class="app" data-show=(show)>
                 header(home: home, tabs: tabs, current: String::new(), new: new)
-                <main class="cfm" data-show=(show)>
+                <main class="cfm">
                     <div class="sdb">
                         if home {
                             signins(providers: providers.clone())
