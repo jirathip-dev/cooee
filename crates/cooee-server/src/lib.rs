@@ -9,6 +9,7 @@
 mod hub;
 mod login;
 mod manage;
+mod passkey;
 mod plugin;
 mod push;
 
@@ -22,6 +23,7 @@ use std::{
 
 use cooee_core::{Claim, Config, Device, Devices, Plugin, ShedError};
 use futures_util::{Stream, StreamExt, stream};
+use passkey::Unlocks;
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::error::RecvError;
 use topcoat::{
@@ -1009,6 +1011,54 @@ async fn device_remove(cx: &Cx, Json(d): Json<DeviceId>) -> Result<Response> {
     }
 }
 
+/// `POST /passkey/options`: a challenge for this device's passkey ceremony, and its passkey's id once it has one
+/// (none: the page registers one).
+#[route(POST "/passkey/options")]
+async fn passkey_options(cx: &Cx) -> Result<Response> {
+    let me = &request_context::<Paired>(cx).0;
+    let challenge = app_context::<Arc<Unlocks>>(cx).challenge(&me.id, now())?;
+    let id = me.passkey.as_ref().map(|p| p.id.clone());
+    let challenge = base64::Engine::encode(&base64::prelude::BASE64_URL_SAFE_NO_PAD, challenge);
+    Json(serde_json::json!({ "challenge": challenge, "id": id })).into_response(cx)
+}
+
+/// `POST /passkey/register` (the device's first passkey) and `/passkey/unlock`: either unlocks the gated tab for
+/// [`passkey::IDLE`]; each unlock goes to `<data>/terminal.log` with the time and device.
+#[route(POST "/passkey/{rest}")]
+async fn passkey_check(cx: &Cx, Json(p): Json<passkey::Proof>) -> Result<Response> {
+    let me = request_context::<Paired>(cx).0.clone();
+    let (unlocks, host) = (
+        app_context::<Arc<Unlocks>>(cx),
+        header(cx, "host").unwrap_or_default(),
+    );
+    let checked = match (path_param::<Rest>(cx), &me.passkey) {
+        ("register", None) => match unlocks.register(&me.id, host, &p, now()) {
+            Ok(pk) => {
+                let (devices, id) = (devices(cx), me.id.clone());
+                if tokio::task::spawn_blocking(move || devices.set_passkey(&id, pk)).await?? {
+                    unlocks.unlock(&me.id, now());
+                    Ok(())
+                } else {
+                    Err("this device has a passkey already".to_owned())
+                }
+            }
+            Err(e) => Err(e),
+        },
+        ("unlock", Some(pk)) => unlocks.assert(&me.id, pk, host, &p, now()),
+        ("register", Some(_)) => Err("this device has a passkey already".to_owned()),
+        ("unlock", None) => Err("register this device's passkey first".to_owned()),
+        _ => return Err(not_found().into()),
+    };
+    if let Err(why) = checked {
+        return plain(403, &format!("Not unlocked: {why}."));
+    }
+    let line = serde_json::json!({ "at": now(), "device": me.id, "event": "unlock" });
+    let file = app_context::<Data>(cx).0.join("terminal.log");
+    tokio::task::spawn_blocking(move || cooee_core::append_line(&file, &line.to_string()))
+        .await??;
+    plain(200, "unlocked")
+}
+
 /// The data folder, and the config's folder (its `profiles/`).
 struct Data(PathBuf, Option<PathBuf>);
 
@@ -1072,10 +1122,24 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
     let target = uri.path_and_query().map_or("/", |t| t.as_str());
     let target = target.strip_prefix(&prefix).unwrap_or(target).to_owned();
     let method = method(cx).to_string();
-    let pass: Vec<(&str, String)> = ["content-type", "accept", "last-event-id"]
+    let mut pass: Vec<(&str, String)> = ["content-type", "accept", "last-event-id"]
         .into_iter()
         .filter_map(|h| Some((h, header(cx, h)?.to_owned())))
         .collect();
+    // The gated tab: only an unlocked device's calls get through, and each counts as use; the backend learns which
+    // device (it refuses calls without one).
+    let me = request_context::<Paired>(cx).0.id.clone();
+    let unlocks = Arc::clone(app_context::<Arc<Unlocks>>(cx));
+    let gated = p.name == passkey::GATED;
+    if gated {
+        if !unlocks.touch(&me, now()) {
+            return Ok(Response::builder()
+                .status(403)
+                .header("Cooee-Locked", "1")
+                .body(Body::from("locked"))?);
+        }
+        pass.push(("cooee-device", me.clone()));
+    }
     let reply = tokio::task::spawn_blocking(move || {
         let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
         let timeout = Some(Duration::from_secs(30));
@@ -1092,7 +1156,9 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
     {
         reply.body.get_ref().set_read_timeout(None)?;
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        std::thread::spawn(move || plugin::events(reply, |e| tx.send(e).is_ok()));
+        // A locked device's stream ends at its next event.
+        let open = move || !gated || unlocks.open(&me, now());
+        std::thread::spawn(move || plugin::events(reply, |e| open() && tx.send(e).is_ok()));
         let stream = stream::unfold(rx, |mut rx| async move {
             let e = rx.recv().await?;
             Some((Result::<Event>::Ok(relay(e)), rx))
@@ -1534,6 +1600,8 @@ pub fn router(
         .route(pair_cancel)
         .route(device_list)
         .route(device_remove)
+        .route(passkey_options)
+        .route(passkey_check)
         .route(report)
         .page(home)
         .page(chat)
@@ -1578,6 +1646,7 @@ pub fn router(
         .route(plugin_dot)
         .app_context(hub)
         .app_context(Arc::new(Dots::default()))
+        .app_context(Arc::new(Unlocks::default()))
         .app_context(logins)
         .app_context(manager)
         .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))

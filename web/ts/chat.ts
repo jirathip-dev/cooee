@@ -912,12 +912,87 @@ if (frame) {
       if (!u) return to({ op: "event", id: m.id, event: "error", data: "not this plugin's backend" });
       const es = new EventSource(u);
       es.onmessage = (ev) => to({ op: "event", id: m.id, ...JSON.parse(ev.data) });
+      // A stream refused for good (a locked tab's 403) says so: `closed`.
+      es.onerror = () => {
+        if (es.readyState === EventSource.CLOSED) to({ op: "event", id: m.id, event: "closed", data: "" });
+      };
       streams.set(m.id, es);
     } else if (m.op === "close") {
       streams.get(m.id)?.close();
       streams.delete(m.id);
-    }
+    } else if (m.op === "unlock") lock.hidden = false;
   });
+  // The passkey gate (#28): the ceremony runs here, never in the sandboxed frame. The first time, this device
+  // registers its passkey; then each unlock signs a fresh challenge. The tap is on this page's own button.
+  const lock = document.createElement("button");
+  lock.className = "pk";
+  lock.hidden = true;
+  lock.textContent = "Unlock with Face ID";
+  frame.after(lock);
+  const b64 = (b: ArrayBuffer): string =>
+    btoa(String.fromCharCode(...new Uint8Array(b)))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  const bytes = (s: string): Uint8Array<ArrayBuffer> =>
+    Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+  lock.onclick = async () => {
+    try {
+      const o = await post<{ challenge: string; id: string | null }>("/passkey/options", {});
+      const challenge = bytes(o.challenge);
+      const rpId = location.hostname;
+      if (o.id) {
+        const c = (await navigator.credentials.get({
+          publicKey: {
+            challenge,
+            rpId,
+            allowCredentials: [{ type: "public-key", id: bytes(o.id) }],
+            userVerification: "required",
+          },
+        })) as PublicKeyCredential;
+        const r = c.response as AuthenticatorAssertionResponse;
+        await post("/passkey/unlock", {
+          id: c.id,
+          client: b64(r.clientDataJSON),
+          auth: b64(r.authenticatorData),
+          sig: b64(r.signature),
+        });
+      } else {
+        const c = (await navigator.credentials.create({
+          publicKey: {
+            challenge,
+            rp: { id: rpId, name: "cooee" },
+            user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "owner", displayName: "cooee owner" },
+            pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+            authenticatorSelection: { userVerification: "required", residentKey: "preferred" },
+          },
+        })) as PublicKeyCredential;
+        const r = c.response as AuthenticatorAttestationResponse;
+        const key = r.getPublicKey();
+        if (!key) throw new Error("This passkey has no P-256 key.");
+        await post("/passkey/register", {
+          id: c.id,
+          client: b64(r.clientDataJSON),
+          auth: b64(r.getAuthenticatorData()),
+          key: b64(key),
+        });
+      }
+      lock.hidden = true;
+      to({ op: "unlocked" });
+    } catch (x) {
+      toast(message(x), true);
+    }
+  };
+  // The tab fills what the keyboard leaves (#443): a bar at the frame's foot sits on the keyboard.
+  const vv = visualViewport;
+  const tab = frame.parentElement;
+  const fit = (): void => {
+    if (!vv || !tab) return;
+    tab.style.height = `${vv.height}px`;
+    tab.style.transform = `translateY(${vv.offsetTop}px)`;
+  };
+  vv?.addEventListener("resize", fit);
+  vv?.addEventListener("scroll", fit);
   const vars = [
     "--bg",
     "--card",
