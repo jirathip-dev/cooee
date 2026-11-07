@@ -12,8 +12,11 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "you"; text: string; random_id: string }
   | { kind: "agent"; text: string; stop_reason: string }
   | { kind: "tool"; call: string; title: string; status: string; ended?: number }
-  | { kind: "approval"; tool: string; options: { id: string; name: string; kind: string }[]; tapped?: string; chosen?: string; plugin?: string }
+  | { kind: "approval"; tool: string; options: { id: string; name: string; kind: string }[]; tapped?: string; chosen?: string; plugin?: string;
+      by?: string; answered?: number; form?: "config" | "secret" | "thread"; detail?: string; line?: string; until?: number }
+  | { kind: "link"; text: string; thread: string; title: string; out?: boolean }
   | { kind: "plan"; entries: { content: string; status: string; priority?: string }[] }
+  | { kind: "note"; text: string }
   | { kind: "ended"; text: string }
 );
 type Turn = { text: string; state: "working" | "blocked" | "done" | "error" | "ended" | ""; note?: string };
@@ -25,11 +28,12 @@ type Turn = { text: string; state: "working" | "blocked" | "done" | "error" | "e
 |---|---|---|
 | `GET /threads` | | the thread list's cards under the device's chip, `{folder, rows: Row[], done?: Row[]}[]`; `Row` is `{id, title, agent, folder, state, last, at, unread, workflow?: {source, group, item, role, round, url}}` (`folder`: `~/…` under home; a Workflow source's card has `done`, its finished sessions, and `folder` is the source) |
 | `POST /list` | a form: `list` (`all`, `chats` or `workflow`) | 303 to `/`, keeping the chip in the `cooee-list` cookie |
-| `POST /threads` | `{agent, account?, folder, text, random_id}` | `{id}` |
-| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor}` |
+| `POST /threads` | `{agent, account?, model?, effort?, folder, text, random_id}` | `{id}` |
+| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, waiting: Item \| null}` (`waiting`: the oldest config card that waits) |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |
 | `POST /threads/{id}/send` | `{text, random_id}` (a retry with the same id is stored once) | `Item` |
-| `POST /threads/{id}/approve` | `{item, option}` | `Item` or `null` |
+| `POST /threads/{id}/approve` | `{item, option, value?}` (a plugin card's option may be free text; `value`: a secret card's, sent to its plugin only) | `Item` or `null` |
+| `POST /threads/{id}/model` | `{model, effort}` (`""`: the default; only what its provider offers) | the `note` it adds |
 | `POST /threads/{id}/cancel` | `{}` | `null` |
 | `POST /threads/{id}/close` | `{}` | `null` (400 for a Workflow session: its tool closes it) |
 | `POST /threads/{id}/read` | `{item}`: read up to this id | `null` |

@@ -403,8 +403,9 @@ impl Shed {
         self.cli(&["agents"])
     }
 
-    /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`); with `env`, its
-    /// installed adapter runs as `env K=V <adapter>` (an account's config folder).
+    /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`); with `env` or `picks`,
+    /// its installed adapter runs as `env K=V… <adapter> args…` (an account's config folder; a model or effort's
+    /// `NAME=value` words go before the adapter, the others after it).
     ///
     /// # Errors
     /// [`ShedError::Cli`] when the CLI fails (e.g. the agent isn't installed or the name is taken).
@@ -414,7 +415,7 @@ impl Shed {
         agent: &str,
         cwd: &Path,
         labels: &BTreeMap<String, String>,
-        env: Option<(&str, &Path)>,
+        (env, picks): (Option<(&str, &Path)>, &[String]),
     ) -> Result<TerminalInfo, ShedError> {
         let cwd = cwd.to_string_lossy();
         let mut args = vec!["run", "--acp", agent, "--name", name, "--cwd", &cwd];
@@ -422,23 +423,37 @@ impl Shed {
         for label in &labels {
             args.extend(["--label", label]);
         }
-        let (var, cmd) = match env {
-            Some((k, dir)) => {
-                let installed = self.agents()?.into_iter().find(|a| a.id == agent);
-                let cmd = installed.map(|a| a.cmd).unwrap_or_default();
-                if cmd.is_empty() {
-                    return Err(ShedError::Cli {
-                        args: "agents".to_owned(),
-                        detail: format!("ACP agent {agent} is not installed"),
-                    });
-                }
-                (format!("{k}={}", dir.display()), cmd)
+        let mut vars: Vec<String> = env
+            .map(|(k, dir)| format!("{k}={}", dir.display()))
+            .into_iter()
+            .collect();
+        let is_var = |w: &String| {
+            w.split_once('=').is_some_and(|(k, _)| {
+                !k.is_empty()
+                    && k.bytes()
+                        .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_')
+            })
+        };
+        let (more, after): (Vec<&String>, Vec<&String>) = picks.iter().partition(|w| is_var(w));
+        vars.extend(more.into_iter().cloned());
+        let cmd = if vars.is_empty() && after.is_empty() {
+            Vec::new()
+        } else {
+            let installed = self.agents()?.into_iter().find(|a| a.id == agent);
+            let cmd = installed.map(|a| a.cmd).unwrap_or_default();
+            if cmd.is_empty() {
+                return Err(ShedError::Cli {
+                    args: "agents".to_owned(),
+                    detail: format!("ACP agent {agent} is not installed"),
+                });
             }
-            None => (String::new(), Vec::new()),
+            cmd
         };
         if !cmd.is_empty() {
-            args.extend(["--", "env", &var]);
+            args.extend(["--", "env"]);
+            args.extend(vars.iter().map(String::as_str));
             args.extend(cmd.iter().map(String::as_str));
+            args.extend(after.iter().map(|w| w.as_str()));
         }
         self.cli(&args)
     }

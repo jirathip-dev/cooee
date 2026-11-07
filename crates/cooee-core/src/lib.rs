@@ -13,7 +13,7 @@ mod shed;
 mod store;
 
 pub use accounts::{Account, Accounts, Sheet};
-pub use chat::{Body, Change, Chat, Item, Summary, Turn};
+pub use chat::{Body, Card, Change, Chat, Item, Summary, Turn};
 pub use config::{Config, ConfigError, Perf, Plugin, ROOTS_FIX, save_roots};
 pub use devices::{Claim, Device, Devices, random, sha256, write_private};
 pub use login::{Provider, Status, links, redact};
