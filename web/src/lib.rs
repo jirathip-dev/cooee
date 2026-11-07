@@ -1109,7 +1109,10 @@ pub fn chat_page(
     choices: (Vec<String>, Vec<String>),
     ids: Vec<String>,
 ) -> impl View {
-    view! { cx => chat(thread: thread, turn: turn, profile: profile, choices: choices, ids: ids) }
+    view! {
+        cx =>
+        chat(thread: thread, turn: turn, profile: profile, choices: choices, ids: ids)
+    }
 }
 
 /// A model or effort select (#553 row 34): `name`'s choices, `default` first, `now` selected.
