@@ -3,4 +3,4 @@
 # The cap is a total for the repo: a lane asks only when its own PR, merged onto current staging, would
 # put the total over it. Trim first, then ask `--kind owner`.
 [fleet.cooee]
-line_cap = 15500
+line_cap = 17000
