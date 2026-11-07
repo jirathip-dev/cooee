@@ -67,7 +67,8 @@ pub fn note(
             _ => return None,
         },
         Change::State(t) if t.state == was => return None,
-        Change::State(t) if t.state == "done" && !watched => {
+        // A Workflow session runs unattended: its turns end without a push (#33).
+        Change::State(t) if t.state == "done" && !watched && thread.workflow.is_none() => {
             let reply = chat.items.iter().rev().find_map(|i| match &i.body {
                 Body::Agent { text, .. } => text.lines().find(|l| !l.trim().is_empty()),
                 _ => None,

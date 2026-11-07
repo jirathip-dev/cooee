@@ -43,6 +43,8 @@ struct Shared {
     stopped: BTreeSet<String>,
     gone: BTreeSet<String>,
     agents: BTreeMap<String, Sender<Input>>,
+    /// The terminals a tool started (`lane`), with their labels; every other one is cooee's.
+    lanes: BTreeMap<String, BTreeMap<String, String>>,
 }
 
 /// A plain terminal's program (`run`): its stdin, its output so far, its exit and whether its wait timed out.
@@ -151,6 +153,17 @@ impl FakeShed {
         let options = vec![option("allow"), option("reject")];
         self.emit(name, EventKind::ApprovalRequest { tool, options });
         self.report(name, "blocked", Some("Edit early.rs"));
+    }
+
+    /// Starts ACP terminal `name` as another tool would, with `labels` (a Workflow session, #33).
+    pub fn lane(&self, name: &str, labels: &[(&str, &str)]) {
+        let labels = labels
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()));
+        let mut s = self.shared.lock().unwrap();
+        s.lanes.insert(name.to_owned(), labels.collect());
+        drop(s);
+        self.emit(name, EventKind::Started);
     }
 
     /// Terminal `name` is gone, as after a shed restart.
@@ -277,7 +290,8 @@ impl FakeShed {
     fn emit(&self, name: &str, kind: EventKind) {
         let mut s = self.shared.lock().unwrap();
         s.seq += 1;
-        let labels = BTreeMap::from([("cooee".to_owned(), "1".to_owned())]);
+        let cooee = BTreeMap::from([("cooee".to_owned(), "1".to_owned())]);
+        let labels = s.lanes.get(name).cloned().unwrap_or(cooee);
         let event = Event {
             seq: s.seq,
             name: name.to_owned(),
@@ -288,7 +302,8 @@ impl FakeShed {
         s.ring.push(event);
     }
 
-    fn report(&self, name: &str, state: &str, note: Option<&str>) {
+    /// Terminal `name` reports `state`.
+    pub fn report(&self, name: &str, state: &str, note: Option<&str>) {
         let r = Reported {
             state: state.to_owned(),
             note: note.map(str::to_owned),
@@ -330,7 +345,23 @@ impl FakeShed {
             return Err(RpcError::new(ErrorCode::NoSuchTerminal, name));
         }
         let running = !s.stopped.contains(name);
-        Ok(Self::info(name, running, s.reported.get(name).cloned()))
+        let mut t = Self::info(name, running, s.reported.get(name).cloned());
+        if let Some(labels) = s.lanes.get(name) {
+            t["labels"] = json!(labels);
+        }
+        Ok(t)
+    }
+
+    /// `ls`: the lanes carrying every one of `want` (cooee's own terminals are never listed).
+    fn ls(&self, want: &Value) -> Value {
+        let want = want.as_object().cloned().unwrap_or_default();
+        let all = self.shared.lock().unwrap().lanes.clone();
+        let has = |l: &BTreeMap<String, String>| {
+            want.iter().all(|(k, v)| l.get(k).is_some_and(|x| v == x))
+        };
+        let listed = all.iter().filter(|(_, l)| has(l));
+        let listed = listed.filter_map(|(n, _)| self.terminal(n).ok());
+        json!(listed.collect::<Vec<_>>())
     }
 
     /// The session-ready `wait`: held while `hold-ready` is shut, timed out while `ready-timeout` is.
@@ -381,7 +412,7 @@ impl FakeShed {
                 }
                 "get" => self.terminal(&name),
                 "run" => self.run(&req.params),
-                "ls" => Ok(json!([])),
+                "ls" => Ok(self.ls(&req.params["labels"])),
                 "resize" => Ok(json!({})),
                 "read" => {
                     let procs = self.procs.by_name.lock().unwrap();
