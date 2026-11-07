@@ -11,6 +11,7 @@ use std::{
 use cooee_core::{AGENTS_FIX, Account, Agent, ROOTS_FIX, Sheet, Status, Summary};
 use topcoat::{
     Result,
+    context::Cx,
     view::{View, component, view},
 };
 
@@ -455,11 +456,16 @@ async fn folder_sheet(spots: Vec<Spot>, recent: usize) -> Result<impl View> {
 
 /// The sidebar (from 1024 px): [+ new thread] (`cur` `new`: the composer's own page), then a folder per project,
 /// the folders by their newest thread, each foldable: its rows (the state dot, the title, the age), the open
-/// thread's (`cur`) marked.
+/// thread's (`cur`) marked; under the device's chip (#33), as the list is.
 #[component]
-pub async fn side(rows: Vec<Summary>, cur: String) -> Result<impl View> {
+pub async fn side(cx: &Cx, rows: Vec<Summary>, cur: String) -> Result<impl View> {
+    let list = crate::chip(cx);
     let mut groups: Vec<(PathBuf, Vec<Summary>)> = Vec::new();
     for r in rows {
+        if (list == "chats" && r.workflow.is_some()) || (list == "workflow" && r.workflow.is_none())
+        {
+            continue;
+        }
         match groups.iter_mut().find(|(f, _)| *f == r.folder) {
             Some((_, list)) => list.push(r),
             None => groups.push((r.folder.clone(), vec![r])),

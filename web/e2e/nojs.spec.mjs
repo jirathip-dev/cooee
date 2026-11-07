@@ -17,10 +17,18 @@ test("with no script the look sheet, Settings and the new thread's chips' sheets
   await open.locator("[data-k=style][data-v=terminal]").click();
   await expect(page.locator("html")).toHaveAttribute("data-style", "terminal");
   await expect(page.locator("body")).toHaveCSS("font-family", /monospace/);
+  // #35: Figures none posts too, and the page drawn for it doesn't list Scene.
+  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await expect(open.getByRole("radiogroup", { name: "style" }).getByRole("radio")).toHaveText(["modern", "terminal", "scene"]);
+  await open.locator("[data-k=figures][data-v=none]").click();
+  await expect(page.locator("html")).toHaveAttribute("data-figures", "none");
+  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await expect(open.getByRole("radiogroup", { name: "style" }).getByRole("radio")).toHaveText(["modern", "terminal"]);
+  await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "settings" }).click();
   await expect(open).toHaveAttribute("id", "sh-settings");
-  await expect(open.locator(".sv")).toHaveText(["terminal", "on", "farm", "system · dark now", "dark farm · light farm"]);
+  await expect(open.locator(".sv")).toHaveText(["terminal", "none", "farm", "system · dark now", "dark farm · light farm"]);
   await shot(page, info, "nojs-settings");
   await page.keyboard.press("Escape");
   await expect(open).toHaveCount(0);

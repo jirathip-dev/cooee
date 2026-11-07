@@ -1,5 +1,6 @@
 //! The threads, live: each thread's chat, its numbered page events (kept in a ring for replay) and their
-//! subscribers, fed by one shed `events` stream for every cooee terminal.
+//! subscribers, fed by one shed `events` stream for every terminal: cooee's own, and the Workflow sessions other
+//! tools start, known by their labels (#33).
 
 use std::{
     collections::{BTreeMap, VecDeque},
@@ -12,8 +13,8 @@ use std::{
 
 use cooee_core::{
     Agent, Body, Change, Chat, Item, Plugin, Shed, ShedError, Store, StoreError, Summary, Thread,
-    Turn,
-    shed_proto::{self, ApprovalOption, Event},
+    Turn, Workflow,
+    shed_proto::{self, ApprovalOption, Event, TerminalInfo},
 };
 use serde::Serialize;
 use serde_json::json;
@@ -309,6 +310,10 @@ impl Hub {
                 thread::sleep(TICK);
                 *lock(&ticker.agents) = ticker.shed.agents().map_err(|e| e.to_string());
                 ticker.watch(now());
+                let at = now();
+                if let Ok(terminals) = ticker.shed.ls(BTreeMap::new()) {
+                    ticker.prune(&terminals, at);
+                }
             }
         });
         Ok(hub)
@@ -329,6 +334,13 @@ impl Hub {
     /// thread. Returns the oldest applied shed event among the attached, to replay from.
     fn reattach(&self) -> Result<Option<u64>, ShedError> {
         self.shed.hello()?;
+        let (at, terminals) = (now(), self.shed.ls(BTreeMap::new())?);
+        self.prune(&terminals, at);
+        for t in &terminals {
+            if !self.all().iter().any(|l| lock(l).meta.terminal == t.name) {
+                self.adopt(t);
+            }
+        }
         let mut since: Option<u64> = None;
         for live in self.all() {
             let mut live = lock(&live);
@@ -361,16 +373,65 @@ impl Hub {
         Ok(since)
     }
 
-    /// Follows shed's events for every cooee terminal, for ever: re-attaches, subscribes, applies; on a break,
-    /// waits a second and does it again from the last event seen.
+    /// Lists Workflow session `t` (#33) as a thread, stored so its rows outlive a restart; `None` if it isn't one.
+    fn adopt(&self, t: &TerminalInfo) -> Option<Arc<Mutex<Live>>> {
+        let workflow = Workflow::from_labels(&t.labels).filter(|_| t.acp.is_some())?;
+        let safe = |c: char| c.is_ascii_alphanumeric() || c == '-' || c == '_';
+        let id: String = format!("w-{}", t.name)
+            .chars()
+            .map(|c| if safe(c) { c } else { '_' })
+            .take(64)
+            .collect();
+        let title = format!("{} {}", workflow.group, workflow.item);
+        let meta = Thread {
+            id: id.clone(),
+            title: Some(title.trim())
+                .filter(|t| !t.is_empty())
+                .unwrap_or(&t.name)
+                .to_owned(),
+            agent: t.acp.clone().unwrap_or_default(),
+            folder: Some(t.cwd.clone()),
+            terminal: t.name.clone(),
+            workflow: Some(workflow),
+            ..Thread::default()
+        };
+        if let Err(e) = self.store.save(&meta) {
+            eprintln!("cooee: {e}");
+            return None;
+        }
+        let live = Arc::new(Mutex::new(Live::new(meta, Chat::default())));
+        lock(&self.threads).insert(id, Arc::clone(&live));
+        Some(live)
+    }
+
+    /// Drops the Workflow sessions whose terminal is not among `terminals` (listed at `at`): the tool that started
+    /// them cleaned them up (#33). One adopted since the listing stays.
+    pub fn prune(&self, terminals: &[TerminalInfo], at: u64) {
+        for live in self.all() {
+            let id = {
+                let live = lock(&live);
+                let listed = terminals.iter().any(|t| t.name == live.meta.terminal);
+                if live.meta.workflow.is_none() || listed || live.moved > at {
+                    continue;
+                }
+                live.meta.id.clone()
+            };
+            lock(&self.threads).remove(&id);
+            if let Err(e) = self.store.remove(&id) {
+                eprintln!("cooee: {e}");
+            }
+        }
+    }
+
+    /// Follows shed's events for every terminal, for ever: re-attaches, subscribes, applies; on a break, waits a
+    /// second and does it again from the last event seen.
     fn follow(&self) {
         let mut last: Option<u64> = None;
         let mut said = String::new();
         loop {
-            let labels = BTreeMap::from([(LABEL.to_owned(), "1".to_owned())]);
             let stream = self
                 .reattach()
-                .and_then(|since| self.shed.events(labels, last.or(since)));
+                .and_then(|since| self.shed.events(BTreeMap::new(), last.or(since)));
             match stream {
                 Ok(events) => {
                     said.clear();
@@ -389,12 +450,16 @@ impl Hub {
         }
     }
 
-    /// Applies one shed event to the thread whose terminal it names.
+    /// Applies one shed event to the thread whose terminal it names; a new Workflow session's first is listed.
     pub fn apply(&self, event: Event) {
         let found = self
             .all()
             .into_iter()
-            .find(|l| lock(l).meta.terminal == event.name);
+            .find(|l| lock(l).meta.terminal == event.name)
+            .or_else(|| {
+                Workflow::from_labels(&event.labels)?;
+                self.adopt(&self.shed.get(&event.name).ok()?)
+            });
         let Some(live) = found else { return };
         let mut live = lock(&live);
         if event.seq <= live.applied {
@@ -409,6 +474,23 @@ impl Hub {
             "working".clone_into(&mut live.chat.turn.state);
             live.chat.turn.note = None;
             changes.push(Change::State(live.chat.turn.clone()));
+        }
+        // A Workflow session's prompts come from its tool: shown as the owner's own are (#33).
+        if let (Some(_), shed_proto::EventKind::Turn { prompt }) =
+            (&live.meta.workflow, &event.kind)
+        {
+            let own = live
+                .chat
+                .items
+                .last()
+                .is_some_and(|i| matches!(&i.body, Body::You { text, .. } if text == prompt));
+            if !own {
+                let body = Body::You {
+                    text: prompt.clone(),
+                    random_id: String::new(),
+                };
+                changes.push(Change::Item(live.chat.push(now(), event.seq, body)));
+            }
         }
         changes.extend(live.chat.apply(now(), event.seq, event.kind));
         if let Err(e) = live.publish(self, changes) {
@@ -899,6 +981,11 @@ impl Hub {
     pub fn close(&self, id: &str) -> Result<(), HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
+        if live.meta.workflow.is_some() {
+            return Err(HubError::Refused(
+                "the tool that started this session closes it".to_owned(),
+            ));
+        }
         self.shed.close(&live.meta.terminal)?;
         live.meta.closed = true;
         self.store.save(&live.meta)?;
@@ -952,6 +1039,7 @@ impl Hub {
                     last: text.lines().last().unwrap_or("").chars().take(80).collect(),
                     at: last.map_or(0, |i| i.at),
                     unread: last.is_some_and(|i| live.meta.read.is_none_or(|r| r < i.id)),
+                    workflow: live.meta.workflow.clone(),
                 }
             })
             .collect();
@@ -1169,5 +1257,27 @@ mod tests {
         assert_eq!(hub.list()[0].state, "blocked");
         hub.apply(event("idle", 2, EventKind::Text { text: "w".into() }));
         assert_eq!(state(&hub).state, "working");
+    }
+
+    /// #33: a Workflow session whose terminal shed no longer lists is dropped (its files too); one that moved since
+    /// the listing and the owner's own chats stay.
+    #[test]
+    fn prune_drops_only_the_workflow_sessions_shed_no_longer_lists() {
+        let dir = scratch("prune");
+        seed(&dir, "mine", "");
+        let threads = dir.join("data/threads");
+        for id in ["gone", "new"] {
+            let meta = json!({ "format": 1, "thread": { "id": id, "title": id, "messages": [], "terminal": format!("cooee-{id}"), "workflow": { "source": "tool" } } });
+            fs::write(threads.join(format!("{id}.json")), meta.to_string()).unwrap();
+        }
+        let hub = hub(&dir);
+        let at = now();
+        std::thread::sleep(Duration::from_millis(2));
+        hub.apply(event("new", 1, EventKind::Text { text: "w".into() }));
+        hub.prune(&[], at);
+        let ids: Vec<String> = hub.list().into_iter().map(|r| r.id).collect();
+        assert_eq!(ids.len(), 2, "{ids:?}");
+        assert!(ids.contains(&"mine".to_owned()) && ids.contains(&"new".to_owned()));
+        assert!(!threads.join("gone.json").exists());
     }
 }

@@ -76,13 +76,23 @@ async fn head(which: &str) -> Result<impl View> {
     })
 }
 
-/// A key's values as one radio group (`cur` checked).
+/// A key's values as one radio group (`cur` checked); one not in `shown` is hidden (`look.ts` shows it once offered).
 #[component]
-async fn seg(k: &str, list: Vec<&'static str>, cur: String) -> Result<impl View> {
+async fn seg(
+    k: &str,
+    list: Vec<&'static str>,
+    cur: String,
+    #[default] shown: Option<Vec<&'static str>>,
+) -> Result<impl View> {
+    let list: Vec<(&str, bool)> = list
+        .into_iter()
+        .map(|v| (v, shown.as_ref().is_some_and(|s| !s.contains(&v))))
+        .collect();
     Ok(view! {
         <div class="seg" role="radiogroup" aria-label=(k)>
-            for v in list {
+            for (v, hidden) in list {
                 <button
+                    hidden=(hidden)
                     type="submit"
                     role="radio"
                     name=(k)
@@ -165,7 +175,7 @@ async fn colours(cx: &Cx, m: &str, showing: String) -> Result<impl View> {
     })
 }
 
-/// The look sheet: STYLE, SPRITES, THEME, APPEARANCE and the dark and light COLOURS.
+/// The look sheet: STYLE, FIGURES (Scene and Sprite only where offered), THEME, APPEARANCE and the dark and light COLOURS.
 #[component]
 async fn look_sheet(cx: &Cx) -> Result<impl View> {
     let look = shown(cx);
@@ -195,16 +205,18 @@ async fn look_sheet(cx: &Cx) -> Result<impl View> {
                     <span>"style"</span>
                     seg(
                         k: "style",
-                        list: vec!["modern", "terminal"],
-                        cur: look.style().to_owned()
+                        list: vec!["modern", "terminal", "scene"],
+                        cur: look.style().to_owned(),
+                        shown: Some(look.styles())
                     )
                 </div>
                 <div class="lrw">
-                    <span>"sprites"</span>
+                    <span>"figures"</span>
                     seg(
-                        k: "sprites",
-                        list: vec!["on", "ascii", "off"],
-                        cur: look.figs().to_owned()
+                        k: "figures",
+                        list: vec!["sprite", "ascii", "none"],
+                        cur: look.figures().to_owned(),
+                        shown: Some(look.figure_list())
                     )
                 </div>
                 <p class="ch">"theme"</p>
@@ -308,7 +320,7 @@ async fn settings(cx: &Cx) -> Result<impl View> {
                 </button>
                 <p class="ch" id="s-look">"look"</p>
                 look_row(k: "style", v: look.style().to_owned())
-                look_row(k: "sprites", v: look.figs().to_owned())
+                look_row(k: "figures", v: look.figures().to_owned())
                 look_row(k: "theme", v: look.theme().label.clone())
                 look_row(k: "appearance", v: appearance)
                 look_row(k: "colours", v: both)
@@ -358,7 +370,7 @@ struct Tap {
     theme: Option<String>,
     mode: Option<String>,
     style: Option<String>,
-    sprites: Option<String>,
+    figures: Option<String>,
     dark: Option<String>,
     light: Option<String>,
 }
@@ -369,7 +381,7 @@ pub async fn look_set(cx: &Cx, Form(t): Form<Tap>) -> Result<Response> {
         ("theme", &t.theme),
         ("mode", &t.mode),
         ("style", &t.style),
-        ("sprites", &t.sprites),
+        ("figures", &t.figures),
         ("dark", &t.dark),
         ("light", &t.light),
     ];
