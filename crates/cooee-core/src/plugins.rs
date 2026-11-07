@@ -10,7 +10,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::Plugin;
+use crate::{Plugin, profiles::Profile};
 
 /// `cooee-plugin.toml`: what a plugin is, builds with and runs.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -29,6 +29,9 @@ pub struct Manifest {
     /// The tools it needs on `PATH`.
     #[serde(default)]
     pub needs: Vec<String>,
+    /// The agent profiles it brings, their paths in its checkout.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub profiles: Vec<Profile>,
 }
 
 /// One tab of a plugin: its `[[plugins]]` entry's name, label and UI module.
@@ -139,6 +142,10 @@ impl Manifest {
         if m.tabs.is_empty() {
             return Err(bad("cooee-plugin.toml: a plugin needs at least one tab"));
         }
+        for p in &m.profiles {
+            p.check()
+                .map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
+        }
         Ok(m)
     }
 }
@@ -147,6 +154,12 @@ impl Manifest {
 #[must_use]
 pub fn lock_path(data: &Path) -> PathBuf {
     data.join("plugins.lock")
+}
+
+/// Plugin `name`'s build at `commit`: `<data>/plugins/<name>/builds/<commit>`.
+#[must_use]
+pub fn build_dir(data: &Path, name: &str, commit: &str) -> PathBuf {
+    data.join("plugins").join(name).join("builds").join(commit)
 }
 
 /// `<data>/plugins/plugins.toml`, the installed plugins' `[[plugins]]` entries.
@@ -231,6 +244,10 @@ mod tests {
         assert_eq!(Manifest::parse(ok).unwrap().tabs[0].label, "X");
         assert!(Manifest::parse(&ok.replace("\"x\"\nversion", "\"X\"\nversion")).is_err());
         assert!(Manifest::parse(ok.split("[[tabs]]").next().unwrap()).is_err());
+        let with =
+            |p: &str| format!("{ok}[[profiles]]\nname = {p:?}\nlabel = \"C\"\nagent = \"a\"\n");
+        assert_eq!(Manifest::parse(&with("c")).unwrap().profiles[0].label, "C");
+        assert!(Manifest::parse(&with("C!")).is_err());
     }
 
     #[test]
