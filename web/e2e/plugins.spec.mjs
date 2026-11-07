@@ -40,7 +40,7 @@ test("the example plugin's tab: proxied calls with its token, its stream, a push
   const card = chat.locator(".blk.ap", { hasText: "Ship it?" });
   await expect(card.locator(".k")).toHaveText("hello");
   await card.getByRole("button", { name: "yes" }).click();
-  await expect(card.locator(".ans")).toHaveText("✓ yes");
+  await expect(card.locator(".ans")).toHaveText(/^✓ yes · .+ · \d{1,2}:\d\d/);
   await expect(tab.getByText('choice: "yes"').first()).toBeVisible();
 });
 

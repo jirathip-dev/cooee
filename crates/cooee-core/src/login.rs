@@ -13,7 +13,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 /// A provider the sign-ins sheet lists: its CLI's own login, logout and read-only status commands.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Provider {
     /// Its name on the sheet (`claude`); also part of its login terminal's name and its accounts' folder.
@@ -34,6 +34,19 @@ pub struct Provider {
     /// The logout command.
     #[serde(default)]
     pub logout: Vec<String>,
+    /// The models a thread may pick (#553 row 34).
+    #[serde(default)]
+    pub models: Vec<String>,
+    /// The words that start its agent on a model: `{}` is the pick; a `NAME=value` word goes to its environment,
+    /// any other after its command.
+    #[serde(default)]
+    pub model: Vec<String>,
+    /// The efforts a thread may pick.
+    #[serde(default)]
+    pub efforts: Vec<String>,
+    /// The words for an effort, as `model`.
+    #[serde(default)]
+    pub effort: Vec<String>,
 }
 
 impl Provider {
@@ -53,9 +66,10 @@ impl Provider {
             install: format!("npm install -g {npm}"),
             home: home.to_owned(),
             logout: v(logout),
+            ..Self::default()
         };
         let creds = "\"${GEMINI_CLI_HOME:-$HOME}/.gemini/oauth_creds.json\"";
-        vec![
+        let mut list = vec![
             p(
                 "claude",
                 "claude-acp",
@@ -93,7 +107,33 @@ impl Provider {
                 "@google/gemini-cli",
                 "GEMINI_CLI_HOME",
             ),
-        ]
+        ];
+        let v = |a: &[&str]| -> Vec<String> { a.iter().map(|s| (*s).to_owned()).collect() };
+        list[0].models = v(&["opus", "sonnet", "haiku"]);
+        list[0].model = v(&["ANTHROPIC_MODEL={}"]);
+        list[1].efforts = v(&["low", "medium", "high"]);
+        list[1].effort = v(&["-c", "model_reasoning_effort={}"]);
+        list
+    }
+
+    /// The words that start its agent on `model` and `effort` (empty: its own default); `None` when it offers no
+    /// such pick.
+    #[must_use]
+    pub fn picks(&self, model: &str, effort: &str) -> Option<Vec<String>> {
+        let mut words = Vec::new();
+        for (pick, offered, template) in [
+            (model, &self.models, &self.model),
+            (effort, &self.efforts, &self.effort),
+        ] {
+            if pick.is_empty() {
+                continue;
+            }
+            if !offered.iter().any(|o| o == pick) {
+                return None;
+            }
+            words.extend(template.iter().map(|w| w.replace("{}", pick)));
+        }
+        Some(words)
     }
 
     /// The variable and folder that point its CLI at the account in `home` (none for the system default).
@@ -347,6 +387,22 @@ mod tests {
         );
     }
 
+    /// #553 row 34: a pick's words, `{}` filled in; nothing for the defaults; `None` for a pick not offered.
+    #[test]
+    fn picks_fill_the_providers_words() {
+        let codex = &Provider::defaults()[1];
+        assert_eq!(
+            codex.picks("", "high"),
+            Some(vec![
+                "-c".to_owned(),
+                "model_reasoning_effort=high".to_owned()
+            ])
+        );
+        assert_eq!(codex.picks("", ""), Some(Vec::new()));
+        assert_eq!(codex.picks("", "max"), None);
+        assert_eq!(codex.picks("opus", ""), None);
+    }
+
     #[test]
     fn status_from_the_exit_code_and_output() {
         let p = |status: &str| Provider {
@@ -357,6 +413,7 @@ mod tests {
             install: "npm install -g p".to_owned(),
             home: "COOEE_TEST_HOME".to_owned(),
             logout: Vec::new(),
+            ..Provider::default()
         };
         let s = p("echo '  Logged in\n  as owner'").check(None);
         assert_eq!((s.signed_in, s.line.as_str()), (true, "Logged in as owner"));

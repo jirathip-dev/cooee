@@ -276,13 +276,13 @@ test("row 10: a theme with moments plays one when a turn ends live; terminal pla
 test("row 12: ascii figures replace the sprites and stay", async ({ page }, info) => {
   await page.goto("/");
   await page.getByRole("button", { name: "look: theme and colours" }).click();
-  await page.locator('#sheet [data-k="sprites"][data-v="ascii"]').click();
+  await page.locator('#sheet [data-k="figures"][data-v="ascii"]').click();
   await page.keyboard.press("Escape");
   await expect(page.locator(".tp .rsp")).toHaveCount(0);
   expect(await page.locator(".tp .rsa").count()).toBeGreaterThan(0);
-  await expect(page.locator(".tp .rsa").first()).toHaveText(/^\S{3}$/);
+  await expect(page.locator(".tp .rsa b").first()).toHaveText(/^\S{3}$/);
   await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-sprites", "ascii");
+  await expect(page.locator("html")).toHaveAttribute("data-figures", "ascii");
   await shot(page, info, "parity-12-ascii");
   await audit(page);
 });

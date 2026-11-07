@@ -48,7 +48,7 @@ One thread is one ACP session on [shed](https://github.com/jirathip-dev/shed): `
 cooee-<id> --label cooee=1 --label cooee.thread=<id> --cwd <folder>` (the CLI, as are `shed agents`; the socket has
 no method for them). Everything else goes over shed's socket, one connection per request, each opening with the exact
 `hello` of the pinned `shed-proto` (another version is refused with both versions named). Prompts, approvals and
-cancels are framed `send`s, as `shed send|approve|cancel` do. One `events` stream (label `cooee=1`) feeds every thread;
+cancels are framed `send`s, as `shed send|approve|cancel` do. One `events` stream (every terminal; cooee's carry `cooee=1`) feeds every thread;
 after a restart cooee re-attaches each open thread to its terminal by name and replays from the last event it applied.
 
 A new thread is stored and listed before shed starts its agent, so an ask that comes during the start is shown, and its
@@ -64,6 +64,20 @@ Each shed event maps to items through one exhaustive `match` (`cooee-core/src/ch
 reconnects with `Last-Event-ID` gets exactly what it missed, and one from another run or too far behind gets `reset`
 and reloads. Its first slice (`/threads/<id>/messages?around=&before=&after=`) carries the cursor it is current to,
 taken under the thread's lock with the subscription, so nothing is lost or doubled.
+
+## Workflow (#33)
+
+The thread list is one list from two sources, filtered by the chips All · Chats · Workflow (kept per device in the
+`cooee-list` cookie; a tap posts `POST /list`, so it needs no script). **Chats** are the sessions the owner starts.
+**Workflow** is any ACP session another tool started in shed, known only by its labels: `source` (the tool),
+`group` (its repo), `item` (`#issue`), `role`, `round` and an optional `url`; one carrying a `cooee…` label is
+cooee's own. cooee's one `events` stream follows every terminal: a new session's first event lists it (and at
+start, `shed ls` lists the ones already running, replayed from shed's kept events), stored like a thread as
+`w-<terminal>` so its rows outlive a restart. Its card is per source: needs-you first, then working, then the newest;
+the finished (`done`, `ended`) fold under "done today", and a session goes once shed no longer lists it (checked at
+start and every 30 s). It opens as a normal chat with its role, round and a link to its `url`; the tool's prompts
+show as messages, the reply box and [stop] reach its terminal, and only its tool closes it. Its turns end without a
+push (approvals and errors still push).
 
 ## Pairing and push (M2)
 
@@ -165,7 +179,7 @@ for the owner to run. `cooee doctor` checks the service, port, shed, push key an
 | `shed` | `shed` | The `shed` binary. |
 | `shed_dir` | shed's per-user server | shed's `--dir` (its socket `shed.sock` and state). |
 | `data` | `$XDG_DATA_HOME/cooee/<instance>`, else `~/.local/share/cooee/<instance>` | Where threads, devices and push subscriptions are stored. |
-| `providers` | Claude Code, Codex, Gemini | The sign-ins: `[[providers]]` with `name`, `agent` (its ACP agent id), `login`, `status` and `logout` (commands, as arrays), `install` and `home` (the CLI's config-folder variable; without it only the system default account). Setting it replaces the defaults. |
+| `providers` | Claude Code, Codex, Gemini | The sign-ins: `[[providers]]` with `name`, `agent` (its ACP agent id), `login`, `status` and `logout` (commands, as arrays), `install` and `home` (the CLI's config-folder variable; without it only the system default account). `models` and `efforts` are the picks a thread offers; `model` and `effort` the words that start its agent on one (`{}` is the pick; `NAME=value` goes in its environment, the rest after its command): Claude `ANTHROPIC_MODEL={}`, Codex `-c model_reasoning_effort={}`. A pick applies when the agent starts (shed can't change a running session's model yet). Setting it replaces the defaults. |
 | `theme` | `farm` | The theme a device shows until it picks its own ([themes.md](themes.md)); own themes and schemes live in `themes/` and `schemes/` beside the config file. |
 | `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |
 | `plugin_index` | the built-in `plugins/index.toml` | The plugin index `cooee plugin add <name>` and Settings › Plugins list ([plugins.md](plugins.md)). |
@@ -178,6 +192,6 @@ stream is open and amber while it reconnects. Every action answers with a short 
 app coming back after 30 s or the network returning reload the page's data. Settings has an index and deep links
 (`#settings/<section>`): sign-ins, look, alerts (truthful: on only when the server keeps this browser's subscription for
 this device; `POST /push/test` alerts this device only, `POST /push/unsubscribe` turns it off), devices, and report
-mode (`POST /report` to `<data>/reports.jsonl`, listed by `cooee reports`). Sprites are `on`, `ascii` or `off`; a theme
+mode (`POST /report` to `<data>/reports.jsonl`, listed by `cooee reports`). Figures are `sprite`, `ascii` or `none` (#35); a theme
 with moments plays them on the thread bar.
 

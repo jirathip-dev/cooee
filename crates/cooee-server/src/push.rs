@@ -67,7 +67,8 @@ pub fn note(
             _ => return None,
         },
         Change::State(t) if t.state == was => return None,
-        Change::State(t) if t.state == "done" && !watched => {
+        // A Workflow session runs unattended: its turns end without a push (#33).
+        Change::State(t) if t.state == "done" && !watched && thread.workflow.is_none() => {
             let reply = chat.items.iter().rev().find_map(|i| match &i.body {
                 Body::Agent { text, .. } => text.lines().find(|l| !l.trim().is_empty()),
                 _ => None,
@@ -590,6 +591,7 @@ mod tests {
                     tapped: tapped.map(str::to_owned),
                     chosen: None,
                     plugin: None,
+                    card: cooee_core::Card::default(),
                 },
             })
         };
@@ -602,7 +604,7 @@ mod tests {
         };
         let t = thread();
         let (looks, _) = cooee_web::Looks::load(None, None);
-        let (farm, terminal) = (&looks.themes["farm"], &looks.themes["terminal"]);
+        let (farm, plain) = (&looks.themes["farm"], &looks.themes["plain"]);
         assert_eq!(
             note(&t, &chat, &approval(None), "working", true, farm),
             Some(n("at the gate · needs you · codex: Edit src/lib.rs", 3))
@@ -631,7 +633,7 @@ mod tests {
                 &turn("error", Some("rate limited")),
                 "working",
                 true,
-                terminal
+                plain
             ),
             Some(n("failed · codex: rate limited", 2))
         );

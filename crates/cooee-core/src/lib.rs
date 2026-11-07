@@ -12,10 +12,10 @@ mod shed;
 mod store;
 
 pub use accounts::{Account, Accounts, Sheet};
-pub use chat::{Body, Change, Chat, Item, Summary, Turn};
+pub use chat::{Body, Card, Change, Chat, Item, Summary, Turn};
 pub use config::{Config, ConfigError, Plugin, ROOTS_FIX, save_roots};
 pub use devices::{Asking, Claim, Device, Devices, Passkey, label, random, sha256, write_private};
 pub use login::{Provider, Status, links, redact};
 pub use shed::{AGENTS_FIX, Agent, Shed, ShedError};
 pub use shed_proto;
-pub use store::{FORMAT, Message, Role, Store, StoreError, Thread};
+pub use store::{FORMAT, Message, Role, Store, StoreError, Thread, Workflow};

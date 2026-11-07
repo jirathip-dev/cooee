@@ -69,17 +69,60 @@ pub enum Body {
         /// A plugin's choice card: the plugin that asked, which gets the answer instead of shed.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         plugin: Option<String>,
+        /// Who answered and when, and a plugin card's form.
+        #[serde(flatten, default)]
+        card: Card,
     },
     /// The agent's plan.
     Plan {
         /// The entries (`content`, `priority`, `status`).
         entries: Vec<Value>,
     },
+    /// A line linked to another thread (#553 row 35): a handoff's `continued in`, or a line `from` it.
+    Link {
+        /// The line.
+        text: String,
+        /// The other thread's id.
+        thread: String,
+        /// Its title.
+        title: String,
+        /// Whether it points onward (`continued in`) rather than back (`from`).
+        #[serde(default)]
+        out: bool,
+    },
+    /// A line from cooee itself (`model sonnet · effort low from the next start`).
+    Note {
+        /// The line.
+        text: String,
+    },
     /// The session ended (the agent exited, or the thread was closed).
     Ended {
         /// Why.
         text: String,
     },
+}
+
+/// An approval's answer and a plugin card's form (#553 rows 30–33); every field is optional.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Card {
+    /// Who answered: the device's label, or the plugin's own (a conductor's answer).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub by: Option<String>,
+    /// When it was answered, in Unix milliseconds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub answered: Option<u64>,
+    /// `config` (a diff to apply or discard), `secret` (a masked value) or `thread` (pick a thread); none: choices.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub form: Option<String>,
+    /// A config card's diff, or a secret card's name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+    /// The plugin's line once settled (`applied, doctor ✓`), or why it can't be answered (`stale: …`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub line: Option<String>,
+    /// Until when a conductor's answer may be changed, in Unix milliseconds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub until: Option<u64>,
 }
 
 /// The turn in progress: what the page shows beyond the committed items.
@@ -113,6 +156,9 @@ pub struct Summary {
     pub at: u64,
     /// Whether it has items the owner hasn't seen.
     pub unread: bool,
+    /// A session a tool started (#33): its labels.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub workflow: Option<crate::Workflow>,
 }
 
 /// What applying an event changed, for the page.
@@ -279,6 +325,7 @@ impl Chat {
                     tapped: None,
                     chosen: None,
                     plugin: None,
+                    card: Card::default(),
                 };
                 vec![Change::Item(self.push(at, seq, body))]
             }
@@ -330,25 +377,35 @@ impl Chat {
         changes
     }
 
-    /// Records the owner's tap of `option` on approval `id`. `None` when it isn't an approval or was already
-    /// tapped or answered, so the tap must not be sent again.
-    pub fn tap(&mut self, id: u64, option: &str) -> Option<Item> {
-        let open = |b: &Body| {
-            matches!(
-                b,
-                Body::Approval {
-                    tapped: None,
-                    chosen: None,
-                    ..
-                }
-            )
+    /// Records `by`'s tap of `option` on approval `id` at `now`. `None` when it isn't an approval or was already
+    /// tapped or answered, so the tap must not be sent again; a conductor's answer is open to a change until its
+    /// `until`.
+    pub fn tap(&mut self, id: u64, option: &str, by: &str, now: u64) -> Option<Item> {
+        let open = |b: &Body| match b {
+            Body::Approval {
+                tapped: None,
+                chosen,
+                card,
+                ..
+            } => chosen.is_none() || card.until.is_some_and(|u| now < u),
+            _ => false,
         };
         if !self.items.iter().any(|i| i.id == id && open(&i.body)) {
             return None;
         }
         self.update(id, 0, |b| {
-            if let Body::Approval { tapped, .. } = b {
+            if let Body::Approval {
+                tapped,
+                chosen,
+                card,
+                ..
+            } = b
+            {
                 *tapped = Some(option.to_owned());
+                *chosen = None;
+                card.by = Some(by.to_owned());
+                card.answered = Some(now);
+                card.until = None;
             }
         })
     }
@@ -365,6 +422,7 @@ mod tests {
             tapped: None,
             chosen: None,
             plugin: plugin.map(str::to_owned),
+            card: Card::default(),
         }
     }
 
@@ -383,6 +441,42 @@ mod tests {
             (chosen(card), chosen(ask)),
             (None, Some("allow".to_owned()))
         );
+    }
+
+    /// #553 row 31: a conductor's answer takes the owner's change until its `until`, then none; an owner's own
+    /// answer takes no second tap.
+    #[test]
+    fn a_conductors_answer_may_be_changed_for_its_window_only() {
+        let mut chat = Chat::default();
+        let mut body = approval(Some("drover"));
+        if let Body::Approval { chosen, card, .. } = &mut body {
+            *chosen = Some("yes".to_owned());
+            card.until = Some(100);
+        }
+        let late = chat.push(1, 0, body.clone()).id;
+        let id = chat.push(1, 0, body).id;
+        assert!(chat.tap(late, "no", "iPhone", 100).is_none(), "too late");
+        let changed = chat.tap(id, "no", "iPhone", 99).unwrap();
+        let Body::Approval {
+            tapped,
+            chosen,
+            card,
+            ..
+        } = changed.body
+        else {
+            unreachable!()
+        };
+        assert_eq!(
+            (
+                tapped.as_deref(),
+                chosen,
+                card.by.as_deref(),
+                card.answered,
+                card.until
+            ),
+            (Some("no"), None, Some("iPhone"), Some(99), None)
+        );
+        assert!(chat.tap(id, "yes", "iPhone", 99).is_none(), "once");
     }
 
     /// R6 (herdsman#447): folding 30,000 stored versions of 1,000 rows (a thread's load) takes under 300 ms: each
