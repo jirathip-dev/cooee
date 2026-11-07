@@ -1,5 +1,5 @@
 {
-  "label": "terminal",
+  "label": "plain",
   "scheme": { "dark": "github-dark", "light": "paper" },
   "sprites": false,
   "moments": false,
