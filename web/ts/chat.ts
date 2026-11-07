@@ -366,7 +366,9 @@ document.addEventListener("click", (e) => {
   if (!b?.dataset.copy) return;
   navigator.clipboard?.writeText(b.dataset.copy).then(
     () => {
+      const was = b.textContent;
       b.textContent = "copied";
+      setTimeout(() => (b.textContent = was), 1500);
     },
     () => {},
   );

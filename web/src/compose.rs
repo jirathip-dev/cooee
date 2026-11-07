@@ -626,7 +626,7 @@ pub async fn providers_sheet(providers: Vec<Sheet>) -> Result<impl View> {
                                 type="button"
                                 class="sec"
                                 data-copy=(sheet.provider.install.clone())
-                                aria-label=(format!("copy {}", sheet.provider.install))
+                                title=(sheet.provider.install.clone())
                             >
                                 "copy install"
                             </button>

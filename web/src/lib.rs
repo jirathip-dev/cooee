@@ -938,7 +938,7 @@ async fn chat(
                             )
                         </div>
                     }
-                    <form class="tw" id="composer">
+                    <form class="tw nc" id="composer">
                         <div class="pill" id="pill" hidden=(true)>
                             <span id="pst" data-st="working" data-plain="">(pill)</span>
                             <span id="el">"0:00"</span>

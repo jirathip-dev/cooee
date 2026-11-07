@@ -40,7 +40,7 @@ function audit(composer) {
   for (const e of document.querySelectorAll("body *")) {
     if (!shown(e)) continue;
     const r = e.getBoundingClientRect(), s = getComputedStyle(e);
-    if (e.matches(".chip, :is(.nc,.acr,.lg) button:not(.sr,.gl), :is(.pop,.lg) :is(input:not([type=radio]), select), .nc textarea")) {
+    if (e.matches(".chip, :is(.nc,.acr,.lg) button:not(.sr,.gl,.stop), :is(.pop,.lg) :is(input:not([type=radio]), select), .nc textarea")) {
       if (!near(r.height, CTL)) bad.push(`control ${r.height}px, not --ctl ${CTL} · ${name(e)}`);
       if (!near(parseFloat(s.borderTopLeftRadius), RC)) bad.push(`radius ${s.borderTopLeftRadius}, not --r-ctl ${RC} · ${name(e)}`);
       const want = e.matches("input,textarea,select") ? 16 : FS;
@@ -160,6 +160,18 @@ test("send opens the chat at once with the loading line, which the reply replace
     await expect(page.locator("#st")).toHaveText("saddling up");
     await expect(page.locator(".tb .ds")).toContainText(`${who} · `);
     expect(await page.evaluate(audit, false)).toEqual([]);
+    // The chat's composer is on the same scale as /new's, so nothing jumps on send; the bar's word is amber, as the line's.
+    const got = await page.evaluate(() => {
+      const cs = getComputedStyle(document.documentElement), v = (k) => cs.getPropertyValue(k).trim();
+      const box = [...document.querySelectorAll("#composer :is(textarea, button[type=submit])")].map((e) => {
+        const s = getComputedStyle(e);
+        return [e.getBoundingClientRect().height, s.borderTopLeftRadius];
+      });
+      const color = (q) => getComputedStyle(document.querySelector(q)).color;
+      return { box, want: [parseFloat(v("--ctl")), v("--r-ctl")], st: color("#st"), word: color(".cnx .thw") };
+    });
+    expect(got.box).toEqual([got.want, got.want]);
+    expect(got.st).toBe(got.word);
     await shot(page, info, "chat-connecting");
     await axe(page);
     gate(`hold-in-${where}`, false);

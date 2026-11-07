@@ -49,7 +49,9 @@ test("first run: no agents and no roots show their fix lines with copy buttons, 
   await expect(row.locator(".sk")).toHaveText("not installed");
   await expect(sheet.getByRole("button", { name: /sign in|\+ account/ })).toHaveCount(0);
   await page.screenshot({ path: "../../ui-390/first-run-signins.png", fullPage: true });
-  await row.getByRole("button", { name: "copy npm install -g @openai/codex" }).click();
+  await row.getByRole("button", { name: "copy install" }).click();
   await expect(row.getByRole("button")).toHaveText("copied");
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("npm install -g @openai/codex");
+  // `copied` is for a moment; the button reads [copy install] again.
+  await expect(row.getByRole("button")).toHaveText("copy install");
 });
