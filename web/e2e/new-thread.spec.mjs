@@ -15,7 +15,7 @@ const gate = (name, shut) => {
   else fs.rmSync(p, { force: true });
 };
 const shot = (page, info, name) => page.screenshot({ path: `../../ui-${info.project.name}/new-${name}.png` });
-const LOOKS = { farm: "theme:farm/mode:dark", kitchen: "mode:light/theme:kitchen", garden: "mode:dark/theme:garden", terminal: "mode:light/style:terminal/theme:terminal" };
+const LOOKS = { farm: "theme:farm/mode:dark", kitchen: "mode:light/theme:kitchen", garden: "mode:dark/theme:garden", terminal: "mode:light/style:terminal/theme:plain" };
 const look = (context, baseURL, value) =>
   context.addCookies([{ name: "cooee-look", value, url: baseURL }]);
 
@@ -40,10 +40,10 @@ function audit(composer) {
   for (const e of document.querySelectorAll("body *")) {
     if (!shown(e)) continue;
     const r = e.getBoundingClientRect(), s = getComputedStyle(e);
-    if (e.matches(".chip, :is(.nc,.acr,.lg) button:not(.sr,.gl), :is(.pop,.lg) input:not([type=radio]), .nc textarea")) {
+    if (e.matches(".chip, :is(.nc,.acr,.lg) button:not(.sr,.gl), :is(.pop,.lg) :is(input:not([type=radio]), select), .nc textarea")) {
       if (!near(r.height, CTL)) bad.push(`control ${r.height}px, not --ctl ${CTL} · ${name(e)}`);
       if (!near(parseFloat(s.borderTopLeftRadius), RC)) bad.push(`radius ${s.borderTopLeftRadius}, not --r-ctl ${RC} · ${name(e)}`);
-      const want = e.matches("input,textarea") ? 16 : FS;
+      const want = e.matches("input,textarea,select") ? 16 : FS;
       if (!near(parseFloat(s.fontSize), want)) bad.push(`text ${s.fontSize}, not ${want} · ${name(e)}`);
     }
     if (e.matches(".side :is(.nw, .sb, summary)") && !near(r.height, CTL)) bad.push(`sidebar row ${r.height}px, not --ctl ${CTL} · ${name(e)}`);
@@ -151,6 +151,20 @@ test("send opens the chat at once with the loading line, which the reply replace
   } finally {
     gate(`hold-in-${where}`, false);
   }
+});
+
+test("the agent sheet picks the start's model and effort (#553 row 34), said in the thread's bar", async ({ page }, info) => {
+  await page.goto("/new");
+  await page.locator("#chip-agent").click();
+  const sheet = page.locator("#sh-agent");
+  await sheet.getByLabel("model", { exact: true }).selectOption("sonnet");
+  await sheet.getByLabel("effort", { exact: true }).selectOption("high");
+  await page.keyboard.press("Escape");
+  await page.getByLabel("first message").fill(`Row 34 start ${info.project.name}`);
+  await page.getByRole("button", { name: "send" }).click();
+  await page.waitForURL(/\/t\//);
+  await expect(page.locator(".tb .ds")).toContainText(" · sonnet · ");
+  await expect(page.getByLabel("effort", { exact: true })).toHaveValue("high");
 });
 
 test("a connect that fails shows inline with retry; the message stays; retry sends it", async ({ page }, info) => {

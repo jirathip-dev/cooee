@@ -12,11 +12,11 @@ use std::{
 };
 
 use cooee_core::{
-    Agent, Body, Change, Chat, Item, Plugin, Shed, ShedError, Store, StoreError, Summary, Thread,
-    Turn, Workflow,
+    Agent, Body, Card, Change, Chat, Item, Plugin, Shed, ShedError, Store, StoreError, Summary,
+    Thread, Turn, Workflow,
     shed_proto::{self, ApprovalOption, Event, TerminalInfo},
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::broadcast;
 
@@ -30,6 +30,9 @@ const LABEL: &str = "cooee";
 
 /// A working turn with no shed event for this long is surfaced as needs-you (herdsman#444), in milliseconds.
 const STUCK: u64 = 30 * 60 * 1000;
+
+/// How long a conductor's answer may be changed (#553 row 31), in milliseconds.
+const CHANGE: u64 = 30 * 60 * 1000;
 
 /// How often the installed agents are checked again and stuck turns looked for.
 const TICK: Duration = Duration::from_secs(30);
@@ -97,6 +100,8 @@ pub struct Slice {
     /// The first message while its thread connects, not yet an item.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pending: Option<Pending>,
+    /// The oldest config card that waits (#553 row 32), wherever it is.
+    pub waiting: Option<Item>,
 }
 
 /// A thread's first message while it connects: its text and the start's id (the item it becomes has it).
@@ -106,6 +111,49 @@ pub struct Pending {
     pub text: String,
     /// The start's `random_id`.
     pub random_id: String,
+}
+
+/// How a thread's agent starts: its account (as the header names it) and that account's folder (`env`), and the
+/// model and effort picked (#553 row 34) with the `words` that start it on them.
+#[derive(Debug, Default)]
+pub struct Launch<'a> {
+    /// The account's label.
+    pub account: &'a str,
+    /// The provider's variable and the account's folder.
+    pub env: Option<(&'a str, &'a Path)>,
+    /// The model (empty: the agent's default).
+    pub model: &'a str,
+    /// The effort (empty: the agent's default).
+    pub effort: &'a str,
+    /// The words for the model and effort (`Provider::picks`).
+    pub words: Vec<String>,
+}
+
+/// A plugin's card (`POST /plugin/card`, docs/plugins.md).
+#[derive(Debug, Deserialize)]
+pub struct CardSpec {
+    /// The thread it goes in.
+    pub thread: String,
+    /// The question, a config change's name or why a secret is wanted.
+    pub text: String,
+    /// The choices (none for a form's card).
+    #[serde(default)]
+    pub options: Vec<String>,
+    /// The option shown first, marked recommended.
+    #[serde(default)]
+    pub recommend: Option<String>,
+    /// `config`, `secret` or `thread`; none: choices.
+    #[serde(default)]
+    pub form: Option<String>,
+    /// A config card's diff, or a secret card's name.
+    #[serde(default)]
+    pub detail: Option<String>,
+    /// The conductor's own answer: shown answered, and the owner may change it for 30 minutes.
+    #[serde(default)]
+    pub answered: Option<String>,
+    /// Who gave that answer (default: the plugin's label).
+    #[serde(default)]
+    pub by: Option<String>,
 }
 
 /// What a page subscription starts with: replayed events, or a reset (the page reloads its slice).
@@ -639,12 +687,12 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        (account, env): (&str, Option<(&str, &Path)>),
+        launch: &Launch<'_>,
     ) -> Result<String, HubError> {
         let Some(folder) = self.allowed(folder) else {
             return Err(outside(folder));
         };
-        self.start(agent, &folder, text, random_id, (account, env))
+        self.start(agent, &folder, text, random_id, launch)
     }
 
     /// [`Hub::create`] in a folder of cooee's own (a plugin's checkout), not checked against the roots.
@@ -657,11 +705,18 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        (account, env): (&str, Option<(&str, &Path)>),
+        launch: &Launch<'_>,
     ) -> Result<String, HubError> {
         self.shed.hello()?;
-        let (id, fresh) = self.admit(agent, folder, text, random_id, account)?;
-        self.connect(&id, (fresh, false), text, random_id, env)?;
+        let picked = (launch.account, launch.model, launch.effort);
+        let (id, fresh) = self.admit(agent, folder, text, random_id, picked)?;
+        self.connect(
+            &id,
+            (fresh, false),
+            text,
+            random_id,
+            (launch.env, &launch.words),
+        )?;
         Ok(id)
     }
 
@@ -676,29 +731,31 @@ impl Hub {
         (agent, name): (&str, &str),
         folder: &Path,
         (text, random_id): (&str, &str),
-        (account, env): (&str, Option<(String, PathBuf)>),
+        launch: &Launch<'_>,
     ) -> Result<String, HubError> {
         let Some(folder) = self.allowed(folder) else {
             return Err(outside(folder));
         };
-        let (id, fresh) = self.admit(agent, &folder, text, random_id, account)?;
+        let picked = (launch.account, launch.model, launch.effort);
+        let (id, fresh) = self.admit(agent, &folder, text, random_id, picked)?;
         if fresh {
             let live = self.live(&id)?;
             lock(&live).pending = Some(text.to_owned());
         }
-        self.retry(&id, env, name)?;
+        let env = launch.env.map(|(k, dir)| (k.to_owned(), dir.to_owned()));
+        self.retry(&id, (env, launch.words.clone()), name)?;
         Ok(id)
     }
 
     /// Starts thread `id`'s agent again after its start failed (none failed, or one runs: nothing), and sends its
-    /// first message; as [`Hub::create_later`].
+    /// first message; as [`Hub::create_later`] (`env` and `words` as [`Launch`]'s).
     ///
     /// # Errors
     /// [`HubError::NoThread`]; [`HubError::Store`] when the state can't be published.
     pub fn retry(
         self: &Arc<Self>,
         id: &str,
-        env: Option<(String, PathBuf)>,
+        (env, words): (Option<(String, PathBuf)>, Vec<String>),
         name: &str,
     ) -> Result<(), HubError> {
         let live = self.live(id)?;
@@ -723,7 +780,8 @@ impl Hub {
         thread::spawn(move || {
             let env = env.as_ref().map(|(k, dir)| (k.as_str(), dir.as_path()));
             let done = hub.shed.hello().map_err(HubError::from);
-            let done = done.and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, env));
+            let done = done
+                .and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, (env, &words)));
             let mut l = lock(&live);
             match done {
                 // shed's events say more.
@@ -756,7 +814,7 @@ impl Hub {
         folder: &Path,
         text: &str,
         random_id: &str,
-        account: &str,
+        (account, model, effort): (&str, &str, &str),
     ) -> Result<(String, bool), HubError> {
         if text.trim().is_empty() {
             return Err(HubError::Refused("the first message is empty".to_owned()));
@@ -790,6 +848,8 @@ impl Hub {
             agent: agent.to_owned(),
             folder: Some(folder.to_owned()),
             account: account.to_owned(),
+            model: model.to_owned(),
+            effort: effort.to_owned(),
             terminal: format!("cooee-{id}"),
             random_id: random_id.to_owned(),
             ..Thread::default()
@@ -809,7 +869,7 @@ impl Hub {
         (fresh, keep): (bool, bool),
         text: &str,
         random_id: &str,
-        env: Option<(&str, &Path)>,
+        (env, words): (Option<(&str, &Path)>, &[String]),
     ) -> Result<(), HubError> {
         let live = self.live(id)?;
         let (terminal, agent, folder) = {
@@ -822,7 +882,9 @@ impl Hub {
                 (LABEL.to_owned(), "1".to_owned()),
                 (format!("{LABEL}.thread"), id.to_owned()),
             ]);
-            if let Err(e) = self.shed.run_acp(&terminal, &agent, &folder, &labels, env)
+            if let Err(e) = self
+                .shed
+                .run_acp(&terminal, &agent, &folder, &labels, (env, words))
                 && self.shed.get(&terminal).is_err()
             {
                 if !keep {
@@ -872,15 +934,23 @@ impl Hub {
         Ok(item)
     }
 
-    /// The owner's answer to approval `item`: sent once (stored first) to shed, or to the plugin whose choice card
-    /// it is (then chosen); a second tap returns the item.
+    /// `by`'s answer to approval `item`: sent once (stored first) to shed, or to the plugin whose card it is (then
+    /// chosen, with the plugin's line; a 409 leaves it closed with the plugin's why). A secret card's `value` goes
+    /// to its plugin only and is never kept. A second tap returns the item.
     ///
     /// # Errors
     /// [`HubError::Shed`] when shed fails; [`HubError::Refused`] when the plugin does.
-    pub fn approve(&self, id: &str, item: u64, option: &str) -> Result<Option<Item>, HubError> {
+    pub fn approve(
+        &self,
+        id: &str,
+        item: u64,
+        option: &str,
+        value: Option<&str>,
+        by: &str,
+    ) -> Result<Option<Item>, HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
-        let Some(tapped) = live.chat.tap(item, option) else {
+        let Some(tapped) = live.chat.tap(item, option, by, now()) else {
             return Ok(live.chat.items.iter().find(|i| i.id == item).cloned());
         };
         live.publish(self, vec![Change::Item(tapped.clone())])?;
@@ -892,21 +962,30 @@ impl Hub {
                 .into_iter()
                 .find(|p| &p.name == name)
                 .ok_or_else(|| io::Error::other("no longer configured"))
-                .and_then(|p| crate::plugin::answer(&p, id, item, option))
+                .and_then(|p| crate::plugin::answer(&p, id, item, option, by, value))
                 .map_err(|e| HubError::Refused(format!("plugin {name}: {e}"))),
             _ => return self.shed_approve(&mut live, tapped, option),
         };
         let done = live.chat.update(item, 0, |b| {
-            if let Body::Approval { tapped, chosen, .. } = b {
-                if sent.is_ok() {
-                    *chosen = Some(option.to_owned());
-                } else {
-                    *tapped = None;
+            if let Body::Approval {
+                tapped,
+                chosen,
+                card,
+                ..
+            } = b
+            {
+                match &sent {
+                    Ok(Ok(said)) => {
+                        *chosen = Some(option.to_owned());
+                        card.line.clone_from(said);
+                    }
+                    Ok(Err(why)) => card.line = Some(why.clone()),
+                    Err(_) => *tapped = None,
                 }
             }
         });
         live.publish(self, done.clone().map(Change::Item).into_iter().collect())?;
-        sent.map(|()| done)
+        sent.map(|_| done)
     }
 
     fn shed_approve(
@@ -928,38 +1007,117 @@ impl Hub {
         Ok(Some(tapped))
     }
 
-    /// Plugin `plugin`'s choice card in thread `id`: `text` and a button per option. The owner's tap goes to the
-    /// plugin.
+    /// Plugin `plugin`'s card (#553 rows 30–33, 35): choices (the recommended one first), a config diff to apply
+    /// or discard, a secret to save or dismiss, or the other open threads to pick from. The owner's tap goes to the
+    /// plugin; a card the conductor answered itself may be changed for 30 minutes.
     ///
     /// # Errors
-    /// [`HubError::Refused`] without text or options.
-    pub fn card(
-        &self,
-        id: &str,
-        plugin: &str,
-        text: &str,
-        options: &[String],
-    ) -> Result<Item, HubError> {
-        if text.trim().is_empty() || options.is_empty() {
+    /// [`HubError::Refused`] without text, options, a config's diff or a secret's name.
+    pub fn card(&self, plugin: &Plugin, c: CardSpec) -> Result<Item, HubError> {
+        let plain = |o: &str| ApprovalOption {
+            id: o.to_owned(),
+            name: o.to_owned(),
+            kind: String::new(),
+        };
+        let mut options: Vec<ApprovalOption> = match c.form.as_deref() {
+            None => c.options.iter().map(|o| plain(o)).collect(),
+            Some("config") => vec![plain("apply"), plain("discard")],
+            Some("secret") => vec![plain("save"), plain("dismiss")],
+            Some("thread") => self
+                .list()
+                .into_iter()
+                .filter(|t| t.id != c.thread && t.state != "ended")
+                .take(6)
+                .map(|t| ApprovalOption {
+                    id: t.id,
+                    name: t.title,
+                    kind: String::new(),
+                })
+                .collect(),
+            Some(f) => return Err(HubError::Refused(format!("no card form {f:?}"))),
+        };
+        let detail = c.detail.as_deref().is_some_and(|d| !d.trim().is_empty());
+        if c.text.trim().is_empty()
+            || options.is_empty()
+            || (matches!(c.form.as_deref(), Some("config" | "secret")) && !detail)
+        {
             return Err(HubError::Refused(
-                "a choice card needs text and options".to_owned(),
+                "a card needs text and options (a thread to pick), a config card its diff and a secret card its name"
+                    .to_owned(),
             ));
         }
+        if let Some(at) = options
+            .iter()
+            .position(|o| c.recommend.as_ref() == Some(&o.id))
+        {
+            let mut first = options.remove(at);
+            "recommended".clone_into(&mut first.kind);
+            options.insert(0, first);
+        }
+        let live = self.live(&c.thread)?;
+        let mut live = lock(&live);
+        let at = now();
+        let answered = c.answered.is_some();
+        let body = Body::Approval {
+            tool: c.text,
+            options,
+            tapped: None,
+            chosen: c.answered,
+            plugin: Some(plugin.name.clone()),
+            card: Card {
+                by: answered.then(|| c.by.unwrap_or_else(|| plugin.label.clone())),
+                answered: answered.then_some(at),
+                form: c.form,
+                detail: c.detail,
+                line: None,
+                until: answered.then_some(at + CHANGE),
+            },
+        };
+        let item = live.chat.push(at, 0, body);
+        live.publish(self, vec![Change::Item(item.clone())])?;
+        Ok(item)
+    }
+
+    /// A line in thread `id` linked to thread `other` (#553 row 35): a handoff's `continued in` (`out`), or a
+    /// line `from` it.
+    ///
+    /// # Errors
+    /// [`HubError::NoThread`] when either thread is unknown.
+    pub fn link(&self, id: &str, other: &str, text: &str, out: bool) -> Result<Item, HubError> {
+        let title = self.thread(other)?.0.title;
         let live = self.live(id)?;
         let mut live = lock(&live);
-        let options = options.iter().map(|o| ApprovalOption {
-            id: o.clone(),
-            name: o.clone(),
-            kind: String::new(),
-        });
-        let body = Body::Approval {
-            tool: text.to_owned(),
-            options: options.collect(),
-            tapped: None,
-            chosen: None,
-            plugin: Some(plugin.to_owned()),
+        let body = Body::Link {
+            text: text.to_owned(),
+            thread: other.to_owned(),
+            title,
+            out,
         };
         let item = live.chat.push(now(), 0, body);
+        live.publish(self, vec![Change::Item(item.clone())])?;
+        Ok(item)
+    }
+
+    /// The owner's model and effort for thread `id` (#553 row 34): kept on the thread and said in it. shed can't
+    /// change a running agent's model yet, so they apply from the agent's next start.
+    ///
+    /// # Errors
+    /// [`HubError::Store`] when the thread can't be saved.
+    pub fn pick(&self, id: &str, model: &str, effort: &str) -> Result<Item, HubError> {
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        model.clone_into(&mut live.meta.model);
+        effort.clone_into(&mut live.meta.effort);
+        self.store.save(&live.meta)?;
+        let say = |what: &str, pick: &str| {
+            format!("{what} {}", if pick.is_empty() { "default" } else { pick })
+        };
+        let text = format!(
+            "{} · {} from the next start",
+            say("model", model),
+            say("effort", effort)
+        );
+        let item = live.chat.push(now(), 0, Body::Note { text });
         live.publish(self, vec![Change::Item(item.clone())])?;
         Ok(item)
     }
@@ -1022,12 +1180,21 @@ impl Hub {
                 let live = lock(live);
                 let last = live.chat.items.last();
                 let text = last.map_or("", |i| match &i.body {
-                    Body::You { text, .. } | Body::Agent { text, .. } | Body::Ended { text } => {
-                        text
-                    }
+                    Body::Link { text, title, .. } if text.is_empty() => title,
+                    Body::You { text, .. }
+                    | Body::Agent { text, .. }
+                    | Body::Note { text }
+                    | Body::Link { text, .. }
+                    | Body::Ended { text } => text,
                     Body::Tool { title, .. } => title,
                     Body::Approval { tool, .. } => tool,
                     Body::Plan { .. } => "plan",
+                });
+                let waiting = live.chat.items.iter().find_map(|i| match &i.body {
+                    Body::Approval { tool, .. } if waits(&i.body) => {
+                        Some(format!("{tool} waiting"))
+                    }
+                    _ => None,
                 });
                 Summary {
                     id: live.meta.id.clone(),
@@ -1036,7 +1203,9 @@ impl Hub {
                     account: live.meta.account.clone(),
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     state: live.chat.turn.state.clone(),
-                    last: text.lines().last().unwrap_or("").chars().take(80).collect(),
+                    last: waiting.unwrap_or_else(|| {
+                        text.lines().last().unwrap_or("").chars().take(80).collect()
+                    }),
                     at: last.map_or(0, |i| i.at),
                     unread: last.is_some_and(|i| live.meta.read.is_none_or(|r| r < i.id)),
                     workflow: live.meta.workflow.clone(),
@@ -1086,6 +1255,7 @@ impl Hub {
                 text,
                 random_id: live.meta.random_id.clone(),
             }),
+            waiting: items.iter().find(|i| waits(&i.body)).cloned(),
         })
     }
 
@@ -1144,6 +1314,11 @@ impl From<HubError> for io::Error {
     fn from(e: HubError) -> Self {
         io::Error::other(e.to_string())
     }
+}
+
+/// Whether `body` is a config card that waits for the owner (#553 row 32).
+fn waits(body: &Body) -> bool {
+    matches!(body, Body::Approval { chosen: None, card, .. } if card.form.as_deref() == Some("config") && card.line.is_none())
 }
 
 #[cfg(test)]

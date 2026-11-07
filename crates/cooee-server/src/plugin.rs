@@ -186,23 +186,41 @@ pub fn events(reply: Reply, mut f: impl FnMut(Sse) -> bool) {
     }
 }
 
-/// Sends the owner's answer to choice card `item` in `thread`: `POST /cooee/choice`.
+/// Sends `by`'s answer to choice card `item` in `thread`: `POST /cooee/choice` `{thread, item, option, by}`, with a
+/// secret card's `value` (never kept by cooee). A 2xx settles it, with the backend's `{"line": …}` when it sends one;
+/// a 409 means it can't be answered any more: `Err` with its line, else `stale`.
 ///
 /// # Errors
-/// When the backend can't be reached or doesn't answer 2xx.
-pub fn answer(p: &Plugin, thread: &str, item: u64, option: &str) -> io::Result<()> {
-    let body = serde_json::json!({ "thread": thread, "item": item, "option": option }).to_string();
+/// When the backend can't be reached or answers anything else.
+pub fn answer(
+    p: &Plugin,
+    thread: &str,
+    item: u64,
+    option: &str,
+    by: &str,
+    value: Option<&str>,
+) -> io::Result<Result<Option<String>, String>> {
+    let mut body =
+        serde_json::json!({ "thread": thread, "item": item, "option": option, "by": by });
+    if let Some(value) = value {
+        body["value"] = value.into();
+    }
     let json = [("Content-Type", "application/json")];
     let reply = call(
         p,
         "POST",
         "/cooee/choice",
         &json,
-        body.as_bytes(),
+        body.to_string().as_bytes(),
         Some(Duration::from_secs(10)),
     )?;
-    match reply.status {
-        200..=299 => Ok(()),
+    let status = reply.status;
+    let line = serde_json::from_slice::<serde_json::Value>(&reply.bytes().unwrap_or_default())
+        .ok()
+        .and_then(|v| Some(v.get("line")?.as_str()?.chars().take(300).collect()));
+    match status {
+        200..=299 => Ok(Ok(line)),
+        409 => Ok(Err(line.unwrap_or_else(|| "stale".to_owned()))),
         code => Err(io::Error::other(format!("the backend answered {code}"))),
     }
 }

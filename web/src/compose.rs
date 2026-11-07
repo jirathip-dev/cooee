@@ -45,7 +45,7 @@ pub fn who(agent: &str, account: &str, providers: &[Sheet]) -> String {
 }
 
 /// `<provider> · <account>`, or the provider alone.
-fn said(name: &str, who: &str) -> String {
+pub(crate) fn said(name: &str, who: &str) -> String {
     if who.is_empty() {
         name.to_owned()
     } else {
@@ -327,9 +327,21 @@ async fn agent_sheet(
             _ => sections.push((c.agent.clone(), c.name.clone(), vec![c])),
         }
     }
+    // Its model and effort picks (#553 row 34), under its accounts.
+    let offers = |agent: &str| {
+        providers
+            .iter()
+            .find(|s| s.provider.agent == agent)
+            .map(|s| (s.provider.models.clone(), s.provider.efforts.clone()))
+            .unwrap_or_default()
+    };
+    let sections: Vec<_> = sections
+        .into_iter()
+        .map(|(agent, name, them)| (offers(&agent), agent, name, them))
+        .collect();
     let panels: Vec<(String, String)> = providers
         .iter()
-        .filter(|s| sections.iter().any(|(a, _, _)| *a == s.provider.agent))
+        .filter(|s| sections.iter().any(|(_, a, ..)| *a == s.provider.agent))
         .map(|s| (s.provider.name.clone(), s.provider.login.join(" ")))
         .collect();
     Ok(view! {
@@ -343,7 +355,7 @@ async fn agent_sheet(
             pop_head(which: "agent")
             <fieldset class="top">
                 <legend class="vh">"provider and account"</legend>
-                for (_, name, them) in sections {
+                for (offers, agent, name, them) in sections {
                     <p class="ch">(name)</p>
                     for c in them {
                         <div class=(if c.signed_in { "sr pk" } else { "sr pk so" })>
@@ -382,6 +394,11 @@ async fn agent_sheet(
                             <i class="tk" aria-hidden="true">"✓"</i>
                         </div>
                     }
+                    crate::picks(
+                        suffix: format!(":{agent}"),
+                        choices: offers,
+                        now: Default::default()
+                    )
                 }
                 for (p, cmd) in panels {
                     login_panel(provider: p, command: cmd)

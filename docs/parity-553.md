@@ -34,12 +34,12 @@ Row numbers are #553's.
 | 27 | Per-thread drafts, picked files included | partial | IndexedDB draft per thread (`chat.ts` `draft`) | picked files (after row 20) |
 | 28 | Long-press menu: copy, copy as markdown, quote | missing | — | the menu |
 | 29 | Sticky thread header; older messages on scroll | done | `.th` above the scrolling list; slices by id with preload (`chat.ts` `load`, `preload`) | — |
-| 30 | Choice rows, "other" box, answered ✓ line | partial | approval rows with options and ✓ (`chat.ts` `fill` approval); plugin cards (`cooee-server/src/lib.rs:619`) | "other" free-text box; who and when on the ✓ line |
-| 31 | Conductor-answered asks keep [change] 30 min | missing | — | [change] on an answered ask |
-| 32 | Config-proposal card | missing | — | diff, apply/discard, stale, waiting bar |
-| 33 | Secret request card, masked input | missing | — | the card and its write |
-| 34 | Harness pick at start; model/effort chip | partial | agent picker at start (`web/src/lib.rs` `agent`) | model/effort chip and its op |
-| 35 | Handoff chips, flow-back lines, pick-a-thread row | missing | — | chips, lines, the choice row |
+| 30 | Choice rows, "other" box, answered ✓ line | built (#44) | chat.ts `choices()`: recommended first, an "other" box on plugin cards; the ✓ line has `by` (the device) and when (hub `approve`) | — |
+| 31 | Conductor-answered asks keep [change] 30 min | built (#44) | `/plugin/card` `answered`/`by`: [change] until `until` (core `Chat::tap`) | — |
+| 32 | Config-proposal card | built (#44) | `form: config`: the diff, [apply] [discard], the backend's line or its 409 (stale); `#cw` bar and the list's `waiting` | — |
+| 33 | Secret request card, masked input | built (#44) | `form: secret`: a password field; the value goes to the plugin only | — |
+| 34 | Harness pick at start; model/effort chip | built (#44) | agent picker plus model/effort at start; composer chips, `POST /threads/{id}/model` (q662: from the next start until shed can switch a live session) | live switch: a shed input for ACP `session/set_model` |
+| 35 | Handoff chips, flow-back lines, pick-a-thread row | built (#44) | `/plugin/handoff`, `/plugin/line` (`link` items with chips); `form: thread` | — |
 
 Totals at `51f92e8`: 4 done (9, 11, 21, 29), 18 partial, 13 missing. The rows 1–14 PR builds 1–8, 10 and 12–14
 (9 and 11 were done); rows 15–29 and 30–35 follow as cooee#43 and cooee#44.
