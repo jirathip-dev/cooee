@@ -114,6 +114,7 @@ function refresh(): Promise<unknown> | null {
     copyAt = Number(r.headers.get("cooee-at")) || 0;
     const next = new DOMParser().parseFromString(await r.text(), "text/html").querySelector(".ags");
     if (next) now.replaceWith(next);
+    light();
   })()
     .catch((x) => toast(`couldn't refresh: ${message(x)}`, true))
     .finally(() => {
@@ -124,6 +125,18 @@ function refresh(): Promise<unknown> | null {
   return refreshing;
 }
 $("#rf")?.addEventListener("click", refresh);
+
+// Scene (#34): night on the strip (the scene's `#night`) from 19:00 to 07:00 on this device's clock.
+function light(): void {
+  const scn = $("#scene");
+  const h = new Date().getHours();
+  const night = h < 7 || h >= 19 ? "#night" : "";
+  scn?.classList.toggle("night", !!night);
+  const img = $("#scene .sky") as HTMLImageElement | null;
+  if (img && img.getAttribute("src") !== `${scn?.dataset.art}${night}`) img.src = `${scn?.dataset.art}${night}`;
+}
+light();
+setInterval(() => document.hidden || light(), 60000);
 
 let pullY: number | null = null;
 let hiddenAt = 0;
@@ -922,8 +935,20 @@ function chat(main: HTMLElement): void {
   // Back goes to the thread a ref or chip came from, else to the list.
   const from = document.referrer ? new URL(document.referrer) : null;
   const bk = $<HTMLAnchorElement>(".th .bk");
-  if (bk && from?.origin === location.origin && from.pathname.startsWith("/t/") && from.pathname !== location.pathname)
+  if (
+    bk &&
+    from?.origin === location.origin &&
+    from.pathname.startsWith("/t/") &&
+    from.pathname !== location.pathname
+  ) {
     bk.href = from.pathname;
+    // Beside the agents (from 1000 px) the ‹ shows only to go back from a ref or chip tapped in a chat (#84, #86).
+    if (sessionStorage.getItem("cooee-from") === from.pathname) bk.dataset.ref = "";
+  }
+  sessionStorage.removeItem("cooee-from");
+  list.addEventListener("click", (e) => {
+    if ((e.target as Element).closest?.('a[href^="/t/"]')) sessionStorage.setItem("cooee-from", location.pathname);
+  });
   // A config card that waits (#553 row 32): the bar under the header names it, wherever it is; a tap brings it in.
   const cw = $("#cw") as HTMLButtonElement;
   function waiting(it?: Item | null): void {

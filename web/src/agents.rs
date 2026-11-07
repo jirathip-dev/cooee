@@ -194,86 +194,184 @@ async fn sidebar(
         .collect();
     Ok(view! {
         <nav class="ags" aria-label="agents">
-            <p class="lb">"agents"</p>
-            for (n, m, latest, unread, on) in rows {
-                <a
-                    class=(match (on, unread) {
-                        (true, _) => "agr on",
-                        (false, true) => "agr ud",
-                        _ => "agr",
-                    })
-                    href=(href(&m))
-                    aria-current=((on && m.chats.first().is_some_and(|c| c.id == open)).then(
-                        || "page".to_owned(),
-                    ))
-                >
-                    avatar(name: m.name.clone(), n: n, big: false)
-                    <span class="tt">(m.name.clone())</span>
-                    <span class="ta">
-                        (latest.as_ref().map(|c| age(c.at)).unwrap_or_default())
-                    </span>
-                    <span class="tp">
-                        <b
-                            data-st=(state(
-                                latest.as_ref().map_or("", |c| c.state.as_str()),
-                            ))
-                        >
-                            (Unescaped::new_unchecked(
-                                look.st(
-                                    state(latest.as_ref().map_or("", |c| c.state.as_str())),
-                                    false,
-                                ),
-                            ))
-                        </b>
-                        (latest.map(|c| c.last).unwrap_or_default())
-                    </span>
-                </a>
-                if on {
-                    <div class="sth">
-                        for c in m.chats.iter().skip(1).take(SIDE).cloned() {
-                            side_row(c: c, open: open.clone())
-                        }
-                        if m.chats.len() > SIDE + 1 {
-                            <details>
-                                <summary>
-                                    (format!("{} older chats", m.chats.len() - SIDE - 1))
-                                </summary>
-                                for c in m.chats.iter().skip(SIDE + 1).cloned() {
-                                    side_row(c: c, open: open.clone())
-                                }
-                            </details>
-                        }
-                        <a class="str nw" href=(format!("/new?{}", m.key))>
-                            "+ new chat"
-                        </a>
-                    </div>
+            if look.scene() {
+                herd(rows: rows, open: open.clone())
+            } else {
+                <p class="lb">"agents"</p>
+                for (n, m, latest, unread, on) in rows {
+                    <a
+                        class=(match (on, unread) {
+                            (true, _) => "agr on",
+                            (false, true) => "agr ud",
+                            _ => "agr",
+                        })
+                        href=(href(&m))
+                        aria-current=((on
+                                && m.chats.first().is_some_and(|c| c.id == open)).then(
+                            || "page".to_owned(),
+                        ))
+                    >
+                        avatar(name: m.name.clone(), n: n, big: false)
+                        <span class="tt">(m.name.clone())</span>
+                        <span class="ta">
+                            (latest.as_ref().map(|c| age(c.at)).unwrap_or_default())
+                        </span>
+                        <span class="tp">
+                            <b
+                                data-st=(state(
+                                    latest.as_ref().map_or("", |c| c.state.as_str()),
+                                ))
+                            >
+                                (Unescaped::new_unchecked(
+                                    look.st(
+                                        state(latest.as_ref().map_or("", |c| c.state.as_str())),
+                                        false,
+                                    ),
+                                ))
+                            </b>
+                            (latest.map(|c| c.last).unwrap_or_default())
+                        </span>
+                    </a>
+                    if on {
+                        <div class="sth">
+                            for c in m.chats.iter().skip(1).take(SIDE).cloned() {
+                                side_row(c: c, open: open.clone())
+                            }
+                            if m.chats.len() > SIDE + 1 {
+                                <details>
+                                    <summary>
+                                        (format!("{} older chats", m.chats.len() - SIDE - 1))
+                                    </summary>
+                                    for c in m.chats.iter().skip(SIDE + 1).cloned() {
+                                        side_row(c: c, open: open.clone())
+                                    }
+                                </details>
+                            }
+                            <a class="str nw" href=(format!("/new?{}", m.key))>
+                                "+ new chat"
+                            </a>
+                        </div>
+                    }
                 }
             }
             if can_add {
-                <details class="nwa">
-                    <summary>"+ new agent"</summary>
-                    <form method="post" action="/agents">
-                        <input
-                            name="name"
-                            aria-label="name"
-                            placeholder="name"
-                            required=(true)
-                            autocomplete="off"
-                        >
-                        <label class="pk">
-                            <span class="lb">"profile"</span>
-                            <select name="profile">
-                                <option value="">"Plain"</option>
-                                for p in profiles {
-                                    <option value=(p.id())>(p.label.clone())</option>
-                                }
-                            </select>
-                        </label>
-                        <button type="submit">"add"</button>
-                    </form>
-                </details>
+                new_agent(profiles: profiles)
             }
         </nav>
+    })
+}
+
+/// `+ new agent`: a name and a profile (Plain by default), posted to `/agents`.
+#[component]
+async fn new_agent(profiles: Vec<Profile>) -> Result<impl View> {
+    Ok(view! {
+        <details class="nwa">
+            <summary>"+ new agent"</summary>
+            <form method="post" action="/agents">
+                <input
+                    name="name"
+                    aria-label="name"
+                    placeholder="name"
+                    required=(true)
+                    autocomplete="off"
+                >
+                <label class="pk">
+                    <span class="lb">"profile"</span>
+                    <select name="profile">
+                        <option value="">"Plain"</option>
+                        for p in profiles {
+                            <option value=(p.id())>(p.label.clone())</option>
+                        }
+                    </select>
+                </label>
+                <button type="submit">"add"</button>
+            </form>
+        </details>
+    })
+}
+
+/// A state's pose in Scene (#34): its 132 × 100 sprite.
+fn pose(st: &str) -> &'static str {
+    match st {
+        "working" => "edit",
+        "needs" => "needs",
+        "done" => "done",
+        "fail" => "fail",
+        "ended" => "merged",
+        _ => "idle",
+    }
+}
+
+/// The sidebar in Scene (#34, design §1): one page of the theme's scene, each agent a sprite acting out its ongoing
+/// chat's state over its name card (name, `profile · age`, the state's word), the current one ringed; then the
+/// current agent's chats as chips. `chat.ts` switches the strip to night by the device's clock.
+#[component]
+async fn herd(
+    cx: &Cx,
+    rows: Vec<(usize, Mate, Option<Summary>, bool, bool)>,
+    open: String,
+) -> Result<impl View> {
+    let look = shown(cx);
+    let art = format!("/look/{}/scene.svg", look.name());
+    let count = format!("{} agents", rows.len());
+    let current = rows.iter().find(|r| r.4).map(|r| r.1.clone());
+    let sprites: Vec<(Mate, String, String, String, String, bool)> = rows
+        .into_iter()
+        .map(|(_, m, latest, unread, on)| {
+            let st = state(m.chats.first().map_or("", |c| c.state.as_str()));
+            let key = if st.is_empty() { "idle" } else { st };
+            let meta = match latest {
+                Some(c) => format!("{} · {}", m.profile, age(c.at)),
+                None => m.profile.clone(),
+            };
+            let class = if unread { "sb" } else { "sb rd" };
+            (m, class.to_owned(), st.to_owned(), key.to_owned(), meta, on)
+        })
+        .collect();
+    Ok(view! {
+        <div class="scn" id="scene" data-art=(art.clone())>
+            <section class="sp" aria-label="agents">
+                <img class="sky" src=(art) alt="">
+                <h2 class="fh">
+                    <b>"agents"</b>
+                    <span class="ds">(count)</span>
+                </h2>
+                <div class="fld">
+                    for (m, class, st, key, meta, on) in sprites {
+                        <a
+                            class=(class)
+                            href=(href(&m))
+                            aria-current=(on.then(|| "true".to_owned()))
+                        >
+                            <span class="sf" data-s=(pose(&st))>
+                                (Unescaped::new_unchecked(look.s(pose(&st))))
+                            </span>
+                            <span class="sn">
+                                <b>(m.name.clone())</b>
+                                <span>(meta)</span>
+                                <span class=(format!("sw {st}")) data-w=(key.clone())>
+                                    (Unescaped::new_unchecked(look.w(&key, false)))
+                                </span>
+                            </span>
+                        </a>
+                    }
+                </div>
+            </section>
+        </div>
+        if let Some(m) = current {
+            <nav class="scc" aria-label=(format!("{}'s chats", m.name))>
+                for (i, c) in m.chats.iter().enumerate() {
+                    <a
+                        class="chip"
+                        href=(format!("/t/{}", c.id))
+                        aria-current=((c.id == open).then(|| "page".to_owned()))
+                    >
+                        (if i == 0 { m.name.clone() } else { c.title.clone() })
+                    </a>
+                }
+                <a class="chip" href=(format!("/new?{}", m.key))>"+ new chat"</a>
+            </nav>
+        }
     })
 }
 
