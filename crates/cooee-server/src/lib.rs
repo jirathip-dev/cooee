@@ -351,11 +351,17 @@ async fn login_cancel(cx: &Cx) -> Result<Answer<()>> {
 #[page("/t/{id}")]
 async fn chat(cx: &Cx) -> Result<impl View> {
     let id = thread_id(cx);
-    let Ok((thread, turn)) = blocking(cx, move |hub| hub.thread(&id)).await else {
+    // With every thread's id, so a ref to one in the chat opens it (#84).
+    let Ok((thread, turn, ids)) = blocking(cx, move |hub| {
+        let (thread, turn) = hub.thread(&id)?;
+        Ok((thread, turn, hub.list().into_iter().map(|t| t.id).collect()))
+    })
+    .await
+    else {
         return Err(not_found().into());
     };
     let choices = logins(cx).choices(&thread.agent);
-    Ok(cooee_web::chat_page(cx, thread, turn, choices))
+    Ok(cooee_web::chat_page(cx, thread, turn, choices, ids))
 }
 
 /// `?around=<id>&before=N&after=N`.

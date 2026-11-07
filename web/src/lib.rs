@@ -1024,15 +1024,17 @@ async fn pair(code: String, bad: bool) -> Result<impl View> {
     })
 }
 
-/// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer.
+/// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer; `ids` are the threads a
+/// ref in it may open (#84).
 #[must_use]
 pub fn chat_page(
     cx: &Cx,
     thread: Thread,
     turn: Turn,
     choices: (Vec<String>, Vec<String>),
+    ids: Vec<String>,
 ) -> impl View {
-    view! { cx => chat(thread: thread, turn: turn, choices: choices) }
+    view! { cx => chat(thread: thread, turn: turn, choices: choices, ids: ids) }
 }
 
 /// A model or effort select (#553 row 34): `name`'s choices, `default` first, `now` selected.
@@ -1058,6 +1060,7 @@ async fn chat(
     thread: Thread,
     turn: Turn,
     choices: (Vec<String>, Vec<String>),
+    ids: Vec<String>,
 ) -> Result<impl View> {
     let look = shown(cx);
     let [st, wait, pill] = [
@@ -1083,12 +1086,16 @@ async fn chat(
                 data-agent=(thread.agent.clone())
                 data-read=(thread.read.unwrap_or(0).to_string())
                 data-state=(turn.state.clone())
+                data-ids=(ids.join(" "))
             >
                 header(home: false, tabs: Vec::new(), current: String::new())
                 <div class="th">
-                    <a class="gl bk" href="/" aria-label="back to threads">"‹"</a>
+                    <a class="gl bk" href="/" aria-label="back">"‹"</a>
                     <div class="tb">
-                        <h1>(thread.title.clone())</h1>
+                        <div class="tn">
+                            <h1>(thread.title.clone())</h1>
+                            <small>(thread.id.clone())</small>
+                        </div>
                         <span class="ds">
                             <i class="dt"></i>
                             (byline(&thread, &folder))
