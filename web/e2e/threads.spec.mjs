@@ -14,6 +14,12 @@ test("agents: the list renders, fits the width, no axe violations; + opens a new
   await expect(page.locator("#new")).toBeVisible();
   await expect(page.locator(".hi")).toContainText("New chat with");
   await expect(page.getByRole("button", { name: "folder: scratch ▾" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "close the chat" })).toBeVisible();
+  if (info.project.name === "1440") {
+    // The chat being started is its own row under the agent, which is not marked.
+    await expect(page.locator(".ags .str[aria-current=page]")).toHaveText(/New chat\s*now/);
+    await expect(page.locator(".ags .agr.on")).toHaveCount(0);
+  }
   await expect(page.getByRole("textbox", { name: "message", exact: true })).toBeFocused();
   await page.screenshot({ path: `../../ui-${info.project.name}/new-chat.png`, fullPage: true });
   const { violations } = await new AxeBuilder({ page }).analyze();

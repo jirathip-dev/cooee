@@ -21,7 +21,10 @@ test("a profile is an agent: listed, a new chat with it runs as it, its bar says
   await page.goto("/new?profile=reviewer");
   await expect(page.locator(".hi")).toContainText("New chat with Reviewer");
   await expect(page.locator(".th .ds")).toContainText("Reviewer · reviewer · scratch");
-  await expect(page.locator(".agr.on .tt")).toHaveText("Reviewer");
+  // The new chat is its own current row under Reviewer; the agent's row is not marked.
+  await expect(page.locator(".agr:has(+ .sth) .tt")).toHaveText("Reviewer");
+  await expect(page.locator(".sth .str[aria-current=page]")).toHaveText(/New chat\s*now/);
+  await expect(page.locator(".agr.on")).toHaveCount(0);
   await shot(page, info, "profile-new");
   await audit(page);
 

@@ -191,7 +191,8 @@ fn href(m: &Mate) -> String {
 }
 
 /// The sidebar: each agent (its avatar, name, age, state and last line; the current one with its side threads and
-/// `+ new chat`), then `+ new agent`. `current` is the agent on show, `open` the chat.
+/// `+ new chat`), then `+ new agent`. `current` is the agent on show, `open` the chat; `fresh`: a new chat with it,
+/// marked as its own `New chat · now` row.
 #[component]
 async fn sidebar(
     cx: &Cx,
@@ -200,6 +201,7 @@ async fn sidebar(
     archived: Vec<Summary>,
     current: String,
     open: String,
+    fresh: bool,
 ) -> Result<impl View> {
     let look = shown(cx);
     // A new agent needs one to run: none installed, none to add.
@@ -223,7 +225,7 @@ async fn sidebar(
                 <p class="lb">"agents"</p>
                 for (n, m, latest, unread, on) in rows {
                     <a
-                        class=(match (on, unread) {
+                        class=(match (on && !fresh, unread) {
                             (true, _) => "agr on",
                             (false, true) => "agr ud",
                             _ => "agr",
@@ -271,6 +273,16 @@ async fn sidebar(
                                         side_row(c: c, open: open.clone())
                                     }
                                 </details>
+                            }
+                            if fresh {
+                                <a
+                                    class="str on"
+                                    href=(format!("/new?{}", m.key))
+                                    aria-current="page"
+                                >
+                                    <span class="tt">"New chat"</span>
+                                    <span class="ta">"now"</span>
+                                </a>
                             }
                             <a class="str nw" href=(format!("/new?{}", m.key))>
                                 "+ new chat"
@@ -625,7 +637,8 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
                                 .cloned()
                                 .collect(),
                             current: if home { String::new() } else { current },
-                            open: open.clone()
+                            open: open.clone(),
+                            fresh: matches!(pane, Pane::New { .. })
                         )
                     </div>
                     match pane {
@@ -659,6 +672,38 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
                 </main>
             </div>
         )
+    })
+}
+
+/// A new chat's bar: `‹` back to the agents, the agent, `New chat`, its folder, and (not on the home page) `×`, back
+/// to the agent's ongoing chat, else the agents.
+#[component]
+async fn bar(home: bool, n: usize, m: Mate) -> Result<impl View> {
+    let close = m
+        .chats
+        .first()
+        .map_or("/?list".to_owned(), |c| format!("/t/{}", c.id));
+    Ok(view! {
+        <div class="th">
+            <a class="gl bk" href="/?list" aria-label="back to agents">"‹"</a>
+            avatar(name: m.name.clone(), n: n, big: false)
+            <div class="tb">
+                // On the home page the header's "cooee" is the page's heading.
+                if home {
+                    <h2>"New chat"</h2>
+                } else {
+                    <h1>"New chat"</h1>
+                }
+                <span class="ds">
+                    <i class="dt" data-sync="on"></i>
+                    (format!("{} · {} · ", m.name, m.profile))
+                    <span id="bf">"scratch"</span>
+                </span>
+            </div>
+            if !home {
+                <a class="gl" href=(close.clone()) aria-label="close the chat">"×"</a>
+            }
+        </div>
     })
 }
 
@@ -701,25 +746,7 @@ async fn hello(
                     </div>
                 }
                 Some((n, m)) => {
-                    <div class="th">
-                        <a class="gl bk" href="/?list" aria-label="back to agents">
-                            "‹"
-                        </a>
-                        avatar(name: m.name.clone(), n: n, big: false)
-                        <div class="tb">
-                            // On the home page the header's "cooee" is the page's heading.
-                            if home {
-                                <h2>"New chat"</h2>
-                            } else {
-                                <h1>"New chat"</h1>
-                            }
-                            <span class="ds">
-                                <i class="dt" data-sync="on"></i>
-                                (format!("{} · {} · ", m.name, m.profile))
-                                <span id="bf">"scratch"</span>
-                            </span>
-                        </div>
-                    </div>
+                    bar(home: home, n: n, m: m.clone())
                     <div class="tc">
                         <div class="hi">
                             avatar(name: m.name.clone(), n: n, big: true)
