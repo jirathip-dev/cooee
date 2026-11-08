@@ -218,6 +218,8 @@ test("row 6 (#47): a new device asks, a paired one approves with its passkey (a 
   // Settings lists the devices and the passkey; the new device removes itself and goes back to pairing.
   await ipad.goto("/#settings/devices");
   await expect(ipad.locator("#s-passkeys-box .pkr").first()).toBeVisible();
+  // A passkey's [remove] is the quiet outline button (approve.html), not the filled primary.
+  await expect(ipad.locator("#s-passkeys-box .pkr button").first()).not.toHaveCSS("box-shadow", "none");
   const mine = ipad.locator("#s-devices-box .lrw").filter({ hasText: "this device" });
   await expect(mine).toHaveCount(1);
   await shot(ipad, info, "parity-6-devices");
