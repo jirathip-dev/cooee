@@ -156,7 +156,8 @@ after 10 minutes; then the terminal is killed and removed, `[cancel]` does the s
 `cooee-login` terminals a previous run left. The screen is only ever read on demand: never stored, logged or kept
 in memory. Before it goes to the page, anything that looks like a token is replaced by `[redacted]`: a run of 20 or
 more token characters with both a letter and a digit, and in a link the values of `token`, `secret`, `password` and
-`key` parameters. The tokens themselves stay with the CLI.
+`key` parameters. The tokens themselves stay with the CLI: where each OS keeps them, and what a headless Mac needs,
+is in [logins.md](logins.md), linked from the sign-ins card.
 
 ## Plugins (M4)
 
@@ -239,9 +240,10 @@ account = "work"                # optional: its provider's account (else the def
 folder = "~/Projects/app"       # optional: the folder (a root or inside one), instead of the one picked
 instructions = "coder.md"       # optional: sent ahead of the first message (the chat shows only the message)
 settings = "settings.json"      # optional: an agent settings file, its hooks the profile's guard
-env = { MODE = "review", API_KEY = "secret:API_KEY" }   # optional: plain values, secrets as secret:<NAME>
+env = { MODE = "review", API_KEY = "secret:API_KEY" }   # optional: plain values ({thread}: the thread's id), secrets as secret:<NAME>
 policy = "ask"                  # optional: shed's approval policy, ask, allow or deny
 mcp = "mcp.json"                # optional: refused for now (shed starts ACP sessions without MCP servers)
+avatar = "https://x/me.png"     # optional: the sidebar's avatar, an image URL or a theme sprite id (none: initials)
 ```
 
 Paths are relative to the profile's file (a plugin's: its checkout); `~/` is the home folder. A secret is never in a
@@ -250,8 +252,10 @@ At spawn the agent's adapter runs as `env <account folder> <settings variable>=<
 through a 0600 file that the adapter's shell reads and removes (`sh -c '. file; rm file; exec adapter'`), so no
 secret is on a command line, in shed's state or in cooee's files or log. **Guarded profiles:** `settings` reaches the
 agent only through its provider's `settings` variable, the one its ACP adapter reads an extra settings file from
-and enforces, hooks included; an agent with none (the default for every built-in provider) can't start the profile:
-"this profile's guard can't run with <agent>". The form preselects each folder's last-used profile.
+and enforces, hooks included; an agent with none (Codex's and Gemini's) can't start the profile: "this profile's guard
+can't run with <agent>". Claude Code's is `CLAUDE_CONFIG_DIR` (herdsman#565: claude-acp enforces the user settings
+there), so a Claude profile's `settings` is a config folder (its `settings.json` holds the hooks), in place of the
+account's. The form preselects each folder's last-used profile.
 
 ## The app shell (#21, herdsman#553 rows 1–14)
 

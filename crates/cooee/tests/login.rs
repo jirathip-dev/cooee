@@ -174,7 +174,15 @@ fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_scr
 fn a_login_left_for_10_minutes_is_killed_and_removed() {
     let s = setup("login-timeout");
     let (terminal, _) = s.start();
-    let wait = &s.shed.calls("wait", &terminal)[0];
+    // The reaper's `wait` runs on its own thread: poll until shed has it.
+    let start = Instant::now();
+    let wait = loop {
+        if let Some(w) = s.shed.calls("wait", &terminal).into_iter().next() {
+            break w;
+        }
+        assert!(start.elapsed() < Duration::from_secs(10), "no wait call");
+        thread::sleep(Duration::from_millis(20));
+    };
     assert_eq!(wait["timeout"], json!(600.0));
     assert!(!s.shed.exited(&terminal));
 

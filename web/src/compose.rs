@@ -114,8 +114,8 @@ async fn account_row(provider: String, a: Account, s: Status) -> Result<impl Vie
 }
 
 /// Settings › providers (#48): one row per account, `[provider] <who> ✓ signed in [sign out]` or `signed out [sign
-/// in]`; `[+ account]` per installed provider; one row per provider that isn't installed, `[copy install]`. A
-/// sign-in's terminal opens under its row.
+/// in]`; `[+ account]` per installed provider; one row per provider that isn't installed, `[copy install]`; then the
+/// help link. A sign-in's terminal opens under its row.
 #[component]
 pub async fn providers_sheet(providers: Vec<Sheet>) -> Result<impl View> {
     let (out, mut installed): (Vec<Sheet>, Vec<Sheet>) = providers
@@ -195,6 +195,16 @@ pub async fn providers_sheet(providers: Vec<Sheet>) -> Result<impl View> {
                         }
                     </div>
                 }
+                <p class="ds">
+                    <a
+                        href="https://github.com/jirathip-dev/cooee/blob/main/docs/logins.md"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        "Where logins live"
+                    </a>
+                    " · on a headless Mac, keep the login Keychain unlocked"
+                </p>
             </div>
         </div>
     })

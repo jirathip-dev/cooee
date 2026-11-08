@@ -302,12 +302,18 @@ fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
 /// The sidebar's and a new chat's data (#86).
 async fn side(cx: &Cx) -> Result<cooee_web::Side> {
     let providers = on_logins(cx, |l| Ok(l.statuses()));
-    let rest = blocking(cx, |hub| Ok((hub.list(), hub.agents(), hub.folders())));
-    let (providers, (rows, agents, folders)) =
+    let d = app_context::<Data>(cx);
+    let (data, config) = (d.0.clone(), d.1.clone());
+    let rest = blocking(cx, move |hub| {
+        let mut profiles = profiles(hub, (&data, config.as_deref()));
+        profiles.retain(|p| !p.hidden);
+        Ok((hub.list(), hub.agents(), hub.folders(), profiles))
+    });
+    let (providers, (rows, agents, folders, profiles)) =
         futures_util::future::try_join(providers, rest).await?;
     Ok(cooee_web::Side {
         rows,
-        profiles: profiles(cx),
+        profiles,
         agents,
         providers,
         folders,
@@ -453,11 +459,9 @@ async fn chat(cx: &Cx) -> Result<impl View> {
     let Ok((thread, turn)) = blocking(cx, move |hub| hub.thread(&id)).await else {
         return Err(not_found().into());
     };
-    let profile = profiles(cx).into_iter().find(|p| p.id() == thread.profile);
-    let label = match profile {
-        Some(p) => p.label,
-        None => thread.profile.clone(),
-    };
+    let side = side(cx).await?;
+    let profile = side.profiles.iter().find(|p| p.id() == thread.profile);
+    let label = profile.map_or(thread.profile.clone(), |p| p.label.clone());
     let choices = logins(cx).choices(&thread.agent);
     let folder = thread.folder.clone();
     let pane = cooee_web::Pane::Chat {
@@ -467,7 +471,7 @@ async fn chat(cx: &Cx) -> Result<impl View> {
         folder,
         choices,
     };
-    Ok(cooee_web::page(cx, side(cx).await?, pane))
+    Ok(cooee_web::page(cx, side, pane))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -579,24 +583,35 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     let (data, config, hub) = (data.0.clone(), data.1.clone(), hub(cx));
     let id = tokio::task::spawn_blocking(move || {
         let profile = new.profile.as_deref().unwrap_or_default();
+        let list = profiles(&hub, (&data, config.as_deref()));
         let picked = (new.model, new.effort);
         let (agent, folder, recipe) = recipe(
             &logins,
-            (&data, config.as_deref()),
+            (&data, &list),
             (&new.agent, new.account.as_deref(), profile),
             new.folder,
             picked,
         )?;
-        if !new.background {
-            return hub.create(&agent, &folder, &new.text, &new.random_id, &recipe);
+        let id = if new.background {
+            let name = cooee_web::named(&agent, &logins.statuses());
+            hub.create_later(
+                (&agent, &name),
+                &folder,
+                (&new.text, &new.random_id),
+                recipe,
+            )?
+        } else {
+            hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)?
+        };
+        // A plugin's profile: its backend is told the thread's id (so it can attach it).
+        let ours = list.into_iter().find(|p| p.id() == profile);
+        let ours = ours.and_then(|p| Some((backend(&hub, &data, p.plugin.as_deref()?)?, p.name)));
+        if let Some((b, name)) = ours
+            && let Err(e) = plugin::started(&b, &id, &name)
+        {
+            eprintln!("cooee: plugin {}: thread-started: {e}", b.name);
         }
-        let name = cooee_web::named(&agent, &logins.statuses());
-        hub.create_later(
-            (&agent, &name),
-            &folder,
-            (&new.text, &new.random_id),
-            recipe,
-        )
+        Ok(id)
     });
     let id = id.await.map_err(|e| HubError::Refused(e.to_string()))?;
     Ok(Answer(id.map(|id| Created { id })))
@@ -610,9 +625,10 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
     let (data, config) = (data.0.clone(), data.1.clone());
     let done = tokio::task::spawn_blocking(move || {
         let (t, _) = hub.thread(&id)?;
+        let list = profiles(&hub, (&data, config.as_deref()));
         let (_, _, recipe) = recipe(
             &logins,
-            (&data, config.as_deref()),
+            (&data, &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
             (t.model, t.effort),
@@ -638,9 +654,10 @@ async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Ite
     let (data, config) = (data.0.clone(), data.1.clone());
     let done = tokio::task::spawn_blocking(move || {
         let (t, _) = hub.thread(&id)?;
+        let list = profiles(&hub, (&data, config.as_deref()));
         let (_, _, recipe) = recipe(
             &logins,
-            (&data, config.as_deref()),
+            (&data, &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
             (t.model, t.effort),
@@ -653,10 +670,11 @@ async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Ite
 }
 
 /// How a thread of `agent` starts in `folder`: Plain with `account`, or as agent profile `profile` (non-empty: its
-/// agent, and its folder if it has one), on the model and effort `picked`. Returns its agent and folder too.
+/// agent, and its folder if it has one; one of `list`, not hidden), on the model and effort `picked`. Returns its
+/// agent and folder too.
 fn recipe(
     logins: &Logins,
-    (data, config): (&std::path::Path, Option<&std::path::Path>),
+    (data, list): (&std::path::Path, &[cooee_core::Profile]),
     (agent, account, profile): (&str, Option<&str>, &str),
     folder: PathBuf,
     picked: (String, String),
@@ -670,7 +688,11 @@ fn recipe(
         };
         (agent.to_owned(), folder, recipe)
     } else {
-        let p = cooee_core::profiles::find(config, data, profile).map_err(refused)?;
+        let p = list.iter().find(|p| p.id() == profile).cloned();
+        let p = p.ok_or_else(|| refused(format!("no profile {profile}")))?;
+        if p.hidden {
+            return Err(refused(format!("profile {profile} is hidden: {}", p.why)));
+        }
         let (account, launch, instructions) = logins.profile(&p, data)?;
         let recipe = Recipe {
             account,
@@ -1045,10 +1067,31 @@ async fn passkey_check(cx: &Cx, Json(p): Json<passkey::Proof>) -> Result<Respons
 /// The data folder, and the config's folder (its `profiles/`).
 struct Data(PathBuf, Option<PathBuf>);
 
-/// The agent profiles to pick from (Plain aside).
-fn profiles(cx: &Cx) -> Vec<cooee_core::Profile> {
-    let data = app_context::<Data>(cx);
-    cooee_core::profiles::list(data.1.as_deref(), &data.0)
+/// The agent profiles (Plain aside), hidden ones too; a plugin's from its backend when it serves them, a `/path`
+/// avatar through its proxy.
+fn profiles(
+    hub: &Hub,
+    (data, config): (&std::path::Path, Option<&std::path::Path>),
+) -> Vec<cooee_core::Profile> {
+    let mut list = cooee_core::profiles::list(config, data, |name| {
+        plugin::profiles(&backend(hub, data, name)?)
+    });
+    for p in &mut list {
+        let via = p.plugin.as_deref().and_then(|n| backend(hub, data, n));
+        if let (Some(via), Some(a)) = (via, &mut p.avatar)
+            && a.starts_with('/')
+        {
+            *a = format!("/p/{}/api{a}", via.name);
+        }
+    }
+    list
+}
+
+/// Installed plugin `name`'s backend: its first tab's entry (its URL and token).
+fn backend(hub: &Hub, data: &std::path::Path, name: &str) -> Option<Plugin> {
+    let lock = cooee_core::plugins::read_lock(data).ok()?;
+    let tabs = lock.into_iter().find(|l| l.name == name)?.tabs;
+    hub.plugins().into_iter().find(|p| tabs.contains(&p.name))
 }
 
 path_param!(name);

@@ -336,19 +336,29 @@ async fn document(
 /// The chat header: the agent's name, the title (an agent's ongoing chat is titled by its name; a side thread by
 /// its own, its agent first in the line), and the line before its state: a Workflow session's role and round, else
 /// its agent profile's label, or Plain and who it runs as (`runs`: provider · account, never the agent's id), and the
-/// model (the folder follows it, drawn apart so Use a folder… can change it). `provider`: the provider's name.
+/// model (the folder follows it, drawn apart so Use a folder… can change it). `provider`: the provider's name. Last,
+/// the agent its `‹` shows: the one that holds it (a plugin's agent that lists it included), else its own.
 fn bar(
     thread: &Thread,
-    mate: Option<&(usize, String, bool)>,
+    mate: Option<&(usize, String, bool, Option<String>, String)>,
     (profile, provider, runs): (&str, &str, &str),
-) -> (String, String, String) {
+) -> (String, String, String, String) {
+    let back = mate.map_or_else(
+        || agents::key(&thread.agent, &thread.profile),
+        |m| m.4.clone(),
+    );
     let (name, title, by) = match mate {
-        Some((_, n, true)) => (n.clone(), n.clone(), ""),
-        Some((_, n, false)) => (n.clone(), thread.title.clone(), n.as_str()),
+        Some((_, n, true, ..)) => (n.clone(), n.clone(), ""),
+        Some((_, n, false, ..)) => (n.clone(), thread.title.clone(), n.as_str()),
         None => (provider.to_owned(), thread.title.clone(), ""),
     };
     if let Some(w) = &thread.workflow {
-        return (name, title, format!("{} · round {} · ", w.role, w.round));
+        return (
+            name,
+            title,
+            format!("{} · round {} · ", w.role, w.round),
+            back,
+        );
     }
     let (profile, runs) = if profile.is_empty() {
         ("Plain", runs)
@@ -360,7 +370,7 @@ fn bar(
         .filter(|s| !s.is_empty())
         .flat_map(|s| [s, " · "])
         .collect();
-    (name, title, line)
+    (name, title, line, back)
 }
 
 /// `~/x` for a folder under `$HOME` (as given, or resolved: a folder a chat works in is stored resolved); none
@@ -1032,7 +1042,7 @@ async fn chat(
     turn: Turn,
     providers: &[Sheet],
     profile: String,
-    mate: Option<(usize, String, bool)>,
+    mate: Option<(usize, String, bool, Option<String>, String)>,
     places: agents::Places,
     choices: (Vec<String>, Vec<String>),
     ids: Vec<String>,
@@ -1047,9 +1057,9 @@ async fn chat(
     let folder = places.2.as_deref().map_or("scratch".to_owned(), short);
     let provider = named(&thread.agent, providers);
     let runs = compose::said(&provider, &who(&thread.agent, &thread.account, providers));
-    let (name, title, said) = bar(&thread, mate.as_ref(), (&profile, &provider, &runs));
+    let (name, title, said, back) = bar(&thread, mate.as_ref(), (&profile, &provider, &runs));
     let ended = thread.closed || turn.state == "ended";
-    let renamable = !matches!(mate, Some((_, _, true)));
+    let renamable = !matches!(mate, Some((_, _, true, ..)));
     // A Workflow session (#33): its role and round, and a link to what it works on; its tool closes it.
     let workflow = thread.workflow.clone();
     let link = workflow.as_ref().and_then(|w| web_url(&w.url));
@@ -1064,9 +1074,9 @@ async fn chat(
             data-ids=(ids.join(" "))
         >
             <div class="th">
-                agents::back(key: agents::key(&thread.agent, &thread.profile))
-                if let Some((n, _, _)) = mate {
-                    agents::avatar(name: name.clone(), n: n, big: false)
+                agents::back(key: back)
+                if let Some((n, _, _, src, _)) = mate.clone() {
+                    agents::avatar(name: name.clone(), n: n, big: false, src: src)
                 }
                 <div class="tb">
                     <div class="tn">
