@@ -108,8 +108,7 @@ fn main() -> ExitCode {
             return with_config(path.as_deref(), &instance, |config| perf(config, minutes));
         }
         ["devices", "rm", id] => {
-            let id = (*id).to_owned();
-            return with_config(path.as_deref(), &instance, |config| remove(config, &id));
+            return with_config(path.as_deref(), &instance, |config| remove(config, id));
         }
         ["doctor"] => doctor,
         ["push", "migrate"] => keychain::command,
