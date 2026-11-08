@@ -244,6 +244,7 @@ dependencies = [
  "futures-util",
  "hkdf 0.13.0",
  "p256",
+ "qrcode",
  "serde",
  "serde_json",
  "sha2 0.11.1",

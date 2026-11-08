@@ -1,0 +1,103 @@
+/* cooee pairing (#47): what this design adds on top of the look (#7: serve.css + cooee.css + look.css + modern.css).
+   Tokens only. The one raw colour is the QR tile: black on white in every scheme, so any camera reads it. */
+
+/* The shell (q528): unpaired, the header is the name and the connection dot, nothing else, and no thread data loads. */
+.pg{display:block;padding:var(--s3) 0 var(--s4)}
+.pg h1{margin:0;font-size:var(--fs);font-weight:700}
+@media (min-width:1000px){.pg{max-width:1080px;margin:0 auto;padding-top:calc(3 * var(--s4))}}
+
+/* The welcome: the theme's idle figure (sprites off or terminal: the theme's icon), the title, one line of why. */
+.hero{display:flex;flex-direction:column;align-items:center;gap:var(--s2);text-align:center;padding:var(--s3) 0 var(--s4)}
+.hero p{margin:0;max-width:36ch;color:var(--mute)}
+.hic{width:calc(4 * var(--s4));height:calc(4 * var(--s4));border-radius:var(--s3);image-rendering:pixelated}
+
+/* From 1000 px the welcome is two columns: the figure and the steps on the left, the code and the other ways right. */
+@media (min-width:1000px){
+  .wel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 calc(4 * var(--s4));align-items:start}
+  .wel>.hero{align-items:flex-start;text-align:left;padding-top:0}
+  .wel>.cdc{grid-column:2;grid-row:1 / span 3}
+}
+
+/* Three numbered steps: a filled number, the step in bold, one muted line under it. */
+.steps{list-style:none;counter-reset:st;margin:0;padding:0}
+.steps li{counter-increment:st;display:grid;grid-template-columns:var(--ctl) minmax(0,1fr);gap:var(--s1) var(--s3);padding:var(--s3) 0;border-bottom:1px solid var(--line)}
+.steps li:last-child{border-bottom:0}
+.steps li::before{content:counter(st);grid-row:1 / span 2;display:flex;align-items:center;justify-content:center;width:var(--ctl);height:var(--ctl);border-radius:50%;background:var(--l);color:var(--bg);font-weight:700}
+.steps span{color:var(--mute);font-size:var(--fs-meta)}
+.steps code,.pc code,.cdn code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:var(--fs-meta);color:var(--fg)}
+
+/* The code card: six big boxes (a gap after the third, as `cooee pair` prints 482 913), auto-advance, paste fills
+   all six, the sixth digit sends it; [pair] is there for keyboards and screen readers. */
+.cdc{display:block;margin:var(--s3) 0;padding:var(--s3);background:var(--card);border:1px solid var(--edge);border-radius:6px}
+.cdc .ch{margin:0 0 var(--s2)}
+.cb{display:flex;justify-content:center;gap:var(--s2)}
+.cb input{box-sizing:border-box;flex:0 1 calc(3 * var(--s4));min-width:0;width:0;height:calc(4 * var(--s4) - var(--s1));padding:0;border:1px solid var(--edge);border-radius:6px;background:var(--bg);color:var(--fg);font:700 var(--fs-code)/1 ui-monospace,SFMono-Regular,Menlo,monospace;text-align:center;caret-color:var(--l)}
+.cb input:nth-child(4){margin-left:var(--s3)}
+.cb input.f{border:2px solid var(--l);box-shadow:0 0 0 3px color-mix(in srgb,var(--l) 25%,transparent)}
+.cb.r input{border-color:var(--r);color:var(--r)}
+.cb.ok input{border-color:var(--g)}
+.cb.dim input{color:var(--mute)}
+.cdn{margin:var(--s2) 0 0;text-align:center;font-size:var(--fs-meta);color:var(--mute)}
+.cdc>.go{display:flex;justify-content:center;margin-top:var(--s3)}
+html[data-style=modern] .cdc>.go button{min-width:50%}
+button:disabled{opacity:.45}
+
+/* The other ways, as settings rows: the question on the left, its key on the right. */
+.alt{margin-top:var(--s2)}
+.alt .sr:last-child{border-bottom:0}
+
+/* The iOS hint: only in Safari on iPhone and iPad, never in the installed app (navigator.standalone). */
+.hint{display:flex;gap:var(--s3);align-items:flex-start;margin:0 0 var(--s3);padding:var(--s3);border:1px solid var(--edge);border-left:3px solid var(--link);border-radius:6px}
+.hint p{margin:0}.hint p+p{margin-top:var(--s1);font-size:var(--fs-meta);color:var(--mute)}
+.shi{flex:none;display:inline-block;width:var(--s4);height:calc(var(--s4) + 2px);vertical-align:-3px;color:var(--link)}
+.hint>.shi{width:calc(var(--s4) + var(--s2));height:calc(var(--s4) + var(--s3));margin-top:2px}
+@media (min-width:1000px){.wel>.hint{display:none}}
+
+/* A state card: one per state below the screen; a quiet head, then what the screen shows. */
+.pc{display:flex;flex-direction:column;gap:var(--s2);padding:var(--s3);background:var(--card);border:1px solid var(--edge);border-radius:6px}
+.pc p{margin:0}
+.pc .acts{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4);align-items:center}
+.pc[data-k=r]{border-color:var(--r)}.pc[data-k=g]{border-color:var(--g)}.pc[data-k=a]{border-color:var(--a)}
+.pc .et{font-weight:700}.pc[data-k=r] .et{color:var(--r)}.pc[data-k=g] .et{color:var(--g)}.pc[data-k=a] .et{color:var(--a)}
+.pc .m{color:var(--mute);font-size:var(--fs-meta)}
+.pc .big{margin:0 auto}
+.pc .ctr{text-align:center}
+.pc .acts.ctr{justify-content:center}
+
+/* Waiting for approval: the theme's loading figure, the check word big, the time left. */
+.cw{margin:0;text-align:center;font:700 var(--fs-code)/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+
+/* A shown code (the QR panel, `cooee pair`): 32 px, spaced, 482 913. */
+.bc{margin:0;text-align:center;font:700 var(--fs-code)/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em}
+
+/* The QR: black on white whatever the scheme, a quiet zone of four modules inside the tile. */
+.qrt{display:block;box-sizing:border-box;width:216px;margin:0 auto;padding:var(--s2);background:#fff;border-radius:var(--s3)}
+.qrt img{display:block;width:100%;image-rendering:pixelated}
+
+/* `cooee pair` in a terminal: the CLI's output; its QR is the text QR it prints today (two modules a character). */
+.tm{margin:0;padding:var(--s2) var(--s3);background:color-mix(in srgb,var(--fg) 5%,var(--bg));border:1px solid var(--edge);border-radius:6px;font:var(--fs-meta)/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.tm .q{display:block;line-height:1;letter-spacing:0;white-space:pre;overflow-wrap:normal}
+.tm .p{color:var(--mute)}.tm b{color:var(--g)}
+
+/* The approve card (a paired device): in the list above the folders, the check word and the device it came from,
+   [approve with Face ID] [decline]. */
+.apc{margin:var(--s3) 0;padding:var(--s3);border:1px solid var(--a);border-radius:6px;background:color-mix(in srgb,var(--a) 8%,var(--card))}
+.apc p{margin:0}
+.apc .aph{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s2)}
+.apc .aph b{color:var(--a)}
+.apc .who{margin:var(--s1) 0 var(--s2)}
+.apc .cwl{display:flex;align-items:baseline;gap:1ch;margin-bottom:var(--s3)}
+.apc .cwl b{font-size:var(--fs);font-weight:700;letter-spacing:.02em}
+.apc .acts{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4)}
+.m{color:var(--mute);font-size:var(--fs-meta)}
+
+/* A passkey row in Settings › devices: its device, when it was made, [remove]. */
+.pkr .sk small{color:var(--mute);font-size:var(--fs-meta)}
+
+/* Modern: the same, rounder and in its type scale. */
+html[data-style=modern] .pg h1{font-size:17px}
+html[data-style=modern] :is(.cdc,.pc,.hint,.apc,.tm){border-radius:var(--r-card)}
+html[data-style=modern] .cb input{border-radius:var(--r-row)}
+html[data-style=modern] .steps li::before{font-size:var(--fs)}
+html[data-style=modern] .apc .cwl b{font-size:17px}
+html[data-style=modern] .pc :is(.acts,.go) button+button,html[data-style=modern] .apc .acts button+button,html[data-style=modern] :is(.alt .q,.pkr button){background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}

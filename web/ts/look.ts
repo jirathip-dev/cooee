@@ -392,7 +392,7 @@ addEventListener("DOMContentLoaded", deep);
 
 addEventListener("click", (e) => {
   const t = (e.target as Element).closest?.<HTMLElement>(
-    "[data-open],[data-close],[data-k],[data-f],[data-go],[data-add],[data-rm]",
+    "[data-open],[data-close],[data-k][data-v],[data-f],[data-go],[data-add],[data-rm]",
   );
   if (!t) return;
   const d = t.dataset;

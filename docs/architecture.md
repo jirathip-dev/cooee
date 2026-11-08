@@ -87,18 +87,24 @@ cooee core, never in a cooee-drover tab; those show the queue, asks and fleets (
 
 ## Pairing and push (M2)
 
-Everything but `/pair` (and `/pair/request`, `/pair/claim`, `/pair/cancel`) and the static files (manifest, icons,
-style, scripts, `sw.js`, `POST /look`, the themes' files) needs a paired device: an unpaired page load goes to `/pair`, any other read
-or write gets 401. `/pair` is the app's shell for an unpaired browser (#21): the look sheet, a pair hint and the
-composer off, with no thread titles or messages. `cooee pair` prints a six-digit code (and its
-`/pair?code=` link as a QR code), good for 10 minutes and once; five wrong tries drop it. The browser that enters it
-gets a random token as an `HttpOnly`, `SameSite=Strict` cookie. A `devices.json` that can't be read gets 503, never
-taken for "not paired". `<data>/devices.json` (0600) keeps only SHA-256
-hashes. The other way round, the phone asks for a code (`/pair/request`), shows it, and polls `/pair/claim` with the
-claim it was given; `cooee pair <code>` on the Mac approves it and the next poll gets the cookie (at most 4 open
-requests, 10 minutes each, only hashes kept). `cooee devices` lists the devices and `cooee devices rm <id>` unpairs one
-(its pushes stop too); Settings → devices does both from the phone (`GET /devices`, `POST /devices/remove`). On iPhone,
-add cooee to the Home Screen first and pair there: the app has its own cookies.
+Everything but `/pair` (and `/pair/request`, `/pair/claim`, `/pair/cancel`, `/passkey/challenge`, `/passkey/signin`)
+and the static files (manifest, icons, style, scripts, `sw.js`, `POST /look`, the themes' files) needs a paired device:
+an unpaired page load goes to `/pair`, any other read or write gets 401. `/pair` is all an unpaired browser sees (#47,
+q528; docs/design/pair): the theme's figure, three steps, six code boxes and the other ways, no thread titles or
+messages. `cooee pair` (or Settings › devices › pair a device) shows a six-digit code and its `/pair?code=` link as a
+QR code, good for 10 minutes and once; a new one drops the open one. The QR link fills the boxes and pairs at once.
+Five wrong codes a minute from one address (the forwarded one behind `tailscale serve`) close the boxes for the rest
+of the minute, and five misses drop the code. The browser that enters it gets a random token as an `HttpOnly`,
+`SameSite=Strict` cookie. A `devices.json` that can't be read gets 503, never taken for "not paired".
+`<data>/devices.json` (0600) keeps only SHA-256 hashes of codes and tokens, and the passkeys' public keys. The other
+way round, a new device asks to pair (`/pair/request`), shows a two-word check word and polls `/pair/claim`; every
+paired device gets a push and a card, and approving needs a passkey with Face ID (`/pair/answer`); a decline tells the
+new device who said no. Requests last 5 minutes, at most 4 at once. Passkeys are WebAuthn, ES256 on the platform
+authenticator, offered after pairing: the server checks the challenge (once, 5 minutes), the origin, the relying
+party's hash, user verification and the signature. A device that lost its cookie signs back in with its passkey
+(`/passkey/signin`) as a new device. `cooee devices` lists the devices and `cooee devices rm <id>` unpairs one (its
+pushes stop too); Settings → devices does both from the phone and lists and removes passkeys. On iPhone, add cooee to
+the Home Screen first and pair there: the app has its own cookies (the page says so in Safari).
 
 Before that, every request's `Host` (and its `Origin`, when sent) must be localhost, the `bind` address or one of
 `allowed_hosts`, or it gets 403, paired cookie or not. That blocks DNS rebinding. To reach cooee from the phone,
