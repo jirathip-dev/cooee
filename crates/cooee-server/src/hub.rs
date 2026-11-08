@@ -3,24 +3,28 @@
 //! tools start, known by their labels (#33).
 
 use std::{
-    collections::{BTreeMap, VecDeque},
+    collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, MutexGuard, PoisonError},
+    sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError},
     thread,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use cooee_core::{
-    Agent, Body, Card, Change, Chat, Item, Launch, Plugin, Queued, Shed, ShedError, Store,
+    Agent, Body, Card, Change, Chat, Config, Item, Launch, Plugin, Queued, Shed, ShedError, Store,
     StoreError, Summary, Thread, Turn, Workflow,
+    mcp::{self, COOEE, Pick, Server},
     shed_proto::{self, ApprovalOption, Event, TerminalInfo},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::broadcast;
 
-use crate::push::{Note, Push, note};
+use crate::{
+    mcp::Grant,
+    push::{Note, Push, note},
+};
 
 /// How many page events a thread keeps for a reconnecting page.
 const RING: usize = 4096;
@@ -178,6 +182,8 @@ pub struct Recipe {
     pub model: String,
     /// The effort picked, as `model`.
     pub effort: String,
+    /// The MCP servers its profile picks (#56), each run through cooee's proxy.
+    pub mcp: Vec<String>,
 }
 
 /// The threads and the shed they run on.
@@ -201,6 +207,16 @@ pub struct Hub {
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
     /// The stamp of the newest thread id handed out.
     last: Mutex<u64>,
+    /// The data folder (the secrets' file fallback).
+    data: PathBuf,
+    /// Where a thread's MCP proxies reach cooee, once it listens.
+    url: OnceLock<String>,
+    /// The key each thread's MCP token is made with (`<data>/mcp.key`).
+    mcp_key: String,
+    /// The servers agents proposed, by thread and card, until answered (a restart drops them).
+    proposals: Mutex<HashMap<(String, u64), Server>>,
+    /// Each server's tools as last listed, for the profile sheet; held while the registry is written.
+    tools: Mutex<HashMap<String, Result<Vec<(String, String)>, String>>>,
 }
 
 pub(crate) fn now() -> u64 {
@@ -348,6 +364,15 @@ impl Hub {
         plugins: Vec<Plugin>,
     ) -> Result<Arc<Self>, HubError> {
         let store = Store::open(data)?;
+        let key = data.join("mcp.key");
+        let mcp_key = match fs::read_to_string(&key) {
+            Ok(k) => k,
+            Err(_) => {
+                let k = cooee_core::random(32).map(|r| cooee_core::sha256(&r));
+                let k = k.and_then(|k| cooee_core::write_private(&key, k.as_bytes()).map(|()| k));
+                k.map_err(|e| refused(&key, &e))?
+            }
+        };
         let mut threads = BTreeMap::new();
         for id in store.ids()? {
             let mut meta = store.load(&id)?;
@@ -372,6 +397,11 @@ impl Hub {
             boot: format!("{:x}", now()),
             threads: Mutex::new(threads),
             last: Mutex::new(0),
+            data: data.to_owned(),
+            url: OnceLock::new(),
+            mcp_key,
+            proposals: Mutex::default(),
+            tools: Mutex::default(),
         });
         let follower = Arc::clone(&hub);
         thread::spawn(move || follower.follow());
@@ -987,12 +1017,13 @@ impl Hub {
                 (LABEL.to_owned(), "1".to_owned()),
                 (format!("{LABEL}.thread"), id.to_owned()),
             ]);
+            let launch = self.mcp_launch(id, recipe)?;
             if let Err(e) = self.shed.run_acp(
                 &terminal,
                 (&agent, &self.adapter(&agent)),
                 &folder,
                 &labels,
-                &recipe.launch,
+                &launch,
             ) && self.shed.get(&terminal).is_err()
             {
                 if !keep {
@@ -1047,15 +1078,14 @@ impl Hub {
             (format!("{LABEL}.thread"), id.to_owned()),
         ]);
         let started = self
-            .shed
-            .run_acp(
-                &terminal,
-                (&agent, &self.adapter(&agent)),
-                &folder,
-                &labels,
-                &recipe.launch,
-            )
-            .map_err(HubError::from)
+            .mcp_launch(id, recipe)
+            .and_then(|launch| {
+                let cmd = self.adapter(&agent);
+                let run = (agent.as_str(), cmd.as_slice());
+                Ok(self
+                    .shed
+                    .run_acp(&terminal, run, &folder, &labels, &launch)?)
+            })
             .and_then(|_| Ok(self.shed.ready(&terminal)?));
         if let Some((file, _)) = &recipe.launch.secrets {
             let _ = fs::remove_file(file);
@@ -1333,6 +1363,9 @@ impl Hub {
                 .ok_or_else(|| io::Error::other("no longer configured"))
                 .and_then(|p| crate::plugin::answer(&p, id, item, option, by, value))
                 .map_err(|e| HubError::Refused(format!("plugin {name}: {e}"))),
+            Body::Approval { card, .. } if card.form.as_deref() == Some("mcp") => {
+                Ok(self.mcp_answer(id, item, option))
+            }
             _ => return self.shed_approve(&mut live, tapped, option),
         };
         let done = live.chat.update(item, 0, |b| {
@@ -1686,6 +1719,320 @@ impl Hub {
     #[must_use]
     pub fn event_id(&self, out: &Out) -> String {
         format!("{}.{}", self.boot, out.seq)
+    }
+}
+
+/// An agent's `propose_server` (#56): a server for the registry, and why.
+#[derive(Debug, Deserialize)]
+pub struct Proposal {
+    /// Its name.
+    pub name: String,
+    /// `stdio`, `http` or `sse`.
+    #[serde(rename = "type", default)]
+    pub kind: String,
+    /// A stdio server's program.
+    #[serde(default)]
+    pub command: String,
+    /// Its arguments.
+    #[serde(default)]
+    pub args: Vec<String>,
+    /// An http or sse server's URL.
+    #[serde(default)]
+    pub url: String,
+    /// What the owner gets from it.
+    #[serde(default)]
+    pub why: String,
+}
+
+impl Proposal {
+    /// The server it would add: switched off, with no variables or headers (the Mac adds those).
+    #[must_use]
+    pub fn server(self) -> Server {
+        Server {
+            name: self.name,
+            kind: self.kind,
+            command: self.command,
+            args: self.args,
+            url: self.url,
+            env: BTreeMap::new(),
+            headers: BTreeMap::new(),
+            enabled: false,
+        }
+    }
+}
+
+/// MCP servers (#56): the registry in the config file, a thread's proxies and their grants, and proposals.
+impl Hub {
+    /// Agents' MCP proxies reach cooee at `url` (`cooee serve`, once it listens).
+    pub fn listening(&self, url: String) {
+        let _ = self.url.set(url);
+    }
+
+    /// The registry, read from the config file now.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] when the config can't be read.
+    pub fn mcp(&self) -> Result<Vec<Server>, HubError> {
+        let Some(c) = &self.config else {
+            return Ok(Vec::new());
+        };
+        Config::load(c)
+            .map(|c| c.mcp)
+            .map_err(|e| HubError::Refused(e.to_string()))
+    }
+
+    /// Changes the registry with `f` (its sentence on success), checks and saves it.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] with `f`'s or the check's reason, or no config file.
+    pub fn edit_mcp(
+        &self,
+        f: impl FnOnce(&mut Vec<Server>) -> Result<String, String>,
+    ) -> Result<String, HubError> {
+        let mut tools = lock(&self.tools);
+        let Some(c) = &self.config else {
+            return Err(HubError::Refused(
+                "there is no config file to save MCP servers in".to_owned(),
+            ));
+        };
+        let mut list = self.mcp()?;
+        let said = f(&mut list).map_err(HubError::Refused)?;
+        mcp::check(&list).map_err(HubError::Refused)?;
+        mcp::save(c, &list).map_err(|e| refused(c, &e))?;
+        tools.clear();
+        Ok(said)
+    }
+
+    /// The config's folder (its `profiles/`).
+    fn config_dir(&self) -> Option<&Path> {
+        self.config.as_deref().and_then(Path::parent)
+    }
+
+    /// Profile `id`'s picks (none for Plain or a profile gone).
+    fn picks(&self, id: &str) -> Vec<Pick> {
+        cooee_core::profiles::find(self.config_dir(), &self.data, id)
+            .map_or_else(|_| Vec::new(), |p| p.mcp)
+    }
+
+    /// Saves profile `id`'s picks (an owner's profile only), each naming a server in the registry.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a plugin's profile, an unknown server or a file that can't be written.
+    pub fn set_picks(&self, id: &str, picks: &[Pick]) -> Result<(), HubError> {
+        let servers = self.mcp()?;
+        if let Some(p) = picks
+            .iter()
+            .find(|p| !servers.iter().any(|s| s.name == p.server))
+        {
+            return Err(HubError::Refused(format!(
+                "there is no MCP server {}",
+                p.server
+            )));
+        }
+        let file = self
+            .config_dir()
+            .and_then(|c| cooee_core::profiles::file(c, id));
+        let file =
+            file.ok_or_else(|| HubError::Refused(format!("{id} isn't one of your own profiles")))?;
+        mcp::save_picks(&file, picks).map_err(|e| refused(&file, &e))
+    }
+
+    /// Server `name`'s tools (name, description), listed once and kept until the registry changes.
+    #[must_use]
+    pub fn mcp_tools(&self, name: &str) -> Result<Vec<(String, String)>, String> {
+        if let Some(t) = lock(&self.tools).get(name) {
+            return t.clone();
+        }
+        let s = self
+            .mcp()
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .find(|s| s.name == name);
+        let listed = s
+            .ok_or_else(|| format!("no MCP server {name}"))
+            .and_then(|s| Ok(self.grant_of(s, None)?))
+            .and_then(|g| crate::mcp::tools(&g));
+        lock(&self.tools).insert(name.to_owned(), listed.clone());
+        listed
+    }
+
+    /// `s` resolved, with `tools` allowed.
+    fn grant_of(&self, s: Server, tools: Option<Vec<String>>) -> Result<Grant, String> {
+        let (env, headers) = s.resolved(&self.data)?;
+        Ok(Grant {
+            kind: s.kind,
+            command: s.command,
+            args: s.args,
+            url: s.url,
+            env,
+            headers,
+            tools,
+        })
+    }
+
+    /// `recipe`'s launch for thread `id`, with its MCP servers: cooee's own, then each its profile picks (on, and
+    /// resolving now), each a `cooee mcp proxy` holding the thread's token. Before cooee listens: none.
+    fn mcp_launch(&self, id: &str, recipe: &Recipe) -> Result<Launch, HubError> {
+        let mut launch = recipe.launch.clone();
+        let (Some(url), Ok(exe)) = (self.url.get(), std::env::current_exe()) else {
+            return Ok(launch);
+        };
+        let servers = self.mcp()?;
+        for name in &recipe.mcp {
+            let s = servers.iter().find(|s| &s.name == name && s.enabled);
+            let s = s.ok_or_else(|| {
+                HubError::Refused(format!(
+                    "MCP server {name} is off or gone: settings › mcp servers"
+                ))
+            })?;
+            s.resolved(&self.data).map_err(HubError::Refused)?;
+        }
+        let var = json!([{ "name": crate::mcp::VAR, "value": format!("{url} {}", crate::mcp::token(&self.mcp_key, id)) }]);
+        let exe = exe.to_string_lossy();
+        let entry = |name: &str, args: &[&str]| json!({ "name": name, "command": exe, "args": args, "env": var });
+        let mut all = vec![entry(COOEE, &["mcp", "serve", "--thread", id])];
+        all.extend(
+            recipe
+                .mcp
+                .iter()
+                .map(|s| entry(s, &["mcp", "proxy", s, "--thread", id])),
+        );
+        let file = self
+            .data
+            .join("secrets")
+            .join(format!(".mcp-{id}-{:x}.json", now()));
+        launch.mcp = Some((file, all));
+        Ok(launch)
+    }
+
+    /// Thread `id`, if `token` is its MCP token and it is open.
+    fn token_of(&self, id: &str, token: &str) -> Result<Thread, HubError> {
+        let no = || {
+            HubError::Refused(format!(
+                "this MCP token isn't thread {id}'s, or the thread is closed"
+            ))
+        };
+        if token != crate::mcp::token(&self.mcp_key, id) {
+            return Err(no());
+        }
+        let meta = self.thread(id).map_err(|_| no())?.0;
+        if meta.closed {
+            return Err(no());
+        }
+        Ok(meta)
+    }
+
+    /// The grant of thread `id`'s proxy for `server` (`token`: the thread's): its pick from its profile, the server
+    /// on, resolved now.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token, a closed thread, a server it doesn't pick, one off, or a reference
+    /// that doesn't resolve.
+    pub fn grant(&self, id: &str, token: &str, server: &str) -> Result<Grant, HubError> {
+        let meta = self.token_of(id, token)?;
+        let pick = self
+            .picks(&meta.profile)
+            .into_iter()
+            .find(|p| p.server == server);
+        let pick = pick.ok_or_else(|| {
+            HubError::Refused(format!(
+                "thread {id}'s profile doesn't pick MCP server {server}"
+            ))
+        })?;
+        let s = self
+            .mcp()?
+            .into_iter()
+            .find(|s| s.name == server && s.enabled);
+        let s =
+            s.ok_or_else(|| HubError::Refused(format!("MCP server {server} is off or gone")))?;
+        self.grant_of(s, pick.tools).map_err(HubError::Refused)
+    }
+
+    /// An agent's `propose_server` in thread `id`: a card with the exact command or URL; nothing runs, and the
+    /// server is added (off) only when the owner approves it with Face ID.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token, a closed thread, a server that breaks a rule or a name taken.
+    pub fn propose(&self, id: &str, token: &str, p: Proposal) -> Result<Item, HubError> {
+        self.token_of(id, token)?;
+        let why: String = p.why.trim().chars().take(300).collect();
+        let s = p.server();
+        s.check().map_err(HubError::Refused)?;
+        if self.mcp()?.iter().any(|o| o.name == s.name) {
+            return Err(HubError::Refused(format!(
+                "there is an MCP server {} already",
+                s.name
+            )));
+        }
+        let option = |o: &str| ApprovalOption {
+            id: o.to_owned(),
+            name: o.to_owned(),
+            kind: String::new(),
+        };
+        let body = Body::Approval {
+            tool: format!("add MCP server {} ({}): {why}", s.name, s.kind),
+            options: vec![option("approve"), option("decline")],
+            tapped: None,
+            chosen: None,
+            plugin: None,
+            card: Card {
+                form: Some("mcp".to_owned()),
+                detail: Some(s.shown()),
+                ..Card::default()
+            },
+        };
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        let item = live.chat.push(now(), 0, body);
+        live.publish(self, vec![Change::Item(item.clone())])?;
+        lock(&self.proposals).insert((id.to_owned(), item.id), s);
+        Ok(item)
+    }
+
+    /// Whether item `item` of thread `id` is an MCP proposal's card (approving it needs Face ID).
+    #[must_use]
+    pub fn is_proposal(&self, id: &str, item: u64) -> bool {
+        let Ok(live) = self.live(id) else {
+            return false;
+        };
+        let live = lock(&live);
+        live.chat.items.iter().any(|i| {
+            i.id == item && matches!(&i.body, Body::Approval { card, .. } if card.form.as_deref() == Some("mcp"))
+        })
+    }
+
+    /// The owner's answer to a proposal: `approve` adds it, off.
+    fn mcp_answer(&self, id: &str, item: u64, option: &str) -> Result<Option<String>, String> {
+        let s = lock(&self.proposals).remove(&(id.to_owned(), item));
+        if option != "approve" {
+            return Ok(Some("declined".to_owned()));
+        }
+        let s = s.ok_or("this proposal ran out (cooee restarted): ask the agent again")?;
+        self.add_mcp(s).map(Some).map_err(|e| e.to_string())
+    }
+
+    /// Adds `s` to the registry, off (an agent's proposal, or the phone's `+ server`, both after Face ID).
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a name taken or a server that breaks a rule.
+    pub fn add_mcp(&self, s: Server) -> Result<String, HubError> {
+        self.edit_mcp(|list| {
+            if list.iter().any(|o| o.name == s.name) {
+                return Err(format!(
+                    "there is an MCP server {} already: change it on the Mac",
+                    s.name
+                ));
+            }
+            let said = format!(
+                "added {}, off: turn it on in settings › mcp servers",
+                s.name
+            );
+            list.push(Server {
+                enabled: false,
+                ..s
+            });
+            Ok(said)
+        })
     }
 }
 

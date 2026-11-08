@@ -9,7 +9,7 @@ use std::{
     process::{Command, Stdio},
     sync::{Arc, Mutex, PoisonError},
     thread,
-    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use aes_gcm::{
@@ -17,7 +17,7 @@ use aes_gcm::{
     aead::{Aead, generic_array::GenericArray},
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
-use cooee_core::{Body, Change, Chat, Devices, Thread, random, write_private};
+use cooee_core::{Body, Change, Chat, Devices, Thread, mcp::security, random, write_private};
 use hkdf::Hkdf;
 use p256::{
     PublicKey, SecretKey,
@@ -191,41 +191,6 @@ pub fn jwt(k: &SecretKey, endpoint: &str, now: u64) -> String {
 fn account(data: &Path) -> String {
     let hash = cooee_core::sha256(data.as_os_str().as_encoded_bytes());
     format!("vapid-{}", &hash[..16])
-}
-
-/// How long a `security` call may take: past it, an unseen keychain prompt (after a rebuild) is an error, not a
-/// wait for ever (herdsman#548).
-const KEYCHAIN: Duration = Duration::from_secs(5);
-
-/// Runs `security` with `input` on its stdin, for [`KEYCHAIN`] at most: whether it succeeded, and its stdout.
-fn security(args: &[&str], input: &str) -> io::Result<(bool, String)> {
-    let mut child = Command::new("security")
-        .args(args)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()?;
-    child
-        .stdin
-        .take()
-        .map(|mut i| i.write_all(input.as_bytes()));
-    let deadline = Instant::now() + KEYCHAIN;
-    while child.try_wait()?.is_none() {
-        if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Err(io::Error::new(
-                io::ErrorKind::TimedOut,
-                "the keychain didn't answer in 5 s: unlock it, or allow cooee in Keychain Access",
-            ));
-        }
-        thread::sleep(Duration::from_millis(20));
-    }
-    let out = child.wait_with_output()?;
-    Ok((
-        out.status.success(),
-        String::from_utf8_lossy(&out.stdout).trim().to_owned(),
-    ))
 }
 
 /// The VAPID key already stored for `data`, if any.

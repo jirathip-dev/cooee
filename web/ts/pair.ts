@@ -66,7 +66,7 @@ async function savePasskey(): Promise<void> {
 }
 
 /// A passkey's signature over a fresh challenge, after Face ID.
-async function sign(): Promise<Assertion> {
+export async function sign(): Promise<Assertion> {
   const { challenge } = await post<{ challenge: string }>("/passkey/challenge", {});
   const c = (await navigator.credentials
     .get({ publicKey: { challenge: bytes(challenge), rpId: location.hostname, userVerification: "required" } })
@@ -588,4 +588,44 @@ async function passkeys(): Promise<void> {
       ]),
     );
   box.replaceChildren(...rows);
+}
+
+// ---- Settings › mcp servers (#56): `+ server` shows its card, the exact command or URL; approving needs Face ID, and
+// the server is added off.
+const mcpAdd = $<HTMLFormElement>("#mcp-add");
+if (mcpAdd) {
+  mcpAdd.onsubmit = (e) => {
+    e.preventDefault();
+    const f = new FormData(mcpAdd);
+    const c = make("div", "apc");
+    c.id = "mcp-card";
+    c.setAttribute("role", "group");
+    c.setAttribute("aria-label", `add MCP server ${f.get("name")}`);
+    const head = make("p", "aph");
+    head.append(make("b", "", `Add ${f.get("name")} (${f.get("type")})?`));
+    const err = make("p", "err");
+    const approve = async (): Promise<void> => {
+      err.textContent = "";
+      try {
+        f.set("passkey", JSON.stringify(await sign()));
+        const r = await fetch("/mcp/servers", {
+          method: "POST",
+          body: new URLSearchParams([...f].map(([k, v]) => [k, String(v)])),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        location.reload();
+      } catch (x) {
+        err.textContent = x instanceof Error ? x.message : String(x);
+      }
+    };
+    c.append(
+      head,
+      make("pre", "diff", String(f.get("target"))),
+      make("p", "m", "It is added off: nothing runs until you turn it on."),
+      acts(["approve with Face ID", approve], ["cancel", () => c.remove(), "sec"]),
+      err,
+    );
+    $("#mcp-card")?.remove();
+    mcpAdd.after(c);
+  };
 }

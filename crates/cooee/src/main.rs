@@ -21,7 +21,10 @@ const USAGE: &str = "usage: cooee <serve | pair | devices | reports | devices rm
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
-                     | theme check <path>...> [--instance <name>] [--config <file>] | cooee --version";
+                     | theme check <path>... | mcp ls | mcp add <name> (<command> [<arg>...] | --url <url> [--type sse]) \
+                     [--env K=secret:N|env:N]... [--header K=secret:N|env:N]... | mcp rm|enable|disable <name> \
+                     | mcp proxy <server> --thread <id> | mcp serve --thread <id>> [--instance <name>] [--config <file>] \
+                     | cooee --version";
 
 /// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the exact version.
 const SHED_CARGO: [&str; 8] = [
@@ -114,6 +117,13 @@ fn main() -> ExitCode {
             return with_config(path.as_deref(), &instance, |config| {
                 plugin(config, &rest, rev.as_deref(), yes, purge)
             });
+        }
+        ["mcp", "proxy", server, "--thread", thread] => {
+            return finish(cooee_server::mcp::proxy(server, thread));
+        }
+        ["mcp", "serve", "--thread", thread] => return finish(cooee_server::mcp::serve(thread)),
+        ["mcp", rest @ ..] => {
+            return with_config(path.as_deref(), &instance, |config| mcp(config, rest));
         }
         ["theme", rest @ ..] => {
             return with_config(path.as_deref(), &instance, |config| {
@@ -409,6 +419,90 @@ fn plugin(
 }
 
 /// `cooee theme add|remove|list|check` (docs/themes.md).
+/// `cooee mcp ls | add | rm | enable | disable` (#56): the registry in the config file, changed on the Mac.
+fn mcp(config: &Config, args: &[&str]) -> Result<(), String> {
+    use cooee_core::mcp::{Server, save};
+    let path = config
+        .path
+        .as_deref()
+        .ok_or("no config file: set HOME or --config")?;
+    let mut list = config.mcp.clone();
+    let said = match args {
+        ["ls"] => {
+            for s in &list {
+                let on = if s.enabled { "on" } else { "off" };
+                println!("[{}] {} · {on} · {}", s.kind, s.name, s.shown());
+            }
+            return Ok(());
+        }
+        ["add", name, rest @ ..] => {
+            let mut s = Server {
+                name: (*name).to_owned(),
+                kind: "stdio".to_owned(),
+                command: String::new(),
+                args: Vec::new(),
+                url: String::new(),
+                env: std::collections::BTreeMap::new(),
+                headers: std::collections::BTreeMap::new(),
+                enabled: true,
+            };
+            let mut words = rest.iter();
+            let pair = |v: Option<&&str>| {
+                v.and_then(|v| v.split_once('='))
+                    .map(|(k, v)| (k.to_owned(), v.to_owned()))
+            };
+            while let Some(w) = words.next() {
+                match *w {
+                    "--url" | "--type" if s.command.is_empty() => {
+                        let v = words.next().ok_or(USAGE)?;
+                        if *w == "--url" {
+                            (s.url, s.kind) = ((*v).to_owned(), "http".to_owned());
+                        } else {
+                            s.kind = (*v).to_owned();
+                        }
+                    }
+                    "--env" | "--header" => {
+                        let (k, v) = pair(words.next()).ok_or(USAGE)?;
+                        let to = if *w == "--env" {
+                            &mut s.env
+                        } else {
+                            &mut s.headers
+                        };
+                        to.insert(k, v);
+                    }
+                    _ if s.command.is_empty() && s.url.is_empty() => s.command = (*w).to_owned(),
+                    _ => s.args.push((*w).to_owned()),
+                }
+            }
+            if list.iter().any(|o| o.name == s.name) {
+                return Err(format!(
+                    "there is an MCP server {name} already: `cooee mcp rm {name}` first"
+                ));
+            }
+            let said = format!("added {name}: [{}] {}", s.kind, s.shown());
+            list.push(s);
+            said
+        }
+        ["rm", name] => {
+            list.retain(|s| s.name != *name);
+            format!("removed {name}")
+        }
+        [on @ ("enable" | "disable"), name] => {
+            let s = list
+                .iter_mut()
+                .find(|s| s.name == *name)
+                .ok_or(format!("no MCP server {name}"))?;
+            s.enabled = *on == "enable";
+            format!("{name} is {}", if s.enabled { "on" } else { "off" })
+        }
+        _ => return Err(USAGE.to_owned()),
+    };
+    cooee_core::mcp::check(&list)?;
+    save(path, &list).map_err(|e| format!("{}: {e}", path.display()))?;
+    println!("{said}");
+    Ok(())
+}
+
 fn theme(config: &Config, args: &[&str], rev: Option<&str>, yes: bool) -> Result<(), String> {
     if let ["check", paths @ ..] = args {
         let mut failed = 0;

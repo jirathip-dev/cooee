@@ -49,6 +49,8 @@ pub struct Config {
     pub instance: String,
     /// Timing (`[perf]`).
     pub perf: Perf,
+    /// The MCP servers profiles pick from (`[[mcp]]`, #56).
+    pub mcp: Vec<crate::mcp::Server>,
 }
 
 /// `[perf]`: how cooee times itself (#53).
@@ -101,6 +103,7 @@ impl Default for Config {
             path: None,
             instance: "cooee".to_owned(),
             perf: Perf::default(),
+            mcp: Vec::new(),
         }
     }
 }
@@ -118,6 +121,14 @@ pub enum ConfigError {
         path: PathBuf,
         /// The underlying error.
         source: io::Error,
+    },
+    /// An `[[mcp]]` server breaks a rule (a value where only a reference may be): the key, never the value.
+    #[error("{path}: {why}")]
+    Mcp {
+        /// The config file.
+        path: PathBuf,
+        /// What is wrong.
+        why: String,
     },
     /// The file isn't valid TOML for [`Config`] (an unknown key lists the known ones).
     #[error("{path}: {source}")]
@@ -171,6 +182,10 @@ impl Config {
         let config: Self = toml::from_str(&text).map_err(|source| ConfigError::Parse {
             path: path.to_owned(),
             source,
+        })?;
+        crate::mcp::check(&config.mcp).map_err(|why| ConfigError::Mcp {
+            path: path.to_owned(),
+            why,
         })?;
         let home = env::var_os("HOME").map(PathBuf::from);
         let roots = config

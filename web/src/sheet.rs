@@ -453,6 +453,11 @@ async fn settings(cx: &Cx) -> Result<impl View> {
                 <div id="s-passkeys-box"></div>
                 <p class="ch" id="s-plugins">"plugins"</p>
                 <div id="s-plugins-box"></div>
+                <p class="ch" id="s-mcp">"mcp servers"</p>
+                <a class="sr" href="/mcp">
+                    <span class="sk">"mcp servers"</span>
+                    <i class="cv">"▸"</i>
+                </a>
                 <p class="ch" id="s-report">"report"</p>
                 <button type="button" class="sr" data-report=(true)>
                     <span class="sk">"report a problem"</span>

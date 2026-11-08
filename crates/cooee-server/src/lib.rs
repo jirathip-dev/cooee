@@ -9,6 +9,7 @@
 mod hub;
 mod login;
 mod manage;
+pub mod mcp;
 mod pairing;
 mod passkey;
 mod plugin;
@@ -16,6 +17,7 @@ mod push;
 mod themes;
 
 use std::{
+    collections::BTreeMap,
     io,
     net::{IpAddr, SocketAddr},
     path::PathBuf,
@@ -142,6 +144,10 @@ impl Layer for Gate {
             }
             let path = uri(cx).path();
             if OPEN.contains(&path) || path.starts_with("/look/") {
+                return next.run(cx, body).await;
+            }
+            // A thread's MCP proxy carries the thread's token, checked by the call.
+            if path.starts_with("/mcp/agent/") {
                 return next.run(cx, body).await;
             }
             if path.starts_with("/plugin/") {
@@ -670,6 +676,7 @@ fn recipe(
             profile: p.id(),
             launch,
             instructions,
+            mcp: p.mcp.iter().map(|k| k.server.clone()).collect(),
             ..Recipe::default()
         };
         (p.agent, p.folder.unwrap_or(folder), recipe)
@@ -870,18 +877,30 @@ struct Approve {
     option: String,
     #[serde(default)]
     value: Option<String>,
+    /// Approving an MCP server an agent proposed needs Face ID (#56).
+    #[serde(default)]
+    passkey: Option<pairing::Assertion>,
 }
 
 #[route(POST "/threads/{id}/approve")]
-async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Answer<Option<cooee_core::Item>>> {
+async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Response> {
     let id = thread_id(cx);
+    if a.option == "approve" && hub(cx).is_proposal(&id, a.item) {
+        let Some(p) = a.passkey else {
+            return plain(403, "Approving an MCP server needs Face ID.");
+        };
+        if let Err(why) = pairing::assert(cx, p).await? {
+            return plain(403, why);
+        }
+    }
     let by = request_context::<Paired>(cx).0.label.clone();
-    Ok(Answer(
+    Answer(
         blocking(cx, move |hub| {
             hub.approve(&id, a.item, &a.option, a.value.as_deref(), &by)
         })
         .await,
-    ))
+    )
+    .into_response(cx)
 }
 
 /// `POST /threads/{id}/model` `{model, effort}`: the composer's chip (#553 row 34; empty: the default).
@@ -1688,6 +1707,229 @@ async fn report(cx: &Cx, Json(r): Json<Report>) -> Result<Response> {
     plain(200, "report sent")
 }
 
+/// A thread's MCP proxy or cooee's own server asking (#56): `{thread, server}`, with the thread's token.
+#[derive(Deserialize)]
+struct AgentAsk {
+    thread: String,
+    #[serde(default)]
+    server: serde_json::Value,
+}
+
+/// The `Authorization: Bearer` token.
+fn bearer(cx: &Cx) -> String {
+    let token = header(cx, "authorization").and_then(|a| a.strip_prefix("Bearer "));
+    token.unwrap_or_default().to_owned()
+}
+
+/// `POST /mcp/agent/grant` `{thread, server}`: the server resolved, in memory, and the tools it may offer.
+#[route(POST "/mcp/agent/grant")]
+async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant>> {
+    let (token, server) = (bearer(cx), a.server.as_str().unwrap_or_default().to_owned());
+    Ok(Answer(
+        blocking(cx, move |hub| hub.grant(&a.thread, &token, &server)).await,
+    ))
+}
+
+/// `POST /mcp/agent/propose` `{thread, server: {name, type, command, args, url, why}}`: `propose_server`'s card.
+#[route(POST "/mcp/agent/propose")]
+async fn mcp_propose(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<cooee_core::Item>> {
+    let token = bearer(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let p =
+                serde_json::from_value(a.server).map_err(|e| HubError::Refused(e.to_string()))?;
+            hub.propose(&a.thread, &token, p)
+        })
+        .await,
+    ))
+}
+
+/// `GET /mcp`: Settings › mcp servers.
+#[page("/mcp")]
+async fn mcp_settings(cx: &Cx) -> Result<impl View> {
+    let data = app_context::<Data>(cx);
+    let (d, c) = (data.0.clone(), data.1.clone());
+    let page = blocking(cx, move |hub| {
+        let servers = hub.mcp()?;
+        let on = servers.iter().filter(|s| s.enabled);
+        let tools = on
+            .map(|s| (s.name.clone(), hub.mcp_tools(&s.name)))
+            .collect();
+        let profiles = cooee_core::profiles::list(c.as_deref(), &d);
+        let profiles = profiles
+            .into_iter()
+            .filter(|p| p.plugin.is_none())
+            .collect();
+        Ok(cooee_web::McpPage {
+            servers,
+            profiles,
+            tools,
+        })
+    });
+    Ok(cooee_web::mcp_page(
+        cx,
+        page.await.map_err(io::Error::from)?,
+    ))
+}
+
+/// Back to Settings › mcp servers, or the reason.
+fn to_mcp<T>(done: Result<T, HubError>) -> Result<Response> {
+    match done {
+        Ok(_) => Ok(Response::builder()
+            .status(303)
+            .header("Location", "/mcp")
+            .body(Body::from(()))?),
+        Err(e) => plain(400, &e.to_string()),
+    }
+}
+
+/// The phone's `+ server`: its name, type, command line or URL, and the Face ID assertion (JSON) its card got.
+#[derive(Deserialize)]
+struct NewServer {
+    name: String,
+    #[serde(rename = "type")]
+    kind: String,
+    target: String,
+    #[serde(default)]
+    passkey: Option<String>,
+}
+
+/// `POST /mcp/servers`: adds a server, off, after Face ID.
+#[route(POST "/mcp/servers")]
+async fn mcp_add(cx: &Cx, Form(n): Form<NewServer>) -> Result<Response> {
+    let Some(p) = n.passkey.and_then(|p| serde_json::from_str(&p).ok()) else {
+        return plain(
+            403,
+            "Adding an MCP server needs Face ID: approve it on its card.",
+        );
+    };
+    if let Err(why) = pairing::assert(cx, p).await? {
+        return plain(403, why);
+    }
+    let mut words = n.target.split_whitespace().map(str::to_owned);
+    let stdio = n.kind == "stdio";
+    let p = hub::Proposal {
+        name: n.name.trim().to_owned(),
+        command: words.next().filter(|_| stdio).unwrap_or_default(),
+        args: if stdio { words.collect() } else { Vec::new() },
+        url: if stdio {
+            String::new()
+        } else {
+            n.target.trim().to_owned()
+        },
+        kind: n.kind,
+        why: String::new(),
+    };
+    match blocking(cx, move |hub| hub.add_mcp(p.server())).await {
+        Ok(said) => plain(200, &said),
+        Err(e) => plain(400, &e.to_string()),
+    }
+}
+
+/// `POST /mcp/servers/{name}` `enabled=on|off`: turns a server on or off. Its command, args, URL, env and headers
+/// are the Mac's to change: a phone that sends one is refused.
+#[route(POST "/mcp/servers/{id}")]
+async fn mcp_toggle(cx: &Cx, Form(f): Form<BTreeMap<String, String>>) -> Result<Response> {
+    if f.keys().any(|k| k != "enabled") {
+        return plain(
+            403,
+            "A server's command, URL, env and headers change on the Mac only: `cooee mcp add` there.",
+        );
+    }
+    let on = match f.get("enabled").map(String::as_str) {
+        Some("on") => true,
+        Some("off") => false,
+        _ => return plain(400, "`enabled` is on or off."),
+    };
+    let name = thread_id(cx);
+    to_mcp(
+        blocking(cx, move |hub| {
+            hub.edit_mcp(|list| {
+                let s = list.iter_mut().find(|s| s.name == name);
+                s.ok_or(format!("no MCP server {name}"))?.enabled = on;
+                Ok(String::new())
+            })
+        })
+        .await,
+    )
+}
+
+/// `POST /mcp/servers/{name}/remove`.
+#[route(POST "/mcp/servers/{id}/remove")]
+async fn mcp_remove(cx: &Cx) -> Result<Response> {
+    let name = thread_id(cx);
+    to_mcp(
+        blocking(cx, move |hub| {
+            hub.edit_mcp(|list| {
+                let had = list.len();
+                list.retain(|s| s.name != name);
+                (list.len() < had)
+                    .then(String::new)
+                    .ok_or(format!("no MCP server {name}"))
+            })
+        })
+        .await,
+    )
+}
+
+/// A secret for `secret:<NAME>`.
+#[derive(Deserialize)]
+struct NewSecret {
+    name: String,
+    value: String,
+}
+
+/// `POST /mcp/secret` `name, value`: saved straight to the keychain, never shown again.
+#[route(POST "/mcp/secret")]
+async fn mcp_secret(cx: &Cx, Form(s): Form<NewSecret>) -> Result<Response> {
+    let data = app_context::<Data>(cx).0.clone();
+    let saved = tokio::task::spawn_blocking(move || {
+        cooee_core::mcp::set_secret(&data, s.name.trim(), &s.value)
+    });
+    to_mcp(saved.await?.map_err(|e| HubError::Refused(e.to_string())))
+}
+
+/// `POST /profiles/{id}/mcp`: the profile's servers (`s:<server>`) and tools (`t:<server>:<tool>`); every tool of a
+/// server ticked is all of them, and a server whose tools couldn't be listed keeps the ones it had.
+#[route(POST "/profiles/{id}/mcp")]
+async fn profile_mcp(cx: &Cx, Form(f): Form<BTreeMap<String, String>>) -> Result<Response> {
+    let (id, data) = (thread_id(cx), app_context::<Data>(cx));
+    let (d, c) = (data.0.clone(), data.1.clone());
+    to_mcp(
+        blocking(cx, move |hub| {
+            let had = cooee_core::profiles::find(c.as_deref(), &d, &id)
+                .map_err(|e| HubError::Refused(e.to_string()))?
+                .mcp;
+            let picks: Vec<cooee_core::mcp::Pick> = f
+                .keys()
+                .filter_map(|k| k.strip_prefix("s:"))
+                .map(|s| {
+                    let tools = match hub.mcp_tools(s) {
+                        Ok(all) if !all.is_empty() => {
+                            let on: Vec<String> = all
+                                .iter()
+                                .map(|t| t.0.clone())
+                                .filter(|t| f.contains_key(&format!("t:{s}:{t}")))
+                                .collect();
+                            (on.len() < all.len()).then_some(on)
+                        }
+                        _ => had
+                            .iter()
+                            .find(|k| k.server == s)
+                            .and_then(|k| k.tools.clone()),
+                    };
+                    cooee_core::mcp::Pick {
+                        server: s.to_owned(),
+                        tools,
+                    }
+                })
+                .collect();
+            hub.set_picks(&id, &picks)
+        })
+        .await,
+    )
+}
+
 /// The web UI (with `looks`, its themes and schemes), the threads' API over `hub`, the providers' `logins`, the plugin `manager` and pairing, behind the gate: requests must name `bind`, localhost
 /// or one of `allowed_hosts`; devices are paired in `data`.
 #[must_use]
@@ -1776,6 +2018,14 @@ pub fn router(
     .route(theme_act)
     .page(preview)
     .route(theme_saves)
+    .route(mcp_grant)
+    .route(mcp_propose)
+    .page(mcp_settings)
+    .route(mcp_add)
+    .route(mcp_toggle)
+    .route(mcp_remove)
+    .route(mcp_secret)
+    .route(profile_mcp)
     .app_context(hub)
     .app_context(Arc::new(Dots::default()))
     .app_context(Arc::new(Unlocks::default()))
@@ -1857,6 +2107,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .block_on(async {
             let listener = tokio::net::TcpListener::bind((config.bind, config.port)).await?;
             let addr = listener.local_addr()?;
+            hub.listening(format!("http://127.0.0.1:{}", addr.port()));
             manager.supervise(hub, format!("http://127.0.0.1:{}", addr.port()));
             ready(addr);
             topcoat::serve(listener, router).await

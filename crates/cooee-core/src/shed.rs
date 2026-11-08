@@ -98,6 +98,9 @@ pub struct Launch {
     pub policy: Option<String>,
     /// Words after the adapter's command (a model or effort pick's).
     pub args: Vec<String>,
+    /// `--mcp`: the file the session's MCP servers pass through (written here, removed once shed has read it), and
+    /// the servers, in ACP's shape (#56).
+    pub mcp: Option<(PathBuf, Vec<Value>)>,
 }
 
 impl Launch {
@@ -560,6 +563,15 @@ impl Shed {
         if let Some(policy) = &launch.policy {
             args.extend(["--policy", policy]);
         }
+        let mcp = launch.mcp.as_ref().map(|(f, _)| f.to_string_lossy());
+        if let (Some((file, servers)), Some(path)) = (&launch.mcp, &mcp) {
+            let text = serde_json::to_vec(servers).unwrap_or_default();
+            crate::write_private(file, &text).map_err(|e| ShedError::Cli {
+                args: "run".to_owned(),
+                detail: format!("{}: {e}", file.display()),
+            })?;
+            args.extend(["--mcp", path]);
+        }
         let mut tail: Vec<String> = Vec::new();
         if !launch.env.is_empty() || launch.secrets.is_some() || !launch.args.is_empty() {
             if cmd.is_empty() {
@@ -589,7 +601,11 @@ impl Shed {
             args.push("--");
             args.extend(tail.iter().map(String::as_str));
         }
-        self.cli(&args)
+        let run = self.cli(&args);
+        if let Some((file, _)) = &launch.mcp {
+            let _ = std::fs::remove_file(file);
+        }
+        run
     }
 
     fn cli<R: DeserializeOwned>(&self, args: &[&str]) -> Result<R, ShedError> {
