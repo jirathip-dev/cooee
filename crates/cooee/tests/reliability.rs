@@ -185,6 +185,35 @@ fn an_old_keychain_key_is_copied_to_the_file_once() {
     assert_eq!(fs::read_to_string(&key).unwrap(), old);
 }
 
+/// #99: a phone that asks for the key while the old one is still being read gets a new key; the late old key is
+/// dropped and the subscriptions made before are asked to turn alerts on again.
+#[cfg(target_os = "macos")]
+#[test]
+fn a_key_made_during_the_keychain_read_wins_and_old_subscriptions_reset() {
+    let dir = scratch("keychain-race");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let old = "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc";
+    let gate = dir.join("gate");
+    let script = format!("#!/bin/sh\nwhile [ ! -e {gate:?} ]; do sleep 0.02; done\necho {old}\n");
+    let path = fake_security(&dir, &script);
+    let cooee = Cooee::start_env(&dir, &shed.dir, "", &[("PATH", path.as_str())]);
+    let sub = json!({ "endpoint": "https://push.example.com/x", "p256dh": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4", "auth": "BTBZMqHH6r4Tts7J_aSIgg" });
+    assert_eq!(cooee.post("/push/subscribe", &sub).0, 200);
+    let public = cooee.json("/push/key");
+    let key = dir.join("data/vapid.key");
+    let made = fs::read_to_string(&key).unwrap();
+    assert_ne!(made, old);
+    fs::write(&gate, "").unwrap();
+    until("the reset", || cooee.json("/push/reset").is_string());
+    let why = cooee.json("/push/reset");
+    assert!(
+        why.as_str().unwrap().contains("before the old one"),
+        "{why}"
+    );
+    assert_eq!(cooee.json("/push/key"), public);
+    assert_eq!(fs::read_to_string(&key).unwrap(), made);
+}
+
 /// R3 (herdsman#501): a 401 then a 200 leaves no pairing page, and a devices store that can't be read is a 503,
 /// never "pair this device first".
 #[test]

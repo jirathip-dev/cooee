@@ -65,16 +65,24 @@ pub fn migrate(data: &Path) -> Result<Option<String>, String> {
     }
     match read(data) {
         Ok(None) => Ok(None),
-        Ok(Some(key)) => {
-            let kept = push.adopt(&key).map_err(|e| e.to_string())?;
-            Ok(kept.then(|| "push key copied from the keychain to vapid.key".to_owned()))
-        }
-        Err(()) => {
-            let why = "the keychain didn't answer in 5 s, so cooee made a new push key: turn alerts on again";
-            push.renew(why).map_err(|e| e.to_string())?;
-            Ok(Some(why.to_owned()))
-        }
+        Ok(Some(key)) if push.adopt(&key).map_err(|e| e.to_string())? => Ok(Some(
+            "push key copied from the keychain to vapid.key".to_owned(),
+        )),
+        // A phone asked for the key while the keychain was read: the new key stays, the old subscriptions go.
+        Ok(Some(_)) => renew(
+            &push,
+            "cooee made a new push key before the old one was copied: turn alerts on again",
+        ),
+        Err(()) => renew(
+            &push,
+            "the keychain didn't answer in 5 s, so cooee made a new push key: turn alerts on again",
+        ),
     }
+}
+
+fn renew(push: &Push, why: &str) -> Result<Option<String>, String> {
+    push.renew(why).map_err(|e| e.to_string())?;
+    Ok(Some(why.to_owned()))
 }
 
 /// `cooee push migrate`: [`migrate`], then the command that deletes the old keychain item.
