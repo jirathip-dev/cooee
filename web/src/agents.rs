@@ -90,11 +90,14 @@ impl Side {
             mates[at].chats.push(r.clone());
         }
         for m in &mut mates {
+            // The first one started that is still open (an id is its start time in hex), whatever moved since.
             let ongoing = m
                 .chats
                 .iter()
-                .rposition(|c| c.state != "ended")
-                .unwrap_or(0);
+                .enumerate()
+                .filter(|(_, c)| c.state != "ended")
+                .min_by_key(|(_, c)| (c.id.len(), c.id.clone()))
+                .map_or(0, |(i, _)| i);
             if !m.chats.is_empty() {
                 let first = m.chats.remove(ongoing);
                 m.chats.insert(0, first);
