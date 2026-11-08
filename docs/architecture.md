@@ -139,6 +139,8 @@ default's is never removed). A provider whose CLI is missing says "not installed
 The new-thread picker marks each agent by its default account, `✓` or `signed out` with a link to the sheet, and has
 an account picker, the default preselected; the thread's agent starts as `shed run --acp <agent> … -- env
 <variable>=<folder> <the agent's adapter>` (the system default: no `env`), and the thread's header names the account.
+`cooee accounts env` and `cooee accounts ls --json` hand an account's environment to a fleet engine (herdsman):
+the contract is in `docs/accounts.md`.
 
 `[sign in]` runs the login command (for an added account, `env <variable>=<folder> <login>`) in a plain shed terminal (terminal mode, not ACP; over the socket: `run`, then
 `resize` to 500 columns so a long link stays on one line), named `cooee-login-<provider>-<stamp>` and labelled
