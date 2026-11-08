@@ -1,0 +1,119 @@
+/* #48: what this design adds to web/src/app.css. Tokens only, no raw colour; the pages load app.css first, unchanged.
+
+   One size scale for the new-thread view, both sheets and Settings › providers:
+     --ctl   every chip, button and one-line input, and the message box's first line   modern 36 px · terminal 28 px
+     --row   every list row in a sheet or in Settings                                   44 px in both
+     --r-ctl the radius of all of them (the message box keeps it as it grows)            modern 18 px · terminal 6 px
+     --fs    the text of chips, buttons and rows (--fs-meta under or beside it)          modern 15/13 · terminal 13/11
+   Inputs are 16 px in both styles, so iOS doesn't zoom into them: the scale's one exception. */
+:root{--row:44px;--r-ctl:18px}
+html[data-style=terminal]{--r-ctl:6px}
+.chip,:is(.nc,.acr) button:not(.sr,.gl),.nc textarea,.pop input{height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);font-size:var(--fs)}
+.nc textarea,.pop input{font-size:16px;padding:0 12px;line-height:calc(var(--ctl) - 2px)}
+.nc textarea{height:auto;max-height:40vh}
+
+/* The new-thread view (`/new`): the thread bar, an empty space, and the composer: the chip row, then the box and
+   [send]. On a phone the composer sits at the bottom, where the chat's will be; from 1024 px it sits in the column's
+   upper third. */
+.nt{display:flex;flex-direction:column;height:100dvh;max-width:100ch;margin:0 auto}
+.nt .sp{flex:1}.nt .nc+.sp{display:none}
+.nc{flex-wrap:wrap;align-items:center}
+.chips{display:flex;gap:8px;flex-basis:100%;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:max-content;flex:0 1 auto;padding:0 12px;background:var(--bg);color:var(--fg);font-weight:400;box-shadow:inset 0 0 0 1px var(--edge)}
+.chip>span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.chip>i{font-style:normal;color:var(--mute)}
+.chip[aria-expanded=true]{box-shadow:inset 0 0 0 2px var(--l)}
+@media (min-width:1024px){
+  .nt .sp{flex:1 1 0}
+  .nt .nc{width:min(720px,100% - 24px);margin:0 auto;padding:12px;border:1px solid var(--edge);border-radius:var(--r-card)}
+  .nt .nc+.sp{display:block;flex:2.5 1 0}
+}
+
+/* The agent and folder sheets: a sheet from the bottom on a phone (as tall as its list, at most 80 %), from 1024 px
+   a 420 px panel under its chip with no scrim (over the box; the composer sits in the column's upper third). A row is --row tall; the pick has a tick; a signed-out account is muted
+   with [sign in] on its row. */
+.pop .bd{position:fixed;inset:0;z-index:2;background:var(--scrim)}
+.pop .sh{position:fixed;z-index:3;left:0;right:0;bottom:0;max-height:80%;display:flex;flex-direction:column;background:var(--bg);border-top:1px solid var(--edge);border-radius:20px 20px 0 0;text-align:left}
+@media (min-width:1024px){
+  .pop .bd{display:none}
+  .pop .sh{position:absolute;left:12px;right:auto;top:calc(12px + var(--ctl) + 8px);bottom:auto;width:420px;max-height:min(560px,60vh);border:1px solid var(--edge);border-radius:var(--r-card);box-shadow:0 8px 48px #0006}
+}
+html[data-style=terminal] .pop .sh{border-radius:var(--r-card) var(--r-card) 0 0}
+@media (min-width:1024px){html[data-style=terminal] .pop .sh{border-radius:var(--r-card)}}
+.pop .ch:first-child{margin-top:0}
+.pk{min-height:var(--row);height:auto}
+.pk .sv{margin-left:auto}
+.pk .tk{margin-left:8px;flex:none}
+.pk.so .sk{color:var(--mute)}
+.fq{display:flex;gap:8px;padding:4px 0 8px}.fq input{flex:1;min-width:0;color:var(--fg);background:var(--card);border:1px solid var(--edge)}
+.sec,.pop .sec,.acr .sec{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
+html[data-style=terminal] .sec,html[data-style=terminal] .chip{background:none;box-shadow:none}
+html[data-style=terminal] button.chip{gap:0;color:var(--l);text-transform:none}
+html[data-style=terminal] .chip>i{color:inherit;margin-left:1ch}
+
+/* The shell: the header across the top, then the page. From 1024 px the sidebar is always there on the left and the
+   page beside it: the composer, a chat, or on `/` the composer (the sidebar is the list). A chat's thread bar, items
+   and composer span the column, their content 100ch wide in its middle; [‹] goes, and so does the header's [+]
+   (the sidebar's [+ new thread] is it). Below 1024 px nothing changes. */
+body.app{display:flex;flex-direction:column;height:100dvh}
+.app>.bar{flex:none}
+.shell{flex:1;min-height:0;display:flex}
+.shell>main{flex:1;min-width:0;height:auto}
+.shell>.list{overflow-y:auto;align-self:stretch;margin:0 auto}
+.side,.nt.home{display:none}
+@media (min-width:1024px){
+  .side{display:flex;flex-direction:column;flex:none;width:320px;overflow-y:auto;overscroll-behavior:contain;padding:12px 8px 16px;border-right:1px solid var(--edge)}
+  .app .np,.shell .th .bk{display:none}
+  .shell>.list{display:none}.shell>.nt.home{display:flex}
+  .shell>:is(.chat,.nt){max-width:none;margin:0}
+  .shell>.chat>:is(.th,.tc,.tw){padding-inline:max(12px,(100% - 100ch) / 2)}
+  .shell>.nt>.th{padding-inline:max(12px,(100% - 720px) / 2)}
+}
+/* The sidebar: [+ new thread] (the composer's own page has it ringed), then a folder per project, newest thread first:
+   ▾ the folder, its thread count; a row is the state dot (amber working or connecting, red needs you or failed,
+   muted done), the title (bold while unread) and the age. A tap on a folder folds it. Every row is --ctl tall. */
+.nw{display:flex;align-items:center;justify-content:center;flex:none;height:var(--ctl);border-radius:var(--r-ctl);background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge);font-size:var(--fs);font-weight:600;text-decoration:none}
+.nw[aria-current]{box-shadow:inset 0 0 0 2px var(--l)}
+.fg{padding-top:12px}
+.fg>summary{gap:8px;min-height:var(--ctl);height:var(--ctl);padding:0 8px;font-size:var(--fs-meta);list-style:none}
+.fg>summary::-webkit-details-marker{display:none}
+.fg>summary::before{content:"▸";flex:none;width:8px}.fg[open]>summary::before{content:"▾"}
+.fg>summary b{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600;color:var(--fg)}
+.sb{display:flex;align-items:center;gap:8px;height:var(--ctl);padding:0 8px;border-radius:var(--r-row);color:var(--fg);font-size:var(--fs);text-decoration:none}
+.sb .tt{flex:1;min-width:0}.sb.rd .tt{font-weight:400;color:var(--mute)}
+.sb .ta{flex:none}
+.sb .sd{flex:none;margin:0;color:var(--mute)}
+.sd:is([data-sb=working],[data-sb=loading]){color:var(--a)}.sd:is([data-sb=needs],[data-sb=fail]){color:var(--r)}
+.sb[aria-current]{background:color-mix(in srgb,var(--fg) 8%,transparent)}
+html[data-style=terminal] .nw{justify-content:flex-start;padding:0 1ch;background:none;box-shadow:none;color:var(--l);font-weight:400}
+html[data-style=terminal] .nw::before{content:"["}html[data-style=terminal] .nw::after{content:"]"}
+html[data-style=terminal] .nw[aria-current]{align-self:flex-start;background:var(--l);color:var(--bg)}
+html[data-style=terminal] .fg>summary b{color:var(--link);font-weight:400}
+html[data-style=terminal] .sb[aria-current]{box-shadow:inset 3px 0 var(--l)}
+
+/* The chat right after send: your message, then the state line where the reply will come, in the theme's loading
+   word: `[sprite] saddling up · connecting claude · jk@work.com`. The reply replaces it. A failed connect puts the
+   error and [retry] there instead, and your message stays. */
+.cnx{display:flex;align-items:center;flex-wrap:wrap;gap:0 .5ch;min-height:var(--row);color:var(--mute);font-size:var(--fs-meta)}
+.cnx>span:first-child{font-size:var(--fs)}
+.cnx .rsp.ld{width:32px}
+.cnx .sg.ld{color:var(--a)}
+.ldst{color:var(--a);white-space:nowrap}
+.cfl{align-self:stretch;padding:8px 12px 12px;background:var(--card);border:1px solid var(--r);border-radius:var(--r-card)}
+.cfl p{margin:0}.cfl .cnx{min-height:28px}.cfl .ds{margin:4px 0 8px;overflow-wrap:anywhere}
+html[data-style=terminal] .cfl{border:0;border-left:3px solid var(--r);border-radius:var(--r-card)}
+
+/* Settings › providers: one flat list, one --row row per account: the provider tag, the account (its email, else its
+   name), its state and one key. Each installed provider ends with [+ account]; one that isn't installed is one row. */
+.acr{display:flex;align-items:center;gap:8px;min-height:var(--row);border-bottom:1px solid var(--line)}
+.acr .sk{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.acr .st{flex:none;font-size:var(--fs-meta)}
+.ptg{flex:none;min-width:7ch;padding:2px 8px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--fg) 8%,transparent);font-size:var(--fs-meta);text-align:center}
+html[data-style=terminal] .ptg{min-width:7ch;padding:0;background:none;color:var(--p);text-align:left}
+.acr.add .sk,.acr.ni .sk{color:var(--mute)}
+.sh .hd.pvh{padding-left:4px}
+
+/* Mockup only: the gallery's captions and frames. */
+html.gallery body{display:block;height:auto;padding:0 0 24px}
+.cap{margin:0;padding:16px 12px 8px;font:var(--fs-meta)/1.3 var(--sans);color:var(--mute)}
+html.gallery iframe{display:block;width:100%;border:0;border-block:1px solid var(--edge)}

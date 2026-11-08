@@ -74,10 +74,11 @@ and a scheme per mode). The server draws it from the page's first byte (`web/src
 - **Scene** is offered only with `sprite`. With `ascii` or `none` the look sheet doesn't list it, and a device on
   Scene shows its last Modern or Terminal pick (the cookie keeps it: `style:terminal/scene:on`).
 
-Scene (#34) draws the thread list as the theme's scene: a page per working folder, swiped sideways with a dot per
-page, each session a 132 × 100 sprite acting out its state (`working` `s-edit`, `needs`, `done`, `fail`, ended
-`s-merged`, else `s-idle`) over its name card (title, agent · age, the state's word); a tap opens the thread. Threads
-keep Modern or Terminal, whichever came last. Scene is offered only with Figures `sprite` (so never with plain).
+Scene (#34) draws the agents sidebar (#86) as the theme's scene, on one page: each agent a 132 × 100 sprite acting
+out its ongoing chat's state (`working` `s-edit`, `needs`, `done`, `fail`, ended `s-merged`, else `s-idle`) over its
+name card (name, profile · age, the state's word); a tap opens its chat. The current agent's card is ringed and its
+chats sit under the scene as chips, ending in `+ new chat`. Chats keep Modern or Terminal, whichever came last.
+Scene is offered only with Figures `sprite` (so never with plain).
 
 ## Plugin tabs
 

@@ -1,8 +1,8 @@
-// herdsman#553 parity, rows 15–29 (#43, threads and messages; row 24 is #48's): the list's unread dot, badge and live
-// refresh, the title and rename, swipe to archive with undo and restore, markdown and folded tool runs, code blocks'
-// [copy], attachments and the viewer, the outbox, the growing composer, the keyboard, stopping and the offline line,
-// the queue and steering, drafts with files, the long-press menu, and older messages on scroll. Each row's shot is
-// ui-<viewport>/parity-<row>-….png.
+// herdsman#553 parity, rows 15–29 (#43, threads and messages; row 24 is #48's): the agents list's (#86) unread mark,
+// badge and live refresh, the title and rename, swipe to archive with undo and restore, markdown and folded tool runs,
+// code blocks' [copy], attachments and the viewer, the outbox, the growing composer, the keyboard, stopping and the
+// offline line, the queue and steering, drafts with files, the long-press menu, and older messages on scroll. Each
+// row's shot is ui-<viewport>/parity-<row>-….png.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -15,11 +15,11 @@ async function audit(page) {
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 }
 
-// A new thread whose turn is done, open; its id.
-async function thread(page, text = "Say hello") {
-  await page.goto("/#new");
-  await page.getByLabel("first message").fill(text);
-  await page.getByRole("button", { name: "start" }).click();
+// A new chat (#86: nothing to pick) whose turn is done, open; its id. `at`: the agent's new chat (default the first).
+async function thread(page, text = "Say hello", at = "/new") {
+  await page.goto(at);
+  await page.getByLabel("message", { exact: true }).fill(text);
+  await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
   return new URL(page.url()).pathname.split("/").pop();
@@ -30,6 +30,15 @@ async function say(page, text) {
   await page.getByRole("button", { name: "send" }).click();
 }
 
+// An agent of its own (#86), so its first chat is its ongoing one: the agent's row on the list; its new chat's page.
+async function agent(page, name) {
+  const r = await page.request.post("/agents", { form: { name, profile: "" }, maxRedirects: 0 });
+  expect(r.status()).toBe(303);
+  return r.headers().location;
+}
+// The sidebar's row of chat `id`: its agent's row (the ongoing chat) or a side thread's.
+const rowOf = (page, id) => page.locator(`.ags [data-id="${id}"]`);
+
 const box = (page) => page.getByRole("textbox", { name: "message", exact: true });
 
 test.beforeEach(async ({ page }) => {
@@ -38,23 +47,22 @@ test.beforeEach(async ({ page }) => {
 
 test("row 15: a new reply shows on the open list (dot and badge, no reload); opening the thread clears it", async ({ page }, info) => {
   await page.clock.install();
-  const id = await thread(page);
+  const id = await thread(page, "Say hello", await agent(page, `Row15 ${info.project.name}`));
   // Read: the mark goes after 3 s.
   const marked = () => page.waitForResponse((r) => r.url().endsWith(`/threads/${id}/read`));
   let read = marked();
   await page.clock.runFor(3500);
   await read;
-  await page.goto("/");
-  const row = page.locator(`.fc a.tr[data-id="${id}"]`);
-  await expect(row).toHaveClass(/\brd\b/);
+  await page.goto("/?list");
+  const row = rowOf(page, id);
+  await expect(row).not.toHaveClass(/\bud\b/);
   await expect(row.locator(".bd")).toHaveCount(0);
   const before = await page.evaluate(() => performance.getEntriesByType("navigation").length);
   const sent = await page.request.post(`/threads/${id}/send`, { data: { text: "Say hello", random_id: `r15-${info.project.name}` } });
   expect(sent.ok()).toBe(true);
   await expect.poll(async () => (await (await page.request.get(`/threads/${id}/messages`)).json()).items.length).toBe(4);
   await page.clock.runFor(5000);
-  await expect(row).not.toHaveClass(/\brd\b/);
-  await expect(row.locator(".ud")).toHaveText("●");
+  await expect(row).toHaveClass(/\bud\b/);
   await expect(row.locator(".bd")).toHaveText("1");
   expect(await page.evaluate(() => performance.getEntriesByType("navigation").length)).toBe(before);
   await shot(page, info, "parity-15-unread");
@@ -64,17 +72,17 @@ test("row 15: a new reply shows on the open list (dot and badge, no reload); ope
   read = marked();
   await page.clock.runFor(3500);
   await read;
-  await page.goto("/");
-  await expect(row).toHaveClass(/\brd\b/);
+  await page.goto("/?list");
+  await expect(row).not.toHaveClass(/\bud\b/);
   await expect(row.locator(".bd")).toHaveCount(0);
 });
 
-test("row 16: a thread started by typing is titled by its first line; the title renames it", async ({ page }, info) => {
+test("row 16: a side thread started by typing is titled by its first line; the title renames it", async ({ page }, info) => {
   const title = `hi ${info.project.name}`;
-  const id = await thread(page, title);
-  await page.goto("/");
-  await expect(page.locator(`.fc a.tr[data-id="${id}"] .tt`)).toHaveText(title);
-  await page.goto(`/t/${id}`);
+  const at = await agent(page, `Row16 ${info.project.name}`);
+  await thread(page, "Say hello", at);
+  const id = await thread(page, title, at);
+  await expect(rowOf(page, id).locator(".tt")).toHaveText(title);
   await page.locator(".th .ttl").click();
   const rt = page.locator("#rt");
   await expect(rt).toBeVisible();
@@ -84,14 +92,26 @@ test("row 16: a thread started by typing is titled by its first line; the title 
   await rt.getByRole("button", { name: "rename" }).click();
   await expect(rt).toBeHidden();
   await expect(page.locator(".th .ttl")).toHaveText(`renamed ${info.project.name}`);
-  await page.goto("/");
-  await expect(page.locator(`.fc a.tr[data-id="${id}"] .tt`)).toHaveText(`renamed ${info.project.name}`);
+  await page.reload();
+  await expect(rowOf(page, id).locator(".tt")).toHaveText(`renamed ${info.project.name}`);
+});
+
+test("a phone's ‹ back to agents keeps the chat's agent current: its side threads and + new chat", async ({ page }, info) => {
+  test.skip(info.project.name !== "390", "the ‹ is a phone's");
+  const at = await agent(page, `Back ${info.project.name}`);
+  await thread(page, "Say hello", at);
+  const id = await thread(page, `side ${info.project.name}`, at);
+  await page.getByRole("link", { name: "back to agents" }).click();
+  await page.waitForURL(/\/\?list&/);
+  await expect(rowOf(page, id)).toBeVisible();
+  await rowOf(page, id).locator("xpath=..").getByRole("link", { name: "+ new chat" }).click();
+  await expect(page).toHaveURL(new RegExp(`/new\\?${at.split("?")[1]}$`));
 });
 
 test("row 17: a row swiped left is archived, undo brings it back, and the archived list restores it", async ({ page }, info) => {
-  const id = await thread(page);
-  await page.goto("/");
-  const row = page.locator(`.fc a.tr[data-id="${id}"]`);
+  const id = await thread(page, "Say hello", await agent(page, `Row17 ${info.project.name}`));
+  await page.goto("/?list");
+  const row = rowOf(page, id);
   const swipe = () =>
     row.evaluate((r) => {
       const y = r.getBoundingClientRect().top + 10;

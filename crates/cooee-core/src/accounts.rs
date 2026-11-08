@@ -1,7 +1,8 @@
 //! A provider's accounts: the system default login (`~/.claude`, …) and the ones added in cooee, each a config folder
 //! `<data>/accounts/<provider>/<name>/` that its CLI gets through the provider's variable (`CLAUDE_CONFIG_DIR`, …).
 //! The CLI keeps its own login there or in its keychain; cooee never reads or stores a token. Beside the folders,
-//! `.cooee.json` keeps only the provider's default account and when each one's login last succeeded.
+//! `.cooee.json` keeps only when each one's login last succeeded. There is no default account: a new thread takes
+//! the last one used in its folder (#48).
 
 use std::{
     collections::BTreeMap,
@@ -32,29 +33,26 @@ pub struct Account {
     /// Its config folder; none for the system default.
     #[serde(skip)]
     pub dir: Option<PathBuf>,
-    /// New threads use it.
-    pub default: bool,
     /// When a login in cooee last succeeded for it (ms since the epoch).
     pub signed_in_at: Option<u64>,
 }
 
 impl Account {
-    /// Its name as the page shows it.
+    /// Who it is as the page shows it (#48): the email its status reports, else its name; the system default login
+    /// with no email is `main login`.
     #[must_use]
-    pub fn label(&self) -> &str {
-        if self.name.is_empty() {
-            "System default"
-        } else {
-            &self.name
+    pub fn shown(&self, status: &Status) -> String {
+        match (&status.who, self.name.as_str()) {
+            (Some(who), _) => who.clone(),
+            (None, "") => "main login".to_owned(),
+            (None, name) => name.to_owned(),
         }
     }
 }
 
-/// `.cooee.json`: the default account and the last successful logins, by name.
+/// `.cooee.json`: the last successful logins, by name (an older one's `default` is ignored).
 #[derive(Default, Serialize, Deserialize)]
 struct Meta {
-    #[serde(default)]
-    default: String,
     #[serde(default)]
     signed_in: BTreeMap<String, u64>,
 }
@@ -109,12 +107,9 @@ impl Accounts {
             .collect();
         names.sort();
         let names = std::iter::once(String::new()).chain(names);
-        let known = |n: &String| n.is_empty() || self.root.join(provider).join(n).is_dir();
-        let default = Some(&meta.default).filter(|n| known(n)).cloned();
         names
             .map(|name| Account {
                 dir: (!name.is_empty()).then(|| self.root.join(provider).join(&name)),
-                default: default.as_ref().map_or(name.is_empty(), |d| *d == name),
                 signed_in_at: meta.signed_in.get(&name).copied(),
                 name,
             })
@@ -125,26 +120,6 @@ impl Accounts {
     #[must_use]
     pub fn get(&self, provider: &str, name: &str) -> Option<Account> {
         self.list(provider).into_iter().find(|a| a.name == name)
-    }
-
-    /// The account new threads of `provider` use.
-    #[must_use]
-    pub fn default(&self, provider: &str) -> Account {
-        let mut list = self.list(provider);
-        let i = list.iter().position(|a| a.default).unwrap_or(0);
-        list.swap_remove(i)
-    }
-
-    /// Makes account `name` (one of [`Accounts::list`]) the default of `provider`.
-    ///
-    /// # Errors
-    /// When `.cooee.json` can't be written.
-    pub fn set_default(&self, provider: &str, name: &str) -> io::Result<()> {
-        let meta = Meta {
-            default: name.to_owned(),
-            ..self.meta(provider)
-        };
-        self.save(provider, &meta)
     }
 
     /// Notes that a login for account `name` of `provider` succeeded at `at`.
@@ -198,9 +173,6 @@ impl Accounts {
         meta.signed_in.remove(name);
         if !name.is_empty() && safe(name) {
             fs::remove_dir_all(self.root.join(provider).join(name))?;
-            if meta.default == name {
-                meta.default.clear();
-            }
         }
         self.save(provider, &meta)
     }
@@ -211,14 +183,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn system_first_a_new_account_listed_once_adopted_default_and_removal() {
+    fn system_first_a_new_account_listed_once_adopted_and_removal() {
         let data = std::env::temp_dir().join(format!("cooee-accounts-{}", std::process::id()));
         let a = Accounts::new(&data);
         let names = |a: &Accounts| -> Vec<String> {
             a.list("claude").into_iter().map(|a| a.name).collect()
         };
         assert_eq!(names(&a), [""]);
-        assert!(a.default("claude").default && a.default("claude").dir.is_none());
+        assert!(a.get("claude", "").unwrap().dir.is_none());
 
         let (name, dir) = a.pending("claude").unwrap();
         assert_eq!((name.as_str(), dir.is_dir()), ("account-2", true));
@@ -231,13 +203,9 @@ mod tests {
         assert_eq!(work.signed_in_at, Some(7));
         assert_eq!(work.dir, Some(data.join("accounts/claude/account-2")));
 
-        a.set_default("claude", "account-2").unwrap();
-        assert_eq!(a.default("claude").name, "account-2");
-        assert!(!a.get("claude", "").unwrap().default);
         a.remove("claude", "account-2").unwrap();
         assert!(!data.join("accounts/claude/account-2").exists());
         assert_eq!(names(&a), [""]);
-        assert_eq!(a.default("claude").name, "");
         assert!(a.get("claude", "../x").is_none());
         fs::remove_dir_all(&data).unwrap();
     }

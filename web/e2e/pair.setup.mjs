@@ -38,6 +38,6 @@ test("an unpaired browser is sent to pairing; the code pairs it", async ({ page,
   // No black frame: from its first paint the list is drawn, not a bare background, with no reload.
   await page.screenshot({ path: "../../ui-390/paired.png" });
   expect(await colours(page)).toBeGreaterThan(8);
-  await expect(page.locator(".fc .tr").first()).toBeVisible();
+  await expect(page.locator(".ags .agr").first()).toBeVisible();
   await page.context().storageState({ path: new URL("./.auth/state.json", import.meta.url).pathname });
 });

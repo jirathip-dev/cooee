@@ -35,7 +35,8 @@ pub struct Thread {
     /// The working folder.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub folder: Option<PathBuf>,
-    /// The provider account its agent runs with, as the header shows it (empty: no provider's agent).
+    /// The provider account its agent runs with, by name (empty: the system default, or no provider's agent; before
+    /// #48 its label, `System default` for that one).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub account: String,
     /// Its agent profile's id (empty: Plain), fixed for its life.
@@ -68,6 +69,9 @@ pub struct Thread {
     /// Where a session a tool started came from (a Workflow item, #33); none: the owner's own chat.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workflow: Option<Workflow>,
+    /// Sent ahead of the next message after a folder was attached (#86): the agent started again there.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub handover: String,
 }
 
 /// A message queued during a turn.

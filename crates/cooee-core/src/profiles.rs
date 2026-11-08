@@ -209,6 +209,85 @@ pub fn find(config: Option<&Path>, data: &Path, id: &str) -> io::Result<Profile>
     found.ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, format!("no profile {id}")))
 }
 
+/// `+ new agent` (#86): a profile named `label` saved as `<config>/profiles/<name>.toml`, `name` made from the label;
+/// a copy of profile `base` (empty: Plain on ACP agent `agent`). Returns it.
+///
+/// # Errors
+/// A label with no letter or digit, a name taken, an unknown `base`, or a file that can't be written.
+pub fn create(
+    config: &Path,
+    data: &Path,
+    label: &str,
+    base: &str,
+    agent: &str,
+) -> io::Result<Profile> {
+    let mut name = String::new();
+    for c in label.trim().to_lowercase().chars() {
+        if c.is_ascii_alphanumeric() {
+            name.push(c);
+        } else if !name.is_empty() && !name.ends_with('-') {
+            name.push('-');
+        }
+    }
+    let name = name.trim_end_matches('-').to_owned();
+    let refused = |why: String| io::Error::new(io::ErrorKind::InvalidInput, why);
+    if name.is_empty() {
+        return Err(refused(format!("{label:?} needs a letter or digit")));
+    }
+    let taken = list(Some(config), data).into_iter().any(|p| p.id() == name);
+    let mut p = match base {
+        "" => Profile {
+            name: String::new(),
+            label: String::new(),
+            agent: agent.to_owned(),
+            account: None,
+            folder: None,
+            instructions: None,
+            settings: None,
+            env: BTreeMap::new(),
+            mcp: None,
+            policy: None,
+            plugin: None,
+        },
+        id => find(Some(config), data, id)?,
+    };
+    (p.name, p.label, p.plugin) = (name, label.trim().to_owned(), None);
+    let dir = config.join("profiles");
+    let file = dir.join(format!("{}.toml", p.name));
+    if taken || file.exists() {
+        return Err(refused(format!("there is an agent {} already", p.name)));
+    }
+    // TOML's basic strings read JSON's.
+    let q = |v: &str| serde_json::to_string(v).unwrap_or_default();
+    let paths = [
+        ("folder", &p.folder),
+        ("instructions", &p.instructions),
+        ("settings", &p.settings),
+        ("mcp", &p.mcp),
+    ];
+    let paths = paths.map(|(k, v)| (k, v.as_ref().map(|v| v.to_string_lossy().into_owned())));
+    let keys = [
+        ("name", Some(p.name.clone())),
+        ("label", Some(p.label.clone())),
+        ("agent", Some(p.agent.clone())),
+        ("account", p.account.clone()),
+        ("policy", p.policy.clone()),
+    ];
+    let mut lines: Vec<String> = keys
+        .into_iter()
+        .chain(paths)
+        .filter_map(|(k, v)| Some(format!("{k} = {}", q(&v?))))
+        .collect();
+    if !p.env.is_empty() {
+        lines.push("\n[env]".to_owned());
+        lines.extend(p.env.iter().map(|(k, v)| format!("{} = {}", q(k), q(v))));
+    }
+    let text = lines.join("\n") + "\n";
+    fs::create_dir_all(&dir)?;
+    fs::write(&file, text)?;
+    Ok(p)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

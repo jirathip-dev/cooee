@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · Account Manager (#86: a message from another agent, a folder attached)</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="cf.css">
+<script type="module" src="cf.js"></script>
+</head>
+<body>
+<div class="cf">
+  <header class="bar">
+    <h1>cooee</h1>
+    <nav class="tabs" aria-label="tabs"><a href="#" class="on">Chat</a><a href="#">Workflow</a><a href="#">Machines</a></nav>
+    <button type="button" class="gl" aria-label="refresh">↻</button>
+    <a class="gl" href="new.html" aria-label="new chat with Account Manager">+</a>
+    <button type="button" class="gl" aria-label="look">◐</button>
+    <button type="button" class="gl" aria-label="settings">⚙</button>
+  </header>
+  <div class="cfm">
+    <nav class="ags ph1440" id="agents" data-cur="am" aria-label="agents"></nav>
+    <p class="cap">Account Manager's chat: a folder attached at 08:31, then Chief's message:</p>
+    <main class="chat">
+      <div class="th">
+        <a class="gl bk" href="#" aria-label="back to agents">‹</a>
+        <i data-av="am"></i>
+        <div class="tb">
+          <h1>Account Manager</h1>
+          <span class="ds"><i class="dt" data-sync="on"></i>crm · ~/Clients/crm · <span data-st="done"></span></span>
+        </div>
+      </div>
+      <ol class="tc" aria-label="messages">
+        <li class="blk me"><div class="md">Work from the CRM export from now on.</div><span class="ct">08:30</span></li>
+        <li class="qs">now in ~/Clients/crm · later turns run here · 08:31</li>
+        <li class="blk ai"><b class="k">Account Manager</b><div class="md">Got it: renewals.csv and contacts.csv are here.</div></li>
+        <li class="blk in"><b class="k"><i data-av="chief" data-cls="s"></i>Chief <span class="ct">09:13</span></b><div class="md">Which renewals are due this month? Name, date and owner.</div><a class="chip" href="agents.html">from Chief</a></li>
+        <li class="blk run"><span class="k">tool</span><span class="cmd">Read renewals.csv</span><span class="ts g">✓</span></li>
+        <li class="blk run"><span class="k">tool</span><span class="cmd">$ rg -i ',2026-11-' renewals.csv</span><span class="ts g">✓</span></li>
+        <li class="blk ai"><b class="k">Account Manager</b><div class="md">Acme 14 Nov (Lee), Birch &amp; Co 21 Nov (Sam), Kestrel 28 Nov (Dana Okafor).</div></li>
+        <li class="qs ln">sent back to Chief ✓ 09:14 <a class="chip" href="agents.html">Chief</a></li>
+        <li class="te"><span data-st="done" data-plain=""></span><span class="ct">09:14 · 1 min · 2 tools</span></li>
+      </ol>
+      <div class="mc">
+        <button type="button" class="fo" aria-haspopup="dialog">folder: ~/Clients/crm ▾</button>
+        <select aria-label="model"><option>model: default</option></select>
+        <select aria-label="effort"><option>effort: default</option></select>
+      </div>
+      <form class="tw"><textarea rows="1" aria-label="message" placeholder="message Account Manager"></textarea><button type="button">send</button></form>
+    </main>
+  </div>
+</div>
+</body>
+</html>

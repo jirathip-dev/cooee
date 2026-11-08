@@ -7,20 +7,22 @@
 
 #![forbid(unsafe_code)]
 
+mod agents;
+mod compose;
 mod look;
 mod sheet;
 mod shown;
 
 use std::{
-    collections::BTreeMap,
     path::{Path, PathBuf},
     sync::{Arc, PoisonError, RwLock},
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{
-    AGENTS_FIX, Account, Agent, Profile, ROOTS_FIX, Sheet, Status, Summary, Thread, Turn,
-};
+pub use agents::{Mate, Pane, Side, page};
+use compose::hint;
+pub use compose::{named, who};
+use cooee_core::{Sheet, Thread, Turn};
 pub use look::{Looks, Pair, SPRITES, Scheme, TOKENS, Theme, WORDS, check, gate, plain, read_pack};
 use sheet::{sheets, shown};
 pub use shown::Shown;
@@ -29,7 +31,6 @@ use topcoat::{
     context::{Cx, app_context},
     router::{
         Body, RouterBuilder,
-        content::Form,
         error::not_found,
         path_param,
         response::{IntoResponse, Response},
@@ -47,7 +48,7 @@ macro_rules! built {
 
 /// The static routes: the manifest, the icons, the style sheet, the scripts and the service worker; the look:
 /// `POST /look` (a pick with no script) and each theme's data at
-/// `/look/<theme>/{theme.json,sprites.svg,scene.svg,icon.png}`; and `POST /list`, the thread list's chip.
+/// `/look/<theme>/{theme.json,sprites.svg,scene.svg,icon.png}`.
 #[must_use]
 pub fn assets(builder: RouterBuilder, looks: Arc<LookAssets>) -> RouterBuilder {
     builder
@@ -62,7 +63,6 @@ pub fn assets(builder: RouterBuilder, looks: Arc<LookAssets>) -> RouterBuilder {
         .route(worker)
         .route(look_js)
         .route(sheet::look_set)
-        .route(list_set)
         .route(look_file)
         .app_context(looks)
 }
@@ -271,9 +271,14 @@ async fn look_js() -> Result<Static> {
 }
 
 /// A page in the device's look, drawn from the first byte: the scheme's tokens, `data-*` on `<html>` and the
-/// theme's icon; the sheets after the content.
+/// theme's icon; the sheets after the content (`providers`: Settings › providers).
 #[component]
-async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<impl View> {
+async fn document(
+    cx: &Cx,
+    title: &str,
+    #[default] providers: Vec<Sheet>,
+    #[default] child: Child<'_>,
+) -> Result<impl View> {
     let look = shown(cx);
     let name = look.name().to_owned();
     let bg = look
@@ -322,153 +327,61 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
                     <span class="ago"></span>
                 </p>
                 <p id="toast" role="status" popover="manual"></p>
-                sheets()
+                sheets(providers: providers)
             </body>
         </html>
     })
 }
 
-/// The chat header's line before its state: a Workflow session's role and round, else profile, agent, account, model and
-/// folder.
-fn byline(thread: &Thread, profile: &str, folder: &str) -> String {
+/// The chat header: the agent's name, the title (an agent's ongoing chat is titled by its name; a side thread by
+/// its own, its agent first in the line), and the line before its state: a Workflow session's role and round, else
+/// its agent profile's label, or Plain and who it runs as (`runs`: provider · account, never the agent's id), and the
+/// model (the folder follows it, drawn apart so Use a folder… can change it). `provider`: the provider's name.
+fn bar(
+    thread: &Thread,
+    mate: Option<&(usize, String, bool)>,
+    (profile, provider, runs): (&str, &str, &str),
+) -> (String, String, String) {
+    let (name, title, by) = match mate {
+        Some((_, n, true)) => (n.clone(), n.clone(), ""),
+        Some((_, n, false)) => (n.clone(), thread.title.clone(), n.as_str()),
+        None => (provider.to_owned(), thread.title.clone(), ""),
+    };
     if let Some(w) = &thread.workflow {
-        return format!("{} · round {} · ", w.role, w.round);
+        return (name, title, format!("{} · round {} · ", w.role, w.round));
     }
-    [
-        profile,
-        &thread.agent,
-        &thread.account,
-        &thread.model,
-        folder,
-    ]
-    .into_iter()
-    .filter(|s| !s.is_empty())
-    .flat_map(|s| [s, " · "])
-    .collect()
+    let (profile, runs) = if profile.is_empty() {
+        ("Plain", runs)
+    } else {
+        (profile, "")
+    };
+    let line = [by, profile, runs, &thread.model]
+        .into_iter()
+        .filter(|s| !s.is_empty())
+        .flat_map(|s| [s, " · "])
+        .collect();
+    (name, title, line)
 }
 
-/// `~/x` for a folder under `$HOME`.
-fn short(folder: &Path) -> String {
+/// `~/x` for a folder under `$HOME` (as given, or resolved: a folder a chat works in is stored resolved); none
+/// (empty): `scratch`, a chat's own folder.
+#[must_use]
+pub fn short(folder: &Path) -> String {
+    if folder.as_os_str().is_empty() {
+        return "scratch".to_owned();
+    }
     let home = std::env::var_os("HOME").map(PathBuf::from);
-    match home.as_deref().and_then(|h| folder.strip_prefix(h).ok()) {
+    let homes = home
+        .iter()
+        .flat_map(|h| [h.clone(), h.canonicalize().unwrap_or_default()]);
+    let homes = homes.filter(|h| h.has_root());
+    let rest = homes
+        .into_iter()
+        .find_map(|h| folder.strip_prefix(h).ok().map(Path::to_path_buf));
+    match rest {
         Some(rest) if rest.as_os_str().is_empty() => "~".to_owned(),
         Some(rest) => format!("~/{}", rest.display()),
         None => folder.display().to_string(),
-    }
-}
-
-/// A card on the thread list: a working folder (`~/x`) and its chats, or a Workflow source and its sessions.
-#[derive(serde::Serialize)]
-pub struct Card {
-    /// The folder, `~/` for one under `$HOME`; or the source.
-    pub folder: String,
-    /// Its threads, in the list's order.
-    pub rows: Vec<Summary>,
-    /// A source's card: its finished sessions, folded under "done today".
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub done: Option<Vec<Summary>>,
-}
-
-/// The thread list as `GET /threads` and the page draw it: the cards, and the archived threads apart.
-#[derive(serde::Serialize)]
-pub struct Listed {
-    /// The cards under the chip (`cards`).
-    pub cards: Vec<Card>,
-    /// The archived threads, newest first.
-    pub archived: Vec<Summary>,
-}
-
-/// The cookie that keeps the thread list's chip: `chats` or `workflow` (else All).
-const LIST: &str = "cooee-list";
-
-/// The device's chip: `all`, `chats` or `workflow`.
-#[must_use]
-pub fn chip(cx: &Cx) -> &'static str {
-    let cookie = topcoat::router::request::headers(cx)
-        .get("cookie")
-        .and_then(|v| v.to_str().ok());
-    let value = cookie
-        .into_iter()
-        .flat_map(|c| c.split(';'))
-        .find_map(|c| c.trim().strip_prefix(LIST)?.strip_prefix('='));
-    match value {
-        Some("chats") => "chats",
-        Some("workflow") => "workflow",
-        _ => "all",
-    }
-}
-
-/// `POST /list`: the chip tapped.
-#[derive(serde::Deserialize)]
-struct Chip {
-    list: String,
-}
-
-/// Keeps the chip tapped for this device and goes back to the list.
-#[route(POST "/list")]
-async fn list_set(Form(c): Form<Chip>) -> Result<Response> {
-    let value = if matches!(c.list.as_str(), "chats" | "workflow") {
-        c.list.as_str()
-    } else {
-        "all"
-    };
-    Ok(Response::builder()
-        .status(303)
-        .header("Location", "/")
-        .header(
-            "Set-Cookie",
-            format!("{LIST}={value}; Path=/; Max-Age=315360000; SameSite=Lax"),
-        )
-        .body(Body::from(()))?)
-}
-
-/// The thread list's cards under chip `list` (`GET /threads` and the page draw the same): Chats, one per working
-/// folder, by folder; then Workflow, one per source, needs-you first, then working, then the newest, the finished
-/// ones folded.
-#[must_use]
-pub fn cards(rows: Vec<Summary>, list: &str) -> Vec<Card> {
-    let mut by: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
-    let mut sources: BTreeMap<String, Vec<Summary>> = BTreeMap::new();
-    for r in rows {
-        match &r.workflow {
-            Some(w) => sources.entry(w.source.clone()).or_default().push(r),
-            None => by.entry(r.folder.clone()).or_default().push(r),
-        }
-    }
-    let chats = by.into_iter().map(|(f, rows)| Card {
-        folder: short(&f),
-        rows,
-        done: None,
-    });
-    let workflow = sources.into_iter().map(|(source, mut rows)| {
-        rows.sort_by_key(|r| match r.state.as_str() {
-            "blocked" => 0,
-            "working" => 1,
-            _ => 2,
-        });
-        let (done, rows) = rows
-            .into_iter()
-            .partition(|r| matches!(r.state.as_str(), "done" | "ended"));
-        Card {
-            folder: source,
-            rows,
-            done: Some(done),
-        }
-    });
-    match list {
-        "chats" => chats.collect(),
-        "workflow" => workflow.collect(),
-        _ => chats.chain(workflow).collect(),
-    }
-}
-
-/// The thread list under chip `list`: its cards, and the archived threads apart.
-#[must_use]
-pub fn listed(rows: Vec<Summary>, list: &str) -> Listed {
-    let (archived, rows): (Vec<_>, Vec<_>) = rows.into_iter().partition(|r| r.archived);
-    Listed {
-        cards: cards(rows, list),
-        archived,
     }
 }
 
@@ -494,20 +407,22 @@ fn state(state: &str) -> &'static str {
     match state {
         "blocked" => "needs",
         "working" => "working",
-        "error" => "fail",
+        "error" | "unconnected" => "fail",
         "done" => "done",
         "ended" => "ended",
+        "connecting" => "loading",
         _ => "",
     }
 }
 
-/// The header: the app's name (the heading on the thread list, with the 🔔 that turns alerts on; else a link to
-/// it), the plugin tabs (`current` open), `+`, the look sheet and Settings.
+/// The header: the app's name (the heading on the agents list, with the 🔔 that turns alerts on; else a link to
+/// it), the plugin tabs (`current` open), `+` (`new`: a new chat with the agent on show), the look sheet and Settings.
 #[component]
 async fn header(
     home: bool,
     tabs: Vec<(String, String, bool)>,
     current: String,
+    new: String,
 ) -> Result<impl View> {
     Ok(view! {
         <header class="bar">
@@ -527,13 +442,7 @@ async fn header(
             }
             nav(tabs: tabs, current: current)
             <button type="button" class="gl" id="rf" aria-label="refresh">"↻"</button>
-            <a
-                class="gl"
-                href=(if home { "#new" } else { "/#new" })
-                aria-label="new thread"
-            >
-                "+"
-            </a>
+            <a class="gl" href=(new) aria-label="new chat">"+"</a>
             <button
                 type="button"
                 class="gl"
@@ -555,44 +464,6 @@ async fn header(
                 "⚙"
             </button>
         </header>
-    })
-}
-
-/// A row's line under the title: agent · age, or a Workflow session's role · round · age.
-fn meta(r: &Summary) -> String {
-    match &r.workflow {
-        Some(w) => format!("{} · round {} · {}", w.role, w.round, age(r.at)),
-        None => format!("{} · {}", r.agent, age(r.at)),
-    }
-}
-
-#[component]
-async fn row(cx: &Cx, r: Summary) -> Result<impl View> {
-    let st = state(&r.state);
-    let mark = Unescaped::new_unchecked(shown(cx).st(st, false));
-    let href = format!("/t/{}", r.id);
-    let meta = meta(&r);
-    Ok(view! {
-        <a
-            class=(if r.unread { "tr" } else { "tr rd" })
-            href=(href)
-            data-id=(r.id.clone())
-        >
-            <i class="ud">(if r.unread { "●" } else { "" })</i>
-            <span class="tt">(r.title)</span>
-            <span class="ta">
-                (meta)
-                if r.unseen > 0 {
-                    <b class="bd" aria-label=(format!("{} unread", r.unseen))>
-                        (r.unseen.to_string())
-                    </b>
-                }
-            </span>
-            <span class="tp">
-                <b data-st=(st)>(mark)</b>
-                (r.last)
-            </span>
-        </a>
     })
 }
 
@@ -622,665 +493,6 @@ async fn nav(tabs: Vec<(String, String, bool)>, current: String) -> Result<impl 
     })
 }
 
-/// The thread list: one card per working folder, its 3 newest threads shown, the rest folded; the new-thread
-/// form (open when the owner has no chats, else behind `+`), each agent with its provider's state (no agents or no
-/// folders: the fix line instead); the
-/// sign-ins card (`#signins`, from Settings): each provider's accounts and their state, and its login's terminal (drawn by `chat.ts`); `tabs`: the
-/// plugins' names and labels. With agent `profiles`, the form's profile picker.
-#[must_use]
-pub fn threads_page(
-    cx: &Cx,
-    rows: Vec<Summary>,
-    (agents, profiles): (Result<Vec<Agent>, String>, Vec<Profile>),
-    folders: Vec<(PathBuf, u8)>,
-    providers: Vec<Sheet>,
-    tabs: Vec<(String, String, bool)>,
-) -> impl View {
-    view! {
-        cx =>
-        threads(
-            rows: rows,
-            agents: agents,
-            profiles: profiles,
-            folders: folders,
-            providers: providers,
-            tabs: tabs
-        )
-    }
-}
-
-/// One account's row: its state, who it is, its last sign-in and usage, and [sign in], [sign out], [default].
-#[component]
-async fn account(a: Account, s: Status) -> Result<impl View> {
-    let (class, label) = match (s.signed_in, a.signed_in_at) {
-        (true, _) => ("g", "✓ signed in"),
-        (false, Some(_)) => ("m", "needs sign-in again"),
-        (false, None) => ("m", "signed out"),
-    };
-    let seen = a.signed_in_at.map(|at| match age(at).as_str() {
-        "now" => "last sign-in just now".to_owned(),
-        ago => format!("last sign-in {ago} ago"),
-    });
-    let line = [s.who.or(Some(s.line)), seen, s.usage];
-    let line: Vec<String> = line
-        .into_iter()
-        .flatten()
-        .filter(|l| !l.is_empty())
-        .collect();
-    Ok(view! {
-        <div class="ac" data-account=(a.name.clone())>
-            <div class="fh">
-                <b>(a.label())</b>
-                <span class=(class)>(label)</span>
-            </div>
-            <p class="ds">(line.join(" · "))</p>
-            <div class="ab">
-                <button type="button" class="si" hidden=(s.signed_in)>"sign in"</button>
-                if s.signed_in || a.dir.is_some() {
-                    <button type="button" class="sg">"sign out"</button>
-                }
-                if a.default {
-                    <span class="ds">"default for new threads"</span>
-                } else {
-                    <button type="button" class="df">"make default"</button>
-                }
-            </div>
-        </div>
-    })
-}
-
-/// One provider on the sign-ins card: its accounts (the system default first) and [+ account], or the install line
-/// when its CLI is missing; the login terminal (drawn by `chat.ts`).
-#[component]
-async fn provider(sheet: Sheet) -> Result<impl View> {
-    let p = sheet.provider;
-    let install = sheet.accounts.first().and_then(|(_, s)| s.install.clone());
-    let add = install.is_none() && !p.home.is_empty();
-    Ok(view! {
-        <div class="pv" data-provider=(p.name.clone())>
-            <div class="fh">
-                <b>(p.name.clone())</b>
-                if install.is_some() {
-                    <span class="m">"not installed"</span>
-                }
-                if add {
-                    <button type="button" class="ad">"+ account"</button>
-                }
-            </div>
-            if let Some(why) = sheet.why {
-                <p class="ds wy">(why)</p>
-            }
-            match install {
-                Some(fix) => {
-                    <p class="ds">"not installed on this Mac"</p>
-                    if !fix.is_empty() {
-                        hint(why: "on the Mac:", fix: fix.as_str(), then: "")
-                    }
-                }
-                None => {
-                    for (a, s) in sheet.accounts {
-                        account(a: a, s: s)
-                    }
-                }
-            }
-            <div class="lg" hidden=(true)>
-                <p class="ds">(format!("{} · shed terminal", p.login.join(" ")))</p>
-                <pre class="out"></pre>
-                <form class="tw">
-                    <input
-                        aria-label=(format!("the code from the {} sign-in page", p.name))
-                        placeholder="paste the code"
-                        autocomplete="off"
-                    >
-                    <button type="submit">"send"</button>
-                    <button type="button" class="cn">"cancel"</button>
-                </form>
-            </div>
-        </div>
-    })
-}
-
-#[component]
-async fn signins(providers: Vec<Sheet>) -> Result<impl View> {
-    Ok(view! {
-        <section class="nf shut" id="signins">
-            <div class="fh">
-                <b>"sign-ins"</b>
-                <a class="gl" href="#" aria-label="close sign-ins">"×"</a>
-            </div>
-            for sheet in providers {
-                provider(sheet: sheet)
-            }
-        </section>
-    })
-}
-
-/// One agent in the new-thread picker: its default account signed in `✓`, or signed out with a link to the
-/// sign-ins card; and the account picker, the default preselected.
-#[component]
-async fn agent(
-    id: String,
-    first: bool,
-    accounts: Option<Vec<(Account, Status)>>,
-    choices: (Vec<String>, Vec<String>),
-) -> Result<impl View> {
-    let signed = accounts.as_ref().and_then(|list| {
-        let default = list.iter().find(|(a, _)| a.default);
-        default.map(|(_, s)| s.signed_in)
-    });
-    Ok(view! {
-        <label>
-            <input type="radio" name="agent" value=(id.clone()) checked=(first)>
-            <span>(id.clone())</span>
-            match signed {
-                Some(true) => {
-                    <span class="g">"✓"</span>
-                }
-                Some(false) => {
-                    <span class="m">"signed out"</span>
-                }
-                None => {
-
-                }
-            }
-        </label>
-        if let Some(list) = accounts {
-            <select name=(format!("account:{id}")) aria-label=(format!("{id} account"))>
-                for (a, s) in list {
-                    <option value=(a.name.clone()) selected=(a.default)>
-                        (if s.signed_in {
-                            a.label().to_owned()
-                        } else {
-                            format!("{} · signed out", a.label())
-                        })
-                    </option>
-                }
-            </select>
-        }
-        pick(
-            id: format!("model:{id}"),
-            name: "model",
-            list: choices.0,
-            now: String::new()
-        )
-        pick(
-            id: format!("effort:{id}"),
-            name: "effort",
-            list: choices.1,
-            now: String::new()
-        )
-        if signed == Some(false) {
-            <a class="so" href="#signins">(format!("sign in {id}"))</a>
-        }
-    })
-}
-
-/// An empty picker's row instead: why, and the line that fixes it with its copy button (`chat.ts`).
-#[component]
-async fn hint(why: &str, fix: &str, then: &str) -> Result<impl View> {
-    Ok(view! {
-        <p class="hn">
-            (why)
-            <code>(fix)</code>
-            (then)
-            <button type="button" data-copy=(fix) aria-label=(format!("copy {fix}"))>
-                "copy"
-            </button>
-        </p>
-    })
-}
-
-/// The new-thread form's folder: the roots and the folders 1 level inside them (and 2 levels, as `chat.ts`'s search
-/// finds them), with [+ new folder]; or the fix line when there are none.
-#[component]
-async fn folder_picker(folders: Vec<(PathBuf, u8)>) -> Result<impl View> {
-    Ok(view! {
-        if folders.is_empty() {
-            <p class="lb">"folder"</p>
-            hint(why: "no folders set · add", fix: ROOTS_FIX, then: "to config.toml")
-        } else {
-            <div class="fh">
-                <input
-                    id="fq"
-                    type="search"
-                    aria-label="search folders"
-                    placeholder="search folders"
-                    autocomplete="off"
-                >
-                <button type="button" id="mkdir">"+ new folder"</button>
-            </div>
-            <fieldset class="fl">
-                <legend class="lb">"folder"</legend>
-                for (i, (f, depth)) in folders.into_iter().enumerate() {
-                    <label data-d=(depth.to_string()) hidden=(depth > 1)>
-                        <input
-                            type="radio"
-                            name="folder"
-                            value=(f.display().to_string())
-                            checked=(i == 0)
-                        >
-                        (short(&f))
-                    </label>
-                }
-            </fieldset>
-        }
-    })
-}
-
-/// A state's pose in Scene (#34): its 132 × 100 sprite.
-fn pose(st: &str) -> &'static str {
-    match st {
-        "working" => "edit",
-        "needs" => "needs",
-        "done" => "done",
-        "fail" => "fail",
-        "ended" => "merged",
-        _ => "idle",
-    }
-}
-
-/// One session in Scene: its sprite acting out its state, and its name card (title, [`meta`], the state's word);
-/// a tap opens it.
-#[component]
-async fn sprite(cx: &Cx, r: Summary) -> Result<impl View> {
-    let look = shown(cx);
-    let st = state(&r.state);
-    let key = if st.is_empty() { "idle" } else { st };
-    let (fig, word, meta) = (look.s(pose(st)), look.w(key, false), meta(&r));
-    Ok(view! {
-        <a
-            class=(if r.unread { "sb" } else { "sb rd" })
-            href=(format!("/t/{}", r.id))
-            data-id=(r.id.clone())
-        >
-            <span class="sf" data-s=(pose(st))>(Unescaped::new_unchecked(fig))</span>
-            <span class="sn">
-                <b>(r.title)</b>
-                <span>(meta)</span>
-                <span class=(format!("sw {st}")) data-w=(key)>
-                    (Unescaped::new_unchecked(word))
-                </span>
-            </span>
-        </a>
-    })
-}
-
-/// Scene (#34): the thread list as the theme's scene, a page per working folder swiped sideways with a dot per page
-/// (a link with no script), each page the scene's strip over the sessions' sprites. `chat.ts` redraws it on refresh,
-/// marks the dot in view and switches the strip to night by the device's clock.
-#[component]
-async fn scene(cx: &Cx, cards: Vec<Card>) -> Result<impl View> {
-    let art = format!("/look/{}/scene.svg", shown(cx).name());
-    let dots: Vec<(usize, String)> = cards.iter().map(|c| c.folder.clone()).enumerate().collect();
-    Ok(view! {
-        <div class="scn" id="scene" data-art=(art.clone())>
-            <nav class="sdt" aria-label="pages" hidden=(dots.len() < 2)>
-                for (i, f) in dots {
-                    <a
-                        href=(format!("#sp-{i}"))
-                        aria-label=(f)
-                        aria-current=(if i == 0 { Some("page") } else { None })
-                    ></a>
-                }
-            </nav>
-            <div class="spg">
-                for (i, Card { folder, rows, done }) in cards.into_iter().enumerate() {
-                    <section
-                        class="sp"
-                        id=(format!("sp-{i}"))
-                        aria-label=(folder.clone())
-                    >
-                        <img class="sky" src=(art.clone()) alt="">
-                        <h2 class="fh">
-                            <b>(folder)</b>
-                            <span class="ds">(format!("{} threads", rows.len()))</span>
-                        </h2>
-                        <div class="fld">
-                            for r in rows.into_iter().chain(done.into_iter().flatten()) {
-                                sprite(r: r)
-                            }
-                        </div>
-                    </section>
-                }
-            </div>
-        </div>
-    })
-}
-
-/// Each folder's last-used profile (its newest thread's, if it is still one to pick), by the folder as the form names
-/// it: the first folder's, and all of them as JSON.
-fn last_used(
-    rows: &[Summary],
-    profiles: &[Profile],
-    folders: &[(PathBuf, u8)],
-) -> (String, String) {
-    // Rows are newest first, their folders resolved.
-    let mut newest = BTreeMap::new();
-    for r in rows {
-        if r.profile.is_empty() || profiles.iter().any(|p| p.id() == r.profile) {
-            newest.entry(&r.folder).or_insert(&r.profile);
-        }
-    }
-    let last: BTreeMap<String, String> = folders
-        .iter()
-        .filter_map(|(f, _)| {
-            let p = newest.get(&f.canonicalize().ok()?)?;
-            Some((f.display().to_string(), (*p).clone()))
-        })
-        .collect();
-    let first = folders.first().map(|(f, _)| f.display().to_string());
-    let chosen = first
-        .and_then(|f| last.get(&f).cloned())
-        .unwrap_or_default();
-    (chosen, serde_json::to_string(&last).unwrap_or_default())
-}
-
-/// The new-thread form's agent profile picker: Plain, then each profile (a plugin's with its name), `chosen`
-/// selected; `last` is each folder's last-used profile, as JSON, for `chat.ts` to pick as a folder is picked. A
-/// profile picked hides the agent picker, and one with its own folder the folder picker (CSS).
-#[component]
-async fn profile_picker(profiles: Vec<Profile>, chosen: String, last: String) -> Result<impl View> {
-    Ok(view! {
-        <label class="pk">
-            <span class="lb">"profile"</span>
-            <select name="profile" data-last=(last)>
-                <option value="" selected=(chosen.is_empty())>"Plain"</option>
-                for p in profiles {
-                    <option
-                        value=(p.id())
-                        selected=(p.id() == chosen)
-                        data-folder=(p.folder.is_some())
-                    >
-                        (match &p.plugin {
-                            Some(by) => format!("{} · {by}", p.label),
-                            None => p.label.clone(),
-                        })
-                    </option>
-                }
-            </select>
-        </label>
-    })
-}
-
-/// The chips over the one list (#33): All · Chats · Workflow, `list` on; a tap posts `POST /list`.
-#[component]
-async fn chips(list: &'static str) -> Result<impl View> {
-    Ok(view! {
-        <form class="seg" id="chips" method="post" action="/list" aria-label="show">
-            for (v, label) in [
-                ("all", "All"),
-                ("chats", "Chats"),
-                ("workflow", "Workflow"),
-            ] {
-                <button
-                    type="submit"
-                    role="radio"
-                    name="list"
-                    value=(v)
-                    aria-checked=(if v == list { "true" } else { "false" })
-                >
-                    (label)
-                </button>
-            }
-        </form>
-    })
-}
-
-/// One card: a folder's 3 newest chats, the rest folded; or a source's sessions, the finished ones folded.
-#[component]
-async fn card(c: Card) -> Result<impl View> {
-    let Card { folder, rows, done } = c;
-    let shown = if done.is_some() { rows.len() } else { 3 };
-    Ok(view! {
-        <section class="fc">
-            <div class="fh">
-                <b>(folder)</b>
-                <span class="ds">(format!("{} threads", rows.len()))</span>
-            </div>
-            for r in rows.iter().take(shown).cloned() {
-                row(r: r)
-            }
-            if let Some(done) = done {
-                if !done.is_empty() {
-                    <details>
-                        <summary>(format!("{} done today", done.len()))</summary>
-                        for r in done {
-                            row(r: r)
-                        }
-                    </details>
-                }
-            } else if rows.len() > 3 {
-                <details>
-                    <summary>(format!("{} older threads", rows.len() - 3))</summary>
-                    for r in rows.iter().skip(3).cloned() {
-                        row(r: r)
-                    }
-                </details>
-            }
-        </section>
-    })
-}
-
-#[component]
-async fn threads(
-    cx: &Cx,
-    rows: Vec<Summary>,
-    agents: Result<Vec<Agent>, String>,
-    profiles: Vec<Profile>,
-    folders: Vec<(PathBuf, u8)>,
-    providers: Vec<Sheet>,
-    tabs: Vec<(String, String, bool)>,
-) -> Result<impl View> {
-    // Open until the owner has a chat of their own (Workflow sessions aren't theirs).
-    let open = rows.iter().all(|r| r.workflow.is_some());
-    let list = chip(cx);
-    let (chosen, by_folder) = last_used(&rows, &profiles, &folders);
-    let Listed { cards, archived } = listed(rows, list);
-    let empty = cards.is_empty();
-    let look = shown(cx);
-    let (figure, words) = (look.s("empty"), look.w("empty-threads", true));
-    // Start waits for an agent and a folder to pick.
-    let can_start = !folders.is_empty() && agents.as_ref().is_ok_and(|a| !a.is_empty());
-    let accounts: BTreeMap<String, Vec<(Account, Status)>> = providers
-        .iter()
-        .rev()
-        .map(|p| (p.provider.agent.clone(), p.accounts.clone()))
-        .collect();
-    let picks: BTreeMap<String, (Vec<String>, Vec<String>)> = providers
-        .iter()
-        .rev()
-        .map(|p| {
-            let p = &p.provider;
-            (p.agent.clone(), (p.models.clone(), p.efforts.clone()))
-        })
-        .collect();
-    Ok(view! {
-        document(
-            title: "cooee",
-            header(home: true, tabs: tabs, current: String::new())
-            <main class="list">
-                signins(providers: providers)
-                if empty {
-                    <div class="emp">
-                        <span data-s="empty">(Unescaped::new_unchecked(figure))</span>
-                        <p data-w="empty-threads" data-plain="">
-                            (Unescaped::new_unchecked(words))
-                        </p>
-                    </div>
-                }
-                <form class=(if open { "nf" } else { "nf shut" }) id="new">
-                    <div class="fh">
-                        <b>"new thread"</b>
-                        <a class="gl" href="#" aria-label="close">"×"</a>
-                    </div>
-                    if !profiles.is_empty() {
-                        profile_picker(
-                            profiles: profiles,
-                            chosen: chosen,
-                            last: by_folder
-                        )
-                    }
-                    <fieldset class="ag">
-                        <legend class="lb">"agent"</legend>
-                        match agents {
-                            Ok(list) => {
-                                if list.is_empty() {
-                                    hint(
-                                        why: "no agents installed · on the Mac:",
-                                        fix: AGENTS_FIX,
-                                        then: ""
-                                    )
-                                }
-                                for (i, a) in list.into_iter().enumerate() {
-                                    agent(
-                                        id: a.id.clone(),
-                                        first: i == 0,
-                                        accounts: accounts.get(&a.id).cloned(),
-                                        choices: picks.get(&a.id).cloned().unwrap_or_default()
-                                    )
-                                }
-                            }
-                            Err(e) => {
-                                <p class="err">(e)</p>
-                            }
-                        }
-                    </fieldset>
-                    folder_picker(folders: folders)
-                    <div class="tw">
-                        <textarea
-                            name="text"
-                            rows="2"
-                            aria-label="first message"
-                            placeholder="message"
-                        ></textarea>
-                        <button type="submit" disabled=(!can_start)>"start"</button>
-                    </div>
-                    <p class="err" id="new-err" hidden=(true)></p>
-                </form>
-                chips(list: list)
-                if look.scene() {
-                    scene(cards: cards)
-                } else {
-                    for c in cards {
-                        card(c: c)
-                    }
-                }
-                shelf(rows: archived)
-            </main>
-        )
-    })
-}
-
-/// The rename box the thread bar's title opens (`chat.ts`).
-#[component]
-async fn rename(title: String) -> Result<impl View> {
-    Ok(view! {
-        <form id="rt" class="rt" popover="auto" aria-label="rename the thread">
-            <input
-                name="title"
-                aria-label="thread title"
-                value=(title)
-                maxlength="80"
-                required=(true)
-            >
-            <button type="submit">"rename"</button>
-        </form>
-    })
-}
-
-/// The archived threads, folded, each with [restore] (`chat.ts`).
-#[component]
-async fn shelf(rows: Vec<Summary>) -> Result<impl View> {
-    Ok(view! {
-        if !rows.is_empty() {
-            <details class="fc arc">
-                <summary>(format!("{} archived", rows.len()))</summary>
-                for r in rows {
-                    <div class="arw">
-                        <a href=(format!("/t/{}", r.id))>(r.title.clone())</a>
-                        <button
-                            type="button"
-                            class="cn"
-                            data-restore=(r.id.clone())
-                            aria-label=(format!("restore {}", r.title))
-                        >
-                            "restore"
-                        </button>
-                    </div>
-                }
-            </details>
-        }
-    })
-}
-
-/// A thread's foot: the model and effort chips, the working pill, the queued messages, the picked files, the
-/// composer; the long-press menu and the image viewer (`chat.ts`).
-#[component]
-async fn foot(
-    who: String,
-    ended: bool,
-    pill: Unescaped<String>,
-    choices: (Vec<String>, Vec<String>),
-    now: (String, String),
-) -> Result<impl View> {
-    Ok(view! {
-        if !ended && (!choices.0.is_empty() || !choices.1.is_empty()) {
-            <div class="mc">
-                pick(id: "model".to_owned(), name: "model", list: choices.0, now: now.0)
-                pick(
-                    id: "effort".to_owned(),
-                    name: "effort",
-                    list: choices.1,
-                    now: now.1
-                )
-            </div>
-        }
-        <div class="cmp">
-            <div class="pill" id="pill" hidden=(true)>
-                <span id="pst" data-st="working" data-plain="">(pill)</span>
-                <span id="el">"0:00"</span>
-                <button type="button" class="stop">"stop"</button>
-            </div>
-            <ul class="qu" id="queue" aria-label="queued messages" hidden=(true)></ul>
-            <div class="fis" id="picked" hidden=(true)></div>
-            <form class="tw" id="composer">
-                <label class="gl att" hidden=(ended)>
-                    "📎"
-                    <input
-                        type="file"
-                        id="files"
-                        class="vh"
-                        multiple=(true)
-                        aria-label="attach files"
-                    >
-                </label>
-                <textarea
-                    id="box"
-                    rows="1"
-                    aria-label="message"
-                    placeholder=(format!("message {who}"))
-                    disabled=(ended)
-                ></textarea>
-                <button type="submit" disabled=(ended)>"send"</button>
-            </form>
-        </div>
-        <div
-            id="menu"
-            class="mn"
-            popover="manual"
-            role="menu"
-            aria-label="message actions"
-        >
-            <button type="button" role="menuitem" data-m="copy">"copy"</button>
-            <button type="button" role="menuitem" data-m="md">
-                "copy as markdown"
-            </button>
-            <button type="button" role="menuitem" data-m="quote">"quote"</button>
-        </div>
-        <div id="viewer" class="vw" popover="auto" aria-label="image"><img alt=""></div>
-    })
-}
-
 /// Plugin `name`'s tab: its module runs in a sandboxed frame that `chat.ts` hosts.
 #[must_use]
 pub fn plugin_page(
@@ -1303,7 +515,12 @@ async fn plugin(
         document(
             title: title.as_str(),
             <main class="pt">
-                header(home: false, tabs: tabs, current: name.clone())
+                header(
+                    home: false,
+                    tabs: tabs,
+                    current: name.clone(),
+                    new: "/new".to_owned()
+                )
                 <h1 class="vh">(label.clone())</h1>
                 <iframe
                     class="pf"
@@ -1656,23 +873,6 @@ async fn preview(cx: &Cx, name: String, fails: Vec<String>, thread: String) -> R
     })
 }
 
-/// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer; `ids` are the threads a
-/// ref in it may open (#84).
-#[must_use]
-pub fn chat_page(
-    cx: &Cx,
-    thread: Thread,
-    turn: Turn,
-    profile: String,
-    choices: (Vec<String>, Vec<String>),
-    ids: Vec<String>,
-) -> impl View {
-    view! {
-        cx =>
-        chat(thread: thread, turn: turn, profile: profile, choices: choices, ids: ids)
-    }
-}
-
 /// A model or effort select (#553 row 34): `name`'s choices, `default` first, `now` selected.
 #[component]
 async fn pick(id: String, name: &str, list: Vec<String>, now: String) -> Result<impl View> {
@@ -1720,12 +920,120 @@ fn web_url(url: &str) -> Option<String> {
     (url.starts_with("https://") || url.starts_with("http://")).then(|| url.to_owned())
 }
 
+/// The rename box the thread bar's title opens (`chat.ts`).
+#[component]
+async fn rename(title: String) -> Result<impl View> {
+    Ok(view! {
+        <form id="rt" class="rt" popover="auto" aria-label="rename the thread">
+            <input
+                name="title"
+                aria-label="thread title"
+                value=(title)
+                maxlength="80"
+                required=(true)
+            >
+            <button type="submit">"rename"</button>
+        </form>
+    })
+}
+
+/// The archived threads, folded, each with [restore] (`chat.ts`).
+#[component]
+pub(crate) async fn shelf(rows: Vec<cooee_core::Summary>) -> Result<impl View> {
+    Ok(view! {
+        if !rows.is_empty() {
+            <details class="arc">
+                <summary>(format!("{} archived", rows.len()))</summary>
+                for r in rows {
+                    <div class="arw">
+                        <a href=(format!("/t/{}", r.id))>(r.title.clone())</a>
+                        <button
+                            type="button"
+                            class="cn"
+                            data-restore=(r.id.clone())
+                            aria-label=(format!("restore {}", r.title))
+                        >
+                            "restore"
+                        </button>
+                    </div>
+                }
+            </details>
+        }
+    })
+}
+
+/// A thread's foot: the folder, model and effort chips (none once it ended), the working pill, the queued messages,
+/// the picked files, the composer; the long-press menu and the image viewer (`chat.ts`).
+#[component]
+async fn foot(
+    who: String,
+    ended: bool,
+    pill: Unescaped<String>,
+    places: Option<agents::Places>,
+    choices: (Vec<String>, Vec<String>),
+    now: (String, String),
+) -> Result<impl View> {
+    Ok(view! {
+        if !ended {
+            agents::chips(places: places, choices: choices, now: now)
+        }
+        <div class="cmp">
+            <div class="pill" id="pill" hidden=(true)>
+                <span id="pst" data-st="working" data-plain="">(pill)</span>
+                <span id="el">"0:00"</span>
+                <button type="button" class="stop">"stop"</button>
+            </div>
+            <ul class="qu" id="queue" aria-label="queued messages" hidden=(true)></ul>
+            <div class="fis" id="picked" hidden=(true)></div>
+            <form class="tw nc" id="composer">
+                <label class="gl att" hidden=(ended)>
+                    "📎"
+                    <input
+                        type="file"
+                        id="files"
+                        class="vh"
+                        multiple=(true)
+                        aria-label="attach files"
+                    >
+                </label>
+                <textarea
+                    id="box"
+                    rows="1"
+                    aria-label="message"
+                    placeholder=(format!("message {who}"))
+                    disabled=(ended)
+                ></textarea>
+                <button type="submit" disabled=(ended)>"send"</button>
+            </form>
+        </div>
+        <div
+            id="menu"
+            class="mn"
+            popover="manual"
+            role="menu"
+            aria-label="message actions"
+        >
+            <button type="button" role="menuitem" data-m="copy">"copy"</button>
+            <button type="button" role="menuitem" data-m="md">
+                "copy as markdown"
+            </button>
+            <button type="button" role="menuitem" data-m="quote">"quote"</button>
+        </div>
+        <div id="viewer" class="vw" popover="auto" aria-label="image"><img alt=""></div>
+    })
+}
+
+/// One thread (the pane of `/t/{id}`): its bar (its agent's avatar and name, the title of a side thread), the
+/// items (drawn by `chat.ts`), the working pill, and the composer with the folder, model and effort chips.
 #[component]
 async fn chat(
     cx: &Cx,
     thread: Thread,
     turn: Turn,
+    providers: &[Sheet],
     profile: String,
+    mate: Option<(usize, String, bool)>,
+    places: agents::Places,
     choices: (Vec<String>, Vec<String>),
     ids: Vec<String>,
 ) -> Result<impl View> {
@@ -1736,81 +1044,97 @@ async fn chat(
         ("working", true),
     ]
     .map(|(st, plain)| Unescaped::new_unchecked(look.st(st, plain)));
-    let folder = thread.folder.as_deref().map(short).unwrap_or_default();
+    let folder = places.2.as_deref().map_or("scratch".to_owned(), short);
+    let provider = named(&thread.agent, providers);
+    let runs = compose::said(&provider, &who(&thread.agent, &thread.account, providers));
+    let (name, title, said) = bar(&thread, mate.as_ref(), (&profile, &provider, &runs));
     let ended = thread.closed || turn.state == "ended";
+    let renamable = !matches!(mate, Some((_, _, true)));
     // A Workflow session (#33): its role and round, and a link to what it works on; its tool closes it.
     let workflow = thread.workflow.clone();
     let link = workflow.as_ref().and_then(|w| web_url(&w.url));
     Ok(view! {
-        document(
-            title: thread.title.as_str(),
-            <main
-                class="chat"
-                data-thread=(thread.id.clone())
-                data-agent=(thread.agent.clone())
-                data-read=(thread.read.unwrap_or(0).to_string())
-                data-state=(turn.state.clone())
-                data-ids=(ids.join(" "))
-            >
-                header(home: false, tabs: Vec::new(), current: String::new())
-                <div class="th">
-                    <a class="gl bk" href="/" aria-label="back">"‹"</a>
-                    <div class="tb">
-                        <div class="tn">
+        <div
+            class="chat"
+            data-thread=(thread.id.clone())
+            data-agent=(name.clone())
+            data-who=(runs.clone())
+            data-read=(thread.read.unwrap_or(0).to_string())
+            data-state=(turn.state.clone())
+            data-ids=(ids.join(" "))
+        >
+            <div class="th">
+                agents::back(key: agents::key(&thread.agent, &thread.profile))
+                if let Some((n, _, _)) = mate {
+                    agents::avatar(name: name.clone(), n: n, big: false)
+                }
+                <div class="tb">
+                    <div class="tn">
+                        // A side thread's title renames it (#43); an agent's ongoing chat goes by its name.
+                        if renamable {
                             <h1>
                                 <button
                                     type="button"
                                     class="ttl"
                                     popovertarget="rt"
-                                    aria-label=(format!("{} · rename", thread.title))
+                                    aria-label=(format!("{title} · rename"))
                                 >
-                                    (thread.title.clone())
+                                    (title.clone())
                                 </button>
                             </h1>
-                            <small>(thread.id.clone())</small>
-                        </div>
-                        <span class="ds">
-                            <i class="dt"></i>
-                            <span id="net"></span>
-                            (byline(&thread, &profile, &folder))
-                            <span id="st" data-st=(state(&turn.state))>(st)</span>
-                            if let Some(url) = link {
-                                " · "
-                                <a href=(url)>"issue & PR"</a>
-                            }
-                        </span>
+                        } else {
+                            <h1>(title.clone())</h1>
+                        }
+                        <small>(thread.id.clone())</small>
                     </div>
-                    <button
-                        type="button"
-                        id="close"
-                        class="gl"
-                        hidden=(ended || workflow.is_some())
-                        aria-label="close the thread"
-                    >
-                        "×"
-                    </button>
-                    rename(title: thread.title.clone())
+                    <span class="ds">
+                        <i class="dt"></i>
+                        <span id="net"></span>
+                        (said)
+                        if thread.workflow.is_none() {
+                            <span id="bf">(folder)</span>
+                            " · "
+                        }
+                        <span id="st" data-st=(state(&turn.state))>(st)</span>
+                        if let Some(url) = link {
+                            " · "
+                            <a href=(url)>"issue & PR"</a>
+                        }
+                    </span>
                 </div>
-                dev_bar(thread: thread.id.clone(), folder: thread.folder.clone())
-                <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
-                <ol
-                    class="tc"
-                    id="msgs"
-                    tabindex="0"
-                    aria-label="messages"
-                    aria-live="polite"
-                ></ol>
-                <p class="tlv" id="wait" hidden=(true)>
-                    <span data-st="needs" data-plain="">(wait)</span>
-                </p>
-                foot(
-                    who: thread.agent.clone(),
-                    ended: ended,
-                    pill: pill,
-                    choices: choices,
-                    now: (thread.model.clone(), thread.effort.clone())
-                )
-            </main>
-        )
+                <button
+                    type="button"
+                    id="close"
+                    class="gl"
+                    hidden=(ended || workflow.is_some())
+                    aria-label="close the thread"
+                >
+                    "×"
+                </button>
+                if renamable {
+                    rename(title: title.clone())
+                }
+            </div>
+            dev_bar(thread: thread.id.clone(), folder: thread.folder.clone())
+            <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
+            <ol
+                class="tc"
+                id="msgs"
+                tabindex="0"
+                aria-label="messages"
+                aria-live="polite"
+            ></ol>
+            <p class="tlv" id="wait" hidden=(true)>
+                <span data-st="needs" data-plain="">(wait)</span>
+            </p>
+            foot(
+                who: name.clone(),
+                ended: ended,
+                pill: pill,
+                places: thread.workflow.is_none().then_some(places),
+                choices: choices,
+                now: (thread.model.clone(), thread.effort.clone())
+            )
+        </div>
     })
 }

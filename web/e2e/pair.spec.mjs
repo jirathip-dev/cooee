@@ -82,7 +82,7 @@ test("a QR link pairs at once and the list offers a passkey; the used code then 
   const page = await context.newPage();
   await page.goto(`/pair?code=${code}`);
   await page.waitForURL(/\/$/);
-  await expect(page.locator("main.list")).toBeVisible();
+  await expect(page.locator(".ags")).toBeVisible();
   await expect(page.locator("#pairing")).toContainText("Save a passkey?");
   await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
   await page.screenshot({ path: "../../ui-390/pair-offer.png" });

@@ -29,10 +29,12 @@ type File = { name: string; data: string }; // data: the bytes in base64
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | the thread list under the device's chip: `{cards: {folder, rows: Row[], done?: Row[]}[], archived: Row[]}`; `Row` is `{id, title, agent, folder, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}}` (`folder`: `~/…` under home; `unseen`: the agent's items past the read mark; a Workflow source's card has `done`, its finished sessions, and `folder` is the source) |
-| `POST /list` | a form: `list` (`all`, `chats` or `workflow`) | 303 to `/`, keeping the chip in the `cooee-list` cookie |
-| `POST /threads` | `{agent, account?, model?, effort?, folder, text, random_id}` | `{id}` |
-| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, queue: Queued[], waiting: Item \| null}` (`waiting`: the oldest config card that waits) |
+| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, folder, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}}` (`unseen`: the agent's items past the read mark) |
+| `POST /threads` | `{agent, account?, model?, effort?, folder?, text, random_id, background?}` | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
+| `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
+| `POST /threads/{id}/folder` | `{folder}` (a root or inside one): "Use a folder…"; its agent starts again there and the next message carries a hand-over | the `note` it adds |
+| `POST /agents` | a form: `name`, `profile` (`""`: Plain on the first installed agent) | 303 to its new chat; the agent is saved as `<config>/profiles/<name>.toml` |
+| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, queue: Queued[], waiting: Item \| null, pending?: {text, random_id}}` (`waiting`: the oldest config card that waits; `pending`: the first message while the thread connects) |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |
 | `POST /threads/{id}/send` | `{text, random_id, files?: File[]}` (a retry with the same id is stored once; the agent gets the files' paths under the text) | `Item` |
 | `POST /threads/{id}/queue` | as `send`: held until the turn in progress ends, then sent (between turns: at once) | `Queued[]` |
@@ -70,7 +72,6 @@ another run; load the newest slice again).
 | `POST /logins/{id}/send` | `{text}`: typed into the login's terminal | `null` |
 | `POST /logins/{id}/cancel` | `{}` | `null` |
 | `POST /logins/{id}/signout` | `{account}` | `null` |
-| `POST /logins/{id}/default` | `{account}` | `null` |
 
 ## Alerts, devices, reports
 

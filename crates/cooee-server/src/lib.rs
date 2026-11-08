@@ -171,6 +171,7 @@ impl Layer for Gate {
                 Some(d) => next.run(&cx.with(Paired(d)), body).await,
                 None if method(cx) == "GET"
                     && (path == "/"
+                        || path == "/new"
                         || path.starts_with("/t/")
                         || path.strip_prefix("/p/").is_some_and(|p| !p.contains('/'))) =>
                 {
@@ -298,23 +299,89 @@ fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
     .collect()
 }
 
-#[page("/")]
-async fn home(cx: &Cx) -> Result<impl View> {
+/// The sidebar's and a new chat's data (#86).
+async fn side(cx: &Cx) -> Result<cooee_web::Side> {
     let providers = on_logins(cx, |l| Ok(l.statuses()));
-    let rest = blocking(cx, |hub| {
-        let agents = hub.agents();
-        Ok((hub.list(), agents, hub.folders()))
-    });
+    let rest = blocking(cx, |hub| Ok((hub.list(), hub.agents(), hub.folders())));
     let (providers, (rows, agents, folders)) =
         futures_util::future::try_join(providers, rest).await?;
-    Ok(cooee_web::threads_page(
-        cx,
+    Ok(cooee_web::Side {
         rows,
-        (agents, profiles(cx)),
-        folders,
+        profiles: profiles(cx),
+        agents,
         providers,
-        tabs(cx),
+        folders,
+        tabs: tabs(cx),
+    })
+}
+
+/// `/new?agent=<ACP id>` (Plain) or `?profile=<id>`: a new chat with that agent; on `/` (`?list` keeps a phone on
+/// the agents list) the agent on show.
+#[derive(Deserialize)]
+struct NewChat {
+    list: Option<String>,
+    agent: Option<String>,
+    profile: Option<String>,
+}
+
+/// The query's agent as a [`cooee_web::Mate`] key (empty: none), and whether it has `?list`.
+fn agent_key(cx: &Cx) -> (String, bool) {
+    let q = parse_query_params::<NewChat>(cx).ok();
+    let list = q.as_ref().is_some_and(|q| q.list.is_some());
+    let key = match q {
+        Some(NewChat {
+            profile: Some(p), ..
+        }) => format!("profile={p}"),
+        Some(NewChat { agent: Some(a), .. }) => format!("agent={a}"),
+        _ => String::new(),
+    };
+    (key, list)
+}
+
+#[page("/")]
+async fn home(cx: &Cx) -> Result<impl View> {
+    let (key, list) = agent_key(cx);
+    let pane = cooee_web::Pane::Home { list, key };
+    Ok(cooee_web::page(cx, side(cx).await?, pane))
+}
+
+#[page("/new")]
+async fn new_chat(cx: &Cx) -> Result<impl View> {
+    let (key, _) = agent_key(cx);
+    Ok(cooee_web::page(
+        cx,
+        side(cx).await?,
+        cooee_web::Pane::New { key },
     ))
+}
+
+/// `POST /agents` (a form): `+ new agent`, a name and the profile it starts from (empty: Plain on the first
+/// installed agent); saved as a profile of its own, then its new chat opens.
+#[derive(Deserialize)]
+struct NewAgent {
+    name: String,
+    #[serde(default)]
+    profile: String,
+}
+
+#[route(POST "/agents")]
+async fn new_agent(cx: &Cx, Form(a): Form<NewAgent>) -> Result<Response> {
+    let data = app_context::<Data>(cx);
+    let (data, config) = (data.0.clone(), data.1.clone());
+    let made = blocking(cx, move |hub| {
+        let first = hub.agents().ok().and_then(|a| a.into_iter().next());
+        let agent = first.map(|a| a.id).unwrap_or_default();
+        let config = config.ok_or_else(|| refused("there is no config folder for profiles"))?;
+        cooee_core::profiles::create(&config, &data, &a.name, &a.profile, &agent).map_err(refused)
+    })
+    .await;
+    match made {
+        Ok(p) => Ok(Response::builder()
+            .status(303)
+            .header("Location", format!("/new?profile={}", p.id()))
+            .body(Body::from(()))?),
+        Err(e) => plain(400, &e.to_string()),
+    }
 }
 
 /// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account.
@@ -335,7 +402,7 @@ async fn login_start(cx: &Cx, Json(s): Json<Option<Start>>) -> Result<Answer<()>
     ))
 }
 
-/// `POST /logins/{id}/signout` and `/default`: account `account` (empty: the system default).
+/// `POST /logins/{id}/signout`: account `account` (empty: the system default).
 #[derive(Deserialize)]
 struct Pick {
     account: String,
@@ -346,14 +413,6 @@ async fn login_signout(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
     let name = thread_id(cx);
     Ok(Answer(
         on_logins(cx, move |l| l.sign_out(&name, &p.account)).await,
-    ))
-}
-
-#[route(POST "/logins/{id}/default")]
-async fn login_default(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
-    let name = thread_id(cx);
-    Ok(Answer(
-        on_logins(cx, move |l| l.set_default(&name, &p.account)).await,
     ))
 }
 
@@ -384,13 +443,7 @@ async fn login_cancel(cx: &Cx) -> Result<Answer<()>> {
 #[page("/t/{id}")]
 async fn chat(cx: &Cx) -> Result<impl View> {
     let id = thread_id(cx);
-    // With every thread's id, so a ref to one in the chat opens it (#84).
-    let Ok((thread, turn, ids)) = blocking(cx, move |hub| {
-        let (thread, turn) = hub.thread(&id)?;
-        Ok((thread, turn, hub.list().into_iter().map(|t| t.id).collect()))
-    })
-    .await
-    else {
+    let Ok((thread, turn)) = blocking(cx, move |hub| hub.thread(&id)).await else {
         return Err(not_found().into());
     };
     let profile = profiles(cx).into_iter().find(|p| p.id() == thread.profile);
@@ -399,7 +452,15 @@ async fn chat(cx: &Cx) -> Result<impl View> {
         None => thread.profile.clone(),
     };
     let choices = logins(cx).choices(&thread.agent);
-    Ok(cooee_web::chat_page(cx, thread, turn, label, choices, ids))
+    let folder = thread.folder.clone();
+    let pane = cooee_web::Pane::Chat {
+        thread: Box::new(thread),
+        turn,
+        profile: label,
+        folder,
+        choices,
+    };
+    Ok(cooee_web::page(cx, side(cx).await?, pane))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -466,26 +527,28 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
-/// `GET /threads`: the thread list's cards under the device's chip and its archived threads, as the page draws them
-/// (docs/api.md).
+/// `GET /threads`: every thread's row, newest first (docs/api.md).
 #[route(GET "/threads")]
-async fn thread_list(cx: &Cx) -> Result<Answer<cooee_web::Listed>> {
-    let list = cooee_web::chip(cx);
-    Ok(Answer(
-        blocking(cx, move |hub| Ok(cooee_web::listed(hub.list(), list))).await,
-    ))
+async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
+    Ok(Answer(blocking(cx, |hub| Ok(hub.list())).await))
 }
 
 /// `POST /threads`: a new thread.
 #[derive(Deserialize)]
 struct New {
     agent: String,
+    /// None or empty: the thread's own scratch folder (#48).
+    #[serde(default)]
     folder: PathBuf,
     text: String,
     random_id: String,
-    /// The agent's provider account (none: its default).
+    /// The agent's provider account (none: the system default).
     #[serde(default)]
     account: Option<String>,
+    /// Answer with the id at once and connect behind it (#48: the page opens the chat on send); else once the
+    /// agent took the first message.
+    #[serde(default)]
+    background: bool,
     /// The agent profile's id (none or empty: Plain, with `agent` and `account`).
     #[serde(default)]
     profile: Option<String>,
@@ -506,40 +569,116 @@ struct Created {
 async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     let logins = logins(cx);
     let data = app_context::<Data>(cx);
-    let (data, config) = (data.0.clone(), data.1.clone());
-    let id = blocking(cx, move |hub| {
-        let (agent, folder, mut recipe) = match new.profile.as_deref().filter(|p| !p.is_empty()) {
-            None => {
-                let (account, launch) = logins.home(&new.agent, new.account.as_deref())?;
-                let recipe = Recipe {
-                    account,
-                    launch,
-                    ..Recipe::default()
-                };
-                (new.agent, new.folder, recipe)
-            }
-            Some(id) => {
-                let p =
-                    cooee_core::profiles::find(config.as_deref(), &data, id).map_err(refused)?;
-                let (account, launch, instructions) = logins.profile(&p, &data)?;
-                let recipe = Recipe {
-                    account,
-                    profile: p.id(),
-                    launch,
-                    instructions,
-                    ..Recipe::default()
-                };
-                (p.agent, p.folder.unwrap_or(new.folder), recipe)
-            }
-        };
-        recipe
-            .launch
-            .pick(logins.picks(&agent, &new.model, &new.effort)?);
-        (recipe.model, recipe.effort) = (new.model, new.effort);
-        hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)
-    })
-    .await;
+    let (data, config, hub) = (data.0.clone(), data.1.clone(), hub(cx));
+    let id = tokio::task::spawn_blocking(move || {
+        let profile = new.profile.as_deref().unwrap_or_default();
+        let picked = (new.model, new.effort);
+        let (agent, folder, recipe) = recipe(
+            &logins,
+            (&data, config.as_deref()),
+            (&new.agent, new.account.as_deref(), profile),
+            new.folder,
+            picked,
+        )?;
+        if !new.background {
+            return hub.create(&agent, &folder, &new.text, &new.random_id, &recipe);
+        }
+        let name = cooee_web::named(&agent, &logins.statuses());
+        hub.create_later(
+            (&agent, &name),
+            &folder,
+            (&new.text, &new.random_id),
+            recipe,
+        )
+    });
+    let id = id.await.map_err(|e| HubError::Refused(e.to_string()))?;
     Ok(Answer(id.map(|id| Created { id })))
+}
+
+/// `POST /threads/{id}/retry`: starts a thread whose start failed again, with its first message (#48).
+#[route(POST "/threads/{id}/retry")]
+async fn retry(cx: &Cx) -> Result<Answer<()>> {
+    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+    let data = app_context::<Data>(cx);
+    let (data, config) = (data.0.clone(), data.1.clone());
+    let done = tokio::task::spawn_blocking(move || {
+        let (t, _) = hub.thread(&id)?;
+        let (_, _, recipe) = recipe(
+            &logins,
+            (&data, config.as_deref()),
+            (&t.agent, Some(&t.account), &t.profile),
+            PathBuf::new(),
+            (t.model, t.effort),
+        )?;
+        let name = cooee_web::named(&t.agent, &logins.statuses());
+        hub.retry(&id, recipe, &name)
+    });
+    Ok(Answer(
+        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
+    ))
+}
+
+/// `POST /threads/{id}/folder`: "Use a folder…" (#86).
+#[derive(Deserialize)]
+struct Attach {
+    folder: PathBuf,
+}
+
+#[route(POST "/threads/{id}/folder")]
+async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Item>> {
+    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+    let data = app_context::<Data>(cx);
+    let (data, config) = (data.0.clone(), data.1.clone());
+    let done = tokio::task::spawn_blocking(move || {
+        let (t, _) = hub.thread(&id)?;
+        let (_, _, recipe) = recipe(
+            &logins,
+            (&data, config.as_deref()),
+            (&t.agent, Some(&t.account), &t.profile),
+            PathBuf::new(),
+            (t.model, t.effort),
+        )?;
+        hub.attach(&id, &a.folder, &recipe)
+    });
+    Ok(Answer(
+        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
+    ))
+}
+
+/// How a thread of `agent` starts in `folder`: Plain with `account`, or as agent profile `profile` (non-empty: its
+/// agent, and its folder if it has one), on the model and effort `picked`. Returns its agent and folder too.
+fn recipe(
+    logins: &Logins,
+    (data, config): (&std::path::Path, Option<&std::path::Path>),
+    (agent, account, profile): (&str, Option<&str>, &str),
+    folder: PathBuf,
+    picked: (String, String),
+) -> Result<(String, PathBuf, Recipe), HubError> {
+    let (agent, folder, mut recipe) = if profile.is_empty() {
+        let (account, launch) = logins.home(agent, account)?;
+        let recipe = Recipe {
+            account,
+            launch,
+            ..Recipe::default()
+        };
+        (agent.to_owned(), folder, recipe)
+    } else {
+        let p = cooee_core::profiles::find(config, data, profile).map_err(refused)?;
+        let (account, launch, instructions) = logins.profile(&p, data)?;
+        let recipe = Recipe {
+            account,
+            profile: p.id(),
+            launch,
+            instructions,
+            ..Recipe::default()
+        };
+        (p.agent, p.folder.unwrap_or(folder), recipe)
+    };
+    recipe
+        .launch
+        .pick(logins.picks(&agent, &picked.0, &picked.1)?);
+    (recipe.model, recipe.effort) = picked;
+    Ok((agent, folder, recipe))
 }
 
 /// `?path=<folder>&hidden=1`: Settings › Folders.
@@ -1595,10 +1734,14 @@ pub fn router(
     .route(report)
     .page(home)
     .page(chat)
+    .page(new_chat)
     .route(thread_list)
     .route(messages)
     .route(events)
     .route(create)
+    .route(retry)
+    .route(new_agent)
+    .route(attach)
     .route(browse)
     .route(root)
     .route(new_folder)
@@ -1619,7 +1762,6 @@ pub fn router(
     .route(login_send)
     .route(login_cancel)
     .route(login_signout)
-    .route(login_default)
     .page(tab)
     .route(frame)
     .route(proxy)

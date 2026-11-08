@@ -132,8 +132,9 @@ fn new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply() {
     assert_eq!(kinds, ["you", "agent"]);
     let (status, page) = s.cooee.get("/");
     assert_eq!(status, 200);
+    // Its agent in the sidebar opens it, with the last line.
     assert!(
-        page.contains("Say hello") && page.contains("fake-acp"),
+        page.contains(&format!(r#"href="/t/{id}""#)) && page.contains("Hello"),
         "{page}"
     );
     let (status, page) = s.cooee.get(&format!("/t/{id}"));
@@ -309,51 +310,66 @@ fn closing_a_thread_kills_and_removes_its_terminal() {
 }
 
 #[test]
-fn scene_draws_one_sprite_per_session_on_a_page_per_folder() {
-    // #34: Style's Scene draws the thread list as the theme's scene; threads keep the style chosen before it.
+fn scene_draws_the_agents_as_sprites_and_the_current_ones_chats_as_chips() {
+    // #34 on #86: Style's Scene draws the agents sidebar as the theme's scene; chats keep the style chosen before it.
     let s = setup_with("scene", &["farm", "kitchen"]);
     let ids = [s.create("one"), s.create("two")];
-    let other = json!({ "agent": "fake-acp", "folder": s.dir.join("root"), "text": "three", "random_id": "scene-root" });
-    let (status, body) = s.cooee.post("/threads", &other);
-    assert_eq!(status, 200, "{body}");
-    let third = serde_json::from_str::<Value>(&body).unwrap()["id"]
-        .as_str()
-        .unwrap()
-        .to_owned();
-    let page = |pick: &str| {
+    let page = |path: &str, pick: &str| {
         let cookie = format!("{}; cooee-look={pick}", s.cooee.cookie);
-        s.cooee.raw("GET", "/", &[("Cookie", &cookie)], "").1
+        s.cooee.raw("GET", path, &[("Cookie", &cookie)], "").1
     };
-    let scene = page("scene:on/style:terminal");
+    let agents = page("/?list", "").matches(r#"<a class="agr"#).count();
+    assert!(agents >= 1);
+    let scene = page("/?list", "scene:on/style:terminal");
     assert!(scene.contains(r#"data-style="terminal""#), "{scene}");
     assert_eq!(
         scene.matches(r#"<section class="sp""#).count(),
-        2,
+        1,
         "{scene}"
     );
-    assert_eq!(scene.matches("<nav class=\"sdt\"").count(), 1, "{scene}");
-    assert_eq!(scene.matches(r##"<a href="#sp-"##).count(), 2, "{scene}");
-    assert_eq!(scene.matches(r#"<a class="sb"#).count(), 3, "{scene}");
-    for id in ids.iter().chain([&third]) {
-        let tap = format!(r#"href="/t/{id}" data-id="{id}""#);
-        assert_eq!(scene.matches(&tap).count(), 1, "{id}: {scene}");
-    }
+    assert_eq!(scene.matches(r#"<a class="sb"#).count(), agents, "{scene}");
+    assert!(scene.contains(&format!("{agents} agents")), "{scene}");
+    assert!(!scene.contains(r#"<a class="agr"#), "{scene}");
     assert!(scene.contains("/look/farm/sprites.svg#s-"), "{scene}");
-    assert!(!scene.contains(r#"<section class="fc""#), "{scene}");
+    // The list's current agent (the first, as a phone's `‹` names none): its one sprite for both chats, ringed,
+    // opens the ongoing one (the oldest open); its chats are chips under the scene.
+    let ongoing = format!(r#"href="/t/{}""#, ids[0]);
+    assert_eq!(
+        scene.matches(r#"aria-current="true""#).count(),
+        1,
+        "{scene}"
+    );
+    let chips = &scene[scene.find(r#"class="scc""#).expect(&scene)..];
+    let chips = &chips[..chips.find("</nav>").unwrap()];
+    assert!(chips.contains(&format!("/t/{}", ids[1])), "{chips}");
+    assert_eq!(scene.matches(&ongoing).count(), 2, "{scene}");
     // Scene is checked; Figures stays live (ASCII or None leave Scene, amendment A).
     assert!(
         scene.contains(r#"data-v="scene" aria-checked="true""#),
         "{scene}"
     );
-    // Figures ASCII or None, or a theme with no sprites (plain): no Scene, the cards, and Scene not offered.
+    // On the side thread: its agent's sprite ringed, and its chats as chips, the side thread's current.
+    let chat = page(&format!("/t/{}", ids[1]), "scene:on");
+    let ring = chat.find(r#"aria-current="true""#).expect(&chat);
+    let tag = &chat[chat[..ring].rfind("<a").unwrap()..ring];
+    assert!(tag.contains(&ongoing), "{tag}");
+    let chips = &chat[chat.find(r#"class="scc""#).expect(&chat)..];
+    let chips = &chips[..chips.find("</nav>").unwrap()];
+    let first = chips.find(&ongoing).expect(chips);
+    let side = chips
+        .find(&format!(r#"href="/t/{}" aria-current="page""#, ids[1]))
+        .expect(chips);
+    let new = chips.find("+ new chat").expect(chips);
+    assert!(first < side && side < new, "{chips}");
+    // Figures ASCII or None, or a theme with no sprites (plain): no Scene, the agents' rows, and Scene not offered.
     for pick in [
         "scene:on/figures:ascii",
         "scene:on/figures:none",
         "scene:on/theme:plain",
     ] {
-        let list = page(pick);
+        let list = page("/?list", pick);
         assert!(!list.contains(r#"id="scene""#), "{pick}");
-        assert!(list.contains(r#"<section class="fc""#), "{pick}");
+        assert!(list.contains(r#"<a class="agr"#), "{pick}");
         let v = list.find(r#"data-v="scene""#).unwrap();
         let at = list[..v].rfind("<button").unwrap();
         let tag = &list[at..v];

@@ -40,7 +40,8 @@ fn row_34_a_thread_starts_on_its_pick_and_the_chips_change_it() {
     );
     let page = cooee.get(&format!("/t/{id}")).1;
     assert!(
-        page.contains("fake-acp · System default · opus · "),
+        // The provider's name and the main login (#48: never the agent's id), then the model.
+        page.contains("fake · main login · opus · "),
         "{page}"
     );
     assert!(

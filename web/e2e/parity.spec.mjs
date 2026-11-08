@@ -22,9 +22,9 @@ async function audit(page) {
 
 // A new thread whose turn is done, open.
 async function thread(page, text = "Say hello") {
-  await page.goto("/#new");
-  await page.getByLabel("first message").fill(text);
-  await page.getByRole("button", { name: "start" }).click();
+  await page.goto("/new");
+  await page.getByLabel("message", { exact: true }).fill(text);
+  await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
 }
@@ -47,7 +47,7 @@ test("row 1: installable, no double-tap zoom, and offline it opens on its last c
   await context.setOffline(true);
   await page.clock.fastForward("10:00");
   await page.reload();
-  await expect(page.locator(".fc .tr").first()).toBeVisible();
+  await expect(page.locator(".ags .agr").first()).toBeVisible();
   await expect(page.locator("#ld")).toBeVisible();
   await expect(page.locator("#ld .ago")).toHaveText(/^as of 1\dm ago$/);
   await shot(page, info, "parity-1-offline");
@@ -185,7 +185,7 @@ test("row 6 (#47): a new device asks, a paired one approves with its passkey (a 
   await expect(card).toContainText("It's in settings › devices.");
   await expect(card).toHaveAttribute("data-k", "g");
   await ipad.waitForURL(/\/$/);
-  await expect(ipad.locator("main.list")).toBeVisible();
+  await expect(ipad.locator(".ags")).toBeVisible();
   // [rename it]: the new device's row in settings takes the name.
   await card.getByRole("button", { name: "rename it" }).click();
   await card.getByRole("textbox", { name: "its name" }).fill("Kim's iPad");

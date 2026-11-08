@@ -87,10 +87,10 @@ for (const w of [390, 1440]) {
     await page.screenshot({ path: `${out}/${w}-${name}.png`, fullPage: true });
     console.log(`${w} ${name} ok`);
   };
-  await page.goto("/");
-  await shot("threads", page.locator(".fc .tr").first());
-  await page.goto("/#new");
-  await shot("new", page.getByLabel("first message"));
+  await page.goto("/?list");
+  await shot("agents", page.locator(".ags .agr").first());
+  await page.goto("/new");
+  await shot("new", page.getByLabel("message", { exact: true }));
   await page.goto(`/t/long-${w}`);
   await shot("chat", page.getByLabel("message", { exact: true }));
   await page.goto("/#settings/sign-ins");
@@ -109,11 +109,14 @@ echo "drive exit=$?"; cat "$OUT/drive.log"
 
 Selectors this UI answers to (from `web/e2e/*.spec.mjs`):
 
-- header: `heading` level 1 `cooee`, link `new thread`, button `settings`, a plugin's tab link by its label
+- header: `heading` level 1 `cooee`, link `new chat`, button `settings`, a plugin's tab link by its label
   (`Hello`, `Machines`; `Machines (needs you)` with its dot)
-- thread list: `.fc .tr` rows
-- new thread (`#new`): radio per agent (`fake-acp`), `<agent> account` select, `first message` field, button `start`
-  (lands on `/t/<id>`)
+- agents sidebar (the home screen on a phone, `/?list`): `.ags .agr` rows, one per agent; a chat's `‹` is
+  `back to agents`
+- new chat (`/new`, `/new?<agent>`): nothing to pick; `message` field (exact), button `send` (lands on `/t/<id>`, run
+  in its own scratch folder)
+- Use a folder…: the composer's button `folder: scratch ▾` opens `#ufs` (`search folders`, a radio per folder); the
+  thread bar's folder is `#bf`
 - chat (`/t/<id>`): `message` field (exact), button `send`; seeded threads `long-390` and `long-1440`
   (1,000 messages, read up to #990)
 - settings sheet: the open popover `#sheet .sh:popover-open`, its index `.six a` (sign-ins, folders, look, alerts, devices, plugins, report)
@@ -134,9 +137,9 @@ Selectors this UI answers to (from `web/e2e/*.spec.mjs`):
 | Screen / feature | How to reach it |
 |---|---|
 | Pairing | `/pair` (any page redirects there unpaired) |
-| Thread list | `/` |
-| New thread | `/#new`, or header `new thread` |
-| Chat | `/t/long-390` or `/t/long-1440`; a new one via `/#new` → `start` |
+| Agents | `/` (from 1000 px beside a chat), `/?list` on a phone |
+| New chat | `/new`, or header `new chat` |
+| Chat | `/t/long-390` or `/t/long-1440`; a new one via `/new` → `send` |
 | Settings | `/#settings/<section>`: `sign-ins`, `folders`, `look`, `alerts`, `devices`, `plugins`, `report`; or header `settings` |
 | Sign-ins (providers) | `/#settings/sign-ins` → `providers` |
 | Folders | `/#settings/folders` → `roots` |

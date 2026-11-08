@@ -93,11 +93,11 @@ impl Setup {
         (id, line.to_owned())
     }
 
-    /// The new-thread form's profile picker.
+    /// The sidebar's agents (#86): Plain on each agent, then each profile.
     fn picker(&self) -> String {
         let page = self.cooee.get("/").1;
-        let at = page.find(r#"<select name="profile""#).expect("a picker");
-        page[at..at + page[at..].find("</select>").unwrap()].to_owned()
+        let at = page.find(r#"<nav class="ags""#).expect("the agents");
+        page[at..at + page[at..].find("</nav>").unwrap()].to_owned()
     }
 
     /// Every file under `dir`, as text.
@@ -117,9 +117,11 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let s = setup("profiles");
     let picker = s.picker();
     assert!(
-        picker.contains(r#"<option value="" selected="">Plain</option>"#)
-            && picker.contains(r#"<option value="coder">Coder</option>"#)
-            && picker.contains(r#"<option value="guard">Guarded</option>"#)
+        picker.contains(r#"href="/new?agent=fake-acp""#)
+            && picker.contains(r#"<span class="tt">Fake</span>"#)
+            && picker.contains(r#"href="/new?profile=coder""#)
+            && picker.contains(r#"<span class="tt">Coder</span>"#)
+            && picker.contains(r#"<span class="tt">Guarded</span>"#)
             && !picker.contains("Leak"),
         "{picker}"
     );
@@ -135,7 +137,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     assert_eq!(s.shed.sent(&terminal), ["\x1e{\"prompt\":\"hi\"}\n"]);
     let chat = s.cooee.get(&format!("/t/{id}")).1;
     assert!(
-        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>fake-acp · System default · "),
+        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Plain · fake · main login · "),
         "{chat}"
     );
 
@@ -178,12 +180,12 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let items = s.cooee.json(&format!("/threads/{id}/messages"));
     assert_eq!(items["items"][0]["text"], "hi", "{items}");
     let chat = s.cooee.get(&format!("/t/{id}")).1;
-    assert!(chat.contains("Coder · fake-acp · work · "), "{chat}");
-    // The folder's last-used profile is picked next time.
     assert!(
-        s.picker()
-            .contains(r#"<option value="coder" selected="">Coder</option>"#)
+        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Coder · "),
+        "{chat}"
     );
+    // Coder's ongoing chat is this one.
+    assert!(s.picker().contains(&format!(r#"href="/t/{id}""#)));
 
     // A guard its agent can't run: refused, nothing started.
     let runs = s.shed.cli_log().matches(" run ").count();
@@ -195,9 +197,9 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     );
     assert_eq!(s.shed.cli_log().matches(" run ").count(), runs);
     assert_eq!(
-        s.cooee.json("/threads")["cards"].as_array().unwrap().len(),
-        1,
-        "one card, two threads"
+        s.cooee.json("/threads").as_array().unwrap().len(),
+        2,
+        "two threads, the refused start none"
     );
     // An unknown profile, and one left out for a secret inline, are refused too.
     for id in ["nope", "leak"] {
@@ -251,7 +253,7 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
     .unwrap();
     git(&repo, &["add", "-A"]);
     git(&repo, &["commit", "--quiet", "-m", "1"]);
-    let option = r#"<option value="plug/conductor">Conductor · plug</option>"#;
+    let option = r#"href="/new?profile=plug/conductor""#;
     assert!(!s.picker().contains(option));
 
     let url = repo.to_string_lossy().into_owned();
@@ -270,7 +272,7 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
         s.cooee
             .get(&format!("/t/{id}"))
             .1
-            .contains("Conductor · fake-acp · ")
+            .contains("<i class=\"dt\"></i><span id=\"net\"></span>Conductor · ")
     );
 
     s.cooee.cli(&["plugin", "remove", "plug"]);
