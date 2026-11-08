@@ -216,14 +216,12 @@ impl Server {
 
 impl Pick {
     fn toml(&self) -> String {
-        let mut t = format!("server = {}", q(&self.server));
-        if let Some(tools) = &self.tools {
-            t += &format!(
-                "\ntools = {}",
-                serde_json::to_string(tools).unwrap_or_default()
-            );
-        }
-        t
+        let tools = self
+            .tools
+            .as_ref()
+            .map(|t| serde_json::to_string(t).unwrap_or_default());
+        let tools = tools.map(|t| format!("\ntools = {t}")).unwrap_or_default();
+        format!("server = {}{tools}", q(&self.server))
     }
 
     /// Whether it lets `tool` run.
@@ -268,11 +266,11 @@ fn with_tables(text: &str, tables: &[String]) -> String {
             kept.push_str(line);
         }
     }
-    let mut out = kept.trim_end().to_owned();
-    for t in tables {
-        out += &format!("\n\n[[mcp]]\n{t}");
-    }
-    out.trim_start().to_owned() + "\n"
+    let out = tables
+        .iter()
+        .map(|t| ["\n\n[[mcp]]\n", t.as_str()].concat());
+    let out: String = out.collect();
+    format!("{}{out}", kept.trim_end()).trim_start().to_owned() + "\n"
 }
 
 fn read(path: &Path) -> io::Result<String> {
@@ -439,7 +437,7 @@ mod tests {
         let token = format!("ghp_{}", "a1".repeat(12));
         for bad in [
             format!("command = \"x\"\nenv = {{ T = \"{token}\" }}"),
-            format!("command = \"x\"\nenv = {{ T = \"plain\" }}"),
+            "command = \"x\"\nenv = { T = \"plain\" }".to_owned(),
             format!("command = \"x\"\nargs = [\"--token\", \"{token}\"]"),
             format!("type = \"http\"\nurl = \"https://x/?token={token}\""),
             format!("type = \"http\"\nurl = \"https://x\"\nheaders = {{ A = \"Bearer {token}\" }}"),
@@ -458,6 +456,10 @@ mod tests {
 
     #[test]
     fn saving_keeps_every_other_line_and_reads_back() {
+        #[derive(Deserialize)]
+        struct Back {
+            mcp: Vec<Server>,
+        }
         let text = "# mine\nport = 1\n\n[[mcp]]\nname = \"old\"\ncommand = \"o\"\n[mcp.env]\nA = \"env:A\"\n\n[[plugins]]\nname = \"x\"\n";
         let s = Server {
             name: "gh".to_owned(),
@@ -474,10 +476,6 @@ mod tests {
             out.starts_with("# mine\nport = 1\n\n[[plugins]]\nname = \"x\"\n\n[[mcp]]\n"),
             "{out}"
         );
-        #[derive(Deserialize)]
-        struct Back {
-            mcp: Vec<Server>,
-        }
         let back: Back = toml::from_str(&out.replace("[[plugins]]\nname = \"x\"", "")).unwrap();
         assert_eq!(back.mcp, [s]);
     }

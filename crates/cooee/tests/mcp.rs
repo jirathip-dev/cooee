@@ -365,7 +365,7 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
     files(&s.dir.join("data"), &mut all);
     files(&s.shed.dir, &mut all);
     all.push_str(&fs::read_to_string(s.dir.join("cooee.err")).unwrap());
-    all.push_str(&format!("{:?}", s.shed.requests.lock().unwrap()));
+    all.push_str(&serde_json::to_string(&*s.shed.requests.lock().unwrap()).unwrap());
     all.push_str(&s.cooee.get(&format!("/threads/{id}/messages")).1);
     assert!(all.contains("secret:TOKEN"), "the scan reads the config");
     assert!(!all.contains(&s.token), "a value was written");

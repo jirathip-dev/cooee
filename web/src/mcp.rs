@@ -56,7 +56,13 @@ async fn server_row(s: Server) -> Result<impl View> {
             </form>
             <span class="st m">"edit on Mac"</span>
             <form method="post" action=(format!("{to}/remove"))>
-                <button type="submit" class="sec" aria-label=(format!("remove {}", s.name))>"remove"</button>
+                <button
+                    type="submit"
+                    class="sec"
+                    aria-label=(format!("remove {}", s.name))
+                >
+                    "remove"
+                </button>
             </form>
         </div>
     })
@@ -74,7 +80,11 @@ async fn picks(
     Ok(view! {
         <details class="thx">
             <summary>(p.label.clone())</summary>
-            <form method="post" action=(format!("/profiles/{}/mcp", p.name)) class="mcp-p">
+            <form
+                method="post"
+                action=(format!("/profiles/{}/mcp", p.name))
+                class="mcp-p"
+            >
                 for s in on {
                     <fieldset>
                         <legend>
@@ -87,14 +97,21 @@ async fn picks(
                                 (s.name.clone())
                             </label>
                         </legend>
-                        match tools.get(&s.name).cloned().unwrap_or_else(|| Err(String::new())) {
+                        match tools
+                            .get(&s.name)
+                            .cloned()
+                            .unwrap_or_else(|| Err(String::new())) {
                             Ok(list) => {
                                 for (t, about) in list {
                                     <label title=(about)>
                                         <input
                                             type="checkbox"
                                             name=(format!("t:{}:{t}", s.name))
-                                            checked=(p.mcp.iter().any(|k| k.server == s.name && k.allows(&t)) || !p.mcp.iter().any(|k| k.server == s.name))
+                                            checked=(p
+                                                    .mcp
+                                                    .iter()
+                                                    .any(|k| k.server == s.name && k.allows(&t))
+                                                || !p.mcp.iter().any(|k| k.server == s.name))
                                         >
                                         (t.clone())
                                     </label>
@@ -119,8 +136,10 @@ async fn mcp(page: McpPage) -> Result<impl View> {
             title: "mcp servers",
             <main class="sh set mcp" aria-labelledby="sht-mcp">
                 <div class="hd pvh">
-                    <a class="gl" href="/#settings" aria-label="back to settings">"‹"</a>
-                    <b id="sht-mcp">"mcp servers"</b>
+                    <a class="gl" href="/#settings" aria-label="back to settings">
+                        "‹"
+                    </a>
+                    <h1 id="sht-mcp">"mcp servers"</h1>
                 </div>
                 <div class="top">
                     for s in page.servers.clone() {
@@ -129,27 +148,56 @@ async fn mcp(page: McpPage) -> Result<impl View> {
                     <details class="thx" id="mcp-new">
                         <summary>"+ server"</summary>
                         <form method="post" action="/mcp/servers" id="mcp-add">
-                            <input name="name" required=(true) aria-label="name" placeholder="name">
+                            <input
+                                name="name"
+                                required=(true)
+                                aria-label="name"
+                                placeholder="name"
+                            >
                             <select name="type" aria-label="type">
                                 <option value="stdio">"stdio"</option>
                                 <option value="http">"http"</option>
                                 <option value="sse">"sse"</option>
                             </select>
-                            <input name="target" required=(true) aria-label="command or URL" placeholder="command or URL">
+                            <input
+                                name="target"
+                                required=(true)
+                                aria-label="command or URL"
+                                placeholder="command or URL"
+                            >
                             <button type="submit">"review"</button>
                         </form>
-                        <p class="ds">"you see the exact command or URL, then approve with Face ID; it is added off"</p>
+                        <p class="ds">
+                            "you see the exact command or URL, then approve with Face ID; it is added off"
+                        </p>
                     </details>
                     <p class="ch">"secrets"</p>
                     <form method="post" action="/mcp/secret" class="mcp-s">
-                        <input name="name" required=(true) aria-label="secret name" placeholder="NAME" autocomplete="off">
-                        <input name="value" type="password" required=(true) aria-label="secret value" placeholder="value" autocomplete="off">
+                        <input
+                            name="name"
+                            required=(true)
+                            aria-label="secret name"
+                            placeholder="NAME"
+                            autocomplete="off"
+                        >
+                        <input
+                            name="value"
+                            type="password"
+                            required=(true)
+                            aria-label="secret value"
+                            placeholder="value"
+                            autocomplete="off"
+                        >
                         <button type="submit">"save to keychain"</button>
                     </form>
                     <p class="ds">"a server's env or headers name it as secret:NAME"</p>
                     <p class="ch">"agents"</p>
                     for p in page.profiles {
-                        picks(p: p, servers: page.servers.clone(), tools: page.tools.clone())
+                        picks(
+                            p: p,
+                            servers: page.servers.clone(),
+                            tools: page.tools.clone()
+                        )
                     }
                 </div>
             </main>

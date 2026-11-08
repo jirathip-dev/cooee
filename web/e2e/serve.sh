@@ -10,7 +10,8 @@
 # shells `/bin/sh -l` in the fake shed. farm, kitchen and garden are installed. The 390 provider has two more accounts,
 # `work` and `lab` (signed in, their email `<name>@example.com`), last used for a new thread in root/project and
 # root/other (#48), root/fresh never used; a start in root/slow-<viewport> waits while the spec holds it, one in
-# root/bad-<viewport> fails. One agent profile, `reviewer`, sits beside the main config (#40).
+# root/bad-<viewport> fails. One agent profile, `reviewer`, sits beside the main config (#40). Two MCP servers (#56):
+# `files` (a fake stdio server with three tools, on) and `docs` (http, off).
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -157,7 +158,31 @@ label = "Terminal"
 url = "http://127.0.0.1:$((PORT + 5))"
 module = "/tab.js"
 token = "terminal-token-0123456789"
+
+[[mcp]]
+name = "files"
+command = "$tmp/fake-mcp"
+
+[[mcp]]
+name = "docs"
+type = "http"
+url = "https://docs.example/mcp"
+enabled = false
 EOF
+# A stdio MCP server (#56) whose tools Settings › mcp servers lists: read_file, write_file and search.
+cat >"$tmp/fake-mcp" <<'EOF'
+#!/bin/sh
+while IFS= read -r line; do
+  id=$(printf '%s' "$line" | sed -n 's/.*"id":\([^,}]*\).*/\1/p')
+  [ -n "$id" ] || continue
+  case "$line" in
+  *'"method":"tools/list"'*) r='{"tools":[{"name":"read_file","description":"read a file"},{"name":"write_file","description":"write a file"},{"name":"search","description":"search files"}]}' ;;
+  *) r='{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"files","version":"1"}}' ;;
+  esac
+  printf '{"jsonrpc":"2.0","id":%s,"result":%s}\n' "$id" "$r"
+done
+EOF
+chmod +x "$tmp/fake-mcp"
 mkdir -p "$(dirname "${PAIR_CODE:?}")" "$tmp/profiles"
 # The first-party theme packs, added from their folders (#38: only the plain theme is built in).
 for t in farm kitchen garden; do

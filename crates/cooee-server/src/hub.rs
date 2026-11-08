@@ -216,7 +216,7 @@ pub struct Hub {
     /// The servers agents proposed, by thread and card, until answered (a restart drops them).
     proposals: Mutex<HashMap<(String, u64), Server>>,
     /// Each server's tools as last listed, for the profile sheet; held while the registry is written.
-    tools: Mutex<HashMap<String, Result<Vec<(String, String)>, String>>>,
+    tools: Mutex<HashMap<String, cooee_web::Tools>>,
 }
 
 pub(crate) fn now() -> u64 {
@@ -365,13 +365,12 @@ impl Hub {
     ) -> Result<Arc<Self>, HubError> {
         let store = Store::open(data)?;
         let key = data.join("mcp.key");
-        let mcp_key = match fs::read_to_string(&key) {
-            Ok(k) => k,
-            Err(_) => {
-                let k = cooee_core::random(32).map(|r| cooee_core::sha256(&r));
-                let k = k.and_then(|k| cooee_core::write_private(&key, k.as_bytes()).map(|()| k));
-                k.map_err(|e| refused(&key, &e))?
-            }
+        let mcp_key = if let Ok(k) = fs::read_to_string(&key) {
+            k
+        } else {
+            let k = cooee_core::random(32).map(|r| cooee_core::sha256(&r));
+            let k = k.and_then(|k| cooee_core::write_private(&key, k.as_bytes()).map(|()| k));
+            k.map_err(|e| refused(&key, &e))?
         };
         let mut threads = BTreeMap::new();
         for id in store.ids()? {
@@ -1838,8 +1837,10 @@ impl Hub {
     }
 
     /// Server `name`'s tools (name, description), listed once and kept until the registry changes.
-    #[must_use]
-    pub fn mcp_tools(&self, name: &str) -> Result<Vec<(String, String)>, String> {
+    ///
+    /// # Errors
+    /// Why they couldn't be listed (no such server, a reference that doesn't resolve, no answer).
+    pub fn mcp_tools(&self, name: &str) -> cooee_web::Tools {
         if let Some(t) = lock(&self.tools).get(name) {
             return t.clone();
         }
@@ -1850,7 +1851,7 @@ impl Hub {
             .find(|s| s.name == name);
         let listed = s
             .ok_or_else(|| format!("no MCP server {name}"))
-            .and_then(|s| Ok(self.grant_of(s, None)?))
+            .and_then(|s| self.grant_of(s, None))
             .and_then(|g| crate::mcp::tools(&g));
         lock(&self.tools).insert(name.to_owned(), listed.clone());
         listed

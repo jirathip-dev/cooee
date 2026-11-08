@@ -118,10 +118,7 @@ fn main() -> ExitCode {
                 plugin(config, &rest, rev.as_deref(), yes, purge)
             });
         }
-        ["mcp", "proxy", server, "--thread", thread] => {
-            return finish(cooee_server::mcp::proxy(server, thread));
-        }
-        ["mcp", "serve", "--thread", thread] => return finish(cooee_server::mcp::serve(thread)),
+        ["mcp", agent @ ("proxy" | "serve"), rest @ ..] => return finish(mcp_agent(agent, rest)),
         ["mcp", rest @ ..] => {
             return with_config(path.as_deref(), &instance, |config| mcp(config, rest));
         }
@@ -419,6 +416,15 @@ fn plugin(
 }
 
 /// `cooee theme add|remove|list|check` (docs/themes.md).
+/// `cooee mcp proxy <server> --thread <id>` and `cooee mcp serve --thread <id>`: what a thread's agent runs (#56).
+fn mcp_agent(agent: &str, args: &[&str]) -> Result<(), String> {
+    match (agent, args) {
+        ("proxy", [server, "--thread", thread]) => cooee_server::mcp::proxy(server, thread),
+        ("serve", ["--thread", thread]) => cooee_server::mcp::serve(thread),
+        _ => Err(USAGE.to_owned()),
+    }
+}
+
 /// `cooee mcp ls | add | rm | enable | disable` (#56): the registry in the config file, changed on the Mac.
 fn mcp(config: &Config, args: &[&str]) -> Result<(), String> {
     use cooee_core::mcp::{Server, save};
@@ -458,7 +464,7 @@ fn mcp(config: &Config, args: &[&str]) -> Result<(), String> {
                         if *w == "--url" {
                             (s.url, s.kind) = ((*v).to_owned(), "http".to_owned());
                         } else {
-                            s.kind = (*v).to_owned();
+                            (*v).clone_into(&mut s.kind);
                         }
                     }
                     "--env" | "--header" => {
@@ -470,7 +476,9 @@ fn mcp(config: &Config, args: &[&str]) -> Result<(), String> {
                         };
                         to.insert(k, v);
                     }
-                    _ if s.command.is_empty() && s.url.is_empty() => s.command = (*w).to_owned(),
+                    _ if s.command.is_empty() && s.url.is_empty() => {
+                        (*w).clone_into(&mut s.command);
+                    }
                     _ => s.args.push((*w).to_owned()),
                 }
             }

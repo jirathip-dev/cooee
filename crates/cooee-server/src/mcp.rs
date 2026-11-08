@@ -9,6 +9,7 @@
 use std::{
     collections::HashSet,
     env,
+    fmt::Write as _,
     io::{self, BufRead, BufReader, Read, Write},
     net::TcpStream,
     process::{Child, ChildStdin, Command, Stdio},
@@ -91,7 +92,7 @@ fn grant(server: &str, thread: &str) -> Result<Grant, String> {
     serde_json::from_value(g).map_err(|e| e.to_string())
 }
 
-fn reply(id: &Value, result: Value) -> Value {
+fn reply(id: &Value, result: &Value) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "result": result })
 }
 
@@ -185,9 +186,9 @@ impl Upstream {
             .chain(sid)
             .chain(headers.iter().map(|(k, v)| (k.as_str(), v.as_str())))
         {
-            config += &format!("header = {}\n", quoted(&format!("{k}: {v}")));
+            let _ = writeln!(config, "header = {}", quoted(&format!("{k}: {v}")));
         }
-        config += &format!("data-binary = {}\n", quoted(&msg.to_string()));
+        let _ = writeln!(config, "data-binary = {}", quoted(&msg.to_string()));
         let mut child = Command::new("curl")
             .args(["-K", "-"])
             .stdin(Stdio::piped())
@@ -389,14 +390,14 @@ pub fn serve(thread: &str) -> Result<(), String> {
         let answer = match msg["method"].as_str().unwrap_or_default() {
             "initialize" => reply(
                 id,
-                json!({
+                &json!({
                     "protocolVersion": msg.pointer("/params/protocolVersion").cloned().unwrap_or(json!("2025-06-18")),
                     "capabilities": { "tools": {} },
                     "serverInfo": { "name": "cooee", "version": env!("CARGO_PKG_VERSION") }
                 }),
             ),
-            "ping" => reply(id, json!({})),
-            "tools/list" => reply(id, json!({ "tools": [tool] })),
+            "ping" => reply(id, &json!({})),
+            "tools/list" => reply(id, &json!({ "tools": [tool] })),
             "tools/call" if msg.pointer("/params/name") == Some(&json!("propose_server")) => {
                 let args = msg
                     .pointer("/params/arguments")
@@ -408,7 +409,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                 };
                 reply(
                     id,
-                    json!({ "content": [{ "type": "text", "text": text }], "isError": failed }),
+                    &json!({ "content": [{ "type": "text", "text": text }], "isError": failed }),
                 )
             }
             "tools/call" => error(id, -32602, "cooee's only tool is propose_server"),

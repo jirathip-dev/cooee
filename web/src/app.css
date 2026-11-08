@@ -400,3 +400,7 @@ html[data-style=terminal] .ptg{min-width:7ch;padding:0;background:none;color:var
 .scc{display:flex;flex-wrap:wrap;gap:8px;padding:12px 4px 4px}
 .scc .chip{display:inline-flex;align-items:center;min-height:var(--hit);padding:0 12px}
 .scc .chip[aria-current]{background:color-mix(in srgb,var(--l) 14%,var(--card));color:var(--fg);font-weight:600}
+main.mcp{max-width:640px;margin:0 auto}.mcp fieldset{margin:8px 0;border:1px solid var(--line);border-radius:var(--r-card)}
+.mcp fieldset label{display:inline-flex;align-items:center;gap:4px;min-height:var(--hit);margin-right:12px}
+.mcp .acr form{display:contents}#mcp-add,.mcp-s{display:flex;flex-wrap:wrap;gap:8px}
+.mcp .hd h1{flex:1;margin:0;font-size:var(--fs-key)}
