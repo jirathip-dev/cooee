@@ -25,6 +25,10 @@ pub struct Mate {
     pub profile: String,
     /// The ACP agent a Plain chat runs.
     pub agent: String,
+    /// Its profile's avatar (see [`Profile::avatar`]; none: its initials).
+    pub avatar: Option<String>,
+    /// The plugin it came with (empty: the owner's), which its row is grouped under.
+    pub group: String,
     /// Its chats: the ongoing one (its oldest open, else its newest) first, then its side threads, newest first.
     pub chats: Vec<Summary>,
 }
@@ -61,8 +65,10 @@ impl Side {
             });
             mate(format!("agent={}", a.id), name, "Plain", &a.id)
         });
-        let profiles = self.profiles.iter().map(|p| {
-            mate(
+        let profiles = self.profiles.iter().map(|p| Mate {
+            avatar: p.avatar.clone(),
+            group: p.plugin.clone().unwrap_or_default(),
+            ..mate(
                 format!("profile={}", p.id()),
                 p.label.clone(),
                 &p.id(),
@@ -70,12 +76,23 @@ impl Side {
             )
         });
         let mut mates: Vec<Mate> = plain.chain(profiles).collect();
+        // A plugin's agents follow the owner's, grouped under its name.
+        mates.sort_by_key(|m| !m.group.is_empty());
+        // A thread a plugin lists as one of its agents' is that agent's.
+        let listed = |id: &str| {
+            self.profiles
+                .iter()
+                .find(|p| p.threads.iter().any(|t| t == id))
+        };
         for r in self
             .rows
             .iter()
             .filter(|r| r.workflow.is_none() && !r.archived)
         {
-            let key = key(&r.agent, &r.profile);
+            let key = listed(&r.id).map_or_else(
+                || key(&r.agent, &r.profile),
+                |p| format!("profile={}", p.id()),
+            );
             let at = if let Some(at) = mates.iter().position(|m| m.key == key) {
                 at
             } else {
@@ -90,14 +107,21 @@ impl Side {
             mates[at].chats.push(r.clone());
         }
         for m in &mut mates {
-            // The first one started that is still open (an id is its start time in hex), whatever moved since.
-            let ongoing = m
-                .chats
+            // The first one started that is still open (an id is its start time in hex), whatever moved since; an
+            // agent whose plugin lists its threads: the newest.
+            let newest = self
+                .profiles
                 .iter()
-                .enumerate()
-                .filter(|(_, c)| c.state != "ended")
-                .min_by_key(|(_, c)| (c.id.len(), c.id.clone()))
-                .map_or(0, |(i, _)| i);
+                .any(|p| format!("profile={}", p.id()) == m.key && !p.threads.is_empty());
+            let chats = m.chats.iter().enumerate();
+            let ongoing = if newest {
+                chats.max_by_key(|(_, c)| (c.id.len(), c.id.clone()))
+            } else {
+                chats
+                    .filter(|(_, c)| c.state != "ended")
+                    .min_by_key(|(_, c)| (c.id.len(), c.id.clone()))
+            };
+            let ongoing = ongoing.map_or(0, |(i, _)| i);
             if !m.chats.is_empty() {
                 let first = m.chats.remove(ongoing);
                 m.chats.insert(0, first);
@@ -113,6 +137,8 @@ fn mate(key: String, name: String, profile: &str, agent: &str) -> Mate {
         name,
         profile: profile.to_owned(),
         agent: agent.to_owned(),
+        avatar: None,
+        group: String::new(),
         chats: Vec::new(),
     }
 }
@@ -136,43 +162,162 @@ fn initials(name: &str) -> String {
     two.to_uppercase()
 }
 
-/// An agent's avatar: its initials in the `n`th scheme colour.
+/// An agent's avatar: its image, or its sprite while the look shows sprites, else its initials in the `n`th scheme
+/// colour.
 #[component]
-pub(crate) async fn avatar(name: String, n: usize, big: bool) -> Result<impl View> {
+pub(crate) async fn avatar(
+    cx: &Cx,
+    name: String,
+    n: usize,
+    big: bool,
+    src: Option<String>,
+) -> Result<impl View> {
     let colour = ["--l", "--link", "--g", "--p"][n % 4];
+    let class = if big { "av big-av" } else { "av" };
+    let look = shown(cx);
+    let image = src.clone().filter(|s| s.contains(['/', ':']));
+    let sprite = src.filter(|_| image.is_none() && look.figures() == "sprite");
     Ok(view! {
-        <i
-            class=(if big { "av big-av" } else { "av" })
-            style=(format!("--av:var({colour})"))
-            aria-hidden="true"
-        >
-            (initials(&name))
-        </i>
+        if let Some(url) = image {
+            <img class=(class) src=(url) alt="">
+        } else if let Some(id) = sprite {
+            <i class=(class) style=(format!("--av:var({colour})")) aria-hidden="true">
+                (Unescaped::new_unchecked(look.svg(&id, "big")))
+            </i>
+        } else {
+            <i class=(class) style=(format!("--av:var({colour})")) aria-hidden="true">
+                (initials(&name))
+            </i>
+        }
     })
 }
 
 /// How many side threads show under the agent on show; the older fold.
 const SIDE: usize = 5;
 
-/// A side thread's row: its title, age and unread count (#43).
+/// How many unread side threads show under an agent not on show; the rest are `+N`.
+const UNREAD: usize = 3;
+
+impl Mate {
+    /// Its side threads with unread replies, the newest reply first.
+    #[must_use]
+    pub fn unread(&self) -> Vec<&Summary> {
+        let mut unread: Vec<&Summary> = self.chats.iter().skip(1).filter(|c| c.unread).collect();
+        unread.sort_by_key(|c| std::cmp::Reverse(c.at));
+        unread
+    }
+
+    /// Where `newest` goes: the side thread with the newest unread reply, else its most recent side thread.
+    #[must_use]
+    pub fn newest(&self) -> Option<&Summary> {
+        self.unread()
+            .first()
+            .copied()
+            .or_else(|| self.chats.iter().skip(1).max_by_key(|c| c.at))
+    }
+}
+
+/// A row of the one list (#96, as Telegram's chats and forum topics): an agent's or a side thread's.
+#[derive(Clone)]
+struct Line {
+    /// `agr` (an agent) or `str` (a side thread).
+    class: &'static str,
+    href: String,
+    /// The chat it opens.
+    id: Option<String>,
+    title: String,
+    /// On show.
+    on: bool,
+    /// The page's own row (`aria-current`).
+    page: bool,
+    /// Its unread replies (#43): the count, and the dot when any.
+    unseen: usize,
+    /// A pick waits on you (`blocked`).
+    choose: bool,
+    /// An agent's: its avatar's colour and its latest chat (its state and last line).
+    agent: Option<(usize, Option<Summary>)>,
+    /// An agent's avatar (see [`Mate::avatar`]).
+    src: Option<String>,
+    at: Option<u64>,
+}
+
+/// A side thread's row: its title, age, unread dot and count (#43), and `choose` while a pick waits.
+fn side(c: &Summary, open: &str) -> Line {
+    Line {
+        class: "str",
+        href: format!("/t/{}", c.id),
+        id: Some(c.id.clone()),
+        title: c.title.clone(),
+        on: c.id == open,
+        page: false,
+        unseen: c.unseen,
+        choose: c.state == "blocked",
+        agent: None,
+        src: None,
+        at: Some(c.at),
+    }
+}
+
+/// One row of the list: (an agent's) avatar, the title after the unread dot, `choose`, the age and the count, then
+/// (an agent's) state and last line.
 #[component]
-async fn side_row(c: Summary, open: String) -> Result<impl View> {
+async fn row(cx: &Cx, l: Line) -> Result<impl View> {
+    let look = shown(cx);
+    let unread = l.unseen > 0;
+    let class = match (l.on, unread) {
+        (true, _) => format!("{} on", l.class),
+        (false, true) => format!("{} ud", l.class),
+        _ => l.class.to_owned(),
+    };
+    let st = l.agent.as_ref().map_or("", |(_, c)| {
+        state(c.as_ref().map_or("", |c| c.state.as_str()))
+    });
     Ok(view! {
         <a
-            class=(match (c.id == open, c.unread) {
-                (true, _) => "str on",
-                (false, true) => "str ud",
-                _ => "str",
-            })
-            href=(format!("/t/{}", c.id))
-            data-id=(c.id.clone())
+            class=(class)
+            href=(l.href)
+            data-id=(l.id)
+            aria-current=(l.page.then(|| "page".to_owned()))
         >
-            <span class="tt">(c.title)</span>
-            <span class="ta">
-                (age(c.at))
-                badge(n: c.unseen)
+            if let Some((n, _)) = &l.agent {
+                avatar(name: l.title.clone(), n: *n, big: false, src: l.src.clone())
+            }
+            <span class="tt">
+                if unread {
+                    <i class="ur" aria-hidden="true"></i>
+                }
+                (l.title.clone())
             </span>
+            <span class="ta">
+                if l.choose {
+                    <b class="chs">"choose"</b>
+                }
+                (l.at.map(age).unwrap_or_default())
+                badge(n: l.unseen)
+            </span>
+            if let Some((_, latest)) = l.agent.clone() {
+                <span class="tp">
+                    <b data-st=(st)>(Unescaped::new_unchecked(look.st(st, false)))</b>
+                    (latest.map(|c| c.last).unwrap_or_default())
+                </span>
+            }
         </a>
+    })
+}
+
+/// `newest`: the agent's side thread with the newest unread reply, else its most recent one.
+#[component]
+async fn jump(m: Mate) -> Result<impl View> {
+    Ok(view! {
+        if let Some(c) = m.newest() {
+            <a
+                class="str nw"
+                href=(format!("/t/{}", c.id))
+                aria-label=(format!("newest side thread of {}", m.name))
+            >
+                "newest"
+            </a>
+        }
     })
 }
 
@@ -207,8 +352,11 @@ async fn sidebar(
     fresh: bool,
 ) -> Result<impl View> {
     let look = shown(cx);
-    // A new agent needs one to run: none installed, none to add.
+    // A new agent needs one to run: none installed, none to add. Where each plugin's group starts.
     let can_add = !mates.is_empty();
+    let heads: Vec<usize> = (0..mates.len())
+        .filter(|&i| i == 0 || mates[i - 1].group != mates[i].group)
+        .collect();
     // An agent's row says its latest: its newest chat's state, line and age; bold while any chat is unread.
     let rows: Vec<(usize, Mate, Option<Summary>, bool, bool)> = mates
         .into_iter()
@@ -226,71 +374,44 @@ async fn sidebar(
                 herd(rows: rows, open: open.clone())
             } else {
                 <p class="lb">"agents"</p>
-                for (n, m, latest, unread, on) in rows {
-                    <a
-                        class=(match (on && !fresh, unread) {
-                            (true, _) => "agr on",
-                            (false, true) => "agr ud",
-                            _ => "agr",
-                        })
-                        href=(href(&m))
-                        data-id=(m.chats.first().map(|c| c.id.clone()))
-                        aria-current=((on
-                                && m.chats.first().is_some_and(|c| c.id == open)).then(
-                            || "page".to_owned(),
-                        ))
-                    >
-                        avatar(name: m.name.clone(), n: n, big: false)
-                        <span class="tt">(m.name.clone())</span>
-                        <span class="ta">
-                            (latest.as_ref().map(|c| age(c.at)).unwrap_or_default())
-                            badge(n: m.chats.iter().map(|c| c.unseen).sum())
-                        </span>
-                        <span class="tp">
-                            <b
-                                data-st=(state(
-                                    latest.as_ref().map_or("", |c| c.state.as_str()),
-                                ))
-                            >
-                                (Unescaped::new_unchecked(
-                                    look.st(
-                                        state(latest.as_ref().map_or("", |c| c.state.as_str())),
-                                        false,
-                                    ),
-                                ))
-                            </b>
-                            (latest.map(|c| c.last).unwrap_or_default())
-                        </span>
-                    </a>
-                    if on {
-                        <div class="sth">
-                            for c in m.chats.iter().skip(1).take(SIDE).cloned() {
-                                side_row(c: c, open: open.clone())
+                for (n, m, latest, _, on) in rows {
+                    if !m.group.is_empty() && heads.contains(&n) {
+                        <p class="lb">(m.group.clone())</p>
+                    }
+                    row(
+                        l: Line {
+                            class: "agr",
+                            href: href(&m),
+                            id: m.chats.first().map(|c| c.id.clone()),
+                            title: m.name.clone(),
+                            on: on && !fresh,
+                            page: on && m.chats.first().is_some_and(|c| c.id == open),
+                            unseen: m.chats.iter().map(|c| c.unseen).sum(),
+                            choose: m.chats.iter().any(|c| c.state == "blocked"),
+                            at: latest.as_ref().map(|c| c.at),
+                            agent: Some((n, latest)),
+                            src: m.avatar.clone(),
+                        }
+                    )
+                    if !on && m.chats.len() > 1 {
+                        // Its side threads with unread replies, newest first, then `+N` and `newest`.
+                        <div class="ust">
+                            for c in m.unread().into_iter().take(UNREAD) {
+                                row(l: side(c, &open))
                             }
-                            if m.chats.len() > SIDE + 1 {
-                                <details>
-                                    <summary>
-                                        (format!("{} older chats", m.chats.len() - SIDE - 1))
-                                    </summary>
-                                    for c in m.chats.iter().skip(SIDE + 1).cloned() {
-                                        side_row(c: c, open: open.clone())
-                                    }
-                                </details>
-                            }
-                            if fresh {
-                                <a
-                                    class="str on"
-                                    href=(format!("/new?{}", m.key))
-                                    aria-current="page"
-                                >
-                                    <span class="tt">"New chat"</span>
-                                    <span class="ta">"now"</span>
-                                </a>
-                            }
-                            <a class="str nw" href=(format!("/new?{}", m.key))>
-                                "+ new chat"
-                            </a>
+                            <p class="str mo">
+                                <span class="ds">
+                                    (match m.unread().len().saturating_sub(UNREAD) {
+                                        0 => String::new(),
+                                        more => format!("+{more}"),
+                                    })
+                                </span>
+                                jump(m: m.clone())
+                            </p>
                         </div>
+                    }
+                    if on {
+                        sides(m: m.clone(), open: open.clone(), fresh: fresh)
                     }
                 }
             }
@@ -299,6 +420,37 @@ async fn sidebar(
                 new_agent(profiles: profiles)
             }
         </nav>
+    })
+}
+
+/// The current agent's side threads (its chats after the ongoing one, the oldest folded), its `New chat · now` row
+/// when `fresh`, and `+ new chat`.
+#[component]
+async fn sides(m: Mate, open: String, fresh: bool) -> Result<impl View> {
+    Ok(view! {
+        <div class="sth">
+            for c in m.chats.iter().skip(1).take(SIDE) {
+                row(l: side(c, &open))
+            }
+            if m.chats.len() > SIDE + 1 {
+                <details>
+                    <summary>
+                        (format!("{} older chats", m.chats.len() - SIDE - 1))
+                    </summary>
+                    for c in m.chats.iter().skip(SIDE + 1) {
+                        row(l: side(c, &open))
+                    }
+                </details>
+            }
+            jump(m: m.clone())
+            if fresh {
+                <a class="str on" href=(format!("/new?{}", m.key)) aria-current="page">
+                    <span class="tt">"New chat"</span>
+                    <span class="ta">"now"</span>
+                </a>
+            }
+            <a class="str nw" href=(format!("/new?{}", m.key))>"+ new chat"</a>
+        </div>
     })
 }
 
@@ -409,6 +561,9 @@ async fn herd(
                     >
                         (if i == 0 { m.name.clone() } else { c.title.clone() })
                     </a>
+                }
+                if let Some(c) = m.newest() {
+                    <a class="chip" href=(format!("/t/{}", c.id))>"newest"</a>
                 }
                 <a class="chip" href=(format!("/new?{}", m.key))>"+ new chat"</a>
             </nav>
@@ -586,6 +741,11 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
     let mates = side.mates();
     let own = side.rows.iter().any(|r| r.workflow.is_none());
     let find = |key: &str| mates.iter().position(|m| m.key == key);
+    let holds = |id: &str| {
+        mates
+            .iter()
+            .position(|m| m.chats.iter().any(|c| c.id == id))
+    };
     let (at, show, title) = match &pane {
         Pane::Home { list, key } => (
             find(key).or((!mates.is_empty()).then_some(0)),
@@ -597,7 +757,7 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
             thread
                 .workflow
                 .is_none()
-                .then(|| find(&key(&thread.agent, &thread.profile)))
+                .then(|| holds(&thread.id).or_else(|| find(&key(&thread.agent, &thread.profile))))
                 .flatten(),
             "pane",
             thread.title.clone(),
@@ -654,7 +814,7 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
                                 mate: mate.map(
                                     |(n, m)| {
                                         let ongoing = m.chats.first().is_some_and(|c| c.id == open);
-                                        (n, m.name, ongoing)
+                                        (n, m.name, ongoing, m.avatar, m.key)
                                     },
                                 ),
                                 // Every thread's id, so a ref to one in the chat opens it (#84).
@@ -700,7 +860,7 @@ async fn bar(home: bool, n: usize, m: Mate) -> Result<impl View> {
     Ok(view! {
         <div class="th">
             back(key: m.key.clone())
-            avatar(name: m.name.clone(), n: n, big: false)
+            avatar(name: m.name.clone(), n: n, big: false, src: m.avatar.clone())
             <div class="tb">
                 // On the home page the header's "cooee" is the page's heading.
                 if home {
@@ -769,7 +929,12 @@ async fn hello(
                     bar(home: home, n: n, m: m.clone())
                     <div class="tc">
                         <div class="hi">
-                            avatar(name: m.name.clone(), n: n, big: true)
+                            avatar(
+                                name: m.name.clone(),
+                                n: n,
+                                big: true,
+                                src: m.avatar.clone()
+                            )
                             <b>(format!("New chat with {}", m.name))</b>
                             <p class="ds">
                                 "It starts in a scratch folder of its own. Use a folder… whenever this should work in a repo."
@@ -814,4 +979,71 @@ async fn hello(
             }
         </div>
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A thread of agent `a`'s, last active at `at`.
+    fn chat(id: &str, at: u64, unread: bool) -> Summary {
+        Summary {
+            id: id.to_owned(),
+            title: format!("topic {id}"),
+            agent: "a".to_owned(),
+            account: String::new(),
+            profile: String::new(),
+            folder: PathBuf::new(),
+            state: "done".to_owned(),
+            last: String::new(),
+            at,
+            unread,
+            unseen: usize::from(unread),
+            archived: false,
+            workflow: None,
+        }
+    }
+
+    fn mate_of(rows: Vec<Summary>) -> Mate {
+        let side = Side {
+            rows,
+            profiles: Vec::new(),
+            agents: Ok(Vec::new()),
+            providers: Vec::new(),
+            folders: Vec::new(),
+            tabs: Vec::new(),
+        };
+        side.mates().remove(0)
+    }
+
+    #[test]
+    fn unread_side_threads_come_newest_reply_first_and_newest_jumps_to_the_first() {
+        // `a1` is the ongoing chat (the first started), unread too: never a side thread.
+        let m = mate_of(vec![
+            chat("a1", 90, true),
+            chat("a7", 10, true),
+            chat("a3", 60, true),
+            chat("a5", 50, false),
+            chat("a4", 40, true),
+            chat("a6", 30, true),
+            chat("a2", 20, true),
+        ]);
+        let ids: Vec<&str> = m.unread().iter().map(|c| c.id.as_str()).collect();
+        assert_eq!(ids, ["a3", "a4", "a6", "a2", "a7"]);
+        assert_eq!(m.newest().map(|c| c.id.as_str()), Some("a3"));
+    }
+
+    #[test]
+    fn with_nothing_unread_newest_is_the_most_recent_side_thread_and_one_chat_has_none() {
+        let m = mate_of(vec![
+            chat("a1", 90, false),
+            chat("a2", 20, false),
+            chat("a3", 60, false),
+        ]);
+        assert!(m.unread().is_empty());
+        assert_eq!(m.newest().map(|c| c.id.as_str()), Some("a3"));
+        let only = mate_of(vec![chat("a1", 90, true)]);
+        assert!(only.unread().is_empty());
+        assert!(only.newest().is_none());
+    }
 }

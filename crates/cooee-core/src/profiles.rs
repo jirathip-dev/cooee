@@ -1,7 +1,8 @@
 //! Agent profiles: a named recipe for a thread's agent (its agent, account, folder, instructions, settings, env, MCP
 //! servers and shed's approval policy), picked when the thread starts and kept for its life. Plain (no profile) is
 //! the agent with the owner's own setup. The owner's are `<config>/profiles/*.toml`; a plugin brings its own as
-//! `[[profiles]]` in its `cooee-plugin.toml`, its paths in its build. A secret never sits in a profile: an `env`
+//! `[[profiles]]` in its `cooee-plugin.toml`, or its backend serves them (`GET /cooee/profiles`), their paths in its
+//! build. A secret never sits in a profile: an `env`
 //! value is plain text or `secret:<NAME>`, the file `<data>/secrets/<NAME>`.
 
 use std::{
@@ -40,7 +41,7 @@ pub struct Profile {
     /// variable; an agent without one can't start the profile.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings: Option<PathBuf>,
-    /// Variables for the agent: plain text, or `secret:<NAME>`.
+    /// Variables for the agent: plain text (a `{thread}` in it is the thread's id), or `secret:<NAME>`.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub env: BTreeMap<String, String>,
     /// An MCP servers file; shed starts ACP sessions without MCP servers, so a profile with one is refused.
@@ -49,6 +50,19 @@ pub struct Profile {
     /// shed's approval policy: `ask` (shed's default), `allow` or `deny`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policy: Option<String>,
+    /// Not offered nor started (a plugin's, while its guard can't be proven); `why` says why.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub hidden: bool,
+    /// Why it is hidden.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub why: String,
+    /// Its avatar in the sidebar (#86): an image (`https://…`, `data:image/…`, or a plugin's `/path` on its backend),
+    /// or a sprite of the theme's (`s-<id>` in its `sprites.svg`); none: its initials.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avatar: Option<String>,
+    /// Threads its plugin lists as this agent's (its side threads, the newest the ongoing chat).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub threads: Vec<String>,
     /// The plugin it came with (none: the owner's own).
     #[serde(skip)]
     pub plugin: Option<String>,
@@ -90,6 +104,17 @@ impl Profile {
         {
             return Err(format!(
                 "profile {}: policy {p:?} isn't ask, allow or deny",
+                self.name
+            ));
+        }
+        if let Some(a) = self.avatar.as_deref().filter(|a| {
+            !(a.starts_with("https://")
+                || a.starts_with("data:image/")
+                || a.starts_with('/')
+                || (!a.is_empty() && a.bytes().all(ok)))
+        }) {
+            return Err(format!(
+                "profile {}: avatar {a:?} isn't an image URL or a sprite id",
                 self.name
             ));
         }
@@ -158,9 +183,14 @@ impl Profile {
 }
 
 /// The profiles to pick from: the owner's (`<config>/profiles/*.toml`, by file name), then each enabled installed
-/// plugin's. One that can't be read or breaks a rule is left out and logged by its file, never its text.
+/// plugin's: `served(<plugin>)`'s list when its backend serves one (none: its manifest's). One that can't be read or
+/// breaks a rule is left out and logged by its file, never its text.
 #[must_use]
-pub fn list(config: Option<&Path>, data: &Path) -> Vec<Profile> {
+pub fn list(
+    config: Option<&Path>,
+    data: &Path,
+    served: impl Fn(&str) -> Option<Vec<Profile>>,
+) -> Vec<Profile> {
     let mut out = Vec::new();
     let dir = config.map(|c| c.join("profiles"));
     let mut files: Vec<PathBuf> = dir
@@ -187,25 +217,37 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Profile> {
         .filter(|l| l.enabled)
     {
         let build = plugins::build_dir(data, &l.name, &l.commit);
-        let read = fs::read_to_string(build.join("cooee-plugin.toml"));
-        let Ok(m) = read.and_then(|t| Manifest::parse(&t)) else {
-            eprintln!("cooee: {}: no readable cooee-plugin.toml", build.display());
-            continue;
+        let profiles = if let Some(list) = served(&l.name) {
+            list
+        } else {
+            let read = fs::read_to_string(build.join("cooee-plugin.toml"));
+            let Ok(m) = read.and_then(|t| Manifest::parse(&t)) else {
+                eprintln!("cooee: {}: no readable cooee-plugin.toml", build.display());
+                continue;
+            };
+            m.profiles
         };
-        out.extend(m.profiles.into_iter().map(|p| Profile {
-            plugin: Some(l.name.clone()),
-            ..p.rooted(&build)
-        }));
+        for p in profiles {
+            match p.check() {
+                Ok(()) => out.push(Profile {
+                    plugin: Some(l.name.clone()),
+                    ..p.rooted(&build)
+                }),
+                Err(e) => eprintln!("cooee: plugin {}: {e}", l.name),
+            }
+        }
     }
     out
 }
 
-/// The profile with id `id` (see [`Profile::id`]).
+/// The profile with id `id` (see [`Profile::id`]), plugins' from their manifests.
 ///
 /// # Errors
 /// When there is none.
 pub fn find(config: Option<&Path>, data: &Path, id: &str) -> io::Result<Profile> {
-    let found = list(config, data).into_iter().find(|p| p.id() == id);
+    let found = list(config, data, |_| None)
+        .into_iter()
+        .find(|p| p.id() == id);
     found.ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, format!("no profile {id}")))
 }
 
@@ -234,7 +276,9 @@ pub fn create(
     if name.is_empty() {
         return Err(refused(format!("{label:?} needs a letter or digit")));
     }
-    let taken = list(Some(config), data).into_iter().any(|p| p.id() == name);
+    let taken = list(Some(config), data, |_| None)
+        .into_iter()
+        .any(|p| p.id() == name);
     let mut p = match base {
         "" => Profile {
             name: String::new(),
@@ -247,11 +291,16 @@ pub fn create(
             env: BTreeMap::new(),
             mcp: None,
             policy: None,
+            hidden: false,
+            why: String::new(),
+            avatar: None,
+            threads: Vec::new(),
             plugin: None,
         },
         id => find(Some(config), data, id)?,
     };
     (p.name, p.label, p.plugin) = (name, label.trim().to_owned(), None);
+    p.threads.clear();
     let dir = config.join("profiles");
     let file = dir.join(format!("{}.toml", p.name));
     if taken || file.exists() {
@@ -314,6 +363,21 @@ mod tests {
         assert!(profile("env = { \"A B\" = \"x\" }").check().is_err());
         assert!(profile("policy = \"yolo\"").check().is_err());
         assert!(profile("").check().is_ok());
+        assert!(profile("env = { T = \"{thread}\" }").check().is_ok());
+        for ok in [
+            "https://x/a.png",
+            "data:image/png;base64,AA",
+            "/a.png",
+            "idle",
+        ] {
+            assert!(profile(&format!("avatar = {ok:?}")).check().is_ok(), "{ok}");
+        }
+        for bad in ["javascript:alert(1)", "http://x/a.png", "", "Idle"] {
+            assert!(
+                profile(&format!("avatar = {bad:?}")).check().is_err(),
+                "{bad}"
+            );
+        }
         assert!(
             toml::from_str::<Profile>("name = \"p\"\nlabel = \"P\"\nagent = \"a\"\nhooks = 1")
                 .is_err()

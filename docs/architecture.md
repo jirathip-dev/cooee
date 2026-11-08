@@ -143,6 +143,8 @@ default's is never removed). A provider whose CLI is missing says "not installed
 The new-thread picker marks each agent by its default account, `✓` or `signed out` with a link to the sheet, and has
 an account picker, the default preselected; the thread's agent starts as `shed run --acp <agent> … -- env
 <variable>=<folder> <the agent's adapter>` (the system default: no `env`), and the thread's header names the account.
+`cooee accounts env` and `cooee accounts ls --json` hand an account's environment to a fleet engine (herdsman):
+the contract is in `docs/accounts.md`.
 
 `[sign in]` runs the login command (for an added account, `env <variable>=<folder> <login>`) in a plain shed terminal (terminal mode, not ACP; over the socket: `run`, then
 `resize` to 500 columns so a long link stays on one line), named `cooee-login-<provider>-<stamp>` and labelled
@@ -235,9 +237,10 @@ account = "work"                # optional: its provider's account (else the def
 folder = "~/Projects/app"       # optional: the folder (a root or inside one), instead of the one picked
 instructions = "coder.md"       # optional: sent ahead of the first message (the chat shows only the message)
 settings = "settings.json"      # optional: an agent settings file, its hooks the profile's guard
-env = { MODE = "review", API_KEY = "secret:API_KEY" }   # optional: plain values, secrets as secret:<NAME>
+env = { MODE = "review", API_KEY = "secret:API_KEY" }   # optional: plain values ({thread}: the thread's id), secrets as secret:<NAME>
 policy = "ask"                  # optional: shed's approval policy, ask, allow or deny
 mcp = "mcp.json"                # optional: refused for now (shed starts ACP sessions without MCP servers)
+avatar = "https://x/me.png"     # optional: the sidebar's avatar, an image URL or a theme sprite id (none: initials)
 ```
 
 Paths are relative to the profile's file (a plugin's: its checkout); `~/` is the home folder. A secret is never in a
@@ -246,8 +249,10 @@ At spawn the agent's adapter runs as `env <account folder> <settings variable>=<
 through a 0600 file that the adapter's shell reads and removes (`sh -c '. file; rm file; exec adapter'`), so no
 secret is on a command line, in shed's state or in cooee's files or log. **Guarded profiles:** `settings` reaches the
 agent only through its provider's `settings` variable, the one its ACP adapter reads an extra settings file from
-and enforces, hooks included; an agent with none (the default for every built-in provider) can't start the profile:
-"this profile's guard can't run with <agent>". The form preselects each folder's last-used profile.
+and enforces, hooks included; an agent with none (Codex's and Gemini's) can't start the profile: "this profile's guard
+can't run with <agent>". Claude Code's is `CLAUDE_CONFIG_DIR` (herdsman#565: claude-acp enforces the user settings
+there), so a Claude profile's `settings` is a config folder (its `settings.json` holds the hooks), in place of the
+account's. The form preselects each folder's last-used profile.
 
 ## The app shell (#21, herdsman#553 rows 1–14)
 

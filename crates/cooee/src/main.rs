@@ -14,6 +14,7 @@ use std::{
 use cooee_core::{AGENTS_FIX, Config, Devices, ROOTS_FIX, Shed};
 use qrcode::{QrCode, render::unicode::Dense1x2};
 
+mod accounts;
 mod keychain;
 mod setup;
 
@@ -22,7 +23,8 @@ const USAGE: &str = "usage: cooee <serve | pair | devices | reports | devices rm
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
-                     | theme check <path>...> [--instance <name>] [--config <file>] | cooee --version";
+                     | theme check <path>... | accounts ls [--json] \
+                     | accounts env <provider> <name> [--require-signed-in]> [--instance <name>] [--config <file>] | cooee --version";
 
 /// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the exact version.
 const SHED_CARGO: [&str; 8] = [
@@ -60,6 +62,7 @@ fn main() -> ExitCode {
         at.map(|i| args.remove(i)).is_some()
     };
     let (dry_run, yes, purge) = (switch("--dry-run"), switch("--yes"), switch("--purge"));
+    let (json, require) = (switch("--json"), switch("--require-signed-in"));
     let (Ok(instance), Ok(config), Ok(port), Ok(rev), Ok(minutes)) = (
         flag(&mut args, "--instance"),
         flag(&mut args, "--config"),
@@ -110,6 +113,10 @@ fn main() -> ExitCode {
         }
         ["doctor"] => doctor,
         ["push", "migrate"] => keychain::command,
+        ["accounts", rest @ ..] => {
+            let run = |c: Config| accounts::run(&c, rest, json, require);
+            return load(path.as_deref(), &instance).map_or_else(|e| finish(Err(e)), run);
+        }
         ["plugin", rest @ ..] => {
             let rest: Vec<String> = rest.iter().map(|a| (*a).to_owned()).collect();
             let rest: Vec<&str> = rest.iter().map(String::as_str).collect();

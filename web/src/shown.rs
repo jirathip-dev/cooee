@@ -239,7 +239,7 @@ impl Shown {
         }
     }
 
-    fn svg(&self, id: &str, cls: &str) -> String {
+    pub(crate) fn svg(&self, id: &str, cls: &str) -> String {
         let bx = if cls == "big" || id == "loading" {
             "0 0 132 100"
         } else {
