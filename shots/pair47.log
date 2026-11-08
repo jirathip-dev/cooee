@@ -1,0 +1,69 @@
+  unpaired /t/long-390 -> /pair
+  unpaired GET /threads -> 401
+  body mentions 'Long thread': false
+  steps: 3 boxes: 6 hint: 0
+  header buttons: [] links: []
+  pair disabled: true
+  passkey row: 0
+shot pair-dark (dark)
+shot pair-light (light)
+  after 482 focused digit 4: true
+shot pair-typing (light)
+OK   A unpaired welcome: shell only
+  hint count: 1 text: "Add cooee to your Home Screen first.\n\nTap  Share, then Add to Home Screen, and pair in the app it adds. Safari and the Home Screen app keep separate sign-ins."
+shot pair-ios-hint (dark)
+  standalone hint visible: true count: 1
+OK   B iOS Safari hint
+  card: "That code isn't right. Check the six digits on your Mac or phone and type them again.\n\n4 tries left this minute"
+  digit1 empty+focused:  true
+shot pair-wrong (dark)
+OK   C wrong code
+  landed: /
+  offer: "✓ paired\n\nSave a passkey? Touch ID then signs this device back in if the browser forgets it, and approves new devices.\n\nsave a passkey\nnot now\n\nlater: settings › devices › passkeys"
+shot pair-offer (dark)
+shot pair-offer-light (light)
+  authenticator credentials: 1 server passkeys: [{"created":1794144157991,"id":"RAGInpXJiq00Dh3qlqbUCQj7QUgks1nWgDxfcyGEo24","label":"Mac","mine":true,"used":0}]
+shot pair-passkey-saved (dark)
+OK   G QR link -> paired, passkey offer, save
+  url: http://localhost:41533/pair?bad=expired&code=914902
+  card: "That code has run out. A code works once, for 10 minutes. Show a new one: cooee pair, or pair a device on your phone.\n\ntype a new code"
+shot pair-expired (dark)
+OK   H used QR code -> run out
+  panel: "Scan it with the new device's Camera, or type the code there.\n\n281 463\n\none use · expires in 10:00 · localhost\n\ndone\nnew code"
+  qr alt: QR code: the link to pair with code 281463
+FAIL I settings › devices: QR + passkeys: Unexpected token 'o', "forbidden" is not valid JSON
+  waiting: "waiting for approval\n\nriver salmon\n\nYour paired devices got a request. Approve it where it shows river salmon.\n\nexpires in 5:00\ncancel"
+shot pair-waiting (dark)
+  card on A: "Pair a new device?\njust now\n\niPad, over your tailnet\n\ncheck word\nriver salmon\n\napprove with Touch ID\ndecline"
+shot approve-card (dark)
+  A after approve: "✓ iPad paired\n\nIt's in settings › devices. The other devices' cards cleared.\n\nrename it\ndone"
+shot approve-approved (dark)
+  C landed: / list visible: true
+shot pair-approved-newdevice (dark)
+OK   J ask to pair, approve with passkey
+  A declined card: "Declined · iPad\n\nIt won't be paired, and it sees that you said no.\n\nundo\nfor 10 s"
+shot approve-declined (dark)
+  D: "Mac said no.\n\nYour request to pair (coral badger) was declined. If that was a mistake, ask again.\n\nask again\nuse a code"
+shot pair-declined (dark)
+OK   K decline -> declined state on new device
+  after clearing cookies / -> /pair
+  passkey row shown: 1
+  after passkey -> / GET /devices: 200
+  no-passkey error: "No passkey for this cooee on this device. Pair with a code instead."
+shot pair-no-passkey (dark)
+OK   L passkey sign-in restores pairing
+shot settings-devices-passkeys (dark)
+  after remove: "none yet: a passkey signs a device back in and approves new ones\n\nsave a passkey here"
+OK   O passkey remove in settings
+  offline: "Can't reach your Mac.\n\nTurn on Tailscale on this device, check that the Mac is awake, then try again.\n\ntry again\ntried 0:00 ago"
+shot pair-offline (dark)
+OK   M offline
+  try 1: ?bad=wrong&left=3
+  try 2: ?bad=wrong&left=2
+  try 3: ?bad=wrong&left=1
+  try 4: ?bad=limit&wait=60
+  boxes disabled: true
+  card: "Too many tries. Five wrong codes a minute is the limit. The boxes open again in 1:00."
+shot pair-limit (dark)
+  right code while limited -> 303 /pair?bad=limit&wait=36
+OK   N rate limit

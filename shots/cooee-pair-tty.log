@@ -1,0 +1,11 @@
+POST /pair -> 303 http://127.0.0.1:41533/?paired
+Scan it with the new device's Camera, or open the link and type the code.
+                                     
+                                     
+                                     
+                                     
+code  130 439  (one use, 10 minutes)
+link  http://127.0.0.1:41533/pair?code=130439
+waiting…  ✓ paired: iPad
+
+still running: False

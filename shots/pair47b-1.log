@@ -1,0 +1,20 @@
+hint safari18: 1 "Add cooee to your Home Screen first.\n\nTap  Share, then Add to Home Screen, and pair in the app it adds. Safari and the Home Screen app keep separate sign-ins."
+hint safari26: 1 "Add cooee to your Home Screen first.\n\nTap  Share (in the ⋯ menu), then Add to Home Screen, and pair in the app it adds. Safari and the Home Screen app keep separate sign-ins."
+shot pair-ios26-hint (light)
+hint homescreen: 0 ""
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+page.waitForURL: Timeout 30000ms exceeded.
+=========================== logs ===========================
+waiting for navigation until "load"
+  navigated to "http://127.0.0.1:41533/pair?bad=limit&wait=1"
+  navigated to "http://127.0.0.1:41533/pair"
+============================================================
+    at /Users/jirathip/.local/share/herdsman/work/cooee/verify-47-r8/web/e2e/[eval1]:26:52 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.2

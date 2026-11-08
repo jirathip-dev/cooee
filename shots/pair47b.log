@@ -1,0 +1,15 @@
+hint safari18: 1 "Add cooee to your Home Screen first.\n\nTap  Share, then Add to Home Screen, and pair in the app it adds. Safari and the Home Screen app keep separate sign-ins."
+hint safari26: 1 "Add cooee to your Home Screen first.\n\nTap  Share (in the ⋯ menu), then Add to Home Screen, and pair in the app it adds. Safari and the Home Screen app keep separate sign-ins."
+shot pair-ios26-hint (light)
+hint homescreen: 0 ""
+iPhone offer: "✓ paired\n\nSave a passkey? Face ID then signs this device back in if the browser forgets it, and approves new devices.\n\nsave a passkey\nnot now\n\nlater: settings › devices › passkeys"
+shot pair-offer-iphone (dark)
+panel: "Scan it with the new device's Camera, or type the code there.\n\n811 689\n\none use · expires in 10:00 · 127.0.0.1\n\ndone\nnew code"
+shot settings-pair-qr (dark)
+qr img box: {"x":95,"y":456.125,"width":200,"height":200}
+/devices/pair: 200 link: https://127.0.0.1:41533/pair?code=406457 host: 127.0.0.1 code: 406457
+fresh device via settings QR link -> / devices: 200
+no-passkey card: "Pair a new device?\njust now\n\nMac, over your tailnet\n\ncheck word\nsilver heron\n\nApproving needs a passkey. Save one on this device, or approve on another one.\n\nsave a passkey\ndecline"
+shot approve-no-passkey (dark)
+declined card: "Declined · Mac\n\nIt won't be paired, and it sees “iPhone said no”.\n\nundo\nfor 10 s"
+shot approve-declined-settled (dark)
