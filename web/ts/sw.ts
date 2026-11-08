@@ -9,7 +9,7 @@ const sw = self as unknown as ServiceWorkerGlobalScope;
 type Push = { title: string; body: string; tag: string; url: string; item?: number };
 
 const CACHE = "cooee-1";
-const KEPT = /^\/($|t\/|threads$|app\.css|chat\.js|md\.js|look\.js|look\/|icon|manifest)/;
+const KEPT = /^\/($|t\/|threads$|app\.css|chat\.js|md\.js|look\.js|pair\.js|look\/|icon|manifest)/;
 sw.addEventListener("install", () => sw.skipWaiting());
 sw.addEventListener("activate", (e) => e.waitUntil(sw.clients.claim()));
 

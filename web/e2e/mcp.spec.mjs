@@ -29,9 +29,11 @@ test("mcp servers: one row per server, + server's card shows the exact command, 
   const docs = page.locator('.acr[data-server="docs"]');
   await expect(docs.locator(".ptg")).toHaveText("http");
   await expect(docs.getByRole("button", { name: "docs is off: turn it on" })).toHaveText("off");
-  await page.locator("summary", { hasText: "Reviewer" }).click();
-  for (const t of ["read_file", "write_file", "search"]) await expect(page.getByLabel(t, { exact: true })).toBeChecked();
-  await expect(page.getByLabel("files", { exact: true })).not.toBeChecked();
+  // Other specs add agents beside Reviewer.
+  const reviewer = page.locator("details", { has: page.locator("summary", { hasText: /^Reviewer$/ }) });
+  await reviewer.locator("summary").click();
+  for (const t of ["read_file", "write_file", "search"]) await expect(reviewer.getByLabel(t, { exact: true })).toBeChecked();
+  await expect(reviewer.getByLabel("files", { exact: true })).not.toBeChecked();
   await shot(page, info, "mcp-servers");
   await audit(page);
 
