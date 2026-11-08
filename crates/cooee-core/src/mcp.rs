@@ -120,7 +120,9 @@ impl Server {
             }
             k => return Err(format!("mcp {n}: type {k:?} isn't stdio, http or sse")),
         }
+        // A path's folder names (a temp folder's hash) aren't tokens.
         let words = self.args.iter().chain([&self.command, &self.url]);
+        let words = words.filter(|w| !w.starts_with(['/', '~', '.']));
         if words.into_iter().any(|w| crate::redact(w) != *w) {
             return Err(format!(
                 "mcp {n}: its command, args or url hold what looks like a token: put it in env or headers as `secret:<NAME>`"
