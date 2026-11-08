@@ -399,7 +399,7 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
     let (new, _) = s.thread("", "newer");
     served(&[&old, &new]);
     let agents = s.picker_with(&format!(r#"href="/t/{new}""#));
-    let a = agents.find(r#"<span class="tt">Fleet A</span>"#).unwrap();
+    let a = agents.find("Fleet A</span>").unwrap();
     let start = agents[..a].rfind("<a").unwrap();
     assert!(
         agents[start..a].contains(&format!(r#"href="/t/{new}""#)),
@@ -408,7 +408,7 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
     let chat = s.cooee.get(&format!("/t/{new}")).1;
     let at = chat.find(r#"<nav class="ags""#).unwrap();
     let side = &chat[at..at + chat[at..].find("</nav>").unwrap()];
-    let fleet = side.find(r#"<span class="tt">Fleet A</span>"#).unwrap();
+    let fleet = side.find("Fleet A</span>").unwrap();
     let under = &side[fleet..side[fleet..].find("+ new chat").unwrap() + fleet];
     assert!(
         under.contains(&format!(r#"href="/t/{old}""#))
