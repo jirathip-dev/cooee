@@ -25,7 +25,7 @@ Prints one JSON object of environment variables on one line and exits 0:
 
 ```console
 $ cooee accounts env claude work
-{"CLAUDE_CONFIG_DIR":"/Users/me/.local/share/cooee/accounts/claude/work"}
+{"CLAUDE_CONFIG_DIR":"/home/user/.local/share/cooee/accounts/claude/work"}
 ```
 
 - The name `""` is the system default login (`~/.claude`, …): `{}`.
@@ -63,8 +63,8 @@ token files by name. It never prints a token.
 ```json
 [
   {"provider": "claude", "name": "", "folder": null, "signed_in": true, "token_file": null, "token_age_days": null, "error": null},
-  {"provider": "claude", "name": "work", "folder": "/Users/me/.local/share/cooee/accounts/claude/work", "signed_in": false, "token_file": null, "token_age_days": null, "error": null},
-  {"provider": "claude", "name": "ci", "folder": null, "signed_in": true, "token_file": "/Users/me/.local/share/cooee/accounts/claude/ci.token", "token_age_days": 41, "error": null}
+  {"provider": "claude", "name": "work", "folder": "/home/user/.local/share/cooee/accounts/claude/work", "signed_in": false, "token_file": null, "token_age_days": null, "error": null},
+  {"provider": "claude", "name": "ci", "folder": null, "signed_in": true, "token_file": "/home/user/.local/share/cooee/accounts/claude/ci.token", "token_age_days": 41, "error": null}
 ]
 ```
 
