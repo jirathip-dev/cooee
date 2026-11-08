@@ -112,9 +112,13 @@ Before that, every request's `Host` (and its `Origin`, when sent) must be localh
 `allowed_hosts`, or it gets 403, paired cookie or not. That blocks DNS rebinding. To reach cooee from the phone,
 keep `bind` on 127.0.0.1, run `tailscale serve --bg 4747`, and put the machine's Tailscale name in `allowed_hosts`.
 
-Web push (RFC 8291 aes128gcm, VAPID per RFC 8292, sent with `curl`): the VAPID key is made once and kept in the
-macOS keychain (`security`, service `cooee`; a call that takes over 5 s, as an unseen prompt after a rebuild would,
-is an error), else in `<data>/vapid.key` (0600). The thread list's 🔔 subscribes;
+Web push (RFC 8291 aes128gcm, VAPID per RFC 8292, sent with `curl`): the VAPID key is a file, `<data>/vapid.key`,
+made once with mode 0600 (a looser one is tightened to 0600 before use); cooee keeps nothing in the macOS keychain.
+Before #99 the key sat there (service `cooee`): while there is no key file, `cooee serve` reads it once in the
+background, 5 s at most, and copies it to the file; `cooee push migrate` does the same and prints the
+`security delete-generic-password` command that removes the old item, which cooee leaves for the owner. A read that
+times out (a locked keychain) makes a new key, and every subscribed device is asked, with the reason, to turn
+alerts on again (`GET /push/reset`). The thread list's 🔔 subscribes;
 subscriptions sit in `<data>/push.json` (0600), each tied to its device. A push goes out when an agent asks for an
 approval, a turn finishes while no page has the thread open, or an agent errors. Each one is a line about the thread:
 `{title, body, tag: <thread>, url: /t/<thread>, item}`. The service worker (push, and a network-first copy of the pages and static files for offline) shows it under the

@@ -15,9 +15,10 @@ use cooee_core::{AGENTS_FIX, Config, Devices, ROOTS_FIX, Shed};
 use qrcode::{QrCode, render::unicode::Dense1x2};
 
 mod accounts;
+mod keychain;
 mod setup;
 
-const USAGE: &str = "usage: cooee <serve | pair | devices | reports | devices rm <id> | install --port <p> | doctor \
+const USAGE: &str = "usage: cooee <serve | pair | devices | reports | devices rm <id> | install --port <p> | doctor | push migrate \
                      | perf [--minutes <n>] \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list \
@@ -107,10 +108,10 @@ fn main() -> ExitCode {
             return with_config(path.as_deref(), &instance, |config| perf(config, minutes));
         }
         ["devices", "rm", id] => {
-            let id = (*id).to_owned();
-            return with_config(path.as_deref(), &instance, |config| remove(config, &id));
+            return with_config(path.as_deref(), &instance, |config| remove(config, id));
         }
         ["doctor"] => doctor,
+        ["push", "migrate"] => keychain::command,
         ["accounts", rest @ ..] => {
             let run = |c: Config| accounts::run(&c, rest, json, require);
             return load(path.as_deref(), &instance).map_or_else(|e| finish(Err(e)), run);
@@ -193,6 +194,14 @@ fn serve(config: &Config) -> Result<(), String> {
         .plugins
         .iter()
         .find(|p| p.name == cooee_terminal::NAME);
+    // In the background, so a keychain that never answers holds up nothing.
+    if let Some(data) = config.data_dir() {
+        std::thread::spawn(move || match keychain::migrate(&data) {
+            Ok(Some(done)) => eprintln!("cooee: {done}"),
+            Ok(None) => {}
+            Err(e) => eprintln!("cooee: push key: {e}"),
+        });
+    }
     cooee_server::serve(config, |addr| {
         println!("cooee: listening on http://{addr}");
         if let (Some(p), Some(data)) = (terminal, config.data_dir()) {
