@@ -24,6 +24,8 @@ struct Setup {
     cooee: Cooee,
     /// A secret-shaped value the fake CLI prints and keeps in its folder, built at runtime.
     token: String,
+    /// The config lines naming provider `fake`, to start cooee again.
+    extra: String,
 }
 
 fn script(path: &Path, body: &str) {
@@ -76,6 +78,7 @@ fn setup(name: &str) -> Setup {
         shed,
         cooee,
         token,
+        extra,
     }
 }
 
@@ -258,4 +261,30 @@ fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_ou
 
     let written = s.written();
     assert!(!written.contains(&s.token), "a token was written");
+}
+
+#[test]
+fn signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted() {
+    let mut s = setup("accounts-stale");
+    let (_, v) = s.add("good-code");
+    assert_eq!(v["why"], "the login command finished");
+    let row = r#"data-account="account-2"><span class="ptg">fake</span><span class="sk">account-2</span><span class="st m">signed out</span>"#;
+    assert!(s.page().contains(r#"data-account="account-2"><span class="ptg">fake</span><span class="sk">account-2@example.com</span><span class="st g">✓ signed in</span>"#));
+    // The help says where logins live.
+    assert!(
+        s.page()
+            .contains(r#"<a href="https://github.com/jirathip-dev/cooee/blob/main/docs/logins.md" target="_blank" rel="noopener">Where logins live</a>"#)
+    );
+
+    // The login is lost outside cooee (revoked, its Keychain item gone); the sign-in stays noted.
+    fs::remove_file(s.accounts().join("account-2/creds")).unwrap();
+    let noted = fs::read_to_string(s.accounts().join(".cooee.json")).unwrap();
+    assert!(noted.contains("account-2"), "{noted}");
+    s.cooee.child.kill().unwrap();
+    s.cooee.child.wait().unwrap();
+    // A fresh start checks every account's status: signed out, whatever was noted.
+    s.cooee = Cooee::start_with(&s.dir, &s.shed.dir, &s.extra);
+    let page = s.page();
+    assert!(page.contains(row), "{page}");
+    assert!(!page.contains("✓ signed in"), "{page}");
 }

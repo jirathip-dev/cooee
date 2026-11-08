@@ -154,7 +154,8 @@ after 10 minutes; then the terminal is killed and removed, `[cancel]` does the s
 `cooee-login` terminals a previous run left. The screen is only ever read on demand: never stored, logged or kept
 in memory. Before it goes to the page, anything that looks like a token is replaced by `[redacted]`: a run of 20 or
 more token characters with both a letter and a digit, and in a link the values of `token`, `secret`, `password` and
-`key` parameters. The tokens themselves stay with the CLI.
+`key` parameters. The tokens themselves stay with the CLI: where each OS keeps them, and what a headless Mac needs,
+is in [logins.md](logins.md), linked from the sign-ins card.
 
 ## Plugins (M4)
 
