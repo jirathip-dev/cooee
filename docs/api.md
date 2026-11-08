@@ -107,6 +107,23 @@ another run; load the newest slice again).
 | `POST /plugins/improve` | `{name, text}` | `{thread}` |
 | `POST /plugins/approve`, `/plugins/rollback`, `/plugins/remove` | `{name}` | a JSON string |
 
+## MCP servers (Settings › mcp servers, #56)
+
+Native forms, as theme packs; `GET /mcp` is the page.
+
+| Call | Body | Answer |
+|---|---|---|
+| `POST /mcp/servers` | `name`, `type`, `target` (the command line or URL), `passkey` (an assertion, JSON) | 200 text; 403 without Face ID; 400 for a name taken |
+| `POST /mcp/servers/<name>` | `enabled` = `on` or `off`, nothing else | 303 to `/mcp`; 403 for any other field (a command, args, URL, env or headers: the Mac's) |
+| `POST /mcp/servers/<name>/remove` | | 303 to `/mcp` |
+| `POST /mcp/secret` | `name`, `value` | 303 to `/mcp`: saved to the keychain (else `<data>/secrets/`) |
+| `POST /profiles/<id>/mcp` | `s:<server>` per server, `t:<server>:<tool>` per tool (all ticked: all tools) | 303 to `/mcp` |
+| `POST /threads/<id>/approve` | on an MCP proposal's card, `approve` needs `passkey` | as any card; 403 without Face ID |
+
+A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the thread's token>`, no cookie:
+`POST /mcp/agent/grant` `{thread, server}` → the server resolved and its allowed `tools`; `POST /mcp/agent/propose`
+`{thread, server: {name, type, command, args, url, why}}` → the card.
+
 ## Theme packs (Settings › look › themes, [docs/themes.md](themes.md))
 
 Native forms (`application/x-www-form-urlencoded`); each answers with a redirect, or a 409 with the reason as text.
