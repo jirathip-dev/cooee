@@ -287,7 +287,12 @@ async fn sidebar(
                             || "page".to_owned(),
                         ))
                     >
-                        avatar(name: m.name.clone(), n: n, big: false, src: m.avatar.clone())
+                        avatar(
+                            name: m.name.clone(),
+                            n: n,
+                            big: false,
+                            src: m.avatar.clone()
+                        )
                         <span class="tt">(m.name.clone())</span>
                         <span class="ta">
                             (latest.as_ref().map(|c| age(c.at)).unwrap_or_default())
@@ -821,7 +826,12 @@ async fn hello(
                     bar(home: home, n: n, m: m.clone())
                     <div class="tc">
                         <div class="hi">
-                            avatar(name: m.name.clone(), n: n, big: true, src: m.avatar.clone())
+                            avatar(
+                                name: m.name.clone(),
+                                n: n,
+                                big: true,
+                                src: m.avatar.clone()
+                            )
                             <b>(format!("New chat with {}", m.name))</b>
                             <p class="ds">
                                 "It starts in a scratch folder of its own. Use a folder… whenever this should work in a repo."
