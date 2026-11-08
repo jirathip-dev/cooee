@@ -213,12 +213,22 @@ fn a_wrong_expired_or_reused_code_says_so() {
     // Used once, it has run out.
     assert!(enter(&c, "203.0.113.2", &format!("code={pin}")).1.is_some());
     let (to, cookie) = enter(&c, "203.0.113.2", &format!("code={pin}"));
-    assert_eq!((to.as_str(), cookie), ("/pair?bad=expired", None));
+    assert_eq!(
+        (to.as_str(), cookie),
+        (format!("/pair?bad=expired&code={pin}").as_str(), None)
+    );
     let (_, page) = c.raw("GET", &to, &[], "");
     assert!(
         page.contains("That code has run out.") && page.contains("type a new code"),
         "{page}"
     );
+    // The used code stays in the boxes, muted.
+    assert!(page.contains(r#"class="cbx dim""#), "{page}");
+    for (i, d) in pin.chars().enumerate() {
+        let digit = format!(r#"aria-label="digit {}""#, i + 1);
+        let tag = page.split("<input").find(|t| t.contains(&digit)).unwrap();
+        assert!(tag.contains(&format!(r#"value="{d}""#)), "{tag}");
+    }
     // After 10 minutes, too.
     let pin = new_code(&c);
     let file = dir.join("data/devices.json");
@@ -227,7 +237,7 @@ fn a_wrong_expired_or_reused_code_says_so() {
     fs::write(&file, devices.to_string()).unwrap();
     assert_eq!(
         enter(&c, "203.0.113.2", &format!("code={pin}")).0,
-        "/pair?bad=expired"
+        format!("/pair?bad=expired&code={pin}")
     );
 }
 
