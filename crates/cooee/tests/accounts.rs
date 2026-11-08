@@ -285,7 +285,14 @@ fn signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted() {
     s.cooee.child.wait().unwrap();
     // A fresh start checks every account's status: signed out, whatever was noted.
     s.cooee = Cooee::start_with(&s.dir, &s.shed.dir, &s.extra);
-    let page = s.page();
+    let start = Instant::now();
+    let page = loop {
+        let page = s.page();
+        if page.contains(row) || start.elapsed() > Duration::from_secs(10) {
+            break page;
+        }
+        thread::sleep(Duration::from_millis(20));
+    };
     assert!(page.contains(row), "{page}");
     assert!(!page.contains("✓ signed in"), "{page}");
 }

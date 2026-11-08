@@ -6,6 +6,7 @@
 use std::{
     collections::BTreeMap,
     env,
+    panic::AssertUnwindSafe,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
     thread,
@@ -220,7 +221,12 @@ impl Logins {
                 }
                 let (logins, p) = (Arc::clone(self), p.clone());
                 thread::spawn(move || {
-                    let status = p.check(a.dir.as_deref());
+                    // A panicking check still settles, so the account is checked again.
+                    let status =
+                        std::panic::catch_unwind(AssertUnwindSafe(|| p.check(a.dir.as_deref())))
+                            .unwrap_or_else(|_| {
+                                Status::unknown("can't tell: the status check failed")
+                            });
                     let mut checks = lock(&logins.checks);
                     if let Some(c) = checks.get_mut(&key) {
                         c.busy = false;
