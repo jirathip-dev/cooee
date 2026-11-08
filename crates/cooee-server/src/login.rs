@@ -350,7 +350,8 @@ impl Logins {
     }
 
     /// What a thread of agent profile `p` runs with: its account's label and [`Launch`] (the account's folder, the
-    /// settings file in the provider's `settings` variable, the env, its secrets read from `data` through a file
+    /// settings file in the provider's `settings` variable (in place of the account's folder when it is the same
+    /// variable), the env, its secrets read from `data` through a file
     /// there, the policy), and its instructions. A profile its agent can't run as written is refused: settings
     /// with no `settings` variable (its guard can't run).
     ///
@@ -368,6 +369,7 @@ impl Logins {
                     p.agent
                 )));
             };
+            launch.env.retain(|(k, _)| k != var);
             launch
                 .env
                 .push((var.to_owned(), settings.display().to_string()));

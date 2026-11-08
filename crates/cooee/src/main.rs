@@ -14,6 +14,7 @@ use std::{
 use cooee_core::{AGENTS_FIX, Config, Devices, ROOTS_FIX, Shed};
 use qrcode::{QrCode, render::unicode::Dense1x2};
 
+mod accounts;
 mod setup;
 
 const USAGE: &str = "usage: cooee <serve | pair | devices | reports | devices rm <id> | install --port <p> | doctor \
@@ -21,7 +22,9 @@ const USAGE: &str = "usage: cooee <serve | pair | devices | reports | devices rm
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
-                     | theme check <path>... | mcp ls | mcp add <name> (<command> [<arg>...] | --url <url> [--type sse]) \
+                     | theme check <path>... | accounts ls [--json] \
+                     | accounts env <provider> <name> [--require-signed-in] | mcp ls \
+                     | mcp add <name> (<command> [<arg>...] | --url <url> [--type sse]) \
                      [--env K=secret:N|env:N]... [--header K=secret:N|env:N]... | mcp rm|enable|disable <name> \
                      | mcp proxy <server> --thread <id> | mcp serve --thread <id>> [--instance <name>] [--config <file>] \
                      | cooee --version";
@@ -62,6 +65,7 @@ fn main() -> ExitCode {
         at.map(|i| args.remove(i)).is_some()
     };
     let (dry_run, yes, purge) = (switch("--dry-run"), switch("--yes"), switch("--purge"));
+    let (json, require) = (switch("--json"), switch("--require-signed-in"));
     let (Ok(instance), Ok(config), Ok(port), Ok(rev), Ok(minutes)) = (
         flag(&mut args, "--instance"),
         flag(&mut args, "--config"),
@@ -111,6 +115,10 @@ fn main() -> ExitCode {
             return with_config(path.as_deref(), &instance, |config| remove(config, &id));
         }
         ["doctor"] => doctor,
+        ["accounts", rest @ ..] => {
+            let run = |c: Config| accounts::run(&c, rest, json, require);
+            return load(path.as_deref(), &instance).map_or_else(|e| finish(Err(e)), run);
+        }
         ["plugin", rest @ ..] => {
             let rest: Vec<String> = rest.iter().map(|a| (*a).to_owned()).collect();
             let rest: Vec<&str> = rest.iter().map(String::as_str).collect();
