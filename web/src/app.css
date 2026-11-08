@@ -16,10 +16,10 @@ small,.ds,.ta,.ct,.lb{color:var(--mute);font-size:var(--fs-meta)}
 button{font:inherit;font-weight:600;color:var(--bg);background:var(--l);border:0;border-radius:var(--r-pill);min-height:var(--ctl);padding:0 16px;cursor:pointer}
 button:disabled{opacity:.5;cursor:default}
 .gl{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;font-size:var(--fs-key);font-weight:400;color:var(--fg);background:none;text-decoration:none;padding:0}
-.gl[aria-pressed=true]{color:var(--l)}
+.gl[aria-pressed=true],.gl[aria-current]{color:var(--l)}
 .bar{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:4px;min-height:48px;padding:0 4px 0 16px;background:var(--card);border-bottom:1px solid var(--edge)}
 .bar h1,.bar .brand{font-size:var(--fs-key);font-weight:700;margin:0 auto 0 0;color:var(--fg);text-decoration:none}
-h1{font-size:inherit;margin:0}
+h1,.tb h2{font-size:inherit;margin:0}
 .list{display:flex;flex-direction:column;gap:12px;max-width:100ch;margin:0 auto;padding:12px}
 .fc,.nf,.emp{background:var(--card);border:1px solid var(--edge);border-radius:var(--r-card);padding:0 12px 4px}
 .fh{display:flex;align-items:center;gap:8px;min-height:44px}.fh b{margin-right:auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.fh .ds{flex:none}
@@ -29,14 +29,10 @@ h1{font-size:inherit;margin:0}
 .tt{font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.tr.rd .tt{font-weight:400;color:var(--mute)}
 .tp{grid-column:2/4;font-size:var(--fs-meta);color:var(--mute);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.tp b{font-weight:400;margin-right:1ch}
 details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute);cursor:pointer}
-.nf{display:flex;flex-direction:column;gap:6px;padding-bottom:12px}.nf[hidden]{display:none}.nf.shut:not(:target){display:none}
-p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;color:var(--mute)}.hn code{font-family:var(--mono);color:var(--fg);overflow-wrap:anywhere}
-.nf fieldset{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
-.nf fieldset label{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 12px;border:1px solid var(--edge);border-radius:var(--r-pill)}
-.nf select{max-width:100%}
-.nf .pk{display:flex;flex-direction:column;gap:4px}
-.nf:has(.pk option:checked:not([value=""])) .ag,.nf:has(.pk option[data-folder]:checked) :is(.fl,.fh:has(#fq)){display:none}
-.nf select,.nf input,textarea{font:16px/1.4 var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:44px}
+.nf{display:flex;flex-direction:column;gap:6px;padding-bottom:12px}.nf[hidden]{display:none}
+.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;color:var(--mute)}.hn code{font-family:var(--mono);color:var(--fg);overflow-wrap:anywhere}
+.nf input,textarea,.lgf input{font:16px/1.4 var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:44px}
+.nc:has(input[name=pick][data-folder]:checked) #chip-folder{display:none}
 .chat{display:flex;flex-direction:column;height:var(--vvh,100dvh);max-width:100ch;margin:0 auto}
 .th{display:flex;align-items:center;gap:4px;min-height:52px;padding:0 4px;background:var(--card);border-bottom:1px solid var(--edge)}
 .th .bk{color:var(--link)}
@@ -79,7 +75,7 @@ p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media (max-width:599px){.bar{flex-wrap:wrap}.tabs{order:9;flex-basis:100%;min-width:0;overflow-x:auto;scrollbar-width:none}}
 .tabs{display:flex;gap:4px}.tabs a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 10px;border-radius:999px;color:var(--fg);text-decoration:none}.tabs a.on{background:var(--bg);font-weight:600}.tabs .dot{color:var(--r);font-style:normal;font-size:.7em;margin-left:4px}
-.pt{display:flex;flex-direction:column;height:100dvh;position:relative}.pk{position:absolute;top:45%;left:50%;transform:translateX(-50%)}.pf{flex:1;width:100%;border:0;background:var(--bg)}
+.pt{display:flex;flex-direction:column;height:100dvh;position:relative}.pkl{position:absolute;top:45%;left:50%;transform:translateX(-50%)}.pf{flex:1;width:100%;border:0;background:var(--bg)}
 [hidden]{display:none!important}
 
 /* A state (shown.rs, look.ts): the sprite, the glyph or the dot, then the theme word in the state's colour and `· plain` muted.
@@ -171,11 +167,10 @@ html[data-style=terminal] .lth .pick{border-radius:var(--r-card)}
 html[data-style=terminal] .swa{border-radius:4px}
 
 @media (prefers-reduced-motion:reduce){.chc.busy::after,.rsp,.big{animation:none}}
-.pv{border-top:1px solid var(--line)}.pv .fh b{margin-right:auto}.pv .ds{margin:0 0 8px;overflow-wrap:anywhere}
+/* A sign-in's terminal (chat.ts), under the row that started it: the command, its screen, the code box. */
+.lg{padding:8px 0;border-bottom:1px solid var(--line)}.lg .ds{margin:0 0 8px;overflow-wrap:anywhere}
 .out{margin:0 0 8px;padding:8px;max-height:50vh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:13px var(--mono);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row)}
-.pv .tw{padding:0;background:none;border:0}.pv .cn,.ac .sg,.ac .df{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
-.ac{padding-left:12px;border-left:2px solid var(--line);margin-bottom:8px}.ab{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.ab .ds{margin:0}
-.nf .so{align-self:center;min-height:var(--hit);display:inline-flex;align-items:center}
+.lgf{display:flex;gap:8px}.lgf input{flex:1;min-width:0}
 
 /* #21: the loading strip (thin, under the header, taps pass through; an old copy's age stays), the toast (one line
    under the header; an error wraps), ↻ spinning, the alert dot on ⚙, Settings' section index, the pairing code. */
@@ -212,12 +207,99 @@ html[data-style=terminal] .swa{border-radius:4px}
 @keyframes mo-hop{50%{translate:0 -4px}}@keyframes mo-shake{25%{translate:-2px 0}75%{translate:2px 0}}@keyframes mo-pulse{50%{scale:1.25}}
 @keyframes mo-tint{from{background:color-mix(in srgb,var(--r) 18%,var(--card))}}@keyframes mo-tag{0%,100%{scale:0}8%,85%{scale:1}}
 @media (prefers-reduced-motion:reduce){#ld.run,.rfs,.th[data-mo],.th[data-mo] *{animation:none!important}}
-.nf .fl{flex-direction:column;flex-wrap:nowrap;gap:0;max-height:40vh;overflow-y:auto}
-.nf .fl label{border:0;border-radius:0;border-top:1px solid var(--line);overflow-wrap:anywhere}.fl [data-d="1"]{padding-left:28px}.fl [data-d="2"]{padding-left:44px}
-#fq{flex:1;min-width:0}.lrw .sk{min-width:0;overflow-wrap:anywhere}
+.lrw .sk{min-width:0;overflow-wrap:anywhere}
 .pga{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .plg{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.4 var(--mono);max-height:40vh;overflow:auto;margin:8px 0;padding:8px;background:var(--bg);border-radius:var(--r-row)}
 #s-plugins-box form input{flex:1;min-width:0;font:16px var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:var(--hit)}
+
+/* #48: one size scale for the new-thread composer, its two sheets and Settings › providers (the chat's composer takes
+   it too, so nothing jumps on send):
+     --ctl   every chip, button and one-line input, and the message box's first line   modern 36 px · terminal 28 px
+     --row   every list row in a sheet or in Settings                                   44 px in both
+     --r-ctl the radius of all of them (the message box keeps it as it grows)            modern 18 px · terminal 6 px
+     --fs    the text of chips, buttons and rows (--fs-meta under or beside it)          modern 15/13 · terminal 13/11
+   Inputs are 16 px in both styles, so iOS doesn't zoom into them: the scale's one exception. */
+:root{--row:44px;--r-ctl:18px}
+html[data-style=terminal]{--r-ctl:6px}
+.chip,:is(.nc,.acr,.lg) button:not(.sr,.gl,.stop),.nc textarea,:is(.pop,.lg) :is(input,select){height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);font-size:var(--fs)}
+.nc textarea,:is(.pop,.lg) :is(input,select){font-size:16px;padding:0 12px;line-height:calc(var(--ctl) - 2px)}
+.nc textarea{height:auto;max-height:40vh}
+.sec{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
+html[data-style=terminal] .sec,html[data-style=terminal] .chip{background:none;box-shadow:none}
+
+/* The shell: the header across the top, then the page. */
+body.app{display:flex;flex-direction:column;height:var(--vvh,100dvh)}
+.app>.bar{flex:none}
+.shell{flex:1;min-height:0;display:flex}
+.shell>main{flex:1;min-width:0;height:auto}
+.shell>.list{overflow-y:auto;overscroll-behavior:contain;align-self:stretch;margin:0 auto}
+
+/* The new-thread view (`/new`): the thread bar, an empty space, and the composer: the chip row, then the box and
+   [send]. On a phone the composer sits at the bottom, where the chat's will be; from 1024 px it is a 720 px card in
+   the column's upper third. */
+.nt{display:flex;flex-direction:column;height:100dvh;max-width:100ch;margin:0 auto}
+.ntsp{flex:1}.nt .nc~.ntsp{display:none}
+.nc{flex-wrap:wrap;align-items:center}#composer.nc{align-items:flex-end}
+.nc>.hn,.nc>.err{flex-basis:100%}
+.chips{display:flex;gap:8px;flex-basis:100%;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:max-content;flex:0 1 auto;padding:0 12px;border:0;background:var(--bg);color:var(--fg);font-weight:400;box-shadow:inset 0 0 0 1px var(--edge)}
+.chip>span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.chip>i{font-style:normal;color:var(--mute)}
+.chip[aria-expanded=true]{box-shadow:inset 0 0 0 2px var(--l)}
+html[data-style=terminal] button.chip{gap:0;color:var(--l);text-transform:none}
+html[data-style=terminal] .chip>i{color:inherit;margin-left:1ch}
+@media (min-width:1024px){
+  .ntsp{flex:1 1 0}
+  .nt .nc{width:min(720px,100% - 24px);margin:0 auto;padding:12px;border:1px solid var(--edge);border-radius:var(--r-card)}
+  .nt .nc~.ntsp{display:block;flex:2.5 1 0}
+}
+
+/* The agent and folder sheets: popovers of radios in the composer's form. From the bottom on a phone (as tall as the
+   list, at most 80 %, over the scrim); from 1024 px a 420 px panel under its chip with no scrim. A row is --row tall,
+   the pick has the tick; a signed-out account is muted with [sign in] on its row. */
+.pop{position:fixed;inset:auto 0 0;width:auto;height:auto;max-width:none;max-height:80%;margin:0;padding:0;overflow:visible;color:inherit;flex-direction:column;background:var(--bg);border:0;border-top:1px solid var(--edge);border-radius:20px 20px 0 0;text-align:left}
+.pop:popover-open{display:flex}
+.pop::backdrop{background:var(--scrim)}
+.pop fieldset{border:0;margin:0;padding:0;min-width:0}
+.pop select{margin:8px 8px 0 0;color:var(--fg);background:var(--bg);border:1px solid var(--edge)}
+@media (min-width:1024px){
+  .pop::backdrop{background:none}
+  .pop{inset:auto;position-area:bottom span-right;margin-top:8px;width:420px;max-height:min(560px,60vh);border:1px solid var(--edge);border-radius:var(--r-card);box-shadow:0 8px 48px #0006}
+  @supports not (position-area:bottom){.pop{left:calc(50% - 210px);top:15%}}
+}
+html[data-style=terminal] .pop{border-radius:var(--r-card) var(--r-card) 0 0}
+@media (min-width:1024px){html[data-style=terminal] .pop{border-radius:var(--r-card)}}
+.pop .ch:first-of-type{margin-top:0}
+.pk{min-height:var(--row);height:var(--row)}
+.pk>label{display:flex;align-items:center;gap:8px;flex:1;min-width:0;height:100%;cursor:pointer}
+label.pk{cursor:pointer}
+.pk input{position:absolute;opacity:0;pointer-events:none}
+.pk:has(:focus-visible){outline:2px solid var(--l);outline-offset:-2px}
+.pk .sv{margin-left:auto}
+.pk .tk{display:none;margin-left:8px;flex:none}.pk:has(:checked) .tk{display:inline}
+.pk.so .sk,.pk.so>label{color:var(--mute);cursor:default}
+.fq{display:flex;gap:8px;padding:4px 0 8px}.fq input{flex:1;min-width:0;color:var(--fg);background:var(--card);border:1px solid var(--edge)}
+
+/* The chat right after send: your message, then the state line where the reply will come, in the theme's loading
+   word: `[sprite] saddling up · connecting claude · jk@work.com`. The reply replaces it. A failed connect puts the
+   error and [retry] there instead, and your message stays. */
+.cnx{display:flex;align-items:center;flex-wrap:wrap;gap:0 .5ch;min-height:var(--row);color:var(--mute);font-size:var(--fs-meta);white-space:normal}
+.cnx .thw{font-size:var(--fs)}
+.cnx[data-st=loading] .thw,.ldst,#st[data-st=loading]{color:var(--a)}
+.rsp.ld{width:32px}
+.cfl{align-self:stretch;padding:8px 12px 12px;background:var(--card);border:1px solid var(--r);border-radius:var(--r-card)}
+.cfl p{margin:0}.cfl .cnx{display:block;min-height:28px}.cfl .ds{margin:4px 0 8px;overflow-wrap:anywhere}
+html[data-style=terminal] .cfl{border:0;border-left:3px solid var(--r);border-radius:var(--r-card)}
+
+/* Settings › providers: one flat list, one --row row per account: the provider tag, the account (its email, else its
+   name), its state and one key. Each installed provider ends with [+ account]; one that isn't installed is one row. */
+.acr{display:flex;align-items:center;gap:8px;min-height:var(--row);border-bottom:1px solid var(--line)}
+.acr .sk{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.acr .st{flex:none;font-size:var(--fs-meta)}
+.ptg{flex:none;min-width:7ch;padding:2px 8px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--fg) 8%,transparent);font-size:var(--fs-meta);text-align:center}
+html[data-style=terminal] .ptg{min-width:7ch;padding:0;background:none;color:var(--p);text-align:left}
+.acr.add .sk,.acr.ni .sk{color:var(--mute)}
+.sh .hd.pvh{padding-left:4px}
 /* #38 theme packs: Settings › look › themes (native forms), a theme thread's bar and its live preview. */
 .thm{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:var(--hit);border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none}
 .thn{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.thm .thx{flex-basis:100%}.thx{border-bottom:1px solid var(--line)}.thm .thx{border:0}
@@ -259,7 +341,7 @@ html[data-style=terminal] .swa{border-radius:4px}
 .fi img{display:block;width:72px;height:72px;object-fit:cover;border-radius:8px}
 .fi:not(.im){display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 8px;border:1px solid var(--edge);border-radius:var(--r-row);overflow-wrap:anywhere}
 #picked{margin:0;padding:8px 12px 0;background:var(--card);border-top:1px solid var(--edge)}
-.pk{position:relative}.pk button{position:absolute;top:-6px;right:-6px;width:24px;min-height:24px;padding:0;border-radius:50%}.pk:not(:has(img)) button{position:static}
+.fpk{position:relative}.fpk button{position:absolute;top:-6px;right:-6px;width:24px;min-height:24px;padding:0;border-radius:50%}.fpk:not(:has(img)) button{position:static}
 .att{flex:none;cursor:pointer}
 #box{max-height:calc(6lh + 18px);overflow-y:auto}
 .vw{display:none;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#000e;align-items:center;justify-content:center}.vw:popover-open{display:flex}

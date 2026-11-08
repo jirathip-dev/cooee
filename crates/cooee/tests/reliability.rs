@@ -179,9 +179,13 @@ fn r7_page_loads_run_no_subprocess() {
     let before = calls();
     assert_eq!(before.1, "checked\n", "checked once, at start");
     for _ in 0..5 {
-        let (code, page) = cooee.get("/");
-        assert!(code == 200 && page.contains("fake-acp"), "{page}");
-        assert!(page.contains("Signed in"), "{page}");
+        assert_eq!(cooee.get("/").0, 200);
+        let (code, page) = cooee.get("/new");
+        assert!(
+            code == 200 && page.contains(r#"data-agent="fake-acp""#),
+            "{page}"
+        );
+        assert!(page.contains("✓ signed in"), "{page}");
         assert_eq!(cooee.get(&format!("/t/{id}")).0, 200);
     }
     assert_eq!(calls(), before);
@@ -204,14 +208,14 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
         let log = s.shed.cli_log();
         log.lines().filter(|l| l.ends_with(" agents")).count()
     };
-    let page = s.cooee.get("/").1;
+    let page = s.cooee.get("/new").1;
     assert!(
         page.contains(r#"<p class="err">"#) && page.contains("agents down"),
         "{page}"
     );
     s.shed.gate("agents-fails", false);
     for _ in 0..10 {
-        assert!(s.cooee.get("/").1.contains("agents down"));
+        assert!(s.cooee.get("/new").1.contains("agents down"));
     }
     assert_eq!(lists(), 1, "{}", s.shed.cli_log());
 
@@ -220,7 +224,7 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
     assert_eq!(code, 200, "{body}");
     assert_eq!(lists(), 2);
     for _ in 0..10 {
-        let page = s.cooee.get("/").1;
+        let page = s.cooee.get("/new").1;
         assert!(
             page.contains("fake-acp") && !page.contains("agents down"),
             "{page}"
@@ -239,7 +243,7 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
         err.contains("cooee: kept the agent list: ") && err.contains("agents down"),
         "{err}"
     );
-    let page = s.cooee.get("/").1;
+    let page = s.cooee.get("/new").1;
     assert!(
         page.contains("fake-acp") && !page.contains("agents down"),
         "{page}"
@@ -516,4 +520,105 @@ fn r21_an_answer_to_a_gone_session_says_not_delivered() {
         (status, body.as_str()),
         (410, "Not delivered: this thread's agent is gone.")
     );
+}
+
+/// #48: a start from the page answers at once: listed `connecting`, its first message pending (no item yet), and the
+/// agent started behind it; once shed takes the message it is one item, sent once, and the state moves on.
+#[test]
+fn a_background_start_answers_before_the_agent_runs_and_sends_once() {
+    let s = setup("start-later");
+    s.shed.gate("hold-run", true);
+    let mut new = start(&s, "hi there", "later");
+    new["background"] = json!(true);
+    let (status, body) = s.cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = id_of(&body);
+    let slice = s.cooee.json(&format!("/threads/{id}/messages"));
+    assert_eq!(slice["turn"]["state"], "connecting", "{slice}");
+    assert_eq!(slice["items"], json!([]), "{slice}");
+    assert_eq!(
+        slice["pending"],
+        json!({ "text": "hi there", "random_id": "later" })
+    );
+    assert_eq!(listed(&s.cooee), std::slice::from_ref(&id));
+    // The same start again while it connects: the same thread, nothing started twice.
+    let (_, again) = s.cooee.post("/threads", &new);
+    assert_eq!(id_of(&again), id);
+    s.shed.gate("hold-run", false);
+    until("the first message went", || {
+        prompts(&s.shed, &id).len() == 1
+    });
+    until("it is an item", || {
+        let slice = s.cooee.json(&format!("/threads/{id}/messages"));
+        slice["items"][0]["text"] == "hi there"
+            && slice.get("pending").is_none()
+            && slice["turn"]["state"] != "connecting"
+    });
+    assert_eq!((runs(&s.shed), prompts(&s.shed, &id).len()), (1, 1));
+}
+
+/// #48: a background start that fails stays listed, `unconnected` with why; a retry starts it again and sends the
+/// first message once, its terminal (which came up) never started twice.
+#[test]
+fn a_failed_background_start_says_why_and_a_retry_sends_once() {
+    let s = setup("start-later-fails");
+    s.shed.gate("ready-timeout", true);
+    let mut new = start(&s, "hi", "fails");
+    new["background"] = json!(true);
+    let (status, body) = s.cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = id_of(&body);
+    let messages = format!("/threads/{id}/messages");
+    until("the start failed", || {
+        s.cooee.json(&messages)["turn"]["state"] == "unconnected"
+    });
+    let slice = s.cooee.json(&messages);
+    let why = slice["turn"]["note"].as_str().unwrap();
+    // Said with the provider's name, never the agent's id.
+    assert!(
+        why.starts_with("fake stopped: ") && !why.contains("fake-acp"),
+        "{slice}"
+    );
+    assert_eq!(
+        slice["pending"]["text"], "hi",
+        "the message is kept: {slice}"
+    );
+    assert_eq!(listed(&s.cooee), std::slice::from_ref(&id));
+    assert_eq!(prompts(&s.shed, &id), Vec::<String>::new());
+
+    s.shed.gate("ready-timeout", false);
+    let (status, body) = s.cooee.post(&format!("/threads/{id}/retry"), &json!({}));
+    assert_eq!(status, 200, "{body}");
+    until("the retry sent it", || prompts(&s.shed, &id).len() == 1);
+    until("it is an item", || {
+        s.cooee.json(&messages)["items"][0]["text"] == "hi"
+    });
+    // A second retry once it went: nothing more.
+    s.cooee.post(&format!("/threads/{id}/retry"), &json!({}));
+    thread::sleep(Duration::from_millis(200));
+    assert_eq!((runs(&s.shed), prompts(&s.shed, &id).len()), (1, 1));
+}
+
+/// #48: a start with no folder runs in the thread's own scratch folder, `<data>/scratch/<id>`, made for it; it is kept
+/// with no folder and said as `scratch` (the list's card, the thread's bar), never as its path.
+#[test]
+fn a_start_with_no_folder_runs_in_its_own_scratch_folder() {
+    let s = setup("scratch");
+    let new =
+        json!({ "agent": "fake-acp", "text": "hi", "random_id": "scratch", "background": true });
+    let (status, body) = s.cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let id = id_of(&body);
+    until("the first message went", || {
+        prompts(&s.shed, &id).len() == 1
+    });
+    let dir = s.dir.join("data/scratch").join(&id);
+    assert!(dir.is_dir(), "{}", dir.display());
+    let cwd = format!("--cwd {}", dir.display());
+    assert!(s.shed.cli_log().contains(&cwd), "{}", s.shed.cli_log());
+    let (_, list) = s.cooee.get("/");
+    assert!(list.contains("<b>scratch</b>"), "{list}");
+    let (_, page) = s.cooee.get(&format!("/t/{id}"));
+    assert!(page.contains(" · scratch · "), "{page}");
+    assert!(!page.contains("data/scratch"), "{page}");
 }

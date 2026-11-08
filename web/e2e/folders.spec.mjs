@@ -39,10 +39,11 @@ test("Settings › Folders: browse from home, add a root and remove it", async (
   await expect(sheet.locator(".lrw .sk", { hasText: `~/${folder}` })).toHaveCount(2);
   await shot(page, info, "folders-added");
   // Closing reloads the page: the picker lists the new root.
+  const reloaded = page.waitForEvent("load");
   await sheet.getByRole("button", { name: "close" }).click();
-  await page.waitForLoadState("load");
-  await page.goto("/#new");
-  await expect(page.getByRole("radio", { name: `~/${folder}`, exact: true })).toBeAttached();
+  await reloaded;
+  await page.goto("/new");
+  await expect(page.locator("#sh-folder .sk", { hasText: new RegExp(`^~/${folder}$`) })).toBeAttached();
 
   await page.getByRole("button", { name: "settings" }).click();
   await page.locator("#sheet").getByRole("button", { name: "roots" }).click();
@@ -51,20 +52,28 @@ test("Settings › Folders: browse from home, add a root and remove it", async (
   await expect(sheet.locator(".lrw .sk", { hasText: `~/${folder}` })).toHaveCount(1);
 });
 
-test("new-thread picker: search finds a sub-folder, [+ new folder] makes one in a root and picks it", async ({ page }, info) => {
+test("the folder sheet: search finds a sub-folder, [+ new folder] makes one in a root and picks it", async ({ page }, info) => {
   const name = `new-${info.project.name}`;
-  await page.goto("/#new");
-  const deep = page.getByRole("radio", { name: "~/root/project/deep-src" });
+  await page.goto("/new");
+  const sheet = page.locator("#sh-folder");
+  const row = (path) => sheet.locator("label", { has: page.locator(".sk", { hasText: new RegExp(`^${path}$`) }) });
+  await page.locator("#chip-folder").click();
+  const deep = row("~/root/project/deep-src");
   await expect(deep).toBeHidden();
   await page.getByLabel("search folders").fill("deep");
   await expect(deep).toBeVisible();
-  await expect(page.getByRole("radio", { name: "~/root", exact: true })).toBeHidden();
+  await expect(row("~/root")).toBeHidden();
   await shot(page, info, "picker-search");
   await page.getByLabel("search folders").fill("");
-  await page.getByRole("radio", { name: "~/root", exact: true }).check();
+  // A pick sets the chip and closes the sheet.
+  await row("~/root").click();
+  await expect(sheet).toBeHidden();
+  await expect(page.locator("#chip-folder")).toHaveText(/^root/);
+  await page.locator("#chip-folder").click();
   page.once("dialog", (d) => d.accept(name));
   await page.getByRole("button", { name: "+ new folder" }).click();
-  await expect(page.getByRole("radio", { name: `~/root/${name}` })).toBeChecked();
+  await expect(page.locator("#chip-folder")).toHaveText(new RegExp(`^${name}`));
+  await expect(page.locator(`#nc input[name=folder][value$="/root/${name}"]`)).toBeChecked();
   await expect(page.locator("#new-err")).toBeHidden();
   await shot(page, info, "picker-new-folder");
   await audit(page);

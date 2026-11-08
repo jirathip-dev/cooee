@@ -6,6 +6,9 @@
 //   [data-st=working|needs|done|fail|idle|ended]  a state: the sprite (data-tool=edit|read|run while working) or the
 //                                                 ascii figure, then the theme word (data-plain adds `· plain word`);
 //                                                 figures none: a dot and the plain word
+//   [data-st=loading]                             a thread connecting (#48): the loading figure at line height and
+//                                                 the theme's loading word, else `connecting`; data-who adds
+//                                                 `· connecting <who>` (`<who>` when the word is `connecting`)
 //   [data-w=<key>]                                a theme word (data-plain adds `· plain word`)
 //   [data-s=loading|empty]                        the theme's 132 × 100 figure (figures none: none)
 //   [data-open=look|settings|folders]             opens that sheet (#settings/<section> opens Settings there)
@@ -101,7 +104,7 @@ const word = (k: string): string => theme().words[k] || PLAIN[k] || k;
 const url = (file: string): string => new URL(`/look/${name()}/${file}`, location.href).href;
 
 const svg = (id: string, cls: string): string => {
-  const box = cls === "big" ? "0 0 132 100" : "0 0 24 24";
+  const box = cls === "big" || id === "loading" ? "0 0 132 100" : "0 0 24 24";
   return `<svg class="${cls}" viewBox="${box}" aria-hidden="true"><use href="/look/${name()}/sprites.svg#s-${id}"/></svg>`;
 };
 
@@ -114,10 +117,20 @@ function fill(e: HTMLElement): void {
     "plain" in e.dataset && said !== PLAIN[k] ? `<small class="pw"> · ${PLAIN[k]}</small>` : "";
   if (st !== undefined) {
     const id = st === "working" ? e.dataset.tool || "edit" : st;
+    const ld = st === "loading";
     const mark =
-      figs() === "none" ? '<i class="sd"></i>' : figs() === "ascii" ? `${ascii(id, "rsa")} ` : svg(id, "rsp");
-    const said = figs() === "none" ? (PLAIN[st] ?? "") : word(st);
-    e.innerHTML = PLAIN[st] ? `${mark}<span class="thw">${esc(said)}</span>${plainOf(st, said)}` : "";
+      figs() === "none"
+        ? '<i class="sd"></i>'
+        : figs() === "ascii"
+          ? `${ascii(ld ? "read" : id, "rsa")} `
+          : svg(id, ld ? "rsp ld" : "rsp");
+    const own = theme().words.loading;
+    const said = ld ? (figs() === "none" ? "" : own) || "connecting" : figs() === "none" ? (PLAIN[st] ?? "") : word(st);
+    const who =
+      ld && e.dataset.who !== undefined
+        ? `<span> ${said !== "connecting" ? "· connecting " : ""}${esc(e.dataset.who)}</span>`
+        : "";
+    e.innerHTML = PLAIN[st] ? `${mark}<span class="thw">${esc(said)}</span>${plainOf(st, said)}${who}` : "";
   } else if (w) {
     e.innerHTML = esc(word(w)) + plainOf(w, word(w));
   } else if (s) {
@@ -186,7 +199,7 @@ function paint(): void {
 // A change keeps the reader where they were: the row at the top of the view stays there, cut at the same share
 // of its height, however much the new style grows or shrinks it.
 function hold(change: () => void): void {
-  const box = document.getElementById("msgs");
+  const box = document.getElementById("msgs") ?? $("main.list");
   const rows = box ? box.children : document.querySelectorAll(".fh,.tr");
   const top = box ? box.getBoundingClientRect().top : 0;
   const anchor = [...rows].find((r) => r.getBoundingClientRect().bottom > top);
@@ -367,6 +380,10 @@ for (const s of sheets()) {
 function deep(): void {
   const m = location.hash.match(/^#settings(?:\/([\w-]+))?$/);
   if (!m) return;
+  if (m[1] === "providers") {
+    show("providers");
+    return;
+  }
   show("settings");
   if (m[1]) $(`#s-${m[1]}`)?.scrollIntoView({ block: "start" });
 }

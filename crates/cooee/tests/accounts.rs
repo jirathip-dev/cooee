@@ -1,6 +1,7 @@
 //! Provider accounts end to end with fake CLIs: `cooee serve` against the fake shed (tests/support), whose plain
 //! terminals really run the fake login. [+ account] runs the login in a new folder, listed only once it succeeds;
-//! the default and a thread's pick start its agent with that folder in the provider's variable; [sign out] runs the
+//! a thread's pick starts its agent with that folder in the provider's variable, and the composer offers the account
+//! signed in (#48: no default account); [sign out] runs the
 //! logout for the folder, then removes it; a JSON status shows as a plain row; no token reaches cooee's files, its
 //! log or what it sends shed.
 
@@ -124,7 +125,7 @@ impl Setup {
     }
 
     fn page(&self) -> String {
-        self.cooee.get("/").1
+        self.cooee.get("/new").1
     }
 
     /// Starts a thread on `fake-acp` with `account` (none: the default); returns its id and its `shed run` line.
@@ -171,14 +172,13 @@ impl Setup {
 }
 
 #[test]
-fn add_account_listed_only_on_success_default_and_thread_pick_spawn_with_its_folder_sign_out_removes_it()
- {
+fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it() {
     let s = setup("accounts");
     let page = s.page();
     assert!(
-        page.contains(r#"data-account="""#)
-            && page.contains("<b>System default</b>")
-            && page.contains("+ account"),
+        page.contains(r#"<div class="acr" data-provider="fake" data-account=""><span class="ptg">fake</span><span class="sk">main login</span><span class="st m">signed out</span>"#)
+            && page.contains("+ account")
+            && !page.contains("System default"),
         "{page}"
     );
 
@@ -203,13 +203,11 @@ fn add_account_listed_only_on_success_default_and_thread_pick_spawn_with_its_fol
     let folder = s.accounts().join("account-2");
     assert!(folder.join("creds").is_file() && !pending.exists());
     let page = s.page();
-    let row = &page[page.find(r#"data-account="account-2""#).unwrap()..];
-    let row = &row[..row.find("</div></div>").unwrap()];
     assert!(
-        row.contains("<b>account-2</b><span class=\"g\">✓ signed in</span>")
-            && row.contains("account-2@example.com · last sign-in just now")
-            && row.contains("make default"),
-        "{row}"
+        page.contains(r#"data-account="account-2"><span class="ptg">fake</span><span class="sk">account-2@example.com</span><span class="st g">✓ signed in</span>"#)
+            && !page.contains("make default")
+            && !page.contains("default for new threads"),
+        "{page}"
     );
     // The page's own data (the looks, #49) aside.
     let (head, rest) = page
@@ -220,37 +218,31 @@ fn add_account_listed_only_on_success_default_and_thread_pick_spawn_with_its_fol
         !page.contains("loggedIn") && !page.contains("{\""),
         "no raw JSON: {page}"
     );
-    // The system default is signed out, and still the default.
-    let (_, line) = s.thread(None);
-    assert!(!line.contains("env"), "{line}");
-
-    // The default: new threads start with its folder.
-    let (status, body) = s
-        .cooee
-        .post("/logins/fake/default", &json!({ "account": "account-2" }));
-    assert_eq!(status, 200, "{body}");
-    assert!(
-        s.page()
-            .contains(r#"<option value="account-2" selected="">account-2</option>"#),
-        "{}",
-        s.page()
-    );
+    // No account named: the system default, no folder.
     let (id, line) = s.thread(None);
-    assert!(
-        line.ends_with(&format!(" -- env FAKE_HOME={} fake-acp", folder.display())),
-        "{line}"
-    );
-    let (_, chat) = s.cooee.get(&format!("/t/{id}"));
-    assert!(chat.contains("fake-acp · account-2 · "), "{chat}");
-    // A thread's own pick: the system default, no folder.
-    let (id, line) = s.thread(Some(""));
     assert!(!line.contains("env"), "{line}");
     assert!(
         s.cooee
             .get(&format!("/t/{id}"))
             .1
-            .contains("fake-acp · System default · ")
+            .contains("fake · main login · ")
     );
+    // The composer never starts on the signed-out system default it was last used with: the signed-in account.
+    let page = s.page();
+    let pick = &page[page.find(r#"value="fake-acp/account-2""#).unwrap()..];
+    assert!(
+        pick[..pick.find('>').unwrap()].contains(r#"checked="""#),
+        "{pick}"
+    );
+    // A thread's own pick: that account's folder.
+    let (id, line) = s.thread(Some("account-2"));
+    assert!(
+        line.ends_with(&format!(" -- env FAKE_HOME={} fake-acp", folder.display())),
+        "{line}"
+    );
+    let (_, chat) = s.cooee.get(&format!("/t/{id}"));
+    assert!(chat.contains("fake · account-2@example.com · "), "{chat}");
+    assert!(!chat.contains(">fake-acp"), "no agent id on screen: {chat}");
     assert_eq!(
         s.cooee
             .post("/threads", &json!({ "agent": "fake-acp", "account": "nope", "folder": s.dir.join("root"), "text": "hi", "random_id": "r" }))
@@ -269,11 +261,7 @@ fn add_account_listed_only_on_success_default_and_thread_pick_spawn_with_its_fol
     );
     assert!(!folder.exists());
     let page = s.page();
-    assert!(
-        !page.contains(r#"data-account="account-2""#)
-            && page.contains(r#"<option value="" selected="">"#),
-        "{page}"
-    );
+    assert!(!page.contains(r#"data-account="account-2""#), "{page}");
 
     let written = s.written();
     assert!(!written.contains(&s.token), "a token was written");
