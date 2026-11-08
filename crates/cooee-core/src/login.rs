@@ -5,10 +5,13 @@ use std::{
     env,
     io::Read,
     path::Path,
-    process::{Command, Stdio},
+    process::{Child, Command, Stdio},
     thread,
     time::{Duration, Instant},
 };
+
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 
 use serde::{Deserialize, Serialize};
 
@@ -167,7 +170,8 @@ impl Provider {
     }
 
     /// Runs `cmd` (10 s at most) for the account in `home`: whether it exited 0, its stdout and its stderr; none when
-    /// it timed out.
+    /// it timed out. On unix it leads its own process group, so a timeout also ends what it started (#105: `security`
+    /// on a locked Keychain).
     fn run(
         &self,
         cmd: &[String],
@@ -180,6 +184,8 @@ impl Provider {
         if let Some((var, dir)) = self.env(home) {
             command.env(var, dir);
         }
+        #[cfg(unix)]
+        command.process_group(0);
         let child = command
             .args(args)
             .stdin(Stdio::null())
@@ -196,13 +202,14 @@ impl Provider {
         };
         let stdout = drain(child.stdout.take().map(|r| Box::new(r) as _));
         let stderr = drain(child.stderr.take().map(|r| Box::new(r) as _));
-        let deadline = Instant::now() + Duration::from_secs(10);
+        let deadline = Instant::now() + LIMIT;
         let ok = loop {
             match child.try_wait() {
                 Ok(Some(status)) => break status.success(),
                 Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(20)),
+                // The drain threads are left to end on their own: the group's death closes the pipes' write ends.
                 _ => {
-                    let _ = child.kill();
+                    kill_group(&mut child);
                     let _ = child.wait();
                     return Ok(None);
                 }
@@ -314,6 +321,29 @@ impl Status {
             usage: None,
         }
     }
+}
+
+/// How long a provider command may run (shorter in tests, so the timeout test is quick).
+const LIMIT: Duration = Duration::from_secs(if cfg!(test) { 2 } else { 10 });
+
+/// Ends `child` and, on unix, its whole process group (it leads it): SIGTERM, then SIGKILL 200 ms later. It is not
+/// yet waited, so its pid (the group's id) can't be reused meanwhile.
+fn kill_group(child: &mut Child) {
+    #[cfg(unix)]
+    {
+        let group = format!("-{}", child.id());
+        let kill = |sig| {
+            Command::new("kill")
+                .args([sig, "--", &group])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+        };
+        let _ = kill("-TERM");
+        thread::sleep(Duration::from_millis(200));
+        let _ = kill("-KILL");
+    }
+    let _ = child.kill();
 }
 
 /// `text` on one line, redacted, at most 80 characters.
@@ -496,15 +526,38 @@ mod tests {
         );
     }
 
-    /// #106: a status command that hangs is killed after 10 s and reads as unknown, never as signed out.
+    #[cfg(unix)]
     #[test]
-    fn a_status_command_that_times_out_is_unknown() {
+    fn a_timeout_kills_the_command_and_what_it_started() {
+        let pids = env::temp_dir().join(format!("cooee-hung-{}", std::process::id()));
         let p = Provider {
-            status: vec!["sleep".to_owned(), "30".to_owned()],
+            status: ["sh", "-c", r#"sleep 600 & echo $$ $! > "$H"; sleep 600"#]
+                .map(String::from)
+                .into(),
+            home: "H".to_owned(),
             ..Provider::default()
         };
-        let start = Instant::now();
-        assert_eq!(p.check(None), Status::unknown(TIMED_OUT));
-        assert!(start.elapsed() < Duration::from_secs(15));
+        let started = Instant::now();
+        let s = p.check(Some(&pids));
+        assert!(started.elapsed() < LIMIT + Duration::from_secs(2));
+        // #106: it reads as unknown, never as signed out.
+        assert_eq!(s, Status::unknown(TIMED_OUT));
+        let pids = std::fs::read_to_string(&pids).unwrap();
+        let alive = |pid: &str| {
+            Command::new("kill")
+                .args(["-0", pid])
+                .stderr(Stdio::null())
+                .status()
+                .unwrap()
+                .success()
+        };
+        // The orphaned child is reaped by init, so give it a moment to leave the process table.
+        let gone = Instant::now() + Duration::from_secs(2);
+        for pid in pids.split_whitespace() {
+            while alive(pid) && Instant::now() < gone {
+                thread::sleep(Duration::from_millis(20));
+            }
+            assert!(!alive(pid), "pid {pid} still alive");
+        }
     }
 }
