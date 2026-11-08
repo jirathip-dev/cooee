@@ -1,0 +1,3 @@
+cargo fmt --all --check
+topcoat fmt --check $(git ls-files 'crates/*.rs' 'web/*.rs')
+checked 57 inputs (0 need formatting), 0 failed in 131ms

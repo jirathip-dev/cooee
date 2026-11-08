@@ -1,0 +1,38 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.27
+   Compiling serde_core v1.0.229
+   Compiling typenum v1.20.1
+   Compiling libc v0.2.191
+   Compiling zmij v1.0.23
+   Compiling serde_json v1.0.154
+   Compiling serde v1.0.229
+   Compiling thiserror v2.0.21
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling const-oid v0.10.2
+   Compiling winnow v1.0.5
+   Compiling cfg-if v1.0.5
+   Compiling toml_parser v1.1.5+spec-1.1.0
+   Compiling hybrid-array v0.4.15
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling digest v0.11.3
+   Compiling syn v3.0.9
+   Compiling toml_datetime v1.1.2+spec-1.1.0
+   Compiling serde_spanned v1.1.2
+   Compiling toml v1.2.0+spec-1.1.0
+   Compiling cpufeatures v0.3.1
+   Compiling sha2 v0.11.1
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.21
+   Compiling shed-proto v0.0.0 (https://github.com/jirathip-dev/shed?rev=f026a4d35a2705e560a52515da8e3a5d32e4d659#f026a4d3)
+   Compiling cooee-core v0.1.0 (/Users/jirathip/.local/share/herdsman/work/cooee/issue-87/crates/cooee-core)
+   Compiling cooee-machines v0.1.0 (/Users/jirathip/.local/share/herdsman/work/cooee/issue-87/crates/cooee-machines)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.23s
+     Running unittests src/lib.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-87/debug/deps/cooee_machines-e46606cc8c1406d9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
