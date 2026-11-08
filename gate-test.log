@@ -1,0 +1,250 @@
+cargo test --workspace --locked
+   Compiling cooee-terminal v0.1.0 (/Users/jirathip/.local/share/herdsman/work/cooee/issue-100/crates/cooee-terminal)
+   Compiling cooee-web v0.1.0 (/Users/jirathip/.local/share/herdsman/work/cooee/issue-100/web)
+   Compiling cooee-machines v0.1.0 (/Users/jirathip/.local/share/herdsman/work/cooee/issue-100/crates/cooee-machines)
+   Compiling cooee-core v0.1.0 (/Users/jirathip/.local/share/herdsman/work/cooee/issue-100/crates/cooee-core)
+   Compiling cooee-server v0.1.0 (/Users/jirathip/.local/share/herdsman/work/cooee/issue-100/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jirathip/.local/share/herdsman/work/cooee/issue-100/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.41s
+     Running unittests src/main.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/cooee-54eb1a62cf566b92)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/accounts.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/accounts-a3214a94b6760652)
+
+running 2 tests
+test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.79s
+
+     Running tests/chat.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/chat-ef1a77d01ff98649)
+
+running 10 tests
+test fake_shed_server ... ignored, a server for web/e2e, not a test
+test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+test closing_a_thread_kills_and_removes_its_terminal ... ok
+test a_shed_of_another_version_is_refused_naming_both_versions ... ok
+test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+test scene_draws_the_agents_as_sprites_and_the_current_ones_chats_as_chips ... ok
+
+test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 1.54s
+
+     Running tests/chat_first.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/chat_first-efacab0587b9cd02)
+
+running 3 tests
+test a_new_agent_is_saved_as_a_profile_and_listed ... ok
+test a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns ... ok
+test an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_picked ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.60s
+
+     Running tests/cli.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/cli-c2fac7364df03c2e)
+
+running 4 tests
+test version ... ok
+test listening_beyond_localhost_needs_allowed_hosts ... ok
+test unknown_args_and_config_keys_fail ... ok
+test serve_listens_on_localhost_at_the_configured_port ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests/first_run.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/first_run-d90029a1429754d7)
+
+running 3 tests
+test with_no_roots_a_chat_still_starts_in_scratch_and_use_a_folder_says_how_to_add_one ... ok
+test with_one_root_and_nothing_in_it_a_thread_starts_in_the_root ... ok
+test no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.03s
+
+     Running tests/folders.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/folders-a5eb59201ab3695c)
+
+running 5 tests
+test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+test picker_lists_sub_folders_two_levels_deep_never_symlinks ... ok
+test browse_lists_only_folders_inside_home ... ok
+test add_and_remove_root_persists_in_the_config ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.23s
+
+     Running tests/instances.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/instances-1a5bb782bd4dc73c)
+
+running 3 tests
+test install_writes_a_plist_and_prints_the_commands ... ok
+test doctor_reports_a_missing_shed ... ok
+test two_instances_never_see_each_others_threads_or_devices ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running tests/login.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/login-ff0e23e594faeef5)
+
+running 2 tests
+test a_login_left_for_10_minutes_is_killed_and_removed ... ok
+test login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.11s
+
+     Running tests/machines.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/machines-46b175f34029f341)
+
+running 1 test
+test the_machines_tab_shows_each_machine_and_a_dot_while_one_is_offline ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.03s
+
+     Running tests/model.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/model-53b69412808ed476)
+
+running 1 test
+test row_34_a_thread_starts_on_its_pick_and_the_chips_change_it ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.34s
+
+     Running tests/pairing.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/pairing-f1ba095f84c1fb81)
+
+running 15 tests
+test five_wrong_codes_a_minute_close_the_boxes_for_that_address ... ok
+test a_foreign_host_or_origin_is_refused_even_paired ... ok
+test a_declined_request_tells_the_new_device_who_said_no ... ok
+test a_wrong_expired_or_reused_code_says_so ... ok
+test a_passkey_signs_a_device_back_in_and_can_be_removed ... ok
+test devices_are_listed_and_removed_from_the_phone ... ok
+test alerts_status_test_and_off_are_this_devices ... ok
+test a_qr_code_is_prefilled_and_pairs_at_once ... ok
+test a_report_is_kept_and_listed ... ok
+test pair_use_remove_and_only_the_hash_on_disk ... ok
+test push_subscriptions_are_checked_and_tied_to_the_device ... ok
+test the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it ... ok
+test the_new_calls_need_a_paired_device_but_pairing_requests_do_not ... ok
+test unpaired_reads_and_writes_are_refused ... ok
+test a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.58s
+
+     Running tests/perf.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/perf-04dd3370af248722)
+
+running 4 tests
+test cooee_perf_turns_a_log_into_the_table ... ok
+test first_token_is_logged_once_per_prompt_and_nothing_private_is ... ok
+test requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn ... ok
+test a_fast_request_under_the_default_threshold_is_debug_only ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.86s
+
+     Running tests/plugin_manager.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/plugin_manager-dca56ff2324e7fc2)
+
+running 6 tests
+test add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it ... ok
+test only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issue ... ok
+test an_index_plugin_has_no_warning_and_a_url_plugin_is_not_reviewed ... ok
+test remove_stops_it_and_keeps_the_checkout_unless_purged ... ok
+test improve_makes_a_branch_an_approval_builds_and_swaps_it_in_and_it_rolls_back ... ok
+test a_failed_update_keeps_the_old_build_and_a_good_one_swaps_in ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.72s
+
+     Running tests/plugins.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/plugins-8b53764c39f2d6fc)
+
+running 13 tests
+test a_plugin_with_no_token_configured_does_not_start ... ok
+test the_docs_show_the_example_plugin_the_ui_tests_run ... ok
+test a_plugin_without_its_token_is_refused ... ok
+test a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab ... ok
+test a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin ... ok
+test row_31_a_conductors_answer_takes_one_change_from_the_owner ... ok
+test row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale ... ok
+test row_30_choice_rows_recommended_first_other_text_and_who_and_when ... ok
+test row_33_a_secrets_value_reaches_its_plugin_only ... ok
+test row_35_handoff_chips_flow_back_lines_and_pick_a_thread ... ok
+test a_backends_event_stream_comes_through_the_proxy ... ok
+test the_proxy_sends_the_plugins_own_token_and_never_the_cookie ... ok
+test the_tab_frames_the_module_in_a_sandbox ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.71s
+
+     Running tests/profiles.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/profiles-39797bf26db7aebf)
+
+running 2 tests
+test plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused ... ok
+test a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_it ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.44s
+
+     Running tests/reliability.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/reliability-b14554b7feeebec5)
+
+running 15 tests
+test r14_a_crash_between_start_and_send_is_recovered_once ... ok
+test r17_paths_in_text_are_never_files_served ... ok
+test a_background_start_answers_before_the_agent_runs_and_sends_once ... ok
+test r11_a_slow_start_is_adopted_once ... ok
+test a_failed_background_start_says_why_and_a_retry_sends_once ... ok
+test a_start_with_no_folder_runs_in_its_own_scratch_folder ... ok
+test r13_malformed_input_or_config_is_denied_with_a_reason ... ok
+test r10_an_ask_made_during_the_start_is_listed_and_answerable ... ok
+test agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list ... ok
+test r16_a_repeated_id_is_one_row_however_often_it_is_refreshed ... ok
+test r21_an_answer_to_a_gone_session_says_not_delivered ... ok
+test r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch ... ok
+test r7_page_loads_run_no_subprocess ... ok
+test r1_a_hung_keychain_is_a_clear_error_within_5_s_and_blocks_nothing ... ok
+test r20_a_stuck_delivery_never_holds_the_next_one ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 22.67s
+
+     Running tests/setup.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/setup-3f44073e69e9478e)
+
+running 6 tests
+test install_sh_checks_its_tools_then_installs_cooee_and_runs_setup ... ok
+test dry_run_writes_nothing_and_prints_every_command ... FAILED
+test a_doctor_failure_stops_with_its_fix ... FAILED
+test a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them ... FAILED
+test an_existing_config_keeps_its_keys ... FAILED
+test setup_installs_the_first_party_themes_chosen_from_the_index ... FAILED
+
+failures:
+
+---- dry_run_writes_nothing_and_prints_every_command stdout ----
+
+thread 'dry_run_writes_nothing_and_prints_every_command' (31886999) panicked at crates/cooee/tests/setup.rs:275:5:
+Output { status: ExitStatus(unix_wait_status(256)), stdout: "shed f026a4d:\n  would run: cargo install --locked --git https://github.com/jirathip-dev/shed --rev f026a4d35a2705e560a52515da8e3a5d32e4d659 shed\nshed service dev.shed.serve:\n  would run: shed install\n  would run: launchctl bootstrap gui/501 /var/folders/4k/fbv06j2j5bbd3h4wgbwk1ccm0000gn/T/cooee-su-dry-93438/Library/LaunchAgents/dev.shed.serve.plist\n", stderr: "cooee: no port + 1000 for the terminal plugin\n" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- a_doctor_failure_stops_with_its_fix stdout ----
+
+thread 'a_doctor_failure_stops_with_its_fix' (31886996) panicked at crates/cooee/tests/setup.rs:316:5:
+cooee: no port + 1000 for the terminal plugin
+
+
+---- a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them stdout ----
+
+thread 'a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them' (31886997) panicked at crates/cooee/tests/setup.rs:204:5:
+Output { status: ExitStatus(unix_wait_status(256)), stdout: "shed f026a4d:\n  $ cargo install --locked --git https://github.com/jirathip-dev/shed --rev f026a4d35a2705e560a52515da8e3a5d32e4d659 shed\nshed service dev.shed.serve:\n  $ shed install\nwrote the job\n  $ launchctl bootstrap gui/501 /var/folders/4k/fbv06j2j5bbd3h4wgbwk1ccm0000gn/T/cooee-su-fresh-93438/Library/LaunchAgents/dev.shed.serve.plist\n", stderr: "cooee: no port + 1000 for the terminal plugin\n" }
+
+---- an_existing_config_keeps_its_keys stdout ----
+
+thread 'an_existing_config_keeps_its_keys' (31886998) panicked at crates/cooee/tests/setup.rs:335:5:
+Output { status: ExitStatus(unix_wait_status(256)), stdout: "shed f026a4d:\n  $ cargo install --locked --git https://github.com/jirathip-dev/shed --rev f026a4d35a2705e560a52515da8e3a5d32e4d659 shed\nshed service dev.shed.serve:\n  $ shed install\nwrote the job\n  $ launchctl bootstrap gui/501 /var/folders/4k/fbv06j2j5bbd3h4wgbwk1ccm0000gn/T/cooee-su-keep-93438/Library/LaunchAgents/dev.shed.serve.plist\n", stderr: "cooee: no port + 1000 for the terminal plugin\n" }
+
+---- setup_installs_the_first_party_themes_chosen_from_the_index stdout ----
+
+thread 'setup_installs_the_first_party_themes_chosen_from_the_index' (31887001) panicked at crates/cooee/tests/setup.rs:411:5:
+Output { status: ExitStatus(unix_wait_status(256)), stdout: "shed f026a4d:\n  $ cargo install --locked --git https://github.com/jirathip-dev/shed --rev f026a4d35a2705e560a52515da8e3a5d32e4d659 shed\nshed service dev.shed.serve:\n  $ shed install\nwrote the job\n  $ launchctl bootstrap gui/501 /var/folders/4k/fbv06j2j5bbd3h4wgbwk1ccm0000gn/T/cooee-su-themes-93438/Library/LaunchAgents/dev.shed.serve.plist\n", stderr: "cooee: no port + 1000 for the terminal plugin\n" }
+
+
+failures:
+    a_doctor_failure_stops_with_its_fix
+    a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them
+    an_existing_config_keeps_its_keys
+    dry_run_writes_nothing_and_prints_every_command
+    setup_installs_the_first_party_themes_chosen_from_the_index
+
+test result: FAILED. 1 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.59s
+
+error: test failed, to rerun pass `-p cooee --test setup`
+error: recipe `test` failed on line 14 with exit code 101

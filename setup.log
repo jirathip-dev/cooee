@@ -1,0 +1,13 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running tests/setup.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-100/debug/deps/setup-3f44073e69e9478e)
+
+running 6 tests
+test install_sh_checks_its_tools_then_installs_cooee_and_runs_setup ... ok
+test dry_run_writes_nothing_and_prints_every_command ... ok
+test an_existing_config_keeps_its_keys ... ok
+test a_doctor_failure_stops_with_its_fix ... ok
+test a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them ... ok
+test setup_installs_the_first_party_themes_chosen_from_the_index ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.03s
+
