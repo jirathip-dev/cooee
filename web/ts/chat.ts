@@ -467,18 +467,23 @@ const cleared = (thread: string, read: number): void => {
 
 // Alerts, truthfully: on only when this browser has a subscription the server keeps for this device. The 🔔 and a
 // dot on ⚙ show where push works and isn't on; Settings' alerts section turns them on or off and sends a test.
-type Alerts = { state: "unsupported" | "blocked" | "off" | "on"; sub?: PushSubscription | null };
+type Alerts = { state: "unsupported" | "blocked" | "off" | "on"; sub?: PushSubscription | null; why?: string | null };
 async function alertState(): Promise<Alerts> {
   if (!("PushManager" in window) || !navigator.serviceWorker) return { state: "unsupported" };
   if (Notification.permission === "denied") return { state: "blocked" };
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription();
-  if (!sub || Notification.permission !== "granted") return { state: "off", sub };
+  // Why the server set this device's alerts aside (its push key changed), so the page asks to turn them on again.
+  const why: string | null = await fetch("/push/reset").then(
+    (r) => (r.ok ? r.json() : null),
+    () => null,
+  );
+  if (!sub || Notification.permission !== "granted") return { state: "off", sub, why };
   const mine: string[] = await fetch("/push/endpoints").then(
     (r) => (r.ok ? r.json() : []),
     () => [],
   );
-  return { state: mine.includes(sub.endpoint) ? "on" : "off", sub };
+  return mine.includes(sub.endpoint) ? { state: "on", sub } : { state: "off", sub, why };
 }
 async function alertsOn(): Promise<void> {
   if ((await Notification.requestPermission()) !== "granted") throw new Error("notifications are off for this app");
@@ -486,6 +491,8 @@ async function alertsOn(): Promise<void> {
   const r = await fetch("/push/key");
   if (!r.ok) throw await why(r);
   const key: string = (await r.json()).key.replace(/-/g, "+").replace(/_/g, "/");
+  // A subscription made with an old key can't be renewed in place.
+  await (await reg.pushManager.getSubscription())?.unsubscribe();
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: Uint8Array.from(atob(key), (c) => c.charCodeAt(0)),
@@ -530,12 +537,9 @@ async function alertsDo(f: () => Promise<void>, ok: string): Promise<void> {
 async function fillAlerts(): Promise<void> {
   const box = $("#s-alerts-box");
   if (!box) return;
-  const state = await alertState().then(
-    (a) => a.state,
-    () => "unsupported" as const,
-  );
+  const { state, why } = await alertState().catch(() => ({ state: "unsupported" as const, why: null }));
   const row = make("div", "lrw");
-  row.append(make("span", state === "on" ? "g" : "m", ALERTS[state]));
+  row.append(make("span", state === "on" ? "g" : "m", (state === "off" && why) || ALERTS[state]));
   const act = (label: string, f: () => unknown): void => {
     const b = make("button", "", label) as HTMLButtonElement;
     b.type = "button";
@@ -767,6 +771,10 @@ addEventListener("cooee-sheet", (e) => {
     fillDevices();
     fillPlugins();
   }
+});
+// The sign-ins card opened: the accounts' status is checked again (#106); a reload shows it.
+addEventListener("cooee-sheet", (e) => {
+  if ((e as CustomEvent).detail === "providers") post("/logins", {}).catch(() => {});
 });
 
 // Report mode (Settings → report a problem, or `/report` sent in a thread): the next tap picks an element, outlined;

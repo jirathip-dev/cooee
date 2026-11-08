@@ -59,8 +59,10 @@ A new thread is stored and listed before shed starts its agent, so an ask that c
 terminal; a start whose CLI failed while the terminal came up anyway is kept too. Each socket call gives up after 10 s
 (a `wait` gets its own timeout on top), so one stuck call never holds its thread; a message or answer to a terminal
 that is gone gets "Not delivered" (410). A working turn with no shed event for 30 minutes shows as needs-you, with a
-push, until its next event. Page loads run no command: the installed agents and the sign-ins' status are checked at
-start and every 30 s (the sign-ins also after a login, sign-out or new default), and pages read that.
+push, until its next event. Page loads run no command: the installed agents are checked at start and every 30 s, and
+pages read that. The sign-ins' status is checked per account at start, every 10 minutes, when the sign-ins card opens
+(at most once per 30 s), after a login and after a sign-out, one check per account at a time; pages and
+`GET /logins/<provider>` read the last result and its age, never waiting on a check (#106).
 
 Each shed event maps to items through one exhaustive `match` (`cooee-core/src/chat.rs`). The page gets them over SSE
 (`/threads/<id>/events`), each with id `<run>.<seq>`; a thread keeps its last 4,096 page events, so a page that
@@ -110,9 +112,13 @@ Before that, every request's `Host` (and its `Origin`, when sent) must be localh
 `allowed_hosts`, or it gets 403, paired cookie or not. That blocks DNS rebinding. To reach cooee from the phone,
 keep `bind` on 127.0.0.1, run `tailscale serve --bg 4747`, and put the machine's Tailscale name in `allowed_hosts`.
 
-Web push (RFC 8291 aes128gcm, VAPID per RFC 8292, sent with `curl`): the VAPID key is made once and kept in the
-macOS keychain (`security`, service `cooee`; a call that takes over 5 s, as an unseen prompt after a rebuild would,
-is an error), else in `<data>/vapid.key` (0600). The thread list's 🔔 subscribes;
+Web push (RFC 8291 aes128gcm, VAPID per RFC 8292, sent with `curl`): the VAPID key is a file, `<data>/vapid.key`,
+made once with mode 0600 (a looser one is tightened to 0600 before use); cooee keeps nothing in the macOS keychain.
+Before #99 the key sat there (service `cooee`): while there is no key file, `cooee serve` reads it once in the
+background, 5 s at most, and copies it to the file; `cooee push migrate` does the same and prints the
+`security delete-generic-password` command that removes the old item, which cooee leaves for the owner. A read that
+times out (a locked keychain) makes a new key, and every subscribed device is asked, with the reason, to turn
+alerts on again (`GET /push/reset`). The thread list's 🔔 subscribes;
 subscriptions sit in `<data>/push.json` (0600), each tied to its device. A push goes out when an agent asks for an
 approval, a turn finishes while no page has the thread open, or an agent errors. Each one is a line about the thread:
 `{title, body, tag: <thread>, url: /t/<thread>, item}`. The service worker (push, and a network-first copy of the pages and static files for offline) shows it under the
@@ -125,7 +131,11 @@ Each provider is one row of the `providers` table in the config: its name, the A
 login, logout and read-only status commands, and the variable that points its CLI at a config folder (`home`:
 `CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `GEMINI_CLI_HOME`). There is no provider-specific code beyond that table. The
 status command signs an account in when it exits 0; its output, on one line and redacted, is the status line (a
-JSON status, as `claude auth status` prints, becomes a plain line, its email or org and any `usage` shown apart).
+JSON status, as `claude auth status` prints, becomes a plain line, its email or org and any `usage` shown apart). A
+status command that runs past 10 s is killed and the account reads `unknown`: "can't tell: the status command timed
+out". It keeps the signed-in state last known (a timeout never signs an account out) and the card offers no sign-in
+for it; each timeout doubles that account's interval (20, 40, then at most 80 minutes, which opening the card doesn't
+cut short) until a check answers. A login Keychain that doesn't answer is the usual cause.
 
 A provider's accounts are the system default login (`~/.claude` and so on, the first row) and the ones added in
 cooee: each a config folder `<data>/accounts/<provider>/<name>/` that the CLI gets through its variable, so the CLI
@@ -150,7 +160,8 @@ after 10 minutes; then the terminal is killed and removed, `[cancel]` does the s
 `cooee-login` terminals a previous run left. The screen is only ever read on demand: never stored, logged or kept
 in memory. Before it goes to the page, anything that looks like a token is replaced by `[redacted]`: a run of 20 or
 more token characters with both a letter and a digit, and in a link the values of `token`, `secret`, `password` and
-`key` parameters. The tokens themselves stay with the CLI.
+`key` parameters. The tokens themselves stay with the CLI: where each OS keeps them, and what a headless Mac needs,
+is in [logins.md](logins.md), linked from the sign-ins card.
 
 ## Plugins (M4)
 

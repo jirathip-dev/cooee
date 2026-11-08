@@ -428,6 +428,13 @@ async fn login_signout(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
     ))
 }
 
+/// `POST /logins`: the sign-ins card opened; checks the accounts' status again, never waiting on it (#106).
+#[route(POST "/logins")]
+async fn logins_check(cx: &Cx) -> Result<Answer<()>> {
+    logins(cx).ask();
+    Ok(Answer(Ok(())))
+}
+
 #[route(GET "/logins/{id}")]
 async fn login_view(cx: &Cx) -> Result<Answer<LoginView>> {
     let name = thread_id(cx);
@@ -1660,6 +1667,7 @@ async fn push_subscribe(cx: &Cx, Json(s): Json<Subscribe>) -> Result<Response> {
         endpoint: s.endpoint,
         p256dh: s.p256dh,
         auth: s.auth,
+        reset: None,
     };
     let hub = hub(cx);
     match tokio::task::spawn_blocking(move || hub.push().subscribe(sub)).await? {
@@ -1689,6 +1697,13 @@ async fn push_unsubscribe(cx: &Cx, Json(e): Json<Endpoint>) -> Result<Response> 
 async fn push_endpoints(cx: &Cx) -> Result<Response> {
     let me = &request_context::<Paired>(cx).0.id;
     Json(hub(cx).push().endpoints(me)).into_response(cx)
+}
+
+/// `GET /push/reset`: why this device's alerts stopped (`null` unless they did), so the page asks to turn them on.
+#[route(GET "/push/reset")]
+async fn push_reset(cx: &Cx) -> Result<Response> {
+    let me = &request_context::<Paired>(cx).0.id;
+    Json(hub(cx).push().reset(me)).into_response(cx)
 }
 
 /// `POST /push/test`: "alerts are on" to this device only.
@@ -2010,6 +2025,7 @@ pub fn router(
     .route(push_subscribe)
     .route(push_unsubscribe)
     .route(push_endpoints)
+    .route(push_reset)
     .route(push_test)
     .route(device_list)
     .route(device_remove)
@@ -2043,6 +2059,7 @@ pub fn router(
     .route(close)
     .route(read)
     .route(login_start)
+    .route(logins_check)
     .route(login_view)
     .route(login_send)
     .route(login_cancel)

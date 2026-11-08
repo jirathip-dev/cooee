@@ -1,10 +1,10 @@
 //! Web push (herdsman's `webpush.rs`): an RFC 8291 aes128gcm body and an ES256 VAPID JWT (RFC 8292), sent by
-//! `curl` with the body on stdin. The VAPID key is made once and kept in the macOS keychain (one per data folder), else in
-//! `<data>/vapid.key` (0600); the subscriptions are in `<data>/push.json` (0600), each tied to a paired device, so
+//! `curl` with the body on stdin. The VAPID key is made once and kept only in `<data>/vapid.key` (0600); the subscriptions are in `<data>/push.json` (0600), each tied to a paired device, so
 //! unpairing it stops its pushes.
 
 use std::{
     io::{self, Write},
+    os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::{Command, Stdio},
     sync::{Arc, Mutex, PoisonError},
@@ -17,7 +17,7 @@ use aes_gcm::{
     aead::{Aead, generic_array::GenericArray},
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
-use cooee_core::{Body, Change, Chat, Devices, Thread, mcp::security, random, write_private};
+use cooee_core::{Body, Change, Chat, Devices, Thread, random, write_private};
 use hkdf::Hkdf;
 use p256::{
     PublicKey, SecretKey,
@@ -107,6 +107,9 @@ pub struct Sub {
     pub p256dh: String,
     /// The browser's auth secret, base64url.
     pub auth: String,
+    /// Why it no longer works (the key it was made with is gone): its device is asked to turn alerts on again.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reset: Option<String>,
 }
 
 /// The subscriptions and the VAPID key of one data folder.
@@ -187,53 +190,45 @@ pub fn jwt(k: &SecretKey, endpoint: &str, now: u64) -> String {
     format!("{msg}.{}", B64.encode(sig.to_bytes()))
 }
 
-/// The keychain account of data folder `data`'s key, so two instances never share one.
-fn account(data: &Path) -> String {
-    let hash = cooee_core::sha256(data.as_os_str().as_encoded_bytes());
-    format!("vapid-{}", &hash[..16])
+/// The key file of data folder `data`.
+fn key_file(data: &Path) -> PathBuf {
+    data.join("vapid.key")
 }
 
-/// The VAPID key already stored for `data`, if any.
+/// The VAPID key in `data`'s key file, if any; a file others can read is tightened to 0600 first.
 fn find_key(data: &Path) -> io::Result<Option<String>> {
-    if cfg!(target_os = "macos") {
-        let find = [
-            "find-generic-password",
-            "-s",
-            "cooee",
-            "-a",
-            &account(data),
-            "-w",
-        ];
-        let (found, key) = security(&find, "")?;
-        return Ok(found.then_some(key));
+    let path = key_file(data);
+    let mode = match std::fs::metadata(&path) {
+        Ok(m) => m.permissions().mode(),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => return Err(e),
+    };
+    if mode & 0o077 != 0 {
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))?;
     }
-    match std::fs::read_to_string(data.join("vapid.key")) {
-        Ok(k) => Ok(Some(k.trim().to_owned())),
-        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(e),
+    Ok(Some(std::fs::read_to_string(path)?.trim().to_owned()))
+}
+
+/// Writes `key` as `data`'s key file (0600) unless one is there already; the key stored after.
+fn keep_key(data: &Path, key: &str) -> io::Result<String> {
+    let path = key_file(data);
+    let tmp = path.with_extension(format!("new-{}", B64.encode(random(6)?)));
+    write_private(&tmp, key.as_bytes())?;
+    // A link never replaces a file, so of two writers the first key stays.
+    let linked = std::fs::hard_link(&tmp, &path);
+    std::fs::remove_file(&tmp)?;
+    match linked {
+        Err(e) if e.kind() != io::ErrorKind::AlreadyExists => Err(e),
+        _ => find_key(data)?.ok_or_else(|| io::Error::other("the VAPID key file vanished")),
     }
 }
 
-/// The stored VAPID key (base64url), made on first use: the keychain on macOS, else a 0600 file.
+/// The stored VAPID key (base64url), made on first use.
 fn stored_key(data: &Path) -> io::Result<String> {
-    if let Some(k) = find_key(data)? {
-        return Ok(k);
+    match find_key(data)? {
+        Some(k) => Ok(k),
+        None => keep_key(data, &B64.encode(new_key()?.to_bytes())),
     }
-    if cfg!(target_os = "macos") {
-        let k = B64.encode(new_key()?.to_bytes());
-        // `-i` reads the command from stdin, so the key never shows in a process list.
-        let a = account(data);
-        let add = format!("add-generic-password -U -s cooee -a {a} -w {k}\n");
-        if !security(&["-i"], &add)?.0 {
-            return Err(io::Error::other(
-                "can't store the VAPID key in the keychain",
-            ));
-        }
-        return Ok(k);
-    }
-    let k = B64.encode(new_key()?.to_bytes());
-    write_private(&data.join("vapid.key"), k.as_bytes())?;
-    Ok(k)
 }
 
 impl Push {
@@ -260,7 +255,7 @@ impl Push {
     /// Whether the VAPID key exists yet (it is made when a phone first asks for it).
     ///
     /// # Errors
-    /// When the keychain or the key file can't be read.
+    /// When the key file can't be read.
     pub fn has_key(&self) -> io::Result<bool> {
         Ok(find_key(&self.data)?.is_some())
     }
@@ -271,6 +266,39 @@ impl Push {
     /// When the key can't be read or made.
     pub fn public_key(&self) -> io::Result<String> {
         Ok(B64.encode(public(&self.vapid()?)))
+    }
+
+    /// Keeps `key` (base64url), the key from before the key file, unless there is a key file already; whether
+    /// it was kept.
+    ///
+    /// # Errors
+    /// When `key` is not a P-256 key, or it can't be stored.
+    pub fn adopt(&self, key: &str) -> io::Result<bool> {
+        SecretKey::from_slice(&b64(key)?)
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "not a P-256 key"))?;
+        Ok(keep_key(&self.data, key)? == key)
+    }
+
+    /// The key from before is lost: a new one is made (unless there is one already) and every subscription, made
+    /// with the old key, is set aside with `why`, so its device is asked to turn alerts on again.
+    ///
+    /// # Errors
+    /// When the key or the subscriptions can't be stored.
+    pub fn renew(&self, why: &str) -> io::Result<()> {
+        stored_key(&self.data)?;
+        let _g = LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut all = self.load();
+        for s in all.iter_mut().filter(|s| s.reset.is_none()) {
+            s.reset = Some(why.to_owned());
+        }
+        self.store(&all)
+    }
+
+    /// Why `device`'s alerts stopped, if they did and it hasn't turned them on again.
+    #[must_use]
+    pub fn reset(&self, device: &str) -> Option<String> {
+        let mut subs = self.load().into_iter().filter(|s| s.device == device);
+        subs.find_map(|s| s.reset)
     }
 
     fn path(&self) -> PathBuf {
@@ -302,7 +330,7 @@ impl Push {
         }
         let _g = LOCK.lock().unwrap_or_else(PoisonError::into_inner);
         let mut all = self.load();
-        all.retain(|s| s.endpoint != sub.endpoint);
+        all.retain(|s| s.endpoint != sub.endpoint && (s.device != sub.device || s.reset.is_none()));
         all.push(sub);
         self.store(&all)
     }
@@ -323,7 +351,8 @@ impl Push {
     /// `device`'s subscriptions' endpoints.
     #[must_use]
     pub fn endpoints(&self, device: &str) -> Vec<String> {
-        let subs = self.load().into_iter().filter(|s| s.device == device);
+        let subs = self.load().into_iter();
+        let subs = subs.filter(|s| s.device == device && s.reset.is_none());
         subs.map(|s| s.endpoint).collect()
     }
 
@@ -353,7 +382,8 @@ impl Push {
         let all = self.load();
         let (live, mut gone): (Vec<Sub>, Vec<Sub>) =
             all.into_iter().partition(|s| paired.contains(&s.device));
-        for s in live.iter().filter(|s| to.is_none_or(|d| d == s.device)) {
+        let live = live.iter().filter(|s| s.reset.is_none());
+        for s in live.filter(|s| to.is_none_or(|d| d == s.device)) {
             let key = self.vapid()?;
             let one = || -> io::Result<u16> {
                 let salt: [u8; 16] = random(16)?.try_into().unwrap_or_default();
@@ -434,7 +464,6 @@ mod tests {
             .collect();
         let (hits, got) = mpsc::channel();
         let push = Push::new(&dir);
-        // The key in memory, so the test never touches the keychain.
         *push.key.lock().unwrap() = Some(new_key().unwrap());
         for id in &ids {
             let l = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -451,6 +480,7 @@ mod tests {
                 endpoint,
                 p256dh: "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4".into(),
                 auth: "BTBZMqHH6r4Tts7J_aSIgg".into(),
+                reset: None,
             })
             .unwrap();
         }
@@ -468,6 +498,88 @@ mod tests {
         assert!(push.unsubscribe(&ids[0], &theirs).unwrap());
         assert_eq!(push.endpoints(&ids[0]), Vec::<String>::new());
         assert_eq!(push.endpoints(&ids[1]).len(), 1);
+    }
+
+    fn dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("cooee-push-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn mode(path: &Path) -> u32 {
+        std::fs::metadata(path).unwrap().permissions().mode() & 0o777
+    }
+
+    /// The key is made in `<data>/vapid.key`, 0600, and read back from there by a later start.
+    #[test]
+    fn the_key_is_made_in_a_0600_file() {
+        let dir = dir("made");
+        assert!(!Push::new(&dir).has_key().unwrap());
+        let public = Push::new(&dir).public_key().unwrap();
+        assert_eq!(mode(&dir.join("vapid.key")), 0o600);
+        assert!(Push::new(&dir).has_key().unwrap());
+        assert_eq!(Push::new(&dir).public_key().unwrap(), public);
+    }
+
+    /// A key file others can read is tightened to 0600 before it is used.
+    #[test]
+    fn a_0644_key_file_is_tightened() {
+        let dir = dir("loose");
+        let key = new_key().unwrap();
+        let file = dir.join("vapid.key");
+        std::fs::write(&file, B64.encode(key.to_bytes())).unwrap();
+        std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(Push::new(&dir).has_key().unwrap());
+        assert_eq!(mode(&file), 0o600);
+        assert_eq!(
+            Push::new(&dir).public_key().unwrap(),
+            B64.encode(public(&key))
+        );
+    }
+
+    /// A key from before is copied in once: a second one never replaces it.
+    #[test]
+    fn an_old_key_is_adopted_once() {
+        let dir = dir("adopt");
+        let (old, other) = (new_key().unwrap(), new_key().unwrap());
+        let push = Push::new(&dir);
+        assert!(push.adopt(&B64.encode(old.to_bytes())).unwrap());
+        assert!(!push.adopt(&B64.encode(other.to_bytes())).unwrap());
+        assert!(push.adopt("not a key").is_err());
+        assert_eq!(mode(&dir.join("vapid.key")), 0o600);
+        assert_eq!(push.public_key().unwrap(), B64.encode(public(&old)));
+    }
+
+    /// A lost key: every subscription is set aside with the reason until its device subscribes again.
+    #[test]
+    fn a_renewed_key_asks_each_device_to_subscribe_again() {
+        let dir = dir("renew");
+        let push = Push::new(&dir);
+        let sub = |device: &str, endpoint: &str| {
+            Sub {
+            device: device.to_owned(),
+            endpoint: endpoint.to_owned(),
+            p256dh: "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4".into(),
+            auth: "BTBZMqHH6r4Tts7J_aSIgg".into(),
+            reset: None,
+        }
+        };
+        push.subscribe(sub("a", "https://push.example.com/a"))
+            .unwrap();
+        push.subscribe(sub("b", "https://push.example.com/b"))
+            .unwrap();
+        push.renew("the key changed").unwrap();
+        assert!(push.has_key().unwrap());
+        for d in ["a", "b"] {
+            assert_eq!(push.endpoints(d), Vec::<String>::new());
+            assert_eq!(push.reset(d).as_deref(), Some("the key changed"));
+        }
+        push.subscribe(sub("a", "https://push.example.com/a2"))
+            .unwrap();
+        assert_eq!(push.endpoints("a"), ["https://push.example.com/a2"]);
+        assert_eq!(push.reset("a"), None);
+        assert_eq!(push.reset("b").as_deref(), Some("the key changed"));
     }
 
     /// RFC 8291 appendix A.

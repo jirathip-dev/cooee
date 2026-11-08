@@ -78,14 +78,21 @@ pub async fn login_panel(provider: String, command: String) -> Result<impl View>
     })
 }
 
-/// One account in Settings › providers: `[provider] <who> ✓ signed in [sign out]`, or `signed out [sign in]`.
+/// One account in Settings › providers: `[provider] <who> ✓ signed in [sign out]`, `signed out [sign in]`, or why
+/// it can't tell.
 #[component]
 async fn account_row(provider: String, a: Account, s: Status) -> Result<impl View> {
     Ok(view! {
         <div class="acr" data-provider=(provider.clone()) data-account=(a.name.clone())>
             <span class="ptg">(provider.clone())</span>
             <span class="sk">(a.shown(&s))</span>
-            if s.signed_in {
+            if s.unknown {
+                // #106: can't tell (a status check timed out, or none ran yet): no sign-in offered as the fix.
+                <span class="st m un">(s.line.clone())</span>
+                if a.dir.is_some() {
+                    <button type="button" class="sec sgo">"sign out"</button>
+                }
+            } else if s.signed_in {
                 <span class="st g">"✓ signed in"</span>
                 <button type="button" class="sec sgo">"sign out"</button>
             } else {
@@ -107,8 +114,8 @@ async fn account_row(provider: String, a: Account, s: Status) -> Result<impl Vie
 }
 
 /// Settings › providers (#48): one row per account, `[provider] <who> ✓ signed in [sign out]` or `signed out [sign
-/// in]`; `[+ account]` per installed provider; one row per provider that isn't installed, `[copy install]`. A
-/// sign-in's terminal opens under its row.
+/// in]`; `[+ account]` per installed provider; one row per provider that isn't installed, `[copy install]`; then the
+/// help link. A sign-in's terminal opens under its row.
 #[component]
 pub async fn providers_sheet(providers: Vec<Sheet>) -> Result<impl View> {
     let (out, mut installed): (Vec<Sheet>, Vec<Sheet>) = providers
@@ -188,6 +195,16 @@ pub async fn providers_sheet(providers: Vec<Sheet>) -> Result<impl View> {
                         }
                     </div>
                 }
+                <p class="ds">
+                    <a
+                        href="https://github.com/jirathip-dev/cooee/blob/main/docs/logins.md"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        "Where logins live"
+                    </a>
+                    " · on a headless Mac, keep the login Keychain unlocked"
+                </p>
             </div>
         </div>
     })

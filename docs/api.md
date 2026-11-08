@@ -68,7 +68,8 @@ another run; load the newest slice again).
 | Call | Body | Answer |
 |---|---|---|
 | `POST /logins/{id}` | `{account?}`, or `{new: true}` for a new account | `null` |
-| `GET /logins/{id}` | | `{state: "running" \| "ended" \| "none", screen, links: string[], why?, status?}` |
+| `POST /logins` | `{}`: the sign-ins card opened; checks the accounts' status again, not waiting | `null` |
+| `GET /logins/{id}` | | `{state: "running" \| "ended" \| "none", screen, links: string[], why?, status?, age?}`: `status` as last checked (`{signed_in, unknown, line, …}`; `unknown`: timed out or not checked yet), `age` in seconds |
 | `POST /logins/{id}/send` | `{text}`: typed into the login's terminal | `null` |
 | `POST /logins/{id}/cancel` | `{}` | `null` |
 | `POST /logins/{id}/signout` | `{account}` | `null` |
