@@ -1,0 +1,32 @@
+390 read t1a1bb85df35 200
+390 read t1a1bb85e095 200
+390 read t1a1bb85e121 200
+390 read 200 200
+390 thread t1a1bb85df35 {"title":"C ongoing","unread":false,"at":1794147475588}
+390 thread t1a1bb85e095 {"title":"C side old","unread":false,"at":1794147475635}
+390 thread t1a1bb85e121 {"title":"C side new","unread":false,"at":1794147475778}
+390 thread t1a1bb85e1da {"title":"M ongoing","unread":false,"at":1794147475952}
+390 thread t1a1bb85e260 {"title":"M side unread","unread":true,"at":1794147476083}
+390 thread t1a1bb85e2e1 {"title":"M side read newer","unread":false,"at":1794147476214}
+390 Calm 390 agent class=agr dot=0 ust= newest
+390 Calm 390 titles: []
+390 newest(Calm 390) -> /t/t1a1bb85e121 want /t/t1a1bb85e121 OK
+390 Mixed 390 agent class=agr ud dot=1 ust= M side unreadnow1newest
+390 Mixed 390 titles: ["M side unread"]
+390 newest(Mixed 390) -> /t/t1a1bb85e260 want /t/t1a1bb85e260 OK
+1440 read t1a1bb863a67 200
+1440 read t1a1bb863bbd 200
+1440 read t1a1bb863c4b 200
+1440 read 200 200
+1440 thread t1a1bb863a67 {"title":"C ongoing","unread":false,"at":1794147498914}
+1440 thread t1a1bb863bbd {"title":"C side old","unread":false,"at":1794147498969}
+1440 thread t1a1bb863c4b {"title":"C side new","unread":false,"at":1794147499110}
+1440 thread t1a1bb863dcb {"title":"M ongoing","unread":false,"at":1794147499492}
+1440 thread t1a1bb863e54 {"title":"M side unread","unread":true,"at":1794147499658}
+1440 thread t1a1bb863efa {"title":"M side read newer","unread":false,"at":1794147499827}
+1440 Calm 1440 agent class=agr dot=0 ust= newest
+1440 Calm 1440 titles: []
+1440 newest(Calm 1440) -> /t/t1a1bb863c4b want /t/t1a1bb863c4b OK
+1440 Mixed 1440 agent class=agr ud dot=1 ust= M side unreadnow1newest
+1440 Mixed 1440 titles: ["M side unread"]
+1440 newest(Mixed 1440) -> /t/t1a1bb863e54 want /t/t1a1bb863e54 OK

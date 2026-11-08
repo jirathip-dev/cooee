@@ -1,0 +1,156 @@
+unpaired / -> /pair
+paired -> /
+390 agents ok
+390 new ok
+390 chat ok
+390 settings ok
+390 plugin-hello ok
+390 plugin-machines ok
+390 thread t1a1bb84a1cb {"title":"Ongoing","state":"done","unread":true,"at":1794147394184}
+390 thread t1a1bb84a309 {"title":"Topic 1","state":"done","unread":true,"at":1794147394400}
+390 thread t1a1bb84a37b {"title":"Topic 2","state":"done","unread":true,"at":1794147394515}
+390 thread t1a1bb84a47b {"title":"Topic 3","state":"done","unread":true,"at":1794147394759}
+390 thread t1a1bb84a549 {"title":"Topic 4","state":"done","unread":true,"at":1794147394930}
+390 thread t1a1bb84a57c {"title":"approve an edit","state":"blocked","unread":true,"at":1794147395015}
+390 thread t1a1bb84a5ea {"title":"Q ongoing","state":"done","unread":true,"at":1794147395094}
+390 thread t1a1bb84a627 {"title":"Q side 1","state":"done","unread":true,"at":1794147395142}
+390 thread t1a1bb84a6b6 {"title":"Q side 2","state":"done","unread":true,"at":1794147395340}
+390 modern html style=modern theme=farm
+--- 390 modern
+AGR[agr on] Fake-390 dot=true chs=false
+  sth: [str] Picked project510d | [str] Picked other511d | [str ud •] Long thread1088d5 | [str nw] newest | [str nw] + new chat
+AGR[agr ud] Busy 390 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Quiet 390 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr] Reviewer dot=false chs=false
+390 unread-modern ok
+390 terminal html style=terminal theme=farm
+--- 390 terminal
+AGR[agr on] Fake-390 dot=true chs=false
+  sth: [str] Picked project510d | [str] Picked other511d | [str ud •] Long thread1088d5 | [str nw] newest | [str nw] + new chat
+AGR[agr ud] Busy 390 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Quiet 390 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr] Reviewer dot=false chs=false
+390 unread-terminal ok
+390 light html style=modern theme=kitchen
+--- 390 light
+AGR[agr on] Fake-390 dot=true chs=false
+  sth: [str] Picked project510d | [str] Picked other511d | [str ud •] Long thread1088d5 | [str nw] newest | [str nw] + new chat
+AGR[agr ud] Busy 390 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Quiet 390 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr] Reviewer dot=false chs=false
+390 unread-light ok
+390 scene html style=modern theme=farm
+390 scene chips: ["Fake-390","Picked project","Picked other","Long thread","newest","+ new chat"] ust count 0
+390 unread-scene ok
+390 newest(Busy 390) -> /t/t1a1bb84a57c want /t/t1a1bb84a57c OK
+390 quiet titles: 2
+390 newest(Quiet 390) -> /t/t1a1bb84a6b6 want /t/t1a1bb84a6b6 OK
+--- 390 after opening newest
+AGR[agr on] Fake-390 dot=true chs=false
+  sth: [str] Picked project510d | [str] Picked other511d | [str ud •] Long thread1088d5 | [str nw] newest | [str nw] + new chat
+AGR[agr ud] Busy 390 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Quiet 390 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr] Reviewer dot=false chs=false
+--- 390 busy on show
+AGR[agr on] Fake-390 dot=true chs=false
+  sth: [str] Picked project510d | [str] Picked other511d | [str ud •] Long thread1088d5 | [str nw] newest | [str nw] + new chat
+AGR[agr ud] Busy 390 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Quiet 390 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr] Reviewer dot=false chs=false
+1440 agents ok
+1440 new ok
+1440 chat ok
+1440 settings ok
+1440 plugin-hello ok
+1440 plugin-machines ok
+1440 thread t1a1bb84d537 {"title":"Ongoing","state":"done","unread":true,"at":1794147407389}
+1440 thread t1a1bb84d62f {"title":"Topic 1","state":"done","unread":true,"at":1794147407455}
+1440 thread t1a1bb84d6e0 {"title":"Topic 2","state":"done","unread":true,"at":1794147407643}
+1440 thread t1a1bb84d791 {"title":"Topic 3","state":"done","unread":true,"at":1794147407827}
+1440 thread t1a1bb84d846 {"title":"Topic 4","state":"done","unread":true,"at":1794147407983}
+1440 thread t1a1bb84d87b {"title":"approve an edit","state":"blocked","unread":true,"at":1794147408059}
+1440 thread t1a1bb84d8c8 {"title":"Q ongoing","state":"done","unread":true,"at":1794147408129}
+1440 thread t1a1bb84d974 {"title":"Q side 1","state":"done","unread":true,"at":1794147408298}
+1440 thread t1a1bb84da23 {"title":"Q side 2","state":"done","unread":true,"at":1794147408459}
+1440 modern html style=modern theme=farm
+--- 1440 modern
+AGR[agr on] Fake-390 dot=true chs=false
+  sth: [str] Picked project510d | [str] Picked other511d | [str on •] Long thread1088d5 | [str nw] newest | [str nw] + new chat
+AGR[agr ud] Busy 1440 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Busy 390 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Quiet 1440 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr ud] Quiet 390 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr] Reviewer dot=false chs=false
+1440 unread-modern ok
+1440 terminal html style=terminal theme=farm
+--- 1440 terminal
+AGR[agr on] Fake-390 dot=true chs=false
+  sth: [str] Picked project510d | [str] Picked other511d | [str on •] Long thread1088d5 | [str nw] newest | [str nw] + new chat
+AGR[agr ud] Busy 1440 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Busy 390 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Quiet 1440 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr ud] Quiet 390 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr] Reviewer dot=false chs=false
+1440 unread-terminal ok
+1440 light html style=modern theme=kitchen
+--- 1440 light
+AGR[agr on] Fake-390 dot=true chs=false
+  sth: [str] Picked project510d | [str] Picked other511d | [str on •] Long thread1088d5 | [str nw] newest | [str nw] + new chat
+AGR[agr ud] Busy 1440 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Busy 390 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Quiet 1440 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr ud] Quiet 390 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr] Reviewer dot=false chs=false
+1440 unread-light ok
+1440 scene html style=modern theme=farm
+1440 scene chips: ["Fake-390","Picked project","Picked other","Long thread","newest","+ new chat"] ust count 0
+1440 unread-scene ok
+1440 newest(Busy 1440) -> /t/t1a1bb84d87b want /t/t1a1bb84d87b OK
+1440 quiet titles: 2
+1440 newest(Quiet 1440) -> /t/t1a1bb84da23 want /t/t1a1bb84da23 OK
+--- 1440 after opening newest
+AGR[agr on] Fake-390 dot=true chs=false
+  sth: [str] Picked project510d | [str] Picked other511d | [str on •] Long thread1088d5 | [str nw] newest | [str nw] + new chat
+AGR[agr ud] Busy 1440 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Busy 390 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Quiet 1440 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr ud] Quiet 390 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr] Reviewer dot=false chs=false
+--- 1440 busy on show
+AGR[agr ud] Fake-390 dot=true chs=false
+  ust: [str ud •] Long thread1088d5 | [str mo] newest
+AGR[agr on] Busy 1440 dot=true chs=true
+  sth: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str ud •] Topic 2now1 | [str ud •] Topic 1now1 | [str nw] newest | [str nw] + new chat
+AGR[agr ud] Busy 390 dot=true chs=true
+  ust: [str ud • choose] approve an editchoosenow2 | [str ud •] Topic 4now1 | [str ud •] Topic 3now1 | [str mo] +2newest
+AGR[agr ud] Quiet 1440 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr ud] Quiet 390 dot=true chs=false
+  ust: [str ud •] Q side 2now1 | [str ud •] Q side 1now1 | [str mo] newest
+AGR[agr] Reviewer dot=false chs=false
