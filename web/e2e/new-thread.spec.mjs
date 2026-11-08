@@ -126,7 +126,7 @@ test("the agent chip starts at the account last used in the folder picked", asyn
   await chip.click();
   await page.locator("#sh-agent label", { hasText: "lab@example.com" }).click();
   await expect(chip).toHaveText(/^fake-390 · lab@example\.com/);
-  await pick("~/root");
+  await pick("~/root/fresh");
   await expect(chip.locator("span")).toHaveText(overall);
   // Back to scratch (no folder): the newest pick overall again.
   await pick("scratch");

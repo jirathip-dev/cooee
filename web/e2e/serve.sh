@@ -9,12 +9,12 @@
 # plugin index lists the example plugin as `greet`, in a git repo of its own. The terminal plugin runs on $PORT + 5, its
 # shells `/bin/sh -l` in the fake shed. farm, kitchen and garden are installed. The 390 provider has two more accounts,
 # `work` and `lab` (signed in, their email `<name>@example.com`), last used for a new thread in root/project and
-# root/other (#48); a start in root/slow-<viewport> waits while the spec holds it, one in root/bad-<viewport> fails. One
-# agent profile, `reviewer`, sits beside the main config (#40).
+# root/other (#48), root/fresh never used; a start in root/slow-<viewport> waits while the spec holds it, one in
+# root/bad-<viewport> fails. One agent profile, `reviewer`, sits beside the main config (#40).
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
-mkdir -p "$tmp/shed" "$tmp/root/project/deep-src" "$tmp/data/threads" "$tmp/.hidden-folder" "$tmp/root/other" \
+mkdir -p "$tmp/shed" "$tmp/root/project/deep-src" "$tmp/data/threads" "$tmp/.hidden-folder" "$tmp/root/other" "$tmp/root/fresh" \
   "$tmp/root/slow-390" "$tmp/root/slow-1440" "$tmp/root/bad-390" "$tmp/root/bad-1440" \
   "$tmp/root/project/prof-390" "$tmp/root/project/prof-1440" \
   "$tmp/data/accounts/fake-390/work" "$tmp/data/accounts/fake-390/lab"
