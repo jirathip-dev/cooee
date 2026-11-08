@@ -9,7 +9,7 @@ use std::{
 };
 
 use base64::{Engine, engine::general_purpose::STANDARD};
-use cooee_core::Plugin;
+use cooee_core::{Plugin, Profile};
 use sha2::{Digest, Sha256};
 
 /// The largest answer cooee passes on.
@@ -221,6 +221,46 @@ pub fn answer(
     match status {
         200..=299 => Ok(Ok(line)),
         409 => Ok(Err(line.unwrap_or_else(|| "stale".to_owned()))),
+        code => Err(io::Error::other(format!("the backend answered {code}"))),
+    }
+}
+
+/// The agent profiles `p`'s backend serves: `GET /cooee/profiles` answers `{"profiles": [...]}`. `None` when it
+/// answers 404 (it serves none: its manifest's are offered); any other answer offers none.
+pub fn profiles(p: &Plugin) -> Option<Vec<Profile>> {
+    let got = call(p, "GET", "/cooee/profiles", &[], &[], Some(Duration::from_secs(5)));
+    let list = got.and_then(|r| match r.status {
+        404 => Ok(None),
+        200 => {
+            let mut v: serde_json::Value = serde_json::from_slice(&r.bytes()?)?;
+            Ok(Some(serde_json::from_value(v["profiles"].take())?))
+        }
+        code => Err(io::Error::other(format!("the backend answered {code}"))),
+    });
+    list.unwrap_or_else(|e| {
+        eprintln!("cooee: plugin {}: its profiles: {e}", p.name);
+        Some(Vec::new())
+    })
+}
+
+/// Tells `p`'s backend thread `thread` started as its profile `profile`: `POST /cooee/thread-started`
+/// `{thread, profile}`.
+///
+/// # Errors
+/// When the backend can't be reached or answers anything but a 2xx.
+pub fn started(p: &Plugin, thread: &str, profile: &str) -> io::Result<()> {
+    let body = serde_json::json!({ "thread": thread, "profile": profile }).to_string();
+    let json = [("Content-Type", "application/json")];
+    let reply = call(
+        p,
+        "POST",
+        "/cooee/thread-started",
+        &json,
+        body.as_bytes(),
+        Some(Duration::from_secs(10)),
+    )?;
+    match reply.status {
+        200..=299 => Ok(()),
         code => Err(io::Error::other(format!("the backend answered {code}"))),
     }
 }

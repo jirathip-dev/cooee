@@ -39,6 +39,12 @@ module = "/tab.js"
 A plugin may also bring agent profiles, `[[profiles]]` with the fields of an owner's profile
 ([architecture.md](architecture.md#agent-profiles-40)), their paths in its checkout. The add and update confirm lists
 them; they are offered in the new-thread form while the plugin is installed and on.
+Its backend may serve them instead (one per fleet, say): `GET /cooee/profiles` (with the token, read as the
+new-thread form opens and as a thread starts) answers `{"profiles": [...]}` in the same format, each with optional
+`hidden = true` and a `why` line (not offered nor started, e.g. while its guard can't be proven). That list replaces
+the manifest's: a profile it doesn't list isn't offered; a 404 offers the manifest's, any other answer none. When a
+thread starts as one of the plugin's profiles, its backend gets `POST /cooee/thread-started` `{"thread", "profile"}`
+(the profile's name), so it can attach the thread.
 
 - `cooee plugin add <name | git-url> [--rev R] [--yes]` clones it into `<data>/plugins/<name>/repo`, shows what it will
   run (the URL, the commit, the exact build and run commands, and "not reviewed" when it isn't in the index) and asks

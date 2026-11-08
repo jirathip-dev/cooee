@@ -296,3 +296,148 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
     let pid = s.cooee.child.id().to_string();
     let _ = Command::new("kill").args(["-TERM", &pid]).status();
 }
+
+/// A plugin backend (docs/plugins/hello's checks) that serves `profiles` at `GET /cooee/profiles` and appends each
+/// `POST /cooee/thread-started` body to `log`.
+fn serving(profiles: &Value, log: &Path) -> String {
+    format!(
+        r#"import fs from "node:fs";
+import http from "node:http";
+const {{ PORT, TOKEN }} = process.env;
+http.createServer(async (req, res) => {{
+  if (req.headers.authorization !== `Bearer ${{TOKEN}}`) return res.writeHead(401).end();
+  if (req.url === "/tab.js") return res.writeHead(200).end("document.body.append('plug');");
+  if (req.url === "/cooee/profiles") return res.writeHead(200).end(JSON.stringify({profiles}));
+  let b = ""; for await (const c of req) b += c;
+  if (req.url === "/cooee/thread-started") {{ fs.appendFileSync({log:?}, b + "\n"); return res.writeHead(200).end("{{}}"); }}
+  res.writeHead(404).end();
+}}).listen(Number(PORT), "127.0.0.1");
+"#,
+        log = log.to_string_lossy()
+    )
+}
+
+#[test]
+fn a_backend_serves_its_plugins_profiles_a_hidden_one_is_not_offered_and_thread_is_the_threads_id() {
+    let s = setup("profiles-served");
+    let repo = s.dir.join("plug.git");
+    fs::create_dir_all(&repo).unwrap();
+    git(&repo, &["init", "--quiet", "-b", "main"]);
+    let log = s.dir.join("started.log");
+    let served = json!([
+        { "name": "fleet-a", "label": "Fleet A", "agent": "fake-acp",
+          "env": { "HERDSMAN_THREAD": "{thread}", "FLEET": "a" } },
+        { "name": "fleet-b", "label": "Fleet B", "agent": "fake-acp", "hidden": true,
+          "why": "its guard can't be proven" },
+    ]);
+    fs::write(repo.join("server.mjs"), serving(&served, &log)).unwrap();
+    fs::write(
+        repo.join("cooee-plugin.toml"),
+        "name = \"plug\"\nversion = \"1\"\nbuild = \"true\"\nrun = \"TOKEN=$COOEE_PLUGIN_TOKEN exec node server.mjs\"\n\
+         [[tabs]]\nname = \"plug\"\nlabel = \"Plug\"\nmodule = \"/tab.js\"\n\
+         [[profiles]]\nname = \"old\"\nlabel = \"Old\"\nagent = \"fake-acp\"\n",
+    )
+    .unwrap();
+    git(&repo, &["add", "-A"]);
+    git(&repo, &["commit", "--quiet", "-m", "1"]);
+    s.cooee
+        .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
+
+    // The backend's list is the plugin's: a hidden one, and the manifest's it doesn't list, aren't offered.
+    let picker = s.picker();
+    assert!(
+        picker.contains(r#"value="p:plug/fleet-a""#)
+            && picker.contains(r#"data-label="Fleet A · plug""#),
+        "{picker}"
+    );
+    assert!(
+        !picker.contains("fleet-b") && !picker.contains("Fleet B") && !picker.contains("p:plug/old"),
+        "{picker}"
+    );
+    let runs = s.shed.cli_log().matches(" run ").count();
+    let (status, body) = s.start("plug/fleet-b", "go");
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains("hidden: its guard can't be proven"), "{body}");
+    assert_eq!(s.start("plug/old", "go").0, 400);
+    assert_eq!(s.shed.cli_log().matches(" run ").count(), runs);
+    assert!(!log.exists(), "nothing started");
+
+    // `{thread}` is the new thread's id in the agent's env, and the backend is told the thread started.
+    let (id, _) = s.thread("plug/fleet-a", "go");
+    let env = s.shed.adapter_env();
+    for var in [format!("HERDSMAN_THREAD={id}"), "FLEET=a".to_owned()] {
+        assert!(env.lines().any(|l| l == var), "{var} not in {env}");
+    }
+    let told: Value = serde_json::from_str(fs::read_to_string(&log).unwrap().trim()).unwrap();
+    assert_eq!(told, json!({ "thread": id, "profile": "fleet-a" }));
+
+    s.cooee.cli(&["plugin", "remove", "plug"]);
+    let pid = s.cooee.child.id().to_string();
+    let _ = Command::new("kill").args(["-TERM", &pid]).status();
+}
+
+#[test]
+fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a_command() {
+    let dir = scratch("profiles-claude");
+    let data = dir.join("data");
+    fs::create_dir_all(data.join("accounts/claude/work")).unwrap();
+    // The guard: a fake of herdsman's hook, refusing a push to main.
+    let claude = dir.join("profiles/claude");
+    fs::create_dir_all(&claude).unwrap();
+    let guard = claude.join("guard.sh");
+    fs::write(
+        &guard,
+        "#!/bin/sh\ngrep -q 'git push origin main' && { echo 'REFUSED MAIN_TARGET' >&2; exit 2; }\nexit 0\n",
+    )
+    .unwrap();
+    let hooks = json!({ "hooks": { "PreToolUse": [
+        { "matcher": "Bash", "hooks": [{ "type": "command", "command": guard }] } ] } });
+    fs::write(claude.join("settings.json"), hooks.to_string()).unwrap();
+    fs::write(
+        dir.join("profiles/guarded.toml"),
+        "name = \"guarded\"\nlabel = \"Guarded\"\nagent = \"fake-acp\"\naccount = \"work\"\nsettings = \"claude\"\n",
+    )
+    .unwrap();
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    // A fake claude-acp: runs the PreToolUse hook of `$CLAUDE_CONFIG_DIR/settings.json` on one Bash call, as
+    // Claude Code does, noting its output and exit.
+    let adapter = shed.dir.join("fake-acp");
+    fs::write(
+        &adapter,
+        "#!/bin/sh\nout=\"$(dirname \"$0\")/hook.out\"\n\
+         hook=$(sed -n 's/.*\"command\":\"\\([^\"]*\\)\".*/\\1/p' \"$CLAUDE_CONFIG_DIR/settings.json\")\n\
+         echo '{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git push origin main\"}}' | sh \"$hook\" >\"$out\" 2>&1\n\
+         echo \"exit $?\" >>\"$out\"\n",
+    )
+    .unwrap();
+    // The built-in Claude Code provider, on the fake shed's agent.
+    let mut provider = cooee_core::Provider::defaults().remove(0);
+    provider.agent = "fake-acp".to_owned();
+    (provider.login, provider.status) = (vec!["true".to_owned()], vec!["true".to_owned()]);
+    // Its fields are strings and lists of them: as JSON, they are TOML too.
+    let mut extra = "[[providers]]\n".to_owned();
+    for (k, v) in serde_json::to_value(&provider).unwrap().as_object().unwrap() {
+        extra.push_str(&format!("{k} = {v}\n"));
+    }
+    let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
+
+    let new = json!({ "agent": "fake-acp", "profile": "guarded", "folder": dir.join("root"),
+                      "text": "hi", "random_id": "claude-1" });
+    let (status, body) = cooee.post("/threads", &new);
+    assert_eq!(status, 200, "{body}");
+    let log = shed.cli_log();
+    let line = log.lines().rfind(|l| l.contains(" run ")).unwrap();
+    assert_eq!(
+        line.matches("CLAUDE_CONFIG_DIR=").count(),
+        1,
+        "the settings folder replaces the account's: {line}"
+    );
+    assert!(
+        line.contains(&format!(" -- env CLAUDE_CONFIG_DIR={} ", claude.display())),
+        "{line}"
+    );
+    let out = fs::read_to_string(shed.dir.join("hook.out")).unwrap();
+    assert_eq!(out, "REFUSED MAIN_TARGET\nexit 2\n");
+    let pid = cooee.child.id().to_string();
+    let _ = Command::new("kill").args(["-TERM", &pid]).status();
+}

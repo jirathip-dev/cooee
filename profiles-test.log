@@ -1,0 +1,25 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.herdr/worktrees/cooee/issue-87/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.53s
+     Running tests/profiles.rs (/Users/jkmacmini/.cache/herdsman/target/cooee/debug/deps/profiles-44d185b9fc129f24)
+
+running 4 tests
+test a_backend_serves_its_plugins_profiles_a_hidden_one_is_not_offered_and_thread_is_the_threads_id ... FAILED
+test a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a_command ... ok
+test a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_it ... ok
+test plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused ... ok
+
+failures:
+
+---- a_backend_serves_its_plugins_profiles_a_hidden_one_is_not_offered_and_thread_is_the_threads_id stdout ----
+
+thread 'a_backend_serves_its_plugins_profiles_a_hidden_one_is_not_offered_and_thread_is_the_threads_id' (117520774) panicked at crates/cooee/tests/profiles.rs:348:5:
+id="sh-agent" popover="auto" role="dialog" aria-labelledby="sht-agent"><div class="hd"><b id="sht-agent">agent</b><button type="button" class="gl" popovertarget="sh-agent" popovertargetaction="hide" aria-label="close">×</button></div><fieldset class="top"><legend class="vh">provider and account</legend><p class="ch">profiles</p><div class="sr pk"><label><input type="radio" name="pick" value="p:coder" data-agent="fake-acp" data-account="work" data-profile="coder" data-name="fake" data-label="Coder"><span class="sk">Coder</span></label><i class="tk" aria-hidden="true">✓</i></div><div class="sr pk"><label><input type="radio" name="pick" value="p:guard" data-agent="other-acp" data-account="" data-profile="guard" data-name="other" data-label="Guarded"><span class="sk">Guarded</span></label><i class="tk" aria-hidden="true">✓</i></div><div class="sr pk"><label><input type="radio" name="pick" value="p:plug/old" data-agent="fake-acp" data-account="" data-profile="plug/old" data-name="fake" data-label="Old · plug"><span class="sk">Old · plug</span></label><i class="tk" aria-hidden="true">✓</i></div><p class="ch">fake</p><div class="sr pk"><label><input type="radio" name="pick" value="fake-acp/" data-agent="fake-acp" data-account="" data-profile="" data-name="fake" data-label="fake · main login" checked=""><span class="sk">main login</span></label><i class="tk" aria-hidden="true">✓</i></div><div class="sr pk"><label><input type="radio" name="pick" value="fake-acp/work" data-agent="fake-acp" data-account="work" data-profile="" data-name="fake" data-label="fake · work"><span class="sk">work</span></label><i class="tk" aria-hidden="true">✓</i></div><div class="lg" data-provider="fake" hidden=""><p class="ds">true · shed terminal</p><pre class="out"></pre><div class="lgf"><input aria-label="the code from the fake sign-in page" placeholder="paste the code" autocomplete="off"><button type="button" class="lgs">send</button><button type="button" class="sec cn">cancel</button></div></div><p class="lft"><a href="#settings/providers">add an account or a provider in settings ›</a></p></fieldset></div><div class="sh pop" 
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_backend_serves_its_plugins_profiles_a_hidden_one_is_not_offered_and_thread_is_the_threads_id
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.51s
+
+error: test failed, to rerun pass `-p cooee --test profiles`

@@ -987,12 +987,17 @@ impl Hub {
                 (LABEL.to_owned(), "1".to_owned()),
                 (format!("{LABEL}.thread"), id.to_owned()),
             ]);
+            // A profile's `{thread}` is this thread's id.
+            let mut launch = recipe.launch.clone();
+            for (_, v) in &mut launch.env {
+                *v = v.replace("{thread}", id);
+            }
             if let Err(e) = self.shed.run_acp(
                 &terminal,
                 (&agent, &self.adapter(&agent)),
                 &folder,
                 &labels,
-                &recipe.launch,
+                &launch,
             ) && self.shed.get(&terminal).is_err()
             {
                 if !keep {
