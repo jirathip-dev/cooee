@@ -112,10 +112,8 @@ fn main() -> ExitCode {
         }
         ["doctor"] => doctor,
         ["accounts", rest @ ..] => {
-            return match load(path.as_deref(), &instance) {
-                Ok(config) => accounts::run(&config, rest, json, require),
-                Err(e) => finish(Err(e)),
-            };
+            let run = |c: Config| accounts::run(&c, rest, json, require);
+            return load(path.as_deref(), &instance).map_or_else(|e| finish(Err(e)), run);
         }
         ["plugin", rest @ ..] => {
             let rest: Vec<String> = rest.iter().map(|a| (*a).to_owned()).collect();
