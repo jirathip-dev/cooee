@@ -92,7 +92,7 @@ pub(crate) fn cookie(cx: &Cx, token: &str) -> String {
     )
 }
 
-/// `?code=` (the QR code's link fills it in), and after a refused code `?bad=wrong&left=`, `?bad=expired` or
+/// `?code=` (the QR code's link fills it in), and after a refused code `?bad=wrong&left=`, `?bad=expired&code=` (kept, muted) or
 /// `?bad=limit&wait=`.
 #[derive(Deserialize, Default)]
 struct PairQuery {
@@ -171,16 +171,17 @@ async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
         return see_other(&format!("/pair?bad=limit&wait={wait}"), None);
     }
     let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
+    let tried = code.clone();
     let (claimed, open) = store(cx, move |d| {
         let open = d.code_open(t)?;
-        Ok((d.claim(&code, &agent, t)?, open))
+        Ok((d.claim(&tried, &agent, t)?, open))
     })
     .await?;
     if let Some(token) = claimed {
         return see_other("/?paired", Some(cookie(cx, &token)));
     }
     if !open {
-        return see_other("/pair?bad=expired", None);
+        return see_other(&format!("/pair?bad=expired&code={code}"), None);
     }
     let left = {
         let mut misses = pairing(cx)

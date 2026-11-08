@@ -683,7 +683,7 @@ async fn welcome(cx: &Cx, ios: Option<bool>) -> Result<impl View> {
     })
 }
 
-/// The code card: six boxes (filled from a QR link), why the last code was refused, [pair] and the other ways.
+/// The code card: six boxes (filled from a QR link, or the used code muted), why the last code was refused, [pair] and the other ways.
 #[component]
 async fn code_card(state: PairState) -> Result<impl View> {
     let bad = state.bad.clone().unwrap_or_default();
@@ -712,7 +712,7 @@ async fn code_card(state: PairState) -> Result<impl View> {
                         aria-label=(format!("digit {}", i + 1))
                         disabled=(off)
                         autofocus=(i == 0 && bad == "wrong")
-                        value=(if bad.is_empty() {
+                        value=(if bad.is_empty() || bad == "expired" {
                             digits.get(i).map(char::to_string).unwrap_or_default()
                         } else {
                             String::new()

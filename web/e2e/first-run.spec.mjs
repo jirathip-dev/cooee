@@ -14,7 +14,7 @@ test("first run: no agents shows its fix line with a copy button, never an empty
   const code = fs.readFileSync(new URL("./.auth/code.bare", import.meta.url), "utf8").trim();
   await page.getByLabel("digit 1").click();
   await page.keyboard.type(code);
-  await page.waitForURL(/\/$/);
+  await page.waitForURL(/\/(\?paired)?$/);
   await page.goto(`${url}/new`);
 
   // No agent to type to: what to run instead, no composer.
