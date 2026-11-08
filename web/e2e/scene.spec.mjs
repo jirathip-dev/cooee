@@ -38,8 +38,9 @@ test("Scene draws a sprite per agent on one page; a tap opens its chat, ringed, 
   const pose = await page.locator("#scene .sb .sf use").first().getAttribute("href");
   expect(pose).toMatch(/^\/look\/farm\/sprites\.svg#s-(edit|needs|done|fail|merged|idle)$/);
   await expect(page.locator("#scene .sky")).toHaveAttribute("src", /^\/look\/farm\/scene\.svg/);
-  // Nobody is current on the list, so no chips.
-  await expect(page.locator(".scc")).toHaveCount(0);
+  // The list's current agent is the first (a phone's ‹ names its own): ringed, its chats as chips (the approved 390).
+  await expect(page.locator("#scene .sb").first()).toHaveAttribute("aria-current", "true");
+  await expect(page.locator(".scc .chip").last()).toHaveText("+ new chat");
   // A tap opens the first agent's chat (or a new one), in Terminal, the style chosen before Scene.
   const first = page.locator("#scene .sb").first();
   const name = await first.locator(".sn b").textContent();

@@ -158,10 +158,15 @@ fn an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_p
     };
     let ongoing = start("first");
     let side = start("second");
-    let (_, home) = cooee.get("/?list");
+    // The list (a phone's `‹` back to agents): the agent's row opens its ongoing chat, its side thread under it.
+    let (_, home) = cooee.get("/?list&agent=fake-acp");
     let nav = &home[home.find(r#"<nav class="ags""#).unwrap()..];
     assert!(
-        nav.contains(&format!(r#"href="/t/{ongoing}""#)) && !nav.contains(&side),
+        nav.contains(&format!(r#"<a class="agr on" href="/t/{ongoing}""#))
+            && nav.contains(&format!(
+                r#"href="/t/{side}" data-id="{side}"><span class="tt">second</span>"#
+            ))
+            && nav.contains(r#"<a class="str nw" href="/new?agent=fake-acp">+ new chat</a>"#),
         "{nav}"
     );
     let (_, page) = cooee.get(&format!("/t/{side}"));

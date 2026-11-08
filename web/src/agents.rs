@@ -118,7 +118,7 @@ fn mate(key: String, name: String, profile: &str, agent: &str) -> Mate {
 }
 
 /// The agent a thread of `agent` and `profile` belongs to, as [`Mate::key`].
-fn key(agent: &str, profile: &str) -> String {
+pub(crate) fn key(agent: &str, profile: &str) -> String {
     if profile.is_empty() {
         format!("agent={agent}")
     } else {
@@ -552,6 +552,8 @@ pub enum Pane {
     Home {
         /// Keep a phone on the list (`?list`, the `‹` of a chat).
         list: bool,
+        /// The agent on show, with its side threads (the `‹` of its chat); empty: the first.
+        key: String,
     },
     /// `/new?<key>`.
     New {
@@ -585,8 +587,8 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
     let own = side.rows.iter().any(|r| r.workflow.is_none());
     let find = |key: &str| mates.iter().position(|m| m.key == key);
     let (at, show, title) = match &pane {
-        Pane::Home { list } => (
-            (!mates.is_empty()).then_some(0),
+        Pane::Home { list, key } => (
+            find(key).or((!mates.is_empty()).then_some(0)),
             if *list || own { "list" } else { "pane" },
             "cooee".to_owned(),
         ),
@@ -637,7 +639,7 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
                                 .filter(|r| r.archived && r.workflow.is_none())
                                 .cloned()
                                 .collect(),
-                            current: if home { String::new() } else { current },
+                            current: current,
                             open: open.clone(),
                             fresh: matches!(pane, Pane::New { .. })
                         )
@@ -677,6 +679,16 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
     })
 }
 
+/// A phone's `‹` back to the agents, with agent `key` on show.
+#[component]
+pub(crate) async fn back(key: String) -> Result<impl View> {
+    Ok(view! {
+        <a class="gl bk" href=(format!("/?list&{key}")) aria-label="back to agents">
+            "‹"
+        </a>
+    })
+}
+
 /// A new chat's bar: `‹` back to the agents, the agent, `New chat`, its folder, and (not on the home page) `×`, back
 /// to the agent's ongoing chat, else the agents.
 #[component]
@@ -687,7 +699,7 @@ async fn bar(home: bool, n: usize, m: Mate) -> Result<impl View> {
         .map_or("/?list".to_owned(), |c| format!("/t/{}", c.id));
     Ok(view! {
         <div class="th">
-            <a class="gl bk" href="/?list" aria-label="back to agents">"‹"</a>
+            back(key: m.key.clone())
             avatar(name: m.name.clone(), n: n, big: false)
             <div class="tb">
                 // On the home page the header's "cooee" is the page's heading.

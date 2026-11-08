@@ -870,7 +870,7 @@ async fn chat(
             data-ids=(ids.join(" "))
         >
             <div class="th">
-                <a class="gl bk" href="/?list" aria-label="back to agents">"‹"</a>
+                agents::back(key: agents::key(&thread.agent, &thread.profile))
                 if let Some((n, _, _)) = mate {
                     agents::avatar(name: name.clone(), n: n, big: false)
                 }

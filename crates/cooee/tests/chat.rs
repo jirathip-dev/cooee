@@ -331,13 +331,18 @@ fn scene_draws_the_agents_as_sprites_and_the_current_ones_chats_as_chips() {
     assert!(scene.contains(&format!("{agents} agents")), "{scene}");
     assert!(!scene.contains(r#"<a class="agr"#), "{scene}");
     assert!(scene.contains("/look/farm/sprites.svg#s-"), "{scene}");
-    // The list has no current agent: no ring, no chips.
-    assert!(!scene.contains(r#"aria-current="true""#), "{scene}");
-    assert!(!scene.contains(r#"class="scc""#), "{scene}");
-    // Its one sprite for both chats opens the ongoing one (the oldest open).
+    // The list's current agent (the first, as a phone's `‹` names none): its one sprite for both chats, ringed,
+    // opens the ongoing one (the oldest open); its chats are chips under the scene.
     let ongoing = format!(r#"href="/t/{}""#, ids[0]);
-    assert_eq!(scene.matches(&ongoing).count(), 1, "{scene}");
-    assert!(!scene.contains(&format!("/t/{}", ids[1])), "{scene}");
+    assert_eq!(
+        scene.matches(r#"aria-current="true""#).count(),
+        1,
+        "{scene}"
+    );
+    let chips = &scene[scene.find(r#"class="scc""#).expect(&scene)..];
+    let chips = &chips[..chips.find("</nav>").unwrap()];
+    assert!(chips.contains(&format!("/t/{}", ids[1])), "{chips}");
+    assert_eq!(scene.matches(&ongoing).count(), 2, "{scene}");
     // Scene is checked; Figures stays live (ASCII or None leave Scene, amendment A).
     assert!(
         scene.contains(r#"data-v="scene" aria-checked="true""#),

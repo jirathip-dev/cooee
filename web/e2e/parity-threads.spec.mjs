@@ -96,6 +96,18 @@ test("row 16: a side thread started by typing is titled by its first line; the t
   await expect(rowOf(page, id).locator(".tt")).toHaveText(`renamed ${info.project.name}`);
 });
 
+test("a phone's ‹ back to agents keeps the chat's agent current: its side threads and + new chat", async ({ page }, info) => {
+  test.skip(info.project.name !== "390", "the ‹ is a phone's");
+  const at = await agent(page, `Back ${info.project.name}`);
+  await thread(page, "Say hello", at);
+  const id = await thread(page, `side ${info.project.name}`, at);
+  await page.getByRole("link", { name: "back to agents" }).click();
+  await page.waitForURL(/\/\?list&/);
+  await expect(rowOf(page, id)).toBeVisible();
+  await rowOf(page, id).locator("xpath=..").getByRole("link", { name: "+ new chat" }).click();
+  await expect(page).toHaveURL(new RegExp(`/new\\?${at.split("?")[1]}$`));
+});
+
 test("row 17: a row swiped left is archived, undo brings it back, and the archived list restores it", async ({ page }, info) => {
   const id = await thread(page, "Say hello", await agent(page, `Row17 ${info.project.name}`));
   await page.goto("/?list");

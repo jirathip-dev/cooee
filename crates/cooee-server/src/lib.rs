@@ -310,29 +310,19 @@ async fn side(cx: &Cx) -> Result<cooee_web::Side> {
     })
 }
 
-/// `?list` keeps a phone on the agents list.
-#[derive(Deserialize)]
-struct Home {
-    list: Option<String>,
-}
-
-#[page("/")]
-async fn home(cx: &Cx) -> Result<impl View> {
-    let list = parse_query_params::<Home>(cx).is_ok_and(|q| q.list.is_some());
-    let pane = cooee_web::Pane::Home { list };
-    Ok(cooee_web::page(cx, side(cx).await?, pane))
-}
-
-/// `/new?agent=<ACP id>` (Plain) or `?profile=<id>`: a new chat with that agent.
+/// `/new?agent=<ACP id>` (Plain) or `?profile=<id>`: a new chat with that agent; on `/` (`?list` keeps a phone on
+/// the agents list) the agent on show.
 #[derive(Deserialize)]
 struct NewChat {
+    list: Option<String>,
     agent: Option<String>,
     profile: Option<String>,
 }
 
-#[page("/new")]
-async fn new_chat(cx: &Cx) -> Result<impl View> {
+/// The query's agent as a [`cooee_web::Mate`] key (empty: none), and whether it has `?list`.
+fn agent_key(cx: &Cx) -> (String, bool) {
     let q = parse_query_params::<NewChat>(cx).ok();
+    let list = q.as_ref().is_some_and(|q| q.list.is_some());
     let key = match q {
         Some(NewChat {
             profile: Some(p), ..
@@ -340,6 +330,19 @@ async fn new_chat(cx: &Cx) -> Result<impl View> {
         Some(NewChat { agent: Some(a), .. }) => format!("agent={a}"),
         _ => String::new(),
     };
+    (key, list)
+}
+
+#[page("/")]
+async fn home(cx: &Cx) -> Result<impl View> {
+    let (key, list) = agent_key(cx);
+    let pane = cooee_web::Pane::Home { list, key };
+    Ok(cooee_web::page(cx, side(cx).await?, pane))
+}
+
+#[page("/new")]
+async fn new_chat(cx: &Cx) -> Result<impl View> {
+    let (key, _) = agent_key(cx);
     Ok(cooee_web::page(
         cx,
         side(cx).await?,
