@@ -1,7 +1,6 @@
-// Agent profiles (#40) in the composer (#48): the agent sheet (serve.sh: the `reviewer` profile beside the config) lists
-// the profiles, then Plain's accounts; picking one sets the chip to its label; its thread's header shows the label; and
-// a folder picked picks its last-used profile. Each viewport's threads go in its own ~/root/project/prof-<viewport>
-// (serve.sh).
+// Agent profiles (#40) as agents (#86): the sidebar lists Plain on the agent and each profile (serve.sh: `reviewer`
+// beside the config); a new chat with Reviewer runs as its profile and its bar says so. Each viewport's chats go in
+// its own ~/root/project/prof-<viewport> (serve.sh).
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -15,40 +14,30 @@ async function audit(page) {
 
 test.beforeEach(async ({ page }) => { await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" }); });
 
-test("the agent sheet: profiles, then Plain's accounts; a profile's thread says its label; a folder picks its last", async ({ page }, info) => {
+test("a profile is an agent: listed, a new chat with it runs as it, its bar says its label", async ({ page }, info) => {
+  await page.goto("/?list");
+  const agents = page.locator(".ags");
+  await expect(agents.locator(".agr .tt", { hasText: "Reviewer" })).toBeVisible();
+  await page.goto("/new?profile=reviewer");
+  await expect(page.locator(".hi")).toContainText("New chat with Reviewer");
+  await expect(page.locator(".th .ds")).toContainText("Reviewer · reviewer · scratch");
+  // The new chat is its own current row under Reviewer; the agent's row is not marked.
+  await expect(page.locator(".agr:has(+ .sth) .tt")).toHaveText("Reviewer");
+  await expect(page.locator(".sth .str[aria-current=page]")).toHaveText(/New chat\s*now/);
+  await expect(page.locator(".agr.on")).toHaveCount(0);
+  await shot(page, info, "profile-new");
+  await audit(page);
+
   const own = `prof-${info.project.name}`;
-  const chip = page.locator("#chip-agent"), sheet = page.locator("#sh-agent");
-  const folder = async (q, name) => {
-    await page.locator("#chip-folder").click();
-    await page.getByLabel("search folders").fill(q);
-    await page.locator("#sh-folder label", { has: page.locator(".sk", { hasText: new RegExp(`^${name}$`) }) }).click();
-    await expect(page.locator("#sh-folder")).toBeHidden();
-  };
-  await page.goto("/new");
-  await folder(own, `~/root/project/${own}`);
-  await chip.click();
-  await expect(sheet.locator(".ch").first()).toHaveText("profiles");
-  await expect(sheet.locator(".pk .sk").first()).toHaveText("Reviewer");
-  await shot(page, info, "profile-sheet");
-  await audit(page);
-
-  await sheet.locator("label", { hasText: "Reviewer" }).click();
-  await expect(sheet).toBeHidden();
-  await expect(chip).toHaveText(/^Reviewer/);
-  await shot(page, info, "profile-picked");
-  await audit(page);
-
-  await page.getByLabel("first message").fill("hi");
+  await page.getByRole("button", { name: "folder: scratch ▾" }).click();
+  await page.getByLabel("search folders").fill(own);
+  await page.getByRole("radio", { name: new RegExp(`^${own}`) }).check();
+  await page.getByLabel("message", { exact: true }).fill("hi");
   await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await expect(page.locator(".th .ds")).toContainText("Reviewer · ");
+  await expect(page.locator(".th .ds")).toContainText(own);
   await expect(page.locator("#msgs .blk.me")).toHaveText(/hi/);
+  await expect(page.locator(".agr.on .tt")).toHaveText("Reviewer");
   await shot(page, info, "profile-thread");
-
-  // Back on the composer: its folder picks Reviewer, another folder a Plain account.
-  await page.goto("/new");
-  await folder(own, `~/root/project/${own}`);
-  await expect(chip).toHaveText(/^Reviewer/);
-  await folder("", "~/root/project");
-  await expect(chip).not.toHaveText(/^Reviewer/);
 });

@@ -1,19 +1,27 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-test("thread list: renders, fits the width, no axe violations", async ({ page }, info) => {
-  await page.goto("/");
+test("agents: the list renders, fits the width, no axe violations; + opens a new chat with nothing to pick", async ({ page }, info) => {
+  await page.goto("/?list");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("cooee");
-  await expect(page.locator(".fc .tr").first()).toBeVisible();
+  await expect(page.locator(".ags .agr").first()).toBeVisible();
+  await expect(page.locator(".ags .agr .av").first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
-  await page.screenshot({ path: `../../ui-${info.project.name}/threads.png`, fullPage: true });
-  await page.goto("/new");
-  await expect(page.locator("#nc")).toBeVisible();
-  // The provider and account last used (or its agent profile's label, #40), never the agent's id; once login.spec has
-  // signed in the main login, the seeded threads with no account count as its.
-  await expect(page.locator("#chip-agent")).toHaveText(/^(fake-390 · (\S+@example\.com|main login)|Reviewer)/);
-  await page.screenshot({ path: `../../ui-${info.project.name}/threads-new.png`, fullPage: true });
+  await page.screenshot({ path: `../../ui-${info.project.name}/agents.png`, fullPage: true });
+  await page.getByRole("link", { name: "new chat" }).first().click();
+  await page.waitForURL(/\/new\?/);
+  await expect(page.locator("#new")).toBeVisible();
+  await expect(page.locator(".hi")).toContainText("New chat with");
+  await expect(page.getByRole("button", { name: "folder: scratch ▾" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "close the chat" })).toBeVisible();
+  if (info.project.name === "1440") {
+    // The chat being started is its own row under the agent, which is not marked.
+    await expect(page.locator(".ags .str[aria-current=page]")).toHaveText(/New chat\s*now/);
+    await expect(page.locator(".ags .agr.on")).toHaveCount(0);
+  }
+  await expect(page.getByRole("textbox", { name: "message", exact: true })).toBeFocused();
+  await page.screenshot({ path: `../../ui-${info.project.name}/new-chat.png`, fullPage: true });
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 });
@@ -36,16 +44,35 @@ test("installable: the manifest, its icons and the service worker load", async (
 
 test("a failed start reads as one plain sentence, never the server's JSON error", async ({ page }) => {
   await page.goto("/new");
-  // No agent picked: the server refuses the request's JSON.
-  const picks = page.locator("#nc input[name=pick]");
-  const was = await picks.evaluateAll((rs) => rs.findIndex((r) => r.checked));
-  await picks.evaluateAll((rs) => rs.forEach((r) => { r.checked = false; }));
-  await page.getByLabel("first message").fill("hi");
+  // No message field: the server refuses the request's JSON.
+  await page.locator("#new textarea").evaluate((t) => { t.name = "x"; });
+  await page.getByLabel("message", { exact: true }).fill("hi");
   await page.getByRole("button", { name: "send" }).click();
   await expect(page.locator("#new-err")).toHaveText("cooee couldn't do that (error 400): reload and try again.");
   // cooee's own refusal is shown as it is.
-  await picks.nth(was).evaluate((r) => { r.checked = true; });
-  await page.locator("#nc input[name=folder]").first().evaluate((r) => { r.value = "/"; });
+  await page.goto("/new");
+  await page.locator("#new input[name=folder]").nth(1).evaluate((r) => { r.value = "/"; r.checked = true; });
+  await page.getByLabel("message", { exact: true }).fill("hi");
   await page.getByRole("button", { name: "send" }).click();
   await expect(page.locator("#new-err")).toHaveText("/ is not inside a configured root");
+});
+
+test("the current agent's row reads at AA while its chat works, on the light themes", async ({ page, context, baseURL }, info) => {
+  test.skip(info.project.name !== "1440", "the sidebar shows beside a chat from 1000 px");
+  const r = await page.request.post("/agents", { form: { name: `Busy ${info.project.name}`, profile: "" }, maxRedirects: 0 });
+  await page.goto(r.headers().location);
+  await page.getByLabel("message", { exact: true }).fill("hang on");
+  await page.getByRole("button", { name: "send" }).click();
+  await page.waitForURL(/\/t\//);
+  await expect(page.locator("#pill")).toBeVisible();
+  const row = page.locator(".ags .agr.on");
+  for (const theme of ["farm", "kitchen", "garden"]) {
+    await context.addCookies([{ name: "cooee-look", value: `theme:${theme}/mode:light`, url: baseURL }]);
+    await page.reload();
+    await expect(row.locator('[data-st="working"]')).toBeVisible();
+    const { violations } = await new AxeBuilder({ page }).include(".ags").withRules(["color-contrast"]).analyze();
+    expect(violations.map((v) => `${theme} ${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
+  }
+  await page.locator("#pill .stop").click();
+  await expect(page.locator("#pill")).toBeHidden();
 });

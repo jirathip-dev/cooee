@@ -2,7 +2,7 @@
    (these defaults are farm, dark, or farm light when the system is light) and data-style, data-figures. Both styles
    read the same tokens: Modern (the default, the Topcoat spike's look) and Terminal (herdsman's look) differ only in
    shape, radius, type and button form, set in the html[data-style=terminal] block below. Class names follow the v1
-   design (#1): fc folder card, tr thread row, blk me/ai/run/ap chat blocks, chc choices, tw composer, th thread bar. */
+   design (#1): blk me/ai/run/ap chat blocks, chc choices, tw composer, th thread bar. */
 :root{--bg:#0f1a13;--card:#1d1a12;--edge:#3b3a27;--line:#26301f;--scrim:#050b08aa;--fg:#ece4cc;--mute:#a3a68a;--l:#ecdba6;--link:#7cc4f0;--g:#7fd06a;--a:#f29b4b;--r:#ff7d6e;--p:#c7a4ff;color-scheme:dark}
 @media (prefers-color-scheme:light){:root{--bg:#f5efda;--card:#ebe2c4;--edge:#cbbd90;--line:#e0d6b4;--scrim:#2b241866;--fg:#29251a;--mute:#5c573f;--l:#6b3410;--link:#1f639b;--g:#2a6d1c;--a:#7a5f00;--r:#b81d3c;--p:#7a4aa8;color-scheme:light}}
 :root{--fs:15px;--fs-meta:13px;--fs-key:17px;--ctl:36px;--hit:44px;--r-card:16px;--r-row:12px;--r-pill:999px;--r-me:20px 20px 6px 20px;--sans:system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace;--font:var(--sans)}
@@ -21,22 +21,18 @@ button:disabled{opacity:.5;cursor:default}
 .bar h1,.bar .brand{font-size:var(--fs-key);font-weight:700;margin:0 auto 0 0;color:var(--fg);text-decoration:none}
 h1,.tb h2{font-size:inherit;margin:0}
 .list{display:flex;flex-direction:column;gap:12px;max-width:100ch;margin:0 auto;padding:12px}
-.fc,.nf,.emp{background:var(--card);border:1px solid var(--edge);border-radius:var(--r-card);padding:0 12px 4px}
+.nf,.emp{background:var(--card);border:1px solid var(--edge);border-radius:var(--r-card);padding:0 12px 4px}
 .fh{display:flex;align-items:center;gap:8px;min-height:44px}.fh b{margin-right:auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.fh .ds{flex:none}
-.fc .fh b::before{content:"";display:inline-block;width:8px;height:8px;margin-right:1ch;border-radius:50%;background:var(--link);vertical-align:middle}
-.tr{display:grid;grid-template-columns:1.2em minmax(0,1fr) auto;column-gap:4px;min-height:44px;padding:8px 0;border-top:1px solid var(--line);color:var(--fg);text-decoration:none}
-.tr .ud{grid-row:span 2;color:var(--link);font-style:normal}
-.tt{font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.tr.rd .tt{font-weight:400;color:var(--mute)}
+.tt{font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .tp{grid-column:2/4;font-size:var(--fs-meta);color:var(--mute);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.tp b{font-weight:400;margin-right:1ch}
 details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute);cursor:pointer}
 .nf{display:flex;flex-direction:column;gap:6px;padding-bottom:12px}.nf[hidden]{display:none}
-.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;color:var(--mute)}.hn code{font-family:var(--mono);color:var(--fg);overflow-wrap:anywhere}
+p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;color:var(--mute)}.hn code{font-family:var(--mono);color:var(--fg);overflow-wrap:anywhere}
 .nf input,textarea,.lgf input{font:16px/1.4 var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:44px}
-.nc:has(input[name=pick][data-folder]:checked) #chip-folder{display:none}
 .chat{display:flex;flex-direction:column;height:var(--vvh,100dvh);max-width:100ch;margin:0 auto}
 .th{display:flex;align-items:center;gap:4px;min-height:52px;padding:0 4px;background:var(--card);border-bottom:1px solid var(--edge)}
 .th .bk{color:var(--link)}
-.tb{display:flex;flex-direction:column;min-width:0;flex:1}.tb h1,.tb .ds{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tb{display:flex;flex-direction:column;min-width:0;flex:1}.tb :is(h1,h2),.tb .ds{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.tb h2{font-size:inherit;margin:0}
 .tn{display:flex;align-items:baseline;gap:1ch;min-width:0}.tn h1{min-width:0}.tn small{flex:none}
 .dt{display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%;background:var(--a)}.dt[data-sync=on]{background:var(--g)}
 .tc{position:relative;overflow-anchor:none;flex:1;overflow-y:auto;list-style:none;margin:0;padding:12px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
@@ -145,8 +141,6 @@ html[data-style=terminal] button:not(.pick,.sr,.ttl,.seg button)::after{content:
 html[data-style=terminal] .gl{color:var(--l)}
 html[data-style=terminal] .gl:not(button)::before{content:"["}html[data-style=terminal] .gl:not(button)::after{content:"]"}
 html[data-style=terminal] .bar,html[data-style=terminal] .th,html[data-style=terminal] .tw{background:var(--bg);border-color:var(--line)}
-html[data-style=terminal] .fc{border-top:3px solid var(--link)}
-html[data-style=terminal] .fc .fh b{color:var(--link)}html[data-style=terminal] .fc .fh b::before{content:none}
 html[data-style=terminal] .tt{font-weight:400}
 html[data-style=terminal] .blk.me,html[data-style=terminal] .blk.ai,html[data-style=terminal] .blk.run,html[data-style=terminal] .blk.ap{align-self:stretch;max-width:none;padding:8px 12px;background:var(--card);border:0;border-left:3px solid var(--l);border-radius:var(--r-card)}
 html[data-style=terminal] .blk.ai{border-left-color:var(--p)}
@@ -207,10 +201,48 @@ html[data-style=terminal] .swa{border-radius:4px}
 @keyframes mo-hop{50%{translate:0 -4px}}@keyframes mo-shake{25%{translate:-2px 0}75%{translate:2px 0}}@keyframes mo-pulse{50%{scale:1.25}}
 @keyframes mo-tint{from{background:color-mix(in srgb,var(--r) 18%,var(--card))}}@keyframes mo-tag{0%,100%{scale:0}8%,85%{scale:1}}
 @media (prefers-reduced-motion:reduce){#ld.run,.rfs,.th[data-mo],.th[data-mo] *{animation:none!important}}
+.fl [data-d="1"]{padding-left:16px}.fl [data-d="2"]{padding-left:32px}
 .lrw .sk{min-width:0;overflow-wrap:anywhere}
 .pga{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .plg{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.4 var(--mono);max-height:40vh;overflow:auto;margin:8px 0;padding:8px;background:var(--bg);border-radius:var(--r-row)}
 #s-plugins-box form input{flex:1;min-width:0;font:16px var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:var(--hit)}
+/* Chat-first (#86, docs/design/chat-first): the sidebar of agents beside the pane from 1000 px (340 px); on a phone the
+   list is the home screen and a chat its own screen. Avatars are initials in a scheme colour; the current agent shows
+   its side threads. The folder chip opens Use a folder…: a sheet on a phone, a 380 px panel over the chip from 1000 px. */
+.app{display:flex;flex-direction:column;height:var(--vvh,100dvh)}
+.cfm{flex:1;min-height:0;display:flex}
+.sdb{flex:1;min-width:0;overflow-y:auto;overscroll-behavior:contain}
+.cfm .chat{flex:1;min-width:0;height:auto;max-width:none;margin:0;overflow:hidden}
+.cfm .tc{padding-inline:max(12px,calc((100% - 100ch)/2))}
+@media (max-width:999px){.app[data-show=pane] :is(.tabs,.sdb),.app[data-show=list] .chat{display:none}}
+@media (min-width:1000px){.sdb{flex:none;width:340px;border-right:1px solid var(--edge)}.cfm .th .bk:not([data-ref]){display:none}}
+.ags{display:flex;flex-direction:column;padding:8px}.ags>.lb{margin:8px;font-weight:600}
+.agr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;column-gap:12px;align-items:center;padding:8px;border-radius:var(--r-row);color:var(--fg);text-decoration:none}
+.agr .av{grid-row:span 2}.agr .tt{font-weight:400}.agr.ud .tt{font-weight:700}.agr .tp{grid-column:2/4}
+.agr.on,.str.on{background:color-mix(in srgb,var(--l) 8%,var(--bg))}
+.av{display:inline-flex;align-items:center;justify-content:center;flex:none;width:40px;height:40px;border-radius:50%;font:700 13px/1 var(--font);font-style:normal;color:var(--fg);background:color-mix(in srgb,var(--av) 30%,var(--bg))}
+.big-av{width:64px;height:64px;font-size:20px}
+.sth{display:flex;flex-direction:column;padding-left:52px}
+.str{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:0 8px;border-radius:var(--r-row);color:var(--fg);text-decoration:none}
+.str .tt{font-weight:400}.str.nw{color:var(--link)}.sth summary{padding:0 8px}
+.nwa{margin-top:8px;padding:0 8px;border-top:1px solid var(--line)}.nwa summary{color:var(--link)}
+.nwa form{display:flex;flex-direction:column;gap:8px;padding-bottom:8px}.nwa .pk{display:flex;flex-direction:column;gap:4px}
+:is(.nwa,.ufs) :is(input:not([type=radio]),select){font:16px/1.4 var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:44px;width:100%}
+.hi{margin:auto;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:44ch;text-align:center}.hi p{margin:0}
+.hi .so{min-height:var(--hit);display:inline-flex;align-items:center}
+.mc{overflow-x:auto;flex-wrap:nowrap}.mc>*{flex:none}
+.fo{min-height:32px;padding:0 12px;font-size:var(--fs-meta);font-weight:400;color:var(--fg);background:var(--bg);box-shadow:inset 0 0 0 1px var(--edge)}
+.ufs{position:fixed;inset:auto 0 0 0;width:auto;max-height:80dvh;margin:0;padding:0 16px calc(12px + env(safe-area-inset-bottom));overflow-y:auto;color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:20px 20px 0 0}
+.ufs::backdrop{background:var(--scrim)}
+@media (min-width:1000px){.ufs{inset:auto auto 112px 352px;width:380px;border-radius:var(--r-card);box-shadow:0 8px 48px #0006}.ufs::backdrop{background:none}}
+.ufs .fl{display:flex;flex-direction:column;margin:0;padding:0;border:0}
+.ufs .fl label{display:flex;align-items:center;gap:8px;min-height:44px;border-top:1px solid var(--line);overflow-wrap:anywhere}.ufs .fl label .ds{margin-left:auto}
+.ufs .fl label{position:relative}.ufs .fl [type=radio]{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0}.ufs .fl label:has(:checked)::after{content:"✓";color:var(--link)}
+.ufs .fl label:has(:focus-visible){outline:2px solid var(--link)}.ufs .fl [data-d="0"]{min-height:36px;margin-top:8px;font-size:var(--fs-meta);font-weight:600;color:var(--mute);border:0}
+#fq{margin:4px 0 8px}.ufs>.ds{margin:8px 0}
+html[data-style=terminal] .av{border-radius:4px}
+html[data-style=terminal] :is(.agr,.str).on{background:none;border-radius:0;box-shadow:inset 3px 0 var(--l)}
+html[data-style=terminal] .fo::before,html[data-style=terminal] .fo::after{content:none}
 
 /* #48: one size scale for the new-thread composer, its two sheets and Settings › providers (the chat's composer takes
    it too, so nothing jumps on send):
@@ -221,65 +253,12 @@ html[data-style=terminal] .swa{border-radius:4px}
    Inputs are 16 px in both styles, so iOS doesn't zoom into them: the scale's one exception. */
 :root{--row:44px;--r-ctl:18px}
 html[data-style=terminal]{--r-ctl:6px}
-.chip,:is(.nc,.acr,.lg) button:not(.sr,.gl,.stop),.nc textarea,:is(.pop,.lg) :is(input,select){height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);font-size:var(--fs)}
+.nc button:not(.sr,.gl,.stop,.att),:is(.acr,.lg) button:not(.sr,.gl,.stop),.nc textarea,:is(.pop,.lg) :is(input,select){height:var(--ctl);min-height:var(--ctl);border-radius:var(--r-ctl);font-size:var(--fs)}
 .nc textarea,:is(.pop,.lg) :is(input,select){font-size:16px;padding:0 12px;line-height:calc(var(--ctl) - 2px)}
 .nc textarea{height:auto;max-height:40vh}
 .sec{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
-html[data-style=terminal] .sec,html[data-style=terminal] .chip{background:none;box-shadow:none}
-
-/* The shell: the header across the top, then the page. */
-body.app{display:flex;flex-direction:column;height:var(--vvh,100dvh)}
-.app>.bar{flex:none}
-.shell{flex:1;min-height:0;display:flex}
-.shell>main{flex:1;min-width:0;height:auto}
-.shell>.list{overflow-y:auto;overscroll-behavior:contain;align-self:stretch;margin:0 auto}
-
-/* The new-thread view (`/new`): the thread bar, an empty space, and the composer: the chip row, then the box and
-   [send]. On a phone the composer sits at the bottom, where the chat's will be; from 1024 px it is a 720 px card in
-   the column's upper third. */
-.nt{display:flex;flex-direction:column;height:100dvh;max-width:100ch;margin:0 auto}
-.ntsp{flex:1}.nt .nc~.ntsp{display:none}
-.nc{flex-wrap:wrap;align-items:center}#composer.nc{align-items:flex-end}
-.nc>.hn,.nc>.err{flex-basis:100%}
-.chips{display:flex;gap:8px;flex-basis:100%;min-width:0}
-.chip{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:max-content;flex:0 1 auto;padding:0 12px;border:0;background:var(--bg);color:var(--fg);font-weight:400;box-shadow:inset 0 0 0 1px var(--edge)}
-.chip>span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.chip>i{font-style:normal;color:var(--mute)}
-.chip[aria-expanded=true]{box-shadow:inset 0 0 0 2px var(--l)}
-html[data-style=terminal] button.chip{gap:0;color:var(--l);text-transform:none}
-html[data-style=terminal] .chip>i{color:inherit;margin-left:1ch}
-@media (min-width:1024px){
-  .ntsp{flex:1 1 0}
-  .nt .nc{width:min(720px,100% - 24px);margin:0 auto;padding:12px;border:1px solid var(--edge);border-radius:var(--r-card)}
-  .nt .nc~.ntsp{display:block;flex:2.5 1 0}
-}
-
-/* The agent and folder sheets: popovers of radios in the composer's form. From the bottom on a phone (as tall as the
-   list, at most 80 %, over the scrim); from 1024 px a 420 px panel under its chip with no scrim. A row is --row tall,
-   the pick has the tick; a signed-out account is muted with [sign in] on its row. */
-.pop{position:fixed;inset:auto 0 0;width:auto;height:auto;max-width:none;max-height:80%;margin:0;padding:0;overflow:visible;color:inherit;flex-direction:column;background:var(--bg);border:0;border-top:1px solid var(--edge);border-radius:20px 20px 0 0;text-align:left}
-.pop:popover-open{display:flex}
-.pop::backdrop{background:var(--scrim)}
-.pop fieldset{border:0;margin:0;padding:0;min-width:0}
-.pop select{margin:8px 8px 0 0;color:var(--fg);background:var(--bg);border:1px solid var(--edge)}
-@media (min-width:1024px){
-  .pop::backdrop{background:none}
-  .pop{inset:auto;position-area:bottom span-right;margin-top:8px;width:420px;max-height:min(560px,60vh);border:1px solid var(--edge);border-radius:var(--r-card);box-shadow:0 8px 48px #0006}
-  @supports not (position-area:bottom){.pop{left:calc(50% - 210px);top:15%}}
-}
-html[data-style=terminal] .pop{border-radius:var(--r-card) var(--r-card) 0 0}
-@media (min-width:1024px){html[data-style=terminal] .pop{border-radius:var(--r-card)}}
-.pop .ch:first-of-type{margin-top:0}
-.pk{min-height:var(--row);height:var(--row)}
-.pk>label{display:flex;align-items:center;gap:8px;flex:1;min-width:0;height:100%;cursor:pointer}
-label.pk{cursor:pointer}
-.pk input{position:absolute;opacity:0;pointer-events:none}
-.pk:has(:focus-visible){outline:2px solid var(--l);outline-offset:-2px}
-.pk .sv{margin-left:auto}
-.pk .tk{display:none;margin-left:8px;flex:none}.pk:has(:checked) .tk{display:inline}
-.pk.so .sk,.pk.so>label{color:var(--mute);cursor:default}
-.fq{display:flex;gap:8px;padding:4px 0 8px}.fq input{flex:1;min-width:0;color:var(--fg);background:var(--card);border:1px solid var(--edge)}
-
+html[data-style=terminal] .sec{background:none;box-shadow:none}
+#composer.nc{align-items:flex-end}
 /* The chat right after send: your message, then the state line where the reply will come, in the theme's loading
    word: `[sprite] saddling up · connecting claude · jk@work.com`. The reply replaces it. A failed connect puts the
    error and [retry] there instead, and your message stays. */
@@ -290,7 +269,6 @@ label.pk{cursor:pointer}
 .cfl{align-self:stretch;padding:8px 12px 12px;background:var(--card);border:1px solid var(--r);border-radius:var(--r-card)}
 .cfl p{margin:0}.cfl .cnx{display:block;min-height:28px}.cfl .ds{margin:4px 0 8px;overflow-wrap:anywhere}
 html[data-style=terminal] .cfl{border:0;border-left:3px solid var(--r);border-radius:var(--r-card)}
-
 /* Settings › providers: one flat list, one --row row per account: the provider tag, the account (its email, else its
    name), its state and one key. Each installed provider ends with [+ account]; one that isn't installed is one row. */
 .acr{display:flex;align-items:center;gap:8px;min-height:var(--row);border-bottom:1px solid var(--line)}
@@ -309,9 +287,9 @@ html[data-style=terminal] .ptg{min-width:7ch;padding:0;background:none;color:var
 .tds{color:var(--mute);font-size:var(--fs-meta)}.prv{max-width:100ch;margin:0 auto}.prv .th h1{flex:1}.prg{margin:12px;color:var(--mute);font-size:var(--fs-meta)}.prx{margin:0 12px}
 .prf{display:grid;gap:12px;padding:0 12px 12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
 .prf iframe,.prf img{width:100%;height:70dvh;border:1px solid var(--edge);border-radius:var(--r-card);background:var(--bg)}.prf img{height:auto}
-/* #43, herdsman#553 rows 15–29. The list: a row's unread badge, a swipe's slide, the archived threads. */
+/* #43, herdsman#553 rows 15–29. The agents list: a row's unread badge, a swipe's slide, the archived chats. */
 .bd{display:inline-block;margin-left:6px;padding:0 6px;border-radius:var(--r-pill);background:var(--link);color:var(--bg);font-size:11px;font-weight:700;line-height:1.5}
-.fc a.tr{transition:transform .15s}
+.ags [data-id]{transition:transform .15s}.ags .arc{margin-top:8px;padding:0 8px}
 .arc>summary{padding:0}.arw{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:var(--hit);border-top:1px solid var(--line)}.arw a{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .arw .cn,.qc button{min-height:36px;padding:0 12px;background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
 #toast button{min-height:28px;margin-left:8px;padding:0 10px}
@@ -352,20 +330,16 @@ html[data-style=terminal] .ptg{min-width:7ch;padding:0;background:none;color:var
 .blk.me,.blk.ai{-webkit-touch-callout:none}
 .mn{display:none;position:fixed;inset:auto;margin:0;padding:4px;flex-direction:column;min-width:200px;color:var(--fg);background:var(--card);border:1px solid var(--edge);border-radius:var(--r-row);box-shadow:0 8px 32px #0006}.mn:popover-open{display:flex}
 .mn button{min-height:var(--hit);background:none;color:var(--fg);font-weight:400;text-align:left;border-radius:var(--r-row)}
-/* #34 Scene: the thread list as the theme's scene (herdsman's Herd): a page per folder, swiped sideways (scroll-snap),
-   its dots on top; each page the scene's strip, the folder's bar, then each session's 132 × 100 sprite in a 156 px slot
-   with its name card. The pasture (--pa) and the cards' colours are herdsman's, so they read on any scheme. */
-.scn{--pa:linear-gradient(var(--card),var(--bg));margin:0 -12px}
+/* #34 Scene, the sidebar's (#86): the agents as the theme's scene (herdsman's Herd) on one page: the scene's strip,
+   its bar, then each agent's 132 × 100 sprite in a 156 px slot with its name card, the current one ringed; its chats
+   as chips under it. The pasture (--pa) and the cards' colours are herdsman's, so they read on any scheme. */
+.scn{--pa:linear-gradient(var(--card),var(--bg));margin:0 -8px}
 [data-theme=farm] .scn{--pa:linear-gradient(#a9b06c,#7f8f50 40vh,#4c6340)}[data-theme=farm] .scn.night{--pa:linear-gradient(#576c62,#3b5750 40vh,#28413f)}
 [data-theme=kitchen] .scn{--pa:repeating-conic-gradient(#4a3f38 0 25%,#41372f 0 50%) 0 0/24px 24px}
 [data-theme=garden] .scn{--pa:repeating-linear-gradient(90deg,#8a5a34 0 46px,#7a4e2c 46px 48px)}
-.sdt{display:flex;justify-content:center;gap:4px}
-.sdt a{display:flex;align-items:center;justify-content:center;width:28px;height:28px}
-.sdt a::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--fg);opacity:.35}.sdt a[aria-current]::before{opacity:1}
-.spg{display:flex;overflow:auto hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none}
-.spg::-webkit-scrollbar{display:none}
-.sp{flex:0 0 100%;min-width:0;min-height:70svh;scroll-snap-align:start;scroll-snap-stop:always;background:var(--pa);padding-bottom:12px}
+.sp{background:var(--pa);padding-bottom:12px}
 .sky{display:block;width:100%;height:min(calc(100vw * .5),max(120px,22vh));object-fit:cover;object-position:50% 100%}
+@media (min-width:1000px){.sky{height:170px}}
 .sp .fh{margin:0;padding:0 12px;font-size:var(--fs);background:#1f2a38f0;color:#f4ecd8}.sp .fh .ds{color:#f4ecd8}
 .fld{display:flex;flex-wrap:wrap;justify-content:center;align-items:start;gap:8px;padding-top:8px}
 .sb{flex:0 0 156px;display:flex;flex-direction:column;align-items:center;min-width:0;color:inherit;text-decoration:none}
@@ -373,4 +347,7 @@ html[data-style=terminal] .ptg{min-width:7ch;padding:0;background:none;color:var
 .sn{display:flex;flex-direction:column;max-width:156px;margin-top:-4px;padding:4px 8px;border-radius:8px;background:#f4ecd8;color:#3a332e;font-size:var(--fs-meta);line-height:1.3;text-align:center;box-shadow:0 1px 3px #0004}
 .sn>*{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sb.rd .sn b{font-weight:400}
 .sn .sw{color:#5d554d}.sn .sw.needs,.sn .sw.fail{color:#b3261e;font-weight:600}.sn .sw.working{color:#2f6b32}
-.sb:has(.sw.needs) .sn{background:#f6d9d3}
+.sb:has(.sw.needs) .sn{background:#f6d9d3}.sb[aria-current] .sn{box-shadow:0 0 0 3px #1f2a38,0 1px 3px #0004}
+.scc{display:flex;flex-wrap:wrap;gap:8px;padding:12px 4px 4px}
+.scc .chip{display:inline-flex;align-items:center;min-height:var(--hit);padding:0 12px}
+.scc .chip[aria-current]{background:color-mix(in srgb,var(--l) 14%,var(--card));color:var(--fg);font-weight:600}

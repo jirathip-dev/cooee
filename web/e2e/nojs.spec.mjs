@@ -1,12 +1,12 @@
-// HTML-first (#49): with script off, the sheets and the new-thread form still open, as server HTML: the look sheet (a
-// key posts the pick, and the page comes back drawn in it), Settings, and the new thread's chips' sheets (#48).
+// HTML-first (#49): with script off, the sheets and a new chat still open, as server HTML: the look sheet (a key
+// posts the pick, and the page comes back drawn in it), Settings, and Use a folder… (#86).
 import { expect, test } from "@playwright/test";
 
 test.use({ javaScriptEnabled: false });
 
 const shot = (page, info, name) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png` });
 
-test("with no script the look sheet, Settings and the new thread's chips' sheets open", async ({ page }, info) => {
+test("with no script the look sheet, Settings and Use a folder… open", async ({ page }, info) => {
   await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
   await page.goto("/");
   const open = page.locator("#sheet .sh:popover-open");
@@ -34,14 +34,9 @@ test("with no script the look sheet, Settings and the new thread's chips' sheets
   await expect(open).toHaveCount(0);
 
   await page.goto("/new");
-  await expect(page.locator("#nc")).toBeVisible();
-  await page.locator("#chip-folder").click();
-  await expect(page.locator("#sh-folder")).toBeVisible();
-  await expect(page.locator("#nc input[name=folder]").first()).toBeChecked();
-  await expect(page.locator("#sh-folder .sk", { hasText: /^~\/root$/ })).toBeVisible();
+  await expect(page.locator("#new")).toBeVisible();
+  await expect(page.locator("#new input[name=folder]").first()).toBeChecked();
+  await page.getByRole("button", { name: "folder: scratch ▾" }).click();
+  await expect(page.getByRole("radio", { name: /^~\/root( |$)/ })).toBeVisible();
   await shot(page, info, "nojs-new");
-  await page.keyboard.press("Escape");
-  await page.locator("#chip-agent").click();
-  await expect(page.locator("#sh-agent")).toBeVisible();
-  await expect(page.locator("#sh-agent .sk", { hasText: "work@example.com" })).toBeVisible();
 });

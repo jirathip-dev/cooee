@@ -93,19 +93,11 @@ impl Setup {
         (id, line.to_owned())
     }
 
-    /// The composer's agent sheet (#48): the profiles, then Plain's accounts.
+    /// The sidebar's agents (#86): Plain on each agent, then each profile.
     fn picker(&self) -> String {
-        let page = self.cooee.get("/new").1;
-        let at = page.find(r#"id="sh-agent""#).expect("an agent sheet");
-        page[at..at + page[at..].find(r#"id="sh-folder""#).unwrap()].to_owned()
-    }
-
-    /// The pick the agent sheet starts on.
-    fn picked(&self) -> String {
-        let sheet = self.picker();
-        let input = sheet.split("<input").find(|i| i.contains(r#"checked="""#));
-        let value = input.expect("a pick").split(r#"value=""#).nth(1).unwrap();
-        value.split('"').next().unwrap().to_owned()
+        let page = self.cooee.get("/").1;
+        let at = page.find(r#"<nav class="ags""#).expect("the agents");
+        page[at..at + page[at..].find("</nav>").unwrap()].to_owned()
     }
 
     /// Every file under `dir`, as text.
@@ -125,15 +117,14 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let s = setup("profiles");
     let picker = s.picker();
     assert!(
-        picker.contains(r#"value="p:coder""#)
-            && picker.contains(r#"data-label="Coder""#)
-            && picker.contains(r#"value="p:guard""#)
-            && picker.contains(r#"data-label="Guarded""#)
+        picker.contains(r#"href="/new?agent=fake-acp""#)
+            && picker.contains(r#"<span class="tt">Fake</span>"#)
+            && picker.contains(r#"href="/new?profile=coder""#)
+            && picker.contains(r#"<span class="tt">Coder</span>"#)
+            && picker.contains(r#"<span class="tt">Guarded</span>"#)
             && !picker.contains("Leak"),
         "{picker}"
     );
-    // No thread yet: Plain's first account.
-    assert_eq!(s.picked(), "fake-acp/");
 
     // Plain: the agent as it is.
     let (id, line) = s.thread("", "hi");
@@ -146,7 +137,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     assert_eq!(s.shed.sent(&terminal), ["\x1e{\"prompt\":\"hi\"}\n"]);
     let chat = s.cooee.get(&format!("/t/{id}")).1;
     assert!(
-        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>fake · main login · "),
+        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Plain · fake · main login · "),
         "{chat}"
     );
 
@@ -193,13 +184,8 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Coder · "),
         "{chat}"
     );
-    // The folder's last-used profile is picked next time it is picked; scratch (no folder) stays on Plain.
-    let root = format!(
-        r#"value="{}" data-last="p:coder""#,
-        s.dir.join("root").display()
-    );
-    assert!(s.cooee.get("/new").1.contains(&root));
-    assert_eq!(s.picked(), "fake-acp/");
+    // Coder's ongoing chat is this one.
+    assert!(s.picker().contains(&format!(r#"href="/t/{id}""#)));
 
     // A guard its agent can't run: refused, nothing started.
     let runs = s.shed.cli_log().matches(" run ").count();
@@ -211,9 +197,9 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     );
     assert_eq!(s.shed.cli_log().matches(" run ").count(), runs);
     assert_eq!(
-        s.cooee.json("/threads")["cards"].as_array().unwrap().len(),
-        1,
-        "one card, two threads"
+        s.cooee.json("/threads").as_array().unwrap().len(),
+        2,
+        "two threads, the refused start none"
     );
     // An unknown profile, and one left out for a secret inline, are refused too.
     for id in ["nope", "leak"] {
@@ -267,7 +253,7 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
     .unwrap();
     git(&repo, &["add", "-A"]);
     git(&repo, &["commit", "--quiet", "-m", "1"]);
-    let option = r#"value="p:plug/conductor""#;
+    let option = r#"href="/new?profile=plug/conductor""#;
     assert!(!s.picker().contains(option));
 
     let url = repo.to_string_lossy().into_owned();
@@ -277,7 +263,6 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
         "{out}"
     );
     assert!(s.picker().contains(option), "{}", s.picker());
-    assert!(s.picker().contains(r#"data-label="Conductor · plug""#));
     let (id, _) = s.thread("plug/conductor", "go");
     assert_eq!(
         s.shed.sent(&format!("cooee-{id}")),

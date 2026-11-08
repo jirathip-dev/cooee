@@ -294,45 +294,89 @@ fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
     .collect()
 }
 
-/// The thread list, what the composer needs and the providers, as last checked.
-async fn shell(
-    cx: &Cx,
-) -> Result<
-    (
-        Vec<cooee_core::Summary>,
-        cooee_web::New,
-        Vec<cooee_core::Sheet>,
-    ),
-    HubError,
-> {
+/// The sidebar's and a new chat's data (#86).
+async fn side(cx: &Cx) -> Result<cooee_web::Side> {
     let providers = on_logins(cx, |l| Ok(l.statuses()));
-    let rest = blocking(cx, |hub| {
-        let agents = hub.agents();
-        Ok((hub.list(), agents, hub.folders()))
-    });
+    let rest = blocking(cx, |hub| Ok((hub.list(), hub.agents(), hub.folders())));
     let (providers, (rows, agents, folders)) =
         futures_util::future::try_join(providers, rest).await?;
-    let profiles = profiles(cx);
-    let new = cooee_web::New {
+    Ok(cooee_web::Side {
+        rows,
+        profiles: profiles(cx),
         agents,
-        profiles,
+        providers,
         folders,
+        tabs: tabs(cx),
+    })
+}
+
+/// `/new?agent=<ACP id>` (Plain) or `?profile=<id>`: a new chat with that agent; on `/` (`?list` keeps a phone on
+/// the agents list) the agent on show.
+#[derive(Deserialize)]
+struct NewChat {
+    list: Option<String>,
+    agent: Option<String>,
+    profile: Option<String>,
+}
+
+/// The query's agent as a [`cooee_web::Mate`] key (empty: none), and whether it has `?list`.
+fn agent_key(cx: &Cx) -> (String, bool) {
+    let q = parse_query_params::<NewChat>(cx).ok();
+    let list = q.as_ref().is_some_and(|q| q.list.is_some());
+    let key = match q {
+        Some(NewChat {
+            profile: Some(p), ..
+        }) => format!("profile={p}"),
+        Some(NewChat { agent: Some(a), .. }) => format!("agent={a}"),
+        _ => String::new(),
     };
-    Ok((rows, new, providers))
+    (key, list)
 }
 
 #[page("/")]
 async fn home(cx: &Cx) -> Result<impl View> {
-    let providers = on_logins(cx, |l| Ok(l.statuses()));
-    let rows = blocking(cx, |hub| Ok(hub.list()));
-    let (providers, rows) = futures_util::future::try_join(providers, rows).await?;
-    Ok(cooee_web::threads_page(cx, rows, providers, tabs(cx)))
+    let (key, list) = agent_key(cx);
+    let pane = cooee_web::Pane::Home { list, key };
+    Ok(cooee_web::page(cx, side(cx).await?, pane))
 }
 
 #[page("/new")]
-async fn new_thread(cx: &Cx) -> Result<impl View> {
-    let (rows, new, providers) = shell(cx).await?;
-    Ok(cooee_web::new_page(cx, rows, new, providers, tabs(cx)))
+async fn new_chat(cx: &Cx) -> Result<impl View> {
+    let (key, _) = agent_key(cx);
+    Ok(cooee_web::page(
+        cx,
+        side(cx).await?,
+        cooee_web::Pane::New { key },
+    ))
+}
+
+/// `POST /agents` (a form): `+ new agent`, a name and the profile it starts from (empty: Plain on the first
+/// installed agent); saved as a profile of its own, then its new chat opens.
+#[derive(Deserialize)]
+struct NewAgent {
+    name: String,
+    #[serde(default)]
+    profile: String,
+}
+
+#[route(POST "/agents")]
+async fn new_agent(cx: &Cx, Form(a): Form<NewAgent>) -> Result<Response> {
+    let data = app_context::<Data>(cx);
+    let (data, config) = (data.0.clone(), data.1.clone());
+    let made = blocking(cx, move |hub| {
+        let first = hub.agents().ok().and_then(|a| a.into_iter().next());
+        let agent = first.map(|a| a.id).unwrap_or_default();
+        let config = config.ok_or_else(|| refused("there is no config folder for profiles"))?;
+        cooee_core::profiles::create(&config, &data, &a.name, &a.profile, &agent).map_err(refused)
+    })
+    .await;
+    match made {
+        Ok(p) => Ok(Response::builder()
+            .status(303)
+            .header("Location", format!("/new?profile={}", p.id()))
+            .body(Body::from(()))?),
+        Err(e) => plain(400, &e.to_string()),
+    }
 }
 
 /// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account.
@@ -394,27 +438,24 @@ async fn login_cancel(cx: &Cx) -> Result<Answer<()>> {
 #[page("/t/{id}")]
 async fn chat(cx: &Cx) -> Result<impl View> {
     let id = thread_id(cx);
-    // With every thread's id, so a ref to one in the chat opens it (#84).
-    let Ok((thread, ids)) = blocking(cx, move |hub| {
-        let thread = hub.thread(&id)?;
-        Ok((thread, hub.list().into_iter().map(|t| t.id).collect()))
-    })
-    .await
-    else {
+    let Ok((thread, turn)) = blocking(cx, move |hub| hub.thread(&id)).await else {
         return Err(not_found().into());
     };
-    let profile = profiles(cx)
-        .into_iter()
-        .find(|p| p.id() == thread.0.profile);
+    let profile = profiles(cx).into_iter().find(|p| p.id() == thread.profile);
     let label = match profile {
         Some(p) => p.label,
-        None => thread.0.profile.clone(),
+        None => thread.profile.clone(),
     };
-    let choices = logins(cx).choices(&thread.0.agent);
-    let providers = logins(cx).statuses();
-    Ok(cooee_web::chat_page(
-        cx, thread, providers, label, choices, ids,
-    ))
+    let choices = logins(cx).choices(&thread.agent);
+    let folder = thread.folder.clone();
+    let pane = cooee_web::Pane::Chat {
+        thread: Box::new(thread),
+        turn,
+        profile: label,
+        folder,
+        choices,
+    };
+    Ok(cooee_web::page(cx, side(cx).await?, pane))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -481,18 +522,10 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
-/// `GET /threads`: the thread list's cards under the device's chip and its archived threads, as the page draws them
-/// (docs/api.md).
+/// `GET /threads`: every thread's row, newest first (docs/api.md).
 #[route(GET "/threads")]
-async fn thread_list(cx: &Cx) -> Result<Answer<cooee_web::Listed>> {
-    let providers = logins(cx).statuses();
-    let list = cooee_web::chip(cx);
-    Ok(Answer(
-        blocking(cx, move |hub| {
-            Ok(cooee_web::listed(hub.list(), &providers, list))
-        })
-        .await,
-    ))
+async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
+    Ok(Answer(blocking(cx, |hub| Ok(hub.list())).await))
 }
 
 /// `POST /threads`: a new thread.
@@ -574,6 +607,33 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
         )?;
         let name = cooee_web::named(&t.agent, &logins.statuses());
         hub.retry(&id, recipe, &name)
+    });
+    Ok(Answer(
+        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
+    ))
+}
+
+/// `POST /threads/{id}/folder`: "Use a folder…" (#86).
+#[derive(Deserialize)]
+struct Attach {
+    folder: PathBuf,
+}
+
+#[route(POST "/threads/{id}/folder")]
+async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Item>> {
+    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+    let data = app_context::<Data>(cx);
+    let (data, config) = (data.0.clone(), data.1.clone());
+    let done = tokio::task::spawn_blocking(move || {
+        let (t, _) = hub.thread(&id)?;
+        let (_, _, recipe) = recipe(
+            &logins,
+            (&data, config.as_deref()),
+            (&t.agent, Some(&t.account), &t.profile),
+            PathBuf::new(),
+            (t.model, t.effort),
+        )?;
+        hub.attach(&id, &a.folder, &recipe)
     });
     Ok(Answer(
         done.await.map_err(|e| HubError::Refused(e.to_string()))?,
@@ -1734,13 +1794,15 @@ pub fn router(
         .route(passkey_check)
         .route(report)
         .page(home)
-        .page(new_thread)
         .page(chat)
+        .page(new_chat)
         .route(thread_list)
         .route(messages)
         .route(events)
         .route(create)
         .route(retry)
+        .route(new_agent)
+        .route(attach)
         .route(browse)
         .route(root)
         .route(new_folder)

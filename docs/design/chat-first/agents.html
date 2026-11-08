@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · Chief (#86: the agents and an ongoing chat)</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="cf.css">
+<script type="module" src="cf.js"></script>
+</head>
+<body>
+<div class="cf">
+  <header class="bar">
+    <h1>cooee</h1>
+    <nav class="tabs" aria-label="tabs"><a href="#" class="on">Chat</a><a href="#">Workflow</a><a href="#">Machines</a></nav>
+    <button type="button" class="gl" aria-label="refresh">↻</button>
+    <a class="gl" href="new.html" aria-label="new chat with Chief">+</a>
+    <button type="button" class="gl" aria-label="look">◐</button>
+    <button type="button" class="gl" aria-label="settings">⚙</button>
+  </header>
+  <div class="cfm">
+    <nav class="ags" id="agents" data-cur="chief" aria-label="agents"></nav>
+    <p class="cap">A tap on Chief opens its ongoing chat:</p>
+    <main class="chat">
+      <div class="th">
+        <a class="gl bk" href="#" aria-label="back to agents">‹</a>
+        <i data-av="chief"></i>
+        <div class="tb">
+          <h1>Chief</h1>
+          <span class="ds"><i class="dt" data-sync="on"></i>Plain · scratch · <span data-st="done"></span></span>
+        </div>
+      </div>
+      <ol class="tc" aria-label="messages">
+        <li class="blk me"><div class="md">Who runs Kestrel's finance team now?</div><span class="ct">08:40</span></li>
+        <li class="blk xm"><details><summary><span class="avs"><i data-av="res" data-cls="s"></i><i data-av="chief" data-cls="s"></i></span><span class="xt">Messages from Researcher and Chief</span><span class="ct">2 · 08:41</span></summary></details></li>
+        <li class="blk ai"><b class="k">Chief</b><div class="md">Dana Okafor, since September (Researcher found it in their 2 Sep filing).</div></li>
+        <li class="blk me"><div class="md">Which client renewals are due this month? Draft a short note for each.</div><span class="ct">09:12</span></li>
+        <li class="blk xm"><details open><summary><span class="avs"><i data-av="am" data-cls="s"></i><i data-av="chief" data-cls="s"></i></span><span class="xt">Messages from Account Manager and Chief</span><span class="ct">2 · 09:13</span></summary>
+          <ol class="xl">
+            <li><i data-av="chief" data-cls="s"></i><b class="k">Chief → Account Manager <span class="ct">09:13</span></b><div class="md">Which renewals are due this month? Name, date and owner.</div></li>
+            <li><i data-av="am" data-cls="s"></i><b class="k">Account Manager → Chief <span class="ct">09:14</span></b><div class="md">Acme 14 Nov (Lee), Birch &amp; Co 21 Nov (Sam), Kestrel 28 Nov (Dana Okafor).</div></li>
+          </ol>
+          <a class="chip" href="received.html">open Account Manager's chat</a>
+        </details></li>
+        <li class="blk run"><span class="k">tool</span><span class="cmd">Write renewals.md</span><span class="ts g">✓</span></li>
+        <li class="blk ai"><b class="k">Chief</b><div class="md">Three are due: Acme on the 14th, Birch &amp; Co on the 21st and Kestrel on the 28th. The three notes are in renewals.md.</div></li>
+        <li class="blk me"><div class="md">Good. Do this every Monday at 9.</div><span class="ct">09:16</span></li>
+        <li class="rt"><span class="gy">⟳</span><b>Created routine: Monday renewals</b><span>Mondays 09:00 · in this chat</span><a href="#">edit ▸</a></li>
+        <li class="blk ai"><b class="k">Chief</b><div class="md">Done. Every Monday at 09:00 I'll check the renewals and tell you here.</div></li>
+        <li class="te"><span data-st="done" data-plain=""></span><span class="ct">09:17 · 5 min · 3 tools</span></li>
+      </ol>
+      <div class="mc">
+        <button type="button" class="fo" aria-haspopup="dialog">folder: scratch ▾</button>
+        <select aria-label="model"><option>model: default</option></select>
+        <select aria-label="effort"><option>effort: default</option></select>
+      </div>
+      <form class="tw"><textarea rows="1" aria-label="message" placeholder="message Chief"></textarea><button type="button">send</button></form>
+    </main>
+  </div>
+</div>
+</body>
+</html>
