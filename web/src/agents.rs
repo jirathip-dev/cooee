@@ -12,7 +12,7 @@ use topcoat::{
     view::{Unescaped, View, component, view},
 };
 
-use super::{age, document, header, hint, pick, short, shown, signins, state};
+use super::{age, document, header, hint, named, pick, short, shown, state};
 
 /// One agent in the sidebar.
 #[derive(Debug, Clone)]
@@ -621,13 +621,11 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
     Ok(view! {
         document(
             title: title.as_str(),
+            providers: providers.clone(),
             <div class="app" data-show=(show)>
                 header(home: home, tabs: tabs, current: String::new(), new: new)
                 <main class="cfm">
                     <div class="sdb">
-                        if home {
-                            signins(providers: providers.clone())
-                        }
                         sidebar(
                             mates: mates.clone(),
                             profiles: profiles,
@@ -646,6 +644,7 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
                             super::chat(
                                 thread: *thread,
                                 turn: turn,
+                                providers: &providers,
                                 profile: profile,
                                 mate: mate.map(
                                     |(n, m)| {
@@ -721,8 +720,11 @@ async fn hello(
     let provider = mate
         .as_ref()
         .and_then(|(_, m)| providers.iter().find(|p| p.provider.agent == m.agent));
-    let signed_out =
-        provider.is_some_and(|p| p.accounts.iter().any(|(a, s)| a.default && !s.signed_in));
+    let signed_out = provider.is_some_and(|p| {
+        p.accounts
+            .iter()
+            .any(|(a, s)| a.name.is_empty() && !s.signed_in)
+    });
     let choices = provider.map_or_else(Default::default, |p| {
         (p.provider.models.clone(), p.provider.efforts.clone())
     });
@@ -730,6 +732,9 @@ async fn hello(
         <div class="chat hip">
             match mate {
                 None => {
+                    if !home {
+                        <h1 class="vh">"New chat"</h1>
+                    }
                     <div class="tc">
                         match none {
                             Some(e) => {
@@ -755,9 +760,13 @@ async fn hello(
                                 "It starts in a scratch folder of its own. Use a folder… whenever this should work in a repo."
                             </p>
                             if signed_out {
-                                <a class="so" href="/#signins">
-                                    (format!("sign in {}", m.agent))
-                                </a>
+                                <button
+                                    type="button"
+                                    class="so"
+                                    popovertarget="sh-providers"
+                                >
+                                    (format!("sign in {}", named(&m.agent, &providers)))
+                                </button>
                             }
                         </div>
                     </div>

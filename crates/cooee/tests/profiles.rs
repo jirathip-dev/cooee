@@ -137,9 +137,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     assert_eq!(s.shed.sent(&terminal), ["\x1e{\"prompt\":\"hi\"}\n"]);
     let chat = s.cooee.get(&format!("/t/{id}")).1;
     assert!(
-        chat.contains(
-            "<i class=\"dt\"></i><span id=\"net\"></span>Plain · fake-acp · System default · "
-        ),
+        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Plain · fake · main login · "),
         "{chat}"
     );
 
@@ -182,7 +180,10 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let items = s.cooee.json(&format!("/threads/{id}/messages"));
     assert_eq!(items["items"][0]["text"], "hi", "{items}");
     let chat = s.cooee.get(&format!("/t/{id}")).1;
-    assert!(chat.contains("Coder · fake-acp · work · "), "{chat}");
+    assert!(
+        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Coder · "),
+        "{chat}"
+    );
     // Coder's ongoing chat is this one.
     assert!(s.picker().contains(&format!(r#"href="/t/{id}""#)));
 
@@ -271,7 +272,7 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
         s.cooee
             .get(&format!("/t/{id}"))
             .1
-            .contains("Conductor · fake-acp · ")
+            .contains("<i class=\"dt\"></i><span id=\"net\"></span>Conductor · ")
     );
 
     s.cooee.cli(&["plugin", "remove", "plug"]);

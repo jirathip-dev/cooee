@@ -174,7 +174,7 @@ fn an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_p
     );
     // The side thread's bar: its title, its agent before the rest; in its scratch folder.
     assert!(
-        page.contains(">second</button></h1>") && page.contains("fake-acp · Plain · fake-acp · "),
+        page.contains(">second</button></h1>") && page.contains("fake-acp · Plain · fake · "),
         "{page}"
     );
     assert!(

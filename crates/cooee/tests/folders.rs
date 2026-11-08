@@ -79,7 +79,7 @@ fn add_and_remove_root_persists_in_the_config() {
         text.contains(r#""~/Projects"]"#) && text.contains("shed_dir = "),
         "{text}"
     );
-    let (_, page) = cooee.get("/");
+    let (_, page) = cooee.get("/new");
     let sub = format!(
         r#"name="folder" value="{}""#,
         projects.join("app").display()
@@ -104,7 +104,7 @@ fn add_and_remove_root_persists_in_the_config() {
             .unwrap()
             .contains("Projects")
     );
-    let (_, page) = cooee.get("/");
+    let (_, page) = cooee.get("/new");
     assert!(!page.contains("Projects"), "{page}");
 }
 

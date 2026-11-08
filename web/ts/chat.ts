@@ -38,6 +38,7 @@ type Slice = {
   queue?: Queued[];
   at?: number;
   waiting?: Item | null;
+  pending?: { text: string; random_id: string };
 };
 
 const rid = (): string => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
@@ -271,9 +272,10 @@ if (form) {
       profile: f.get("profile"),
       model: f.get("model") ?? "",
       effort: f.get("effort") ?? "",
-      folder: f.get("folder") || null,
+      folder: f.get("folder") ?? "",
       text: f.get("text"),
       random_id: form.dataset.rid,
+      background: true,
     };
     if (start) start.disabled = true;
     try {
@@ -346,45 +348,50 @@ ufs?.addEventListener("change", async (e) => {
   if (bf) bf.textContent = t.value ? (t.parentElement?.title ?? name) : "scratch";
 });
 
-// An empty picker's hint: its copy button puts the fix line on the clipboard.
+// A hint's copy button puts its line on the clipboard (Settings › providers' [copy install] too).
 document.addEventListener("click", (e) => {
   const b = (e.target as Element).closest?.<HTMLElement>("[data-copy]");
   if (!b?.dataset.copy) return;
   navigator.clipboard?.writeText(b.dataset.copy).then(
     () => {
+      const was = b.textContent;
       b.textContent = "copied";
+      setTimeout(() => (b.textContent = was), 1500);
     },
     () => {},
   );
 });
 
-// The sign-ins card (open on `#signins`, by CSS). [sign in] starts the provider's own login for that account in a
-// shed terminal ([+ account]: in a new account's folder); its screen (redacted by the server) is drawn every second
-// with its links tappable, a code typed below goes to it, and once it ends the page reloads with the accounts' state.
-// [sign out] (after a confirm) and [make default] reload it too.
+// Sign-ins, in Settings › providers: [sign in] starts the provider's own login for that account
+// in a shed terminal ([+ account]: in a new account's folder); its terminal opens under the row, its screen
+// (redacted by the server) drawn every second with its links tappable, and a code typed there goes to it. Once it
+// ends the page reloads with the accounts' state (Settings › providers open again). [sign out] (after a confirm) reloads it too.
 type LoginView = { state: string; screen: string; links: string[] };
-for (const row of document.querySelectorAll<HTMLElement>("#signins .pv")) {
-  const api = `/logins/${row.dataset.provider}`;
-  const lg = $(".lg", row);
-  const out = $(".out", row);
-  const code = $<HTMLInputElement>("input", row);
-  let timer = 0;
-  const tell = (m: string): void => {
-    let w = $(".wy", row);
-    if (!w) {
-      w = make("p", "ds wy");
-      $(".fh", row)?.after(w);
-    }
-    w.textContent = m;
-  };
+let loginTimer = 0;
+const tell = (row: HTMLElement, m: string): void => {
+  let w = row.nextElementSibling?.classList.contains("wy") ? (row.nextElementSibling as HTMLElement) : null;
+  if (!w) {
+    w = make("p", "err wy");
+    row.after(w);
+  }
+  w.textContent = m;
+};
+const again = (): void => {
+  location.hash = "#settings/providers";
+  location.reload();
+};
+function signIn(row: HTMLElement, provider: string, body: object): void {
+  const api = `/logins/${provider}`;
+  const lg = row.closest(".top")?.querySelector<HTMLElement>(`.lg[data-provider="${CSS.escape(provider)}"]`);
+  const out = lg && $(".out", lg);
+  if (!lg || !out) return;
   const draw = (v: LoginView): void => {
     if (v.state === "ended") {
-      clearInterval(timer);
-      location.reload();
+      clearInterval(loginTimer);
+      again();
     }
-    if (v.state !== "running" || !lg || !out) return;
+    if (v.state !== "running") return;
     lg.hidden = false;
-    for (const b of row.querySelectorAll<HTMLElement>(".si, .ad")) b.hidden = true;
     out.replaceChildren();
     let rest = v.screen;
     for (const url of v.links) {
@@ -403,57 +410,50 @@ for (const row of document.querySelectorAll<HTMLElement>("#signins .pv")) {
     const r = await fetch(api);
     if (r.ok) draw(await r.json());
   };
-  const start = async (body: object, state: HTMLElement | null): Promise<void> => {
-    try {
-      await post(api, body);
-    } catch (x) {
-      return tell(message(x));
-    }
-    if (state) {
-      state.className = "a";
-      state.textContent = "signing in";
-    }
-    clearInterval(timer);
-    timer = setInterval(poll, 1000);
-    poll();
-  };
-  const reload = (p: Promise<unknown>): void => {
-    p.then(
-      () => location.reload(),
-      (x) => tell(message(x)),
-    );
-  };
-  const add = $(".ad", row);
-  if (add) add.onclick = () => start({ new: true }, null);
-  for (const ac of row.querySelectorAll<HTMLElement>(".ac")) {
-    const account = ac.dataset.account ?? "";
-    const label = $("b", ac)?.textContent ?? "";
-    const si = $(".si", ac);
-    const so = $(".sg", ac);
-    const df = $(".df", ac);
-    if (si) si.onclick = () => start({ account }, $(".fh span", ac));
-    if (so)
-      so.onclick = () => {
-        if (confirm(`Sign ${label} out?${account ? " Its folder is removed." : ""}`))
-          reload(post(`${api}/signout`, { account }));
-      };
-    if (df) df.onclick = () => reload(post(`${api}/default`, { account }));
-  }
-  const tw = $<HTMLFormElement>("form", row);
-  if (tw)
-    tw.onsubmit = async (e) => {
-      e.preventDefault();
+  const code = $<HTMLInputElement>("input", lg);
+  const go = $<HTMLButtonElement>(".lgs", lg);
+  const cn = $<HTMLButtonElement>(".cn", lg);
+  if (go)
+    go.onclick = async () => {
       try {
         await post(`${api}/send`, { text: code?.value ?? "" });
         if (code) code.value = "";
         poll();
       } catch (x) {
-        tell(message(x));
+        tell(lg, message(x));
       }
     };
-  const cn = $(".cn", row);
   if (cn) cn.onclick = () => post(`${api}/cancel`, {}).then(poll, poll);
+  row.after(lg);
+  post(api, body).then(
+    () => {
+      const st = $(".st, .sv", row);
+      if (st) {
+        st.className = st.classList.contains("st") ? "st a" : "sv a";
+        st.textContent = "signing in";
+      }
+      clearInterval(loginTimer);
+      loginTimer = setInterval(poll, 1000);
+      poll();
+    },
+    (x) => tell(row, message(x)),
+  );
 }
+document.addEventListener("click", (e) => {
+  const b = (e.target as Element).closest?.<HTMLElement>(".si, .sgo, .ad");
+  const row = b?.closest<HTMLElement>(".acr, .pk");
+  if (!b || !row) return;
+  e.preventDefault();
+  const provider = b.dataset.provider ?? row.dataset.provider ?? "";
+  const account = b.dataset.account ?? row.dataset.account ?? "";
+  if (b.classList.contains("ad")) signIn(row, provider, { new: true });
+  else if (b.classList.contains("si")) signIn(row, provider, { account });
+  else if (confirm(`Sign ${$(".sk", row)?.textContent ?? account} out?${account ? " Its folder is removed." : ""}`))
+    post(`/logins/${provider}/signout`, { account }).then(
+      () => again(),
+      (x) => tell(row, message(x)),
+    );
+});
 
 // Not while pairing: a worker installing and claiming the page as the pair redirects can leave a home-screen app on
 // a bare background until a reload (the first run, #25).
@@ -925,7 +925,7 @@ if (frame) {
   // The passkey gate (#28): the ceremony runs here, never in the sandboxed frame. The first time, this device
   // registers its passkey; then each unlock signs a fresh challenge. The tap is on this page's own button.
   const lock = document.createElement("button");
-  lock.className = "pk";
+  lock.className = "pkl";
   lock.hidden = true;
   lock.textContent = "Unlock with Face ID";
   frame.after(lock);
@@ -1230,6 +1230,53 @@ function chat(main: HTMLElement): void {
     done: "done",
     error: "fail",
     ended: "ended",
+    connecting: "loading",
+    unconnected: "fail",
+  };
+  const who = main.dataset.who ?? agent;
+
+  // While the agent connects (#48): the connecting line where the reply will come, in the theme's loading word,
+  // until the agent's first output; a failed connect puts its card there instead, with why and [retry].
+  let greeting = state === "connecting";
+  function connecting(): void {
+    $(".cnx, .cfl", list)?.remove();
+    if (state === "connecting") greeting = true;
+    else if (state !== "working") greeting = false;
+    const pill = $("#pill");
+    if (pill) pill.hidden = state !== "working" || greeting;
+    if (after > 0) return;
+    if (greeting) {
+      const line = el("li", "cnx");
+      line.dataset.st = "loading";
+      line.dataset.who = who;
+      list.append(line);
+    } else if (state === "unconnected") {
+      const card = el("li", "cfl");
+      const box = el("div");
+      const head = el("p", "cnx");
+      const mark = el("span");
+      const retry = el("button", "", "retry") as HTMLButtonElement;
+      box.setAttribute("role", "alert");
+      mark.dataset.st = "fail";
+      head.append(mark, el("span", "", ` · couldn't connect ${who}`));
+      retry.type = "button";
+      retry.onclick = () => {
+        retry.disabled = true;
+        post(`${api}/retry`, {}).catch((x) => {
+          retry.disabled = false;
+          toast(message(x), true);
+        });
+      };
+      box.append(head, el("p", "ds", note), retry);
+      card.append(box);
+      list.append(card);
+    }
+  }
+  // The agent answers: its first output replaces the connecting line.
+  const answered = (): void => {
+    if (!greeting) return;
+    greeting = false;
+    connecting();
   };
 
   // A turn's end: one quiet line under its last block, `[sprite] in the stable · done 09:21 · 9 min · 6 tools`.
@@ -1417,6 +1464,7 @@ function chat(main: HTMLElement): void {
       after++;
       return;
     }
+    if (it.kind !== "you") answered();
     keep(() => {
       $(".te", list)?.remove();
       let row = it.kind === "you" ? list.querySelector<HTMLElement>(`[data-rid="${it.random_id}"]`) : null;
@@ -1441,6 +1489,7 @@ function chat(main: HTMLElement): void {
   let liveAt = 0;
   function text(chunk: string): void {
     if (after > 0) return;
+    answered();
     keep(() => {
       if (!live) {
         $(".te", list)?.remove();
@@ -1470,12 +1519,12 @@ function chat(main: HTMLElement): void {
 
   function setState(t: Turn): void {
     if (t.state !== state) since = Date.now();
+    if (t.state !== state && ["done", "blocked", "error", "unconnected"].includes(t.state)) recopy();
     state = t.state;
     note = t.note ?? "";
-    const [st, pill, wait, close] = [$("#st"), $("#pill"), $("#wait"), $("#close")];
+    const [st, wait, close] = [$("#st"), $("#wait"), $("#close")];
     if (st) st.dataset.st = KEY[state] ?? "";
     main.dataset.state = state;
-    if (pill) pill.hidden = state !== "working";
     if (state !== "working") stopping(false);
     if (wait) wait.hidden = state !== "blocked";
     if (state === "ended") {
@@ -1488,7 +1537,10 @@ function chat(main: HTMLElement): void {
       live.remove();
       live = null;
     }
-    keep(turnEnd);
+    keep(() => {
+      connecting();
+      turnEnd();
+    });
   }
 
   // Drops the rows more than (KEEP - 1) / 2 screens past the viewport, on the side away from the reader, so the
@@ -1510,10 +1562,24 @@ function chat(main: HTMLElement): void {
   }
 
   // Loads a slice: `q` is the query; `where` is "replace", "before" (older) or "after" (newer).
+  // The newest slice is kept on the device, so the thread opens offline on its last copy; a turn that settles
+  // after the page opened (a thread that connected behind it, #48) keeps it again.
+  const kept = `cooee.slice.${id}`;
+  const keepCopy = (s: Slice): void => {
+    try {
+      localStorage.setItem(kept, JSON.stringify({ ...s, at: Date.now() }));
+    } catch {
+      // Full: no copy.
+    }
+  };
+  const recopy = (): void => {
+    fetch(`${api}/messages?before=${SLICE}`).then(
+      async (r) => r.ok && keepCopy(await r.json()),
+      () => {},
+    );
+  };
   const load = (q: string, where: "replace" | "before" | "after"): Promise<Slice> =>
     inOrder(async () => {
-      // The newest slice is kept on the device, so the thread opens offline on its last copy.
-      const kept = `cooee.slice.${id}`;
       const newest = where === "replace" && q === `before=${SLICE}`;
       const r = await fetch(`${api}/messages?${q}`).catch((x) => {
         if (newest && localStorage.getItem(kept)) return null;
@@ -1521,18 +1587,22 @@ function chat(main: HTMLElement): void {
       });
       if (r && !r.ok) throw await why(r);
       const s: Slice = r ? await r.json() : JSON.parse(localStorage.getItem(kept) ?? "null");
-      if (newest && r)
-        try {
-          localStorage.setItem(kept, JSON.stringify({ ...s, at: Date.now() }));
-        } catch {
-          // Full: no copy.
-        }
+      if (newest && r) keepCopy(s);
       if (where === "replace") {
         copyAt = r ? 0 : (s.at ?? 0);
         // The outbox's rows (sending, failed) stay, unless the server has them.
         const stored = new Set(s.items.map((it) => (it.kind === "you" ? it.random_id : "")));
         const outbox = [...list.querySelectorAll<HTMLElement>(":scope > [data-rid]")];
-        list.replaceChildren(render(s.items), ...outbox.filter((r) => !stored.has(r.dataset.rid ?? "")));
+        const kept = outbox.filter((r) => !stored.has(r.dataset.rid ?? ""));
+        list.replaceChildren(render(s.items), ...kept);
+        // The first message while the thread connects: the item it becomes takes its row.
+        const p = s.pending;
+        if (p && !s.skipped_after && !kept.some((r) => r.dataset.rid === p.random_id)) {
+          const row = el("li", "blk me");
+          row.dataset.rid = p.random_id;
+          row.append(el("div", "md", p.text));
+          list.append(row);
+        }
         live = null;
         before = s.skipped_before;
         after = s.skipped_after;
@@ -1747,7 +1817,7 @@ function chat(main: HTMLElement): void {
     box.hidden = !picked.length;
     box.replaceChildren(
       ...picked.map((f, i) => {
-        const chip = el("span", "fi pk", IMAGE.test(f.name) ? undefined : f.name);
+        const chip = el("span", "fi fpk", IMAGE.test(f.name) ? undefined : f.name);
         if (IMAGE.test(f.name)) {
           const img = el("img") as HTMLImageElement;
           img.src = urls[i] ?? "";

@@ -8,6 +8,7 @@
 #![forbid(unsafe_code)]
 
 mod agents;
+mod compose;
 mod look;
 mod sheet;
 mod shown;
@@ -19,7 +20,9 @@ use std::{
 };
 
 pub use agents::{Mate, Pane, Side, page};
-use cooee_core::{Account, Sheet, Status, Thread, Turn};
+use compose::hint;
+pub use compose::{named, who};
+use cooee_core::{Sheet, Thread, Turn};
 pub use look::{Looks, Pair, SPRITES, Scheme, TOKENS, Theme, WORDS, check, gate, plain, read_pack};
 use sheet::{sheets, shown};
 pub use shown::Shown;
@@ -259,9 +262,14 @@ async fn look_js() -> Result<Static> {
 }
 
 /// A page in the device's look, drawn from the first byte: the scheme's tokens, `data-*` on `<html>` and the
-/// theme's icon; the sheets after the content.
+/// theme's icon; the sheets after the content (`providers`: Settings › providers).
 #[component]
-async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<impl View> {
+async fn document(
+    cx: &Cx,
+    title: &str,
+    #[default] providers: Vec<Sheet>,
+    #[default] child: Child<'_>,
+) -> Result<impl View> {
     let look = shown(cx);
     let name = look.name().to_owned();
     let bg = look
@@ -309,7 +317,7 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
                     <span class="ago"></span>
                 </p>
                 <p id="toast" role="status" popover="manual"></p>
-                sheets()
+                sheets(providers: providers)
             </body>
         </html>
     })
@@ -317,22 +325,27 @@ async fn document(cx: &Cx, title: &str, #[default] child: Child<'_>) -> Result<i
 
 /// The chat header: the agent's name, the title (an agent's ongoing chat is titled by its name; a side thread by
 /// its own, its agent first in the line), and the line before its state: a Workflow session's role and round, else
-/// profile (Plain), agent, account and model (the folder follows it, drawn apart so Use a folder… can change it).
+/// its agent profile's label, or Plain and who it runs as (`runs`: provider · account, never the agent's id), and the
+/// model (the folder follows it, drawn apart so Use a folder… can change it). `provider`: the provider's name.
 fn bar(
     thread: &Thread,
     mate: Option<&(usize, String, bool)>,
-    profile: &str,
+    (profile, provider, runs): (&str, &str, &str),
 ) -> (String, String, String) {
     let (name, title, by) = match mate {
         Some((_, n, true)) => (n.clone(), n.clone(), ""),
         Some((_, n, false)) => (n.clone(), thread.title.clone(), n.as_str()),
-        None => (thread.agent.clone(), thread.title.clone(), ""),
+        None => (provider.to_owned(), thread.title.clone(), ""),
     };
     if let Some(w) = &thread.workflow {
         return (name, title, format!("{} · round {} · ", w.role, w.round));
     }
-    let profile = if profile.is_empty() { "Plain" } else { profile };
-    let line = [by, profile, &thread.agent, &thread.account, &thread.model]
+    let (profile, runs) = if profile.is_empty() {
+        ("Plain", runs)
+    } else {
+        (profile, "")
+    };
+    let line = [by, profile, runs, &thread.model]
         .into_iter()
         .filter(|s| !s.is_empty())
         .flat_map(|s| [s, " · "])
@@ -340,9 +353,13 @@ fn bar(
     (name, title, line)
 }
 
-/// `~/x` for a folder under `$HOME` (as given, or resolved: a folder a chat works in is stored resolved).
+/// `~/x` for a folder under `$HOME` (as given, or resolved: a folder a chat works in is stored resolved); none
+/// (empty): `scratch`, a chat's own folder.
 #[must_use]
 pub fn short(folder: &Path) -> String {
+    if folder.as_os_str().is_empty() {
+        return "scratch".to_owned();
+    }
     let home = std::env::var_os("HOME").map(PathBuf::from);
     let homes = home
         .iter()
@@ -380,9 +397,10 @@ fn state(state: &str) -> &'static str {
     match state {
         "blocked" => "needs",
         "working" => "working",
-        "error" => "fail",
+        "error" | "unconnected" => "fail",
         "done" => "done",
         "ended" => "ended",
+        "connecting" => "loading",
         _ => "",
     }
 }
@@ -462,127 +480,6 @@ async fn nav(tabs: Vec<(String, String, bool)>, current: String) -> Result<impl 
                 }
             </nav>
         }
-    })
-}
-
-/// One account's row: its state, who it is, its last sign-in and usage, and [sign in], [sign out], [default].
-#[component]
-async fn account(a: Account, s: Status) -> Result<impl View> {
-    let (class, label) = match (s.signed_in, a.signed_in_at) {
-        (true, _) => ("g", "✓ signed in"),
-        (false, Some(_)) => ("m", "needs sign-in again"),
-        (false, None) => ("m", "signed out"),
-    };
-    let seen = a.signed_in_at.map(|at| match age(at).as_str() {
-        "now" => "last sign-in just now".to_owned(),
-        ago => format!("last sign-in {ago} ago"),
-    });
-    let line = [s.who.or(Some(s.line)), seen, s.usage];
-    let line: Vec<String> = line
-        .into_iter()
-        .flatten()
-        .filter(|l| !l.is_empty())
-        .collect();
-    Ok(view! {
-        <div class="ac" data-account=(a.name.clone())>
-            <div class="fh">
-                <b>(a.label())</b>
-                <span class=(class)>(label)</span>
-            </div>
-            <p class="ds">(line.join(" · "))</p>
-            <div class="ab">
-                <button type="button" class="si" hidden=(s.signed_in)>"sign in"</button>
-                if s.signed_in || a.dir.is_some() {
-                    <button type="button" class="sg">"sign out"</button>
-                }
-                if a.default {
-                    <span class="ds">"default for new threads"</span>
-                } else {
-                    <button type="button" class="df">"make default"</button>
-                }
-            </div>
-        </div>
-    })
-}
-
-/// One provider on the sign-ins card: its accounts (the system default first) and [+ account], or the install line
-/// when its CLI is missing; the login terminal (drawn by `chat.ts`).
-#[component]
-async fn provider(sheet: Sheet) -> Result<impl View> {
-    let p = sheet.provider;
-    let install = sheet.accounts.first().and_then(|(_, s)| s.install.clone());
-    let add = install.is_none() && !p.home.is_empty();
-    Ok(view! {
-        <div class="pv" data-provider=(p.name.clone())>
-            <div class="fh">
-                <b>(p.name.clone())</b>
-                if install.is_some() {
-                    <span class="m">"not installed"</span>
-                }
-                if add {
-                    <button type="button" class="ad">"+ account"</button>
-                }
-            </div>
-            if let Some(why) = sheet.why {
-                <p class="ds wy">(why)</p>
-            }
-            match install {
-                Some(fix) => {
-                    <p class="ds">"not installed on this Mac"</p>
-                    if !fix.is_empty() {
-                        hint(why: "on the Mac:", fix: fix.as_str(), then: "")
-                    }
-                }
-                None => {
-                    for (a, s) in sheet.accounts {
-                        account(a: a, s: s)
-                    }
-                }
-            }
-            <div class="lg" hidden=(true)>
-                <p class="ds">(format!("{} · shed terminal", p.login.join(" ")))</p>
-                <pre class="out"></pre>
-                <form class="tw">
-                    <input
-                        aria-label=(format!("the code from the {} sign-in page", p.name))
-                        placeholder="paste the code"
-                        autocomplete="off"
-                    >
-                    <button type="submit">"send"</button>
-                    <button type="button" class="cn">"cancel"</button>
-                </form>
-            </div>
-        </div>
-    })
-}
-
-#[component]
-async fn signins(providers: Vec<Sheet>) -> Result<impl View> {
-    Ok(view! {
-        <section class="nf shut" id="signins">
-            <div class="fh">
-                <b>"sign-ins"</b>
-                <a class="gl" href="#" aria-label="close sign-ins">"×"</a>
-            </div>
-            for sheet in providers {
-                provider(sheet: sheet)
-            }
-        </section>
-    })
-}
-
-/// An empty picker's row instead: why, and the line that fixes it with its copy button (`chat.ts`).
-#[component]
-async fn hint(why: &str, fix: &str, then: &str) -> Result<impl View> {
-    Ok(view! {
-        <p class="hn">
-            (why)
-            <code>(fix)</code>
-            (then)
-            <button type="button" data-copy=(fix) aria-label=(format!("copy {fix}"))>
-                "copy"
-            </button>
-        </p>
     })
 }
 
@@ -894,7 +791,7 @@ async fn foot(
             </div>
             <ul class="qu" id="queue" aria-label="queued messages" hidden=(true)></ul>
             <div class="fis" id="picked" hidden=(true)></div>
-            <form class="tw" id="composer">
+            <form class="tw nc" id="composer">
                 <label class="gl att" hidden=(ended)>
                     "📎"
                     <input
@@ -939,6 +836,7 @@ async fn chat(
     cx: &Cx,
     thread: Thread,
     turn: Turn,
+    providers: &[Sheet],
     profile: String,
     mate: Option<(usize, String, bool)>,
     places: agents::Places,
@@ -953,7 +851,9 @@ async fn chat(
     ]
     .map(|(st, plain)| Unescaped::new_unchecked(look.st(st, plain)));
     let folder = places.2.as_deref().map_or("scratch".to_owned(), short);
-    let (name, title, said) = bar(&thread, mate.as_ref(), &profile);
+    let provider = named(&thread.agent, providers);
+    let runs = compose::said(&provider, &who(&thread.agent, &thread.account, providers));
+    let (name, title, said) = bar(&thread, mate.as_ref(), (&profile, &provider, &runs));
     let ended = thread.closed || turn.state == "ended";
     let renamable = !matches!(mate, Some((_, _, true)));
     // A Workflow session (#33): its role and round, and a link to what it works on; its tool closes it.
@@ -964,6 +864,7 @@ async fn chat(
             class="chat"
             data-thread=(thread.id.clone())
             data-agent=(name.clone())
+            data-who=(runs.clone())
             data-read=(thread.read.unwrap_or(0).to_string())
             data-state=(turn.state.clone())
             data-ids=(ids.join(" "))

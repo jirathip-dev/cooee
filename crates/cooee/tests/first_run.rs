@@ -19,7 +19,7 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
                  status = [\"true\"]\ninstall = \"npm install -g @openai/codex\"\n";
     let cooee = Cooee::start_with(&dir, &shed.dir, &format!("roots = []\n{codex}"));
 
-    let (status, page) = cooee.get("/");
+    let (status, page) = cooee.get("/new");
     assert_eq!(status, 200, "{page}");
     assert!(
         page.contains("no agents installed · on the Mac:<code>shed agents add claude-acp</code>")
@@ -31,18 +31,14 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
         !page.contains("<select") && !page.contains(r#"<form id="new">"#),
         "{page}"
     );
-    // codex's CLI is missing: "not installed on this Mac" and its install line; no sign-in, no accounts.
+    // codex's CLI is missing: one row, `not installed` and [copy install]; no sign-in, no accounts.
     assert!(
-        page.contains(r#"<b>codex</b><span class="m">not installed</span></div><p class="ds">not installed on this Mac</p><p class="hn">on the Mac:<code>npm install -g @openai/codex</code>"#),
+        page.contains(r#"<div class="acr ni"><span class="ptg">codex</span><span class="sk">not installed</span><button type="button" class="sec" data-copy="npm install -g @openai/codex" title="npm install -g @openai/codex">copy install</button></div>"#),
         "{page}"
     );
-    let codex = &page[page.find(r#"data-provider="codex""#).unwrap()..];
-    let codex = &codex[..codex.find(r#"class="lg""#).unwrap()];
     assert!(
-        !codex.contains("sign in")
-            && !codex.contains("+ account")
-            && !codex.contains("class=\"ac\""),
-        "{codex}"
+        !page.contains("sign in") && !page.contains("+ account"),
+        "{page}"
     );
 
     let out = Command::new(env!("CARGO_BIN_EXE_cooee"))

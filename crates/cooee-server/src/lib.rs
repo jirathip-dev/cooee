@@ -166,6 +166,7 @@ impl Layer for Gate {
                 Some(d) => next.run(&cx.with(Paired(d)), body).await,
                 None if method(cx) == "GET"
                     && (path == "/"
+                        || path == "/new"
                         || path.starts_with("/t/")
                         || path.strip_prefix("/p/").is_some_and(|p| !p.contains('/'))) =>
                 {
@@ -393,7 +394,7 @@ async fn login_start(cx: &Cx, Json(s): Json<Option<Start>>) -> Result<Answer<()>
     ))
 }
 
-/// `POST /logins/{id}/signout` and `/default`: account `account` (empty: the system default).
+/// `POST /logins/{id}/signout`: account `account` (empty: the system default).
 #[derive(Deserialize)]
 struct Pick {
     account: String,
@@ -404,14 +405,6 @@ async fn login_signout(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
     let name = thread_id(cx);
     Ok(Answer(
         on_logins(cx, move |l| l.sign_out(&name, &p.account)).await,
-    ))
-}
-
-#[route(POST "/logins/{id}/default")]
-async fn login_default(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
-    let name = thread_id(cx);
-    Ok(Answer(
-        on_logins(cx, move |l| l.set_default(&name, &p.account)).await,
     ))
 }
 
@@ -451,8 +444,7 @@ async fn chat(cx: &Cx) -> Result<impl View> {
         None => thread.profile.clone(),
     };
     let choices = logins(cx).choices(&thread.agent);
-    let scratch = app_context::<Data>(cx).0.join("scratch");
-    let folder = thread.folder.clone().filter(|f| !f.starts_with(&scratch));
+    let folder = thread.folder.clone();
     let pane = cooee_web::Pane::Chat {
         thread: Box::new(thread),
         turn,
@@ -537,14 +529,18 @@ async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
 #[derive(Deserialize)]
 struct New {
     agent: String,
-    /// None: a scratch folder of its own (#86).
+    /// None or empty: the thread's own scratch folder (#48).
     #[serde(default)]
-    folder: Option<PathBuf>,
+    folder: PathBuf,
     text: String,
     random_id: String,
-    /// The agent's provider account (none: its default).
+    /// The agent's provider account (none: the system default).
     #[serde(default)]
     account: Option<String>,
+    /// Answer with the id at once and connect behind it (#48: the page opens the chat on send); else once the
+    /// agent took the first message.
+    #[serde(default)]
+    background: bool,
     /// The agent profile's id (none or empty: Plain, with `agent` and `account`).
     #[serde(default)]
     profile: Option<String>,
@@ -561,66 +557,57 @@ struct Created {
     id: String,
 }
 
-/// What a thread of `agent` (as Plain with `account`, or as `profile`) runs with on a model and effort: its agent,
-/// the profile's own folder, and its [`Recipe`].
-fn recipe(
-    cx: &Cx,
-    (agent, account, profile): (String, Option<&str>, &str),
-    (on, effort): (String, String),
-) -> impl FnOnce() -> Result<(String, Option<PathBuf>, Recipe), HubError> + Send + 'static {
-    let logins = logins(cx);
-    let data = app_context::<Data>(cx);
-    let (data, config) = (data.0.clone(), data.1.clone());
-    let (account, profile) = (account.map(str::to_owned), profile.to_owned());
-    move || {
-        let (agent, folder, mut recipe) = if profile.is_empty() {
-            if agent.is_empty() {
-                return Err(HubError::Refused("pick an agent or a profile".to_owned()));
-            }
-            let (account, launch) = logins.home(&agent, account.as_deref())?;
-            let recipe = Recipe {
-                account,
-                launch,
-                ..Recipe::default()
-            };
-            (agent, None, recipe)
-        } else {
-            let p =
-                cooee_core::profiles::find(config.as_deref(), &data, &profile).map_err(refused)?;
-            let (account, launch, instructions) = logins.profile(&p, &data)?;
-            let recipe = Recipe {
-                account,
-                profile: p.id(),
-                launch,
-                instructions,
-                ..Recipe::default()
-            };
-            (p.agent, p.folder, recipe)
-        };
-        recipe.launch.pick(logins.picks(&agent, &on, &effort)?);
-        (recipe.model, recipe.effort) = (on, effort);
-        Ok((agent, folder, recipe))
-    }
-}
-
 #[route(POST "/threads")]
 async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
-    let profile = new.profile.clone().unwrap_or_default();
-    let who = (new.agent.clone(), new.account.as_deref(), profile.as_str());
-    let made = recipe(cx, who, (new.model.clone(), new.effort.clone()));
-    let id = blocking(cx, move |hub| {
-        let (agent, own, recipe) = made()?;
-        let folder = own.or(new.folder);
-        hub.create(
-            &agent,
-            folder.as_deref(),
-            &new.text,
-            &new.random_id,
-            &recipe,
+    let logins = logins(cx);
+    let data = app_context::<Data>(cx);
+    let (data, config, hub) = (data.0.clone(), data.1.clone(), hub(cx));
+    let id = tokio::task::spawn_blocking(move || {
+        let profile = new.profile.as_deref().unwrap_or_default();
+        let picked = (new.model, new.effort);
+        let (agent, folder, recipe) = recipe(
+            &logins,
+            (&data, config.as_deref()),
+            (&new.agent, new.account.as_deref(), profile),
+            new.folder,
+            picked,
+        )?;
+        if !new.background {
+            return hub.create(&agent, &folder, &new.text, &new.random_id, &recipe);
+        }
+        let name = cooee_web::named(&agent, &logins.statuses());
+        hub.create_later(
+            (&agent, &name),
+            &folder,
+            (&new.text, &new.random_id),
+            recipe,
         )
-    })
-    .await;
+    });
+    let id = id.await.map_err(|e| HubError::Refused(e.to_string()))?;
     Ok(Answer(id.map(|id| Created { id })))
+}
+
+/// `POST /threads/{id}/retry`: starts a thread whose start failed again, with its first message (#48).
+#[route(POST "/threads/{id}/retry")]
+async fn retry(cx: &Cx) -> Result<Answer<()>> {
+    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+    let data = app_context::<Data>(cx);
+    let (data, config) = (data.0.clone(), data.1.clone());
+    let done = tokio::task::spawn_blocking(move || {
+        let (t, _) = hub.thread(&id)?;
+        let (_, _, recipe) = recipe(
+            &logins,
+            (&data, config.as_deref()),
+            (&t.agent, Some(&t.account), &t.profile),
+            PathBuf::new(),
+            (t.model, t.effort),
+        )?;
+        let name = cooee_web::named(&t.agent, &logins.statuses());
+        hub.retry(&id, recipe, &name)
+    });
+    Ok(Answer(
+        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
+    ))
 }
 
 /// `POST /threads/{id}/folder`: "Use a folder…" (#86).
@@ -631,16 +618,59 @@ struct Attach {
 
 #[route(POST "/threads/{id}/folder")]
 async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Item>> {
-    let id = thread_id(cx);
-    let Ok((t, _)) = hub(cx).thread(&id) else {
-        return Err(not_found().into());
-    };
-    // The account as the thread shows it: the system default's label, else its name.
-    let account = Some(t.account.as_str()).map(|a| if a == "System default" { "" } else { a });
-    let made = recipe(cx, (t.agent, account, &t.profile), (t.model, t.effort));
+    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+    let data = app_context::<Data>(cx);
+    let (data, config) = (data.0.clone(), data.1.clone());
+    let done = tokio::task::spawn_blocking(move || {
+        let (t, _) = hub.thread(&id)?;
+        let (_, _, recipe) = recipe(
+            &logins,
+            (&data, config.as_deref()),
+            (&t.agent, Some(&t.account), &t.profile),
+            PathBuf::new(),
+            (t.model, t.effort),
+        )?;
+        hub.attach(&id, &a.folder, &recipe)
+    });
     Ok(Answer(
-        blocking(cx, move |hub| hub.attach(&id, &a.folder, &made()?.2)).await,
+        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
     ))
+}
+
+/// How a thread of `agent` starts in `folder`: Plain with `account`, or as agent profile `profile` (non-empty: its
+/// agent, and its folder if it has one), on the model and effort `picked`. Returns its agent and folder too.
+fn recipe(
+    logins: &Logins,
+    (data, config): (&std::path::Path, Option<&std::path::Path>),
+    (agent, account, profile): (&str, Option<&str>, &str),
+    folder: PathBuf,
+    picked: (String, String),
+) -> Result<(String, PathBuf, Recipe), HubError> {
+    let (agent, folder, mut recipe) = if profile.is_empty() {
+        let (account, launch) = logins.home(agent, account)?;
+        let recipe = Recipe {
+            account,
+            launch,
+            ..Recipe::default()
+        };
+        (agent.to_owned(), folder, recipe)
+    } else {
+        let p = cooee_core::profiles::find(config, data, profile).map_err(refused)?;
+        let (account, launch, instructions) = logins.profile(&p, data)?;
+        let recipe = Recipe {
+            account,
+            profile: p.id(),
+            launch,
+            instructions,
+            ..Recipe::default()
+        };
+        (p.agent, p.folder.unwrap_or(folder), recipe)
+    };
+    recipe
+        .launch
+        .pick(logins.picks(&agent, &picked.0, &picked.1)?);
+    (recipe.model, recipe.effort) = picked;
+    Ok((agent, folder, recipe))
 }
 
 /// `?path=<folder>&hidden=1`: Settings › Folders.
@@ -1767,6 +1797,7 @@ pub fn router(
         .route(messages)
         .route(events)
         .route(create)
+        .route(retry)
         .route(new_agent)
         .route(attach)
         .route(browse)
@@ -1789,7 +1820,6 @@ pub fn router(
         .route(login_send)
         .route(login_cancel)
         .route(login_signout)
-        .route(login_default)
         .page(tab)
         .route(frame)
         .route(proxy)

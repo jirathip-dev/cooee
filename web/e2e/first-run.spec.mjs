@@ -14,6 +14,8 @@ test("first run: no agents shows its fix line with a copy button, never an empty
   const code = fs.readFileSync(new URL("./.auth/code.bare", import.meta.url), "utf8").trim();
   await page.getByLabel("pairing code").fill(code);
   await page.getByRole("button", { name: "pair" }).click();
+  await page.waitForURL(/\/$/);
+  await page.goto(`${url}/new`);
 
   // No agent to type to: what to run instead, no composer.
   await expect(page.locator("#new")).toHaveCount(0);
@@ -27,16 +29,19 @@ test("first run: no agents shows its fix line with a copy button, never an empty
   await expect(agents.getByRole("button")).toHaveText("copied");
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("shed agents add claude-acp");
 
-  // A provider whose CLI isn't installed: the install line, no sign-in.
+  // A provider whose CLI isn't installed: one line, `[codex] not installed [copy install]`, no sign-in.
   await page.getByRole("button", { name: "settings" }).click();
-  await page.locator("#sheet").getByRole("link", { name: "providers" }).click();
-  const row = page.locator('.pv[data-provider="codex"]');
-  await expect(row.locator(".fh span")).toHaveText("not installed");
-  await expect(row).toContainText("not installed on this Mac");
-  await expect(row.getByRole("button", { name: "+ account" })).toHaveCount(0);
-  await expect(row.locator(".hn code")).toHaveText("npm install -g @openai/codex");
-  await expect(row.getByRole("button", { name: "sign in" })).toBeHidden();
+  await page.locator("#sheet").getByRole("button", { name: "providers" }).click();
+  const sheet = page.locator("#sh-providers");
+  await expect(sheet.locator(".acr")).toHaveCount(1);
+  const row = sheet.locator(".acr.ni");
+  await expect(row.locator(".ptg")).toHaveText("codex");
+  await expect(row.locator(".sk")).toHaveText("not installed");
+  await expect(sheet.getByRole("button", { name: /sign in|\+ account/ })).toHaveCount(0);
   await page.screenshot({ path: "../../ui-390/first-run-signins.png", fullPage: true });
-  await row.getByRole("button", { name: "copy npm install -g @openai/codex" }).click();
+  await row.getByRole("button", { name: "copy install" }).click();
+  await expect(row.getByRole("button")).toHaveText("copied");
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("npm install -g @openai/codex");
+  // `copied` is for a moment; the button reads [copy install] again.
+  await expect(row.getByRole("button")).toHaveText("copy install");
 });

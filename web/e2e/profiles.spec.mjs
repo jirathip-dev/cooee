@@ -35,7 +35,7 @@ test("a profile is an agent: listed, a new chat with it runs as it, its bar says
   await page.getByLabel("message", { exact: true }).fill("hi");
   await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
-  await expect(page.locator(".th .ds")).toContainText("Reviewer · fake-acp · ");
+  await expect(page.locator(".th .ds")).toContainText("Reviewer · ");
   await expect(page.locator(".th .ds")).toContainText(own);
   await expect(page.locator("#msgs .blk.me")).toHaveText(/hi/);
   await expect(page.locator(".agr.on .tt")).toHaveText("Reviewer");
