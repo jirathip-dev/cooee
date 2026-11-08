@@ -422,15 +422,19 @@ impl Logins {
         let provider = self.provider(name)?;
         let a = self.account(name, account)?;
         let out = provider.sign_out(a.dir.as_deref());
-        if out.is_ok() || a.dir.is_some() {
+        let changed = out.is_ok() || a.dir.is_some();
+        if changed {
             self.accounts
                 .remove(name, account)
                 .map_err(|e| HubError::Refused(e.to_string()))?;
         }
-        // Checked again within a second, whatever its backoff; unknown until then.
+        // Checked again within a second, whatever its backoff; unknown until then, unless nothing was signed out.
         let key = (name.to_owned(), account.to_owned());
         if let Some(c) = lock(&self.checks).get_mut(&key) {
-            (c.status, c.next) = (None, 0);
+            c.next = 0;
+            if changed {
+                c.status = None;
+            }
         }
         let who = if account.is_empty() { name } else { account };
         out.map_err(|e| HubError::Refused(format!("{who} sign-out: {e}")))

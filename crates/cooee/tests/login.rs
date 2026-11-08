@@ -229,7 +229,8 @@ fn a_hanging_status_check_never_holds_a_request_and_runs_once() {
     assert!(v["age"].is_null(), "{v}");
     let no_sign_in = r#"class="si" data-provider="fake" data-account="""#;
     assert!(
-        page.contains(r#"<span class="st m">not checked yet</span>"#) && !page.contains(no_sign_in),
+        page.contains(r#"<span class="st m un">not checked yet</span>"#)
+            && !page.contains(no_sign_in),
         "{page}"
     );
     assert_eq!(s.cooee.post("/logins", &json!({})).0, 200);
@@ -246,7 +247,7 @@ fn a_hanging_status_check_never_holds_a_request_and_runs_once() {
     );
     let (_, page) = s.cooee.get("/new");
     assert!(
-        page.contains(r#"<span class="st m">can't tell: the status command timed out</span>"#)
+        page.contains(r#"<span class="st m un">can't tell: the status command timed out</span>"#)
             && !page.contains(no_sign_in),
         "{page}"
     );
@@ -254,4 +255,26 @@ fn a_hanging_status_check_never_holds_a_request_and_runs_once() {
     assert_eq!(s.cooee.post("/logins", &json!({})).0, 200);
     thread::sleep(Duration::from_millis(1500));
     assert_eq!(ran(), 1);
+}
+
+/// #106: a sign-out that fails (here: no sign-out command) signs nothing out, so the recorded signed-in status stays
+/// while its recheck hangs.
+#[test]
+fn a_failed_sign_out_keeps_the_last_known_status() {
+    let dir = scratch("login-signout-fails-flag");
+    let once = dir.join("checked");
+    let s = setup_with(
+        "login-signout-fails",
+        Some(&format!(
+            "test -f '{0}' && exec sleep 30\ntouch '{0}'\necho 'Signed in as owner@example.com'\n",
+            once.display()
+        )),
+    );
+    s.until(|v| v["status"]["signed_in"] == true);
+    let (code, _) = s
+        .cooee
+        .post("/logins/fake/signout", &json!({ "account": "" }));
+    assert_eq!(code, 400);
+    let v = s.cooee.json("/logins/fake");
+    assert_eq!(v["status"]["signed_in"], true, "{v}");
 }

@@ -88,7 +88,7 @@ async fn account_row(provider: String, a: Account, s: Status) -> Result<impl Vie
             <span class="sk">(a.shown(&s))</span>
             if s.unknown {
                 // #106: can't tell (a status check timed out, or none ran yet): no sign-in offered as the fix.
-                <span class="st m">(s.line.clone())</span>
+                <span class="st m un">(s.line.clone())</span>
                 if a.dir.is_some() {
                     <button type="button" class="sec sgo">"sign out"</button>
                 }
