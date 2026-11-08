@@ -27,7 +27,7 @@ async function audit(page) {
 // A thread that waits on you, as the design's shots show.
 async function blocked(page) {
   await page.goto("/new");
-  await page.getByLabel("first message").fill("approve an edit");
+  await page.getByLabel("message", { exact: true }).fill("approve an edit");
   await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await expect(page.locator(".blk.ap")).toBeVisible();
@@ -55,8 +55,7 @@ test("a device's pick shows from the first frame, and stays on this device only"
   await expect.poll(() => page.evaluate(() => window.first)).toMatchObject({ bg: "#1a1816", style: "terminal" });
   await expect(page.locator("#st")).toHaveText("needs you");
   await expect(page.locator("#st .sd")).toBeVisible();
-  await page.goto("/");
-  await expect(page.locator(".tp [data-st=needs]").first()).toHaveText("needs you");
+  await page.goto("/?list");
   await expect(page.locator(".tp .rsp")).toHaveCount(0);
   // Another device (a fresh context) keeps the server's default: farm, Modern, sprites.
   const other = await browser.newPage();
@@ -201,14 +200,14 @@ test("the look sheet lists Scene only with sprites, and plain only ASCII or None
   const radios = (k) => sheet(page).getByRole("radiogroup", { name: k }).getByRole("radio");
   await expect(radios("style")).toHaveText(["modern", "terminal", "scene"]);
   await expect(radios("figures")).toHaveText(["sprite", "ascii", "none"]);
-  // Scene in or out redraws the thread list (#34), which closes the sheet: open it again once the list is drawn.
+  // Scene in or out redraws the agents sidebar (#34, #86), which closes the sheet: open it again once the list is drawn.
   const again = async () => {
     if (!(await sheet(page).count())) await page.getByRole("button", { name: "look: theme and colours" }).click();
   };
   await tap(page, "style", "terminal");
   await tap(page, "style", "scene");
   await expect(page.locator("#scene")).toBeVisible();
-  // Scene changes only the list: pages keep the Terminal pick's shape.
+  // Scene changes only the sidebar: pages keep the Terminal pick's shape.
   await expect(page.locator("html")).toHaveAttribute("data-style", "terminal");
   // ASCII or None hides Scene, and the device goes back to its Terminal pick.
   for (const f of ["ascii", "none"]) {
@@ -254,11 +253,12 @@ test("switching style or figures keeps the scroll position", async ({ page }, in
     l.scrollTop += r.getBoundingClientRect().top - l.getBoundingClientRect().top + r.offsetHeight / 2;
   });
   // The first row in view, and how much of it is above the list's top edge (its share of the row's height): a
-  // switch restyles every row, so the same row stays first in view, cut at the same share.
+  // switch restyles every row, so the same row stays first in view, cut at the same share to the pixel (scrollTop
+  // snaps to whole pixels, so a short row's share may move by a pixel's worth).
   const view = () => list.evaluate((l) => {
     const top = l.getBoundingClientRect().top, r = [...l.children].find((r) => r.getBoundingClientRect().bottom > top);
     const b = r.getBoundingClientRect();
-    return { id: r.dataset.id, cut: Math.round(((top - b.top) / b.height) * 50) / 50 };
+    return { id: r.dataset.id, cut: (top - b.top) / b.height, h: b.height };
   });
   const before = await view();
   expect(before.cut).toBeGreaterThan(0);
@@ -268,7 +268,9 @@ test("switching style or figures keeps the scroll position", async ({ page }, in
     await tap(page, k, v);
     // The switch did move the rows: the thread's height changed.
     if (k === "style") expect(await list.evaluate((l) => l.scrollHeight)).not.toBe(height);
-    expect(await view(), `${k} ${v}`).toEqual(before);
+    const now = await view();
+    expect(now.id, `${k} ${v}`).toBe(before.id);
+    expect(Math.abs(now.cut - before.cut) * now.h, `${k} ${v}`).toBeLessThanOrEqual(1);
   }
 });
 

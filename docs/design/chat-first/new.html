@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · New chat (#86: a new chat and Use a folder…)</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="cf.css">
+<script type="module" src="cf.js"></script>
+</head>
+<body>
+<div class="cf">
+  <header class="bar">
+    <h1>cooee</h1>
+    <nav class="tabs" aria-label="tabs"><a href="#" class="on">Chat</a><a href="#">Workflow</a><a href="#">Machines</a></nav>
+    <button type="button" class="gl" aria-label="refresh">↻</button>
+    <a class="gl" href="#" aria-label="new chat with Chief">+</a>
+    <button type="button" class="gl" aria-label="look">◐</button>
+    <button type="button" class="gl" aria-label="settings">⚙</button>
+  </header>
+  <div class="cfm">
+    <nav class="ags ph1440" id="agents" data-cur="chief" data-sub aria-label="agents"></nav>
+    <p class="cap">+ (or + new chat under Chief) opens a side thread with Chief, nothing to pick:</p>
+    <main class="chat" data-twin="A tap on folder: scratch opens Use a folder…:">
+      <div class="th">
+        <a class="gl bk" href="#" aria-label="back to agents">‹</a>
+        <i data-av="chief"></i>
+        <div class="tb">
+          <h1>New chat</h1>
+          <span class="ds"><i class="dt" data-sync="on"></i>Chief · Plain · scratch</span>
+        </div>
+        <button type="button" class="gl" aria-label="close the chat">×</button>
+      </div>
+      <ol class="tc" aria-label="messages">
+        <li class="hi"><i data-av="chief" data-cls="l"></i><b>New chat with Chief</b><p>It starts in a scratch folder of its own. Use a folder… whenever this should work in a repo.</p></li>
+      </ol>
+      <div class="mc">
+        <button type="button" class="fo" aria-haspopup="dialog">folder: scratch ▾</button>
+        <select aria-label="model"><option>model: default</option></select>
+        <select aria-label="effort"><option>effort: default</option></select>
+      </div>
+      <form class="tw"><textarea rows="1" aria-label="message" placeholder="message Chief">Draft a launch post for us</textarea><button type="button">send</button></form>
+      <div class="uscr"></div>
+      <section class="ufs" role="dialog" aria-label="Use a folder…">
+        <div class="hd"><b>Use a folder…</b><button type="button" class="gl" aria-label="close">×</button></div>
+        <div class="top">
+          <input type="search" aria-label="search folders" placeholder="search folders">
+          <a class="fr" href="#"><span>scratch</span><span class="ds">this chat's own</span><i class="tk">✓</i></a>
+          <h2 class="ch">~/Projects</h2>
+          <a class="fr" data-d="1" href="#"><span>cooee</span><span class="ds">3 chats</span></a>
+          <a class="fr" data-d="1" href="#"><span>cooee-drover</span><span class="ds">1 chat</span></a>
+          <a class="fr" data-d="1" href="#"><span>site</span></a>
+          <h2 class="ch">~/Clients</h2>
+          <a class="fr" data-d="1" href="#"><span>crm</span><span class="ds">Account Manager</span></a>
+          <a class="fr" data-d="1" href="#"><span>acme-portal</span></a>
+          <p class="lft">Later turns run in the folder you pick. What the chat made in scratch stays there.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+</body>
+</html>

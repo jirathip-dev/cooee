@@ -69,6 +69,9 @@ pub struct Thread {
     /// Where a session a tool started came from (a Workflow item, #33); none: the owner's own chat.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workflow: Option<Workflow>,
+    /// Sent ahead of the next message after a folder was attached (#86): the agent started again there.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub handover: String,
 }
 
 /// A message queued during a turn.

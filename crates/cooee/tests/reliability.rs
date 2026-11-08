@@ -70,15 +70,11 @@ fn prompts(shed: &FakeShed, id: &str) -> Vec<String> {
         .collect()
 }
 
-/// The thread ids the thread list links to, each once per card.
+/// The thread ids `GET /threads` lists.
 fn listed(cooee: &Cooee) -> Vec<String> {
-    let (status, page) = cooee.get("/");
-    assert_eq!(status, 200, "{page}");
-    let ids = page.split("class=\"tr").skip(1).filter_map(|card| {
-        let at = card.find("href=\"/t/")? + 9;
-        Some(card[at..].split('"').next()?.to_owned())
-    });
-    ids.collect()
+    let rows = cooee.json("/threads");
+    let ids = rows.as_array().unwrap().iter();
+    ids.map(|r| r["id"].as_str().unwrap().to_owned()).collect()
 }
 
 /// A POST that may never get its answer (the server is killed under it).
@@ -182,7 +178,7 @@ fn r7_page_loads_run_no_subprocess() {
         assert_eq!(cooee.get("/").0, 200);
         let (code, page) = cooee.get("/new");
         assert!(
-            code == 200 && page.contains(r#"data-agent="fake-acp""#),
+            code == 200 && page.contains(r#"name="agent" value="fake-acp""#),
             "{page}"
         );
         assert!(page.contains("✓ signed in"), "{page}");
@@ -600,7 +596,7 @@ fn a_failed_background_start_says_why_and_a_retry_sends_once() {
 }
 
 /// #48: a start with no folder runs in the thread's own scratch folder, `<data>/scratch/<id>`, made for it; it is kept
-/// with no folder and said as `scratch` (the list's card, the thread's bar), never as its path.
+/// with no folder and said as `scratch` (the thread's bar and its folder chip), never as its path.
 #[test]
 fn a_start_with_no_folder_runs_in_its_own_scratch_folder() {
     let s = setup("scratch");
@@ -616,9 +612,10 @@ fn a_start_with_no_folder_runs_in_its_own_scratch_folder() {
     assert!(dir.is_dir(), "{}", dir.display());
     let cwd = format!("--cwd {}", dir.display());
     assert!(s.shed.cli_log().contains(&cwd), "{}", s.shed.cli_log());
-    let (_, list) = s.cooee.get("/");
-    assert!(list.contains("<b>scratch</b>"), "{list}");
     let (_, page) = s.cooee.get(&format!("/t/{id}"));
-    assert!(page.contains(" · scratch · "), "{page}");
+    assert!(
+        page.contains(r#"<span id="bf">scratch</span> · "#) && page.contains("folder: scratch ▾"),
+        "{page}"
+    );
     assert!(!page.contains("data/scratch"), "{page}");
 }

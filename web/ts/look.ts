@@ -1,6 +1,6 @@
 // cooee's look (docs/design/look) once the page is up. The server draws the device's pick from its `cooee-look`
 // cookie on the first byte (theme, mode system | light | dark, style modern | terminal | scene, figures sprite | ascii |
-// none, and a scheme per mode; unset: the theme's default; #35; Scene, #34, draws the thread list as the theme's scene), with every theme and scheme in `<script id="looks">`. This module
+// none, and a scheme per mode; unset: the theme's default; #35; Scene, #34, draws the agents sidebar as the theme's scene), with every theme and scheme in `<script id="looks">`. This module
 // keeps it live: a pick in the look sheet applies at once without a reload (the cookie keeps it), System follows
 // prefers-color-scheme, and elements added later are filled as they come, so chat.ts only names what it shows:
 //   [data-st=working|needs|done|fail|idle|ended]  a state: the sprite (data-tool=edit|read|run while working) or the
@@ -97,7 +97,7 @@ const figs = (): string =>
   pick.figures === "ascii" || pick.figures === "none" ? pick.figures : theme().sprites ? "sprite" : "ascii";
 const style = (): string =>
   pick.scene === "on" && figs() === "sprite" ? "scene" : pick.style === "terminal" ? "terminal" : "modern";
-// The shape pages take: in Scene only the thread list is the scene, the rest keeps the Modern or Terminal pick.
+// The shape pages take: in Scene only the agents sidebar is the scene, the rest keeps the Modern or Terminal pick.
 const shape = (): string => (pick.style === "terminal" ? "terminal" : "modern");
 const scene = (): boolean => style() === "scene";
 const word = (k: string): string => theme().words[k] || PLAIN[k] || k;
@@ -231,8 +231,8 @@ function set(k: Key, v: string | undefined): void {
     .join("/");
   // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is newer than the iPhones cooee serves.
   document.cookie = `${COOKIE}=${value}; path=/; max-age=315360000; samesite=lax`;
-  // Scene in or out, or another theme's scene: the thread list is drawn again by the server.
-  if ($("main.list") && (scene() && name()) !== was) location.reload();
+  // Scene in or out, or another theme's scene: the agents sidebar is drawn again by the server.
+  if ($(".ags") && (scene() && name()) !== was) location.reload();
   else hold(paint);
 }
 

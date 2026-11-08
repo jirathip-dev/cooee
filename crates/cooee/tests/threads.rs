@@ -59,22 +59,15 @@ fn eventually(mut f: impl FnMut() -> bool) {
 
 fn row(cooee: &Cooee, id: &str) -> (Value, bool) {
     let list = cooee.json("/threads");
-    let found = |rows: &Value| {
-        rows.as_array()
-            .unwrap()
-            .iter()
-            .find(|r| r["id"] == id)
-            .cloned()
-    };
-    let carded = list["cards"]
+    let r = list
         .as_array()
         .unwrap()
         .iter()
-        .find_map(|c| found(&c["rows"]));
-    match carded {
-        Some(r) => (r, false),
-        None => (found(&list["archived"]).expect("listed"), true),
-    }
+        .find(|r| r["id"] == id)
+        .cloned()
+        .expect("listed");
+    let archived = r["archived"] == json!(true);
+    (r, archived)
 }
 
 #[test]

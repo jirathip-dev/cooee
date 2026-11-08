@@ -7,7 +7,7 @@
 
 use std::{
     collections::BTreeMap,
-    env, fs,
+    env, fs, io,
     path::{Path, PathBuf},
 };
 
@@ -56,6 +56,13 @@ pub struct Profile {
     /// Why it is hidden.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub why: String,
+    /// Its avatar in the sidebar (#86): an image (`https://…`, `data:image/…`, or a plugin's `/path` on its backend),
+    /// or a sprite of the theme's (`s-<id>` in its `sprites.svg`); none: its initials.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avatar: Option<String>,
+    /// Threads its plugin lists as this agent's (its side threads, the newest the ongoing chat).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub threads: Vec<String>,
     /// The plugin it came with (none: the owner's own).
     #[serde(skip)]
     pub plugin: Option<String>,
@@ -97,6 +104,17 @@ impl Profile {
         {
             return Err(format!(
                 "profile {}: policy {p:?} isn't ask, allow or deny",
+                self.name
+            ));
+        }
+        if let Some(a) = self.avatar.as_deref().filter(|a| {
+            !(a.starts_with("https://")
+                || a.starts_with("data:image/")
+                || a.starts_with('/')
+                || (!a.is_empty() && a.bytes().all(ok)))
+        }) {
+            return Err(format!(
+                "profile {}: avatar {a:?} isn't an image URL or a sprite id",
                 self.name
             ));
         }
@@ -222,6 +240,103 @@ pub fn list(
     out
 }
 
+/// The profile with id `id` (see [`Profile::id`]), plugins' from their manifests.
+///
+/// # Errors
+/// When there is none.
+pub fn find(config: Option<&Path>, data: &Path, id: &str) -> io::Result<Profile> {
+    let found = list(config, data, |_| None)
+        .into_iter()
+        .find(|p| p.id() == id);
+    found.ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, format!("no profile {id}")))
+}
+
+/// `+ new agent` (#86): a profile named `label` saved as `<config>/profiles/<name>.toml`, `name` made from the label;
+/// a copy of profile `base` (empty: Plain on ACP agent `agent`). Returns it.
+///
+/// # Errors
+/// A label with no letter or digit, a name taken, an unknown `base`, or a file that can't be written.
+pub fn create(
+    config: &Path,
+    data: &Path,
+    label: &str,
+    base: &str,
+    agent: &str,
+) -> io::Result<Profile> {
+    let mut name = String::new();
+    for c in label.trim().to_lowercase().chars() {
+        if c.is_ascii_alphanumeric() {
+            name.push(c);
+        } else if !name.is_empty() && !name.ends_with('-') {
+            name.push('-');
+        }
+    }
+    let name = name.trim_end_matches('-').to_owned();
+    let refused = |why: String| io::Error::new(io::ErrorKind::InvalidInput, why);
+    if name.is_empty() {
+        return Err(refused(format!("{label:?} needs a letter or digit")));
+    }
+    let taken = list(Some(config), data, |_| None)
+        .into_iter()
+        .any(|p| p.id() == name);
+    let mut p = match base {
+        "" => Profile {
+            name: String::new(),
+            label: String::new(),
+            agent: agent.to_owned(),
+            account: None,
+            folder: None,
+            instructions: None,
+            settings: None,
+            env: BTreeMap::new(),
+            mcp: None,
+            policy: None,
+            hidden: false,
+            why: String::new(),
+            avatar: None,
+            threads: Vec::new(),
+            plugin: None,
+        },
+        id => find(Some(config), data, id)?,
+    };
+    (p.name, p.label, p.plugin) = (name, label.trim().to_owned(), None);
+    p.threads.clear();
+    let dir = config.join("profiles");
+    let file = dir.join(format!("{}.toml", p.name));
+    if taken || file.exists() {
+        return Err(refused(format!("there is an agent {} already", p.name)));
+    }
+    // TOML's basic strings read JSON's.
+    let q = |v: &str| serde_json::to_string(v).unwrap_or_default();
+    let paths = [
+        ("folder", &p.folder),
+        ("instructions", &p.instructions),
+        ("settings", &p.settings),
+        ("mcp", &p.mcp),
+    ];
+    let paths = paths.map(|(k, v)| (k, v.as_ref().map(|v| v.to_string_lossy().into_owned())));
+    let keys = [
+        ("name", Some(p.name.clone())),
+        ("label", Some(p.label.clone())),
+        ("agent", Some(p.agent.clone())),
+        ("account", p.account.clone()),
+        ("policy", p.policy.clone()),
+    ];
+    let mut lines: Vec<String> = keys
+        .into_iter()
+        .chain(paths)
+        .filter_map(|(k, v)| Some(format!("{k} = {}", q(&v?))))
+        .collect();
+    if !p.env.is_empty() {
+        lines.push("\n[env]".to_owned());
+        lines.extend(p.env.iter().map(|(k, v)| format!("{} = {}", q(k), q(v))));
+    }
+    let text = lines.join("\n") + "\n";
+    fs::create_dir_all(&dir)?;
+    fs::write(&file, text)?;
+    Ok(p)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -249,6 +364,20 @@ mod tests {
         assert!(profile("policy = \"yolo\"").check().is_err());
         assert!(profile("").check().is_ok());
         assert!(profile("env = { T = \"{thread}\" }").check().is_ok());
+        for ok in [
+            "https://x/a.png",
+            "data:image/png;base64,AA",
+            "/a.png",
+            "idle",
+        ] {
+            assert!(profile(&format!("avatar = {ok:?}")).check().is_ok(), "{ok}");
+        }
+        for bad in ["javascript:alert(1)", "http://x/a.png", "", "Idle"] {
+            assert!(
+                profile(&format!("avatar = {bad:?}")).check().is_err(),
+                "{bad}"
+            );
+        }
         assert!(
             toml::from_str::<Profile>("name = \"p\"\nlabel = \"P\"\nagent = \"a\"\nhooks = 1")
                 .is_err()

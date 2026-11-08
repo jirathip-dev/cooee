@@ -227,13 +227,6 @@ fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_ou
             .1
             .contains("fake · main login · ")
     );
-    // The composer never starts on the signed-out system default it was last used with: the signed-in account.
-    let page = s.page();
-    let pick = &page[page.find(r#"value="fake-acp/account-2""#).unwrap()..];
-    assert!(
-        pick[..pick.find('>').unwrap()].contains(r#"checked="""#),
-        "{pick}"
-    );
     // A thread's own pick: that account's folder.
     let (id, line) = s.thread(Some("account-2"));
     assert!(

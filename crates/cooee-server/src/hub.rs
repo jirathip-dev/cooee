@@ -1027,6 +1027,85 @@ impl Hub {
         self.send_after(id, text, random_id, files, "")
     }
 
+    /// "Use a folder…" (#86): thread `id`'s later turns run in `folder` (inside a root). shed fixes a session's folder
+    /// when it starts, so its agent starts again there as `recipe` says, and the next message carries a hand-over:
+    /// the profile's instructions, where it was and its last turns. The chat says so; the old terminal is closed.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a folder outside the roots, or a closed or Workflow thread; [`HubError::Shed`]
+    /// when the agent can't start there (the thread stays where it was).
+    pub fn attach(&self, id: &str, folder: &Path, recipe: &Recipe) -> Result<Item, HubError> {
+        let folder = self.allowed(folder).ok_or_else(|| outside(folder))?;
+        let live = self.live(id)?;
+        let (agent, old) = {
+            let l = lock(&live);
+            if l.meta.closed || l.meta.workflow.is_some() {
+                return Err(HubError::Refused(
+                    "only an open chat of your own can move".to_owned(),
+                ));
+            }
+            (l.meta.agent.clone(), l.meta.terminal.clone())
+        };
+        let terminal = format!("cooee-{id}-{:x}", now());
+        let labels = BTreeMap::from([
+            (LABEL.to_owned(), "1".to_owned()),
+            (format!("{LABEL}.thread"), id.to_owned()),
+        ]);
+        let started = self
+            .shed
+            .run_acp(
+                &terminal,
+                (&agent, &self.adapter(&agent)),
+                &folder,
+                &labels,
+                &recipe.launch,
+            )
+            .map_err(HubError::from)
+            .and_then(|_| Ok(self.shed.ready(&terminal)?));
+        if let Some((file, _)) = &recipe.launch.secrets {
+            let _ = fs::remove_file(file);
+        }
+        started?;
+        let mut live = lock(&live);
+        let was = live
+            .meta
+            .folder
+            .clone()
+            .unwrap_or_else(|| self.scratch.join(id));
+        let turns: Vec<String> = live
+            .chat
+            .items
+            .iter()
+            .filter_map(|i| match &i.body {
+                Body::You { text, .. } => Some(format!("Owner: {text}")),
+                Body::Agent { text, .. } => Some(format!("You: {text}")),
+                _ => None,
+            })
+            .collect();
+        let last = turns[turns.len().saturating_sub(6)..].join("\n\n");
+        let handover = format!(
+            "{}\n\nThis chat moved from {} to {}, where you now run; what it made before is still there. Its last turns:\n\n{last}",
+            recipe.instructions.trim_end(),
+            was.display(),
+            folder.display()
+        );
+        handover.trim_start().clone_into(&mut live.meta.handover);
+        live.meta.terminal = terminal;
+        live.meta.folder = Some(folder.clone());
+        self.store.save(&live.meta)?;
+        let text = format!(
+            "now in {} · later turns run here",
+            cooee_web::short(&folder)
+        );
+        let item = live.chat.push(now(), 0, Body::Note { text });
+        live.publish(self, vec![Change::Item(item.clone())])?;
+        drop(live);
+        if let Err(e) = self.shed.close(&old) {
+            eprintln!("cooee: {e}");
+        }
+        Ok(item)
+    }
+
     /// [`Hub::send`] with `before` (a profile's instructions) ahead of the text for the agent; only the text is stored.
     fn send_after(
         &self,
@@ -1096,6 +1175,12 @@ impl Hub {
     /// Sends `q` to the agent, `before` ahead of it, then stores and publishes it.
     fn deliver(&self, live: &mut Live, q: Queued, before: &str) -> Result<Item, HubError> {
         let start = Instant::now();
+        // After Use a folder…, the hand-over goes once ahead of the next message.
+        let before = if before.trim().is_empty() {
+            live.meta.handover.clone()
+        } else {
+            before.to_owned()
+        };
         let mut prompt = if before.trim().is_empty() {
             q.text.clone()
         } else {
@@ -1110,6 +1195,10 @@ impl Hub {
             }
         }
         self.shed.prompt(&live.meta.terminal, prompt.trim())?;
+        if !live.meta.handover.is_empty() {
+            live.meta.handover.clear();
+            self.store.save(&live.meta)?;
+        }
         live.sent = Some(start);
         let first = live.meta.random_id == q.random_id;
         let body = Body::You {

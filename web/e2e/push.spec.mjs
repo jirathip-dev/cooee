@@ -24,7 +24,7 @@ const shown = (page, tag) =>
 test("two pushes for a thread show one notification; none while it is open; reading it clears it", async ({ page, context }) => {
   await context.grantPermissions(["notifications"]);
   await page.goto("/new");
-  await page.getByLabel("first message").fill("Say hello");
+  await page.getByLabel("message", { exact: true }).fill("Say hello");
   await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await expect(page.locator("#st")).toHaveAttribute("data-st", "done");

@@ -113,23 +113,24 @@ fn picker_lists_sub_folders_two_levels_deep_never_symlinks() {
     let (home, _shed, cooee) = start("folders-picker");
     let projects = home.join("Projects");
     cooee.post("/roots", &json!({ "path": projects }));
-    let (_, page) = cooee.get("/new");
-    let row = |p: &Path, d: u8| {
+    let (_, page) = cooee.get("/");
+    let row = |p: &Path, d: u8, short: &str| {
         let hidden = if d > 1 { r#" hidden="""# } else { "" };
         format!(
-            r#"<label class="sr pk" data-d="{d}"{hidden}><input type="radio" name="folder" value="{}""#,
+            r#"<label data-d="{d}"{hidden} title="{short}"><input type="radio" name="folder" value="{}""#,
             p.display()
         )
     };
-    for (p, d) in [
-        (projects.clone(), 0),
-        (projects.join("app"), 1),
-        (projects.join("app/src"), 2),
+    for (p, d, short) in [
+        (projects.clone(), 0, "~/Projects"),
+        (projects.join("app"), 1, "~/Projects/app"),
+        (projects.join("app/src"), 2, "~/Projects/app/src"),
     ] {
-        assert!(page.contains(&row(&p, d)), "{}: {page}", p.display());
+        assert!(page.contains(&row(&p, d, short)), "{}: {page}", p.display());
     }
+    // A root heads its group; a folder in it shows by name.
     assert!(
-        page.contains(r#"<span class="sk">~/Projects/app/src</span>"#),
+        page.contains(">~/Projects<span") && page.contains(">src<span"),
         "{page}"
     );
     assert!(page.contains(r#"id="fq" type="search""#), "{page}");

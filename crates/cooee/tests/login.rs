@@ -112,11 +112,9 @@ impl Setup {
 fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen() {
     let s = setup("login");
     let (_, page) = s.cooee.get("/new");
-    // Settings › providers and the agent sheet: signed out, with [sign in] on its row.
-    let row = r#"<span class="sv">signed out</span><button type="button" class="si" data-provider="fake" data-account="""#;
+    // Settings › providers: signed out, with [sign in] on its row.
     assert!(
-        page.contains(r#"<span class="sk">main login</span><span class="st m">signed out</span>"#)
-            && page.contains(row),
+        page.contains(r#"<span class="sk">main login</span><span class="st m">signed out</span><button type="button" class="si" data-provider="fake" data-account="""#),
         "{page}"
     );
 
@@ -153,7 +151,7 @@ fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_scr
     let (_, page) = s.cooee.get("/new");
     assert!(
         page.contains(r#"<span class="sk">main login</span><span class="st g">✓ signed in</span>"#)
-            && !page.contains(row),
+            && !page.contains(r#"class="si" data-provider="fake" data-account="""#),
         "{page}"
     );
 

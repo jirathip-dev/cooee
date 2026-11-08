@@ -8,7 +8,7 @@ const shot = (page, info, name) => page.screenshot({ path: `../../ui-${info.proj
 
 async function start(page, text, base = "") {
   await page.goto(`${base}/new`);
-  await page.getByLabel("first message").fill(text);
+  await page.getByLabel("message", { exact: true }).fill(text);
   await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
 }

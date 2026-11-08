@@ -25,7 +25,7 @@ async function audit(page) {
 // A new thread whose turn is done, open; its id.
 async function thread(page, text) {
   await page.goto("/new");
-  await page.getByLabel("first message").fill(text);
+  await page.getByLabel("message", { exact: true }).fill(text);
   await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
@@ -118,7 +118,7 @@ test("row 34: the composer's model and effort chips; a pick is kept and said in 
   const id = await thread(page, `Row 34 ${info.project.name}`);
   await expect(page.getByLabel("model", { exact: true })).toHaveValue("");
   await page.getByLabel("effort", { exact: true }).selectOption("low");
-  await expect(page.locator(".qs", { hasText: "effort low" })).toHaveText("model default · effort low from the next start");
+  await expect(page.locator(".qs", { hasText: "effort low" })).toHaveText(/^model default · effort low from the next start · \d\d?:\d\d/);
   await audit(page);
   await shot(page, info, "parity-34-chip");
   await page.goto(`/t/${id}`);

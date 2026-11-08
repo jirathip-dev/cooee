@@ -94,34 +94,24 @@ impl Setup {
         (id, line.to_owned())
     }
 
-    /// The composer's agent sheet (#48): the profiles, then Plain's accounts.
+    /// The sidebar's agents (#86): Plain on each agent, then each profile.
     fn picker(&self) -> String {
-        let page = self.cooee.get("/new").1;
-        let at = page
-            .find(r#"id="sh-agent""#)
-            .unwrap_or_else(|| panic!("an agent sheet: {page}"));
-        page[at..at + page[at..].find(r#"id="sh-folder""#).unwrap()].to_owned()
+        let page = self.cooee.get("/").1;
+        let at = page.find(r#"<nav class="ags""#).expect("the agents");
+        page[at..at + page[at..].find("</nav>").unwrap()].to_owned()
     }
 
-    /// The agent sheet once it has `what` (up to 20 s: the server runs a plugin's backend within half a second of its
+    /// The agents once they have `what` (up to 20 s: the server runs a plugin's backend within half a second of its
     /// add, and asks it for its profiles once it answers).
     fn picker_with(&self, what: &str) -> String {
         for _ in 0..400 {
-            let sheet = self.picker();
-            if sheet.contains(what) {
-                return sheet;
+            let agents = self.picker();
+            if agents.contains(what) {
+                return agents;
             }
             std::thread::sleep(std::time::Duration::from_millis(50));
         }
         panic!("never {what}: {}", self.picker());
-    }
-
-    /// The pick the agent sheet starts on.
-    fn picked(&self) -> String {
-        let sheet = self.picker();
-        let input = sheet.split("<input").find(|i| i.contains(r#"checked="""#));
-        let value = input.expect("a pick").split(r#"value=""#).nth(1).unwrap();
-        value.split('"').next().unwrap().to_owned()
     }
 
     /// Every file under `dir`, as text.
@@ -141,15 +131,14 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let s = setup("profiles");
     let picker = s.picker();
     assert!(
-        picker.contains(r#"value="p:coder""#)
-            && picker.contains(r#"data-label="Coder""#)
-            && picker.contains(r#"value="p:guard""#)
-            && picker.contains(r#"data-label="Guarded""#)
+        picker.contains(r#"href="/new?agent=fake-acp""#)
+            && picker.contains(r#"<span class="tt">Fake</span>"#)
+            && picker.contains(r#"href="/new?profile=coder""#)
+            && picker.contains(r#"<span class="tt">Coder</span>"#)
+            && picker.contains(r#"<span class="tt">Guarded</span>"#)
             && !picker.contains("Leak"),
         "{picker}"
     );
-    // No thread yet: Plain's first account.
-    assert_eq!(s.picked(), "fake-acp/");
 
     // Plain: the agent as it is.
     let (id, line) = s.thread("", "hi");
@@ -162,7 +151,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     assert_eq!(s.shed.sent(&terminal), ["\x1e{\"prompt\":\"hi\"}\n"]);
     let chat = s.cooee.get(&format!("/t/{id}")).1;
     assert!(
-        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>fake · main login · "),
+        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Plain · fake · main login · "),
         "{chat}"
     );
 
@@ -209,13 +198,8 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Coder · "),
         "{chat}"
     );
-    // The folder's last-used profile is picked next time it is picked; scratch (no folder) stays on Plain.
-    let root = format!(
-        r#"value="{}" data-last="p:coder""#,
-        s.dir.join("root").display()
-    );
-    assert!(s.cooee.get("/new").1.contains(&root));
-    assert_eq!(s.picked(), "fake-acp/");
+    // Coder's ongoing chat is this one.
+    assert!(s.picker().contains(&format!(r#"href="/t/{id}""#)));
 
     // A guard its agent can't run: refused, nothing started.
     let runs = s.shed.cli_log().matches(" run ").count();
@@ -227,9 +211,9 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     );
     assert_eq!(s.shed.cli_log().matches(" run ").count(), runs);
     assert_eq!(
-        s.cooee.json("/threads")["cards"].as_array().unwrap().len(),
-        1,
-        "one card, two threads"
+        s.cooee.json("/threads").as_array().unwrap().len(),
+        2,
+        "two threads, the refused start none"
     );
     // An unknown profile, and one left out for a secret inline, are refused too.
     for id in ["nope", "leak"] {
@@ -283,7 +267,7 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
     .unwrap();
     git(&repo, &["add", "-A"]);
     git(&repo, &["commit", "--quiet", "-m", "1"]);
-    let option = r#"value="p:plug/conductor""#;
+    let option = r#"href="/new?profile=plug/conductor""#;
     assert!(!s.picker().contains(option));
 
     let url = repo.to_string_lossy().into_owned();
@@ -292,10 +276,7 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
         out.contains("agent profiles: Conductor (fake-acp)"),
         "{out}"
     );
-    assert!(
-        s.picker_with(option)
-            .contains(r#"data-label="Conductor · plug""#)
-    );
+    assert!(s.picker_with(option).contains("Conductor"));
     let (id, _) = s.thread("plug/conductor", "go");
     assert_eq!(
         s.shed.sent(&format!("cooee-{id}")),
@@ -315,9 +296,9 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
     let _ = Command::new("kill").args(["-TERM", &pid]).status();
 }
 
-/// A plugin backend (docs/plugins/hello's checks) that serves `profiles` at `GET /cooee/profiles` and appends each
-/// `POST /cooee/thread-started` body to `log`.
-fn serving(profiles: &Value, log: &Path) -> String {
+/// A plugin backend (docs/plugins/hello's checks) that serves the profiles in the JSON file `list` at
+/// `GET /cooee/profiles` (read at each call) and appends each `POST /cooee/thread-started` body to `log`.
+fn serving(list: &Path, log: &Path) -> String {
     format!(
         r#"import fs from "node:fs";
 import http from "node:http";
@@ -325,31 +306,36 @@ const {{ PORT, TOKEN }} = process.env;
 http.createServer(async (req, res) => {{
   if (req.headers.authorization !== `Bearer ${{TOKEN}}`) return res.writeHead(401).end();
   if (req.url === "/tab.js") return res.writeHead(200).end("document.body.append('plug');");
-  if (req.url === "/cooee/profiles") return res.writeHead(200).end(JSON.stringify({{ profiles: {profiles} }}));
+  if (req.url === "/cooee/profiles") return res.writeHead(200).end(`{{"profiles":${{fs.readFileSync({list:?})}}}}`);
   let b = ""; for await (const c of req) b += c;
   if (req.url === "/cooee/thread-started") {{ fs.appendFileSync({log:?}, b + "\n"); return res.writeHead(200).end("{{}}"); }}
   res.writeHead(404).end();
 }}).listen(Number(PORT), "127.0.0.1");
 "#,
+        list = list.to_string_lossy(),
         log = log.to_string_lossy()
     )
 }
 
 #[test]
-fn a_backend_serves_its_plugins_profiles_a_hidden_one_is_not_offered_and_thread_is_the_threads_id()
-{
+fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_the_threads_id() {
     let s = setup("profiles-served");
     let repo = s.dir.join("plug.git");
     fs::create_dir_all(&repo).unwrap();
     git(&repo, &["init", "--quiet", "-b", "main"]);
-    let log = s.dir.join("started.log");
-    let served = json!([
-        { "name": "fleet-a", "label": "Fleet A", "agent": "fake-acp",
-          "env": { "HERDSMAN_THREAD": "{thread}", "FLEET": "a" } },
-        { "name": "fleet-b", "label": "Fleet B", "agent": "fake-acp", "hidden": true,
-          "why": "its guard can't be proven" },
-    ]);
-    fs::write(repo.join("server.mjs"), serving(&served, &log)).unwrap();
+    let (list, log) = (s.dir.join("served.json"), s.dir.join("started.log"));
+    let served = |threads: &[&str]| {
+        let v = json!([
+            { "name": "fleet-a", "label": "Fleet A", "agent": "fake-acp", "avatar": "/a.png",
+              "env": { "HERDSMAN_THREAD": "{thread}", "FLEET": "a" }, "threads": threads },
+            { "name": "fleet-b", "label": "Fleet B", "agent": "fake-acp", "hidden": true,
+              "why": "its guard can't be proven" },
+            { "name": "fleet-c", "label": "Fleet C", "agent": "fake-acp" },
+        ]);
+        fs::write(&list, v.to_string()).unwrap();
+    };
+    served(&[]);
+    fs::write(repo.join("server.mjs"), serving(&list, &log)).unwrap();
     fs::write(
         repo.join("cooee-plugin.toml"),
         "name = \"plug\"\nversion = \"1\"\nbuild = \"true\"\nrun = \"TOKEN=$COOEE_PLUGIN_TOKEN exec node server.mjs\"\n\
@@ -362,19 +348,26 @@ fn a_backend_serves_its_plugins_profiles_a_hidden_one_is_not_offered_and_thread_
     s.cooee
         .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
 
-    // The backend's list is the plugin's (once the server runs it): a hidden one, and the manifest's it doesn't
-    // list, aren't offered.
-    let picker = s.picker_with("p:plug/fleet-a");
+    // The backend's list is the plugin's agents (once the server runs it), under its name after the owner's, with
+    // their names and avatars (none: the initials); a hidden one, and the manifest's it doesn't list, aren't there.
+    let agents = s.picker_with(r#"href="/new?profile=plug/fleet-a""#);
+    let group = agents.find(r#"<p class="lb">plug</p>"#).expect(&agents);
+    let a = agents.find(r#"href="/new?profile=plug/fleet-a""#).unwrap();
     assert!(
-        picker.contains(r#"value="p:plug/fleet-a""#)
-            && picker.contains(r#"data-label="Fleet A · plug""#),
-        "{picker}"
+        agents.find("Coder").unwrap() < group && group < a,
+        "{agents}"
     );
+    let row = |at: usize| &agents[at..at + agents[at..].find("</a>").unwrap()];
     assert!(
-        !picker.contains("fleet-b")
-            && !picker.contains("Fleet B")
-            && !picker.contains("p:plug/old"),
-        "{picker}"
+        row(a).contains(r#"<img class="av" src="/p/plug/api/a.png" alt="">"#)
+            && row(a).contains(r#"<span class="tt">Fleet A</span>"#),
+        "{agents}"
+    );
+    let c = agents.find(r#"href="/new?profile=plug/fleet-c""#).unwrap();
+    assert!(row(c).contains(">FC</i>"), "{agents}");
+    assert!(
+        !agents.contains("fleet-b") && !agents.contains("Fleet B") && !agents.contains("plug/old"),
+        "{agents}"
     );
     let runs = s.shed.cli_log().matches(" run ").count();
     let (status, body) = s.start("plug/fleet-b", "go");
@@ -392,6 +385,33 @@ fn a_backend_serves_its_plugins_profiles_a_hidden_one_is_not_offered_and_thread_
     }
     let told: Value = serde_json::from_str(fs::read_to_string(&log).unwrap().trim()).unwrap();
     assert_eq!(told, json!({ "thread": id, "profile": "fleet-a" }));
+
+    // Threads the backend lists as the agent's are its side threads, the newest its ongoing chat.
+    let (old, _) = s.thread("", "older");
+    let (new, _) = s.thread("", "newer");
+    served(&[&old, &new]);
+    let agents = s.picker_with(&format!(r#"href="/t/{new}""#));
+    let a = agents.find(r#"<span class="tt">Fleet A</span>"#).unwrap();
+    let start = agents[..a].rfind("<a").unwrap();
+    assert!(
+        agents[start..a].contains(&format!(r#"href="/t/{new}""#)),
+        "{agents}"
+    );
+    let chat = s.cooee.get(&format!("/t/{new}")).1;
+    let at = chat.find(r#"<nav class="ags""#).unwrap();
+    let side = &chat[at..at + chat[at..].find("</nav>").unwrap()];
+    let fleet = side.find(r#"<span class="tt">Fleet A</span>"#).unwrap();
+    let under = &side[fleet..side[fleet..].find("+ new chat").unwrap() + fleet];
+    assert!(
+        under.contains(&format!(r#"href="/t/{old}""#))
+            && under.contains(&format!(r#"href="/t/{id}""#)),
+        "{side}"
+    );
+    // They are no longer Plain's.
+    assert!(
+        side.contains(r#"<a class="agr" href="/new?agent=fake-acp">"#),
+        "{side}"
+    );
 
     s.cooee.cli(&["plugin", "remove", "plug"]);
     let pid = s.cooee.child.id().to_string();

@@ -7,21 +7,22 @@
 
 #![forbid(unsafe_code)]
 
+mod agents;
 mod compose;
 mod look;
 mod sheet;
 mod shown;
 
 use std::{
-    collections::BTreeMap,
     path::{Path, PathBuf},
     sync::{Arc, PoisonError, RwLock},
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use compose::composer;
-pub use compose::{New, named, who};
-use cooee_core::{Sheet, Summary, Thread, Turn};
+pub use agents::{Mate, Pane, Side, page};
+use compose::hint;
+pub use compose::{named, who};
+use cooee_core::{Sheet, Thread, Turn};
 pub use look::{Looks, Pair, SPRITES, Scheme, TOKENS, Theme, WORDS, check, gate, plain, read_pack};
 use sheet::{sheets, shown};
 pub use shown::Shown;
@@ -30,7 +31,6 @@ use topcoat::{
     context::{Cx, app_context},
     router::{
         Body, RouterBuilder,
-        content::Form,
         error::not_found,
         path_param,
         response::{IntoResponse, Response},
@@ -48,7 +48,7 @@ macro_rules! built {
 
 /// The static routes: the manifest, the icons, the style sheet, the scripts and the service worker; the look:
 /// `POST /look` (a pick with no script) and each theme's data at
-/// `/look/<theme>/{theme.json,sprites.svg,scene.svg,icon.png}`; and `POST /list`, the thread list's chip.
+/// `/look/<theme>/{theme.json,sprites.svg,scene.svg,icon.png}`.
 #[must_use]
 pub fn assets(builder: RouterBuilder, looks: Arc<LookAssets>) -> RouterBuilder {
     builder
@@ -62,7 +62,6 @@ pub fn assets(builder: RouterBuilder, looks: Arc<LookAssets>) -> RouterBuilder {
         .route(worker)
         .route(look_js)
         .route(sheet::look_set)
-        .route(list_set)
         .route(look_file)
         .app_context(looks)
 }
@@ -309,7 +308,7 @@ async fn document(
                 <script type="module" src="/look.js"></script>
                 <script type="module" src="/chat.js"></script>
             </head>
-            <body class="app" data-at=(now().to_string())>
+            <body data-at=(now().to_string())>
                 (child)
                 <p id="ld" role="status" hidden=(true)>
                     <span class="lw" data-w="loading">
@@ -324,153 +323,55 @@ async fn document(
     })
 }
 
-/// The chat header's line before its state: a Workflow session's role and round, else who it runs as (`runs`:
-/// provider · account, or its agent `profile`'s label), the model and the folder.
-fn byline(thread: &Thread, (runs, profile): (&str, &str), folder: &str) -> String {
+/// The chat header: the agent's name, the title (an agent's ongoing chat is titled by its name; a side thread by
+/// its own, its agent first in the line), and the line before its state: a Workflow session's role and round, else
+/// its agent profile's label, or Plain and who it runs as (`runs`: provider · account, never the agent's id), and the
+/// model (the folder follows it, drawn apart so Use a folder… can change it). `provider`: the provider's name.
+fn bar(
+    thread: &Thread,
+    mate: Option<&(usize, String, bool, Option<String>)>,
+    (profile, provider, runs): (&str, &str, &str),
+) -> (String, String, String) {
+    let (name, title, by) = match mate {
+        Some((_, n, true, _)) => (n.clone(), n.clone(), ""),
+        Some((_, n, false, _)) => (n.clone(), thread.title.clone(), n.as_str()),
+        None => (provider.to_owned(), thread.title.clone(), ""),
+    };
     if let Some(w) = &thread.workflow {
-        return format!("{} · round {} · ", w.role, w.round);
+        return (name, title, format!("{} · round {} · ", w.role, w.round));
     }
-    let runs = if profile.is_empty() { runs } else { profile };
-    [runs, &thread.model, folder]
+    let (profile, runs) = if profile.is_empty() {
+        ("Plain", runs)
+    } else {
+        (profile, "")
+    };
+    let line = [by, profile, runs, &thread.model]
         .into_iter()
         .filter(|s| !s.is_empty())
         .flat_map(|s| [s, " · "])
-        .collect()
+        .collect();
+    (name, title, line)
 }
 
-/// `~/x` for a folder under `$HOME` (as spelled, or resolved: a thread keeps its folder resolved); none (empty):
-/// `scratch`, a thread's own folder (#48).
-fn short(folder: &Path) -> String {
+/// `~/x` for a folder under `$HOME` (as given, or resolved: a folder a chat works in is stored resolved); none
+/// (empty): `scratch`, a chat's own folder.
+#[must_use]
+pub fn short(folder: &Path) -> String {
     if folder.as_os_str().is_empty() {
         return "scratch".to_owned();
     }
     let home = std::env::var_os("HOME").map(PathBuf::from);
-    let real = home.as_deref().and_then(|h| h.canonicalize().ok());
-    let under = |h: &Path| folder.strip_prefix(h).ok();
-    match home
-        .as_deref()
-        .and_then(under)
-        .or_else(|| real.as_deref().and_then(under))
-    {
+    let homes = home
+        .iter()
+        .flat_map(|h| [h.clone(), h.canonicalize().unwrap_or_default()]);
+    let homes = homes.filter(|h| h.has_root());
+    let rest = homes
+        .into_iter()
+        .find_map(|h| folder.strip_prefix(h).ok().map(Path::to_path_buf));
+    match rest {
         Some(rest) if rest.as_os_str().is_empty() => "~".to_owned(),
         Some(rest) => format!("~/{}", rest.display()),
         None => folder.display().to_string(),
-    }
-}
-
-/// A card on the thread list: a working folder (`~/x`) and its chats, or a Workflow source and its sessions.
-#[derive(serde::Serialize)]
-pub struct Card {
-    /// The folder, `~/` for one under `$HOME`; or the source.
-    pub folder: String,
-    /// Its threads, in the list's order.
-    pub rows: Vec<Summary>,
-    /// A source's card: its finished sessions, folded under "done today".
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub done: Option<Vec<Summary>>,
-}
-
-/// The thread list as `GET /threads` and the page draw it: the cards, and the archived threads apart.
-#[derive(serde::Serialize)]
-pub struct Listed {
-    /// The cards under the chip (`cards`).
-    pub cards: Vec<Card>,
-    /// The archived threads, newest first.
-    pub archived: Vec<Summary>,
-}
-
-/// The cookie that keeps the thread list's chip: `chats` or `workflow` (else All).
-const LIST: &str = "cooee-list";
-
-/// The device's chip: `all`, `chats` or `workflow`.
-#[must_use]
-pub fn chip(cx: &Cx) -> &'static str {
-    let cookie = topcoat::router::request::headers(cx)
-        .get("cookie")
-        .and_then(|v| v.to_str().ok());
-    let value = cookie
-        .into_iter()
-        .flat_map(|c| c.split(';'))
-        .find_map(|c| c.trim().strip_prefix(LIST)?.strip_prefix('='));
-    match value {
-        Some("chats") => "chats",
-        Some("workflow") => "workflow",
-        _ => "all",
-    }
-}
-
-/// `POST /list`: the chip tapped.
-#[derive(serde::Deserialize)]
-struct Chip {
-    list: String,
-}
-
-/// Keeps the chip tapped for this device and goes back to the list.
-#[route(POST "/list")]
-async fn list_set(Form(c): Form<Chip>) -> Result<Response> {
-    let value = if matches!(c.list.as_str(), "chats" | "workflow") {
-        c.list.as_str()
-    } else {
-        "all"
-    };
-    Ok(Response::builder()
-        .status(303)
-        .header("Location", "/")
-        .header(
-            "Set-Cookie",
-            format!("{LIST}={value}; Path=/; Max-Age=315360000; SameSite=Lax"),
-        )
-        .body(Body::from(()))?)
-}
-
-/// The thread list's cards under chip `list` (`GET /threads` and the page draw the same): Chats, one per working
-/// folder, by folder; then Workflow, one per source, needs-you first, then working, then the newest, the finished
-/// ones folded. Each row's `agent` is its provider's name (`providers`), never the agent's id.
-#[must_use]
-pub fn cards(rows: Vec<Summary>, providers: &[Sheet], list: &str) -> Vec<Card> {
-    let mut by: BTreeMap<PathBuf, Vec<Summary>> = BTreeMap::new();
-    let mut sources: BTreeMap<String, Vec<Summary>> = BTreeMap::new();
-    for mut r in rows {
-        r.agent = named(&r.agent, providers);
-        match &r.workflow {
-            Some(w) => sources.entry(w.source.clone()).or_default().push(r),
-            None => by.entry(r.folder.clone()).or_default().push(r),
-        }
-    }
-    let chats = by.into_iter().map(|(f, rows)| Card {
-        folder: short(&f),
-        rows,
-        done: None,
-    });
-    let workflow = sources.into_iter().map(|(source, mut rows)| {
-        rows.sort_by_key(|r| match r.state.as_str() {
-            "blocked" => 0,
-            "working" => 1,
-            _ => 2,
-        });
-        let (done, rows) = rows
-            .into_iter()
-            .partition(|r| matches!(r.state.as_str(), "done" | "ended"));
-        Card {
-            folder: source,
-            rows,
-            done: Some(done),
-        }
-    });
-    match list {
-        "chats" => chats.collect(),
-        "workflow" => workflow.collect(),
-        _ => chats.chain(workflow).collect(),
-    }
-}
-
-/// The thread list under chip `list`: its cards, and the archived threads apart.
-#[must_use]
-pub fn listed(rows: Vec<Summary>, providers: &[Sheet], list: &str) -> Listed {
-    let (archived, rows): (Vec<_>, Vec<_>) = rows.into_iter().partition(|r| r.archived);
-    Listed {
-        cards: cards(rows, providers, list),
-        archived,
     }
 }
 
@@ -504,14 +405,14 @@ fn state(state: &str) -> &'static str {
     }
 }
 
-/// The header: the app's name (the heading on the thread list, with the 🔔 that turns alerts on; else a link to
-/// it), the plugin tabs (`current` open), `+` (pressed on the composer's page, `new`), the look sheet and Settings.
+/// The header: the app's name (the heading on the agents list, with the 🔔 that turns alerts on; else a link to
+/// it), the plugin tabs (`current` open), `+` (`new`: a new chat with the agent on show), the look sheet and Settings.
 #[component]
 async fn header(
     home: bool,
     tabs: Vec<(String, String, bool)>,
     current: String,
-    #[default] new: bool,
+    new: String,
 ) -> Result<impl View> {
     Ok(view! {
         <header class="bar">
@@ -531,14 +432,7 @@ async fn header(
             }
             nav(tabs: tabs, current: current)
             <button type="button" class="gl" id="rf" aria-label="refresh">"↻"</button>
-            <a
-                class="gl np"
-                href="/new"
-                aria-label="new thread"
-                aria-current=(if new { Some("page") } else { None })
-            >
-                "+"
-            </a>
+            <a class="gl" href=(new) aria-label="new chat">"+"</a>
             <button
                 type="button"
                 class="gl"
@@ -560,44 +454,6 @@ async fn header(
                 "⚙"
             </button>
         </header>
-    })
-}
-
-/// A row's line under the title: agent · age, or a Workflow session's role · round · age.
-fn meta(r: &Summary) -> String {
-    match &r.workflow {
-        Some(w) => format!("{} · round {} · {}", w.role, w.round, age(r.at)),
-        None => format!("{} · {}", r.agent, age(r.at)),
-    }
-}
-
-#[component]
-async fn row(cx: &Cx, r: Summary) -> Result<impl View> {
-    let st = state(&r.state);
-    let mark = Unescaped::new_unchecked(shown(cx).st(st, false));
-    let href = format!("/t/{}", r.id);
-    let meta = meta(&r);
-    Ok(view! {
-        <a
-            class=(if r.unread { "tr" } else { "tr rd" })
-            href=(href)
-            data-id=(r.id.clone())
-        >
-            <i class="ud">(if r.unread { "●" } else { "" })</i>
-            <span class="tt">(r.title)</span>
-            <span class="ta">
-                (meta)
-                if r.unseen > 0 {
-                    <b class="bd" aria-label=(format!("{} unread", r.unseen))>
-                        (r.unseen.to_string())
-                    </b>
-                }
-            </span>
-            <span class="tp">
-                <b data-st=(st)>(mark)</b>
-                (r.last)
-            </span>
-        </a>
     })
 }
 
@@ -627,345 +483,6 @@ async fn nav(tabs: Vec<(String, String, bool)>, current: String) -> Result<impl 
     })
 }
 
-/// The thread list (`/`): one card per working folder, its 3 newest threads shown, the rest folded. `tabs`: the
-/// plugins' names and labels.
-#[must_use]
-pub fn threads_page(
-    cx: &Cx,
-    rows: Vec<Summary>,
-    providers: Vec<Sheet>,
-    tabs: Vec<(String, String, bool)>,
-) -> impl View {
-    view! { cx => threads(rows: rows, providers: providers, tabs: tabs) }
-}
-
-/// A state's pose in Scene (#34): its 132 × 100 sprite.
-fn pose(st: &str) -> &'static str {
-    match st {
-        "working" => "edit",
-        "needs" => "needs",
-        "done" => "done",
-        "fail" => "fail",
-        "ended" => "merged",
-        _ => "idle",
-    }
-}
-
-/// One session in Scene: its sprite acting out its state, and its name card (title, [`meta`], the state's word);
-/// a tap opens it.
-#[component]
-async fn sprite(cx: &Cx, r: Summary) -> Result<impl View> {
-    let look = shown(cx);
-    let st = state(&r.state);
-    let key = if st.is_empty() { "idle" } else { st };
-    let (fig, word, meta) = (look.s(pose(st)), look.w(key, false), meta(&r));
-    Ok(view! {
-        <a
-            class=(if r.unread { "sb" } else { "sb rd" })
-            href=(format!("/t/{}", r.id))
-            data-id=(r.id.clone())
-        >
-            <span class="sf" data-s=(pose(st))>(Unescaped::new_unchecked(fig))</span>
-            <span class="sn">
-                <b>(r.title)</b>
-                <span>(meta)</span>
-                <span class=(format!("sw {st}")) data-w=(key)>
-                    (Unescaped::new_unchecked(word))
-                </span>
-            </span>
-        </a>
-    })
-}
-
-/// Scene (#34): the thread list as the theme's scene, a page per working folder swiped sideways with a dot per page
-/// (a link with no script), each page the scene's strip over the sessions' sprites. `chat.ts` redraws it on refresh,
-/// marks the dot in view and switches the strip to night by the device's clock.
-#[component]
-async fn scene(cx: &Cx, cards: Vec<Card>) -> Result<impl View> {
-    let art = format!("/look/{}/scene.svg", shown(cx).name());
-    let dots: Vec<(usize, String)> = cards.iter().map(|c| c.folder.clone()).enumerate().collect();
-    Ok(view! {
-        <div class="scn" id="scene" data-art=(art.clone())>
-            <nav class="sdt" aria-label="pages" hidden=(dots.len() < 2)>
-                for (i, f) in dots {
-                    <a
-                        href=(format!("#sp-{i}"))
-                        aria-label=(f)
-                        aria-current=(if i == 0 { Some("page") } else { None })
-                    ></a>
-                }
-            </nav>
-            <div class="spg">
-                for (i, Card { folder, rows, done }) in cards.into_iter().enumerate() {
-                    <section
-                        class="sp"
-                        id=(format!("sp-{i}"))
-                        aria-label=(folder.clone())
-                    >
-                        <img class="sky" src=(art.clone()) alt="">
-                        <h2 class="fh">
-                            <b>(folder)</b>
-                            <span class="ds">(format!("{} threads", rows.len()))</span>
-                        </h2>
-                        <div class="fld">
-                            for r in rows.into_iter().chain(done.into_iter().flatten()) {
-                                sprite(r: r)
-                            }
-                        </div>
-                    </section>
-                }
-            </div>
-        </div>
-    })
-}
-
-/// The chips over the one list (#33): All · Chats · Workflow, `list` on; a tap posts `POST /list`.
-#[component]
-async fn chips(list: &'static str) -> Result<impl View> {
-    Ok(view! {
-        <form class="seg" id="chips" method="post" action="/list" aria-label="show">
-            for (v, label) in [
-                ("all", "All"),
-                ("chats", "Chats"),
-                ("workflow", "Workflow"),
-            ] {
-                <button
-                    type="submit"
-                    role="radio"
-                    name="list"
-                    value=(v)
-                    aria-checked=(if v == list { "true" } else { "false" })
-                >
-                    (label)
-                </button>
-            }
-        </form>
-    })
-}
-
-/// One card: a folder's 3 newest chats, the rest folded; or a source's sessions, the finished ones folded.
-#[component]
-async fn card(c: Card) -> Result<impl View> {
-    let Card { folder, rows, done } = c;
-    let shown = if done.is_some() { rows.len() } else { 3 };
-    Ok(view! {
-        <section class="fc">
-            <div class="fh">
-                <b>(folder)</b>
-                <span class="ds">(format!("{} threads", rows.len()))</span>
-            </div>
-            for r in rows.iter().take(shown).cloned() {
-                row(r: r)
-            }
-            if let Some(done) = done {
-                if !done.is_empty() {
-                    <details>
-                        <summary>(format!("{} done today", done.len()))</summary>
-                        for r in done {
-                            row(r: r)
-                        }
-                    </details>
-                }
-            } else if rows.len() > 3 {
-                <details>
-                    <summary>(format!("{} older threads", rows.len() - 3))</summary>
-                    for r in rows.iter().skip(3).cloned() {
-                        row(r: r)
-                    }
-                </details>
-            }
-        </section>
-    })
-}
-
-#[component]
-async fn threads(
-    cx: &Cx,
-    rows: Vec<Summary>,
-    providers: Vec<Sheet>,
-    tabs: Vec<(String, String, bool)>,
-) -> Result<impl View> {
-    let list = chip(cx);
-    let Listed { cards, archived } = listed(rows, &providers, list);
-    let empty = cards.is_empty();
-    let look = shown(cx);
-    let (figure, words) = (look.s("empty"), look.w("empty-threads", true));
-    Ok(view! {
-        document(
-            title: "cooee",
-            providers: providers.clone(),
-            header(home: true, tabs: tabs, current: String::new())
-            <div class="shell">
-                <main class="list">
-                    if empty {
-                        <div class="emp">
-                            <span data-s="empty">
-                                (Unescaped::new_unchecked(figure))
-                            </span>
-                            <p data-w="empty-threads" data-plain="">
-                                (Unescaped::new_unchecked(words))
-                            </p>
-                            <a href="/new">"start a thread"</a>
-                        </div>
-                    }
-                    chips(list: list)
-                    if look.scene() {
-                        scene(cards: cards)
-                    } else {
-                        for c in cards {
-                            card(c: c)
-                        }
-                    }
-                    shelf(rows: archived)
-                </main>
-            </div>
-        )
-    })
-}
-
-/// `/new`: the composer alone, under the thread bar (on a phone at the bottom, where the chat's will be).
-#[must_use]
-pub fn new_page(
-    cx: &Cx,
-    rows: Vec<Summary>,
-    new: New,
-    providers: Vec<Sheet>,
-    tabs: Vec<(String, String, bool)>,
-) -> impl View {
-    view! { cx => new_thread(rows: rows, new: new, providers: providers, tabs: tabs) }
-}
-
-#[component]
-async fn new_thread(
-    rows: Vec<Summary>,
-    new: New,
-    providers: Vec<Sheet>,
-    tabs: Vec<(String, String, bool)>,
-) -> Result<impl View> {
-    Ok(view! {
-        document(
-            title: "new thread · cooee",
-            providers: providers.clone(),
-            header(home: false, tabs: tabs, current: String::new(), new: true)
-            <div class="shell">
-                <main class="nt">
-                    <div class="th">
-                        <a class="gl bk" href="/" aria-label="back to threads">"‹"</a>
-                        <div class="tb"><h1>"new thread"</h1></div>
-                    </div>
-                    <div class="ntsp"></div>
-                    composer(rows: rows, new: new, providers: providers)
-                    <div class="ntsp"></div>
-                </main>
-            </div>
-        )
-    })
-}
-
-/// The rename box the thread bar's title opens (`chat.ts`).
-#[component]
-async fn rename(title: String) -> Result<impl View> {
-    Ok(view! {
-        <form id="rt" class="rt" popover="auto" aria-label="rename the thread">
-            <input
-                name="title"
-                aria-label="thread title"
-                value=(title)
-                maxlength="80"
-                required=(true)
-            >
-            <button type="submit">"rename"</button>
-        </form>
-    })
-}
-
-/// The archived threads, folded, each with [restore] (`chat.ts`).
-#[component]
-async fn shelf(rows: Vec<Summary>) -> Result<impl View> {
-    Ok(view! {
-        if !rows.is_empty() {
-            <details class="fc arc">
-                <summary>(format!("{} archived", rows.len()))</summary>
-                for r in rows {
-                    <div class="arw">
-                        <a href=(format!("/t/{}", r.id))>(r.title.clone())</a>
-                        <button
-                            type="button"
-                            class="cn"
-                            data-restore=(r.id.clone())
-                            aria-label=(format!("restore {}", r.title))
-                        >
-                            "restore"
-                        </button>
-                    </div>
-                }
-            </details>
-        }
-    })
-}
-
-/// A thread's foot: the model and effort chips, the working pill, the queued messages, the picked files, the
-/// composer; the long-press menu and the image viewer (`chat.ts`).
-#[component]
-async fn foot(
-    who: String,
-    ended: bool,
-    pill: Unescaped<String>,
-    choices: (Vec<String>, Vec<String>),
-    now: (String, String),
-) -> Result<impl View> {
-    Ok(view! {
-        if !ended && (!choices.0.is_empty() || !choices.1.is_empty()) {
-            <div class="mc">
-                picks(suffix: String::new(), choices: choices, now: now)
-            </div>
-        }
-        <div class="cmp">
-            <div class="pill" id="pill" hidden=(true)>
-                <span id="pst" data-st="working" data-plain="">(pill)</span>
-                <span id="el">"0:00"</span>
-                <button type="button" class="stop">"stop"</button>
-            </div>
-            <ul class="qu" id="queue" aria-label="queued messages" hidden=(true)></ul>
-            <div class="fis" id="picked" hidden=(true)></div>
-            <form class="tw nc" id="composer">
-                <label class="gl att" hidden=(ended)>
-                    "📎"
-                    <input
-                        type="file"
-                        id="files"
-                        class="vh"
-                        multiple=(true)
-                        aria-label="attach files"
-                    >
-                </label>
-                <textarea
-                    id="box"
-                    rows="1"
-                    aria-label="message"
-                    placeholder=(format!("message {who}"))
-                    disabled=(ended)
-                ></textarea>
-                <button type="submit" disabled=(ended)>"send"</button>
-            </form>
-        </div>
-        <div
-            id="menu"
-            class="mn"
-            popover="manual"
-            role="menu"
-            aria-label="message actions"
-        >
-            <button type="button" role="menuitem" data-m="copy">"copy"</button>
-            <button type="button" role="menuitem" data-m="md">
-                "copy as markdown"
-            </button>
-            <button type="button" role="menuitem" data-m="quote">"quote"</button>
-        </div>
-        <div id="viewer" class="vw" popover="auto" aria-label="image"><img alt=""></div>
-    })
-}
-
 /// Plugin `name`'s tab: its module runs in a sandboxed frame that `chat.ts` hosts.
 #[must_use]
 pub fn plugin_page(
@@ -988,7 +505,12 @@ async fn plugin(
         document(
             title: title.as_str(),
             <main class="pt">
-                header(home: false, tabs: tabs, current: name.clone())
+                header(
+                    home: false,
+                    tabs: tabs,
+                    current: name.clone(),
+                    new: "/new".to_owned()
+                )
                 <h1 class="vh">(label.clone())</h1>
                 <iframe
                     class="pf"
@@ -1157,31 +679,6 @@ async fn preview(cx: &Cx, name: String, fails: Vec<String>, thread: String) -> R
     })
 }
 
-/// One thread: its bar, the items (drawn by `chat.ts`), the working pill and the composer. The bar names the provider
-/// and the account (`providers`), or its agent `profile`'s label, never the agent's id; `ids` are the threads a ref in
-/// it may open (#84).
-#[must_use]
-pub fn chat_page(
-    cx: &Cx,
-    (thread, turn): (Thread, Turn),
-    providers: Vec<Sheet>,
-    profile: String,
-    choices: (Vec<String>, Vec<String>),
-    ids: Vec<String>,
-) -> impl View {
-    view! {
-        cx =>
-        chat(
-            thread: thread,
-            turn: turn,
-            providers: providers,
-            profile: profile,
-            choices: choices,
-            ids: ids
-        )
-    }
-}
-
 /// A model or effort select (#553 row 34): `name`'s choices, `default` first, `now` selected.
 #[component]
 async fn pick(id: String, name: &str, list: Vec<String>, now: String) -> Result<impl View> {
@@ -1196,19 +693,6 @@ async fn pick(id: String, name: &str, list: Vec<String>, now: String) -> Result<
                 }
             </select>
         }
-    })
-}
-
-/// The model and effort selects (`model<suffix>`, `effort<suffix>`), `now` selected.
-#[component]
-async fn picks(
-    suffix: String,
-    choices: (Vec<String>, Vec<String>),
-    now: (String, String),
-) -> Result<impl View> {
-    Ok(view! {
-        pick(id: format!("model{suffix}"), name: "model", list: choices.0, now: now.0)
-        pick(id: format!("effort{suffix}"), name: "effort", list: choices.1, now: now.1)
     })
 }
 
@@ -1242,13 +726,120 @@ fn web_url(url: &str) -> Option<String> {
     (url.starts_with("https://") || url.starts_with("http://")).then(|| url.to_owned())
 }
 
+/// The rename box the thread bar's title opens (`chat.ts`).
+#[component]
+async fn rename(title: String) -> Result<impl View> {
+    Ok(view! {
+        <form id="rt" class="rt" popover="auto" aria-label="rename the thread">
+            <input
+                name="title"
+                aria-label="thread title"
+                value=(title)
+                maxlength="80"
+                required=(true)
+            >
+            <button type="submit">"rename"</button>
+        </form>
+    })
+}
+
+/// The archived threads, folded, each with [restore] (`chat.ts`).
+#[component]
+pub(crate) async fn shelf(rows: Vec<cooee_core::Summary>) -> Result<impl View> {
+    Ok(view! {
+        if !rows.is_empty() {
+            <details class="arc">
+                <summary>(format!("{} archived", rows.len()))</summary>
+                for r in rows {
+                    <div class="arw">
+                        <a href=(format!("/t/{}", r.id))>(r.title.clone())</a>
+                        <button
+                            type="button"
+                            class="cn"
+                            data-restore=(r.id.clone())
+                            aria-label=(format!("restore {}", r.title))
+                        >
+                            "restore"
+                        </button>
+                    </div>
+                }
+            </details>
+        }
+    })
+}
+
+/// A thread's foot: the folder, model and effort chips (none once it ended), the working pill, the queued messages,
+/// the picked files, the composer; the long-press menu and the image viewer (`chat.ts`).
+#[component]
+async fn foot(
+    who: String,
+    ended: bool,
+    pill: Unescaped<String>,
+    places: Option<agents::Places>,
+    choices: (Vec<String>, Vec<String>),
+    now: (String, String),
+) -> Result<impl View> {
+    Ok(view! {
+        if !ended {
+            agents::chips(places: places, choices: choices, now: now)
+        }
+        <div class="cmp">
+            <div class="pill" id="pill" hidden=(true)>
+                <span id="pst" data-st="working" data-plain="">(pill)</span>
+                <span id="el">"0:00"</span>
+                <button type="button" class="stop">"stop"</button>
+            </div>
+            <ul class="qu" id="queue" aria-label="queued messages" hidden=(true)></ul>
+            <div class="fis" id="picked" hidden=(true)></div>
+            <form class="tw nc" id="composer">
+                <label class="gl att" hidden=(ended)>
+                    "📎"
+                    <input
+                        type="file"
+                        id="files"
+                        class="vh"
+                        multiple=(true)
+                        aria-label="attach files"
+                    >
+                </label>
+                <textarea
+                    id="box"
+                    rows="1"
+                    aria-label="message"
+                    placeholder=(format!("message {who}"))
+                    disabled=(ended)
+                ></textarea>
+                <button type="submit" disabled=(ended)>"send"</button>
+            </form>
+        </div>
+        <div
+            id="menu"
+            class="mn"
+            popover="manual"
+            role="menu"
+            aria-label="message actions"
+        >
+            <button type="button" role="menuitem" data-m="copy">"copy"</button>
+            <button type="button" role="menuitem" data-m="md">
+                "copy as markdown"
+            </button>
+            <button type="button" role="menuitem" data-m="quote">"quote"</button>
+        </div>
+        <div id="viewer" class="vw" popover="auto" aria-label="image"><img alt=""></div>
+    })
+}
+
+/// One thread (the pane of `/t/{id}`): its bar (its agent's avatar and name, the title of a side thread), the
+/// items (drawn by `chat.ts`), the working pill, and the composer with the folder, model and effort chips.
 #[component]
 async fn chat(
     cx: &Cx,
     thread: Thread,
     turn: Turn,
-    providers: Vec<Sheet>,
+    providers: &[Sheet],
     profile: String,
+    mate: Option<(usize, String, bool, Option<String>)>,
+    places: agents::Places,
     choices: (Vec<String>, Vec<String>),
     ids: Vec<String>,
 ) -> Result<impl View> {
@@ -1259,90 +850,97 @@ async fn chat(
         ("working", true),
     ]
     .map(|(st, plain)| Unescaped::new_unchecked(look.st(st, plain)));
-    let folder = short(thread.folder.as_deref().unwrap_or(Path::new("")));
+    let folder = places.2.as_deref().map_or("scratch".to_owned(), short);
+    let provider = named(&thread.agent, providers);
+    let runs = compose::said(&provider, &who(&thread.agent, &thread.account, providers));
+    let (name, title, said) = bar(&thread, mate.as_ref(), (&profile, &provider, &runs));
     let ended = thread.closed || turn.state == "ended";
-    let name = named(&thread.agent, &providers);
-    let runs = compose::said(
-        &name,
-        &compose::who(&thread.agent, &thread.account, &providers),
-    );
+    let renamable = !matches!(mate, Some((_, _, true, _)));
     // A Workflow session (#33): its role and round, and a link to what it works on; its tool closes it.
     let workflow = thread.workflow.clone();
     let link = workflow.as_ref().and_then(|w| web_url(&w.url));
     Ok(view! {
-        document(
-            title: thread.title.as_str(),
-            providers: providers,
-            header(home: false, tabs: Vec::new(), current: String::new())
-            <div class="shell">
-                <main
-                    class="chat"
-                    data-thread=(thread.id.clone())
-                    data-agent=(name.clone())
-                    data-who=(runs.clone())
-                    data-read=(thread.read.unwrap_or(0).to_string())
-                    data-state=(turn.state.clone())
-                    data-ids=(ids.join(" "))
-                >
-                    <div class="th">
-                        <a class="gl bk" href="/" aria-label="back">"‹"</a>
-                        <div class="tb">
-                            <div class="tn">
-                                <h1>
-                                    <button
-                                        type="button"
-                                        class="ttl"
-                                        popovertarget="rt"
-                                        aria-label=(format!("{} · rename", thread.title))
-                                    >
-                                        (thread.title.clone())
-                                    </button>
-                                </h1>
-                                <small>(thread.id.clone())</small>
-                            </div>
-                            <span class="ds">
-                                <i class="dt"></i>
-                                <span id="net"></span>
-                                (byline(&thread, (&runs, &profile), &folder))
-                                <span id="st" data-st=(state(&turn.state))>(st)</span>
-                                if let Some(url) = link {
-                                    " · "
-                                    <a href=(url)>"issue & PR"</a>
-                                }
-                            </span>
-                        </div>
-                        <button
-                            type="button"
-                            id="close"
-                            class="gl"
-                            hidden=(ended || workflow.is_some())
-                            aria-label="close the thread"
-                        >
-                            "×"
-                        </button>
-                        rename(title: thread.title.clone())
+        <div
+            class="chat"
+            data-thread=(thread.id.clone())
+            data-agent=(name.clone())
+            data-who=(runs.clone())
+            data-read=(thread.read.unwrap_or(0).to_string())
+            data-state=(turn.state.clone())
+            data-ids=(ids.join(" "))
+        >
+            <div class="th">
+                agents::back(key: agents::key(&thread.agent, &thread.profile))
+                if let Some((n, _, _, src)) = mate.clone() {
+                    agents::avatar(name: name.clone(), n: n, big: false, src: src)
+                }
+                <div class="tb">
+                    <div class="tn">
+                        // A side thread's title renames it (#43); an agent's ongoing chat goes by its name.
+                        if renamable {
+                            <h1>
+                                <button
+                                    type="button"
+                                    class="ttl"
+                                    popovertarget="rt"
+                                    aria-label=(format!("{title} · rename"))
+                                >
+                                    (title.clone())
+                                </button>
+                            </h1>
+                        } else {
+                            <h1>(title.clone())</h1>
+                        }
+                        <small>(thread.id.clone())</small>
                     </div>
-                    dev_bar(thread: thread.id.clone(), folder: thread.folder.clone())
-                    <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
-                    <ol
-                        class="tc"
-                        id="msgs"
-                        tabindex="0"
-                        aria-label="messages"
-                        aria-live="polite"
-                    ></ol>
-                    <p class="tlv" id="wait" hidden=(true)>
-                        <span data-st="needs" data-plain="">(wait)</span>
-                    </p>
-                    foot(
-                        who: name,
-                        ended: ended,
-                        pill: pill,
-                        choices: choices,
-                        now: (thread.model.clone(), thread.effort.clone())
-                    )
-                </main>
+                    <span class="ds">
+                        <i class="dt"></i>
+                        <span id="net"></span>
+                        (said)
+                        if thread.workflow.is_none() {
+                            <span id="bf">(folder)</span>
+                            " · "
+                        }
+                        <span id="st" data-st=(state(&turn.state))>(st)</span>
+                        if let Some(url) = link {
+                            " · "
+                            <a href=(url)>"issue & PR"</a>
+                        }
+                    </span>
+                </div>
+                <button
+                    type="button"
+                    id="close"
+                    class="gl"
+                    hidden=(ended || workflow.is_some())
+                    aria-label="close the thread"
+                >
+                    "×"
+                </button>
+                if renamable {
+                    rename(title: title.clone())
+                }
             </div>
-        )
+            dev_bar(thread: thread.id.clone(), folder: thread.folder.clone())
+            <button type="button" class="tlv cw" id="cw" hidden=(true)></button>
+            <ol
+                class="tc"
+                id="msgs"
+                tabindex="0"
+                aria-label="messages"
+                aria-live="polite"
+            ></ol>
+            <p class="tlv" id="wait" hidden=(true)>
+                <span data-st="needs" data-plain="">(wait)</span>
+            </p>
+            foot(
+                who: name.clone(),
+                ended: ended,
+                pill: pill,
+                places: thread.workflow.is_none().then_some(places),
+                choices: choices,
+                now: (thread.model.clone(), thread.effort.clone())
+            )
+        </div>
     })
 }
