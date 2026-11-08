@@ -199,16 +199,15 @@ pub fn list(
         .filter(|l| l.enabled)
     {
         let build = plugins::build_dir(data, &l.name, &l.commit);
-        let profiles = match served(&l.name) {
-            Some(list) => list,
-            None => {
-                let read = fs::read_to_string(build.join("cooee-plugin.toml"));
-                let Ok(m) = read.and_then(|t| Manifest::parse(&t)) else {
-                    eprintln!("cooee: {}: no readable cooee-plugin.toml", build.display());
-                    continue;
-                };
-                m.profiles
-            }
+        let profiles = if let Some(list) = served(&l.name) {
+            list
+        } else {
+            let read = fs::read_to_string(build.join("cooee-plugin.toml"));
+            let Ok(m) = read.and_then(|t| Manifest::parse(&t)) else {
+                eprintln!("cooee: {}: no readable cooee-plugin.toml", build.display());
+                continue;
+            };
+            m.profiles
         };
         for p in profiles {
             match p.check() {

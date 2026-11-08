@@ -117,7 +117,7 @@ impl Provider {
         let v = |a: &[&str]| -> Vec<String> { a.iter().map(|s| (*s).to_owned()).collect() };
         list[0].models = v(&["opus", "sonnet", "haiku"]);
         list[0].model = v(&["ANTHROPIC_MODEL={}"]);
-        list[0].settings = "CLAUDE_CONFIG_DIR".to_owned();
+        "CLAUDE_CONFIG_DIR".clone_into(&mut list[0].settings);
         list[1].efforts = v(&["low", "medium", "high"]);
         list[1].effort = v(&["-c", "model_reasoning_effort={}"]);
         list

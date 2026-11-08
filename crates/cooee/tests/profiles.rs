@@ -7,6 +7,7 @@
 mod support;
 
 use std::{
+    fmt::Write as _,
     fs,
     path::{Path, PathBuf},
     process::Command,
@@ -96,8 +97,23 @@ impl Setup {
     /// The composer's agent sheet (#48): the profiles, then Plain's accounts.
     fn picker(&self) -> String {
         let page = self.cooee.get("/new").1;
-        let at = page.find(r#"id="sh-agent""#).expect("an agent sheet");
+        let at = page
+            .find(r#"id="sh-agent""#)
+            .unwrap_or_else(|| panic!("an agent sheet: {page}"));
         page[at..at + page[at..].find(r#"id="sh-folder""#).unwrap()].to_owned()
+    }
+
+    /// The agent sheet once it has `what` (up to 20 s: the server runs a plugin's backend within half a second of its
+    /// add, and asks it for its profiles once it answers).
+    fn picker_with(&self, what: &str) -> String {
+        for _ in 0..400 {
+            let sheet = self.picker();
+            if sheet.contains(what) {
+                return sheet;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        panic!("never {what}: {}", self.picker());
     }
 
     /// The pick the agent sheet starts on.
@@ -276,8 +292,10 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
         out.contains("agent profiles: Conductor (fake-acp)"),
         "{out}"
     );
-    assert!(s.picker().contains(option), "{}", s.picker());
-    assert!(s.picker().contains(r#"data-label="Conductor · plug""#));
+    assert!(
+        s.picker_with(option)
+            .contains(r#"data-label="Conductor · plug""#)
+    );
     let (id, _) = s.thread("plug/conductor", "go");
     assert_eq!(
         s.shed.sent(&format!("cooee-{id}")),
@@ -307,7 +325,7 @@ const {{ PORT, TOKEN }} = process.env;
 http.createServer(async (req, res) => {{
   if (req.headers.authorization !== `Bearer ${{TOKEN}}`) return res.writeHead(401).end();
   if (req.url === "/tab.js") return res.writeHead(200).end("document.body.append('plug');");
-  if (req.url === "/cooee/profiles") return res.writeHead(200).end(JSON.stringify({profiles}));
+  if (req.url === "/cooee/profiles") return res.writeHead(200).end(JSON.stringify({{ profiles: {profiles} }}));
   let b = ""; for await (const c of req) b += c;
   if (req.url === "/cooee/thread-started") {{ fs.appendFileSync({log:?}, b + "\n"); return res.writeHead(200).end("{{}}"); }}
   res.writeHead(404).end();
@@ -318,7 +336,8 @@ http.createServer(async (req, res) => {{
 }
 
 #[test]
-fn a_backend_serves_its_plugins_profiles_a_hidden_one_is_not_offered_and_thread_is_the_threads_id() {
+fn a_backend_serves_its_plugins_profiles_a_hidden_one_is_not_offered_and_thread_is_the_threads_id()
+{
     let s = setup("profiles-served");
     let repo = s.dir.join("plug.git");
     fs::create_dir_all(&repo).unwrap();
@@ -343,15 +362,18 @@ fn a_backend_serves_its_plugins_profiles_a_hidden_one_is_not_offered_and_thread_
     s.cooee
         .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
 
-    // The backend's list is the plugin's: a hidden one, and the manifest's it doesn't list, aren't offered.
-    let picker = s.picker();
+    // The backend's list is the plugin's (once the server runs it): a hidden one, and the manifest's it doesn't
+    // list, aren't offered.
+    let picker = s.picker_with("p:plug/fleet-a");
     assert!(
         picker.contains(r#"value="p:plug/fleet-a""#)
             && picker.contains(r#"data-label="Fleet A · plug""#),
         "{picker}"
     );
     assert!(
-        !picker.contains("fleet-b") && !picker.contains("Fleet B") && !picker.contains("p:plug/old"),
+        !picker.contains("fleet-b")
+            && !picker.contains("Fleet B")
+            && !picker.contains("p:plug/old"),
         "{picker}"
     );
     let runs = s.shed.cli_log().matches(" run ").count();
@@ -416,8 +438,12 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     (provider.login, provider.status) = (vec!["true".to_owned()], vec!["true".to_owned()]);
     // Its fields are strings and lists of them: as JSON, they are TOML too.
     let mut extra = "[[providers]]\n".to_owned();
-    for (k, v) in serde_json::to_value(&provider).unwrap().as_object().unwrap() {
-        extra.push_str(&format!("{k} = {v}\n"));
+    for (k, v) in serde_json::to_value(&provider)
+        .unwrap()
+        .as_object()
+        .unwrap()
+    {
+        writeln!(extra, "{k} = {v}").unwrap();
     }
     let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
 

@@ -228,12 +228,24 @@ pub fn answer(
 /// The agent profiles `p`'s backend serves: `GET /cooee/profiles` answers `{"profiles": [...]}`. `None` when it
 /// answers 404 (it serves none: its manifest's are offered); any other answer offers none.
 pub fn profiles(p: &Plugin) -> Option<Vec<Profile>> {
-    let got = call(p, "GET", "/cooee/profiles", &[], &[], Some(Duration::from_secs(5)));
+    let got = call(
+        p,
+        "GET",
+        "/cooee/profiles",
+        &[],
+        &[],
+        Some(Duration::from_secs(5)),
+    );
     let list = got.and_then(|r| match r.status {
         404 => Ok(None),
         200 => {
-            let mut v: serde_json::Value = serde_json::from_slice(&r.bytes()?)?;
-            Ok(Some(serde_json::from_value(v["profiles"].take())?))
+            #[derive(serde::Deserialize)]
+            struct Served {
+                profiles: Vec<Profile>,
+            }
+            Ok(Some(
+                serde_json::from_slice::<Served>(&r.bytes()?)?.profiles,
+            ))
         }
         code => Err(io::Error::other(format!("the backend answered {code}"))),
     });
