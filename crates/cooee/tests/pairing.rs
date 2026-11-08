@@ -414,22 +414,16 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
     use std::os::unix::fs::PermissionsExt;
     let dir = scratch("approve");
     let shed = FakeShed::start(&dir.join("shed"), version());
-    // A fake push service: `curl` logs where it posts; a fake keychain holds the VAPID key.
+    // A fake push service: `curl` logs where it posts.
     let bin = dir.join("bin");
     fs::create_dir_all(&bin).unwrap();
     let log = dir.join("pushed.log");
-    let fakes = [
-        (
-            "curl",
-            format!(
-                "#!/bin/sh\ncat >/dev/null\nfor a; do last=$a; done\necho \"$last\" >>{log:?}\nprintf 201\n"
-            ),
+    let fakes = [(
+        "curl",
+        format!(
+            "#!/bin/sh\ncat >/dev/null\nfor a; do last=$a; done\necho \"$last\" >>{log:?}\nprintf 201\n"
         ),
-        (
-            "security",
-            "#!/bin/sh\necho BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc\n".to_owned(),
-        ),
-    ];
+    )];
     for (name, script) in fakes {
         fs::write(bin.join(name), script).unwrap();
         fs::set_permissions(bin.join(name), fs::Permissions::from_mode(0o755)).unwrap();
