@@ -420,6 +420,9 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
         side.contains(r#"<a class="agr" href="/new?agent=fake-acp">"#),
         "{side}"
     );
+    // A phone's `‹` goes back to the agent that lists it, whose side threads they are.
+    let back = r#"href="/?list&amp;profile=plug/fleet-a" aria-label="back to agents""#;
+    assert!(chat.contains(back), "{chat}");
 
     s.cooee.cli(&["plugin", "remove", "plug"]);
     let pid = s.cooee.child.id().to_string();

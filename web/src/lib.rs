@@ -839,6 +839,7 @@ async fn chat(
     providers: &[Sheet],
     profile: String,
     mate: Option<(usize, String, bool, Option<String>)>,
+    back: String,
     places: agents::Places,
     choices: (Vec<String>, Vec<String>),
     ids: Vec<String>,
@@ -870,7 +871,7 @@ async fn chat(
             data-ids=(ids.join(" "))
         >
             <div class="th">
-                agents::back(key: agents::key(&thread.agent, &thread.profile))
+                agents::back(key: back)
                 if let Some((n, _, _, src)) = mate.clone() {
                     agents::avatar(name: name.clone(), n: n, big: false, src: src)
                 }
