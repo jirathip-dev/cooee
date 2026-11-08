@@ -38,7 +38,9 @@ pub struct Provider {
     #[serde(default)]
     pub logout: Vec<String>,
     /// The variable its ACP adapter reads an extra settings file from and enforces, hooks included. Without it an
-    /// agent profile with `settings` can't start with its agent.
+    /// agent profile with `settings` can't start with its agent. Claude Code's is `CLAUDE_CONFIG_DIR` (herdsman#565:
+    /// claude-acp enforces the user settings there), so its profile's `settings` is a config folder, in place of the
+    /// account's.
     #[serde(default)]
     pub settings: String,
     /// The models a thread may pick (#553 row 34).
@@ -118,6 +120,7 @@ impl Provider {
         let v = |a: &[&str]| -> Vec<String> { a.iter().map(|s| (*s).to_owned()).collect() };
         list[0].models = v(&["opus", "sonnet", "haiku"]);
         list[0].model = v(&["ANTHROPIC_MODEL={}"]);
+        "CLAUDE_CONFIG_DIR".clone_into(&mut list[0].settings);
         list[1].efforts = v(&["low", "medium", "high"]);
         list[1].effort = v(&["-c", "model_reasoning_effort={}"]);
         list
