@@ -1,0 +1,22 @@
+   Compiling cooee v0.1.0 (/Users/jirathip/.local/share/herdsman/work/cooee/issue-99/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.62s
+     Running tests/reliability.rs (/Users/jirathip/.local/share/herdsman/work/.build/cooee-impl-99/debug/deps/reliability-b14554b7feeebec5)
+
+running 1 test
+test a_key_made_during_the_keychain_read_wins_and_old_subscriptions_reset ... FAILED
+
+failures:
+
+---- a_key_made_during_the_keychain_read_wins_and_old_subscriptions_reset stdout ----
+
+thread 'a_key_made_during_the_keychain_read_wins_and_old_subscriptions_reset' (32971918) panicked at crates/cooee/tests/reliability.rs:40:9:
+never: the reset
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_key_made_during_the_keychain_read_wins_and_old_subscriptions_reset
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 16 filtered out; finished in 11.71s
+
+error: test failed, to rerun pass `-p cooee --test reliability`
