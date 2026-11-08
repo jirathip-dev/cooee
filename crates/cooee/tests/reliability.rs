@@ -171,6 +171,12 @@ fn r7_page_loads_run_no_subprocess() {
     assert_eq!(code, 200, "{body}");
     let id = id_of(&body);
 
+    // The first check runs in the background (#106): wait for its result.
+    let start = std::time::Instant::now();
+    while cooee.json("/logins/fake")["status"]["unknown"] != false {
+        assert!(start.elapsed() < std::time::Duration::from_secs(10));
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
     let calls = || (shed.cli_log(), fs::read_to_string(&log).unwrap());
     let before = calls();
     assert_eq!(before.1, "checked\n", "checked once, at start");

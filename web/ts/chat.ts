@@ -767,6 +767,10 @@ addEventListener("cooee-sheet", (e) => {
     fillPlugins();
   }
 });
+// The sign-ins card opened: the accounts' status is checked again (#106); a reload shows it.
+addEventListener("cooee-sheet", (e) => {
+  if ((e as CustomEvent).detail === "providers") post("/logins", {}).catch(() => {});
+});
 
 // Report mode (Settings → report a problem, or `/report` sent in a thread): the next tap picks an element, outlined;
 // the note box at the bottom sends it with the page, the element and the look; `cooee reports` lists them.

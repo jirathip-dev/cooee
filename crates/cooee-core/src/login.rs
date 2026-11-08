@@ -166,8 +166,13 @@ impl Provider {
         self.login.first().is_some_and(|b| !installed(b))
     }
 
-    /// Runs `cmd` (10 s at most) for the account in `home`: whether it exited 0, its stdout and its stderr.
-    fn run(&self, cmd: &[String], home: Option<&Path>) -> Result<(bool, String, String), String> {
+    /// Runs `cmd` (10 s at most) for the account in `home`: whether it exited 0, its stdout and its stderr; none when
+    /// it timed out.
+    fn run(
+        &self,
+        cmd: &[String],
+        home: Option<&Path>,
+    ) -> Result<Option<(bool, String, String)>, String> {
         let Some((bin, args)) = cmd.split_first() else {
             return Err("no command".to_owned());
         };
@@ -199,7 +204,7 @@ impl Provider {
                 _ => {
                     let _ = child.kill();
                     let _ = child.wait();
-                    return Err(format!("`{}` timed out", cmd.join(" ")));
+                    return Ok(None);
                 }
             }
         };
@@ -207,7 +212,7 @@ impl Provider {
             stdout.join().unwrap_or_default(),
             stderr.join().unwrap_or_default(),
         );
-        Ok((ok, stdout, stderr))
+        Ok(Some((ok, stdout, stderr)))
     }
 
     /// Runs the logout command for the account in `home`.
@@ -216,17 +221,22 @@ impl Provider {
     /// Its output on one line, redacted, when it fails or can't run.
     pub fn sign_out(&self, home: Option<&Path>) -> Result<(), String> {
         match self.run(&self.logout, home)? {
-            (true, ..) => Ok(()),
-            (false, out, err) => Err(one_line(if err.trim().is_empty() { &out } else { &err })),
+            Some((true, ..)) => Ok(()),
+            Some((false, out, err)) => {
+                Err(one_line(if err.trim().is_empty() { &out } else { &err }))
+            }
+            None => Err(format!("`{}` timed out", self.logout.join(" "))),
         }
     }
 
-    /// Runs the status command (10 s at most) for the account in `home`: signed in when it exits 0.
+    /// Runs the status command (10 s at most) for the account in `home`: signed in when it exits 0; unknown when it
+    /// times out.
     #[must_use]
     pub fn check(&self, home: Option<&Path>) -> Status {
         let out = |signed_in, line: &str| Status {
             install: None,
             signed_in,
+            unknown: false,
             line: one_line(line),
             who: None,
             usage: None,
@@ -238,7 +248,8 @@ impl Provider {
             };
         }
         let (ok, stdout, stderr) = match self.run(&self.status, home) {
-            Ok(r) => r,
+            Ok(Some(r)) => r,
+            Ok(None) => return Status::unknown(TIMED_OUT),
             Err(e) => return out(false, &e),
         };
         // A JSON status (`claude auth status`): its `loggedIn` as one plain line, who, and usage when it says.
@@ -273,8 +284,10 @@ impl Provider {
 /// An account's signed-in state, from its provider's status command.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Status {
-    /// The status command exited 0.
+    /// The status command exited 0; when `unknown`, as it was last known.
     pub signed_in: bool,
+    /// Can't tell: the status command timed out, or hasn't run yet; `line` says which.
+    pub unknown: bool,
     /// Its output on one line, redacted, at most 80 characters.
     pub line: String,
     /// The install line, when the login command isn't found.
@@ -283,6 +296,24 @@ pub struct Status {
     pub who: Option<String>,
     /// Its usage, when the status reports it.
     pub usage: Option<String>,
+}
+
+/// The status line of a status command that timed out.
+const TIMED_OUT: &str = "can't tell: the status command timed out";
+
+impl Status {
+    /// An unknown status that says `why`, not signed in.
+    #[must_use]
+    pub fn unknown(why: &str) -> Self {
+        Self {
+            signed_in: false,
+            unknown: true,
+            line: why.to_owned(),
+            install: None,
+            who: None,
+            usage: None,
+        }
+    }
 }
 
 /// `text` on one line, redacted, at most 80 characters.
@@ -463,5 +494,17 @@ mod tests {
             .check(None)
             .signed_in
         );
+    }
+
+    /// #106: a status command that hangs is killed after 10 s and reads as unknown, never as signed out.
+    #[test]
+    fn a_status_command_that_times_out_is_unknown() {
+        let p = Provider {
+            status: vec!["sleep".to_owned(), "30".to_owned()],
+            ..Provider::default()
+        };
+        let start = Instant::now();
+        assert_eq!(p.check(None), Status::unknown(TIMED_OUT));
+        assert!(start.elapsed() < Duration::from_secs(15));
     }
 }

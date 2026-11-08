@@ -839,7 +839,7 @@ async fn hello(
     let signed_out = provider.is_some_and(|p| {
         p.accounts
             .iter()
-            .any(|(a, s)| a.name.is_empty() && !s.signed_in)
+            .any(|(a, s)| a.name.is_empty() && !s.signed_in && !s.unknown)
     });
     let choices = provider.map_or_else(Default::default, |p| {
         (p.provider.models.clone(), p.provider.efforts.clone())

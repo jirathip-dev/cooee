@@ -174,6 +174,7 @@ impl Setup {
 #[test]
 fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it() {
     let s = setup("accounts");
+    s.until(|v| v["status"]["unknown"] == false);
     let page = s.page();
     assert!(
         page.contains(r#"<div class="acr" data-provider="fake" data-account=""><span class="ptg">fake</span><span class="sk">main login</span><span class="st m">signed out</span>"#)
