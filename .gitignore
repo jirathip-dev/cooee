@@ -7,3 +7,4 @@ node_modules/
 /ui-1440/
 /web/e2e/.auth/
 /.verify/
+target*/
