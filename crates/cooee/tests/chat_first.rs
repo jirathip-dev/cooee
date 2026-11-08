@@ -164,7 +164,7 @@ fn an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_p
     assert!(
         nav.contains(&format!(r#"<a class="agr on" href="/t/{ongoing}""#))
             && nav.contains(&format!(
-                r#"href="/t/{side}" data-id="{side}"><span class="tt">second</span>"#
+                r#"href="/t/{side}" data-id="{side}"><span class="tt"><i class="ur" aria-hidden="true"></i>second</span>"#
             ))
             && nav.contains(r#"<a class="str nw" href="/new?agent=fake-acp">+ new chat</a>"#),
         "{nav}"
@@ -173,7 +173,7 @@ fn an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_p
     let nav = &page[page.find(r#"<nav class="ags""#).unwrap()..];
     assert!(
         nav.contains(&format!(
-            r#"<a class="str on" href="/t/{side}" data-id="{side}"><span class="tt">second</span>"#
+            r#"<a class="str on" href="/t/{side}" data-id="{side}"><span class="tt"><i class="ur" aria-hidden="true"></i>second</span>"#
         )) && nav.contains(r#"<a class="str nw" href="/new?agent=fake-acp">+ new chat</a>"#),
         "{nav}"
     );

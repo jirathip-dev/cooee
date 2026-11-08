@@ -76,3 +76,40 @@ test("the current agent's row reads at AA while its chat works, on the light the
   await page.locator("#pill .stop").click();
   await expect(page.locator("#pill")).toBeHidden();
 });
+
+test("an agent's unread side threads show under it, newest 3 and +2; newest opens the newest reply; one row for both", async ({ page }, info) => {
+  const r = await page.request.post("/agents", { form: { name: `Topics ${info.project.name}`, profile: "" }, maxRedirects: 0 });
+  const profile = new URL(r.headers().location, "http://x").searchParams.get("profile");
+  // Started in turn and never opened, so each has an unread reply: the ongoing chat, then 4 side threads, then one
+  // waiting on a pick (the newest reply).
+  const start = async (text, n) => {
+    const res = await page.request.post("/threads", { data: { agent: "", profile, text, random_id: `t96-${info.project.name}-${n}` } });
+    expect(res.ok()).toBe(true);
+    const { id } = await res.json();
+    const want = text === "approve an edit" ? "blocked" : "done";
+    await expect.poll(async () => (await (await page.request.get("/threads")).json()).find((t) => t.id === id)?.state).toBe(want);
+    return id;
+  };
+  const ids = [];
+  for (const [n, text] of ["Ongoing", "Topic 1", "Topic 2", "Topic 3", "Topic 4", "approve an edit"].entries()) ids.push(await start(text, n));
+  await page.goto("/?list");
+  const agent = page.locator(".ags .agr", { has: page.locator(".tt", { hasText: `Topics ${info.project.name}` }) });
+  const under = agent.locator("+ .ust");
+  await expect(under.locator(".str .tt")).toHaveText(["approve an edit", "Topic 4", "Topic 3"]);
+  await expect(under.locator(".mo .ds")).toHaveText("+2");
+  // The unread dot and `choose` on the agent's row and the side thread's: the same component.
+  await expect(agent.locator(".tt .ur")).toHaveCount(1);
+  await expect(agent.locator(".ta .chs")).toHaveText("choose");
+  const pick = under.locator(`.str[data-id="${ids[5]}"]`);
+  await expect(pick.locator(".tt .ur")).toHaveCount(1);
+  await expect(pick.locator(".ta .chs")).toHaveText("choose");
+  await expect(under.locator(".str").nth(1).locator(".chs")).toHaveCount(0);
+  // An agent with no unread side threads shows no titles.
+  await expect(page.locator(".ags .ust").filter({ hasNot: page.locator(".str.ud") }).locator(".str:not(.nw) .tt")).toHaveCount(0);
+  await under.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `../../ui-${info.project.name}/unread-side-threads.png` });
+  const { violations } = await new AxeBuilder({ page }).include(".ags").analyze();
+  expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
+  await under.getByRole("link", { name: `newest side thread of Topics ${info.project.name}` }).click();
+  await page.waitForURL(new RegExp(`/t/${ids[5]}$`));
+});

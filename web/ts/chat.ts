@@ -153,7 +153,7 @@ async function agentsNow(): Promise<void> {
   badge();
 }
 const badge = (): void => {
-  const n = document.querySelectorAll(".ags :is(.agr,.str).ud, .ags .sb:not(.rd)").length;
+  const n = document.querySelectorAll(".ags :is(.agr,.sth .str).ud, .ags .sb:not(.rd)").length;
   if ("setAppBadge" in navigator) (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {});
 };
 
