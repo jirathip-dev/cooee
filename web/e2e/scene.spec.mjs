@@ -29,10 +29,11 @@ async function clock(page, night) {
 // A thread in the root folder itself (the long fixtures are in its project folder), so there are two pages.
 test.beforeAll(async ({ browser }) => {
   const page = await browser.newPage({ storageState: test.info().project.use.storageState });
-  await page.goto("/#new");
-  await page.locator("#new input[name=folder]").first().check();
+  await page.goto("/new");
+  await page.locator("#chip-folder").click();
+  await page.locator("#sh-folder label", { has: page.locator(".sk", { hasText: /^~\/root$/ }) }).first().click();
   await page.getByLabel("first message").fill("a scene of two folders");
-  await page.getByRole("button", { name: "start" }).click();
+  await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await page.close();
 });

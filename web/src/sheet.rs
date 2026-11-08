@@ -1,4 +1,4 @@
-//! The sheets (#49): the look sheet, Settings and Settings › Folders as server-rendered popovers in `#sheet`, so they
+//! The sheets (#49): the look sheet, Settings, Settings › Folders and › providers (#48) as server-rendered popovers in `#sheet`, so they
 //! open with no script. The look sheet is a form: with no script a key posts the pick (`POST /look` sets the cookie
 //! and goes back); `look.ts` applies it in place instead and keeps the marks in step. `chat.ts` fills Settings'
 //! alerts, devices and plugins, and `look.ts` Settings › Folders, from the JSON API.
@@ -19,8 +19,11 @@ use topcoat::{
     view::{View, component, view},
 };
 
+use cooee_core::Sheet;
+
 use crate::{
     LookAssets,
+    compose::providers_sheet,
     look::{SCHEMES, Scheme},
     shown::{COOKIE, Shown},
 };
@@ -415,10 +418,15 @@ async fn settings(cx: &Cx) -> Result<impl View> {
                     }
                 </nav>
                 <p class="ch" id="s-sign-ins">"sign-ins"</p>
-                <a class="sr" href="/#signins" data-close=(true)>
+                <button
+                    type="button"
+                    class="sr"
+                    data-open="providers"
+                    popovertarget="sh-providers"
+                >
                     <span class="sk">"providers"</span>
                     <i class="cv">"▸"</i>
-                </a>
+                </button>
                 <p class="ch" id="s-folders">"folders"</p>
                 <button
                     type="button"
@@ -455,13 +463,14 @@ async fn settings(cx: &Cx) -> Result<impl View> {
     })
 }
 
-/// Every sheet, closed.
+/// Every sheet, closed; Settings › providers lists `providers`.
 #[component]
-pub async fn sheets() -> Result<impl View> {
+pub async fn sheets(providers: Vec<Sheet>) -> Result<impl View> {
     Ok(view! {
         <div id="sheet">
             look_sheet()
             settings()
+            providers_sheet(providers: providers)
             <div
                 class="sh set"
                 id="sh-folders"

@@ -17,9 +17,9 @@ async function audit(page) {
 
 // A new thread whose turn is done, open; its id.
 async function thread(page, text = "Say hello") {
-  await page.goto("/#new");
+  await page.goto("/new");
   await page.getByLabel("first message").fill(text);
-  await page.getByRole("button", { name: "start" }).click();
+  await page.getByRole("button", { name: "send" }).click();
   await page.waitForURL(/\/t\//);
   await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
   return new URL(page.url()).pathname.split("/").pop();
