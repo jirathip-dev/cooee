@@ -1,8 +1,8 @@
 //! Paired devices (herdsman's `devices.rs`): `cooee pair` opens a six-digit code for 10 minutes; the browser that
 //! enters it gets a random token as its cookie. Only SHA-256 hashes of codes and tokens are kept, in
-//! `<data>/devices.json` (mode 0600). Five wrong codes drop the open one. The other way round (#21): a phone asks for a
-//! code, shows it, and `cooee pair <code>` on the Mac approves it; the phone then collects its token with the claim it
-//! was given.
+//! `<data>/devices.json` (mode 0600). Five wrong codes drop the open one. The other way round (#47): a new device asks
+//! to pair and shows a check word; a paired device approves it (with its passkey) or declines; the new device then
+//! collects its token with the claim it was given. Passkeys (their public keys) are kept here too.
 
 use std::{
     fmt::Write as _,
@@ -27,7 +27,7 @@ const MISSES: u32 = 5;
 /// One paired browser.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Device {
-    /// The first 8 hex digits of its token's hash: what `cooee devices rm` takes.
+    /// The first 8 hex digits of its token's hash (an approved request's: its claim's): what `cooee devices rm` takes.
     pub id: String,
     /// What it is (`iPhone`, `Android`, `Mac`, …), from its user agent.
     pub label: String,
@@ -37,6 +37,9 @@ pub struct Device {
     pub created: u64,
     /// When it was last seen (to the hour), in Unix milliseconds.
     pub used: u64,
+    /// The device that approved its request, if one did.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub by: String,
     /// Its passkey (Face ID on iPhone), registered on first use of a tab that needs one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub passkey: Option<Passkey>,
@@ -58,31 +61,84 @@ struct File {
     /// The open code's hash and when it was made.
     code: Option<(String, u64)>,
     misses: u32,
-    requests: Vec<Request>,
+    asks: Vec<Request>,
+    passkeys: Vec<Credential>,
 }
 
-/// A phone's open request: its code's and claim's hashes, when it was made, and whether the Mac approved it.
+/// A new device's open request to pair: its claim's hash, the check word it shows, what it is, when it asked and the
+/// answer (`None`: waiting; the answering device's label with yes or no).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Request {
-    code: String,
     claim: String,
+    word: String,
+    label: String,
     at: u64,
-    approved: bool,
+    answer: Option<(bool, String)>,
 }
 
 /// Open requests kept at once; a newer one drops the oldest.
 const REQUESTS: usize = 4;
 
-/// What a phone's claim finds: its request gone (expired, cancelled or never made), still waiting, or its token.
+/// How long a request waits for an answer, in milliseconds.
+const ASK_TTL: u64 = 5 * 60 * 1000;
+
+/// What a new device's claim finds: its request gone (expired, cancelled or never made), still waiting, declined (by
+/// which device), or its token.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Claim {
     /// No such request.
     Gone,
-    /// Not approved yet.
+    /// Not answered yet.
     Waiting,
+    /// Declined on this device.
+    Declined(String),
     /// Approved: the new device's token.
     Paired(String),
 }
+
+/// An open request as paired devices see it: its id, check word, what asks and when.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Asking {
+    /// The first 8 hex digits of its claim's hash.
+    pub id: String,
+    /// The check word the new device shows.
+    pub word: String,
+    /// What the new device is, from its user agent.
+    pub label: String,
+    /// When it asked, in Unix milliseconds.
+    pub at: u64,
+}
+
+/// A passkey that signs a device back in and approves new ones (`WebAuthn`, ES256): its credential id, public key
+/// and the device that made it. The terminal's unlock key is a device's own [`Passkey`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Credential {
+    /// The credential id, base64url.
+    pub id: String,
+    /// The uncompressed P-256 public key, base64url.
+    pub key: String,
+    /// The label of the device that made it.
+    pub label: String,
+    /// The id of the device that made it (the one it signed back in, after a sign-in).
+    #[serde(default)]
+    pub device: String,
+    /// When it was made, in Unix milliseconds.
+    pub created: u64,
+    /// When it was last used, in Unix milliseconds (0: never).
+    pub used: u64,
+}
+
+/// Two words from a fixed list, so a check word is never mistaken for a code.
+const WORDS: [[&str; 16]; 2] = [
+    [
+        "maple", "amber", "river", "cedar", "coral", "misty", "sunny", "quiet", "swift", "lucky",
+        "olive", "frosty", "golden", "silver", "rusty", "velvet",
+    ],
+    [
+        "otter", "heron", "panda", "lynx", "badger", "falcon", "gecko", "koala", "lemur", "moose",
+        "owl", "puffin", "rabbit", "salmon", "tiger", "walrus",
+    ],
+];
 
 /// A six-digit code.
 fn six() -> io::Result<String> {
@@ -94,17 +150,24 @@ fn six() -> io::Result<String> {
 }
 
 impl File {
-    /// Adds a device for `agent`; its token.
-    fn add(&mut self, token: &str, agent: &str, now: u64) {
+    /// Drops the requests older than [`ASK_TTL`].
+    fn expire(&mut self, now: u64) {
+        self.asks.retain(|r| r.at + ASK_TTL > now);
+    }
+
+    /// Adds a device with `token`, named `label` (its id: `id`, else from the token's hash); the device.
+    fn add(&mut self, token: &str, id: Option<String>, label: &str, now: u64) -> &mut Device {
         let hash = sha256(token.as_bytes());
         self.devices.push(Device {
-            id: hash[..8].to_owned(),
-            label: label(agent).to_owned(),
+            id: id.unwrap_or_else(|| hash[..8].to_owned()),
+            label: label.to_owned(),
             hash,
             created: now,
             used: now,
+            by: String::new(),
             passkey: None,
         });
+        self.devices.last_mut().expect("just pushed")
     }
 }
 
@@ -183,7 +246,8 @@ fn same(a: &str, b: &str) -> bool {
 }
 
 /// A short name for the browser behind `agent`.
-fn label(agent: &str) -> &'static str {
+#[must_use]
+pub fn label(agent: &str) -> &'static str {
     [
         ("iPhone", "iPhone"),
         ("iPad", "iPad"),
@@ -258,78 +322,195 @@ impl Devices {
                 return Ok(None);
             }
             f.code = None;
-            f.add(&token, agent, now);
+            f.add(&token, None, label(agent), now);
             Ok(Some(token.clone()))
         })
     }
 
-    /// A phone's request, good for 10 minutes: the code it shows and the claim it collects its token with.
+    /// Whether a pairing code is open (made and not yet used, run out or dropped).
+    ///
+    /// # Errors
+    /// When the file can't be read.
+    pub fn code_open(&self, now: u64) -> io::Result<bool> {
+        Ok(self.load()?.code.is_some_and(|(_, at)| at + CODE_TTL > now))
+    }
+
+    /// A new device's request to pair, good for 5 minutes: the check word it shows and the claim it collects its
+    /// token with.
     ///
     /// # Errors
     /// When the file can't be read or written.
-    pub fn request(&self, now: u64) -> io::Result<(String, String)> {
-        let (code, claim) = (six()?, hex(&random(32)?));
+    pub fn ask(&self, agent: &str, now: u64) -> io::Result<(String, String)> {
+        let (b, claim) = (random(2)?, hex(&random(32)?));
+        let word = format!(
+            "{} {}",
+            WORDS[0][usize::from(b[0] % 16)],
+            WORDS[1][usize::from(b[1] % 16)]
+        );
         self.change(|f| {
-            f.requests.retain(|r| r.at + CODE_TTL > now);
-            if f.requests.len() >= REQUESTS {
-                f.requests.remove(0);
+            f.expire(now);
+            if f.asks.len() >= REQUESTS {
+                f.asks.remove(0);
             }
-            f.requests.push(Request {
-                code: sha256(code.as_bytes()),
+            f.asks.push(Request {
                 claim: sha256(claim.as_bytes()),
+                word: word.clone(),
+                label: label(agent).to_owned(),
                 at: now,
-                approved: false,
+                answer: None,
             });
             Ok(())
         })?;
-        Ok((code, claim))
+        Ok((word, claim))
     }
 
-    /// Approves the open request showing `code` (`cooee pair <code>`); whether there was one.
+    /// The requests still waiting for an answer, oldest first.
+    ///
+    /// # Errors
+    /// When the file can't be read.
+    pub fn asking(&self, now: u64) -> io::Result<Vec<Asking>> {
+        let mut f = self.load()?;
+        f.expire(now);
+        let open = f.asks.into_iter().filter(|r| r.answer.is_none());
+        Ok(open
+            .map(|r| Asking {
+                id: r.claim[..8].to_owned(),
+                word: r.word,
+                label: r.label,
+                at: r.at,
+            })
+            .collect())
+    }
+
+    /// Approves (`yes`) or declines the waiting request `id` on device `by`; whether there was one.
     ///
     /// # Errors
     /// When the file can't be read or written.
-    pub fn approve(&self, code: &str, now: u64) -> io::Result<bool> {
-        let hash = sha256(code.trim().as_bytes());
+    pub fn answer(&self, id: &str, yes: bool, by: &str, now: u64) -> io::Result<bool> {
         self.change(|f| {
-            f.requests.retain(|r| r.at + CODE_TTL > now);
+            f.expire(now);
             let found = f
-                .requests
+                .asks
                 .iter_mut()
-                .find(|r| !r.approved && same(&r.code, &hash));
-            Ok(found.map(|r| r.approved = true).is_some())
+                .find(|r| r.answer.is_none() && r.claim.starts_with(id) && id.len() == 8);
+            Ok(found
+                .map(|r| r.answer = Some((yes, by.to_owned())))
+                .is_some())
         })
     }
 
-    /// The phone's claim: its token once approved (once), else whether it still waits.
+    /// The new device's claim: its token once approved (once), else whether it waits or was declined.
     ///
     /// # Errors
     /// When the file can't be read or written.
-    pub fn collect(&self, claim: &str, agent: &str, now: u64) -> io::Result<Claim> {
+    pub fn collect(&self, claim: &str, now: u64) -> io::Result<Claim> {
         let (hash, token) = (sha256(claim.as_bytes()), hex(&random(32)?));
         self.change(|f| {
-            f.requests.retain(|r| r.at + CODE_TTL > now);
-            let Some(i) = f.requests.iter().position(|r| same(&r.claim, &hash)) else {
+            f.expire(now);
+            let Some(i) = f.asks.iter().position(|r| same(&r.claim, &hash)) else {
                 return Ok(Claim::Gone);
             };
-            if !f.requests[i].approved {
-                return Ok(Claim::Waiting);
+            match f.asks[i].answer.clone() {
+                None => Ok(Claim::Waiting),
+                Some((false, by)) => {
+                    f.asks.remove(i);
+                    Ok(Claim::Declined(by))
+                }
+                Some((true, by)) => {
+                    let r = f.asks.remove(i);
+                    f.add(&token, Some(r.claim[..8].to_owned()), &r.label, now)
+                        .by = by;
+                    Ok(Claim::Paired(token.clone()))
+                }
             }
-            f.requests.remove(i);
-            f.add(&token, agent, now);
-            Ok(Claim::Paired(token.clone()))
         })
     }
 
-    /// Drops the phone's request.
+    /// Drops the new device's request.
     ///
     /// # Errors
     /// When the file can't be read or written.
     pub fn cancel(&self, claim: &str) -> io::Result<()> {
         let hash = sha256(claim.as_bytes());
         self.change(|f| {
-            f.requests.retain(|r| !same(&r.claim, &hash));
+            f.asks.retain(|r| !same(&r.claim, &hash));
             Ok(())
+        })
+    }
+
+    /// Every passkey, oldest first.
+    ///
+    /// # Errors
+    /// When the file can't be read.
+    pub fn passkeys(&self) -> io::Result<Vec<Credential>> {
+        Ok(self.load()?.passkeys)
+    }
+
+    /// Keeps `key` (replacing one with its id).
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn add_passkey(&self, key: Credential) -> io::Result<()> {
+        self.change(|f| {
+            f.passkeys.retain(|k| k.id != key.id);
+            f.passkeys.push(key);
+            Ok(())
+        })
+    }
+
+    /// Marks passkey `id` used now.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn used_passkey(&self, id: &str, now: u64) -> io::Result<()> {
+        self.change(|f| {
+            for k in f.passkeys.iter_mut().filter(|k| k.id == id) {
+                k.used = now;
+            }
+            Ok(())
+        })
+    }
+
+    /// Removes passkey `id`; whether there was one.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn remove_passkey(&self, id: &str) -> io::Result<bool> {
+        self.change(|f| {
+            let n = f.passkeys.len();
+            f.passkeys.retain(|k| k.id != id);
+            Ok(f.passkeys.len() < n)
+        })
+    }
+
+    /// Pairs the browser behind `agent` after a sign-in with `passkey`, which is then its: its new token.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn restore(&self, agent: &str, passkey: &str, now: u64) -> io::Result<String> {
+        let token = hex(&random(32)?);
+        self.change(|f| {
+            let id = f.add(&token, None, label(agent), now).id.clone();
+            for k in f.passkeys.iter_mut().filter(|k| k.id == passkey) {
+                k.device.clone_from(&id);
+            }
+            Ok(token.clone())
+        })
+    }
+
+    /// Renames device `id`, or the approved request `id` the device it becomes then takes; whether there was one.
+    ///
+    /// # Errors
+    /// When the file can't be read or written.
+    pub fn rename(&self, id: &str, to: &str) -> io::Result<bool> {
+        self.change(|f| {
+            let approved =
+                |r: &&mut Request| matches!(r.answer, Some((true, _))) && r.claim[..8] == *id;
+            let label = match f.devices.iter_mut().find(|d| d.id == id) {
+                Some(d) => Some(&mut d.label),
+                None => f.asks.iter_mut().find(approved).map(|r| &mut r.label),
+            };
+            Ok(label.map(|l| to.clone_into(l)).is_some())
         })
     }
 
@@ -447,32 +628,59 @@ mod tests {
     }
 
     #[test]
-    fn a_request_waits_for_approval_then_pairs_once() {
+    fn a_request_waits_for_an_answer_then_pairs_once_or_is_declined() {
         let d = scratch("request");
-        let (code, claim) = d.request(0).unwrap();
-        assert_eq!(d.collect(&claim, "iPhone", 1).unwrap(), Claim::Waiting);
-        assert!(!d.approve("not-it", 1).unwrap());
-        assert!(d.approve(&code, 1).unwrap());
-        let Claim::Paired(token) = d.collect(&claim, "Mozilla/5.0 (iPhone)", 2).unwrap() else {
+        let (word, claim) = d.ask("Mozilla/5.0 (iPad)", 0).unwrap();
+        assert_eq!(word.split(' ').count(), 2);
+        assert_eq!(d.collect(&claim, 1).unwrap(), Claim::Waiting);
+        let open = d.asking(1).unwrap();
+        assert_eq!(
+            (open[0].word.as_str(), open[0].label.as_str()),
+            (word.as_str(), "iPad")
+        );
+        assert!(!d.answer("deadbeef", true, "iPhone", 1).unwrap());
+        assert!(d.answer(&open[0].id, true, "iPhone", 1).unwrap());
+        assert_eq!(d.asking(1).unwrap(), []);
+        // Renamed on the approving device before and after the new one picks it up; its id is the request's.
+        assert!(d.rename(&open[0].id, "Kim's iPad").unwrap());
+        let Claim::Paired(token) = d.collect(&claim, 2).unwrap() else {
             panic!("not paired");
         };
-        assert_eq!(d.find(&token, 3).unwrap().unwrap().label, "iPhone");
-        assert_eq!(d.collect(&claim, "x", 3).unwrap(), Claim::Gone);
+        let found = d.find(&token, 3).unwrap().unwrap();
+        assert_eq!(
+            (found.id.as_str(), found.label.as_str()),
+            (open[0].id.as_str(), "Kim's iPad")
+        );
+        assert!(d.rename(&open[0].id, "iPad").unwrap());
+        assert_eq!(d.find(&token, 3).unwrap().unwrap().label, "iPad");
+        assert!(!d.rename("deadbeef", "x").unwrap());
+        assert_eq!(d.collect(&claim, 3).unwrap(), Claim::Gone);
         let disk = fs::read_to_string(&d.path).unwrap();
         assert!(!disk.contains(&claim) && !disk.contains(&token), "{disk}");
 
-        // Expired, cancelled, and a fifth request dropping the oldest.
-        let (code, claim) = d.request(0).unwrap();
-        assert!(!d.approve(&code, CODE_TTL).unwrap());
-        assert_eq!(d.collect(&claim, "x", CODE_TTL).unwrap(), Claim::Gone);
-        let (_, claim) = d.request(0).unwrap();
+        // Declined: the new device hears who said no, once.
+        let (_, claim) = d.ask("x", 0).unwrap();
+        let id = d.asking(0).unwrap()[0].id.clone();
+        assert!(d.answer(&id, false, "iPhone", 1).unwrap());
+        assert!(!d.answer(&id, true, "iPhone", 1).unwrap(), "answered once");
+        assert_eq!(
+            d.collect(&claim, 2).unwrap(),
+            Claim::Declined("iPhone".into())
+        );
+        assert_eq!(d.collect(&claim, 2).unwrap(), Claim::Gone);
+
+        // Expired after 5 minutes, cancelled, and a fifth request dropping the oldest.
+        let (_, claim) = d.ask("x", 0).unwrap();
+        assert_eq!(d.asking(ASK_TTL).unwrap(), []);
+        assert_eq!(d.collect(&claim, ASK_TTL).unwrap(), Claim::Gone);
+        let (_, claim) = d.ask("x", 0).unwrap();
         d.cancel(&claim).unwrap();
-        assert_eq!(d.collect(&claim, "x", 1).unwrap(), Claim::Gone);
-        let first = d.request(0).unwrap().1;
+        assert_eq!(d.collect(&claim, 1).unwrap(), Claim::Gone);
+        let first = d.ask("x", 0).unwrap().1;
         for _ in 0..REQUESTS {
-            d.request(0).unwrap();
+            d.ask("x", 0).unwrap();
         }
-        assert_eq!(d.collect(&first, "x", 1).unwrap(), Claim::Gone);
+        assert_eq!(d.collect(&first, 1).unwrap(), Claim::Gone);
     }
 
     /// R3 (herdsman#501): a devices file that can't be read is an error, never "not paired".

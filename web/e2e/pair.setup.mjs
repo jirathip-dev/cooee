@@ -31,9 +31,10 @@ test("an unpaired browser is sent to pairing; the code pairs it", async ({ page,
 
   const code = fs.readFileSync(new URL("./.auth/code", import.meta.url), "utf8").trim();
   expect(code).toMatch(/^\d{6}$/);
-  await page.getByLabel("pairing code").fill(code);
-  await page.getByRole("button", { name: "pair" }).click();
-  await page.waitForURL(/\/$/, { waitUntil: "commit" });
+  // The six boxes: each digit moves on and the sixth sends it (#47).
+  await page.getByLabel("digit 1").click();
+  await page.keyboard.type(code);
+  await page.waitForURL(/\/(\?paired)?$/, { waitUntil: "commit" });
   // No black frame: from its first paint the list is drawn, not a bare background, with no reload.
   await page.screenshot({ path: "../../ui-390/paired.png" });
   expect(await colours(page)).toBeGreaterThan(8);
