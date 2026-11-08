@@ -678,11 +678,6 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
         Pane::Chat { thread, .. } => thread.id.clone(),
         _ => String::new(),
     };
-    // A chat's `‹` shows the agent that holds it, which may be the plugin agent that lists it.
-    let up = match &pane {
-        Pane::Chat { thread, .. } if current.is_empty() => key(&thread.agent, &thread.profile),
-        _ => current.clone(),
-    };
     let new = format!("/new?{current}");
     let Side {
         rows,
@@ -724,10 +719,9 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
                                 mate: mate.map(
                                     |(n, m)| {
                                         let ongoing = m.chats.first().is_some_and(|c| c.id == open);
-                                        (n, m.name, ongoing, m.avatar)
+                                        (n, m.name, ongoing, m.avatar, m.key)
                                     },
                                 ),
-                                back: up,
                                 // Every thread's id, so a ref to one in the chat opens it (#84).
                                 ids: rows.iter().map(|r| r.id.clone()).collect(),
                                 places: (list, rows, folder),
