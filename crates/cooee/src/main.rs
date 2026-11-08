@@ -58,6 +58,12 @@ fn flag(args: &mut Vec<String>, name: &str) -> Result<Option<String>, ()> {
     Ok(Some(value))
 }
 
+/// The usage line on stderr; exit 2.
+fn usage() -> ExitCode {
+    eprintln!("{USAGE}");
+    ExitCode::from(2)
+}
+
 fn main() -> ExitCode {
     let mut args: Vec<String> = env::args().skip(1).collect();
     let mut switch = |name: &str| {
@@ -73,8 +79,7 @@ fn main() -> ExitCode {
         flag(&mut args, "--rev"),
         flag(&mut args, "--minutes"),
     ) else {
-        eprintln!("{USAGE}");
-        return ExitCode::from(2);
+        return usage();
     };
     let instance = instance.unwrap_or_else(|| "cooee".to_owned());
     let named = !instance.is_empty()
@@ -105,8 +110,7 @@ fn main() -> ExitCode {
         ["reports"] => reports,
         ["perf"] => {
             let Ok(minutes) = minutes.map_or(Ok(60), |m| m.parse::<u64>()) else {
-                eprintln!("{USAGE}");
-                return ExitCode::from(2);
+                return usage();
             };
             return with_config(path.as_deref(), &instance, |config| perf(config, minutes));
         }
@@ -137,15 +141,13 @@ fn main() -> ExitCode {
         }
         ["install"] => {
             let Some(port) = port.and_then(|p| p.parse().ok()) else {
-                eprintln!("{USAGE}");
-                return ExitCode::from(2);
+                return usage();
             };
             return finish(install(path, &instance, port, explicit));
         }
         ["setup"] => {
             let Ok(port) = port.map(|p| p.parse()).transpose() else {
-                eprintln!("{USAGE}");
-                return ExitCode::from(2);
+                return usage();
             };
             let path = path.ok_or("no config path: set HOME");
             let setup = setup::Setup {
@@ -158,8 +160,7 @@ fn main() -> ExitCode {
             return finish(path.map_err(str::to_owned).and_then(|p| setup.run(&p)));
         }
         _ => {
-            eprintln!("{USAGE}");
-            return ExitCode::from(2);
+            return usage();
         }
     };
     with_config(path.as_deref(), &instance, run)

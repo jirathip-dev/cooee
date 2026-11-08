@@ -1798,7 +1798,7 @@ async fn mcp_settings(cx: &Cx) -> Result<impl View> {
         let tools = on
             .map(|s| (s.name.clone(), hub.mcp_tools(&s.name)))
             .collect();
-        let profiles = cooee_core::profiles::list(c.as_deref(), &d);
+        let profiles = cooee_core::profiles::list(c.as_deref(), &d, |_| None);
         let profiles = profiles
             .into_iter()
             .filter(|p| p.plugin.is_none())
