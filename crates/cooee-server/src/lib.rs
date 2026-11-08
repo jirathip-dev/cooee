@@ -422,6 +422,13 @@ async fn login_signout(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
     ))
 }
 
+/// `POST /logins`: the sign-ins card opened; checks the accounts' status again, never waiting on it (#106).
+#[route(POST "/logins")]
+async fn logins_check(cx: &Cx) -> Result<Answer<()>> {
+    logins(cx).ask();
+    Ok(Answer(Ok(())))
+}
+
 #[route(GET "/logins/{id}")]
 async fn login_view(cx: &Cx) -> Result<Answer<LoginView>> {
     let name = thread_id(cx);
@@ -1801,6 +1808,7 @@ pub fn router(
     .route(close)
     .route(read)
     .route(login_start)
+    .route(logins_check)
     .route(login_view)
     .route(login_send)
     .route(login_cancel)

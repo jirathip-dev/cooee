@@ -6,6 +6,7 @@
 use std::{
     collections::BTreeMap,
     env,
+    panic::AssertUnwindSafe,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
     thread,
@@ -45,8 +46,75 @@ pub struct View {
     pub links: Vec<String>,
     /// How the last login ended.
     pub why: Option<String>,
-    /// The status of the account it was for (else the system default), once no login runs.
+    /// The status of the account it was for (else the system default), as last checked, once no login runs.
     pub status: Option<Status>,
+    /// How long ago that status was checked, in seconds; none before its first check.
+    pub age: Option<u64>,
+}
+
+/// How often an account's status is checked when nothing asks, in ms (#106).
+const EVERY: u64 = 10 * 60_000;
+/// The longest that interval grows to, doubling after each timeout.
+const SLOWEST: u64 = 80 * 60_000;
+/// How soon after a check another may be asked for (the sign-ins card opened), in ms.
+const GAP: u64 = 30_000;
+
+/// One account's status checks: the last result, and when the next is due.
+#[derive(Default)]
+struct Check {
+    status: Option<Status>,
+    /// When the last check finished (ms).
+    at: u64,
+    /// The interval after it: [`EVERY`], doubled after each timeout up to [`SLOWEST`].
+    every: u64,
+    /// When the next check is due (ms).
+    next: u64,
+    /// A check runs: never two at once.
+    busy: bool,
+}
+
+impl Check {
+    /// Whether a check is due at `at`; it is then marked running.
+    fn start(&mut self, at: u64) -> bool {
+        let due = !self.busy && at >= self.next;
+        self.busy |= due;
+        due
+    }
+
+    /// Notes check result `s` at `at`: a timeout keeps the signed-in state last known and doubles the interval, any
+    /// other result resets it.
+    fn settle(&mut self, s: Status, at: u64) {
+        self.every = if s.unknown {
+            (self.every.max(EVERY) * 2).min(SLOWEST)
+        } else {
+            EVERY
+        };
+        (self.at, self.next) = (at, at + self.every);
+        self.status = Some(match self.status.take() {
+            Some(old) if s.unknown => Status {
+                signed_in: old.signed_in,
+                who: old.who,
+                usage: old.usage,
+                ..s
+            },
+            _ => s,
+        });
+    }
+
+    /// Asked for at `at`: due now, unless it backs off after a timeout or ran in the last [`GAP`].
+    fn ask(&mut self, at: u64) {
+        if self.every <= EVERY && at >= self.at + GAP {
+            self.next = self.next.min(at);
+        }
+    }
+
+    /// Its status as last checked, and its age in seconds at `at`.
+    fn known(&self, at: u64) -> (Status, Option<u64>) {
+        match &self.status {
+            Some(s) => (s.clone(), Some(at.saturating_sub(self.at) / 1000)),
+            None => (Status::unknown("not checked yet"), None),
+        }
+    }
 }
 
 /// The providers, their accounts and logins.
@@ -55,9 +123,10 @@ pub struct Logins {
     providers: Vec<Provider>,
     accounts: Accounts,
     live: Mutex<BTreeMap<String, Login>>,
-    /// Every provider's accounts and their status as last checked: a page load never runs a status command
-    /// itself (herdsman#337). Checked at start, every 30 s, and after a login or sign-out.
-    sheets: Mutex<Vec<Sheet>>,
+    /// Each account's status checks, by provider and account: a request never runs a status command itself
+    /// (herdsman#337, #106). Checked at start, every 10 minutes (longer after a timeout), when the sign-ins card
+    /// opens, and after a login or sign-out.
+    checks: Mutex<BTreeMap<(String, String), Check>>,
 }
 
 impl Logins {
@@ -69,14 +138,13 @@ impl Logins {
             providers,
             accounts: Accounts::new(data),
             live: Mutex::new(BTreeMap::new()),
-            sheets: Mutex::new(Vec::new()),
+            checks: Mutex::new(BTreeMap::new()),
         });
-        logins.check();
         let checker = Arc::clone(&logins);
         thread::spawn(move || {
             loop {
-                thread::sleep(Duration::from_secs(30));
-                checker.check();
+                checker.tick();
+                thread::sleep(Duration::from_secs(1));
             }
         });
         let shed = logins.shed.clone();
@@ -112,48 +180,70 @@ impl Logins {
     /// Every provider with its accounts' status, as last checked, and how its last login ended.
     #[must_use]
     pub fn statuses(&self) -> Vec<Sheet> {
-        let mut sheets = lock(&self.sheets).clone();
-        for sheet in &mut sheets {
-            if let Some(Login::Ended(why, _)) = lock(&self.live).get(&sheet.provider.name) {
-                sheet.why = Some(why.clone());
-            }
-        }
-        sheets
-    }
-
-    /// Checks every provider's accounts' status again, in parallel.
-    fn check(&self) {
-        let sheets = thread::scope(|s| {
-            let checks: Vec<_> = self
-                .providers
-                .iter()
-                .map(|p| {
-                    let accounts = self.accounts.list(&p.name).into_iter().map(|a| {
-                        s.spawn(move || {
-                            let status = p.check(a.dir.as_deref());
-                            (a, status)
-                        })
-                    });
-                    (p, accounts.collect::<Vec<_>>())
+        let at = now();
+        let checks = lock(&self.checks);
+        let live = lock(&self.live);
+        let sheet = |p: &Provider| {
+            let mut accounts: Vec<_> = (self.accounts.list(&p.name).into_iter())
+                .map(|a| {
+                    let check = checks.get(&(p.name.clone(), a.name.clone()));
+                    let status = check.map_or_else(|| Check::default().known(at), |c| c.known(at));
+                    (a, status.0)
                 })
                 .collect();
-            checks
-                .into_iter()
-                .map(|(p, accounts)| {
-                    let mut accounts: Vec<_> =
-                        accounts.into_iter().filter_map(|c| c.join().ok()).collect();
-                    if p.missing() {
-                        accounts.truncate(1);
+            if p.missing() {
+                accounts.truncate(1);
+            }
+            let why = match live.get(&p.name) {
+                Some(Login::Ended(why, _)) => Some(why.clone()),
+                _ => None,
+            };
+            Sheet {
+                provider: p.clone(),
+                accounts,
+                why,
+            }
+        };
+        self.providers.iter().map(sheet).collect()
+    }
+
+    /// Starts each account's status check that is due, each on its own thread.
+    fn tick(self: &Arc<Self>) {
+        for p in &self.providers {
+            for a in self.accounts.list(&p.name) {
+                let key = (p.name.clone(), a.name.clone());
+                if !lock(&self.checks)
+                    .entry(key.clone())
+                    .or_default()
+                    .start(now())
+                {
+                    continue;
+                }
+                let (logins, p) = (Arc::clone(self), p.clone());
+                thread::spawn(move || {
+                    // A panicking check still settles, so the account is checked again.
+                    let status =
+                        std::panic::catch_unwind(AssertUnwindSafe(|| p.check(a.dir.as_deref())))
+                            .unwrap_or_else(|_| {
+                                Status::unknown("can't tell: the status check failed")
+                            });
+                    let mut checks = lock(&logins.checks);
+                    if let Some(c) = checks.get_mut(&key) {
+                        c.busy = false;
+                        c.settle(status, now());
                     }
-                    Sheet {
-                        provider: p.clone(),
-                        accounts,
-                        why: None,
-                    }
-                })
-                .collect()
-        });
-        *lock(&self.sheets) = sheets;
+                });
+            }
+        }
+    }
+
+    /// Asks for every account's status check again (the sign-ins card opened): those not checked in the last 30 s
+    /// nor backing off after a timeout run within a second.
+    pub fn ask(&self) {
+        let at = now();
+        for c in lock(&self.checks).values_mut() {
+            c.ask(at);
+        }
     }
 
     /// Starts provider `name`'s login command in a new shed terminal (a running one is kept): for account
@@ -232,7 +322,8 @@ impl Logins {
         if let Err(e) = self.shed.close(terminal) {
             eprintln!("cooee: {terminal}: {e}");
         }
-        let signed_in = ok && self.provider(name).is_ok_and(|p| p.check(home).signed_in);
+        let status = self.provider(name).ok().map(|p| p.check(home));
+        let signed_in = ok && status.as_ref().is_some_and(|s| s.signed_in);
         let noted = match (signed_in, new) {
             (true, true) => self.accounts.adopt(name, account, now()),
             (true, false) => self.accounts.signed_in(name, account, now()),
@@ -247,7 +338,20 @@ impl Logins {
         } else if ok && !signed_in {
             "the login command finished, but the account isn't signed in".clone_into(&mut why);
         }
-        self.check();
+        // A new account's folder moved when it was listed: its status is checked there.
+        let moved = |p: &Provider| Some(p.check(self.accounts.get(name, account)?.dir.as_deref()));
+        let status = if new && signed_in {
+            self.provider(name).ok().and_then(moved)
+        } else {
+            status.filter(|_| !new)
+        };
+        if let Some(status) = status {
+            let key = (name.to_owned(), account.to_owned());
+            lock(&self.checks)
+                .entry(key)
+                .or_default()
+                .settle(status, now());
+        }
         let mut live = lock(&self.live);
         if matches!(live.get(name), Some(Login::Running(t)) if t == terminal) {
             let account = if new && !signed_in { "" } else { account };
@@ -269,19 +373,24 @@ impl Logins {
                 screen,
                 why: None,
                 status: None,
+                age: None,
             });
         }
         let (why, account) = match lock(&self.live).get(name) {
             Some(Login::Ended(why, account)) => (Some(why.clone()), account.clone()),
             _ => (None, String::new()),
         };
-        let home = self.accounts.get(name, &account).and_then(|a| a.dir);
+        let key = (provider.name.clone(), account);
+        let (status, age) = lock(&self.checks)
+            .get(&key)
+            .map_or_else(|| Check::default().known(now()), |c| c.known(now()));
         Ok(View {
             state: if why.is_some() { "ended" } else { "none" },
             screen: String::new(),
             links: Vec::new(),
             why,
-            status: Some(provider.check(home.as_deref())),
+            status: Some(status),
+            age,
         })
     }
 
@@ -319,12 +428,20 @@ impl Logins {
         let provider = self.provider(name)?;
         let a = self.account(name, account)?;
         let out = provider.sign_out(a.dir.as_deref());
-        if out.is_ok() || a.dir.is_some() {
+        let changed = out.is_ok() || a.dir.is_some();
+        if changed {
             self.accounts
                 .remove(name, account)
                 .map_err(|e| HubError::Refused(e.to_string()))?;
         }
-        self.check();
+        // Checked again within a second, whatever its backoff; unknown until then, unless nothing was signed out.
+        let key = (name.to_owned(), account.to_owned());
+        if let Some(c) = lock(&self.checks).get_mut(&key) {
+            c.next = 0;
+            if changed {
+                c.status = None;
+            }
+        }
         let who = if account.is_empty() { name } else { account };
         out.map_err(|e| HubError::Refused(format!("{who} sign-out: {e}")))
     }
@@ -419,5 +536,78 @@ impl Logins {
                 "{agent} offers no model {model:?} or effort {effort:?}"
             ))
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn status(signed_in: bool, line: &str) -> Status {
+        Status {
+            signed_in,
+            unknown: false,
+            line: line.to_owned(),
+            install: None,
+            who: Some("o@example.com".to_owned()),
+            usage: None,
+        }
+    }
+
+    /// #106: a check that hangs runs once at a time; each timeout doubles the interval up to 80 minutes, a card
+    /// opening doesn't cut that short, and a result resets it to 10 minutes.
+    #[test]
+    fn a_hanging_check_starts_once_per_growing_interval() {
+        let min = 60_000;
+        let timeout = Status::unknown("can't tell: the status command timed out");
+        let mut c = Check::default();
+        let mut t = 0;
+        let mut started = Vec::new();
+        for _ in 0..6 {
+            while !c.start(t) {
+                c.ask(t);
+                t += 1000;
+            }
+            started.push(t / min);
+            // It hangs for 10 s: nothing else starts, asked for or not.
+            for _ in 0..10 {
+                c.ask(t);
+                t += 1000;
+                assert!(!c.start(t));
+            }
+            c.busy = false;
+            c.settle(timeout.clone(), t);
+        }
+        // Each start is 10 s after the last ended: 20, 40, then 80 minutes apart.
+        assert_eq!(started, [0, 20, 60, 140, 220, 300]);
+        assert_eq!(c.every, 80 * min);
+
+        assert!(c.start(t + 80 * min));
+        c.busy = false;
+        c.settle(status(true, "signed in"), t + 80 * min);
+        assert_eq!(c.every, 10 * min);
+        // Healthy: a card opening checks again once 30 s have passed.
+        c.ask(t + 80 * min + 29_000);
+        assert!(!c.start(t + 80 * min + 29_000));
+        c.ask(t + 80 * min + 30_000);
+        assert!(c.start(t + 80 * min + 30_000));
+    }
+
+    /// #106: a timeout leaves a signed-in account signed in, as unknown; never signed out.
+    #[test]
+    fn a_timeout_keeps_a_signed_in_account_signed_in_as_unknown() {
+        let mut c = Check::default();
+        assert_eq!(c.known(0), (Status::unknown("not checked yet"), None));
+        c.settle(status(true, "signed in"), 1000);
+        let timeout = Status::unknown("can't tell: the status command timed out");
+        c.settle(timeout.clone(), 5000);
+        c.settle(timeout, 9000);
+        let (s, age) = c.known(12_000);
+        assert!(s.signed_in && s.unknown, "{s:?}");
+        assert_eq!(s.line, "can't tell: the status command timed out");
+        assert_eq!(s.who.as_deref(), Some("o@example.com"));
+        assert_eq!(age, Some(3));
+        c.settle(status(false, "Not signed in"), 20_000);
+        assert!(!c.known(20_000).0.signed_in && !c.known(20_000).0.unknown);
     }
 }
