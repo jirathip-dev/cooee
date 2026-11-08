@@ -462,7 +462,10 @@ fn mcp(config: &Config, args: &[&str]) -> Result<(), String> {
                     "--url" | "--type" if s.command.is_empty() => {
                         let v = words.next().ok_or(USAGE)?;
                         if *w == "--url" {
-                            (s.url, s.kind) = ((*v).to_owned(), "http".to_owned());
+                            (*v).clone_into(&mut s.url);
+                            if s.kind == "stdio" {
+                                "http".clone_into(&mut s.kind);
+                            }
                         } else {
                             (*v).clone_into(&mut s.kind);
                         }

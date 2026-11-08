@@ -616,3 +616,68 @@ fn url(s: &str) -> String {
         })
         .collect()
 }
+
+#[test]
+fn the_mac_adds_toggles_and_removes_servers_with_references_only() {
+    let dir = scratch("mcp-cli");
+    let config = dir.join("config.toml");
+    fs::write(&config, "# mine\nport = 1\n").unwrap();
+    let cooee = |args: &[&str]| {
+        let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
+            .arg("--config")
+            .arg(&config)
+            .args(args)
+            .output()
+            .unwrap();
+        (
+            out.status.success(),
+            String::from_utf8_lossy(&out.stdout).into_owned()
+                + &String::from_utf8_lossy(&out.stderr),
+        )
+    };
+    let add = [
+        "mcp",
+        "add",
+        "docs",
+        "--type",
+        "sse",
+        "--url",
+        "https://docs.example/sse",
+        "--header",
+        "Authorization=secret:DOCS",
+    ];
+    assert_eq!(
+        cooee(&add),
+        (
+            true,
+            "added docs: [sse] https://docs.example/sse\n".to_owned()
+        )
+    );
+    let (ok, said) = cooee(&[
+        "mcp",
+        "add",
+        "git",
+        "uvx",
+        "mcp-server-git",
+        "--env",
+        "GIT_TOKEN=env:GIT_TOKEN",
+    ]);
+    assert!(ok, "{said}");
+    let (ok, said) = cooee(&["mcp", "add", "bad", "x", "--env", "T=literal"]);
+    assert!(!ok && said.contains("env T: only a reference"), "{said}");
+    assert!(cooee(&["mcp", "disable", "git"]).0);
+    assert_eq!(
+        cooee(&["mcp", "ls"]).1,
+        "[sse] docs · on · https://docs.example/sse\n[stdio] git · off · uvx mcp-server-git\n"
+    );
+    assert!(cooee(&["mcp", "rm", "docs"]).0);
+    let text = fs::read_to_string(&config).unwrap();
+    assert!(
+        text.starts_with("# mine\nport = 1\n\n[[mcp]]\nname = \"git\"\n") && !text.contains("docs"),
+        "{text}"
+    );
+    assert!(
+        text.contains(r#"env = { "GIT_TOKEN" = "env:GIT_TOKEN" }"#),
+        "{text}"
+    );
+}
