@@ -276,6 +276,14 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
         out.contains("agent profiles: Conductor (fake-acp)"),
         "{out}"
     );
+    // Until its backend runs the manifest's profile is offered; once it does, an unreachable one offers none: wait for
+    // it so the chat page below sees the backend's 404 (its manifest's), not a backend still starting.
+    for _ in 0..400 {
+        if s.cooee.get("/p/plug/api/whoami").0 == 200 {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
     assert!(s.picker_with(option).contains("Conductor"));
     let (id, _) = s.thread("plug/conductor", "go");
     assert_eq!(

@@ -315,34 +315,12 @@ async fn sidebar(
                         </span>
                     </a>
                     if on {
-                        <div class="sth">
-                            for c in m.chats.iter().skip(1).take(SIDE).cloned() {
-                                side_row(c: c, open: open.clone())
-                            }
-                            if m.chats.len() > SIDE + 1 {
-                                <details>
-                                    <summary>
-                                        (format!("{} older chats", m.chats.len() - SIDE - 1))
-                                    </summary>
-                                    for c in m.chats.iter().skip(SIDE + 1).cloned() {
-                                        side_row(c: c, open: open.clone())
-                                    }
-                                </details>
-                            }
-                            if fresh {
-                                <a
-                                    class="str on"
-                                    href=(format!("/new?{}", m.key))
-                                    aria-current="page"
-                                >
-                                    <span class="tt">"New chat"</span>
-                                    <span class="ta">"now"</span>
-                                </a>
-                            }
-                            <a class="str nw" href=(format!("/new?{}", m.key))>
-                                "+ new chat"
-                            </a>
-                        </div>
+                        sides(
+                            chats: m.chats,
+                            key: m.key,
+                            open: open.clone(),
+                            fresh: fresh
+                        )
                     }
                 }
             }
@@ -351,6 +329,36 @@ async fn sidebar(
                 new_agent(profiles: profiles)
             }
         </nav>
+    })
+}
+
+/// The current agent's side threads (its chats after the ongoing one, the oldest folded), its `New chat · now` row
+/// when `fresh`, and `+ new chat`.
+#[component]
+async fn sides(chats: Vec<Summary>, key: String, open: String, fresh: bool) -> Result<impl View> {
+    Ok(view! {
+        <div class="sth">
+            for c in chats.iter().skip(1).take(SIDE).cloned() {
+                side_row(c: c, open: open.clone())
+            }
+            if chats.len() > SIDE + 1 {
+                <details>
+                    <summary>
+                        (format!("{} older chats", chats.len() - SIDE - 1))
+                    </summary>
+                    for c in chats.iter().skip(SIDE + 1).cloned() {
+                        side_row(c: c, open: open.clone())
+                    }
+                </details>
+            }
+            if fresh {
+                <a class="str on" href=(format!("/new?{key}")) aria-current="page">
+                    <span class="tt">"New chat"</span>
+                    <span class="ta">"now"</span>
+                </a>
+            }
+            <a class="str nw" href=(format!("/new?{key}"))>"+ new chat"</a>
+        </div>
     })
 }
 
