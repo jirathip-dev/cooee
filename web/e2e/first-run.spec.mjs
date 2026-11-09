@@ -16,6 +16,12 @@ test("first run: no agents shows its fix line with a copy button, never an empty
   await page.keyboard.type(code);
   await page.waitForURL(/\/(\?paired)?$/);
   await page.goto(`${url}/new`);
+  // No terminal plugin on this instance: a reply's code block has [copy] only, no [▸ terminal] (#29).
+  const buttons = await page.evaluate(async () => {
+    const { render } = await import("/md.js");
+    return [...render("```\nls\n```").querySelectorAll("button")].map((b) => b.textContent);
+  });
+  expect(buttons).toEqual(["copy"]);
 
   // No agent to type to: what to run instead, no composer.
   await expect(page.locator("#new")).toHaveCount(0);

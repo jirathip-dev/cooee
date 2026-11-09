@@ -319,4 +319,5 @@ view.addEventListener("touchend", () => {
   pinch = null;
 });
 
-await load();
+// The page's #name (a chat's [▸ terminal] typed into that shell) opens on it.
+await load(location.hash.slice(1) || undefined);

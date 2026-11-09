@@ -49,3 +49,23 @@ test("md.ts renders each element as DOM, escaping all text", async ({ page }) =>
   // Up to the last blank line; nothing inside an open fence; a half-typed table waits.
   expect(out.settled).toEqual([3, 0, 0, 11]);
 });
+
+test("a fenced block gets [▸ terminal] beside [copy] only where the owner terminal's tab is on (#29)", async ({ page }) => {
+  const fence = async () =>
+    page.evaluate(async () => {
+      const { render } = await import("/md.js");
+      const d = document.createElement("div");
+      d.append(render("```sh\ncd ~\nls -la\n```"));
+      return [...d.querySelectorAll("button")].map((b) => [b.textContent, b.dataset.copy ?? b.dataset.term]);
+    });
+  // Pairing has no tabs: [copy] only (as in the test above).
+  await page.goto("/pair");
+  expect(await fence()).toEqual([["copy", "cd ~\nls -la"]]);
+  // The chats, with the Terminal tab: [▸ terminal] carries the block's exact text.
+  await page.goto("/");
+  await expect(page.locator('nav.tabs a[href="/p/terminal"]')).toHaveText("Terminal");
+  expect(await fence()).toEqual([
+    ["copy", "cd ~\nls -la"],
+    ["▸ terminal", "cd ~\nls -la"],
+  ]);
+});
