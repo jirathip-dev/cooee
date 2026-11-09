@@ -11,7 +11,7 @@ A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` 
 | File | Required | What it is |
 |---|---|---|
 | `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, and `scene` (the Scene's layers: element ids in `scene.svg`) |
-| `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
+| `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100), optionally Scene's 132 × 100 poses `s-scene-edit s-scene-idle s-scene-done s-scene-needs s-scene-merged s-scene-fail` (#115: farm and kitchen carry herdsman's vector figures; without them Scene draws `s-<state>`); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
 | `scene.svg` | when `sprites` or `scene` | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned), its `viewBox` at most 400 × 320 (the first-party packs carry herdsman's Herd scenes, `docs/design/scene/build.mjs`: 390 × 320 or 392 × 188), holding each layer `scene` names. A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
 | `schemes/<name>.json` | no | the pack's own colour schemes (below); its `theme.json` may name them |
 | `icon.png` | no | the tile in the look sheet, the favicon and the home-screen icon (else cooee's icon) |
@@ -75,7 +75,7 @@ and a scheme per mode). The server draws it from the page's first byte (`web/src
   Scene shows its last Modern or Terminal pick (the cookie keeps it: `style:terminal/scene:on`).
 
 Scene (#34) draws the agents sidebar (#86) as the theme's scene, on one page: each agent a 132 × 100 sprite acting
-out its ongoing chat's state (`working` `s-edit`, `needs`, `done`, `fail`, ended `s-merged`, else `s-idle`) over its
+out its ongoing chat's state (`working` `s-edit`, `needs`, `done`, `fail`, ended `s-merged`, else `s-idle`; each as its `s-scene-` pose when the sheet has one) over its
 name card (name, profile · age, the state's word); a tap opens its chat. The current agent's card is ringed and its
 chats sit under the scene as chips, ending in `+ new chat`. Chats keep Modern or Terminal, whichever came last.
 Scene is offered only with Figures `sprite` (so never with plain).

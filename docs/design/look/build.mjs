@@ -20,13 +20,21 @@ const PICK = {
   kitchen: { edit: 'row-cook', read: 'row-taste', run: 'row-chop', idle: 'row-wait', done: 'row-serve', needs: 'row-bell',
     merged: 'row-serve', fail: 'row-back', loading: 'chef-cook', empty: 'chef-wait' },
 };
+// #115: Scene's 132 × 100 poses (`s-scene-<pose>`): the theme's vector figures, never a row sprite blown up. edit: the
+// impl action; idle, done, needs: herdsman's poses; merged: the merged moment; fail: the blocked pose.
+const SCENE = {
+  farm: { edit: 'horse-plough', idle: 'horse-graze', done: 'horse-done', needs: 'horse-blocked', merged: 'jump-over',
+    fail: 'horse-blocked' },
+  kitchen: { edit: 'chef-cook', idle: 'chef-wait', done: 'chef-serve', needs: 'chef-bell', merged: 'order-up',
+    fail: 'chef-bell' },
+};
 // The big figures' coats, as herdsman's loading overlay and kitchen look A set them.
 const COAT = { farm: '--c:#c89a56;--d:#a37a3c;--m:#e8dcc0;--b:#efe7dc;--fk:#58a6ff', kitchen: '--fk:#58a6ff' };
 
 for (const [theme, ids] of Object.entries(PICK)) {
   const src = readFileSync(join(hm, `assets/themes/${theme}/sprites.svg`), 'utf8');
   let s = '';
-  for (const [id, sid] of Object.entries(ids)) {
+  for (const [id, sid] of [...Object.entries(ids), ...Object.entries(SCENE[theme]).map(([k, v]) => [`scene-${k}`, v])]) {
     const line = src.split('\n').find(l => l.startsWith(`<g id="${sid}"`));
     if (!line) throw new Error(`${theme}: no sprite ${sid}`);
     const g = line.replace(` id="${sid}"`, '');

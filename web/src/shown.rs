@@ -299,12 +299,19 @@ impl Shown {
         format!("{}{}", esc(said), Self::plain_after(k, said, plain))
     }
 
-    /// The theme's 132 × 100 figure (`[data-s]`).
+    /// The theme's 132 × 100 figure (`[data-s]`): its Scene pose `s-scene-<k>` when the sheet has one (#115), else
+    /// `s-<k>`.
     #[must_use]
     pub fn s(&self, k: &str) -> String {
         match self.figures() {
             "ascii" => ascii(k, "lsa"),
-            "sprite" => self.svg(k, "big"),
+            "sprite" => {
+                let pose = format!("scene-{k}");
+                let has = self.theme().sprite_sheet.as_deref().is_some_and(|b| {
+                    String::from_utf8_lossy(b).contains(&format!("id=\"s-{pose}\""))
+                });
+                self.svg(if has { &pose } else { k }, "big")
+            }
             _ => String::new(),
         }
     }
@@ -448,6 +455,18 @@ mod tests {
             big,
             "<i class=\"lsa\" aria-hidden=\"true\"><b>( o.o )\n  ...</b><b>( o.O )\n  .. </b></i>"
         );
+        // Scene's poses (#115): farm and kitchen draw their vector figures, a sheet without them its `s-<k>`.
+        let fig = |theme: &str, k: &str| {
+            Shown::new(looks.clone(), Some(&format!("cooee-look=theme:{theme}"))).s(k)
+        };
+        for k in ["edit", "idle", "done", "needs", "merged", "fail"] {
+            assert!(fig("farm", k).contains(&format!("/look/farm/sprites.svg#s-scene-{k}\"")));
+            assert!(
+                fig("kitchen", k).contains(&format!("/look/kitchen/sprites.svg#s-scene-{k}\""))
+            );
+            assert!(fig("garden", k).contains(&format!("/look/garden/sprites.svg#s-{k}\"")));
+        }
+        assert!(fig("farm", "empty").contains("#s-empty\""));
         // Every figure has two frames that differ, one per state a page names.
         for (id, [a, b]) in ASCII {
             assert!(!a.is_empty() && a != b, "{id}");

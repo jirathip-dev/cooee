@@ -1,7 +1,7 @@
 // Scene (#34, #86): Style's third value draws the agents sidebar as the theme's scene: one page, a sprite per agent
 // acting out its ongoing chat, a tap opens that chat in the style chosen before, the current agent ringed with its
 // chats as chips; refreshes never copy a sprite; Scene is offered only with Figures Sprite (ASCII, None or the plain
-// theme hide it); and the audit at 390 in each theme.
+// theme hide it); and the audit at 390 in each theme, farm's at 1440 too, every pose a vector figure (#115).
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -9,6 +9,19 @@ const sheet = (page) => page.locator("#sheet .sh:popover-open");
 const pickOn = (context, url, pick) =>
   context.addCookies([{ name: "cooee-look", value: Object.entries(pick).map(([k, v]) => `${k}:${v}`).join("/"), url }]);
 const hrefs = (l) => l.evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+// Every Scene pose's symbol, from the sheet the page uses: a 132 × 100 figure, never a 16 px row sprite blown up (#115).
+async function poses(page, theme) {
+  const svg = await (await page.request.get(`/look/${theme}/sprites.svg`)).text();
+  for (const k of ["edit", "idle", "done", "needs", "merged", "fail"]) {
+    const use = `/look/${theme}/sprites.svg#s-scene-${k}`;
+    const sym = new RegExp(`<symbol id="s-scene-${k}" viewBox="0 0 132 100">(.*?)</symbol>`).exec(svg)?.[1];
+    expect(sym, use).toBeTruthy();
+    expect(sym, use).not.toMatch(/class="row /);
+    if (theme === "farm") expect(sym, use).not.toContain("crispEdges");
+  }
+  for (const href of await page.locator("#scene .sb .sf use").evaluateAll((us) => us.map((u) => u.getAttribute("href"))))
+    expect(href).toMatch(new RegExp(`^/look/${theme}/sprites\\.svg#s-scene-(edit|needs|done|fail|merged|idle)$`));
+}
 
 test.beforeEach(async ({ page }) => { await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" }); });
 // The device's clock by day (noon) or night (05:00), as now or before it, so the page never reads as an old copy.
@@ -36,7 +49,7 @@ test("Scene draws a sprite per agent on one page; a tap opens its chat, ringed, 
   await expect(page.locator("#scene .fh .ds")).toHaveText(`${names.length} agents`);
   // Each sprite acts out its state with the theme's art.
   const pose = await page.locator("#scene .sb .sf use").first().getAttribute("href");
-  expect(pose).toMatch(/^\/look\/farm\/sprites\.svg#s-(edit|needs|done|fail|merged|idle)$/);
+  expect(pose).toMatch(/^\/look\/farm\/sprites\.svg#s-scene-(edit|needs|done|fail|merged|idle)$/);
   await expect(page.locator("#scene .sky")).toHaveAttribute("src", /^\/look\/farm\/scene\.svg/);
   // The list's current agent is the first (a phone's ‹ names its own): ringed, its chats as chips (the approved 390).
   await expect(page.locator("#scene .sb").first()).toHaveAttribute("aria-current", "true");
@@ -102,8 +115,9 @@ test("Scene is offered only with Figures Sprite; ASCII, None or the plain theme 
 
 for (const theme of ["farm", "kitchen", "garden"])
   for (const mode of ["dark", "light"])
-    test(`Scene's audit at 390: ${theme}, ${mode}`, async ({ page, context, baseURL }, info) => {
-      test.skip(info.project.name !== "390", "the audit is at 390");
+    test(`Scene's audit: ${theme}, ${mode}`, async ({ page, context, baseURL }, info) => {
+      // farm's vector horses are shot at 1440 too (#115).
+      test.skip(info.project.name !== "390" && theme !== "farm", "the audit is at 390");
       await clock(page, false);
       await pickOn(context, baseURL, { theme, mode, scene: "on" });
       await page.goto("/?list");
@@ -112,7 +126,8 @@ for (const theme of ["farm", "kitchen", "garden"])
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
       const { violations } = await new AxeBuilder({ page }).analyze();
       expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
-      await page.screenshot({ path: `../../ui-390/scene-${theme}-${mode}.png` });
+      if (theme !== "garden") await poses(page, theme);
+      await page.screenshot({ path: `../../ui-${info.project.name}/scene-${theme}-${mode}.png` });
     });
 
 test("Scene beside a chat at 1440: the sidebar is the scene, the chat keeps its style", async ({ page, context, baseURL }, info) => {
@@ -130,12 +145,12 @@ test("Scene beside a chat at 1440: the sidebar is the scene, the chat keeps its 
 });
 
 test("farm's Scene at night: the strip's night from 19:00 on this device's clock", async ({ page, context, baseURL }, info) => {
-  test.skip(info.project.name !== "390", "the audit is at 390");
   await clock(page, true);
   await pickOn(context, baseURL, { scene: "on" });
   await page.goto("/?list");
   await expect(page.locator("#scene")).toHaveClass(/night/);
   await expect(page.locator("#scene .sky")).toHaveAttribute("src", "/look/farm/scene.svg#night");
   await expect.poll(() => page.locator("#scene .sky").evaluate((i) => i.complete && i.naturalWidth > 0)).toBe(true);
-  await page.screenshot({ path: "../../ui-390/scene-farm-night.png" });
+  await poses(page, "farm");
+  await page.screenshot({ path: `../../ui-${info.project.name}/scene-farm-night.png` });
 });
