@@ -1,0 +1,10 @@
+Decided: GET /workflow folds Workflow sessions by source+group+item; row state, stage and round are the newest round's
+Because: "grouped by their labels `source` + `group` + `item` into one row per issue"
+Decided: the plugin named as the source answers GET /cooee/workflow; extra passes through as given, done drops the row
+Because: "The row carries it as given (`extra`). cooee never interprets it"
+Decided: a new /workflow/events SSE emits `row` {source,group,item} on item/state changes and prunes, not text chunks
+Because: "A live stream (or the existing events stream) tells clients when a row changes"
+Rejected: reusing per-thread events stream — a client would need one connection per session
+Check: thread-state mapping in crates/cooee-server/src/workflow.rs (blocked=needs_you, error/unconnected=failed, working/connecting=working, else ready)
+Check: just, topcoat, cargo-deny absent on host; ran each other recipe directly, all exit 0
+Owner: The server now lists Workflow issues one row each with their rounds, for the native app to draw.
