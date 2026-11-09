@@ -1,0 +1,23 @@
+
+Running 17 tests using 2 workers
+
+  ✘   1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (3ms)
+
+
+  1) [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it ──────
+
+    Error: browserType.launch: Executable doesn't exist at /Users/jirathip/Library/Caches/ms-playwright/webkit-2359/pw_run.sh
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/pair.setup.mjs-an-unpaired-24fa3-o-pairing-the-code-pairs-it-pair/error-context.md
+
+  1 failed
+    [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it ───────
+  16 did not run
