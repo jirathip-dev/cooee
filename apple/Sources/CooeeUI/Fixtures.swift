@@ -4,7 +4,7 @@ import Foundation
 // the working pill and the queued messages. Personas carry what the persona sheet shows (#116's q888/q893/q894).
 // Illustrative, as #116's mock data: no networking (#124).
 
-public enum State: String, Sendable { case working, needs, done, idle, fail, merged }
+public enum LaneState: String, Sendable { case working, needs, done, idle, fail, merged }
 
 public struct Persona: Identifiable, Sendable {
     public let id: String
@@ -13,7 +13,7 @@ public struct Persona: Identifiable, Sendable {
     public let symbol: String  // Modern's SF Symbol on its avatar
     public let tint: Tint
     public let coat: String  // Scene's horse coat (apple/design/sprites.mjs)
-    public let state: State
+    public let state: LaneState
     public let agent: String
     public let model: String
     public let effort: String
@@ -49,7 +49,7 @@ public struct Row: Identifiable, Sendable {
     public let last: String
     public let at: String
     public let unseen: Int
-    public let state: State
+    public let state: LaneState
 }
 
 /// `Item`, as the chat draws it.
@@ -172,5 +172,5 @@ public enum Fixtures {
     ]
 
     /// Servers on the LAN (Bonjour, `_cooee._tcp`).
-    public static let nearby = [("mini", "Guy's Mac mini · 192.168.1.20", "macmini"), ("studio", "studio.local · 192.168.1.31", "macstudio")]
+    public static let nearby = [("mini", "Guy's Mac mini · 192.0.2.20", "macmini"), ("studio", "studio.local · 192.0.2.31", "macstudio")]
 }

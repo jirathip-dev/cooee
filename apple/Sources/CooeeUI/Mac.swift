@@ -106,7 +106,7 @@ public struct MacSetup: View {
                 }
                 .padding(16).surface(look, radius: 14)
                 MacList {
-                    MacRow(icon: "checkmark.circle.fill", title: "Wi-Fi", detail: "mini.local · 192.168.1.20", ok: true)
+                    MacRow(icon: "checkmark.circle.fill", title: "Wi-Fi", detail: "server.local · 192.0.2.20", ok: true)
                     MacRow(icon: "circle.dashed", title: "Tailscale", detail: "not found", last: true)
                 }
                 Spacer()
@@ -115,7 +115,7 @@ public struct MacSetup: View {
         case .qr, .approve:
             HStack(alignment: .center, spacing: 36) {
                 VStack(spacing: 10) {
-                    QRCode(text: "https://mini.tail4a2b.ts.net/pair?c=K7Q2MX", size: 230)
+                    QRCode(text: "https://server.example.com/pair?c=K7Q2MX", size: 230)
                         .padding(18).background(.white, in: .rect(cornerRadius: 18))
                     Text("or enter K7Q2MX").font(.system(size: 13, design: .monospaced)).foregroundStyle(p.mute)
                 }
@@ -123,7 +123,7 @@ public struct MacSetup: View {
                     Text("Pair your iPhone").ui(26, .bold, look)
                     Text("Open cooee on the phone and tap Scan QR. Or pick mini under Nearby, or type its address:")
                         .ui(14, .regular, look).foregroundStyle(p.mute).fixedSize(horizontal: false, vertical: true)
-                    Text("mini.tail4a2b.ts.net").font(.system(size: 14, design: .monospaced)).padding(8)
+                    Text("server.example.com").font(.system(size: 14, design: .monospaced)).padding(8)
                         .background(p.card, in: .rect(cornerRadius: 8))
                     HStack(spacing: 8) { ProgressDots(); Text("Waiting for a phone · code lasts 5 min").ui(12, .regular, look).foregroundStyle(p.mute) }
                     Text("`cooee setup` in a terminal prints this same QR.").ui(12, .regular, look).foregroundStyle(p.mute)
@@ -148,7 +148,7 @@ struct ApprovePrompt: View {
             Text("Guy's iPhone wants to pair").ui(17, .bold, look)
             Text("Approve only if it shows the same word:").ui(13, .regular, look).foregroundStyle(p.mute)
             Text("maple").font(.system(size: 30, weight: .bold, design: .monospaced)).tracking(3).foregroundStyle(p.l)
-            Text("from 192.168.1.44 · just now").ui(12, .regular, look).foregroundStyle(p.mute)
+            Text("from 192.0.2.44 · just now").ui(12, .regular, look).foregroundStyle(p.mute)
             HStack(spacing: 10) {
                 MacButton(title: "Decline").frame(maxWidth: .infinity)
                 MacButton(title: "Approve · Touch ID", primary: true).frame(maxWidth: .infinity)

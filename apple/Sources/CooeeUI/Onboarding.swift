@@ -49,7 +49,7 @@ public struct PhoneOnboarding: View {
             StepHeader(title: "Scan QR", subtitle: "Point at the code on your Mac, or in the terminal")
             ZStack {
                 RoundedRectangle(cornerRadius: 28).fill(Color.hex(0x1c1f1d))
-                QRCode(text: "https://mini.tail4a2b.ts.net/pair?c=K7Q2MX", size: 150)
+                QRCode(text: "https://server.example.com/pair?c=K7Q2MX", size: 150)
                     .padding(16).background(Color.white, in: .rect(cornerRadius: 10))
                     .rotationEffect(.degrees(-6)).shadow(radius: 12)
                 ViewfinderCorners().stroke(p.l, style: StrokeStyle(lineWidth: 5, lineCap: .round)).frame(width: 240, height: 240)
@@ -115,7 +115,7 @@ struct WaysIn: View {
         VStack(spacing: 10) {
             way("qrcode.viewfinder", "Scan QR", "The code on your Mac, or in the terminal", primary: true)
             way("wifi", "Nearby", "2 servers on this Wi-Fi")
-            way("keyboard", "Enter address", "mini.tail4a2b.ts.net")
+            way("keyboard", "Enter address", "server.example.com")
         }
         .foregroundStyle(p.fg)
     }
@@ -196,7 +196,7 @@ struct AddressField: View {
         let p = look.palette
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("mini.tail4a2b.ts.net").ui(17, .regular, look)
+                Text("server.example.com").ui(17, .regular, look)
                 Rectangle().fill(p.link).frame(width: 2, height: 22)
                 Spacer()
             }

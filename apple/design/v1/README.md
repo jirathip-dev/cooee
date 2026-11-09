@@ -29,7 +29,7 @@ Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the f
 | `pair-welcome-*` | First run: the mark, and the three ways in: **Scan QR**, **Nearby**, **Enter address**. A footnote for those with no server: get cooee for Mac, or run `cooee setup`. | q962, #124 onboarding |
 | `pair-scan-*` | The camera with the viewfinder over the Mac's QR, `Found mini · cooee 0.9`; Nearby and Enter address below as fallbacks. | |
 | `pair-nearby-*` | Servers found on the LAN by Bonjour (`_cooee._tcp`): mini, studio; still looking; a hint for Tailscale or far away. | |
-| `pair-address-*` | Typing the address (`mini.tail4a2b.ts.net`), Connect. | |
+| `pair-address-*` | Typing the address (`server.example.com`), Connect. | |
 | `pair-waiting-*` | Waiting for approval, **the check word shown** (`maple`, from `POST /pair/request`), 4:51 left; any paired device can approve; Cancel. | |
 | `pair-paired-*` | Paired with mini: the personas waiting, then Go to Home. | |
 
