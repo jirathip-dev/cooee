@@ -1876,7 +1876,22 @@ async fn persona_new(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
         id: String::new(),
         ..p
     };
-    on_personas(cx, move |d, c| personas::save(c, d, p)).await
+    persona_save(cx, p).await
+}
+
+/// Saves `p`, its plugins (#129) each an installed one.
+async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
+    let installed = hub(cx).installed();
+    on_personas(cx, move |d, c| {
+        match p.plugins.iter().find(|n| !installed.contains(n)) {
+            Some(n) => Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("no installed plugin {n}"),
+            )),
+            None => personas::save(c, d, p),
+        }
+    })
+    .await
 }
 
 #[route(GET "/personas/{id}")]
@@ -1891,7 +1906,17 @@ async fn persona_put(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
         id: thread_id(cx),
         ..p
     };
-    on_personas(cx, move |d, c| personas::save(c, d, p)).await
+    persona_save(cx, p).await
+}
+
+/// `GET /personas/{id}/places` (#129): its attached plugins' header screens; none until a plugin can have one (#125).
+#[route(GET "/personas/{id}/places")]
+async fn places(cx: &Cx) -> Result<Answer<Vec<personas::Place>>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| {
+        personas::find(Some(c), d, &id).map(|_| Vec::new())
+    })
+    .await
 }
 
 #[route(DELETE "/personas/{id}")]
@@ -1940,6 +1965,7 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
         .route(persona_get)
         .route(persona_put)
         .route(persona_delete)
+        .route(places)
         .route(memory)
         .route(memory_add)
         .route(memory_clear)

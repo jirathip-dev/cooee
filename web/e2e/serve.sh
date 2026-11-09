@@ -198,6 +198,10 @@ agent = "fake-acp"
 instructions = "reviewer.md"
 EOF
 
+# A persona (#129) with the example plugin `hello` attached: its cards go to its chats only (cards.spec.mjs).
+mkdir -p "$tmp/personas"
+printf 'name = "Cards"\nagent = "fake-acp"\nplugins = ["hello"]\n' >"$tmp/personas/cards.toml"
+
 # A fresh instance on $PORT + 3: no agents in shed, no roots, a provider whose CLI is missing; its pairing code beside $PAIR_CODE (first-run.spec.mjs).
 printf '#!/bin/sh\necho "[]"\n' >"$tmp/bare-shed" && chmod +x "$tmp/bare-shed"
 mkdir -p "$tmp/bare"
