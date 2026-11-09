@@ -7,11 +7,10 @@ import { expect, test } from "@playwright/test";
 const frameOf = (page, name) => page.frames().find((f) => f.url().includes(`/p/${name}/frame`));
 
 test("the example plugin's tab: proxied calls with its token, its stream, a push and a choice card", async ({ page, context }, info) => {
-  await page.goto("/new");
-  await page.getByLabel("message", { exact: true }).fill("Say hello");
-  await page.getByRole("button", { name: "send" }).click();
-  await page.waitForURL(/\/t\//);
-  const thread = new URL(page.url()).pathname.split("/")[2];
+  // A chat of persona `cards`, which `hello` is attached to (serve.sh, #129): a card goes only to such a chat.
+  const r = await page.request.post("/threads", { data: { agent: "fake-acp", profile: "cards", text: "Say hello", random_id: `hello-${info.project.name}` } });
+  expect(r.status(), await r.text()).toBe(200);
+  const { id: thread } = await r.json();
 
   await page.goto("/");
   await page.getByRole("navigation", { name: "tabs" }).getByRole("link", { name: "Hello" }).click();

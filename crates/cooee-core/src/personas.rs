@@ -11,7 +11,10 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::profiles;
+use crate::{plugins, profiles};
+
+/// drover's installed name (`plugins/index.toml`).
+const DROVER: &str = "cooee-drover";
 
 /// One persona.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -37,9 +40,24 @@ pub struct Persona {
     pub model: String,
     /// The default effort (empty: the agent's).
     pub effort: String,
+    /// The installed plugins attached to it (#129): their cards go only to its chats.
+    pub plugins: Vec<String>,
     /// The owner profile it runs as (one read as a persona), never set over the API.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub profile: Option<String>,
+}
+
+/// One of its attached plugins' screens in a persona's header (#129, as #125 draws them).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Place {
+    /// Its plugin.
+    pub name: String,
+    /// What the header shows.
+    pub label: String,
+    /// Its icon.
+    pub icon: String,
+    /// Its screen's URL.
+    pub url: String,
 }
 
 /// One note in a persona's memory.
@@ -83,6 +101,13 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
             Err(e) => eprintln!("cooee: {}: {e}", file.display()),
         }
     }
+    // Migrated (#129): an installed drover goes with the conductor profile's persona.
+    let lock = plugins::read_lock(data).unwrap_or_default();
+    let drover: Vec<String> = lock
+        .into_iter()
+        .map(|l| l.name)
+        .filter(|n| n == DROVER)
+        .collect();
     for p in profiles::list(config, data, |_| None) {
         if p.plugin.is_none() && out.iter().all(|o| o.id != p.name) {
             let text = p.instructions.and_then(|f| fs::read_to_string(f).ok());
@@ -96,6 +121,11 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
                     .map(|f| f.display().to_string())
                     .unwrap_or_default(),
                 agent: p.agent,
+                plugins: if p.name == "conductor" {
+                    drover.clone()
+                } else {
+                    Vec::new()
+                },
                 profile: Some(p.name),
                 ..Persona::default()
             });
@@ -142,7 +172,7 @@ pub fn save(config: &Path, data: &Path, mut p: Persona) -> io::Result<Persona> {
             "a persona needs a name, an agent, and an image or none as its avatar".to_owned(),
         ));
     }
-    // TOML's basic strings read JSON's; every field is a string.
+    // TOML's basic strings and arrays read JSON's; every field is a string or a list of them.
     let fields = serde_json::to_value(Persona {
         id: String::new(),
         ..p.clone()
