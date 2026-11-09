@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · the native shell (#116: five tabs, large titles, the rail at 1440)</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="ns.css">
+<script type="module" src="ns.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<div class="fr"><p class="cap">Chats · large title</p>
+<section class="ph" data-f="chats">
+  <div class="scr"><div class="in">
+    <h1 class="lt">Chats</h1>
+    <div data-x="personas"></div>
+    <div data-x="threads"></div>
+  </div></div>
+  <header class="nb"><span></span><b class="nt">Chats</b><span><a class="gl" href="persona.html" aria-label="new persona">+</a></span></header>
+  <nav class="tbar" data-x="tabs" data-on="chats" aria-label="tabs"></nav>
+</section></div>
+
+<div class="fr"><p class="cap">Chats · scrolled: the inline title</p>
+<section class="ph sc" data-f="chats-scrolled">
+  <div class="scr"><div class="in" style="--y:96px">
+    <h1 class="lt">Chats</h1>
+    <div data-x="personas"></div>
+    <div data-x="threads"></div>
+  </div></div>
+  <header class="nb"><span></span><b class="nt">Chats</b><span><a class="gl" href="persona.html" aria-label="new persona">+</a></span></header>
+  <nav class="tbar" data-x="tabs" data-on="chats" aria-label="tabs"></nav>
+</section></div>
+
+<div class="fr"><p class="cap">Workflow · one row per issue, herdsman #641 open</p>
+<section class="ph" data-f="workflow">
+  <div class="scr"><div class="in">
+    <h1 class="lt">Workflow</h1>
+    <div data-x="workflow" data-open="641"></div>
+  </div></div>
+  <header class="nb"><span></span><b class="nt">Workflow</b><span></span></header>
+  <nav class="tbar" data-x="tabs" data-on="workflow" aria-label="tabs"></nav>
+</section></div>
+
+<div class="fr"><p class="cap">Queue · drover's tab in the shell</p>
+<section class="ph" data-f="queue">
+  <div class="scr"><div class="in">
+    <h1 class="lt">Queue</h1>
+    <div data-x="queue"></div>
+  </div></div>
+  <header class="nb"><span></span><b class="nt">Queue</b><span></span></header>
+  <nav class="tbar" data-x="tabs" data-on="queue" aria-label="tabs"></nav>
+</section></div>
+
+<div class="fr"><p class="cap">Asks · the needs-you cards</p>
+<section class="ph" data-f="asks">
+  <div class="scr"><div class="in">
+    <h1 class="lt">Asks</h1>
+    <div data-x="asks"></div>
+  </div></div>
+  <header class="nb"><span></span><b class="nt">Asks</b><span></span></header>
+  <nav class="tbar" data-x="tabs" data-on="asks" aria-label="tabs"></nav>
+</section></div>
+
+<div class="fr"><p class="cap">More · grouped</p>
+<section class="ph" data-f="more">
+  <div class="scr"><div class="in">
+    <h1 class="lt">More</h1>
+    <div data-x="more"></div>
+  </div></div>
+  <header class="nb"><span></span><b class="nt">More</b><span></span></header>
+  <nav class="tbar" data-x="tabs" data-on="more" aria-label="tabs"></nav>
+</section></div>
+
+<div class="fr"><p class="cap">A chat: the persona and its agent chip in the header, the composer on the keyboard</p>
+<section class="ph" data-f="chat">
+  <div class="cvw kbd" data-x="chat" data-kb></div>
+  <header class="nb sc" data-x="chathead"></header>
+</section></div>
+
+<div class="fr"><p class="cap">Swipe back from the left edge: the chat follows the finger, Chats slides in under it</p>
+<section class="ph" data-f="chat-swipe">
+  <div class="lyr swb">
+    <div class="scr"><div class="in"><h1 class="lt">Chats</h1><div data-x="personas" data-cur="chief"></div><div data-x="threads"></div></div></div>
+    <header class="nb"><span></span><b class="nt">Chats</b><span><a class="gl" href="persona.html" aria-label="new persona">+</a></span></header>
+    <nav class="tbar" data-x="tabs" data-on="chats" aria-label="tabs"></nav>
+  </div>
+  <div class="lyr swf">
+    <div class="cvw" data-x="chat"></div>
+    <header class="nb sc" data-x="chathead"></header>
+  </div>
+  <i class="tch" aria-hidden="true"></i>
+</section></div>
+
+<div class="fr"><p class="cap">Chats in Scene (Look › Scene): the vector horses (cooee#115)</p>
+<section class="ph" data-f="scene">
+  <div class="scr"><div class="in">
+    <h1 class="lt">Chats</h1>
+    <div data-x="scene"></div>
+    <div data-x="threads"></div>
+  </div></div>
+  <header class="nb"><span></span><b class="nt">Chats</b><span><a class="gl" href="persona.html" aria-label="new persona">+</a></span></header>
+  <nav class="tbar" data-x="tabs" data-on="chats" aria-label="tabs"></nav>
+</section></div>
+
+<div class="fr"><p class="cap">Side note</p>
+<aside class="note" data-f="notes">
+  <h2>Side note: motion and touch (not drawn)</h2>
+  <h3>The large title collapses</h3>
+  <p>The 34 px title scrolls with the list. Once it passes under the nav bar (41 px of scroll), the 17 px inline title fades in at the centre and the bar takes its blur and hairline, as in <i>Chats · scrolled</i>. Pulling down past the top stretches the title. A tap on the current tab, or on the status bar, scrolls back to the top. A second tap on the current tab goes back to that tab's root.</p>
+  <h3>Swipe back</h3>
+  <p>From the left edge (the first 24 px), a pushed screen (a chat, a persona's sheet in Settings, a round's lane chat) follows the finger. The screen under it slides in from 30 % with a fading dim. Letting go past a third of the width, or with a quick flick, goes back. Anything less springs back. <code>‹ Chats</code> does the same. iOS's own edge gesture is not raced: the app's container sets <code>overscroll-behavior-x: none</code>. At 1440 there is nothing to swipe: the list and the detail are side by side.</p>
+  <h3>Press states</h3>
+  <p>A row, tab or chip tints (<code>--press</code>, the fg at 9 %) at touch-start, with no 300 ms wait (<code>touch-action: manipulation</code>, <code>-webkit-tap-highlight-color: transparent</code>). The tint fades over 150 ms on release, and a scroll cancels it. Buttons scale to 0.97. A long press on a row opens its menu: pin, mark read, archive. The tab bar and the rail answer on touch-start too.</p>
+  <h3>Sheets</h3>
+  <p>The persona sheet comes up as a page sheet with its grabber. Dragging it down dismisses it, and so does Cancel. On the 1440 window it is a centred panel, and Esc closes it.</p>
+</aside></div>
+
+<div class="fr w"><p class="cap">1440 · Chats: the rail, the list, Chief's chat</p>
+<section class="wd" data-f="wide-chats">
+  <nav class="rail" data-x="rail" data-on="chats" aria-label="tabs"></nav>
+  <div class="lst">
+    <header class="nb"><span></span><b class="nt"></b><span><a class="gl" href="persona.html" aria-label="new persona">+</a></span></header>
+    <div class="scr"><div class="in">
+      <h1 class="lt">Chats</h1>
+      <div data-x="personas" data-cur="chief"></div>
+      <div data-x="threads"></div>
+    </div></div>
+  </div>
+  <main class="dtl">
+    <div class="th"><i data-av="chief"></i><div class="tb"><h1>Chief</h1><span class="ds"><i class="dt" data-sync="on"></i>~/Clients/crm · <span data-st="done"></span></span></div><button type="button" class="agc"><b>Claude Code</b>· opus 5.5 · high</button><a class="gl" href="persona.html" aria-label="Chief's persona">ⓘ</a></div>
+    <div data-x="chat" style="display:contents"></div>
+  </main>
+</section></div>
+
+<div class="fr w"><p class="cap">1440 · Workflow: the rows, herdsman #641's fix 1 lane chat beside them</p>
+<section class="wd" data-f="wide-workflow">
+  <nav class="rail" data-x="rail" data-on="workflow" aria-label="tabs"></nav>
+  <div class="lst">
+    <header class="nb"><span></span><b class="nt"></b><span></span></header>
+    <div class="scr"><div class="in">
+      <h1 class="lt">Workflow</h1>
+      <div data-x="workflow" data-open="641"></div>
+    </div></div>
+  </div>
+  <main class="dtl">
+    <div class="th"><span class="fg" style="margin-left:12px"><b data-st="working" data-tool="edit"></b></span><div class="tb"><h1>herdsman #641 · fix 1</h1><span class="ds">herdsman-impl-641 · Claude Code · opus 5.5 · mini · 6m</span></div><a class="chip" href="#" style="margin-right:12px">PR #704 ›</a></div>
+    <ol class="tc" aria-label="lane">
+      <li class="qs">fix 1 · on review 1's FAIL at 5c2e9a0 · 2 findings</li>
+      <li class="blk run"><span class="k">tool</span><span class="cmd">Read crates/core/src/hosts/bootstrap.rs</span><span class="ts g">✓</span></li>
+      <li class="blk ai"><b class="k">fix 1</b><div class="md">Finding 1: two <code>boat1</code> profiles still both match. <code>resolve()</code> now returns the one profile for a label or refuses <code>AMBIGUOUS_HOST</code>; <code>recreate</code> replaces the profile instead of adding a second.</div></li>
+      <li class="blk run"><span class="k">tool</span><span class="cmd">Edit crates/core/src/hosts/bootstrap.rs</span><span class="ts g">✓</span></li>
+      <li class="blk run"><span class="k">tool</span><span class="cmd">$ cargo test -p herdsman-core hosts::label</span><span class="ts a">▍</span></li>
+      <li class="te"><span data-st="working" data-tool="run"></span><span class="ct">12 passed · running</span></li>
+    </ol>
+  </main>
+</section></div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · a persona (#116: Character, Instructions, memory, folder, the agent chip)</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="ns.css">
+<script type="module" src="ns.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<div class="fr"><p class="cap">Chief's sheet: avatar, name, agent, Character, Instructions</p>
+<section class="ph" data-f="persona">
+  <div class="scr"><div class="in"><h1 class="lt">Chats</h1><div data-x="personas"></div></div></div>
+  <header class="nb"><span></span><b class="nt">Chats</b><span><a class="gl" href="#">+</a></span></header>
+  <nav class="tbar" data-x="tabs" data-on="chats" aria-label="tabs"></nav>
+  <div class="dim"></div>
+  <div class="ps" role="dialog" aria-label="Chief">
+    <div class="psh"><a href="#">Cancel</a><b>Chief</b><a href="#">Done</a></div>
+    <div class="pb"><div class="in" data-x="persona"></div></div>
+  </div>
+</section></div>
+
+<div class="fr"><p class="cap">Scrolled: memory and folder; Clear memory… asks first</p>
+<section class="ph" data-f="persona-memory">
+  <div class="scr"><div class="in"><h1 class="lt">Chats</h1><div data-x="personas"></div></div></div>
+  <header class="nb"><span></span><b class="nt">Chats</b><span><a class="gl" href="#">+</a></span></header>
+  <nav class="tbar" data-x="tabs" data-on="chats" aria-label="tabs"></nav>
+  <div class="dim"></div>
+  <div class="ps" role="dialog" aria-label="Chief">
+    <div class="psh"><a href="#">Cancel</a><b>Chief</b><a href="#">Done</a></div>
+    <div class="pb"><div class="in" data-x="persona" style="--y:330px"></div></div>
+  </div>
+  <div class="mdim"></div>
+  <div class="acs"><div><p>Chief forgets these 12 notes. Its chats stay.</p><a class="rd" href="#">Clear memory</a></div><div><a href="#">Cancel</a></div></div>
+</section></div>
+
+<div class="fr"><p class="cap">In the chat: the header's agent chip switches the next turn</p>
+<section class="ph" data-f="persona-chip">
+  <div class="cvw" data-x="chat"></div>
+  <header class="nb sc" data-x="chathead"></header>
+  <div class="mdim"></div>
+  <div class="agm" style="left:calc(50% - 134px);top:calc(var(--sat) + var(--nb) + 6px)" role="menu" aria-label="next turn">
+    <p class="gh">next turn</p>
+    <a class="gr" href="#"><i>✓</i><span class="sk">Claude Code</span></a>
+    <a class="gr" href="#"><i></i><span class="sk">Codex</span></a>
+    <div class="gp"></div>
+    <a class="gr" href="#"><i>✓</i><span class="sk">opus 5.5</span></a>
+    <a class="gr" href="#"><i></i><span class="sk">sonnet 5.5</span></a>
+    <a class="gr" href="#"><i></i><span class="sk">fable 5.1</span></a>
+    <div class="gp"></div>
+    <div class="seg" role="radiogroup" aria-label="effort"><button type="button" role="radio" aria-checked="false">low</button><button type="button" role="radio" aria-checked="false">med</button><button type="button" role="radio" aria-checked="true">high</button><button type="button" role="radio" aria-checked="false">max</button></div>
+  </div>
+</section></div>
+
+<div class="fr w"><p class="cap">1440 · New persona, over Chats</p>
+<section class="wd" data-f="wide-persona">
+  <nav class="rail" data-x="rail" data-on="chats" aria-label="tabs"></nav>
+  <div class="lst">
+    <header class="nb"><span></span><b class="nt"></b><span><a class="gl" href="#">+</a></span></header>
+    <div class="scr"><div class="in"><h1 class="lt">Chats</h1><div data-x="personas" data-cur="chief"></div><div data-x="threads"></div></div></div>
+  </div>
+  <main class="dtl">
+    <div class="th"><i data-av="chief"></i><div class="tb"><h1>Chief</h1><span class="ds"><i class="dt" data-sync="on"></i>~/Clients/crm · <span data-st="done"></span></span></div><button type="button" class="agc"><b>Claude Code</b>· opus 5.5 · high</button></div>
+    <div data-x="chat" style="display:contents"></div>
+  </main>
+  <div class="dim"></div>
+  <div class="ps" role="dialog" aria-label="New persona">
+    <div class="psh"><a href="#">Cancel</a><b>New persona</b><a href="#">Create</a></div>
+    <div class="pb"><div class="in" data-x="persona" data-new></div></div>
+  </div>
+</section></div>
+
+</div>
+</body>
+</html>
