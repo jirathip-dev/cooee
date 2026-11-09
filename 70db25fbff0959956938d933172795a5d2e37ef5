@@ -1,0 +1,10 @@
+Decided: Scene draws new s-scene-<pose> symbols (herdsman's vector figures); the s-<state> row sprites stay for rows and avatars
+Because: "The 16 px row sprites stay where they belong: list rows and avatars at row size"
+Because: web/src/shown.rs:309
+Decided: farm fail and needs use horse-blocked, merged uses jump-over; kitchen mirrors with chef-bell and order-up
+Because: "merged → the v2 jump moment if present, fail → blocked"
+Rejected: replacing s-<state> with the big figures — rows would then draw 132 × 100 art at 24 px
+Rejected: a theme update command or a refresh at start — neither exists; the index pin moves and the owner reinstalls instead
+Check: web/e2e/scene.spec.mjs poses() fails if any Scene <use> or its symbol is a row sprite or uses crispEdges (farm)
+Check: the PR's side-by-side images match herdsman's figures state for state
+Owner: Scene shows herdsman's drawn horses and chefs; reinstall farm and kitchen on the phone to get them
