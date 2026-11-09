@@ -1,0 +1,8 @@
+light (250,303) top=<p class=""> "#992 found on issues" inChat=true inList=false
+light (300,303) top=<p class=""> "#992 found on issues" inChat=true inList=false
+light (330,303) top=<p class=""> "#992 found on issues" inChat=true inList=false
+light (260,200) top=<div class="md pl"> "#991 review passed t" inChat=true inList=false
+dark (250,303) top=<p class=""> "#992 found on issues" inChat=true inList=false
+dark (300,303) top=<p class=""> "#992 found on issues" inChat=true inList=false
+dark (330,303) top=<p class=""> "#992 found on issues" inChat=true inList=false
+dark (260,200) top=<div class="md pl"> "#991 review passed t" inChat=true inList=false

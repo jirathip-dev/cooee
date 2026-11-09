@@ -1,0 +1,23 @@
+{
+ "groups": [
+  "DIV.gs x=16 w=358",
+  "DIV.gs x=16 w=358",
+  "DIV.gs x=16 w=358",
+  "DIV.gs x=16 w=358"
+ ],
+ "heads": [
+  "H2.ch 'Machines' x=16 pad-left=0px",
+  "H2.ch 'Terminal' x=16 pad-left=0px",
+  "H2.ch 'settings' x=16 pad-left=0px"
+ ],
+ "icons": [
+  "◐Lookmodern · farm ·: '◐' bg=rgb(122, 74, 168)",
+  "!Notificationsblocke: '!' bg=rgb(184, 29, 60)",
+  "▣Machines● (needs yo: '▣' bg=rgb(28, 110, 112)",
+  "›_Terminal: '›_' bg=rgb(41, 37, 26)",
+  "⚿Sign-ins: '⚿' bg=rgb(31, 99, 155)",
+  "⚙Settings: '⚙' bg=rgb(107, 52, 16)"
+ ]
+}
+scrolled: class nb sc nt opacity 1 nt Chats 17px blur blur(20px) saturate(1.8) shadow color(srgb 0.160784 0.145098 0.101961 / 0.14) 0px 0.5px 0px 0px | bb 0px
+tbar hairline: shadow=color(srgb 0.92549 0.894118 0.8 / 0.14) 0px -0.5px 0px 0px before=rgba(0, 0, 0, 0)/auto

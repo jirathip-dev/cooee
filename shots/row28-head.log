@@ -1,0 +1,25 @@
+    Expected: visible
+    Received: hidden
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeVisible" locator('#menu') with timeout 5000ms
+      - waiting for locator('#menu')
+        14 × locator resolved to <div id="menu" class="mn" role="menu" popover="manual" aria-label="message actions">…</div>
+           - unexpected value "hidden"
+
+
+      386 |     await page.clock.runFor(600);
+      387 |     const menu = page.locator("#menu");
+    > 388 |     await expect(menu).toBeVisible();
+          |                        ^
+      389 |     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      390 |     await page.clock.runFor(100);
+      391 |     await expect(menu).toBeVisible();
+        at /Volumes/NVMe/herdsman/cooee/verify-118-r2/web/e2e/parity-threads.spec.mjs:388:24
+
+    Error Context: test-results/parity-threads-touch-row-2-69eb7-quote-puts-lines-in-the-box-390-repeat2/error-context.md
+
+  1 failed
+    [390] › parity-threads.spec.mjs:376:3 › touch › row 28: a long press on a reply opens copy, copy as markdown and quote; quote puts > lines in the box 
+  6 passed (13.1s)

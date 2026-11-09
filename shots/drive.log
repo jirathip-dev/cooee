@@ -1,0 +1,66 @@
+unpaired / -> /pair
+paired -> /
+390 agents ok
+390 header.bar count: 0 refresh btn: 0
+390 tabs: ["Chats","Workflow (needs you)","Queue","Asks","More (needs you)"]
+390 tbar box: {"x":0,"y":795,"width":390,"height":49}
+390 sdb box: {"x":0,"y":0,"width":390,"height":844}
+390 lt: Chats 34px/41px 700
+390 viewport meta: width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content | status: black-translucent
+390 tbar css: blur(20px) saturate(1.8) color(srgb 0.921569 0.886274 0.768627 / 0.84) border-top:0px rgb(41, 37, 26) pad-bottom:0px
+390 new ok
+390 chat ok
+390 chat: tbar visible: false
+390 settings ok
+390 plugin-hello ok
+390 plugin-machines ok
+390 chats-light ok
+390 light nb h: 44px nt opacity rest: 0
+390 light scrollTop: 0 nb class: nb nt opacity: 0 blur: none
+390 chats-scrolled-light ok
+390 more-light ok
+390 light more rows: ["Look","Notifications","Machines","Terminal","Sign-ins","Settings"]
+390 workflow-light ok
+390 light swipe: app class: app swp --sx: -16.53846153846154% tbar visible: true
+390 light swipe released ->  /?list&agent=fake-acp
+390 chats-dark ok
+390 dark nb h: 44px nt opacity rest: 0
+390 dark scrollTop: 0 nb class: nb nt opacity: 0 blur: none
+390 chats-scrolled-dark ok
+390 more-dark ok
+390 dark more rows: ["Look","Notifications","Machines","Terminal","Sign-ins","Settings"]
+390 workflow-dark ok
+390 dark swipe: app class: app swp --sx: -16.53846153846154% tbar visible: true
+390 dark swipe released ->  /?list&agent=fake-acp
+390 press tint: before rgba(0, 0, 0, 0) pressed color(srgb 0.92549 0.894118 0.8 / 0.09)
+1440 agents ok
+1440 header.bar count: 0 refresh btn: 0
+1440 tabs: ["Chats","Workflow (needs you)","Queue","Asks","More (needs you)"]
+1440 tbar box: {"x":0,"y":0,"width":88,"height":900}
+1440 sdb box: {"x":88,"y":0,"width":380,"height":900}
+1440 lt: Chats 34px/41px 700
+1440 viewport meta: width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content | status: black-translucent
+1440 tbar css: blur(20px) saturate(1.8) rgb(235, 226, 196) border-top:0px rgb(41, 37, 26) pad-bottom:12px
+1440 new ok
+1440 chat ok
+1440 chat: tbar visible: true
+1440 settings ok
+1440 plugin-hello ok
+1440 plugin-machines ok
+1440 chats-light ok
+1440 light nb h: 44px nt opacity rest: 0
+1440 light scrollTop: 0 nb class: nb nt opacity: 0 blur: none
+1440 chats-scrolled-light ok
+1440 more-light ok
+1440 light more rows: ["Look","Notifications","Machines","Terminal","Sign-ins","Settings"]
+1440 workflow-light ok
+1440 chats-chat-light ok
+1440 chats-dark ok
+1440 dark nb h: 44px nt opacity rest: 0
+1440 dark scrollTop: 0 nb class: nb nt opacity: 0 blur: none
+1440 chats-scrolled-dark ok
+1440 more-dark ok
+1440 dark more rows: ["Look","Notifications","Machines","Terminal","Sign-ins","Settings"]
+1440 workflow-dark ok
+1440 chats-chat-dark ok
+1440 press tint: before rgba(0, 0, 0, 0) pressed color(srgb 0.92549 0.894118 0.8 / 0.09)

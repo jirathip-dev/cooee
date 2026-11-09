@@ -1,0 +1,11 @@
+<a.str ud> "Long thread1" pos=static z=auto transform=none willChange=auto x=-4
+  <span.tt> "Long thread" pos=static z=auto transform=none willChange=auto x=4
+  <span.ta> "1089d5" pos=static z=auto transform=none willChange=auto x=246
+<span.ta> "1089d5" pos=static z=auto transform=none willChange=auto x=246
+  <b.bd> "5" pos=static z=auto transform=none willChange=auto x=290
+.app <div.app swp> "Chats+Chatsa" pos=static z=auto transform=none willChange=auto x=0
+.sdb <div.sdb> "Chats+Chatsa" pos=fixed z=auto transform=matrix(1, 0, 0, 1, -64.5, 0) willChange=auto x=-64
+.cfm <main.cfm> "Chats+Chatsa" pos=static z=auto transform=none willChange=auto x=0
+.cfm .chat <div.chat> "‹FAFake-390l" pos=relative z=1 transform=matrix(1, 0, 0, 1, 175, 0) willChange=auto x=175
+main <main.cfm> "Chats+Chatsa" pos=static z=auto transform=none willChange=auto x=0
+.tbar <nav.tbar> "ChatsWorkflo" pos=fixed z=0 transform=matrix(1, 0, 0, 1, -64.5, 0) willChange=auto x=-64
