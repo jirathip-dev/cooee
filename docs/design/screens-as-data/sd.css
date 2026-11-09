@@ -1,0 +1,78 @@
+/* #125 screens as data, on web/src/app.css and #116's ns.css: only what the blocks add, as tokens. New class names:
+   sbd a row's badge, sst a row's subtitle, tg a toggle, pkv a picker's value, sf a section footer, st/sti the stat
+   tiles, spk a sparkline, sbp/sbo a primary / outline button, sim the images block (sic its caption), wv the web-view
+   block, cd a card's head (cdt title, cdm meta), cat the block catalogue (blocks.html). */
+[data-tone=ok],[data-tone=done]{--k:var(--g)}[data-tone=warn],[data-tone=working],[data-tone=needs]{--k:var(--a)}
+[data-tone=bad],[data-tone=fail]{--k:var(--r)}[data-tone=info]{--k:var(--link)}[data-tone=accent]{--k:var(--l)}
+[data-tone=mute],[data-tone=idle]{--k:var(--mute)}
+
+/* row */
+.gr .rsp{flex:none;width:22px;height:22px}
+.gr .sk small{display:block;overflow:hidden;text-overflow:ellipsis;font-size:var(--fs-meta);color:var(--mute)}
+.gr .sk small[data-tone]{color:var(--k)}
+.gr.two{min-height:58px}
+.sbd{flex:none;padding:1px 8px;border-radius:var(--r-pill);font:600 12px/18px var(--font);color:var(--k);background:color-mix(in srgb,var(--k) 14%,transparent)}
+.gr.in1{padding-left:40px}.gr.in1::after{content:"└";position:absolute;left:20px;color:var(--mute);font-family:var(--mono)}
+
+/* card: ns.css's .ak, its edge in the tone; lists inside run edge to edge */
+.ak[data-tone]{border-color:var(--k)}.ak[data-tone=accent]{border-left:3px solid var(--k)}
+.cd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cdt{font-weight:600}.cdm{margin-left:auto;font-size:var(--fs-meta);color:var(--mute)}
+.cd .cds{flex-basis:100%;margin-top:-4px;font-size:var(--fs-meta);color:var(--mute)}
+.cd .cdb{display:flex;gap:8px;margin-left:auto}.cd .cdb button{min-height:32px;padding:0 12px;font-size:var(--fs-meta)}
+.cd .cdb button+button{background:var(--bg);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
+.ak .gs{margin:0 -12px;background:none;border-radius:0}.ak .gs:first-child{margin-top:-4px}
+.ak .gr{border-top:.5px solid var(--sep)}.ak .gr::before{display:none}
+.ak .ch{margin:6px 0 0;text-transform:uppercase;letter-spacing:.04em}
+.ak .sim{margin:0 -12px}
+
+/* section */
+.sf{margin:6px 32px 0;font-size:var(--fs-meta);color:var(--mute)}.ps .sf{margin:6px 32px 0}
+
+/* form: toggle and picker */
+.tg{flex:none;position:relative;width:51px;height:31px;border-radius:16px;background:var(--sep)}
+.tg::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:var(--card);box-shadow:0 2px 4px #0003}
+.tg[aria-checked=true]{background:var(--g)}.tg[aria-checked=true]::after{left:22px;background:#fff}
+.gr .pkv{flex:none;max-width:70%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--mute)}
+.gr .pkv::after{content:"";display:inline-block;width:6px;height:6px;margin:0 3px 4px 9px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+.sdx .gr .lb{width:auto;min-width:72px;flex:none}.gr .lb+input{flex:1;text-align:right;color:var(--mute)}
+.gr .sv small{color:var(--g)}
+
+/* stat and sparkline */
+.st{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin:4px 16px 12px}
+.sti{display:flex;flex-direction:column;gap:2px;min-width:0;padding:10px 12px;background:var(--card);border-radius:var(--r-row)}
+.sti b{font:700 24px/1.1 var(--font);color:var(--k,var(--fg))}.sti b small{font-size:var(--fs-meta);font-weight:400;color:var(--mute)}
+.sti span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:var(--fs-meta);color:var(--mute)}
+.st.one .sti{padding:16px}.st.one .sti b{font-size:44px}
+.spk{width:100%;height:22px;fill:none;stroke:var(--l);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;overflow:visible}
+
+/* text, button */
+.scr .txt,.ps .txt{margin:8px 16px;overflow-wrap:anywhere}.txt p{margin:0 0 8px}.txt :last-child{margin-bottom:0}
+.txt .diff{white-space:pre-wrap;overflow-wrap:anywhere}
+.ak .txt{margin:0}.ds.txt{margin-top:-2px}
+.sbp,.sbo{display:flex;align-items:center;justify-content:center;width:calc(100% - 32px);min-height:50px;margin:12px 16px;border-radius:var(--r-ctl);font:600 17px/1 var(--font)}
+.sbo{background:var(--card);color:var(--l);box-shadow:inset 0 0 0 1px var(--edge)}
+.chc button[data-tone=bad]{color:var(--r)}
+
+/* images (gap 1: not in the brief's list) */
+.sim{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 12px}.sim figure{flex:none;margin:0}
+.sim img{display:block;width:72px;height:156px;object-fit:cover;object-position:top;border-radius:8px;border:1px solid var(--edge);background:var(--bg)}
+.sim.lg img{width:150px;height:324px}
+.sic{margin-top:4px;font-size:var(--fs-meta);color:var(--mute);text-align:center}
+
+/* web-view escape */
+.wv{position:relative;margin:4px 16px 12px;height:var(--h,180px);border:1px dashed var(--edge);border-radius:var(--r-row);background:var(--card);display:grid;place-items:center;color:var(--mute);font-size:var(--fs-meta)}
+.wv b{position:absolute;top:6px;left:8px;font-weight:600;color:var(--mute)}
+
+/* the detail at 1440 */
+.dtl .scr{position:relative;flex:1;padding:16px max(16px,calc((100% - 760px)/2)) 24px;overflow:hidden}
+.dtl .nb{position:relative;height:56px;padding:0 8px;background:var(--bar);box-shadow:0 .5px 0 var(--sep)}.dtl .nb .nt{opacity:1}
+
+/* blocks.html: each block's JSON beside its drawing */
+.cat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;width:1440px;padding:24px;box-sizing:border-box;background:var(--bg);color:var(--fg)}
+.cat h1{grid-column:1/-1;margin:0;font:700 28px/1.2 var(--font)}.cat h1 small{display:block;font:400 var(--fs) var(--font);color:var(--mute)}
+.cat>section{display:grid;align-items:start;grid-template-columns:minmax(0,1fr) 320px;gap:12px;padding:12px;border:1px solid var(--edge);border-radius:var(--r-card);background:color-mix(in srgb,var(--card) 50%,var(--bg))}
+.cat>section.wide{grid-column:span 2}
+.cat h2{grid-column:1/-1;margin:0;font:600 15px/1 var(--font)}.cat h2 small{font-weight:400;color:var(--mute)}
+.cat pre{margin:0;padding:8px;overflow:hidden;background:var(--bg);border-radius:var(--r-row);font:10.5px/1.45 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.cat .cv2{position:relative;align-self:start;padding:8px 0;background:var(--bg);border-radius:var(--r-row);overflow:hidden}
+.cat .cv2 .ps{position:relative;top:0}.cat .cv2 .acs{position:relative;left:auto;right:auto;bottom:auto;margin:0 8px}
