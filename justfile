@@ -1,9 +1,9 @@
 # Every CI gate, locally (the ui gate needs `npm ci` in web/e2e once).
 check: fmt clippy test doc deny cap deps hygiene themes ts ui
 
+# Installs the pinned topcoat into .tools/ when it is not on PATH; `scripts/fmt.sh fix` rewrites.
 fmt:
-    cargo fmt --all --check
-    topcoat fmt --check $(git ls-files 'crates/*.rs' 'web/*.rs')
+    scripts/fmt.sh
 
 clippy:
     cargo clippy --workspace --all-targets --locked -- -D warnings

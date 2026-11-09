@@ -1,0 +1,2 @@
+- don't push a head that `scripts/fmt.sh` rejects, or skip it because topcoat is missing: it installs topcoat into .tools/ itself (enforced by: msrv CI `just fmt`)
+- don't push any later commit, even a format-only one, without re-running `cargo clippy --workspace --all-targets --locked -- -D warnings` at it: a reformat can push a function over too_many_lines (enforced by: msrv CI `just clippy`)
