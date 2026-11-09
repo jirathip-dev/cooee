@@ -36,7 +36,7 @@ struct AgentChip: View {
             Text("· \(persona.model)\(effort ? " · \(persona.effort)" : "")")
             Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
         }
-        .ui(12, .regular, look).foregroundStyle(p.mute)
+        .ui(12, .regular, look).foregroundStyle(p.mute).lineLimit(1).fixedSize()
         .padding(.horizontal, 9).padding(.vertical, 4)
         .background(look.mono ? Color.clear : p.edge.opacity(0.35), in: .capsule)
         .overlay { if look.mono { Rectangle().strokeBorder(p.edge, lineWidth: 1) } }

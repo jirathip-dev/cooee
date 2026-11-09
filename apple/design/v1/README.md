@@ -24,6 +24,7 @@ Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the f
 | `chat-streaming-*` | Coder mid-turn: the persona header (avatar, name, the agent chip `Codex · gpt-5.5 ▾`), your message with its file, three tool calls folded into one row, agent markdown with **bold**, *italic* and a code block with Copy, the reply still streaming (`▍`), a running tool row, the **working pill with Stop**, a **queued message** (Send now, ×), an attachment, and the composer (`Queue a message`). | q955 chat: stream, composer, files |
 | `chat-card-*` | Researcher waits on you: a **choice card** (Allow once · recommended / Always for sec.gov / Deny) in the chat. Asks are chat cards, not a tab. | q954 asks are chat cards |
 | `chat-cards-more-*` | The other cards: a **config** card (a plugin's settings, Save), a **secret** card (masked, Face ID, "sent to the plugin only, never to the agent"), and a **run card** (what for, the command, its sha, folder, what it touches, Approve / Deny, `lapses in 11m`). | q955 cards |
+| `chat-conductor-*` | Conductor's chat: its plugins' **Queue** and **Events** chips on a strip under the header (they open as sheets in v2), folded `herdsman` tool rows, a status reply in markdown, and an **ask** as a choice card (Approve · recommended / Revise… / Reject). The strip keeps the header to one line however many plugins a persona has. | q954 plugins attach to a persona; asks are chat cards |
 | `persona-*` | Chief's persona sheet: avatar and Edit avatar; Name; Agent (`Claude Code · opus 5.5 · high ▾`); Character; Instructions; Memory · 12 notes (three, Show all 12, Clear memory…); Folder. | #116 q888/q893/q894, carried over |
 | `pair-welcome-*` | First run: the mark, and the three ways in: **Scan QR**, **Nearby**, **Enter address**. A footnote for those with no server: get cooee for Mac, or run `cooee setup`. | q962, #124 onboarding |
 | `pair-scan-*` | The camera with the viewfinder over the Mac's QR, `Found mini · cooee 0.9`; Nearby and Enter address below as fallbacks. | |
@@ -56,4 +57,4 @@ Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the f
 ## Not drawn
 
 - The CLI-only path (`scripts/install.sh`, `cooee setup` on Mac or Linux) prints the same pairing QR in the terminal (q962).
-- Terminal, Machines and the Conductor plugin's sheets are v2 (q955). Conductor's header carries its plugins' Queue and Events chips (q954). They are in the fixtures, not drawn here.
+- Terminal, Machines and the Conductor plugin's sheets (Queue, Events) are v2 (q955); only their entry points are drawn (`avatar-menu-*`, `chat-conductor-*`).

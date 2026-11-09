@@ -18,6 +18,7 @@ public struct ChatView: View {
         ChatView(personaID: "coder", items: Fixtures.streaming, working: true, queued: Fixtures.queued, back: back)
     }
     public static func cards() -> ChatView { ChatView(personaID: "res", items: Fixtures.cards) }
+    public static func conductor() -> ChatView { ChatView(personaID: "cond", items: Fixtures.conductor) }
     public static func moreCards() -> ChatView { ChatView(personaID: "res", items: Fixtures.moreCards) }
 
     public var body: some View {
@@ -50,20 +51,28 @@ struct ChatHeader: View {
     var back = true
     var body: some View {
         let p = look.palette
-        HStack(spacing: 10) {
-            if back { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
-            Avatar(persona: persona, size: 38)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(persona.name).ui(16, .semibold, look)
-                AgentChip(persona: persona)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                if back { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
+                Avatar(persona: persona, size: 38)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(persona.name).ui(16, .semibold, look)
+                    AgentChip(persona: persona)
+                }
+                Spacer(minLength: 4)
+                RoundButton(symbol: "ellipsis", ascii: "…", size: 40)
             }
-            Spacer()
-            ForEach(persona.plugins, id: \.self) { plug in
-                Text(look.mono ? "[\(plug.lowercased())]" : plug).ui(12, .semibold, look).foregroundStyle(p.g)
-                    .padding(.horizontal, 9).frame(height: 28)
-                    .modifier(RoundSurface(look: look))
+            // A persona's plugins (Conductor: Queue, Events) open as sheets from their own strip (q954).
+            if !persona.plugins.isEmpty {
+                HStack(spacing: 8) {
+                    ForEach(persona.plugins, id: \.self) { plug in
+                        Text(look.mono ? "[\(plug.lowercased())]" : plug).ui(13, .semibold, look).foregroundStyle(p.g)
+                            .padding(.horizontal, 12).frame(height: 30)
+                            .modifier(RoundSurface(look: look))
+                    }
+                }
+                .padding(.leading, back ? 50 : 0)
             }
-            if persona.plugins.isEmpty { RoundButton(symbol: "ellipsis", ascii: "…", size: 40) }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(p.line).frame(height: 0.5) }
@@ -185,7 +194,9 @@ struct BlockView: View {
             Text((try? AttributedString(markdown: s)) ?? AttributedString(s)).ui(16, .regular, look)
                 .fixedSize(horizontal: false, vertical: true)
         case .bullets(let xs):
-            VStack(alignment: .leading, spacing: 4) { ForEach(xs, id: \.self) { Text("•  \($0)").ui(16, .regular, look) } }
+            VStack(alignment: .leading, spacing: 4) { ForEach(xs, id: \.self) { x in
+                Text((try? AttributedString(markdown: "•  " + x)) ?? AttributedString(x)).ui(16, .regular, look)
+            } }
         case .code(let lang, let code):
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
