@@ -1,0 +1,13 @@
+Decided: drover's tabs are matched by label (Queue, Asks); every other plugin tab is listed under More, in its own group.
+Because: "Plugin tabs: Queue and Asks are drover's plugin tabs when that plugin is installed"
+Because: web/src/lib.rs:465
+Decided: the Workflow dot means a lane is blocked; Asks shows drover's plugin dot, because the existing read has no count.
+Because: "an Asks count badge and a Workflow needs-you dot (from the existing reads)"
+Decided: Workflow (/w) lists the lanes' chats for now; one row per issue with rounds is #116's build issue 3.
+Decided: Terminal and Machines are screens pushed from More: on a phone they show ‹ More and hide the tab bar, so the terminal's key bar stays at the foot.
+Because: web/src/lib.rs:559
+Rejected: an Asks count from a new plugin API field — it needs drover to change, which is outside this issue.
+Rejected: keeping ↻ for the desktop — the spec says pull to refresh replaces it; the list polls every 5 s and a chat streams.
+Check: ui-390 and ui-1440 chats/more/chat-swipe/workflow shots against the PNGs; the PR body lists each difference and why.
+Check: threads.spec.mjs:60 [1440] fails the same way on base dafabbb (pre-existing, flaky).
+Owner: Please check on your iPhone that the header is gone, the tab bar sits over the home indicator, the title shrinks and swipe back works.
