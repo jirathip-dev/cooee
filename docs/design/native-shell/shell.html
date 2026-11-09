@@ -33,11 +33,11 @@
   <nav class="tbar" data-x="tabs" data-on="chats" aria-label="tabs"></nav>
 </section></div>
 
-<div class="fr"><p class="cap">Workflow · one row per issue, herdsman #715 open</p>
+<div class="fr"><p class="cap">Workflow · one row per issue, herdsman #641 open</p>
 <section class="ph" data-f="workflow">
   <div class="scr"><div class="in">
     <h1 class="lt">Workflow</h1>
-    <div data-x="workflow" data-open="715"></div>
+    <div data-x="workflow" data-open="641"></div>
   </div></div>
   <header class="nb"><span></span><b class="nt">Workflow</b><span></span></header>
   <nav class="tbar" data-x="tabs" data-on="workflow" aria-label="tabs"></nav>
@@ -71,6 +71,26 @@
   </div></div>
   <header class="nb"><span></span><b class="nt">More</b><span></span></header>
   <nav class="tbar" data-x="tabs" data-on="more" aria-label="tabs"></nav>
+</section></div>
+
+<div class="fr"><p class="cap">A chat: the persona and its agent chip in the header, the composer on the keyboard</p>
+<section class="ph" data-f="chat">
+  <div class="cvw kbd" data-x="chat" data-kb></div>
+  <header class="nb sc" data-x="chathead"></header>
+</section></div>
+
+<div class="fr"><p class="cap">Swipe back from the left edge: the chat follows the finger, Chats slides in under it</p>
+<section class="ph" data-f="chat-swipe">
+  <div class="lyr swb">
+    <div class="scr"><div class="in"><h1 class="lt">Chats</h1><div data-x="personas" data-cur="chief"></div><div data-x="threads"></div></div></div>
+    <header class="nb"><span></span><b class="nt">Chats</b><span><a class="gl" href="persona.html" aria-label="new persona">+</a></span></header>
+    <nav class="tbar" data-x="tabs" data-on="chats" aria-label="tabs"></nav>
+  </div>
+  <div class="lyr swf">
+    <div class="cvw" data-x="chat"></div>
+    <header class="nb sc" data-x="chathead"></header>
+  </div>
+  <i class="tch" aria-hidden="true"></i>
 </section></div>
 
 <div class="fr"><p class="cap">Chats in Scene (Look › Scene): the vector horses (cooee#115)</p>
@@ -109,30 +129,30 @@
     </div></div>
   </div>
   <main class="dtl">
-    <div class="th"><i data-av="chief"></i><div class="tb"><h1>Chief</h1><span class="ds"><i class="dt" data-sync="on"></i>~/Clients/crm · <span data-st="done"></span></span></div><a class="gl" href="persona.html" aria-label="Chief's persona">ⓘ</a></div>
+    <div class="th"><i data-av="chief"></i><div class="tb"><h1>Chief</h1><span class="ds"><i class="dt" data-sync="on"></i>~/Clients/crm · <span data-st="done"></span></span></div><button type="button" class="agc"><b>Claude Code</b>· opus 5.5 · high</button><a class="gl" href="persona.html" aria-label="Chief's persona">ⓘ</a></div>
     <div data-x="chat" style="display:contents"></div>
   </main>
 </section></div>
 
-<div class="fr w"><p class="cap">1440 · Workflow: the rows, herdsman #715's review 2 lane chat beside them</p>
+<div class="fr w"><p class="cap">1440 · Workflow: the rows, herdsman #641's fix 1 lane chat beside them</p>
 <section class="wd" data-f="wide-workflow">
   <nav class="rail" data-x="rail" data-on="workflow" aria-label="tabs"></nav>
   <div class="lst">
     <header class="nb"><span></span><b class="nt"></b><span></span></header>
     <div class="scr"><div class="in">
       <h1 class="lt">Workflow</h1>
-      <div data-x="workflow" data-open="715"></div>
+      <div data-x="workflow" data-open="641"></div>
     </div></div>
   </div>
   <main class="dtl">
-    <div class="th"><span class="fg" style="margin-left:12px"><b data-st="working" data-tool="read"></b></span><div class="tb"><h1>herdsman #715 · review 2</h1><span class="ds">herdsman-rev-715-r2 · Claude Code · opus 5.5 · mini · 6m</span></div><a class="chip" href="#" style="margin-right:12px">PR #722 ›</a></div>
+    <div class="th"><span class="fg" style="margin-left:12px"><b data-st="working" data-tool="edit"></b></span><div class="tb"><h1>herdsman #641 · fix 1</h1><span class="ds">herdsman-impl-641 · Claude Code · opus 5.5 · mini · 6m</span></div><a class="chip" href="#" style="margin-right:12px">PR #704 ›</a></div>
     <ol class="tc" aria-label="lane">
-      <li class="qs">review 2 · head 4e1c9a2 · fix 1's commit on top of review 1's FAIL</li>
-      <li class="blk run"><span class="k">tool</span><span class="cmd">Read crates/core/src/drive.rs</span><span class="ts g">✓</span></li>
-      <li class="blk run"><span class="k">tool</span><span class="cmd">$ git diff 9b02f17..4e1c9a2 -- crates/core</span><span class="ts g">✓</span></li>
-      <li class="blk ai"><b class="k">review 2</b><div class="md">Round 1's two findings: <code>fold()</code> now keeps a needs-human issue's rounds, and the test covers an issue with three rounds. Checking that a merged issue leaves the list on the next tick.</div></li>
-      <li class="blk run"><span class="k">tool</span><span class="cmd">$ cargo test -p herdsman-core drive::fold</span><span class="ts a">▍</span></li>
-      <li class="te"><span data-st="working" data-tool="run"></span><span class="ct">41 passed · running</span></li>
+      <li class="qs">fix 1 · on review 1's FAIL at 5c2e9a0 · 2 findings</li>
+      <li class="blk run"><span class="k">tool</span><span class="cmd">Read crates/core/src/hosts/bootstrap.rs</span><span class="ts g">✓</span></li>
+      <li class="blk ai"><b class="k">fix 1</b><div class="md">Finding 1: two <code>boat1</code> profiles still both match. <code>resolve()</code> now returns the one profile for a label or refuses <code>AMBIGUOUS_HOST</code>; <code>recreate</code> replaces the profile instead of adding a second.</div></li>
+      <li class="blk run"><span class="k">tool</span><span class="cmd">Edit crates/core/src/hosts/bootstrap.rs</span><span class="ts g">✓</span></li>
+      <li class="blk run"><span class="k">tool</span><span class="cmd">$ cargo test -p herdsman-core hosts::label</span><span class="ts a">▍</span></li>
+      <li class="te"><span data-st="working" data-tool="run"></span><span class="ct">12 passed · running</span></li>
     </ol>
   </main>
 </section></div>

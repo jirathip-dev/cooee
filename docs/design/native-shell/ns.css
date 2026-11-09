@@ -201,3 +201,39 @@ html[data-one] .ph{border-radius:0;box-shadow:none}
 .note{max-width:420px;padding:24px;background:var(--bg);font-size:var(--fs-meta);color:var(--fg)}
 .note h2{margin:0 0 8px;font-size:var(--fs-key)}.note h3{margin:16px 0 4px;font-size:var(--fs)}.note p{margin:0 0 6px;color:var(--mute)}
 .note code{font:12px var(--mono);color:var(--fg)}
+
+/* Revision 1 (q902). A chat's nav bar: ‹ Chats, then the persona (avatar, name) over its agent chip, smaller than the
+   sheet's; at 1440 the chip sits in the chat's header. */
+.ph2{display:flex;align-items:center;gap:8px;min-width:0}.ph2 .av{width:32px;height:32px;font-size:11px;flex:none}
+.ph2>span{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}.ph2>span>b{font:600 15px/1.1 var(--font)}
+.agc.sm{height:20px;min-height:20px;padding:0 8px;gap:4px;font-size:12px}
+.th .agc{margin-right:4px}
+/* The composer sits on the keyboard (.kbd), else on the home indicator; attach, the field, send. */
+.cvw .tc{overflow:hidden;justify-content:flex-end}
+.cvw .tw{align-items:center}.cvw.kbd .tw{padding-bottom:8px;border-top:.5px solid var(--sep)}
+.tw .att{flex:none;width:34px;min-width:34px;height:34px;min-height:34px;padding:0;border-radius:50%;background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge);font:300 24px/1 var(--font)}
+.tw [aria-label=send]{flex:none;width:34px;min-width:34px;height:34px;min-height:34px;padding:0;border-radius:50%;font:700 18px/1 var(--font)}
+.cvw .tw textarea{height:36px;min-height:36px;padding:7px 14px;border-radius:18px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+/* The system keyboard: the phone's own chrome, so its own greys, as iOS draws them in light and dark. */
+.kb{flex:none;display:flex;flex-direction:column;gap:11px;height:336px;padding:0 3px;background:#d1d4db;color:#000;font:400 22px/1 -apple-system,system-ui,sans-serif}
+[data-mode=dark] .kb{background:#2b2b2d;color:#fff}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);height:44px;margin:0 -3px;font-size:16px}
+.kp span{display:grid;place-items:center}.kp span+span{border-left:1px solid #0002}[data-mode=dark] .kp span+span{border-color:#fff2}
+.kr{display:flex;gap:6px;height:42px}.kr.k2{padding:0 19px}
+.ky{flex:1;display:grid;place-items:center;border-radius:5px;background:#fff;box-shadow:0 1px 0 #0004;font-style:normal}
+[data-mode=dark] .ky{background:#6b6b6e;box-shadow:0 1px 0 #0008}
+.ky.fn{flex:none;width:42px;background:#abb0ba;font-size:16px}[data-mode=dark] .ky.fn{background:#47474a}
+.ky.w{width:42px}.ky.w2{width:88px}.ky.sp{flex:1;font-size:16px}
+.kr:nth-child(4) .ky.w:first-child{margin-right:8px}.kr:nth-child(4) .ky.w:last-child{margin-left:8px}
+.kg{display:flex;justify-content:space-between;padding:6px 22px 0;font-size:22px;opacity:.6}
+/* Swipe back, mid-gesture (swb the screen behind, swf the one in front): the chat follows the finger (here 45 %), Chats comes in from -30 % under a fading dim. */
+.lyr{position:absolute;inset:0;overflow:hidden;background:var(--bg)}
+.lyr.swb{transform:translateX(-64px)}.lyr.swb::after{content:"";position:absolute;inset:0;z-index:7;background:var(--scrim);opacity:.35}
+.lyr.swf{transform:translateX(176px);box-shadow:-12px 0 32px #0003}
+.tch{position:absolute;z-index:22;left:156px;top:470px;width:44px;height:44px;border-radius:50%;background:color-mix(in srgb,var(--fg) 22%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--fg) 30%,transparent)}
+/* Asks: a herdsman run card (#83): what it runs for, the exact command, its sha, folder and blast; approve · deny, its
+   lapse; once run, the exit and the output tail. */
+.ak.run{border-color:var(--a)}.ak .diff{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.ak>.m{font-size:var(--fs-meta)}
+.ak .ans{align-self:flex-start;margin:0}
+/* Scene: the farm palette only; the tack in the farm's own project colour. */
+.scn .sf{--fk:var(--fk-l)}

@@ -11,52 +11,61 @@
 <body>
 <div class="gal">
 
-<div class="fr"><p class="cap">Folded, one per state; unfolded: herdsman #715, review 2 working</p>
+<div class="fr"><p class="cap">Folded, one per state; unfolded: herdsman #641, fix 1 working</p>
 <section class="ph sc" data-f="row">
   <div class="scr"><div class="in">
     <h2 class="ch">folded</h2>
-    <div data-x="workflow" data-only="116,115,83,601"></div>
+    <div data-x="workflow" data-only="116,722,708,115"></div>
     <h2 class="ch">unfolded</h2>
-    <div data-x="workflow" data-only="715" data-open="715"></div>
+    <div data-x="workflow" data-only="641" data-open="641"></div>
   </div></div>
   <header class="nb"><span></span><b class="nt">Workflow</b><span></span></header>
   <nav class="tbar" data-x="tabs" data-on="workflow" aria-label="tabs"></nav>
 </section></div>
 
-<div class="fr"><p class="cap">Unfolded: the current round needs you, has failed, is done</p>
+<div class="fr"><p class="cap">Unfolded: the current round needs you, has failed</p>
 <section class="ph sc" data-f="row-open">
   <div class="scr"><div class="in">
-    <div data-x="workflow" data-only="116,601,83" data-open="116,601,83"></div>
+    <div data-x="workflow" data-only="116,115,708" data-open="116,115"></div>
   </div></div>
   <header class="nb"><span></span><b class="nt">Workflow</b><span></span></header>
   <nav class="tbar" data-x="tabs" data-on="workflow" aria-label="tabs"></nav>
 </section></div>
 
-<div class="fr w"><p class="cap">1440 · herdsman #601's review 1 FAIL open beside its row</p>
+<div class="fr"><p class="cap">Unfolded: every round done, ready to merge</p>
+<section class="ph sc" data-f="row-done">
+  <div class="scr"><div class="in">
+    <div data-x="workflow" data-only="708,722" data-open="708"></div>
+  </div></div>
+  <header class="nb"><span></span><b class="nt">Workflow</b><span></span></header>
+  <nav class="tbar" data-x="tabs" data-on="workflow" aria-label="tabs"></nav>
+</section></div>
+
+<div class="fr w"><p class="cap">1440 · cooee #115's review 1 FAIL open beside its row</p>
 <section class="wd" data-f="wide-row">
   <nav class="rail" data-x="rail" data-on="workflow" aria-label="tabs"></nav>
   <div class="lst">
     <header class="nb"><span></span><b class="nt"></b><span></span></header>
     <div class="scr"><div class="in">
       <h1 class="lt">Workflow</h1>
-      <div data-x="workflow" data-open="116,601"></div>
+      <div data-x="workflow" data-open="116,115"></div>
     </div></div>
   </div>
   <main class="dtl">
-    <div class="th"><span class="fg" style="margin-left:12px"><b data-st="fail"></b></span><div class="tb"><h1>herdsman #601 · review 1</h1><span class="ds">herdsman-rev-601-r1 · Codex · gpt-5.6-luna · air · 2m</span></div><a class="chip" href="#" style="margin-right:12px">PR #606 ›</a></div>
+    <div class="th"><span class="fg" style="margin-left:12px"><b data-st="fail"></b></span><div class="tb"><h1>cooee #115 · review 1</h1><span class="ds">cooee-rev-115-r1 · Claude Code · opus 5.5 · air · 10m</span></div><a class="chip" href="#" style="margin-right:12px">PR #117 ›</a></div>
     <ol class="tc" aria-label="lane">
-      <li class="qs">review 1 · head 7d03b1e · FAIL · 2 findings</li>
+      <li class="qs">review 1 · head 70db25f · FAIL · 2 findings</li>
       <li class="blk ai"><b class="k">verdict.md</b><div class="md">
-        <p><b class="r">blocking</b> [correctness] <code>crates/core/src/hosts.rs:88</code>: an unreachable herdr reads as up, because <code>probe()</code> returns <code>Ok</code> when the ssh command times out.</p>
+        <p><b class="r">blocking</b> [correctness] <code>web/src/shown.rs:309</code>: a pose is found by a substring scan of the whole sprite sheet, so <code>s-scene-needs-x</code> would match <code>s-scene-needs</code>.</p>
         <p>Proof: run</p>
-        <div class="cb"><pre><code>$ cargo test -p herdsman-core hosts::probe_timeout
-test hosts::probe_timeout ... FAILED
-  left: Up, right: Offline</code></pre></div>
-        <p><b class="r">blocking</b> [test-coverage] <code>crates/cli/tests/shed.rs</code>: no test for a remote host with no shed on its PATH.</p>
+        <div class="cb"><pre><code>$ cargo test -p cooee-web shown::scene_pose_exact
+test shown::scene_pose_exact ... FAILED
+  left: "#s-scene-needs-x", right: "#s-needs"</code></pre></div>
+        <p><b class="r">blocking</b> [test-coverage] <code>web/e2e/scene.spec.mjs</code>: no Scene shot at farm night.</p>
         <p>Proof: spec</p>
-        <blockquote>AC 2: a remote host without shed is up when its herdr answers, and offline when it does not.</blockquote>
+        <blockquote>AC 2: Scene screenshots at 390 and 1440 (farm light, dark and night) show the vector horses in every state.</blockquote>
       </div></li>
-      <li class="te"><span data-st="fail"></span><span class="ct">09:31 · fix 1 next</span></li>
+      <li class="te"><span data-st="fail"></span><span class="ct">14:58 · fix 1 next</span></li>
     </ol>
   </main>
 </section></div>

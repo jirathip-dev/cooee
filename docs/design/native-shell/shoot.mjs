@@ -17,11 +17,12 @@ const BOTH = ['dark', 'light'];
 const VIEWS = [
   ['shell', 'chats', 390, BOTH], ['shell', 'chats-scrolled', 390, BOTH], ['shell', 'workflow', 390, BOTH],
   ['shell', 'queue', 390, BOTH], ['shell', 'asks', 390, BOTH], ['shell', 'more', 390, BOTH],
+  ['shell', 'chat', 390, BOTH], ['shell', 'chat-swipe', 390, BOTH],
   ['shell', 'scene', 390, ['light']], ['shell', 'notes', 390, ['light']],
   ['shell', 'wide-chats', 1440, ['dark']], ['shell', 'wide-workflow', 1440, ['light']],
   ['persona', 'persona', 390, BOTH], ['persona', 'persona-memory', 390, BOTH], ['persona', 'persona-chip', 390, BOTH],
   ['persona', 'wide-persona', 1440, ['light']],
-  ['row', 'row', 390, BOTH], ['row', 'row-open', 390, BOTH], ['row', 'wide-row', 1440, ['dark']],
+  ['row', 'row', 390, BOTH], ['row', 'row-open', 390, BOTH], ['row', 'row-done', 390, BOTH], ['row', 'wide-row', 1440, ['dark']],
 ];
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
 const srv = createServer((q, r) => {
@@ -54,8 +55,8 @@ function audit() {
   const bad = [], W = innerWidth, name = e => e.tagName.toLowerCase() + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/).join('.') : '') + ` "${(e.textContent || '').trim().slice(0, 30)}"`;
   if (document.documentElement.scrollWidth > W) bad.push(`sideways scroll ${document.documentElement.scrollWidth} > ${W}`);
   for (const e of document.querySelectorAll('.one *')) {
-    // The chip rows scroll sideways by design; the hidden layers and svg are not text.
-    if (!e.getClientRects().length || e.closest('.dch,.mc,svg,.stb')) continue;
+    // The chip rows scroll sideways by design, and a swipe moves the chat past the edge; the hidden layers and svg are not text.
+    if (!e.getClientRects().length || e.closest('.dch,.mc,svg,.stb,.lyr.swf')) continue;
     const r = e.getBoundingClientRect(), s = getComputedStyle(e);
     if (s.visibility === 'hidden' || r.bottom < 0 || r.top > innerHeight) continue;
     if (r.right > W + 0.5) bad.push(`past the right edge ${Math.round(r.right)} · ${name(e)}`);
