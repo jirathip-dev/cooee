@@ -439,7 +439,7 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
     let ran = s.dir.join("bin/ran");
     let web = s.dir.join("bin/fake-mcp");
     let mut cooee = Mcp::start(named(&servers, "cooee"), Agent::Codex);
-    assert_eq!(cooee.tools(), ["propose_server"]);
+    assert_eq!(cooee.tools(), ["propose_server", "remember"]);
     let proposal = json!({ "name": "web", "type": "stdio", "command": web, "args": ["--port", "9 9"], "why": "browse the docs" });
     let said = cooee.run("propose_server", &proposal).unwrap();
     assert!(

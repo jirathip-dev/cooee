@@ -155,8 +155,10 @@ pub struct Summary {
     pub agent: String,
     /// The provider account it runs with (empty: the system default).
     pub account: String,
-    /// Its agent profile's id (empty: Plain).
+    /// Its agent profile's id (empty: Plain), or its persona's.
     pub profile: String,
+    /// Its persona's id (#126; empty: none, or one deleted).
+    pub persona: String,
     /// The working folder.
     pub folder: PathBuf,
     /// The state: `connecting`, `unconnected` (its start failed), `working`, `blocked`, `done`, `error`, `ended` or
