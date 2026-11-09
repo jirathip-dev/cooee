@@ -1,0 +1,442 @@
+== cargo fmt --all --check
+exit 0 : cargo fmt --all --check
+== topcoat fmt --check $(git ls-files "crates/*.rs" "web/*.rs")
+(eval):1: command not found: topcoat
+exit 127 : topcoat fmt --check $(git ls-files "crates/*.rs" "web/*.rs")
+== cargo clippy --workspace --all-targets --locked -- -D warnings
+    Checking typenum v1.20.1
+    Checking subtle v2.6.1
+   Compiling stable_deref_trait v1.2.1
+   Compiling itoa v1.0.18
+    Checking libc v0.2.191
+   Compiling serde_core v1.0.229
+   Compiling siphasher v1.0.4
+    Checking zeroize v1.9.1
+    Checking rand_core v0.10.1
+   Compiling memchr v2.8.3
+    Checking cmov v0.5.4
+   Compiling yoke v0.8.4
+    Checking cfg-if v1.0.5
+   Compiling zmij v1.0.23
+   Compiling phf_shared v0.14.0
+    Checking const-oid v0.10.2
+    Checking ctutils v0.4.8
+   Compiling equivalent v1.0.3
+    Checking thiserror v2.0.21
+   Compiling indexmap v2.14.2
+   Compiling zerovec v0.11.9
+   Compiling zerotrie v0.2.5
+   Compiling phf_generator v0.14.0
+    Checking bytes v1.12.1
+   Compiling compact_str v0.10.0
+   Compiling percent-encoding v2.3.2
+   Compiling phf_macros v0.14.0
+    Checking pin-project-lite v0.2.17
+    Checking errno v0.3.14
+    Checking hybrid-array v0.4.15
+    Checking generic-array v0.14.7
+    Checking futures-core v0.3.34
+    Checking signal-hook-registry v1.4.8
+    Checking socket2 v0.6.5
+    Checking http v1.5.0
+    Checking cpufeatures v0.3.1
+    Checking mio v1.2.4
+    Checking winnow v1.0.5
+    Checking futures-sink v0.3.34
+   Compiling toml_edit v0.25.18+spec-1.1.0
+    Checking cpufeatures v0.2.17
+   Compiling cobs v0.3.0
+    Checking slab v0.4.12
+    Checking crypto-common v0.1.7
+    Checking toml_parser v1.1.5+spec-1.1.0
+    Checking tokio v1.54.1
+   Compiling tinystr v0.8.5
+   Compiling potential_utf v0.1.6
+    Checking crypto-common v0.2.2
+   Compiling icu_locale_core v2.4.0
+    Checking block-buffer v0.12.1
+   Compiling icu_collections v2.4.0
+    Checking once_cell v1.21.4
+    Checking num-traits v0.2.19
+   Compiling phf v0.14.0
+    Checking zerocopy v0.8.63
+    Checking tracing-core v0.1.36
+   Compiling proc-macro-crate v3.5.0
+    Checking httparse v1.10.1
+    Checking serde v1.0.229
+    Checking digest v0.11.3
+    Checking serde_json v1.0.154
+    Checking serde_spanned v1.1.2
+    Checking toml_datetime v1.1.2+spec-1.1.0
+    Checking sha2 v0.11.1
+   Compiling topcoat-core-grammar v0.11.0
+   Compiling oxc_ast_macros v0.157.0
+    Checking getrandom v0.3.4
+    Checking toml v1.2.0+spec-1.1.0
+   Compiling icu_provider v2.4.0
+    Checking hashbrown v0.17.1
+   Compiling icu_locale_fallback v2.4.0
+    Checking shed-proto v0.0.0 (https://github.com/jirathip-dev/shed?rev=f026a4d35a2705e560a52515da8e3a5d32e4d659#f026a4d3)
+    Checking cpubits v0.1.1
+   Compiling smallvec v1.16.4
+   Compiling oxc_index v5.0.0
+   Compiling postcard v1.1.3
+    Checking crypto-bigint v0.7.10
+    Checking rand_core v0.9.5
+   Compiling ropey v1.6.1
+   Compiling icu_segmenter v2.4.0
+    Checking tracing v0.1.44
+   Compiling oxc-browserslist v5.0.1
+    Checking http-body v1.1.0
+    Checking block-buffer v0.10.4
+    Checking ff v0.14.0
+   Compiling elsa v1.11.2
+   Compiling anymap3 v1.1.0
+    Checking fnv v1.0.7
+   Compiling oxc_data_structures v0.157.0
+   Compiling textwrap v0.16.4
+   Compiling futures-task v0.3.34
+    Checking cooee-core v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-core)
+   Compiling heck v0.5.0
+   Compiling oxc_allocator v0.157.0
+   Compiling base64 v0.22.1
+    Checking atomic-waker v1.1.2
+    Checking futures-util v0.3.34
+   Compiling oxc_sourcemap v9.0.0
+    Checking digest v0.10.7
+   Compiling oxc_str v0.157.0
+   Compiling topcoat-core v0.11.0
+    Checking hmac v0.13.0
+   Compiling oxc_span v0.157.0
+    Checking futures-channel v0.3.34
+    Checking httpdate v1.0.3
+    Checking form_urlencoded v1.2.2
+    Checking sha1 v0.10.7
+    Checking group v0.14.0
+    Checking der v0.8.3
+    Checking log v0.4.35
+   Compiling oxc_syntax v0.157.0
+   Compiling oxc_diagnostics v0.157.0
+    Checking ryu v1.0.23
+    Checking data-encoding v2.11.1
+    Checking base16ct v1.0.0
+    Checking tokio-util v0.7.20
+    Checking serde_urlencoded v0.7.1
+    Checking ref-cast v1.0.27
+    Checking hkdf v0.13.0
+   Compiling topcoat-router-grammar v0.11.0
+    Checking http-body-util v0.1.5
+    Checking serde_path_to_error v0.1.20
+    Checking inout v0.1.4
+    Checking sec1 v0.8.1
+   Compiling oxc_regular_expression v0.157.0
+    Checking ppv-lite86 v0.2.21
+    Checking matchit v0.9.2
+    Checking ipnet v2.12.2
+    Checking elliptic-curve v0.14.3
+    Checking h2 v0.4.20
+    Checking cipher v0.4.4
+    Checking primefield v0.14.0
+    Checking rand_chacha v0.9.0
+   Compiling oxc_compat v0.157.0
+    Checking rand v0.9.5
+   Compiling topcoat-core-macro v0.11.0
+    Checking universal-hash v0.5.1
+    Checking opaque-debug v0.3.1
+    Checking wnaf v0.14.1
+    Checking rfc6979 v0.6.0
+    Checking polyval v0.6.2
+    Checking signature v3.0.0
+    Checking ctr v0.9.2
+    Checking ghash v0.5.1
+    Checking aes v0.8.4
+    Checking aead v0.5.2
+    Checking ecdsa v0.17.0
+    Checking primeorder v0.14.0
+    Checking qrcode v0.14.1
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-machines)
+    Checking aes-gcm v0.10.3
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-terminal)
+    Checking topcoat-view v0.11.0
+   Compiling topcoat-router-macro v0.11.0
+    Checking tungstenite v0.29.0
+    Checking p256 v0.14.0
+   Compiling oxc_ast v0.157.0
+    Checking tokio-tungstenite v0.29.0
+   Compiling topcoat-view-grammar v0.11.0
+    Checking hyper v1.12.0
+   Compiling topcoat-view-macro v0.11.0
+    Checking hyper-util v0.1.21
+    Checking topcoat-router v0.11.0
+    Checking topcoat v0.11.0
+   Compiling oxc_ecmascript v0.157.0
+   Compiling oxc_ast_visit v0.157.0
+   Compiling oxc_parser v0.157.0
+   Compiling oxc_semantic v0.157.0
+   Compiling oxc_traverse v0.157.0
+   Compiling oxc_codegen v0.157.0
+   Compiling oxc_transformer v0.157.0
+   Compiling oxc_transformer_plugins v0.157.0
+   Compiling oxc v0.157.0
+   Compiling cooee-web v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/web)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-server)
+    Checking cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 16.42s
+exit 0 : cargo clippy --workspace --all-targets --locked -- -D warnings
+== test "$(grep -rE "allow\(" crates web/src | wc -l)" -le 10
+exit 0 : test "$(grep -rE "allow\(" crates web/src | wc -l)" -le 10
+== cargo test --workspace --locked
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-machines)
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-core)
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-terminal)
+   Compiling cooee-web v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/web)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.71s
+     Running unittests src/main.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/cooee-54eb1a62cf566b92)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/accounts.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/accounts-a3214a94b6760652)
+
+running 2 tests
+test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.12s
+
+     Running tests/accounts_env.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/accounts_env-f323cef5bec83abf)
+
+running 4 tests
+test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+test unknown_provider_or_account_refuses_on_one_line ... ok
+test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+test ls_json_lists_every_account_without_its_token ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.26s
+
+     Running tests/chat.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/chat-ef1a77d01ff98649)
+
+running 10 tests
+test fake_shed_server ... ignored, a server for web/e2e, not a test
+test a_shed_of_another_version_is_refused_naming_both_versions ... ok
+test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+test closing_a_thread_kills_and_removes_its_terminal ... ok
+test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+test scene_draws_the_agents_as_sprites_and_the_current_ones_chats_as_chips ... ok
+
+test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running tests/chat_first.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/chat_first-efacab0587b9cd02)
+
+running 3 tests
+test a_new_agent_is_saved_as_a_profile_and_listed ... ok
+test an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_picked ... ok
+test a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+     Running tests/cli.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/cli-c2fac7364df03c2e)
+
+running 4 tests
+test version ... ok
+test listening_beyond_localhost_needs_allowed_hosts ... ok
+test unknown_args_and_config_keys_fail ... ok
+test serve_listens_on_localhost_at_the_configured_port ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/first_run.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/first_run-d90029a1429754d7)
+
+running 3 tests
+test with_no_roots_a_chat_still_starts_in_scratch_and_use_a_folder_says_how_to_add_one ... ok
+test with_one_root_and_nothing_in_it_a_thread_starts_in_the_root ... ok
+test no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests/folders.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/folders-a5eb59201ab3695c)
+
+running 5 tests
+test picker_lists_sub_folders_two_levels_deep_never_symlinks ... ok
+test browse_lists_only_folders_inside_home ... ok
+test add_and_remove_root_persists_in_the_config ... ok
+test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests/instances.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/instances-1a5bb782bd4dc73c)
+
+running 3 tests
+test doctor_reports_a_missing_shed ... ok
+test install_writes_a_plist_and_prints_the_commands ... ok
+test two_instances_never_see_each_others_threads_or_devices ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests/login.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/login-ff0e23e594faeef5)
+
+running 4 tests
+test a_failed_sign_out_keeps_the_last_known_status ... ok
+test a_login_left_for_10_minutes_is_killed_and_removed ... ok
+test login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen ... ok
+test a_hanging_status_check_never_holds_a_request_and_runs_once ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.80s
+
+     Running tests/machines.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/machines-46b175f34029f341)
+
+running 1 test
+test the_machines_tab_shows_each_machine_and_a_dot_while_one_is_offline ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s
+
+     Running tests/model.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/model-53b69412808ed476)
+
+running 1 test
+test row_34_a_thread_starts_on_its_pick_and_the_chips_change_it ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+     Running tests/pairing.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/pairing-f1ba095f84c1fb81)
+
+running 15 tests
+test push_subscriptions_are_checked_and_tied_to_the_device ... ok
+test a_report_is_kept_and_listed ... ok
+test a_foreign_host_or_origin_is_refused_even_paired ... ok
+test a_declined_request_tells_the_new_device_who_said_no ... ok
+test pair_use_remove_and_only_the_hash_on_disk ... ok
+test a_qr_code_is_prefilled_and_pairs_at_once ... ok
+test alerts_status_test_and_off_are_this_devices ... ok
+test devices_are_listed_and_removed_from_the_phone ... ok
+test a_wrong_expired_or_reused_code_says_so ... ok
+test the_new_calls_need_a_paired_device_but_pairing_requests_do_not ... ok
+test the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it ... ok
+test unpaired_reads_and_writes_are_refused ... ok
+test five_wrong_codes_a_minute_close_the_boxes_for_that_address ... ok
+test a_passkey_signs_a_device_back_in_and_can_be_removed ... ok
+test a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.83s
+
+     Running tests/perf.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/perf-04dd3370af248722)
+
+running 4 tests
+test cooee_perf_turns_a_log_into_the_table ... ok
+test a_fast_request_under_the_default_threshold_is_debug_only ... ok
+test first_token_is_logged_once_per_prompt_and_nothing_private_is ... ok
+test requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running tests/plugin_manager.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/plugin_manager-dca56ff2324e7fc2)
+
+running 6 tests
+test add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it ... ok
+test only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issue ... ok
+test an_index_plugin_has_no_warning_and_a_url_plugin_is_not_reviewed ... ok
+test remove_stops_it_and_keeps_the_checkout_unless_purged ... ok
+test improve_makes_a_branch_an_approval_builds_and_swaps_it_in_and_it_rolls_back ... ok
+test a_failed_update_keeps_the_old_build_and_a_good_one_swaps_in ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.73s
+
+     Running tests/plugins.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/debug/deps/plugins-8b53764c39f2d6fc)
+
+running 13 tests
+test the_docs_show_the_example_plugin_the_ui_tests_run ... ok
+test a_plugin_with_no_token_configured_does_not_start ... ok
+test a_plugin_without_its_token_is_refused ... ok
+test a_backends_event_stream_comes_through_the_proxy ... ok
+test the_tab_frames_the_module_in_a_sandbox ... ok
+test the_proxy_sends_the_plugins_own_token_and_never_the_cookie ... ok
+test a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab ... ok
+test row_30_choice_rows_recommended_first_other_text_and_who_and_when ... ok
+test row_31_a_conductors_answer_takes_one_change_from_the_owner ... ok
+test a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin ... ok
+test row_33_a_secrets_value_reaches_its_plugin_only ... ok
+test row_35_handoff_chips_flow_back_lines_and_pick_a_thread ... FAILED
+test row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale ... ok
+
+failures:
+
+---- row_35_handoff_chips_flow_back_lines_and_pick_a_thread stdout ----
+
+thread 'row_35_handoff_chips_flow_back_lines_and_pick_a_thread' (133977602) panicked at crates/cooee/tests/plugins.rs:634:5:
+assertion `left == right` failed
+  left: (String("agent"), String("Hello"), Null, Null, Null)
+ right: (String("link"), String("take the build"), String("t1a1be4ff678"), String("Plan the week"), Bool(false))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    row_35_handoff_chips_flow_back_lines_and_pick_a_thread
+
+test result: FAILED. 12 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+error: test failed, to rerun pass `-p cooee --test plugins`
+exit 101 : cargo test --workspace --locked
+== RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+    Checking cooee-core v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-core)
+   Compiling cooee-web v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/web)
+ Documenting cooee-core v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-core)
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-terminal)
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-machines)
+ Documenting cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-machines)
+ Documenting cooee-web v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/web)
+ Documenting cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-terminal)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-server)
+ Documenting cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee-server)
+ Documenting cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.30s
+   Generated /Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-29/doc/cooee/index.html and 5 other files
+exit 0 : RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+== cargo deny --locked check
+error: no such command: `deny`
+
+help: a command with a similar name exists: `bench`
+
+help: view all installed commands with `cargo --list`
+help: find a package to install `deny` with `cargo search cargo-deny`
+exit 101 : cargo deny --locked check
+== scripts/line-cap.sh
+non-test lines: 19750 / 21800
+exit 0 : scripts/line-cap.sh
+== scripts/dep-direction.sh
+dependency direction ok
+exit 0 : scripts/dep-direction.sh
+== scripts/hygiene.sh
+no setup-specific names or secrets
+exit 0 : scripts/hygiene.sh
+== cargo run --quiet --locked -p cooee -- theme check packs/themes/* packs/starter
+ok   packs/themes/farm
+ok   packs/themes/garden
+ok   packs/themes/kitchen
+ok   packs/starter
+exit 0 : cargo run --quiet --locked -p cooee -- theme check packs/themes/* packs/starter
+== (cd web && npx tsc -p ts && npx tsc -p ts/tsconfig.sw.json && npx biome check ts)
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-29/web/biome.json:5:13 deserialize  DEPRECATED  ━━━━━━━━━━
+
+  i The use of the recommended field has been deprecated, and will removed in the next major version of Biome. Use preset instead.
+  
+    3 │   "files": { "includes": ["ts/**/*.ts", "ts/**/*.json"] },
+    4 │   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
+  > 5 │   "linter": { "rules": { "recommended": true, "suspicious": { "noExplicitAny": "error" } } }
+      │             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    6 │ }
+    7 │ 
+  
+  i Migrate the configuration with the proper command
+  
+  $ biome migrate
+  
+
+Checked 8 files in 44ms. No fixes applied.
+exit 0 : (cd web && npx tsc -p ts && npx tsc -p ts/tsconfig.sw.json && npx biome check ts)
