@@ -1,0 +1,12 @@
+Decided: owner profiles are read as personas (no file rewrite); a persona keeps a `profile` link so account, settings, env, MCP and policy still apply
+Because: "Today's profiles and agents are migrated (or read as personas) with nothing lost"
+Because: docs/api.md:36
+Decided: the persona's remember tool is a second tool on cooee's own MCP server, guarded by the thread's MCP token
+Because: "The persona adds a note with a `remember` tool through cooee's MCP proxy"
+Because: crates/cooee-server/src/hub.rs:1986
+Decided: a thread's persona is its `profile` id; /threads rows get `persona` when that id is a persona
+Rejected: a separate Thread.persona field in the store — more lines, and profile ids and persona ids already share one namespace
+Rejected: 404 for an unknown persona — a new HubError variant for lines the cap can't spare; 400 with the reason, documented
+Check: crates/cooee/tests/personas.rs drives the real `cooee mcp serve` remember tool and the real POST /threads prompt
+Check: scripts/line-cap.sh is 21943 / 22800 at this head (cap raised by #132 per q958)
+Owner: Personas are on the server for the native app; existing agents carry over untouched; the line cap was raised for it (q958, #132).
