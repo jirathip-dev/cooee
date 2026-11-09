@@ -366,6 +366,7 @@ impl Hub {
         (roots, config): (Vec<PathBuf>, Option<PathBuf>),
         theme: cooee_web::Theme,
         plugins: Vec<Plugin>,
+        apns: Option<cooee_core::Apns>,
     ) -> Result<Arc<Self>, HubError> {
         let store = Store::open(data)?;
         let key = data.join("mcp.key");
@@ -392,7 +393,7 @@ impl Hub {
             store,
             scratch: data.join("scratch"),
             files: data.join("files"),
-            push: Push::new(data),
+            push: Push::new(data).with_apns(apns),
             theme,
             roots: Mutex::new(roots),
             config,
@@ -2143,6 +2144,7 @@ mod tests {
             (Vec::new(), None),
             theme,
             Vec::new(),
+            None,
         )
         .unwrap()
     }

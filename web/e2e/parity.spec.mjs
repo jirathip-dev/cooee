@@ -201,7 +201,8 @@ test("row 6 (#47): a new device asks, a paired one approves with its passkey (a 
   await other.getByRole("button", { name: "ask to pair" }).click();
   await expect(other.locator("#ask-word")).toHaveText(/^[a-z]+ [a-z]+$/);
   const word2 = (await other.locator("#ask-word").textContent()).trim();
-  const card2 = phone.getByRole("group", { name: new RegExp(`asks to pair: ${word2}$`) });
+  // .last(): the newest card; the check word can repeat (16 × 16 words).
+  const card2 = phone.getByRole("group", { name: new RegExp(`asks to pair: ${word2}$`) }).last();
   await card2.getByRole("button", { name: "decline" }).click();
   await expect(card2).toContainText("Declined");
   await expect(card2).toContainText("for 10 s");

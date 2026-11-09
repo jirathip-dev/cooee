@@ -125,6 +125,15 @@ approval, a turn finishes while no page has the thread open, or an agent errors.
 thread's tag, so a newer push replaces the older one. It shows nothing while that thread is open in view. A tap opens
 the thread, and reading the thread past `item` closes it.
 
+APNs (#130): the native app registers its device token with `POST /push/apns`; it sits in `push.json` beside the web
+subscriptions, tied to its device, so unpairing the device drops it. Every push above also goes to each token over
+HTTP/2 (`curl --http2`), `{aps: {alert: {title, body}, thread-id: <thread>}, url, item}` with `apns-collapse-id`
+the thread, signed with a provider JWT (ES256, `kid` the key id, `iss` the team, made again every 50 minutes). A 410
+or `BadDeviceToken` drops the token. The key is the owner's APNs auth key: Apple Developer › Certificates, IDs &
+Profiles › Keys, a new key with Apple Push Notifications service (APNs), downloaded once as `AuthKey_<id>.p8`. It
+lives only in `<data>/apns.p8` (mode 0600, a looser one tightened before use; never the keychain), and `[apns]`
+holds what isn't secret. Without either, nothing goes to APNs and `cooee doctor` warns; it never prints the key.
+
 ## Sign-ins (M3) and accounts
 
 Each provider is one row of the `providers` table in the config: its name, the ACP agent it signs in, its CLI's own
@@ -208,7 +217,7 @@ push key) and pairing, so two instances never share state; both use the one shed
 `cooee-drover` adds its tabs without touching `cooee`. `cooee install --instance <name> --port <p>` writes
 `~/Library/LaunchAgents/dev.cooee.<name>.plist` (KeepAlive, log in the data folder) and the config's `port` if it has
 no config yet, then prints the `launchctl bootstrap`, `tailscale serve` and (if shed isn't running) shed install lines
-for the owner to run. `cooee doctor` checks the service, port, shed, push key and tailnet URL.
+for the owner to run. `cooee doctor` checks the service, port, shed, APNs, push key and tailnet URL.
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -223,6 +232,7 @@ for the owner to run. `cooee doctor` checks the service, port, shed, push key an
 | `theme` | `farm` (when installed, else `terminal`) | The theme a device shows until it picks its own ([themes.md](themes.md)); installed theme packs and own schemes live in `themes/` and `schemes/` beside the config file, themes being built in `themes-dev/`. |
 | `plugins` | none | `[[plugins]]` entries: `name`, `label`, `url`, `module`, `token` ([plugins.md](plugins.md)). |
 | `plugin_index` | the built-in `plugins/index.toml` | The plugin index `cooee plugin add <name>` and Settings › Plugins list ([plugins.md](plugins.md)). |
+| `[apns]` | none | Apple push for the native app: `key_id`, `team_id`, `topic` (the app's bundle id), `env` (`sandbox` for Xcode and TestFlight builds, `production`) and `url` (default Apple's server for each token's env). The key is `<data>/apns.p8`. |
 | `[perf] slow_ms` | `250` | A request taking this many ms or more is a `warn` line in `<data>/perf.log` and on stderr (#53). |
 
 `cooee serve` times every request (method, route pattern, status), every shed call (method, socket or CLI) and each

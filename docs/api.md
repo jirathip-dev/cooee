@@ -105,8 +105,10 @@ profile has an installed `cooee-drover` attached. An unknown id or a broken rule
 | `GET /push/key` | | `{key}`: the VAPID public key, base64url |
 | `POST /push/subscribe` | `{endpoint, p256dh, auth}` (`PushSubscription.toJSON()`) | text |
 | `POST /push/unsubscribe` | `{endpoint}` | text |
-| `GET /push/endpoints` | | this device's endpoints, `string[]` |
+| `GET /push/endpoints` | | this device's endpoints and APNs tokens, `string[]` |
 | `POST /push/test` | `{}` | text |
+| `POST /push/apns` | `{token, env?}`: a native device's APNs token (hex); `env` `sandbox` or `production`, default `[apns] env` | text; 400 for a token that isn't hex |
+| `DELETE /push/apns` | `{token}` | text |
 | `GET /devices` | | `{id, label, created, used, me, by}[]`: `by`, the device that approved its request (empty if none) |
 | `POST /devices/remove` | `{id}` | text |
 | `POST /devices/pair` | `{}` | `{code, link, svg, host}`: a new code (dropping the open one), its link and the link as a QR code |
