@@ -1,0 +1,10 @@
+Decided: APNs sends reuse p256 for the ES256 provider JWT and system curl --http2 for HTTP/2; no new crate
+Because: "prefer what the workspace already has"
+Decided: APNs tokens live in push.json as Sub entries marked `apns`, so unpairing drops them like web subscriptions
+Because: "Kept in `push.json` beside the web subscriptions, tied to the device"
+Decided: optional `[apns] url` (default Apple's host per token env) so tests drive a fake APNs server
+Rejected: a cfg(test)-only host override — production code only for tests; a url key is also an operator override
+Rejected: enabling p256's pkcs8 feature — new crates in the lock; the .p8's SEC1 key is read from the DER directly
+Check: crates/cooee-server/src/push.rs tests drive real curl against a fake APNs listener (headers, 410, BadDeviceToken, no key)
+Check: crates/cooee/tests/instances.rs runs the real `cooee doctor` with no [apns], no key file, and a real openssl key
+Owner: The native app gets Apple push beside web push once you drop apns.p8 in the data folder and fill [apns].
