@@ -1,0 +1,6 @@
+Decided: open the PR on the design lane's two approved commits as-is, no edits after approval
+Because: q907
+Because: "The HTML pages and PNGs are in `docs/design/native-shell/`, with a README listing each PNG and the decision it shows"
+Rejected: re-drawing or touching up the frames — the owner already approved this exact revision
+Check: docs/design/native-shell/README.md lists every PNG in the folder with its decision
+Owner: The approved native-shell design is now in a PR to staging, unchanged.
