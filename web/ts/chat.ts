@@ -1244,8 +1244,7 @@ function chat(main: HTMLElement): void {
   let greeting = state === "connecting";
   function connecting(): void {
     $(".cnx, .cfl", list)?.remove();
-    if (state === "connecting") greeting = true;
-    else if (state !== "working") greeting = false;
+    if (state !== "working" && state !== "connecting") greeting = false;
     const pill = $("#pill");
     if (pill) pill.hidden = state !== "working" || greeting;
     if (after > 0) return;
@@ -1542,6 +1541,8 @@ function chat(main: HTMLElement): void {
 
   function setState(t: Turn): void {
     if (t.state !== state) since = Date.now();
+    // Only a change into connecting shows the connecting line: an answer that came first has already replaced it.
+    if (t.state !== state && t.state === "connecting") greeting = true;
     if (t.state !== state && ["done", "blocked", "error", "unconnected"].includes(t.state)) recopy();
     state = t.state;
     note = t.note ?? "";
