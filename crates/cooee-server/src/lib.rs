@@ -15,6 +15,7 @@ mod passkey;
 mod plugin;
 mod push;
 mod themes;
+mod workflow;
 
 use std::{
     collections::BTreeMap,
@@ -548,6 +549,26 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
     Ok(Answer(blocking(cx, |hub| Ok(hub.list())).await))
+}
+
+/// `GET /workflow` (#127): one row per Workflow issue, its rounds folded in (docs/api.md).
+#[route(GET "/workflow")]
+async fn workflow_rows(cx: &Cx) -> Result<Answer<Vec<workflow::Row>>> {
+    Ok(Answer(blocking(cx, |hub| Ok(workflow::read(hub))).await))
+}
+
+/// `GET /workflow/events`: `row` `{source, group, item}` as one changes (`reset`: some were missed).
+#[route(GET "/workflow/events")]
+async fn workflow_events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>>> {
+    let rows = stream::unfold(hub(cx).row_changes(), |mut rx| async move {
+        let event = match rx.recv().await {
+            Ok(key) => Event::new().event("row").data(key),
+            Err(RecvError::Lagged(_)) => Event::new().event("reset").data("{}"),
+            Err(RecvError::Closed) => return None,
+        };
+        Some((Ok(event), rx))
+    });
+    Ok(Sse::new(rows).keep_alive(KeepAlive::new()))
 }
 
 /// `POST /threads`: a new thread.
@@ -2037,6 +2058,8 @@ pub fn router(
     .page(chat)
     .page(new_chat)
     .route(thread_list)
+    .route(workflow_rows)
+    .route(workflow_events)
     .route(messages)
     .route(events)
     .route(create)

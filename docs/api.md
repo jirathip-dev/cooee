@@ -53,6 +53,27 @@ The event stream's events, each with an id `<boot>.<seq>` to resume after: `item
 (`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), `queue` (the `Queued[]` now), and `reset` (`{}`: too far behind or
 another run; load the newest slice again).
 
+## Workflow (#127)
+
+The Workflow sessions (#33) folded into one row per issue, by their labels `source` + `group` + `item`; the native
+app draws them. An issue leaves once its tool removes its sessions, or once its plugin calls it `done`.
+
+| Call | Body | Answer |
+|---|---|---|
+| `GET /workflow` | | `Issue[]`: `needs_you`, then `failed`, `working`, `ready`; most recently moved first within each |
+| `GET /workflow/events` | SSE | `row` (`{source, group, item}`: that row changed, read `GET /workflow` again) or `reset` (`{}`: some were missed, read it all) |
+
+```ts
+type State = "needs_you" | "failed" | "working" | "ready"; // a thread's blocked, error/unconnected, working/connecting, else
+type Round = { role: string; round: string; state: State; summary: string; age: number; thread: string }; // age: seconds since it moved
+type Issue = { source; group; item; title; url; stage: string; round: string; state: State; age: number; rounds: Round[]; extra?: unknown };
+```
+
+`stage`, `round`, `state` and `age` are the newest round's; `rounds` are oldest first, `thread` opens it as a chat.
+`extra` is what the plugin named as the `source` answers for the issue, as given: its backend's `GET /cooee/workflow`
+answers `{"items": [{group, item, done?: boolean, extra?: any}]}` (a 404, or no such plugin: the label data only).
+cooee reads nothing in `extra`.
+
 ## Folders
 
 | Call | Body | Answer |

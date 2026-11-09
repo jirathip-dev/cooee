@@ -220,6 +220,8 @@ pub struct Hub {
     proposals: Mutex<HashMap<(String, u64), Server>>,
     /// Each server's tools as last listed, for the profile sheet; held while the registry is written.
     tools: Mutex<HashMap<String, cooee_web::Tools>>,
+    /// A Workflow session's `{source, group, item}` as it changes or goes (#127).
+    rows: broadcast::Sender<String>,
 }
 
 pub(crate) fn now() -> u64 {
@@ -344,9 +346,13 @@ impl Live {
                     store.append(&self.meta.id, &item)?;
                     self.emit("item", json!(item).to_string());
                 }
-                Change::Text(text) => self.emit("text", json!({ "text": text }).to_string()),
+                Change::Text(text) => {
+                    self.emit("text", json!({ "text": text }).to_string());
+                    continue;
+                }
                 Change::State(turn) => self.emit("state", json!(turn).to_string()),
             }
+            hub.row_changed(self.meta.workflow.as_ref());
         }
         Ok(())
     }
@@ -404,6 +410,7 @@ impl Hub {
             mcp_key,
             proposals: Mutex::default(),
             tools: Mutex::default(),
+            rows: broadcast::channel(RING).0,
         });
         let follower = Arc::clone(&hub);
         thread::spawn(move || follower.follow());
@@ -517,6 +524,7 @@ impl Hub {
                 if live.meta.workflow.is_none() || listed || live.moved > at {
                     continue;
                 }
+                self.row_changed(live.meta.workflow.as_ref());
                 live.meta.id.clone()
             };
             lock(&self.threads).remove(&id);
@@ -1647,6 +1655,32 @@ impl Hub {
             .collect();
         rows.sort_by_key(|r| std::cmp::Reverse(r.at));
         rows
+    }
+
+    /// The Workflow sessions' rows (#127), each with when it started: its first item's time, else when it was loaded.
+    pub fn sessions(&self) -> Vec<(Summary, u64)> {
+        let threads = lock(&self.threads).clone();
+        let rows = self.list().into_iter().filter(|r| r.workflow.is_some());
+        rows.filter_map(|r| {
+            let live = lock(threads.get(&r.id)?);
+            let start = live.chat.items.first().map_or(live.moved, |i| i.at);
+            drop(live);
+            Some((r, start))
+        })
+        .collect()
+    }
+
+    /// Tells `GET /workflow/events` that Workflow session `w`'s row changed (none: not one).
+    fn row_changed(&self, w: Option<&Workflow>) {
+        if let Some(w) = w {
+            let key = json!({ "source": w.source, "group": w.group, "item": w.item });
+            let _ = self.rows.send(key.to_string());
+        }
+    }
+
+    /// The Workflow rows' changes from now on (#127).
+    pub fn row_changes(&self) -> broadcast::Receiver<String> {
+        self.rows.subscribe()
     }
 
     /// The thread's meta.

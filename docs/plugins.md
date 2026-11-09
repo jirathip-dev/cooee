@@ -47,7 +47,8 @@ thread ids it lists as that agent's (its side threads, the newest its ongoing ch
 under the plugin's name, named by its `label`. That list replaces the manifest's: a profile it doesn't list isn't
 offered; a 404 offers the manifest's, any other answer (or a backend not up yet) none. When a thread starts as one of
 the plugin's profiles, its backend gets `POST /cooee/thread-started` `{"thread", "profile"}` (the profile's name), so
-it can attach the thread.
+it can attach the thread. A plugin named as a Workflow tool's `source` label may answer `GET /cooee/workflow` with
+what that tool knows of its issues (`{"items": [{group, item, done?, extra?}]}`, [api.md](api.md#workflow-127)).
 
 - `cooee plugin add <name | git-url> [--rev R] [--yes]` clones it into `<data>/plugins/<name>/repo`, shows what it will
   run (the URL, the commit, the exact build and run commands, and "not reviewed" when it isn't in the index) and asks

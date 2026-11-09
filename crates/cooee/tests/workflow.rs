@@ -4,7 +4,11 @@
 
 mod support;
 
-use std::{thread, time::Duration};
+use std::{
+    io::{BufRead, BufReader, Write},
+    thread,
+    time::Duration,
+};
 
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, is_item, scratch, version};
@@ -172,4 +176,87 @@ fn a_lane_goes_once_its_tool_removes_it() {
         .collect();
     roles.sort();
     assert_eq!(roles, ["impl", "rev"]);
+}
+
+/// A `drover` plugin whose `GET /cooee/workflow` answers `items`.
+fn drover_plugin(items: Value) -> String {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    thread::spawn(move || {
+        for conn in listener.incoming().flatten() {
+            let mut r = BufReader::new(conn);
+            let mut head = String::new();
+            r.read_line(&mut head).unwrap();
+            let mut line = String::new();
+            while r.read_line(&mut line).unwrap() > 2 {
+                line.clear();
+            }
+            let (status, body) = if head.starts_with("GET /cooee/workflow ") {
+                ("200 OK", json!({ "items": items }).to_string())
+            } else {
+                ("404 Not Found", String::new())
+            };
+            let _ = write!(r.into_inner(), "HTTP/1.0 {status}\r\n\r\n{body}");
+        }
+    });
+    format!(
+        "[[plugins]]\nname = \"drover\"\nlabel = \"Drover\"\nurl = \"http://127.0.0.1:{port}\"\nmodule = \"/tab.js\"\ntoken = \"drover-token-0123456789\"\n"
+    )
+}
+
+/// #127: `GET /workflow` folds an issue's lanes into one row with its rounds, carries its plugin's `extra` as given,
+/// drops the issue the plugin calls done, and `/workflow/events` names a row as it changes.
+#[test]
+fn workflow_folds_an_issues_lanes_into_one_row_and_a_done_one_leaves() {
+    let dir = scratch("workflow-rows");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let given = json!([
+        { "group": "cooee", "item": "#33", "extra": { "pr": 60, "ask": "q9" } },
+        { "group": "cooee", "item": "#31", "done": true },
+    ]);
+    let cooee = Cooee::start_with(&dir, &shed.dir, &drover_plugin(given));
+    shed.lane("lane-33-impl", &labels("#33", "impl", "1"));
+    shed.lane("lane-33-rev", &labels("#33", "rev", "1"));
+    shed.lane("lane-31-rev", &labels("#31", "rev", "2"));
+    shed.lane("lane-32-impl", &labels("#32", "impl", "1"));
+    workflow(&cooee, 4);
+    let mut events = cooee.stream("/workflow/events", "");
+    shed.report("lane-32-impl", "blocked", None);
+    let row = events.until(|e| e.event == "row" && e.data["item"] == "#32");
+    assert_eq!(
+        row.last().unwrap().data,
+        json!({ "source": "drover", "group": "cooee", "item": "#32" })
+    );
+
+    let rows = cooee.json("/workflow");
+    let rows = rows.as_array().unwrap();
+    let items: Vec<_> = rows.iter().map(|r| (&r["item"], &r["state"])).collect();
+    assert_eq!(
+        items,
+        [
+            (&json!("#32"), &json!("needs_you")),
+            (&json!("#33"), &json!("ready"))
+        ]
+    );
+    let r33 = &rows[1];
+    assert_eq!(r33["extra"], json!({ "pr": 60, "ask": "q9" }));
+    assert_eq!(
+        (&r33["title"], &r33["url"]),
+        (
+            &json!("cooee #33"),
+            &json!("https://github.com/o/cooee/pull/60")
+        )
+    );
+    let mut roles: Vec<_> = r33["rounds"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| (r["role"].as_str().unwrap(), r["thread"].as_str().unwrap()))
+        .collect();
+    roles.sort_unstable();
+    assert_eq!(
+        roles,
+        [("impl", "w-lane-33-impl"), ("rev", "w-lane-33-rev")]
+    );
+    assert!(rows[0].get("extra").is_none());
 }
