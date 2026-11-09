@@ -14,7 +14,7 @@ const [chrome, re] = process.argv.slice(2);
 // [page, frame, width, modes]: the PNG is `<frame>-390-<mode>.png`, or `<frame without wide->-1440.png`.
 const BOTH = ['dark', 'light'];
 const VIEWS = [
-  ['screens', 'home', 390, BOTH], ['screens', 'conductor', 390, BOTH], ['screens', 'queue', 390, BOTH],
+  ['screens', 'home', 390, BOTH], ['screens', 'conductor', 390, BOTH], ['screens', 'cards', 390, BOTH], ['screens', 'queue', 390, BOTH],
   ['screens', 'queue-live', 390, ['light']], ['screens', 'queue-offline', 390, BOTH], ['screens', 'attach', 390, BOTH], ['screens', 'events', 390, BOTH], ['screens', 'confirm', 390, ['dark']],
   ['screens', 'hello', 390, BOTH], ['screens', 'wide', 1440, BOTH], ['blocks', 'blocks', 1440, ['light']],
 ];

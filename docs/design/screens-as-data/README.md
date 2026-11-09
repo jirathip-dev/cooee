@@ -6,7 +6,7 @@ answers JSON works (Python, Node, Rust, shell). Every plugin gets cooee's look, 
 accessibility (Dynamic Type, VoiceOver labels, 44 pt targets) for free, because the app draws everything. **No
 third-party code runs in the app, only data.** The `web` block stays as the escape hatch. The frozen PWA keeps its
 module tabs as they are, and herdsman's lifeboat page (#725) is plain and draws no blocks. Owner decisions: q941,
-q943, q946/q947, q954, and the answers to revision 0's questions (below). **Nothing is built** until the Swift spike
+q943, q946/q947, q954, q984, q985, and the answers to revision 0's questions (below). **Nothing is built** until the Swift spike
 (cooee#124) decides.
 
 **Proof it fits:** drover's Queue, Events and asks are written as fixtures (`fixtures/*.json`). One mockup renderer
@@ -34,26 +34,39 @@ whole plugin in 22 lines of Python.
 - **Permissions:** the manifest declares what a plugin may do. The app shows that list when the owner attaches the
   plugin to a persona, and refuses anything not on it (§ Permissions, `attach-*`).
 
+## Revision 3 (q984, q985)
+
+- **The header strip (q984):** a persona's plugin places are chips on a strip under its chat header, as in cooee#124's
+  `chat-conductor` frame (`apple/design/v1/` on branch `issue-124`). The header stays one line however many plugins
+  the persona has, and the strip scrolls sideways. The place `header-button` is renamed **`header-strip`**, its
+  2-per-persona limit is gone (open question 1, answered) and its `icon` is dropped: a chip is its label and count.
+- **One card set (q985): cooee's own cards are blocks.** Its chat cards (choice, config, secret, run) and a plugin's
+  cards are the same JSON, drawn by one renderer: #124's card views become the block renderer. A card gets a
+  `kind` (`ask`, `run`, `secret`, `config`), and three blocks are added: **`run`** (the command, its sha, folder and
+  what it touches; why is the card's title), **`secret`** (one masked field, sent to the plugin only) and
+  **`config`** (a plugin's settings as label · value rows, Save). New frame: `cards-390-*`.
+
 ## The PNGs and the decision each shows
 
 | PNG | shows | decision |
 |---|---|---|
 | `home-390-light.png`, `-dark.png` | Home (q954): the owner's avatar, `cooee`, `+`, the pinned personas, the chats. The avatar menu is open: Settings, Machines + Terminal, then **plugins**: drover (attached to `Conductor`), hello, and Add a plugin…. | A plugin's optional `menu-row` lives under the avatar menu's Plugins |
-| `conductor-390-light.png`, `-dark.png` | The Conductor chat. The header carries the persona, then drover's **Queue** (count `7`) and **Events** buttons. drover's asks are **chat cards** at the end of the chat: the design card (images, approve · recommended / revise / reject, a revise note), a routine ask (options, other…, its countdown), and needs-human. The run card is just above. | `header-button` and `chat-cards` places; asks are cards, not a screen |
-| `queue-390-light.png`, `-dark.png` | `queue.json` as a sheet over the chat: `⋯` (Fleets…, Drive all now), Queue, Done. Then the repo `chips`, a `stat` row with sparklines, and the fleet `card` with its rows. **Each issue row holds its lane and rounds** (`impl ✓ · review 1 ✗ · fix 1 ▸ herdsman-impl-641 · mini`), the stage badge and a live age. The blocked chain is indented. | A header button opens the plugin's screen as a sheet; Fleets moves under `⋯` |
-| `queue-live-390-light.png` | The same sheet after `queue-stream.json`'s three events: `#722` merged to `review 1` (its new lane), `#708` removed, `#456` replaced (now in impl), `#686`'s subtitle merged, and the header button's count set to 6. | Live updates: ops keyed by block id, not a re-fetch |
+| `conductor-390-light.png`, `-dark.png` | The Conductor chat. The header is one line (the persona, `⋯`); under it, drover's **Queue** (count `7`) and **Events** chips on the **header strip**, as in #124's `chat-conductor` frame. drover's asks are **chat cards** at the end of the chat, each with the app's `ASK` kind line: the design card (images, approve · recommended / revise / reject, a revise note), a routine ask (options, other…, its countdown), and needs-human. The run card is just above. | `header-strip` and `chat-cards` places (q984); asks are cards, not a screen |
+| `cards-390-light.png`, `-dark.png` | **cooee's own cards as blocks** (`fixtures/own-cards.json`), in the Researcher chat as in #124's `chat-cards-more`: a `config` card (EDGAR settings, Save), a `secret` card (`EDGAR_API_KEY` masked, the app's lock line `Sent to the edgar plugin only, never to the agent`, Send to plugin) and a `run` card (why, `$ uv pip install …`, sha, folder, what it touches, Approve / Deny, `lapses in 11m`). Each kind line (`SECRET · EDGAR`) is the app's. | One card set (q985): #124's card views are the block renderer |
+| `queue-390-light.png`, `-dark.png` | `queue.json` as a sheet over the chat: `⋯` (Fleets…, Drive all now), Queue, Done. Then the repo `chips`, a `stat` row with sparklines, and the fleet `card` with its rows. **Each issue row holds its lane and rounds** (`impl ✓ · review 1 ✗ · fix 1 ▸ herdsman-impl-641 · mini`), the stage badge and a live age. The blocked chain is indented. | A strip chip opens the plugin's screen as a sheet; Fleets moves under `⋯` |
+| `queue-live-390-light.png` | The same sheet after `queue-stream.json`'s three events: `#722` merged to `review 1` (its new lane), `#708` removed, `#456` replaced (now in impl), `#686`'s subtitle merged, and the Queue chip's count set to 6. | Live updates: ops keyed by block id, not a re-fetch |
 | `queue-offline-390-light.png`, `-dark.png` | The Queue sheet with the Mac unreachable: its last answer under an amber line (`Mac unreachable · drover's Queue as of 5m ago · actions are off until it's back`, Retry). The chips, buttons and chevrons are greyed; the data stays readable. | Offline shows the last answer and its age, never a blank sheet; no action is sent |
-| `attach-390-light.png`, `-dark.png` | Attaching drover to Conductor: the app's own sheet (Cancel · Attach drover · Attach), drawn from the manifest's `[permissions]`. It shows the version, commit and source, then **it may** (header buttons Queue and Events, cards in Conductor's chats, notifications, a Plugins row), **actions** (the destructive ones in red: always confirm first), and **network** (the hosts it calls, where it runs). | The owner sees every permission once, at attach; anything else is refused |
+| `attach-390-light.png`, `-dark.png` | Attaching drover to Conductor: the app's own sheet (Cancel · Attach drover · Attach), drawn from the manifest's `[permissions]`. It shows the version, commit and source, then **it may** (chips Queue and Events on the header strip, cards in Conductor's chats, notifications, a Plugins row), **actions** (the destructive ones in red: always confirm first), and **network** (the hosts it calls, where it runs). | The owner sees every permission once, at attach; anything else is refused |
 | `events-390-light.png`, `-dark.png` | `events.json` as a sheet: kind chips, today's events newest first (merge, verdict, ask, spawn, FAIL, round limit), each with the theme's state figure and its time. A tap opens the PR, or a lane's chat (`tap: thread`). | Events is a plain list screen; its stream inserts rows |
 | `confirm-390-dark.png` | `merge anyway` on the needs-human card: the app's own action sheet (title, message, red Merge, Cancel). | Destructive confirms are data; the app draws them and the plugin can't skip them |
 | `hello-390-light.png`, `-dark.png` | **A third-party plugin:** `hello.py`'s screen as a sheet from its avatar-menu row: markdown, a stat and a Wave button. A tap POSTs `wave`, and the answer's `merge` op bumps the stat. | The scale: 22 lines of Python, no frontend |
-| `wide-1440-light.png`, `-dark.png` | The Mac window: the sidebar (home: avatar, pinned personas, chats), the Conductor chat with its header buttons, and the Queue sheet as a centred panel. The same JSON as on the iPhone. | One JSON per screen; the app lays it out per size |
-| `blocks-1440.png` | The block set: each block's JSON beside its drawing, with `hello.py` first. Full height. | The block set v1 |
+| `wide-1440-light.png`, `-dark.png` | The Mac window: the sidebar (home: avatar, pinned personas, chats), the Conductor chat with its header strip, and the Queue sheet as a centred panel below the strip. The same JSON as on the iPhone. | One JSON per screen; the app lays it out per size |
+| `blocks-1440.png` | The block set: each block's JSON beside its drawing, with `hello.py` first, now with `card.kind`, `run`, `secret` and `config`. Full height. | The block set v1, one card set |
 
 `screens.html` holds the frames and `blocks.html` the catalogue. Serve the repo root over http (the pages fetch
 `web/`, `packs/` and `../native-shell/ns.css` for the tokens). `?f=<frame>&mode=dark|light` shows one frame.
 `node docs/design/screens-as-data/shoot.mjs <chrome-headless-shell>`, run from the repo root, regenerates every PNG
-and checks each one for sideways scroll, anything past the right edge, and cut text without an ellipsis. **All 19
+and checks each one for sideways scroll, anything past the right edge, and cut text without an ellipsis. **All 21
 pass.** The design card's thumbnails are the shots themselves, so a fresh checkout runs it twice.
 **Look:** Modern, farm scheme, drawn on the design system's tokens. The home layout (q954) is drawn here for the first
 time, small; its own design is not this issue. **Data:** illustrative, from real issues.
@@ -115,6 +128,17 @@ whole-card `tap` is allowed.
   "blocks": [ { "type": "text", "markdown": "Next pass in 3 min." } ] }
 ```
 
+**One card set (q985): cooee's own cards are blocks.** The chat cards cooee draws for itself (an agent's
+permission ask, a plugin's settings, a secret, a run card) and the cards a plugin posts are the same JSON, drawn by
+one renderer: #124's card views become the block renderer. A card's **`kind`** (`ask`, `run`, `secret` or `config`)
+gives it the app's kind line (an icon, `RUN CARD`, and the poster's name, `· EDGAR`) and its edge colour. The app
+writes that line from who posted the card, so no plugin can pass as cooee or as another plugin.
+```json
+{ "type": "card", "id": "q960", "kind": "ask", "tone": "warn", "title": "cooee #125 · design",
+  "blocks": [ { "type": "choice", "id": "a960", "action": "answer", "recommended": "approve",
+    "options": [ { "value": "approve", "label": "approve" }, { "value": "revise", "label": "revise" } ] } ] }
+```
+
 **choice**: one answer. The `recommended` option is drawn first and marked. `other` adds a free-text box (`"for":
 "revise"` ties it to one option). `default` shows its countdown. An option can carry `values` (a run card's `sha`)
 and a `confirm`. This is today's `POST /plugin/card` choice, as a block.
@@ -135,6 +159,33 @@ In a sheet, the sheet's done action sends every form in it.
   { "type": "toggle", "name": "drive", "label": "Drive", "value": true },
   { "type": "picker", "name": "host", "label": "Host", "value": "mini", "options": ["mini", "air"] },
   { "type": "secret", "name": "GH_TOKEN", "label": "GH_TOKEN", "set": true } ] }
+```
+
+**config** (q985): a plugin's settings, in a `config` card: form fields (`text`, `toggle`, `picker`) drawn as label ·
+value rows, and a Save button. Its values go back as a form's. A secret is never a config field: it gets its own
+`secret` block, so the settings can be shown to the agent and the key never is.
+```json
+{ "type": "config", "id": "edgar", "submit": { "label": "Save", "action": "save-config" }, "fields": [
+  { "type": "text", "name": "user_agent", "label": "User agent", "value": "cooee research" },
+  { "type": "picker", "name": "rate", "label": "Rate", "value": "5 / s", "options": ["1 / s", "5 / s", "10 / s"] } ] }
+```
+
+**secret** (q985): one masked field, in a `secret` card: the form's `secret` field on its own. The app draws the lock
+line (`Sent to the edgar plugin only, never to the agent`) and **Send to plugin**, and offers Face ID or a paste. The
+value goes in that one `POST /action` to the plugin's backend and nowhere else: not the chat, not the agent, not a
+log, not the offline cache. Once set, the plugin answers `"set": true` and the field shows `set ✓ · paste to replace`.
+```json
+{ "type": "secret", "id": "EDGAR_API_KEY", "name": "EDGAR_API_KEY", "action": "set-secret" }
+```
+
+**run** (q985): a run card's body, in a `run` card whose title says why. It carries the exact `command`, its `sha`,
+the folder (`dir`), what it `touches`, and when it lapses (`until`). The app draws **Approve** and **Deny** itself and
+sends the `sha` the owner saw (`{"choice": "approve", "sha": …}`), so the plugin refuses it if the command changed.
+`run-card` is always in the manifest's `destructive` list, so Approve always gets the app's confirm.
+```json
+{ "type": "run", "id": "r7", "action": "run-card", "command": "uv pip install -r plugins/edgar/requirements.txt",
+  "sha": "3b7e0c55a1d9", "dir": "~/research", "touches": "~/research/.venv only, no network after",
+  "until": "2026-11-09T09:52:00Z" }
 ```
 
 **button**: `style` is `primary`, `plain` or `destructive`, with an `action` and its `values`. A `confirm`
@@ -199,7 +250,7 @@ A screen with `stream` opens it as server-sent events through the proxy (today's
 | `{"op": "remove", "id"}` | removes it, animated |
 | `{"op": "insert", "into", "before"\|"after", "block"}` | adds a block to the list or section `into`, at the end by default |
 | `{"op": "screen", "screen"}` | replaces the whole screen (a gap in `seq`, or a big change) |
-| `{"op": "badge", "count"}` / `{"op": "dot", "on"}` | the count or dot on the place's header button (or menu row) |
+| `{"op": "badge", "count"}` / `{"op": "dot", "on"}` | the count or dot on the place's strip chip (or menu row) |
 
 The client resumes with `Last-Event-ID: <seq>`. A plugin that can't resume answers a `screen` op first. Without a
 stream, pull to refresh re-GETs the screen. `queue-stream.json` is drawn in `queue-live-390-light.png`.
@@ -224,20 +275,23 @@ A plugin declares its places in its manifest (or answers `GET /cooee/places` in 
 today). `fixtures/places.json` is drover's:
 ```json
 { "places": [
-  { "type": "header-button", "id": "queue", "persona": "conductor", "label": "Queue", "icon": "queue", "screen": "/screens/queue" },
-  { "type": "header-button", "id": "events", "persona": "conductor", "label": "Events", "icon": "events", "screen": "/screens/events" },
+  { "type": "header-strip", "id": "queue", "persona": "conductor", "label": "Queue", "screen": "/screens/queue" },
+  { "type": "header-strip", "id": "events", "persona": "conductor", "label": "Events", "screen": "/screens/events" },
   { "type": "chat-cards", "persona": "conductor" },
   { "type": "menu-row", "label": "drover", "subtitle": "herdsman's fleets", "screen": "/screens/fleets" } ] }
 ```
 
-- **`header-button`**: an icon button in a persona's chat header (at most 2 per persona) that opens `screen` as a
+- **`header-strip`** (q984): a chip, its `label` and an optional count, on the strip under a persona's chat header,
+  as in #124's `chat-conductor` frame. The header stays one line; the strip holds every plugin's chips in the
+  manifest's order and scrolls sideways when they don't fit. A tap opens `screen` as a
   sheet: a page sheet on the iPhone, a centred panel on the Mac. The sheet's bar is the screen's toolbar actions
-  (`⋯` menus), its title, and Done. A pushed screen inside it (`tap: open`) gets `‹`. The button's count comes from
+  (`⋯` menus), its title, and Done. A pushed screen inside it (`tap: open`) gets `‹`. The chip's count comes from
   the screen's stream (`{"op": "badge"}`).
 - **`chat-cards`**: the plugin may post cards into that persona's chats: `POST /plugin/card {"thread", "card":
   <card block>}`, with the card's blocks (text, images, choice, buttons). Later ops on its ids (`POST /plugin/ops
   {"thread", "ops"}`) update it in place, and its actions come back as the same `POST /action`. Today's
-  `/plugin/card` forms (choice, run card, secret, config) become card blocks. A card can also be pushed (`push`).
+  `/plugin/card` forms (choice, run card, secret, config) become card blocks, the same ones cooee draws
+  for itself (one card set, q985). A card can also be pushed (`push`).
 - **`menu-row`** (optional): a row under the avatar menu's **Plugins**. It opens `screen` as a sheet. A plugin with
   no persona (hello) lives only here.
 - A plugin is attached to the personas its places name. The owner can move it to another persona in its Plugins
@@ -252,7 +306,7 @@ today). `fixtures/places.json` is drover's:
 - **When it shows:** a GET, stream or action that can't reach the Mac (off the tailnet, the Mac asleep) or the plugin
   (its backend down, a 5xx, a timeout over 5 s). The sheet opens at once on the kept answer, with one line on top:
   **who** is unreachable (`Mac unreachable` or `drover isn't answering`), `as of 5m ago` (ticking), and **Retry**. A
-  header button keeps its last count, greyed. A screen never fetched before shows the line and an empty-state text,
+  strip chip keeps its last count, greyed. A screen never fetched before shows the line and an empty-state text,
   not a spinner forever.
 - **Actions are off:** buttons, choices, chips, swipes, forms and taps that would POST are greyed and not focusable.
   A tap on one shakes the offline line. Nothing is queued to send later: an answer must be made against fresh data.
@@ -264,7 +318,7 @@ today). `fixtures/places.json` is drover's:
 
 ```toml
 [permissions]                                   # cooee-plugin.toml
-places = ["header-button", "chat-cards", "menu-row"]
+places = ["header-strip", "chat-cards", "menu-row"]
 push = true                                     # notifications, tag drover
 actions = ["filter", "drive", "pause", "drive-all", "top", "answer", "run-card", "needs-human",
            "save-fleets", "stop", "drop", "remove-fleet"]
@@ -310,9 +364,10 @@ older app.
 
 ## Suggested build issues, after cooee#124 decides
 
-1. **SwiftUI renderer:** the blocks, ops and `POST /action` (`List`, `Section`, `Menu`, `Toggle`,
+1. **SwiftUI renderer:** #124's card views (choice, config, secret, run) generalised into the block renderer, so
+   cooee's own cards and plugins' cards are one set; then the blocks, ops and `POST /action` (`List`, `Section`, `Menu`, `Toggle`,
    `confirmationDialog`, `.swipeActions`, `.sheet`), with this folder's fixtures as snapshot tests on iPhone and Mac.
-2. **Places:** header buttons, chat cards (and `/plugin/card` moving to card blocks), the avatar menu's Plugins rows,
+2. **Places:** the header strip, chat cards (and `/plugin/card` moving to card blocks), the avatar menu's Plugins rows,
    and attaching a plugin to a persona.
 3. **Schema, `[permissions]` and `cooee plugin check`:** the attach sheet, and the refusals.
 4. **Offline:** the per-screen cache, the offline line, and actions off.
@@ -322,8 +377,7 @@ older app.
 
 ## Open questions for the owner
 
-1. **Header buttons per persona.** **Recommend:** at most 2 per persona, with more going under one `⋯`, so the
-   header stays readable on the iPhone. The alternative is no limit, with the app folding extras into `⋯`.
+1. ~~Header buttons per persona~~: answered by q984, the header strip (no limit; it scrolls).
 2. **Who may post chat cards.** **Recommend:** only into chats of the personas the plugin is attached to. The owner
    sees the attachment in its Plugins row. The alternative is any chat a plugin started.
 3. **A card's push.** **Recommend:** a card with `"push": true` notifies, as approvals do today, and the rest stay

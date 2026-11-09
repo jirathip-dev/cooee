@@ -52,10 +52,19 @@ const B = {
       <span class=sk>${esc(b.title)}${sub ? `<small${tone(sub.tone)}>${esc(sub.text)}</small>` : ''}</span>${b.badge ? `<span class=sbd${tone(b.badge.tone)}>${esc(b.badge.text)}</span>` : ''}${
       b.value != null ? `<span class=sv>${val(b.value)}</span>` : ''}${acc ? '<span class=cv></span>' : ''}</a>`;
   },
-  card: b => `<div class=ak${tone(b.tone)} data-id="${b.id || ''}"><div class=cd><span class=cdt>${esc(b.title)}</span>${
+  card: b => { const k = KIND[b.kind];
+    return `<div class=ak${tone(b.tone || k?.[2])} data-id="${b.id || ''}">${k ? `<p class=ckd>${ic(k[0])}<b>${k[1]}</b>${FROM && b.kind !== 'ask' ? ` · ${esc(FROM)}` : ''}</p>` : ''}${b.title || b.meta ? `<div class=cd><span class=cdt>${esc(b.title || '')}</span>` : '<div hidden>'}${
       b.badge ? `<span class=sbd${tone(b.badge.tone)}>${esc(b.badge.text)}</span>` : ''}${b.meta ? `<span class=cdm>${esc(b.meta)}</span>` : ''}${
       b.buttons ? `<span class=cdb>${b.buttons.map(x => `<button type=button>${esc(x.label)}</button>`).join('')}</span>` : ''}${
-      b.subtitle ? `<span class=cds>${esc(b.subtitle)}</span>` : ''}</div>${all(b.blocks)}</div>`,
+      b.subtitle ? `<span class=cds>${esc(b.subtitle)}</span>` : ''}</div>${all(b.blocks)}</div>`; },
+  // Revision 3 (q985): cooee's own cards are blocks. The app draws the lock line, Approve / Deny and the lapse itself.
+  run: b => `<pre class="diff rcm">$ ${esc(b.command)}</pre><p class=rmt>${b.sha ? `<code>sha ${esc(b.sha)}</code><br>` : ''}in ${esc(b.dir)}<br>touches ${esc(b.touches)}</p>
+    <p class=rbt><button type=button>Approve</button><button type=button data-tone=bad>Deny</button></p>${b.until ? `<p class=ds data-tone=warn>lapses in ${rel(b.until)}</p>` : ''}`,
+  secret: b => `<p class=snm>${esc(b.label || b.name)}</p><label class=sfl><input type=password aria-label="${esc(b.name)}" value="${b.set ? '' : 'xxxxxxxxxxxxx'}" placeholder="${b.set ? 'set ✓ · paste to replace' : ''}">${ic('face')}</label>
+    <p class=slk>${ic('lock')}Sent to ${FROM ? `the ${esc(FROM)} plugin` : 'this plugin'} only, never to the agent</p><button type=button class=sbp>${esc(b.submit?.label || 'Send to plugin')}</button>`,
+  config: b => `<div class=cfg>${b.fields.map(f => `<label class=cfr><span>${esc(f.label)}</span>${f.type === 'toggle' ? `<i class=tg role=switch aria-checked=${!!f.value}></i>`
+    : f.type === 'picker' ? `<span class=pkv>${esc(f.value)}</span>` : `<input value="${esc(f.value ?? '')}" placeholder="${esc(f.placeholder || '')}">`}</label>`).join('')}</div>
+    <button type=button class=sbp>${esc(b.submit?.label || 'Save')}</button>`,
   choice: b => {
     const o = [...b.options].sort((x, y) => (y.value === b.recommended) - (x.value === b.recommended));
     return `${b.question ? `<p class="aq${inCard ? '' : ' txt'}">${esc(b.question)}</p>` : ''}<p class=chc${inCard ? '' : ' style="margin:8px 16px"'}>${o.map(x =>
@@ -78,7 +87,9 @@ const B = {
   images: b => `<div class="sim${b.size === 'large' ? ' lg' : ''}">${b.items.map(i => `<figure><img src="${src(i.src)}" alt="${esc(i.alt)}">${i.caption ? `<figcaption class=sic>${esc(i.caption)}</figcaption>` : ''}</figure>`).join('')}</div>`,
   web: b => `<div class=wv style="--h:${b.height || 180}px"><b>web · sandboxed</b>${esc(b.src)}</div>`,
 };
-let inCard = false;
+let inCard = false, FROM = '';
+// A card's kind (q985): the app draws its label and the poster's name, which no plugin can set.
+const KIND = { ask: ['hand', 'ask', 'bad'], run: ['term', 'run card', 'warn'], secret: ['key', 'secret', 'warn'], config: ['gear', 'config', 'info'] };
 const one = b => { if (b.type !== 'card') return B[b.type](b); const was = inCard; inCard = true; const h = B.card(b); inCard = was; return h; };
 const all = bs => (bs || []).map(one).join('');
 
@@ -115,7 +126,11 @@ const CHATS = [['cond', 'Conductor', 'run card c41: delete #48\'s wip snapshots'
   ['cond', 'Conductor · lifeboat page (#725)', 'herdsman#725 queued after #553', '1h'], ['chief', 'Chief · Q3 board deck', 'Draft 2 is in deck.md', '2d']];
 const ICON2 = { queue: '<path d="M9.5 6h11M9.5 12h11M9.5 18h11"/><circle cx="4.5" cy="6" r="1.4"/><circle cx="4.5" cy="12" r="1.4"/><circle cx="4.5" cy="18" r="1.4"/>',
   events: '<path d="M3 12h4l3-7 4 14 3-7h4"/>', more: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
-  new: '<path d="M12 5v14M5 12h14"/>' };
+  new: '<path d="M12 5v14M5 12h14"/>', hand: '<path d="M8 13V6.5a1.5 1.5 0 0 1 3 0V12m0-7a1.5 1.5 0 0 1 3 0v7m0-5.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-.5a6 6 0 0 1-4.6-2.2L3.5 15a1.5 1.5 0 0 1 2.3-1.9L8 15"/>',
+  term: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m7 10 3 2-3 2M12 15h4"/>', key: '<circle cx="8" cy="8" r="4"/><path d="M11 11l9 9M16 16l2-2M18 18l2-2"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  face: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M9 9v1M15 9v1M12 9v4h-1M9 16a4 4 0 0 0 6 0"/>' };
 const ic = k => `<svg class=hic viewBox="0 0 24 24" aria-hidden=true>${ICON2[k]}</svg>`;
 let qBadge = 7;
 const home = () => `<div class=scr><div class=in><div class=pin>${PERS.map(([id, n]) => `<a href="#">${av(id)}<span>${n}</span></a>`).join('')}</div>
@@ -126,14 +141,23 @@ const menu = () => `<div class=mdim></div><div class="agm am" role=menu aria-lab
   <a class=gr href="#"><i>⚙</i><span class=sk>Settings</span></a><a class=gr href="#"><i>▣</i><span class=sk>Machines + Terminal</span></a><div class=gp></div>
   <p class=gh>plugins</p><a class=gr href="#"><i>◎</i><span class=sk>drover</span><span class=sv>Conductor</span></a><a class=gr href="#"><i>◎</i><span class=sk>hello</span></a>
   <a class="gr lk" href="#"><i>+</i><span class=sk>Add a plugin…</span></a></div>`;
-const chathead = () => `<header class="nb sc ch2"><a class=bk href="#"><b>‹</b></a><span class=ph2>${av('cond')}<span><b>Conductor</b><small class=ds>drover · 3 fleets</small></span></span>
-  <span class=hb><a class=hbt href="#" aria-label="Queue">${ic('queue')}<i class=tbd>${qBadge}</i></a><a class=hbt href="#" aria-label="Events">${ic('events')}</a></span></header>`;
-const chat = async () => { const cards = await json('fixtures/cards.json');
-  return `<div class=cvw><ol class=tc aria-label=messages>
-    <li class="blk me"><div class=md>What's waiting on me?</div><span class=ct>09:37</span></li>
-    <li class="blk ai"><b class=k>Conductor</b><div class=md>Four things: a run card that lapses at 09:52, #125's design, a routine ask on #722 and synergy #2708 at its round limit.</div></li>
-    ${cards.map(c => `<li class=ccd>${one(c)}</li>`).join('')}</ol>
-    <form class=tw><button type=button class=att aria-label=attach>+</button><textarea rows=1 aria-label=message placeholder="message Conductor"></textarea><button type=button aria-label=send>↑</button></form></div>${chathead()}`; };
+// Revision 3 (q984): a persona's plugin places are chips on a strip under its chat header (#124's chat-conductor
+// frame): the header stays one line however many plugins it has; the strip scrolls sideways.
+const CHAT = {
+  chat: { p: 'cond', name: 'Conductor', sub: 'drover · 3 fleets', from: 'drover', cards: 'fixtures/cards.json', strip: true, me: "What's waiting on me?",
+    ai: 'Four things: a run card that lapses at 09:52, #125\'s design, a routine ask on #722 and synergy #2708 at its round limit.' },
+  research: { p: 'res', name: 'Researcher', sub: 'edgar · sec.gov', from: 'edgar', cards: 'fixtures/own-cards.json', me: "Pull Kestrel's last three 10-Ks.",
+    ai: 'The edgar plugin needs three things from you first: its settings, its API key and its Python deps.' } };
+const strip = () => `<nav class=hs aria-label="drover"><a class=hsc href="#">Queue<i class=hsn>${qBadge}</i></a><a class=hsc href="#">Events</a></nav>`;
+const chathead = c => `<header class="nb sc ch2${c.strip ? ' hs2' : ''}"><a class=bk href="#"><b>‹</b></a><span class=ph2>${av(c.p)}<span><b>${c.name}</b><small class=ds>${c.sub}</small></span></span>
+  <a class=hbt href="#" aria-label="more">${ic('more')}</a>${c.strip ? strip() : ''}</header>`;
+const chat = async (k = 'chat') => { const c = CHAT[k], cards = await json(c.cards); FROM = c.from;
+  const h = `<div class="cvw${c.strip ? ' hs2' : ''}"><ol class=tc aria-label=messages>
+    <li class="blk me"><div class=md>${esc(c.me)}</div><span class=ct>09:37</span></li>
+    <li class="blk ai"><b class=k>${c.name}</b><div class=md>${esc(c.ai)}</div></li>
+    ${cards.map(x => `<li class=ccd>${one(x)}</li>`).join('')}</ol>
+    <form class=tw><button type=button class=att aria-label=attach>+</button><textarea rows=1 aria-label=message placeholder="message ${c.name}"></textarea><button type=button aria-label=send>↑</button></form></div>${chathead(c)}`;
+  FROM = ''; return h; };
 // A plugin screen in a sheet: its title, its toolbar (⋯ menus), Done; the body is the screen's blocks.
 const sheet = (s, off) => `<div class=dim></div><div class="ps sdx${off ? ' off' : ''}" role=dialog aria-label="${esc(s.title)}"><div class=psh>${s.type === 'sheet'
   ? `<a href="#">${esc(s.cancel || 'Cancel')}</a><b>${esc(s.title)}</b><a href="#">${esc(s.done?.label || 'Done')}</a>`
@@ -144,7 +168,7 @@ const attach = m => { const p = m.permissions, row = (ic, t, sub, tone) => ({ ty
   return sheet({ type: 'sheet', title: 'Attach drover', cancel: 'Cancel', done: { label: 'Attach' }, blocks: [
     { type: 'text', markdown: `**cooee-drover ${m.version}** · \`${m.commit}\` · from the index\n\nAttach it to **Conductor**. It may do only what is listed; cooee refuses anything else.` },
     { type: 'section', header: 'it may', blocks: [{ type: 'list', rows: [
-      row('▤', 'Buttons in Conductor\'s header', 'Queue, Events'), row('▭', 'Post cards in Conductor\'s chats', 'asks, run cards, design reviews'),
+      row('▤', 'Chips on Conductor\'s header strip', 'Queue, Events'), row('▭', 'Post cards in Conductor\'s chats', 'asks, run cards, design reviews'),
       row('!', 'Send notifications', 'tag: drover'), row('≡', 'A row in Plugins', 'drover')] }] },
     { type: 'section', header: 'actions · 12', blocks: [{ type: 'list', rows: [
       row('⚠', 'Always confirm first', p.destructive.join(' · '), 'bad'), row('↩', 'Others', p.actions.filter(a => !p.destructive.includes(a)).join(' · '))] }] },
@@ -158,7 +182,7 @@ for (const e of document.querySelectorAll('[data-host]')) {
     if (e.dataset.live) for (const ev of await json(e.dataset.live)) apply(sc, ev.ops);
     over += sheet(sc, e.dataset.offline);
   }
-  const base = e.dataset.host === 'home' ? home() : await chat();
+  const base = e.dataset.host === 'home' ? home() : await chat(e.dataset.host);
   if ('menu' in e.dataset) over += menu();
   if (e.dataset.attach) over += attach(await json(e.dataset.attach));
   if (e.dataset.confirm) { const f = find({ blocks: await json('fixtures/cards.json') }, e.dataset.confirm).node; over += confirm(f.options.find(o => o.value === e.dataset.value).confirm); }

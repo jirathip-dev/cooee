@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>cooee · plugin screens as data (#125 revision 1: places on the Conductor persona)</title>
+<title>cooee · plugin screens as data (#125 revision 3: the header strip, one card set)</title>
 <link rel="stylesheet" href="../../../web/src/app.css">
 <link rel="stylesheet" href="../native-shell/ns.css">
 <link rel="stylesheet" href="sd.css">
@@ -15,8 +15,11 @@
 <div class="fr"><p class="cap">Home · the avatar menu: Settings, Machines + Terminal, Plugins</p>
 <section class="ph" data-f="home"><div data-host="home" data-menu></div></section></div>
 
-<div class="fr"><p class="cap">The Conductor chat · drover's Queue and Events buttons, its asks as chat cards (cards.json)</p>
+<div class="fr"><p class="cap">The Conductor chat · drover's Queue and Events on the header strip, its asks and run card as chat cards (cards.json)</p>
 <section class="ph" data-f="conductor"><div data-host="chat"></div></section></div>
+
+<div class="fr"><p class="cap">cooee's own cards are blocks · config, secret and run card in the Researcher chat (own-cards.json)</p>
+<section class="ph" data-f="cards"><div data-host="research"></div></section></div>
 
 <div class="fr"><p class="cap">Queue · fixtures/queue.json as a sheet over the Conductor chat</p>
 <section class="ph" data-f="queue"><div data-host="chat" data-screen="fixtures/queue.json"></div></section></div>
@@ -39,7 +42,7 @@
 <div class="fr"><p class="cap">hello · a third-party plugin from the avatar menu's Plugins, as a sheet</p>
 <section class="ph" data-f="hello"><div data-host="home" data-screen="fixtures/hello.json"></div></section></div>
 
-<div class="fr w"><p class="cap">Mac · the sidebar, the Conductor chat, the Queue sheet as a panel</p>
+<div class="fr w"><p class="cap">Mac · the sidebar, the Conductor chat with its header strip, the Queue sheet as a panel</p>
 <section class="wd mac" data-f="wide" data-host="chat" data-wide="1" data-screen="fixtures/queue.json"></section></div>
 
 </div>
