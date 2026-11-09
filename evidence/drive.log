@@ -1,0 +1,26 @@
+unpaired / -> /pair
+paired -> /
+POST /push/apns {"token":"ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB","env":"sandbox"} -> 200 alerts on
+POST /push/apns {"token":"not-hex!"} -> 400 the token must be the APNs device token, in hex
+POST /push/apns {"token":"abababababababababababababababababababababababababababababababab"} -> 200 alerts on
+GET /push/endpoints -> 200 ["abababababababababababababababababababababababababababababababab"]
+POST /push/test -> 200 test alert sent
+DELETE /push/apns -> 200 alerts off
+GET /push/endpoints -> 200 []
+unpaired POST /push/apns -> 401
+390 agents ok
+390 new ok
+390 chat ok
+390 settings ok
+390 alerts ok
+390 devices ok
+390 plugin-hello ok
+390 plugin-machines ok
+1440 agents ok
+1440 new ok
+1440 chat ok
+1440 settings ok
+1440 alerts ok
+1440 devices ok
+1440 plugin-hello ok
+1440 plugin-machines ok

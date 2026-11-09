@@ -1,0 +1,15 @@
+POST aaaa 200 alerts on
+POST dddd 200 alerts on
+POST /push/test 200 test alert sent
+endpoints after send ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+remove own device 200 removed 376f6a38
+second device POST /push/test 400 Alerts are off on this device: turn them on first.
+$ POST /plugin/push (removed device 376f6a38 still has a token in push.json)
+{"title":"PP","body":"build finished","tag":"build","url":"/p/pp#x","item":0} -> 200
+fake APNs requests:        0
+push.json:
+[]
+cooee: listening on http://127.0.0.1:41378
+POST /push/apns 200 alerts on
+{"title":"PP","body":"build finished","tag":"build","url":"/p/pp#x","item":0} -> 200
+fake APNs got /3/device/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb collapse-id: build body: {"aps":{"alert":{"body":"build finished","title":"PP"},"sound":"default","thread-id":"build"},"item":0,"url":"/p/pp#x"}

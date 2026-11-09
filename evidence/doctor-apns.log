@@ -1,0 +1,14 @@
+$ cooee doctor (instance config, no [apns])
+warn apns: no [apns] in config.toml: the native app gets no pushes
+ok   push keys: none yet (made when a phone turns on notifications)
+exit=1
+5:data = "/Volumes/NVMe/herdsman/.build/.scratch/cooee-verify-130-r2/apns/data"
+$ cooee doctor ([apns], no key file)
+warn apns: no /Volumes/NVMe/herdsman/.build/.scratch/cooee-verify-130-r2/apns/data/apns.p8 (Apple Developer › Keys, APNs): the native app gets no pushes
+$ cooee doctor ([apns], bad key file, mode 644)
+warn apns: /Volumes/NVMe/herdsman/.build/.scratch/cooee-verify-130-r2/apns/data/apns.p8 is not an APNs key (.p8): the native app gets no pushes
+-rw-r--r--@ 1 jkmacmini  staff  241 Nov 10 06:08 /Volumes/NVMe/herdsman/.build/.scratch/cooee-verify-130-r2/apns/data/apns.p8
+$ cooee doctor ([apns], real P-256 .p8, mode 644)
+ok   apns ready
+after: -rw-------@
+key body lines in doctor output: 0
