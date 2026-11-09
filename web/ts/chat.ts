@@ -118,14 +118,12 @@ function strip(loading: boolean, now = false): void {
 }
 strip(false);
 
-// Refresh: ↻, a pull down from the very top, the app coming back after 30 s away, or the network coming back. The
+// Refresh: a pull down from the very top, the app coming back after 30 s away, or the network coming back. The
 // chat reloads its newest slice and stream (page.refresh); the agents list is drawn again; any other page reloads.
 const page: { refresh: (() => Promise<unknown>) | null; top: () => boolean } = { refresh: null, top: () => true };
 let refreshing: Promise<unknown> | null = null;
 function refresh(): Promise<unknown> | null {
   if (refreshing || location.pathname === "/pair") return refreshing;
-  const rf = $("#rf");
-  rf?.classList.add("rfs");
   strip(true);
   refreshing = (async () => {
     if (page.refresh) return page.refresh();
@@ -134,13 +132,11 @@ function refresh(): Promise<unknown> | null {
   })()
     .catch((x) => toast(`couldn't refresh: ${message(x)}`, true))
     .finally(() => {
-      rf?.classList.remove("rfs");
       strip(false);
       refreshing = null;
     });
   return refreshing;
 }
-$("#rf")?.addEventListener("click", refresh);
 
 // The agents list drawn again in place from the page (no reload: a navigation away is never raced), a folded list
 // that was open staying open; it follows the threads every 5 s while it shows, and the app's badge counts the unread
@@ -236,7 +232,7 @@ let hiddenAt = 0;
 addEventListener(
   "touchstart",
   (e) => {
-    const scroller = $("#msgs") ?? document.scrollingElement;
+    const scroller = $("#msgs") ?? $(".sdb") ?? document.scrollingElement;
     const top = (scroller?.scrollTop ?? 0) <= 0 && page.top() && !$("#sheet :popover-open");
     pullY = top ? (e.touches[0]?.clientY ?? null) : null;
   },
@@ -259,6 +255,61 @@ document.addEventListener("visibilitychange", () => {
 addEventListener("online", refresh);
 addEventListener("pageshow", (e) => {
   if (e.persisted) refresh();
+});
+
+// A screen's large title (#118): once it has scrolled under the nav bar (41 px), the bar shows the inline title.
+addEventListener(
+  "scroll",
+  (e) => {
+    const s = e.target instanceof Element ? e.target : document.scrollingElement;
+    if (s) $(":scope > .nb", s)?.classList.toggle("sc", s.scrollTop > 41);
+  },
+  { capture: true, passive: true },
+);
+
+// Swipe back (#118): from a phone chat's left edge (24 px) the chat follows the finger over the list, which comes in
+// from -30 % under a fading dim; let go past a third of the width, or with a flick, it goes back (its `‹`).
+const shell = $(".app[data-show=pane]");
+let back: { x: number; at: number; dx: number } | null = null;
+const slide = (dx: number): void => {
+  const p = Math.min(1, dx / innerWidth);
+  shell?.style.setProperty("--sx", `${-30 * (1 - p)}%`);
+  shell?.style.setProperty("--dim", String(0.35 * (1 - p)));
+  const chat = $<HTMLElement>(".cfm .chat");
+  if (chat) chat.style.transform = dx ? `translateX(${dx}px)` : "";
+};
+if (shell)
+  shell.addEventListener(
+    "touchstart",
+    (e) => {
+      const x = e.touches[0]?.clientX ?? 99;
+      back = x < 24 && innerWidth < 1000 ? { x, at: Date.now(), dx: 0 } : null;
+    },
+    { passive: true },
+  );
+shell?.addEventListener(
+  "touchmove",
+  (e) => {
+    if (!back) return;
+    back.dx = Math.max(0, (e.touches[0]?.clientX ?? back.x) - back.x);
+    shell.classList.add("swp");
+    slide(back.dx);
+  },
+  { passive: true },
+);
+shell?.addEventListener("touchend", () => {
+  const b = back;
+  back = null;
+  if (!b?.dx) return;
+  const go = b.dx > innerWidth / 3 || b.dx / (Date.now() - b.at) > 0.5;
+  const chat = $<HTMLElement>(".cfm .chat");
+  if (chat) chat.style.transition = "transform .25s ease-out";
+  slide(go ? innerWidth : 0);
+  setTimeout(() => {
+    if (go) $<HTMLAnchorElement>(".th .bk")?.click();
+    else shell.classList.remove("swp");
+    if (chat) chat.style.transition = "";
+  }, 250);
 });
 
 // A new chat (#86): sent with nothing picked (its own scratch folder, or the folder picked), then opened.
@@ -524,16 +575,13 @@ async function alertsOff(): Promise<void> {
   await post("/push/unsubscribe", { endpoint: sub.endpoint });
   await sub.unsubscribe();
 }
+// More's Notifications row says whether alerts are on, with a dot while they are off.
 async function alertMarks(): Promise<Alerts["state"]> {
   const { state } = await alertState();
-  const gear = $("header [data-open=settings]");
-  const bell = $("#alerts");
-  const off = state === "off" || state === "blocked";
-  if (gear) {
-    gear.toggleAttribute("data-dot", off);
-    gear.setAttribute("aria-label", off ? "settings · alerts are off" : "settings");
-  }
-  if (bell) bell.hidden = state !== "off";
+  const row = $("#alerts");
+  row?.toggleAttribute("data-dot", state === "off" || state === "blocked");
+  const sv = row && $(".sv", row);
+  if (sv) sv.textContent = state;
   return state;
 }
 const ALERTS: Record<Alerts["state"], string> = {
@@ -576,8 +624,6 @@ async function fillAlerts(): Promise<void> {
   }
   box.replaceChildren(row);
 }
-const bell = $("#alerts");
-if (bell) bell.onclick = () => alertsDo(alertsOn, "alerts are on");
 if (location.pathname !== "/pair") alertMarks().catch(() => {});
 
 // Settings' devices section: each paired device, this one marked, with [remove] (removing this one unpairs it).

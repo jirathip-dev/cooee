@@ -5,6 +5,24 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+// A pull down from the top (#118: ↻ went), as a finger draws it, again until a refresh's read answers (one still
+// running takes no other).
+const pull = (page, read = /\/messages\?/) =>
+  expect(async () => {
+    const got = page.waitForResponse(read, { timeout: 2000 });
+    await page.evaluate(() => {
+      document.querySelector("#msgs")?.scrollTo(0, 0);
+      const at = (type, y) => dispatchEvent(Object.assign(new Event(type), { touches: [{ clientX: 100, clientY: y }] }));
+      at("touchstart", 100);
+      at("touchmove", 200);
+    });
+    await got;
+  }).toPass();
+// The look sheet in place (#118: ◐ moved to More): Settings' deep link, then its look row.
+const lookSheet = async (page) => {
+  await page.evaluate(() => { location.hash = ""; location.hash = "settings/look"; });
+  await page.locator("#sh-settings [data-open=look]").first().click();
+};
 const sheet = (page) => page.locator("#sheet .sh:popover-open");
 const pickOn = (context, url, pick) =>
   context.addCookies([{ name: "cooee-look", value: Object.entries(pick).map(([k, v]) => `${k}:${v}`).join("/"), url }]);
@@ -76,8 +94,7 @@ test("refreshed 5 times, Scene keeps one sprite per agent", async ({ page, conte
   await page.goto("/?list");
   const want = (await hrefs(page.locator("#scene .sb"))).length;
   for (let i = 0; i < 5; i++) {
-    await page.getByRole("button", { name: "refresh" }).click();
-    await expect(page.locator("#rf")).not.toHaveClass(/rfs/);
+    await pull(page, (r) => r.url() === page.url());
     await expect(page.locator("#scene")).toHaveCount(1);
     const keys = await hrefs(page.locator("#scene .sb"));
     expect(new Set(keys).size).toBe(keys.length);
@@ -88,19 +105,19 @@ test("refreshed 5 times, Scene keeps one sprite per agent", async ({ page, conte
 
 test("Scene is offered only with Figures Sprite; ASCII, None or the plain theme hide it", async ({ page }, info) => {
   await page.goto("/?list");
-  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await lookSheet(page);
   const scene = sheet(page).locator('[data-k=style][data-v=scene]');
   await scene.click();
   // The sidebar is drawn again as the scene.
   await expect(page.locator("#scene")).toBeVisible();
-  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await lookSheet(page);
   await expect(scene).toHaveAttribute("aria-checked", "true");
   await page.screenshot({ path: `../../ui-${info.project.name}/scene-look.png` });
   // Modern again: the agents' rows.
   await sheet(page).locator('[data-k=style][data-v=modern]').click();
   await expect(page.locator("#scene")).toHaveCount(0);
   await expect(page.locator(".agr").first()).toBeVisible();
-  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await lookSheet(page);
   for (const f of ["ascii", "none"]) {
     await sheet(page).locator(`[data-k=figures][data-v=${f}]`).click();
     await expect(scene).toBeHidden();

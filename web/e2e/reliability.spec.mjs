@@ -4,6 +4,19 @@
 import { expect, test } from "@playwright/test";
 
 
+// A pull down from the top (#118: ↻ went), as a finger draws it, again until a refresh's read answers (one still
+// running takes no other).
+const pull = (page, read = /\/messages\?/) =>
+  expect(async () => {
+    const got = page.waitForResponse(read, { timeout: 2000 });
+    await page.evaluate(() => {
+      document.querySelector("#msgs")?.scrollTo(0, 0);
+      const at = (type, y) => dispatchEvent(Object.assign(new Event(type), { touches: [{ clientX: 100, clientY: y }] }));
+      at("touchstart", 100);
+      at("touchmove", 200);
+    });
+    await got;
+  }).toPass();
 // A new thread whose turn is done, open.
 async function thread(page, text = "Say hello") {
   await page.goto("/new");
@@ -23,7 +36,7 @@ test.describe("on every browser", () => {
     let release;
     const held = new Promise((ok) => { release = ok; });
     await page.route("**/messages?*", async (route) => { await held; await route.continue(); });
-    await page.getByRole("button", { name: "refresh" }).click();
+    pull(page);
     await page.clock.runFor(290);
     await expect(page.locator("#ld")).not.toHaveClass(/run/);
     await page.clock.runFor(20);
@@ -47,8 +60,7 @@ test.describe("on every browser", () => {
     const before = await ids();
     expect(new Set(before).size).toBe(before.length);
     for (let i = 0; i < 5; i++) {
-      await page.getByRole("button", { name: "refresh" }).click();
-      await expect(page.locator("#rf")).not.toHaveClass(/rfs/);
+      await pull(page);
     }
     expect(await ids()).toEqual(before);
     const mine = new URL(page.url()).pathname;
@@ -56,7 +68,7 @@ test.describe("on every browser", () => {
     // Other tests add threads meanwhile, so the order may change: never a row twice, this thread's once.
     const rows = async () => (await (await page.request.get("/threads")).json()).map((r) => `/t/${r.id}`);
     for (let i = 0; i < 5; i++) {
-      await page.getByRole("button", { name: "refresh" }).click();
+      await pull(page, (r) => r.url() === page.url());
       await expect(page.locator(".ags .agr").first()).toBeVisible();
       const hrefs = await rows();
       expect(new Set(hrefs).size).toBe(hrefs.length);
@@ -99,10 +111,11 @@ test.describe("on WebKit, as on the iPhone", () => {
   });
 
   test("R25: closing a sheet goes from sheet to page in one step: no frame flashes, the page never reloads", async ({ page }) => {
-    await thread(page);
+    // The sheets open from More (#118).
+    await page.goto("/more");
     await page.evaluate(() => { window.kept = true; });
     for (const name of ["settings", "look"]) {
-      await page.locator(`[data-open=${name}]`).first().click();
+      await page.locator(`.gs [data-open=${name}]`).click();
       await expect(page.locator("#sheet .sh:popover-open")).toBeVisible();
       // Every frame from the tap: whether the sheet shows, and the page's background under it.
       await page.evaluate(() => {

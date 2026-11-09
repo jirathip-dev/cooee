@@ -111,7 +111,8 @@ test("a connect that fails shows inline with retry; the message stays; retry sen
 test("Settings › providers is one flat list: a row per account, [+ account] per provider", async ({ page }, info) => {
   await page.goto("/");
   expect(await page.evaluate(audit)).toEqual([]);
-  await page.getByRole("button", { name: "settings" }).click();
+  await page.goto("/more");
+  await page.getByRole("button", { name: "Settings" }).click();
   await page.locator("#sheet").getByRole("button", { name: "providers" }).click();
   const sheet = page.locator("#sh-providers");
   await expect(sheet.locator(".hd b")).toHaveText("providers");

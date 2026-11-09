@@ -4,6 +4,11 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+// The look sheet in place (#118: ◐ moved to More): Settings' deep link, then its look row.
+const lookSheet = async (page) => {
+  await page.evaluate(() => { location.hash = ""; location.hash = "settings/look"; });
+  await page.locator("#sh-settings [data-open=look]").first().click();
+};
 const shot = (page, info, name, fullPage = false) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png`, fullPage });
 const bg = (page) => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--bg").trim());
 // The open sheet (the sheets are popovers in #sheet).
@@ -68,9 +73,8 @@ test("a device's pick shows from the first frame, and stays on this device only"
 
 test("the look sheet: style, figures, theme, appearance and colours apply at once and stay", async ({ page, context }, info) => {
   await blocked(page);
-  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await lookSheet(page);
   await expect(sheet(page)).toBeVisible();
-  await expect(page.getByRole("button", { name: "look: theme and colours" })).toHaveAttribute("aria-pressed", "true");
   await expect(sheet(page).locator('[data-k=theme][data-v=farm]')).toHaveAttribute("aria-selected", "true");
   await icons(page);
   await shot(page, info, "look-modern-dark");
@@ -122,7 +126,8 @@ test("System follows the phone's mode live", async ({ page, context, baseURL }) 
 
 test("Settings: the look rows show the pick and open the look sheet", async ({ page }, info) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "settings" }).click();
+  await page.goto("/more");
+  await page.getByRole("button", { name: "Settings" }).click();
   const rows = sheet(page).locator(".sr");
   await expect(rows.locator(".sk")).toHaveText(["providers", "roots", "style", "figures", "theme", "appearance", "colours", "mcp servers", "report a problem"]);
   await expect(rows.locator(".sv")).toHaveText(["modern", "sprite", "farm", "system · dark now", "dark farm · light farm"]);
@@ -196,13 +201,13 @@ test("the ascii figures' two frames alternate", async ({ page, context, baseURL 
 
 test("the look sheet lists Scene only with sprites, and plain only ASCII or None", async ({ page }, info) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await lookSheet(page);
   const radios = (k) => sheet(page).getByRole("radiogroup", { name: k }).getByRole("radio");
   await expect(radios("style")).toHaveText(["modern", "terminal", "scene"]);
   await expect(radios("figures")).toHaveText(["sprite", "ascii", "none"]);
   // Scene in or out redraws the agents sidebar (#34, #86), which closes the sheet: open it again once the list is drawn.
   const again = async () => {
-    if (!(await sheet(page).count())) await page.getByRole("button", { name: "look: theme and colours" }).click();
+    if (!(await sheet(page).count())) await lookSheet(page);
   };
   await tap(page, "style", "terminal");
   await tap(page, "style", "scene");
@@ -237,7 +242,7 @@ test("the look sheet lists Scene only with sprites, and plain only ASCII or None
   await audit(page);
   // The page drawn for it lists the same.
   await page.reload();
-  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await lookSheet(page);
   await expect(radios("figures")).toHaveText(["ascii", "none"]);
   await expect(radios("style")).toHaveText(["modern", "terminal"]);
 });
@@ -262,7 +267,7 @@ test("switching style or figures keeps the scroll position", async ({ page }, in
   });
   const before = await view();
   expect(before.cut).toBeGreaterThan(0);
-  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await lookSheet(page);
   for (const [k, v] of [["style", "terminal"], ["figures", "none"], ["style", "modern"], ["figures", "sprite"]]) {
     const height = await list.evaluate((l) => l.scrollHeight);
     await tap(page, k, v);
@@ -299,7 +304,7 @@ test("a plugin tab gets the theme's variables, data URLs, style and figures, and
   }
   expect(await (await request.get(look.urls.theme)).json()).toMatchObject({ label: "farm", words: { needs: "at the gate" } });
   expect(tab).toBeTruthy();
-  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await lookSheet(page);
   await tap(page, "style", "terminal");
   await expect.poll(async () => (await got()).at(-1).style).toBe("terminal");
   await tap(page, "figures", "none");

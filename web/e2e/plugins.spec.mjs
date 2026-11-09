@@ -14,7 +14,7 @@ test("the example plugin's tab: proxied calls with its token, its stream, a push
   const thread = new URL(page.url()).pathname.split("/")[2];
 
   await page.goto("/");
-  await page.getByRole("navigation", { name: "tabs" }).getByRole("link", { name: "Hello" }).click();
+  await page.getByRole("navigation", { name: "tabs" }).getByRole("link", { name: "Queue" }).click();
   await expect(page).toHaveURL(/\/p\/hello$/);
   // The thread's id as the tab's hash: a deep link, as a push's tap opens.
   await page.goto("/");

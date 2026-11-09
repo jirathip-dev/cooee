@@ -12,7 +12,9 @@ use topcoat::{
     view::{Unescaped, View, component, view},
 };
 
-use super::{age, document, header, hint, named, pick, short, shown, state};
+use super::{
+    DROVER, age, document, hint, named, nav_bar, needs, pick, short, shown, state, tabbar,
+};
 
 /// One agent in the sidebar.
 #[derive(Debug, Clone)]
@@ -338,12 +340,13 @@ fn href(m: &Mate) -> String {
         .map_or(format!("/new?{}", m.key), |c| format!("/t/{}", c.id))
 }
 
-/// The sidebar: each agent (its avatar, name, age, state and last line; the current one with its side threads and
-/// `+ new chat`), then `+ new agent`. `current` is the agent on show, `open` the chat; `fresh`: a new chat with it,
+/// The sidebar: under Chats' nav bar and large title (the page's h1 at `home`, #118), each agent (its avatar, name,
+/// age, state and last line; the current one with its side threads and `+ new chat`), then `+ new agent`. `current` is the agent on show, `open` the chat; `fresh`: a new chat with it,
 /// marked as its own `New chat · now` row.
 #[component]
 async fn sidebar(
     cx: &Cx,
+    home: bool,
     mates: Vec<Mate>,
     profiles: Vec<Profile>,
     archived: Vec<Summary>,
@@ -369,6 +372,11 @@ async fn sidebar(
         })
         .collect();
     Ok(view! {
+        nav_bar(
+            title: "Chats".to_owned(),
+            new: Some(format!("/new?{current}")),
+            large: Some(home)
+        )
         <nav class="ags" aria-label="agents">
             if look.scene() {
                 herd(rows: rows, open: open.clone())
@@ -773,7 +781,6 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
         Pane::Chat { thread, .. } => thread.id.clone(),
         _ => String::new(),
     };
-    let new = format!("/new?{current}");
     let Side {
         rows,
         profiles,
@@ -782,16 +789,16 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
         folders: list,
         tabs,
     } = side;
-    let home = matches!(pane, Pane::Home { .. });
+    let (home, lanes) = (matches!(pane, Pane::Home { .. }), needs(&rows));
     Ok(view! {
         document(
             title: title.as_str(),
             providers: providers.clone(),
             <div class="app" data-show=(show)>
-                header(home: home, tabs: tabs, current: String::new(), new: new)
                 <main class="cfm">
                     <div class="sdb">
                         sidebar(
+                            home: home,
                             mates: mates.clone(),
                             profiles: profiles,
                             archived: rows
@@ -834,6 +841,115 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
                         }
                     }
                 </main>
+                tabbar(tabs: tabs, on: "/".to_owned(), needs: lanes)
+            </div>
+        )
+    })
+}
+
+/// Workflow (`/w`): the lanes' chats (#33), newest first; or More (`/more`): the look, alerts, every plugin tab but
+/// drover's Queue and Asks, sign-ins and Settings, as inset-grouped lists. Each under its large title (#118).
+#[must_use]
+pub fn screen_page(cx: &Cx, side: Side, at: &'static str) -> impl View {
+    view! { cx => screen(s: side, at: at) }
+}
+
+#[component]
+async fn screen(cx: &Cx, s: Side, at: &'static str) -> Result<impl View> {
+    let look = shown(cx);
+    let title = if at == "/w" { "Workflow" } else { "More" };
+    let (mut lanes, mut more) = (s.rows.clone(), s.tabs.clone());
+    lanes.retain(|r| r.workflow.is_some());
+    more.retain(|t| !DROVER.contains(&t.1.as_str()));
+    let looks = format!(
+        "{} · {} · {}",
+        look.shape(),
+        look.name(),
+        look.mode().unwrap_or("auto")
+    );
+    Ok(view! {
+        document(
+            title: title,
+            providers: s.providers.clone(),
+            <div class="app" data-show="list">
+                <main class="cfm">
+                    <div class="sdb">
+                        nav_bar(title: title.to_owned(), new: None, large: Some(true))
+                        if at == "/w" {
+                            <nav class="ags" aria-label="lanes">
+                                for c in &lanes {
+                                    row(l: side(c, ""))
+                                }
+                                if lanes.is_empty() {
+                                    <p class="ds">"No lanes are running."</p>
+                                }
+                            </nav>
+                        } else {
+                            <div class="gs">
+                                <button
+                                    type="button"
+                                    class="gr"
+                                    data-open="look"
+                                    popovertarget="sh-look"
+                                >
+                                    <i class="ms" style="--k:var(--p)" aria-hidden="true">
+                                        "◐"
+                                    </i>
+                                    <span class="sk">"Look"</span>
+                                    <span class="sv">(looks)</span>
+                                </button>
+                                <a class="gr" id="alerts" href="#settings/alerts">
+                                    <i class="ms" style="--k:var(--r)" aria-hidden="true">
+                                        "!"
+                                    </i>
+                                    <span class="sk">"Notifications"</span>
+                                    <span class="sv"></span>
+                                </a>
+                            </div>
+                            for (name, label, dot) in more {
+                                <h2 class="ch">(label.clone())</h2>
+                                <div class="gs">
+                                    <a class="gr" href=(format!("/p/{name}"))>
+                                        <i class="ms" style="--k:var(--c)" aria-hidden="true">
+                                            "▣"
+                                        </i>
+                                        <span class="sk">(label)</span>
+                                        if dot {
+                                            <i class="r" aria-hidden="true">"●"</i>
+                                            <span class="vh">" (needs you)"</span>
+                                        }
+                                    </a>
+                                </div>
+                            }
+                            <h2 class="ch">"settings"</h2>
+                            <div class="gs">
+                                <button
+                                    type="button"
+                                    class="gr"
+                                    data-open="providers"
+                                    popovertarget="sh-providers"
+                                >
+                                    <i class="ms" style="--k:var(--link)" aria-hidden="true">
+                                        "⚿"
+                                    </i>
+                                    <span class="sk">"Sign-ins"</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="gr"
+                                    data-open="settings"
+                                    popovertarget="sh-settings"
+                                >
+                                    <i class="ms" style="--k:var(--l)" aria-hidden="true">
+                                        "⚙"
+                                    </i>
+                                    <span class="sk">"Settings"</span>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </main>
+                tabbar(tabs: s.tabs, on: at.to_owned(), needs: needs(&s.rows))
             </div>
         )
     })

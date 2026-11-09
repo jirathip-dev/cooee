@@ -119,7 +119,7 @@ fn pair_use_remove_and_only_the_hash_on_disk() {
     let cookie = c.cookie.clone();
     let (head, page) = c.raw("GET", "/", &[("Cookie", &cookie)], "");
     assert_eq!(status(&head), 200, "{head}");
-    assert!(page.contains("<h1>cooee</h1>"));
+    assert!(page.contains(r#"<h1 class="lt">Chats</h1>"#), "{page}");
 
     let token = cookie.strip_prefix("cooee=").unwrap();
     let disk = fs::read_to_string(dir.join("data/devices.json")).unwrap();

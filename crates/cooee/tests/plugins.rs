@@ -214,10 +214,13 @@ fn a_backends_event_stream_comes_through_the_proxy() {
 #[test]
 fn the_tab_frames_the_module_in_a_sandbox() {
     let s = setup("plugin-frame");
-    let (code, page) = s.cooee.get("/");
+    // Plugin tabs but drover's Queue and Asks are listed under More (#118).
+    let (code, page) = s.cooee.get("/more");
     assert_eq!(code, 200);
     assert!(
-        page.contains(r#"<a href="/p/a""#) && page.contains("Alpha") && page.contains("Beta"),
+        page.contains(r#"<a class="gr" href="/p/a""#)
+            && page.contains("Alpha")
+            && page.contains("Beta"),
         "{page}"
     );
     let (code, page) = s.cooee.get("/p/a");
@@ -386,8 +389,10 @@ fn a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab() {
         (&json!("machine"), &json!("/p/a#air"))
     );
 
-    let dot = "Alpha<i class=\"dot\" aria-hidden=\"true\">●</i>";
-    assert!(!s.cooee.get("/").1.contains("class=\"dot\""));
+    // Its row under More shows the dot, and so does More's tab on every page (#118).
+    let dot = "Alpha</span><i class=\"r\" aria-hidden=\"true\">●</i>";
+    let more = "More<i class=\"tdt\" aria-hidden=\"true\"></i>";
+    assert!(!s.cooee.get("/").1.contains("class=\"tdt\""));
     assert_eq!(
         s.as_backend("/plugin/dot", "", &json!({ "on": true })).0,
         401
@@ -398,15 +403,16 @@ fn a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab() {
     );
     let home = s.cooee.get("/").1;
     assert!(
-        home.contains(dot) && home.matches("class=\"dot\"").count() == 1,
+        home.contains(more) && home.matches("class=\"tdt\"").count() == 1,
         "{home}"
     );
-    assert!(s.cooee.get("/p/b").1.contains(dot));
+    assert!(s.cooee.get("/more").1.contains(dot));
+    assert!(s.cooee.get("/p/b").1.contains(more));
     assert_eq!(
         s.as_backend("/plugin/dot", &a, &json!({ "on": false })).0,
         200
     );
-    assert!(!s.cooee.get("/").1.contains("class=\"dot\""));
+    assert!(!s.cooee.get("/").1.contains("class=\"tdt\""));
 }
 
 /// This device's label, as an answer's `by` names it.

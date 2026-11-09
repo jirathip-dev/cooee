@@ -7,7 +7,8 @@ import { expect, test } from "@playwright/test";
 test("sign-ins: the provider's own login, its link tappable, a code typed in, then signed in", async ({ page, context }, info) => {
   const name = `fake-${info.project.name}`, url = `https://login.example.com/device?client_id=cooee-${info.project.name}`;
   await page.goto("/");
-  await page.getByRole("button", { name: "settings" }).click();
+  await page.goto("/more");
+  await page.getByRole("button", { name: "Settings" }).click();
   await page.locator("#sheet").getByRole("button", { name: "providers" }).click();
   const sheet = page.locator("#sh-providers");
   await expect(sheet).toBeVisible();

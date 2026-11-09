@@ -20,7 +20,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-pub use agents::{Mate, Pane, Side, page};
+pub use agents::{Mate, Pane, Side, page, screen_page};
 use compose::hint;
 pub use compose::{named, who};
 use cooee_core::{Sheet, Thread, Turn};
@@ -307,6 +307,10 @@ async fn document(
                     content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content"
                 >
                 <meta name="theme-color" content=(bg)>
+                <meta
+                    name="apple-mobile-web-app-status-bar-style"
+                    content="black-translucent"
+                >
                 <title>(title)</title>
                 <link rel="manifest" href="/manifest.webmanifest">
                 <link rel="icon" href=(ico.clone())>
@@ -427,93 +431,120 @@ fn state(state: &str) -> &'static str {
     }
 }
 
-/// The header: the app's name (the heading on the agents list, with the 🔔 that turns alerts on; else a link to
-/// it), the plugin tabs (`current` open), `+` (`new`: a new chat with the agent on show), the look sheet and Settings.
+/// A screen's nav bar (#118) and its large title (`large`: the page's h1, else an h2; a chat's own title is its h1),
+/// which scrolls under it; then the bar shows the 17 px inline title (`chat.ts`), at once where there is none. Empty at
+/// rest but for `+` (`new`: a new chat with the agent on show), or `‹ More` on a plugin tab pushed from More.
 #[component]
-async fn header(
-    home: bool,
-    tabs: Vec<(String, String, bool)>,
-    current: String,
-    new: String,
-) -> Result<impl View> {
+async fn nav_bar(title: String, new: Option<String>, large: Option<bool>) -> Result<impl View> {
+    let back = large.is_none() && !DROVER.contains(&title.as_str());
     Ok(view! {
-        <header class="bar">
-            if home {
-                <h1>"cooee"</h1>
-                <button
-                    type="button"
-                    class="gl"
-                    id="alerts"
-                    hidden=(true)
-                    aria-label="turn on notifications"
-                >
-                    "🔔"
-                </button>
-            } else {
-                <a class="brand" href="/">"cooee"</a>
-            }
-            nav(tabs: tabs, current: current)
-            <button type="button" class="gl" id="rf" aria-label="refresh">"↻"</button>
-            <a class="gl" href=(new) aria-label="new chat">"+"</a>
-            <button
-                type="button"
-                class="gl"
-                data-open="look"
-                popovertarget="sh-look"
-                aria-label="look: theme and colours"
-                aria-pressed="false"
-            >
-                "◐"
-            </button>
-            <button
-                type="button"
-                class="gl"
-                data-open="settings"
-                popovertarget="sh-settings"
-                aria-label="settings"
-                aria-pressed="false"
-            >
-                "⚙"
-            </button>
-        </header>
-    })
-}
-
-/// Chat and the plugin tabs (`(name, label, dot)`), when there are any; `current` is the open one (`""`: Chat).
-#[component]
-async fn nav(tabs: Vec<(String, String, bool)>, current: String) -> Result<impl View> {
-    Ok(view! {
-        if !tabs.is_empty() {
-            <nav class="tabs" aria-label="tabs">
-                <a href="/" class=(if current.is_empty() { "on" } else { "" })>
-                    "Chat"
-                </a>
-                for (name, label, dot) in tabs {
-                    <a
-                        href=(format!("/p/{name}"))
-                        class=(if name == current { "on" } else { "" })
-                    >
-                        (label)
-                        if dot {
-                            <i class="dot" aria-hidden="true">"●"</i>
-                            <span class="vh">" (needs you)"</span>
-                        }
-                    </a>
+        <header class=(if large.is_some() { "nb" } else { "nb sc" })>
+            <span>
+                if back {
+                    <a class="gl bk" href="/more">"‹ More"</a>
                 }
-            </nav>
+            </span>
+            <b class="nt" aria-hidden="true">(title.clone())</b>
+            <span>
+                if let Some(new) = new {
+                    <a class="gl" href=(new) aria-label="new chat">"+"</a>
+                }
+            </span>
+        </header>
+        match large {
+            Some(true) => <h1 class="lt">(title)</h1>,
+            Some(false) => <h2 class="lt">(title)</h2>,
+            None => {
+
+            }
         }
     })
 }
 
-/// Plugin `name`'s tab: its module runs in a sandboxed frame that `chat.ts` hosts.
+/// drover's tabs that are the shell's own (#118); its others and every other plugin's are listed under More.
+pub(crate) const DROVER: [&str; 2] = ["Queue", "Asks"];
+
+/// The tab icons (#116): Chats, Workflow, Queue, Asks, More, as 1.7 px strokes in the text colour.
+const ICONS: [&str; 5] = [
+    r#"<path d="M20.5 11.5a8.5 8 0 0 1-12.3 7.2L3.5 20l1.4-4A8 8 0 0 1 3.5 11.5 8.5 8 0 0 1 20.5 11.5z"/>"#,
+    r#"<circle cx="6" cy="5.5" r="2.3"/><circle cx="6" cy="18.5" r="2.3"/><circle cx="18" cy="12" r="2.3"/><path d="M6 7.8v8.4M8.2 6.2c5 .3 8 1.7 9 3.6"/>"#,
+    r#"<path d="M9.5 6h11M9.5 12h11M9.5 18h11"/><circle cx="4.5" cy="6" r="1.4"/><circle cx="4.5" cy="12" r="1.4"/><circle cx="4.5" cy="18" r="1.4"/>"#,
+    r#"<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.3c-.7.4-1.2.9-1.2 1.7v.3M12 16.9v.1"/>"#,
+    r#"<circle cx="12" cy="12" r="9"/><path d="M7.8 12h.01M12 12h.01M16.2 12h.01" stroke-width="2.8"/>"#,
+];
+
+/// Whether a Workflow lane (#33) waits on you: the Workflow tab's dot.
+#[must_use]
+pub fn needs(rows: &[cooee_core::Summary]) -> bool {
+    rows.iter()
+        .any(|r| r.workflow.is_some() && r.state == "blocked")
+}
+
+/// The tab bar (#118), the 88 px rail from 1000 px: Chats, Workflow (its dot while a lane `needs` you), drover's
+/// Queue and Asks when it is installed (their plugin dots), More (dotted with its plugin tabs). `on`: the current tab's link; any other plugin tab
+/// is More's.
+#[component]
+async fn tabbar(tabs: Vec<(String, String, bool)>, on: String, needs: bool) -> Result<impl View> {
+    let more = tabs.iter().any(|t| t.2 && !DROVER.contains(&t.1.as_str()));
+    // Every plugin tab's name, for what the page offers with one (`md.ts`: [▸ terminal]).
+    let names = tabs
+        .iter()
+        .map(|t| t.0.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let drover = |i: usize| {
+        let t = tabs.iter().find(|t| t.1 == DROVER[i - 2])?;
+        Some((format!("/p/{}", t.0), t.1.clone(), t.2, i))
+    };
+    let all: Vec<_> = [
+        Some(("/".to_owned(), "Chats".to_owned(), false, 0)),
+        Some(("/w".to_owned(), "Workflow".to_owned(), needs, 1)),
+        drover(2),
+        drover(3),
+        Some(("/more".to_owned(), "More".to_owned(), more, 4)),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    let on = if all.iter().any(|t| t.0 == on) {
+        on
+    } else {
+        "/more".to_owned()
+    };
+    Ok(view! {
+        <nav class="tbar" aria-label="tabs" data-tabs=(names)>
+            for (href, label, dot, i) in all {
+                <a
+                    href=(href.clone())
+                    aria-current=((href == on).then(|| "page".to_owned()))
+                >
+                    (Unescaped::new_unchecked(
+                        format!(
+                            r#"<svg viewBox="0 0 24 24" aria-hidden="true">{}</svg>"#,
+                            ICONS[i],
+                        ),
+                    ))
+                    (label)
+                    if dot {
+                        <i class="tdt" aria-hidden="true"></i>
+                        <span class="vh">" (needs you)"</span>
+                    }
+                </a>
+            }
+        </nav>
+    })
+}
+
+/// Plugin `name`'s tab: its module runs in a sandboxed frame that `chat.ts` hosts, under its inline title (#118).
 #[must_use]
 pub fn plugin_page(
     cx: &Cx,
     tabs: Vec<(String, String, bool)>,
     name: String,
     label: String,
+    needs: bool,
 ) -> impl View {
-    view! { cx => plugin(tabs: tabs, name: name, label: label) }
+    view! { cx => plugin(tabs: tabs, name: name, label: label, needs: needs) }
 }
 
 #[component]
@@ -521,27 +552,28 @@ async fn plugin(
     tabs: Vec<(String, String, bool)>,
     name: String,
     label: String,
+    needs: bool,
 ) -> Result<impl View> {
     let title = format!("{label} · cooee");
+    // A plugin tab under More is a screen pushed from it: on a phone, `‹ More` and no tab bar, as a chat.
+    let pushed = !DROVER.contains(&label.as_str());
     Ok(view! {
         document(
             title: title.as_str(),
-            <main class="pt">
-                header(
-                    home: false,
-                    tabs: tabs,
-                    current: name.clone(),
-                    new: "/new".to_owned()
-                )
-                <h1 class="vh">(label.clone())</h1>
-                <iframe
-                    class="pf"
-                    title=(label)
-                    sandbox="allow-scripts"
-                    data-plugin=(name.clone())
-                    data-src=(format!("/p/{name}/frame"))
-                ></iframe>
-            </main>
+            <div class="app" data-show=(pushed.then(|| "pane".to_owned()))>
+                <main class="pt">
+                    nav_bar(title: label.clone(), new: None, large: None)
+                    <h1 class="vh">(label.clone())</h1>
+                    <iframe
+                        class="pf"
+                        title=(label)
+                        sandbox="allow-scripts"
+                        data-plugin=(name.clone())
+                        data-src=(format!("/p/{name}/frame"))
+                    ></iframe>
+                </main>
+                tabbar(tabs: tabs, on: format!("/p/{name}"), needs: needs)
+            </div>
         )
     })
 }

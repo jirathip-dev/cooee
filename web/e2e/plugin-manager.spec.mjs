@@ -40,8 +40,8 @@ test("Settings › Plugins: add from the index after a confirm, it runs with its
   await audit(page);
 
   // Its tab, its backend reached with its own token.
-  await page.goto("/");
-  await expect(page.getByRole("navigation", { name: "tabs" }).getByRole("link", { name: "Greet" })).toBeVisible();
+  await page.goto("/more");
+  await expect(page.getByRole("link", { name: "Greet" })).toBeVisible();
   await page.goto("/p/greet");
   await expect(page.frameLocator("iframe.pf").getByText(/^whoami/)).toHaveText('whoami 200: {"token":"ok","cookie":null}');
 
@@ -49,6 +49,6 @@ test("Settings › Plugins: add from the index after a confirm, it runs with its
   page.once("dialog", (d) => d.accept());
   await box.getByRole("button", { name: "remove greet" }).click();
   await expect(box.getByText(/^greet · 0\.1\.0/)).toHaveCount(0);
-  await page.goto("/");
-  await expect(page.getByRole("navigation", { name: "tabs" }).getByRole("link", { name: "Greet" })).toHaveCount(0);
+  await page.goto("/more");
+  await expect(page.getByRole("link", { name: "Greet" })).toHaveCount(0);
 });

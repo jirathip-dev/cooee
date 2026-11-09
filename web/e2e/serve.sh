@@ -3,8 +3,8 @@
 # a throwaway config on $PORT, its data seeded with a thread of 1,000 messages, read up to #990, per viewport; a
 # pairing code (`cooee pair`) goes to $PAIR_CODE for pair.setup.mjs. One fake provider per viewport: its login prints
 # a link and reads a code (good-code signs it in), its status succeeds once signed in. The example plugin
-# (docs/plugins/hello) runs twice, as plugins `hello` and `other`, on $PORT + 1 and + 2. A fresh instance runs on
-# $PORT + 3. The main instance runs with HOME at the temp folder, so Settings › Folders browses it. The machines plugin
+# (docs/plugins/hello) runs twice, as plugins `hello` and `other` (labelled as drover's Queue and Asks tabs, #118), on
+# $PORT + 1 and + 2. A fresh instance runs on $PORT + 3. The main instance runs with HOME at the temp folder, so Settings › Folders browses it. The machines plugin
 # runs in it on $PORT + 4, the fake shed answering for this machine (24 h of samples) and an `air` that is offline. Its
 # plugin index lists the example plugin as `greet`, in a git repo of its own. The terminal plugin runs on $PORT + 5, its
 # shells `/bin/sh -l` in the fake shed. farm, kitchen and garden are installed. The 390 provider has two more accounts,
@@ -133,14 +133,14 @@ status = ["$tmp/status-1440.sh"]
 
 [[plugins]]
 name = "hello"
-label = "Hello"
+label = "Queue"
 url = "http://127.0.0.1:$hello"
 module = "/tab.js"
 token = "hello-token-0123456789"
 
 [[plugins]]
 name = "other"
-label = "Other"
+label = "Asks"
 url = "http://127.0.0.1:$other"
 module = "/tab.js"
 token = "other-token-0123456789"

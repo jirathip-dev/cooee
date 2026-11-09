@@ -354,7 +354,7 @@ export function show(which: string): void {
   for (const s of sheets()) if (s.matches(":popover-open") && s.id !== `sh-${which}`) s.hidePopover();
   const s = which ? sheetOf(which) : null;
   if (s && !s.matches(":popover-open")) {
-    const source = $<HTMLElement>(`header [data-open=${which}]`);
+    const source = $<HTMLElement>(`.gs [data-open=${which}]`);
     s.showPopover(source ? { source } : undefined);
   }
 }
@@ -364,7 +364,7 @@ for (const s of sheets()) {
     const shown = (e as ToggleEvent).newState === "open";
     if (shown) open = which;
     else if (open === which) open = "";
-    for (const b of document.querySelectorAll("header [data-open]"))
+    for (const b of document.querySelectorAll(".gs [data-open]"))
       b.setAttribute("aria-pressed", String(b.getAttribute("data-open") === open));
     if (shown) {
       if (which === "folders") folders();
@@ -420,7 +420,7 @@ addEventListener("click", (e) => {
 });
 // A tap outside an open sheet closes it (the popover's light dismiss) and goes no further, as a scrim's tap did.
 let outside = false;
-const inSheet = (e: Event): boolean => !!(e.target as Element).closest?.("#sheet .sh, header [data-open]");
+const inSheet = (e: Event): boolean => !!(e.target as Element).closest?.("#sheet .sh, .gs [data-open]");
 addEventListener(
   "pointerdown",
   (e) => {

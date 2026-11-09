@@ -62,8 +62,9 @@ test("a fenced block gets [▸ terminal] beside [copy] only where the owner term
   await page.goto("/pair");
   expect(await fence()).toEqual([["copy", "cd ~\nls -la"]]);
   // The chats, with the Terminal tab: [▸ terminal] carries the block's exact text.
+  await page.goto("/more");
+  await expect(page.locator('.gr[href="/p/terminal"]')).toContainText("Terminal");
   await page.goto("/");
-  await expect(page.locator('nav.tabs a[href="/p/terminal"]')).toHaveText("Terminal");
   expect(await fence()).toEqual([
     ["copy", "cd ~\nls -la"],
     ["▸ terminal", "cd ~\nls -la"],

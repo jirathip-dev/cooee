@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 test("agents: the list renders, fits the width, no axe violations; + opens a new chat with nothing to pick", async ({ page }, info) => {
   await page.goto("/?list");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("cooee");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Chats");
   await expect(page.locator(".ags .agr").first()).toBeVisible();
   await expect(page.locator(".ags .agr .av").first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

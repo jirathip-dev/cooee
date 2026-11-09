@@ -16,8 +16,10 @@ test("the machines tab: a card per machine, a chart on tap, the Air offline and 
   // the run has taken; a day kept twice (2878) never passes.
   await expect(here.locator("svg.sp polyline").first()).toHaveAttribute("points", /^(\S+ ){1420,1439}\S+$/);
   await expect(air.locator(".seen")).toHaveText(/^offline · last seen 4\d min ago$/);
-  // The dot: the plugin has told cooee by now; the header is drawn with the page.
-  await expect.poll(async () => { await page.reload(); return page.getByRole("link", { name: "Machines (needs you)" }).count(); }).toBe(1);
+  // The dot: the plugin has told cooee by now; More (#118) is drawn with the page, its tab dotted too.
+  await expect.poll(async () => { await page.goto("/more"); return page.getByRole("link", { name: "Machines (needs you)" }).count(); }).toBe(1);
+  await expect(page.getByRole("link", { name: "More (needs you)" })).toHaveAttribute("aria-current", "page");
+  await page.goto("/p/machines");
 
   const load = here.locator("details", { hasText: "load/cpu" });
   await load.locator("summary").click();

@@ -9,6 +9,24 @@ import { expect, test } from "@playwright/test";
 // The full Chromium (new headless): the headless shell has no notifications, so row 8 would read as blocked.
 test.use({ channel: "chromium" });
 
+// A pull down from the top (#118: ↻ went), as a finger draws it, again until a refresh's read answers (one still
+// running takes no other).
+const pull = (page, read = /\/messages\?/) =>
+  expect(async () => {
+    const got = page.waitForResponse(read, { timeout: 2000 });
+    await page.evaluate(() => {
+      document.querySelector("#msgs")?.scrollTo(0, 0);
+      const at = (type, y) => dispatchEvent(Object.assign(new Event(type), { touches: [{ clientX: 100, clientY: y }] }));
+      at("touchstart", 100);
+      at("touchmove", 200);
+    });
+    await got;
+  }).toPass();
+// The look sheet in place (#118: ◐ moved to More): Settings' deep link, then its look row.
+const lookSheet = async (page) => {
+  await page.evaluate(() => { location.hash = ""; location.hash = "settings/look"; });
+  await page.locator("#sh-settings [data-open=look]").first().click();
+};
 const shot = (page, info, name, fullPage = false) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png`, fullPage });
 const config = () => fs.readFileSync(new URL("./.auth/code.config", import.meta.url), "utf8").trim();
 const bin = () => fs.readFileSync(new URL("./.auth/code.bin", import.meta.url), "utf8").trim();
@@ -74,16 +92,15 @@ test("row 2: the sync dot is green while the stream is open, amber when it drops
   expect(after.every((id, i) => i === 0 || id === after[i - 1] + 1)).toBe(true);
 });
 
-test("rows 3 and 5: ↻ spins while the thin strip shows and the page stays tappable; a pull and coming back reload too", async ({ page }, info) => {
+test("rows 3 and 5: a pull shows the thin strip and the page stays tappable; a pull and coming back reload too", async ({ page }, info) => {
   await thread(page);
   let release;
   const held = new Promise((ok) => { release = ok; });
   await page.route("**/messages?*", async (route) => { await held; await route.continue(); });
   const reloads = [];
   page.on("request", (r) => { if (r.url().includes("/messages?")) reloads.push(r.url()); });
-  await page.getByRole("button", { name: "refresh" }).click();
+  pull(page);
   await expect(page.locator("#ld.run")).toBeVisible();
-  await expect(page.locator("#rf")).toHaveClass(/rfs/);
   await expect(page.locator("#ld .lw")).not.toBeEmpty();
   await shot(page, info, "parity-3-strip");
   // The strip is under the thread bar's title and lets taps through.
@@ -91,7 +108,6 @@ test("rows 3 and 5: ↻ spins while the thin strip shows and the page stays tapp
   await audit(page);
   release();
   await expect(page.locator("#ld")).toBeHidden();
-  await expect(page.locator("#rf")).not.toHaveClass(/rfs/);
   await page.unroute("**/messages?*");
 
   // A pull down from the top of the messages.
@@ -125,7 +141,7 @@ test("row 5: the app coming back after 30 s away reloads; under 30 s it doesn't"
 test("row 4: an action's toast is one short line on screen, then it clears", async ({ page }, info) => {
   await page.clock.install();
   await thread(page);
-  await page.getByRole("button", { name: "refresh" }).click();
+  await pull(page);
   await page.locator("#box").fill("/report");
   await page.getByRole("button", { name: "send" }).click();
   const toast = page.locator("#toast");
@@ -256,7 +272,10 @@ test("rows 8 and 13: Settings opens at a section from its link, has an index, an
   await expect(sheet.locator("#s-alerts-box")).toContainText(/alerts are off|can't show alerts/);
   if (await page.evaluate(() => "PushManager" in window)) {
     await expect(sheet.getByRole("button", { name: "turn on" })).toBeVisible();
-    await expect(page.locator("header [data-open=settings]")).toHaveAttribute("data-dot", "");
+    await page.goto("/more");
+    await expect(page.locator("#alerts")).toHaveAttribute("data-dot", "");
+    await expect(page.locator("#alerts .sv")).toHaveText("off");
+    await page.goto("/#settings/alerts");
   }
   await shot(page, info, "parity-13-settings");
   await audit(page);
@@ -292,7 +311,7 @@ test("row 10: a theme with moments plays one when a turn ends live; terminal pla
 
 test("row 12: ascii figures replace the sprites and stay", async ({ page }, info) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await lookSheet(page);
   await page.locator('#sheet [data-k="figures"][data-v="ascii"]').click();
   await page.keyboard.press("Escape");
   await expect(page.locator(".tp .rsp")).toHaveCount(0);
@@ -305,11 +324,11 @@ test("row 12: ascii figures replace the sprites and stay", async ({ page }, info
 });
 
 test("row 14: report mode: tap an element, add a note, send; cooee reports lists it", async ({ page }, info) => {
-  await page.goto("/#settings/report");
+  await page.goto("/?list#settings/report");
   await page.getByRole("button", { name: "report a problem" }).click();
   await expect(page.locator("#sheet")).toBeHidden();
-  await page.locator(".bar h1").click();
-  await expect(page.locator(".bar h1")).toHaveClass(/repo/);
+  await page.locator("h1.lt").click();
+  await expect(page.locator("h1.lt")).toHaveClass(/repo/);
   const note = `the title is off (${info.project.name})`;
   await page.getByLabel("what's wrong").fill(note);
   await shot(page, info, "parity-14-report");
@@ -318,5 +337,5 @@ test("row 14: report mode: tap an element, add a note, send; cooee reports lists
   await expect(page.locator(".repf")).toHaveCount(0);
   const listed = cooee("reports");
   expect(listed).toContain(note);
-  expect(listed).toContain("header.bar > h1");
+  expect(listed).toContain("div.sdb > h1.lt");
 });

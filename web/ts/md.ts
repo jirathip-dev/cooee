@@ -193,7 +193,7 @@ function code(text: string, lang: string): HTMLElement {
   copy.setAttribute("aria-label", lang ? `copy the ${lang} code` : "copy the code");
   copy.dataset.copy = text;
   bar.append(el("span", "", lang), copy);
-  if (document.querySelector('nav.tabs a[href="/p/terminal"]')) {
+  if (document.querySelector('.tbar[data-tabs~="terminal"]')) {
     const term = el("button", "cpt", "▸ terminal");
     term.setAttribute("type", "button");
     term.setAttribute("aria-label", "type the code into the terminal");

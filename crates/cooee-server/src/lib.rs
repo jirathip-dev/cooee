@@ -178,6 +178,8 @@ impl Layer for Gate {
                 None if method(cx) == "GET"
                     && (path == "/"
                         || path == "/new"
+                        || path == "/w"
+                        || path == "/more"
                         || path.starts_with("/t/")
                         || path.strip_prefix("/p/").is_some_and(|p| !p.contains('/'))) =>
                 {
@@ -355,6 +357,18 @@ async fn home(cx: &Cx) -> Result<impl View> {
     let (key, list) = agent_key(cx);
     let pane = cooee_web::Pane::Home { list, key };
     Ok(cooee_web::page(cx, side(cx).await?, pane))
+}
+
+/// Workflow (#118): the lanes' chats.
+#[page("/w")]
+async fn workflow(cx: &Cx) -> Result<impl View> {
+    Ok(cooee_web::screen_page(cx, side(cx).await?, "/w"))
+}
+
+/// More (#118): the look, alerts, the other plugin tabs, sign-ins and Settings.
+#[page("/more")]
+async fn more(cx: &Cx) -> Result<impl View> {
+    Ok(cooee_web::screen_page(cx, side(cx).await?, "/more"))
 }
 
 #[page("/new")]
@@ -1127,7 +1141,8 @@ fn named(cx: &Cx) -> Result<Plugin> {
 #[page("/p/{name}")]
 async fn tab(cx: &Cx) -> Result<impl View> {
     let p = named(cx)?;
-    Ok(cooee_web::plugin_page(cx, tabs(cx), p.name, p.label))
+    let needs = blocking(cx, |hub| Ok(cooee_web::needs(&hub.list()))).await?;
+    Ok(cooee_web::plugin_page(cx, tabs(cx), p.name, p.label, needs))
 }
 
 #[route(GET "/p/{name}/frame")]
@@ -2036,6 +2051,8 @@ pub fn router(
     .page(home)
     .page(chat)
     .page(new_chat)
+    .page(workflow)
+    .page(more)
     .route(thread_list)
     .route(messages)
     .route(events)

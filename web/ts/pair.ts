@@ -283,13 +283,13 @@ if (form) {
 }
 
 // ---- The thread list: the passkey offer after pairing, and the approve cards.
-const list = location.pathname === "/" ? $("main.cfm") : null;
+const list = location.pathname === "/" ? $(".sdb > .lt") : null;
 if (list) {
-  // Above the chat-first app's main: a landmark of its own.
+  // Under the chats' large title (#118): a landmark of its own.
   const top = make("section", "pq");
   top.id = "pairing";
   top.setAttribute("aria-label", "pairing");
-  list.before(top);
+  list.after(top);
   const me = /iPhone|iPad/.test(navigator.userAgent)
     ? "Face ID"
     : /Macintosh/.test(navigator.userAgent)

@@ -36,7 +36,8 @@ test("first run: no agents shows its fix line with a copy button, never an empty
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("shed agents add claude-acp");
 
   // A provider whose CLI isn't installed: one line, `[codex] not installed [copy install]`, no sign-in.
-  await page.getByRole("button", { name: "settings" }).click();
+  await page.goto(`${url}/more`);
+  await page.getByRole("button", { name: "Settings" }).click();
   await page.locator("#sheet").getByRole("button", { name: "providers" }).click();
   const sheet = page.locator("#sh-providers");
   await expect(sheet.locator(".acr")).toHaveCount(1);

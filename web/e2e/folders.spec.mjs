@@ -17,7 +17,8 @@ test.beforeEach(async ({ page }) => { await page.emulateMedia({ colorScheme: "da
 test("Settings › Folders: browse from home, add a root and remove it", async ({ page }, info) => {
   const folder = info.project.name === "390" ? "schemes" : "shed";
   await page.goto("/");
-  await page.getByRole("button", { name: "settings" }).click();
+  await page.goto("/more");
+  await page.getByRole("button", { name: "Settings" }).click();
   await page.locator("#sheet").getByRole("button", { name: "roots" }).click();
   const sheet = page.locator("#sheet .sh:popover-open");
   await expect(sheet.locator(".hd b")).toHaveText("folders");
@@ -45,7 +46,8 @@ test("Settings › Folders: browse from home, add a root and remove it", async (
   await page.goto("/new");
   await expect(page.locator(`#ufs input[name=folder][value$="/${folder}"]`)).toHaveCount(1);
 
-  await page.getByRole("button", { name: "settings" }).click();
+  await page.goto("/more");
+  await page.getByRole("button", { name: "Settings" }).click();
   await page.locator("#sheet").getByRole("button", { name: "roots" }).click();
   page.once("dialog", (d) => d.accept());
   await sheet.locator(".lrw", { hasText: `~/${folder}` }).first().getByRole("button", { name: "remove" }).click();

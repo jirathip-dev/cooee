@@ -6,6 +6,11 @@ import { dirname } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+// The look sheet in place (#118: ◐ moved to More): Settings' deep link, then its look row.
+const lookSheet = async (page) => {
+  await page.evaluate(() => { location.hash = ""; location.hash = "settings/look"; });
+  await page.locator("#sh-settings [data-open=look]").first().click();
+};
 const shot = (page, info, name) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png`, fullPage: true });
 // serve.sh's config folder, where themes/ and themes-dev/ are.
 const config = () => dirname(readFileSync(new URL("./.auth/code.config", import.meta.url), "utf8").trim());
@@ -55,7 +60,7 @@ test("remix farm with an agent, watch the preview reload on a save, keep it and 
   await page.getByRole("button", { name: "keep" }).click();
   await page.waitForURL(/#settings\/look$/);
   await expect(page.locator(".thm", { hasText: `${name} night` })).toBeVisible();
-  await page.getByRole("button", { name: "look: theme and colours" }).click();
+  await lookSheet(page);
   await page.locator(`#sh-look [data-k=theme][data-v="${name}"]`).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", name);
 });

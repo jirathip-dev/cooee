@@ -65,14 +65,15 @@ fn the_machines_tab_shows_each_machine_and_a_dot_while_one_is_offline() {
         "{log}"
     );
 
-    // The alert's dot, once the plugin has told cooee.
-    let mut home = String::new();
+    // The alert's dot on its row under More (#118), once the plugin has told cooee.
+    let dot = "Machines</span><i class=\"r\" aria-hidden=\"true\">●</i><span class=\"vh\"> (needs you)</span>";
+    let mut more = String::new();
     for _ in 0..100 {
-        home = cooee.get("/").1;
-        if home.contains("class=\"dot\"") {
+        more = cooee.get("/more").1;
+        if more.contains(dot) {
             break;
         }
         thread::sleep(Duration::from_millis(100));
     }
-    assert!(home.contains("Machines<i class=\"dot\" aria-hidden=\"true\">●</i><span class=\"vh\"> (needs you)</span>"), "{home}");
+    assert!(more.contains(dot), "{more}");
 }
