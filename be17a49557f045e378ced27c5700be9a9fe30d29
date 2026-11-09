@@ -1,0 +1,8 @@
+Decided: line_cap 22800 and apple_cap 5000 in ci/cap.toml; line-cap.sh checks and prints both totals
+Because: q958
+Because: "Add `apple_cap = 5000`."
+Decided: #Preview blocks are skipped by brace counting from the #Preview line to its closing brace
+Because: scripts/line-cap.sh:21
+Rejected: dropping every line after the first #Preview — would also drop code that follows the block
+Check: ci/line-cap-test.sh fails on the base script and passes at head; just cap runs it
+Owner: The size limit is now 22,800 lines, and the Apple app has its own 5,000-line limit that leaves out tests and previews.
