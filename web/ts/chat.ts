@@ -362,6 +362,16 @@ document.addEventListener("click", (e) => {
   );
 });
 
+// A code block's [▸ terminal] (#29): only the owner's own tap (never a script's click) keeps its text for this tab
+// only and opens the Terminal tab, which types it in (never Enter) once Face ID has unlocked it.
+const INSERT = "cooee-terminal-insert";
+document.addEventListener("click", (e) => {
+  const b = (e.target as Element).closest?.<HTMLElement>("[data-term]");
+  if (!e.isTrusted || b?.dataset.term === undefined) return;
+  sessionStorage.setItem(INSERT, b.dataset.term);
+  location.assign("/p/terminal");
+});
+
 // Sign-ins, in Settings › providers: [sign in] starts the provider's own login for that account
 // in a shed terminal ([+ account]: in a new account's folder); its terminal opens under the row, its screen
 // (redacted by the server) drawn every second with its links tappable, and a code typed there goes to it. Once it
@@ -890,6 +900,7 @@ if (frame) {
   lock.hidden = true;
   lock.textContent = "Unlock with Face ID";
   frame.after(lock);
+  let opened = (): void => {};
   const b64 = (b: ArrayBuffer): string =>
     btoa(String.fromCharCode(...new Uint8Array(b)))
       .replace(/\+/g, "-")
@@ -940,6 +951,7 @@ if (frame) {
       }
       lock.hidden = true;
       to({ op: "unlocked" });
+      opened();
     } catch (x) {
       toast(message(x), true);
     }
@@ -981,7 +993,29 @@ if (frame) {
   // look.ts sets the scheme's colours on <html>: a new pick or a system switch goes to the frame too.
   new MutationObserver(theme).observe(document.documentElement, { attributes: true });
   matchMedia("(prefers-color-scheme: light)").addEventListener("change", theme);
-  frame.src = (frame.dataset.src ?? "") + location.hash;
+  // A code block's text from a tap in a chat: typed into the shell used last (the backend's /insert never presses
+  // Enter), Face ID first when the tab is locked; the frame then opens on that shell (its #name).
+  const text = frame.dataset.plugin === "terminal" ? sessionStorage.getItem(INSERT) : null;
+  sessionStorage.removeItem(INSERT);
+  const insert = async (text: string): Promise<void> => {
+    for (;;) {
+      const r = await fetch(`${base}/insert`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (r.ok) return history.replaceState(null, "", `#${(await r.json()).terminal}`);
+      const why = await r.text();
+      if (r.status !== 403 || why !== "locked") return toast(why || `couldn't type it (error ${r.status})`, true);
+      await new Promise<void>((ok) => {
+        opened = ok;
+        lock.hidden = false;
+      });
+    }
+  };
+  (text === null ? Promise.resolve() : insert(text).catch((x) => toast(message(x), true))).then(() => {
+    frame.src = (frame.dataset.src ?? "") + location.hash;
+  });
   // An installed plugin's update, roll back or improvement reloads just this tab's frame.
   let built = "";
   setInterval(async () => {

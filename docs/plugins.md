@@ -178,7 +178,9 @@ token = "a-third-long-random-secret"
   lock it (blurred, no input) until Face ID again, and the shells keep running ([architecture.md](architecture.md#plugins-m4)).
 - **Insert text:** `POST /insert` `{"text"}` (through the tab's proxy) types into the shell used last, else the
   newest, else a new one, and never presses Enter: trailing line ends go, a `\` continuation joins its lines and any
-  other line end becomes `; `. It answers `{"terminal"}`.
+  other line end becomes `; `. It answers `{"terminal"}`. A chat's code block has **[▸ terminal]** beside [copy] when this plugin is on
+  (#29): the owner's tap opens the Terminal tab, which asks for Face ID first when locked, then inserts the block's
+  text and opens that shell (the tab's `#name`).
 
 Its other calls: `GET /list`, `POST /shell`, `GET /watch?t=<name>` (the stream), `POST /input` `{terminal, text}`,
 `/keys` `{terminal, keys}` (shed's key names), `/resize` `{terminal, cols, rows}`, `/close` `{terminal}`,

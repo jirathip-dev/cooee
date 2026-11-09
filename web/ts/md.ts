@@ -1,8 +1,9 @@
 // Markdown for the agent's replies (#43), hand-written: it builds DOM nodes (createElement, textContent), never
 // HTML, so every character of the text is escaped by construction. Blocks: paragraphs, headings, fenced code (its
-// language and a [copy] button, chat.ts's data-copy), ordered and unordered lists, blockquotes, rules and GitHub
-// tables (in a box that scrolls sideways); inline: bold, italic, code and links, of http and https only (a new tab,
-// rel=noopener). Raw HTML and images stay text. `settled` is how much of a streaming reply is whole blocks.
+// language, a [copy] button, chat.ts's data-copy, and [▸ terminal], its data-term, when the page has the owner
+// terminal's tab), ordered and unordered lists, blockquotes, rules and GitHub tables (in a box that scrolls
+// sideways); inline: bold, italic, code and links, of http and https only (a new tab, rel=noopener). Raw HTML and
+// images stay text. `settled` is how much of a streaming reply is whole blocks.
 
 const el = (tag: string, cls = "", text?: string): HTMLElement => {
   const e = document.createElement(tag);
@@ -182,7 +183,8 @@ function table(lines: string[], i: number, into: Node): number {
   return i;
 }
 
-/// A fenced block: its language (when the fence names one), [copy] and the code, as it is.
+/// A fenced block: its language (when the fence names one), [copy], [▸ terminal] (with the terminal plugin on) and
+/// the code, as it is.
 function code(text: string, lang: string): HTMLElement {
   const box = el("div", "cb");
   const bar = el("div", "cbh");
@@ -191,6 +193,13 @@ function code(text: string, lang: string): HTMLElement {
   copy.setAttribute("aria-label", lang ? `copy the ${lang} code` : "copy the code");
   copy.dataset.copy = text;
   bar.append(el("span", "", lang), copy);
+  if (document.querySelector('nav.tabs a[href="/p/terminal"]')) {
+    const term = el("button", "cpt", "▸ terminal");
+    term.setAttribute("type", "button");
+    term.setAttribute("aria-label", "type the code into the terminal");
+    term.dataset.term = text;
+    bar.append(term);
+  }
   const pre = el("pre");
   pre.appendChild(el("code", "", text));
   box.append(bar, pre);
