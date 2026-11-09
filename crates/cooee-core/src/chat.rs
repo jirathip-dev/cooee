@@ -114,7 +114,7 @@ pub struct Card {
     /// When it was answered, in Unix milliseconds.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub answered: Option<u64>,
-    /// `config` (a diff to apply or discard), `secret` (a masked value), `thread` (pick a thread) or `run` (a
+    /// `config` (a diff to apply or discard), `secret` (a masked value), `thread` (pick a thread) or `run-card` (a
     /// herdsman run card's command to approve or deny); none: choices.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub form: Option<String>,

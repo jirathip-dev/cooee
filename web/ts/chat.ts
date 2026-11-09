@@ -1348,10 +1348,12 @@ function chat(main: HTMLElement): void {
       // An MCP server an agent proposes (#56): the exact command or URL.
       if (it.form === "mcp" && it.detail) row.append(el("pre", "diff", it.detail));
       // A herdsman run card (#83): the exact command and the sha its [approve] carries.
-      if (it.form === "run" && it.detail)
-        row.append(el("pre", "diff", it.detail), el("p", "m", `sha ${it.sha?.slice(0, 12)}`));
+      // Its long lines scroll, so the block takes focus (axe: scrollable-region-focusable).
+      const scroll = (s: string): HTMLElement => Object.assign(el("pre", "diff", s), { tabIndex: 0 });
+      if (it.form === "run-card" && it.detail)
+        row.append(scroll(it.detail), el("p", "m", `sha ${it.sha?.slice(0, 12)}`));
       // A run's line is herdsman's `… exit N`, then its output tail in a fence.
-      const [line, ...tail] = it.form === "run" && it.line ? it.line.split("\n") : [it.line];
+      const [line, ...tail] = it.form === "run-card" && it.line ? it.line.split("\n") : [it.line];
       const out = tail.filter((l) => !l?.startsWith("```")).join("\n");
       if (it.chosen) {
         // The ✓ line: what was picked (or the plugin's own line), by whom and when; a conductor's answer keeps
@@ -1370,7 +1372,7 @@ function chat(main: HTMLElement): void {
           [said, it.by, it.answered ? time(it.answered) : ""].filter(Boolean).join(" · "),
         );
         row.append(ans);
-        if (out) row.append(el("pre", "diff", out));
+        if (out) row.append(scroll(out));
         if (it.until && Date.now() < it.until) {
           const change = el("button", "chg", "change") as HTMLButtonElement;
           change.type = "button";

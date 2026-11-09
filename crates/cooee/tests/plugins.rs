@@ -663,7 +663,7 @@ fn a_run_card_approves_once_with_its_sha_and_shows_the_tail() {
     let id = new_thread(&s, "Say hello");
     let sha = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
     let run = |sha: Option<&str>| {
-        let mut c = json!({ "thread": id, "text": "run r1: re-tag the release", "form": "run", "detail": "git tag -f v1" });
+        let mut c = json!({ "thread": id, "text": "run r1: re-tag the release", "form": "run-card", "detail": "git tag -f v1" });
         if let Some(sha) = sha {
             c["sha"] = sha.into();
         }
@@ -673,7 +673,7 @@ fn a_run_card_approves_once_with_its_sha_and_shows_the_tail() {
     let (_, r1) = s.card(&run(Some(sha)));
     assert_eq!(
         (&r1["form"], &r1["detail"], &r1["sha"]),
-        (&json!("run"), &json!("git tag -f v1"), &json!(sha))
+        (&json!("run-card"), &json!("git tag -f v1"), &json!(sha))
     );
     assert_eq!(
         r1["options"]

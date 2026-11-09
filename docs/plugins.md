@@ -125,7 +125,7 @@ The backend authenticates with the same token (`Authorization: Bearer <token>`);
   - `"form": "secret", "detail": "NAME"`: a masked field with [save] [dismiss]; the choice carries the `value`,
     which cooee never keeps or logs. The line reads `secret NAME set ✓`.
   - `"form": "thread"`: the other open threads as choices (the option is the thread's id).
-  - `"form": "run", "detail": "<command>", "sha": "<its sha>"`: a herdsman run card (herdsman#538): the command,
+  - `"form": "run-card", "detail": "<command>", "sha": "<its sha>"`: a herdsman run card (herdsman#538): the command,
     its sha's first 12 characters and [approve] [deny]. [approve] carries the card's `sha` as the `value`, sent
     once; the backend's line (`… exit N`, then the output tail in a fence) shows under the card, its 409 (expired,
     changed) closes it.

@@ -136,7 +136,7 @@ pub struct CardSpec {
     /// The option shown first, marked recommended.
     #[serde(default)]
     pub recommend: Option<String>,
-    /// `config`, `secret`, `thread` or `run`; none: choices.
+    /// `config`, `secret`, `thread` or `run-card`; none: choices.
     #[serde(default)]
     pub form: Option<String>,
     /// A config card's diff, a secret card's name, or a run card's command.
@@ -1373,7 +1373,7 @@ impl Hub {
                 .and_then(|p| {
                     // A run card's `approve` carries the sha it showed, never the page's value.
                     let value = match card.form.as_deref() {
-                        Some("run") => card.sha.as_deref().filter(|_| option == "approve"),
+                        Some("run-card") => card.sha.as_deref().filter(|_| option == "approve"),
                         _ => value,
                     };
                     crate::plugin::answer(&p, id, item, option, by, value)
@@ -1442,7 +1442,7 @@ impl Hub {
             None => c.options.iter().map(|o| plain(o)).collect(),
             Some("config") => vec![plain("apply"), plain("discard")],
             Some("secret") => vec![plain("save"), plain("dismiss")],
-            Some("run") => vec![plain("approve"), plain("deny")],
+            Some("run-card") => vec![plain("approve"), plain("deny")],
             Some("thread") => self
                 .list()
                 .into_iter()
@@ -1459,8 +1459,9 @@ impl Hub {
         let set = |v: &Option<String>| v.as_deref().is_some_and(|d| !d.trim().is_empty());
         if c.text.trim().is_empty()
             || options.is_empty()
-            || (matches!(c.form.as_deref(), Some("config" | "secret" | "run")) && !set(&c.detail))
-            || (c.form.as_deref() == Some("run") && !set(&c.sha))
+            || (matches!(c.form.as_deref(), Some("config" | "secret" | "run-card"))
+                && !set(&c.detail))
+            || (c.form.as_deref() == Some("run-card") && !set(&c.sha))
         {
             return Err(HubError::Refused(
                 "a card needs text and options (a thread to pick), a config card its diff, a secret card its name \
