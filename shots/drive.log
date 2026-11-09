@@ -1,0 +1,37 @@
+unpaired / -> /pair
+paired -> /
+GET /personas: 200 [{"id":"cards","name":"Cards","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","plugins":["hello"]},{"id":"reviewer","name":"Reviewer","character":"","instructions":"Be brief.\n","folder":"","agent":"fake-acp","model":"","effort":"","plugins":[],"profile":"reviewer"}]
+GET /personas/cards plugins: ["hello"]
+GET /personas/cards/places: 200 []
+GET /personas/nope/places: 400 no persona nope
+PUT cards plugins=[hello,other]: 200 {"id":"cards","name":"Cards","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","plugins":["hello","other"]}
+after attach: ["hello","other"]
+PUT cards plugins=[hello]: 200 {"id":"cards","name":"Cards","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","plugins":["hello"]}
+after detach: ["hello"]
+PUT cards plugins=[not-installed]: 400 no installed plugin not-installed
+after bad put: ["hello"]
+cards thread: 200 t1a1c21a2f5c
+390 agents ok
+390 new ok
+390 chat ok
+390 settings ok
+390 plugin-hello ok
+390 plugin-machines ok
+390 card-attached: ask 200: 200
+390 card-plain-thread: ask 200: 400
+390 card-other-plugin: ask 200: 400
+390 cards in persona thread: 1, kinds: hello
+390 card-in-chat ok
+390 'Ship it?' cards in long-390: 0
+1440 agents ok
+1440 new ok
+1440 chat ok
+1440 settings ok
+1440 plugin-hello ok
+1440 plugin-machines ok
+1440 card-attached: ask 200: 200
+1440 card-plain-thread: ask 200: 400
+1440 card-other-plugin: ask 200: 400
+1440 cards in persona thread: 2, kinds: hello,hello
+1440 card-in-chat ok
+1440 'Ship it?' cards in long-1440: 0

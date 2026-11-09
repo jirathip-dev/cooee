@@ -1,0 +1,73 @@
+import { chromium } from "@playwright/test";
+import fs from "node:fs";
+const out = process.env.OUT, base = `http://127.0.0.1:${process.env.P}`;
+const browser = await chromium.launch();
+const pair = await browser.newPage({ baseURL: base });
+await pair.goto("/");
+console.log("unpaired / ->", new URL(pair.url()).pathname);
+await pair.getByLabel("digit 1").click();
+await pair.keyboard.type(fs.readFileSync(`${out}/code`, "utf8").trim());
+await pair.waitForURL(/\/(\?paired)?$/, { waitUntil: "commit" });
+await pair.context().storageState({ path: `${out}/state.json` });
+console.log("paired ->", new URL(pair.url()).pathname);
+// #129 API steps, from the paired browser
+const rq = pair.request;
+const show = async (label, r) => console.log(`${label}: ${r.status()} ${(await r.text()).slice(0, 400)}`);
+await show("GET /personas", await rq.get("/personas"));
+const cards = await (await rq.get("/personas/cards")).json();
+console.log("GET /personas/cards plugins:", JSON.stringify(cards.plugins));
+await show("GET /personas/cards/places", await rq.get("/personas/cards/places"));
+await show("GET /personas/nope/places", await rq.get("/personas/nope/places"));
+await show("PUT cards plugins=[hello,other]", await rq.put("/personas/cards", { data: { ...cards, plugins: ["hello", "other"] } }));
+console.log("after attach:", JSON.stringify((await (await rq.get("/personas/cards")).json()).plugins));
+await show("PUT cards plugins=[hello]", await rq.put("/personas/cards", { data: { ...cards, plugins: ["hello"] } }));
+console.log("after detach:", JSON.stringify((await (await rq.get("/personas/cards")).json()).plugins));
+await show("PUT cards plugins=[not-installed]", await rq.put("/personas/cards", { data: { ...cards, plugins: ["not-installed"] } }));
+console.log("after bad put:", JSON.stringify((await (await rq.get("/personas/cards")).json()).plugins));
+const t = await rq.post("/threads", { data: { agent: "fake-acp", profile: "cards", text: "Say hello", random_id: "verify-129" } });
+const { id: thread } = await t.json();
+console.log("cards thread:", t.status(), thread);
+for (const w of [390, 1440]) {
+  const page = await browser.newPage({ baseURL: base, viewport: { width: w, height: w === 390 ? 844 : 900 }, storageState: `${out}/state.json` });
+  const shot = async (name, ready) => {
+    await ready.waitFor();
+    await page.screenshot({ path: `${out}/${w}-${name}.png`, fullPage: true });
+    console.log(`${w} ${name} ok`);
+  };
+  await page.goto("/?list");
+  await shot("agents", page.locator(".ags .agr").first());
+  await page.goto("/new");
+  await shot("new", page.getByLabel("message", { exact: true }));
+  await page.goto(`/t/long-${w}`);
+  await shot("chat", page.getByLabel("message", { exact: true }));
+  await page.goto("/#settings/sign-ins");
+  await shot("settings", page.locator("#sheet .sh:popover-open .six"));
+  await page.goto("/p/hello");
+  await shot("plugin-hello", page.locator("iframe.pf"));
+  await page.goto("/p/machines");
+  await shot("plugin-machines", page.frameLocator("iframe.pf").locator("article.on"));
+  // #129: hello's card to the cards persona's thread (attached), then to a plain thread and via `other` (not attached)
+  const ask = async (plugin, th, name) => {
+    await page.goto("/"); await page.goto(`/p/${plugin}#${th}`);
+    const tab = page.frameLocator("iframe.pf");
+    await tab.getByText(/^whoami/).waitFor();
+    await tab.getByRole("button", { name: "ask" }).click();
+    const li = tab.getByRole("listitem").filter({ hasText: /^ask/ });
+    await li.waitFor(); await page.waitForTimeout(500);
+    console.log(`${w} ${name}: ${await li.textContent()}`);
+    await page.screenshot({ path: `${out}/${w}-${name}.png`, fullPage: true });
+  };
+  await ask("hello", thread, "card-attached");
+  await ask("hello", `long-${w}`, "card-plain-thread");
+  await ask("other", thread, "card-other-plugin");
+  await page.goto(`/t/${encodeURIComponent(thread)}`);
+  const card = page.locator(".blk.ap", { hasText: "Ship it?" }).first();
+  await card.waitFor();
+  console.log(`${w} cards in persona thread: ${await page.locator(".blk.ap").count()}, kinds: ${(await page.locator(".blk.ap .k").allTextContents()).join(",")}`);
+  await shot("card-in-chat", card);
+  await page.goto(`/t/long-${w}`);
+  await page.getByLabel("message", { exact: true }).waitFor();
+  console.log(`${w} 'Ship it?' cards in long-${w}: ${await page.locator(".blk.ap", { hasText: "Ship it?" }).count()}`);
+  await page.close();
+}
+await browser.close();

@@ -1,0 +1,6 @@
+== token=hello thread=long-1440
+plugin hello is not attached to thread long-1440's persona [400]
+== token=other thread=t1a1c21a2f5c
+plugin other is not attached to thread t1a1c21a2f5c's persona [400]
+== token=hello thread=t1a1c21a2f5c
+{"id":5,"at":1794257875681,"seq":0,"kind":"approval","tool":"verify?","options":[{"id":"yes","name":"yes","kind":""},{"id":"no","name":"no","kind":""}],"plugin":"hello"} [200]
