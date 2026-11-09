@@ -1018,7 +1018,7 @@ shed_dir = {}
         (head, body.to_owned())
     }
 
-    fn request(&self, method: &str, path: &str, body: Option<&Value>) -> (u16, String) {
+    pub fn request(&self, method: &str, path: &str, body: Option<&Value>) -> (u16, String) {
         let body = body.map(Value::to_string).unwrap_or_default();
         let headers = [
             ("Content-Type", "application/json"),

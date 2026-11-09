@@ -15,6 +15,7 @@ use cooee_core::{
     Agent, Body, Card, Change, Chat, Config, Item, Launch, Plugin, Queued, Shed, ShedError, Store,
     StoreError, Summary, Thread, Turn, Workflow,
     mcp::{self, COOEE, Pick, Server},
+    personas,
     shed_proto::{self, ApprovalOption, Event, TerminalInfo},
 };
 use serde::{Deserialize, Serialize};
@@ -1597,6 +1598,7 @@ impl Hub {
     /// The thread list, newest first.
     #[must_use]
     pub fn list(&self) -> Vec<Summary> {
+        let personas = personas::list(self.config_dir(), &self.data);
         let mut rows: Vec<Summary> = self
             .all()
             .iter()
@@ -1632,6 +1634,11 @@ impl Hub {
                     agent: live.meta.agent.clone(),
                     account: live.meta.account.clone(),
                     profile: live.meta.profile.clone(),
+                    persona: personas
+                        .iter()
+                        .find(|p| p.id == live.meta.profile)
+                        .map(|p| p.id.clone())
+                        .unwrap_or_default(),
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     state: live.chat.turn.state.clone(),
                     last: waiting.unwrap_or_else(|| {
@@ -1970,6 +1977,20 @@ impl Hub {
         let s =
             s.ok_or_else(|| HubError::Refused(format!("MCP server {server} is off or gone")))?;
         self.grant_of(s, pick.tools).map_err(HubError::Refused)
+    }
+
+    /// An agent's `remember` in thread `id` (#126): a note by the thread's persona, for its next sessions.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an empty note.
+    pub fn remember(&self, id: &str, token: &str, text: &str) -> Result<personas::Note, HubError> {
+        let meta = self.token_of(id, token)?;
+        let found = personas::list(self.config_dir(), &self.data)
+            .into_iter()
+            .find(|p| p.id == meta.profile);
+        let p = found.ok_or_else(|| HubError::Refused(format!("thread {id} has no persona")))?;
+        personas::remember(&self.data, &p.id, "persona", text, now())
+            .map_err(|e| HubError::Refused(e.to_string()))
     }
 
     /// An agent's `propose_server` in thread `id`: a card with the exact command or URL; nothing runs, and the

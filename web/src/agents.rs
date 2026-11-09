@@ -993,6 +993,7 @@ mod tests {
             agent: "a".to_owned(),
             account: String::new(),
             profile: String::new(),
+            persona: String::new(),
             folder: PathBuf::new(),
             state: "done".to_owned(),
             last: String::new(),

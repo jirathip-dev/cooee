@@ -104,12 +104,7 @@ impl Profile {
                 self.name
             ));
         }
-        if let Some(a) = self.avatar.as_deref().filter(|a| {
-            !(a.starts_with("https://")
-                || a.starts_with("data:image/")
-                || a.starts_with('/')
-                || (!a.is_empty() && a.bytes().all(ok)))
-        }) {
+        if let Some(a) = self.avatar.as_deref().filter(|a| !avatar(a)) {
             return Err(format!(
                 "profile {}: avatar {a:?} isn't an image URL or a sprite id",
                 self.name
@@ -172,6 +167,30 @@ impl Profile {
         }
         Ok((plain, secret))
     }
+}
+
+/// Whether `a` is an avatar: an image (`https://…`, `data:image/…`, or a plugin's `/path`) or a sprite id.
+#[must_use]
+pub fn avatar(a: &str) -> bool {
+    let ok = |b: u8| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-';
+    a.starts_with("https://")
+        || a.starts_with("data:image/")
+        || a.starts_with('/')
+        || (!a.is_empty() && a.bytes().all(ok))
+}
+
+/// An id made from `label`: its letters and digits, lowercased, other runs a `-`.
+#[must_use]
+pub fn slug(label: &str) -> String {
+    let mut name = String::new();
+    for c in label.trim().to_lowercase().chars() {
+        if c.is_ascii_alphanumeric() {
+            name.push(c);
+        } else if !name.is_empty() && !name.ends_with('-') {
+            name.push('-');
+        }
+    }
+    name.trim_end_matches('-').to_owned()
 }
 
 /// The profiles to pick from: the owner's (`<config>/profiles/*.toml`, by file name), then each enabled installed
@@ -267,15 +286,7 @@ pub fn create(
     base: &str,
     agent: &str,
 ) -> io::Result<Profile> {
-    let mut name = String::new();
-    for c in label.trim().to_lowercase().chars() {
-        if c.is_ascii_alphanumeric() {
-            name.push(c);
-        } else if !name.is_empty() && !name.ends_with('-') {
-            name.push('-');
-        }
-    }
-    let name = name.trim_end_matches('-').to_owned();
+    let name = slug(label);
     let refused = |why: String| io::Error::new(io::ErrorKind::InvalidInput, why);
     if name.is_empty() {
         return Err(refused(format!("{label:?} needs a letter or digit")));

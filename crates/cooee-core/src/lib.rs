@@ -9,6 +9,7 @@ mod devices;
 mod login;
 pub mod mcp;
 pub mod perf;
+pub mod personas;
 pub mod plugins;
 pub mod profiles;
 mod shed;
