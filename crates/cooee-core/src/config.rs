@@ -51,6 +51,34 @@ pub struct Config {
     pub perf: Perf,
     /// The MCP servers profiles pick from (`[[mcp]]`, #56).
     pub mcp: Vec<crate::mcp::Server>,
+    /// Apple push for the native app (`[apns]`, #130); its key is `<data>/apns.p8`.
+    pub apns: Option<Apns>,
+}
+
+/// `[apns]`: the owner's APNs key's ids and the app it pushes to; none of it is secret.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Apns {
+    /// The key's id (Apple Developer › Keys).
+    pub key_id: String,
+    /// The team id.
+    pub team_id: String,
+    /// The app's bundle id.
+    pub topic: String,
+    /// `sandbox` (Xcode and test-flight builds) or `production`: a token registered without one is this.
+    pub env: ApnsEnv,
+    /// The APNs server; default Apple's for each token's `env`.
+    pub url: Option<String>,
+}
+
+/// Which APNs server a device token belongs to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ApnsEnv {
+    /// `api.sandbox.push.apple.com`.
+    Sandbox,
+    /// `api.push.apple.com`.
+    Production,
 }
 
 /// `[perf]`: how cooee times itself (#53).
@@ -104,6 +132,7 @@ impl Default for Config {
             instance: "cooee".to_owned(),
             perf: Perf::default(),
             mcp: Vec::new(),
+            apns: None,
         }
     }
 }

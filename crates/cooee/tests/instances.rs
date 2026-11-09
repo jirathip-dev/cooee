@@ -133,4 +133,32 @@ fn doctor_reports_a_missing_shed() {
             ),
         "{stdout}"
     );
+    assert!(
+        stdout.contains("warn apns: no [apns] in config.toml: the native app gets no pushes\n"),
+        "{stdout}"
+    );
+
+    // With `[apns]` but no key, doctor names the file; with a key it says ready and never prints it.
+    let apns =
+        "[apns]\nkey_id = \"K\"\nteam_id = \"T\"\ntopic = \"dev.cooee.app\"\nenv = \"sandbox\"\n";
+    fs::write(&config, format!("port = 1\n{apns}")).unwrap();
+    let stdout = String::from_utf8_lossy(&cooee(&home, &["doctor"]).stdout).into_owned();
+    let p8 = home.join(".local/share/cooee/cooee/apns.p8");
+    let missing = format!(
+        "warn apns: no {} (Apple Developer › Keys, APNs)",
+        p8.display()
+    );
+    assert!(stdout.contains(&missing), "{stdout}");
+    // A throwaway key made for this test (`openssl ecparam -genkey -name prime256v1 | openssl pkcs8 -topk8 -nocrypt`).
+    let key = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg/FMQqoOmZU6bop6k\n\
+               jwzlkZBiOA5CCW7ngc03CgGpgsKhRANCAASkJsDwiTE2wL6OIdpH5tfnsdyw5UK8\n\
+               NOnlJZkFHy9kIEFLJ8uttasmC9v/MsS+Cbb3MJBa25UlVnmKe8xoXskq";
+    let p = "PRIVATE KEY-----";
+    fs::create_dir_all(p8.parent().unwrap()).unwrap();
+    fs::write(&p8, format!("-----BEGIN {p}\n{key}\n-----END {p}\n")).unwrap();
+    let stdout = String::from_utf8_lossy(&cooee(&home, &["doctor"]).stdout).into_owned();
+    assert!(
+        stdout.contains("ok   apns ready\n") && !stdout.contains(&key[..40]),
+        "{stdout}"
+    );
 }

@@ -739,6 +739,13 @@ fn doctor(config: &Config) -> Result<(), String> {
         println!("warn no roots configured\n     fix: add {ROOTS_FIX} to config.toml");
     }
     let data = config.data_dir().ok_or("no data folder")?;
+    match cooee_server::Push::new(&data)
+        .with_apns(config.apns.clone())
+        .apns_ready()
+    {
+        Ok(()) => println!("ok   apns ready"),
+        Err(why) => println!("warn apns: {why}: the native app gets no pushes"),
+    }
     match cooee_server::Push::new(&data).has_key() {
         Ok(true) => println!("ok   push keys stored"),
         Ok(false) => {

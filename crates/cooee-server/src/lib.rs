@@ -1697,11 +1697,42 @@ async fn push_subscribe(cx: &Cx, Json(s): Json<Subscribe>) -> Result<Response> {
         p256dh: s.p256dh,
         auth: s.auth,
         reset: None,
+        apns: None,
     };
     let hub = hub(cx);
     match tokio::task::spawn_blocking(move || hub.push().subscribe(sub)).await? {
         Ok(()) => plain(200, "alerts on"),
         Err(e) if e.kind() == io::ErrorKind::InvalidInput => plain(400, &e.to_string()),
+        Err(e) => plain(500, &e.to_string()),
+    }
+}
+
+/// `POST`/`DELETE /push/apns`: this native device's APNs token (`env`: default the config's).
+#[derive(Deserialize)]
+struct Token {
+    token: String,
+    #[serde(default)]
+    env: Option<cooee_core::ApnsEnv>,
+}
+
+#[route(POST "/push/apns")]
+async fn apns_add(cx: &Cx, Json(t): Json<Token>) -> Result<Response> {
+    let (hub, me) = (hub(cx), request_context::<Paired>(cx).0.id.clone());
+    match tokio::task::spawn_blocking(move || hub.push().register_apns(&me, &t.token, t.env))
+        .await?
+    {
+        Ok(()) => plain(200, "alerts on"),
+        Err(e) if e.kind() == io::ErrorKind::InvalidInput => plain(400, &e.to_string()),
+        Err(e) => plain(500, &e.to_string()),
+    }
+}
+
+#[route(DELETE "/push/apns")]
+async fn apns_remove(cx: &Cx, Json(t): Json<Token>) -> Result<Response> {
+    let (hub, me) = (hub(cx), request_context::<Paired>(cx).0.id.clone());
+    let token = t.token.to_ascii_lowercase();
+    match tokio::task::spawn_blocking(move || hub.push().unsubscribe(&me, &token)).await? {
+        Ok(_) => plain(200, "alerts off"),
         Err(e) => plain(500, &e.to_string()),
     }
 }
@@ -2160,6 +2191,8 @@ pub fn router(
     .route(push_key)
     .route(push_subscribe)
     .route(push_unsubscribe)
+    .route(apns_add)
+    .route(apns_remove)
     .route(push_endpoints)
     .route(push_reset)
     .route(push_test)
@@ -2288,6 +2321,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         (config.roots.clone(), config.path.clone()),
         theme,
         manager.tabs(),
+        config.apns.clone(),
     )?;
     let router = router(
         Arc::clone(&hub),
