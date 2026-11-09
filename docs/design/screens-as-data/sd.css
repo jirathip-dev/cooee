@@ -104,3 +104,9 @@
 .wd>.dim{z-index:8}.wd .ps{top:40px;bottom:40px;width:640px;left:calc(50% - 320px)}
 .wd .dtl .ch2{position:absolute;height:56px;padding:0 8px}.wd .cvw{padding-top:56px}
 .nb.hm .me,.nb.hm .me .av{text-decoration:none}
+
+/* Revision 2: ofl the offline line at a sheet's top; .off greys every action under it (nothing can be sent). */
+.ofl{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 12px;margin:0 16px 12px;padding:10px 12px;border-radius:var(--r-row);background:color-mix(in srgb,var(--a) 16%,transparent);font-size:var(--fs-meta)}
+.ofl b{color:var(--a)}.ofl span{grid-column:1;color:var(--fg)}.ofl a{grid-row:1/3;grid-column:2;color:var(--l);font-weight:600;text-decoration:none}
+.off .pb :is(button,.chip,input),.off .cdb button{opacity:.38}.off .pb .gr .cv{opacity:.3}
+.off .sti,.off .ak,.off .gs{filter:saturate(.4)}

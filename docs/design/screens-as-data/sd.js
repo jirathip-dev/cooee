@@ -135,10 +135,20 @@ const chat = async () => { const cards = await json('fixtures/cards.json');
     ${cards.map(c => `<li class=ccd>${one(c)}</li>`).join('')}</ol>
     <form class=tw><button type=button class=att aria-label=attach>+</button><textarea rows=1 aria-label=message placeholder="message Conductor"></textarea><button type=button aria-label=send>↑</button></form></div>${chathead()}`; };
 // A plugin screen in a sheet: its title, its toolbar (⋯ menus), Done; the body is the screen's blocks.
-const sheet = s => `<div class=dim></div><div class="ps sdx" role=dialog aria-label="${esc(s.title)}"><div class=psh>${s.type === 'sheet'
+const sheet = (s, off) => `<div class=dim></div><div class="ps sdx${off ? ' off' : ''}" role=dialog aria-label="${esc(s.title)}"><div class=psh>${s.type === 'sheet'
   ? `<a href="#">${esc(s.cancel || 'Cancel')}</a><b>${esc(s.title)}</b><a href="#">${esc(s.done?.label || 'Done')}</a>`
   : `<span>${(s.actions || []).map(a => `<a href="#" aria-label="${esc(a.label)}">${ic(a.icon) }</a>`).join('')}</span><b>${esc(s.title)}</b><a href="#">Done</a>`}</div>
-  <div class=pb><div class=in>${all(s.blocks)}</div></div></div>`;
+  <div class=pb><div class=in>${off ? `<div class=ofl role=status><b>Mac unreachable</b><span>drover's Queue as of ${off} ago · actions are off until it's back</span><a href="#">Retry</a></div>` : ''}${all(s.blocks)}</div></div></div>`;
+// The attach confirm (revision 2): the app's own sheet, drawn from the manifest's [permissions], never from the plugin.
+const attach = m => { const p = m.permissions, row = (ic, t, sub, tone) => ({ type: 'row', figure: { icon: ic }, title: t, subtitle: sub && (tone ? { text: sub, tone } : sub) });
+  return sheet({ type: 'sheet', title: 'Attach drover', cancel: 'Cancel', done: { label: 'Attach' }, blocks: [
+    { type: 'text', markdown: `**cooee-drover ${m.version}** · \`${m.commit}\` · from the index\n\nAttach it to **Conductor**. It may do only what is listed; cooee refuses anything else.` },
+    { type: 'section', header: 'it may', blocks: [{ type: 'list', rows: [
+      row('▤', 'Buttons in Conductor\'s header', 'Queue, Events'), row('▭', 'Post cards in Conductor\'s chats', 'asks, run cards, design reviews'),
+      row('!', 'Send notifications', 'tag: drover'), row('≡', 'A row in Plugins', 'drover')] }] },
+    { type: 'section', header: 'actions · 12', blocks: [{ type: 'list', rows: [
+      row('⚠', 'Always confirm first', p.destructive.join(' · '), 'bad'), row('↩', 'Others', p.actions.filter(a => !p.destructive.includes(a)).join(' · '))] }] },
+    { type: 'section', header: 'network', footer: 'Its backend runs on mini as you: node server.mjs. Images and web blocks load only from these hosts.', blocks: [{ type: 'list', rows: p.network.map(h => row('⇄', h)) }] }] }); };
 const confirm = c => `<div class=mdim></div><div class=acs><div><p><b>${esc(c.title)}</b>${c.message ? `<br>${esc(c.message)}` : ''}</p><a class=rd href="#">${esc(c.ok)}</a></div><div><a href="#">Cancel</a></div></div>`;
 
 for (const e of document.querySelectorAll('[data-host]')) {
@@ -146,10 +156,11 @@ for (const e of document.querySelectorAll('[data-host]')) {
   if (e.dataset.screen) {
     sc = await json(e.dataset.screen);
     if (e.dataset.live) for (const ev of await json(e.dataset.live)) apply(sc, ev.ops);
-    over += sheet(sc);
+    over += sheet(sc, e.dataset.offline);
   }
   const base = e.dataset.host === 'home' ? home() : await chat();
   if ('menu' in e.dataset) over += menu();
+  if (e.dataset.attach) over += attach(await json(e.dataset.attach));
   if (e.dataset.confirm) { const f = find({ blocks: await json('fixtures/cards.json') }, e.dataset.confirm).node; over += confirm(f.options.find(o => o.value === e.dataset.value).confirm); }
   if (e.dataset.wide) e.innerHTML = `<aside class=side>${home()}</aside><main class=dtl>${base}</main>${over}`;
   else e.outerHTML = base + over;

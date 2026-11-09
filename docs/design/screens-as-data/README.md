@@ -27,6 +27,13 @@ whole plugin in 22 lines of Python.
   The design review is a chat card, no longer a pushed screen. Their frames are gone.
 - **Answered:** images in v1 (Q2, yes), one `POST /action` (Q3), and a JSON Schema plus `cooee plugin check` (Q4, yes).
 
+## Revision 2 (the owner: "add what's you commented on the design")
+
+- **Offline:** the app keeps each plugin screen's last answer and shows it with an `as of 5m ago` line when drover or
+  the Mac is unreachable, never a blank sheet. Every action is off until it is back (§ Offline, `queue-offline-*`).
+- **Permissions:** the manifest declares what a plugin may do. The app shows that list when the owner attaches the
+  plugin to a persona, and refuses anything not on it (§ Permissions, `attach-*`).
+
 ## The PNGs and the decision each shows
 
 | PNG | shows | decision |
@@ -35,6 +42,8 @@ whole plugin in 22 lines of Python.
 | `conductor-390-light.png`, `-dark.png` | The Conductor chat. The header carries the persona, then drover's **Queue** (count `7`) and **Events** buttons. drover's asks are **chat cards** at the end of the chat: the design card (images, approve · recommended / revise / reject, a revise note), a routine ask (options, other…, its countdown), and needs-human. The run card is just above. | `header-button` and `chat-cards` places; asks are cards, not a screen |
 | `queue-390-light.png`, `-dark.png` | `queue.json` as a sheet over the chat: `⋯` (Fleets…, Drive all now), Queue, Done. Then the repo `chips`, a `stat` row with sparklines, and the fleet `card` with its rows. **Each issue row holds its lane and rounds** (`impl ✓ · review 1 ✗ · fix 1 ▸ herdsman-impl-641 · mini`), the stage badge and a live age. The blocked chain is indented. | A header button opens the plugin's screen as a sheet; Fleets moves under `⋯` |
 | `queue-live-390-light.png` | The same sheet after `queue-stream.json`'s three events: `#722` merged to `review 1` (its new lane), `#708` removed, `#456` replaced (now in impl), `#686`'s subtitle merged, and the header button's count set to 6. | Live updates: ops keyed by block id, not a re-fetch |
+| `queue-offline-390-light.png`, `-dark.png` | The Queue sheet with the Mac unreachable: its last answer under an amber line (`Mac unreachable · drover's Queue as of 5m ago · actions are off until it's back`, Retry). The chips, buttons and chevrons are greyed; the data stays readable. | Offline shows the last answer and its age, never a blank sheet; no action is sent |
+| `attach-390-light.png`, `-dark.png` | Attaching drover to Conductor: the app's own sheet (Cancel · Attach drover · Attach), drawn from the manifest's `[permissions]`. It shows the version, commit and source, then **it may** (header buttons Queue and Events, cards in Conductor's chats, notifications, a Plugins row), **actions** (the destructive ones in red: always confirm first), and **network** (the hosts it calls, where it runs). | The owner sees every permission once, at attach; anything else is refused |
 | `events-390-light.png`, `-dark.png` | `events.json` as a sheet: kind chips, today's events newest first (merge, verdict, ask, spawn, FAIL, round limit), each with the theme's state figure and its time. A tap opens the PR, or a lane's chat (`tap: thread`). | Events is a plain list screen; its stream inserts rows |
 | `confirm-390-dark.png` | `merge anyway` on the needs-human card: the app's own action sheet (title, message, red Merge, Cancel). | Destructive confirms are data; the app draws them and the plugin can't skip them |
 | `hello-390-light.png`, `-dark.png` | **A third-party plugin:** `hello.py`'s screen as a sheet from its avatar-menu row: markdown, a stat and a Wave button. A tap POSTs `wave`, and the answer's `merge` op bumps the stat. | The scale: 22 lines of Python, no frontend |
@@ -44,7 +53,7 @@ whole plugin in 22 lines of Python.
 `screens.html` holds the frames and `blocks.html` the catalogue. Serve the repo root over http (the pages fetch
 `web/`, `packs/` and `../native-shell/ns.css` for the tokens). `?f=<frame>&mode=dark|light` shows one frame.
 `node docs/design/screens-as-data/shoot.mjs <chrome-headless-shell>`, run from the repo root, regenerates every PNG
-and checks each one for sideways scroll, anything past the right edge, and cut text without an ellipsis. **All 15
+and checks each one for sideways scroll, anything past the right edge, and cut text without an ellipsis. **All 19
 pass.** The design card's thumbnails are the shots themselves, so a fresh checkout runs it twice.
 **Look:** Modern, farm scheme, drawn on the design system's tokens. The home layout (q954) is drawn here for the first
 time, small; its own design is not this issue. **Data:** illustrative, from real issues.
@@ -234,10 +243,53 @@ today). `fixtures/places.json` is drover's:
 - A plugin is attached to the personas its places name. The owner can move it to another persona in its Plugins
   row; the default comes from the manifest. Places never add a tab or touch another plugin's persona.
 
+### Offline: the last answer, with its age (revision 2)
+
+- **What is kept:** for each place's screen (by path and query), the app keeps the last 2xx answer with the stream
+  ops applied after it, and the time of the last good read. Chat cards are kept with their chat. It is kept on the
+  device, in the app's container, never synced, and removed when the plugin is detached. A `secret` field never has a
+  value to keep.
+- **When it shows:** a GET, stream or action that can't reach the Mac (off the tailnet, the Mac asleep) or the plugin
+  (its backend down, a 5xx, a timeout over 5 s). The sheet opens at once on the kept answer, with one line on top:
+  **who** is unreachable (`Mac unreachable` or `drover isn't answering`), `as of 5m ago` (ticking), and **Retry**. A
+  header button keeps its last count, greyed. A screen never fetched before shows the line and an empty-state text,
+  not a spinner forever.
+- **Actions are off:** buttons, choices, chips, swipes, forms and taps that would POST are greyed and not focusable.
+  A tap on one shakes the offline line. Nothing is queued to send later: an answer must be made against fresh data.
+  Taps that only push a kept screen still work.
+- **Back online:** the stream resumes from its `seq` (or the plugin sends a `screen` op), the line goes, and the
+  actions come back. Times (`since` / `until`) tick on offline too, so `lapses in 11m` stays true.
+
+### Permissions: declared in the manifest, shown at attach, enforced (revision 2)
+
+```toml
+[permissions]                                   # cooee-plugin.toml
+places = ["header-button", "chat-cards", "menu-row"]
+push = true                                     # notifications, tag drover
+actions = ["filter", "drive", "pause", "drive-all", "top", "answer", "run-card", "needs-human",
+           "save-fleets", "stop", "drop", "remove-fleet"]
+destructive = ["stop", "drop", "remove-fleet", "run-card", "needs-human"]   # always confirmed first
+network = ["api.github.com", "127.0.0.1:7878"]  # hosts its backend, images and web blocks reach; [] for none
+```
+
+- **At attach** (Plugins › drover › Attach to…, or the add confirm): the app's own sheet lists the persona, then each
+  permission in plain words, with the version, commit and source. The owner taps Attach once. An update whose
+  permissions grow asks again and shows only what is new. The list stays readable in the plugin's row.
+- **Enforced by the app:**
+  - a place not declared is not drawn;
+  - `/plugin/push` without `push`, and a card without `chat-cards` or into another persona's chat, get a 403;
+  - an action not in `actions` is greyed and never sent;
+  - an action in `destructive` always gets the app's confirm, even when its JSON has none;
+  - an image or `web` block from a host not in `network` is not loaded.
+
+  `cooee plugin check` reports each of these before the owner ever sees one.
+- **The backend's own calls:** `network` is shown at attach. It is enforced where cooee runs the backend under shed's
+  sandbox (an outbound allow-list). A backend outside it is told apart in the sheet as `not sandboxed`.
+
 ### The schema and `cooee plugin check` (Q4)
 
 `docs/plugins/screens.schema.json` (to build) describes every block, op, place and action answer. `cooee plugin
-check` GETs each place's screen, validates it, and lints it: ids unique, a destructive button with no confirm, a
+check` GETs each place's screen, validates it against the schema and the manifest's `[permissions]`, and lints it: ids unique, a destructive button with no confirm, a
 `secret` sent with a value, images over 2 MB. The app still skips unknown blocks, so a newer plugin works on an
 older app.
 
@@ -262,10 +314,11 @@ older app.
    `confirmationDialog`, `.swipeActions`, `.sheet`), with this folder's fixtures as snapshot tests on iPhone and Mac.
 2. **Places:** header buttons, chat cards (and `/plugin/card` moving to card blocks), the avatar menu's Plugins rows,
    and attaching a plugin to a persona.
-3. **Schema and `cooee plugin check`.**
-4. **drover on screens:** cooee-drover serves Queue, Events, Fleets and its cards in these shapes, attached to the
+3. **Schema, `[permissions]` and `cooee plugin check`:** the attach sheet, and the refusals.
+4. **Offline:** the per-screen cache, the offline line, and actions off.
+5. **drover on screens:** cooee-drover serves Queue, Events, Fleets and its cards in these shapes, attached to the
    Conductor.
-5. **Docs:** `docs/plugins.md` gets the hello example and the block and place reference.
+6. **Docs:** `docs/plugins.md` gets the hello example and the block and place reference.
 
 ## Open questions for the owner
 
@@ -275,3 +328,5 @@ older app.
    sees the attachment in its Plugins row. The alternative is any chat a plugin started.
 3. **A card's push.** **Recommend:** a card with `"push": true` notifies, as approvals do today, and the rest stay
    quiet in the chat. The alternative is that every card notifies.
+4. **The backend's network outside shed.** **Recommend:** show `not sandboxed` at attach and allow it, since drover
+   runs on your Mac as you today. The alternative is to refuse attaching any plugin whose backend isn't sandboxed.
