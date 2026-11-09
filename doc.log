@@ -1,0 +1,13 @@
+    Checking cooee-core v0.1.0 (/Volumes/NVMe/herdsman/cooee/issue-129/crates/cooee-core)
+   Compiling cooee-web v0.1.0 (/Volumes/NVMe/herdsman/cooee/issue-129/web)
+ Documenting cooee-core v0.1.0 (/Volumes/NVMe/herdsman/cooee/issue-129/crates/cooee-core)
+    Checking cooee-machines v0.1.0 (/Volumes/NVMe/herdsman/cooee/issue-129/crates/cooee-machines)
+    Checking cooee-terminal v0.1.0 (/Volumes/NVMe/herdsman/cooee/issue-129/crates/cooee-terminal)
+ Documenting cooee-machines v0.1.0 (/Volumes/NVMe/herdsman/cooee/issue-129/crates/cooee-machines)
+ Documenting cooee-terminal v0.1.0 (/Volumes/NVMe/herdsman/cooee/issue-129/crates/cooee-terminal)
+ Documenting cooee-web v0.1.0 (/Volumes/NVMe/herdsman/cooee/issue-129/web)
+    Checking cooee-server v0.1.0 (/Volumes/NVMe/herdsman/cooee/issue-129/crates/cooee-server)
+ Documenting cooee-server v0.1.0 (/Volumes/NVMe/herdsman/cooee/issue-129/crates/cooee-server)
+ Documenting cooee v0.1.0 (/Volumes/NVMe/herdsman/cooee/issue-129/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.54s
+   Generated /Volumes/NVMe/herdsman/.build/cooee-impl-129/doc/cooee/index.html and 5 other files

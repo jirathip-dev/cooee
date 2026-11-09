@@ -1,0 +1,37 @@
+
+Running 2 tests using 1 worker
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (1.2s)
+  ✘  2 [1440] › threads.spec.mjs:60:1 › the current agent's row reads at AA while its chat works, on the light themes (5.2s)
+
+
+  1) [1440] › threads.spec.mjs:60:1 › the current agent's row reads at AA while its chat works, on the light themes 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  locator('#pill')
+    Expected: visible
+    Received: hidden
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeVisible" locator('#pill') with timeout 5000ms
+      - waiting for locator('#pill')
+        14 × locator resolved to <div id="pill" hidden="" class="pill">…</div>
+           - unexpected value "hidden"
+
+
+      65 |   await page.getByRole("button", { name: "send" }).click();
+      66 |   await page.waitForURL(/\/t\//);
+    > 67 |   await expect(page.locator("#pill")).toBeVisible();
+         |                                       ^
+      68 |   const row = page.locator(".ags .agr.on");
+      69 |   for (const theme of ["farm", "kitchen", "garden"]) {
+      70 |     await context.addCookies([{ name: "cooee-look", value: `theme:${theme}/mode:light`, url: baseURL }]);
+        at /Volumes/NVMe/herdsman/cooee/issue-129/web/e2e/threads.spec.mjs:67:39
+
+    Error Context: test-results/threads-the-current-agent--a870d-t-works-on-the-light-themes-1440/error-context.md
+
+  1 failed
+    [1440] › threads.spec.mjs:60:1 › the current agent's row reads at AA while its chat works, on the light themes 
+  1 passed (14.0s)
