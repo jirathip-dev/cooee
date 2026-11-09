@@ -18,6 +18,7 @@ public struct ChatView: View {
         ChatView(personaID: "coder", items: Fixtures.streaming, working: true, queued: Fixtures.queued, back: back)
     }
     public static func cards() -> ChatView { ChatView(personaID: "res", items: Fixtures.cards) }
+    public static func conductor() -> ChatView { ChatView(personaID: "cond", items: Fixtures.conductor) }
     public static func moreCards() -> ChatView { ChatView(personaID: "res", items: Fixtures.moreCards) }
 
     public var body: some View {

@@ -150,6 +150,21 @@ public enum Fixtures {
              sha: "3b7e0c55a1d9", folder: "~/research", blast: "~/research/.venv only, no network after", lapses: "lapses in 11m"),
     ]
 
+    /// Conductor's chat: its plugins' Queue and Events chips in the header, an ask card at the end.
+    public static let conductor: [Item] = [
+        .you(id: 1, text: "How's cooee's queue?"),
+        .tools(id: 2, rows: [("Run herdsman board cooee", "done"), ("Run herdsman asks cooee", "done")]),
+        .agent(id: 3, markdown: [
+            .text("Three in flight on **cooee**:"),
+            .bullets(["#124 native v1: **design review**, waiting on you", "#126 pairing API: review 1, PASS so far",
+                      "#128 Bonjour: impl, 40m in"]),
+            .text("#124's screens are up. Approve it and impl starts on the same branch."),
+        ]),
+        .choice(id: 4, title: "#124 design: native app v1 screens",
+                detail: "36 frames: home, chat, cards, persona sheet, avatar menu, pairing, Mac setup, three styles",
+                options: ["Approve", "Revise…", "Reject"], recommended: 0),
+    ]
+
     public static let chiefMemory = [
         ("Dana Okafor runs Kestrel's finance team, since September", "from Chief · 2h"),
         ("Renewals are tracked in renewals.md, one line each", "from you · 1d"),

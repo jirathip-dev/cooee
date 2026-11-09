@@ -30,6 +30,7 @@ MainActor.assumeIsolated {
         shot("chat-streaming-\(m)", W, H, pal, ChatView.streaming())
         shot("chat-card-\(m)", W, H, pal, ChatView.cards())
         shot("chat-cards-more-\(m)", W, H, pal, ChatView.moreCards())
+        shot("chat-conductor-\(m)", W, H, pal, ChatView.conductor())
         shot("persona-\(m)", W, H, pal, PersonaSheet())
         shot("avatar-menu-\(m)", W, H, pal, HomeView(menuOpen: true))
         for s in PhoneStep.allCases { shot("pair-\(s.rawValue)-\(m)", W, H, pal, PhoneOnboarding(step: s)) }
