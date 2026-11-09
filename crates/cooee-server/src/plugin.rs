@@ -217,7 +217,7 @@ pub fn answer(
     let status = reply.status;
     let line = serde_json::from_slice::<serde_json::Value>(&reply.bytes().unwrap_or_default())
         .ok()
-        .and_then(|v| Some(v.get("line")?.as_str()?.chars().take(300).collect()));
+        .and_then(|v| Some(v.get("line")?.as_str()?.chars().take(2000).collect()));
     match status {
         200..=299 => Ok(Ok(line)),
         409 => Ok(Err(line.unwrap_or_else(|| "stale".to_owned()))),

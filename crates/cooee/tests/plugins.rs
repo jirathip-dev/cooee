@@ -653,3 +653,78 @@ fn row_35_handoff_chips_flow_back_lines_and_pick_a_thread() {
         json!([{ "id": t6, "name": "Fix the build", "kind": "" }])
     );
 }
+
+/// #83: a herdsman run card shows its command and sha; [approve] goes to the plugin once, carrying the card's sha
+/// (never the page's value), and settles with the exit code and output tail; a second approve sends nothing; [deny]
+/// carries no sha; an expired card's 409 leaves it stale.
+#[test]
+fn a_run_card_approves_once_with_its_sha_and_shows_the_tail() {
+    let s = setup("card-83");
+    let id = new_thread(&s, "Say hello");
+    let sha = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+    let run = |sha: Option<&str>| {
+        let mut c = json!({ "thread": id, "text": "run r1: re-tag the release", "form": "run", "detail": "git tag -f v1" });
+        if let Some(sha) = sha {
+            c["sha"] = sha.into();
+        }
+        c
+    };
+    assert_eq!(s.card(&run(None)).0, 400, "a run card needs its sha");
+    let (_, r1) = s.card(&run(Some(sha)));
+    assert_eq!(
+        (&r1["form"], &r1["detail"], &r1["sha"]),
+        (&json!("run"), &json!("git tag -f v1"), &json!(sha))
+    );
+    assert_eq!(
+        r1["options"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|o| &o["id"])
+            .collect::<Vec<_>>(),
+        ["approve", "deny"]
+    );
+
+    let line = "run r1 approved by owner, ran in /repo: exit 0\n```\nUpdated tag 'v1'\n```";
+    *s.a.choice.lock().unwrap() = Some((200, json!({ "line": line })));
+    let ran = s.tap(
+        &id,
+        &json!({ "item": r1["id"], "option": "approve", "value": "0000" }),
+    );
+    assert_eq!(
+        (&ran["chosen"], &ran["line"], &ran["by"]),
+        (&json!("approve"), &json!(line), &json!(me(&s)))
+    );
+    let again = s.tap(&id, &json!({ "item": r1["id"], "option": "approve" }));
+    assert_eq!(again["line"], line);
+    assert_eq!(
+        s.a.choices(),
+        [
+            json!({ "thread": id, "item": r1["id"], "option": "approve", "by": me(&s), "value": sha })
+        ],
+        "approved once, with the card's sha"
+    );
+
+    let (_, r2) = s.card(&run(Some(sha)));
+    let denied = s.tap(&id, &json!({ "item": r2["id"], "option": "deny" }));
+    assert_eq!(denied["chosen"], "deny");
+    assert_eq!(
+        s.a.choices()[1],
+        json!({ "thread": id, "item": r2["id"], "option": "deny", "by": me(&s) })
+    );
+
+    let (_, r3) = s.card(&run(Some(sha)));
+    let expired = "r3 expired 15 min after it was posted; post a new card";
+    *s.a.choice.lock().unwrap() = Some((409, json!({ "line": expired })));
+    let stale = s.tap(&id, &json!({ "item": r3["id"], "option": "approve" }));
+    assert_eq!(
+        (&stale["chosen"], &stale["line"]),
+        (&Value::Null, &json!(expired))
+    );
+    s.tap(&id, &json!({ "item": r3["id"], "option": "approve" }));
+    assert_eq!(
+        s.a.choices().len(),
+        3,
+        "a stale card takes no second approve"
+    );
+}

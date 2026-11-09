@@ -26,7 +26,15 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "ended"; text: string }
 );
 // Who answered and when, and a plugin card's form (#553 rows 30-33).
-type Form = { by?: string; answered?: number; form?: string; detail?: string; line?: string; until?: number };
+type Form = {
+  by?: string;
+  answered?: number;
+  form?: string;
+  detail?: string;
+  sha?: string;
+  line?: string;
+  until?: number;
+};
 type Choice = Extract<Item, { kind: "approval" }>;
 type Turn = { text: string; state: string; note?: string };
 type Queued = { text: string; random_id: string; files?: string[] };
@@ -1339,12 +1347,18 @@ function chat(main: HTMLElement): void {
       }
       // An MCP server an agent proposes (#56): the exact command or URL.
       if (it.form === "mcp" && it.detail) row.append(el("pre", "diff", it.detail));
+      // A herdsman run card (#83): the exact command and the sha its [approve] carries.
+      if (it.form === "run" && it.detail)
+        row.append(el("pre", "diff", it.detail), el("p", "m", `sha ${it.sha?.slice(0, 12)}`));
+      // A run's line is herdsman's `… exit N`, then its output tail in a fence.
+      const [line, ...tail] = it.form === "run" && it.line ? it.line.split("\n") : [it.line];
+      const out = tail.filter((l) => !l?.startsWith("```")).join("\n");
       if (it.chosen) {
         // The ✓ line: what was picked (or the plugin's own line), by whom and when; a conductor's answer keeps
         // [change] for its 30 minutes.
         const name = it.options.find((o) => o.id === it.chosen)?.name ?? it.chosen;
         const said =
-          it.line ??
+          line ??
           (it.form === "secret"
             ? `secret ${it.detail} ${it.chosen === "save" ? "set ✓" : "dismissed"}`
             : it.form === "config"
@@ -1356,6 +1370,7 @@ function chat(main: HTMLElement): void {
           [said, it.by, it.answered ? time(it.answered) : ""].filter(Boolean).join(" · "),
         );
         row.append(ans);
+        if (out) row.append(el("pre", "diff", out));
         if (it.until && Date.now() < it.until) {
           const change = el("button", "chg", "change") as HTMLButtonElement;
           change.type = "button";

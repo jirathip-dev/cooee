@@ -125,6 +125,10 @@ The backend authenticates with the same token (`Authorization: Bearer <token>`);
   - `"form": "secret", "detail": "NAME"`: a masked field with [save] [dismiss]; the choice carries the `value`,
     which cooee never keeps or logs. The line reads `secret NAME set ✓`.
   - `"form": "thread"`: the other open threads as choices (the option is the thread's id).
+  - `"form": "run", "detail": "<command>", "sha": "<its sha>"`: a herdsman run card (herdsman#538): the command,
+    its sha's first 12 characters and [approve] [deny]. [approve] carries the card's `sha` as the `value`, sent
+    once; the backend's line (`… exit N`, then the output tail in a fence) shows under the card, its 409 (expired,
+    changed) closes it.
 - `POST /plugin/handoff` `{"from": "<id>", "to": "<id>", "text": "…"}`: `from` shows a `continued in <to>` chip,
   `to` the text with a `from <from>` chip; `POST /plugin/line` `{"thread", "from", "text"}`: a line flowing back
   into `thread` with a `from` chip. A chip opens that thread (row 35).
@@ -223,7 +227,12 @@ http.createServer(async (req, res) => {
   const body = await read(req);
   if (req.url === "/notify") return json(res, 200, await toCooee("/plugin/push", { text: "hello from the plugin", path: "hi" }));
   if (req.url === "/ask") return json(res, 200, await toCooee("/plugin/card", { thread: body.thread, text: "Ship it?", options: ["yes", "no"] }));
-  if (req.url === "/cooee/choice") { tell("choice", body.option); return json(res, 200, "ok"); }
+  if (req.url === "/cooee/choice") {
+    tell("choice", body.option);
+    // A run card's [approve] carries its sha; herdsman would run it and answer the exit code and output tail.
+    if (body.option === "approve" && body.value) return json(res, 200, { line: `ran: exit 0\n\`\`\`\nat ${body.value.slice(0, 12)}\n\`\`\`` });
+    return json(res, 200, "ok");
+  }
   json(res, 404, "no such path");
 }).listen(Number(PORT), "127.0.0.1");
 ```
