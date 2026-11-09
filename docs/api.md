@@ -55,13 +55,15 @@ another run; load the newest slice again).
 
 ## Personas (#126)
 
-A persona is `{id, name, avatar?, character, instructions, folder, agent, model, effort, profile?}`: `avatar` an image
+A persona is `{id, name, avatar?, character, instructions, folder, agent, model, effort, plugins, profile?}`: `avatar` an image
 (`https://…`, `data:image/…`; none: the client draws initials), `folder` an owned folder or `scratch`, `agent`, `model`
 and `effort` its defaults. It is `<config>/personas/<id>.toml`; an owner profile with no persona of its name is read
 as one (`profile`: the profile it runs as, its account, settings, env, MCP servers and policy kept; never set over the
 API). Its Character, Instructions and notes go ahead of each new session's first message (`POST /threads` with
 `profile: <id>`). A note is `{text, by: "persona" | "owner", at}`, in `<data>/personas/<id>/memory.jsonl`; the persona
-adds one with the `remember` tool of cooee's own MCP server. An unknown id or a broken rule is a 400 with the reason.
+adds one with the `remember` tool of cooee's own MCP server. `plugins` (#129) are the installed plugins (or config
+`[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. The persona read from a `conductor`
+profile has an installed `cooee-drover` attached. An unknown id or a broken rule is a 400 with the reason.
 
 | Call | Body | Answer |
 |---|---|---|
@@ -70,6 +72,7 @@ adds one with the `remember` tool of cooee's own MCP server. An unknown id or a 
 | `GET /personas/{id}` | | the persona |
 | `PUT /personas/{id}` | the persona | the persona |
 | `DELETE /personas/{id}` | | `null`: its file, the profile it runs as and its notes go; its chats stay |
+| `GET /personas/{id}/places` | | its attached plugins' header screens, `{name, label, icon, url}[]`: none until a plugin can have one (#125) |
 | `GET /personas/{id}/memory` | | its notes, oldest first |
 | `POST /personas/{id}/memory` | `{text}` | the note, by `owner` |
 | `DELETE /personas/{id}/memory` | | `null`: the notes go, the persona and its chats stay |

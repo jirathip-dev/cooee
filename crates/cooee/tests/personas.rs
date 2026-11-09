@@ -1,7 +1,8 @@
 //! Personas over the API (#126) with the fake shed (tests/support): one is created, edited and deleted; today's
 //! profile is read as a persona with nothing lost and runs as that profile; a note by the persona (its `remember`
 //! tool through cooee's MCP server) and one by the owner both list and reach its next session; clearing its memory,
-//! or deleting it, leaves its chats.
+//! or deleting it, leaves its chats. Plugins attach to a persona and detach (#129); an installed drover goes with the
+//! conductor profile's.
 
 mod support;
 
@@ -225,7 +226,7 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
         list,
         json!([{ "id": "coder", "name": "Coder", "avatar": "idle", "character": "",
                  "instructions": "Follow the house rules.\n", "folder": "", "agent": "fake-acp",
-                 "model": "", "effort": "", "profile": "coder" }])
+                 "model": "", "effort": "", "plugins": [], "profile": "coder" }])
     );
 
     // It runs as the profile: its env and policy on the adapter, its instructions ahead of the first message.
@@ -260,4 +261,70 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
     assert_eq!(s.call("DELETE", "/personas/coder", None).0, 200);
     assert!(!profile.exists() && !s.dir.join("personas/coder.toml").exists());
     assert_eq!(s.cooee.json("/personas"), json!([]));
+}
+
+/// drover installed (off, so nothing runs it) in `<data>/plugins.lock`.
+fn install_drover(s: &Setup) {
+    let lock = json!([{ "name": "cooee-drover", "url": "https://example.com/cooee-drover", "commit": "c0",
+                        "version": "0.1.0", "tabs": ["queue"], "port": 1, "enabled": false }]);
+    fs::write(s.dir.join("data/plugins.lock"), lock.to_string()).unwrap();
+}
+
+/// #129: a plugin is attached and detached over the API, only an installed one; the places list only attached
+/// plugins' screens, and none has one before #125.
+#[test]
+fn a_plugin_is_attached_to_a_persona_and_detached() {
+    let s = setup("personas-plugins");
+    install_drover(&s);
+    let new = json!({ "name": "Chief", "agent": "fake-acp" });
+    let (status, mut chief) = s.call("POST", "/personas", Some(&new));
+    assert_eq!((status, &chief["plugins"]), (200, &json!([])), "{chief}");
+
+    chief["plugins"] = json!(["cooee-drover"]);
+    let (status, saved) = s.call("PUT", "/personas/chief", Some(&chief));
+    assert_eq!(status, 200, "{saved}");
+    assert_eq!(
+        s.cooee.json("/personas/chief")["plugins"],
+        json!(["cooee-drover"])
+    );
+    assert_eq!(s.cooee.json("/personas/coder")["plugins"], json!([]));
+    assert_eq!(s.cooee.json("/personas/chief/places"), json!([]));
+    assert_eq!(s.call("GET", "/personas/nobody/places", None).0, 400);
+
+    chief["plugins"] = json!(["cooee-drover", "nope"]);
+    let (status, why) = s.call("PUT", "/personas/chief", Some(&chief));
+    assert_eq!(status, 400, "{why}");
+    assert!(
+        why.as_str().unwrap().contains("no installed plugin nope"),
+        "{why}"
+    );
+    assert_eq!(
+        s.cooee.json("/personas/chief")["plugins"],
+        json!(["cooee-drover"])
+    );
+
+    chief["plugins"] = json!([]);
+    assert_eq!(s.call("PUT", "/personas/chief", Some(&chief)).0, 200);
+    assert_eq!(s.cooee.json("/personas/chief")["plugins"], json!([]));
+}
+
+/// #129: an installed drover is attached to the persona read from the conductor profile, and to no other.
+#[test]
+fn migration_attaches_drover_to_the_conductor_persona_only() {
+    let s = setup("personas-drover");
+    fs::write(
+        s.dir.join("profiles/conductor.toml"),
+        "name = \"conductor\"\nlabel = \"Conductor\"\nagent = \"fake-acp\"\n",
+    )
+    .unwrap();
+    let plugins = |id: &str| s.cooee.json(&format!("/personas/{id}"))["plugins"].clone();
+    assert_eq!(
+        (plugins("conductor"), plugins("coder")),
+        (json!([]), json!([]))
+    );
+    install_drover(&s);
+    assert_eq!(
+        (plugins("conductor"), plugins("coder")),
+        (json!(["cooee-drover"]), json!([]))
+    );
 }

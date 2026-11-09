@@ -22,14 +22,14 @@ async function audit(page) {
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 }
 
-// A new thread whose turn is done, open; its id.
+// A new thread of persona `cards` (serve.sh: `hello` is attached to it, #129) whose turn is done, open; its id.
 async function thread(page, text) {
-  await page.goto("/new");
-  await page.getByLabel("message", { exact: true }).fill(text);
-  await page.getByRole("button", { name: "send" }).click();
-  await page.waitForURL(/\/t\//);
+  const r = await page.request.post("/threads", { data: { agent: "fake-acp", profile: "cards", text, random_id: text } });
+  expect(r.status(), await r.text()).toBe(200);
+  const { id } = await r.json();
+  await page.goto(`/t/${encodeURIComponent(id)}`);
   await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
-  return decodeURIComponent(new URL(page.url()).pathname.split("/")[2]);
+  return id;
 }
 
 test.beforeEach(async ({ page }) => {

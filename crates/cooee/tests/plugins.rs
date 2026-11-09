@@ -14,7 +14,7 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, scratch, version};
+use support::{Cooee, FakeShed, is_item, scratch, version};
 
 /// A plugin backend on a free port: every request's head (request line and lowercased headers) and body. Its
 /// next answer to `/cooee/choice` is `choice`'s, when set.
@@ -121,6 +121,10 @@ fn setup(name: &str) -> Setup {
     };
     let extra = plugin("a", "Alpha", a.port, TOKEN_A) + &plugin("b", "Beta", b.port, TOKEN_B);
     let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
+    // Both plugins attached to persona `chief` (#129): their cards go to its threads only.
+    let chief = json!({ "name": "Chief", "agent": "fake-acp", "plugins": ["a", "b"] });
+    let (code, body) = cooee.post("/personas", &chief);
+    assert_eq!(code, 200, "{body}");
     Setup {
         dir,
         shed,
@@ -298,13 +302,7 @@ fn a_plugin_with_no_token_configured_does_not_start() {
 #[test]
 fn a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin() {
     let s = setup("plugin-card");
-    let new = json!({ "agent": "fake-acp", "folder": s.dir.join("root/project"), "text": "Say hello", "random_id": "r0" });
-    let (code, body) = s.cooee.post("/threads", &new);
-    assert_eq!(code, 200, "{body}");
-    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let id = new_thread(&s, "Say hello");
 
     let card = |token: &str, text: &str| {
         let card = json!({ "thread": id, "text": text, "options": ["yes", "no"] });
@@ -416,16 +414,26 @@ fn me(s: &Setup) -> String {
     me.unwrap()["label"].as_str().unwrap().to_owned()
 }
 
-/// A new thread's id.
+/// A new thread's id: one of persona `chief`'s.
 fn new_thread(s: &Setup, text: &str) -> String {
-    let random = format!("r-{text}");
-    let new = json!({ "agent": "fake-acp", "folder": s.dir.join("root/project"), "text": text, "random_id": random });
+    thread_of(s, "chief", text)
+}
+
+/// A new thread of persona `persona` (none: Plain), once its agent has answered: its id.
+fn thread_of(s: &Setup, persona: &str, text: &str) -> String {
+    let random = format!("r-{persona}-{text}");
+    let new = json!({ "agent": "fake-acp", "profile": persona, "folder": s.dir.join("root/project"), "text": text, "random_id": random });
     let (code, body) = s.cooee.post("/threads", &new);
     assert_eq!(code, 200, "{body}");
-    serde_json::from_str::<Value>(&body).unwrap()["id"]
+    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
         .as_str()
         .unwrap()
-        .to_owned()
+        .to_owned();
+    let cursor = s.cooee.json(&format!("/threads/{id}/messages"))["cursor"].clone();
+    let boot = cursor.as_str().unwrap().split('.').next().unwrap();
+    let mut events = s.cooee.events(&id, &format!("{boot}.0"), false);
+    events.until(|e| is_item(e, "agent"));
+    id
 }
 
 impl Setup {
@@ -727,4 +735,27 @@ fn a_run_card_approves_once_with_its_sha_and_shows_the_tail() {
         3,
         "a stale card takes no second approve"
     );
+}
+
+/// #129: a plugin's card goes only to a thread of a persona it is attached to; any other is refused, with why.
+#[test]
+fn a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused() {
+    let s = setup("card-unattached");
+    let only_b = json!({ "name": "Bee", "agent": "fake-acp", "plugins": ["b"] });
+    assert_eq!(s.cooee.post("/personas", &only_b).0, 200);
+    for id in [
+        thread_of(&s, "bee", "Say hello"),
+        thread_of(&s, "", "Say hi"),
+    ] {
+        let card = json!({ "thread": id, "text": "Ship it?", "options": ["yes"] });
+        let (code, why) = s.as_backend("/plugin/card", &format!("Bearer {TOKEN_A}"), &card);
+        assert_eq!(code, 400, "{why}");
+        assert!(why.contains("plugin a is not attached"), "{why}");
+        let items = s.cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+        assert!(!items.to_string().contains("Ship it?"), "{items}");
+    }
+    let card =
+        json!({ "thread": thread_of(&s, "bee", "Again"), "text": "Merge?", "options": ["yes"] });
+    let (code, body) = s.as_backend("/plugin/card", &format!("Bearer {TOKEN_B}"), &card);
+    assert_eq!(code, 200, "{body}");
 }
