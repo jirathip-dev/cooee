@@ -1,0 +1,12 @@
+    Blocking waiting for file lock on package cache
+   Compiling cooee v0.1.0 (/Volumes/NVMe/herdsman/cooee/verify-126-r1/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.99s
+     Running tests/personas.rs (/Volumes/NVMe/herdsman/.build/cooee-verify-126-r1/debug/deps/personas-7d4d05c173a4576b)
+
+running 2 tests
+test a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session ... ok
+test a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.20s
+
+exit=0

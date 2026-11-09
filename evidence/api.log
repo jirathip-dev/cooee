@@ -1,0 +1,88 @@
+$ ls profiles
+reviewer.md
+reviewer.toml
+--- /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.ewMRGdkDWD/profiles/reviewer.md
+Be brief.
+--- /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.ewMRGdkDWD/profiles/reviewer.toml
+name = "reviewer"
+label = "Reviewer"
+agent = "fake-acp"
+instructions = "reviewer.md"
+$ curl GET /personas (no cookie)
+[http 401]
+$ curl -X GET /personas 
+[{"id":"reviewer","name":"Reviewer","character":"","instructions":"Be brief.\n","folder":"","agent":"fake-acp","model":"","effort":"","profile":"reviewer"}]
+[http 200]
+$ curl -X POST /personas -d '{"name":"Ada Reviewer","character":"terse, precise","instructions":"always cite file:line","folder":"scratch","agent":"fake-acp","model":"","effort":""}'
+{"id":"ada-reviewer","name":"Ada Reviewer","character":"terse, precise","instructions":"always cite file:line","folder":"scratch","agent":"fake-acp","model":"","effort":""}
+[http 200]
+$ ls personas
+ada-reviewer.toml
+agent = "fake-acp"
+character = "terse, precise"
+effort = ""
+folder = "scratch"
+instructions = "always cite file:line"
+model = ""
+name = "Ada Reviewer"
+$ curl -X GET /personas 
+[{"id":"ada-reviewer","name":"Ada Reviewer","character":"terse, precise","instructions":"always cite file:line","folder":"scratch","agent":"fake-acp","model":"","effort":""},{"id":"reviewer","name":"Reviewer","character":"","instructions":"Be brief.\n","folder":"","agent":"fake-acp","model":"","effort":"","profile":"reviewer"}]
+[http 200]
+$ curl -X PUT /personas/ada-reviewer -d '{"id":"ada-reviewer","name":"Ada","avatar":"https://example.com/a.png","character":"warm","instructions":"cite file:line","folder":"scratch","agent":"fake-acp","model":"","effort":""}'
+{"id":"ada-reviewer","name":"Ada","avatar":"https://example.com/a.png","character":"warm","instructions":"cite file:line","folder":"scratch","agent":"fake-acp","model":"","effort":""}
+[http 200]
+$ curl -X GET /personas/ada-reviewer 
+{"id":"ada-reviewer","name":"Ada","avatar":"https://example.com/a.png","character":"warm","instructions":"cite file:line","folder":"scratch","agent":"fake-acp","model":"","effort":""}
+[http 200]
+$ curl -X PUT /personas/ada-reviewer -d '{"id":"ada-reviewer","name":"Ada","avatar":"javascript:alert(1)","character":"","instructions":"","folder":"scratch","agent":"fake-acp","model":"","effort":""}'
+a persona needs a name, an agent, and an image or none as its avatar
+[http 400]
+$ curl -X GET /personas/nope 
+no persona nope
+[http 400]
+$ curl -X POST /personas/ada-reviewer/memory -d '{"text":"owner likes short answers"}'
+{"text":"owner likes short answers","by":"owner","at":1794238265324}
+[http 200]
+$ curl -X GET /personas/ada-reviewer/memory 
+[{"text":"owner likes short answers","by":"owner","at":1794238265324}]
+[http 200]
+$ curl -X GET /threads 
+[{"id":"w-lane-rev","title":"cooee #31","agent":"fake-acp","account":"","profile":"","persona":"","folder":"/","state":"blocked","last":"Edit src/lib.rs","at":1794238219647,"unread":true,"unseen":2,"archived":false,"workflow":{"source":"drover","group":"cooee","item":"#31","role":"rev","round":"1","url":"https://github.com/o/cooee/issues/31"}},{"id":"w-lane-done","title":"cooee #30","agent":"fake-acp","account":"","profile":"","persona":"","folder":"/","state":"done","last":"Read it.","at":1794238219640,"unread":true,"unseen":2,"archived":false,"workflow":{"source":"dro
+$ curl -X POST /threads -d '{"agent":"fake-acp","profile":"ada-reviewer","text":"hello persona","random_id":"r-ada-1"}'
+{"id":"t1a1c0ef52a8"}
+[http 200]
+{'id': 't1a1c0ef52a8', 'agent': 'fake-acp', 'profile': 'ada-reviewer', 'persona': 'ada-reviewer', 'folder': '', 'state': 'done', 'last': 'Read it.'}
+$ thread file (first lines)
+{"id":1,"at":1794238272197,"seq":0,"kind":"you","text":"hello persona","random_id":"r-ada-1"}
+{"id":2,"at":1794238272201,"seq":24,"kind":"tool","call":"c1","title":"Read src/lib.rs","status":"pending"}
+{"id":2,"at":1794238272201,"seq":25,"kind":"tool","call":"c1","title":"Read src/lib.rs","status":"in_progress"}
+{"id":2,"at":1794238272201,"seq":26,"kind":"tool","call":"c1","title":"Read src/lib.rs","status":"completed","ended":1794238272207}
+{"id":3,"at":1794238272211,"seq":29,"kind":"agent","text":"Read it.","stop_reason":"end_turn"}
+
+$ curl -X DELETE /personas/ada-reviewer/memory 
+null
+[http 200]
+$ curl -X GET /personas/ada-reviewer/memory 
+[]
+[http 200]
+$ curl -X GET /personas/ada-reviewer 
+{"id":"ada-reviewer","name":"Ada","avatar":"https://example.com/a.png","character":"warm","instructions":"cite file:line","folder":"scratch","agent":"fake-acp","model":"","effort":""}
+[http 200]
+{'id': 't1a1c0ef52a8', 'profile': 'ada-reviewer', 'persona': 'ada-reviewer', 'state': 'done'}
+$ curl -X GET /threads/t1a1c0ef52a8 
+not found
+[http 404]
+
+$ curl -X DELETE /personas/ada-reviewer 
+null
+[http 200]
+$ curl -X GET /personas 
+[{"id":"reviewer","name":"Reviewer","character":"","instructions":"Be brief.\n","folder":"","agent":"fake-acp","model":"","effort":"","profile":"reviewer"}]
+[http 200]
+$ ls personas
+{'id': 't1a1c0ef52a8', 'profile': 'ada-reviewer', 'persona': '', 'state': 'done'}
+$ wc -l thread file
+       5
+$ curl -X GET /personas/reviewer/memory 
+[]
+[http 200]
