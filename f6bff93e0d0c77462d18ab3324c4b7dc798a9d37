@@ -1,0 +1,9 @@
+Decided: More's group headers use the design's margin 20px 16px 4px, so they line up with the group's edge.
+Because: docs/design/native-shell/ns.css:79
+Decided: More's plugin rows take the design's tiles: Terminal a dark ›_, Fleets a green ⟳, any other plugin the teal ▣.
+Because: docs/design/native-shell/ns.js:157
+Because: "The UI must match the approved PNGs exactly"
+Rejected: a tile field from the plugin's manifest — it needs a plugin API change, which is outside this issue.
+Check: ui-390/more-{light,dark}.png beside more-390-*: MACHINES/TERMINAL/SETTINGS at x=16, Terminal's tile dark with ›_.
+Check: threads.spec.mjs:60 [1440] fails locally the same way on base dafabbb; it was green in CI at 21b93d1.
+Owner: Please check on your iPhone that the header is gone, the tab bar sits over the home indicator, the title shrinks and swipe back works.
