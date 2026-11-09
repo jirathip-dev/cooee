@@ -88,7 +88,8 @@ const CLI: &str = r#"#!/bin/sh
 # comes up while `fails-in-<f>` is); `machine ls` prints
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
-# after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env.
+# after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env. A `--mcp`
+# file is kept as mcp-<name>.json.
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
@@ -105,6 +106,7 @@ case "$*" in
   while [ $# -gt 0 ]; do
     [ "$1" = --name ] && name=$2
     [ "$1" = --cwd ] && cwd=$2
+    [ "$1" = --mcp ] && cp "$2" "$gates/mcp-$name.json"
     [ "$1" = -- ] && { shift; break; }
     shift
   done

@@ -7,6 +7,7 @@ mod chat;
 mod config;
 mod devices;
 mod login;
+pub mod mcp;
 pub mod perf;
 pub mod plugins;
 pub mod profiles;

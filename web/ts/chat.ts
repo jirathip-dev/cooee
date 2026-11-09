@@ -12,6 +12,7 @@
 // A plugin tab hosts the plugin's sandboxed frame (frame.ts is the frame's side).
 import { $, make, show } from "./look.js";
 import { render as markdown, settled } from "./md.js";
+import { sign } from "./pair.js";
 
 type Option = { id: string; name: string; kind: string };
 type Item = { id: number; at: number; seq?: number } & (
@@ -1336,6 +1337,8 @@ function chat(main: HTMLElement): void {
           pre.append(el("span", l.startsWith("+") ? "g" : l.startsWith("-") ? "r" : "", `${l}\n`));
         row.append(pre);
       }
+      // An MCP server an agent proposes (#56): the exact command or URL.
+      if (it.form === "mcp" && it.detail) row.append(el("pre", "diff", it.detail));
       if (it.chosen) {
         // The ✓ line: what was picked (or the plugin's own line), by whom and when; a conductor's answer keeps
         // [change] for its 30 minutes.
@@ -1413,7 +1416,13 @@ function chat(main: HTMLElement): void {
       chc.append(f);
     } else {
       for (const o of it.options)
-        chc.append(button(o.name, () => approve(row, it.id, o.id), o.kind === "recommended" ? "rec" : ""));
+        chc.append(
+          button(
+            o.name,
+            () => approve(row, it.id, o.id, undefined, it.form === "mcp"),
+            o.kind === "recommended" ? "rec" : "",
+          ),
+        );
       // A ref in an option's label opens its thread from a link after the buttons (a link can't sit inside one).
       chc.append(...it.options.flatMap((o) => refs(o.name).filter((n) => typeof n !== "string")));
       if (it.plugin && !it.form) {
@@ -1429,8 +1438,9 @@ function chat(main: HTMLElement): void {
     return chc;
   }
 
-  // A tap locks the row's answers (spinner) until the server answers; the server sends it to shed once.
-  async function approve(row: HTMLElement, item: number, option: string, value?: string): Promise<void> {
+  // A tap locks the row's answers (spinner) until the server answers; the server sends it to shed once. Approving an
+  // MCP server (`face`) signs with the passkey first (Face ID).
+  async function approve(row: HTMLElement, item: number, option: string, value?: string, face = false): Promise<void> {
     const chc = $(".chc", row);
     if (!chc) return;
     const lock = (on: boolean): void => {
@@ -1440,7 +1450,8 @@ function chat(main: HTMLElement): void {
     lock(true);
     // The answer comes back over the event stream (tapped, then chosen), never older than what is shown.
     try {
-      await post(`${api}/approve`, { item, option, value });
+      const passkey = face && option === "approve" ? await sign() : undefined;
+      await post(`${api}/approve`, { item, option, value, passkey });
     } catch (x) {
       toast(message(x), true);
       lock(false);

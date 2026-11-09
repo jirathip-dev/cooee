@@ -470,7 +470,7 @@ impl Logins {
     /// settings file in the provider's `settings` variable (in place of the account's folder when it is the same
     /// variable), the env, its secrets read from `data` through a file
     /// there, the policy), and its instructions. A profile its agent can't run as written is refused: settings
-    /// with no `settings` variable (its guard can't run) or MCP servers (shed starts sessions without them).
+    /// with no `settings` variable (its guard can't run).
     ///
     /// # Errors
     /// [`HubError::Refused`] as above, for an unknown account, a missing secret or an unreadable file.
@@ -490,12 +490,6 @@ impl Logins {
             launch
                 .env
                 .push((var.to_owned(), settings.display().to_string()));
-        }
-        if p.mcp.is_some() {
-            return Err(refused(format!(
-                "this profile's MCP servers can't run with {}: shed starts ACP sessions without them",
-                p.agent
-            )));
         }
         let (plain, secret) = p.env(data).map_err(refused)?;
         launch.env.extend(plain);

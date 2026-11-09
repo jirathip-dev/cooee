@@ -248,7 +248,7 @@ async fn pair_asks(cx: &Cx) -> Result<Response> {
 
 /// A passkey's signature (`navigator.credentials.get`), base64url.
 #[derive(Deserialize)]
-struct Assertion {
+pub(crate) struct Assertion {
     id: String,
     client: String,
     auth: String,
@@ -388,7 +388,7 @@ fn b64(s: &str) -> Vec<u8> {
 }
 
 /// Checks a passkey's assertion: a known passkey signed this server's challenge with Face ID; marks it used.
-async fn assert(cx: &Cx, a: Assertion) -> Result<Result<(), &'static str>> {
+pub(crate) async fn assert(cx: &Cx, a: Assertion) -> Result<Result<(), &'static str>> {
     let (client, auth) = (b64(&a.client), b64(&a.auth));
     if let Err(why) = ceremony(cx, "webauthn.get", &client, &auth) {
         return Ok(Err(why));

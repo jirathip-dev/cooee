@@ -127,7 +127,7 @@ p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:
 .swa b{color:var(--sfg);margin-right:2px;box-shadow:inset 0 -2px var(--sl)}
 .swa i{display:inline-block;width:6px;height:16px;border-radius:1px}
 .lft{margin:12px 0 16px;font-size:var(--fs-meta);color:var(--mute)}
-.sr{display:flex;align-items:center;gap:8px;width:100%;min-height:var(--hit);padding:0;border-bottom:1px solid var(--line);border-radius:0;background:none;color:var(--fg);font-weight:400;text-align:left}
+.sr{display:flex;text-decoration:none;align-items:center;gap:8px;width:100%;min-height:var(--hit);padding:0;border-bottom:1px solid var(--line);border-radius:0;background:none;color:var(--fg);font-weight:400;text-align:left}
 .sr .sk{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .sr .sv{flex:none;max-width:55%;font-size:var(--fs-meta);color:var(--mute);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .sr .cv{font-style:normal;font-size:11px;color:var(--mute)}
@@ -280,7 +280,7 @@ html[data-style=terminal] :is(.acts,.alt) .q,html[data-style=terminal] .acts but
 html[data-style=terminal] .chs{border-radius:0;box-shadow:none}html[data-style=terminal] .chs::before{content:"["}html[data-style=terminal] .chs::after{content:"]"}
 .nwa{margin-top:8px;padding:0 8px;border-top:1px solid var(--line)}.nwa summary{color:var(--link)}
 .nwa form{display:flex;flex-direction:column;gap:8px;padding-bottom:8px}.nwa .pk{display:flex;flex-direction:column;gap:4px}
-:is(.nwa,.ufs) :is(input:not([type=radio]),select){font:16px/1.4 var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:44px;width:100%}
+:is(.nwa,.ufs) :is(input:not([type=radio]),select),:is(#mcp-add,.mcp-s) :is(input,select){font:16px/1.4 var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge);border-radius:var(--r-row);padding:8px;min-height:44px;width:100%}
 .hi{margin:auto;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:44ch;text-align:center}.hi p{margin:0}
 .hi .so{min-height:var(--hit);display:inline-flex;align-items:center}
 .mc{overflow-x:auto;flex-wrap:nowrap}.mc>*{flex:none}
@@ -405,3 +405,7 @@ html[data-style=terminal] .ptg{min-width:7ch;padding:0;background:none;color:var
 .scc{display:flex;flex-wrap:wrap;gap:8px;padding:12px 4px 4px}
 .scc .chip{display:inline-flex;align-items:center;min-height:var(--hit);padding:0 12px}
 .scc .chip[aria-current]{background:color-mix(in srgb,var(--l) 14%,var(--card));color:var(--fg);font-weight:600}
+main.mcp{max-width:640px;margin:0 auto}.mcp fieldset{margin:8px 0;border:1px solid var(--line);border-radius:var(--r-card)}
+.mcp fieldset label{display:inline-flex;align-items:center;gap:4px;min-height:var(--hit);margin-right:12px}
+.mcp .acr form{display:contents}#mcp-add,.mcp-s{display:flex;flex-wrap:wrap;gap:8px}
+.mcp .hd h1{flex:1;margin:0;font-size:var(--fs-key)}

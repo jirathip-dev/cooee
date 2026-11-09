@@ -246,12 +246,16 @@ instructions = "coder.md"       # optional: sent ahead of the first message (the
 settings = "settings.json"      # optional: an agent settings file, its hooks the profile's guard
 env = { MODE = "review", API_KEY = "secret:API_KEY" }   # optional: plain values ({thread}: the thread's id), secrets as secret:<NAME>
 policy = "ask"                  # optional: shed's approval policy, ask, allow or deny
-mcp = "mcp.json"                # optional: refused for now (shed starts ACP sessions without MCP servers)
 avatar = "https://x/me.png"     # optional: the sidebar's avatar, an image URL or a theme sprite id (none: initials)
+
+[[mcp]]                         # optional, repeatable: an MCP server from the registry (#56)
+server = "github"
+tools = ["get_issue"]           # optional: the tools it may use (none: all)
 ```
 
 Paths are relative to the profile's file (a plugin's: its checkout); `~/` is the home folder. A secret is never in a
 profile: an env value that looks like a token is refused, and `secret:<NAME>` reads `<data>/secrets/<NAME>` at start.
+Its MCP servers are below.
 At spawn the agent's adapter runs as `env <account folder> <settings variable>=<file> K=V… <adapter>`; secrets go
 through a 0600 file that the adapter's shell reads and removes (`sh -c '. file; rm file; exec adapter'`), so no
 secret is on a command line, in shed's state or in cooee's files or log. **Guarded profiles:** `settings` reaches the
@@ -260,6 +264,26 @@ and enforces, hooks included; an agent with none (Codex's and Gemini's) can't st
 can't run with <agent>". Claude Code's is `CLAUDE_CONFIG_DIR` (herdsman#565: claude-acp enforces the user settings
 there), so a Claude profile's `settings` is a config folder (its `settings.json` holds the hooks), in place of the
 account's. The form preselects each folder's last-used profile.
+
+## MCP servers (#56)
+
+The registry is `[[mcp]]` in the config: `name`, `type` (`stdio`, `http` or `sse`), `command` and `args` or `url`,
+`env` or `headers`, and `enabled`. An env or header value is only a reference: `secret:<NAME>` (the Mac's keychain,
+else `<data>/secrets/<NAME>`) or `env:<NAME>` (the Mac's environment); a literal value, or a token in the command, args
+or url, is refused at load naming the key, never the value. `cooee mcp ls | add | rm | enable | disable` changes it on
+the Mac; Settings › mcp servers (`/mcp`) turns a server on or off, removes it, adds one (`+ server`: its card shows the
+exact command or URL and needs Face ID; it is added off), saves a secret to the keychain, and sets each of the owner's
+profiles' servers and tools. A command or URL changes on the Mac only: the server refuses it from the phone.
+
+Every thread's agent gets, through shed's `--mcp` file (0600, removed once shed read it): `cooee` (`cooee mcp serve
+--thread <id>`), whose only tool is `propose_server {name, type, command|url, args, why}`; and for each server its
+profile picks (on, its references resolving), `cooee mcp proxy <server> --thread <id>`. Each carries `COOEE_MCP`
+(cooee's URL and the thread's token, `sha256(<data>/mcp.key:<thread>)`), good while the thread is open. The proxy asks
+`POST /mcp/agent/grant` for its server, its references resolved in memory then and never written, starts it (stdio) or
+posts to it (http, through `curl -K -`, headers on stdin; `sse` isn't proxied yet), answers `tools/list` with only the
+allowed tools and refuses a call to any other (asking again each call, so a closed thread's token stops). A proposal
+raises an approval card in the thread with the exact command or URL; approving it needs the device's passkey (Face
+ID) and adds the server off. Nothing runs before the owner turns it on and a profile picks it.
 
 ## The app shell (#21, herdsman#553 rows 1–14)
 

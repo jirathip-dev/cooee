@@ -13,7 +13,10 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::plugins::{self, Manifest};
+use crate::{
+    mcp::var,
+    plugins::{self, Manifest},
+};
 
 /// Variables, `K=V`.
 pub type Vars = Vec<(String, String)>;
@@ -44,9 +47,9 @@ pub struct Profile {
     /// Variables for the agent: plain text (a `{thread}` in it is the thread's id), or `secret:<NAME>`.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub env: BTreeMap<String, String>,
-    /// An MCP servers file; shed starts ACP sessions without MCP servers, so a profile with one is refused.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mcp: Option<PathBuf>,
+    /// The MCP servers it picks from the registry (`[[mcp]]`: `server`, and `tools`, none for all; #56).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mcp: Vec<crate::mcp::Pick>,
     /// shed's approval policy: `ask` (shed's default), `allow` or `deny`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policy: Option<String>,
@@ -66,12 +69,6 @@ pub struct Profile {
     /// The plugin it came with (none: the owner's own).
     #[serde(skip)]
     pub plugin: Option<String>,
-}
-
-/// A variable's name: `A-Z a-z 0-9 _`, not starting with a digit.
-fn var(name: &str) -> bool {
-    name.bytes().next().is_some_and(|b| !b.is_ascii_digit())
-        && name.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
 }
 
 impl Profile {
@@ -142,12 +139,7 @@ impl Profile {
                 _ => base.join(&*p),
             };
         };
-        let paths = [
-            &mut self.instructions,
-            &mut self.settings,
-            &mut self.mcp,
-            &mut self.folder,
-        ];
+        let paths = [&mut self.instructions, &mut self.settings, &mut self.folder];
         for p in paths.into_iter().flatten() {
             whole(p, base);
         }
@@ -240,6 +232,18 @@ pub fn list(
     out
 }
 
+/// The file of the owner's profile `name` under `<config>/profiles/`.
+#[must_use]
+pub fn file(config: &Path, name: &str) -> Option<PathBuf> {
+    let files = fs::read_dir(config.join("profiles")).ok()?.flatten();
+    files.map(|e| e.path()).find(|f| {
+        let p = fs::read_to_string(f)
+            .ok()
+            .and_then(|t| toml::from_str::<Profile>(&t).ok());
+        f.extension().is_some_and(|e| e == "toml") && p.is_some_and(|p| p.name == name)
+    })
+}
+
 /// The profile with id `id` (see [`Profile::id`]), plugins' from their manifests.
 ///
 /// # Errors
@@ -289,7 +293,7 @@ pub fn create(
             instructions: None,
             settings: None,
             env: BTreeMap::new(),
-            mcp: None,
+            mcp: Vec::new(),
             policy: None,
             hidden: false,
             why: String::new(),
@@ -312,7 +316,6 @@ pub fn create(
         ("folder", &p.folder),
         ("instructions", &p.instructions),
         ("settings", &p.settings),
-        ("mcp", &p.mcp),
     ];
     let paths = paths.map(|(k, v)| (k, v.as_ref().map(|v| v.to_string_lossy().into_owned())));
     let keys = [
@@ -334,6 +337,9 @@ pub fn create(
     let text = lines.join("\n") + "\n";
     fs::create_dir_all(&dir)?;
     fs::write(&file, text)?;
+    if !p.mcp.is_empty() {
+        crate::mcp::save_picks(&file, &p.mcp)?;
+    }
     Ok(p)
 }
 
