@@ -72,6 +72,12 @@ for (const mode of ["light", "dark"]) {
     // Other specs may add a plugin meanwhile: these in this order, drover's two never.
     await expect(page.locator(".gs .sk")).toContainText(["Look", "Notifications", "Machines", "Terminal", "Sign-ins", "Settings"]);
     await expect(page.locator(".gs .sk").filter({ hasText: /^(Queue|Asks)$/ })).toHaveCount(0);
+    // Group headers line up with the group's edge; Terminal has its own dark ›_ tile (more-390-*).
+    const x = async (l) => (await l.boundingBox()).x;
+    expect(await x(page.locator(".sdb>h2.ch").first())).toBe(await x(page.locator(".sdb>.gs").first()));
+    const term = page.getByRole("link", { name: "Terminal" }).locator(".ms");
+    await expect(term).toHaveText("›_");
+    await expect(term).toHaveCSS("background-color", await page.locator("body").evaluate((b) => getComputedStyle(b).color));
     await expect(tabs(page).last()).toHaveAttribute("aria-current", "page");
     await shot(page, info, `more-${mode}`);
     await audit(page);

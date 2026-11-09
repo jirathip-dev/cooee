@@ -847,6 +847,15 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
     })
 }
 
+/// More's tile per plugin tab, as the design's `ns.js` draws them.
+fn tile(label: &str) -> (&'static str, &'static str) {
+    match label {
+        "Terminal" => ("--k:var(--fg)", "›_"),
+        "Fleets" => ("--k:var(--g)", "⟳"),
+        _ => ("--k:var(--c)", "▣"),
+    }
+}
+
 /// Workflow (`/w`): the lanes' chats (#33), newest first; or More (`/more`): the look, alerts, every plugin tab but
 /// drover's Queue and Asks, sign-ins and Settings, as inset-grouped lists. Each under its large title (#118).
 #[must_use]
@@ -910,8 +919,8 @@ async fn screen(cx: &Cx, s: Side, at: &'static str) -> Result<impl View> {
                                 <h2 class="ch">(label.clone())</h2>
                                 <div class="gs">
                                     <a class="gr" href=(format!("/p/{name}"))>
-                                        <i class="ms" style="--k:var(--c)" aria-hidden="true">
-                                            "▣"
+                                        <i class="ms" style=(tile(&label).0) aria-hidden="true">
+                                            (tile(&label).1)
                                         </i>
                                         <span class="sk">(label)</span>
                                         if dot {

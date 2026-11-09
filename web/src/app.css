@@ -277,7 +277,7 @@ html[data-style=terminal] :is(.acts,.alt) .q,html[data-style=terminal] .acts but
 @media (max-width:999px){:is(.sdb,.app:not([data-show=pane])>.pt){padding-bottom:calc(49px + var(--sab))}}.app>.pt{flex:1;min-height:0;height:auto}
 @media (min-width:1000px){.app{flex-direction:row}.tbar{position:static;order:-1;display:flex;flex-direction:column;gap:4px;width:88px;height:auto;padding:12px 10px;background:var(--card);border-right:1px solid var(--edge);box-shadow:none}
   .tbar a{min-height:60px;border-radius:var(--r-row);font-size:11px}.tbar a[aria-current]{background:color-mix(in srgb,var(--l) 12%,transparent)}.tdt{top:8px;box-shadow:0 0 0 2px var(--card)}.nb .bk{display:none}}
-.gs{margin:0 16px;background:var(--card);border-radius:var(--r-row);overflow:hidden}.sdb>.ch{margin:20px 32px 6px;text-transform:uppercase;letter-spacing:.04em}.sdb>.lt+.gs{margin-top:12px}
+.gs{margin:0 16px;background:var(--card);border-radius:var(--r-row);overflow:hidden}.sdb>.ch{margin:20px 16px 4px;text-transform:uppercase;letter-spacing:.04em}.sdb>.lt+.gs{margin-top:12px}
 .gr{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:var(--hit);padding:0 16px;font:inherit;font-size:17px;color:var(--fg);background:none;border-radius:0;text-decoration:none;text-align:left}
 .gr+.gr::before{content:"";position:absolute;top:0;left:57px;right:0;border-top:.5px solid var(--sep)}.gr::after{content:"›"/"";margin-left:auto;font-size:20px;color:var(--mute);opacity:.6}
 .gr .sk{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:400}.gr .sv{flex:none;max-width:55%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--mute);font-weight:400}
