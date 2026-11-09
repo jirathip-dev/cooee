@@ -1,0 +1,11 @@
+Decided: a persona's plugins name installed plugins (lock name, else the config entry's); a card is refused unless the thread's persona lists its plugin
+Because: "A card for any other thread is refused, with a reason."
+Because: crates/cooee-server/src/hub.rs:1438
+Decided: GET /personas/{id}/places answers an empty list for a known persona
+Because: "It is empty until #125 is built."
+Rejected: listing plugin tabs as places — the spec says empty until #125 names header screens
+Decided: the persona read from an owner profile named conductor gets an installed cooee-drover
+Because: "an installed drover plugin is attached to the persona migrated from the conductor profile"
+Check: cards to Plain threads are now refused too; tests and e2e moved to persona threads (tests/plugins.rs, web/e2e/serve.sh)
+Check: threads.spec.mjs:60 #pill flakes on origin/staging as well (2 of 3 repeats)
+Owner: plugins attach to a persona, their cards show only in its chats, and drover goes with the conductor
