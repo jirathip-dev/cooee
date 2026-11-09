@@ -1,0 +1,203 @@
+/* #116 the native shell, on web/src/app.css (the shared tokens, blocks, avatars, chips, Scene): this design's additions
+   as tokens only. No raw colour but the phone's own chrome (the island is black on every scheme) and Scene's coats
+   (herdsman's, as app.css's Scene block). New class names: ph a 390 × 844 phone screen, stb its status bar, isl the
+   island, hind the home indicator; wd a 1440 window, lst its list column, dtl its detail; scr a screen, nb its nav bar
+   (nt the inline title), lt the large title; tbar the tab bar (rail at 1440), tbd a tab's count, tdt its dot; pr a
+   persona row, sr2 a side thread; gs/gr an inset-grouped list and its row, ms a row's icon tile; wr a Workflow row (wh
+   its head), rns its rounds, rn a round (rh its head, rnb its body); dch drover's repo chips, fcd its fleet card, qr a
+   queue row; ak an ask card; ps the persona sheet (psh its head), agc the agent + model chip, agm its menu; acs an
+   action sheet. */
+:root{--sat:47px;--sab:34px;--nb:44px;--tb:49px;--sep:color-mix(in srgb,var(--fg) 14%,transparent);--bar:color-mix(in srgb,var(--card) 84%,transparent);--press:color-mix(in srgb,var(--fg) 9%,transparent);--blur:blur(20px) saturate(1.8)}
+html,body{height:auto}
+
+/* Gallery (no ?f=): each frame with its caption, the 1440 ones at half size, the side note beside them. ?f=<frame>
+   shows that frame alone at its own size (the shots). */
+.gal{display:flex;flex-wrap:wrap;align-items:flex-start;gap:40px 32px;padding:24px}
+.fr{display:flex;flex-direction:column;gap:8px}.fr>.cap{font-size:var(--fs-meta);color:var(--mute)}
+.fr.w{flex-basis:100%}.fr.w>.wd{zoom:.5;box-shadow:0 0 0 2px var(--edge)}
+.gal .ph{border-radius:48px;box-shadow:0 0 0 1px var(--edge)}
+html[data-one] .gal{display:block;padding:0}html[data-one] .fr{display:block}
+html[data-one] :is(.cap,.fr:not(.one)){display:none}html[data-one] .fr.w>.wd{zoom:1;box-shadow:none}
+html[data-one] .ph{border-radius:0;box-shadow:none}
+
+/* A phone screen, as a Home Screen app draws it: full screen to the safe areas (47 px top, 34 px bottom), the
+   status bar and the island over the app, the home indicator over the tab bar. */
+.ph{position:relative;flex:none;width:390px;height:844px;overflow:hidden;background:var(--bg);color:var(--fg);isolation:isolate}
+.stb{position:absolute;z-index:20;top:0;left:0;right:0;height:var(--sat);display:flex;align-items:center;justify-content:space-between;padding:6px 26px 0 52px;font:600 17px/1 var(--sans);color:var(--fg);pointer-events:none}
+.stb .si{display:flex;align-items:center;gap:6px}.stb svg{height:12px;fill:currentColor}
+.isl{position:absolute;z-index:21;top:11px;left:calc(50% - 63px);width:126px;height:37px;border-radius:19px;background:#000}
+.hind{position:absolute;z-index:21;bottom:8px;left:calc(50% - 67px);width:134px;height:5px;border-radius:3px;background:var(--fg)}
+.on-dim .stb{color:var(--fg)}
+
+/* A screen: the nav bar over the status bar (empty at rest, the inline title and its blur once the large title has
+   scrolled under it: .sc), the large title, the list. --y draws the list scrolled by that much. */
+.scr{position:absolute;inset:0;overflow:hidden;padding:calc(var(--sat) + var(--nb)) 0 calc(var(--tb) + var(--sab))}
+.scr>.in{transform:translateY(calc(-1 * var(--y,0px)))}
+.nb{position:absolute;z-index:5;top:0;left:0;right:0;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;height:calc(var(--sat) + var(--nb));padding:var(--sat) 4px 0}
+.nb>:first-child{justify-self:start}.nb>:last-child{justify-self:end;display:flex}
+.nb .nt{font:600 17px/1 var(--font);opacity:0;white-space:nowrap}
+.nb .gl{color:var(--l);font-size:22px}
+.nb .bk{display:inline-flex;align-items:center;gap:2px;min-height:var(--hit);padding:0 8px 0 4px;color:var(--l);font-size:17px;text-decoration:none}.nb .bk b{font:300 30px/1 var(--font);margin-top:-3px}
+.sc .nb,.wd .nb.sc{background:var(--bar);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:0 .5px 0 var(--sep)}
+.sc .nb .nt,.nb.sc .nt{opacity:1}
+.lt{margin:0;padding:2px 16px 8px;font:700 34px/41px var(--font);letter-spacing:.01em}
+
+/* The tab bar: five tabs, the current one in --l and filled; Asks' count, Workflow's needs-you dot. */
+.tbar{position:absolute;z-index:6;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));height:calc(var(--tb) + var(--sab));padding-bottom:var(--sab);background:var(--bar);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:0 -.5px 0 var(--sep)}
+.tbar a,.rail a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font:500 10px/12px var(--font);color:var(--mute);text-decoration:none}
+.tbar a[aria-current],.rail a[aria-current]{color:var(--l)}
+.tbar svg,.rail svg{width:28px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+:is(.tbar,.rail) a[aria-current] svg{fill:color-mix(in srgb,currentColor 22%,transparent)}
+.tbd{position:absolute;top:1px;left:calc(50% + 5px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--r);color:var(--bg);font:700 12px/18px var(--font);text-align:center}
+.tdt{position:absolute;top:4px;left:calc(50% + 9px);width:10px;height:10px;border-radius:50%;background:var(--r);box-shadow:0 0 0 2px var(--bg)}
+
+/* 1440: the same shell as a window: the tab bar is a left rail, the list and the detail side by side; no safe areas. */
+.wd{--sat:0px;--sab:0px;position:relative;display:grid;grid-template-columns:88px 380px minmax(0,1fr);width:1440px;height:900px;overflow:hidden;background:var(--bg);color:var(--fg)}
+.rail{display:flex;flex-direction:column;gap:4px;padding:12px 10px;background:var(--card);border-right:1px solid var(--edge)}
+.rail a{min-height:60px;border-radius:var(--r-row);font-size:11px}
+.rail a[aria-current]{background:color-mix(in srgb,var(--l) 12%,transparent)}
+.rail .tbd{top:4px;left:calc(50% + 6px)}.rail .tdt{top:8px;left:calc(50% + 9px);box-shadow:0 0 0 2px var(--card)}
+.lst{position:relative;overflow:hidden;border-right:1px solid var(--edge)}
+.lst .nb{position:relative}.lst .scr{position:static;padding:0}
+.dtl{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
+.dtl .tc{padding-inline:max(16px,calc((100% - 90ch)/2))}
+.dtl .th{background:var(--bar);border-bottom:.5px solid var(--sep)}
+
+/* Chats: a persona's row (avatar, name and age, its ongoing chat's state and last line), then the side threads. */
+.pr,.sr2{position:relative;display:grid;column-gap:12px;align-items:center;padding:0 16px;color:var(--fg);text-decoration:none}
+.pr{grid-template-columns:52px minmax(0,1fr) auto;min-height:76px}
+.pr::after,.sr2::after,.wr::after{content:"";position:absolute;left:var(--in,80px);right:0;bottom:0;border-bottom:.5px solid var(--sep)}
+.pr .av{grid-row:span 2;width:52px;height:52px;font-size:16px}
+.an{align-self:end;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:var(--fs-key);font-weight:400}.pr.ud .an{font-weight:700}
+.pr .ta,.sr2 .ta,.wh .ta{align-self:end;display:flex;align-items:center;gap:4px}
+.cv::after{content:"›";font-size:20px;line-height:1;color:var(--mute);opacity:.6}
+.pr .tp{align-self:start;display:flex;align-items:center;gap:8px;padding-bottom:2px}.pr .tp>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pr .tp [data-st]{flex:none}.pr .bd{margin:0 0 0 auto;background:var(--l)}
+.sr2{--in:60px;grid-template-columns:32px minmax(0,1fr) auto;min-height:52px}
+.sr2 .tt{font-weight:400;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.sr2 .ta{align-self:center}.sr2 .tt small{margin-left:1ch}
+.av.s{width:32px;height:32px;font-size:11px}.av.xl{width:88px;height:88px;font-size:28px}
+.scr .ch,.lst .ch{margin:20px 16px 4px;text-transform:uppercase;letter-spacing:.04em}
+/* Press states, drawn: the row under the finger, tinted at touch-start (rows, tabs, chips; .prs is that look). */
+:is(.pr,.sr2,.gr,.wh,.qr):active,.prs{background:var(--press)}
+
+/* Inset-grouped lists (More, the persona sheet): a card per group, its rows split by inset hairlines. */
+.gs{margin:0 16px;background:var(--card);border-radius:var(--r-row);overflow:hidden}
+.gr{position:relative;display:flex;align-items:center;gap:12px;min-height:var(--hit);padding:0 16px;color:var(--fg);text-decoration:none}
+.gr+.gr::before{content:"";position:absolute;top:0;left:var(--in,16px);right:0;border-top:.5px solid var(--sep)}
+.gs.ic{--in:57px}
+.gr .sk{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.gr .sv{flex:none;max-width:55%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--mute)}
+.gr.rd{color:var(--r)}.gr.lk{color:var(--link)}.gr.cn{justify-content:center}
+.ms{flex:none;display:grid;place-items:center;width:29px;height:29px;border-radius:7px;background:var(--k);color:var(--bg);font:700 14px/1 var(--font)}
+.dt.r{background:var(--r)}.dt.m{background:var(--mute)}
+
+/* Workflow: one row per issue (`repo #n · <stage> <round>`, its figure, word and age, the title); a tap unfolds its
+   rounds as sections on a line, each with its state and summary, the current one open. */
+.wr{position:relative;--in:56px}
+.wh{display:grid;grid-template-columns:28px minmax(0,1fr) auto;column-gap:12px;align-items:center;min-height:68px;padding:6px 16px;color:var(--fg);text-decoration:none}
+.wh>.fg{grid-row:span 2;display:grid;place-items:center}.wh .rsp{width:28px;height:28px;margin:0}
+.wn{align-self:end;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:var(--fs-key)}.wn b{font-weight:600}
+.wn [data-k],.rs{color:var(--k)}
+[data-k=working]{--k:var(--a)}[data-k=needs],[data-k=fail]{--k:var(--r)}[data-k=done]{--k:var(--g)}
+.wt{grid-column:2/4;align-self:start;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:var(--fs-meta);color:var(--mute)}
+.wt .w{color:var(--k)}
+.wr.op>.wh .cv::after{content:"⌄";font-size:16px;line-height:.5}
+.rns{list-style:none;margin:-2px 16px 14px 29px;padding:0 0 0 27px;border-left:2px solid var(--line)}
+.rn{position:relative}
+.rh{display:flex;align-items:center;gap:8px;min-height:var(--hit)}
+.rh::before{content:"";position:absolute;left:-33px;top:17px;width:10px;height:10px;border-radius:50%;background:var(--k);box-shadow:0 0 0 3px var(--bg)}
+.rn.cur>.rh::before{width:14px;height:14px;left:-35px;top:15px}
+.rh .ta{display:flex;align-items:center;gap:4px}.rh b{font-weight:600}.rh .rs{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:var(--fs-meta)}
+.rnb{display:flex;flex-direction:column;gap:8px;margin:0 0 6px;padding:10px 12px;background:var(--card);border:1px solid var(--edge);border-radius:var(--r-row);font-size:var(--fs-meta)}
+.rn[data-k=needs] .rnb,.rn[data-k=fail] .rnb{border-color:color-mix(in srgb,var(--r) 60%,var(--edge))}
+.rnb p{margin:0}.rnb .lv{list-style:none;margin:0;padding:0;font:12px/1.6 var(--mono);color:var(--mute)}.rnb .lv li{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.rnb .lv li:last-child{color:var(--a)}
+.rnb .chps{display:flex;flex-wrap:wrap;gap:8px}.rnb .chip,.dtl .chip{display:inline-flex;align-items:center;min-height:32px;padding:0 12px}
+.rnb .chc{margin:0}.rnb .chc button{min-height:var(--ctl)}
+.fnd{list-style:none;margin:0;padding:0}.fnd li{padding:6px 0;border-top:.5px solid var(--sep)}.fnd li:first-child{border:0;padding-top:0}
+.fnd code{font:12px var(--mono);color:var(--fg);overflow-wrap:anywhere}
+.thb{display:flex;gap:8px}.thb img{width:56px;height:121px;object-fit:cover;object-position:top;border-radius:8px;border:1px solid var(--edge);background:var(--bg)}
+.ak .thb img{width:72px;height:156px}
+
+/* Queue: drover's tab as it is, in the shell: the repo chips, the fleet card (drive line, Drive now, Pause), its rows
+   grouped needs you / in progress / queued. */
+.dch{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 16px 8px}.dch>*{flex:none}
+.dch .chip{display:inline-flex;align-items:center;min-height:32px;padding:0 14px;font-weight:400;color:var(--fg);background:var(--card)}
+.dch .chip[aria-pressed=true]{background:var(--l);border-color:var(--l);color:var(--bg);font-weight:600}
+.fcd{margin:4px 16px 12px;padding:0 12px 8px;background:var(--card);border:1px solid var(--edge);border-left:3px solid var(--l);border-radius:var(--r-card)}
+.fcd .fh button{min-height:32px;padding:0 12px;font-size:var(--fs-meta)}.fcd .fh button+button{background:var(--bg);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge)}
+.fcd .dl{margin:-6px 0 4px;font-size:var(--fs-meta);color:var(--mute)}
+.qg h3{margin:10px 0 2px;font-size:var(--fs-meta);font-weight:600;color:var(--mute)}
+.qr{display:flex;align-items:center;gap:1ch;min-height:var(--hit);margin:0 -12px;padding:0 12px;border-top:.5px solid var(--sep);font-size:var(--fs-meta);white-space:nowrap;color:var(--fg)}
+.qr .tl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--mute)}.qr .gt{font-family:var(--mono);color:var(--mute)}
+.qr b{font-weight:600}.fcd .lk{display:flex;align-items:center;min-height:var(--hit);border-top:.5px solid var(--sep);font-size:var(--fs-meta);color:var(--link)}
+
+/* Asks: the needs-you cards in the shell: whose, which kind and the age, the question, the options (recommended first). */
+.ak{display:flex;flex-direction:column;gap:8px;margin:4px 16px 12px;padding:12px;background:var(--card);border:1px solid var(--edge);border-radius:var(--r-card)}
+.ak.own{border-color:var(--a)}.ak.nh{border-color:var(--r)}
+.ak p{margin:0}.ah{display:flex;justify-content:space-between;gap:8px;font-size:var(--fs-meta);color:var(--mute)}.ah b{color:var(--fg);font-weight:600}
+.aq{font-weight:600}.ak .chc{margin:0}.ak .chc button{min-height:var(--ctl)}.ak .oth input{min-height:var(--ctl);padding:0 12px}
+.ak .ds{margin:0}
+
+/* The persona sheet: a page sheet over the dimmed screen (its grabber, Cancel · name · Done), then the avatar and the
+   grouped fields: Name, the agent chip, Character, Instructions, Memory (its notes, Clear memory…), Folder. */
+.dim{position:absolute;z-index:8;inset:0;background:var(--scrim)}
+.ps{position:absolute;z-index:9;left:0;right:0;bottom:0;top:calc(var(--sat) + 10px);display:flex;flex-direction:column;background:var(--bg);border-radius:12px 12px 0 0;overflow:hidden}
+.ps::before{content:"";position:absolute;top:5px;left:calc(50% - 18px);width:36px;height:5px;border-radius:3px;background:var(--sep)}
+.psh{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;min-height:56px;padding:0 4px}
+.psh a{display:inline-flex;align-items:center;min-height:var(--hit);padding:0 12px;color:var(--l);font-size:17px;text-decoration:none}.psh a:last-child{justify-self:end;font-weight:600}
+.psh b{font:600 17px/1 var(--font)}
+.pb{flex:1;overflow:hidden;padding-bottom:calc(var(--sab) + 16px)}.pb>.in{transform:translateY(calc(-1 * var(--y,0px)))}
+.pav{display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 0 12px}.pav a{color:var(--l);font-size:var(--fs);text-decoration:none}
+.ps .ch{margin:22px 32px 6px;text-transform:uppercase;letter-spacing:.04em}
+.ps .gs{margin:0 16px}
+.gr .lb{flex:none;width:72px;color:var(--fg);font-size:var(--fs)}
+.gs textarea,.gs input{display:block;width:100%;min-height:var(--hit);margin:0;padding:11px 16px;font:16px/1.45 var(--font);color:var(--fg);background:none;border:0;border-radius:0;resize:none}
+.gr input{padding:0}
+.gs textarea::placeholder,.gs input::placeholder{color:var(--mute)}
+.mem{display:block;padding:10px 16px}.mem span{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.mem small{display:block}
+/* The agent + model chip: the persona's default in its sheet, switched for the next turn from the chat's composer;
+   its menu: the agent (Claude Code, Codex), the model, the effort. */
+.agc{display:inline-flex;align-items:center;gap:6px;flex:none;height:var(--ctl);min-height:var(--ctl);padding:0 12px;border-radius:var(--r-pill);background:var(--bg);color:var(--fg);box-shadow:inset 0 0 0 1px var(--edge);font:400 var(--fs-meta) var(--font);white-space:nowrap}
+.agc b{font-weight:600}.agc::after{content:"▾";color:var(--mute)}
+.gr .agc{margin:6px 0}
+.agm{position:absolute;z-index:12;width:268px;background:var(--bar);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border-radius:14px;box-shadow:0 0 0 .5px var(--sep),0 12px 48px #0006;overflow:hidden}
+.agm .gh{padding:10px 16px 6px;font-size:var(--fs-meta);color:var(--mute)}
+.agm .gr{gap:10px;min-height:var(--hit);padding:0 16px 0 12px}.agm .gr::before{left:0}
+.agm .gr i{flex:none;width:16px;font-style:normal;color:var(--l)}
+.agm .gp{height:8px;background:var(--sep)}
+.agm .seg{display:flex;margin:8px 12px 12px}.agm .seg button{flex:1;padding:0 4px;font-size:var(--fs-meta);min-height:30px}
+.mdim{position:absolute;z-index:11;inset:0;background:var(--scrim)}
+/* An action sheet: the question and the red action in one card, Cancel apart. */
+.acs{position:absolute;z-index:12;left:8px;right:8px;bottom:calc(var(--sab) + 4px);display:flex;flex-direction:column;gap:8px}
+.acs>div{background:var(--bar);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border-radius:14px;overflow:hidden}
+.acs p{margin:0;padding:14px 16px;text-align:center;font-size:var(--fs-meta);color:var(--mute)}
+.acs a{display:flex;align-items:center;justify-content:center;min-height:56px;border-top:.5px solid var(--sep);font-size:19px;color:var(--l);text-decoration:none}
+.acs a.rd{color:var(--r)}.acs>div:last-child a{border:0;font-weight:600}
+/* A chat on a phone: the nav bar's ‹ Chats and the persona (a tap opens its sheet); no tab bar; the composer to the
+   home indicator. */
+.cvw{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:calc(var(--sat) + var(--nb))}
+.cvw .tc{padding:12px 12px 16px}
+.cvw .mc,.dtl .mc{padding:8px 12px 0;background:var(--bar);border-top:.5px solid var(--sep)}
+.cvw .tw{padding:8px 12px calc(8px + var(--sab));background:var(--bar);border:0}
+.dtl .tw{background:var(--bar);border-top:0}
+.tw textarea{min-height:var(--ctl);height:var(--ctl);padding:6px 14px;border-radius:var(--r-ctl);font:16px/1.4 var(--font);color:var(--fg);background:var(--bg);border:1px solid var(--edge)}
+.tw button{min-height:var(--ctl)}
+.nh{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;line-height:1}.nh .av{width:28px;height:28px;font-size:10px}
+.th .av{margin:0 4px 0 12px}
+/* 1440: the sheet as a centred panel over the dimmed window. */
+.wd .ps{left:calc(50% - 300px);right:auto;top:48px;bottom:48px;width:600px;border-radius:var(--r-card);box-shadow:0 12px 64px #0008}
+.wd .ps::before{display:none}
+
+/* Scene, still a look for Chats: the personas as herdsman's vector horses (cooee#115) over their name cards, on the
+   farm's scene strip; the side threads below. A coat per persona (herdsman's coats). */
+.scn{margin:0}.scn .sf svg{display:block;width:132px;height:100px}
+.cn-ch{--c:#c89a56;--d:#a37a3c;--m:#e8dcc0;--b:#efe7dc}.cn-bay{--c:#8a5a35;--d:#6b4426;--m:#2e231c;--b:#efe7dc}
+.cn-gry{--c:#b9b3a8;--d:#958e83;--m:#ece8e0;--b:#f4f1ea}.cn-blk{--c:#4a4038;--d:#3a322b;--m:#241e19;--b:#efe7dc}
+.scn .fld{gap:4px 0}.scn .sb{flex-basis:50%}
+.ph .scn .sky{height:150px}
+
+/* The side note (the gallery only): press states, swipe back, the title's collapse. */
+.note{max-width:420px;padding:24px;background:var(--bg);font-size:var(--fs-meta);color:var(--fg)}
+.note h2{margin:0 0 8px;font-size:var(--fs-key)}.note h3{margin:16px 0 4px;font-size:var(--fs)}.note p{margin:0 0 6px;color:var(--mute)}
+.note code{font:12px var(--mono);color:var(--fg)}

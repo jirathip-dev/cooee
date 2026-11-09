@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · the Workflow issue row (#116: folded, unfolded, a round in each state)</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="ns.css">
+<script type="module" src="ns.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<div class="fr"><p class="cap">Folded, one per state; unfolded: herdsman #715, review 2 working</p>
+<section class="ph sc" data-f="row">
+  <div class="scr"><div class="in">
+    <h2 class="ch">folded</h2>
+    <div data-x="workflow" data-only="116,115,83,601"></div>
+    <h2 class="ch">unfolded</h2>
+    <div data-x="workflow" data-only="715" data-open="715"></div>
+  </div></div>
+  <header class="nb"><span></span><b class="nt">Workflow</b><span></span></header>
+  <nav class="tbar" data-x="tabs" data-on="workflow" aria-label="tabs"></nav>
+</section></div>
+
+<div class="fr"><p class="cap">Unfolded: the current round needs you, has failed, is done</p>
+<section class="ph sc" data-f="row-open">
+  <div class="scr"><div class="in">
+    <div data-x="workflow" data-only="116,601,83" data-open="116,601,83"></div>
+  </div></div>
+  <header class="nb"><span></span><b class="nt">Workflow</b><span></span></header>
+  <nav class="tbar" data-x="tabs" data-on="workflow" aria-label="tabs"></nav>
+</section></div>
+
+<div class="fr w"><p class="cap">1440 · herdsman #601's review 1 FAIL open beside its row</p>
+<section class="wd" data-f="wide-row">
+  <nav class="rail" data-x="rail" data-on="workflow" aria-label="tabs"></nav>
+  <div class="lst">
+    <header class="nb"><span></span><b class="nt"></b><span></span></header>
+    <div class="scr"><div class="in">
+      <h1 class="lt">Workflow</h1>
+      <div data-x="workflow" data-open="116,601"></div>
+    </div></div>
+  </div>
+  <main class="dtl">
+    <div class="th"><span class="fg" style="margin-left:12px"><b data-st="fail"></b></span><div class="tb"><h1>herdsman #601 · review 1</h1><span class="ds">herdsman-rev-601-r1 · Codex · gpt-5.6-luna · air · 2m</span></div><a class="chip" href="#" style="margin-right:12px">PR #606 ›</a></div>
+    <ol class="tc" aria-label="lane">
+      <li class="qs">review 1 · head 7d03b1e · FAIL · 2 findings</li>
+      <li class="blk ai"><b class="k">verdict.md</b><div class="md">
+        <p><b class="r">blocking</b> [correctness] <code>crates/core/src/hosts.rs:88</code>: an unreachable herdr reads as up, because <code>probe()</code> returns <code>Ok</code> when the ssh command times out.</p>
+        <p>Proof: run</p>
+        <div class="cb"><pre><code>$ cargo test -p herdsman-core hosts::probe_timeout
+test hosts::probe_timeout ... FAILED
+  left: Up, right: Offline</code></pre></div>
+        <p><b class="r">blocking</b> [test-coverage] <code>crates/cli/tests/shed.rs</code>: no test for a remote host with no shed on its PATH.</p>
+        <p>Proof: spec</p>
+        <blockquote>AC 2: a remote host without shed is up when its herdr answers, and offline when it does not.</blockquote>
+      </div></li>
+      <li class="te"><span data-st="fail"></span><span class="ct">09:31 · fix 1 next</span></li>
+    </ol>
+  </main>
+</section></div>
+
+</div>
+</body>
+</html>
