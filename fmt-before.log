@@ -1,0 +1,3 @@
+$ topcoat fmt --check web/src/lib.rs   # the old recipe line, on this host
+(eval):1: command not found: topcoat
+exit=127

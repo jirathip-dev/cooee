@@ -1,0 +1,8 @@
+$ git show e6a800e:web/src/agents.rs > web/src/agents.rs && scripts/fmt.sh
+web/src/agents.rs: needs formatting
+checked 60 inputs (1 need formatting), 0 failed in 55ms
+exit=1
+$ git show bc0fe6b:web/src/lib.rs > web/src/lib.rs && scripts/fmt.sh
+web/src/lib.rs: needs formatting
+checked 60 inputs (1 need formatting), 0 failed in 64ms
+exit=1
