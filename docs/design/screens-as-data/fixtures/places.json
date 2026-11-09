@@ -1,0 +1,9 @@
+{
+  "plugin": "cooee-drover",
+  "places": [
+    { "type": "header-button", "id": "queue", "persona": "conductor", "label": "Queue", "icon": "queue", "screen": "/screens/queue" },
+    { "type": "header-button", "id": "events", "persona": "conductor", "label": "Events", "icon": "events", "screen": "/screens/events" },
+    { "type": "chat-cards", "persona": "conductor" },
+    { "type": "menu-row", "label": "drover", "subtitle": "herdsman's fleets", "screen": "/screens/fleets" }
+  ]
+}

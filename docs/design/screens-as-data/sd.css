@@ -65,7 +65,7 @@
 
 /* the detail at 1440 */
 .dtl .scr{position:relative;flex:1;padding:16px max(16px,calc((100% - 760px)/2)) 24px;overflow:hidden}
-.dtl .nb{position:relative;height:56px;padding:0 8px;background:var(--bar);box-shadow:0 .5px 0 var(--sep)}.dtl .nb .nt{opacity:1}
+
 
 /* blocks.html: each block's JSON beside its drawing */
 .cat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;width:1440px;padding:24px;box-sizing:border-box;background:var(--bg);color:var(--fg)}
@@ -76,3 +76,31 @@
 .cat pre{margin:0;padding:8px;overflow:hidden;background:var(--bg);border-radius:var(--r-row);font:10.5px/1.45 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
 .cat .cv2{position:relative;align-self:start;padding:8px 0;background:var(--bg);border-radius:var(--r-row);overflow:hidden}
 .cat .cv2 .ps{position:relative;top:0}.cat .cv2 .acs{position:relative;left:auto;right:auto;bottom:auto;margin:0 8px}
+
+/* Revision 1 (q946, q954): the native app's host chrome: no tab bar. pin the pinned personas row, hm the home bar (me
+   the owner's avatar), am the avatar menu, ch2 a persona chat's bar (hb its plugin buttons, hbt one, hic its icon),
+   ccd a chat card, side the Mac window's sidebar. */
+.ph .scr{padding-bottom:var(--sab)}
+.pin{display:flex;gap:4px;padding:4px 8px 12px;border-bottom:.5px solid var(--sep)}
+.pin a{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--fg);text-decoration:none;font-size:var(--fs-meta)}
+.pin .av{width:60px;height:60px;font-size:18px}
+.nb.hm .me{display:inline-flex;align-items:center;min-height:var(--hit);padding:0 12px}
+.hic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.nb .gl .hic{color:var(--l)}
+.am{top:calc(var(--sat) + var(--nb) - 4px);left:10px}
+.am .sv{margin-left:auto;font-size:var(--fs-meta);color:var(--mute)}
+.ch2{grid-template-columns:auto minmax(0,1fr) auto}.ch2 .ph2{justify-self:start}.ch2 .ph2 small{display:block;margin:0}
+.hb{display:flex;gap:2px;padding-right:6px}
+.hbt{position:relative;display:inline-grid;place-items:center;width:44px;height:44px;color:var(--l)}
+.hbt .tbd{position:absolute;top:2px;right:0}
+.ccd{list-style:none}.ccd>.ak{margin:4px 0 8px}
+.psh>span:first-child{display:flex}.psh>span a{padding:0 12px}
+/* The Mac window (1440 × 900): the sidebar (home) and the chat; a sheet is a centred panel over the whole window. */
+.wd.mac{grid-template-columns:340px minmax(0,1fr)}
+.side{position:relative;overflow:hidden;background:var(--card);border-right:1px solid var(--edge)}
+.side .nb{--sat:0px}.side .scr{padding-top:var(--nb)}
+.wd .cvw{position:relative;height:100%;padding-top:var(--nb)}.wd .ch2{--sat:0px;background:var(--bar)}
+.wd .dtl .tc{padding-inline:max(16px,calc((100% - 760px)/2))}
+.wd>.dim{z-index:8}.wd .ps{top:40px;bottom:40px;width:640px;left:calc(50% - 320px)}
+.wd .dtl .ch2{position:absolute;height:56px;padding:0 8px}.wd .cvw{padding-top:56px}
+.nb.hm .me,.nb.hm .me .av{text-decoration:none}

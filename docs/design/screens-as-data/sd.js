@@ -90,10 +90,10 @@ function find(node, id, parent = null) {
   return null;
 }
 const kids = p => p.blocks || p.rows || p.items;
-let tabBadge = 4;
+
 function apply(screen, ops) {
   for (const o of ops) {
-    if (o.op === 'badge') { tabBadge = o.count; continue; }
+    if (o.op === 'badge') { qBadge = o.count; continue; }
     const f = find(screen, o.id || o.into);
     if (!f) continue;
     if (o.op === 'merge') Object.assign(f.node, o.fields);
@@ -103,46 +103,63 @@ function apply(screen, ops) {
   }
 }
 
-// The host's chrome: #116's tab bar (Chats · Workflow · Queue · Asks · More), status bar, island, home indicator.
-const TABS = [
-  ['chats', 'Chats', '<path d="M20.5 11.5a8.5 8 0 0 1-12.3 7.2L3.5 20l1.4-4A8 8 0 0 1 3.5 11.5 8.5 8 0 0 1 20.5 11.5z"/>'],
-  ['workflow', 'Workflow', '<circle cx="6" cy="5.5" r="2.3"/><circle cx="6" cy="18.5" r="2.3"/><circle cx="18" cy="12" r="2.3"/><path d="M6 7.8v8.4M8.2 6.2c5 .3 8 1.7 9 3.6"/>'],
-  ['queue', 'Queue', '<path d="M9.5 6h11M9.5 12h11M9.5 18h11"/><circle cx="4.5" cy="6" r="1.4"/><circle cx="4.5" cy="12" r="1.4"/><circle cx="4.5" cy="18" r="1.4"/>'],
-  ['asks', 'Asks', '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.3c-.7.4-1.2.9-1.2 1.7v.3M12 16.9v.1"/>'],
-  ['more', 'More', '<circle cx="12" cy="12" r="9"/><path d="M7.8 12h.01M12 12h.01M16.2 12h.01" stroke-width="2.8"/>'],
-];
-const tabs = on => TABS.map(([id, label, d]) => `<a href="#"${id === on ? ' aria-current=page' : ''}><svg viewBox="0 0 24 24" aria-hidden=true>${d}</svg>${label}${
-  id === 'asks' ? `<i class=tbd>${tabBadge}</i>` : id === 'workflow' ? '<i class=tdt aria-label="needs you"></i>' : ''}</a>`).join('');
+// The host (cooee's native app, q946/q954): no tab bar. Home is the owner's avatar (its menu: Settings, Machines +
+// Terminal, Plugins), a pinned personas row and the chat list. A plugin's places (README § Places): drover attaches
+// to the Conductor persona: Queue and Events buttons in its chat header open its screens as sheets, and its asks are
+// cards in that chat. A plugin's optional menu row sits under the avatar menu's Plugins (hello, drover).
 const SB = `<span>9:41</span><span class=si><svg viewBox="0 0 18 12"><rect y="8" width="3" height="4" rx=".7"/><rect x="5" y="5.5" width="3" height="6.5" rx=".7"/><rect x="10" y="3" width="3" height="9" rx=".7"/><rect x="15" width="3" height="12" rx=".7"/></svg><svg viewBox="0 0 16 12"><path d="M8 2.4c2.4 0 4.5.9 6.1 2.4L15.3 3.6A10.3 10.3 0 0 0 8 .6 10.3 10.3 0 0 0 .7 3.6l1.2 1.2A8.6 8.6 0 0 1 8 2.4zm0 3.5c1.4 0 2.6.5 3.6 1.4l1.2-1.2A6.8 6.8 0 0 0 8 4.1 6.8 6.8 0 0 0 3.2 6.1l1.2 1.2c1-.9 2.2-1.4 3.6-1.4zM8 11.5l2.4-2.4a3.4 3.4 0 0 0-4.8 0z"/></svg><svg viewBox="0 0 27 12" style="height:13px"><rect x=".5" y=".5" width="23" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="18" height="8" rx="2"/><path d="M25 4v4c.8-.3 1.4-1 1.4-2S25.8 4.3 25 4z" opacity=".4"/></svg></span>`;
-
-const nav = s => `<header class="nb${s.large === false ? ' sc' : ''}">${s.back ? `<a class=bk href="#"><b>‹</b>${esc(s.back)}</a>` : '<span></span>'}<b class=nt${s.large === false ? ' style="opacity:1"' : ''}>${esc(s.title)}</b><span>${
-  (s.actions || []).map(a => `<a class=gl href="#" aria-label="${esc(a.label)}">${ICON[a.icon] || esc(a.label)}</a>`).join('')}</span></header>`;
-const body = s => `${s.large === false ? '' : `<h1 class=lt>${esc(s.title)}</h1>`}${all(s.blocks)}`;
-const screen = (s, on) => `<div class=scr><div class=in>${body(s)}</div></div>${nav(s)}<nav class=tbar aria-label=tabs>${tabs(on)}</nav>`;
-const sheet = s => `<div class=dim></div><div class="ps sdx" role=dialog aria-label="${esc(s.title)}"><div class=psh><a href="#">${esc(s.cancel || 'Cancel')}</a><b>${esc(s.title)}</b><a href="#">${esc(s.done?.label || 'Done')}</a></div>
+const PERS = [['cond', 'Conductor', 'CD', '--l'], ['chief', 'Chief', 'CH', '--link'], ['coder', 'Coder', 'CO', '--c'], ['res', 'Researcher', 'RE', '--p']];
+const av = (id, cls = '') => { const p = PERS.find(x => x[0] === id); return `<i class="av ${cls}" style="--av:var(${p[3]})" aria-hidden=true>${p[2]}</i>`; };
+const CHATS = [['cond', 'Conductor', 'run card c41: delete #48\'s wip snapshots', 'now', 4], ['chief', 'Chief', 'Every Monday at 09:00 I\'ll check the renewals.', '2m'],
+  ['coder', 'Coder', '$ cargo test -p cooee-core', '9m', 2], ['res', 'Researcher', 'Fetch sec.gov … company=kestrel', '12m', 1],
+  ['cond', 'Conductor · lifeboat page (#725)', 'herdsman#725 queued after #553', '1h'], ['chief', 'Chief · Q3 board deck', 'Draft 2 is in deck.md', '2d']];
+const ICON2 = { queue: '<path d="M9.5 6h11M9.5 12h11M9.5 18h11"/><circle cx="4.5" cy="6" r="1.4"/><circle cx="4.5" cy="12" r="1.4"/><circle cx="4.5" cy="18" r="1.4"/>',
+  events: '<path d="M3 12h4l3-7 4 14 3-7h4"/>', more: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
+  new: '<path d="M12 5v14M5 12h14"/>' };
+const ic = k => `<svg class=hic viewBox="0 0 24 24" aria-hidden=true>${ICON2[k]}</svg>`;
+let qBadge = 7;
+const home = () => `<div class=scr><div class=in><div class=pin>${PERS.map(([id, n]) => `<a href="#">${av(id)}<span>${n}</span></a>`).join('')}</div>
+  ${CHATS.map(([id, n, last, age, ud]) => `<a class="pr${ud ? ' ud' : ''}" href="#">${av(id)}<span class=an>${esc(n)}</span><span class="ta cv">${age}</span>
+    <span class=tp><span>${esc(last)}</span>${ud ? `<i class=bd>${ud}</i>` : ''}</span></a>`).join('')}</div></div>
+  <header class="nb hm"><a class=me href="#" aria-label="you"><i class="av s" style="--av:var(--a)">G</i></a><b class=nt style="opacity:1">cooee</b><span><a class=gl href="#" aria-label="new chat">${ic('new')}</a></span></header>`;
+const menu = () => `<div class=mdim></div><div class="agm am" role=menu aria-label="you"><p class=gh>Guy · mini</p>
+  <a class=gr href="#"><i>⚙</i><span class=sk>Settings</span></a><a class=gr href="#"><i>▣</i><span class=sk>Machines + Terminal</span></a><div class=gp></div>
+  <p class=gh>plugins</p><a class=gr href="#"><i>◎</i><span class=sk>drover</span><span class=sv>Conductor</span></a><a class=gr href="#"><i>◎</i><span class=sk>hello</span></a>
+  <a class="gr lk" href="#"><i>+</i><span class=sk>Add a plugin…</span></a></div>`;
+const chathead = () => `<header class="nb sc ch2"><a class=bk href="#"><b>‹</b></a><span class=ph2>${av('cond')}<span><b>Conductor</b><small class=ds>drover · 3 fleets</small></span></span>
+  <span class=hb><a class=hbt href="#" aria-label="Queue">${ic('queue')}<i class=tbd>${qBadge}</i></a><a class=hbt href="#" aria-label="Events">${ic('events')}</a></span></header>`;
+const chat = async () => { const cards = await json('fixtures/cards.json');
+  return `<div class=cvw><ol class=tc aria-label=messages>
+    <li class="blk me"><div class=md>What's waiting on me?</div><span class=ct>09:37</span></li>
+    <li class="blk ai"><b class=k>Conductor</b><div class=md>Four things: a run card that lapses at 09:52, #125's design, a routine ask on #722 and synergy #2708 at its round limit.</div></li>
+    ${cards.map(c => `<li class=ccd>${one(c)}</li>`).join('')}</ol>
+    <form class=tw><button type=button class=att aria-label=attach>+</button><textarea rows=1 aria-label=message placeholder="message Conductor"></textarea><button type=button aria-label=send>↑</button></form></div>${chathead()}`; };
+// A plugin screen in a sheet: its title, its toolbar (⋯ menus), Done; the body is the screen's blocks.
+const sheet = s => `<div class=dim></div><div class="ps sdx" role=dialog aria-label="${esc(s.title)}"><div class=psh>${s.type === 'sheet'
+  ? `<a href="#">${esc(s.cancel || 'Cancel')}</a><b>${esc(s.title)}</b><a href="#">${esc(s.done?.label || 'Done')}</a>`
+  : `<span>${(s.actions || []).map(a => `<a href="#" aria-label="${esc(a.label)}">${ic(a.icon) }</a>`).join('')}</span><b>${esc(s.title)}</b><a href="#">Done</a>`}</div>
   <div class=pb><div class=in>${all(s.blocks)}</div></div></div>`;
 const confirm = c => `<div class=mdim></div><div class=acs><div><p><b>${esc(c.title)}</b>${c.message ? `<br>${esc(c.message)}` : ''}</p><a class=rd href="#">${esc(c.ok)}</a></div><div><a href="#">Cancel</a></div></div>`;
 
-for (const e of document.querySelectorAll('[data-screen]')) {
-  const s = await json(e.dataset.screen);
-  if (e.dataset.back) s.back = e.dataset.back; // the host's back button: a plugin pushed from More
-  if (e.dataset.live) for (const ev of await json(e.dataset.live)) apply(s, ev.ops);
-  let h = screen(s, e.dataset.on);
-  if (e.dataset.sheet) h += sheet(await json(e.dataset.sheet));
-  if (e.dataset.confirm) { const f = find(s, e.dataset.confirm).node; h += confirm((f.options || []).find(o => o.value === e.dataset.value)?.confirm || f.confirm); }
-  e.outerHTML = h; tabBadge = 4;
+for (const e of document.querySelectorAll('[data-host]')) {
+  let over = '', sc;
+  if (e.dataset.screen) {
+    sc = await json(e.dataset.screen);
+    if (e.dataset.live) for (const ev of await json(e.dataset.live)) apply(sc, ev.ops);
+    over += sheet(sc);
+  }
+  const base = e.dataset.host === 'home' ? home() : await chat();
+  if ('menu' in e.dataset) over += menu();
+  if (e.dataset.confirm) { const f = find({ blocks: await json('fixtures/cards.json') }, e.dataset.confirm).node; over += confirm(f.options.find(o => o.value === e.dataset.value).confirm); }
+  if (e.dataset.wide) e.innerHTML = `<aside class=side>${home()}</aside><main class=dtl>${base}</main>${over}`;
+  else e.outerHTML = base + over;
+  qBadge = 7;
 }
 for (const p of document.querySelectorAll('.ph')) p.insertAdjacentHTML('beforeend', `<div class=stb>${SB}</div><i class=isl></i><i class=hind></i>`);
-// 1440: the rail, a screen as the list column, another (the pushed one) as the detail.
-for (const e of document.querySelectorAll('[data-wide]')) {
-  const [l, d] = await Promise.all(e.dataset.wide.split(' ').map(json));
-  e.innerHTML = `<nav class=rail aria-label=tabs>${tabs(e.dataset.on)}</nav><div class=lst>${nav({ ...l, title: '' })}<div class=scr><div class=in>${body(l)}</div></div></div>
-    <main class=dtl>${nav({ ...d, large: false })}<div class=scr><div class=in>${all(d.blocks)}</div></div></main>`;
-}
 // blocks.html: each example's JSON beside its drawing.
 for (const e of document.querySelectorAll('[data-cat]')) {
   const cat = await json(e.dataset.cat), hello = await fetch('hello/hello.py').then(r => r.text());
-  e.innerHTML = `<h1>The block set, v1 <small>Each block's JSON (left) and how cooee's web client draws it (right). The Swift app and herdsman's board draw the same JSON with their own views.</small></h1>
+  e.innerHTML = `<h1>The block set, v1 <small>Each block's JSON (left) and this mockup's renderer draws it (right). The native app (SwiftUI, iPhone + Mac) draws the same JSON with its own views.</small></h1>
     <section><h2>hello.py <small>· a whole plugin, 22 lines of Python, no frontend code</small></h2><pre>${esc(hello)}</pre><div class="cv2 sdx">${all([(await json('fixtures/hello.json'))]
       .map(s => ({ type: 'section', blocks: s.blocks })))}</div></section>` +
     cat.map(x => `<section${x.wide ? ' class=wide' : ''}><h2>${esc(x.name)} <small>· ${esc(x.note)}</small></h2><pre>${esc(JSON.stringify(x.block, null, 1).replace(/\n\s+(?=[\]}])/g, ' ').replace(/\[\n\s+/g, '[ '))}</pre><div class="cv2 sdx">${

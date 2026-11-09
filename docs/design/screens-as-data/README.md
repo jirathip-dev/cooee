@@ -1,37 +1,53 @@
-# Plugin screens as data: a block set every client draws natively (#125)
+# Plugin screens as data: a block set the native app draws (#125)
 
-A plugin returns its screens as **JSON made of cooee's blocks**, and each client draws them with its own views: the
-Swift app (cooee#124), the web app, and herdsman's board page (herdsman#725). The plugin author writes no frontend
-code. Any backend that answers JSON works (Python, Node, Rust, shell). Every plugin gets cooee's look, its themes,
-dark mode and accessibility (Dynamic Type, VoiceOver labels, 44 pt targets) on every client, because the client
-draws everything. **No third-party code runs in the app, only data.** The `web` block stays as the escape hatch.
-Owner decisions: q941 and q943 (conductor thread t59). **Nothing is built** until the Swift spike (cooee#124) decides.
+A plugin returns its screens as **JSON made of cooee's blocks**, and the native app (SwiftUI, iPhone and Mac,
+iOS/macOS 26; q946/q947) draws them with its own views. The plugin author writes no frontend code. Any backend that
+answers JSON works (Python, Node, Rust, shell). Every plugin gets cooee's look, its themes, dark mode and
+accessibility (Dynamic Type, VoiceOver labels, 44 pt targets) for free, because the app draws everything. **No
+third-party code runs in the app, only data.** The `web` block stays as the escape hatch. The frozen PWA keeps its
+module tabs as they are, and herdsman's lifeboat page (#725) is plain and draws no blocks. Owner decisions: q941,
+q943, q946/q947, q954, and the answers to revision 0's questions (below). **Nothing is built** until the Swift spike
+(cooee#124) decides.
 
-**Proof it fits:** drover's Queue, Asks, Fleets and design-review screens are written as fixtures
-(`fixtures/*.json`), and one renderer (`sd.js`, about 150 lines, one function per block) draws them on #116's
-native shell. The PNGs below are those fixtures drawn, not hand-made HTML. `fixtures/hello.json` is the real answer
-of `hello/hello.py`, a whole plugin in 22 lines of Python.
+**Proof it fits:** drover's Queue, Events and asks are written as fixtures (`fixtures/*.json`). One mockup renderer
+(`sd.js`, one function per block) draws them in the native app's new home (q954) on the design system. The PNGs
+below are those fixtures drawn, not hand-made HTML. `fixtures/hello.json` is the real answer of `hello/hello.py`, a
+whole plugin in 22 lines of Python.
+
+## Revision 1 (q946, q947, q954)
+
+- **The native app is the only client.** The web renderer here is a mockup, not a client. The PWA is frozen, its
+  module tabs unchanged (Q1), and herdsman's board draws no blocks (Q5: no).
+- **No tab bar:** home is the owner's avatar (its menu: Settings, Machines + Terminal, Plugins), a pinned personas
+  row, then the chat list. **Plugins attach to a persona, not the app.** drover attaches to the Conductor only: its
+  **Queue** (issues holding their lanes and rounds) and **Events** open as sheets from buttons in the Conductor
+  chat's header, and **asks are chat cards** in that chat, with no screen of their own. A new spec section,
+  **Places** (below), says where a plugin's screens go.
+- **Fleets** is no longer a place of its own: it is a sheet under the Queue sheet's `⋯` (`fleets.json` is unchanged).
+  The design review is a chat card, no longer a pushed screen. Their frames are gone.
+- **Answered:** images in v1 (Q2, yes), one `POST /action` (Q3), and a JSON Schema plus `cooee plugin check` (Q4, yes).
 
 ## The PNGs and the decision each shows
 
 | PNG | shows | decision |
 |---|---|---|
-| `queue-390-light.png`, `-dark.png` | drover's Queue from `queue.json`: `chips` (repo filter), a `stat` row with sparklines, the herdsman fleet `card` (badge `driving`, Drive now / Pause), and `section`s of `row`s, each with the theme's state figure, a stage badge and a live age. `#686` is indented under `#456` (`indent`, the blocked chain) and has a red subtitle. | Queue fits in blocks, with two row fields added: `indent` and a toned `subtitle` |
-| `queue-live-390-light.png` | The same screen after `queue-stream.json`'s three events: `#722` merged to `review 1`, `#708` removed, `#456` replaced (now in impl), `#686`'s subtitle merged, and the Asks tab badge set to 3. | Live updates: ops keyed by block id (replace, merge, remove, insert), not a re-fetch |
-| `asks-390-dark.png`, `-light.png` | Asks from `asks.json`: the run card (markdown with a code fence, the sha line, approve / deny, `lapses in 11m` ticking), the design ask (`images` + approve · recommended / revise / reject), a routine ask (options, other…, the default's countdown), and needs-human below the fold. | Asks is `card` + `text` + `choice`; time ticks on the client (`since` / `until`) |
-| `confirm-390-dark.png` | `merge anyway`'s confirm, drawn as the client's own action sheet: the title, the message, a red Merge, and Cancel. | Destructive confirms are data (`confirm`); the client draws them and the plugin can't skip them |
-| `fleets-390-dark.png`, `-light.png` | The Fleets sheet (`fleets.json`) over Queue, opened from its ⚙ toolbar action: Cancel · Fleets · Save, one `section` + `form` per fleet (toggle, pickers, text, a set `secret`), a link row, and a destructive button. | Settings are a `sheet` of `form`s; Save sends every field by `name` |
-| `design-390-light.png`, `-dark.png` | The design review (`design-review.json`), pushed from Asks: `‹ Asks`, an inline title, the card with large `images` (they scroll sideways), the decisions list, and the choice with a revise note. | Images need a block (gap 1, added) |
-| `hello-390-light.png`, `-dark.png` | **A third-party plugin:** `hello.py`'s screen, pushed from More: markdown, a stat, a Wave button. A tap POSTs `wave`, and the answer's `merge` op bumps the stat. | The scale: 22 lines of Python, no frontend |
-| `wide-1440-light.png`, `-dark.png` | 1440: the rail, Queue as the list column, and the design review as the detail (`‹ Asks`, its toolbar ↗). The same JSON as at 390. | One JSON per screen; the client lays it out per size |
+| `home-390-light.png`, `-dark.png` | Home (q954): the owner's avatar, `cooee`, `+`, the pinned personas, the chats. The avatar menu is open: Settings, Machines + Terminal, then **plugins**: drover (attached to `Conductor`), hello, and Add a plugin…. | A plugin's optional `menu-row` lives under the avatar menu's Plugins |
+| `conductor-390-light.png`, `-dark.png` | The Conductor chat. The header carries the persona, then drover's **Queue** (count `7`) and **Events** buttons. drover's asks are **chat cards** at the end of the chat: the design card (images, approve · recommended / revise / reject, a revise note), a routine ask (options, other…, its countdown), and needs-human. The run card is just above. | `header-button` and `chat-cards` places; asks are cards, not a screen |
+| `queue-390-light.png`, `-dark.png` | `queue.json` as a sheet over the chat: `⋯` (Fleets…, Drive all now), Queue, Done. Then the repo `chips`, a `stat` row with sparklines, and the fleet `card` with its rows. **Each issue row holds its lane and rounds** (`impl ✓ · review 1 ✗ · fix 1 ▸ herdsman-impl-641 · mini`), the stage badge and a live age. The blocked chain is indented. | A header button opens the plugin's screen as a sheet; Fleets moves under `⋯` |
+| `queue-live-390-light.png` | The same sheet after `queue-stream.json`'s three events: `#722` merged to `review 1` (its new lane), `#708` removed, `#456` replaced (now in impl), `#686`'s subtitle merged, and the header button's count set to 6. | Live updates: ops keyed by block id, not a re-fetch |
+| `events-390-light.png`, `-dark.png` | `events.json` as a sheet: kind chips, today's events newest first (merge, verdict, ask, spawn, FAIL, round limit), each with the theme's state figure and its time. A tap opens the PR, or a lane's chat (`tap: thread`). | Events is a plain list screen; its stream inserts rows |
+| `confirm-390-dark.png` | `merge anyway` on the needs-human card: the app's own action sheet (title, message, red Merge, Cancel). | Destructive confirms are data; the app draws them and the plugin can't skip them |
+| `hello-390-light.png`, `-dark.png` | **A third-party plugin:** `hello.py`'s screen as a sheet from its avatar-menu row: markdown, a stat and a Wave button. A tap POSTs `wave`, and the answer's `merge` op bumps the stat. | The scale: 22 lines of Python, no frontend |
+| `wide-1440-light.png`, `-dark.png` | The Mac window: the sidebar (home: avatar, pinned personas, chats), the Conductor chat with its header buttons, and the Queue sheet as a centred panel. The same JSON as on the iPhone. | One JSON per screen; the app lays it out per size |
 | `blocks-1440.png` | The block set: each block's JSON beside its drawing, with `hello.py` first. Full height. | The block set v1 |
 
 `screens.html` holds the frames and `blocks.html` the catalogue. Serve the repo root over http (the pages fetch
-`web/`, `packs/` and `../native-shell/ns.css`). `?f=<frame>&mode=dark|light` shows one frame.
+`web/`, `packs/` and `../native-shell/ns.css` for the tokens). `?f=<frame>&mode=dark|light` shows one frame.
 `node docs/design/screens-as-data/shoot.mjs <chrome-headless-shell>`, run from the repo root, regenerates every PNG
 and checks each one for sideways scroll, anything past the right edge, and cut text without an ellipsis. **All 15
-pass.** The design review's thumbnails are the shots themselves, so a fresh checkout runs it twice.
-**Look:** Modern, farm scheme, #116's shell. **Data:** illustrative, from #116's real issues.
+pass.** The design card's thumbnails are the shots themselves, so a fresh checkout runs it twice.
+**Look:** Modern, farm scheme, drawn on the design system's tokens. The home layout (q954) is drawn here for the first
+time, small; its own design is not this issue. **Data:** illustrative, from real issues.
 
 ## 1. The spec
 
@@ -60,8 +76,8 @@ inline title (a pushed detail). The host adds `‹ back`.
   "actions": [ { "icon": "plus", "label": "New lane", "tap": { "sheet": "/screens/lanes/new" } } ],
   "blocks": [ { "type": "text", "markdown": "3 lanes on **mini**." } ] }
 ```
-`icon` is a name from cooee's small fixed set (`plus`, `gear`, `share`, `info`, `filter`, …). The Swift app maps
-each to an SF Symbol, and the web app to its stroke icons. `label` is the accessible name.
+`icon` is a name from cooee's small fixed set (`plus`, `gear`, `share`, `info`, `filter`, …). The app maps each to an
+SF Symbol. `label` is the accessible name.
 
 **section**: a header, blocks, and a footer.
 ```json
@@ -156,9 +172,8 @@ screen, with pinch to zoom. `src` is a path on the plugin's backend, or a `data:
   "blocks": [ { "type": "form", "id": "nf", "fields": [ { "type": "text", "name": "repo", "label": "Repo", "placeholder": "owner/name" } ] } ] }
 ```
 
-**web**: the escape hatch: a page on the plugin's backend in a sandboxed frame (`WKWebView` with no bridge on iOS;
-`sandbox="allow-scripts"` and the CSP of today's tabs on the web) at a fixed `height`. The theme's CSS variables are
-passed in, as for today's module tabs. Use it for charts or art the blocks can't express.
+**web**: the escape hatch: a page on the plugin's backend in a sandboxed `WKWebView` with no bridge and no cookies,
+at a fixed `height`. The theme's colours are passed in as CSS variables, as for today's module tabs. Use it for charts or art the blocks can't express.
 ```json
 { "type": "web", "id": "chart", "src": "/web/load-24h.html", "height": 120 }
 ```
@@ -175,7 +190,7 @@ A screen with `stream` opens it as server-sent events through the proxy (today's
 | `{"op": "remove", "id"}` | removes it, animated |
 | `{"op": "insert", "into", "before"\|"after", "block"}` | adds a block to the list or section `into`, at the end by default |
 | `{"op": "screen", "screen"}` | replaces the whole screen (a gap in `seq`, or a big change) |
-| `{"op": "badge", "count"}` / `{"op": "dot", "on"}` | the tab's count or dot |
+| `{"op": "badge", "count"}` / `{"op": "dot", "on"}` | the count or dot on the place's header button (or menu row) |
 
 The client resumes with `Last-Event-ID: <seq>`. A plugin that can't resume answers a `screen` op first. Without a
 stream, pull to refresh re-GETs the screen. `queue-stream.json` is drawn in `queue-live-390-light.png`.
@@ -194,48 +209,69 @@ sheet, all of its forms), and the chips. The block is disabled with a spinner un
 - **409:** `{"line": "stale: answered by conductor-t6"}`: the block shows the line and stays closed, as today's cards.
 - **anything else:** an error toast, and the block can be tapped again.
 
-### Where it plugs in (a proposal: no API change in this issue)
+### Places: where a plugin's screens go (q954)
 
-A manifest tab gets `screen = "/screens/queue"` instead of `module = "/tab.js"` (and an `icon`). Everything else
-stays: the token, the proxy, `cooee plugin add`, the index, and `/plugin/push`. A tab with a `module` keeps working,
-as today's sandboxed frame. herdsman's board (#725) fetches the same paths with its own token and draws the same
-blocks in its page.
+A plugin declares its places in its manifest (or answers `GET /cooee/places` in the same shape, as profiles do
+today). `fixtures/places.json` is drover's:
+```json
+{ "places": [
+  { "type": "header-button", "id": "queue", "persona": "conductor", "label": "Queue", "icon": "queue", "screen": "/screens/queue" },
+  { "type": "header-button", "id": "events", "persona": "conductor", "label": "Events", "icon": "events", "screen": "/screens/events" },
+  { "type": "chat-cards", "persona": "conductor" },
+  { "type": "menu-row", "label": "drover", "subtitle": "herdsman's fleets", "screen": "/screens/fleets" } ] }
+```
+
+- **`header-button`**: an icon button in a persona's chat header (at most 2 per persona) that opens `screen` as a
+  sheet: a page sheet on the iPhone, a centred panel on the Mac. The sheet's bar is the screen's toolbar actions
+  (`⋯` menus), its title, and Done. A pushed screen inside it (`tap: open`) gets `‹`. The button's count comes from
+  the screen's stream (`{"op": "badge"}`).
+- **`chat-cards`**: the plugin may post cards into that persona's chats: `POST /plugin/card {"thread", "card":
+  <card block>}`, with the card's blocks (text, images, choice, buttons). Later ops on its ids (`POST /plugin/ops
+  {"thread", "ops"}`) update it in place, and its actions come back as the same `POST /action`. Today's
+  `/plugin/card` forms (choice, run card, secret, config) become card blocks. A card can also be pushed (`push`).
+- **`menu-row`** (optional): a row under the avatar menu's **Plugins**. It opens `screen` as a sheet. A plugin with
+  no persona (hello) lives only here.
+- A plugin is attached to the personas its places name. The owner can move it to another persona in its Plugins
+  row; the default comes from the manifest. Places never add a tab or touch another plugin's persona.
+
+### The schema and `cooee plugin check` (Q4)
+
+`docs/plugins/screens.schema.json` (to build) describes every block, op, place and action answer. `cooee plugin
+check` GETs each place's screen, validates it, and lints it: ids unique, a destructive button with no confirm, a
+`secret` sent with a value, images over 2 MB. The app still skips unknown blocks, so a newer plugin works on an
+older app.
 
 ## 2. What drover's screens need that the blocks can't express
 
-1. **Images** (the design review's PNGs): not in the brief's list, so it is **added** as the `images` block.
+1. **Images** (the design card's PNGs): not in the brief's list, so it is **added** as the `images` block (Q2: in v1).
 2. **A live clock** (`lapses in 11m`, `takes the recommendation in 12m`, row ages): **added** as `since` / `until`
    values, ticked by the client. Without them a stream would have to send an op every minute.
-3. **The blocked chain** (`#686` held until `#456`): **added** as row `indent` and a toned `subtitle`.
+3. **The blocked chain** (`#686` held until `#456`) and **an issue holding its rounds**: **added** as row `indent` and a toned `subtitle`, which carries the rounds line. A Workflow-style unfolding row could come in v2.
 4. **A lane's live chat** (tool lines, the transcript): **not a block.** A row's `tap: {"thread": id}` opens cooee's
    own chat, which is better than any copy of it.
-5. **Reordering the queue** (drag to move): **not in v1.** The Queue fixture uses swipe actions (`Top`, `Drop`).
+5. **Reordering the queue** (drag to move): **not in v1.** The Queue sheet uses swipe actions (`Top`, `Drop`).
    A `reorder` action on a list could come in v2.
 6. **Scene** (the horses acting their states): theme art, cooee's own. Rows get the theme's state figure through
    `figure.state`, but a whole-field Scene is not a plugin block.
-7. **The Terminal tab** and **charts you tap into** (the machines plugin's 24 h charts): the `web` escape hatch,
-   or they stay first-party native tabs.
+7. **Terminal** and **charts you tap into** (the machines plugin's 24 h charts): the `web` escape hatch, or
+   cooee's own views (Machines + Terminal sits in the avatar menu).
 
 ## Suggested build issues, after cooee#124 decides
 
-1. **spec + web renderer:** the blocks, ops and action POST in `web/` (the renderer here grown up: accessible and
-   tested), with a manifest `screen =` tab.
-2. **Swift renderer:** the same blocks in SwiftUI (`List`, `Section`, `Menu`, `Toggle`, `confirmationDialog`,
-   `.swipeActions`, `.sheet`), on the fixtures here as snapshot tests.
-3. **drover on screens:** cooee-drover's Queue, Asks and Fleets serve these fixtures' shapes instead of its module.
-4. **herdsman board (#725):** draw the same JSON in the lifeboat page.
-5. **plugin SDK docs:** `docs/plugins.md` gets the hello example and the block reference. Optional tiny helpers
-   (`cooee_screens.py`, an npm package) only if authors ask.
+1. **SwiftUI renderer:** the blocks, ops and `POST /action` (`List`, `Section`, `Menu`, `Toggle`,
+   `confirmationDialog`, `.swipeActions`, `.sheet`), with this folder's fixtures as snapshot tests on iPhone and Mac.
+2. **Places:** header buttons, chat cards (and `/plugin/card` moving to card blocks), the avatar menu's Plugins rows,
+   and attaching a plugin to a persona.
+3. **Schema and `cooee plugin check`.**
+4. **drover on screens:** cooee-drover serves Queue, Events, Fleets and its cards in these shapes, attached to the
+   Conductor.
+5. **Docs:** `docs/plugins.md` gets the hello example and the block and place reference.
 
 ## Open questions for the owner
 
-1. **Mixing module and screen tabs.** **Recommend:** keep module tabs working as they are (the escape for a whole
-   tab), and put new first-party work on screens. The alternative is to deprecate modules once drover moves.
-2. **Images in v1?** **Recommend:** yes, the `images` block, since a design review can't work without it. The
-   alternative is a `web` block per review.
-3. **One action endpoint or one per block?** **Recommend:** one `POST /action` with the block id, which is simple for
-   a 20-line plugin. The alternative is a `path` per action.
-4. **Validation.** **Recommend:** a JSON Schema in the repo, plus `cooee plugin check` linting a screen. The client
-   still skips unknown blocks. The alternative is no schema, documented by example only.
-5. **Where herdsman's own screens live.** **Recommend:** drover stays the plugin that serves them (cooee-drover), so
-   herdsman's board and cooee draw one source. The alternative is herdsman serving them itself.
+1. **Header buttons per persona.** **Recommend:** at most 2 per persona, with more going under one `⋯`, so the
+   header stays readable on the iPhone. The alternative is no limit, with the app folding extras into `⋯`.
+2. **Who may post chat cards.** **Recommend:** only into chats of the personas the plugin is attached to. The owner
+   sees the attachment in its Plugins row. The alternative is any chat a plugin started.
+3. **A card's push.** **Recommend:** a card with `"push": true` notifies, as approvals do today, and the rest stay
+   quiet in the chat. The alternative is that every card notifies.
