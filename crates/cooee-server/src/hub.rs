@@ -136,12 +136,15 @@ pub struct CardSpec {
     /// The option shown first, marked recommended.
     #[serde(default)]
     pub recommend: Option<String>,
-    /// `config`, `secret` or `thread`; none: choices.
+    /// `config`, `secret`, `thread` or `run-card`; none: choices.
     #[serde(default)]
     pub form: Option<String>,
-    /// A config card's diff, or a secret card's name.
+    /// A config card's diff, a secret card's name, or a run card's command.
     #[serde(default)]
     pub detail: Option<String>,
+    /// A run card's command sha.
+    #[serde(default)]
+    pub sha: Option<String>,
     /// The conductor's own answer: shown answered, and the owner may change it for 30 minutes.
     #[serde(default)]
     pub answered: Option<String>,
@@ -1338,7 +1341,8 @@ impl Hub {
 
     /// `by`'s answer to approval `item`: sent once (stored first) to shed, or to the plugin whose card it is (then
     /// chosen, with the plugin's line; a 409 leaves it closed with the plugin's why). A secret card's `value` goes
-    /// to its plugin only and is never kept. A second tap returns the item.
+    /// to its plugin only and is never kept; a run card's `approve` sends its sha as the `value`. A second tap
+    /// returns the item.
     ///
     /// # Errors
     /// [`HubError::Shed`] when shed fails; [`HubError::Refused`] when the plugin does.
@@ -1358,13 +1362,22 @@ impl Hub {
         live.publish(self, vec![Change::Item(tapped.clone())])?;
         let sent = match &tapped.body {
             Body::Approval {
-                plugin: Some(name), ..
+                plugin: Some(name),
+                card,
+                ..
             } => self
                 .plugins()
                 .into_iter()
                 .find(|p| &p.name == name)
                 .ok_or_else(|| io::Error::other("no longer configured"))
-                .and_then(|p| crate::plugin::answer(&p, id, item, option, by, value))
+                .and_then(|p| {
+                    // A run card's `approve` carries the sha it showed, never the page's value.
+                    let value = match card.form.as_deref() {
+                        Some("run-card") => card.sha.as_deref().filter(|_| option == "approve"),
+                        _ => value,
+                    };
+                    crate::plugin::answer(&p, id, item, option, by, value)
+                })
                 .map_err(|e| HubError::Refused(format!("plugin {name}: {e}"))),
             Body::Approval { card, .. } if card.form.as_deref() == Some("mcp") => {
                 Ok(self.mcp_answer(id, item, option))
@@ -1413,11 +1426,12 @@ impl Hub {
     }
 
     /// Plugin `plugin`'s card (#553 rows 30–33, 35): choices (the recommended one first), a config diff to apply
-    /// or discard, a secret to save or dismiss, or the other open threads to pick from. The owner's tap goes to the
+    /// or discard, a secret to save or dismiss, a herdsman run card's command to approve or deny (#83), or the
+    /// other open threads to pick from. The owner's tap goes to the
     /// plugin; a card the conductor answered itself may be changed for 30 minutes.
     ///
     /// # Errors
-    /// [`HubError::Refused`] without text, options, a config's diff or a secret's name.
+    /// [`HubError::Refused`] without text, options, a config's diff, a secret's name or a run's command and sha.
     pub fn card(&self, plugin: &Plugin, c: CardSpec) -> Result<Item, HubError> {
         let plain = |o: &str| ApprovalOption {
             id: o.to_owned(),
@@ -1428,6 +1442,7 @@ impl Hub {
             None => c.options.iter().map(|o| plain(o)).collect(),
             Some("config") => vec![plain("apply"), plain("discard")],
             Some("secret") => vec![plain("save"), plain("dismiss")],
+            Some("run-card") => vec![plain("approve"), plain("deny")],
             Some("thread") => self
                 .list()
                 .into_iter()
@@ -1441,13 +1456,16 @@ impl Hub {
                 .collect(),
             Some(f) => return Err(HubError::Refused(format!("no card form {f:?}"))),
         };
-        let detail = c.detail.as_deref().is_some_and(|d| !d.trim().is_empty());
+        let set = |v: &Option<String>| v.as_deref().is_some_and(|d| !d.trim().is_empty());
         if c.text.trim().is_empty()
             || options.is_empty()
-            || (matches!(c.form.as_deref(), Some("config" | "secret")) && !detail)
+            || (matches!(c.form.as_deref(), Some("config" | "secret" | "run-card"))
+                && !set(&c.detail))
+            || (c.form.as_deref() == Some("run-card") && !set(&c.sha))
         {
             return Err(HubError::Refused(
-                "a card needs text and options (a thread to pick), a config card its diff and a secret card its name"
+                "a card needs text and options (a thread to pick), a config card its diff, a secret card its name \
+                 and a run card its command and sha"
                     .to_owned(),
             ));
         }
@@ -1474,6 +1492,7 @@ impl Hub {
                 answered: answered.then_some(at),
                 form: c.form,
                 detail: c.detail,
+                sha: c.sha,
                 line: None,
                 until: answered.then_some(at + CHANGE),
             },

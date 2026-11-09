@@ -114,12 +114,16 @@ pub struct Card {
     /// When it was answered, in Unix milliseconds.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub answered: Option<u64>,
-    /// `config` (a diff to apply or discard), `secret` (a masked value) or `thread` (pick a thread); none: choices.
+    /// `config` (a diff to apply or discard), `secret` (a masked value), `thread` (pick a thread) or `run-card` (a
+    /// herdsman run card's command to approve or deny); none: choices.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub form: Option<String>,
-    /// A config card's diff, or a secret card's name.
+    /// A config card's diff, a secret card's name, or a run card's command.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
+    /// A run card's command sha, sent back with its `approve` (herdsman's `card approve --sha`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sha: Option<String>,
     /// The plugin's line once settled (`applied, doctor ✓`), or why it can't be answered (`stale: …`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub line: Option<String>,
@@ -175,6 +179,10 @@ pub struct Summary {
 
 /// What applying an event changed, for the page.
 #[derive(Debug, Clone, PartialEq)]
+#[allow(
+    clippy::large_enum_variant,
+    reason = "a change lives only until it is published; boxing every item for it isn't worth it"
+)]
 pub enum Change {
     /// An item was added or replaced; it is stored before the page hears of it.
     Item(Item),

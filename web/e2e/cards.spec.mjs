@@ -169,3 +169,26 @@ test("#84: the header shows the id; a whole-word ref opens that thread and back 
   await page.locator(".th .bk").click();
   await page.waitForURL(`/t/${source}`);
 });
+
+test("#83: a herdsman run card shows its command and sha; [approve] shows the exit and tail, [deny] runs nothing", async ({ page }, info) => {
+  const id = await thread(page, `Run card ${info.project.name}`);
+  const sha = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+  const run = { thread: id, form: "run-card", detail: "git tag -f v1 && git push -f origin v1", sha };
+  await card(page, { ...run, text: "run card r1: re-tag the release\ntouches: origin's v1 tag" });
+  const row = page.locator(".blk.ap.run-card", { hasText: "r1" });
+  await expect(row.locator("pre.diff")).toHaveText(run.detail);
+  await expect(row.locator(".m")).toHaveText("sha 9f86d081884c");
+  await audit(page);
+  await shot(page, info, "run-83-card");
+  await row.getByRole("button", { name: "approve" }).click();
+  await expect(row.locator(".ans")).toHaveText(new RegExp(`^ran: exit 0 · .+ · ${at.source}`));
+  await expect(row.locator("pre.diff").last()).toHaveText("at 9f86d081884c");
+  await expect(row.getByRole("button", { name: "approve" })).toHaveCount(0);
+  await shot(page, info, "run-83-ran");
+
+  await card(page, { ...run, text: "run card r2: re-tag again" });
+  const r2 = page.locator(".blk.ap.run-card", { hasText: "r2" });
+  await r2.getByRole("button", { name: "deny" }).click();
+  await expect(r2.locator(".ans")).toHaveText(/^✓ deny · /);
+  await expect(r2.locator("pre.diff")).toHaveCount(1);
+});

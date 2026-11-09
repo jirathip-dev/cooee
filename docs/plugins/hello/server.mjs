@@ -25,6 +25,11 @@ http.createServer(async (req, res) => {
   const body = await read(req);
   if (req.url === "/notify") return json(res, 200, await toCooee("/plugin/push", { text: "hello from the plugin", path: "hi" }));
   if (req.url === "/ask") return json(res, 200, await toCooee("/plugin/card", { thread: body.thread, text: "Ship it?", options: ["yes", "no"] }));
-  if (req.url === "/cooee/choice") { tell("choice", body.option); return json(res, 200, "ok"); }
+  if (req.url === "/cooee/choice") {
+    tell("choice", body.option);
+    // A run card's [approve] carries its sha; herdsman would run it and answer the exit code and output tail.
+    if (body.option === "approve" && body.value) return json(res, 200, { line: `ran: exit 0\n\`\`\`\nat ${body.value.slice(0, 12)}\n\`\`\`` });
+    return json(res, 200, "ok");
+  }
   json(res, 404, "no such path");
 }).listen(Number(PORT), "127.0.0.1");
