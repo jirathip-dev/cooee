@@ -1,0 +1,7 @@
+Decided: staging build fix: the parity row 6 decline locator takes the newest card, so a repeated check word no longer matches two cards
+Because: crates/cooee-core/src/devices.rs:347
+Rejected: widening the check-word list — a product change the issue did not ask for; 256 words only makes a test collision rare, not impossible
+Decided: chat.spec.mjs:131 long-task failure left alone: a timing flake that also fails on staging, untouched by this PR
+Because: web/e2e/chat.spec.mjs:177
+Check: in CI both pair asks drew "cedar walrus" and the old locator resolved to 2 cards; web/e2e/parity.spec.mjs:205 now picks the last one
+Owner: No change for users; a test that failed when two pairing requests happened to draw the same check word now passes.
