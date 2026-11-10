@@ -49,17 +49,11 @@ pub struct Provider {
     /// `N% used · resets [Mon D at ]H[:MM]am|pm (UTC)`, as Claude Code's `/usage` prints them. None: no usage.
     #[serde(default)]
     pub usage: Vec<String>,
-    /// The models a thread may pick (#553 row 34).
-    #[serde(default)]
-    pub models: Vec<String>,
-    /// The words that start its agent on a model: `{}` is the pick; a `NAME=value` word goes to its environment,
-    /// any other after its command.
-    #[serde(default)]
-    pub model: Vec<String>,
-    /// The efforts a thread may pick.
+    /// The efforts a thread may pick (#553 row 34; its models are the agent's own, #193).
     #[serde(default)]
     pub efforts: Vec<String>,
-    /// The words for an effort, as `model`.
+    /// The words that start its agent on an effort: `{}` is the pick; a `NAME=value` word goes to its environment,
+    /// any other after its command.
     #[serde(default)]
     pub effort: Vec<String>,
 }
@@ -127,32 +121,23 @@ impl Provider {
         // `/usage` reads nothing with nonessential traffic off, and prints its reset times in UTC with TZ=UTC.
         let usage = "env -u CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC TZ=UTC claude -p /usage";
         list[0].usage = usage.split(' ').map(str::to_owned).collect();
-        list[0].models = v(&["opus", "sonnet", "haiku"]);
-        list[0].model = v(&["ANTHROPIC_MODEL={}"]);
         "CLAUDE_CONFIG_DIR".clone_into(&mut list[0].settings);
         list[1].efforts = v(&["low", "medium", "high"]);
         list[1].effort = v(&["-c", "model_reasoning_effort={}"]);
         list
     }
 
-    /// The words that start its agent on `model` and `effort` (empty: its own default); `None` when it offers no
-    /// such pick.
+    /// The words that start its agent on `effort` (empty: its own default); `None` when it offers no such pick.
     #[must_use]
-    pub fn picks(&self, model: &str, effort: &str) -> Option<Vec<String>> {
-        let mut words = Vec::new();
-        for (pick, offered, template) in [
-            (model, &self.models, &self.model),
-            (effort, &self.efforts, &self.effort),
-        ] {
-            if pick.is_empty() {
-                continue;
-            }
-            if !offered.iter().any(|o| o == pick) {
-                return None;
-            }
-            words.extend(template.iter().map(|w| w.replace("{}", pick)));
+    pub fn picks(&self, effort: &str) -> Option<Vec<String>> {
+        if effort.is_empty() {
+            return Some(Vec::new());
         }
-        Some(words)
+        let words = self.effort.iter().map(|w| w.replace("{}", effort));
+        self.efforts
+            .iter()
+            .any(|o| o == effort)
+            .then(|| words.collect())
     }
 
     /// The variable and folder that point its CLI at the account in `home` (none for the system default).
@@ -529,20 +514,19 @@ mod tests {
         );
     }
 
-    /// #553 row 34: a pick's words, `{}` filled in; nothing for the defaults; `None` for a pick not offered.
+    /// #553 row 34: an effort's words, `{}` filled in; nothing for the default; `None` for an effort not offered.
     #[test]
     fn picks_fill_the_providers_words() {
         let codex = &Provider::defaults()[1];
         assert_eq!(
-            codex.picks("", "high"),
+            codex.picks("high"),
             Some(vec![
                 "-c".to_owned(),
                 "model_reasoning_effort=high".to_owned()
             ])
         );
-        assert_eq!(codex.picks("", ""), Some(Vec::new()));
-        assert_eq!(codex.picks("", "max"), None);
-        assert_eq!(codex.picks("opus", ""), None);
+        assert_eq!(codex.picks(""), Some(Vec::new()));
+        assert_eq!(codex.picks("max"), None);
     }
 
     /// #183: `/usage`'s reset times, read at a fixed clock: a date's next occurrence (the next year's past

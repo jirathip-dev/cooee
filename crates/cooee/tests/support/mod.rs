@@ -440,7 +440,8 @@ impl FakeShed {
     }
 
     /// The session-ready `wait`: held while `hold-ready` is shut, timed out while `ready-timeout` (or, for this
-    /// terminal only, `ready-timeout-<name>`) is.
+    /// terminal only, `ready-timeout-<name>`) is. The session is `session.json`'s, when there is one (#193: the
+    /// models the fake agent reports).
     fn ready_wait(&self, name: &str) -> Result<Value, RpcError> {
         self.hold("hold-ready");
         let timeout = ["ready-timeout".to_owned(), format!("ready-timeout-{name}")];
@@ -449,7 +450,10 @@ impl FakeShed {
         } else {
             "matched"
         };
-        let t = self.terminal(name)?;
+        let mut t = self.terminal(name)?;
+        if let Ok(session) = fs::read_to_string(self.dir.join("session.json")) {
+            t["session"] = serde_json::from_str(&session).unwrap();
+        }
         Ok(json!({ "outcome": outcome, "terminal": t }))
     }
 
@@ -564,7 +568,7 @@ impl FakeShed {
                 "get" => self.terminal(&name),
                 "run" => self.run(&req.params),
                 "ls" => Ok(self.ls(&req.params["labels"])),
-                "resize" | "terminal.resize" => Ok(json!({})),
+                "resize" | "terminal.resize" | "acp.model" => Ok(json!({})),
                 "screen.watch" => return self.watch(id, &req.params, &mut writer),
                 "terminal.input" | "terminal.keys" => Ok(self.type_keys(&req.params)),
                 "read" => {
