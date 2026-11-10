@@ -7,15 +7,17 @@ import Testing
 
 @MainActor
 internal struct ChatPluginsTests {
-    private static let conductor = APIPersona(id: "cond", name: "Conductor", agent: "claude", plugins: ["drover"])
-    private static let queue = Place(plugin: "drover", key: "queue", label: "Queue", screen: "/screens/queue")
-    private static let strip = [PluginPlace(kind: "header-strip", label: "Waves")]
-    private static let hello = PluginRow(
+    nonisolated private static let conductor = APIPersona(
+        id: "cond", name: "Conductor", agent: "claude", plugins: ["drover"])
+    nonisolated private static let queue = Place(
+        plugin: "drover", key: "queue", label: "Queue", screen: "/screens/queue")
+    nonisolated private static let strip = [PluginPlace(kind: "header-strip", label: "Waves")]
+    nonisolated private static let hello = PluginRow(
         name: "hello", version: "0.1.0", commit: "abc", places: strip, permissions: PluginPermissions(actions: ["wave"])
     )
-    private static let drover = PluginRow(
+    nonisolated private static let drover = PluginRow(
         name: "drover", version: "1", commit: "d", places: strip, permissions: .init())
-    private static let menuOnly = PluginRow(
+    nonisolated private static let menuOnly = PluginRow(
         name: "menu", version: "1", commit: "m", places: [PluginPlace(kind: "menu-row", label: "m")],
         permissions: .init()
     )

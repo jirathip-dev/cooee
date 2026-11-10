@@ -7,8 +7,9 @@ import Testing
 
 @MainActor
 internal struct PluginScreenFeatureTests {
-    private static let queue = Place(plugin: "drover", key: "queue", label: "Queue", screen: "/screens/queue")
-    private static let screen: JSONValue = .object([
+    nonisolated private static let queue = Place(
+        plugin: "drover", key: "queue", label: "Queue", screen: "/screens/queue")
+    nonisolated private static let screen: JSONValue = .object([
         "type": .string("screen"), "id": .string("queue"), "title": .string("Queue"),
         "stream": .string("/screens/queue/stream"),
         "blocks": .array([.object(["type": .string("stat"), "id": .string("lanes"), "value": .string("7")])]),
