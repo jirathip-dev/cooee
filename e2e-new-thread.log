@@ -1,0 +1,16 @@
+
+Running 9 tests using 2 workers
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (689ms)
+send → chat with your message: 109 ms (1440)
+send → chat with your message: 118 ms (390)
+  ✓  3 [390] › new-thread.spec.mjs:44:1 › send opens the chat at once with the loading line, which the reply replaces (957ms)
+  ✓  2 [1440] › new-thread.spec.mjs:44:1 › send opens the chat at once with the loading line, which the reply replaces (992ms)
+  ✓  4 [390] › new-thread.spec.mjs:72:1 › the model and effort picked are the start's (#553 row 34), said in the thread's bar (232ms)
+  ✓  5 [1440] › new-thread.spec.mjs:72:1 › the model and effort picked are the start's (#553 row 34), said in the thread's bar (217ms)
+  ✓  6 [390] › new-thread.spec.mjs:83:1 › a connect that fails shows inline with retry; the message stays; retry sends it (804ms)
+  ✓  7 [1440] › new-thread.spec.mjs:83:1 › a connect that fails shows inline with retry; the message stays; retry sends it (838ms)
+  ✓  8 [390] › new-thread.spec.mjs:111:1 › Settings › providers is one flat list: a row per account, [+ account] per provider (649ms)
+  ✓  9 [1440] › new-thread.spec.mjs:111:1 › Settings › providers is one flat list: a row per account, [+ account] per provider (728ms)
+
+  9 passed (10.2s)
