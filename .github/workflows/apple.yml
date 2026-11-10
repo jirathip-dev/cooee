@@ -1,13 +1,24 @@
 # #124: build the native app (apple/) for iOS and macOS on a GitHub-hosted macOS runner (free on this public repo); no
-# signing. #143: the API client's unit tests, and `e2e`: the app in the iOS simulator against a real `cooee serve`
-# (apple/e2e/serve.sh), its screens kept as the `simulator-shots` artifact.
+# signing. #147: `apple-quality` runs `just apple-check`, every Swift gate (format, anti-slop, SwiftLint, tests,
+# coverage, Periphery). #143: `e2e`: the app in the iOS simulator against a real `cooee serve` (apple/e2e/serve.sh), its
+# screens kept as the `simulator-shots` artifact.
 name: apple
 on:
   push:
     branches: [staging]
-    paths: ["apple/**", ".github/workflows/apple.yml"]
+    paths:
+      - "apple/**"
+      - "tools/anti-slop-swift/**"
+      - "scripts/apple-check.sh"
+      - "scripts/apple-coverage.swift"
+      - ".github/workflows/apple.yml"
   pull_request:
-    paths: ["apple/**", ".github/workflows/apple.yml"]
+    paths:
+      - "apple/**"
+      - "tools/anti-slop-swift/**"
+      - "scripts/apple-check.sh"
+      - "scripts/apple-coverage.swift"
+      - ".github/workflows/apple.yml"
 jobs:
   build:
     runs-on: macos-26
@@ -20,16 +31,21 @@ jobs:
       - name: xcodebuild
         working-directory: apple
         run: >-
-          xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination '${{ matrix.destination }}'
+          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination '${{ matrix.destination }}'
           CODE_SIGNING_ALLOWED=NO build
-      - name: unit tests (swift test)
-        if: matrix.destination == 'generic/platform=macOS'
-        working-directory: apple
-        run: swift test
-      - name: renders (swift run shots)
-        if: matrix.destination == 'generic/platform=macOS'
-        working-directory: apple
-        run: swift run shots /tmp/shots && ls /tmp/shots
+
+  apple-quality:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just
+      - name: just apple-check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: just apple-check
 
   e2e:
     runs-on: macos-26
@@ -61,7 +77,7 @@ jobs:
             xcrun simctl ui "$sim" appearance "$look"
             xcrun simctl keychain "$sim" reset
             link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
-            TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" xcodebuild -project Cooee.xcodeproj \
+            TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" xcodebuild -skipMacroValidation -project Cooee.xcodeproj \
               -scheme Cooee -destination "id=$sim" -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" test
           done
       - name: screenshots
