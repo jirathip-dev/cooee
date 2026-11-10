@@ -1,0 +1,8 @@
+Decided: the approved v1 screens (q987) ship as is; this round only merges current staging and refreshes the PR body
+Because: q987
+Decided: xcodebuild proof comes from the GitHub-hosted macOS job, not a local build (the Mini has no Xcode.app)
+Because: "a GitHub-hosted macOS job (free on this public repo) builds the app target"
+Rejected: a local xcodebuild run — only Command Line Tools are installed; installing Xcode is a host change
+Check: both build (generic/platform=iOS Simulator) and build (generic/platform=macOS) are green at the PR head
+Check: apple/ is outside crates/*/src and web/src, so the line cap total does not move
+Owner: The native app's first screens, as you approved them, are ready to merge and become the starting code for the build issues.
