@@ -1,0 +1,10 @@
+Decided: a first step writes ASC_KEY_PATH and LOG from $RUNNER_TEMP into $GITHUB_ENV; the job-level env keeps only secrets
+Because: "Set `ASC_KEY_PATH` and `LOG` where `runner.temp` is allowed"
+Decided: trigger on push to main (same paths) plus workflow_dispatch, and the job has if: github.ref == 'refs/heads/main'
+Because: "The job refuses to run on any ref but `main`"
+Decided: a ci job runs actionlint 1.7.12 over every workflow file, installed by actionlint's own pinned download script
+Because: "Add actionlint to the `ci` workflow for `.github/workflows/**`"
+Rejected: taiki-e/install-action for actionlint — it has no actionlint and its cargo-binstall fallback failed on the first CI run
+Check: the actionlint job fails at commit 666759c (runner context in job env) and passes at the head
+Check: pushes to issue-180 created no apple-testflight run
+Owner: after merge and promotion to main, switch the testflight environment's deployment branch from staging to main
