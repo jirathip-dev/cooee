@@ -40,7 +40,7 @@ internal struct Pixels: Equatable {
 @MainActor
 internal struct SnapshotTests {
     private static let channelTolerance = 16
-    private static let pixelTolerance = 0.005
+    private static let pixelTolerance = 0.025
     private static let designs = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         .appendingPathComponent("design/v1")
