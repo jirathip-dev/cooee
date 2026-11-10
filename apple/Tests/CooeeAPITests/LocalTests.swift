@@ -26,31 +26,39 @@
             return LocalServer(cooee: cooee)
         }
 
-        @Test internal func theMacReadsTheCodeAndRequestsAndAnswersThroughCooee() throws {
+        @Test internal func theMacReadsTheCodeAndRequestsAndAnswersThroughCooee() async throws {
             let server = try fake(Self.fakeCooee)
-            let code = try server.code()
+            let code = try await server.code()
             #expect(code.code == "123456" && code.link == "http://127.0.0.1:4747/pair?code=123456")
-            #expect(try server.requests() == [PairRequest(id: "ab12cd34", word: "maple fox", label: "iPhone")])
-            try server.answer("ab12cd34", yes: true)
-            try server.answer("ab12cd34", yes: false)
+            #expect(try await server.requests() == [PairRequest(id: "ab12cd34", word: "maple fox", label: "iPhone")])
+            try await server.answer("ab12cd34", yes: true)
+            try await server.answer("ab12cd34", yes: false)
             let answers = try String(contentsOf: dir.appending(path: "answers"), encoding: .utf8)
             #expect(answers == "pair approve ab12cd34\npair decline ab12cd34\n")
-            #expect(try server.signIns() == [SignIn(provider: "claude", name: "guy", signedIn: true)])
-            #expect(throws: APIError(status: 1, text: "no request gone is waiting")) {
-                try server.answer("gone", yes: true)
+            #expect(try await server.signIns() == [SignIn(provider: "claude", name: "guy", signedIn: true)])
+            await #expect(throws: APIError(status: 1, text: "no request gone is waiting")) {
+                try await server.answer("gone", yes: true)
             }
         }
 
-        @Test internal func aPairWithoutALinkIsAnError() throws {
-            let server = try fake("#!/bin/sh\necho 'the code ran out'\n")
-            #expect(throws: APIError(status: 0, text: "`cooee pair` printed no link.")) { try server.code() }
+        @Test internal func aCommandThatHangsIsStopped() async throws {
+            await #expect(throws: APIError(status: 0, text: "`sleep` took over 1 s.")) {
+                try await Shell.run(URL(filePath: "/bin/sleep"), ["30"], limit: 1)
+            }
         }
 
-        @Test internal func theShellRunsLikeTerminalAndFindsTheAgentsAndNetwork() throws {
-            #expect(try Shell.login("printf ok") == "ok")
-            #expect(Shell.agents().map(\.name) == ["claude", "codex", "hermes"])
-            let network = Shell.network()
-            #expect(!network.name.isEmpty && network.lan.hasPrefix(network.name))
+        @Test internal func aPairWithoutALinkIsAnError() async throws {
+            let server = try fake("#!/bin/sh\necho 'the code ran out'\n")
+            await #expect(throws: APIError(status: 0, text: "`cooee pair` printed no link.")) {
+                try await server.code()
+            }
+        }
+
+        @Test internal func theShellRunsLikeTerminalAndFindsTheAgentsAndNetwork() async throws {
+            #expect(try await Shell.login("printf ok") == "ok")
+            #expect(await Shell.agents().map(\.name) == ["claude", "codex", "hermes"])
+            let network = await Shell.network()
+            #expect(!network.name.isEmpty && network.lan == "\(network.name).local")
         }
 
         @Test internal func theConfigKeepsItsTablesAndSetsTopLevelKeys() throws {

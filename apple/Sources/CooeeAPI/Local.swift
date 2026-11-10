@@ -10,18 +10,35 @@
             true
             """#
 
-        /// `executable`'s standard output; an `APIError` with its standard error when it exits non-zero.
-        public static func run(_ executable: URL, _ arguments: [String]) throws -> String {
+        /// `executable`'s standard output, run off the concurrency pool with no input and stopped after `limit`
+        /// seconds; an `APIError` with its standard error when it fails.
+        public static func run(_ executable: URL, _ arguments: [String], limit: Double = 60) async throws -> String {
+            try await withCheckedThrowingContinuation { done in
+                DispatchQueue.global().async {
+                    done.resume(with: Result { try wait(executable, arguments, limit: limit) })
+                }
+            }
+        }
+
+        private static func wait(_ executable: URL, _ arguments: [String], limit: Double) throws -> String {
             let process = Process()
             let (out, err) = (Pipe(), Pipe())
             process.executableURL = executable
             process.arguments = arguments
+            process.standardInput = FileHandle.nullDevice
             process.standardOutput = out
             process.standardError = err
             try process.run()
+            let pid = process.processIdentifier
+            let stop = DispatchWorkItem { kill(pid, SIGTERM) }
+            DispatchQueue.global().asyncAfter(deadline: .now() + limit, execute: stop)
             let output = String(bytes: out.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
             let error = String(bytes: err.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
             process.waitUntilExit()
+            stop.cancel()
+            guard process.terminationReason == .exit else {
+                throw APIError(status: 0, text: "`\(executable.lastPathComponent)` took over \(Int(limit)) s.")
+            }
             guard process.terminationStatus == 0 else {
                 throw APIError(status: Int(process.terminationStatus), text: error.trimmingCharacters(in: .newlines))
             }
@@ -29,22 +46,23 @@
         }
 
         /// `script` in a login shell, so it sees the user's `PATH` as Terminal does.
-        public static func login(_ script: String) throws -> String {
-            try run(URL(filePath: "/bin/zsh"), ["-lc", script])
+        public static func login(_ script: String) async throws -> String {
+            try await run(URL(filePath: "/bin/zsh"), ["-lc", script])
         }
 
-        public static func agents() -> [FoundAgent] {
+        public static func agents() async -> [FoundAgent] {
             let home = URL.homeDirectory.path(percentEncoded: false)
             let prefix = home.hasSuffix("/") ? home : home + "/"
-            let found = ((try? login(agentsScript)) ?? "").replacingOccurrences(of: "\t\(prefix)", with: "\t~/")
+            let found = ((try? await login(agentsScript)) ?? "").replacingOccurrences(of: "\t\(prefix)", with: "\t~/")
             return FoundAgent.list(found: found)
         }
 
-        public static func network() -> Network {
-            let lan = ProcessInfo.processInfo.hostName
-            let name = lan.split(separator: ".").first.map(String.init) ?? lan
-            let status = (try? login("tailscale status --json")) ?? ""
-            return Network(name: name, lan: lan, tailnet: Network.tailnet(status: Data(status.utf8)))
+        /// This Mac's Bonjour name (`scutil`, which asks no one on the network) and its tailnet name, if any.
+        public static func network() async -> Network {
+            let named = try? await run(URL(filePath: "/usr/sbin/scutil"), ["--get", "LocalHostName"])
+            let name = named?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "this Mac"
+            let status = (try? await login("tailscale status --json")) ?? ""
+            return Network(name: name, lan: "\(name).local", tailnet: Network.tailnet(status: Data(status.utf8)))
         }
     }
 
@@ -55,24 +73,25 @@
             self.cooee = cooee
         }
 
-        public func code() throws -> PairCode {
-            let output = try Shell.run(cooee, ["pair"])
+        public func code() async throws -> PairCode {
+            let output = try await Shell.run(cooee, ["pair"])
             guard let code = PairCode(output: output) else {
                 throw APIError(status: 0, text: "`cooee pair` printed no link.")
             }
             return code
         }
 
-        public func requests() throws -> [PairRequest] {
-            try JSONDecoder().decode([PairRequest].self, from: Data(Shell.run(cooee, ["pair", "asks"]).utf8))
+        public func requests() async throws -> [PairRequest] {
+            try JSONDecoder().decode([PairRequest].self, from: Data(await Shell.run(cooee, ["pair", "asks"]).utf8))
         }
 
-        public func answer(_ id: String, yes: Bool) throws {
-            _ = try Shell.run(cooee, ["pair", yes ? "approve" : "decline", id])
+        public func answer(_ id: String, yes: Bool) async throws {
+            _ = try await Shell.run(cooee, ["pair", yes ? "approve" : "decline", id])
         }
 
-        public func signIns() throws -> [SignIn] {
-            try JSONDecoder().decode([SignIn].self, from: Data(Shell.run(cooee, ["accounts", "ls", "--json"]).utf8))
+        public func signIns() async throws -> [SignIn] {
+            let listed = try await Shell.run(cooee, ["accounts", "ls", "--json"])
+            return try JSONDecoder().decode([SignIn].self, from: Data(listed.utf8))
         }
     }
 

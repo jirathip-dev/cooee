@@ -13,7 +13,7 @@
             keep(app, "welcome")
             setUp.click()
             XCTAssert(labelled(app, "cooee on · shed on").waitForExistence(timeout: 60), "the login items run")
-            XCTAssert(labelled(app, "Claude Code").exists)
+            XCTAssert(labelled(app, "Claude Code").waitForExistence(timeout: 90), "the agents are listed")
             keep(app, "folders")
             next(app, "Each agent signs in on this Mac", "signins")
             next(app, "Reach it from anywhere", "tailscale")

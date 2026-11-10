@@ -37,35 +37,36 @@
             return LoginItems(cooee: LoginItem.cooee.register(), shed: LoginItem.shed.register())
         }
 
-        internal func addFolder(_ path: String) throws {
+        internal func addFolder(_ path: String) async throws {
             let roots = config.strings("roots")
             guard !roots.contains(path) else { return }
             try config.set("roots", roots + [path])
-            restart()
+            await restart()
         }
 
-        internal func signIn(_ provider: String) throws {
+        internal func signIn(_ provider: String) async throws {
             let script = FileManager.default.temporaryDirectory.appending(path: "cooee-\(provider).command")
             try "#!/bin/zsh -l\nexec \(provider)\n".write(to: script, atomically: true, encoding: .utf8)
             try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path())
-            _ = try Shell.run(URL(filePath: "/usr/bin/open"), ["-a", "Terminal", script.path(percentEncoded: false)])
+            _ = try await Shell.run(
+                URL(filePath: "/usr/bin/open"), ["-a", "Terminal", script.path(percentEncoded: false)])
         }
 
-        internal func network() throws -> Network {
-            let network = Shell.network()
+        internal func network() async throws -> Network {
+            let network = await Shell.network()
             guard let name = network.tailnet else { return network }
             let hosts = config.strings("allowed_hosts")
             let port = config.port
-            _ = try? Shell.login("tailscale serve --bg --https=\(port) http://127.0.0.1:\(port)")
+            _ = try? await Shell.login("tailscale serve --bg --https=\(port) http://127.0.0.1:\(port)")
             guard !hosts.contains(name) else { return network }
             try config.set("allowed_hosts", hosts + [name])
-            restart()
+            await restart()
             return network
         }
 
-        private func restart() {
+        private func restart() async {
             let label = "gui/\(getuid())/\(LoginItem.cooee.rawValue)"
-            _ = try? Shell.run(URL(filePath: "/bin/launchctl"), ["kickstart", "-k", label])
+            _ = try? await Shell.run(URL(filePath: "/bin/launchctl"), ["kickstart", "-k", label])
         }
 
         internal func answer(_ id: String, yes: Bool) async throws {
@@ -74,20 +75,20 @@
                 try await context.evaluatePolicy(
                     .deviceOwnerAuthenticationWithBiometrics, localizedReason: "approve a new device for cooee")
             }
-            try server.answer(id, yes: yes)
+            try await server.answer(id, yes: yes)
         }
 
         internal func client() -> MacServerClient {
             MacServerClient(
                 start: { try start() },
                 folders: { config.strings("roots") },
-                addFolder: { try addFolder($0) },
-                agents: { Shell.agents() },
-                signIns: { try server.signIns() },
-                signIn: { try signIn($0) },
-                network: { try network() },
-                code: { try server.code() },
-                requests: { try server.requests() },
+                addFolder: { try await addFolder($0) },
+                agents: { await Shell.agents() },
+                signIns: { try await server.signIns() },
+                signIn: { try await signIn($0) },
+                network: { try await network() },
+                code: { try await server.code() },
+                requests: { try await server.requests() },
                 answer: { try await answer($0, yes: $1) }
             )
         }
