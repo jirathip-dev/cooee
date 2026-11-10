@@ -1,0 +1,5 @@
+[{"id":"a1b2","title":"Flaky e2e","agent":"fake-acp","account":"","profile":"coder","persona":"coder","folder":"/w/project",
+"state":"working","last":"Hello","at":1762790000000,"unread":true,"unseen":2,"archived":false},
+{"id":"old","title":"Old","agent":"fake-acp","account":"","profile":"","persona":"","folder":"/w","state":"","last":"",
+"at":1762700000000,"unread":false,"unseen":0,"archived":true,"workflow":{"source":"drover","group":"cooee","item":"#1",
+"role":"impl","round":"1","url":"https://example.com"}}]

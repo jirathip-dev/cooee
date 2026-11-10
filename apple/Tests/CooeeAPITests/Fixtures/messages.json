@@ -1,0 +1,11 @@
+{"items":[{"id":1,"at":1762790000000,"seq":0,"kind":"you","text":"Fix it","random_id":"r1","files":["1-0-log.txt"]},
+{"id":2,"at":1762790001000,"seq":3,"kind":"tool","call":"c1","title":"Read web/e2e/look.spec.ts","status":"completed","ended":1762790002000},
+{"id":3,"at":1762790001500,"seq":4,"kind":"tool","call":"c2","title":"Run npx playwright","status":"in_progress"},
+{"id":4,"at":1762790002000,"seq":5,"kind":"approval","tool":"Edit src/lib.rs","options":[{"id":"allow","name":"Allow","kind":"allow_once"}]},
+{"id":5,"at":1762790003000,"kind":"link","text":"Spawned","thread":"t9","title":"Child","out":true},
+{"id":6,"at":1762790004000,"kind":"plan","entries":[{"content":"Read","status":"completed"}]},
+{"id":7,"at":1762790005000,"kind":"note","text":"Model set to gpt-5.5"},
+{"id":8,"at":1762790006000,"kind":"agent","text":"Done.","stop_reason":"end_turn"},
+{"id":9,"at":1762790007000,"kind":"ended","text":""}],
+"skipped_before":0,"skipped_after":0,"turn":{"text":"Hel","state":"working","note":"retrying"},"cursor":"boot.5",
+"queue":[{"text":"Then open the PR","random_id":"q1","files":["a.txt"]}],"waiting":null,"pending":{"text":"hi","random_id":"p1"}}

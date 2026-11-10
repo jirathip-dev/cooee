@@ -1,0 +1,5 @@
+retain_public: false
+retain_codable_properties: true
+retain_files:
+  - Sources/CooeeApp/*.swift
+strict: true

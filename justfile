@@ -41,3 +41,7 @@ ts:
 # Playwright at 390 and 1440 px with axe; screenshots in ui-390/ and ui-1440/.
 ui:
     cd web/e2e && npx playwright test
+
+# The Swift quality gate on apple/ (#147): format, anti-slop, SwiftLint, build, tests, coverage, Periphery.
+apple-check:
+    scripts/apple-check.sh

@@ -1,6 +1,8 @@
 //! `cooee accounts env` and `accounts ls --json`, the credential helper's contract (docs/accounts.md), with a fake
 //! provider whose status reads its folder: a signed-in and a signed-out folder account, unknown ones refused, a
 //! Claude token file (0600) handed over and a looser one refused, and no folder's secret ever on stdout or stderr.
+//! #183: an existing folder adopted and dropped (the folder stays), a token inherited from the caller never signing a
+//! folder in, and usage per account: a fresh reading, and a stored one past its reset at 0 % with its age.
 
 use std::{
     env, fs,
@@ -19,7 +21,8 @@ struct Fixture {
     secret: String,
 }
 
-/// Provider `fake` (`FAKE_HOME`; signed in when the folder has `creds`), whose accounts are `work` (signed in) and
+/// Provider `fake` (`FAKE_HOME`; signed in when the folder has `creds`, or when a token is inherited: it must not
+/// be; usage from the folder's `usage.txt`), whose accounts are `work` (signed in) and
 /// `idle` (signed out), and provider `claude` with token files `ci` (0600) and `loose` (0644).
 fn fixture(name: &str) -> Fixture {
     let dir = env::temp_dir().join(format!("cooee-{name}-{}", std::process::id()));
@@ -42,7 +45,8 @@ fn fixture(name: &str) -> Fixture {
         format!(
             "data = {:?}\n\
              [[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\nlogin = [\"true\"]\n\
-             status = [\"sh\", \"-c\", \"cat \\\"$FAKE_HOME/creds\\\"\"]\n\
+             status = [\"sh\", \"-c\", \"test -n \\\"$CLAUDE_CODE_OAUTH_TOKEN\\\" || cat \\\"$FAKE_HOME/creds\\\"\"]\n\
+             usage = [\"sh\", \"-c\", \"cat \\\"$FAKE_HOME/usage.txt\\\"\"]\n\
              [[providers]]\nname = \"claude\"\nagent = \"claude-acp\"\nhome = \"CLAUDE_CONFIG_DIR\"\n\
              login = [\"true\"]\nstatus = [\"false\"]\n",
             dir.join("data").to_string_lossy()
@@ -60,6 +64,7 @@ impl Fixture {
             .args(args)
             .arg("--config")
             .arg(self.dir.join("config.toml"))
+            .env("CLAUDE_CODE_OAUTH_TOKEN", "inherited-login")
             .output()
             .unwrap();
         let (stdout, stderr) = (
@@ -156,7 +161,7 @@ fn ls_json_lists_every_account_without_its_token() {
         let token = token.map(|t| claude.join(t));
         json!({ "provider": provider, "name": name, "folder": folder, "signed_in": signed_in,
                 "token_file": token, "token_age_days": if token.is_some() && error.is_null() { json!(0) } else { json!(null) },
-                "error": error })
+                "error": error, "usage": null })
     };
     let loose = format!(
         "{}: a token file must be 0600 or tighter, not 644",
@@ -194,4 +199,97 @@ fn ls_json_lists_every_account_without_its_token() {
             ),
         ])
     );
+}
+
+#[test]
+fn an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays() {
+    let f = fixture("accounts-adopt");
+    let a = f.dir.join("herdsman/A");
+    fs::create_dir_all(&a).unwrap();
+    fs::write(a.join("creds"), "signed in").unwrap();
+    let a = a.canonicalize().unwrap();
+    let add = |folder: &Path| f.run(&["add", "fake", "A", "--folder", folder.to_str().unwrap()]);
+    assert_eq!(add(&a), (0, String::new(), String::new()));
+    assert_eq!(add(&a).0, 0, "adopting the same folder again is a no-op");
+    let (code, _, err) = add(&f.folder("idle"));
+    assert_eq!((code, err.as_str()), (1, "cooee: fake has an account A\n"));
+    assert_eq!(add(&f.dir.join("nope")).0, 1);
+    let (code, _, err) = f.run(&["add", "fake", "../x", "--folder", a.to_str().unwrap()]);
+    assert_eq!(code, 1, "{err}");
+
+    // Its own folder, not the link: the CLI keys its keychain login by the folder's path.
+    let (code, out, _) = f.run(&["env", "fake", "A", "--require-signed-in"]);
+    assert_eq!((code, parse(&out)), (0, json!({ "FAKE_HOME": a })));
+    let ls = parse(&f.run(&["ls", "--json"]).1);
+    let row = ls
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["name"] == "A")
+        .unwrap();
+    assert_eq!(
+        (&row["folder"], &row["signed_in"]),
+        (&json!(a), &json!(true))
+    );
+
+    assert_eq!(f.run(&["rm", "fake", "A"]).0, 0);
+    assert!(a.join("creds").is_file(), "the adopted folder stays");
+    assert_eq!(f.run(&["env", "fake", "A"]).0, 1);
+    assert_eq!(f.run(&["rm", "fake", "A"]).0, 1);
+}
+
+#[test]
+fn an_inherited_token_never_signs_a_folder_in() {
+    let f = fixture("accounts-inherited");
+    let (code, out, err) = f.run(&["env", "fake", "idle", "--require-signed-in"]);
+    assert_eq!(
+        (code, out.as_str(), err.as_str()),
+        (3, "", "cooee: fake/idle is signed out\n")
+    );
+}
+
+#[test]
+fn ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age() {
+    let f = fixture("accounts-usage");
+    fs::write(
+        f.folder("work").join("usage.txt"),
+        "Current session: 12% used · resets 3pm (UTC)\n\
+         Current week (all models): 40% used · resets Nov 16 at 2am (UTC)\n\
+         Current week (Fable): 0% used · resets Nov 16 at 2am (UTC)\n",
+    )
+    .unwrap();
+    let usage = |f: &Fixture| {
+        let ls = parse(&f.run(&["ls", "--json"]).1);
+        let rows = ls.as_array().unwrap().clone();
+        let work = rows.iter().find(|r| r["name"] == "work").unwrap()["usage"].clone();
+        let idle = rows.iter().find(|r| r["name"] == "idle").unwrap()["usage"].clone();
+        assert_eq!(idle, Value::Null, "a signed-out account has no reading");
+        work
+    };
+    let u = usage(&f);
+    assert_eq!(
+        (&u["five_hour"]["used_pct"], &u["seven_day"]["used_pct"]),
+        (&json!(12), &json!(40))
+    );
+    assert!(u["age_s"].as_u64().unwrap() < 60, "{u}");
+
+    // A stored reading 2 minutes old (fresh: not read again) whose 5 h window reset a minute ago.
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let w = |used, resets_at| json!({ "used_pct": used, "resets_at": resets_at });
+    let reading = json!({ "usage": { "work": {
+        "five_hour": w(97, now - 60), "seven_day": w(55, now + 86_400), "read_at": now - 120 } } });
+    fs::write(
+        f.dir.join("data/accounts/fake/.cooee.json"),
+        reading.to_string(),
+    )
+    .unwrap();
+    let u = usage(&f);
+    assert_eq!(
+        (&u["five_hour"]["used_pct"], &u["seven_day"]["used_pct"]),
+        (&json!(0), &json!(55))
+    );
+    assert!((120..180).contains(&u["age_s"].as_u64().unwrap()), "{u}");
 }
