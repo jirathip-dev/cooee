@@ -33,6 +33,24 @@ extension ThreadsClient: DependencyKey {
     )
 }
 
+extension PluginsClient: DependencyKey {
+    public static let liveValue = PluginsClient(
+        places: { server, persona in try await Client(server).places(persona) },
+        installed: { server in try await Client(server).plugins() },
+        screen: { server, plugin, path in try await Client(server).screen(plugin, path) },
+        events: { server, plugin, path in Client(server).screenEvents(plugin, path) },
+        act: { server, plugin, screen, action in try await Client(server).act(plugin, screen: screen, action) },
+        attach: { server, plugin, persona in try await Client(server).attach(plugin, to: persona) }
+    )
+}
+
+extension ScreenCache: DependencyKey {
+    public static let liveValue = ScreenCache(
+        load: { key in KeptScreens().load(key) },
+        save: { key, kept in KeptScreens().save(key, kept) }
+    )
+}
+
 extension ServerStore: DependencyKey {
     public static let liveValue = ServerStore(
         load: { Keychain().load() },
