@@ -2101,6 +2101,22 @@ async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant
     ))
 }
 
+/// `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout}}`: `ask_persona`'s reply (#156); `timeout`
+/// in seconds, 300 unless given, at most 600.
+#[route(POST "/mcp/agent/ask")]
+async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let (token, s) = (bearer(cx), a.server);
+    let text = |k: &str| s[k].as_str().unwrap_or_default().to_owned();
+    let (persona, message) = (text("persona"), text("message"));
+    let wait = Duration::from_secs(s["timeout"].as_u64().unwrap_or(300).min(600));
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.ask_persona((&a.thread, &token), &persona, &message, wait)
+        })
+        .await,
+    ))
+}
+
 /// `POST /mcp/agent/propose` `{thread, server: {name, type, command, args, url, why}}`: `propose_server`'s card.
 #[route(POST "/mcp/agent/propose")]
 async fn mcp_propose(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<cooee_core::Item>> {
@@ -2396,6 +2412,7 @@ pub fn router(
     .route(theme_saves)
     .route(mcp_grant)
     .route(mcp_propose)
+    .route(mcp_ask)
     .page(mcp_settings)
     .route(mcp_add)
     .route(mcp_toggle)

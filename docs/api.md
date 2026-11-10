@@ -55,7 +55,7 @@ another run; load the newest slice again).
 
 ## Personas (#126)
 
-A persona is `{id, name, avatar?, character, instructions, folder, agent, model, effort, machine, plugins, profile?}`: `avatar` an image
+A persona is `{id, name, avatar?, character, instructions, folder, agent, model, effort, machine, plugins, can_message, profile?}`: `avatar` an image
 (`https://…`, `data:image/…`; none: the client draws initials), `folder` an owned folder or `scratch`, `agent`, `model`
 and `effort` its defaults. It is `<config>/personas/<id>.toml`; an owner profile with no persona of its name is read
 as one (`profile`: the profile it runs as, its account, settings, env, MCP servers and policy kept; never set over the
@@ -64,7 +64,8 @@ API). Its Character, Instructions and notes go ahead of each new session's first
 adds one with the `remember` tool of cooee's own MCP server. `plugins` (#129) are the installed plugins (or config
 `[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. The persona read from a `conductor`
 profile has an installed `cooee-drover` attached. `machine` (#148) is the one its threads run on: `""` this host (every
-persona saved before), else one added to shed (`shed machine add`). An unknown id or a broken rule is a 400 with the reason.
+persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
+with `ask_persona`. An unknown id or a broken rule is a 400 with the reason.
 
 | Call | Body | Answer |
 |---|---|---|
@@ -152,7 +153,11 @@ Native forms, as theme packs; `GET /mcp` is the page.
 A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the thread's token>`, no cookie:
 `POST /mcp/agent/grant` `{thread, server}` → the server resolved and its allowed `tools`; `POST /mcp/agent/propose`
 `{thread, server: {name, type, command, args, url, why}}` → the card; `POST /mcp/agent/remember` `{thread, server:
-{text}}` → the note, by the thread's persona.
+{text}}` → the note, by the thread's persona; `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
+(#156) → `ask_persona`'s reply (a string), the thread's persona asking one its `can_message` names in a linked exchange
+thread (the owner reads it and may reply to steer), waiting `timeout` seconds (300, at most 600). A refusal is a 400
+starting `NOT_ALLOWED`, `DEPTH` (an asked persona may ask one more, no further), `TIMEOUT` or `OFFLINE` (its session
+can't start).
 
 ## Theme packs (Settings › look › themes, [docs/themes.md](themes.md))
 
