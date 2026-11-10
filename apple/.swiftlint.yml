@@ -24,6 +24,9 @@ disabled_rules:
   - vertical_whitespace
 analyzer_rules:
   - unused_import
+unused_import:
+  always_keep_imports:
+    - ComposableArchitecture
 file_length:
   warning: 250
   error: 250
