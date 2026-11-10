@@ -22,6 +22,35 @@ internal final class LiveUITests: XCTestCase {
         XCTAssert(new.waitForExistence(timeout: 10))
         XCTAssert(labelled(app, "Coder").exists)
         keep("home")
+        answersEachCard(app, new)
+    }
+
+    @MainActor
+    private func answersEachCard(_ app: XCUIApplication, _ new: XCUIElement) {
+        new.tap()
+        app.buttons["Coder"].firstMatch.tap()
+        let box = field(app, "Message Coder")
+        XCTAssert(box.waitForExistence(timeout: 10))
+        box.tap()
+        box.typeText("Show me the cards")
+        app.buttons["Send"].firstMatch.tap()
+        XCTAssert(app.buttons["Approve"].waitForExistence(timeout: 30))
+        keep("chat-cards")
+        app.buttons["Allow once · recommended"].firstMatch.tap()
+        XCTAssert(labelled(app, "Allow once ✓").waitForExistence(timeout: 10))
+        app.buttons["apply"].firstMatch.tap()
+        XCTAssert(labelled(app, "apply ✓").waitForExistence(timeout: 10))
+        app.buttons["EDGAR_API_KEY"].firstMatch.tap()
+        let secret = app.secureTextFields.firstMatch
+        XCTAssert(secret.waitForExistence(timeout: 10))
+        secret.typeText("k3y")
+        app.buttons["OK"].firstMatch.tap()
+        app.buttons["Send to plugin"].firstMatch.tap()
+        XCTAssert(labelled(app, "EDGAR_API_KEY set ✓").waitForExistence(timeout: 10))
+        app.buttons["Approve"].firstMatch.tap()
+        app.buttons["Run"].firstMatch.tap()
+        XCTAssert(labelled(app, "ran at 3b7e0c55a1d9: exit 0").waitForExistence(timeout: 10))
+        keep("chat-cards-answered")
     }
 
     @MainActor

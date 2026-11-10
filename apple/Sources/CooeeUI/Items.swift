@@ -17,14 +17,8 @@ internal struct ItemView: View {
             ToolFold(rows: rows)
         case .note(_, let text):
             Text(text).ui(13, .regular, look).foregroundStyle(look.palette.mute).frame(maxWidth: .infinity)
-        case .choice(_, let choice):
-            ChoiceCard(choice: choice)
-        case .config(_, let plugin, let title, let fields):
-            ConfigCard(plugin: plugin, title: title, fields: fields)
-        case .secret(_, let plugin, let name, let why):
-            SecretCard(plugin: plugin, name: name, why: why)
-        case .run(_, let card):
-            RunCardView(card: card)
+        case .card(_, let poster, let block):
+            BlockNode(block: block).environment(\.card, CardContext(poster: poster))
         }
     }
 }
@@ -48,34 +42,6 @@ internal struct YouBubble: View {
                 .foregroundStyle(look.mono ? palette.lead : palette.foreground)
         }
         .frame(maxWidth: .infinity, alignment: .trailing).padding(.leading, look.mono ? 0 : 48)
-    }
-}
-
-internal struct ChatCard<Content: View>: View {
-    @Environment(\.look) private var look
-    internal let kind: String
-    internal let symbol: String
-    internal let tint: Color
-    internal let title: String
-    @ViewBuilder internal var content: Content
-
-    internal var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
-                if !look.mono { Image(systemName: symbol).font(.system(size: 12, weight: .bold)) }
-                Text(look.mono ? "## \(kind)" : kind.uppercased()).ui(11, .bold, look)
-            }
-            .foregroundStyle(tint)
-            Text(title).ui(16, .semibold, look).foregroundStyle(look.palette.foreground)
-            content
-        }
-        .padding(14)
-        .surface(look, radius: 20)
-        .overlay(alignment: .leading) {
-            if look.style == .modern {
-                RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 3).padding(.vertical, 16)
-            }
-        }
     }
 }
 

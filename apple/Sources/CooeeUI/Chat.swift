@@ -10,6 +10,8 @@ public struct ChatActions {
     public var stop: () -> Void
     public var steer: (Int) -> Void
     public var unqueue: (Int) -> Void
+    public var answer: (Int, BlockAction) -> Void
+    public var answering: Set<Int>
     public var back: () -> Void
 
     public init(
@@ -21,6 +23,8 @@ public struct ChatActions {
         stop: @escaping () -> Void = {},
         steer: @escaping (Int) -> Void = { _ in },
         unqueue: @escaping (Int) -> Void = { _ in },
+        answer: @escaping (Int, BlockAction) -> Void = { _, _ in },
+        answering: Set<Int> = [],
         back: @escaping () -> Void = {}
     ) {
         self.draft = draft
@@ -31,6 +35,8 @@ public struct ChatActions {
         self.stop = stop
         self.steer = steer
         self.unqueue = unqueue
+        self.answer = answer
+        self.answering = answering
         self.back = back
     }
 }
@@ -53,7 +59,10 @@ public struct ChatView: View {
                 ChatHeader(persona: persona, back: back, onBack: actions.back)
                 Scroller(end: true) {
                     VStack(alignment: .leading, spacing: 14) {
-                        ForEach(items) { ItemView(item: $0) }
+                        ForEach(items) { item in
+                            ItemView(item: item).environment(\.act) { actions.answer(item.id, $0) }
+                                .disabled(actions.answering.contains(item.id))
+                        }
                     }
                     .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 16)
                 }
