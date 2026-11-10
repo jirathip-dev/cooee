@@ -58,11 +58,11 @@ else
   step "tests with coverage"
   (cd apple && swift test --enable-code-coverage)
   bin=$(cd apple && swift build --show-bin-path)
-  set -- "$bin"/Cooee*Tests.xctest/Contents/MacOS/*
-  first=$1
-  shift
-  for object in "$@"; do set -- "$@" -object "$object"; shift; done
-  xcrun llvm-cov export -summary-only -instr-profile "$bin/codecov/default.profdata" "$first" "$@" >"$bin/coverage.json"
+  set --
+  for object in "$bin"/Cooee*Tests.xctest/Contents/MacOS/*; do
+    [ -f "$object" ] && set -- "$@" -object "$object"
+  done
+  xcrun llvm-cov export -summary-only -instr-profile "$bin/codecov/default.profdata" "$@" >"$bin/coverage.json"
   swift scripts/apple-coverage.swift "$bin/coverage.json"
 
   step "unused imports (swiftlint analyze)"
