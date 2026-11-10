@@ -1,0 +1,11 @@
+Decided: sign with xcodebuild -allowProvisioningUpdates and the ASC API key; the team id comes from the bundle id's seedId, so there is no extra secret
+Because: "No Ruby/fastlane and no exported `.p12` plus password"
+Decided: build number = latest TestFlight build + 1, read via /v1/builds sorted by -uploadedDate
+Because: "The build number is the latest TestFlight build + 1, read through the API"
+Decided: add a placeholder 1024 opaque app icon (the idle horse sprite), because App Store upload validation rejects an iOS bundle with no icon
+Because: "uploads a build that shows in TestFlight"
+Decided: scrub the key id, issuer id and team from the failure-log artifact, because artifacts aren't masked
+Because: "No `.p8`, `.p12`, key id or issuer id is in the repo or in logs"
+Rejected: Xcode-managed build numbers — the summary couldn't name the build
+Check: .github/workflows/apple-testflight.yml has environment testflight and no pull_request trigger; the environment policy allows staging only
+Owner: after the first staging run, create the App Store Connect app record with the fields in the PR, then re-run the workflow
