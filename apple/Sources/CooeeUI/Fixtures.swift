@@ -1,13 +1,14 @@
 import CooeeCore
-import Foundation
 
 public enum Fixtures {
     public static let personas: [Persona] = [
         Persona(
             api: APIPersona(
                 id: "chief", name: "Chief", agent: "Claude Code", model: "opus 5.5", effort: "high", folder: "~/work",
-                character: "Calm chief of staff. Short answers in plain words; one question at a time, never a list of them.",
-                instructions: "Keep renewals.md current. Ask Account Manager for dates; never email a customer yourself."
+                character:
+                    "Calm chief of staff. Short answers in plain words; one question at a time, never a list of them.",
+                instructions:
+                    "Keep renewals.md current. Ask Account Manager for dates; never email a customer yourself."
             ),
             look: PersonaLook(initials: "CH", symbol: "star.fill", tint: .lead, coat: "ch"),
             state: .done
@@ -18,7 +19,8 @@ public enum Fixtures {
                 character: "Terse engineer. Shows the diff, not the essay.",
                 instructions: "Run the tests before you say done. Small commits."
             ),
-            look: PersonaLook(initials: "CO", symbol: "chevron.left.forwardslash.chevron.right", tint: .cyan, coat: "gry"),
+            look: PersonaLook(
+                initials: "CO", symbol: "chevron.left.forwardslash.chevron.right", tint: .cyan, coat: "gry"),
             state: .working
         ),
         Persona(
@@ -44,7 +46,8 @@ public enum Fixtures {
                 folder: "~/src/herdsman", character: "Runs the fleet; asks the owner only what herdsman says to.",
                 instructions: "herdsman's conductor for cooee and herdsman.", plugins: ["Queue", "Events"]
             ),
-            look: PersonaLook(initials: "CD", symbol: "point.3.connected.trianglepath.dotted", tint: .green, coat: "wht"),
+            look: PersonaLook(
+                initials: "CD", symbol: "point.3.connected.trianglepath.dotted", tint: .green, coat: "wht"),
             state: .working
         ),
     ]
@@ -52,31 +55,31 @@ public enum Fixtures {
     public static let rows: [Row] = [
         Row(
             id: "t1", persona: "coder", title: "Flaky e2e on the look sheet", last: "$ cargo test -p cooee-core",
-            at: "now", unseen: 2, state: .working
+            ago: "now", unseen: 2, state: .working
         ),
         Row(
             id: "t2", persona: "res", title: "Kestrel filings", last: "Allow fetch sec.gov/cgi-bin/browse-edgar?",
-            at: "12m", unseen: 1, state: .needs
+            ago: "12m", unseen: 1, state: .needs
         ),
         Row(
-            id: "t3", persona: "cond", title: "cooee queue", last: "#124 design is up for your review", at: "20m",
+            id: "t3", persona: "cond", title: "cooee queue", last: "#124 design is up for your review", ago: "20m",
             unseen: 3, state: .working
         ),
         Row(
             id: "t4", persona: "chief", title: "Renewals", last: "Every Monday at 09:00 I'll check the renewals.",
-            at: "2m", unseen: 0, state: .done
+            ago: "2m", unseen: 0, state: .done
         ),
         Row(
             id: "t5", persona: "am", title: "Birch & Co pricing", last: "Due this month: Acme 14 Nov, Birch 21 Nov",
-            at: "1h", unseen: 0, state: .idle
+            ago: "1h", unseen: 0, state: .idle
         ),
         Row(
-            id: "t6", persona: "chief", title: "Q3 board deck", last: "Slides 4–9 are in deck/q3.key.", at: "2d",
+            id: "t6", persona: "chief", title: "Q3 board deck", last: "Slides 4–9 are in deck/q3.key.", ago: "2d",
             unseen: 0, state: .done
         ),
         Row(
             id: "t7", persona: "coder", title: "Bonjour discovery spike", last: "_cooee._tcp answers on the LAN.",
-            at: "3d", unseen: 0, state: .done
+            ago: "3d", unseen: 0, state: .done
         ),
     ]
 

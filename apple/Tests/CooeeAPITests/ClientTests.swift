@@ -1,8 +1,7 @@
+@testable import CooeeAPI
 import CooeeCore
 import Foundation
 import Testing
-
-@testable import CooeeAPI
 
 internal struct ClientTests {
     private struct Sent: Decodable, Equatable {
@@ -51,16 +50,17 @@ internal struct ClientTests {
         let slice = try await client.messages("a1b2")
         #expect(slice.cursor == "boot.5" && slice.turn == Turn(text: "Hel", state: "working", note: "retrying"))
         #expect(slice.queue == [Queued(text: "Then open the PR", randomID: "q1")])
-        #expect(slice.items.map(\.kind) == ["you", "tool", "tool", "approval", "link", "plan", "note", "agent", "ended"])
+        #expect(
+            slice.items.map(\.kind) == ["you", "tool", "tool", "approval", "link", "plan", "note", "agent", "ended"])
         #expect(server.requests("/threads").first?.value(forHTTPHeaderField: "Cookie") == "cooee=tok")
         #expect(server.requests("/threads/a1b2/messages").first?.url?.query == "before=50")
     }
 
     @Test internal func sendQueueAndTheTurnsCallsPostTheirBodies() async throws {
-        let ok = Answer(headers: json, chunks: ["null"])
+        let empty = Answer(headers: json, chunks: ["null"])
         let server = CannedServer([
-            "/threads/a1b2/send": [ok], "/threads/a1b2/queue": [ok], "/threads/a1b2/steer": [ok],
-            "/threads/a1b2/unqueue": [ok], "/threads/a1b2/cancel": [ok], "/threads/a1b2/read": [ok],
+            "/threads/a1b2/send": [empty], "/threads/a1b2/queue": [empty], "/threads/a1b2/steer": [empty],
+            "/threads/a1b2/unqueue": [empty], "/threads/a1b2/cancel": [empty], "/threads/a1b2/read": [empty],
         ])
         let client = server.client()
         let file = CooeeCore.Attachment(name: "a.txt", bytes: Data("hi".utf8))
@@ -72,7 +72,9 @@ internal struct ClientTests {
         try await client.read("a1b2", upTo: 4)
         let sent = try server.decoded("/threads/a1b2/send", as: Sent.self)
         #expect(sent == Sent(text: "first", randomID: "r1", files: [file]) && file.data == "aGk=")
-        #expect(try server.decoded("/threads/a1b2/queue", as: Sent.self) == Sent(text: "second", randomID: "r2", files: nil))
+        #expect(
+            try server.decoded("/threads/a1b2/queue", as: Sent.self) == Sent(text: "second", randomID: "r2", files: nil)
+        )
         #expect(try server.decoded("/threads/a1b2/steer", as: [String: String].self) == ["random_id": "q1"])
         #expect(try server.decoded("/threads/a1b2/unqueue", as: [String: String].self) == ["random_id": "q2"])
         #expect(server.body("/threads/a1b2/cancel") == "{}")
@@ -102,7 +104,9 @@ internal struct ClientTests {
     @Test internal func aCodePairsAndAClaimWaitsThenPairs() async throws {
         let server = CannedServer([
             "/pair": [
-                Answer(status: 303, headers: ["Location": "/?paired", "Set-Cookie": "cooee=abc123; Path=/; HttpOnly"], chunks: [])
+                Answer(
+                    status: 303, headers: ["Location": "/?paired", "Set-Cookie": "cooee=abc123; Path=/; HttpOnly"],
+                    chunks: [])
             ],
             "/pair/request": [Answer(headers: json, chunks: [#"{"word":"maple","claim":"cl1"}"#])],
             "/pair/claim": [

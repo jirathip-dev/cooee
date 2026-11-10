@@ -1,10 +1,9 @@
 # anti-slop-swift
 
-This repository vendors the upstream tool at commit
-`259e1a32dd9a41e65478513ab3b902a1cb8036e0` under `tools/anti-slop-swift/`.
-The source and MIT license are retained here for reproducible native linting;
-use `bash scripts/anti-slop-swift.sh` from the parent repository for the
-Sendmeter-specific configuration and invocation.
+cooee vendors the upstream tool (MIT, `LICENSE`) at commit `259e1a32dd9a41e65478513ab3b902a1cb8036e0` under
+`tools/anti-slop-swift/`, with all 19 rules on and cooee's own rules added in
+`Sources/AntiSlopCore/Rules/CooeeRules.swift` (no-comments, sorted-imports, layer-imports, no-any, explicit-access).
+`just apple-check` builds it and runs it on `apple/`; every rule blocks.
 
 [![skills.sh](https://skills.sh/b/sawfwair/anti-slop-swift)](https://skills.sh/sawfwair/anti-slop-swift)
 

@@ -1,41 +1,41 @@
+@testable import CooeeAPI
 import CooeeCore
 import Foundation
 import Testing
 
-@testable import CooeeAPI
-
 internal struct EventsTests {
-    @Test internal func aDroppedStreamReconnectsWithLastEventIDAndGetsWhatItMissed() async throws {
-        let server = CannedServer([
-            "/threads/a1b2/events": [
-                Answer(
-                    headers: sse,
-                    chunks: [
-                        "id: boot.6\nevent: text\ndata: {\"text\":\"lo\"}\n\n: keep-alive\n\n",
-                        "id: boot.7\r\nevent: item\ndata: {\"id\":5,\"at\":1,\"seq\":7,\"kind\":\"agent\",",
-                        "\"text\":\"Hello\",\"stop_reason\":\"end_turn\"}\n\nevent: unknown\ndata: {}\n\nretry\n\n",
-                    ]
-                ),
-                Answer(
-                    headers: sse,
-                    chunks: [
-                        "id: boot.8\nevent: state\ndata: {\"state\":\"done\"}\n\n",
-                        "id: boot.9\nevent: queue\ndata: []\n\nid: boot.9\nevent: reset\ndata: {}\n\n",
-                    ]
-                ),
+    private static let dropped = [
+        Answer(
+            headers: sse,
+            chunks: [
+                "id: boot.6\nevent: text\ndata: {\"text\":\"lo\"}\n\n: keep-alive\n\n",
+                "id: boot.7\r\nevent: item\ndata: {\"id\":5,\"at\":1,\"seq\":7,\"kind\":\"agent\",",
+                "\"text\":\"Hello\",\"stop_reason\":\"end_turn\"}\n\nevent: unknown\ndata: {}\n\nretry\n\n",
             ]
-        ])
+        ),
+        Answer(
+            headers: sse,
+            chunks: [
+                "id: boot.8\nevent: state\ndata: {\"state\":\"done\"}\n\n",
+                "id: boot.9\nevent: queue\ndata: []\n\nid: boot.9\nevent: reset\ndata: {}\n\n",
+            ]
+        ),
+    ]
+
+    @Test internal func aDroppedStreamReconnectsWithLastEventIDAndGetsWhatItMissed() async throws {
+        let server = CannedServer(["/threads/a1b2/events": Self.dropped])
         var got: [StreamEvent] = []
         for try await event in server.client().events("a1b2", since: "boot.5") { got.append(event) }
         #expect(
             got == [
-                .text("lo"), .item(APIItem(id: 5, at: 1, kind: "agent", text: "Hello")), .state(Turn(state: "done")),
+                .text("lo"), .item(APIItem(id: 5, time: 1, kind: "agent", text: "Hello")), .state(Turn(state: "done")),
                 .queue([]), .reset,
             ]
         )
         let requests = server.requests("/threads/a1b2/events")
         #expect(requests.count == 2)
-        #expect(requests[0].url?.query == "since=boot.5" && requests[0].value(forHTTPHeaderField: "Last-Event-ID") == nil)
+        #expect(
+            requests[0].url?.query == "since=boot.5" && requests[0].value(forHTTPHeaderField: "Last-Event-ID") == nil)
         #expect(requests[1].value(forHTTPHeaderField: "Last-Event-ID") == "boot.7")
     }
 
@@ -62,13 +62,13 @@ internal struct EventsTests {
 
     @Test internal func aCancelledStreamStops() async throws {
         let server = CannedServer(["/threads/a1b2/events": [Answer(headers: sse, chunks: [": idle\n\n"])]])
-        let stream = server.client().events("a1b2", since: "")
+        let stream = server.client(retry: .seconds(3600)).events("a1b2", since: "")
         let reader = Task {
             var count = 0
             for try await _ in stream { count += 1 }
             return count
         }
-        for _ in 0..<100_000 where server.requests("/threads/a1b2/events").count < 3 { await Task.yield() }
+        for _ in 0..<100_000 where server.requests("/threads/a1b2/events").isEmpty { await Task.yield() }
         reader.cancel()
         #expect(try await reader.value == 0)
     }

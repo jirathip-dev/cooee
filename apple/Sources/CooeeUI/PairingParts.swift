@@ -1,4 +1,3 @@
-import ComposableArchitecture
 import CooeeCore
 import CooeeFeatures
 import CoreImage.CIFilterBuiltins
@@ -11,7 +10,7 @@ internal struct NearbyRow: Sendable {
 
 internal struct WaysIn: View {
     @Environment(\.look) private var look
-    internal var go: (PhoneStep) -> Void = { _ in }
+    internal var show: (PhoneStep) -> Void = { _ in }
     internal var nearby: Int?
 
     private var scans: Bool {
@@ -41,7 +40,7 @@ internal struct WaysIn: View {
     {
         let palette = look.palette
         return Button {
-            go(step)
+            show(step)
         } label: {
             HStack(spacing: 14) {
                 Image(systemName: symbol).font(.system(size: 20, weight: .semibold)).frame(width: 30)
@@ -82,8 +81,12 @@ internal struct StepHeader: View {
 
     internal var body: some View {
         HStack(alignment: .top) {
-            Button { back() } label: { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
-                .buttonStyle(.plain).accessibilityLabel("Back")
+            Button {
+                back()
+            } label: {
+                RoundButton(symbol: "chevron.left", ascii: "<", size: 40)
+            }
+            .buttonStyle(.plain).accessibilityLabel("Back")
             Spacer()
         }
         .overlay {
@@ -123,13 +126,15 @@ internal struct ViewfinderCorners: Shape {
         var path = Path()
         let arm: CGFloat = 36
         let corners = [
-            (rect.minX, rect.minY, 1.0, 1.0), (rect.maxX, rect.minY, -1.0, 1.0), (rect.minX, rect.maxY, 1.0, -1.0),
-            (rect.maxX, rect.maxY, -1.0, -1.0),
+            (CGPoint(x: rect.minX, y: rect.minY), CGVector(dx: 1, dy: 1)),
+            (CGPoint(x: rect.maxX, y: rect.minY), CGVector(dx: -1, dy: 1)),
+            (CGPoint(x: rect.minX, y: rect.maxY), CGVector(dx: 1, dy: -1)),
+            (CGPoint(x: rect.maxX, y: rect.maxY), CGVector(dx: -1, dy: -1)),
         ]
-        for (x, y, dx, dy) in corners {
-            path.move(to: CGPoint(x: x, y: y + dy * arm))
-            path.addLine(to: CGPoint(x: x, y: y))
-            path.addLine(to: CGPoint(x: x + dx * arm, y: y))
+        for (corner, toward) in corners {
+            path.move(to: CGPoint(x: corner.x, y: corner.y + toward.dy * arm))
+            path.addLine(to: corner)
+            path.addLine(to: CGPoint(x: corner.x + toward.dx * arm, y: corner.y))
         }
         return path
     }

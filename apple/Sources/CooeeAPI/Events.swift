@@ -101,7 +101,7 @@ extension Client {
     }
 
     private static func line(_ bytes: [UInt8]) -> Substring {
-        let text = String(decoding: bytes, as: UTF8.self)
+        let text = String(bytes: bytes, encoding: .utf8) ?? ""
         return Substring(text.hasSuffix("\r") ? String(text.dropLast()) : text)
     }
 

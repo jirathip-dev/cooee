@@ -1,4 +1,3 @@
-import CooeeCore
 import SwiftUI
 
 internal struct Group2<Content: View>: View {
@@ -54,10 +53,10 @@ internal struct SettingRow: View {
     }
 }
 
-public struct AvatarMenu: View {
+internal struct AvatarMenu: View {
     @Environment(\.look) private var look
 
-    public var body: some View {
+    internal var body: some View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
@@ -72,13 +71,16 @@ public struct AvatarMenu: View {
             Group2(header: "Settings") {
                 SettingRow(symbol: "paintpalette.fill", title: "Look", tint: palette.amber, value: "Modern · Farm")
                 SettingRow(symbol: "bell.badge.fill", title: "Notifications", tint: palette.red, value: "Asks, done")
-                SettingRow(symbol: "person.badge.key.fill", title: "Sign-ins", tint: palette.purple, value: "Claude, Codex")
+                SettingRow(
+                    symbol: "person.badge.key.fill", title: "Sign-ins", tint: palette.purple, value: "Claude, Codex")
                 SettingRow(symbol: "iphone.gen3", title: "Devices", tint: palette.link, value: "3", divider: false)
             }
             Group2 {
-                SettingRow(symbol: "desktopcomputer", title: "Machines", tint: palette.cyan, value: "mini, air · Terminal")
                 SettingRow(
-                    symbol: "puzzlepiece.extension.fill", title: "Plugins", tint: palette.green, value: "4", divider: false
+                    symbol: "desktopcomputer", title: "Machines", tint: palette.cyan, value: "mini, air · Terminal")
+                SettingRow(
+                    symbol: "puzzlepiece.extension.fill", title: "Plugins", tint: palette.green, value: "4",
+                    divider: false
                 )
             }
             Text(look.mono ? "-- v2: these open their screens" : "Machines, Terminal and the plugin sheets open in v2.")
@@ -89,5 +91,5 @@ public struct AvatarMenu: View {
         .foregroundStyle(palette.foreground)
     }
 
-    public init() {}
+    internal init() {}
 }

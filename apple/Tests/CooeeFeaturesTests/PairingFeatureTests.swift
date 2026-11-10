@@ -1,10 +1,9 @@
 import ComposableArchitecture
 import CooeeAPI
 import CooeeCore
+@testable import CooeeFeatures
 import Foundation
 import Testing
-
-@testable import CooeeFeatures
 
 @MainActor
 internal struct PairingFeatureTests {
@@ -128,9 +127,14 @@ internal struct PairingFeatureTests {
     @Test internal func stepsTheAddressAndNearbyServers() async {
         let found = [NearbyServer(name: "mini", address: "http://192.0.2.20:4100")]
         let store = store {
-            $0.nearby.browse = { AsyncStream { $0.yield(found); $0.finish() } }
+            $0.nearby.browse = {
+                AsyncStream {
+                    $0.yield(found)
+                    $0.finish()
+                }
+            }
         }
-        await store.send(.go(.address)) { $0.step = .address }
+        await store.send(.show(.address)) { $0.step = .address }
         await store.send(.addressChanged("mini")) { $0.address = "mini" }
         await store.send(.browse) { $0.browsing = true }
         await store.receive(\.found) { $0.nearby = found }
@@ -140,7 +144,7 @@ internal struct PairingFeatureTests {
         await store.send(.claimed(.paired("t")))
         await store.send(.asked(PairAsk(word: "w", claim: "c")))
         await store.send(.failed("no")) { $0.error = "no" }
-        await store.send(.go(.welcome)) {
+        await store.send(.show(.welcome)) {
             $0.step = .welcome
             $0.error = nil
         }

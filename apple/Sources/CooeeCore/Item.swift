@@ -100,7 +100,8 @@ public enum ChatItems {
         case "tool":
             fold(item, into: &out)
         case "approval":
-            out.append(.note(id: item.id, text: "A card waits: \(item.tool ?? "an ask"). Answer it on the web for now."))
+            out.append(
+                .note(id: item.id, text: "A card waits: \(item.tool ?? "an ask"). Answer it on the web for now."))
         default:
             guard let text = item.text, !text.isEmpty else { return }
             out.append(.note(id: item.id, text: text))
@@ -118,13 +119,13 @@ public enum ChatItems {
     }
 }
 
-public struct Markdown {
+internal struct Markdown {
     private var out: [Block] = []
     private var paragraph: [String] = []
     private var bullets: [String] = []
     private var code: (lang: String, lines: [String])?
 
-    public static func blocks(_ markdown: String) -> [Block] {
+    internal static func blocks(_ markdown: String) -> [Block] {
         var parser = Markdown()
         for line in markdown.split(separator: "\n", omittingEmptySubsequences: false) {
             parser.feed(String(line))

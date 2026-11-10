@@ -20,7 +20,7 @@ public enum Listing {
                 persona: persona.id,
                 title: thread.title,
                 last: thread.last,
-                at: ago(thread.at, now: now),
+                ago: ago(thread.updated, now: now),
                 unseen: thread.unseen,
                 state: state
             )

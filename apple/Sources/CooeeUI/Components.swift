@@ -12,7 +12,10 @@ internal struct Avatar: View {
         switch look.style {
         case .modern:
             Circle()
-                .fill(LinearGradient(colors: [tint.opacity(0.95), tint.opacity(0.6)], startPoint: .top, endPoint: .bottom))
+                .fill(
+                    LinearGradient(
+                        colors: [tint.opacity(0.95), tint.opacity(0.6)], startPoint: .top, endPoint: .bottom)
+                )
                 .overlay(
                     Image(systemName: persona.look.symbol).font(.system(size: size * 0.40, weight: .semibold))
                         .foregroundStyle(palette.dark ? Color.black.opacity(0.75) : .white)

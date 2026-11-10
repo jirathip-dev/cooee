@@ -1,10 +1,7 @@
 import ComposableArchitecture
-import CooeeAPI
 import CooeeCore
-import Foundation
-import Testing
-
 @testable import CooeeFeatures
+import Testing
 
 @MainActor
 internal struct AppFeatureTests {

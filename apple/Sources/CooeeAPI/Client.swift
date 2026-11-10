@@ -46,7 +46,9 @@ public final class Client: Sendable {
     }
 
     internal func request(_ method: String, _ path: String, json: (any Encodable)? = nil) throws -> URLRequest {
-        guard let url = URL(string: path, relativeTo: base) else { throw APIError(status: 400, text: "Bad path \(path).") }
+        guard let url = URL(string: path, relativeTo: base) else {
+            throw APIError(status: 400, text: "Bad path \(path).")
+        }
         var request = URLRequest(url: url)
         request.httpMethod = method
         if let token { request.setValue("cooee=\(token)", forHTTPHeaderField: "Cookie") }
@@ -67,12 +69,13 @@ public final class Client: Sendable {
         let http = try Self.http(response)
         if http.statusCode >= 400 {
             let own = http.value(forHTTPHeaderField: "Cooee-Error") == "1"
-            throw APIError(status: http.statusCode, text: own ? String(decoding: data, as: UTF8.self) : "")
+            throw APIError(status: http.statusCode, text: own ? String(bytes: data, encoding: .utf8) ?? "" : "")
         }
         return (data, http)
     }
 
-    internal func call<T: Decodable>(_ method: String, _ path: String, _ body: (any Encodable)? = nil) async throws -> T {
+    internal func call<T: Decodable>(_ method: String, _ path: String, _ body: (any Encodable)? = nil) async throws -> T
+    {
         try JSONDecoder().decode(T.self, from: try await send(request(method, path, json: body)).0)
     }
 

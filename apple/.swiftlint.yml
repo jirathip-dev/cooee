@@ -1,0 +1,46 @@
+included:
+  - Sources
+  - Tests
+  - Cooee
+  - UITests
+disabled_rules:
+  - colon
+  - comma
+  - comment_spacing
+  - control_statement
+  - force_cast
+  - force_try
+  - leading_whitespace
+  - line_length
+  - opening_brace
+  - orphaned_doc_comment
+  - return_arrow_whitespace
+  - statement_position
+  - todo
+  - trailing_comma
+  - trailing_newline
+  - trailing_semicolon
+  - trailing_whitespace
+  - vertical_whitespace
+analyzer_rules:
+  - unused_import
+file_length:
+  warning: 250
+  error: 250
+  ignore_comment_only_lines: true
+type_body_length:
+  warning: 150
+  error: 150
+function_body_length:
+  warning: 25
+  error: 25
+cyclomatic_complexity:
+  warning: 8
+  error: 8
+nesting:
+  type_level:
+    warning: 2
+    error: 2
+  function_level:
+    warning: 2
+    error: 2

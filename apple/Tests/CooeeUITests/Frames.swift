@@ -1,5 +1,3 @@
-import AppKit
-import CooeeCore
 import CooeeFeatures
 import CooeeUI
 import SwiftUI

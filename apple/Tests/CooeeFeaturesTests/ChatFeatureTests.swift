@@ -1,17 +1,22 @@
 import ComposableArchitecture
 import CooeeAPI
 import CooeeCore
+@testable import CooeeFeatures
 import Foundation
 import Testing
 
-@testable import CooeeFeatures
-
 @MainActor
 internal struct ChatFeatureTests {
+    nonisolated private static let events: [StreamEvent] = [
+        .text("lo"), .item(APIItem(id: 2, time: 2, kind: "agent", text: "Hello")),
+        .item(APIItem(id: 1, time: 1, kind: "you")),
+        .state(Turn(text: "x", state: "done", note: "ok")), .state(Turn(state: "done")), .queue([]), .reset,
+    ]
+
     private let calls = Calls()
     private let clock = TestClock()
     private let slice = Slice(
-        items: [APIItem(id: 1, at: 1, kind: "you", text: "Fix it")],
+        items: [APIItem(id: 1, time: 1, kind: "you", text: "Fix it")],
         turn: Turn(text: "Hel", state: "working"),
         cursor: "b.1",
         queue: [Queued(text: "Then open the PR", randomID: "q1")]
@@ -44,19 +49,15 @@ internal struct ChatFeatureTests {
         }
     }
 
-    @Test internal func aChatLoadsItsSliceThenFollowsItsStream() async {
-        let events: [StreamEvent] = [
-            .text("lo"), .item(APIItem(id: 2, at: 2, kind: "agent", text: "Hello")), .item(APIItem(id: 1, at: 1, kind: "you")),
-            .state(Turn(text: "x", state: "done", note: "ok")), .state(Turn(state: "done")), .queue([]), .reset,
-        ]
-        let store = store {
-            $0.threads.events = { _, _, _ in
-                AsyncThrowingStream { continuation in
-                    for event in events { continuation.yield(event) }
-                    continuation.finish(throwing: APIError(status: 404, text: "Gone."))
-                }
-            }
+    nonisolated private static func stream() -> AsyncThrowingStream<StreamEvent, any Error> {
+        AsyncThrowingStream { continuation in
+            for event in events { continuation.yield(event) }
+            continuation.finish(throwing: APIError(status: 404, text: "Gone."))
         }
+    }
+
+    @Test internal func aChatLoadsItsSliceThenFollowsItsStream() async {
+        let store = store { $0.threads.events = { _, _, _ in Self.stream() } }
         let task = await store.send(.task)
         await store.receive(\.loaded) {
             $0.items = slice.items
@@ -67,10 +68,10 @@ internal struct ChatFeatureTests {
         }
         await store.receive(\.event) { $0.live = "Hello" }
         await store.receive(\.event) {
-            $0.items.append(APIItem(id: 2, at: 2, kind: "agent", text: "Hello"))
+            $0.items.append(APIItem(id: 2, time: 2, kind: "agent", text: "Hello"))
             $0.live = ""
         }
-        await store.receive(\.event) { $0.items[0] = APIItem(id: 1, at: 1, kind: "you") }
+        await store.receive(\.event) { $0.items[0] = APIItem(id: 1, time: 1, kind: "you") }
         await store.receive(\.event) { $0.turn = Turn(state: "done", note: "ok") }
         await store.receive(\.event) { $0.turn = Turn(state: "done") }
         await store.receive(\.event) { $0.queue = [] }
@@ -150,7 +151,9 @@ internal struct ChatFeatureTests {
         await store.send(.draftChanged("hi")) { $0.draft = "hi" }
         await store.send(.send) { $0.draft = "" }
         await store.receive(\.failed) { $0.error = "Locked." }
-        let fresh = self.store(.new(coder)) { $0.threads.start = { _, _, _ in throw APIError(status: 500, text: "No agent.") } }
+        let fresh = self.store(.new(coder)) {
+            $0.threads.start = { _, _, _ in throw APIError(status: 500, text: "No agent.") }
+        }
         await fresh.send(.draftChanged("hi")) { $0.draft = "hi" }
         await fresh.send(.send) { $0.draft = "" }
         await fresh.receive(\.failed) { $0.error = "No agent." }

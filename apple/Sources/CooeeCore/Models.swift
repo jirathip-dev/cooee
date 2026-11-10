@@ -11,13 +11,18 @@ public struct Server: Codable, Sendable, Equatable {
 }
 
 public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
+    private enum CodingKeys: String, CodingKey {
+        case id, title, agent, persona, state, last, unseen, archived
+        case updated = "at"
+    }
+
     public let id: String
     public let title: String
     public let agent: String
     public let persona: String
     public let state: String
     public let last: String
-    public let at: Int64
+    public let updated: Int64
     public let unseen: Int
     public let archived: Bool
 
@@ -28,7 +33,7 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         persona: String,
         state: String,
         last: String,
-        at: Int64,
+        updated: Int64,
         unseen: Int,
         archived: Bool
     ) {
@@ -38,7 +43,7 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         self.persona = persona
         self.state = state
         self.last = last
-        self.at = at
+        self.updated = updated
         self.unseen = unseen
         self.archived = archived
     }
@@ -79,8 +84,13 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
 }
 
 public struct APIItem: Codable, Sendable, Equatable, Identifiable {
+    private enum CodingKeys: String, CodingKey {
+        case id, kind, text, files, title, status, tool
+        case time = "at"
+    }
+
     public let id: Int
-    public let at: Int64
+    public let time: Int64
     public let kind: String
     public var text: String?
     public var files: [String]?
@@ -90,7 +100,7 @@ public struct APIItem: Codable, Sendable, Equatable, Identifiable {
 
     public init(
         id: Int,
-        at: Int64,
+        time: Int64,
         kind: String,
         text: String? = nil,
         files: [String]? = nil,
@@ -99,7 +109,7 @@ public struct APIItem: Codable, Sendable, Equatable, Identifiable {
         tool: String? = nil
     ) {
         self.id = id
-        self.at = at
+        self.time = time
         self.kind = kind
         self.text = text
         self.files = files

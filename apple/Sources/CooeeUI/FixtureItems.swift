@@ -1,5 +1,4 @@
 import CooeeCore
-import Foundation
 
 extension Fixtures {
     public static let streaming: [Item] = [
@@ -49,14 +48,16 @@ extension Fixtures {
     ]
 
     public static let moreCards: [Item] = [
-        .agent(id: 7, markdown: [.text("Allowed. The edgar plugin needs its settings, its key, and a run to install:")]),
+        .agent(
+            id: 7, markdown: [.text("Allowed. The edgar plugin needs its settings, its key, and a run to install:")]),
         .config(
             id: 4,
             plugin: "edgar",
             title: "EDGAR plugin settings",
             fields: [Field("User agent", "cooee research"), Field("Rate", "5 / s")]
         ),
-        .secret(id: 5, plugin: "edgar", name: "EDGAR_API_KEY", why: "Sent to the edgar plugin only, never to the agent"),
+        .secret(
+            id: 5, plugin: "edgar", name: "EDGAR_API_KEY", why: "Sent to the edgar plugin only, never to the agent"),
         .run(
             id: 6,
             RunCard(

@@ -13,7 +13,7 @@ internal struct PinnedRow: View {
         switch look.style {
         case .scene:
             ZStack(alignment: .bottom) {
-                Sprite(name: "scene-strip").aspectRatio(contentMode: .fill).frame(height: 180).clipped()
+                Sprite(name: "scene-strip").scaledToFill().frame(height: 180).clipped()
                 strip.padding(.bottom, 8)
             }
             .frame(height: 180)
@@ -59,7 +59,8 @@ internal struct PinnedRow: View {
                 .background(scene ? Color.hex(0xf5efda).opacity(0.85) : .clear, in: .capsule)
             if look.style != .modern {
                 Text(persona.word).ui(10, .regular, look)
-                    .foregroundStyle(persona.state == .needs ? palette.red : (scene ? Color.hex(0x29251a) : palette.mute))
+                    .foregroundStyle(
+                        persona.state == .needs ? palette.red : (scene ? Color.hex(0x29251a) : palette.mute))
             }
         }
         .frame(width: scene ? 78 : 70)
@@ -81,7 +82,7 @@ internal struct ChatRow: View {
                     Text(persona.name).ui(16, .semibold, look).lineLimit(1)
                     Text(row.title).ui(14, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
                     Spacer(minLength: 4)
-                    Text(row.at).ui(13, .regular, look).foregroundStyle(row.unseen > 0 ? palette.link : palette.mute)
+                    Text(row.ago).ui(13, .regular, look).foregroundStyle(row.unseen > 0 ? palette.link : palette.mute)
                 }
                 detail
             }
@@ -99,7 +100,8 @@ internal struct ChatRow: View {
                 if look.mono {
                     Text("!").ui(14, .bold, look).foregroundStyle(palette.red)
                 } else {
-                    Image(systemName: "exclamationmark.circle.fill").font(.system(size: 13)).foregroundStyle(palette.red)
+                    Image(systemName: "exclamationmark.circle.fill").font(.system(size: 13)).foregroundStyle(
+                        palette.red)
                 }
             }
             if row.state == .working && !look.mono {

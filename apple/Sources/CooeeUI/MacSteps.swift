@@ -1,4 +1,3 @@
-import CooeeCore
 import SwiftUI
 
 internal struct MacWelcome: View {
@@ -41,9 +40,9 @@ internal struct MacFolders: View {
             MacList {
                 MacRow(
                     icon: "checkmark.circle.fill", title: "Claude Code", detail: "2.4.1 · /opt/homebrew/bin/claude",
-                    ok: true
+                    done: true
                 )
-                MacRow(icon: "checkmark.circle.fill", title: "Codex", detail: "0.61 · ~/.local/bin/codex", ok: true)
+                MacRow(icon: "checkmark.circle.fill", title: "Codex", detail: "0.61 · ~/.local/bin/codex", done: true)
                 MacRow(icon: "circle.dashed", title: "Hermes", detail: "not installed · optional", last: true)
             }
             Spacer()
@@ -62,7 +61,7 @@ internal struct MacSignins: View {
                 .ui(14, .regular, look).foregroundStyle(look.palette.mute)
             MacList {
                 MacRow(
-                    icon: "checkmark.circle.fill", title: "Claude Code", detail: "guy@… · Max plan", ok: true,
+                    icon: "checkmark.circle.fill", title: "Claude Code", detail: "guy@… · Max plan", done: true,
                     trailing: "Sign out"
                 )
                 MacRow(
@@ -87,7 +86,7 @@ internal struct MacTailscale: View {
                 .ui(14, .regular, look).foregroundStyle(palette.mute)
             missing
             MacList {
-                MacRow(icon: "checkmark.circle.fill", title: "Wi-Fi", detail: "server.local · 192.0.2.20", ok: true)
+                MacRow(icon: "checkmark.circle.fill", title: "Wi-Fi", detail: "server.local · 192.0.2.20", done: true)
                 MacRow(icon: "circle.dashed", title: "Tailscale", detail: "not found", last: true)
             }
             Spacer()

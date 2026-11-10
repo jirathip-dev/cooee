@@ -1,10 +1,8 @@
 import ComposableArchitecture
 import CooeeAPI
 import CooeeCore
-import Foundation
-import Testing
-
 @testable import CooeeFeatures
+import Testing
 
 @MainActor
 internal struct HomeFeatureTests {
@@ -34,7 +32,9 @@ internal struct HomeFeatureTests {
 
     @Test internal func homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() async {
         let rows = [row("t1", state: "working"), row("old", archived: true)]
-        let store = store([.rows(rows), .failure(APIError(status: 500, text: "Locked.")), .failure(APIError(status: 401, text: ""))])
+        let store = store([
+            .rows(rows), .failure(APIError(status: 500, text: "Locked.")), .failure(APIError(status: 401, text: "")),
+        ])
         await store.send(.task)
         await store.receive(\.loaded) {
             $0.rows = [rows[0]]

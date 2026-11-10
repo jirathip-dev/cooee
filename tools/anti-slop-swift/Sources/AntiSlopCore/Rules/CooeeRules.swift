@@ -158,7 +158,7 @@ public final class LayerImportsRule: SlopRule {
 
     public static let layers: [String: Set<String>] = [
         "CooeeCore": ["Foundation"],
-        "CooeeAPI": ["CooeeCore", "Foundation", "Network", "Security"],
+        "CooeeAPI": ["CooeeCore", "Foundation", "Network", "Security", "Synchronization"],
         "CooeeFeatures": ["ComposableArchitecture", "CooeeAPI", "CooeeCore", "Foundation"],
         "CooeeUI": [
             "AppKit", "ComposableArchitecture", "CooeeCore", "CooeeFeatures", "CoreImage", "SwiftUI", "UIKit",
@@ -169,7 +169,7 @@ public final class LayerImportsRule: SlopRule {
         "UITests": ["XCTest"],
     ]
 
-    static let testImports: Set<String> = ["Foundation", "Testing", "XCTest"]
+    static let testImports: Set<String> = ["Foundation", "Synchronization", "Testing", "XCTest"]
 
     public required init(
         fileName: String,

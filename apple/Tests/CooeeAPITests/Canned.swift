@@ -13,9 +13,9 @@ internal final class Canned: URLProtocol, @unchecked Sendable {
     private static let answers = Mutex<[String: [String: [Answer]]]>([:])
     private static let seen = Mutex<[URLRequest]>([])
 
-    override internal class func canInit(with request: URLRequest) -> Bool { true }
+    override internal static func canInit(with request: URLRequest) -> Bool { true }
 
-    override internal class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override internal static func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     internal static func register(_ host: String, _ canned: [String: [Answer]]) {
         answers.withLock { $0[host] = canned }
@@ -74,17 +74,17 @@ internal struct CannedServer {
         Canned.register(host, answers)
     }
 
-    internal func client(token: String? = "tok") -> Client {
+    internal func client(token: String? = "tok", retry: Duration = .zero) -> Client {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [Canned.self]
         let base = URL(string: "http://\(host):4100") ?? URL(filePath: "/")
-        return Client(base: base, token: token, configuration: configuration, retry: .zero)
+        return Client(base: base, token: token, configuration: configuration, retry: retry)
     }
 
     internal func requests(_ path: String) -> [URLRequest] { Canned.requests(host, path) }
 
     internal func body(_ path: String) -> String? {
-        requests(path).first?.httpBody.map { String(decoding: $0, as: UTF8.self) }
+        requests(path).first?.httpBody.flatMap { String(bytes: $0, encoding: .utf8) }
     }
 
     internal func decoded<T: Decodable>(_ path: String, as type: T.Type) throws -> T {

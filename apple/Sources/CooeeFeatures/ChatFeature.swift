@@ -78,7 +78,9 @@ public struct ChatFeature: Sendable {
             }
         }
     }
+}
 
+extension ChatFeature {
     private func compose(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .draftChanged(let text):
@@ -128,12 +130,7 @@ public struct ChatFeature: Sendable {
     private func apply(_ state: inout State, _ event: StreamEvent) {
         switch event {
         case .item(let item):
-            if let index = state.items.firstIndex(where: { $0.id == item.id }) {
-                state.items[index] = item
-            } else {
-                state.items.append(item)
-            }
-            if item.kind == "agent" { state.live = "" }
+            upsert(&state, item)
         case .text(let text):
             state.live += text
         case .state(let turn):
@@ -147,6 +144,15 @@ public struct ChatFeature: Sendable {
         }
     }
 
+    private func upsert(_ state: inout State, _ item: APIItem) {
+        if let index = state.items.firstIndex(where: { $0.id == item.id }) {
+            state.items[index] = item
+        } else {
+            state.items.append(item)
+        }
+        if item.kind == "agent" { state.live = "" }
+    }
+
     private func send(_ state: inout State) -> Effect<Action> {
         let text = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
         let files = state.files
@@ -156,12 +162,17 @@ public struct ChatFeature: Sendable {
         let (threads, server, queue) = (threads, state.server, state.working)
         switch state.target {
         case .thread(let thread):
-            return .run { _ in try await threads.send(server, thread, text, files, queue) } catch: { error, send in
+            return .run { _ in
+                try await threads.send(server, thread, text, files, queue)
+            } catch: { error, send in
                 await send(.failed(error.localizedDescription))
             }
         case .new(let persona):
-            return .run { send in await send(.delegate(.started(try await threads.start(server, persona, text)))) }
-                catch: { error, send in await send(.failed(error.localizedDescription)) }
+            return .run { send in
+                await send(.delegate(.started(try await threads.start(server, persona, text))))
+            } catch: { error, send in
+                await send(.failed(error.localizedDescription))
+            }
         }
     }
 
@@ -180,7 +191,9 @@ public struct ChatFeature: Sendable {
     ) -> Effect<Action> {
         guard case .thread(let thread) = state.target else { return .none }
         let (threads, server) = (threads, state.server)
-        return .run { _ in try await call(threads, server, thread) } catch: { error, send in
+        return .run { _ in
+            try await call(threads, server, thread)
+        } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }
     }

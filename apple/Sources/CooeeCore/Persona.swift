@@ -1,5 +1,3 @@
-import Foundation
-
 public enum LaneState: String, Sendable, Equatable {
     case working, needs, done, idle, fail, merged
 
@@ -97,16 +95,16 @@ public struct Row: Identifiable, Sendable, Equatable {
     public let persona: String
     public let title: String
     public let last: String
-    public let at: String
+    public let ago: String
     public let unseen: Int
     public let state: LaneState
 
-    public init(id: String, persona: String, title: String, last: String, at: String, unseen: Int, state: LaneState) {
+    public init(id: String, persona: String, title: String, last: String, ago: String, unseen: Int, state: LaneState) {
         self.id = id
         self.persona = persona
         self.title = title
         self.last = last
-        self.at = at
+        self.ago = ago
         self.unseen = unseen
         self.state = state
     }

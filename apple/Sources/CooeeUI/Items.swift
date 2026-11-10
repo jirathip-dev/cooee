@@ -169,8 +169,10 @@ internal struct ToolFold: View {
             Spacer(minLength: 4)
             if count > 0 {
                 Text("\(count) tools").ui(12, .regular, look).foregroundStyle(palette.mute)
-                Image(systemName: open.wrappedValue ? "chevron.down" : "chevron.right").font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(palette.mute)
+                Image(systemName: open.wrappedValue ? "chevron.down" : "chevron.right").font(
+                    .system(size: 10, weight: .bold)
+                )
+                .foregroundStyle(palette.mute)
             }
         }
         .contentShape(.rect)

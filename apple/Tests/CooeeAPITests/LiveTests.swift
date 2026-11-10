@@ -1,8 +1,7 @@
+@testable import CooeeAPI
 import CooeeCore
 import Foundation
 import Testing
-
-@testable import CooeeAPI
 
 @Suite(.enabled(if: ProcessInfo.processInfo.environment["COOEE_PAIR_LINK"] != nil))
 internal struct LiveTests {

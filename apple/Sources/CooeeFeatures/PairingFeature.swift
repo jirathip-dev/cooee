@@ -27,7 +27,7 @@ public struct PairingFeature: Sendable {
     }
 
     public enum Action: Sendable {
-        case go(PhoneStep)
+        case show(PhoneStep)
         case addressChanged(String)
         case connect(String)
         case asked(PairAsk)
@@ -63,7 +63,7 @@ public struct PairingFeature: Sendable {
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .go(let step):
+            case .show(let step):
                 state.step = step
                 state.error = nil
                 return .none
@@ -83,7 +83,9 @@ public struct PairingFeature: Sendable {
             }
         }
     }
+}
 
+extension PairingFeature {
     private func other(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .personasLoaded(let personas):

@@ -17,19 +17,21 @@ public struct PhoneOnboarding: View {
                 .padding(.horizontal, 24).padding(.bottom, 30)
         }
         .foregroundStyle(look.palette.foreground)
-        .environment(\.stepBack, { go(.welcome) })
+        .environment(\.stepBack, { show(.welcome) })
     }
 
     @ViewBuilder private var screen: some View {
         switch step {
         case .welcome:
-            Welcome(store: store, go: go)
+            Welcome(store: store, show: show)
         case .scan:
-            ScanStep(store: store, go: go, connect: connect)
+            ScanStep(store: store, show: show)
         case .nearby:
             titled("Nearby", "cooee servers on this Wi-Fi") { NearbyList(store: store, connect: connect) }
         case .address:
-            titled("Enter address", "The address `cooee setup` printed") { AddressField(store: store, connect: connect) }
+            titled("Enter address", "The address `cooee setup` printed") {
+                AddressField(store: store, connect: connect)
+            }
         case .waiting:
             Waiting(store: store)
         case .paired:
@@ -47,7 +49,7 @@ public struct PhoneOnboarding: View {
         self.store = store
     }
 
-    private func go(_ step: PhoneStep) { store?.send(.go(step)) }
+    private func show(_ step: PhoneStep) { store?.send(.show(step)) }
 
     private func connect(_ typed: String) { store?.send(.connect(typed)) }
 
@@ -63,7 +65,7 @@ public struct PhoneOnboarding: View {
 internal struct Welcome: View {
     @Environment(\.look) private var look
     internal let store: StoreOf<PairingFeature>?
-    internal let go: (PhoneStep) -> Void
+    internal let show: (PhoneStep) -> Void
 
     internal var body: some View {
         let palette = look.palette
@@ -74,7 +76,7 @@ internal struct Welcome: View {
             Text("Your agents run on your Mac.\nTalk to them from here.").ui(17, .regular, look)
                 .multilineTextAlignment(.center).foregroundStyle(palette.mute)
             Spacer()
-            WaysIn(go: go, nearby: store.map { $0.nearby.count })
+            WaysIn(show: show, nearby: store.map { $0.nearby.count })
             Text("No server yet? Get cooee for Mac, or run `cooee setup` on a Mac or Linux box: both show a QR code.")
                 .ui(13, .regular, look).foregroundStyle(palette.mute).multilineTextAlignment(.center).padding(.top, 6)
         }
@@ -84,8 +86,7 @@ internal struct Welcome: View {
 internal struct ScanStep: View {
     @Environment(\.look) private var look
     internal let store: StoreOf<PairingFeature>?
-    internal let go: (PhoneStep) -> Void
-    internal let connect: (String) -> Void
+    internal let show: (PhoneStep) -> Void
 
     internal var body: some View {
         let palette = look.palette
@@ -100,8 +101,16 @@ internal struct ScanStep: View {
             }
             Spacer()
             HStack(spacing: 10) {
-                Button { go(.nearby) } label: { CardButton(title: "Nearby") }.buttonStyle(.plain)
-                Button { go(.address) } label: { CardButton(title: "Enter address") }.buttonStyle(.plain)
+                Button {
+                    show(.nearby)
+                } label: {
+                    CardButton(title: "Nearby")
+                }.buttonStyle(.plain)
+                Button {
+                    show(.address)
+                } label: {
+                    CardButton(title: "Enter address")
+                }.buttonStyle(.plain)
             }
         }
     }
@@ -110,7 +119,7 @@ internal struct ScanStep: View {
         ZStack {
             RoundedRectangle(cornerRadius: 28).fill(Color.hex(0x1c1f1d))
             #if os(iOS)
-                if store != nil { QRScanner(found: connect).clipShape(.rect(cornerRadius: 28)) }
+                if let store { QRScanner { store.send(.connect($0)) }.clipShape(.rect(cornerRadius: 28)) }
             #endif
             if store == nil {
                 QRCode(text: "https://server.example.com/pair?c=K7Q2MX", size: 150)
@@ -145,7 +154,11 @@ internal struct Waiting: View {
             Text("Any paired device can approve it too: it got a notification.").ui(13, .regular, look)
                 .foregroundStyle(palette.mute).multilineTextAlignment(.center)
             Spacer()
-            Button { store?.send(.cancel) } label: { CardButton(title: "Cancel", tint: palette.red) }.buttonStyle(.plain)
+            Button {
+                store?.send(.cancel)
+            } label: {
+                CardButton(title: "Cancel", tint: palette.red)
+            }.buttonStyle(.plain)
         }
     }
 
@@ -185,7 +198,11 @@ internal struct Paired: View {
             .padding(.top, 10)
             Text("\(personas.count) personas are waiting on Home").ui(14, .regular, look).foregroundStyle(palette.mute)
             Spacer()
-            Button { store?.send(.home) } label: { CardButton(title: "Go to Home", primary: true) }.buttonStyle(.plain)
+            Button {
+                store?.send(.home)
+            } label: {
+                CardButton(title: "Go to Home", primary: true)
+            }.buttonStyle(.plain)
         }
     }
 }

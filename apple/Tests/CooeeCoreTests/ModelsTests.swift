@@ -1,7 +1,6 @@
+@testable import CooeeCore
 import Foundation
 import Testing
-
-@testable import CooeeCore
 
 internal struct ModelsTests {
     private let coder = APIPersona(id: "coder", name: "Coder", agent: "codex", model: "gpt-5.5")

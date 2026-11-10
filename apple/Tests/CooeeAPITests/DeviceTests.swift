@@ -1,9 +1,8 @@
+@testable import CooeeAPI
 import CooeeCore
 import Foundation
 import Network
 import Testing
-
-@testable import CooeeAPI
 
 internal struct DeviceTests {
     @Test internal func theKeychainKeepsOneServer() throws {
@@ -27,13 +26,20 @@ internal struct DeviceTests {
         #expect(Nearby.address(.service(name: "mini", type: "_cooee._tcp", domain: "local", interface: nil)) == nil)
     }
 
-    @Test internal func browsingStartsAndStops() async {
-        let stream = Nearby.browse(type: "_cooee-test-\(UUID().uuidString.prefix(8))._tcp")
-        let reader = Task {
-            for await _ in stream {}
+    @Test(.timeLimit(.minutes(1)))
+    internal func aServerAdvertisedOnTheLANIsFoundAtItsAddress() async throws {
+        let type = "_cooee-\(UUID().uuidString.prefix(6).lowercased())._tcp"
+        let listener = try NWListener(using: .tcp)
+        listener.service = NWListener.Service(name: "mini-test", type: type)
+        listener.newConnectionHandler = { $0.cancel() }
+        listener.start(queue: .global())
+        defer { listener.cancel() }
+        var found: [NearbyServer] = []
+        for await servers in Nearby.browse(type: type) where servers.contains(where: { $0.name == "mini-test" }) {
+            found = servers
+            break
         }
-        try? await Task.sleep(for: .milliseconds(50))
-        reader.cancel()
-        await reader.value
+        let server = try #require(found.first { $0.name == "mini-test" })
+        #expect(server.address.hasPrefix("http://") && server.address.hasSuffix(":\(listener.port?.rawValue ?? 0)"))
     }
 }

@@ -1,5 +1,4 @@
 import CooeeCore
-import Foundation
 import Network
 import Synchronization
 
@@ -36,7 +35,9 @@ public final class Nearby: Sendable {
             else { return }
             connection.cancel()
             let list = found.withLock { list in
-                if !list.contains(where: { $0.name == name }) { list.append(NearbyServer(name: name, address: address)) }
+                if !list.contains(where: { $0.name == name }) {
+                    list.append(NearbyServer(name: name, address: address))
+                }
                 return list
             }
             report(list)

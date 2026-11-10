@@ -31,7 +31,8 @@ internal struct Composer: View {
                 sendButton
             }
         }
-        .fileImporter(isPresented: picking.projectedValue, allowedContentTypes: [.item], allowsMultipleSelection: true) { result in
+        .fileImporter(isPresented: picking.projectedValue, allowedContentTypes: [.item], allowsMultipleSelection: true)
+        { result in
             actions.attach(((try? result.get()) ?? []).compactMap(Self.attachment))
         }
     }

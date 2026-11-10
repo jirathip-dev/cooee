@@ -1,4 +1,3 @@
-import CooeeAPI
 import CooeeCore
 import Foundation
 import Synchronization
@@ -29,9 +28,10 @@ internal final class Queue<Element: Sendable>: Sendable {
     }
 }
 
-internal func row(_ id: String, persona: String = "coder", state: String = "done", archived: Bool = false) -> ThreadRow {
+internal func row(_ id: String, persona: String = "coder", state: String = "done", archived: Bool = false) -> ThreadRow
+{
     ThreadRow(
-        id: id, title: "T \(id)", agent: "codex", persona: persona, state: state, last: "", at: 999_000_000,
+        id: id, title: "T \(id)", agent: "codex", persona: persona, state: state, last: "", updated: 999_000_000,
         unseen: 0, archived: archived
     )
 }

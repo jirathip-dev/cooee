@@ -14,7 +14,8 @@ internal struct Pixels: Equatable {
             guard
                 let context = CGContext(
                     data: buffer.baseAddress, width: columns, height: rows, bitsPerComponent: 8,
-                    bytesPerRow: columns * 4, space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                    bytesPerRow: columns * 4,
+                    space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
                     bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
                 )
             else { return false }

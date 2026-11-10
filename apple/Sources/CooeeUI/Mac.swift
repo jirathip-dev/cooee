@@ -1,8 +1,9 @@
-import CooeeCore
 import SwiftUI
 
 public enum MacStep: String, CaseIterable, Sendable {
-    case welcome, folders, signins, tailscale, qr, approve
+    case welcome, folders, signins, tailscale
+    case pairPhone = "qr"
+    case approve
 }
 
 public struct MacSetup: View {
@@ -32,7 +33,7 @@ public struct MacSetup: View {
         case .folders: MacFolders()
         case .signins: MacSignins()
         case .tailscale: MacTailscale()
-        case .qr, .approve: MacPairPhone()
+        case .pairPhone, .approve: MacPairPhone()
         }
     }
 
@@ -41,10 +42,19 @@ public struct MacSetup: View {
     }
 }
 
+internal struct MacStepEntry {
+    internal let step: MacStep
+    internal let title: String
+    internal let icon: String
+}
+
 internal struct MacStepList: View {
-    private static let steps: [(step: MacStep, title: String, icon: String)] = [
-        (.welcome, "Welcome", "hand.wave"), (.folders, "Folders & agents", "folder"),
-        (.signins, "Sign-ins", "person.badge.key"), (.tailscale, "Tailscale", "network"), (.qr, "Pair a phone", "qrcode"),
+    private static let steps = [
+        MacStepEntry(step: .welcome, title: "Welcome", icon: "hand.wave"),
+        MacStepEntry(step: .folders, title: "Folders & agents", icon: "folder"),
+        MacStepEntry(step: .signins, title: "Sign-ins", icon: "person.badge.key"),
+        MacStepEntry(step: .tailscale, title: "Tailscale", icon: "network"),
+        MacStepEntry(step: .pairPhone, title: "Pair a phone", icon: "qrcode"),
     ]
 
     @Environment(\.look) private var look
@@ -52,7 +62,7 @@ internal struct MacStepList: View {
 
     internal var body: some View {
         let palette = look.palette
-        let current = Self.steps.firstIndex { $0.step == (step == .approve ? .qr : step) } ?? 0
+        let current = Self.steps.firstIndex { $0.step == (step == .approve ? .pairPhone : step) } ?? 0
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 AppMark(size: 34)
@@ -143,7 +153,7 @@ internal struct MacRow: View {
     internal let icon: String
     internal let title: String
     internal let detail: String
-    internal var ok = false
+    internal var done = false
     internal var link = false
     internal var trailing = ""
     internal var last = false
@@ -151,7 +161,7 @@ internal struct MacRow: View {
     internal var body: some View {
         let palette = look.palette
         HStack(spacing: 10) {
-            Image(systemName: icon).foregroundStyle(ok ? palette.green : (link ? palette.link : palette.mute))
+            Image(systemName: icon).foregroundStyle(done ? palette.green : (link ? palette.link : palette.mute))
                 .frame(width: 20)
             Text(title).ui(14, .regular, look).foregroundStyle(link ? palette.link : palette.foreground)
             Text(detail).ui(12, .regular, look).foregroundStyle(palette.mute)
