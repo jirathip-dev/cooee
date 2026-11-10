@@ -1,0 +1,6 @@
+Decided: ship the approved design docs as they are; no build code
+Because: "No build code, no changes to the plugin API"
+Because: q994
+Rejected: building a renderer now — the issue says build only after the Swift spike decides
+Check: README lists every PNG with the decision it shows; fixtures parse as JSON
+Owner: The plugin screens design you approved is ready to merge as docs.
