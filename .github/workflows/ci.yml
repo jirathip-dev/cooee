@@ -9,6 +9,17 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # #180: a workflow file GitHub can't parse fails here, on the PR, not silently after the merge.
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: actionlint@1.7.12
+      - name: actionlint (.github/workflows/**)
+        run: actionlint
+
   # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64 and macOS arm64.
   msrv:
     strategy:
