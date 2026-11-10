@@ -58,7 +58,7 @@ jobs:
         run: |
           PORT=4100 PAIR_LINK="$RUNNER_TEMP/pair" apple/e2e/serve.sh >"$RUNNER_TEMP/serve.log" 2>&1 &
           serve=$!
-          until curl -s -o /dev/null http://127.0.0.1:4100/pair; do
+          until [ -s "$RUNNER_TEMP/pair" ]; do
             kill -0 "$serve" 2>/dev/null || { cat "$RUNNER_TEMP/serve.log"; exit 1; }
             sleep 2
           done
@@ -67,21 +67,19 @@ jobs:
         working-directory: apple
         run: COOEE_PAIR_LINK="$(cat "$RUNNER_TEMP/pair")" swift test --filter LiveTests
       # Once per appearance, set with simctl (the test's own XCUIDevice.appearance left this simulator light); each
-      # run pairs afresh, so the keychain is emptied first.
+      # run pairs afresh, so the keychain is emptied first. The app builds before any code is minted: a code lives 10 min.
       - name: the app in the simulator
         working-directory: apple
         run: |
           sim=$(xcrun simctl create cooee-e2e "iPhone 17")
           xcrun simctl bootstatus "$sim" -b
-          # #139: built once before the pairing link is made, so its code is fresh when the test types it.
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim" \
-            -derivedDataPath "$RUNNER_TEMP/dd" build-for-testing
+          build=(xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim")
+          "${build[@]}" build-for-testing
           for look in dark light; do
             xcrun simctl ui "$sim" appearance "$look"
             xcrun simctl keychain "$sim" reset
             link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
-            TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" xcodebuild -skipMacroValidation -project Cooee.xcodeproj \
-              -scheme Cooee -destination "id=$sim" -derivedDataPath "$RUNNER_TEMP/dd" \
+            TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" "${build[@]}" \
               -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" test-without-building
           done
       # #139: the personas the simulator made and edited, read back from the server, and a client round trip.

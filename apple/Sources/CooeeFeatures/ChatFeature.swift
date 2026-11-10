@@ -22,6 +22,7 @@ public struct ChatFeature: Sendable {
         public var error: String?
         public var draft = ""
         public var files: [Attachment] = []
+        public var answering: Set<Int> = []
 
         public var working: Bool { turn.working }
         public var drawn: [Item] { ChatItems.build(items, live: live) }
@@ -45,6 +46,8 @@ public struct ChatFeature: Sendable {
         case stop
         case steer(Int)
         case unqueue(Int)
+        case answer(Int, BlockAction)
+        case answered(Int, String?)
         case delegate(Delegate)
 
         @CasePathable
@@ -72,6 +75,12 @@ public struct ChatFeature: Sendable {
                 return .none
             case .failed(let error):
                 state.error = error
+                return .none
+            case .answer(let item, let action):
+                return answer(&state, item, action)
+            case .answered(let item, let error):
+                state.answering.remove(item)
+                state.error = error ?? state.error
                 return .none
             default:
                 return compose(&state, action)
@@ -173,6 +182,18 @@ extension ChatFeature {
             } catch: { error, send in
                 await send(.failed(error.localizedDescription))
             }
+        }
+    }
+
+    private func answer(_ state: inout State, _ item: Int, _ action: BlockAction) -> Effect<Action> {
+        guard case .thread(let thread) = state.target, let answer = action.answer else { return .none }
+        state.answering.insert(item)
+        let (threads, server) = (threads, state.server)
+        return .run { send in
+            try await threads.answer(server, thread, item, answer.option, answer.value)
+            await send(.answered(item, nil))
+        } catch: { error, send in
+            await send(.answered(item, error.localizedDescription))
         }
     }
 

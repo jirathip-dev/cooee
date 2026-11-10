@@ -25,6 +25,9 @@ public struct ThreadsClient: Sendable {
     public var unqueue: @Sendable (_ server: Server, _ thread: String, _ randomID: String) async throws -> Void
     public var stop: @Sendable (_ server: Server, _ thread: String) async throws -> Void
     public var read: @Sendable (_ server: Server, _ thread: String, _ item: Int) async throws -> Void
+    public var answer:
+        @Sendable (_ server: Server, _ thread: String, _ item: Int, _ option: String, _ value: String?) async throws
+            -> Void
     public var start: @Sendable (_ server: Server, _ persona: APIPersona, _ text: String) async throws -> String
 }
 

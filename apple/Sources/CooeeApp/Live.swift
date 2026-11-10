@@ -27,6 +27,9 @@ extension ThreadsClient: DependencyKey {
         unqueue: { server, thread, randomID in try await Client(server).unqueue(thread, randomID) },
         stop: { server, thread in try await Client(server).cancel(thread) },
         read: { server, thread, item in try await Client(server).read(thread, upTo: item) },
+        answer: { server, thread, item, option, value in
+            try await Client(server).answer(thread, item: item, option: option, value: value)
+        },
         start: { server, persona, text in try await Client(server).newThread(persona: persona, text: text) }
     )
 }
