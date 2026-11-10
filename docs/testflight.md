@@ -4,10 +4,10 @@ No Mac needs Xcode. CI archives, signs and uploads the iOS app; TestFlight puts 
 
 ## How a build reaches the phone
 
-1. A merge to `staging` that touches `apple/**` (or **Run workflow** on `apple-testflight` in the Actions tab, from
-   `staging`) starts `.github/workflows/apple-testflight.yml` on GitHub's macOS runner.
-2. The job reads the App Store Connect API key from the `testflight` environment. Only `staging` may deploy from that
-   environment, so pull request and fork runs can't read the key.
+1. A merge to `main` that touches `apple/**` (or **Run workflow** on `apple-testflight` in the Actions tab, from
+   `main`) starts `.github/workflows/apple-testflight.yml` on GitHub's macOS runner.
+2. The job reads the App Store Connect API key from the `testflight` environment. Only `main` may deploy from that
+   environment, so pull request and fork runs can't read the key, and the job itself refuses any other branch.
 3. It registers the bundle id `com.jirathip.cooee` if it is missing, finds the app and the latest TestFlight build, and
    sets the build number to that build + 1. Nobody bumps it by hand.
 4. `xcodebuild archive` and `-exportArchive` sign with `-allowProvisioningUpdates` and the API key. Apple manages
@@ -36,5 +36,5 @@ With the Command Line Tools only:
 - `cd apple && swift build` compiles `CooeeUI`, the screens and fixtures.
 - `cd apple && swift run shots` renders every design frame to `apple/design/v1/`, so you can look at views without a simulator.
 - `xcodebuild` (the app target, the iOS build) runs in CI: `.github/workflows/apple.yml` on each pull request,
-  and `apple-testflight.yml` on `staging`.
+  and `apple-testflight.yml` on `main`.
 - On a real device, use TestFlight.
