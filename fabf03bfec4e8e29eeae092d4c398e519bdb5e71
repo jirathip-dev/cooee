@@ -1,0 +1,13 @@
+Decided: layers Core → API → Features (TCA) → UI → App, each target depending only on what its layer allows
+Because: "Each target lists only the dependencies its layer allows"
+Decided: design frames are a snapshot test against apple/design/v1 (0.5% of pixels may differ by more than 16/255); `shots` is removed
+Because: "snapshot tests of the design frames (`apple/design/v1/`) with a stated pixel tolerance"
+Decided: without Xcode, apple-check runs format, anti-slop, the TODO check and SwiftLint, and names the skipped steps
+Because: "On a Mac with only the Command Line Tools, it runs whatever doesn't need Xcode and says what it skipped"
+Rejected: committing patched TCA dependencies so the build runs on the CLT — an unpinned fork of an owner-approved dependency
+Decided: coverage merges every test bundle with llvm-cov export, since each target tests in its own bundle
+Because: scripts/apple-check.sh:63
+Decided: Periphery retains CooeeApp's files as roots, because only the Xcode app target uses them
+Because: apple/.periphery.yml:3
+Check: apple-quality and apple CI jobs at the head, which run the Xcode-only steps for the first time
+Owner: the app now has strict blocking quality checks and a layered TCA structure; it looks and works as before
