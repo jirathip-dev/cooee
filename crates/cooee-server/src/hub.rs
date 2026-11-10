@@ -188,6 +188,8 @@ pub struct Recipe {
     pub effort: String,
     /// The MCP servers its profile picks (#56), each run through cooee's proxy.
     pub mcp: Vec<String>,
+    /// The machine it runs on (#148; empty: this host), one of [`cooee_machines::Machines::added`].
+    pub machine: String,
 }
 
 /// The threads and the shed they run on.
@@ -979,6 +981,7 @@ impl Hub {
             folder: Some(folder.to_owned()).filter(|f| !f.as_os_str().is_empty()),
             account: recipe.account.clone(),
             profile: recipe.profile.clone(),
+            machine: recipe.machine.clone(),
             model: recipe.model.clone(),
             effort: recipe.effort.clone(),
             terminal: format!("cooee-{id}"),
@@ -1651,6 +1654,7 @@ impl Hub {
                         .map(|p| p.id.clone())
                         .unwrap_or_default(),
                     folder: live.meta.folder.clone().unwrap_or_default(),
+                    machine: live.meta.machine.clone(),
                     state: live.chat.turn.state.clone(),
                     last: waiting.unwrap_or_else(|| {
                         text.lines().last().unwrap_or("").chars().take(80).collect()

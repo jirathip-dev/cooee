@@ -199,15 +199,22 @@ impl Machines {
         lock(&self.cards).clone()
     }
 
+    /// The machines added to shed (`shed machine ls`), by name: the ones `--on` reaches; none when shed can't say.
+    #[must_use]
+    pub fn added(&self) -> Vec<String> {
+        let added = self.shed(&["machine", "ls"]).unwrap_or_default();
+        let added = added.as_array().into_iter().flatten();
+        added
+            .filter_map(|m| Some(m["name"].as_str()?.to_owned()))
+            .collect()
+    }
+
     /// Asks shed about this machine and each added one, keeping 24 h of samples per machine (only the new ones
     /// are asked for); the new cards.
     pub fn poll(&self, now: u64) -> Vec<Card> {
         let old = self.cards();
-        let added = self.shed(&["machine", "ls"]).unwrap_or_default();
-        let added = added.as_array().into_iter().flatten();
-        let names = added.filter_map(|m| Some(m["name"].as_str()?.to_owned()));
         let cards: Vec<Card> = std::iter::once(None)
-            .chain(names.map(Some))
+            .chain(self.added().into_iter().map(Some))
             .map(|on| {
                 let name = on.clone().unwrap_or_else(|| self.local.clone());
                 let was = old.iter().find(|c| c.name == name).cloned();
@@ -335,6 +342,21 @@ fn answer(stream: TcpStream, token: &str, machines: &Machines) -> io::Result<()>
     Ok(())
 }
 
+/// This machine's short host name, or `this machine`.
+#[must_use]
+pub fn local_name() -> String {
+    let host = Command::new("hostname").arg("-s").output();
+    let local = host.map_or_else(
+        |_| String::new(),
+        |o| String::from_utf8_lossy(&o.stdout).trim().to_owned(),
+    );
+    if local.is_empty() {
+        "this machine".to_owned()
+    } else {
+        local
+    }
+}
+
 /// Runs the plugin for `plugin` (its backend at its `url`), reaching shed with `shed`/`dir` and cooee at `cooee`:
 /// polls once a minute.
 ///
@@ -348,17 +370,7 @@ pub fn start(
 ) -> io::Result<()> {
     let rest = plugin.url.trim_start_matches("http://");
     let listener = TcpListener::bind(rest.split('/').next().unwrap_or(rest))?;
-    let host = Command::new("hostname").arg("-s").output();
-    let local = host.map_or_else(
-        |_| String::new(),
-        |o| String::from_utf8_lossy(&o.stdout).trim().to_owned(),
-    );
-    let local = if local.is_empty() {
-        "this machine".to_owned()
-    } else {
-        local
-    };
-    let machines = Arc::new(Machines::new(shed, dir, local));
+    let machines = Arc::new(Machines::new(shed, dir, local_name()));
     let (m, token) = (Arc::clone(&machines), plugin.token.clone());
     thread::spawn(move || serve(&listener, &token, &m));
     let cooee = Cooee {
