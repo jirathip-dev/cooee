@@ -31,6 +31,8 @@ fn every_earlier_release_loads_without_losing_data() {
                 "{}",
                 file.display()
             );
+            // #148: every thread from before is on this host.
+            assert_eq!(thread.machine, "", "{}", file.display());
             // And this build writes it back unchanged.
             rewritten.save(&thread).unwrap();
             assert_eq!(rewritten.load(&id).unwrap(), thread);

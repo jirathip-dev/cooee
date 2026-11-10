@@ -29,6 +29,7 @@ use cooee_core::{
     Config, Device, Devices, Plugin, ShedError,
     personas::{self, Persona},
 };
+use cooee_machines::Machines;
 use futures_util::{Stream, StreamExt, stream};
 use pairing::devices;
 use passkey::Unlocks;
@@ -577,6 +578,9 @@ struct New {
     model: String,
     #[serde(default)]
     effort: String,
+    /// The machine it runs on (#148): none, its persona's (this host without one); empty: this host.
+    #[serde(default)]
+    machine: Option<String>,
 }
 
 /// A new thread's id.
@@ -587,20 +591,24 @@ struct Created {
 
 #[route(POST "/threads")]
 async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
-    let logins = logins(cx);
+    let (logins, machines) = (logins(cx), Arc::clone(app_context::<Arc<Machines>>(cx)));
     let data = app_context::<Data>(cx);
     let (data, config, hub) = (data.0.clone(), data.1.clone(), hub(cx));
     let id = tokio::task::spawn_blocking(move || {
         let profile = new.profile.as_deref().unwrap_or_default();
         let list = profiles(&hub, (&data, config.as_deref()));
         let picked = (new.model, new.effort);
-        let (agent, folder, recipe) = recipe(
+        let (agent, folder, mut recipe) = recipe(
             &logins,
             (&data, config.as_deref(), &list),
             (&new.agent, new.account.as_deref(), profile),
             new.folder,
             picked,
         )?;
+        if let Some(m) = new.machine {
+            recipe.machine = m;
+        }
+        allowed(&machines, &recipe.machine).map_err(HubError::Refused)?;
         let id = if new.background {
             let name = cooee_web::named(&agent, &logins.statuses());
             hub.create_later(
@@ -742,6 +750,7 @@ fn recipe(
     if let Some(p) = persona {
         recipe.instructions = p.brief(data);
         recipe.profile = p.id;
+        recipe.machine = p.machine;
     }
     Ok((agent, folder, recipe))
 }
@@ -1879,19 +1888,70 @@ async fn persona_new(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
     persona_save(cx, p).await
 }
 
-/// Saves `p`, its plugins (#129) each an installed one.
+/// Saves `p`, its plugins (#129) each an installed one and its machine (#148) an allowed one.
 async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
     let installed = hub(cx).installed();
+    let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
     on_personas(cx, move |d, c| {
-        match p.plugins.iter().find(|n| !installed.contains(n)) {
-            Some(n) => Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("no installed plugin {n}"),
-            )),
-            None => personas::save(c, d, p),
-        }
+        let why = match p.plugins.iter().find(|n| !installed.contains(n)) {
+            Some(n) => Err(format!("no installed plugin {n}")),
+            None => allowed(&machines, &p.machine),
+        };
+        why.map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+        personas::save(c, d, p)
     })
     .await
+}
+
+/// Whether `machine` may run a thread (#148): this host (empty), or one added to shed (`shed machine ls`).
+fn allowed(machines: &Machines, machine: &str) -> std::result::Result<(), String> {
+    if machine.is_empty() || machines.added().iter().any(|m| m == machine) {
+        Ok(())
+    } else {
+        Err(format!(
+            "no machine {machine}: add it with shed machine add"
+        ))
+    }
+}
+
+/// One machine a thread may run on (#148): its name (empty: this host, `host` its host name), whether shed reaches
+/// it, when it last answered and its health now (the machines plugin's card).
+#[derive(Serialize)]
+struct MachineRow {
+    name: String,
+    host: String,
+    online: bool,
+    last_seen: Option<u64>,
+    health: Option<cooee_core::shed_proto::Sample>,
+    error: Option<String>,
+}
+
+/// `GET /machines`: the allowed machines, this host first.
+#[route(GET "/machines")]
+async fn machine_list(cx: &Cx) -> Result<Answer<Vec<MachineRow>>> {
+    let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
+    Ok(Answer(
+        blocking(cx, move |_| {
+            let cards = machines.poll(cooee_machines::unix_now());
+            Ok(cards
+                .into_iter()
+                .enumerate()
+                .map(|(i, c)| MachineRow {
+                    name: if i == 0 {
+                        String::new()
+                    } else {
+                        c.name.clone()
+                    },
+                    host: c.name,
+                    online: c.online,
+                    last_seen: c.last_seen,
+                    health: c.now,
+                    error: c.error,
+                })
+                .collect())
+        })
+        .await,
+    ))
 }
 
 #[route(GET "/personas/{id}")]
@@ -1961,6 +2021,7 @@ async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
 /// The persona calls (#126), and `remember`'s.
 fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
     b.route(persona_list)
+        .route(machine_list)
         .route(persona_new)
         .route(persona_get)
         .route(persona_put)
@@ -2186,7 +2247,7 @@ async fn profile_mcp(cx: &Cx, Form(f): Form<BTreeMap<String, String>>) -> Result
 #[must_use]
 pub fn router(
     hub: Arc<Hub>,
-    (logins, manager, themes): (Arc<Logins>, Arc<Manager>, Arc<Themes>),
+    (logins, manager, themes, machines): (Arc<Logins>, Arc<Manager>, Arc<Themes>, Arc<Machines>),
     (data, config): (&std::path::Path, Option<&std::path::Path>),
     bind: IpAddr,
     allowed_hosts: &[String],
@@ -2287,6 +2348,7 @@ pub fn router(
     .app_context(logins)
     .app_context(manager)
     .app_context(themes)
+    .app_context(machines)
     .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))
     .app_context(Arc::new(pairing::Pairing::default()))
     .build()
@@ -2351,7 +2413,16 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     )?;
     let router = router(
         Arc::clone(&hub),
-        (logins, Arc::clone(&manager), Arc::new(themes)),
+        (
+            logins,
+            Arc::clone(&manager),
+            Arc::new(themes),
+            Arc::new(Machines::new(
+                config.shed.clone(),
+                config.shed_dir.clone(),
+                cooee_machines::local_name(),
+            )),
+        ),
         (&data, config.dir.as_deref()),
         config.bind,
         &config.allowed_hosts,

@@ -51,6 +51,9 @@ pub struct Thread {
     /// The effort, as `model`.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub effort: String,
+    /// The machine it runs on (#148): its persona's, or the one picked at its start; empty: this host.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub machine: String,
     /// The newest item id the owner has seen.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub read: Option<u64>,
