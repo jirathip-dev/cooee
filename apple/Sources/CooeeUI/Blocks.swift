@@ -74,6 +74,7 @@ internal struct BlockNode: View {
         case "row", "text", "stat", "chips", "button", "web": LeafBlock(block: block)
         case "choice", "secret", "run": AnswerBlock(block: block)
         case "form", "config": FieldsBlock(block: block)
+        case "images": ImagesBlock(block: block)
         default: EmptyView()
         }
     }
