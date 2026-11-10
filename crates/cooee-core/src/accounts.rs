@@ -1,8 +1,8 @@
 //! A provider's accounts: the system default login (`~/.claude`, …) and the ones added in cooee, each a config folder
 //! `<data>/accounts/<provider>/<name>/` that its CLI gets through the provider's variable (`CLAUDE_CONFIG_DIR`, …).
-//! The CLI keeps its own login there or in its keychain; cooee never reads or stores a token. Beside the folders,
-//! `.cooee.json` keeps only when each one's login last succeeded. There is no default account: a new thread takes
-//! the last one used in its folder (#48).
+//! The CLI keeps its own login there or in its keychain; cooee never reads or stores a token. An existing folder is
+//! adopted as a link to it (#183). Beside the folders, `.cooee.json` keeps when each one's login last succeeded and
+//! its last usage reading. There is no default account: a new thread takes the last one used in its folder (#48).
 
 use std::{
     collections::BTreeMap,
@@ -50,11 +50,52 @@ impl Account {
     }
 }
 
-/// `.cooee.json`: the last successful logins, by name (an older one's `default` is ignored).
+/// One usage window of an account: the percent used and when it resets (s since the epoch).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Window {
+    /// Percent used.
+    pub used_pct: u32,
+    /// When it resets.
+    pub resets_at: u64,
+}
+
+/// An account's usage as its provider's usage command read it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Usage {
+    /// The 5 h window, when the reading has one.
+    pub five_hour: Option<Window>,
+    /// The 7 d window, when the reading has one.
+    pub seven_day: Option<Window>,
+    /// When it was read (s since the epoch).
+    pub read_at: u64,
+}
+
+impl Usage {
+    /// The reading as it stands at `now`: a window past its reset time reads as reset, 0 % used.
+    #[must_use]
+    pub fn at(mut self, now: u64) -> Self {
+        for w in [&mut self.five_hour, &mut self.seven_day]
+            .into_iter()
+            .flatten()
+        {
+            if now >= w.resets_at {
+                w.used_pct = 0;
+            }
+        }
+        self
+    }
+}
+
+/// How long a usage reading stands before the usage command runs again (s).
+const FRESH: u64 = 300;
+
+/// `.cooee.json`: the last successful logins and usage readings, by name (an older one's `default` is ignored).
 #[derive(Default, Serialize, Deserialize)]
 struct Meta {
     #[serde(default)]
     signed_in: BTreeMap<String, u64>,
+    #[serde(default)]
+    usage: BTreeMap<String, Usage>,
 }
 
 /// The accounts under `<data>/accounts`.
@@ -63,12 +104,9 @@ pub struct Accounts {
     root: PathBuf,
 }
 
-/// Fit for a folder name: `a-z 0-9 -`, not empty.
+/// Fit for a folder name: `a-z A-Z 0-9 -` (herdsman's are `A`, `B`, …), not empty.
 fn safe(name: &str) -> bool {
-    !name.is_empty()
-        && name
-            .chars()
-            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    !name.is_empty() && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
 }
 
 impl Accounts {
@@ -101,7 +139,7 @@ impl Accounts {
             .into_iter()
             .flatten()
             .flatten()
-            .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
+            .filter(|e| e.path().is_dir())
             .filter_map(|e| e.file_name().into_string().ok())
             .filter(|n| safe(n))
             .collect();
@@ -109,7 +147,11 @@ impl Accounts {
         let names = std::iter::once(String::new()).chain(names);
         names
             .map(|name| Account {
-                dir: (!name.is_empty()).then(|| self.root.join(provider).join(&name)),
+                // An adopted folder by its own path: its CLI keys its keychain login by it.
+                dir: (!name.is_empty()).then(|| {
+                    let at = self.root.join(provider).join(&name);
+                    fs::read_link(&at).unwrap_or(at)
+                }),
                 signed_in_at: meta.signed_in.get(&name).copied(),
                 name,
             })
@@ -130,6 +172,55 @@ impl Accounts {
         let mut meta = self.meta(provider);
         meta.signed_in.insert(name.to_owned(), at);
         self.save(provider, &meta)
+    }
+
+    /// Adopts existing config folder `folder` as account `name` of `provider`, a link to it: no new sign-in. Adopting
+    /// the same folder again is a no-op.
+    ///
+    /// # Errors
+    /// When `name` isn't fit for a folder, `folder` isn't one, or `name` is taken by another.
+    pub fn add(&self, provider: &str, name: &str, folder: &Path) -> io::Result<()> {
+        if !safe(name) {
+            return Err(io::Error::other(format!(
+                "`{name}`: an account name is letters, digits and `-`"
+            )));
+        }
+        let folder = fs::canonicalize(folder)
+            .ok()
+            .filter(|f| f.is_dir())
+            .ok_or_else(|| io::Error::other(format!("{}: no such folder", folder.display())))?;
+        let at = self.root.join(provider).join(name);
+        match fs::read_link(&at) {
+            Ok(old) if old == folder => return Ok(()),
+            _ if at.exists() || at.is_symlink() => {
+                return Err(io::Error::other(format!(
+                    "{provider} has an account {name}"
+                )));
+            }
+            _ => {}
+        }
+        fs::create_dir_all(self.root.join(provider))?;
+        std::os::unix::fs::symlink(folder, at)
+    }
+
+    /// Account `name` of provider `p`'s usage at `now` (s), its folder `dir`: its last reading while fresh, else a new
+    /// one from the usage command (kept), else the last one; each window past its reset reads as reset.
+    #[must_use]
+    pub fn usage(&self, p: &Provider, name: &str, dir: Option<&Path>, now: u64) -> Option<Usage> {
+        let mut meta = self.meta(&p.name);
+        let last = meta.usage.get(name).copied();
+        let reading = match last {
+            Some(u) if now < u.read_at + FRESH => last,
+            _ => match p.usage(dir, now) {
+                Some(u) => {
+                    meta.usage.insert(name.to_owned(), u);
+                    let _ = self.save(&p.name, &meta);
+                    Some(u)
+                }
+                None => last,
+            },
+        };
+        reading.map(|u| u.at(now))
     }
 
     /// A new account's name (`account-2`, …) and its folder while the login runs, `.new-<name>` (hidden from
@@ -164,13 +255,15 @@ impl Accounts {
         let _ = fs::remove_dir_all(self.root.join(provider).join(format!(".new-{name}")));
     }
 
-    /// Removes added account `name`'s folder (the system default's is never touched), and its notes.
+    /// Removes added account `name`'s folder (an adopted one's link only; the system default's is never touched), and
+    /// its notes.
     ///
     /// # Errors
     /// When the folder or `.cooee.json` can't be changed.
     pub fn remove(&self, provider: &str, name: &str) -> io::Result<()> {
         let mut meta = self.meta(provider);
         meta.signed_in.remove(name);
+        meta.usage.remove(name);
         if !name.is_empty() && safe(name) {
             fs::remove_dir_all(self.root.join(provider).join(name))?;
         }

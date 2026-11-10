@@ -222,11 +222,17 @@ impl Logins {
                 let (logins, p) = (Arc::clone(self), p.clone());
                 thread::spawn(move || {
                     // A panicking check still settles, so the account is checked again.
-                    let status =
-                        std::panic::catch_unwind(AssertUnwindSafe(|| p.check(a.dir.as_deref())))
-                            .unwrap_or_else(|_| {
-                                Status::unknown("can't tell: the status check failed")
-                            });
+                    // A signed-in account's usage reading comes with its status (#183).
+                    let check = || {
+                        let mut s = p.check(a.dir.as_deref());
+                        if s.signed_in {
+                            let at = now() / 1000;
+                            s.usage = logins.accounts.usage(&p, &a.name, a.dir.as_deref(), at);
+                        }
+                        s
+                    };
+                    let status = std::panic::catch_unwind(AssertUnwindSafe(check))
+                        .unwrap_or_else(|_| Status::unknown("can't tell: the status check failed"));
                     let mut checks = lock(&logins.checks);
                     if let Some(c) = checks.get_mut(&key) {
                         c.busy = false;

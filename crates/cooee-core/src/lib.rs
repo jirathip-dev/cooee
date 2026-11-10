@@ -16,7 +16,7 @@ pub mod profiles;
 mod shed;
 mod store;
 
-pub use accounts::{Account, Accounts, Sheet};
+pub use accounts::{Account, Accounts, Sheet, Usage, Window};
 pub use chat::{Body, Card, Change, Chat, Item, Summary, Turn};
 pub use config::{Apns, ApnsEnv, Config, ConfigError, Perf, Plugin, ROOTS_FIX, save_roots};
 pub use devices::{

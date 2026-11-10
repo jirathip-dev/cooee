@@ -1,5 +1,6 @@
-//! `cooee accounts ls [--json]` and `cooee accounts env <provider> <name> [--require-signed-in]`: the credential
-//! helper herdsman calls for a lane's login environment (docs/accounts.md). A folder account's environment is its
+//! `cooee accounts ls [--json]`, `cooee accounts env <provider> <name> [--require-signed-in]`: the credential
+//! helper herdsman calls for a lane's login environment (docs/accounts.md), and `cooee accounts add <provider> <name>
+//! --folder <path>` / `rm <provider> <name>`, which adopt an existing config folder and drop one (#183). A folder account's environment is its
 //! provider's variable and folder; its token stays the CLI's. A Claude account may instead be a hand-placed token
 //! file, `<data>/accounts/claude/<name>.token` (0600 or tighter), whose value goes in `CLAUDE_CODE_OAUTH_TOKEN`.
 
@@ -8,7 +9,7 @@ use std::{
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::ExitCode,
-    time::SystemTime,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use cooee_core::{Accounts, Config, Provider};
@@ -115,9 +116,29 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
         return refuse(1, "no data folder: set `data` or HOME");
     };
     let all = entries(config, &data);
+    let accounts = Accounts::new(&data);
+    let provider = |name: &str| config.providers.iter().find(|p| p.name == name);
     match args {
+        ["add", p, name, "--folder", folder] => {
+            if provider(p).is_none_or(|p| p.home.is_empty()) {
+                return refuse(1, &format!("no provider `{p}` with account folders"));
+            }
+            match accounts.add(p, name, Path::new(folder)) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => refuse(1, &e.to_string()),
+            }
+        }
+        ["rm", p, name] => {
+            if name.is_empty() || accounts.get(p, name).is_none() {
+                return refuse(1, &format!("no account `{name}` of provider `{p}`"));
+            }
+            match accounts.remove(p, name) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => refuse(1, &e.to_string()),
+            }
+        }
         ["ls"] => {
-            let rows: Vec<Value> = all.iter().map(row).collect();
+            let rows: Vec<Value> = all.iter().map(|e| row(e, &accounts)).collect();
             if json {
                 println!("{}", Value::Array(rows));
             } else {
@@ -178,14 +199,28 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
         }
         _ => refuse(
             2,
-            "usage: cooee accounts <ls [--json] | env <provider> <name> [--require-signed-in]>",
+            "usage: cooee accounts <ls [--json] | env <provider> <name> [--require-signed-in] \
+             | add <provider> <name> --folder <path> | rm <provider> <name>>",
         ),
     }
 }
 
-/// An account as `accounts ls --json` lists it (never its token).
-fn row(e: &Entry) -> Value {
+/// An account as `accounts ls --json` lists it (never its token), with a signed-in folder account's usage and the
+/// reading's age in seconds.
+fn row(e: &Entry, accounts: &Accounts) -> Value {
     let (signed_in, error) = e.state();
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
+    let usage = match &e.login {
+        Login::Folder(dir) if signed_in => accounts.usage(e.provider, &e.name, dir.as_deref(), now),
+        _ => None,
+    };
+    let usage = usage.map(|u| {
+        let mut v = json!(u);
+        v["age_s"] = json!(now.saturating_sub(u.read_at));
+        v
+    });
     let (folder, token) = match &e.login {
         Login::Folder(dir) => (dir.as_deref(), None),
         Login::Token(path) => (None, Some(path)),
@@ -198,5 +233,6 @@ fn row(e: &Entry) -> Value {
         "token_file": token,
         "token_age_days": token.and_then(|p| token_age(p).ok()),
         "error": error,
+        "usage": usage,
     })
 }
