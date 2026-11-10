@@ -1,0 +1,6 @@
+Decided: merged origin/staging; a thread keeps both staging's machine and this branch's room, room members run on their persona's machine
+Because: "each member's session runs on its own machine"
+Decided: the room routes moved into their own builder so the merged router stays within clippy's line limit
+Because: crates/cooee-server/src/lib.rs:945
+Rejected: none
+Owner: rooms now sit on top of the latest staging, machines included
