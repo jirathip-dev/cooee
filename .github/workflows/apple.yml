@@ -139,7 +139,7 @@ jobs:
           mac=$!
           devices="$HOME/.local/share/cooee/cooee/devices.json"
           waited=0
-          until grep -Eq '"code": ?\["' "$devices" 2>/dev/null; do
+          until grep -q '"code": \[' "$devices" 2>/dev/null; do
             if ! kill -0 "$mac" 2>/dev/null || [ "$waited" -ge 1200 ]; then
               tail -120 "$RUNNER_TEMP/mac-test.log"
               exit 1
