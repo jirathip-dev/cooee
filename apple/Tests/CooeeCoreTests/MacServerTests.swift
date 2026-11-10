@@ -24,16 +24,16 @@ internal struct MacServerTests {
 
     @Test internal func theTailnetNameComesFromTailscaleStatus() {
         #expect(
-            Network.tailnet(status: Data(#"{"Self":{"DNSName":"mini.tail1.ts.net."}}"#.utf8)) == "mini.tail1.ts.net")
+            Network.tailnet(status: Data(#"{"Self":{"DNSName":"mini.example.com."}}"#.utf8)) == "mini.example.com")
         #expect(Network.tailnet(status: Data(#"{"Self":{"DNSName":""}}"#.utf8)) == nil)
         #expect(Network.tailnet(status: Data("tailscale: command not found".utf8)) == nil)
     }
 
     @Test internal func cooeePairsOutputGivesTheLinkCodeAndLifetime() throws {
         let output =
-            "Scan it\n█▀█\ncode  123 456  (one use, 10 minutes)\nlink  https://mini.tail1.ts.net:4747/pair?code=123456\n"
+            "Scan it\n█▀█\ncode  123 456  (one use, 10 minutes)\nlink  https://mini.example.com:4747/pair?code=123456\n"
         let code = try #require(PairCode(output: output))
-        #expect(code.code == "123456" && code.minutes == 10 && code.host == "mini.tail1.ts.net")
+        #expect(code.code == "123456" && code.minutes == 10 && code.host == "mini.example.com")
         #expect(code.local.absoluteString == "http://127.0.0.1:4747")
         #expect(PairCode(output: "link  http://127.0.0.1:4747/pair\n") == nil)
         #expect(PairCode(output: "the code ran out") == nil)

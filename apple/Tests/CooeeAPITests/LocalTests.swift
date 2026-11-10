@@ -63,14 +63,14 @@
             try text.write(to: config.file, atomically: true, encoding: .utf8)
             #expect(config.port == 4800 && config.value("roots") == nil)
             try config.set("roots", ["~/Projects"])
-            try config.set("shed", "/Applications/Cooee.app/Contents/MacOS/shed")
-            try config.set("roots", ["~/Projects", "/Users/guy/src"])
-            #expect(config.strings("roots") == ["~/Projects", "/Users/guy/src"])
+            try config.set("shed", "/Applications/Cooee.app/Contents/Helpers/shed")
+            try config.set("roots", ["~/Projects", "/home/me/src"])
+            #expect(config.strings("roots") == ["~/Projects", "/home/me/src"])
             let written = try String(contentsOf: config.file, encoding: .utf8)
             #expect(
                 written == """
-                    shed = "/Applications/Cooee.app/Contents/MacOS/shed"
-                    roots = ["~/Projects","/Users/guy/src"]
+                    shed = "/Applications/Cooee.app/Contents/Helpers/shed"
+                    roots = ["~/Projects","/home/me/src"]
                     port = 4800
 
                     [[plugins]]

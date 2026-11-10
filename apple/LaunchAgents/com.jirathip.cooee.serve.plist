@@ -6,7 +6,7 @@
 	<key>Label</key>
 	<string>com.jirathip.cooee.serve</string>
 	<key>BundleProgram</key>
-	<string>Contents/MacOS/cooee</string>
+	<string>Contents/Helpers/cooee</string>
 	<key>ProgramArguments</key>
 	<array>
 		<string>cooee</string>

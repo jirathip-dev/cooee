@@ -149,14 +149,14 @@ internal struct MacSetupFeatureTests {
 
     @Test internal func foldersSignInsAndTheNetworkCheckRunOnTheMac() async throws {
         let store = try store(.folders)
-        await store.send(.addFolder("/Users/guy/src"))
+        await store.send(.addFolder("/home/me/src"))
         await store.receive(\.foldersLoaded) { $0.folders = ["~/Projects"] }
         await store.send(.signIn("codex"))
         await store.send(.checkNetwork)
         await store.receive(\.networkChecked) { $0.network = self.home }
         await store.send(.connectElsewhere)
         await store.receive(\.delegate.clientOnly)
-        #expect(calls.all == ["add /Users/guy/src", "sign in codex"])
+        #expect(calls.all == ["add /home/me/src", "sign in codex"])
     }
 
     @Test internal func aFailureShowsAndTryingAgainClearsIt() async throws {

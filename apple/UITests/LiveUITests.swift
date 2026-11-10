@@ -27,8 +27,9 @@
 
         @MainActor
         internal func testAsksAndTheMacApprovesIt() throws {
-            let address = ProcessInfo.processInfo.environment["COOEE_ASK_ADDRESS"]
-            let server = try XCTUnwrap(address, "no COOEE_ASK_ADDRESS")
+            guard let server = ProcessInfo.processInfo.environment["COOEE_ASK_ADDRESS"] else {
+                throw XCTSkip("CI's mac-setup job sets COOEE_ASK_ADDRESS, once the Mac shows its QR")
+            }
             let app = XCUIApplication()
             app.launch()
             app.buttons["Enter address"].firstMatch.tap()

@@ -24,7 +24,7 @@
     }
 
     internal struct MacLive: Sendable {
-        private let app = Bundle.main.bundleURL.appending(path: "Contents/MacOS")
+        private let app = Bundle.main.bundleURL.appending(path: "Contents/Helpers")
         private let config = LocalConfig.standard
 
         private var server: LocalServer { LocalServer(cooee: app.appending(path: "cooee")) }

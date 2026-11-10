@@ -191,7 +191,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "[ \"$PLATFORM_NAME\" = macosx ] || exit 0\ncontents=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\nmkdir -p \"$contents/Library/LaunchAgents\"\ncp \"$SRCROOT/LaunchAgents/\"*.plist \"$contents/Library/LaunchAgents/\"\nif [ -z \"${COOEE_BIN_DIR:-}\" ]; then\n  echo \"COOEE_BIN_DIR is not set: this Mac app has no cooee or shed inside (scripts/mac-app.sh builds them)\"\n  exit 0\nfi\nfor bin in cooee shed; do\n  cp \"$COOEE_BIN_DIR/$bin\" \"$contents/MacOS/$bin\"\n  codesign --force --options runtime ${OTHER_CODE_SIGN_FLAGS:-} --sign \"${EXPANDED_CODE_SIGN_IDENTITY:--}\" \"$contents/MacOS/$bin\"\ndone\n";
+			shellScript = "[ \"$PLATFORM_NAME\" = macosx ] || exit 0\ncontents=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\nmkdir -p \"$contents/Library/LaunchAgents\" \"$contents/Helpers\"\ncp \"$SRCROOT/LaunchAgents/\"*.plist \"$contents/Library/LaunchAgents/\"\nif [ -z \"${COOEE_BIN_DIR:-}\" ]; then\n  echo \"COOEE_BIN_DIR is not set: this Mac app has no cooee or shed inside (scripts/mac-app.sh builds them)\"\n  exit 0\nfi\nfor bin in cooee shed; do\n  cp \"$COOEE_BIN_DIR/$bin\" \"$contents/Helpers/$bin\"\n  codesign --force --options runtime ${OTHER_CODE_SIGN_FLAGS:-} --sign \"${EXPANDED_CODE_SIGN_IDENTITY:--}\" \"$contents/Helpers/$bin\"\ndone\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

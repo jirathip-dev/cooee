@@ -6,7 +6,7 @@
 	<key>Label</key>
 	<string>com.jirathip.cooee.shed</string>
 	<key>BundleProgram</key>
-	<string>Contents/MacOS/shed</string>
+	<string>Contents/Helpers/shed</string>
 	<key>ProgramArguments</key>
 	<array>
 		<string>shed</string>

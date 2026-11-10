@@ -1,6 +1,5 @@
 import CooeeCore
 import CooeeFeatures
-import SwiftUI
 
 public enum Fixtures {
     public static let personas: [Persona] = [
