@@ -137,14 +137,9 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     let (status, edited) = s.call("PUT", "/personas/chief-cook", Some(&edit));
     assert_eq!(status, 200, "{edited}");
     let read = s.cooee.json("/personas/chief-cook");
-    assert_eq!(
-        (
-            read["name"].as_str(),
-            read["instructions"].as_str(),
-            read["pinned"].as_bool()
-        ),
-        (Some("Chief"), Some("Answer in two lines."), Some(true))
-    );
+    assert_eq!(read["name"], "Chief");
+    assert_eq!(read["instructions"], "Answer in two lines.");
+    assert_eq!(read["pinned"], true);
     assert!(fs::read_to_string(&file).unwrap().contains("pinned = true"));
     assert_eq!(s.call("PUT", "/personas/nobody", Some(&edit)).0, 400);
 
