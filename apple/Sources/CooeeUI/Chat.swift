@@ -337,9 +337,18 @@ struct Composer: View {
     let text = State(initialValue: "")
     let files = State(initialValue: [(name: String, data: Data)]())
     let picking = State(initialValue: false)
+    /// A send waiting for the field to let go of the keyboard.
+    let sending = State(initialValue: false)
+    @FocusState var typing: Bool
     var live: Bool { actions.send != nil }
     var chips: [String] { live ? files.wrappedValue.map(\.name) : attachments }
+    /// The keyboard commits what it still holds (an autocorrection) as the field lets go; clearing before that left
+    /// part of a sent message in the field. So a send from the keyboard waits for the field to let go.
     func send() {
+        if typing { sending.wrappedValue = true; typing = false } else { post() }
+    }
+    func post() {
+        sending.wrappedValue = false
         let t = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !t.isEmpty || !files.wrappedValue.isEmpty else { return }
         actions.send?(t, files.wrappedValue.map { Attachment(name: $0.name, bytes: $0.data) })
@@ -383,7 +392,8 @@ struct Composer: View {
                     let hint = queued.isEmpty ? "Message \(persona.name)" : "Queue a message"
                     if live {
                         TextField(hint, text: text.projectedValue, axis: .vertical).ui(16, .regular, look).lineLimit(1...5)
-                            .textFieldStyle(.plain).onSubmit(send)
+                            .textFieldStyle(.plain).onSubmit(send).focused($typing)
+                            .onChange(of: typing) { _, now in if !now && sending.wrappedValue { post() } }
                     } else {
                         Text(draft.isEmpty ? hint : draft).ui(16, .regular, look).foregroundStyle(draft.isEmpty ? p.mute : p.fg)
                     }

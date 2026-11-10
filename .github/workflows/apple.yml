@@ -50,17 +50,28 @@ jobs:
       - name: the client against it (swift test)
         working-directory: apple
         run: COOEE_PAIR_LINK="$(cat "$RUNNER_TEMP/pair")" swift test --filter LiveTests
+      # Once per appearance, set with simctl (the test's own XCUIDevice.appearance left this simulator light); each
+      # run pairs afresh, so the keychain is emptied first.
       - name: the app in the simulator
         working-directory: apple
         run: |
-          link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
-          TEST_RUNNER_COOEE_PAIR_LINK="$link" xcodebuild -project Cooee.xcodeproj -scheme Cooee \
-            -destination 'platform=iOS Simulator,name=iPhone 17' -resultBundlePath "$RUNNER_TEMP/e2e.xcresult" test
+          sim=$(xcrun simctl create cooee-e2e "iPhone 17")
+          xcrun simctl bootstatus "$sim" -b
+          for look in dark light; do
+            xcrun simctl ui "$sim" appearance "$look"
+            xcrun simctl keychain "$sim" reset
+            link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
+            TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" xcodebuild -project Cooee.xcodeproj \
+              -scheme Cooee -destination "id=$sim" -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" test
+          done
       - name: screenshots
         if: always()
         run: |
           mkdir -p simulator-shots
-          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/e2e.xcresult" --output-path simulator-shots || true
+          for look in dark light; do
+            xcrun xcresulttool export attachments --path "$RUNNER_TEMP/e2e-$look.xcresult" \
+              --output-path "simulator-shots/$look" || true
+          done
           cp "$RUNNER_TEMP/serve.log" simulator-shots/ || true
           ls simulator-shots
       - uses: actions/upload-artifact@v4

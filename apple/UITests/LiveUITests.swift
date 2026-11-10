@@ -1,9 +1,10 @@
 import XCTest
 
 /// #143: the app in the simulator against a real `cooee serve` (apple/e2e/serve.sh): it pairs by the link typed as the
-/// address, opens Home, starts a chat with Coder and streams its reply. Each screen is kept, dark and light, as the
-/// result's attachments (`pair-paired-*`, `chat-streaming-*`, `home-*`). `COOEE_PAIR_LINK` reaches the runner as
-/// `TEST_RUNNER_COOEE_PAIR_LINK`; without it the test is skipped.
+/// address, opens Home, starts a chat with Coder and streams its reply. Each screen is kept as the result's attachments
+/// (`pair-paired-*`, `chat-streaming-*`, `home-*`) in the simulator's appearance, which CI sets with `simctl ui` and
+/// names in `COOEE_LOOK` (dark or light): setting it from the test left the CI simulator light. `COOEE_PAIR_LINK` and
+/// `COOEE_LOOK` reach the runner as `TEST_RUNNER_…`.
 final class LiveUITests: XCTestCase {
     @MainActor func testPairsStreamsAndShowsHome() throws {
         let link = try XCTUnwrap(ProcessInfo.processInfo.environment["COOEE_PAIR_LINK"], "no COOEE_PAIR_LINK")
@@ -38,8 +39,12 @@ final class LiveUITests: XCTestCase {
         box.typeText("Then open the PR")
         app.buttons["Send"].firstMatch.tap()
         XCTAssert(labelled(app, "Then open the PR").waitForExistence(timeout: 10))
-        XCTAssert(field(app, "Queue a message").exists)
-        app.scrollViews.firstMatch.swipeDown()  // the keyboard away
+        // A send lets go of the keyboard and leaves the field empty, not holding part of the sent text.
+        let queue = field(app, "Queue a message")
+        XCTAssert(queue.waitForExistence(timeout: 10))
+        XCTAssert(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        let left = queue.value as? String ?? ""
+        XCTAssert(left.isEmpty || left == "Queue a message", "the field holds \(left)")
         keep("chat-streaming")
 
         app.buttons["Back"].firstMatch.tap()
@@ -60,15 +65,11 @@ final class LiveUITests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
 
-    /// The screen now, dark then light.
+    /// The screen now, named for the simulator's appearance.
     @MainActor func keep(_ name: String) {
-        for (mode, look) in [("dark", XCUIDevice.Appearance.dark), ("light", .light)] {
-            XCUIDevice.shared.appearance = look
-            sleep(1)
-            let a = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-            a.name = "\(name)-\(mode)"
-            a.lifetime = .keepAlways
-            add(a)
-        }
+        let a = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        a.name = "\(name)-\(ProcessInfo.processInfo.environment["COOEE_LOOK"] ?? "look")"
+        a.lifetime = .keepAlways
+        add(a)
     }
 }
