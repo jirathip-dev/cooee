@@ -36,8 +36,10 @@ internal struct BlockRenderTests {
     }
 
     @Test internal func theQueueDrawsItsStreamsOps() throws {
-        var queue = LiveScreen(try Self.fixture("queue.json"))
+        let screen = try Self.fixture("queue.json")
+        var queue = LiveScreen(screen)
         for event in try Self.fixture("queue-stream.json").items { queue.apply(event: event) }
-        #expect(Self.height(queue.root) > 200 && Self.height(queue.root) < Self.height(try Self.fixture("queue.json")))
+        let patched = Self.height(queue.root)
+        #expect(patched > 200 && patched < Self.height(screen))
     }
 }
