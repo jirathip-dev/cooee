@@ -1,0 +1,11 @@
+Decided: a member session's turn end pushes nothing; its asks, fails and stalls push under the room as Room · Member
+Because: "push only when a member addresses the owner, asks or fails"
+Decided: a reply addresses the owner when it mentions @you or @owner, by the same mention rules as members
+Because: docs/design/rooms/README.md:72
+Rejected: pushing every member reply into the room — the design keeps replies to each other quiet, in the unread count
+Decided: approval and choice cards in a member's session carry the member as speaker, set once in Live::publish
+Because: "approval and choice cards name the member"
+Decided: a room's row shows a member's open ask and counts it unread, collected without nesting room and member locks
+Because: "a room's unread state"
+Check: lock order is member then room only (routed); nothing holds a room lock while locking a member
+Owner: Room pushes now come only when a member talks to you, asks, or fails, and each names the member.
