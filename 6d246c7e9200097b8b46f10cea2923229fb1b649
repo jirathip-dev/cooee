@@ -1,0 +1,5 @@
+Decided: merged origin/staging to take #204's apple_cap 7500; no app code changed.
+Because: ci/cap.toml:7
+Rejected: trimming 537 Swift lines — drops the persona sheet or avatar menu the issue requires
+Check: msrv's `just cap` is green (apple 5537 / 7500) and the apple e2e job still attaches persona-* and avatar-menu-* screenshots.
+Owner: The only red check was the Swift line limit; the owner's raise has landed, so this round just picks it up.
