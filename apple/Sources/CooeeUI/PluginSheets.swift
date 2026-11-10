@@ -100,7 +100,9 @@ internal struct AttachSheet: View {
         .ui(15, .regular, look).background(palette.background).foregroundStyle(palette.foreground)
     }
 
-    private func list(_ header: String, _ lines: [String], red: (String) -> Bool = { _ in false }) -> some View {
+    private func list(_ header: String, _ lines: [String], red: @escaping (String) -> Bool = { _ in false })
+        -> some View
+    {
         VStack(alignment: .leading, spacing: 6) {
             Text(look.mono ? "## \(header)" : header.uppercased()).ui(12, .semibold, look)
                 .foregroundStyle(look.palette.mute)
