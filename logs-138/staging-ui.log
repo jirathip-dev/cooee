@@ -1,0 +1,1946 @@
+﻿2026-11-10T15:18:06.8583638Z Current runner version: '2.338.2'
+2026-11-10T15:18:06.8619297Z ##[group]Runner Image Provisioner
+2026-11-10T15:18:06.8620676Z Hosted Compute Agent
+2026-11-10T15:18:06.8621822Z Version: 20261028.624
+2026-11-10T15:18:06.8622998Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+2026-11-10T15:18:06.8624595Z Build Date: 2026-10-28T21:51:42Z
+2026-11-10T15:18:06.8626031Z Worker ID: {e98bf986-e2da-4ef5-85a8-22b4399c1f01}
+2026-11-10T15:18:06.8627391Z Region: eastus2
+2026-11-10T15:18:06.8628611Z Cloud: Azure
+2026-11-10T15:18:06.8629666Z ##[endgroup]
+2026-11-10T15:18:06.8631880Z ##[group]Operating System
+2026-11-10T15:18:06.8633616Z Ubuntu
+2026-11-10T15:18:06.8634909Z 24.04.5
+2026-11-10T15:18:06.8635840Z LTS
+2026-11-10T15:18:06.8636921Z ##[endgroup]
+2026-11-10T15:18:06.8637899Z ##[group]Runner Image
+2026-11-10T15:18:06.8639028Z Image: ubuntu-24.04
+2026-11-10T15:18:06.8640115Z Version: 20261101.360.1
+2026-11-10T15:18:06.8642354Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-10T15:18:06.8645427Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+2026-11-10T15:18:06.8647170Z ##[endgroup]
+2026-11-10T15:18:06.8649341Z ##[group]GITHUB_TOKEN Permissions
+2026-11-10T15:18:06.8652306Z Contents: read
+2026-11-10T15:18:06.8653391Z Metadata: read
+2026-11-10T15:18:06.8654668Z Packages: read
+2026-11-10T15:18:06.8655907Z ##[endgroup]
+2026-11-10T15:18:06.8658837Z Secret source: Actions
+2026-11-10T15:18:06.8660613Z Cache mode: write
+2026-11-10T15:18:06.8662358Z Prepare workflow directory
+2026-11-10T15:18:06.9278227Z Prepare all required actions
+2026-11-10T15:18:06.9329278Z Getting action download info
+2026-11-10T15:18:07.1622373Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-11-10T15:18:07.3279316Z Download action repository 'dtolnay/rust-toolchain@1.99.1' (SHA:d124f86f28ff42855784ff3319f48ac182c248f8)
+2026-11-10T15:18:07.4258650Z Download action repository 'Swatinem/rust-cache@v2' (SHA:d1527c8f67ef9af357290475d4af4b0fab8f12e0)
+2026-11-10T15:18:07.6173667Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-11-10T15:18:07.8902348Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-11-10T15:18:08.2831145Z Complete job name: ui
+2026-11-10T15:18:08.3795577Z ##[group]Run actions/checkout@v4
+2026-11-10T15:18:08.3796783Z with:
+2026-11-10T15:18:08.3797533Z   repository: jirathip-dev/cooee
+2026-11-10T15:18:08.3801829Z   token: ***
+2026-11-10T15:18:08.3802554Z   ssh-strict: true
+2026-11-10T15:18:08.3803280Z   ssh-user: git
+2026-11-10T15:18:08.3804268Z   persist-credentials: true
+2026-11-10T15:18:08.3805109Z   clean: true
+2026-11-10T15:18:08.3805840Z   sparse-checkout-cone-mode: true
+2026-11-10T15:18:08.3806647Z   fetch-depth: 1
+2026-11-10T15:18:08.3807353Z   fetch-tags: false
+2026-11-10T15:18:08.3808075Z   show-progress: true
+2026-11-10T15:18:08.3808820Z   lfs: false
+2026-11-10T15:18:08.3809548Z   submodules: false
+2026-11-10T15:18:08.3810285Z   set-safe-directory: true
+2026-11-10T15:18:08.3811073Z   allow-unsafe-pr-checkout: false
+2026-11-10T15:18:08.3812135Z env:
+2026-11-10T15:18:08.3812846Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:08.3813620Z ##[endgroup]
+2026-11-10T15:18:08.9822552Z Syncing repository: jirathip-dev/cooee
+2026-11-10T15:18:08.9825733Z ##[group]Getting Git version info
+2026-11-10T15:18:08.9826575Z Working directory is '/home/runner/work/cooee/cooee'
+2026-11-10T15:18:08.9828250Z [command]/usr/bin/git version
+2026-11-10T15:18:08.9907279Z git version 2.56.0
+2026-11-10T15:18:08.9933099Z ##[endgroup]
+2026-11-10T15:18:08.9949852Z Temporarily overriding HOME='/home/runner/work/_temp/1f3ea9fa-54bd-401b-8736-998b14774369' before making global git config changes
+2026-11-10T15:18:08.9953713Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-10T15:18:08.9956997Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+2026-11-10T15:18:09.0187129Z Deleting the contents of '/home/runner/work/cooee/cooee'
+2026-11-10T15:18:09.0199534Z ##[group]Initializing the repository
+2026-11-10T15:18:09.0204641Z [command]/usr/bin/git init /home/runner/work/cooee/cooee
+2026-11-10T15:18:09.0320435Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-10T15:18:09.0322561Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-10T15:18:09.0324770Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-10T15:18:09.0326137Z hint: call:
+2026-11-10T15:18:09.0326664Z hint:
+2026-11-10T15:18:09.0327406Z hint: 	git config --global init.defaultBranch <name>
+2026-11-10T15:18:09.0328418Z hint:
+2026-11-10T15:18:09.0329358Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-10T15:18:09.0331241Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-10T15:18:09.0332588Z hint:
+2026-11-10T15:18:09.0333151Z hint: 	git branch -m <name>
+2026-11-10T15:18:09.0333831Z hint:
+2026-11-10T15:18:09.0335214Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-10T15:18:09.0349300Z Initialized empty Git repository in /home/runner/work/cooee/cooee/.git/
+2026-11-10T15:18:09.0362995Z [command]/usr/bin/git remote add origin https://github.com/jirathip-dev/cooee
+2026-11-10T15:18:09.0649757Z ##[endgroup]
+2026-11-10T15:18:09.0651526Z ##[group]Disabling automatic garbage collection
+2026-11-10T15:18:09.0653317Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-10T15:18:09.0701460Z ##[endgroup]
+2026-11-10T15:18:09.0702453Z ##[group]Setting up auth
+2026-11-10T15:18:09.0711849Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-10T15:18:09.0766987Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-10T15:18:09.1233443Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-10T15:18:09.1278225Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-10T15:18:09.1524412Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-10T15:18:09.1571801Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-10T15:18:09.1813603Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-10T15:18:09.1861824Z ##[endgroup]
+2026-11-10T15:18:09.1862854Z ##[group]Fetching the repository
+2026-11-10T15:18:09.1876085Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +54e8946e73c6085aaf2e4f2d0f1e244c9e886938:refs/remotes/origin/staging
+2026-11-10T15:18:10.2644131Z From https://github.com/jirathip-dev/cooee
+2026-11-10T15:18:10.2645877Z  * [new ref]         54e8946e73c6085aaf2e4f2d0f1e244c9e886938 -> origin/staging
+2026-11-10T15:18:10.2649541Z ##[endgroup]
+2026-11-10T15:18:10.2650521Z ##[group]Determining the checkout info
+2026-11-10T15:18:10.2653161Z ##[endgroup]
+2026-11-10T15:18:10.2660166Z [command]/usr/bin/git sparse-checkout disable
+2026-11-10T15:18:10.2726597Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-10T15:18:10.2777653Z ##[group]Checking out the ref
+2026-11-10T15:18:10.2783851Z [command]/usr/bin/git checkout --progress --force -B staging refs/remotes/origin/staging
+2026-11-10T15:18:10.5659787Z Switched to a new branch 'staging'
+2026-11-10T15:18:10.5666463Z branch 'staging' set up to track 'origin/staging'.
+2026-11-10T15:18:10.5683505Z ##[endgroup]
+2026-11-10T15:18:10.5745748Z [command]/usr/bin/git log -1 --format=%H
+2026-11-10T15:18:10.5781789Z 54e8946e73c6085aaf2e4f2d0f1e244c9e886938
+2026-11-10T15:18:10.6150847Z ##[group]Run dtolnay/rust-toolchain@1.99.1
+2026-11-10T15:18:10.6151214Z with:
+2026-11-10T15:18:10.6151404Z env:
+2026-11-10T15:18:10.6151596Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:10.6151830Z ##[endgroup]
+2026-11-10T15:18:10.6214337Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+2026-11-10T15:18:10.6276987Z ##[group]Run if [[ -z $toolchain ]]; then
+2026-11-10T15:18:10.6277379Z if [[ -z $toolchain ]]; then
+2026-11-10T15:18:10.6277949Z   # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+2026-11-10T15:18:10.6278523Z   echo "'toolchain' is a required input" >&2
+2026-11-10T15:18:10.6278827Z   exit 1
+2026-11-10T15:18:10.6279166Z elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+2026-11-10T15:18:10.6279604Z   if [[ Linux == macOS ]]; then
+2026-11-10T15:18:10.6280216Z     echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+2026-11-10T15:18:10.6280771Z   else
+2026-11-10T15:18:10.6281196Z     echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+2026-11-10T15:18:10.6281694Z   fi
+2026-11-10T15:18:10.6282005Z elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+2026-11-10T15:18:10.6282567Z   echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+2026-11-10T15:18:10.6283076Z elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+2026-11-10T15:18:10.6283623Z   echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+2026-11-10T15:18:10.6284358Z else
+2026-11-10T15:18:10.6284564Z   delimiter=EOF
+2026-11-10T15:18:10.6284899Z   while [[ $toolchain == *$delimiter* ]]; do delimiter+=_; done
+2026-11-10T15:18:10.6285422Z   printf 'toolchain<<%s\n%s\n%s\n' "$delimiter" "$toolchain" "$delimiter" >> $GITHUB_OUTPUT
+2026-11-10T15:18:10.6285852Z fi
+2026-11-10T15:18:10.6309865Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-10T15:18:10.6310235Z env:
+2026-11-10T15:18:10.6310454Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:10.6310686Z   toolchain: 1.99.1
+2026-11-10T15:18:10.6310897Z ##[endgroup]
+2026-11-10T15:18:10.6410700Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=19]
+2026-11-10T15:18:10.6415683Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+2026-11-10T15:18:10.6450255Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+2026-11-10T15:18:10.6450751Z echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+2026-11-10T15:18:10.6469932Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-10T15:18:10.6470298Z env:
+2026-11-10T15:18:10.6470500Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:10.6470728Z ##[endgroup]
+2026-11-10T15:18:10.6521491Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=10]
+2026-11-10T15:18:10.6524605Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+2026-11-10T15:18:10.6553643Z ##[group]Run if ! command -v rustup &>/dev/null; then
+2026-11-10T15:18:10.6554398Z if ! command -v rustup &>/dev/null; then
+2026-11-10T15:18:10.6555251Z   curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+2026-11-10T15:18:10.6556019Z   echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+2026-11-10T15:18:10.6556309Z fi
+2026-11-10T15:18:10.6575149Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-10T15:18:10.6575672Z env:
+2026-11-10T15:18:10.6576088Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:10.6576354Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:10.6576603Z ##[endgroup]
+2026-11-10T15:18:10.6623572Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=9]
+2026-11-10T15:18:10.6626328Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+2026-11-10T15:18:10.6632458Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-11-10T15:18:10.6646974Z ##[start-action display=rustup toolchain install 1.99.1;id=__dtolnay_rust-toolchain.__run_4]
+2026-11-10T15:18:10.6667376Z ##[group]Run set -f  # split targets and components on commas and whitespace, without glob expansion
+2026-11-10T15:18:10.6668057Z set -f  # split targets and components on commas and whitespace, without glob expansion
+2026-11-10T15:18:10.6668506Z flags=()
+2026-11-10T15:18:10.6668802Z for t in ${targets//,/ }; do flags+=(--target "$t"); done
+2026-11-10T15:18:10.6669228Z for c in ${components//,/ }; do flags+=(--component "$c"); done
+2026-11-10T15:18:10.6669727Z if [[ $toolchain == nightly && -n $components ]]; then flags+=(--allow-downgrade); fi
+2026-11-10T15:18:10.6670155Z log=$(mktemp)
+2026-11-10T15:18:10.6670402Z trap 'rm -f "$log"' EXIT
+2026-11-10T15:18:10.6670663Z for attempt in 1 2 3 4 5; do
+2026-11-10T15:18:10.6671247Z   if rustup toolchain install "$toolchain" "${flags[@]}" --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then
+2026-11-10T15:18:10.6671844Z     break
+2026-11-10T15:18:10.6672086Z   else
+2026-11-10T15:18:10.6672282Z     status=$?
+2026-11-10T15:18:10.6672501Z   fi
+2026-11-10T15:18:10.6672794Z   if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \
+2026-11-10T15:18:10.6673360Z       || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then
+2026-11-10T15:18:10.6673838Z     exit "$status"
+2026-11-10T15:18:10.6674449Z   fi
+2026-11-10T15:18:10.6674814Z   echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2
+2026-11-10T15:18:10.6675241Z   sleep 30
+2026-11-10T15:18:10.6675446Z done
+2026-11-10T15:18:10.6693555Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-10T15:18:10.6694184Z env:
+2026-11-10T15:18:10.6694396Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:10.6694652Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:10.6694919Z   toolchain: 1.99.1
+2026-11-10T15:18:10.6695119Z   targets: 
+2026-11-10T15:18:10.6695305Z   components: 
+2026-11-10T15:18:10.6695512Z   RUSTUP_PERMIT_COPY_RENAME: 1
+2026-11-10T15:18:10.6695768Z ##[endgroup]
+2026-11-10T15:18:11.4172902Z info: syncing channel updates for 1.99.1-x86_64-unknown-linux-gnu
+2026-11-10T15:18:11.7771914Z info: latest update on 2026-10-15 for version 1.99.1 (58cf8f9c3 2026-10-13)
+2026-11-10T15:18:11.7821961Z info: downloading 3 components
+2026-11-10T15:18:19.7712564Z 
+2026-11-10T15:18:19.7780620Z   1.99.1-x86_64-unknown-linux-gnu installed - rustc 1.99.1 (58cf8f9c3 2026-10-13)
+2026-11-10T15:18:19.7781165Z 
+2026-11-10T15:18:19.7959779Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=9131]
+2026-11-10T15:18:19.7993719Z ##[start-action display=rustup default 1.99.1;id=__dtolnay_rust-toolchain.__run_5]
+2026-11-10T15:18:19.8012235Z ##[group]Run rustup default "$toolchain" --force-non-host
+2026-11-10T15:18:19.8012636Z rustup default "$toolchain" --force-non-host
+2026-11-10T15:18:19.8032494Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-10T15:18:19.8032832Z env:
+2026-11-10T15:18:19.8033027Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:19.8033276Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:19.8033514Z   toolchain: 1.99.1
+2026-11-10T15:18:19.8033706Z ##[endgroup]
+2026-11-10T15:18:19.8120478Z info: using existing install for 1.99.1-x86_64-unknown-linux-gnu
+2026-11-10T15:18:19.8126704Z info: default toolchain set to 1.99.1-x86_64-unknown-linux-gnu
+2026-11-10T15:18:19.8127199Z 
+2026-11-10T15:18:19.8193370Z   1.99.1-x86_64-unknown-linux-gnu unchanged - rustc 1.99.1 (58cf8f9c3 2026-10-13)
+2026-11-10T15:18:19.8194274Z 
+2026-11-10T15:18:19.8195421Z info: note that the toolchain '1.99.1-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/cooee/cooee/rust-toolchain.toml')
+2026-11-10T15:18:19.8212030Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=21]
+2026-11-10T15:18:19.8215909Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+2026-11-10T15:18:19.8233249Z ##[group]Run DATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+2026-11-10T15:18:19.8234553Z DATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+2026-11-10T15:18:19.8235288Z HASH=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-hash: //p')
+2026-11-10T15:18:19.8235809Z echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+2026-11-10T15:18:19.8255593Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-10T15:18:19.8255938Z env:
+2026-11-10T15:18:19.8256132Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:19.8256378Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:19.8256624Z   toolchain: 1.99.1
+2026-11-10T15:18:19.8256826Z ##[endgroup]
+2026-11-10T15:18:19.8554658Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=33]
+2026-11-10T15:18:19.8557078Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+2026-11-10T15:18:19.8574726Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+2026-11-10T15:18:19.8575132Z if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+2026-11-10T15:18:19.8575468Z   echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+2026-11-10T15:18:19.8575752Z fi
+2026-11-10T15:18:19.8594568Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-10T15:18:19.8594915Z env:
+2026-11-10T15:18:19.8595113Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:19.8595359Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:19.8595608Z ##[endgroup]
+2026-11-10T15:18:19.8639104Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=8]
+2026-11-10T15:18:19.8641157Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+2026-11-10T15:18:19.8657663Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+2026-11-10T15:18:19.8658041Z if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+2026-11-10T15:18:19.8658378Z   echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+2026-11-10T15:18:19.8658674Z fi
+2026-11-10T15:18:19.8676628Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-10T15:18:19.8676965Z env:
+2026-11-10T15:18:19.8677154Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:19.8677395Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:19.8677639Z   CARGO_INCREMENTAL: 0
+2026-11-10T15:18:19.8677845Z ##[endgroup]
+2026-11-10T15:18:19.8719654Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=7]
+2026-11-10T15:18:19.8722625Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+2026-11-10T15:18:19.8740629Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+2026-11-10T15:18:19.8741154Z # implemented in 1.66, stabilized in 1.68, made default in 1.70
+2026-11-10T15:18:19.8741885Z if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then
+2026-11-10T15:18:19.8742817Z   if rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+2026-11-10T15:18:19.8743558Z     touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true
+2026-11-10T15:18:19.8744393Z     echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+2026-11-10T15:18:19.8744928Z   elif rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+2026-11-10T15:18:19.8745531Z     touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true
+2026-11-10T15:18:19.8746059Z     echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+2026-11-10T15:18:19.8746408Z   fi
+2026-11-10T15:18:19.8746598Z fi
+2026-11-10T15:18:19.8764954Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-10T15:18:19.8765288Z env:
+2026-11-10T15:18:19.8765478Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:19.8765713Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:19.8765973Z   CARGO_INCREMENTAL: 0
+2026-11-10T15:18:19.8766191Z   toolchain: 1.99.1
+2026-11-10T15:18:19.8766389Z ##[endgroup]
+2026-11-10T15:18:19.9032839Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=30]
+2026-11-10T15:18:19.9036442Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+2026-11-10T15:18:19.9053886Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+2026-11-10T15:18:19.9054951Z # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+2026-11-10T15:18:19.9055598Z if rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+2026-11-10T15:18:19.9056081Z   echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+2026-11-10T15:18:19.9056393Z fi
+2026-11-10T15:18:19.9074518Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-10T15:18:19.9074876Z env:
+2026-11-10T15:18:19.9075084Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:19.9075349Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:19.9075605Z   CARGO_INCREMENTAL: 0
+2026-11-10T15:18:19.9075817Z   toolchain: 1.99.1
+2026-11-10T15:18:19.9076017Z ##[endgroup]
+2026-11-10T15:18:19.9232619Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=19]
+2026-11-10T15:18:19.9237083Z ##[start-action display=rustc +1.99.1 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+2026-11-10T15:18:19.9253573Z ##[group]Run rustc +"$toolchain" --version --verbose
+2026-11-10T15:18:19.9254209Z rustc +"$toolchain" --version --verbose
+2026-11-10T15:18:19.9272198Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-10T15:18:19.9272534Z env:
+2026-11-10T15:18:19.9272724Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:19.9272967Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:19.9273219Z   CARGO_INCREMENTAL: 0
+2026-11-10T15:18:19.9273429Z   toolchain: 1.99.1
+2026-11-10T15:18:19.9273639Z ##[endgroup]
+2026-11-10T15:18:19.9410347Z rustc 1.99.1 (58cf8f9c3 2026-10-13)
+2026-11-10T15:18:19.9410821Z binary: rustc
+2026-11-10T15:18:19.9411251Z commit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67
+2026-11-10T15:18:19.9411791Z commit-date: 2026-10-13
+2026-11-10T15:18:19.9412195Z host: x86_64-unknown-linux-gnu
+2026-11-10T15:18:19.9412625Z release: 1.99.1
+2026-11-10T15:18:19.9412997Z LLVM version: 23.1.1
+2026-11-10T15:18:19.9427068Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=18]
+2026-11-10T15:18:19.9539156Z ##[group]Run Swatinem/rust-cache@v2
+2026-11-10T15:18:19.9539456Z with:
+2026-11-10T15:18:19.9539656Z   prefix-key: v0-rust
+2026-11-10T15:18:19.9539887Z   add-job-id-key: true
+2026-11-10T15:18:19.9540127Z   add-rust-environment-hash-key: true
+2026-11-10T15:18:19.9540399Z   cache-targets: true
+2026-11-10T15:18:19.9540616Z   cache-all-crates: false
+2026-11-10T15:18:19.9540861Z   cache-workspace-crates: false
+2026-11-10T15:18:19.9541282Z   save-if: true
+2026-11-10T15:18:19.9541484Z   cache-provider: github
+2026-11-10T15:18:19.9541703Z   cache-bin: true
+2026-11-10T15:18:19.9541906Z   lookup-only: false
+2026-11-10T15:18:19.9542109Z   cmd-format: {0}
+2026-11-10T15:18:19.9542295Z env:
+2026-11-10T15:18:19.9542474Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:19.9542722Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:19.9542973Z   CARGO_INCREMENTAL: 0
+2026-11-10T15:18:19.9543181Z ##[endgroup]
+2026-11-10T15:18:22.8012962Z ##[group]Cache Configuration
+2026-11-10T15:18:22.8013427Z Cache Provider:
+2026-11-10T15:18:22.8014084Z     github
+2026-11-10T15:18:22.8014463Z Workspaces:
+2026-11-10T15:18:22.8014807Z     /home/runner/work/cooee/cooee
+2026-11-10T15:18:22.8015237Z Cache Paths:
+2026-11-10T15:18:22.8015576Z     /home/runner/.cargo/bin
+2026-11-10T15:18:22.8015948Z     /home/runner/.cargo/.crates.toml
+2026-11-10T15:18:22.8016354Z     /home/runner/.cargo/.crates2.json
+2026-11-10T15:18:22.8016768Z     /home/runner/.cargo/registry
+2026-11-10T15:18:22.8017203Z     /home/runner/.cargo/git
+2026-11-10T15:18:22.8017595Z     /home/runner/work/cooee/cooee/target
+2026-11-10T15:18:22.8018046Z Restore Key:
+2026-11-10T15:18:22.8018365Z     v0-rust-ui-Linux-x64-01b81e85
+2026-11-10T15:18:22.8018761Z Cache Key:
+2026-11-10T15:18:22.8019101Z     v0-rust-ui-Linux-x64-01b81e85-e53dee1e
+2026-11-10T15:18:22.8019543Z .. Prefix:
+2026-11-10T15:18:22.8019859Z   - v0-rust-ui-Linux-x64
+2026-11-10T15:18:22.8020231Z .. Environment considered:
+2026-11-10T15:18:22.8020603Z   - Rust Versions:
+2026-11-10T15:18:22.8021103Z     - 1.99.1 x86_64-unknown-linux-gnu 58cf8f9c35b355199727627d07ae34a4e2846d67
+2026-11-10T15:18:22.8021723Z   - CARGO_HOME
+2026-11-10T15:18:22.8022080Z   - CARGO_INCREMENTAL
+2026-11-10T15:18:22.8022463Z   - CARGO_TERM_COLOR
+2026-11-10T15:18:22.8022847Z .. Lockfiles considered:
+2026-11-10T15:18:22.8023289Z   - /home/runner/work/cooee/cooee/Cargo.lock
+2026-11-10T15:18:22.8024168Z   - /home/runner/work/cooee/cooee/crates/cooee-core/Cargo.toml
+2026-11-10T15:18:22.8024926Z   - /home/runner/work/cooee/cooee/crates/cooee-machines/Cargo.toml
+2026-11-10T15:18:22.8025655Z   - /home/runner/work/cooee/cooee/crates/cooee-server/Cargo.toml
+2026-11-10T15:18:22.8026376Z   - /home/runner/work/cooee/cooee/crates/cooee-terminal/Cargo.toml
+2026-11-10T15:18:22.8027171Z   - /home/runner/work/cooee/cooee/crates/cooee/Cargo.toml
+2026-11-10T15:18:22.8027796Z   - /home/runner/work/cooee/cooee/rust-toolchain.toml
+2026-11-10T15:18:22.8028386Z   - /home/runner/work/cooee/cooee/web/Cargo.toml
+2026-11-10T15:18:22.8029230Z ##[endgroup]
+2026-11-10T15:18:22.8029441Z 
+2026-11-10T15:18:22.8029588Z ... Restoring cache ...
+2026-11-10T15:18:22.8905349Z Cache hit for: v0-rust-ui-Linux-x64-01b81e85-e53dee1e
+2026-11-10T15:18:23.9270535Z Received 230686720 of 327607226 (70.4%), 218.3 MBs/sec
+2026-11-10T15:18:24.3049702Z Received 327607226 of 327607226 (100.0%), 225.4 MBs/sec
+2026-11-10T15:18:24.3050762Z Cache Size: ~312 MB (327607226 B)
+2026-11-10T15:18:24.3167179Z [command]/usr/bin/tar -xf /home/runner/work/_temp/e5d98304-0030-4068-8d91-8444aaf4fd79/cache.tzst -P -C /home/runner/work/cooee/cooee --use-compress-program unzstd
+2026-11-10T15:18:26.3025902Z Cache restored successfully
+2026-11-10T15:18:26.5757844Z Restored from cache key "v0-rust-ui-Linux-x64-01b81e85-e53dee1e" full match: true.
+2026-11-10T15:18:26.5952651Z ##[group]Run actions/setup-node@v4
+2026-11-10T15:18:26.5953077Z with:
+2026-11-10T15:18:26.5953500Z   node-version: 24
+2026-11-10T15:18:26.5953838Z   always-auth: false
+2026-11-10T15:18:26.5954401Z   check-latest: false
+2026-11-10T15:18:26.5957002Z   token: ***
+2026-11-10T15:18:26.5957306Z env:
+2026-11-10T15:18:26.5957692Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:26.5958041Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:26.5958388Z   CARGO_INCREMENTAL: 0
+2026-11-10T15:18:26.5958806Z   CACHE_ON_FAILURE: false
+2026-11-10T15:18:26.5959163Z ##[endgroup]
+2026-11-10T15:18:26.7631450Z Found in cache @ /opt/hostedtoolcache/node/24.22.2/x64
+2026-11-10T15:18:26.7637042Z (node:2409) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-11-10T15:18:26.7638379Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-10T15:18:26.7639987Z ##[group]Environment details
+2026-11-10T15:18:29.8864553Z node: v24.22.2
+2026-11-10T15:18:29.8865408Z npm: 11.19.1
+2026-11-10T15:18:29.8866102Z yarn: 1.22.22
+2026-11-10T15:18:29.8867659Z ##[endgroup]
+2026-11-10T15:18:29.9016897Z ##[group]Run npm ci
+2026-11-10T15:18:29.9017299Z npm ci
+2026-11-10T15:18:29.9017828Z npx playwright install --with-deps chromium webkit
+2026-11-10T15:18:29.9230609Z shell: /usr/bin/bash -e {0}
+2026-11-10T15:18:29.9230995Z env:
+2026-11-10T15:18:29.9231437Z   CARGO_TERM_COLOR: always
+2026-11-10T15:18:29.9231846Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:18:29.9232239Z   CARGO_INCREMENTAL: 0
+2026-11-10T15:18:29.9232639Z   CACHE_ON_FAILURE: false
+2026-11-10T15:18:29.9233067Z ##[endgroup]
+2026-11-10T15:18:32.1601410Z 
+2026-11-10T15:18:32.1609475Z added 6 packages, and audited 7 packages in 2s
+2026-11-10T15:18:32.1610390Z 
+2026-11-10T15:18:32.1610745Z found 0 vulnerabilities
+2026-11-10T15:18:33.0817718Z Installing dependencies...
+2026-11-10T15:18:33.0908977Z Switching to root user to install dependencies...
+2026-11-10T15:18:33.2236126Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-11-10T15:18:33.2706426Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-11-10T15:18:33.2708255Z Get:6 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+2026-11-10T15:18:33.2768899Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-11-10T15:18:33.2835168Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-11-10T15:18:33.2905307Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-11-10T15:18:33.4739215Z Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [748 kB]
+2026-11-10T15:18:33.4903634Z Get:8 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [679 kB]
+2026-11-10T15:18:33.5252157Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1443 kB]
+2026-11-10T15:18:33.5326151Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [314 kB]
+2026-11-10T15:18:33.5349728Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1711 kB]
+2026-11-10T15:18:33.5457802Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [344 kB]
+2026-11-10T15:18:33.5473565Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1879 kB]
+2026-11-10T15:18:33.5564558Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [429 kB]
+2026-11-10T15:18:33.5594203Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [50.7 kB]
+2026-11-10T15:18:33.5602565Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [14.3 kB]
+2026-11-10T15:18:33.6405769Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1161 kB]
+2026-11-10T15:18:33.6443164Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [234 kB]
+2026-11-10T15:18:33.6882647Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1228 kB]
+2026-11-10T15:18:33.6951378Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [248 kB]
+2026-11-10T15:18:33.6955671Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [1729 kB]
+2026-11-10T15:18:33.7045726Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [396 kB]
+2026-11-10T15:18:33.7066892Z Get:23 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse amd64 Packages [45.4 kB]
+2026-11-10T15:18:33.7085464Z Get:24 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse Translation-en [12.4 kB]
+2026-11-10T15:18:39.9177157Z Fetched 13.0 MB in 1s (9167 kB/s)
+2026-11-10T15:18:41.0820774Z Reading package lists...
+2026-11-10T15:18:41.1138454Z Reading package lists...
+2026-11-10T15:18:41.3379520Z Building dependency tree...
+2026-11-10T15:18:41.3387278Z Reading state information...
+2026-11-10T15:18:41.3528437Z libasound2t64 is already the newest version (1.2.11-1ubuntu0.3).
+2026-11-10T15:18:41.3529749Z libasound2t64 set to manually installed.
+2026-11-10T15:18:41.3530593Z libatk-bridge2.0-0t64 is already the newest version (2.52.0-1build1).
+2026-11-10T15:18:41.3531435Z libatk-bridge2.0-0t64 set to manually installed.
+2026-11-10T15:18:41.3532224Z libatk1.0-0t64 is already the newest version (2.52.0-1build1).
+2026-11-10T15:18:41.3532947Z libatk1.0-0t64 set to manually installed.
+2026-11-10T15:18:41.3533719Z libatspi2.0-0t64 is already the newest version (2.52.0-1build1).
+2026-11-10T15:18:41.3534836Z libatspi2.0-0t64 set to manually installed.
+2026-11-10T15:18:41.3535552Z libcairo2 is already the newest version (1.18.0-3build1).
+2026-11-10T15:18:41.3536253Z libcairo2 set to manually installed.
+2026-11-10T15:18:41.3536995Z libcups2t64 is already the newest version (2.4.7-1.2ubuntu7.14).
+2026-11-10T15:18:41.3537720Z libcups2t64 set to manually installed.
+2026-11-10T15:18:41.3538454Z libdbus-1-3 is already the newest version (1.14.10-4ubuntu4.1).
+2026-11-10T15:18:41.3539166Z libdbus-1-3 set to manually installed.
+2026-11-10T15:18:41.3539926Z libdrm2 is already the newest version (2.4.125-1ubuntu0.1~24.04.2).
+2026-11-10T15:18:41.3540651Z libdrm2 set to manually installed.
+2026-11-10T15:18:41.3541357Z libgbm1 is already the newest version (25.2.8-0ubuntu0.24.04.4).
+2026-11-10T15:18:41.3542053Z libgbm1 set to manually installed.
+2026-11-10T15:18:41.3542794Z libglib2.0-0t64 is already the newest version (2.80.0-6ubuntu3.10).
+2026-11-10T15:18:41.3543549Z libglib2.0-0t64 set to manually installed.
+2026-11-10T15:18:41.3544448Z libnspr4 is already the newest version (2:4.35-1.1build1).
+2026-11-10T15:18:41.3545131Z libnspr4 set to manually installed.
+2026-11-10T15:18:41.3545826Z libnss3 is already the newest version (2:3.98-1ubuntu0.3).
+2026-11-10T15:18:41.3546489Z libnss3 set to manually installed.
+2026-11-10T15:18:41.3547213Z libpango-1.0-0 is already the newest version (1.52.1+ds-1build1).
+2026-11-10T15:18:41.3547958Z libpango-1.0-0 set to manually installed.
+2026-11-10T15:18:41.3548696Z libx11-6 is already the newest version (2:1.8.7-1ubuntu0.1).
+2026-11-10T15:18:41.3549373Z libx11-6 set to manually installed.
+2026-11-10T15:18:41.3550166Z libxcb1 is already the newest version (1.15-1ubuntu2).
+2026-11-10T15:18:41.3550810Z libxcb1 set to manually installed.
+2026-11-10T15:18:41.3551534Z libxcomposite1 is already the newest version (1:0.4.5-1build3).
+2026-11-10T15:18:41.3552283Z libxcomposite1 set to manually installed.
+2026-11-10T15:18:41.3553028Z libxdamage1 is already the newest version (1:1.1.6-1build1).
+2026-11-10T15:18:41.3553734Z libxdamage1 set to manually installed.
+2026-11-10T15:18:41.3554613Z libxext6 is already the newest version (2:1.3.4-1build2).
+2026-11-10T15:18:41.3555281Z libxext6 set to manually installed.
+2026-11-10T15:18:41.3555976Z libxfixes3 is already the newest version (1:6.0.0-2build1).
+2026-11-10T15:18:41.3556671Z libxfixes3 set to manually installed.
+2026-11-10T15:18:41.3557394Z libxkbcommon0 is already the newest version (1.6.0-1build1).
+2026-11-10T15:18:41.3558119Z libxkbcommon0 set to manually installed.
+2026-11-10T15:18:41.3558838Z libxrandr2 is already the newest version (2:1.5.2-2build1).
+2026-11-10T15:18:41.3559528Z libxrandr2 set to manually installed.
+2026-11-10T15:18:41.3560217Z xvfb is already the newest version (2:21.1.12-1ubuntu1.9).
+2026-11-10T15:18:41.3561170Z fonts-noto-color-emoji is already the newest version (2.047-0ubuntu0.24.04.1).
+2026-11-10T15:18:41.3562192Z libfontconfig1 is already the newest version (2.15.0-1.1ubuntu2).
+2026-11-10T15:18:41.3562941Z libfontconfig1 set to manually installed.
+2026-11-10T15:18:41.3563666Z libfreetype6 is already the newest version (2.13.2+dfsg-1ubuntu0.2).
+2026-11-10T15:18:41.3564788Z libfreetype6 set to manually installed.
+2026-11-10T15:18:41.3565412Z fonts-liberation is already the newest version (1:2.1.5-3).
+2026-11-10T15:18:41.3566054Z fonts-liberation set to manually installed.
+2026-11-10T15:18:41.3566710Z libicu74 is already the newest version (74.2-1ubuntu3.1).
+2026-11-10T15:18:41.3567698Z libatomic1 is already the newest version (14.2.0-4ubuntu2~24.04.1).
+2026-11-10T15:18:41.3568350Z libatomic1 set to manually installed.
+2026-11-10T15:18:41.3569018Z libcairo-gobject2 is already the newest version (1.18.0-3build1).
+2026-11-10T15:18:41.3569679Z libcairo-gobject2 set to manually installed.
+2026-11-10T15:18:41.3570315Z libenchant-2-2 is already the newest version (2.3.3-2build2).
+2026-11-10T15:18:41.3570910Z libenchant-2-2 set to manually installed.
+2026-11-10T15:18:41.3571500Z libepoxy0 is already the newest version (1.5.10-1build1).
+2026-11-10T15:18:41.3572082Z libepoxy0 set to manually installed.
+2026-11-10T15:18:41.3572801Z libgdk-pixbuf-2.0-0 is already the newest version (2.42.10+dfsg-3ubuntu3.3).
+2026-11-10T15:18:41.3573536Z libgdk-pixbuf-2.0-0 set to manually installed.
+2026-11-10T15:18:41.3574427Z libgstreamer1.0-0 is already the newest version (1.24.2-1ubuntu0.1).
+2026-11-10T15:18:41.3575101Z libgstreamer1.0-0 set to manually installed.
+2026-11-10T15:18:41.3575730Z libharfbuzz0b is already the newest version (8.3.0-2build2).
+2026-11-10T15:18:41.3576313Z libharfbuzz0b set to manually installed.
+2026-11-10T15:18:41.3576936Z libjpeg-turbo8 is already the newest version (2.1.5-2ubuntu2).
+2026-11-10T15:18:41.3577542Z libjpeg-turbo8 set to manually installed.
+2026-11-10T15:18:41.3578137Z liblcms2-2 is already the newest version (2.14-2ubuntu0.1).
+2026-11-10T15:18:41.3578704Z liblcms2-2 set to manually installed.
+2026-11-10T15:18:41.3579354Z libpangocairo-1.0-0 is already the newest version (1.52.1+ds-1build1).
+2026-11-10T15:18:41.3580040Z libpangocairo-1.0-0 set to manually installed.
+2026-11-10T15:18:41.3580739Z libpng16-16t64 is already the newest version (1.6.43-5ubuntu0.7).
+2026-11-10T15:18:41.3581392Z libpng16-16t64 set to manually installed.
+2026-11-10T15:18:41.3582076Z libwayland-client0 is already the newest version (1.22.0-2.1build1).
+2026-11-10T15:18:41.3582763Z libwayland-client0 set to manually installed.
+2026-11-10T15:18:41.3583440Z libwayland-egl1 is already the newest version (1.22.0-2.1build1).
+2026-11-10T15:18:41.3584334Z libwayland-egl1 set to manually installed.
+2026-11-10T15:18:41.4860130Z libwebp7 is already the newest version (1.3.2-0.4build3).
+2026-11-10T15:18:41.4860906Z libwebp7 set to manually installed.
+2026-11-10T15:18:41.4861669Z libwebpdemux2 is already the newest version (1.3.2-0.4build3).
+2026-11-10T15:18:41.4862473Z libwebpdemux2 set to manually installed.
+2026-11-10T15:18:41.4863272Z libxml2 is already the newest version (2.9.14+dfsg-1.3ubuntu3.10).
+2026-11-10T15:18:41.4864240Z libxml2 set to manually installed.
+2026-11-10T15:18:41.4865101Z libxslt1.1 is already the newest version (1.1.39-0exp1ubuntu0.24.04.3).
+2026-11-10T15:18:41.4865896Z libxslt1.1 set to manually installed.
+2026-11-10T15:18:41.4866602Z The following additional packages will be installed:
+2026-11-10T15:18:41.4867423Z   glib-networking glib-networking-common glib-networking-services
+2026-11-10T15:18:41.4868357Z   gsettings-desktop-schemas libaa1 libabsl20220623t64 libass9 libasyncns0
+2026-11-10T15:18:41.4869335Z   libavc1394-0 libavcodec60 libavfilter9 libavformat60 libavtp0 libavutil58
+2026-11-10T15:18:41.4870261Z   libblas3 libbluray2 libbs2b0 libcaca0 libcairo-script-interpreter2
+2026-11-10T15:18:41.4871157Z   libcdparanoia0 libchromaprint1 libcjson1 libcodec2-1.2 libdav1d7
+2026-11-10T15:18:41.4872193Z   libdc1394-25 libdca0 libde265-0 libdecor-0-0 libdirectfb-1.7-7t64 libdv4t64
+2026-11-10T15:18:41.4873115Z   libdvdnav4 libdvdread8t64 libegl-mesa0 libegl1 libfaad2 libflac12t64
+2026-11-10T15:18:41.4874293Z   libfluidsynth3 libfreeaptx0 libgav1-1 libgme0 libgraphene-1.0-0 libgsm1
+2026-11-10T15:18:41.4875294Z   libgssdp-1.6-0 libgstreamer-plugins-good1.0-0 libgtk-4-common libgupnp-1.6-0
+2026-11-10T15:18:41.4876640Z   libgupnp-igd-1.6-0 libhwy1t64 libiec61883-0 libimath-3-1-29t64
+2026-11-10T15:18:41.4877284Z   libinstpatch-1.0-2 libjack-jackd2-0 libjxl0.7 liblapack3 liblc3-1
+2026-11-10T15:18:41.4877831Z   libldacbt-enc2 liblilv-0-0 liblrdf0 libltc11 libmbedcrypto7t64 libmfx1
+2026-11-10T15:18:41.4878361Z   libmjpegutils-2.1-0t64 libmodplug1 libmp3lame0 libmpcdec6
+2026-11-10T15:18:41.4879175Z   libmpeg2encpp-2.1-0t64 libmpg123-0t64 libmplex2-2.1-0t64 libmysofa1
+2026-11-10T15:18:41.4879858Z   libneon27t64 libnice10 libopenal-data libopenal1 libopenexr-3-1-30
+2026-11-10T15:18:41.4880356Z   libopenh264-7 libopenmpt0t64 libopenni2-0 liborc-0.4-0t64
+2026-11-10T15:18:41.4880852Z   libpipewire-0.3-0t64 libplacebo338 libpocketsphinx3 libpostproc57
+2026-11-10T15:18:41.4881600Z   libproxy1v5 libpulse0 libqrencode4 libraptor2-0 librav1e0 libraw1394-11
+2026-11-10T15:18:41.4882184Z   librist4 librsvg2-2 librubberband2 libsamplerate0 libsbc1 libsdl2-2.0-0
+2026-11-10T15:18:41.4882752Z   libsecret-common libserd-0-0 libshine3 libshout3 libsndfile1 libsndio7.0
+2026-11-10T15:18:41.4883292Z   libsord-0-0 libsoundtouch1 libsoup-3.0-0 libsoup-3.0-common libsoxr0
+2026-11-10T15:18:41.4884459Z   libspa-0.2-modules libspandsp2t64 libspeex1 libsphinxbase3t64 libsratom-0-0
+2026-11-10T15:18:41.4885512Z   libsrt1.5-gnutls libsrtp2-1 libssh-gcrypt-4 libsvtav1enc1d1 libswresample4
+2026-11-10T15:18:41.4886526Z   libswscale7 libtag1v5 libtag1v5-vanilla libtheora0 libtwolame0 libudfread0
+2026-11-10T15:18:41.4887279Z   libunibreak5 libv4l-0t64 libv4lconvert0t64 libva-drm2 libva-x11-2 libva2
+2026-11-10T15:18:41.4887841Z   libvdpau1 libvidstab1.1 libvisual-0.4-0 libvo-aacenc0 libvo-amrwbenc0
+2026-11-10T15:18:41.4888407Z   libvorbisenc2 libvpl2 libwavpack1 libwebrtc-audio-processing1 libwildmidi2
+2026-11-10T15:18:41.4889295Z   libx265-199 libxcb-xkb1 libxkbcommon-x11-0 libxvidcore4 libyuv0 libzbar0t64
+2026-11-10T15:18:41.4890357Z   libzimg2 libzix-0-0 libzvbi-common libzvbi0t64 libzxing3 ocl-icd-libopencl1
+2026-11-10T15:18:41.4891196Z   session-migration timgm6mb-soundfont xfonts-encodings xfonts-utils
+2026-11-10T15:18:41.4891617Z Suggested packages:
+2026-11-10T15:18:41.4892019Z   frei0r-plugins gvfs libcuda1 libnvcuvid1 libnvidia-encode1 libbluray-bdj
+2026-11-10T15:18:41.4892589Z   libdirectfb-extra libdv-bin oss-compat libdvdcss2 libvisual-0.4-plugins
+2026-11-10T15:18:41.4893138Z   jackd2 liblrdf0-dev libportaudio2 opus-tools pipewire pulseaudio
+2026-11-10T15:18:41.4893650Z   raptor2-utils libraw1394-doc librsvg2-bin serdi sndiod sordi speex
+2026-11-10T15:18:41.4894452Z   libwildmidi-config opencl-icd fluid-soundfont-gm
+2026-11-10T15:18:41.4894814Z Recommended packages:
+2026-11-10T15:18:41.4895171Z   fonts-ipafont-mincho fonts-tlwg-loma gstreamer1.0-x libaacs0
+2026-11-10T15:18:41.4895681Z   default-libdecor-0-plugin-1 | libdecor-0-plugin-1 gstreamer1.0-gl
+2026-11-10T15:18:41.4896251Z   libgtk-4-bin librsvg2-common libgtk-4-media-gstreamer libpipewire-0.3-common
+2026-11-10T15:18:41.4896853Z   pocketsphinx-en-us va-driver-all | va-driver vdpau-driver-all | vdpau-driver
+2026-11-10T15:18:41.4897304Z   libmagickcore-6.q16-7-extra
+2026-11-10T15:18:41.5589613Z The following NEW packages will be installed:
+2026-11-10T15:18:41.5590583Z   fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont
+2026-11-10T15:18:41.5591558Z   fonts-wqy-zenhei glib-networking glib-networking-common
+2026-11-10T15:18:41.5592607Z   glib-networking-services gsettings-desktop-schemas gstreamer1.0-libav
+2026-11-10T15:18:41.5593757Z   gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+2026-11-10T15:18:41.5595108Z   libaa1 libabsl20220623t64 libass9 libasyncns0 libavc1394-0 libavcodec60
+2026-11-10T15:18:41.5596125Z   libavfilter9 libavformat60 libavif16 libavtp0 libavutil58 libblas3
+2026-11-10T15:18:41.5597163Z   libbluray2 libbs2b0 libcaca0 libcairo-script-interpreter2 libcdparanoia0
+2026-11-10T15:18:41.5598222Z   libchromaprint1 libcjson1 libcodec2-1.2 libdav1d7 libdc1394-25 libdca0
+2026-11-10T15:18:41.5599641Z   libde265-0 libdecor-0-0 libdirectfb-1.7-7t64 libdv4t64 libdvdnav4
+2026-11-10T15:18:41.5600734Z   libdvdread8t64 libegl-mesa0 libegl1 libevent-2.1-7t64 libfaad2 libflac12t64
+2026-11-10T15:18:41.5601742Z   libflite1 libfluidsynth3 libfreeaptx0 libgav1-1 libgles2 libgme0
+2026-11-10T15:18:41.5602662Z   libgraphene-1.0-0 libgsm1 libgssdp-1.6-0 libgstreamer-gl1.0-0
+2026-11-10T15:18:41.5603787Z   libgstreamer-plugins-bad1.0-0 libgstreamer-plugins-base1.0-0
+2026-11-10T15:18:41.5604988Z   libgstreamer-plugins-good1.0-0 libgtk-4-1 libgtk-4-common libgupnp-1.6-0
+2026-11-10T15:18:41.5606109Z   libgupnp-igd-1.6-0 libharfbuzz-icu0 libhwy1t64 libhyphen0 libiec61883-0
+2026-11-10T15:18:41.5607269Z   libimath-3-1-29t64 libinstpatch-1.0-2 libjack-jackd2-0 libjxl0.7 liblapack3
+2026-11-10T15:18:41.5608323Z   liblc3-1 libldacbt-enc2 liblilv-0-0 liblrdf0 libltc11 libmanette-0.2-0
+2026-11-10T15:18:41.5609318Z   libmbedcrypto7t64 libmfx1 libmjpegutils-2.1-0t64 libmodplug1 libmp3lame0
+2026-11-10T15:18:41.5610376Z   libmpcdec6 libmpeg2encpp-2.1-0t64 libmpg123-0t64 libmplex2-2.1-0t64
+2026-11-10T15:18:41.5611322Z   libmysofa1 libneon27t64 libnice10 libopenal-data libopenal1
+2026-11-10T15:18:41.5612280Z   libopenexr-3-1-30 libopenh264-7 libopenmpt0t64 libopenni2-0 libopus0
+2026-11-10T15:18:41.5613318Z   liborc-0.4-0t64 libpipewire-0.3-0t64 libplacebo338 libpocketsphinx3
+2026-11-10T15:18:41.5614608Z   libpostproc57 libproxy1v5 libpulse0 libqrencode4 libraptor2-0 librav1e0
+2026-11-10T15:18:41.5615606Z   libraw1394-11 librist4 librsvg2-2 librubberband2 libsamplerate0 libsbc1
+2026-11-10T15:18:41.5616626Z   libsdl2-2.0-0 libsecret-1-0 libsecret-common libserd-0-0 libshine3 libshout3
+2026-11-10T15:18:41.5617669Z   libsndfile1 libsndio7.0 libsord-0-0 libsoundtouch1 libsoup-3.0-0
+2026-11-10T15:18:41.5618672Z   libsoup-3.0-common libsoxr0 libspa-0.2-modules libspandsp2t64 libspeex1
+2026-11-10T15:18:41.5619768Z   libsphinxbase3t64 libsratom-0-0 libsrt1.5-gnutls libsrtp2-1 libssh-gcrypt-4
+2026-11-10T15:18:41.5620812Z   libsvtav1enc1d1 libswresample4 libswscale7 libtag1v5 libtag1v5-vanilla
+2026-11-10T15:18:41.5621703Z   libtheora0 libtwolame0 libudfread0 libunibreak5 libv4l-0t64
+2026-11-10T15:18:41.5622601Z   libv4lconvert0t64 libva-drm2 libva-x11-2 libva2 libvdpau1 libvidstab1.1
+2026-11-10T15:18:41.5623595Z   libvisual-0.4-0 libvo-aacenc0 libvo-amrwbenc0 libvorbisenc2 libvpl2 libvpx9
+2026-11-10T15:18:41.5624770Z   libwavpack1 libwayland-server0 libwebrtc-audio-processing1 libwildmidi2
+2026-11-10T15:18:41.5625783Z   libwoff1 libx264-164 libx265-199 libxcb-xkb1 libxkbcommon-x11-0 libxvidcore4
+2026-11-10T15:18:41.5626797Z   libyuv0 libzbar0t64 libzimg2 libzix-0-0 libzvbi-common libzvbi0t64 libzxing3
+2026-11-10T15:18:41.5627819Z   ocl-icd-libopencl1 session-migration timgm6mb-soundfont xfonts-cyrillic
+2026-11-10T15:18:41.5628654Z   xfonts-encodings xfonts-scalable xfonts-utils
+2026-11-10T15:18:41.5864095Z 0 upgraded, 181 newly installed, 0 to remove and 39 not upgraded.
+2026-11-10T15:18:41.5864899Z Need to get 114 MB of archives.
+2026-11-10T15:18:41.5865763Z After this operation, 364 MB of additional disk space will be used.
+2026-11-10T15:18:41.5866629Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-11-10T15:18:42.1605744Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-ipafont-gothic all 00303-21ubuntu1 [3513 kB]
+2026-11-10T15:19:01.9556220Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 fonts-freefont-ttf all 20211204+svn4273-2 [5641 kB]
+2026-11-10T15:19:04.3237338Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-tlwg-loma-otf all 1:0.7.3-1 [107 kB]
+2026-11-10T15:19:04.4837133Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-unifont all 1:15.1.01-1build1 [2993 kB]
+2026-11-10T15:19:05.9509528Z Get:6 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-wqy-zenhei all 0.9.45-8 [7472 kB]
+2026-11-10T15:19:06.6836131Z Get:7 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libproxy1v5 amd64 0.5.4-4build1 [26.5 kB]
+2026-11-10T15:19:06.8509567Z Get:8 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 glib-networking-common all 2.80.0-1build1 [6702 B]
+2026-11-10T15:19:07.0059244Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 glib-networking-services amd64 2.80.0-1build1 [12.8 kB]
+2026-11-10T15:19:07.2109377Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 session-migration amd64 0.3.9build1 [9034 B]
+2026-11-10T15:19:08.7140505Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 gsettings-desktop-schemas all 46.1-0ubuntu1 [35.6 kB]
+2026-11-10T15:19:08.9783876Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 glib-networking amd64 2.80.0-1build1 [64.1 kB]
+2026-11-10T15:19:09.3778003Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 libva2 amd64 2.20.0-2ubuntu0.2 [66.4 kB]
+2026-11-10T15:19:09.7921897Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 libva-drm2 amd64 2.20.0-2ubuntu0.2 [7124 B]
+2026-11-10T15:19:10.3081944Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 libva-x11-2 amd64 2.20.0-2ubuntu0.2 [12.0 kB]
+2026-11-10T15:19:10.4706464Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libvdpau1 amd64 1.5-2build1 [27.8 kB]
+2026-11-10T15:19:10.7133767Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libvpl2 amd64 2023.3.0-1build1 [99.8 kB]
+2026-11-10T15:19:11.2831108Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 ocl-icd-libopencl1 amd64 2.3.2-1build1 [38.5 kB]
+2026-11-10T15:19:11.5873365Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libavutil58 amd64 7:6.1.1-3ubuntu5 [401 kB]
+2026-11-10T15:19:14.1803808Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libcodec2-1.2 amd64 1.2.0-2build1 [8998 kB]
+2026-11-10T15:19:33.2386876Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libdav1d7 amd64 1.4.1-1build1 [604 kB]
+2026-11-10T15:19:36.2580068Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libgsm1 amd64 1.0.22-1build1 [27.8 kB]
+2026-11-10T15:19:36.4246363Z Get:23 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libhwy1t64 amd64 1.0.7-8.1build1 [584 kB]
+2026-11-10T15:19:39.5437164Z Get:24 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 libjxl0.7 amd64 0.7.0-10.2ubuntu6.1 [1001 kB]
+2026-11-10T15:19:45.0620610Z Get:25 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libmp3lame0 amd64 3.100-6build1 [142 kB]
+2026-11-10T15:19:46.5133469Z Get:26 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libopus0 amd64 1.4-1build1 [208 kB]
+2026-11-10T15:19:47.9430035Z Get:27 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 librav1e0 amd64 0.7.1-2 [1022 kB]
+2026-11-10T15:19:52.7286144Z Get:28 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 librsvg2-2 amd64 2.58.0+dfsg-1ubuntu0.1 [2141 kB]
+2026-11-10T15:20:04.0037063Z Get:29 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libshine3 amd64 3.1.1-2build1 [23.2 kB]
+2026-11-10T15:20:04.5920233Z Get:30 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libspeex1 amd64 1.2.1-2ubuntu2.24.04.1 [59.6 kB]
+2026-11-10T15:20:05.0901197Z Get:31 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libsvtav1enc1d1 amd64 1.7.0+dfsg-2build1 [2425 kB]
+2026-11-10T15:20:17.7356136Z Get:32 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libsoxr0 amd64 0.1.3-4build3 [80.0 kB]
+2026-11-10T15:20:18.4482852Z Get:33 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libswresample4 amd64 7:6.1.1-3ubuntu5 [63.8 kB]
+2026-11-10T15:20:19.2502000Z Get:34 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libtheora0 amd64 1.1.1+dfsg.1-16.1build3 [211 kB]
+2026-11-10T15:20:20.6068516Z Get:35 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libtwolame0 amd64 0.4.0-2build3 [52.3 kB]
+2026-11-10T15:20:20.7918330Z Get:36 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libvorbisenc2 amd64 1.3.7-1build3 [80.8 kB]
+2026-11-10T15:20:20.9688827Z Get:37 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libvpx9 amd64 1.14.0-1ubuntu2.3 [1143 kB]
+2026-11-10T15:20:22.9741993Z Get:38 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libx264-164 amd64 2:0.164.3108+git31e19f9-1 [604 kB]
+2026-11-10T15:20:23.3049590Z Get:39 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libx265-199 amd64 3.5-2build1 [1226 kB]
+2026-11-10T15:20:23.7445421Z Get:40 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libxvidcore4 amd64 2:1.3.7-1build1 [219 kB]
+2026-11-10T15:20:23.9294845Z Get:41 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libzvbi-common all 0.2.42-2 [42.4 kB]
+2026-11-10T15:20:29.5621876Z Get:42 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libzvbi0t64 amd64 0.2.42-2 [261 kB]
+2026-11-10T15:20:32.4955917Z Get:43 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libavcodec60 amd64 7:6.1.1-3ubuntu5 [5851 kB]
+2026-11-10T15:20:58.5645285Z Get:44 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libunibreak5 amd64 5.1-2build1 [25.0 kB]
+2026-11-10T15:20:59.0398893Z Get:45 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libass9 amd64 1:0.17.1-2build1 [104 kB]
+2026-11-10T15:20:59.9635714Z Get:46 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libudfread0 amd64 1.1.2-1build1 [19.0 kB]
+2026-11-10T15:21:00.3881962Z Get:47 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libbluray2 amd64 1:1.3.4-1build1 [159 kB]
+2026-11-10T15:21:01.2352791Z Get:48 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libchromaprint1 amd64 1.5.1-5 [30.5 kB]
+2026-11-10T15:21:01.5552035Z Get:49 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libgme0 amd64 0.6.3-7build1 [134 kB]
+2026-11-10T15:21:02.3929442Z Get:50 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libmpg123-0t64 amd64 1.32.5-1ubuntu1.1 [169 kB]
+2026-11-10T15:21:03.4993216Z Get:51 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libopenmpt0t64 amd64 0.7.3-1.1build3 [647 kB]
+2026-11-10T15:21:08.1008232Z Get:52 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libcjson1 amd64 1.7.17-1 [24.8 kB]
+2026-11-10T15:21:08.8047915Z Get:53 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libmbedcrypto7t64 amd64 2.28.8-1 [209 kB]
+2026-11-10T15:21:10.6291118Z Get:54 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 librist4 amd64 0.2.10+dfsg-2 [74.9 kB]
+2026-11-10T15:21:11.6454535Z Get:55 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libsrt1.5-gnutls amd64 1.5.3-1build2 [316 kB]
+2026-11-10T15:21:13.4449098Z Get:56 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libssh-gcrypt-4 amd64 0.10.6-2ubuntu0.5 [226 kB]
+2026-11-10T15:21:14.7832327Z Get:57 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libavformat60 amd64 7:6.1.1-3ubuntu5 [1153 kB]
+2026-11-10T15:21:21.7804571Z Get:58 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libbs2b0 amd64 3.1.0+dfsg-7build1 [10.6 kB]
+2026-11-10T15:21:21.9818328Z Get:59 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libflite1 amd64 2.2-6build3 [13.6 MB]
+2026-11-10T15:21:23.6390088Z Get:60 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libserd-0-0 amd64 0.32.2-1 [43.6 kB]
+2026-11-10T15:21:24.2214223Z Get:61 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libzix-0-0 amd64 0.4.2-2build1 [23.6 kB]
+2026-11-10T15:21:24.4101974Z Get:62 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libsord-0-0 amd64 0.16.16-2build1 [15.8 kB]
+2026-11-10T15:21:24.6122475Z Get:63 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libsratom-0-0 amd64 0.6.16-1build1 [17.3 kB]
+2026-11-10T15:21:24.7480556Z Get:64 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 liblilv-0-0 amd64 0.24.22-1build1 [41.0 kB]
+2026-11-10T15:21:25.6784524Z Get:65 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libmysofa1 amd64 1.3.2+dfsg-2ubuntu2 [1158 kB]
+2026-11-10T15:21:29.2199301Z Get:66 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libplacebo338 amd64 6.338.2-2build1 [2654 kB]
+2026-11-10T15:21:40.1439066Z Get:67 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libblas3 amd64 3.12.0-3build1.1 [238 kB]
+2026-11-10T15:21:42.0178656Z Get:68 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 liblapack3 amd64 3.12.0-3build1.1 [2646 kB]
+2026-11-10T15:21:49.7685892Z Get:69 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libasyncns0 amd64 0.8-6build4 [11.3 kB]
+2026-11-10T15:21:50.3273399Z Get:70 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libflac12t64 amd64 1.4.3+ds-2.1ubuntu2 [197 kB]
+2026-11-10T15:21:52.6097059Z Get:71 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libsndfile1 amd64 1.2.2-1ubuntu5.24.04.1 [209 kB]
+2026-11-10T15:21:53.3805494Z Get:72 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libpulse0 amd64 1:16.1+dfsg1-2ubuntu10.1 [292 kB]
+2026-11-10T15:21:53.7566524Z Get:73 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libsphinxbase3t64 amd64 0.8+5prealpha+1-17build2 [126 kB]
+2026-11-10T15:21:54.3856209Z Get:74 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libpocketsphinx3 amd64 0.8.0+real5prealpha+1-15ubuntu5 [133 kB]
+2026-11-10T15:21:54.5739765Z Get:75 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libpostproc57 amd64 7:6.1.1-3ubuntu5 [49.9 kB]
+2026-11-10T15:21:54.7386560Z Get:76 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libsamplerate0 amd64 0.2.2-4build1 [1344 kB]
+2026-11-10T15:21:55.6177176Z Get:77 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 librubberband2 amd64 3.3.0+dfsg-2build1 [130 kB]
+2026-11-10T15:21:55.6824475Z Get:78 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libswscale7 amd64 7:6.1.1-3ubuntu5 [193 kB]
+2026-11-10T15:21:55.7675741Z Get:79 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libvidstab1.1 amd64 1.1.0-2build1 [38.5 kB]
+2026-11-10T15:21:55.8573772Z Get:80 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libzimg2 amd64 3.0.5+ds1-1build1 [254 kB]
+2026-11-10T15:21:56.0534880Z Get:81 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libavfilter9 amd64 7:6.1.1-3ubuntu5 [4235 kB]
+2026-11-10T15:21:57.0762415Z Get:82 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 liborc-0.4-0t64 amd64 1:0.4.38-1ubuntu0.1 [207 kB]
+2026-11-10T15:21:57.2401532Z Get:83 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libgstreamer-plugins-base1.0-0 amd64 1.24.2-1ubuntu0.5 [862 kB]
+2026-11-10T15:21:57.5225629Z Get:84 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 gstreamer1.0-libav amd64 1.24.1-1build1 [103 kB]
+2026-11-10T15:21:57.6968027Z Get:85 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libcdparanoia0 amd64 3.10.2+debian-14build3 [48.5 kB]
+2026-11-10T15:21:57.8637642Z Get:86 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libvisual-0.4-0 amd64 0.4.2-2build1 [115 kB]
+2026-11-10T15:21:58.4160450Z Get:87 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 gstreamer1.0-plugins-base amd64 1.24.2-1ubuntu0.5 [721 kB]
+2026-11-10T15:22:19.3906037Z Ign:87 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 gstreamer1.0-plugins-base amd64 1.24.2-1ubuntu0.5
+2026-11-10T15:22:22.7285777Z Get:88 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libaa1 amd64 1.4p5-51.1 [49.9 kB]
+2026-11-10T15:22:23.6869260Z Get:89 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libraw1394-11 amd64 2.1.2-2build3 [26.2 kB]
+2026-11-10T15:22:23.8740143Z Get:90 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libavc1394-0 amd64 0.5.4-5build3 [15.4 kB]
+2026-11-10T15:22:24.0490121Z Get:91 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libcaca0 amd64 0.99.beta20-4ubuntu0.2 [209 kB]
+2026-11-10T15:22:24.9312962Z Get:92 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libdv4t64 amd64 1.0.0-17.1build1 [63.2 kB]
+2026-11-10T15:22:41.9494289Z Ign:93 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libgstreamer-plugins-good1.0-0 amd64 1.24.2-1ubuntu1.8
+2026-11-10T15:23:11.9750279Z Ign:94 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libiec61883-0 amd64 1.2.0-6build1
+2026-11-10T15:23:42.0035491Z Ign:95 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libshout3 amd64 2.4.6-1build2
+2026-11-10T15:23:57.1806214Z Get:96 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libtag1v5-vanilla amd64 1.13.1-1build1 [326 kB]
+2026-11-10T15:23:57.3467838Z Get:97 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libtag1v5 amd64 1.13.1-1build1 [11.7 kB]
+2026-11-10T15:23:57.8742084Z Get:98 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libv4lconvert0t64 amd64 1.26.1-4build3 [87.6 kB]
+2026-11-10T15:23:58.0131834Z Get:99 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libv4l-0t64 amd64 1.26.1-4build3 [46.9 kB]
+2026-11-10T15:23:58.1510520Z Get:100 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libwavpack1 amd64 5.6.0-1build1 [84.6 kB]
+2026-11-10T15:23:59.0491506Z Get:101 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libsoup-3.0-common all 3.4.4-5ubuntu0.11 [13.0 kB]
+2026-11-10T15:23:59.1866349Z Get:102 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libsoup-3.0-0 amd64 3.4.4-5ubuntu0.11 [292 kB]
+2026-11-10T15:23:59.6858503Z Get:103 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 gstreamer1.0-plugins-good amd64 1.24.2-1ubuntu1.8 [2236 kB]
+2026-11-10T15:24:00.3157914Z Get:104 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libabsl20220623t64 amd64 20220623.1-3.1ubuntu3.2 [423 kB]
+2026-11-10T15:24:03.2773483Z Get:105 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libgav1-1 amd64 0.18.0-1build3 [357 kB]
+2026-11-10T15:24:05.8196525Z Get:106 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libyuv0 amd64 0.0~git202401110.af6ac82-1 [178 kB]
+2026-11-10T15:24:07.2854637Z Get:107 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libavif16 amd64 1.0.4-1ubuntu3 [91.2 kB]
+2026-11-10T15:24:07.8596772Z Get:108 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libavtp0 amd64 0.2.0-1build1 [6414 B]
+2026-11-10T15:24:08.0071160Z Get:109 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libcairo-script-interpreter2 amd64 1.18.0-3build1 [60.3 kB]
+2026-11-10T15:24:08.4470123Z Get:110 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libdc1394-25 amd64 2.2.6-4build1 [90.1 kB]
+2026-11-10T15:24:09.0143714Z Get:111 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libde265-0 amd64 1.0.15-1ubuntu0.2 [167 kB]
+2026-11-10T15:24:10.0468490Z Get:112 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libdecor-0-0 amd64 0.2.2-1build2 [16.5 kB]
+2026-11-10T15:24:10.2225916Z Get:113 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libgles2 amd64 1.7.0-1build1 [17.1 kB]
+2026-11-10T15:24:13.5959282Z Get:114 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libdirectfb-1.7-7t64 amd64 1.7.7-11.1ubuntu2 [1035 kB]
+2026-11-10T15:24:14.8297724Z Get:115 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libdvdread8t64 amd64 6.1.3-1.1build1 [54.7 kB]
+2026-11-10T15:24:14.9740837Z Get:116 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libdvdnav4 amd64 6.1.1-3build1 [39.5 kB]
+2026-11-10T15:24:15.3193635Z Get:117 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libegl-mesa0 amd64 25.2.8-0ubuntu0.24.04.4 [117 kB]
+2026-11-10T15:24:16.3175806Z Get:118 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libevent-2.1-7t64 amd64 2.1.12-stable-9ubuntu2.2 [146 kB]
+2026-11-10T15:24:17.2747324Z Get:119 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libfaad2 amd64 2.11.1-1build1 [207 kB]
+2026-11-10T15:24:18.6374879Z Get:120 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libinstpatch-1.0-2 amd64 1.1.6-1build2 [251 kB]
+2026-11-10T15:24:20.2526324Z Get:121 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libjack-jackd2-0 amd64 1.9.21~dfsg-3ubuntu3 [289 kB]
+2026-11-10T15:24:22.0090523Z Get:122 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libwebrtc-audio-processing1 amd64 0.3.1-0ubuntu6 [290 kB]
+2026-11-10T15:24:24.0570802Z Get:123 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libspa-0.2-modules amd64 1.0.5-1ubuntu3.3 [628 kB]
+2026-11-10T15:24:28.0278654Z Get:124 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libpipewire-0.3-0t64 amd64 1.0.5-1ubuntu3.3 [252 kB]
+2026-11-10T15:24:29.6250201Z Get:125 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libsdl2-2.0-0 amd64 2.30.0+dfsg-1ubuntu3.1 [686 kB]
+2026-11-10T15:24:34.3875822Z Get:126 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 timgm6mb-soundfont all 1.3-5 [5427 kB]
+2026-11-10T15:25:11.7137986Z Get:127 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libfluidsynth3 amd64 2.3.4-1build3 [249 kB]
+2026-11-10T15:25:13.7127129Z Get:128 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libfreeaptx0 amd64 0.1.1-2build1 [13.5 kB]
+2026-11-10T15:25:13.9278733Z Get:129 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libgraphene-1.0-0 amd64 1.10.8-3build2 [46.2 kB]
+2026-11-10T15:25:14.3646661Z Get:130 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libgssdp-1.6-0 amd64 1.6.3-1build3 [40.4 kB]
+2026-11-10T15:25:14.9268758Z Get:131 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libegl1 amd64 1.7.0-1build1 [28.7 kB]
+2026-11-10T15:25:15.9289381Z Get:132 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libgstreamer-gl1.0-0 amd64 1.24.2-1ubuntu0.5 [214 kB]
+2026-11-10T15:25:17.7262736Z Get:133 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libgtk-4-common all 4.14.5+ds-0ubuntu0.10 [1497 kB]
+2026-11-10T15:25:26.7839032Z Get:134 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libgtk-4-1 amd64 4.14.5+ds-0ubuntu0.10 [3295 kB]
+2026-11-10T15:25:47.9840186Z Get:135 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libgupnp-1.6-0 amd64 1.6.6-1build3 [92.7 kB]
+2026-11-10T15:25:48.6719460Z Get:136 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libgupnp-igd-1.6-0 amd64 1.6.0-3build3 [16.5 kB]
+2026-11-10T15:25:48.8417289Z Get:137 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libharfbuzz-icu0 amd64 8.3.0-2build2 [13.3 kB]
+2026-11-10T15:25:48.9915484Z Get:138 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libhyphen0 amd64 2.8.8-7build3 [26.5 kB]
+2026-11-10T15:25:49.1572277Z Get:139 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libimath-3-1-29t64 amd64 3.1.9-3.1ubuntu2 [72.2 kB]
+2026-11-10T15:25:49.7437819Z Get:140 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 liblc3-1 amd64 1.0.4-3build1 [69.7 kB]
+2026-11-10T15:25:49.9762676Z Get:141 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libldacbt-enc2 amd64 2.0.2.3+git20200429+ed310a0-4ubuntu2 [27.1 kB]
+2026-11-10T15:25:50.1501501Z Get:142 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libraptor2-0 amd64 2.0.16-3ubuntu0.1 [165 kB]
+2026-11-10T15:25:50.7968164Z Get:143 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 liblrdf0 amd64 0.6.1-4build1 [18.5 kB]
+2026-11-10T15:25:50.9621258Z Get:144 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libltc11 amd64 1.3.2-1build1 [13.0 kB]
+2026-11-10T15:25:51.1027404Z Get:145 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libmanette-0.2-0 amd64 0.2.7-1build2 [30.6 kB]
+2026-11-10T15:25:51.9669485Z Get:146 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libmfx1 amd64 22.5.4-1 [3124 kB]
+2026-11-10T15:26:02.0480743Z Get:147 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libmjpegutils-2.1-0t64 amd64 1:2.1.0+debian-8.1build1 [25.5 kB]
+2026-11-10T15:26:02.5902298Z Get:148 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libmodplug1 amd64 1:0.8.9.0-3build1 [166 kB]
+2026-11-10T15:26:04.0774501Z Get:149 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libmpcdec6 amd64 2:0.1~r495-2build1 [32.7 kB]
+2026-11-10T15:26:04.2570684Z Get:150 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libmpeg2encpp-2.1-0t64 amd64 1:2.1.0+debian-8.1build1 [75.6 kB]
+2026-11-10T15:26:04.5179246Z Get:151 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libmplex2-2.1-0t64 amd64 1:2.1.0+debian-8.1build1 [46.1 kB]
+2026-11-10T15:26:04.7679176Z Get:152 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libneon27t64 amd64 0.33.0-1.1build3 [102 kB]
+2026-11-10T15:26:05.1562886Z Get:153 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libnice10 amd64 0.1.21-2build3 [157 kB]
+2026-11-10T15:26:05.6333035Z Get:154 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libopenal-data all 1:1.23.1-4build1 [161 kB]
+2026-11-10T15:26:07.6579539Z Get:155 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libopenexr-3-1-30 amd64 3.1.5-5.1build3 [1004 kB]
+2026-11-10T15:26:07.7761570Z Get:156 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libopenh264-7 amd64 2.4.1+dfsg-1 [409 kB]
+2026-11-10T15:26:07.7989014Z Get:157 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libopenni2-0 amd64 2.2.0.33+dfsg-18 [370 kB]
+2026-11-10T15:26:07.8211364Z Get:158 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libqrencode4 amd64 4.1.1-1build2 [25.0 kB]
+2026-11-10T15:26:07.8491025Z Get:159 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libsecret-common all 0.21.4-1build3 [4962 B]
+2026-11-10T15:26:07.8739556Z Get:160 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libsecret-1-0 amd64 0.21.4-1build3 [116 kB]
+2026-11-10T15:26:23.0451084Z Get:161 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libsndio7.0 amd64 1.9.0-0.3build3 [29.6 kB]
+2026-11-10T15:26:23.2390953Z Get:162 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libsoundtouch1 amd64 2.3.2+ds1-1build1 [60.5 kB]
+2026-11-10T15:26:23.4424615Z Get:163 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libspandsp2t64 amd64 0.0.6+dfsg-2.1build1 [311 kB]
+2026-11-10T15:26:23.6670653Z Get:164 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libsrtp2-1 amd64 2.5.0-3build1 [41.9 kB]
+2026-11-10T15:26:25.3956306Z Get:165 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libwayland-server0 amd64 1.22.0-2.1build1 [33.9 kB]
+2026-11-10T15:26:25.9170810Z Get:166 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libwildmidi2 amd64 0.4.3-1build3 [68.5 kB]
+2026-11-10T15:26:26.4700220Z Get:167 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libwoff1 amd64 1.0.2-2build1 [45.3 kB]
+2026-11-10T15:26:26.6268942Z Get:168 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libxcb-xkb1 amd64 1.15-1ubuntu2 [32.3 kB]
+2026-11-10T15:26:26.8047351Z Get:169 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libxkbcommon-x11-0 amd64 1.6.0-1build1 [14.5 kB]
+2026-11-10T15:26:27.3527570Z Get:170 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libzbar0t64 amd64 0.23.93-4build3 [123 kB]
+2026-11-10T15:26:27.5234649Z Get:171 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libzxing3 amd64 2.2.1-3 [583 kB]
+2026-11-10T15:26:27.7419329Z Get:172 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-encodings all 1:1.0.5-0ubuntu2 [578 kB]
+2026-11-10T15:26:27.8665821Z Get:173 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-utils amd64 1:7.7+6build3 [94.4 kB]
+2026-11-10T15:26:27.9567841Z Get:174 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 xfonts-cyrillic all 1:1.0.5+nmu1 [384 kB]
+2026-11-10T15:26:28.0982016Z Get:175 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-scalable all 1:1.0.3-1.3 [304 kB]
+2026-11-10T15:26:28.3274540Z Get:176 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libgstreamer-plugins-bad1.0-0 amd64 1.24.2-1ubuntu4 [797 kB]
+2026-11-10T15:26:28.5830420Z Get:177 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libdca0 amd64 0.0.7-2build1 [93.8 kB]
+2026-11-10T15:26:28.7128015Z Get:178 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libopenal1 amd64 1:1.23.1-4build1 [540 kB]
+2026-11-10T15:26:29.6463096Z Get:179 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libsbc1 amd64 2.0-1build1 [33.9 kB]
+2026-11-10T15:26:30.1512471Z Get:180 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libvo-aacenc0 amd64 0.1.3-2build1 [67.8 kB]
+2026-11-10T15:26:30.2995173Z Get:181 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 libvo-amrwbenc0 amd64 0.1.3-2build1 [76.7 kB]
+2026-11-10T15:26:31.8752341Z Get:182 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 gstreamer1.0-plugins-bad amd64 1.24.2-1ubuntu4 [3081 kB]
+2026-11-10T15:26:32.4105494Z Get:87 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 gstreamer1.0-plugins-base amd64 1.24.2-1ubuntu0.5 [721 kB]
+2026-11-10T15:26:32.5782840Z Get:93 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libgstreamer-plugins-good1.0-0 amd64 1.24.2-1ubuntu1.8 [34.3 kB]
+2026-11-10T15:26:32.6935176Z Get:94 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libiec61883-0 amd64 1.2.0-6build1 [24.5 kB]
+2026-11-10T15:26:32.8162381Z Get:95 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 libshout3 amd64 2.4.6-1build2 [50.3 kB]
+2026-11-10T15:26:33.2967189Z Fetched 114 MB in 7min 51s (242 kB/s)
+2026-11-10T15:26:33.3382118Z Selecting previously unselected package fonts-ipafont-gothic.
+2026-11-10T15:26:33.4054330Z (Reading database ... 
+2026-11-10T15:26:33.4055233Z (Reading database ... 5%
+2026-11-10T15:26:33.4055575Z (Reading database ... 10%
+2026-11-10T15:26:33.4055860Z (Reading database ... 15%
+2026-11-10T15:26:33.4056138Z (Reading database ... 20%
+2026-11-10T15:26:33.4056430Z (Reading database ... 25%
+2026-11-10T15:26:33.4056688Z (Reading database ... 30%
+2026-11-10T15:26:33.4056950Z (Reading database ... 35%
+2026-11-10T15:26:33.4057203Z (Reading database ... 40%
+2026-11-10T15:26:33.4057457Z (Reading database ... 45%
+2026-11-10T15:26:33.4057710Z (Reading database ... 50%
+2026-11-10T15:26:33.4725186Z (Reading database ... 55%
+2026-11-10T15:26:33.8286469Z (Reading database ... 60%
+2026-11-10T15:26:34.2156886Z (Reading database ... 65%
+2026-11-10T15:26:34.5517507Z (Reading database ... 70%
+2026-11-10T15:26:34.8365843Z (Reading database ... 75%
+2026-11-10T15:26:35.4753104Z (Reading database ... 80%
+2026-11-10T15:26:36.3503004Z (Reading database ... 85%
+2026-11-10T15:26:37.2515052Z (Reading database ... 90%
+2026-11-10T15:26:38.1416070Z (Reading database ... 95%
+2026-11-10T15:26:38.1416635Z (Reading database ... 100%
+2026-11-10T15:26:38.1417400Z (Reading database ... 215960 files and directories currently installed.)
+2026-11-10T15:26:38.1464140Z Preparing to unpack .../000-fonts-ipafont-gothic_00303-21ubuntu1_all.deb ...
+2026-11-10T15:26:38.1577943Z Unpacking fonts-ipafont-gothic (00303-21ubuntu1) ...
+2026-11-10T15:26:38.4104378Z Selecting previously unselected package fonts-freefont-ttf.
+2026-11-10T15:26:38.4251063Z Preparing to unpack .../001-fonts-freefont-ttf_20211204+svn4273-2_all.deb ...
+2026-11-10T15:26:38.4260071Z Unpacking fonts-freefont-ttf (20211204+svn4273-2) ...
+2026-11-10T15:26:38.5213446Z Selecting previously unselected package fonts-tlwg-loma-otf.
+2026-11-10T15:26:38.5359043Z Preparing to unpack .../002-fonts-tlwg-loma-otf_1%3a0.7.3-1_all.deb ...
+2026-11-10T15:26:38.5366652Z Unpacking fonts-tlwg-loma-otf (1:0.7.3-1) ...
+2026-11-10T15:26:38.5676025Z Selecting previously unselected package fonts-unifont.
+2026-11-10T15:26:38.5828832Z Preparing to unpack .../003-fonts-unifont_1%3a15.1.01-1build1_all.deb ...
+2026-11-10T15:26:38.5837774Z Unpacking fonts-unifont (1:15.1.01-1build1) ...
+2026-11-10T15:26:38.6978728Z Selecting previously unselected package fonts-wqy-zenhei.
+2026-11-10T15:26:38.7124242Z Preparing to unpack .../004-fonts-wqy-zenhei_0.9.45-8_all.deb ...
+2026-11-10T15:26:38.7243220Z Unpacking fonts-wqy-zenhei (0.9.45-8) ...
+2026-11-10T15:26:39.2225748Z Selecting previously unselected package libproxy1v5:amd64.
+2026-11-10T15:26:39.2376552Z Preparing to unpack .../005-libproxy1v5_0.5.4-4build1_amd64.deb ...
+2026-11-10T15:26:39.2395885Z Unpacking libproxy1v5:amd64 (0.5.4-4build1) ...
+2026-11-10T15:26:39.2723226Z Selecting previously unselected package glib-networking-common.
+2026-11-10T15:26:39.2875042Z Preparing to unpack .../006-glib-networking-common_2.80.0-1build1_all.deb ...
+2026-11-10T15:26:39.2883664Z Unpacking glib-networking-common (2.80.0-1build1) ...
+2026-11-10T15:26:39.3139720Z Selecting previously unselected package glib-networking-services.
+2026-11-10T15:26:39.3290921Z Preparing to unpack .../007-glib-networking-services_2.80.0-1build1_amd64.deb ...
+2026-11-10T15:26:39.3299059Z Unpacking glib-networking-services (2.80.0-1build1) ...
+2026-11-10T15:26:39.3570333Z Selecting previously unselected package session-migration.
+2026-11-10T15:26:39.3722790Z Preparing to unpack .../008-session-migration_0.3.9build1_amd64.deb ...
+2026-11-10T15:26:39.3732553Z Unpacking session-migration (0.3.9build1) ...
+2026-11-10T15:26:39.4161836Z Selecting previously unselected package gsettings-desktop-schemas.
+2026-11-10T15:26:39.4312510Z Preparing to unpack .../009-gsettings-desktop-schemas_46.1-0ubuntu1_all.deb ...
+2026-11-10T15:26:39.4321693Z Unpacking gsettings-desktop-schemas (46.1-0ubuntu1) ...
+2026-11-10T15:26:39.4723607Z Selecting previously unselected package glib-networking:amd64.
+2026-11-10T15:26:39.4874937Z Preparing to unpack .../010-glib-networking_2.80.0-1build1_amd64.deb ...
+2026-11-10T15:26:39.4885026Z Unpacking glib-networking:amd64 (2.80.0-1build1) ...
+2026-11-10T15:26:39.5169026Z Selecting previously unselected package libva2:amd64.
+2026-11-10T15:26:39.5319651Z Preparing to unpack .../011-libva2_2.20.0-2ubuntu0.2_amd64.deb ...
+2026-11-10T15:26:39.5328369Z Unpacking libva2:amd64 (2.20.0-2ubuntu0.2) ...
+2026-11-10T15:26:39.5610078Z Selecting previously unselected package libva-drm2:amd64.
+2026-11-10T15:26:39.5765490Z Preparing to unpack .../012-libva-drm2_2.20.0-2ubuntu0.2_amd64.deb ...
+2026-11-10T15:26:39.5776589Z Unpacking libva-drm2:amd64 (2.20.0-2ubuntu0.2) ...
+2026-11-10T15:26:39.6045279Z Selecting previously unselected package libva-x11-2:amd64.
+2026-11-10T15:26:39.6199177Z Preparing to unpack .../013-libva-x11-2_2.20.0-2ubuntu0.2_amd64.deb ...
+2026-11-10T15:26:39.6209489Z Unpacking libva-x11-2:amd64 (2.20.0-2ubuntu0.2) ...
+2026-11-10T15:26:39.6485439Z Selecting previously unselected package libvdpau1:amd64.
+2026-11-10T15:26:39.6639001Z Preparing to unpack .../014-libvdpau1_1.5-2build1_amd64.deb ...
+2026-11-10T15:26:39.6648995Z Unpacking libvdpau1:amd64 (1.5-2build1) ...
+2026-11-10T15:26:39.6950543Z Selecting previously unselected package libvpl2.
+2026-11-10T15:26:39.7108654Z Preparing to unpack .../015-libvpl2_2023.3.0-1build1_amd64.deb ...
+2026-11-10T15:26:39.7118487Z Unpacking libvpl2 (2023.3.0-1build1) ...
+2026-11-10T15:26:39.7412589Z Selecting previously unselected package ocl-icd-libopencl1:amd64.
+2026-11-10T15:26:39.7567807Z Preparing to unpack .../016-ocl-icd-libopencl1_2.3.2-1build1_amd64.deb ...
+2026-11-10T15:26:39.7578491Z Unpacking ocl-icd-libopencl1:amd64 (2.3.2-1build1) ...
+2026-11-10T15:26:39.7932412Z Selecting previously unselected package libavutil58:amd64.
+2026-11-10T15:26:39.8085561Z Preparing to unpack .../017-libavutil58_7%3a6.1.1-3ubuntu5_amd64.deb ...
+2026-11-10T15:26:39.8095760Z Unpacking libavutil58:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:39.8416530Z Selecting previously unselected package libcodec2-1.2:amd64.
+2026-11-10T15:26:39.8570013Z Preparing to unpack .../018-libcodec2-1.2_1.2.0-2build1_amd64.deb ...
+2026-11-10T15:26:39.8579613Z Unpacking libcodec2-1.2:amd64 (1.2.0-2build1) ...
+2026-11-10T15:26:39.9407062Z Selecting previously unselected package libdav1d7:amd64.
+2026-11-10T15:26:39.9557598Z Preparing to unpack .../019-libdav1d7_1.4.1-1build1_amd64.deb ...
+2026-11-10T15:26:39.9567736Z Unpacking libdav1d7:amd64 (1.4.1-1build1) ...
+2026-11-10T15:26:39.9906587Z Selecting previously unselected package libgsm1:amd64.
+2026-11-10T15:26:40.0057687Z Preparing to unpack .../020-libgsm1_1.0.22-1build1_amd64.deb ...
+2026-11-10T15:26:40.0069048Z Unpacking libgsm1:amd64 (1.0.22-1build1) ...
+2026-11-10T15:26:40.0378892Z Selecting previously unselected package libhwy1t64:amd64.
+2026-11-10T15:26:40.0533396Z Preparing to unpack .../021-libhwy1t64_1.0.7-8.1build1_amd64.deb ...
+2026-11-10T15:26:40.0544265Z Unpacking libhwy1t64:amd64 (1.0.7-8.1build1) ...
+2026-11-10T15:26:40.0942416Z Selecting previously unselected package libjxl0.7:amd64.
+2026-11-10T15:26:40.1095292Z Preparing to unpack .../022-libjxl0.7_0.7.0-10.2ubuntu6.1_amd64.deb ...
+2026-11-10T15:26:40.1104545Z Unpacking libjxl0.7:amd64 (0.7.0-10.2ubuntu6.1) ...
+2026-11-10T15:26:40.1520365Z Selecting previously unselected package libmp3lame0:amd64.
+2026-11-10T15:26:40.1671308Z Preparing to unpack .../023-libmp3lame0_3.100-6build1_amd64.deb ...
+2026-11-10T15:26:40.1681575Z Unpacking libmp3lame0:amd64 (3.100-6build1) ...
+2026-11-10T15:26:40.1958889Z Selecting previously unselected package libopus0:amd64.
+2026-11-10T15:26:40.2113528Z Preparing to unpack .../024-libopus0_1.4-1build1_amd64.deb ...
+2026-11-10T15:26:40.2122296Z Unpacking libopus0:amd64 (1.4-1build1) ...
+2026-11-10T15:26:40.2418434Z Selecting previously unselected package librav1e0:amd64.
+2026-11-10T15:26:40.2566117Z Preparing to unpack .../025-librav1e0_0.7.1-2_amd64.deb ...
+2026-11-10T15:26:40.2575059Z Unpacking librav1e0:amd64 (0.7.1-2) ...
+2026-11-10T15:26:40.2967538Z Selecting previously unselected package librsvg2-2:amd64.
+2026-11-10T15:26:40.3115852Z Preparing to unpack .../026-librsvg2-2_2.58.0+dfsg-1ubuntu0.1_amd64.deb ...
+2026-11-10T15:26:40.3124789Z Unpacking librsvg2-2:amd64 (2.58.0+dfsg-1ubuntu0.1) ...
+2026-11-10T15:26:40.3675561Z Selecting previously unselected package libshine3:amd64.
+2026-11-10T15:26:40.3825111Z Preparing to unpack .../027-libshine3_3.1.1-2build1_amd64.deb ...
+2026-11-10T15:26:40.3833340Z Unpacking libshine3:amd64 (3.1.1-2build1) ...
+2026-11-10T15:26:40.4093001Z Selecting previously unselected package libspeex1:amd64.
+2026-11-10T15:26:40.4242970Z Preparing to unpack .../028-libspeex1_1.2.1-2ubuntu2.24.04.1_amd64.deb ...
+2026-11-10T15:26:40.4251968Z Unpacking libspeex1:amd64 (1.2.1-2ubuntu2.24.04.1) ...
+2026-11-10T15:26:40.4517390Z Selecting previously unselected package libsvtav1enc1d1:amd64.
+2026-11-10T15:26:40.4665432Z Preparing to unpack .../029-libsvtav1enc1d1_1.7.0+dfsg-2build1_amd64.deb ...
+2026-11-10T15:26:40.4676720Z Unpacking libsvtav1enc1d1:amd64 (1.7.0+dfsg-2build1) ...
+2026-11-10T15:26:40.5252616Z Selecting previously unselected package libsoxr0:amd64.
+2026-11-10T15:26:40.5399161Z Preparing to unpack .../030-libsoxr0_0.1.3-4build3_amd64.deb ...
+2026-11-10T15:26:40.5407815Z Unpacking libsoxr0:amd64 (0.1.3-4build3) ...
+2026-11-10T15:26:40.5672572Z Selecting previously unselected package libswresample4:amd64.
+2026-11-10T15:26:40.5820688Z Preparing to unpack .../031-libswresample4_7%3a6.1.1-3ubuntu5_amd64.deb ...
+2026-11-10T15:26:40.5830061Z Unpacking libswresample4:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:40.6104607Z Selecting previously unselected package libtheora0:amd64.
+2026-11-10T15:26:40.6258275Z Preparing to unpack .../032-libtheora0_1.1.1+dfsg.1-16.1build3_amd64.deb ...
+2026-11-10T15:26:40.6267875Z Unpacking libtheora0:amd64 (1.1.1+dfsg.1-16.1build3) ...
+2026-11-10T15:26:40.6569215Z Selecting previously unselected package libtwolame0:amd64.
+2026-11-10T15:26:40.6719347Z Preparing to unpack .../033-libtwolame0_0.4.0-2build3_amd64.deb ...
+2026-11-10T15:26:40.6728341Z Unpacking libtwolame0:amd64 (0.4.0-2build3) ...
+2026-11-10T15:26:40.6998974Z Selecting previously unselected package libvorbisenc2:amd64.
+2026-11-10T15:26:40.7149742Z Preparing to unpack .../034-libvorbisenc2_1.3.7-1build3_amd64.deb ...
+2026-11-10T15:26:40.7160410Z Unpacking libvorbisenc2:amd64 (1.3.7-1build3) ...
+2026-11-10T15:26:40.7456647Z Selecting previously unselected package libvpx9:amd64.
+2026-11-10T15:26:40.7610663Z Preparing to unpack .../035-libvpx9_1.14.0-1ubuntu2.3_amd64.deb ...
+2026-11-10T15:26:40.7620576Z Unpacking libvpx9:amd64 (1.14.0-1ubuntu2.3) ...
+2026-11-10T15:26:40.8020938Z Selecting previously unselected package libx264-164:amd64.
+2026-11-10T15:26:40.8172658Z Preparing to unpack .../036-libx264-164_2%3a0.164.3108+git31e19f9-1_amd64.deb ...
+2026-11-10T15:26:40.8183758Z Unpacking libx264-164:amd64 (2:0.164.3108+git31e19f9-1) ...
+2026-11-10T15:26:40.8524305Z Selecting previously unselected package libx265-199:amd64.
+2026-11-10T15:26:40.8677231Z Preparing to unpack .../037-libx265-199_3.5-2build1_amd64.deb ...
+2026-11-10T15:26:40.8686704Z Unpacking libx265-199:amd64 (3.5-2build1) ...
+2026-11-10T15:26:40.9407731Z Selecting previously unselected package libxvidcore4:amd64.
+2026-11-10T15:26:40.9558907Z Preparing to unpack .../038-libxvidcore4_2%3a1.3.7-1build1_amd64.deb ...
+2026-11-10T15:26:40.9568620Z Unpacking libxvidcore4:amd64 (2:1.3.7-1build1) ...
+2026-11-10T15:26:40.9859187Z Selecting previously unselected package libzvbi-common.
+2026-11-10T15:26:41.0014278Z Preparing to unpack .../039-libzvbi-common_0.2.42-2_all.deb ...
+2026-11-10T15:26:41.0022813Z Unpacking libzvbi-common (0.2.42-2) ...
+2026-11-10T15:26:41.0769319Z Selecting previously unselected package libzvbi0t64:amd64.
+2026-11-10T15:26:41.0923493Z Preparing to unpack .../040-libzvbi0t64_0.2.42-2_amd64.deb ...
+2026-11-10T15:26:41.0933284Z Unpacking libzvbi0t64:amd64 (0.2.42-2) ...
+2026-11-10T15:26:41.1274417Z Selecting previously unselected package libavcodec60:amd64.
+2026-11-10T15:26:41.1428897Z Preparing to unpack .../041-libavcodec60_7%3a6.1.1-3ubuntu5_amd64.deb ...
+2026-11-10T15:26:41.1439094Z Unpacking libavcodec60:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:41.2440060Z Selecting previously unselected package libunibreak5:amd64.
+2026-11-10T15:26:41.2594565Z Preparing to unpack .../042-libunibreak5_5.1-2build1_amd64.deb ...
+2026-11-10T15:26:41.2603340Z Unpacking libunibreak5:amd64 (5.1-2build1) ...
+2026-11-10T15:26:41.2885541Z Selecting previously unselected package libass9:amd64.
+2026-11-10T15:26:41.3039601Z Preparing to unpack .../043-libass9_1%3a0.17.1-2build1_amd64.deb ...
+2026-11-10T15:26:41.3048681Z Unpacking libass9:amd64 (1:0.17.1-2build1) ...
+2026-11-10T15:26:41.3328212Z Selecting previously unselected package libudfread0:amd64.
+2026-11-10T15:26:41.3483149Z Preparing to unpack .../044-libudfread0_1.1.2-1build1_amd64.deb ...
+2026-11-10T15:26:41.3495921Z Unpacking libudfread0:amd64 (1.1.2-1build1) ...
+2026-11-10T15:26:41.3778978Z Selecting previously unselected package libbluray2:amd64.
+2026-11-10T15:26:41.3930544Z Preparing to unpack .../045-libbluray2_1%3a1.3.4-1build1_amd64.deb ...
+2026-11-10T15:26:41.3940248Z Unpacking libbluray2:amd64 (1:1.3.4-1build1) ...
+2026-11-10T15:26:41.4232324Z Selecting previously unselected package libchromaprint1:amd64.
+2026-11-10T15:26:41.4385166Z Preparing to unpack .../046-libchromaprint1_1.5.1-5_amd64.deb ...
+2026-11-10T15:26:41.4394620Z Unpacking libchromaprint1:amd64 (1.5.1-5) ...
+2026-11-10T15:26:41.4672696Z Selecting previously unselected package libgme0:amd64.
+2026-11-10T15:26:41.4824645Z Preparing to unpack .../047-libgme0_0.6.3-7build1_amd64.deb ...
+2026-11-10T15:26:41.4835228Z Unpacking libgme0:amd64 (0.6.3-7build1) ...
+2026-11-10T15:26:41.5128645Z Selecting previously unselected package libmpg123-0t64:amd64.
+2026-11-10T15:26:41.5278099Z Preparing to unpack .../048-libmpg123-0t64_1.32.5-1ubuntu1.1_amd64.deb ...
+2026-11-10T15:26:41.5288122Z Unpacking libmpg123-0t64:amd64 (1.32.5-1ubuntu1.1) ...
+2026-11-10T15:26:41.5577467Z Selecting previously unselected package libopenmpt0t64:amd64.
+2026-11-10T15:26:41.5727770Z Preparing to unpack .../049-libopenmpt0t64_0.7.3-1.1build3_amd64.deb ...
+2026-11-10T15:26:41.5737099Z Unpacking libopenmpt0t64:amd64 (0.7.3-1.1build3) ...
+2026-11-10T15:26:41.6085719Z Selecting previously unselected package libcjson1:amd64.
+2026-11-10T15:26:41.6236509Z Preparing to unpack .../050-libcjson1_1.7.17-1_amd64.deb ...
+2026-11-10T15:26:41.6247424Z Unpacking libcjson1:amd64 (1.7.17-1) ...
+2026-11-10T15:26:41.6522130Z Selecting previously unselected package libmbedcrypto7t64:amd64.
+2026-11-10T15:26:41.6672623Z Preparing to unpack .../051-libmbedcrypto7t64_2.28.8-1_amd64.deb ...
+2026-11-10T15:26:41.6682103Z Unpacking libmbedcrypto7t64:amd64 (2.28.8-1) ...
+2026-11-10T15:26:41.6985029Z Selecting previously unselected package librist4:amd64.
+2026-11-10T15:26:41.7135465Z Preparing to unpack .../052-librist4_0.2.10+dfsg-2_amd64.deb ...
+2026-11-10T15:26:41.7144840Z Unpacking librist4:amd64 (0.2.10+dfsg-2) ...
+2026-11-10T15:26:41.7423385Z Selecting previously unselected package libsrt1.5-gnutls:amd64.
+2026-11-10T15:26:41.7577992Z Preparing to unpack .../053-libsrt1.5-gnutls_1.5.3-1build2_amd64.deb ...
+2026-11-10T15:26:41.7587546Z Unpacking libsrt1.5-gnutls:amd64 (1.5.3-1build2) ...
+2026-11-10T15:26:41.7918241Z Selecting previously unselected package libssh-gcrypt-4:amd64.
+2026-11-10T15:26:41.8069575Z Preparing to unpack .../054-libssh-gcrypt-4_0.10.6-2ubuntu0.5_amd64.deb ...
+2026-11-10T15:26:41.8079135Z Unpacking libssh-gcrypt-4:amd64 (0.10.6-2ubuntu0.5) ...
+2026-11-10T15:26:41.8385044Z Selecting previously unselected package libavformat60:amd64.
+2026-11-10T15:26:41.8536416Z Preparing to unpack .../055-libavformat60_7%3a6.1.1-3ubuntu5_amd64.deb ...
+2026-11-10T15:26:41.8547214Z Unpacking libavformat60:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:41.8946460Z Selecting previously unselected package libbs2b0:amd64.
+2026-11-10T15:26:41.9098754Z Preparing to unpack .../056-libbs2b0_3.1.0+dfsg-7build1_amd64.deb ...
+2026-11-10T15:26:41.9108426Z Unpacking libbs2b0:amd64 (3.1.0+dfsg-7build1) ...
+2026-11-10T15:26:41.9405891Z Selecting previously unselected package libflite1:amd64.
+2026-11-10T15:26:41.9557865Z Preparing to unpack .../057-libflite1_2.2-6build3_amd64.deb ...
+2026-11-10T15:26:41.9569550Z Unpacking libflite1:amd64 (2.2-6build3) ...
+2026-11-10T15:26:42.0795709Z Selecting previously unselected package libserd-0-0:amd64.
+2026-11-10T15:26:42.0947234Z Preparing to unpack .../058-libserd-0-0_0.32.2-1_amd64.deb ...
+2026-11-10T15:26:42.0956381Z Unpacking libserd-0-0:amd64 (0.32.2-1) ...
+2026-11-10T15:26:42.1240371Z Selecting previously unselected package libzix-0-0:amd64.
+2026-11-10T15:26:42.1387703Z Preparing to unpack .../059-libzix-0-0_0.4.2-2build1_amd64.deb ...
+2026-11-10T15:26:42.1397693Z Unpacking libzix-0-0:amd64 (0.4.2-2build1) ...
+2026-11-10T15:26:42.1661381Z Selecting previously unselected package libsord-0-0:amd64.
+2026-11-10T15:26:42.1809613Z Preparing to unpack .../060-libsord-0-0_0.16.16-2build1_amd64.deb ...
+2026-11-10T15:26:42.1824616Z Unpacking libsord-0-0:amd64 (0.16.16-2build1) ...
+2026-11-10T15:26:42.2076811Z Selecting previously unselected package libsratom-0-0:amd64.
+2026-11-10T15:26:42.2225862Z Preparing to unpack .../061-libsratom-0-0_0.6.16-1build1_amd64.deb ...
+2026-11-10T15:26:42.2235454Z Unpacking libsratom-0-0:amd64 (0.6.16-1build1) ...
+2026-11-10T15:26:42.2497001Z Selecting previously unselected package liblilv-0-0:amd64.
+2026-11-10T15:26:42.2648642Z Preparing to unpack .../062-liblilv-0-0_0.24.22-1build1_amd64.deb ...
+2026-11-10T15:26:42.2657945Z Unpacking liblilv-0-0:amd64 (0.24.22-1build1) ...
+2026-11-10T15:26:42.2917828Z Selecting previously unselected package libmysofa1:amd64.
+2026-11-10T15:26:42.3069064Z Preparing to unpack .../063-libmysofa1_1.3.2+dfsg-2ubuntu2_amd64.deb ...
+2026-11-10T15:26:42.3079637Z Unpacking libmysofa1:amd64 (1.3.2+dfsg-2ubuntu2) ...
+2026-11-10T15:26:42.3432394Z Selecting previously unselected package libplacebo338:amd64.
+2026-11-10T15:26:42.3583505Z Preparing to unpack .../064-libplacebo338_6.338.2-2build1_amd64.deb ...
+2026-11-10T15:26:42.3591974Z Unpacking libplacebo338:amd64 (6.338.2-2build1) ...
+2026-11-10T15:26:42.4247400Z Selecting previously unselected package libblas3:amd64.
+2026-11-10T15:26:42.4398815Z Preparing to unpack .../065-libblas3_3.12.0-3build1.1_amd64.deb ...
+2026-11-10T15:26:42.4443736Z Unpacking libblas3:amd64 (3.12.0-3build1.1) ...
+2026-11-10T15:26:42.4730467Z Selecting previously unselected package liblapack3:amd64.
+2026-11-10T15:26:42.4878777Z Preparing to unpack .../066-liblapack3_3.12.0-3build1.1_amd64.deb ...
+2026-11-10T15:26:42.4925167Z Unpacking liblapack3:amd64 (3.12.0-3build1.1) ...
+2026-11-10T15:26:42.5493214Z Selecting previously unselected package libasyncns0:amd64.
+2026-11-10T15:26:42.5643109Z Preparing to unpack .../067-libasyncns0_0.8-6build4_amd64.deb ...
+2026-11-10T15:26:42.5650776Z Unpacking libasyncns0:amd64 (0.8-6build4) ...
+2026-11-10T15:26:42.5900025Z Selecting previously unselected package libflac12t64:amd64.
+2026-11-10T15:26:42.6056025Z Preparing to unpack .../068-libflac12t64_1.4.3+ds-2.1ubuntu2_amd64.deb ...
+2026-11-10T15:26:42.6063676Z Unpacking libflac12t64:amd64 (1.4.3+ds-2.1ubuntu2) ...
+2026-11-10T15:26:42.6340111Z Selecting previously unselected package libsndfile1:amd64.
+2026-11-10T15:26:42.6488530Z Preparing to unpack .../069-libsndfile1_1.2.2-1ubuntu5.24.04.1_amd64.deb ...
+2026-11-10T15:26:42.6497177Z Unpacking libsndfile1:amd64 (1.2.2-1ubuntu5.24.04.1) ...
+2026-11-10T15:26:42.6790701Z Selecting previously unselected package libpulse0:amd64.
+2026-11-10T15:26:42.6938927Z Preparing to unpack .../070-libpulse0_1%3a16.1+dfsg1-2ubuntu10.1_amd64.deb ...
+2026-11-10T15:26:42.7021060Z Unpacking libpulse0:amd64 (1:16.1+dfsg1-2ubuntu10.1) ...
+2026-11-10T15:26:42.7307926Z Selecting previously unselected package libsphinxbase3t64:amd64.
+2026-11-10T15:26:42.7452850Z Preparing to unpack .../071-libsphinxbase3t64_0.8+5prealpha+1-17build2_amd64.deb ...
+2026-11-10T15:26:42.7460902Z Unpacking libsphinxbase3t64:amd64 (0.8+5prealpha+1-17build2) ...
+2026-11-10T15:26:42.7730544Z Selecting previously unselected package libpocketsphinx3:amd64.
+2026-11-10T15:26:42.7881517Z Preparing to unpack .../072-libpocketsphinx3_0.8.0+real5prealpha+1-15ubuntu5_amd64.deb ...
+2026-11-10T15:26:42.7890150Z Unpacking libpocketsphinx3:amd64 (0.8.0+real5prealpha+1-15ubuntu5) ...
+2026-11-10T15:26:42.8151697Z Selecting previously unselected package libpostproc57:amd64.
+2026-11-10T15:26:42.8298861Z Preparing to unpack .../073-libpostproc57_7%3a6.1.1-3ubuntu5_amd64.deb ...
+2026-11-10T15:26:42.8306668Z Unpacking libpostproc57:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:42.8558997Z Selecting previously unselected package libsamplerate0:amd64.
+2026-11-10T15:26:42.8705288Z Preparing to unpack .../074-libsamplerate0_0.2.2-4build1_amd64.deb ...
+2026-11-10T15:26:42.8713560Z Unpacking libsamplerate0:amd64 (0.2.2-4build1) ...
+2026-11-10T15:26:42.9021514Z Selecting previously unselected package librubberband2:amd64.
+2026-11-10T15:26:42.9168710Z Preparing to unpack .../075-librubberband2_3.3.0+dfsg-2build1_amd64.deb ...
+2026-11-10T15:26:42.9176054Z Unpacking librubberband2:amd64 (3.3.0+dfsg-2build1) ...
+2026-11-10T15:26:42.9437163Z Selecting previously unselected package libswscale7:amd64.
+2026-11-10T15:26:42.9588808Z Preparing to unpack .../076-libswscale7_7%3a6.1.1-3ubuntu5_amd64.deb ...
+2026-11-10T15:26:42.9598144Z Unpacking libswscale7:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:42.9878817Z Selecting previously unselected package libvidstab1.1:amd64.
+2026-11-10T15:26:43.0029289Z Preparing to unpack .../077-libvidstab1.1_1.1.0-2build1_amd64.deb ...
+2026-11-10T15:26:43.0039247Z Unpacking libvidstab1.1:amd64 (1.1.0-2build1) ...
+2026-11-10T15:26:43.0290518Z Selecting previously unselected package libzimg2:amd64.
+2026-11-10T15:26:43.0439803Z Preparing to unpack .../078-libzimg2_3.0.5+ds1-1build1_amd64.deb ...
+2026-11-10T15:26:43.0449791Z Unpacking libzimg2:amd64 (3.0.5+ds1-1build1) ...
+2026-11-10T15:26:43.0739005Z Selecting previously unselected package libavfilter9:amd64.
+2026-11-10T15:26:43.0889576Z Preparing to unpack .../079-libavfilter9_7%3a6.1.1-3ubuntu5_amd64.deb ...
+2026-11-10T15:26:43.0897760Z Unpacking libavfilter9:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:43.1722257Z Selecting previously unselected package liborc-0.4-0t64:amd64.
+2026-11-10T15:26:43.1870434Z Preparing to unpack .../080-liborc-0.4-0t64_1%3a0.4.38-1ubuntu0.1_amd64.deb ...
+2026-11-10T15:26:43.1878801Z Unpacking liborc-0.4-0t64:amd64 (1:0.4.38-1ubuntu0.1) ...
+2026-11-10T15:26:43.2167503Z Selecting previously unselected package libgstreamer-plugins-base1.0-0:amd64.
+2026-11-10T15:26:43.2315937Z Preparing to unpack .../081-libgstreamer-plugins-base1.0-0_1.24.2-1ubuntu0.5_amd64.deb ...
+2026-11-10T15:26:43.2324807Z Unpacking libgstreamer-plugins-base1.0-0:amd64 (1.24.2-1ubuntu0.5) ...
+2026-11-10T15:26:43.2953818Z Selecting previously unselected package gstreamer1.0-libav:amd64.
+2026-11-10T15:26:43.3104254Z Preparing to unpack .../082-gstreamer1.0-libav_1.24.1-1build1_amd64.deb ...
+2026-11-10T15:26:43.3111632Z Unpacking gstreamer1.0-libav:amd64 (1.24.1-1build1) ...
+2026-11-10T15:26:43.3379020Z Selecting previously unselected package libcdparanoia0:amd64.
+2026-11-10T15:26:43.3525599Z Preparing to unpack .../083-libcdparanoia0_3.10.2+debian-14build3_amd64.deb ...
+2026-11-10T15:26:43.3533426Z Unpacking libcdparanoia0:amd64 (3.10.2+debian-14build3) ...
+2026-11-10T15:26:43.3798733Z Selecting previously unselected package libvisual-0.4-0:amd64.
+2026-11-10T15:26:43.3950701Z Preparing to unpack .../084-libvisual-0.4-0_0.4.2-2build1_amd64.deb ...
+2026-11-10T15:26:43.3958245Z Unpacking libvisual-0.4-0:amd64 (0.4.2-2build1) ...
+2026-11-10T15:26:43.4224976Z Selecting previously unselected package gstreamer1.0-plugins-base:amd64.
+2026-11-10T15:26:43.4371210Z Preparing to unpack .../085-gstreamer1.0-plugins-base_1.24.2-1ubuntu0.5_amd64.deb ...
+2026-11-10T15:26:43.4378637Z Unpacking gstreamer1.0-plugins-base:amd64 (1.24.2-1ubuntu0.5) ...
+2026-11-10T15:26:43.4778138Z Selecting previously unselected package libaa1:amd64.
+2026-11-10T15:26:43.4926747Z Preparing to unpack .../086-libaa1_1.4p5-51.1_amd64.deb ...
+2026-11-10T15:26:43.4933213Z Unpacking libaa1:amd64 (1.4p5-51.1) ...
+2026-11-10T15:26:43.5194843Z Selecting previously unselected package libraw1394-11:amd64.
+2026-11-10T15:26:43.5341476Z Preparing to unpack .../087-libraw1394-11_2.1.2-2build3_amd64.deb ...
+2026-11-10T15:26:43.5349354Z Unpacking libraw1394-11:amd64 (2.1.2-2build3) ...
+2026-11-10T15:26:43.5598967Z Selecting previously unselected package libavc1394-0:amd64.
+2026-11-10T15:26:43.5745519Z Preparing to unpack .../088-libavc1394-0_0.5.4-5build3_amd64.deb ...
+2026-11-10T15:26:43.5754974Z Unpacking libavc1394-0:amd64 (0.5.4-5build3) ...
+2026-11-10T15:26:43.6002602Z Selecting previously unselected package libcaca0:amd64.
+2026-11-10T15:26:43.6151614Z Preparing to unpack .../089-libcaca0_0.99.beta20-4ubuntu0.2_amd64.deb ...
+2026-11-10T15:26:43.6164750Z Unpacking libcaca0:amd64 (0.99.beta20-4ubuntu0.2) ...
+2026-11-10T15:26:43.6457701Z Selecting previously unselected package libdv4t64:amd64.
+2026-11-10T15:26:43.6607184Z Preparing to unpack .../090-libdv4t64_1.0.0-17.1build1_amd64.deb ...
+2026-11-10T15:26:43.6614988Z Unpacking libdv4t64:amd64 (1.0.0-17.1build1) ...
+2026-11-10T15:26:43.6880145Z Selecting previously unselected package libgstreamer-plugins-good1.0-0:amd64.
+2026-11-10T15:26:43.7026351Z Preparing to unpack .../091-libgstreamer-plugins-good1.0-0_1.24.2-1ubuntu1.8_amd64.deb ...
+2026-11-10T15:26:43.7033753Z Unpacking libgstreamer-plugins-good1.0-0:amd64 (1.24.2-1ubuntu1.8) ...
+2026-11-10T15:26:43.7305008Z Selecting previously unselected package libiec61883-0:amd64.
+2026-11-10T15:26:43.7453341Z Preparing to unpack .../092-libiec61883-0_1.2.0-6build1_amd64.deb ...
+2026-11-10T15:26:43.7461249Z Unpacking libiec61883-0:amd64 (1.2.0-6build1) ...
+2026-11-10T15:26:43.7716364Z Selecting previously unselected package libshout3:amd64.
+2026-11-10T15:26:43.7866472Z Preparing to unpack .../093-libshout3_2.4.6-1build2_amd64.deb ...
+2026-11-10T15:26:43.7874903Z Unpacking libshout3:amd64 (2.4.6-1build2) ...
+2026-11-10T15:26:43.8144429Z Selecting previously unselected package libtag1v5-vanilla:amd64.
+2026-11-10T15:26:43.8300399Z Preparing to unpack .../094-libtag1v5-vanilla_1.13.1-1build1_amd64.deb ...
+2026-11-10T15:26:43.8310170Z Unpacking libtag1v5-vanilla:amd64 (1.13.1-1build1) ...
+2026-11-10T15:26:43.8596882Z Selecting previously unselected package libtag1v5:amd64.
+2026-11-10T15:26:43.8746195Z Preparing to unpack .../095-libtag1v5_1.13.1-1build1_amd64.deb ...
+2026-11-10T15:26:43.8753132Z Unpacking libtag1v5:amd64 (1.13.1-1build1) ...
+2026-11-10T15:26:43.9009985Z Selecting previously unselected package libv4lconvert0t64:amd64.
+2026-11-10T15:26:43.9156549Z Preparing to unpack .../096-libv4lconvert0t64_1.26.1-4build3_amd64.deb ...
+2026-11-10T15:26:43.9163467Z Unpacking libv4lconvert0t64:amd64 (1.26.1-4build3) ...
+2026-11-10T15:26:43.9432324Z Selecting previously unselected package libv4l-0t64:amd64.
+2026-11-10T15:26:43.9579909Z Preparing to unpack .../097-libv4l-0t64_1.26.1-4build3_amd64.deb ...
+2026-11-10T15:26:43.9587776Z Unpacking libv4l-0t64:amd64 (1.26.1-4build3) ...
+2026-11-10T15:26:43.9859479Z Selecting previously unselected package libwavpack1:amd64.
+2026-11-10T15:26:44.0007161Z Preparing to unpack .../098-libwavpack1_5.6.0-1build1_amd64.deb ...
+2026-11-10T15:26:44.0015509Z Unpacking libwavpack1:amd64 (5.6.0-1build1) ...
+2026-11-10T15:26:44.0270444Z Selecting previously unselected package libsoup-3.0-common.
+2026-11-10T15:26:44.0419879Z Preparing to unpack .../099-libsoup-3.0-common_3.4.4-5ubuntu0.11_all.deb ...
+2026-11-10T15:26:44.0426945Z Unpacking libsoup-3.0-common (3.4.4-5ubuntu0.11) ...
+2026-11-10T15:26:44.0679403Z Selecting previously unselected package libsoup-3.0-0:amd64.
+2026-11-10T15:26:44.0826800Z Preparing to unpack .../100-libsoup-3.0-0_3.4.4-5ubuntu0.11_amd64.deb ...
+2026-11-10T15:26:44.0834763Z Unpacking libsoup-3.0-0:amd64 (3.4.4-5ubuntu0.11) ...
+2026-11-10T15:26:44.1113389Z Selecting previously unselected package gstreamer1.0-plugins-good:amd64.
+2026-11-10T15:26:44.1263262Z Preparing to unpack .../101-gstreamer1.0-plugins-good_1.24.2-1ubuntu1.8_amd64.deb ...
+2026-11-10T15:26:44.1270719Z Unpacking gstreamer1.0-plugins-good:amd64 (1.24.2-1ubuntu1.8) ...
+2026-11-10T15:26:44.1946670Z Selecting previously unselected package libabsl20220623t64:amd64.
+2026-11-10T15:26:44.2097533Z Preparing to unpack .../102-libabsl20220623t64_20220623.1-3.1ubuntu3.2_amd64.deb ...
+2026-11-10T15:26:44.2106476Z Unpacking libabsl20220623t64:amd64 (20220623.1-3.1ubuntu3.2) ...
+2026-11-10T15:26:44.2572739Z Selecting previously unselected package libgav1-1:amd64.
+2026-11-10T15:26:44.2724962Z Preparing to unpack .../103-libgav1-1_0.18.0-1build3_amd64.deb ...
+2026-11-10T15:26:44.2732340Z Unpacking libgav1-1:amd64 (0.18.0-1build3) ...
+2026-11-10T15:26:44.3035196Z Selecting previously unselected package libyuv0:amd64.
+2026-11-10T15:26:44.3186574Z Preparing to unpack .../104-libyuv0_0.0~git202401110.af6ac82-1_amd64.deb ...
+2026-11-10T15:26:44.3193380Z Unpacking libyuv0:amd64 (0.0~git202401110.af6ac82-1) ...
+2026-11-10T15:26:44.3480889Z Selecting previously unselected package libavif16:amd64.
+2026-11-10T15:26:44.3629154Z Preparing to unpack .../105-libavif16_1.0.4-1ubuntu3_amd64.deb ...
+2026-11-10T15:26:44.3636506Z Unpacking libavif16:amd64 (1.0.4-1ubuntu3) ...
+2026-11-10T15:26:44.3889272Z Selecting previously unselected package libavtp0:amd64.
+2026-11-10T15:26:44.4038977Z Preparing to unpack .../106-libavtp0_0.2.0-1build1_amd64.deb ...
+2026-11-10T15:26:44.4046808Z Unpacking libavtp0:amd64 (0.2.0-1build1) ...
+2026-11-10T15:26:44.4295274Z Selecting previously unselected package libcairo-script-interpreter2:amd64.
+2026-11-10T15:26:44.4442631Z Preparing to unpack .../107-libcairo-script-interpreter2_1.18.0-3build1_amd64.deb ...
+2026-11-10T15:26:44.4450973Z Unpacking libcairo-script-interpreter2:amd64 (1.18.0-3build1) ...
+2026-11-10T15:26:44.4714893Z Selecting previously unselected package libdc1394-25:amd64.
+2026-11-10T15:26:44.4864775Z Preparing to unpack .../108-libdc1394-25_2.2.6-4build1_amd64.deb ...
+2026-11-10T15:26:44.4872969Z Unpacking libdc1394-25:amd64 (2.2.6-4build1) ...
+2026-11-10T15:26:44.5145087Z Selecting previously unselected package libde265-0:amd64.
+2026-11-10T15:26:44.5296086Z Preparing to unpack .../109-libde265-0_1.0.15-1ubuntu0.2_amd64.deb ...
+2026-11-10T15:26:44.5303585Z Unpacking libde265-0:amd64 (1.0.15-1ubuntu0.2) ...
+2026-11-10T15:26:44.5575972Z Selecting previously unselected package libdecor-0-0:amd64.
+2026-11-10T15:26:44.5741086Z Preparing to unpack .../110-libdecor-0-0_0.2.2-1build2_amd64.deb ...
+2026-11-10T15:26:44.5750186Z Unpacking libdecor-0-0:amd64 (0.2.2-1build2) ...
+2026-11-10T15:26:44.6002682Z Selecting previously unselected package libgles2:amd64.
+2026-11-10T15:26:44.6159064Z Preparing to unpack .../111-libgles2_1.7.0-1build1_amd64.deb ...
+2026-11-10T15:26:44.6167029Z Unpacking libgles2:amd64 (1.7.0-1build1) ...
+2026-11-10T15:26:44.6429763Z Selecting previously unselected package libdirectfb-1.7-7t64:amd64.
+2026-11-10T15:26:44.6576671Z Preparing to unpack .../112-libdirectfb-1.7-7t64_1.7.7-11.1ubuntu2_amd64.deb ...
+2026-11-10T15:26:44.6584955Z Unpacking libdirectfb-1.7-7t64:amd64 (1.7.7-11.1ubuntu2) ...
+2026-11-10T15:26:44.7066584Z Selecting previously unselected package libdvdread8t64:amd64.
+2026-11-10T15:26:44.7215975Z Preparing to unpack .../113-libdvdread8t64_6.1.3-1.1build1_amd64.deb ...
+2026-11-10T15:26:44.7225904Z Unpacking libdvdread8t64:amd64 (6.1.3-1.1build1) ...
+2026-11-10T15:26:44.7489293Z Selecting previously unselected package libdvdnav4:amd64.
+2026-11-10T15:26:44.7635244Z Preparing to unpack .../114-libdvdnav4_6.1.1-3build1_amd64.deb ...
+2026-11-10T15:26:44.7642990Z Unpacking libdvdnav4:amd64 (6.1.1-3build1) ...
+2026-11-10T15:26:44.7919205Z Selecting previously unselected package libegl-mesa0:amd64.
+2026-11-10T15:26:44.8069559Z Preparing to unpack .../115-libegl-mesa0_25.2.8-0ubuntu0.24.04.4_amd64.deb ...
+2026-11-10T15:26:44.8077298Z Unpacking libegl-mesa0:amd64 (25.2.8-0ubuntu0.24.04.4) ...
+2026-11-10T15:26:44.8365595Z Selecting previously unselected package libevent-2.1-7t64:amd64.
+2026-11-10T15:26:44.8514609Z Preparing to unpack .../116-libevent-2.1-7t64_2.1.12-stable-9ubuntu2.2_amd64.deb ...
+2026-11-10T15:26:44.8524365Z Unpacking libevent-2.1-7t64:amd64 (2.1.12-stable-9ubuntu2.2) ...
+2026-11-10T15:26:44.8841369Z Selecting previously unselected package libfaad2:amd64.
+2026-11-10T15:26:44.8992611Z Preparing to unpack .../117-libfaad2_2.11.1-1build1_amd64.deb ...
+2026-11-10T15:26:44.9000670Z Unpacking libfaad2:amd64 (2.11.1-1build1) ...
+2026-11-10T15:26:44.9291861Z Selecting previously unselected package libinstpatch-1.0-2:amd64.
+2026-11-10T15:26:44.9445627Z Preparing to unpack .../118-libinstpatch-1.0-2_1.1.6-1build2_amd64.deb ...
+2026-11-10T15:26:44.9453522Z Unpacking libinstpatch-1.0-2:amd64 (1.1.6-1build2) ...
+2026-11-10T15:26:44.9751645Z Selecting previously unselected package libjack-jackd2-0:amd64.
+2026-11-10T15:26:44.9903260Z Preparing to unpack .../119-libjack-jackd2-0_1.9.21~dfsg-3ubuntu3_amd64.deb ...
+2026-11-10T15:26:44.9920701Z Unpacking libjack-jackd2-0:amd64 (1.9.21~dfsg-3ubuntu3) ...
+2026-11-10T15:26:45.0227761Z Selecting previously unselected package libwebrtc-audio-processing1:amd64.
+2026-11-10T15:26:45.0378045Z Preparing to unpack .../120-libwebrtc-audio-processing1_0.3.1-0ubuntu6_amd64.deb ...
+2026-11-10T15:26:45.0391036Z Unpacking libwebrtc-audio-processing1:amd64 (0.3.1-0ubuntu6) ...
+2026-11-10T15:26:45.0678860Z Selecting previously unselected package libspa-0.2-modules:amd64.
+2026-11-10T15:26:45.0826813Z Preparing to unpack .../121-libspa-0.2-modules_1.0.5-1ubuntu3.3_amd64.deb ...
+2026-11-10T15:26:45.0836693Z Unpacking libspa-0.2-modules:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-10T15:26:45.1227070Z Selecting previously unselected package libpipewire-0.3-0t64:amd64.
+2026-11-10T15:26:45.1375005Z Preparing to unpack .../122-libpipewire-0.3-0t64_1.0.5-1ubuntu3.3_amd64.deb ...
+2026-11-10T15:26:45.1383173Z Unpacking libpipewire-0.3-0t64:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-10T15:26:45.1679309Z Selecting previously unselected package libsdl2-2.0-0:amd64.
+2026-11-10T15:26:45.1828263Z Preparing to unpack .../123-libsdl2-2.0-0_2.30.0+dfsg-1ubuntu3.1_amd64.deb ...
+2026-11-10T15:26:45.1836452Z Unpacking libsdl2-2.0-0:amd64 (2.30.0+dfsg-1ubuntu3.1) ...
+2026-11-10T15:26:45.2183204Z Selecting previously unselected package timgm6mb-soundfont.
+2026-11-10T15:26:45.2331090Z Preparing to unpack .../124-timgm6mb-soundfont_1.3-5_all.deb ...
+2026-11-10T15:26:45.2338999Z Unpacking timgm6mb-soundfont (1.3-5) ...
+2026-11-10T15:26:45.5829902Z Selecting previously unselected package libfluidsynth3:amd64.
+2026-11-10T15:26:45.5976997Z Preparing to unpack .../125-libfluidsynth3_2.3.4-1build3_amd64.deb ...
+2026-11-10T15:26:45.5985195Z Unpacking libfluidsynth3:amd64 (2.3.4-1build3) ...
+2026-11-10T15:26:45.6272068Z Selecting previously unselected package libfreeaptx0:amd64.
+2026-11-10T15:26:45.6424824Z Preparing to unpack .../126-libfreeaptx0_0.1.1-2build1_amd64.deb ...
+2026-11-10T15:26:45.6432930Z Unpacking libfreeaptx0:amd64 (0.1.1-2build1) ...
+2026-11-10T15:26:45.6699563Z Selecting previously unselected package libgraphene-1.0-0:amd64.
+2026-11-10T15:26:45.6850137Z Preparing to unpack .../127-libgraphene-1.0-0_1.10.8-3build2_amd64.deb ...
+2026-11-10T15:26:45.6857885Z Unpacking libgraphene-1.0-0:amd64 (1.10.8-3build2) ...
+2026-11-10T15:26:45.7117025Z Selecting previously unselected package libgssdp-1.6-0:amd64.
+2026-11-10T15:26:45.7263826Z Preparing to unpack .../128-libgssdp-1.6-0_1.6.3-1build3_amd64.deb ...
+2026-11-10T15:26:45.7270845Z Unpacking libgssdp-1.6-0:amd64 (1.6.3-1build3) ...
+2026-11-10T15:26:45.7535275Z Selecting previously unselected package libegl1:amd64.
+2026-11-10T15:26:45.7687557Z Preparing to unpack .../129-libegl1_1.7.0-1build1_amd64.deb ...
+2026-11-10T15:26:45.7696187Z Unpacking libegl1:amd64 (1.7.0-1build1) ...
+2026-11-10T15:26:45.7965955Z Selecting previously unselected package libgstreamer-gl1.0-0:amd64.
+2026-11-10T15:26:45.8113604Z Preparing to unpack .../130-libgstreamer-gl1.0-0_1.24.2-1ubuntu0.5_amd64.deb ...
+2026-11-10T15:26:45.8121271Z Unpacking libgstreamer-gl1.0-0:amd64 (1.24.2-1ubuntu0.5) ...
+2026-11-10T15:26:45.8398831Z Selecting previously unselected package libgtk-4-common.
+2026-11-10T15:26:45.8549360Z Preparing to unpack .../131-libgtk-4-common_4.14.5+ds-0ubuntu0.10_all.deb ...
+2026-11-10T15:26:45.8557568Z Unpacking libgtk-4-common (4.14.5+ds-0ubuntu0.10) ...
+2026-11-10T15:26:45.9120605Z Selecting previously unselected package libgtk-4-1:amd64.
+2026-11-10T15:26:45.9274245Z Preparing to unpack .../132-libgtk-4-1_4.14.5+ds-0ubuntu0.10_amd64.deb ...
+2026-11-10T15:26:45.9282078Z Unpacking libgtk-4-1:amd64 (4.14.5+ds-0ubuntu0.10) ...
+2026-11-10T15:26:46.0023350Z Selecting previously unselected package libgupnp-1.6-0:amd64.
+2026-11-10T15:26:46.0176537Z Preparing to unpack .../133-libgupnp-1.6-0_1.6.6-1build3_amd64.deb ...
+2026-11-10T15:26:46.0185080Z Unpacking libgupnp-1.6-0:amd64 (1.6.6-1build3) ...
+2026-11-10T15:26:46.0465267Z Selecting previously unselected package libgupnp-igd-1.6-0:amd64.
+2026-11-10T15:26:46.0620841Z Preparing to unpack .../134-libgupnp-igd-1.6-0_1.6.0-3build3_amd64.deb ...
+2026-11-10T15:26:46.0629840Z Unpacking libgupnp-igd-1.6-0:amd64 (1.6.0-3build3) ...
+2026-11-10T15:26:46.0891547Z Selecting previously unselected package libharfbuzz-icu0:amd64.
+2026-11-10T15:26:46.1044384Z Preparing to unpack .../135-libharfbuzz-icu0_8.3.0-2build2_amd64.deb ...
+2026-11-10T15:26:46.1053407Z Unpacking libharfbuzz-icu0:amd64 (8.3.0-2build2) ...
+2026-11-10T15:26:46.1321339Z Selecting previously unselected package libhyphen0:amd64.
+2026-11-10T15:26:46.1474724Z Preparing to unpack .../136-libhyphen0_2.8.8-7build3_amd64.deb ...
+2026-11-10T15:26:46.1484148Z Unpacking libhyphen0:amd64 (2.8.8-7build3) ...
+2026-11-10T15:26:46.1758342Z Selecting previously unselected package libimath-3-1-29t64:amd64.
+2026-11-10T15:26:46.1912759Z Preparing to unpack .../137-libimath-3-1-29t64_3.1.9-3.1ubuntu2_amd64.deb ...
+2026-11-10T15:26:46.1921332Z Unpacking libimath-3-1-29t64:amd64 (3.1.9-3.1ubuntu2) ...
+2026-11-10T15:26:46.2221743Z Selecting previously unselected package liblc3-1:amd64.
+2026-11-10T15:26:46.2373408Z Preparing to unpack .../138-liblc3-1_1.0.4-3build1_amd64.deb ...
+2026-11-10T15:26:46.2381339Z Unpacking liblc3-1:amd64 (1.0.4-3build1) ...
+2026-11-10T15:26:46.2655783Z Selecting previously unselected package libldacbt-enc2:amd64.
+2026-11-10T15:26:46.2807273Z Preparing to unpack .../139-libldacbt-enc2_2.0.2.3+git20200429+ed310a0-4ubuntu2_amd64.deb ...
+2026-11-10T15:26:46.2815302Z Unpacking libldacbt-enc2:amd64 (2.0.2.3+git20200429+ed310a0-4ubuntu2) ...
+2026-11-10T15:26:46.3076212Z Selecting previously unselected package libraptor2-0:amd64.
+2026-11-10T15:26:46.3225565Z Preparing to unpack .../140-libraptor2-0_2.0.16-3ubuntu0.1_amd64.deb ...
+2026-11-10T15:26:46.3235331Z Unpacking libraptor2-0:amd64 (2.0.16-3ubuntu0.1) ...
+2026-11-10T15:26:46.3513687Z Selecting previously unselected package liblrdf0:amd64.
+2026-11-10T15:26:46.3663746Z Preparing to unpack .../141-liblrdf0_0.6.1-4build1_amd64.deb ...
+2026-11-10T15:26:46.3671733Z Unpacking liblrdf0:amd64 (0.6.1-4build1) ...
+2026-11-10T15:26:46.3945097Z Selecting previously unselected package libltc11:amd64.
+2026-11-10T15:26:46.4095780Z Preparing to unpack .../142-libltc11_1.3.2-1build1_amd64.deb ...
+2026-11-10T15:26:46.4103468Z Unpacking libltc11:amd64 (1.3.2-1build1) ...
+2026-11-10T15:26:46.4380552Z Selecting previously unselected package libmanette-0.2-0:amd64.
+2026-11-10T15:26:46.4535877Z Preparing to unpack .../143-libmanette-0.2-0_0.2.7-1build2_amd64.deb ...
+2026-11-10T15:26:46.4544965Z Unpacking libmanette-0.2-0:amd64 (0.2.7-1build2) ...
+2026-11-10T15:26:46.4822213Z Selecting previously unselected package libmfx1:amd64.
+2026-11-10T15:26:46.4974675Z Preparing to unpack .../144-libmfx1_22.5.4-1_amd64.deb ...
+2026-11-10T15:26:46.4983278Z Unpacking libmfx1:amd64 (22.5.4-1) ...
+2026-11-10T15:26:46.5958976Z Selecting previously unselected package libmjpegutils-2.1-0t64:amd64.
+2026-11-10T15:26:46.6111774Z Preparing to unpack .../145-libmjpegutils-2.1-0t64_1%3a2.1.0+debian-8.1build1_amd64.deb ...
+2026-11-10T15:26:46.6119284Z Unpacking libmjpegutils-2.1-0t64:amd64 (1:2.1.0+debian-8.1build1) ...
+2026-11-10T15:26:46.6380041Z Selecting previously unselected package libmodplug1:amd64.
+2026-11-10T15:26:46.6531448Z Preparing to unpack .../146-libmodplug1_1%3a0.8.9.0-3build1_amd64.deb ...
+2026-11-10T15:26:46.6539610Z Unpacking libmodplug1:amd64 (1:0.8.9.0-3build1) ...
+2026-11-10T15:26:46.6805037Z Selecting previously unselected package libmpcdec6:amd64.
+2026-11-10T15:26:46.6954689Z Preparing to unpack .../147-libmpcdec6_2%3a0.1~r495-2build1_amd64.deb ...
+2026-11-10T15:26:46.6962605Z Unpacking libmpcdec6:amd64 (2:0.1~r495-2build1) ...
+2026-11-10T15:26:46.7225139Z Selecting previously unselected package libmpeg2encpp-2.1-0t64:amd64.
+2026-11-10T15:26:46.7375942Z Preparing to unpack .../148-libmpeg2encpp-2.1-0t64_1%3a2.1.0+debian-8.1build1_amd64.deb ...
+2026-11-10T15:26:46.7384888Z Unpacking libmpeg2encpp-2.1-0t64:amd64 (1:2.1.0+debian-8.1build1) ...
+2026-11-10T15:26:46.7651131Z Selecting previously unselected package libmplex2-2.1-0t64:amd64.
+2026-11-10T15:26:46.7801604Z Preparing to unpack .../149-libmplex2-2.1-0t64_1%3a2.1.0+debian-8.1build1_amd64.deb ...
+2026-11-10T15:26:46.7810237Z Unpacking libmplex2-2.1-0t64:amd64 (1:2.1.0+debian-8.1build1) ...
+2026-11-10T15:26:46.8083824Z Selecting previously unselected package libneon27t64:amd64.
+2026-11-10T15:26:46.8234648Z Preparing to unpack .../150-libneon27t64_0.33.0-1.1build3_amd64.deb ...
+2026-11-10T15:26:46.8244779Z Unpacking libneon27t64:amd64 (0.33.0-1.1build3) ...
+2026-11-10T15:26:46.8541946Z Selecting previously unselected package libnice10:amd64.
+2026-11-10T15:26:46.8698074Z Preparing to unpack .../151-libnice10_0.1.21-2build3_amd64.deb ...
+2026-11-10T15:26:46.8708434Z Unpacking libnice10:amd64 (0.1.21-2build3) ...
+2026-11-10T15:26:46.9001149Z Selecting previously unselected package libopenal-data.
+2026-11-10T15:26:46.9151873Z Preparing to unpack .../152-libopenal-data_1%3a1.23.1-4build1_all.deb ...
+2026-11-10T15:26:46.9160707Z Unpacking libopenal-data (1:1.23.1-4build1) ...
+2026-11-10T15:26:46.9460146Z Selecting previously unselected package libopenexr-3-1-30:amd64.
+2026-11-10T15:26:46.9614863Z Preparing to unpack .../153-libopenexr-3-1-30_3.1.5-5.1build3_amd64.deb ...
+2026-11-10T15:26:46.9622638Z Unpacking libopenexr-3-1-30:amd64 (3.1.5-5.1build3) ...
+2026-11-10T15:26:47.0067513Z Selecting previously unselected package libopenh264-7:amd64.
+2026-11-10T15:26:47.0217508Z Preparing to unpack .../154-libopenh264-7_2.4.1+dfsg-1_amd64.deb ...
+2026-11-10T15:26:47.0225997Z Unpacking libopenh264-7:amd64 (2.4.1+dfsg-1) ...
+2026-11-10T15:26:47.0549878Z Selecting previously unselected package libopenni2-0:amd64.
+2026-11-10T15:26:47.0699004Z Preparing to unpack .../155-libopenni2-0_2.2.0.33+dfsg-18_amd64.deb ...
+2026-11-10T15:26:47.0744247Z Unpacking libopenni2-0:amd64 (2.2.0.33+dfsg-18) ...
+2026-11-10T15:26:47.1075516Z Selecting previously unselected package libqrencode4:amd64.
+2026-11-10T15:26:47.1226629Z Preparing to unpack .../156-libqrencode4_4.1.1-1build2_amd64.deb ...
+2026-11-10T15:26:47.1235448Z Unpacking libqrencode4:amd64 (4.1.1-1build2) ...
+2026-11-10T15:26:47.1484846Z Selecting previously unselected package libsecret-common.
+2026-11-10T15:26:47.1632999Z Preparing to unpack .../157-libsecret-common_0.21.4-1build3_all.deb ...
+2026-11-10T15:26:47.1640701Z Unpacking libsecret-common (0.21.4-1build3) ...
+2026-11-10T15:26:47.1888514Z Selecting previously unselected package libsecret-1-0:amd64.
+2026-11-10T15:26:47.2038264Z Preparing to unpack .../158-libsecret-1-0_0.21.4-1build3_amd64.deb ...
+2026-11-10T15:26:47.2047024Z Unpacking libsecret-1-0:amd64 (0.21.4-1build3) ...
+2026-11-10T15:26:47.2320851Z Selecting previously unselected package libsndio7.0:amd64.
+2026-11-10T15:26:47.2469396Z Preparing to unpack .../159-libsndio7.0_1.9.0-0.3build3_amd64.deb ...
+2026-11-10T15:26:47.2478718Z Unpacking libsndio7.0:amd64 (1.9.0-0.3build3) ...
+2026-11-10T15:26:47.2740700Z Selecting previously unselected package libsoundtouch1:amd64.
+2026-11-10T15:26:47.2891329Z Preparing to unpack .../160-libsoundtouch1_2.3.2+ds1-1build1_amd64.deb ...
+2026-11-10T15:26:47.2899316Z Unpacking libsoundtouch1:amd64 (2.3.2+ds1-1build1) ...
+2026-11-10T15:26:47.3167950Z Selecting previously unselected package libspandsp2t64:amd64.
+2026-11-10T15:26:47.3318987Z Preparing to unpack .../161-libspandsp2t64_0.0.6+dfsg-2.1build1_amd64.deb ...
+2026-11-10T15:26:47.3327825Z Unpacking libspandsp2t64:amd64 (0.0.6+dfsg-2.1build1) ...
+2026-11-10T15:26:47.3629374Z Selecting previously unselected package libsrtp2-1:amd64.
+2026-11-10T15:26:47.3782049Z Preparing to unpack .../162-libsrtp2-1_2.5.0-3build1_amd64.deb ...
+2026-11-10T15:26:47.3790297Z Unpacking libsrtp2-1:amd64 (2.5.0-3build1) ...
+2026-11-10T15:26:47.4055105Z Selecting previously unselected package libwayland-server0:amd64.
+2026-11-10T15:26:47.4205579Z Preparing to unpack .../163-libwayland-server0_1.22.0-2.1build1_amd64.deb ...
+2026-11-10T15:26:47.4228081Z Unpacking libwayland-server0:amd64 (1.22.0-2.1build1) ...
+2026-11-10T15:26:47.4491481Z Selecting previously unselected package libwildmidi2:amd64.
+2026-11-10T15:26:47.4640681Z Preparing to unpack .../164-libwildmidi2_0.4.3-1build3_amd64.deb ...
+2026-11-10T15:26:47.4649408Z Unpacking libwildmidi2:amd64 (0.4.3-1build3) ...
+2026-11-10T15:26:47.5178421Z Selecting previously unselected package libwoff1:amd64.
+2026-11-10T15:26:47.5332842Z Preparing to unpack .../165-libwoff1_1.0.2-2build1_amd64.deb ...
+2026-11-10T15:26:47.5342077Z Unpacking libwoff1:amd64 (1.0.2-2build1) ...
+2026-11-10T15:26:47.5614537Z Selecting previously unselected package libxcb-xkb1:amd64.
+2026-11-10T15:26:47.5763736Z Preparing to unpack .../166-libxcb-xkb1_1.15-1ubuntu2_amd64.deb ...
+2026-11-10T15:26:47.5771974Z Unpacking libxcb-xkb1:amd64 (1.15-1ubuntu2) ...
+2026-11-10T15:26:47.6036690Z Selecting previously unselected package libxkbcommon-x11-0:amd64.
+2026-11-10T15:26:47.6197295Z Preparing to unpack .../167-libxkbcommon-x11-0_1.6.0-1build1_amd64.deb ...
+2026-11-10T15:26:47.6206819Z Unpacking libxkbcommon-x11-0:amd64 (1.6.0-1build1) ...
+2026-11-10T15:26:47.6465310Z Selecting previously unselected package libzbar0t64:amd64.
+2026-11-10T15:26:47.6615084Z Preparing to unpack .../168-libzbar0t64_0.23.93-4build3_amd64.deb ...
+2026-11-10T15:26:47.6623079Z Unpacking libzbar0t64:amd64 (0.23.93-4build3) ...
+2026-11-10T15:26:47.6890276Z Selecting previously unselected package libzxing3:amd64.
+2026-11-10T15:26:47.7039224Z Preparing to unpack .../169-libzxing3_2.2.1-3_amd64.deb ...
+2026-11-10T15:26:47.7047672Z Unpacking libzxing3:amd64 (2.2.1-3) ...
+2026-11-10T15:26:47.7352502Z Selecting previously unselected package xfonts-encodings.
+2026-11-10T15:26:47.7504279Z Preparing to unpack .../170-xfonts-encodings_1%3a1.0.5-0ubuntu2_all.deb ...
+2026-11-10T15:26:47.7511169Z Unpacking xfonts-encodings (1:1.0.5-0ubuntu2) ...
+2026-11-10T15:26:47.7856243Z Selecting previously unselected package xfonts-utils.
+2026-11-10T15:26:47.8008434Z Preparing to unpack .../171-xfonts-utils_1%3a7.7+6build3_amd64.deb ...
+2026-11-10T15:26:47.8020174Z Unpacking xfonts-utils (1:7.7+6build3) ...
+2026-11-10T15:26:47.8711169Z Selecting previously unselected package xfonts-cyrillic.
+2026-11-10T15:26:47.8861214Z Preparing to unpack .../172-xfonts-cyrillic_1%3a1.0.5+nmu1_all.deb ...
+2026-11-10T15:26:47.8869223Z Unpacking xfonts-cyrillic (1:1.0.5+nmu1) ...
+2026-11-10T15:26:47.9257735Z Selecting previously unselected package xfonts-scalable.
+2026-11-10T15:26:47.9407888Z Preparing to unpack .../173-xfonts-scalable_1%3a1.0.3-1.3_all.deb ...
+2026-11-10T15:26:47.9416513Z Unpacking xfonts-scalable (1:1.0.3-1.3) ...
+2026-11-10T15:26:47.9706568Z Selecting previously unselected package libgstreamer-plugins-bad1.0-0:amd64.
+2026-11-10T15:26:47.9855639Z Preparing to unpack .../174-libgstreamer-plugins-bad1.0-0_1.24.2-1ubuntu4_amd64.deb ...
+2026-11-10T15:26:47.9864911Z Unpacking libgstreamer-plugins-bad1.0-0:amd64 (1.24.2-1ubuntu4) ...
+2026-11-10T15:26:48.0293441Z Selecting previously unselected package libdca0:amd64.
+2026-11-10T15:26:48.0440601Z Preparing to unpack .../175-libdca0_0.0.7-2build1_amd64.deb ...
+2026-11-10T15:26:48.0448731Z Unpacking libdca0:amd64 (0.0.7-2build1) ...
+2026-11-10T15:26:48.0720538Z Selecting previously unselected package libopenal1:amd64.
+2026-11-10T15:26:48.0869972Z Preparing to unpack .../176-libopenal1_1%3a1.23.1-4build1_amd64.deb ...
+2026-11-10T15:26:48.0879963Z Unpacking libopenal1:amd64 (1:1.23.1-4build1) ...
+2026-11-10T15:26:48.1193743Z Selecting previously unselected package libsbc1:amd64.
+2026-11-10T15:26:48.1341396Z Preparing to unpack .../177-libsbc1_2.0-1build1_amd64.deb ...
+2026-11-10T15:26:48.1351192Z Unpacking libsbc1:amd64 (2.0-1build1) ...
+2026-11-10T15:26:48.1610738Z Selecting previously unselected package libvo-aacenc0:amd64.
+2026-11-10T15:26:48.1757560Z Preparing to unpack .../178-libvo-aacenc0_0.1.3-2build1_amd64.deb ...
+2026-11-10T15:26:48.1764953Z Unpacking libvo-aacenc0:amd64 (0.1.3-2build1) ...
+2026-11-10T15:26:48.2023507Z Selecting previously unselected package libvo-amrwbenc0:amd64.
+2026-11-10T15:26:48.2172669Z Preparing to unpack .../179-libvo-amrwbenc0_0.1.3-2build1_amd64.deb ...
+2026-11-10T15:26:48.2181245Z Unpacking libvo-amrwbenc0:amd64 (0.1.3-2build1) ...
+2026-11-10T15:26:48.2438547Z Selecting previously unselected package gstreamer1.0-plugins-bad:amd64.
+2026-11-10T15:26:48.2585116Z Preparing to unpack .../180-gstreamer1.0-plugins-bad_1.24.2-1ubuntu4_amd64.deb ...
+2026-11-10T15:26:48.2592018Z Unpacking gstreamer1.0-plugins-bad:amd64 (1.24.2-1ubuntu4) ...
+2026-11-10T15:26:48.4871822Z Setting up libgme0:amd64 (0.6.3-7build1) ...
+2026-11-10T15:26:48.4898184Z Setting up libchromaprint1:amd64 (1.5.1-5) ...
+2026-11-10T15:26:48.4918114Z Setting up libssh-gcrypt-4:amd64 (0.10.6-2ubuntu0.5) ...
+2026-11-10T15:26:48.4937213Z Setting up libhwy1t64:amd64 (1.0.7-8.1build1) ...
+2026-11-10T15:26:48.4954140Z Setting up libcairo-script-interpreter2:amd64 (1.18.0-3build1) ...
+2026-11-10T15:26:48.4975465Z Setting up libfreeaptx0:amd64 (0.1.1-2build1) ...
+2026-11-10T15:26:48.4997002Z Setting up libdvdread8t64:amd64 (6.1.3-1.1build1) ...
+2026-11-10T15:26:48.5013452Z Setting up libudfread0:amd64 (1.1.2-1build1) ...
+2026-11-10T15:26:48.5032670Z Setting up libmodplug1:amd64 (1:0.8.9.0-3build1) ...
+2026-11-10T15:26:48.5049690Z Setting up libcdparanoia0:amd64 (3.10.2+debian-14build3) ...
+2026-11-10T15:26:48.5069318Z Setting up libwayland-server0:amd64 (1.22.0-2.1build1) ...
+2026-11-10T15:26:48.5086980Z Setting up libvo-amrwbenc0:amd64 (0.1.3-2build1) ...
+2026-11-10T15:26:48.5103520Z Setting up session-migration (0.3.9build1) ...
+2026-11-10T15:26:48.6439646Z Created symlink /etc/systemd/user/graphical-session-pre.target.wants/session-migration.service → /usr/lib/systemd/user/session-migration.service.
+2026-11-10T15:26:48.6470481Z 
+2026-11-10T15:26:48.6471010Z Setting up libraw1394-11:amd64 (2.1.2-2build3) ...
+2026-11-10T15:26:48.6489662Z Setting up libsbc1:amd64 (2.0-1build1) ...
+2026-11-10T15:26:48.6506304Z Setting up libproxy1v5:amd64 (0.5.4-4build1) ...
+2026-11-10T15:26:48.6526595Z Setting up libneon27t64:amd64 (0.33.0-1.1build3) ...
+2026-11-10T15:26:48.6546605Z Setting up libtag1v5-vanilla:amd64 (1.13.1-1build1) ...
+2026-11-10T15:26:48.6566689Z Setting up libharfbuzz-icu0:amd64 (8.3.0-2build2) ...
+2026-11-10T15:26:48.6583780Z Setting up libopenni2-0:amd64 (2.2.0.33+dfsg-18) ...
+2026-11-10T15:26:48.6761121Z Setting up libspeex1:amd64 (1.2.1-2ubuntu2.24.04.1) ...
+2026-11-10T15:26:48.6779429Z Setting up libshine3:amd64 (3.1.1-2build1) ...
+2026-11-10T15:26:48.6799376Z Setting up libcaca0:amd64 (0.99.beta20-4ubuntu0.2) ...
+2026-11-10T15:26:48.6818482Z Setting up libvpl2 (2023.3.0-1build1) ...
+2026-11-10T15:26:48.6838078Z Setting up libv4lconvert0t64:amd64 (1.26.1-4build3) ...
+2026-11-10T15:26:48.6854937Z Setting up libx264-164:amd64 (2:0.164.3108+git31e19f9-1) ...
+2026-11-10T15:26:48.6875438Z Setting up libtwolame0:amd64 (0.4.0-2build3) ...
+2026-11-10T15:26:48.6895403Z Setting up libmbedcrypto7t64:amd64 (2.28.8-1) ...
+2026-11-10T15:26:48.6914232Z Setting up libwoff1:amd64 (1.0.2-2build1) ...
+2026-11-10T15:26:48.6933841Z Setting up liblc3-1:amd64 (1.0.4-3build1) ...
+2026-11-10T15:26:48.6951333Z Setting up libqrencode4:amd64 (4.1.1-1build2) ...
+2026-11-10T15:26:48.6969658Z Setting up libhyphen0:amd64 (2.8.8-7build3) ...
+2026-11-10T15:26:48.6990953Z Setting up libgsm1:amd64 (1.0.22-1build1) ...
+2026-11-10T15:26:48.7010629Z Setting up libvisual-0.4-0:amd64 (0.4.2-2build1) ...
+2026-11-10T15:26:48.7033079Z Setting up libsoxr0:amd64 (0.1.3-4build3) ...
+2026-11-10T15:26:48.7050436Z Setting up libzix-0-0:amd64 (0.4.2-2build1) ...
+2026-11-10T15:26:48.7067716Z Setting up libcodec2-1.2:amd64 (1.2.0-2build1) ...
+2026-11-10T15:26:48.7090327Z Setting up libmanette-0.2-0:amd64 (0.2.7-1build2) ...
+2026-11-10T15:26:48.7108758Z Setting up libsrtp2-1:amd64 (2.5.0-3build1) ...
+2026-11-10T15:26:48.7126100Z Setting up libmysofa1:amd64 (1.3.2+dfsg-2ubuntu2) ...
+2026-11-10T15:26:48.7147382Z Setting up libraptor2-0:amd64 (2.0.16-3ubuntu0.1) ...
+2026-11-10T15:26:48.7164469Z Setting up libldacbt-enc2:amd64 (2.0.2.3+git20200429+ed310a0-4ubuntu2) ...
+2026-11-10T15:26:48.7183046Z Setting up fonts-wqy-zenhei (0.9.45-8) ...
+2026-11-10T15:26:48.7311859Z Setting up libwebrtc-audio-processing1:amd64 (0.3.1-0ubuntu6) ...
+2026-11-10T15:26:48.7330350Z Setting up fonts-freefont-ttf (20211204+svn4273-2) ...
+2026-11-10T15:26:48.7352097Z Setting up libevent-2.1-7t64:amd64 (2.1.12-stable-9ubuntu2.2) ...
+2026-11-10T15:26:48.7370708Z Setting up libsvtav1enc1d1:amd64 (1.7.0+dfsg-2build1) ...
+2026-11-10T15:26:48.7392428Z Setting up libsoup-3.0-common (3.4.4-5ubuntu0.11) ...
+2026-11-10T15:26:48.7410558Z Setting up libmpg123-0t64:amd64 (1.32.5-1ubuntu1.1) ...
+2026-11-10T15:26:48.7428285Z Setting up libcjson1:amd64 (1.7.17-1) ...
+2026-11-10T15:26:48.7447004Z Setting up libxvidcore4:amd64 (2:1.3.7-1build1) ...
+2026-11-10T15:26:48.7463520Z Setting up libmpcdec6:amd64 (2:0.1~r495-2build1) ...
+2026-11-10T15:26:48.7480929Z Setting up libmjpegutils-2.1-0t64:amd64 (1:2.1.0+debian-8.1build1) ...
+2026-11-10T15:26:48.7512076Z Setting up librav1e0:amd64 (0.7.1-2) ...
+2026-11-10T15:26:48.7530468Z Setting up liborc-0.4-0t64:amd64 (1:0.4.38-1ubuntu0.1) ...
+2026-11-10T15:26:48.7552547Z Setting up libxcb-xkb1:amd64 (1.15-1ubuntu2) ...
+2026-11-10T15:26:48.7572084Z Setting up libvo-aacenc0:amd64 (0.1.3-2build1) ...
+2026-11-10T15:26:48.7588984Z Setting up librist4:amd64 (0.2.10+dfsg-2) ...
+2026-11-10T15:26:48.7608145Z Setting up librsvg2-2:amd64 (2.58.0+dfsg-1ubuntu0.1) ...
+2026-11-10T15:26:48.7626929Z Setting up libblas3:amd64 (3.12.0-3build1.1) ...
+2026-11-10T15:26:48.7691717Z update-alternatives: using /usr/lib/x86_64-linux-gnu/blas/libblas.so.3 to provide /usr/lib/x86_64-linux-gnu/libblas.so.3 (libblas.so.3-x86_64-linux-gnu) in auto mode
+2026-11-10T15:26:48.7712364Z Setting up libegl-mesa0:amd64 (25.2.8-0ubuntu0.24.04.4) ...
+2026-11-10T15:26:48.7729919Z Setting up libsoundtouch1:amd64 (2.3.2+ds1-1build1) ...
+2026-11-10T15:26:48.7746545Z Setting up libplacebo338:amd64 (6.338.2-2build1) ...
+2026-11-10T15:26:48.7766899Z Setting up libgles2:amd64 (1.7.0-1build1) ...
+2026-11-10T15:26:48.7784707Z Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
+2026-11-10T15:26:48.7801851Z Setting up libva2:amd64 (2.20.0-2ubuntu0.2) ...
+2026-11-10T15:26:48.7828281Z Setting up libspa-0.2-modules:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-10T15:26:48.7848140Z Setting up libzxing3:amd64 (2.2.1-3) ...
+2026-11-10T15:26:48.7870761Z Setting up xfonts-encodings (1:1.0.5-0ubuntu2) ...
+2026-11-10T15:26:48.7890557Z Setting up libopus0:amd64 (1.4-1build1) ...
+2026-11-10T15:26:48.7909336Z Setting up libfaad2:amd64 (2.11.1-1build1) ...
+2026-11-10T15:26:48.7929043Z Setting up libxkbcommon-x11-0:amd64 (1.6.0-1build1) ...
+2026-11-10T15:26:48.7948518Z Setting up libdc1394-25:amd64 (2.2.6-4build1) ...
+2026-11-10T15:26:48.7969294Z Setting up libimath-3-1-29t64:amd64 (3.1.9-3.1ubuntu2) ...
+2026-11-10T15:26:48.7987756Z Setting up libunibreak5:amd64 (5.1-2build1) ...
+2026-11-10T15:26:48.8006773Z Setting up libdv4t64:amd64 (1.0.0-17.1build1) ...
+2026-11-10T15:26:48.8026729Z Setting up libjxl0.7:amd64 (0.7.0-10.2ubuntu6.1) ...
+2026-11-10T15:26:48.8044263Z Setting up libopenh264-7:amd64 (2.4.1+dfsg-1) ...
+2026-11-10T15:26:48.8063370Z Setting up libltc11:amd64 (1.3.2-1build1) ...
+2026-11-10T15:26:48.8082552Z Setting up libx265-199:amd64 (3.5-2build1) ...
+2026-11-10T15:26:48.8102930Z Setting up libv4l-0t64:amd64 (1.26.1-4build3) ...
+2026-11-10T15:26:48.8123687Z Setting up libavtp0:amd64 (0.2.0-1build1) ...
+2026-11-10T15:26:48.8148148Z Setting up libsndio7.0:amd64 (1.9.0-0.3build3) ...
+2026-11-10T15:26:48.8408811Z Setting up libdirectfb-1.7-7t64:amd64 (1.7.7-11.1ubuntu2) ...
+2026-11-10T15:26:48.8426523Z Setting up libspandsp2t64:amd64 (0.0.6+dfsg-2.1build1) ...
+2026-11-10T15:26:48.8450325Z Setting up libvidstab1.1:amd64 (1.1.0-2build1) ...
+2026-11-10T15:26:48.8471966Z Setting up libvpx9:amd64 (1.14.0-1ubuntu2.3) ...
+2026-11-10T15:26:48.8495837Z Setting up libsrt1.5-gnutls:amd64 (1.5.3-1build2) ...
+2026-11-10T15:26:48.8512929Z Setting up libtag1v5:amd64 (1.13.1-1build1) ...
+2026-11-10T15:26:48.8535148Z Setting up libflite1:amd64 (2.2-6build3) ...
+2026-11-10T15:26:48.8553151Z Setting up libdav1d7:amd64 (1.4.1-1build1) ...
+2026-11-10T15:26:48.8574589Z Setting up libva-drm2:amd64 (2.20.0-2ubuntu0.2) ...
+2026-11-10T15:26:48.8590900Z Setting up fonts-ipafont-gothic (00303-21ubuntu1) ...
+2026-11-10T15:26:48.8687350Z update-alternatives: using /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf to provide /usr/share/fonts/truetype/fonts-japanese-gothic.ttf (fonts-japanese-gothic.ttf) in auto mode
+2026-11-10T15:26:48.8704217Z Setting up ocl-icd-libopencl1:amd64 (2.3.2-1build1) ...
+2026-11-10T15:26:48.8721348Z Setting up libasyncns0:amd64 (0.8-6build4) ...
+2026-11-10T15:26:48.8743034Z Setting up libwildmidi2:amd64 (0.4.3-1build3) ...
+2026-11-10T15:26:48.8762409Z Setting up libvdpau1:amd64 (1.5-2build1) ...
+2026-11-10T15:26:48.8789296Z Setting up libwavpack1:amd64 (5.6.0-1build1) ...
+2026-11-10T15:26:48.8806510Z Setting up libbs2b0:amd64 (3.1.0+dfsg-7build1) ...
+2026-11-10T15:26:48.8825215Z Setting up libtheora0:amd64 (1.1.1+dfsg.1-16.1build3) ...
+2026-11-10T15:26:48.8842370Z Setting up libegl1:amd64 (1.7.0-1build1) ...
+2026-11-10T15:26:48.8859941Z Setting up libdecor-0-0:amd64 (0.2.2-1build2) ...
+2026-11-10T15:26:48.8878618Z Setting up libdca0:amd64 (0.0.7-2build1) ...
+2026-11-10T15:26:48.8896155Z Setting up libzimg2:amd64 (3.0.5+ds1-1build1) ...
+2026-11-10T15:26:48.8916236Z Setting up libopenal-data (1:1.23.1-4build1) ...
+2026-11-10T15:26:48.8941053Z Setting up libabsl20220623t64:amd64 (20220623.1-3.1ubuntu3.2) ...
+2026-11-10T15:26:48.8959890Z Setting up libflac12t64:amd64 (1.4.3+ds-2.1ubuntu2) ...
+2026-11-10T15:26:48.8977275Z Setting up libgtk-4-common (4.14.5+ds-0ubuntu0.10) ...
+2026-11-10T15:26:48.8994282Z Setting up libmpeg2encpp-2.1-0t64:amd64 (1:2.1.0+debian-8.1build1) ...
+2026-11-10T15:26:48.9016000Z Setting up glib-networking-common (2.80.0-1build1) ...
+2026-11-10T15:26:48.9034151Z Setting up libmfx1:amd64 (22.5.4-1) ...
+2026-11-10T15:26:48.9052073Z Setting up libbluray2:amd64 (1:1.3.4-1build1) ...
+2026-11-10T15:26:48.9068960Z Setting up libde265-0:amd64 (1.0.15-1ubuntu0.2) ...
+2026-11-10T15:26:48.9086988Z Setting up libsamplerate0:amd64 (0.2.2-4build1) ...
+2026-11-10T15:26:48.9105144Z Setting up timgm6mb-soundfont (1.3-5) ...
+2026-11-10T15:26:48.9190176Z update-alternatives: using /usr/share/sounds/sf2/TimGM6mb.sf2 to provide /usr/share/sounds/sf2/default-GM.sf2 (default-GM.sf2) in auto mode
+2026-11-10T15:26:48.9234691Z update-alternatives: using /usr/share/sounds/sf2/TimGM6mb.sf2 to provide /usr/share/sounds/sf3/default-GM.sf3 (default-GM.sf3) in auto mode
+2026-11-10T15:26:48.9258676Z Setting up libva-x11-2:amd64 (2.20.0-2ubuntu0.2) ...
+2026-11-10T15:26:48.9275406Z Setting up libyuv0:amd64 (0.0~git202401110.af6ac82-1) ...
+2026-11-10T15:26:48.9291952Z Setting up libmplex2-2.1-0t64:amd64 (1:2.1.0+debian-8.1build1) ...
+2026-11-10T15:26:48.9316463Z Setting up libpipewire-0.3-0t64:amd64 (1.0.5-1ubuntu3.3) ...
+2026-11-10T15:26:48.9334604Z Setting up libopenmpt0t64:amd64 (0.7.3-1.1build3) ...
+2026-11-10T15:26:48.9355034Z Setting up libzvbi-common (0.2.42-2) ...
+2026-11-10T15:26:48.9372430Z Setting up libsecret-common (0.21.4-1build3) ...
+2026-11-10T15:26:48.9391653Z Setting up libmp3lame0:amd64 (3.100-6build1) ...
+2026-11-10T15:26:48.9415029Z Setting up libgraphene-1.0-0:amd64 (1.10.8-3build2) ...
+2026-11-10T15:26:48.9434091Z Setting up libvorbisenc2:amd64 (1.3.7-1build3) ...
+2026-11-10T15:26:48.9454447Z Setting up libdvdnav4:amd64 (6.1.1-3build1) ...
+2026-11-10T15:26:48.9473574Z Setting up fonts-unifont (1:15.1.01-1build1) ...
+2026-11-10T15:26:48.9492584Z Setting up libaa1:amd64 (1.4p5-51.1) ...
+2026-11-10T15:26:48.9511437Z Setting up libiec61883-0:amd64 (1.2.0-6build1) ...
+2026-11-10T15:26:48.9530203Z Setting up libserd-0-0:amd64 (0.32.2-1) ...
+2026-11-10T15:26:48.9551915Z Setting up libavc1394-0:amd64 (0.5.4-5build3) ...
+2026-11-10T15:26:48.9571986Z Setting up gsettings-desktop-schemas (46.1-0ubuntu1) ...
+2026-11-10T15:26:48.9591463Z Setting up glib-networking-services (2.80.0-1build1) ...
+2026-11-10T15:26:48.9608854Z Setting up liblapack3:amd64 (3.12.0-3build1.1) ...
+2026-11-10T15:26:48.9673174Z update-alternatives: using /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3 to provide /usr/lib/x86_64-linux-gnu/liblapack.so.3 (liblapack.so.3-x86_64-linux-gnu) in auto mode
+2026-11-10T15:26:48.9693771Z Setting up libzvbi0t64:amd64 (0.2.42-2) ...
+2026-11-10T15:26:48.9739545Z Setting up liblrdf0:amd64 (0.6.1-4build1) ...
+2026-11-10T15:26:48.9758221Z Setting up libzbar0t64:amd64 (0.23.93-4build3) ...
+2026-11-10T15:26:48.9779817Z Setting up libgstreamer-plugins-base1.0-0:amd64 (1.24.2-1ubuntu0.5) ...
+2026-11-10T15:26:48.9799750Z Setting up libavutil58:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:48.9818090Z Setting up libopenal1:amd64 (1:1.23.1-4build1) ...
+2026-11-10T15:26:48.9840887Z Setting up xfonts-utils (1:7.7+6build3) ...
+2026-11-10T15:26:48.9889186Z Setting up libsecret-1-0:amd64 (0.21.4-1build3) ...
+2026-11-10T15:26:48.9911020Z Setting up libgstreamer-plugins-good1.0-0:amd64 (1.24.2-1ubuntu1.8) ...
+2026-11-10T15:26:48.9930145Z Setting up libgstreamer-gl1.0-0:amd64 (1.24.2-1ubuntu0.5) ...
+2026-11-10T15:26:48.9947301Z Setting up gstreamer1.0-plugins-base:amd64 (1.24.2-1ubuntu0.5) ...
+2026-11-10T15:26:48.9967423Z Setting up libass9:amd64 (1:0.17.1-2build1) ...
+2026-11-10T15:26:48.9986879Z Setting up libswresample4:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:49.0006035Z Setting up libopenexr-3-1-30:amd64 (3.1.5-5.1build3) ...
+2026-11-10T15:26:49.0024779Z Setting up libshout3:amd64 (2.4.6-1build2) ...
+2026-11-10T15:26:49.0042515Z Setting up libgav1-1:amd64 (0.18.0-1build3) ...
+2026-11-10T15:26:49.0062940Z Setting up libavcodec60:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:49.0082531Z Setting up librubberband2:amd64 (3.3.0+dfsg-2build1) ...
+2026-11-10T15:26:49.0102668Z Setting up libjack-jackd2-0:amd64 (1.9.21~dfsg-3ubuntu3) ...
+2026-11-10T15:26:49.0120868Z Setting up libsord-0-0:amd64 (0.16.16-2build1) ...
+2026-11-10T15:26:49.0140424Z Setting up xfonts-cyrillic (1:1.0.5+nmu1) ...
+2026-11-10T15:26:49.0499863Z Setting up libpostproc57:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:49.0522072Z Setting up libsratom-0-0:amd64 (0.6.16-1build1) ...
+2026-11-10T15:26:49.0544512Z Setting up libsndfile1:amd64 (1.2.2-1ubuntu5.24.04.1) ...
+2026-11-10T15:26:49.0562034Z Setting up liblilv-0-0:amd64 (0.24.22-1build1) ...
+2026-11-10T15:26:49.0581570Z Setting up libinstpatch-1.0-2:amd64 (1.1.6-1build2) ...
+2026-11-10T15:26:49.0599406Z Setting up xfonts-scalable (1:1.0.3-1.3) ...
+2026-11-10T15:26:49.0892275Z Setting up libswscale7:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:49.0910082Z Setting up libavif16:amd64 (1.0.4-1ubuntu3) ...
+2026-11-10T15:26:49.0930972Z Setting up libpulse0:amd64 (1:16.1+dfsg1-2ubuntu10.1) ...
+2026-11-10T15:26:49.1265912Z Setting up libavformat60:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:49.1286686Z Setting up libsphinxbase3t64:amd64 (0.8+5prealpha+1-17build2) ...
+2026-11-10T15:26:49.1309222Z Setting up libsdl2-2.0-0:amd64 (2.30.0+dfsg-1ubuntu3.1) ...
+2026-11-10T15:26:49.1329970Z Setting up libfluidsynth3:amd64 (2.3.4-1build3) ...
+2026-11-10T15:26:49.1348588Z Setting up libpocketsphinx3:amd64 (0.8.0+real5prealpha+1-15ubuntu5) ...
+2026-11-10T15:26:49.1370219Z Setting up libavfilter9:amd64 (7:6.1.1-3ubuntu5) ...
+2026-11-10T15:26:49.1387089Z Setting up gstreamer1.0-libav:amd64 (1.24.1-1build1) ...
+2026-11-10T15:26:49.1750217Z Processing triggers for fontconfig (2.15.0-1.1ubuntu2) ...
+2026-11-10T15:26:49.3377203Z Processing triggers for libc-bin (2.39-0ubuntu8.9) ...
+2026-11-10T15:26:49.4540320Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-11-10T15:26:49.4564420Z Not building database; man-db/auto-update is not 'true'.
+2026-11-10T15:26:49.4591817Z Processing triggers for libglib2.0-0t64:amd64 (2.80.0-6ubuntu3.10) ...
+2026-11-10T15:26:49.5284259Z Setting up libgtk-4-1:amd64 (4.14.5+ds-0ubuntu0.10) ...
+2026-11-10T15:26:49.9261091Z Setting up glib-networking:amd64 (2.80.0-1build1) ...
+2026-11-10T15:26:49.9298676Z Setting up libsoup-3.0-0:amd64 (3.4.4-5ubuntu0.11) ...
+2026-11-10T15:26:49.9330015Z Setting up libgssdp-1.6-0:amd64 (1.6.3-1build3) ...
+2026-11-10T15:26:49.9404515Z Setting up gstreamer1.0-plugins-good:amd64 (1.24.2-1ubuntu1.8) ...
+2026-11-10T15:26:49.9430626Z Setting up libgupnp-1.6-0:amd64 (1.6.6-1build3) ...
+2026-11-10T15:26:49.9492712Z Setting up libgupnp-igd-1.6-0:amd64 (1.6.0-3build3) ...
+2026-11-10T15:26:49.9529392Z Setting up libnice10:amd64 (0.1.21-2build3) ...
+2026-11-10T15:26:49.9579687Z Setting up libgstreamer-plugins-bad1.0-0:amd64 (1.24.2-1ubuntu4) ...
+2026-11-10T15:26:49.9619686Z Setting up gstreamer1.0-plugins-bad:amd64 (1.24.2-1ubuntu4) ...
+2026-11-10T15:26:49.9653728Z Processing triggers for libc-bin (2.39-0ubuntu8.9) ...
+2026-11-10T15:26:51.2543248Z 
+2026-11-10T15:26:51.2544306Z Running kernel seems to be up-to-date.
+2026-11-10T15:26:51.2546404Z 
+2026-11-10T15:26:51.2546850Z No services need to be restarted.
+2026-11-10T15:26:51.2547180Z 
+2026-11-10T15:26:51.2547435Z No containers need to be restarted.
+2026-11-10T15:26:51.2547744Z 
+2026-11-10T15:26:51.2548053Z No user sessions are running outdated binaries.
+2026-11-10T15:26:51.2548418Z 
+2026-11-10T15:26:51.2548888Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-11-10T15:26:52.4295107Z Downloading Chrome for Testing 153.0.8010.12 (playwright chromium v1243) from https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-linux64.zip
+2026-11-10T15:26:52.8442215Z |                                                                                |   0% of 186.8 MiB
+2026-11-10T15:26:53.0057392Z |■■■■■■■■                                                                        |  10% of 186.8 MiB
+2026-11-10T15:26:53.0932169Z |■■■■■■■■■■■■■■■■                                                                |  20% of 186.8 MiB
+2026-11-10T15:26:53.1923446Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 186.8 MiB
+2026-11-10T15:26:53.2561420Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 186.8 MiB
+2026-11-10T15:26:53.3377299Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 186.8 MiB
+2026-11-10T15:26:53.4192758Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 186.8 MiB
+2026-11-10T15:26:53.5048920Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 186.8 MiB
+2026-11-10T15:26:53.5857116Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 186.8 MiB
+2026-11-10T15:26:53.6915146Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 186.8 MiB
+2026-11-10T15:26:53.7806553Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 186.8 MiB
+2026-11-10T15:26:57.1241316Z Chrome for Testing 153.0.8010.12 (playwright chromium v1243) downloaded to /home/runner/.cache/ms-playwright/chromium-1243
+2026-11-10T15:26:57.1249254Z Downloading FFmpeg (playwright ffmpeg v1011) from https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip
+2026-11-10T15:26:57.5452511Z |                                                                                |   0% of 2.3 MiB
+2026-11-10T15:26:57.5555917Z |■■■■■■■■                                                                        |  10% of 2.3 MiB
+2026-11-10T15:26:57.5606427Z |■■■■■■■■■■■■■■■■                                                                |  20% of 2.3 MiB
+2026-11-10T15:26:57.5633745Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 2.3 MiB
+2026-11-10T15:26:57.5678917Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 2.3 MiB
+2026-11-10T15:26:57.5694726Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 2.3 MiB
+2026-11-10T15:26:57.5737045Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 2.3 MiB
+2026-11-10T15:26:57.5757265Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 2.3 MiB
+2026-11-10T15:26:57.5780417Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 2.3 MiB
+2026-11-10T15:26:57.5790043Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 2.3 MiB
+2026-11-10T15:26:57.5802110Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 2.3 MiB
+2026-11-10T15:26:57.6492619Z FFmpeg (playwright ffmpeg v1011) downloaded to /home/runner/.cache/ms-playwright/ffmpeg-1011
+2026-11-10T15:26:57.6498101Z Downloading Chrome Headless Shell 153.0.8010.12 (playwright chromium-headless-shell v1243) from https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-headless-shell-linux64.zip
+2026-11-10T15:26:58.1018564Z |                                                                                |   0% of 114.3 MiB
+2026-11-10T15:26:58.2113286Z |■■■■■■■■                                                                        |  10% of 114.3 MiB
+2026-11-10T15:26:58.3040862Z |■■■■■■■■■■■■■■■■                                                                |  20% of 114.3 MiB
+2026-11-10T15:26:58.3681483Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 114.3 MiB
+2026-11-10T15:26:58.4333747Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 114.3 MiB
+2026-11-10T15:26:58.5064270Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 114.3 MiB
+2026-11-10T15:26:58.5477123Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 114.3 MiB
+2026-11-10T15:26:58.6176215Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 114.3 MiB
+2026-11-10T15:26:58.6635511Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 114.3 MiB
+2026-11-10T15:26:58.7024384Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 114.3 MiB
+2026-11-10T15:26:58.7630666Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 114.3 MiB
+2026-11-10T15:27:01.1263015Z Chrome Headless Shell 153.0.8010.12 (playwright chromium-headless-shell v1243) downloaded to /home/runner/.cache/ms-playwright/chromium_headless_shell-1243
+2026-11-10T15:27:01.1268238Z Downloading WebKit 26.6 (playwright webkit v2359) from https://cdn.playwright.dev/dbazure/download/playwright/builds/webkit/2359/webkit-ubuntu-24.04.zip
+2026-11-10T15:27:01.5320904Z |                                                                                |   0% of 102.3 MiB
+2026-11-10T15:27:01.6123249Z |■■■■■■■■                                                                        |  10% of 102.3 MiB
+2026-11-10T15:27:01.6789418Z |■■■■■■■■■■■■■■■■                                                                |  20% of 102.3 MiB
+2026-11-10T15:27:01.7257246Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 102.3 MiB
+2026-11-10T15:27:01.7769503Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 102.3 MiB
+2026-11-10T15:27:01.8401229Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 102.3 MiB
+2026-11-10T15:27:01.8767115Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 102.3 MiB
+2026-11-10T15:27:01.9150194Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 102.3 MiB
+2026-11-10T15:27:01.9679100Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 102.3 MiB
+2026-11-10T15:27:02.0028463Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 102.3 MiB
+2026-11-10T15:27:02.0367233Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 102.3 MiB
+2026-11-10T15:27:04.0386378Z WebKit 26.6 (playwright webkit v2359) downloaded to /home/runner/.cache/ms-playwright/webkit-2359
+2026-11-10T15:27:04.3380481Z ##[group]Run cargo build --locked -p cooee
+2026-11-10T15:27:04.3380888Z cargo build --locked -p cooee
+2026-11-10T15:27:04.3401468Z shell: /usr/bin/bash -e {0}
+2026-11-10T15:27:04.3401929Z env:
+2026-11-10T15:27:04.3402135Z   CARGO_TERM_COLOR: always
+2026-11-10T15:27:04.3402401Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:27:04.3402679Z   CARGO_INCREMENTAL: 0
+2026-11-10T15:27:04.3402907Z   CACHE_ON_FAILURE: false
+2026-11-10T15:27:04.3403133Z ##[endgroup]
+2026-11-10T15:27:04.4078039Z     Updating crates.io index
+2026-11-10T15:27:05.4796383Z    Compiling cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+2026-11-10T15:27:05.4824199Z    Compiling cooee-web v0.1.0 (/home/runner/work/cooee/cooee/web)
+2026-11-10T15:27:07.3256341Z    Compiling cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+2026-11-10T15:27:07.3258237Z    Compiling cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+2026-11-10T15:27:10.8450621Z    Compiling cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+2026-11-10T15:27:24.5697463Z    Compiling cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+2026-11-10T15:27:26.2505234Z     Finished `dev` profile [unoptimized + debuginfo] target(s) in 21.87s
+2026-11-10T15:27:26.2818634Z ##[group]Run npx playwright test
+2026-11-10T15:27:26.2818969Z npx playwright test
+2026-11-10T15:27:26.2839464Z shell: /usr/bin/bash -e {0}
+2026-11-10T15:27:26.2839720Z env:
+2026-11-10T15:27:26.2839921Z   CARGO_TERM_COLOR: always
+2026-11-10T15:27:26.2840178Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:27:26.2840446Z   CARGO_INCREMENTAL: 0
+2026-11-10T15:27:26.2840673Z   CACHE_ON_FAILURE: false
+2026-11-10T15:27:26.2840899Z ##[endgroup]
+2026-11-10T15:27:31.6220598Z 
+2026-11-10T15:27:31.6221541Z Running 200 tests using 2 workers
+2026-11-10T15:27:31.6221828Z 
+2026-11-10T15:27:40.6885512Z   ✓    1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (7.6s)
+2026-11-10T15:27:44.6318627Z   ✓    3 [390] › cards.spec.mjs:39:1 › row 30: choice rows, the recommended first, an other box, and the ✓ line says who and when (1.7s)
+2026-11-10T15:27:45.9996589Z   ✓    4 [390] › cards.spec.mjs:60:1 › row 31: a conductor's answer keeps [change]; the owner's pick replaces it (1.4s)
+2026-11-10T15:27:46.1080413Z   ✓    2 [390] › chat.spec.mjs:21:1 › each event kind renders: reply, tool call, plan, approval, state, stop (3.2s)
+2026-11-10T15:27:47.4680843Z   ✓    5 [390] › cards.spec.mjs:81:1 › row 32: a config card shows its diff, the bar says it waits, [apply] settles it (1.5s)
+2026-11-10T15:27:48.6886008Z   ✓    7 [390] › cards.spec.mjs:105:1 › row 33: a secret card's field is masked; saved, the line names only the secret (1.2s)
+2026-11-10T15:27:49.8546755Z   ✓    8 [390] › cards.spec.mjs:120:1 › row 34: the composer's model and effort chips; a pick is kept and said in the thread (1.2s)
+2026-11-10T15:27:50.8357628Z   ✓    6 [390] › chat.spec.mjs:71:1 › a reconnect mid-stream loses and doubles no text (4.7s)
+2026-11-10T15:27:51.4157582Z   ✓   10 [390] › chat.spec.mjs:109:1 › a failed send shows retry, and the retry sends it (557ms)
+2026-11-10T15:27:51.4216169Z   ✓    9 [390] › cards.spec.mjs:131:1 › row 35: handoff chips open the other thread; a line flows back; a pick-a-thread row (1.6s)
+2026-11-10T15:27:53.1566337Z   ✓   12 [390] › cards.spec.mjs:150:1 › #84: the header shows the id; a whole-word ref opens that thread and back returns; code, partial and unknown stay plain (1.7s)
+2026-11-10T15:27:53.3333691Z   ✓   11 [390] › chat.spec.mjs:123:1 › the draft survives a reload (1.9s)
+2026-11-10T15:27:54.4255885Z [WebServer] cooee: slow: POST /threads 200 1210 ms
+2026-11-10T15:27:55.6953778Z   ✓   13 [390] › cards.spec.mjs:173:1 › #83: a herdsman run card shows its command and sha; [approve] shows the exit and tail, [deny] runs nothing (2.5s)
+2026-11-10T15:27:58.8000583Z   ✓   15 [390] › first-run.spec.mjs:9:1 › first run: no agents shows its fix line with a copy button, never an empty composer (3.1s)
+2026-11-10T15:28:01.1565274Z   ✓   16 [390] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it (2.3s)
+2026-11-10T15:28:02.3339792Z   ✘   14 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (8.9s)
+2026-11-10T15:28:02.5666097Z   ✓   17 [390] › folders.spec.mjs:55:1 › Use a folder…: search finds a sub-folder, [+ new folder] makes one in a root and picks it (1.4s)
+2026-11-10T15:28:04.3623420Z   ✓   18 [390] › folders.spec.mjs:86:1 › Use a folder… in a chat: its later turns run in the folder, the chat says so (1.8s)
+2026-11-10T15:28:05.2504856Z   ✓   20 [390] › look.spec.mjs:38:1 › a device's pick shows from the first frame, and stays on this device only (863ms)
+2026-11-10T15:28:06.0755096Z   ✓   19 [390] › login.spec.mjs:7:1 › sign-ins: the provider's own login, its link tappable, a code typed in, then signed in (2.9s)
+2026-11-10T15:28:07.6806289Z   ✓   21 [390] › look.spec.mjs:69:1 › the look sheet: style, figures, theme, appearance and colours apply at once and stay (2.4s)
+2026-11-10T15:28:07.9948704Z   ✓   23 [390] › look.spec.mjs:108:1 › System follows the phone's mode live (293ms)
+2026-11-10T15:28:08.0323493Z   ✓   22 [390] › machines.spec.mjs:7:1 › the machines tab: a card per machine, a chart on tap, the Air offline and the tab's dot (1.9s)
+2026-11-10T15:28:09.4916982Z   ✓   24 [390] › look.spec.mjs:123:1 › Settings: the look rows show the pick and open the look sheet (1.5s)
+2026-11-10T15:28:10.1536581Z   ✓   25 [390] › mcp.spec.mjs:19:1 › mcp servers: one row per server, + server's card shows the exact command, an agent's tools (2.1s)
+2026-11-10T15:28:10.3420324Z   ✓   27 [390] › md.spec.mjs:5:1 › md.ts renders each element as DOM, escaping all text (170ms)
+2026-11-10T15:28:10.5870609Z   ✓   28 [390] › md.spec.mjs:53:1 › a fenced block gets [▸ terminal] beside [copy] only where the owner terminal's tab is on (#29) (235ms)
+2026-11-10T15:28:11.0866269Z send → chat with your message: 232 ms (390)
+2026-11-10T15:28:12.1319836Z   ✓   29 [390] › new-thread.spec.mjs:44:1 › send opens the chat at once with the loading line, which the reply replaces (1.5s)
+2026-11-10T15:28:12.5735420Z   ✓   30 [390] › new-thread.spec.mjs:72:1 › the model and effort picked are the start's (#553 row 34), said in the thread's bar (419ms)
+2026-11-10T15:28:14.0658323Z   ✓   31 [390] › new-thread.spec.mjs:83:1 › a connect that fails shows inline with retry; the message stays; retry sends it (1.5s)
+2026-11-10T15:28:15.6165908Z   ✓   32 [390] › new-thread.spec.mjs:111:1 › Settings › providers is one flat list: a row per account, [+ account] per provider (1.5s)
+2026-11-10T15:28:16.4723042Z   ✓   33 [390] › nojs.spec.mjs:9:1 › with no script the look sheet, Settings and Use a folder… open (834ms)
+2026-11-10T15:28:19.9804468Z   ✓   34 [390] › pair.spec.mjs:42:1 › the welcome: the figure, three steps and six boxes, nothing else; dark and light (3.5s)
+2026-11-10T15:28:22.4971485Z   ✓   35 [390] › pair.spec.mjs:53:1 › typing moves on, ⌫ goes back, a paste fills all six; a wrong code says so and clears the boxes (2.5s)
+2026-11-10T15:28:25.9661144Z   ✓   26 [390] › look.spec.mjs:136:1 › each Style × Figures combination renders at 390 (16.5s)
+2026-11-10T15:28:26.2525867Z   ✓   37 [390] › look.spec.mjs:177:1 › the ascii figures' two frames alternate (272ms)
+2026-11-10T15:28:26.5180407Z   ✓   36 [390] › pair.spec.mjs:79:1 › a QR link pairs at once and the list offers a passkey; the used code then says it has run out (4.0s)
+2026-11-10T15:28:28.8531748Z   ✓   38 [390] › look.spec.mjs:197:1 › the look sheet lists Scene only with sprites, and plain only ASCII or None (2.6s)
+2026-11-10T15:28:29.5266883Z   ✓   40 [390] › look.spec.mjs:245:1 › switching style or figures keeps the scroll position (660ms)
+2026-11-10T15:28:30.2817054Z   ✓   41 [390] › look.spec.mjs:277:1 › a plugin tab gets the theme's variables, data URLs, style and figures, and every change (739ms)
+2026-11-10T15:28:30.7610362Z   ✓   39 [390] › pair.spec.mjs:104:1 › settings › devices › pair a device shows the QR and its code (4.2s)
+2026-11-10T15:28:32.7134769Z   ✓   42 [390] › parity-threads.spec.mjs:48:1 › row 15: a new reply shows on the open list (dot and badge, no reload); opening the thread clears it (2.4s)
+2026-11-10T15:28:34.5999819Z   ✓   44 [390] › parity-threads.spec.mjs:80:1 › row 16: a side thread started by typing is titled by its first line; the title renames it (1.9s)
+2026-11-10T15:28:35.5586467Z   ✓   45 [390] › parity-threads.spec.mjs:99:1 › a phone's ‹ back to agents keeps the chat's agent current: its side threads and + new chat (943ms)
+2026-11-10T15:28:37.6386359Z   ✓   46 [390] › parity-threads.spec.mjs:111:1 › row 17: a row swiped left is archived, undo brings it back, and the archived list restores it (2.1s)
+2026-11-10T15:28:39.1873804Z   ✓   47 [390] › parity-threads.spec.mjs:148:1 › row 18: a reply's markdown renders (table, code, link, raw HTML as text); a run of commands folds and stays open (1.5s)
+2026-11-10T15:28:39.8586182Z   ✓   48 [390] › parity-threads.spec.mjs:186:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain (660ms)
+2026-11-10T15:28:40.3358750Z   ✓   49 [390] › parity-threads.spec.mjs:197:1 › row 19: a code block's [copy] puts its code on the clipboard (467ms)
+2026-11-10T15:28:40.7551587Z   ✓   43 [390] › pair.spec.mjs:143:1 › the approve card: no passkey on this device, approved elsewhere, and a request that ran out (10.0s)
+2026-11-10T15:28:40.9847864Z   ✓   50 [390] › parity-threads.spec.mjs:208:1 › row 20: two photos sent in one message show as thumbnails; one opens full size and back closes it (636ms)
+2026-11-10T15:28:41.5537605Z   ✓   52 [390] › parity-threads.spec.mjs:236:1 › row 21: a send says sending…, then ✓; offline it turns red with [retry], which resends it (552ms)
+2026-11-10T15:28:42.1385837Z   ✓   53 [390] › parity-threads.spec.mjs:250:1 › row 22: the box grows with its text to 6 lines, then scrolls; send stays at its foot (568ms)
+2026-11-10T15:28:42.6198332Z   ✓   54 [390] › parity-threads.spec.mjs:269:1 › row 23: when the keyboard covers the page (iOS: only the visual viewport shrinks), the composer sits on it (467ms)
+2026-11-10T15:28:43.2668841Z   ✓   55 [390] › parity-threads.spec.mjs:291:1 › row 25: [stop] says stopping… until the turn stops; the bar says offline, then nothing once back (630ms)
+2026-11-10T15:28:43.3191562Z [WebServer] cooee: plugin greet: its profiles: Connection refused (os error 111)
+2026-11-10T15:28:45.0175053Z   ✓   56 [390] › parity-threads.spec.mjs:315:1 › row 26: a send during a turn is queued; [send now] steers it in; the next goes when the turn ends; [edit] takes one back (1.7s)
+2026-11-10T15:28:45.6552498Z   ✓   57 [390] › parity-threads.spec.mjs:343:1 › row 27: the draft keeps its text and picked files across a reload (619ms)
+2026-11-10T15:28:46.6702166Z   ✓   51 [390] › plugin-manager.spec.mjs:15:1 › Settings › Plugins: add from the index after a confirm, it runs with its tab and log, then remove (5.9s)
+2026-11-10T15:28:47.9005378Z   ✓   58 [390] › parity-threads.spec.mjs:376:3 › touch › row 28: a long press on a reply opens copy, copy as markdown and quote; quote puts > lines in the box (2.2s)
+2026-11-10T15:28:48.3168991Z   ✓   60 [390] › parity-threads.spec.mjs:411:1 › row 29: the thread bar stays put while scrolling to the top loads older messages (401ms)
+2026-11-10T15:28:48.6183096Z   ✓   59 [390] › plugins.spec.mjs:9:1 › the example plugin's tab: proxied calls with its token, its stream, a push and a choice card (1.9s)
+2026-11-10T15:28:48.8421751Z   ✓   62 [390] › plugins.spec.mjs:46:1 › a plugin reaches only its own backend: not another plugin's, not cooee's storage or page (205ms)
+2026-11-10T15:28:49.4374467Z   ✓   63 [390] › reliability.spec.mjs:19:3 › on every browser › R5: a slow load shows the thin strip only after 300 ms, and the page stays tappable (553ms)
+2026-11-10T15:28:50.0325048Z   ✓   61 [390] › profiles.spec.mjs:17:1 › a profile is an agent: listed, a new chat with it runs as it, its bar says its label (1.7s)
+2026-11-10T15:28:50.6126709Z   ✓   65 [390] › scene.spec.mjs:36:1 › Scene draws a sprite per agent on one page; a tap opens its chat, ringed, with its chats as chips (559ms)
+2026-11-10T15:28:50.7500167Z   ✓   64 [390] › reliability.spec.mjs:44:3 › on every browser › R16: refreshed 5 times, each row is drawn once and the list keeps one card per thread (1.3s)
+2026-11-10T15:28:51.2069444Z   ✓   67 [390] › reliability.spec.mjs:67:3 › on every browser › R17: paths and image words in a message stay text: no image, no file fetched (439ms)
+2026-11-10T15:28:51.2279058Z   -   68 [390] › reliability.spec.mjs:81:3 › on WebKit, as on the iPhone › R4: with the keyboard up (a shrunk viewport) the composer sits flush on it and the page never jumps
+2026-11-10T15:28:51.2283115Z   -   69 [390] › reliability.spec.mjs:101:3 › on WebKit, as on the iPhone › R25: closing a sheet goes from sheet to page in one step: no frame flashes, the page never reloads
+2026-11-10T15:28:51.3446714Z   ✓   66 [390] › scene.spec.mjs:74:1 › refreshed 5 times, Scene keeps one sprite per agent (720ms)
+2026-11-10T15:28:52.3537985Z   ✓   71 [390] › scene.spec.mjs:89:1 › Scene is offered only with Figures Sprite; ASCII, None or the plain theme hide it (995ms)
+2026-11-10T15:28:53.9747880Z   ✓   72 [390] › scene.spec.mjs:118:5 › Scene's audit: farm, dark (1.6s)
+2026-11-10T15:28:55.1442886Z   ✓   70 [390] › terminal.spec.mjs:9:1 › the terminal: Face ID opens it, a shell takes typing, the key bar sits at the foot (3.9s)
+2026-11-10T15:28:55.6464392Z   ✓   73 [390] › scene.spec.mjs:118:5 › Scene's audit: farm, light (1.7s)
+2026-11-10T15:28:57.3994494Z   ✓   75 [390] › scene.spec.mjs:118:5 › Scene's audit: kitchen, dark (1.7s)
+2026-11-10T15:28:58.8172343Z   ✓   74 [390] › themes.spec.mjs:20:1 › remix farm with an agent, watch the preview reload on a save, keep it and pick it (3.6s)
+2026-11-10T15:28:59.1892148Z   ✓   76 [390] › scene.spec.mjs:118:5 › Scene's audit: kitchen, light (1.8s)
+2026-11-10T15:29:00.1722639Z   ✓   77 [390] › threads.spec.mjs:4:1 › agents: the list renders, fits the width, no axe violations; + opens a new chat with nothing to pick (1.3s)
+2026-11-10T15:29:00.3754627Z   ✓   79 [390] › threads.spec.mjs:29:1 › installable: the manifest, its icons and the service worker load (189ms)
+2026-11-10T15:29:00.8306274Z   ✓   80 [390] › threads.spec.mjs:45:1 › a failed start reads as one plain sentence, never the server's JSON error (437ms)
+2026-11-10T15:29:00.9042067Z   -   81 [390] › threads.spec.mjs:60:1 › the current agent's row reads at AA while its chat works, on the light themes
+2026-11-10T15:29:00.9785792Z   ✓   78 [390] › scene.spec.mjs:118:5 › Scene's audit: garden, dark (1.8s)
+2026-11-10T15:29:02.5233824Z   ✓   82 [390] › threads.spec.mjs:80:1 › an agent's unread side threads show under it, newest 3 and +2; newest opens the newest reply; one row for both (1.6s)
+2026-11-10T15:29:02.7616076Z   ✓   83 [390] › scene.spec.mjs:118:5 › Scene's audit: garden, light (1.8s)
+2026-11-10T15:29:02.8518105Z   -   85 [390] › scene.spec.mjs:133:1 › Scene beside a chat at 1440: the sidebar is the scene, the chat keeps its style
+2026-11-10T15:29:03.1739939Z   ✓   86 [390] › scene.spec.mjs:147:1 › farm's Scene at night: the strip's night from 19:00 on this device's clock (310ms)
+2026-11-10T15:29:03.9431750Z   ✓   84 [390] › workflow.spec.mjs:12:1 › Workflow: lanes are never among the agents, and a running impl lane opens as a chat (1.4s)
+2026-11-10T15:29:06.2441637Z   ✓   87 [390] › parity.spec.mjs:34:1 › row 1: installable, no double-tap zoom, and offline it opens on its last copy with its time (2.1s)
+2026-11-10T15:29:07.1386655Z   ✓   89 [390] › parity.spec.mjs:61:1 › row 2: the sync dot is green while the stream is open, amber when it drops, green again with no rows missing (860ms)
+2026-11-10T15:29:07.4957853Z   ✓   88 [390] › push.spec.mjs:24:1 › two pushes for a thread show one notification; none while it is open; reading it clears it (2.2s)
+2026-11-10T15:29:09.6327912Z   ✓   90 [390] › parity.spec.mjs:77:1 › rows 3 and 5: ↻ spins while the thin strip shows and the page stays tappable; a pull and coming back reload too (2.5s)
+2026-11-10T15:29:10.8108655Z   ✓   91 [1440] › cards.spec.mjs:39:1 › row 30: choice rows, the recommended first, an other box, and the ✓ line says who and when (2.4s)
+2026-11-10T15:29:10.9436903Z   ✓   92 [390] › parity.spec.mjs:108:1 › row 5: the app coming back after 30 s away reloads; under 30 s it doesn't (1.3s)
+2026-11-10T15:29:11.9386367Z   ✓   94 [390] › parity.spec.mjs:125:1 › row 4: an action's toast is one short line on screen, then it clears (967ms)
+2026-11-10T15:29:13.5566798Z   ✓   93 [1440] › cards.spec.mjs:60:1 › row 31: a conductor's answer keeps [change]; the owner's pick replaces it (2.7s)
+2026-11-10T15:29:15.5901913Z   ✓   96 [1440] › cards.spec.mjs:81:1 › row 32: a config card shows its diff, the bar says it waits, [apply] settles it (2.0s)
+2026-11-10T15:29:17.5240655Z   ✓   97 [1440] › cards.spec.mjs:105:1 › row 33: a secret card's field is masked; saved, the line names only the secret (1.9s)
+2026-11-10T15:29:19.4990133Z   ✓   98 [1440] › cards.spec.mjs:120:1 › row 34: the composer's model and effort chips; a pick is kept and said in the thread (2.0s)
+2026-11-10T15:29:21.3231204Z   ✓   99 [1440] › cards.spec.mjs:131:1 › row 35: handoff chips open the other thread; a line flows back; a pick-a-thread row (1.8s)
+2026-11-10T15:29:23.4012440Z   ✓   95 [390] › parity.spec.mjs:151:1 › row 6 (#47): a new device asks, a paired one approves with its passkey (a virtual authenticator) or declines (11.4s)
+2026-11-10T15:29:24.0025729Z   ✓  100 [1440] › cards.spec.mjs:150:1 › #84: the header shows the id; a whole-word ref opens that thread and back returns; code, partial and unknown stay plain (2.7s)
+2026-11-10T15:29:25.2786711Z   ✓  101 [390] › parity.spec.mjs:234:1 › row 7: an unpaired browser gets the shell only: pairing, no thread data (1.9s)
+2026-11-10T15:29:26.4959861Z   ✓  102 [1440] › cards.spec.mjs:173:1 › #83: a herdsman run card shows its command and sha; [approve] shows the exit and tail, [deny] runs nothing (2.5s)
+2026-11-10T15:29:27.6244630Z   ✓  103 [390] › parity.spec.mjs:250:1 › rows 8 and 13: Settings opens at a section from its link, has an index, and says truly that alerts are off (2.3s)
+2026-11-10T15:29:28.7819172Z   ✓  105 [390] › parity.spec.mjs:271:1 › row 10: a theme with moments plays one when a turn ends live; terminal plays none (1.1s)
+2026-11-10T15:29:30.1166756Z   ✓  104 [1440] › chat.spec.mjs:21:1 › each event kind renders: reply, tool call, plan, approval, state, stop (3.6s)
+2026-11-10T15:29:31.1823329Z   ✓  106 [390] › parity.spec.mjs:294:1 › row 12: ascii figures replace the sprites and stay (2.4s)
+2026-11-10T15:29:31.9938938Z   ✓  108 [390] › parity.spec.mjs:308:1 › row 14: report mode: tap an element, add a note, send; cooee reports lists it (787ms)
+2026-11-10T15:29:32.9104644Z   -  109 [1440] › first-run.spec.mjs:9:1 › first run: no agents shows its fix line with a copy button, never an empty composer
+2026-11-10T15:29:35.1727942Z   ✓  107 [1440] › chat.spec.mjs:71:1 › a reconnect mid-stream loses and doubles no text (5.0s)
+2026-11-10T15:29:35.7739718Z   ✓  110 [1440] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it (2.8s)
+2026-11-10T15:29:36.0375873Z   ✓  111 [1440] › chat.spec.mjs:109:1 › a failed send shows retry, and the retry sends it (854ms)
+2026-11-10T15:29:37.9279327Z   ✓  112 [1440] › folders.spec.mjs:55:1 › Use a folder…: search finds a sub-folder, [+ new folder] makes one in a root and picks it (2.1s)
+2026-11-10T15:29:38.1208045Z   ✓  113 [1440] › chat.spec.mjs:123:1 › the draft survives a reload (2.1s)
+2026-11-10T15:29:40.5075687Z   ✓  114 [1440] › folders.spec.mjs:86:1 › Use a folder… in a chat: its later turns run in the folder, the chat says so (2.6s)
+2026-11-10T15:29:43.4360408Z   ✓  116 [1440] › login.spec.mjs:7:1 › sign-ins: the provider's own login, its link tappable, a code typed in, then signed in (2.9s)
+2026-11-10T15:29:44.2722467Z   ✓  117 [1440] › look.spec.mjs:38:1 › a device's pick shows from the first frame, and stays on this device only (807ms)
+2026-11-10T15:29:47.1274738Z   ✓  115 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (9.0s)
+2026-11-10T15:29:47.3983375Z   ✓  118 [1440] › look.spec.mjs:69:1 › the look sheet: style, figures, theme, appearance and colours apply at once and stay (3.1s)
+2026-11-10T15:29:47.7508993Z   ✓  120 [1440] › look.spec.mjs:108:1 › System follows the phone's mode live (335ms)
+2026-11-10T15:29:49.0240354Z   ✓  119 [1440] › machines.spec.mjs:7:1 › the machines tab: a card per machine, a chart on tap, the Air offline and the tab's dot (1.9s)
+2026-11-10T15:29:49.6345514Z   ✓  121 [1440] › look.spec.mjs:123:1 › Settings: the look rows show the pick and open the look sheet (1.9s)
+2026-11-10T15:29:49.7143246Z   -  123 [1440] › look.spec.mjs:136:1 › each Style × Figures combination renders at 390
+2026-11-10T15:29:49.9881807Z   ✓  124 [1440] › look.spec.mjs:177:1 › the ascii figures' two frames alternate (263ms)
+2026-11-10T15:29:51.3617422Z   ✓  122 [1440] › mcp.spec.mjs:19:1 › mcp servers: one row per server, + server's card shows the exact command, an agent's tools (2.3s)
+2026-11-10T15:29:51.5185279Z   ✓  126 [1440] › md.spec.mjs:5:1 › md.ts renders each element as DOM, escaping all text (142ms)
+2026-11-10T15:29:51.8245350Z   ✓  127 [1440] › md.spec.mjs:53:1 › a fenced block gets [▸ terminal] beside [copy] only where the owner terminal's tab is on (#29) (293ms)
+2026-11-10T15:29:52.5082696Z send → chat with your message: 310 ms (1440)
+2026-11-10T15:29:53.8271933Z   ✓  125 [1440] › look.spec.mjs:197:1 › the look sheet lists Scene only with sprites, and plain only ASCII or None (3.8s)
+2026-11-10T15:29:54.4302360Z   ✓  128 [1440] › new-thread.spec.mjs:44:1 › send opens the chat at once with the loading line, which the reply replaces (2.6s)
+2026-11-10T15:29:54.7134568Z   ✓  129 [1440] › look.spec.mjs:245:1 › switching style or figures keeps the scroll position (874ms)
+2026-11-10T15:29:55.0538835Z   ✓  130 [1440] › new-thread.spec.mjs:72:1 › the model and effort picked are the start's (#553 row 34), said in the thread's bar (609ms)
+2026-11-10T15:29:55.6160720Z   ✓  131 [1440] › look.spec.mjs:277:1 › a plugin tab gets the theme's variables, data URLs, style and figures, and every change (889ms)
+2026-11-10T15:29:56.8588100Z   ✓  133 [1440] › nojs.spec.mjs:9:1 › with no script the look sheet, Settings and Use a folder… open (1.2s)
+2026-11-10T15:29:56.8901284Z   -  134 [1440] › pair.spec.mjs:42:1 › the welcome: the figure, three steps and six boxes, nothing else; dark and light
+2026-11-10T15:29:56.9066049Z   -  135 [1440] › pair.spec.mjs:53:1 › typing moves on, ⌫ goes back, a paste fills all six; a wrong code says so and clears the boxes
+2026-11-10T15:29:56.9249156Z   -  136 [1440] › pair.spec.mjs:79:1 › a QR link pairs at once and the list offers a passkey; the used code then says it has run out
+2026-11-10T15:29:56.9344726Z   -  137 [1440] › pair.spec.mjs:104:1 › settings › devices › pair a device shows the QR and its code
+2026-11-10T15:29:56.9443878Z   -  138 [1440] › pair.spec.mjs:143:1 › the approve card: no passkey on this device, approved elsewhere, and a request that ran out
+2026-11-10T15:29:57.5676581Z   ✓  132 [1440] › new-thread.spec.mjs:83:1 › a connect that fails shows inline with retry; the message stays; retry sends it (2.5s)
+2026-11-10T15:29:59.7420342Z   ✓  140 [1440] › new-thread.spec.mjs:111:1 › Settings › providers is one flat list: a row per account, [+ account] per provider (2.1s)
+2026-11-10T15:29:59.8498690Z   -  141 [1440] › plugin-manager.spec.mjs:15:1 › Settings › Plugins: add from the index after a confirm, it runs with its tab and log, then remove
+2026-11-10T15:30:00.2017060Z   ✓  139 [1440] › parity-threads.spec.mjs:48:1 › row 15: a new reply shows on the open list (dot and badge, no reload); opening the thread clears it (3.2s)
+2026-11-10T15:30:02.1719876Z   ✓  142 [1440] › plugins.spec.mjs:9:1 › the example plugin's tab: proxied calls with its token, its stream, a push and a choice card (2.3s)
+2026-11-10T15:30:02.4298435Z   ✓  144 [1440] › plugins.spec.mjs:46:1 › a plugin reaches only its own backend: not another plugin's, not cooee's storage or page (244ms)
+2026-11-10T15:30:03.0779896Z   ✓  143 [1440] › parity-threads.spec.mjs:80:1 › row 16: a side thread started by typing is titled by its first line; the title renames it (2.9s)
+2026-11-10T15:30:03.1610539Z   -  146 [1440] › parity-threads.spec.mjs:99:1 › a phone's ‹ back to agents keeps the chat's agent current: its side threads and + new chat
+2026-11-10T15:30:04.5858707Z   ✓  145 [1440] › profiles.spec.mjs:17:1 › a profile is an agent: listed, a new chat with it runs as it, its bar says its label (2.1s)
+2026-11-10T15:30:05.2927950Z   ✓  148 [1440] › reliability.spec.mjs:19:3 › on every browser › R5: a slow load shows the thin strip only after 300 ms, and the page stays tappable (678ms)
+2026-11-10T15:30:06.0139570Z   ✓  147 [1440] › parity-threads.spec.mjs:111:1 › row 17: a row swiped left is archived, undo brings it back, and the archived list restores it (2.8s)
+2026-11-10T15:30:06.6719321Z   ✓  149 [1440] › reliability.spec.mjs:44:3 › on every browser › R16: refreshed 5 times, each row is drawn once and the list keeps one card per thread (1.4s)
+2026-11-10T15:30:07.1287091Z   ✓  151 [1440] › reliability.spec.mjs:67:3 › on every browser › R17: paths and image words in a message stay text: no image, no file fetched (445ms)
+2026-11-10T15:30:07.1371143Z   -  152 [1440] › reliability.spec.mjs:81:3 › on WebKit, as on the iPhone › R4: with the keyboard up (a shrunk viewport) the composer sits flush on it and the page never jumps
+2026-11-10T15:30:07.1387404Z   -  153 [1440] › reliability.spec.mjs:101:3 › on WebKit, as on the iPhone › R25: closing a sheet goes from sheet to page in one step: no frame flashes, the page never reloads
+2026-11-10T15:30:07.8427846Z   ✓  154 [1440] › scene.spec.mjs:36:1 › Scene draws a sprite per agent on one page; a tap opens its chat, ringed, with its chats as chips (676ms)
+2026-11-10T15:30:08.4296477Z   ✓  155 [1440] › scene.spec.mjs:74:1 › refreshed 5 times, Scene keeps one sprite per agent (561ms)
+2026-11-10T15:30:08.8161244Z   ✓  150 [1440] › parity-threads.spec.mjs:148:1 › row 18: a reply's markdown renders (table, code, link, raw HTML as text); a run of commands folds and stays open (2.8s)
+2026-11-10T15:30:09.6299665Z   ✓  156 [1440] › scene.spec.mjs:89:1 › Scene is offered only with Figures Sprite; ASCII, None or the plain theme hide it (1.2s)
+2026-11-10T15:30:09.8797237Z   ✓  157 [1440] › parity-threads.spec.mjs:186:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain (1.0s)
+2026-11-10T15:30:10.4991412Z   ✓  159 [1440] › parity-threads.spec.mjs:197:1 › row 19: a code block's [copy] puts its code on the clipboard (611ms)
+2026-11-10T15:30:11.1886648Z   ✓  160 [1440] › parity-threads.spec.mjs:208:1 › row 20: two photos sent in one message show as thumbnails; one opens full size and back closes it (677ms)
+2026-11-10T15:30:11.6618757Z   ✓  158 [1440] › scene.spec.mjs:118:5 › Scene's audit: farm, dark (2.0s)
+2026-11-10T15:30:11.8975443Z   ✓  161 [1440] › parity-threads.spec.mjs:236:1 › row 21: a send says sending…, then ✓; offline it turns red with [retry], which resends it (695ms)
+2026-11-10T15:30:12.4967001Z   ✓  163 [1440] › parity-threads.spec.mjs:250:1 › row 22: the box grows with its text to 6 lines, then scrolls; send stays at its foot (588ms)
+2026-11-10T15:30:13.0136748Z   ✓  164 [1440] › parity-threads.spec.mjs:269:1 › row 23: when the keyboard covers the page (iOS: only the visual viewport shrinks), the composer sits on it (507ms)
+2026-11-10T15:30:13.7483863Z   ✓  162 [1440] › scene.spec.mjs:118:5 › Scene's audit: farm, light (2.1s)
+2026-11-10T15:30:13.8143080Z   -  166 [1440] › scene.spec.mjs:118:5 › Scene's audit: kitchen, dark
+2026-11-10T15:30:13.8949631Z   -  167 [1440] › scene.spec.mjs:118:5 › Scene's audit: kitchen, light
+2026-11-10T15:30:13.9186840Z   ✓  165 [1440] › parity-threads.spec.mjs:291:1 › row 25: [stop] says stopping… until the turn stops; the bar says offline, then nothing once back (887ms)
+2026-11-10T15:30:13.9728373Z   -  168 [1440] › scene.spec.mjs:118:5 › Scene's audit: garden, dark
+2026-11-10T15:30:14.0547766Z   -  170 [1440] › scene.spec.mjs:118:5 › Scene's audit: garden, light
+2026-11-10T15:30:16.3046814Z   ✓  171 [1440] › scene.spec.mjs:133:1 › Scene beside a chat at 1440: the sidebar is the scene, the chat keeps its style (2.2s)
+2026-11-10T15:30:16.5298917Z   ✓  169 [1440] › parity-threads.spec.mjs:315:1 › row 26: a send during a turn is queued; [send now] steers it in; the next goes when the turn ends; [edit] takes one back (2.6s)
+2026-11-10T15:30:16.7130085Z   ✓  172 [1440] › scene.spec.mjs:147:1 › farm's Scene at night: the strip's night from 19:00 on this device's clock (394ms)
+2026-11-10T15:30:16.7876043Z   -  174 [1440] › terminal.spec.mjs:9:1 › the terminal: Face ID opens it, a shell takes typing, the key bar sits at the foot
+2026-11-10T15:30:17.3851689Z   ✓  173 [1440] › parity-threads.spec.mjs:343:1 › row 27: the draft keeps its text and picked files across a reload (838ms)
+2026-11-10T15:30:20.0898441Z   ✓  176 [1440] › parity-threads.spec.mjs:376:3 › touch › row 28: a long press on a reply opens copy, copy as markdown and quote; quote puts > lines in the box (2.7s)
+2026-11-10T15:30:20.5404194Z   ✓  177 [1440] › parity-threads.spec.mjs:411:1 › row 29: the thread bar stays put while scrolling to the top loads older messages (436ms)
+2026-11-10T15:30:20.8856034Z   ✓  175 [1440] › themes.spec.mjs:20:1 › remix farm with an agent, watch the preview reload on a save, keep it and pick it (4.1s)
+2026-11-10T15:30:22.6399345Z   ✓  178 [1440] › threads.spec.mjs:4:1 › agents: the list renders, fits the width, no axe violations; + opens a new chat with nothing to pick (2.1s)
+2026-11-10T15:30:22.6844567Z   ✓  179 [1440] › workflow.spec.mjs:12:1 › Workflow: lanes are never among the agents, and a running impl lane opens as a chat (1.8s)
+2026-11-10T15:30:22.8713477Z   ✓  180 [1440] › threads.spec.mjs:29:1 › installable: the manifest, its icons and the service worker load (220ms)
+2026-11-10T15:30:23.4425390Z   ✓  181 [1440] › threads.spec.mjs:45:1 › a failed start reads as one plain sentence, never the server's JSON error (558ms)
+2026-11-10T15:30:25.6477868Z   ✓  182 [1440] › parity.spec.mjs:34:1 › row 1: installable, no double-tap zoom, and offline it opens on its last copy with its time (1.9s)
+2026-11-10T15:30:26.6876897Z   ✓  184 [1440] › parity.spec.mjs:61:1 › row 2: the sync dot is green while the stream is open, amber when it drops, green again with no rows missing (1.0s)
+2026-11-10T15:30:27.7714837Z   ✓  183 [1440] › threads.spec.mjs:60:1 › the current agent's row reads at AA while its chat works, on the light themes (4.3s)
+2026-11-10T15:30:29.7262517Z   ✓  186 [1440] › threads.spec.mjs:80:1 › an agent's unread side threads show under it, newest 3 and +2; newest opens the newest reply; one row for both (1.9s)
+2026-11-10T15:30:29.8226890Z   ✓  185 [1440] › parity.spec.mjs:77:1 › rows 3 and 5: ↻ spins while the thin strip shows and the page stays tappable; a pull and coming back reload too (3.1s)
+2026-11-10T15:30:31.2426301Z   ✓  187 [1440] › parity.spec.mjs:108:1 › row 5: the app coming back after 30 s away reloads; under 30 s it doesn't (1.4s)
+2026-11-10T15:30:32.4502894Z   ✓  189 [1440] › parity.spec.mjs:125:1 › row 4: an action's toast is one short line on screen, then it clears (1.1s)
+2026-11-10T15:30:33.0063281Z   ✓  188 [1440] › push.spec.mjs:24:1 › two pushes for a thread show one notification; none while it is open; reading it clears it (2.2s)
+2026-11-10T15:30:33.9276847Z   -  191 [webkit] › reliability.spec.mjs:19:3 › on every browser › R5: a slow load shows the thin strip only after 300 ms, and the page stays tappable
+2026-11-10T15:30:33.9279197Z   -  192 [webkit] › reliability.spec.mjs:44:3 › on every browser › R16: refreshed 5 times, each row is drawn once and the list keeps one card per thread
+2026-11-10T15:30:33.9283810Z   -  193 [webkit] › reliability.spec.mjs:67:3 › on every browser › R17: paths and image words in a message stay text: no image, no file fetched
+2026-11-10T15:30:35.4025664Z   ✓  194 [webkit] › reliability.spec.mjs:81:3 › on WebKit, as on the iPhone › R4: with the keyboard up (a shrunk viewport) the composer sits flush on it and the page never jumps (1.4s)
+2026-11-10T15:30:40.6066493Z   ✓  190 [1440] › parity.spec.mjs:151:1 › row 6 (#47): a new device asks, a paired one approves with its passkey (a virtual authenticator) or declines (8.1s)
+2026-11-10T15:30:41.4770566Z   ✓  195 [webkit] › reliability.spec.mjs:101:3 › on WebKit, as on the iPhone › R25: closing a sheet goes from sheet to page in one step: no frame flashes, the page never reloads (6.0s)
+2026-11-10T15:30:42.0256017Z   ✓  196 [1440] › parity.spec.mjs:234:1 › row 7: an unpaired browser gets the shell only: pairing, no thread data (1.4s)
+2026-11-10T15:30:44.1112701Z   ✓  197 [1440] › parity.spec.mjs:250:1 › rows 8 and 13: Settings opens at a section from its link, has an index, and says truly that alerts are off (2.1s)
+2026-11-10T15:30:45.1744481Z   ✓  198 [1440] › parity.spec.mjs:271:1 › row 10: a theme with moments plays one when a turn ends live; terminal plays none (1.0s)
+2026-11-10T15:30:47.1697296Z   ✓  199 [1440] › parity.spec.mjs:294:1 › row 12: ascii figures replace the sprites and stay (2.0s)
+2026-11-10T15:30:47.8458358Z   ✓  200 [1440] › parity.spec.mjs:308:1 › row 14: report mode: tap an element, add a note, send; cooee reports lists it (659ms)
+2026-11-10T15:30:48.0153435Z 
+2026-11-10T15:30:48.0161102Z 
+2026-11-10T15:30:48.0172840Z   1) [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+2026-11-10T15:30:48.0173623Z 
+2026-11-10T15:30:48.0174272Z     Error: expect(received).toEqual(expected) // deep equality
+2026-11-10T15:30:48.0174755Z 
+2026-11-10T15:30:48.0174933Z     - Expected  - 1
+2026-11-10T15:30:48.0175339Z     + Received  + 3
+2026-11-10T15:30:48.0175557Z 
+2026-11-10T15:30:48.0175709Z     - Array []
+2026-11-10T15:30:48.0176052Z     + Array [
+2026-11-10T15:30:48.0196535Z     +   251,
+2026-11-10T15:30:48.0196924Z     + ]
+2026-11-10T15:30:48.0197111Z 
+2026-11-10T15:30:48.0197409Z       175 |   expect(await anchor()).toEqual(before);
+2026-11-10T15:30:48.0198260Z       176 |   // Neither the scrolling nor the keyboard made a task over 50 ms.
+2026-11-10T15:30:48.0199439Z     > 177 |   expect(await page.evaluate(() => window.longTasks.filter((d) => d > 50))).toEqual([]);
+2026-11-10T15:30:48.0200904Z           |                                                                             ^
+2026-11-10T15:30:48.0201526Z       178 | });
+2026-11-10T15:30:48.0201994Z       179 |
+2026-11-10T15:30:48.0202631Z         at /home/runner/work/cooee/cooee/web/e2e/chat.spec.mjs:177:77
+2026-11-10T15:30:48.0203229Z 
+2026-11-10T15:30:48.0204314Z     Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-390/error-context.md
+2026-11-10T15:30:48.0205116Z 
+2026-11-10T15:30:48.0205267Z   1 failed
+2026-11-10T15:30:48.0206307Z     [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+2026-11-10T15:30:48.0207100Z   23 skipped
+2026-11-10T15:30:48.0207433Z   176 passed (3.3m)
+2026-11-10T15:30:48.0558310Z ##[error]Process completed with exit code 1.
+2026-11-10T15:30:48.0630317Z ##[group]Run actions/upload-artifact@v4
+2026-11-10T15:30:48.0630639Z with:
+2026-11-10T15:30:48.0630831Z   name: ui-390
+2026-11-10T15:30:48.0631044Z   path: ui-390/*.png
+2026-11-10T15:30:48.0631270Z   if-no-files-found: warn
+2026-11-10T15:30:48.0631509Z   compression-level: 6
+2026-11-10T15:30:48.0631724Z   overwrite: false
+2026-11-10T15:30:48.0631939Z   include-hidden-files: false
+2026-11-10T15:30:48.0632186Z env:
+2026-11-10T15:30:48.0632376Z   CARGO_TERM_COLOR: always
+2026-11-10T15:30:48.0632624Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:30:48.0632881Z   CARGO_INCREMENTAL: 0
+2026-11-10T15:30:48.0633105Z   CACHE_ON_FAILURE: false
+2026-11-10T15:30:48.0633322Z ##[endgroup]
+2026-11-10T15:30:48.2414915Z (node:12463) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-11-10T15:30:48.2415772Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-10T15:30:48.2684967Z With the provided path, there will be 119 files uploaded
+2026-11-10T15:30:48.2705370Z Artifact name is valid!
+2026-11-10T15:30:48.2706368Z Root directory input is valid!
+2026-11-10T15:30:48.5042013Z Beginning upload of artifact content to blob storage
+2026-11-10T15:30:48.8056672Z (node:12463) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-11-10T15:30:49.0835797Z Uploaded bytes 6080884
+2026-11-10T15:30:49.0975854Z Finished uploading artifact content to blob storage!
+2026-11-10T15:30:49.0977198Z SHA256 digest of uploaded artifact zip is 1df48bce3406b8c3408bb430db5faaafc451c7f148c06e22b035631b00b8f836
+2026-11-10T15:30:49.0978505Z Finalizing artifact upload
+2026-11-10T15:30:49.5241570Z Artifact ui-390.zip successfully finalized. Artifact ID 13776964237
+2026-11-10T15:30:49.5242903Z Artifact ui-390 has been successfully uploaded! Final size is 6080884 bytes. Artifact ID is 13776964237
+2026-11-10T15:30:49.5249996Z Artifact download URL: https://github.com/jirathip-dev/cooee/actions/runs/42842897596/artifacts/13776964237
+2026-11-10T15:30:49.5488318Z ##[group]Run actions/upload-artifact@v4
+2026-11-10T15:30:49.5488888Z with:
+2026-11-10T15:30:49.5489244Z   name: ui-1440
+2026-11-10T15:30:49.5489614Z   path: ui-1440/*.png
+2026-11-10T15:30:49.5490044Z   if-no-files-found: warn
+2026-11-10T15:30:49.5490492Z   compression-level: 6
+2026-11-10T15:30:49.5490900Z   overwrite: false
+2026-11-10T15:30:49.5491290Z   include-hidden-files: false
+2026-11-10T15:30:49.5491734Z env:
+2026-11-10T15:30:49.5492067Z   CARGO_TERM_COLOR: always
+2026-11-10T15:30:49.5492526Z   CARGO_HOME: /home/runner/.cargo
+2026-11-10T15:30:49.5493001Z   CARGO_INCREMENTAL: 0
+2026-11-10T15:30:49.5493425Z   CACHE_ON_FAILURE: false
+2026-11-10T15:30:49.5493856Z ##[endgroup]
+2026-11-10T15:30:49.7285003Z (node:12475) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-11-10T15:30:49.7285883Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-10T15:30:49.7470637Z With the provided path, there will be 91 files uploaded
+2026-11-10T15:30:49.7477231Z Artifact name is valid!
+2026-11-10T15:30:49.7477786Z Root directory input is valid!
+2026-11-10T15:30:49.9520952Z Beginning upload of artifact content to blob storage
+2026-11-10T15:30:50.3084656Z (node:12475) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-11-10T15:30:50.5760094Z Uploaded bytes 8388608
+2026-11-10T15:30:50.6437560Z Uploaded bytes 10045095
+2026-11-10T15:30:50.6582087Z Finished uploading artifact content to blob storage!
+2026-11-10T15:30:50.6583515Z SHA256 digest of uploaded artifact zip is 876f3dbfe027b7f0dbd6a69642bb613ddac7a5f9ed65e1f2902e80f5af64ada5
+2026-11-10T15:30:50.6584985Z Finalizing artifact upload
+2026-11-10T15:30:51.0982821Z Artifact ui-1440.zip successfully finalized. Artifact ID 13777178886
+2026-11-10T15:30:51.0984119Z Artifact ui-1440 has been successfully uploaded! Final size is 10045095 bytes. Artifact ID is 13777178886
+2026-11-10T15:30:51.0989691Z Artifact download URL: https://github.com/jirathip-dev/cooee/actions/runs/42842897596/artifacts/13777178886
+2026-11-10T15:30:51.1259090Z Post job cleanup.
+2026-11-10T15:30:51.2182017Z [command]/usr/bin/git version
+2026-11-10T15:30:51.2259714Z git version 2.56.0
+2026-11-10T15:30:51.2309652Z Temporarily overriding HOME='/home/runner/work/_temp/c08f100f-a939-4bce-88e0-78e756f85fd1' before making global git config changes
+2026-11-10T15:30:51.2311395Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-10T15:30:51.2316049Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+2026-11-10T15:30:51.2371062Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-10T15:30:51.2411955Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-10T15:30:51.2712233Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-10T15:30:51.2744617Z http.https://github.com/.extraheader
+2026-11-10T15:30:51.2759345Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-11-10T15:30:51.2799811Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-10T15:30:51.3096407Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-10T15:30:51.3148469Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-10T15:30:51.3555270Z Cleaning up orphan processes
+2026-11-10T15:30:51.4055591Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

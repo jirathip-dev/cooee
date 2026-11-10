@@ -1,0 +1,58 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/crates/cooee-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.96s
+     Running unittests src/lib.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-138/debug/deps/cooee_core-0b4da60583249cda)
+
+running 36 tests
+test chat::tests::a_conductors_answer_may_be_changed_for_its_window_only ... ok
+test chat::tests::a_repeated_id_is_one_row ... ok
+test chat::tests::shed_answers_its_own_approval_never_a_plugins_card ... ok
+test config::tests::missing_file_gives_defaults ... ok
+test config::tests::port_from_toml_unknown_key_rejected ... ok
+test blocks::tests::a_settled_card_asks_only_while_it_may_change_and_reads_back_without_its_block ... ok
+test login::tests::finds_links_without_trailing_punctuation ... ok
+test login::tests::picks_fill_the_providers_words ... ok
+test config::tests::roots_under_home_are_expanded ... ok
+test chat::tests::r6_folding_a_long_log_is_within_budget ... ok
+test login::tests::redacts_tokens_keeps_words_paths_codes_and_links ... ok
+test login::tests::usage_windows_from_the_usage_lines ... ok
+test mcp::tests::only_references_pass_and_an_error_never_shows_the_value ... ok
+test mcp::tests::saving_keeps_every_other_line_and_reads_back ... ok
+test models::tests::a_short_name_is_its_familys_newest_and_an_id_is_itself ... ok
+test plugins::tests::a_manifest_needs_a_name_and_a_tab ... ok
+test accounts::tests::a_dead_logins_leftover_folder_never_blocks_a_new_account ... ok
+test plugins::tests::the_built_in_index_parses ... ok
+test profiles::tests::a_secret_inline_or_a_bad_policy_is_refused_naming_the_key_only ... ok
+test accounts::tests::system_first_a_new_account_listed_once_adopted_and_removal ... ok
+test config::tests::saving_roots_keeps_the_other_lines ... ok
+test devices::tests::an_unreadable_store_is_an_error_not_unpaired ... ok
+test store::tests::crash_child ... ignored, the child process of crash_between_temp_write_and_rename_keeps_old_file
+test store::tests::bad_ids_and_newer_formats_are_refused ... ok
+test profiles::tests::secrets_are_read_from_their_files_and_plain_values_kept ... ok
+test plugins::tests::entries_round_trip ... ok
+test login::tests::status_from_the_exit_code_and_output ... ok
+test store::tests::item_lines_append_and_a_torn_last_line_is_skipped ... ok
+test store::tests::save_then_load_round_trips_and_leaves_no_temp ... ok
+test store::tests::crash_between_temp_write_and_rename_keeps_old_file ... ok
+test devices::tests::pair_use_remove_and_only_hashes_on_disk ... ok
+test devices::tests::expired_and_guessed_codes_are_refused ... ok
+test devices::tests::a_request_waits_for_an_answer_then_pairs_once_or_is_declined ... ok
+test login::tests::a_timeout_kills_the_command_and_what_it_started ... ok
+test devices::tests::parallel_writes_never_share_a_temp_file ... ok
+test store::tests::concurrent_saves_of_one_thread_never_tear ... ok
+
+test result: ok. 35 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 3.47s
+
+     Running tests/upgrade_compat.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-138/debug/deps/upgrade_compat-4c797210546dc931)
+
+running 2 tests
+test every_earlier_release_config_loads ... ok
+test every_earlier_release_loads_without_losing_data ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+   Doc-tests cooee_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

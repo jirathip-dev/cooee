@@ -1,0 +1,8 @@
+Building for debugging...
+[Planning deferred tasks]
+[1 / 5]
+[2 / 6] CooeeCore
+[9 / 13] CooeeCore
+[13 / 15] CooeeCore
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/Package.swift: CooeeCore: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+Build complete! (17.36 secs)

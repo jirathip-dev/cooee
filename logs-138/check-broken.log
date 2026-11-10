@@ -1,0 +1,3 @@
+FAIL /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-impl-138/broken.json
+     $.blocks[0].type: 7 is not string
+cooee: 1 answer(s) break docs/plugins/screens.schema.json

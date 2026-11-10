@@ -1,0 +1,1088 @@
+apple-quality	UNKNOWN STEP	﻿2026-11-10T14:55:54.4542210Z Current runner version: '2.338.2'
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4558200Z ##[group]Runner Image Provisioner
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4558760Z Hosted Compute Agent
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4559130Z Version: 20261028.624
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4559520Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4559980Z Build Date: 2026-10-28T21:51:42Z
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4560400Z Worker ID: {d998d041-496b-4b00-b266-9a79356dbc4f}
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4560840Z Region: westus
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4561180Z Cloud: MacCloud
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4561520Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4562390Z ##[group]Operating System
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4562960Z macOS
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4563300Z 26.7.2
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4563750Z 25G332
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4564320Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4564680Z ##[group]Runner Image
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4565150Z Image: macos-26-arm64
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4565550Z Version: 20261102.0473.1
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4566830Z Included Software: https://github.com/actions/runner-images/blob/macos-26-arm64/20261102.0473/images/macos/macos-26-arm64-Readme.md
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4568260Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-26-arm64%2F20261102.0473
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4569120Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4570070Z ##[group]GITHUB_TOKEN Permissions
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4572010Z Contents: read
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4572380Z Metadata: read
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4572830Z Packages: read
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4573250Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4575050Z Secret source: Actions
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4575830Z Cache mode: write
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4576580Z Prepare workflow directory
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4866930Z Prepare all required actions
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.4956080Z Getting action download info
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:54.9680200Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:55.3461060Z Download action repository 'taiki-e/install-action@v2' (SHA:cfdb7ed4ccc7c7dce37759eae89dc5674b469b39)
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.0368800Z Complete job name: apple-quality
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1138510Z ##[group]Run actions/checkout@v4
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1139900Z with:
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1140530Z   repository: jirathip-dev/cooee
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1144800Z   token: ***
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1145310Z   ssh-strict: true
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1145660Z   ssh-user: git
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1146090Z   persist-credentials: true
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1146540Z   clean: true
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1146950Z   sparse-checkout-cone-mode: true
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1147470Z   fetch-depth: 1
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1147800Z   fetch-tags: false
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1148140Z   show-progress: true
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1148560Z   lfs: false
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1148890Z   submodules: false
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1149710Z   set-safe-directory: true
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1150110Z   allow-unsafe-pr-checkout: false
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.1150970Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.6141850Z Syncing repository: jirathip-dev/cooee
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.6144660Z ##[group]Getting Git version info
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.6171250Z Working directory is '/Users/runner/work/cooee/cooee'
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.6180290Z [command]/opt/homebrew/bin/git version
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.6823850Z git version 2.56.0
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.6858080Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.6863910Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/c36d5ddf-6b70-4f5d-9090-b20647046fe2/.gitconfig'
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.6865300Z Temporarily overriding HOME='/Users/runner/work/_temp/c36d5ddf-6b70-4f5d-9090-b20647046fe2' before making global git config changes
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.6868440Z Adding repository directory to the temporary git global config as a safe directory
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.6872810Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/cooee/cooee
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7015580Z Deleting the contents of '/Users/runner/work/cooee/cooee'
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7021800Z ##[group]Initializing the repository
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7023660Z [command]/opt/homebrew/bin/git init /Users/runner/work/cooee/cooee
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7587900Z hint: Using 'master' as the name for the initial branch. This default branch name
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7589080Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7589870Z hint: to use in all of your new repositories, which will suppress this warning,
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7590990Z hint: call:
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7591350Z hint:
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7591860Z hint: 	git config --global init.defaultBranch <name>
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7592480Z hint:
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7593290Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7594850Z hint: 'development'. The just-created branch can be renamed via this command:
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7595590Z hint:
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7596060Z hint: 	git branch -m <name>
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7596520Z hint:
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7597160Z hint: Disable this message with "git config set advice.defaultBranchName false"
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7604450Z Initialized empty Git repository in /Users/runner/work/cooee/cooee/.git/
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7615860Z [command]/opt/homebrew/bin/git remote add origin https://github.com/jirathip-dev/cooee
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7725490Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7726240Z ##[group]Disabling automatic garbage collection
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7734660Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7822600Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7829630Z ##[group]Setting up auth
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7830420Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.7917880Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.9254280Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:56.9352340Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:57.0478410Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:57.0564280Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:57.1586730Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:57.1867760Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:57.1876110Z ##[group]Fetching the repository
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:57.1898980Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +98eff12101325812b02306e12581942e37e0478b:refs/remotes/pull/196/merge
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.2151160Z From https://github.com/jirathip-dev/cooee
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.2154790Z  * [new ref]         98eff12101325812b02306e12581942e37e0478b -> pull/196/merge
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.2157300Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.2157820Z ##[group]Determining the checkout info
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.2158370Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.2161710Z [command]/opt/homebrew/bin/git sparse-checkout disable
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.2275350Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.2390200Z ##[group]Checking out the ref
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.2394520Z [command]/opt/homebrew/bin/git checkout --progress --force refs/remotes/pull/196/merge
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.6332180Z HEAD is now at 98eff12 Merge 5a20b5132b81facbaa9ea5c9ca3e8690c5e28954 into 0b3b59111d7ce420afeafe9506b31893339d19b4
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.6354510Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.6500520Z [command]/opt/homebrew/bin/git log -1 --format=%H
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.6599380Z 98eff12101325812b02306e12581942e37e0478b
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7106520Z ##[group]Run taiki-e/install-action@v2
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7107400Z with:
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7107650Z   tool: just
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7107820Z   checksum: true
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7108010Z   fallback: cargo-binstall
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7108220Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7201400Z ##[start-action display=Run bail() {;id=__taiki-e_install-action.__run]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7271590Z ##[group]Run bail() {
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7271930Z ^[[36;1mbail() {^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7272140Z ^[[36;1m  printf '::error::install-action: %s\n' "$*"^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7272380Z ^[[36;1m  exit 1^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7272520Z ^[[36;1m}^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7272940Z ^[[36;1m# If /bin/sh is dash, environment variable containing % is not imported, but is fine^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7273440Z ^[[36;1m# because it also means that it will not be exposed to subprocess.^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7273780Z ^[[36;1mif /usr/bin/env | grep -Eq '^BASH_FUNC_'; then^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7274400Z ^[[36;1m  bail 'bash function injection via BASH_FUNC_ environment variable is not allowed for security reasons'^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7274840Z ^[[36;1mfi^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7275040Z ^[[36;1mif ! command -v bash >/dev/null; then^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7275310Z ^[[36;1m  if grep -Eq '^ID=alpine' /etc/os-release; then^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7275670Z ^[[36;1m    printf '::group::Install packages required for install-action (bash)\n'^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7276020Z ^[[36;1m    # NB: sync with apk_install in main.sh^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7276280Z ^[[36;1m    if command -v sudo >/dev/null; then^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7276700Z ^[[36;1m      sudo apk --no-cache add bash^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7277000Z ^[[36;1m    elif command -v doas >/dev/null; then^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7277290Z ^[[36;1m      doas apk --no-cache add bash^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7277520Z ^[[36;1m    else^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7277680Z ^[[36;1m      apk --no-cache add bash^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7277870Z ^[[36;1m    fi^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7278040Z ^[[36;1m    printf '::endgroup::\n'^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7278240Z ^[[36;1m  else^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7278410Z ^[[36;1m    bail 'this action requires bash'^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7278620Z ^[[36;1m  fi^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7279440Z ^[[36;1mfi^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7279900Z ^[[36;1mbash --noprofile --norc "${GITHUB_ACTION_PATH:?}/main.sh"^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7284660Z shell: /usr/bin/env -u ENV -u BASH_ENV -u CDPATH -u SHELLOPTS -u BASHOPTS /bin/sh -eu {0}
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7284990Z env:
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7285150Z   INPUT_TOOL: just
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7285300Z   INPUT_CHECKSUM: true
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7285480Z   INPUT_FALLBACK: cargo-binstall
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7288220Z   DEFAULT_GITHUB_TOKEN: ***
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7288440Z   ACTION_USER_AGENT: taiki-e/install-action (v2)
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7288660Z   RUNNER_OS: macOS
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7288810Z   RUNNER_ARCH: ARM64
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.7288970Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.8104170Z info: host platform: aarch64_macos
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.8119670Z info: cargo is located at /opt/homebrew/opt/rustup/bin/cargo
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.8716670Z info: installing just@latest
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.9095120Z info: adding '/Users/runner/.install-action/bin' to PATH
+apple-quality	UNKNOWN STEP	2026-11-10T14:55:59.9187910Z info: downloading https://github.com/casey/just/releases/download/1.59.0/just-1.59.0-aarch64-apple-darwin.tar.gz
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.1668210Z info: verifying sha256 checksum for just-1.59.0-aarch64-apple-darwin.tar.gz
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2269740Z info: just installed at /Users/runner/.install-action/bin/just
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2275020Z + just --version
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2354540Z just 1.59.0
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2357650Z 
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2394530Z ##[end-action id=__taiki-e_install-action.__run;outcome=success;conclusion=success;duration_ms=519]
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2400470Z ##[start-action display=Run Set-StrictMode -Version Latest;id=__taiki-e_install-action.__run_2]
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2413300Z ##[end-action id=__taiki-e_install-action.__run_2;outcome=skipped;conclusion=skipped;duration_ms=0]
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2510460Z ##[group]Run just apple-check
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2511090Z ^[[36;1mjust apple-check^[[0m
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2560180Z shell: /bin/bash -e {0}
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2560460Z env:
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2562810Z   GH_TOKEN: ***
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.2563010Z ##[endgroup]
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.3117390Z scripts/apple-check.sh
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.4390990Z 
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:00.4391560Z == swift format
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:04.0618440Z 
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:04.0720360Z == anti-slop
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:18.5601150Z Fetching https://github.com/swiftlang/swift-syntax.git
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:20.7327150Z [1/81972] Fetching swift-syntax
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:26.2292670Z Fetched https://github.com/swiftlang/swift-syntax.git from cache (7.67s)
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:26.2396680Z Computing version for https://github.com/swiftlang/swift-syntax.git
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:32.9170540Z Computed https://github.com/swiftlang/swift-syntax.git at 603.0.2 (14.37s)
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:32.9194900Z Computed https://github.com/swiftlang/swift-syntax.git at 603.0.2 (0.00s)
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:33.0260090Z Creating working copy for https://github.com/swiftlang/swift-syntax.git
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:33.8948620Z Working copy of https://github.com/swiftlang/swift-syntax.git resolved at 603.0.2
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:35.4793090Z Downloading package prebuilt https://download.swift.org/prebuilts/swift-syntax/603.0.2/swiftlang-6.3.3.1.3-macosx26.5-MacroSupport.zip
+apple-quality	UNKNOWN STEP	2026-11-10T14:56:35.7331620Z Downloaded https://download.swift.org/prebuilts/swift-syntax/603.0.2/swiftlang-6.3.3.1.3-macosx26.5-MacroSupport.zip (0.25s)
+apple-quality	UNKNOWN STEP	2026-11-10T15:05:42.3860720Z no violations
+apple-quality	UNKNOWN STEP	2026-11-10T15:05:42.3869480Z 
+apple-quality	UNKNOWN STEP	2026-11-10T15:05:42.3872430Z == TODO(#N) names an open issue
+apple-quality	UNKNOWN STEP	2026-11-10T15:05:42.4393050Z every TODO names an open issue
+apple-quality	UNKNOWN STEP	2026-11-10T15:05:42.4393810Z 
+apple-quality	UNKNOWN STEP	2026-11-10T15:05:42.4394540Z == SwiftLint 0.65.1
+apple-quality	UNKNOWN STEP	2026-11-10T15:05:48.0198520Z no violations
+apple-quality	UNKNOWN STEP	2026-11-10T15:05:48.0272720Z 
+apple-quality	UNKNOWN STEP	2026-11-10T15:05:48.0274950Z == build (Swift 6, complete concurrency, warnings as errors)
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:07.2282900Z 
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:07.2288440Z == tests with coverage
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:11.7793680Z [0/1] Planning build
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:11.8179910Z Building for debugging...
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:11.9669770Z [0/13] Write swift-version-7974D3F7F03D5E95.txt
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.1545390Z [2/19] Emitting module SwiftSyntax604
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.1571070Z [3/19] Compiling SwiftSyntax604 Empty.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.1571990Z [4/19] Compiling SwiftSyntax602 Empty.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.1606050Z [5/19] Emitting module SwiftSyntax602
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.1666880Z [6/19] Compiling SwiftSyntax603 Empty.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.1768240Z [7/19] Emitting module SwiftSyntax603
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.3509050Z [8/25] Emitting module SwiftSyntax601
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.3537390Z [9/25] Emitting module SwiftSyntax600
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.3538130Z [10/25] Compiling SwiftSyntax600 Empty.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.3538850Z [11/25] Compiling SwiftSyntax601 Empty.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.3591110Z [12/25] Emitting module SwiftSyntax510
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.3607050Z [13/25] Compiling SwiftSyntax510 Empty.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.5329230Z [14/31] Compiling Sharing2 Empty.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.5522540Z [15/31] Emitting module Sharing2
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.5623950Z [16/31] Compiling SwiftSyntax509 Empty.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.5725490Z [17/31] Emitting module SwiftSyntax509
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.5793010Z [18/31] Compiling Sharing1 Empty.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:12.5859900Z [19/31] Emitting module Sharing1
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.1364890Z [20/117] Compiling SwiftSyntax Trivia+commentValue.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.1466340Z [21/117] Compiling SwiftSyntax Trivia.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.1568210Z [22/117] Compiling SwiftSyntax Utils.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.1670470Z [23/117] Compiling SwiftSyntax ChildNameForKeyPath.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.1771960Z [24/117] Compiling SwiftSyntax Keyword.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.1873580Z [25/117] Compiling SwiftSyntax RenamedChildrenCompatibility.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.1976210Z [26/117] Compiling SwiftSyntax RenamedNodesCompatibility.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.2097640Z [27/117] Compiling SwiftSyntax SyntaxAnyVisitor.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.2112260Z [28/117] Compiling SwiftSyntax SyntaxBaseNodes.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.2213490Z [29/117] Compiling SwiftSyntax SyntaxCollections.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.2315210Z [30/117] Compiling SwiftSyntax SyntaxCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.2425550Z [31/117] Compiling SwiftSyntax SyntaxHashable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.2527060Z [32/117] Compiling SwiftSyntax SyntaxIdentifier.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.2628760Z [33/117] Compiling SwiftSyntax SyntaxNodeStructure.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.2730160Z [34/117] Compiling SwiftSyntax SyntaxProtocol.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.2831550Z [35/117] Compiling SwiftSyntax SyntaxText.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.2937610Z [36/117] Compiling SwiftSyntax SyntaxTreeViewMode.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.3039020Z [37/117] Compiling SwiftSyntax TokenDiagnostic.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.3123820Z [38/117] Compiling SwiftSyntax TokenSequence.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.3124730Z [39/117] Compiling SwiftSyntax TokenSyntax.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.3128210Z [40/127] Emitting module InternalCollectionsUtilities
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:14.3855450Z [41/127] Emitting module IssueReporting
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.2580820Z [57/134] Compiling IssueReporting WithExpectedIssue.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.2682070Z [58/134] Compiling IssueReporting WithIssueContext.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.2784230Z [59/134] Compiling InternalCollectionsUtilities UnsafeBufferPointer+Extras.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.2885670Z [60/134] Compiling InternalCollectionsUtilities UnsafeMutableBufferPointer+Extras.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.2996750Z [61/134] Compiling InternalCollectionsUtilities UnsafeMutablePointer+Extras.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.3098460Z [62/134] Compiling InternalCollectionsUtilities UnsafeMutableRawBufferPointer+Extras.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.3182110Z [63/134] Compiling InternalCollectionsUtilities UnsafePointer+Extras.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.3194550Z [64/134] Compiling InternalCollectionsUtilities UnsafeRawBufferPointer+Extras.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.3195320Z [65/134] Compiling InternalCollectionsUtilities _SortedCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.3400380Z [66/134] Compiling InternalCollectionsUtilities _UniqueCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.3401200Z [67/134] Compiling IssueReporting IssueSeverity.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.3502300Z [68/134] Compiling IssueReporting ReportIssue.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.3608700Z [69/134] Compiling IssueReporting _Test.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.3709460Z [70/134] Compiling IssueReporting TestContext.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:15.3846520Z [71/134] Compiling IssueReporting Unimplemented.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:17.4058450Z [74/182] Emitting module CooeeCore
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:17.4158700Z [75/182] Compiling OrderedCollections _HashTable+Bucket.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:17.4259260Z [76/182] Compiling OrderedCollections _HashTable+BucketIterator.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:17.4360720Z [77/182] Compiling OrderedCollections _HashTable+Constants.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:17.4461010Z [78/182] Compiling OrderedCollections _HashTable+CustomStringConvertible.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.4535560Z [79/184] Compiling CooeeCore Persona.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.4563560Z [80/184] Compiling CooeeCore Screen.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5481970Z [81/184] Compiling OrderedCollections OrderedDictionary+Partial RangeReplaceableCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5491860Z [82/184] Compiling OrderedCollections OrderedDictionary+Sendable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5593200Z [83/184] Compiling OrderedCollections OrderedDictionary+Sequence.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5598980Z [84/184] Compiling OrderedCollections OrderedDictionary+Values.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5599500Z [85/184] Compiling OrderedCollections OrderedDictionary.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5600600Z [86/184] Compiling OrderedCollections OrderedSet+Codable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5601170Z [87/184] Compiling OrderedCollections OrderedSet+CustomReflectable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5601910Z [88/184] Compiling OrderedCollections OrderedSet+Descriptions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5603240Z [89/184] Compiling OrderedCollections OrderedSet+Diffing.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5615850Z [90/184] Compiling OrderedCollections OrderedSet+Equatable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5616640Z [91/184] Compiling OrderedCollections OrderedSet+ExpressibleByArrayLiteral.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5617390Z [92/184] Compiling OrderedCollections OrderedSet+Hashable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5618090Z [93/184] Compiling OrderedCollections OrderedSet+Initializers.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5618720Z [94/184] Compiling OrderedCollections OrderedSet+Insertions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5711930Z [95/184] Compiling OrderedCollections OrderedSet+Invariants.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5814290Z [96/184] Compiling OrderedCollections OrderedSet+Move.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.5946050Z [97/184] Compiling OrderedCollections OrderedSet+Partial MutableCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.6047400Z [98/184] Compiling OrderedCollections OrderedSet+Partial RangeReplaceableCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.6148690Z [99/184] Compiling OrderedCollections OrderedSet+Partial SetAlgebra formIntersection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.6248600Z [100/184] Compiling OrderedCollections OrderedSet+Partial SetAlgebra formSymmetricDifference.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:18.6351530Z [101/184] Compiling OrderedCollections OrderedSet+Partial SetAlgebra formUnion.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.0505920Z [102/216] Emitting module OrderedCollections
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.0610310Z [103/216] Compiling PerceptionCore Perceptible.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.0712100Z [104/216] Compiling PerceptionCore PerceptionChecking.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.0848000Z [105/216] Compiling PerceptionCore PerceptionRegistrar.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.0953020Z [106/216] Compiling PerceptionCore PerceptionTracking.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1053480Z [107/216] Compiling PerceptionCore Perceptions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1155080Z [108/216] Compiling PerceptionCore Deprecations.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1255110Z [109/216] Compiling PerceptionCore Exports.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1329360Z [110/216] Compiling PerceptionCore Locals.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1330310Z [111/216] Compiling PerceptionCore ObservationBeta.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1331150Z [112/216] Compiling PerceptionCore Locking.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1331960Z [113/216] Compiling OrderedCollections OrderedDictionary+Deprecations.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1332640Z [114/216] Compiling OrderedCollections OrderedDictionary+Descriptions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1333210Z [115/216] Compiling OrderedCollections OrderedDictionary+Elements.SubSequence.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1333890Z [116/216] Compiling OrderedCollections OrderedDictionary+Elements.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1334340Z [117/216] Compiling OrderedCollections OrderedDictionary+Equatable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1339250Z [118/216] Compiling OrderedCollections OrderedDictionary+ExpressibleByDictionaryLiteral.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1339820Z [119/216] Compiling OrderedCollections OrderedDictionary+Hashable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1341190Z [120/216] Compiling OrderedCollections OrderedDictionary+Initializers.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1342090Z [121/216] Compiling OrderedCollections OrderedDictionary+Invariants.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1342610Z [122/216] Compiling OrderedCollections OrderedDictionary+Move.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.1346110Z [123/216] Compiling OrderedCollections OrderedDictionary+Partial MutableCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.6983570Z [142/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra intersection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.7096100Z [143/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra isDisjoint.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.7198210Z [144/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra isEqualSet.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.7299790Z [145/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra isStrictSubset.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.7401190Z [146/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra isStrictSuperset.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:19.7492590Z [147/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra isSubset.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3227330Z [154/239] Compiling SwiftSyntax SyntaxVisitor.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3329500Z [155/239] Compiling SwiftSyntax TokenKind.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3431580Z [156/239] Compiling SwiftSyntax Tokens.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3453770Z [157/239] Compiling SwiftSyntax TriviaPieces.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3455660Z [158/239] Compiling SwiftSyntax RawSyntaxNodesAB.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3456180Z [159/239] Compiling SwiftSyntax RawSyntaxNodesC.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3466440Z [160/239] Compiling SwiftSyntax RawSyntaxNodesD.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3467560Z [161/239] Compiling SwiftSyntax RawSyntaxNodesEF.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3468120Z [162/239] Compiling SwiftSyntax RawSyntaxNodesGHI.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3469440Z [163/239] Compiling SwiftSyntax RawSyntaxNodesJKLMN.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3470040Z [164/239] Compiling SwiftSyntax RawSyntaxNodesOP.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3471000Z [165/239] Compiling SwiftSyntax RawSyntaxNodesQRS.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3495780Z [166/239] Compiling SwiftSyntax RawSyntaxNodesTUVWXYZ.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3597160Z [167/239] Compiling SwiftSyntax RawSyntaxValidation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3698470Z [168/239] Compiling SwiftSyntax SyntaxNodesAB.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:20.3799510Z [169/239] Emitting module PerceptionCore
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:21.6277400Z [180/265] Compiling CustomDump CoreImage.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:21.6378950Z [181/265] Compiling CustomDump CoreLocation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:21.6483640Z [182/265] Compiling CustomDump CoreMotion.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:21.6492440Z [183/265] Compiling CustomDump Foundation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:21.6493030Z [184/265] Compiling CustomDump GameKit.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:22.9436270Z [185/279] Compiling IdentifiedCollections IdentifiedArray+Equatable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:22.9454410Z [186/279] Compiling IdentifiedCollections IdentifiedArray+ExpressibleByArrayLiteral.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:22.9464680Z [187/279] Compiling IdentifiedCollections IdentifiedArray+Hashable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:22.9466040Z [188/279] Compiling IdentifiedCollections IdentifiedArray+IdentifiedCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:22.9470750Z [189/279] Compiling IdentifiedCollections IdentifiedArray+Initializers.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:22.9572150Z [190/279] Compiling IdentifiedCollections IdentifiedArray+Insertions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.2985390Z [191/285] Emitting module IdentifiedCollections
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.3086470Z [192/285] Compiling IdentifiedCollections Identified.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.3187960Z [193/285] Compiling IdentifiedCollections IdentifiedArray+Codable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.3289550Z [194/285] Compiling IdentifiedCollections IdentifiedArray+Collection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.3391040Z [195/285] Compiling IdentifiedCollections IdentifiedArray+CollectionAlgorithms.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.3492960Z [196/285] Compiling IdentifiedCollections IdentifiedArray+CustomDebugStringConvertible.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.3594640Z [197/285] Compiling IdentifiedCollections IdentifiedArray+CustomReflectable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.3696160Z [198/285] Compiling IdentifiedCollections IdentifiedArray+CustomStringConvertible.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.8021580Z [199/285] Compiling IdentifiedCollections IdentifiedArray+MutableCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.8122000Z [200/285] Compiling IdentifiedCollections IdentifiedArray+RandomAccessCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.8228930Z [201/285] Compiling IdentifiedCollections IdentifiedArray+RangeReplaceableCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.8330660Z [202/285] Compiling IdentifiedCollections IdentifiedArray+Sendable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.8431300Z [203/285] Compiling IdentifiedCollections IdentifiedArray.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:23.8532550Z [204/285] Compiling IdentifiedCollections IdentifiedCollection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:24.5527690Z [205/290] Compiling CooeeCoreTests ActionTests.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:24.5629300Z [206/290] Compiling CooeeCoreTests ItemsTests.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:24.5729480Z [207/290] Compiling CooeeCoreTests ListingTests.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:24.5833670Z [208/290] Compiling CooeeCoreTests ModelsTests.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:24.5931090Z [224/290] Compiling CustomDump Swift.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:24.6032340Z [225/290] Emitting module CustomDump
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:26.3177380Z [226/300] Emitting module SwiftSyntax
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:26.7737680Z [227/300] Compiling CustomDump ExpectDifference.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:26.7839760Z [228/300] Compiling CustomDump ExpectNoDifference.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:26.7940310Z [229/300] Compiling CustomDump AnyType.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:26.8048720Z [230/300] Compiling CustomDump CollectionDifference.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:26.8049280Z [231/300] Compiling CustomDump Identifiable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:26.8049700Z [232/300] Compiling CustomDump Mirror.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:26.8050080Z [233/300] Compiling CustomDump String.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:26.8050420Z [234/300] Compiling CustomDump Unordered.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:26.8050870Z [235/300] Compiling CustomDump XCTAssertDifference.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:26.8051340Z [236/300] Compiling CustomDump XCTAssertNoDifference.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:27.5718170Z [237/305] Compiling CooeeAPI Client.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:27.5819680Z [238/305] Compiling CooeeAPI Endpoints.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:27.5920930Z [239/305] Emitting module CooeeCoreTests
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:27.6022180Z [240/305] Compiling CooeeAPI Events.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:27.6124240Z [241/305] Compiling CooeeAPI Keychain.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:28.7598300Z [244/306] Emitting module CooeeAPI
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.0671080Z [247/307] Compiling CooeeAPI Nearby.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.5116540Z [248/316] Compiling ConcurrencyExtras Locking.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.5219150Z [249/316] Compiling ConcurrencyExtras UncheckedBox.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.5320500Z [250/316] Compiling ConcurrencyExtras LockIsolated.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.5422780Z [251/316] Compiling ConcurrencyExtras MainSerialExecutor.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.7051280Z [252/319] Compiling ConcurrencyExtras ActorIsolated.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.7153380Z [253/319] Compiling ConcurrencyExtras AnyHashableSendable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.7255060Z [254/319] Compiling ConcurrencyExtras AsyncStream.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.7357170Z [255/319] Compiling ConcurrencyExtras AsyncThrowingStream.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.7459820Z [256/319] Emitting module ConcurrencyExtras
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.8072780Z [257/319] Compiling CooeeCoreTests ScreenTests.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.8876950Z [258/319] Compiling ConcurrencyExtras Result.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.8978220Z [259/319] Compiling ConcurrencyExtras Task.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:29.9079090Z [260/319] Compiling ConcurrencyExtras UncheckedSendable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.4203220Z [261/335] Emitting module CasePathsCore
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.7240930Z [262/338] Compiling CasePathsCore CasePathable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.7337370Z [263/338] Compiling CasePathsCore KeyPath+Sendable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.7393660Z [264/338] Compiling CasePathsCore TypeName.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.7394300Z [265/338] Compiling CasePathsCore UncheckedSendable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.7394670Z [266/338] Compiling CasePathsCore AnyCasePath.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.7395120Z [267/338] Compiling CasePathsCore CasePath.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.7395510Z [268/338] Compiling CasePathsCore CasePathIterable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.7395870Z [269/338] Compiling CasePathsCore CasePathReflectable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.7811040Z [270/338] Compiling CasePathsCore Never+CasePathable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.7912770Z [271/338] Compiling CasePathsCore Optional+CasePathable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:30.8013530Z [272/338] Compiling CasePathsCore Result+CasePathable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:31.5782650Z [273/348] Compiling CombineSchedulers AnyScheduler.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:31.5884510Z [274/348] Compiling CombineSchedulers Concurrency.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:31.5985010Z [275/348] Compiling CombineSchedulers ImmediateScheduler.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:31.6085420Z [276/348] Compiling CombineSchedulers Deprecations.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:31.6194250Z [277/348] Compiling CombineSchedulers Lock.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:31.6286270Z [278/348] Emitting module CombineSchedulers
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:31.6324620Z [279/348] Compiling CombineSchedulers NSRecursiveLock.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:31.6325020Z [280/348] Compiling CombineSchedulers Platform.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:31.6325340Z [281/348] Compiling CombineSchedulers SwiftUI.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:31.6325680Z [282/348] Compiling CombineSchedulers TestScheduler.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:32.2957640Z [283/352] Compiling CombineSchedulers Timer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:32.3058110Z [284/352] Compiling CombineSchedulers UIKit.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:32.3158970Z [285/352] Compiling CombineSchedulers UIScheduler.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:32.3260570Z [286/352] Compiling CombineSchedulers UnimplementedScheduler.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:32.8485060Z [290/361] Compiling Clocks AnyClock.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:32.8586880Z [291/361] Compiling Clocks ImmediateClock.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:32.8686920Z [292/361] Compiling Clocks Lock.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:32.8788190Z [293/361] Emitting module CooeeAPITests
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:32.8988900Z [294/361] Compiling CooeeAPITests Support.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:32.9090610Z [295/361] Compiling CooeeAPITests resource_bundle_accessor.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:33.1555470Z [299/361] Emitting module Clocks
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:33.1656540Z [300/361] Compiling Clocks _AsyncTimerSequence.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:33.1757730Z [301/361] Compiling Clocks SwiftUI.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:33.1832020Z [302/361] Compiling Clocks TestClock.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:33.6865020Z [303/363] Compiling Clocks Timer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:33.6892410Z [304/363] Compiling Clocks UnimplementedClock.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:34.7916880Z [305/382] Emitting module Dependencies
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.0717870Z [306/391] Compiling Dependencies FireAndForget.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.0819010Z [307/391] Compiling Dependencies Locale.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.0919970Z [308/391] Compiling Dependencies MainQueue.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.1029560Z [309/391] Compiling Dependencies MainRunLoop.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.1131280Z [310/391] Compiling Dependencies NotificationCenter.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.1232350Z [311/391] Compiling Dependencies OpenURL.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.1333360Z [312/391] Compiling Dependencies TimeZone.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.1434570Z [313/391] Compiling Dependencies URLSession.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.1536140Z [314/391] Compiling Dependencies UUID.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.6302640Z [315/391] Compiling Dependencies Dependency.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.6330970Z [316/391] Compiling Dependencies DependencyContext.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.6331500Z [317/391] Compiling Dependencies DependencyKey.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.6332100Z [318/391] Compiling Dependencies DependencyValues.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.6332500Z [319/391] Compiling Dependencies Assert.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.6333000Z [320/391] Compiling Dependencies Calendar.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.6333490Z [321/391] Compiling Dependencies Clocks.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.6333870Z [322/391] Compiling Dependencies Context.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.6334280Z [323/391] Compiling Dependencies Date.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.9574260Z [324/391] Compiling Dependencies WithRandomNumberGenerator.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.9668260Z [325/391] Compiling Dependencies AppEntryPoint.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.9699320Z [326/391] Compiling Dependencies Deprecations.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.9704130Z [327/391] Compiling Dependencies Exports.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.9714380Z [328/391] Compiling Dependencies SendableKeyPath.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.9715950Z [329/391] Compiling Dependencies TypeName.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.9716440Z [330/391] Compiling Dependencies PreviewTrait.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.9719330Z [331/391] Compiling Dependencies TestTrait.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:35.9721920Z [332/391] Compiling Dependencies WithDependencies.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:37.7387890Z [333/409] Emitting module Sharing
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.3921980Z [334/417] Compiling Sharing SharedPublisher.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.4023540Z [335/417] Compiling Sharing SharedReader.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.4133570Z [336/417] Compiling Sharing SharedReaderKey.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.4135090Z [337/417] Compiling Sharing SwiftUIStateSharing.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.4135490Z [338/417] Compiling Sharing CasePaths.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.4135810Z [339/417] Compiling Sharing CustomDump.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.4136630Z [340/417] Compiling Sharing IdentifiedCollections.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.4137130Z [341/417] Compiling Sharing resource_bundle_accessor.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.5997290Z [342/417] Compiling Sharing Deprecations.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6099070Z [343/417] Compiling Sharing KeyPath+Sendable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6199500Z [344/417] Compiling Sharing MutexBackport.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6307530Z [345/417] Compiling Sharing NSRecursiveLock+WithLock.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6346540Z [346/417] Compiling Sharing PassthroughRelay.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6360340Z [347/417] Compiling Sharing PersistentReferences.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6449190Z [348/417] Compiling Sharing Reference.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6461500Z [349/417] Compiling Sharing SharedChangeTracker.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6507710Z [350/417] Compiling Sharing TypeName.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6517270Z [351/417] Compiling Sharing Shared.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6580410Z [352/417] Compiling Sharing SharedBinding.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6589870Z [353/417] Compiling Sharing SharedContinuations.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6646330Z [354/417] Compiling Sharing SharedKey.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6652060Z [355/417] Compiling Sharing AppStorageKey.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6702360Z [356/417] Compiling Sharing DefaultKey.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6711390Z [357/417] Compiling Sharing FileStorageKey.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:09:39.6771060Z [358/417] Compiling Sharing InMemoryKey.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:03.0900660Z [398/417] Compiling SwiftSyntax SyntaxNodesC.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:03.0902250Z [399/417] Compiling SwiftSyntax SyntaxNodesD.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:03.0902910Z [400/417] Compiling SwiftSyntax SyntaxNodesEF.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:03.0903410Z [401/417] Compiling SwiftSyntax SyntaxNodesGHI.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:03.0904480Z [402/417] Compiling SwiftSyntax SyntaxNodesJKLMN.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:03.0904880Z [403/417] Compiling SwiftSyntax SyntaxNodesOP.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:03.0905340Z [404/417] Compiling SwiftSyntax SyntaxNodesQRS.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:03.0906110Z [405/417] Compiling SwiftSyntax SyntaxNodesTUVWXYZ.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:05.7443080Z [406/462] Emitting module SwiftDiagnostics
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.0593460Z [407/465] Compiling SwiftParser CompilerFiles.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.0678400Z [408/465] Compiling SwiftParser Declarations.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.0679330Z [409/465] Compiling SwiftParser Directives.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.0679950Z [410/465] Compiling SwiftParser Attributes.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.0684730Z [411/465] Compiling SwiftParser Availability.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.0705550Z [412/465] Compiling SwiftParser CharacterInfo.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.0706250Z [413/465] Compiling SwiftParser CollectionNodes+Parsable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.4027240Z [418/465] Emitting module SwiftBasicFormat
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.5236350Z [419/467] Compiling SwiftDiagnostics GroupedDiagnostics.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.5338530Z [420/467] Compiling SwiftDiagnostics Message.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.5440400Z [421/467] Compiling SwiftDiagnostics Note.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.7083870Z [422/467] Compiling SwiftBasicFormat SyntaxProtocol+Formatted.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:06.7185820Z [423/467] Compiling SwiftBasicFormat Trivia+FormatExtensions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:07.2261110Z [424/467] Emitting module SwiftParser
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.2377010Z [425/482] Compiling SwiftParser UnicodeScalarExtensions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.2490960Z [426/482] Compiling SwiftParser Lookahead.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.2596200Z [427/482] Compiling SwiftParser LoopProgressCondition.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.2697480Z [428/482] Compiling SwiftParser Modifiers.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.2798840Z [429/482] Compiling SwiftParser Names.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.2920510Z [430/482] Compiling SwiftParser Nominals.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.3041230Z [431/482] Compiling SwiftParser Parameters.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.3126730Z [432/482] Compiling SwiftParser ParseSourceFile.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.3127450Z [433/482] Compiling SwiftParser Parser.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.3127960Z [434/482] Compiling SwiftParser Patterns.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.3128760Z [435/482] Compiling SwiftParser Recovery.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.3129210Z [436/482] Compiling SwiftParser Specifiers.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.3129590Z [437/482] Compiling SwiftParser Statements.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.3130140Z [438/482] Compiling SwiftParser StringLiteralRepresentedLiteralValue.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:09.3130690Z [439/482] Compiling SwiftParser StringLiterals.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:10.3378660Z [450/482] Compiling SwiftParser IsValidIdentifier.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:10.3381030Z [451/482] Compiling SwiftParser Cursor.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:10.3382160Z [452/482] Compiling SwiftParser Lexeme.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:10.3383570Z [453/482] Compiling SwiftParser LexemeSequence.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:10.3389160Z [454/482] Compiling SwiftParser Lexer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:10.3390160Z [455/482] Compiling SwiftParser RegexLiteralLexer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1903760Z [456/482] Compiling SwiftParser SwiftParserCompatibility.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1904280Z [457/482] Compiling SwiftParser SwiftVersion.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1908460Z [458/482] Compiling SwiftParser SyntaxUtils.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1910070Z [459/482] Compiling SwiftParser TokenConsumer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1910600Z [460/482] Compiling SwiftParser TokenPrecedence.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1911070Z [461/482] Compiling SwiftParser TokenSpec.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1911400Z [462/482] Compiling SwiftParser TokenSpecSet.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1911850Z [463/482] Compiling SwiftParser TopLevel.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1912210Z [464/482] Compiling SwiftParser TriviaParser.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1912640Z [465/482] Compiling SwiftParser Types.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1913240Z [466/482] Compiling SwiftParser ExperimentalFeatures.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1913860Z [467/482] Compiling SwiftParser IsLexerClassified.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1914410Z [468/482] Compiling SwiftParser LayoutNodes+Parsable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1917110Z [469/482] Compiling SwiftParser Parser+TokenSpecSet.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:11.1918980Z [470/482] Compiling SwiftParser TokenSpecStaticMembers.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:12.3322890Z [471/500] Compiling SwiftParserDiagnostics DiagnosticExtensions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:12.3426480Z [472/500] Compiling SwiftParserDiagnostics LexerDiagnosticMessages.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:12.3534250Z [473/500] Compiling SwiftParserDiagnostics MissingNodesError.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:12.3648480Z [474/500] Compiling SwiftParserDiagnostics MissingTokenError.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:12.7560550Z [475/503] Emitting module SwiftParserDiagnostics
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:12.8792180Z [476/507] Compiling SwiftOperators PrecedenceGraph.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:12.8893620Z [477/507] Compiling SwiftOperators PrecedenceGroup.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:12.8995520Z [478/507] Compiling SwiftParserDiagnostics Utils.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:12.9952810Z [479/507] Emitting module SwiftOperators
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:13.0055290Z [480/507] Compiling SwiftParserDiagnostics MultiLineStringLiteralDiagnosticsGenerator.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:13.0157700Z [481/507] Compiling SwiftParserDiagnostics ParseDiagnosticsGenerator.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:13.0259200Z [482/507] Compiling SwiftParserDiagnostics ParserDiagnosticMessages.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:13.4435850Z [484/507] Compiling SwiftParserDiagnostics ChildNameForDiagnostics.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:13.4578390Z [485/507] Compiling SwiftParserDiagnostics SyntaxKindNameForDiagnostics.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:13.4681830Z [486/507] Compiling SwiftParserDiagnostics TokenNameForDiagnostics.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:15.6253850Z [496/518] Compiling SwiftSyntaxBuilder SwiftSyntaxBuilderCompatibility.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:15.6364210Z [497/518] Compiling SwiftSyntaxBuilder Syntax+StringInterpolation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:15.6392470Z [498/518] Compiling SwiftSyntaxBuilder SyntaxNodeWithBody.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:15.6419810Z [499/518] Compiling SwiftSyntaxBuilder SyntaxParsable+ExpressibleByStringInterpolation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:15.6489390Z [500/518] Compiling SwiftSyntaxBuilder ValidatingSyntaxNodes.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:15.6523040Z [501/518] Emitting module SwiftSyntaxBuilder
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:15.6562730Z [502/518] Compiling SwiftSyntaxBuilder ConvenienceInitializers.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:15.6580860Z [503/518] Compiling SwiftSyntaxBuilder DeclSyntaxParseable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:15.6635710Z [504/518] Compiling SwiftSyntaxBuilder Indenter.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:15.6721440Z [505/518] Compiling SwiftSyntaxBuilder ListBuilder.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:15.6729700Z [506/518] Compiling SwiftSyntaxBuilder ResultBuilderExtensions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:17.3261680Z [507/523] Compiling SwiftSyntaxBuilder WithTrailingCommaSyntax+EnsuringTrailingComma.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:17.3263170Z [508/523] Compiling SwiftSyntaxBuilder BuildableNodes.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:17.3264380Z [509/523] Compiling SwiftSyntaxBuilder RenamedChildrenBuilderCompatibility.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:17.3268880Z [510/523] Compiling SwiftSyntaxBuilder ResultBuilders.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:17.3270270Z [511/523] Compiling SwiftSyntaxBuilder SyntaxExpressibleByStringInterpolationConformances.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:19.2591340Z [512/534] Compiling SwiftIfConfig IfConfigDecl+IfConfig.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:19.2595770Z [513/534] Compiling SwiftIfConfig IfConfigDiagnostic.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:19.2701100Z [514/534] Compiling SwiftIfConfig IfConfigEvaluation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:19.2731720Z [515/534] Compiling SwiftIfConfig IfConfigFunctions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:19.2733240Z [516/534] Compiling SwiftIfConfig IfConfigRegionState.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:19.7558070Z [517/539] Emitting module SwiftIfConfig
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:19.7559920Z [518/539] Compiling SwiftIfConfig ActiveClauseEvaluator.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:19.7562560Z [519/539] Compiling SwiftIfConfig ActiveSyntaxRewriter.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:19.7563890Z [520/539] Compiling SwiftIfConfig ActiveSyntaxVisitor.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:19.7565690Z [521/539] Compiling SwiftIfConfig BuildConfiguration.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:19.7566800Z [522/539] Compiling SwiftIfConfig ConfiguredRegions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:20.1744700Z [523/539] Compiling SwiftIfConfig StaticBuildConfiguration.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:20.1745230Z [524/539] Compiling SwiftIfConfig SyntaxLiteralUtils.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:20.1746020Z [525/539] Compiling SwiftIfConfig SyntaxProtocol+IfConfig.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:20.1746540Z [526/539] Compiling SwiftIfConfig VersionTuple+Parsing.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:20.1752140Z [527/539] Compiling SwiftIfConfig VersionTuple.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.0859600Z [528/552] Compiling SwiftSyntaxMacros CodeItemMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.0870870Z [529/552] Compiling SwiftSyntaxMacros DeclarationMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.1011950Z [530/552] Compiling SwiftSyntaxMacros ExpressionMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.1115060Z [531/552] Compiling SwiftSyntaxMacros ExtensionMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.1144270Z [532/552] Compiling SwiftSyntaxMacros FreestandingMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.1253450Z [533/552] Compiling SwiftSyntaxMacros Macro+Format.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.4318160Z [534/558] Compiling SwiftSyntaxMacros AbstractSourceLocation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.4371340Z [535/558] Compiling SwiftSyntaxMacros MacroExpansionContext.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.4372420Z [536/558] Compiling SwiftSyntaxMacros MacroExpansionDiagnosticMessages.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.4379380Z [537/558] Compiling SwiftSyntaxMacros AccessorMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.4380120Z [538/558] Compiling SwiftSyntaxMacros AttachedMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.4386580Z [539/558] Compiling SwiftSyntaxMacros BodyMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.4387340Z [540/558] Emitting module SwiftSyntaxMacros
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.7211920Z [541/558] Compiling SwiftSyntaxMacros Macro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.7215800Z [542/558] Compiling SwiftSyntaxMacros MemberAttributeMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.7218570Z [543/558] Compiling SwiftSyntaxMacros MemberMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.7219420Z [544/558] Compiling SwiftSyntaxMacros PeerMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.7220360Z [545/558] Compiling SwiftSyntaxMacros PreambleMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:21.7221300Z [546/558] Compiling SwiftSyntaxMacros Syntax+LexicalContext.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:23.5730500Z [547/565] Compiling SwiftSyntaxMacroExpansion MacroArgument.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:23.5731780Z [548/565] Compiling SwiftSyntaxMacroExpansion MacroExpansion.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:23.5732790Z [549/565] Compiling SwiftSyntaxMacroExpansion MacroExpansionDiagnosticMessages.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:23.5733840Z [550/565] Compiling SwiftSyntaxMacroExpansion BasicMacroExpansionContext.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:23.5739810Z [551/565] Compiling SwiftSyntaxMacroExpansion FunctionParameterUtils.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:23.5742770Z [552/565] Compiling SwiftSyntaxMacroExpansion IndentationUtils.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:23.5744590Z [553/565] Emitting module SwiftSyntaxMacroExpansion
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:26.2249290Z [554/568] Compiling SwiftSyntaxMacroExpansion MacroReplacement.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:26.2251240Z [555/568] Compiling SwiftSyntaxMacroExpansion MacroSpec.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:26.2256500Z [556/568] Compiling SwiftSyntaxMacroExpansion MacroSystem.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:28.3228420Z [557/577] Emitting module SwiftCompilerPluginMessageHandling
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.3004460Z [558/581] Compiling SwiftCompilerPluginMessageHandling CompilerPluginMessageHandler.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.3016360Z [559/581] Compiling SwiftCompilerPluginMessageHandling Diagnostics.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.3127030Z [560/581] Compiling SwiftCompilerPluginMessageHandling CodingUtilities.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.3140810Z [561/581] Compiling SwiftCompilerPluginMessageHandling JSON.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.3206830Z [562/581] Compiling SwiftCompilerPluginMessageHandling JSONDecoding.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.3229100Z [563/581] Compiling SwiftCompilerPluginMessageHandling JSONEncoding.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.3268410Z [564/581] Compiling SwiftCompilerPluginMessageHandling LRUCache.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.3277120Z [565/581] Compiling SwiftCompilerPluginMessageHandling Macros.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.5636190Z [566/581] Compiling SwiftCompilerPluginMessageHandling PluginMacroExpansionContext.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.5636880Z [567/581] Compiling SwiftCompilerPluginMessageHandling PluginMessageCompatibility.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.5637460Z [568/581] Compiling SwiftCompilerPluginMessageHandling PluginMessages.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.5638030Z [569/581] Compiling SwiftCompilerPluginMessageHandling StandardIOMessageConnection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.9050960Z [570/583] Compiling SwiftCompilerPlugin CompilerPlugin.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:29.9051990Z [571/583] Emitting module SwiftCompilerPlugin
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:31.3529390Z [572/598] Emitting module ComposableArchitectureMacros
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:31.6642710Z [573/600] Compiling PerceptionMacros PerceptibleMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:31.6798740Z [574/600] Compiling DependenciesMacrosPlugin DependencyClientMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:31.6901870Z [575/600] Compiling DependenciesMacrosPlugin DependencyEndpointMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:31.7001700Z [576/600] Emitting module PerceptionMacros
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:31.7952700Z [577/601] Compiling DependenciesMacrosPlugin DependencyEntryMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:31.8064020Z [578/601] Compiling DependenciesMacrosPlugin Plugins.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:31.9819780Z [579/602] Compiling PerceptionMacros Plugins.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:32.4331610Z [580/604] Emitting module DependenciesMacrosPlugin
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:32.5235740Z [583/604] Compiling DependenciesMacrosPlugin Support.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:32.5475940Z [583/604] Write Objects.LinkFileList
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:32.5877420Z [588/604] Compiling ComposableArchitectureMacros ObservableStateMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:33.1819010Z [591/604] Emitting module CasePathsMacrosSupport
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:33.1829320Z [592/604] Compiling CasePathsMacrosSupport CasePathableMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:33.2435620Z [593/604] Compiling ComposableArchitectureMacros ReducerMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:33.2536980Z [594/604] Compiling ComposableArchitectureMacros ViewActionMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:34.1862830Z [595/608] Compiling SwiftNavigationMacros Support.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:34.4496450Z [596/609] Compiling SwiftNavigationMacros CaseBindableMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:34.4597730Z [597/609] Compiling SwiftNavigationMacros Plugin.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:34.4710580Z [598/609] Emitting module SwiftNavigationMacros
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:34.6385980Z [599/609] Compiling SwiftNavigationMacros TransactionEntryMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:35.3233660Z [600/612] Emitting module CasePathsMacros
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:35.3662160Z [601/612] Compiling CasePathsMacros CasePathableMacro.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:35.3793510Z [602/612] Compiling CasePathsMacros Plugin.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:35.5079580Z [602/612] Linking PerceptionMacros-tool
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:35.5209930Z [603/612] Write Objects.LinkFileList
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:36.9772530Z [606/615] Emitting module Perception
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:36.9878850Z [607/615] Compiling Perception Exports.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:37.0066760Z [607/615] Linking DependenciesMacrosPlugin-tool
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:37.0232190Z [608/615] Compiling Perception Macros.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:37.0276980Z [609/615] Write Objects.LinkFileList
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:37.9982030Z [611/618] Compiling DependenciesMacros Exports.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:38.0083310Z [612/618] Compiling DependenciesMacros Macros.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:38.0184620Z [613/619] Emitting module DependenciesMacros
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:38.3673110Z [614/619] Compiling DependenciesMacros MacrosSupport.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:38.9274170Z [614/619] Linking SwiftNavigationMacros-tool
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:40.1328940Z [615/619] Linking ComposableArchitectureMacros-tool
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:40.5144330Z [616/619] Linking CasePathsMacros-tool
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:41.2331680Z [618/624] Compiling CasePaths Exports.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:41.2441890Z [619/624] Compiling CasePaths LockIsolated.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:41.6175030Z [620/626] Compiling CasePaths Macros.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:41.6175630Z [621/626] Compiling CasePaths XCTestSupport.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:41.8638800Z [622/626] Emitting module CasePaths
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:41.8639330Z [623/626] Compiling CasePaths EnumReflection.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:41.8639680Z [624/626] Compiling CasePaths Deprecations.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4126390Z [625/647] Compiling SwiftNavigation Deprecations.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4219470Z [626/647] Compiling SwiftNavigation ErrorMechanism.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4220090Z [627/647] Compiling SwiftNavigation Exports.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4220620Z [628/647] Compiling SwiftNavigation HashableStaticString.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4221240Z [629/647] Compiling SwiftNavigation KeyPath+Sendable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4221680Z [630/647] Compiling SwiftNavigation LockIsolated.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4222200Z [631/647] Compiling SwiftNavigation ToOptionalUnit.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4222700Z [632/647] Compiling SwiftNavigation NSObject+Observe.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4223170Z [633/647] Compiling SwiftNavigation Observe.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4223560Z [634/647] Compiling SwiftNavigation TextState.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4224120Z [635/657] Emitting module SwiftNavigation
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4224550Z [636/657] Compiling SwiftNavigation AlertState.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4224940Z [637/657] Compiling SwiftNavigation Bind.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4225380Z [638/657] Compiling SwiftNavigation Binding.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4225820Z [639/657] Compiling SwiftNavigation ButtonState.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4226320Z [640/657] Compiling SwiftNavigation ButtonStateBuilder.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4226760Z [641/657] Compiling SwiftNavigation CaseBindable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4227280Z [642/657] Compiling SwiftNavigation ConfirmationDialogState.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4233660Z [643/657] Compiling SwiftNavigation HashableObject.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4234060Z [644/657] Compiling SwiftNavigation AnyHashableSendable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:43.4235060Z [645/657] Compiling SwiftNavigation AssumeIsolated.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.4950850Z [646/657] Compiling SwiftNavigation CasePaths.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.4974990Z [647/657] Compiling SwiftNavigation CustomDump.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.4975480Z [648/657] Compiling SwiftNavigation IssueReporting.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.4975900Z [649/657] Compiling SwiftNavigation Perception.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.4976230Z [650/657] Compiling SwiftNavigation Sharing.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.4976620Z [651/657] Compiling SwiftNavigation TransactionEntry.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.4976960Z [652/657] Compiling SwiftNavigation UIBindable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.4977350Z [653/657] Compiling SwiftNavigation UIBinding.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.4977790Z [654/657] Compiling SwiftNavigation UINavigationPath.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.4978190Z [655/657] Compiling SwiftNavigation UITransaction.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8483220Z [656/684] Compiling SwiftUINavigation Deprecations.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8483800Z [657/684] Compiling SwiftUINavigation Exports.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8486800Z [658/684] Compiling SwiftUINavigation Identified.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8581360Z [659/684] Compiling SwiftUINavigation NavigationDestination.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8590870Z [660/684] Compiling UIKitNavigation UISegmentedControl.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8592210Z [661/684] Compiling UIKitNavigation UISlider.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8593250Z [662/684] Compiling UIKitNavigation UIStepper.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8639500Z [663/691] Emitting module UIKitNavigation
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8642780Z [664/691] Compiling SwiftUINavigation Alert+State.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8643730Z [665/691] Compiling SwiftUINavigation Alert.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8644330Z [666/691] Compiling SwiftUINavigation Binding.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8647330Z [667/691] Compiling SwiftUINavigation ConfirmationDialog+State.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8648650Z [668/691] Compiling SwiftUINavigation ConfirmationDialog.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8649360Z [669/691] Compiling SwiftUINavigation FullScreenCover.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:44.8649940Z [670/691] Compiling SwiftUINavigation Binding+Internal.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.0027730Z [671/691] Compiling UIKitNavigation Presentation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.0028730Z [672/691] Compiling UIKitNavigation Push.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.0029370Z [673/691] Compiling UIKitNavigation UIAlertController.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.0030510Z [674/691] Compiling UIKitNavigation Representable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.0031000Z [675/691] Compiling UIKitNavigation UIBinding.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.0031330Z [676/691] Compiling UIKitNavigation UIKitAnimation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.0031740Z [677/691] Compiling UIKitNavigation UITransaction.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.6891220Z [683/696] Emitting module SwiftUINavigation
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.8572130Z [690/696] Compiling SwiftUINavigation NavigationLink.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.8572810Z [691/696] Compiling SwiftUINavigation Popover.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.8573420Z [692/696] Compiling SwiftUINavigation Sheet.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.8573820Z [693/696] Compiling SwiftUINavigation CasePaths.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:45.8574300Z [694/696] Compiling SwiftUINavigation WithState.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.4995010Z [695/738] Compiling ComposableArchitecture Logger.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.4998320Z [696/738] Compiling ComposableArchitecture NavigationID.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5133460Z [697/738] Compiling ComposableArchitecture OpenExistential.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5245240Z [698/738] Compiling ComposableArchitecture PresentationID.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5270060Z [699/738] Compiling ComposableArchitecture ReturningLastNonNilValue.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5384060Z [700/738] Compiling ComposableArchitecture RuntimeWarnings.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5384690Z [701/738] Compiling ComposableArchitecture StackIDGenerator.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5387680Z [702/738] Compiling ComposableArchitecture Macros.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5388210Z [703/738] Compiling ComposableArchitecture Alert+Observation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5388910Z [704/738] Compiling ComposableArchitecture Binding+Observation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5389470Z [705/738] Compiling ComposableArchitecture IdentifiedArray+Observation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5390040Z [706/738] Compiling ComposableArchitecture NavigationStack+Observation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5390590Z [707/738] Compiling ComposableArchitecture ObservableState.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5391080Z [708/738] Compiling ComposableArchitecture ObservationStateRegistrar.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5391610Z [709/738] Compiling ComposableArchitecture Store+Observation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5392160Z [710/738] Compiling ComposableArchitecture ViewAction.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5392590Z [711/738] Compiling ComposableArchitecture Reducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5393040Z [712/738] Compiling ComposableArchitecture ReducerBuilder.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5393440Z [713/738] Compiling ComposableArchitecture BindingReducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:48.5393980Z [714/738] Compiling ComposableArchitecture CombineReducers.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9772680Z [715/758] Compiling ComposableArchitecture CaseReducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9776450Z [716/758] Compiling ComposableArchitecture Core.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9777730Z [717/758] Compiling ComposableArchitecture Dismiss.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9778860Z [718/758] Compiling ComposableArchitecture IsPresented.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9780120Z [719/758] Compiling ComposableArchitecture Effect.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9781220Z [720/758] Compiling ComposableArchitecture Cancellation.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9782540Z [721/758] Compiling ComposableArchitecture Publisher.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9783920Z [722/758] Compiling ComposableArchitecture AreOrderedSetsDuplicates.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9785170Z [723/758] Compiling ComposableArchitecture Box.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9786380Z [724/758] Compiling ComposableArchitecture Create.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9787540Z [725/758] Compiling ComposableArchitecture CurrentValueRelay.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9788840Z [726/758] Compiling ComposableArchitecture Debug.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9789990Z [727/758] Compiling ComposableArchitecture DefaultSubscript.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9791330Z [728/758] Compiling ComposableArchitecture Deprecations.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9792650Z [729/758] Compiling ComposableArchitecture DispatchQueue.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9794410Z [730/758] Compiling ComposableArchitecture EffectActions.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9795680Z [731/758] Compiling ComposableArchitecture EphemeralState.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9796290Z [732/758] Compiling ComposableArchitecture Exports.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9796930Z [733/758] Compiling ComposableArchitecture HashableStaticString.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9797470Z [734/758] Compiling ComposableArchitecture KeyPath+Sendable.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9798050Z [735/758] Compiling ComposableArchitecture Locking.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:49.9798700Z [736/758] Emitting module ComposableArchitecture
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0883700Z [737/758] Compiling ComposableArchitecture DebugReducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0884420Z [738/758] Compiling ComposableArchitecture DependencyKeyWritingReducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0884990Z [739/758] Compiling ComposableArchitecture EmptyReducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0885540Z [740/758] Compiling ComposableArchitecture ForEachReducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0886020Z [741/758] Compiling ComposableArchitecture IfCaseLetReducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0886620Z [742/758] Compiling ComposableArchitecture IfLetReducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0887050Z [743/758] Compiling ComposableArchitecture OnChange.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0887560Z [744/758] Compiling ComposableArchitecture Optional.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0888130Z [745/758] Compiling ComposableArchitecture PresentationReducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0888640Z [746/758] Compiling ComposableArchitecture Reduce.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0890930Z [747/758] Compiling ComposableArchitecture Scope.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0891600Z [748/758] Compiling ComposableArchitecture SignpostReducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0921520Z [749/758] Compiling ComposableArchitecture StackReducer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0922340Z [750/758] Compiling ComposableArchitecture AppStorageKeyPathKey.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0922920Z [751/758] Compiling ComposableArchitecture Store.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0923590Z [752/758] Compiling ComposableArchitecture Binding.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0924050Z [753/758] Compiling ComposableArchitecture TestStore.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0924600Z [754/758] Compiling ComposableArchitecture AlertStateUIKit.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0925460Z [755/758] Compiling ComposableArchitecture NavigationStackControllerUIKit.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:52.0926070Z [756/758] Compiling ComposableArchitecture resource_bundle_accessor.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:56.3616750Z [757/763] Compiling CooeeFeatures Clients.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:56.3617640Z [758/763] Compiling CooeeFeatures HomeFeature.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:56.3618220Z [759/763] Compiling CooeeFeatures AppFeature.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:56.3620040Z [760/763] Compiling CooeeFeatures ChatFeature.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:56.3621150Z [761/763] Emitting module CooeeFeatures
+apple-quality	UNKNOWN STEP	2026-11-10T15:10:58.8146160Z [762/764] Compiling CooeeFeatures PairingFeature.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:01.2520650Z [763/787] Emitting module CooeeUI
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:02.3960700Z [764/795] Compiling CooeeUI BlockLeaves.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:02.4063510Z [765/795] Compiling CooeeUI Blocks.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:02.4166250Z [766/795] Emitting module CooeeFeaturesTests
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:02.4265980Z [767/795] Compiling CooeeUI BlockCards.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:02.4367210Z [768/795] Compiling CooeeUI BlockFields.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:05.5952840Z [769/797] Compiling CooeeFeaturesTests PairingFeatureTests.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:05.6054580Z [770/797] Compiling CooeeFeaturesTests Support.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.1523480Z [771/797] Compiling CooeeUI Home.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.1646720Z [772/797] Compiling CooeeUI HomeRows.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.1768390Z [773/797] Compiling CooeeUI Items.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.1871330Z [774/797] Compiling CooeeUI Layout.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.1972860Z [775/797] Compiling CooeeUI Mac.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.2040640Z [776/797] Compiling CooeeUI MacSteps.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.2041360Z [777/797] Compiling CooeeUI Onboarding.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.2041840Z [778/797] Compiling CooeeUI PairingFields.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.2042510Z [779/797] Compiling CooeeUI PairingParts.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.2043020Z [780/797] Compiling CooeeUI PersonaSheet.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.2043470Z [781/797] Compiling CooeeUI Root.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.2043920Z [782/797] Compiling CooeeUI Scanner.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.2044400Z [783/797] Compiling CooeeUI Sheets.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.2044870Z [784/797] Compiling CooeeUI Theme.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.2045360Z [785/797] Compiling CooeeUI Wide.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:07.2045870Z [786/797] Compiling CooeeUI resource_bundle_accessor.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:08.2303110Z [793/797] Compiling CooeeUI Composer.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:08.2306110Z [794/797] Compiling CooeeUI FixtureItems.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:08.2306750Z [795/797] Compiling CooeeUI Fixtures.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:10.2012600Z [796/802] Compiling CooeeApp Live.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:10.2111860Z [797/802] Emitting module CooeeApp
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:10.3543820Z [798/802] Compiling CooeeUITests Frames.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:10.5754130Z [799/803] Emitting module CooeeUITests
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:10.5757850Z [800/803] Compiling CooeeUITests BlockRenderTests.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:12.7824990Z [801/803] Compiling CooeeUITests SnapshotTests.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:13.3466390Z [802/805] Compiling CooeePackageTests runner.swift
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:13.3466770Z [803/805] Emitting module CooeePackageTests
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:13.3590060Z [803/805] Write Objects.LinkFileList
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:16.5577710Z [804/805] Linking CooeePackageTests
+apple-quality	UNKNOWN STEP	2026-11-10T15:11:16.5758290Z Build complete! (128.40s)
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:38.9917540Z Test Suite 'All tests' started at 2026-11-10 15:11:18.849.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:38.9918310Z Test Suite 'All tests' passed at 2026-11-10 15:11:18.857.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:38.9919340Z 	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.008) seconds
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0218670Z ◇ Test run started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0221710Z ↳ Testing Library Version: 1902
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0223140Z ↳ Target Platform: arm64e-apple-macos14.0
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0224580Z ◇ Suite ChatFeatureTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0225330Z ◇ Suite CardAnswerTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0226410Z ◇ Suite PairingFeatureTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0227710Z ◇ Suite HomeFeatureTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0228190Z ◇ Suite AppFeatureTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0228560Z ◇ Suite ClientTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0228900Z ◇ Suite CardClientTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0229320Z ◇ Suite DeviceTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0229720Z ◇ Suite EventsTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0230070Z ➜ Suite LiveTests skipped.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0233320Z ◇ Suite BlockRenderTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0233740Z ◇ Suite SnapshotTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0234030Z ◇ Suite ItemsTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0234330Z ◇ Suite ScreenTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0234600Z ◇ Suite ActionTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0234980Z ◇ Suite ModelsTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0235270Z ◇ Suite ListingTests started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0238760Z ◇ Test aCardsAnswerGoesBackAsItsItemsChoiceWhileTheCardWaits() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0239350Z ◇ Test aChatLoadsItsSliceThenFollowsItsStream() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0239760Z ◇ Test aSendQueuesWhileATurnRuns() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0240260Z ◇ Test aRefusedAnswerSaysWhyAndTheCardCanBeTappedAgain() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0240830Z ◇ Test theFirstMessageStartsANewChat() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0241270Z ◇ Test aFailedCallSaysWhy() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0241610Z ◇ Test aFailedLoadSaysWhyAndTriesAgain() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0242280Z ◇ Test queuedMessagesAreSteeredOrTakenBack() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0242700Z ◇ Test aDeclineGoesBackToTheAddressWithWhy() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0244990Z ◇ Test cancelTakesBackTheAskAndGoesToTheWelcome() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0246780Z ◇ Test aLinkWithACodePairsAndGoesHome() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0247190Z ◇ Test aBadAddressOrAFailedAskSaysWhy() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0251220Z ◇ Test aForgottenDevicePairsAgain() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0251610Z ◇ Test stepsTheAddressAndNearbyServers() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0252000Z ◇ Test aRefreshLoadsOnceAndClearsTheError() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0252690Z ◇ Test homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0253250Z ◇ Test anUnpairedAppPairsThenShowsHome() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0253750Z ◇ Test anAddressAsksThenWaitsForApproval() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0254180Z ◇ Test aChatOpensFromTheListWithItsPersona() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0254590Z ◇ Test withoutHomeNoChatOpens() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0254910Z ◇ Test aDeclinedOrGoneClaimSaysWhy() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0255290Z ◇ Test aRefusedCodeSaysWhy(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0255750Z ◇ Test threadsPersonasAndASliceDecodeAsDocumented() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0256330Z ◇ Test aNewChatBecomesItsThreadOnceStarted() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0259520Z ◇ Test aNewThreadStartsForAPersona() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0259960Z ◇ Test aCodePairsAndAClaimWaitsThenPairs() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0260570Z ◇ Test cooeesOwnSentenceIsTheError() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0261070Z ◇ Test aClientForAServerCarriesItsCookie() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0261510Z ◇ Test aResolvedServerIsAnHTTPAddress() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0261860Z ◇ Test sseFramesFollowTheSpec() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0262240Z ◇ Test theKeychainKeepsOneServer() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0266250Z ◇ Test aServerAdvertisedOnTheLANIsFoundAtItsAddress() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0267020Z ◇ Test sendQueueAndTheTurnsCallsPostTheirBodies() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0269200Z ◇ Test aServerErrorOrABadEventIsRetried() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0270410Z ◇ Test aDroppedStreamReconnectsWithLastEventIDAndGetsWhatItMissed() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0272360Z ➜ Test pairsListsAndStreamsAReply() skipped.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0273420Z ◇ Test theQueueDrawsItsStreamsOps() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0274340Z ◇ Test aCancelledStreamStops() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0275250Z ◇ Test aRefusedStreamEnds() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0276530Z ◇ Test everyCatalogueBlockDrawsAndAnUnknownOneIsSkipped() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0277560Z ◇ Test everyCardDraws(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0278550Z ◇ Test frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0279710Z ◇ Test timesAreRelativeToNow() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0280920Z ◇ Test aCardComesAsItsBlockAndItsAnswerPostsTheItemsChoice() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0282200Z ◇ Test everyScreenDraws(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0283210Z ◇ Test everyFixtureDecodesAndEncodesBackTheSame() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0284520Z ◇ Test anActionAnswersWithItsChoiceOrOtherTextAndItsOneValue() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0285610Z ◇ Test queueStreamOpsPatchTheQueueByID() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0287110Z ◇ Test insertGoesBeforeAfterOrAtTheEndAndScreenAndDotReplaceTheWhole() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0288640Z ◇ Test aSheetSendsEveryFormsFieldsAndAFieldsOwnValueWins() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0289850Z ◇ Test theReplySoFarIsDrawnLastWithItsCaret() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0291210Z ◇ Test aTapSendsItsActionWithTheTapsTheSourcesAndTheGivenValues() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0292710Z ◇ Test aDestructiveTapIsAlwaysConfirmedTitledWithItsLabel() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0294220Z ◇ Test markdownKeepsAnOpenFenceAndSplitsParagraphsFromBullets() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0295380Z ◇ Test eachStateHasItsFigureWordAndPose() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0296630Z ◇ Test toolsFoldCardsAreBlocksAndNotesShow() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0297720Z ◇ Test aThreadsStateIsALanesState(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0299110Z ◇ Test modelsKeepWhatTheyAreGiven() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0300290Z ◇ Test aServerPersonaGetsInitialsATintAndACoatByItsID() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0302100Z ◇ Test theChatListDrawsEachRowWithItsPersonaOrItsAgent() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0303450Z ◇ Test eachPinnedPersonaIsInItsNewestChatsState() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0305550Z ◇ Test aTypedAddressOrALinkIsAServer() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0305970Z ◇ Test agoIsShort(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0306450Z ◇ Test aTurnIsWorkingWhileItRunsOrConnects() started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0307460Z ◇ Test case passing 2 arguments location → "/pair?bad=wrong&left=4", why → "That code is wrong." to aRefusedCodeSaysWhy(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0309250Z ◇ Test case passing 2 arguments location → "/pair?bad=expired", why → "That code ran out: get a new one." to aRefusedCodeSaysWhy(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0310520Z ◇ Test case passing 2 arguments location → "/pair?bad=limit&wait=30", why → "Too many wrong codes: wait a minute." to aRefusedCodeSaysWhy(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0311260Z ◇ Test case passing 1 argument name → "own-cards.json" to everyCardDraws(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0311980Z ◇ Test case passing 1 argument name → "cards.json" to everyCardDraws(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0312640Z ◇ Test case passing 1 argument frame → home-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0313430Z ◇ Test case passing 1 argument name → "queue.json" to everyScreenDraws(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0314070Z ◇ Test case passing 1 argument name → "events.json" to everyScreenDraws(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0314770Z ◇ Test case passing 1 argument name → "fleets.json" to everyScreenDraws(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0315420Z ◇ Test case passing 1 argument name → "hello.json" to everyScreenDraws(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0317300Z ◇ Test case passing 2 arguments api → "working", state → .working to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0318530Z ◇ Test case passing 2 arguments api → "connecting", state → .working to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0326840Z ◇ Test case passing 2 arguments api → "blocked", state → .needs to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0327790Z ◇ Test case passing 2 arguments seconds → 999970, text → "now" to agoIsShort(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0328520Z ◇ Test case passing 2 arguments seconds → 999000, text → "16m" to agoIsShort(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0329180Z ◇ Test case passing 2 arguments seconds → 990000, text → "2h" to agoIsShort(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0329930Z ◇ Test case passing 2 arguments seconds → 800000, text → "2d" to agoIsShort(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0330600Z ◇ Test case passing 2 arguments api → "done", state → .done to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0331720Z ◇ Test case passing 2 arguments seconds → 1000500, text → "now" to agoIsShort(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0332480Z ◇ Test case passing 2 arguments api → "error", state → .fail to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0333330Z ◇ Test case passing 2 arguments api → "unconnected", state → .fail to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0334100Z ◇ Test case passing 2 arguments api → "", state → .idle to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0336150Z ◇ Test case passing 2 arguments api → "ended", state → .idle to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0336800Z ✔ Test sseFramesFollowTheSpec() passed after 0.134 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0337300Z ✔ Test aClientForAServerCarriesItsCookie() passed after 0.134 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0337840Z ✔ Test aResolvedServerIsAnHTTPAddress() passed after 0.136 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0338450Z ✔ Test anActionAnswersWithItsChoiceOrOtherTextAndItsOneValue() passed after 0.135 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0339470Z ✘ Test everyCatalogueBlockDrawsAndAnUnknownOneIsSkipped() recorded an issue at BlockRenderTests.swift:34:60: Expectation failed: (Self.height(block) → 0) > 0
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0340210Z ↳ images
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0340680Z ◇ Test case passing 1 argument frame → chat-streaming-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0341270Z ✔ Test timesAreRelativeToNow() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0342000Z ✔ Test queueStreamOpsPatchTheQueueByID() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0342640Z ✔ Test theReplySoFarIsDrawnLastWithItsCaret() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0343250Z ✔ Test aSheetSendsEveryFormsFieldsAndAFieldsOwnValueWins() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0344010Z ✔ Test insertGoesBeforeAfterOrAtTheEndAndScreenAndDotReplaceTheWhole() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0344870Z ✔ Test aTapSendsItsActionWithTheTapsTheSourcesAndTheGivenValues() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0345610Z ✔ Test aDestructiveTapIsAlwaysConfirmedTitledWithItsLabel() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0346340Z ✔ Test markdownKeepsAnOpenFenceAndSplitsParagraphsFromBullets() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0346940Z ✔ Test eachStateHasItsFigureWordAndPose() passed after 6.380 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0347530Z ✔ Test toolsFoldCardsAreBlocksAndNotesShow() passed after 6.380 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0348030Z ✔ Test modelsKeepWhatTheyAreGiven() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0348650Z ✔ Test aServerPersonaGetsInitialsATintAndACoatByItsID() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0349320Z ✔ Test theChatListDrawsEachRowWithItsPersonaOrItsAgent() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0350000Z ✔ Test eachPinnedPersonaIsInItsNewestChatsState() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0350590Z ✔ Test aTypedAddressOrALinkIsAServer() passed after 6.379 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0356430Z ✔ Test aTurnIsWorkingWhileItRunsOrConnects() passed after 6.378 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0357110Z ✔ Test everyFixtureDecodesAndEncodesBackTheSame() passed after 6.380 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0358050Z ✔ Test aNewThreadStartsForAPersona() passed after 6.383 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0358630Z ✔ Test theKeychainKeepsOneServer() passed after 6.383 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0361560Z ✔ Test aRefusedCodeSaysWhy(_:_:) with 3 test cases passed after 6.386 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0366000Z ✔ Test agoIsShort(_:_:) with 5 test cases passed after 6.388 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0366790Z ✔ Test aThreadsStateIsALanesState(_:_:) with 8 test cases passed after 8.499 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0367500Z ✔ Test theQueueDrawsItsStreamsOps() passed after 8.500 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0368200Z ✘ Test everyCatalogueBlockDrawsAndAnUnknownOneIsSkipped() failed after 8.500 seconds with 1 issue.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0368820Z ✔ Test everyCardDraws(_:) with 2 test cases passed after 8.501 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0369460Z ✔ Test aCardComesAsItsBlockAndItsAnswerPostsTheItemsChoice() passed after 8.501 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0370110Z ✔ Test aCancelledStreamStops() passed after 8.503 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0371660Z ✔ Test everyScreenDraws(_:) with 4 test cases passed after 8.508 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0372100Z ✔ Suite ItemsTests passed after 8.516 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0372580Z ✔ Suite ActionTests passed after 8.516 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0373020Z ✔ Test cooeesOwnSentenceIsTheError() passed after 8.512 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0373510Z ✔ Suite ScreenTests passed after 8.517 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0376680Z ✔ Test aServerAdvertisedOnTheLANIsFoundAtItsAddress() passed after 8.512 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0377230Z ✔ Suite ListingTests passed after 8.517 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0391650Z ✔ Test aRefusedStreamEnds() passed after 8.511 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0395720Z ◇ Test case passing 1 argument frame → chat-card-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0396480Z ✔ Test threadsPersonasAndASliceDecodeAsDocumented() passed after 8.514 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0397110Z ✔ Suite ModelsTests passed after 8.518 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0397510Z ✔ Suite CardClientTests passed after 8.520 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0398360Z ✔ Test aDeclinedOrGoneClaimSaysWhy() passed after 8.516 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0398830Z ✘ Suite BlockRenderTests failed after 8.521 seconds with 1 issue.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0399360Z ✔ Suite DeviceTests passed after 10.705 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0399910Z ◇ Test case passing 1 argument frame → chat-cards-more-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0400640Z ✔ Test aCodePairsAndAClaimWaitsThenPairs() passed after 10.703 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0401230Z ✔ Test sendQueueAndTheTurnsCallsPostTheirBodies() passed after 10.702 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0401860Z ◇ Test case passing 1 argument frame → chat-conductor-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0402600Z ✔ Suite ClientTests passed after 12.513 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0403090Z ◇ Test case passing 1 argument frame → persona-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0403680Z ✔ Test aForgottenDevicePairsAgain() passed after 14.168 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0404270Z ✔ Test anUnpairedAppPairsThenShowsHome() passed after 14.167 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0404860Z ✔ Test withoutHomeNoChatOpens() passed after 14.167 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0405400Z ✔ Test aRefusedAnswerSaysWhyAndTheCardCanBeTappedAgain() passed after 14.169 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0514900Z ✔ Test aDeclineGoesBackToTheAddressWithWhy() passed after 16.058 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0515620Z ◇ Test case passing 1 argument frame → avatar-menu-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0516500Z ◇ Test case passing 1 argument frame → pair-welcome-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0517200Z ◇ Test case passing 1 argument frame → pair-scan-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0518600Z ✔ Test aServerErrorOrABadEventIsRetried() passed after 19.737 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0519550Z ◇ Test case passing 1 argument frame → pair-nearby-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0520240Z ✔ Test aBadAddressOrAFailedAskSaysWhy() passed after 21.833 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0520820Z ✔ Test aLinkWithACodePairsAndGoesHome() passed after 23.202 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0524450Z ◇ Test case passing 1 argument frame → pair-address-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0525360Z ◇ Test case passing 1 argument frame → pair-waiting-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0526540Z ◇ Test case passing 1 argument frame → pair-paired-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0527220Z ✔ Test aCardsAnswerGoesBackAsItsItemsChoiceWhileTheCardWaits() passed after 26.138 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0527790Z ✔ Suite CardAnswerTests passed after 28.020 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0528420Z ◇ Test case passing 1 argument frame → home-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0529060Z ✔ Test aRefreshLoadsOnceAndClearsTheError() passed after 28.017 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0529680Z ✔ Test aNewChatBecomesItsThreadOnceStarted() passed after 28.016 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0534700Z ◇ Test case passing 1 argument frame → chat-streaming-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0535450Z ◇ Test case passing 1 argument frame → chat-card-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0537630Z ◇ Test case passing 1 argument frame → chat-cards-more-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0538600Z ◇ Test case passing 1 argument frame → chat-conductor-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0539880Z ◇ Test case passing 1 argument frame → persona-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0540770Z ◇ Test case passing 1 argument frame → avatar-menu-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0541470Z ◇ Test case passing 1 argument frame → pair-welcome-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0546420Z ◇ Test case passing 1 argument frame → pair-scan-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0549260Z ✔ Test aFailedCallSaysWhy() passed after 41.262 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0554170Z ◇ Test case passing 1 argument frame → pair-nearby-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0555010Z ◇ Test case passing 1 argument frame → pair-address-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0555960Z ✔ Test aDroppedStreamReconnectsWithLastEventIDAndGetsWhatItMissed() passed after 46.272 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0556870Z ◇ Test case passing 1 argument frame → pair-waiting-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0564350Z ✔ Test anAddressAsksThenWaitsForApproval() passed after 46.276 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0566070Z ✔ Test cancelTakesBackTheAskAndGoesToTheWelcome() passed after 46.277 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0573140Z ✔ Test queuedMessagesAreSteeredOrTakenBack() passed after 46.277 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0575690Z ✔ Suite EventsTests passed after 47.869 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0580380Z ✔ Test aChatOpensFromTheListWithItsPersona() passed after 47.866 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0581010Z ✔ Test theFirstMessageStartsANewChat() passed after 47.867 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0581930Z ◇ Test case passing 1 argument frame → pair-paired-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0582670Z ✔ Suite AppFeatureTests passed after 47.870 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0583300Z ◇ Test case passing 1 argument frame → home-terminal-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0584030Z ◇ Test case passing 1 argument frame → chat-terminal-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0586200Z ◇ Test case passing 1 argument frame → home-scene-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0589590Z ◇ Test case passing 1 argument frame → mac-setup-welcome to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0590520Z ◇ Test case passing 1 argument frame → mac-setup-folders to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0591440Z ◇ Test case passing 1 argument frame → mac-setup-signins to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0592390Z ✔ Test aFailedLoadSaysWhyAndTriesAgain() passed after 61.323 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0593860Z ◇ Test case passing 1 argument frame → mac-setup-tailscale to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0596150Z ◇ Test case passing 1 argument frame → mac-setup-qr to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0596950Z ◇ Test case passing 1 argument frame → mac-setup-approve to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0598280Z ◇ Test case passing 1 argument frame → mac-connect to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0599070Z ◇ Test case passing 1 argument frame → mac-window-dark to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0599650Z ◇ Test case passing 1 argument frame → mac-window-light to frameMatchesTheDesign(_:) started.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0600380Z ✔ Test frameMatchesTheDesign(_:) with 38 test cases passed after 80.010 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0600930Z ✔ Suite SnapshotTests passed after 80.029 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0601390Z ✔ Test aSendQueuesWhileATurnRuns() passed after 80.027 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0602500Z ✔ Test stepsTheAddressAndNearbyServers() passed after 80.027 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0604140Z ✔ Suite PairingFeatureTests passed after 80.030 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0605610Z ✔ Test homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() passed after 80.030 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0606310Z ✔ Suite HomeFeatureTests passed after 80.033 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0607600Z ✔ Test aChatLoadsItsSliceThenFollowsItsStream() passed after 80.036 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0608300Z ✔ Suite ChatFeatureTests passed after 80.038 seconds.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0648800Z ✘ Test run with 64 tests in 17 suites failed after 80.039 seconds with 1 issue.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.0942300Z error: recipe `apple-check` failed on line 47 with exit code 1
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.1251920Z ##[error]Process completed with exit code 1.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:39.2108470Z Post job cleanup.
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.1666590Z [command]/opt/homebrew/bin/git version
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.1892120Z git version 2.56.0
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.1914150Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/019d9825-a8d2-40a8-bde5-5c8d22fb8407/.gitconfig'
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.1921880Z Temporarily overriding HOME='/Users/runner/work/_temp/019d9825-a8d2-40a8-bde5-5c8d22fb8407' before making global git config changes
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.1922590Z Adding repository directory to the temporary git global config as a safe directory
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.1926310Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/cooee/cooee
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.2057570Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.2136010Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.3108270Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.3171350Z http.https://github.com/.extraheader
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.3178410Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.3250990Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.4068980Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.4136030Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:40.5139470Z Cleaning up orphan processes
+apple-quality	UNKNOWN STEP	2026-11-10T15:12:43.2042080Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -1,0 +1,24 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+     Running tests/plugins.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-138/debug/deps/plugins-4f3af7cccd7c1b79)
+
+running 17 tests
+test a_plugin_with_no_token_configured_does_not_start ... ok
+test row_31_a_conductors_answer_takes_one_change_from_the_owner ... ok
+test a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin ... ok
+test the_docs_show_the_example_plugin_the_ui_tests_run ... ok
+test the_proxy_sends_the_plugins_own_token_and_never_the_cookie ... ok
+test row_35_handoff_chips_flow_back_lines_and_pick_a_thread ... ok
+test the_tab_frames_the_module_in_a_sandbox ... ok
+test a_backends_event_stream_comes_through_the_proxy ... ok
+test a_plugin_without_its_token_is_refused ... ok
+test plugin_check_passes_the_fixtures_and_names_a_broken_field ... ok
+test a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab ... ok
+test row_33_a_secrets_value_reaches_its_plugin_only ... ok
+test row_30_choice_rows_recommended_first_other_text_and_who_and_when ... ok
+test a_run_card_approves_once_with_its_sha_and_shows_the_tail ... ok
+test row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale ... ok
+test cooees_own_cards_go_out_as_blocks_and_settle_to_their_line ... ok
+test a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.79s
+

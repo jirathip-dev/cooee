@@ -1,0 +1,70 @@
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 1040]
+[Planning deferred tasks]
+[4 / 147]
+[15 / 153]
+[17 / 153] Sharing2
+[24 / 169] CasePathsMacrosSupport
+[30 / 216] IssueReporting
+[43 / 215] IssueReporting
+[57 / 217] IssueReporting
+[67 / 217] InternalCollectionsUtilities
+[82 / 219] PerceptionCore
+[87 / 219] ConcurrencyExtras
+[97 / 231] ConcurrencyExtras
+[106 / 232] PerceptionCore
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/Package.swift: CooeeCore: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[113 / 246] ComposableArchitectureMacros
+[120 / 259] CombineSchedulers
+[131 / 266] CombineSchedulers
+[141 / 269] CasePaths
+[143 / 266] CasePaths
+[156 / 278] CooeeAPI
+[161 / 278] CooeeAPI
+[169 / 278] CooeeAPI
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/Package.swift: CooeeAPI: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[171 / 278]
+[181 / 278]
+[185 / 278]
+[190 / 278]
+[191 / 278]
+[192 / 278]
+[193 / 278]
+[206 / 278] PerceptionCore
+error: SwiftCompile normal arm64 /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift failed with a nonzero exit code. Command line:     cd /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138
+    builtin-SwiftPerFileCompile WithPerceptionTracking.swift
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift:93:16: [1;31merror: [1;39mexternal macro implementation type 'SwiftUIMacros.StateMacro' could not be found for macro 'State()'; plugin for module 'SwiftUIMacros' not found[0;0m
+ [0;36m91 |[0;0m     }
+ [0;36m92 |[0;0m 
+ [0;36m93 |[0;0m     @State var id = 0
+    [0;36m|[0;0m                `- [1;31merror: [1;39mexternal macro implementation type 'SwiftUIMacros.StateMacro' could not be found for macro 'State()'; plugin for module 'SwiftUIMacros' not found[0;0m
+ [0;36m94 |[0;0m     private let content: _Content
+ [0;36m95 |[0;0m 
+
+SwiftUI.State:1:145: [1;39mnote: [1;39m'State()' declared here[0;0m
+[0;36m1 |[0;0m @attached(accessor, names: named(init), named(get), named(set)) @attached(peer, names: prefixed(`_`), prefixed(__), prefixed(`$`)) public macro State() = #externalMacro(module: "SwiftUIMacros", type: "StateMacro")
+  [0;36m|[0;0m                                                                                                                                                 `- [1;39mnote: [1;39m'State()' declared here[0;0m
+
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift:93:16: [1;31merror: [1;39mexternal macro implementation type 'SwiftUIMacros.StateMacro' could not be found for macro 'State()'; plugin for module 'SwiftUIMacros' not found[0;0m
+ [0;36m91 |[0;0m     }
+ [0;36m92 |[0;0m 
+ [0;36m93 |[0;0m     @State var id = 0
+    [0;36m|[0;0m                `- [1;31merror: [1;39mexternal macro implementation type 'SwiftUIMacros.StateMacro' could not be found for macro 'State()'; plugin for module 'SwiftUIMacros' not found[0;0m
+ [0;36m94 |[0;0m     private let content: _Content
+ [0;36m95 |[0;0m 
+
+SwiftUI.State:1:145: [1;39mnote: [1;39m'State()' declared here[0;0m
+[0;36m1 |[0;0m @attached(accessor, names: named(init), named(get), named(set)) @attached(peer, names: prefixed(`_`), prefixed(__), prefixed(`$`)) public macro State() = #externalMacro(module: "SwiftUIMacros", type: "StateMacro")
+  [0;36m|[0;0m                                                                                                                                                 `- [1;39mnote: [1;39m'State()' declared here[0;0m
+
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift:108:63: [1;31merror: [1;39mleft side of mutating operator isn't mutable: 'self' is immutable[0;0m
+[0;36m106 |[0;0m       case .tracked(let content):
+[0;36m107 |[0;0m         let _ = id
+[0;36m108 |[0;0m         return withPerceptionTracking(content, onChange: { [4;39mid[0;0m &+= 1 })
+    [0;36m|[0;0m                                                               `- [1;31merror: [1;39mleft side of mutating operator isn't mutable: 'self' is immutable[0;0m
+[0;36m109 |[0;0m       }
+[0;36m110 |[0;0m     }
+Failed frontend command:
+/Library/Developer/CommandLineTools/usr/bin/swift-frontend -frontend -c /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/Internal/Deprecations.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/Internal/Exports.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/Internal/Locals.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/Internal/ObservationBeta.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/Locking.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/Perceptible.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/Perception/PerceptionChecking.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/Perception/PerceptionRegistrar.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/PerceptionTracking.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/Perceptions.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/Bindable.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/Environment.swift -primary-file /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/ThreadLocal.swift /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/checkouts/swift-perception/Sources/PerceptionCore/_PerceptionRegistrar.swift -emit-dependencies-path /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.d -emit-const-values-path /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.swiftconstvalues -emit-reference-dependencies-path /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.swiftdeps -serialize-diagnostics-path /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.dia -target arm64-apple-macos12.0 -module-can-import-version Charts 8.1.9 0 -module-can-import-version Combine 3023 0 -module-can-import-version Darwin 428.40.1 0 -module-can-import-version Observation 6.4.2.1 0 -module-can-import-version SwiftUI 8.1.13.1 8.1.13 -disable-cross-import-overlay-search -swift-module-cross-import Darwin /Library/Developer/CommandLineTools/SDKs/MacOSX27.2.sdk/usr/include/Darwin.swiftcrossimport/xlocale.swiftoverlay -load-resolved-plugin /Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/libObservationMacros.dylib\#\#ObservationMacros -load-resolved-plugin /Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/libSwiftMacros.dylib\#\#SwiftMacros -disable-implicit-swift-modules -Xcc -fno-implicit-modules -Xcc -fno-implicit-module-maps -explicit-swift-module-map-file /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/PerceptionCore-dependencies-1.json -Xllvm -aarch64-use-tbi -enable-objc-interop -stack-check -sdk /Library/Developer/CommandLineTools/SDKs/MacOSX27.2.sdk -I /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Products/Debug -Isystem /Library/Developer/CommandLineTools/Developer/usr/lib -F /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Products/Debug/PackageFrameworks -F /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Products/Debug -F /Library/Developer/CommandLineTools/Library/Developer/Frameworks -F /Library/Developer/CommandLineTools/Developer/Library/Frameworks -module-cache-path /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/SwiftExplicitPrecompiledModules -color-diagnostics -Xcc -fcolor-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=4 -suppress-warnings -swift-version 5 -Onone -D SWIFT_PACKAGE -D DEBUG -D SWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE -D Xcode -serialize-debugging-options -enable-upcoming-feature ExistentialAny -enable-upcoming-feature ImmutableWeakCaptures -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature InternalImportsByDefault -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -empty-abi-descriptor -user-module-version 2.0.12 -validate-clang-modules-once -clang-build-session-file /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138 -enable-anonymous-context-mangled-names -file-compilation-dir /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138 -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -Xcc -ivfsstatcache -Xcc /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/SDKStatCaches.noindex/macosx27.2-26B118-1aa54e4a50e311dbd51de5aafe7eca3d5818d34bafcb1249783cb8b2c4efe0a2.sdkstatcache -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -Xcc -I/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Products/Debug/include -Xcc -I/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/DerivedSources-normal/arm64 -Xcc -I/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/DerivedSources/arm64 -Xcc -I/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/DerivedSources -Xcc -DSWIFT_PACKAGE -Xcc -DDEBUG\=1 -no-auto-bridging-header-chaining -module-name PerceptionCore -package-name swift_perception -const-gather-protocols-file /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/PerceptionCore_const_extract_protocols.json -disable-clang-spi -clang-target arm64-apple-macos27.2 -target-sdk-version 27.2 -target-sdk-name macosx27.2 -in-process-plugin-server-path /Library/Developer/CommandLineTools/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -parse-as-library -o /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.o -debug-module-path /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/PerceptionCore.swiftmodule -index-unit-output-path /swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.o -index-store-path /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-138/apple/.build/out -index-system-modules
+error: Build failed

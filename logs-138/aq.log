@@ -1,0 +1,903 @@
+apple-quality	just apple-check	﻿2026-11-10T17:33:15.4478280Z ##[group]Run just apple-check
+apple-quality	just apple-check	2026-11-10T17:33:15.4478690Z ^[[36;1mjust apple-check^[[0m
+apple-quality	just apple-check	2026-11-10T17:33:15.4514680Z shell: /bin/bash -e {0}
+apple-quality	just apple-check	2026-11-10T17:33:15.4514900Z env:
+apple-quality	just apple-check	2026-11-10T17:33:15.4517080Z   GH_TOKEN: ***
+apple-quality	just apple-check	2026-11-10T17:33:15.4517250Z ##[endgroup]
+apple-quality	just apple-check	2026-11-10T17:33:15.4958320Z scripts/apple-check.sh
+apple-quality	just apple-check	2026-11-10T17:33:15.5892120Z 
+apple-quality	just apple-check	2026-11-10T17:33:15.5892650Z == swift format
+apple-quality	just apple-check	2026-11-10T17:33:17.6686910Z 
+apple-quality	just apple-check	2026-11-10T17:33:17.6787390Z == anti-slop
+apple-quality	just apple-check	2026-11-10T17:33:25.5230600Z Fetching https://github.com/swiftlang/swift-syntax.git
+apple-quality	just apple-check	2026-11-10T17:33:27.5641370Z [1/81975] Fetching swift-syntax
+apple-quality	just apple-check	2026-11-10T17:33:30.9038210Z Fetched https://github.com/swiftlang/swift-syntax.git from cache (5.38s)
+apple-quality	just apple-check	2026-11-10T17:33:30.9048260Z Computing version for https://github.com/swiftlang/swift-syntax.git
+apple-quality	just apple-check	2026-11-10T17:33:34.6502430Z Computed https://github.com/swiftlang/swift-syntax.git at 603.0.2 (9.13s)
+apple-quality	just apple-check	2026-11-10T17:33:34.6603550Z Computed https://github.com/swiftlang/swift-syntax.git at 603.0.2 (0.00s)
+apple-quality	just apple-check	2026-11-10T17:33:34.7708170Z Creating working copy for https://github.com/swiftlang/swift-syntax.git
+apple-quality	just apple-check	2026-11-10T17:33:35.1393810Z Working copy of https://github.com/swiftlang/swift-syntax.git resolved at 603.0.2
+apple-quality	just apple-check	2026-11-10T17:33:36.1502580Z Downloading package prebuilt https://download.swift.org/prebuilts/swift-syntax/603.0.2/swiftlang-6.3.3.1.3-macosx26.5-MacroSupport.zip
+apple-quality	just apple-check	2026-11-10T17:33:36.8017030Z Downloaded https://download.swift.org/prebuilts/swift-syntax/603.0.2/swiftlang-6.3.3.1.3-macosx26.5-MacroSupport.zip (0.65s)
+apple-quality	just apple-check	2026-11-10T17:38:04.7840880Z no violations
+apple-quality	just apple-check	2026-11-10T17:38:04.7842910Z 
+apple-quality	just apple-check	2026-11-10T17:38:04.7843000Z == TODO(#N) names an open issue
+apple-quality	just apple-check	2026-11-10T17:38:04.8145100Z every TODO names an open issue
+apple-quality	just apple-check	2026-11-10T17:38:04.8146180Z 
+apple-quality	just apple-check	2026-11-10T17:38:04.8146270Z == SwiftLint 0.65.1
+apple-quality	just apple-check	2026-11-10T17:38:08.2513870Z no violations
+apple-quality	just apple-check	2026-11-10T17:38:08.2551390Z 
+apple-quality	just apple-check	2026-11-10T17:38:08.2551950Z == build (Swift 6, complete concurrency, warnings as errors)
+apple-quality	just apple-check	2026-11-10T17:40:27.8076860Z 
+apple-quality	just apple-check	2026-11-10T17:40:27.8080740Z == tests with coverage
+apple-quality	just apple-check	2026-11-10T17:40:36.4101340Z [0/1] Planning build
+apple-quality	just apple-check	2026-11-10T17:40:36.4791210Z Building for debugging...
+apple-quality	just apple-check	2026-11-10T17:40:36.7359140Z [0/13] Write swift-version-7974D3F7F03D5E95.txt
+apple-quality	just apple-check	2026-11-10T17:40:37.0640590Z [2/19] Compiling SwiftSyntax602 Empty.swift
+apple-quality	just apple-check	2026-11-10T17:40:37.0750530Z [3/19] Compiling SwiftSyntax603 Empty.swift
+apple-quality	just apple-check	2026-11-10T17:40:37.0820950Z [4/19] Emitting module SwiftSyntax603
+apple-quality	just apple-check	2026-11-10T17:40:37.0822040Z [5/19] Compiling SwiftSyntax604 Empty.swift
+apple-quality	just apple-check	2026-11-10T17:40:37.1005290Z [6/19] Emitting module SwiftSyntax602
+apple-quality	just apple-check	2026-11-10T17:40:37.1108000Z [7/19] Emitting module SwiftSyntax604
+apple-quality	just apple-check	2026-11-10T17:40:37.4028480Z [8/25] Compiling SwiftSyntax600 Empty.swift
+apple-quality	just apple-check	2026-11-10T17:40:37.4128660Z [9/25] Emitting module SwiftSyntax600
+apple-quality	just apple-check	2026-11-10T17:40:37.4242500Z [10/25] Emitting module SwiftSyntax510
+apple-quality	just apple-check	2026-11-10T17:40:37.4328900Z [11/25] Compiling SwiftSyntax510 Empty.swift
+apple-quality	just apple-check	2026-11-10T17:40:37.4430790Z [12/25] Emitting module SwiftSyntax601
+apple-quality	just apple-check	2026-11-10T17:40:37.4534840Z [13/25] Compiling SwiftSyntax601 Empty.swift
+apple-quality	just apple-check	2026-11-10T17:40:37.6998560Z [14/31] Emitting module SwiftSyntax509
+apple-quality	just apple-check	2026-11-10T17:40:37.7100280Z [15/31] Compiling SwiftSyntax509 Empty.swift
+apple-quality	just apple-check	2026-11-10T17:40:37.7683910Z [16/31] Emitting module Sharing1
+apple-quality	just apple-check	2026-11-10T17:40:37.7723720Z [17/31] Compiling Sharing1 Empty.swift
+apple-quality	just apple-check	2026-11-10T17:40:37.8217930Z [18/31] Compiling Sharing2 Empty.swift
+apple-quality	just apple-check	2026-11-10T17:40:37.8276320Z [19/31] Emitting module Sharing2
+apple-quality	just apple-check	2026-11-10T17:40:40.6898560Z [20/117] Compiling SwiftSyntax SyntaxCollection.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.6994040Z [21/117] Compiling SwiftSyntax SyntaxHashable.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.7100560Z [22/117] Compiling SwiftSyntax SyntaxIdentifier.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.7203860Z [23/117] Compiling SwiftSyntax SyntaxNodeStructure.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.7305530Z [24/117] Compiling SwiftSyntax SyntaxProtocol.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.7405800Z [25/117] Compiling SwiftSyntax SyntaxText.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.7515350Z [26/117] Compiling SwiftSyntax SyntaxTreeViewMode.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.7607600Z [27/117] Compiling SwiftSyntax TokenDiagnostic.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.7657840Z [28/117] Compiling SwiftSyntax TokenSequence.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.7767290Z [29/117] Compiling SwiftSyntax TokenSyntax.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.7874780Z [30/117] Compiling SwiftSyntax Trivia+commentValue.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.7981110Z [31/117] Compiling SwiftSyntax Trivia.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.8083520Z [32/117] Compiling SwiftSyntax Utils.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.8202030Z [33/117] Compiling SwiftSyntax ChildNameForKeyPath.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.8309990Z [34/117] Compiling SwiftSyntax Keyword.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.8444830Z [35/117] Compiling SwiftSyntax RenamedChildrenCompatibility.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.8547290Z [36/117] Compiling SwiftSyntax RenamedNodesCompatibility.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.8669260Z [37/117] Compiling SwiftSyntax SyntaxAnyVisitor.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.8670980Z [38/117] Compiling SwiftSyntax SyntaxBaseNodes.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.8773100Z [39/117] Compiling SwiftSyntax SyntaxCollections.swift
+apple-quality	just apple-check	2026-11-10T17:40:40.8874680Z [40/127] Emitting module InternalCollectionsUtilities
+apple-quality	just apple-check	2026-11-10T17:40:41.3951490Z [41/127] Emitting module IssueReporting
+apple-quality	just apple-check	2026-11-10T17:40:42.8723190Z [57/134] Compiling IssueReporting WithExpectedIssue.swift
+apple-quality	just apple-check	2026-11-10T17:40:42.8827150Z [58/134] Compiling IssueReporting WithIssueContext.swift
+apple-quality	just apple-check	2026-11-10T17:40:42.8928980Z [59/134] Compiling InternalCollectionsUtilities UnsafeBufferPointer+Extras.swift
+apple-quality	just apple-check	2026-11-10T17:40:42.9031740Z [60/134] Compiling InternalCollectionsUtilities UnsafeMutableBufferPointer+Extras.swift
+apple-quality	just apple-check	2026-11-10T17:40:42.9141960Z [61/134] Compiling InternalCollectionsUtilities UnsafeMutablePointer+Extras.swift
+apple-quality	just apple-check	2026-11-10T17:40:42.9253300Z [62/134] Compiling InternalCollectionsUtilities UnsafeMutableRawBufferPointer+Extras.swift
+apple-quality	just apple-check	2026-11-10T17:40:42.9358240Z [63/134] Compiling InternalCollectionsUtilities UnsafePointer+Extras.swift
+apple-quality	just apple-check	2026-11-10T17:40:42.9465010Z [64/134] Compiling InternalCollectionsUtilities UnsafeRawBufferPointer+Extras.swift
+apple-quality	just apple-check	2026-11-10T17:40:42.9575400Z [65/134] Compiling InternalCollectionsUtilities _SortedCollection.swift
+apple-quality	just apple-check	2026-11-10T17:40:42.9678150Z [66/134] Compiling InternalCollectionsUtilities _UniqueCollection.swift
+apple-quality	just apple-check	2026-11-10T17:40:43.2092020Z [67/139] Compiling IssueReporting IssueSeverity.swift
+apple-quality	just apple-check	2026-11-10T17:40:43.2200320Z [68/139] Compiling IssueReporting ReportIssue.swift
+apple-quality	just apple-check	2026-11-10T17:40:43.2304700Z [69/139] Compiling IssueReporting _Test.swift
+apple-quality	just apple-check	2026-11-10T17:40:43.2406120Z [70/139] Compiling IssueReporting TestContext.swift
+apple-quality	just apple-check	2026-11-10T17:40:43.2516490Z [71/139] Compiling IssueReporting Unimplemented.swift
+apple-quality	just apple-check	2026-11-10T17:40:46.7734020Z [74/182] Emitting module CooeeCore
+apple-quality	just apple-check	2026-11-10T17:40:46.7837580Z [75/182] Compiling OrderedCollections _HashTable+Constants.swift
+apple-quality	just apple-check	2026-11-10T17:40:46.7940710Z [76/182] Compiling OrderedCollections _HashTable+CustomStringConvertible.swift
+apple-quality	just apple-check	2026-11-10T17:40:46.8041810Z [77/182] Compiling OrderedCollections _HashTable+Bucket.swift
+apple-quality	just apple-check	2026-11-10T17:40:46.8142710Z [78/182] Compiling OrderedCollections _HashTable+BucketIterator.swift
+apple-quality	just apple-check	2026-11-10T17:40:48.7433990Z [79/184] Compiling CooeeCore Persona.swift
+apple-quality	just apple-check	2026-11-10T17:40:48.7537470Z [80/184] Compiling CooeeCore Screen.swift
+apple-quality	just apple-check	2026-11-10T17:40:48.9515680Z [81/184] Compiling OrderedCollections OrderedDictionary+Partial RangeReplaceableCollection.swift
+apple-quality	just apple-check	2026-11-10T17:40:48.9622550Z [82/184] Compiling OrderedCollections OrderedDictionary+Sendable.swift
+apple-quality	just apple-check	2026-11-10T17:40:48.9724220Z [83/184] Compiling OrderedCollections OrderedDictionary+Sequence.swift
+apple-quality	just apple-check	2026-11-10T17:40:48.9825440Z [84/184] Compiling OrderedCollections OrderedDictionary+Values.swift
+apple-quality	just apple-check	2026-11-10T17:40:48.9992210Z [85/184] Compiling OrderedCollections OrderedDictionary.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.0094540Z [86/184] Compiling OrderedCollections OrderedSet+Codable.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.0197520Z [87/184] Compiling OrderedCollections OrderedSet+CustomReflectable.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.0298310Z [88/184] Compiling OrderedCollections OrderedSet+Descriptions.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.0398410Z [89/184] Compiling OrderedCollections OrderedSet+Diffing.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.0501850Z [90/184] Compiling OrderedCollections OrderedSet+Equatable.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.0602350Z [91/184] Compiling OrderedCollections OrderedSet+ExpressibleByArrayLiteral.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.0750670Z [92/184] Compiling OrderedCollections OrderedSet+Hashable.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.0895500Z [93/184] Compiling OrderedCollections OrderedSet+Initializers.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.1023140Z [94/184] Compiling OrderedCollections OrderedSet+Insertions.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.1124620Z [95/184] Compiling OrderedCollections OrderedSet+Invariants.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.1230570Z [96/184] Compiling OrderedCollections OrderedSet+Move.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.1332890Z [97/184] Compiling OrderedCollections OrderedSet+Partial MutableCollection.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.1438440Z [98/184] Compiling OrderedCollections OrderedSet+Partial RangeReplaceableCollection.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.1545770Z [99/184] Compiling OrderedCollections OrderedSet+Partial SetAlgebra formIntersection.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.1663550Z [100/184] Compiling OrderedCollections OrderedSet+Partial SetAlgebra formSymmetricDifference.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.1763760Z [101/184] Compiling OrderedCollections OrderedSet+Partial SetAlgebra formUnion.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.2901730Z [102/216] Emitting module OrderedCollections
+apple-quality	just apple-check	2026-11-10T17:40:49.3000990Z [103/216] Compiling PerceptionCore Deprecations.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.3129650Z [104/216] Compiling PerceptionCore Exports.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.3223770Z [105/216] Compiling PerceptionCore Locals.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.3327190Z [106/216] Compiling PerceptionCore ObservationBeta.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.3427660Z [107/216] Compiling PerceptionCore Locking.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.3529920Z [108/216] Compiling PerceptionCore Perceptible.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.3634160Z [109/216] Compiling PerceptionCore PerceptionChecking.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.3736950Z [110/216] Compiling PerceptionCore PerceptionRegistrar.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.3840510Z [111/216] Compiling PerceptionCore PerceptionTracking.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.3842420Z [112/216] Compiling PerceptionCore Perceptions.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.3946390Z [113/216] Compiling OrderedCollections OrderedDictionary+Deprecations.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.4049290Z [114/216] Compiling OrderedCollections OrderedDictionary+Descriptions.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.4253440Z [115/216] Compiling OrderedCollections OrderedDictionary+Elements.SubSequence.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.4265570Z [116/216] Compiling OrderedCollections OrderedDictionary+Elements.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.4367100Z [117/216] Compiling OrderedCollections OrderedDictionary+Equatable.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.4468600Z [118/216] Compiling OrderedCollections OrderedDictionary+ExpressibleByDictionaryLiteral.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.4571770Z [119/216] Compiling OrderedCollections OrderedDictionary+Hashable.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.4664700Z [120/216] Compiling OrderedCollections OrderedDictionary+Initializers.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.4768280Z [121/216] Compiling OrderedCollections OrderedDictionary+Invariants.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.4874030Z [122/216] Compiling OrderedCollections OrderedDictionary+Move.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.4980810Z [123/216] Compiling OrderedCollections OrderedDictionary+Partial MutableCollection.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.7271370Z [142/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra intersection.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.7375270Z [143/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra isDisjoint.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.7483910Z [144/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra isEqualSet.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.7586690Z [145/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra isStrictSubset.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.7686870Z [146/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra isStrictSuperset.swift
+apple-quality	just apple-check	2026-11-10T17:40:49.7787300Z [147/216] Compiling OrderedCollections OrderedSet+Partial SetAlgebra isSubset.swift
+apple-quality	just apple-check	2026-11-10T17:40:51.1409440Z [148/239] Emitting module PerceptionCore
+apple-quality	just apple-check	2026-11-10T17:40:52.7106040Z [155/244] Compiling SwiftSyntax SyntaxVisitor.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.7208820Z [156/244] Compiling SwiftSyntax TokenKind.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.7308930Z [157/244] Compiling SwiftSyntax Tokens.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.7411050Z [158/244] Compiling SwiftSyntax TriviaPieces.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.7512880Z [159/244] Compiling SwiftSyntax RawSyntaxNodesAB.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.7616670Z [160/244] Compiling SwiftSyntax RawSyntaxNodesC.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.7787300Z [161/244] Compiling SwiftSyntax RawSyntaxNodesD.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.7889390Z [162/244] Compiling SwiftSyntax RawSyntaxNodesEF.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.7989760Z [163/244] Compiling SwiftSyntax RawSyntaxNodesGHI.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.8094270Z [164/244] Compiling SwiftSyntax RawSyntaxNodesJKLMN.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.8203030Z [165/244] Compiling SwiftSyntax RawSyntaxNodesOP.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.8298620Z [166/244] Compiling SwiftSyntax RawSyntaxNodesQRS.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.8398540Z [167/244] Compiling SwiftSyntax RawSyntaxNodesTUVWXYZ.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.8509150Z [168/244] Compiling SwiftSyntax RawSyntaxValidation.swift
+apple-quality	just apple-check	2026-11-10T17:40:52.8609370Z [169/244] Compiling SwiftSyntax SyntaxNodesAB.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.1397230Z [170/265] Compiling CustomDump CoreImage.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.1526290Z [171/265] Compiling CustomDump CoreLocation.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.1528080Z [172/265] Compiling CustomDump CoreMotion.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.1573640Z [173/265] Compiling CustomDump Foundation.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.1578110Z [174/265] Compiling CustomDump GameKit.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.1578710Z [175/265] Compiling CustomDump KeyPath.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.1591360Z [176/265] Compiling CustomDump Photos.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.1595520Z [177/265] Compiling CustomDump Speech.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.1596040Z [178/265] Compiling CustomDump StoreKit.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.1606300Z [179/265] Compiling CustomDump Swift.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.4661290Z [180/265] Compiling CustomDump SwiftUI.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.4778100Z [181/265] Compiling CustomDump UIKit.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.4779380Z [182/265] Compiling CustomDump UniformTypeIdentifiers.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.4782070Z [183/265] Compiling CustomDump UserNotifications.swift
+apple-quality	just apple-check	2026-11-10T17:40:53.4784080Z [184/265] Compiling CustomDump UserNotificationsUI.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.4343300Z [185/279] Emitting module IdentifiedCollections
+apple-quality	just apple-check	2026-11-10T17:40:55.9394620Z [186/285] Compiling IdentifiedCollections Identified.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9397700Z [187/285] Compiling IdentifiedCollections IdentifiedArray+Codable.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9406680Z [188/285] Compiling IdentifiedCollections IdentifiedArray+Collection.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9418280Z [189/285] Compiling IdentifiedCollections IdentifiedArray+CollectionAlgorithms.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9419530Z [190/285] Compiling IdentifiedCollections IdentifiedArray+CustomDebugStringConvertible.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9420370Z [191/285] Compiling IdentifiedCollections IdentifiedArray+CustomReflectable.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9425470Z [192/285] Compiling IdentifiedCollections IdentifiedArray+CustomStringConvertible.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9426160Z [193/285] Compiling IdentifiedCollections IdentifiedArray+Equatable.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9434790Z [194/285] Compiling IdentifiedCollections IdentifiedArray+ExpressibleByArrayLiteral.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9435390Z [195/285] Compiling IdentifiedCollections IdentifiedArray+Hashable.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9436280Z [196/285] Compiling IdentifiedCollections IdentifiedArray+IdentifiedCollection.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9437460Z [197/285] Compiling IdentifiedCollections IdentifiedArray+Initializers.swift
+apple-quality	just apple-check	2026-11-10T17:40:55.9438400Z [198/285] Compiling IdentifiedCollections IdentifiedArray+Insertions.swift
+apple-quality	just apple-check	2026-11-10T17:40:56.6038760Z [199/285] Emitting module CustomDump
+apple-quality	just apple-check	2026-11-10T17:40:57.3883460Z [200/295] Compiling IdentifiedCollections IdentifiedArray+MutableCollection.swift
+apple-quality	just apple-check	2026-11-10T17:40:57.3905780Z [201/295] Compiling IdentifiedCollections IdentifiedArray+RandomAccessCollection.swift
+apple-quality	just apple-check	2026-11-10T17:40:57.4007990Z [202/295] Compiling IdentifiedCollections IdentifiedArray+RangeReplaceableCollection.swift
+apple-quality	just apple-check	2026-11-10T17:40:57.4110270Z [203/295] Compiling IdentifiedCollections IdentifiedArray+Sendable.swift
+apple-quality	just apple-check	2026-11-10T17:40:57.4210700Z [204/295] Compiling IdentifiedCollections IdentifiedArray.swift
+apple-quality	just apple-check	2026-11-10T17:40:57.4331740Z [205/295] Compiling IdentifiedCollections IdentifiedCollection.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.5548900Z [206/300] Compiling CooeeCoreTests ActionTests.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.5650400Z [207/300] Compiling CooeeCoreTests ItemsTests.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.5752430Z [208/300] Compiling CooeeCoreTests ListingTests.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.5859590Z [209/300] Compiling CooeeCoreTests ModelsTests.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.5962180Z [225/300] Compiling CustomDump Dump.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.6064600Z [226/300] Compiling CustomDump ExpectDifference.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.6195590Z [227/300] Compiling CustomDump ExpectNoDifference.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.6299050Z [228/300] Compiling CustomDump AnyType.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.6403680Z [229/300] Compiling CustomDump CollectionDifference.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.6510070Z [230/300] Compiling CustomDump Identifiable.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.6510730Z [231/300] Compiling CustomDump Mirror.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.6707150Z [232/300] Compiling CustomDump String.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.6817780Z [233/300] Compiling CustomDump Unordered.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.6919610Z [234/300] Compiling CustomDump XCTAssertDifference.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.7022020Z [235/300] Compiling CustomDump XCTAssertNoDifference.swift
+apple-quality	just apple-check	2026-11-10T17:41:01.7124030Z [236/300] Emitting module SwiftSyntax
+apple-quality	just apple-check	2026-11-10T17:41:03.9589360Z [237/305] Compiling CooeeAPI Client.swift
+apple-quality	just apple-check	2026-11-10T17:41:03.9691690Z [238/305] Compiling CooeeAPI Endpoints.swift
+apple-quality	just apple-check	2026-11-10T17:41:03.9794370Z [239/305] Compiling CooeeAPI Events.swift
+apple-quality	just apple-check	2026-11-10T17:41:03.9896450Z [240/305] Compiling CooeeAPI Keychain.swift
+apple-quality	just apple-check	2026-11-10T17:41:03.9998390Z [241/305] Emitting module CooeeCoreTests
+apple-quality	just apple-check	2026-11-10T17:41:04.0594180Z [244/306] Emitting module CooeeAPI
+apple-quality	just apple-check	2026-11-10T17:41:04.5987280Z [247/307] Compiling CooeeAPI Nearby.swift
+apple-quality	just apple-check	2026-11-10T17:41:05.2666000Z [248/316] Emitting module ConcurrencyExtras
+apple-quality	just apple-check	2026-11-10T17:41:05.4128280Z [249/319] Compiling ConcurrencyExtras Locking.swift
+apple-quality	just apple-check	2026-11-10T17:41:05.4228670Z [250/319] Compiling ConcurrencyExtras UncheckedBox.swift
+apple-quality	just apple-check	2026-11-10T17:41:05.4331110Z [251/319] Compiling ConcurrencyExtras LockIsolated.swift
+apple-quality	just apple-check	2026-11-10T17:41:05.4431060Z [252/319] Compiling ConcurrencyExtras MainSerialExecutor.swift
+apple-quality	just apple-check	2026-11-10T17:41:05.6707740Z [253/319] Compiling ConcurrencyExtras ActorIsolated.swift
+apple-quality	just apple-check	2026-11-10T17:41:05.6806830Z [254/319] Compiling ConcurrencyExtras AnyHashableSendable.swift
+apple-quality	just apple-check	2026-11-10T17:41:05.6807690Z [255/319] Compiling ConcurrencyExtras AsyncStream.swift
+apple-quality	just apple-check	2026-11-10T17:41:05.6808690Z [256/319] Compiling ConcurrencyExtras AsyncThrowingStream.swift
+apple-quality	just apple-check	2026-11-10T17:41:05.9018520Z [257/319] Compiling ConcurrencyExtras Result.swift
+apple-quality	just apple-check	2026-11-10T17:41:05.9120340Z [258/319] Compiling ConcurrencyExtras Task.swift
+apple-quality	just apple-check	2026-11-10T17:41:05.9222080Z [259/319] Compiling ConcurrencyExtras UncheckedSendable.swift
+apple-quality	just apple-check	2026-11-10T17:41:06.6764770Z [260/326] Compiling CooeeCoreTests ScreenTests.swift
+apple-quality	just apple-check	2026-11-10T17:41:07.6178020Z [261/336] Emitting module CombineSchedulers
+apple-quality	just apple-check	2026-11-10T17:41:08.2590480Z [262/340] Compiling CombineSchedulers AnyScheduler.swift
+apple-quality	just apple-check	2026-11-10T17:41:08.2696230Z [263/340] Compiling CombineSchedulers Concurrency.swift
+apple-quality	just apple-check	2026-11-10T17:41:08.2803880Z [264/340] Compiling CombineSchedulers ImmediateScheduler.swift
+apple-quality	just apple-check	2026-11-10T17:41:08.2903770Z [265/340] Compiling CombineSchedulers Deprecations.swift
+apple-quality	just apple-check	2026-11-10T17:41:08.3005180Z [266/340] Compiling CombineSchedulers Lock.swift
+apple-quality	just apple-check	2026-11-10T17:41:08.3502120Z [267/340] Compiling CombineSchedulers NSRecursiveLock.swift
+apple-quality	just apple-check	2026-11-10T17:41:08.3603050Z [268/340] Compiling CombineSchedulers Platform.swift
+apple-quality	just apple-check	2026-11-10T17:41:08.3703900Z [269/340] Compiling CombineSchedulers SwiftUI.swift
+apple-quality	just apple-check	2026-11-10T17:41:08.3805260Z [270/340] Compiling CombineSchedulers TestScheduler.swift
+apple-quality	just apple-check	2026-11-10T17:41:09.2083920Z [271/340] Compiling CombineSchedulers Timer.swift
+apple-quality	just apple-check	2026-11-10T17:41:09.2186000Z [272/340] Compiling CombineSchedulers UIKit.swift
+apple-quality	just apple-check	2026-11-10T17:41:09.2287160Z [273/340] Compiling CombineSchedulers UIScheduler.swift
+apple-quality	just apple-check	2026-11-10T17:41:09.2388840Z [274/340] Compiling CombineSchedulers UnimplementedScheduler.swift
+apple-quality	just apple-check	2026-11-10T17:41:10.0738020Z [275/347] Compiling Clocks AnyClock.swift
+apple-quality	just apple-check	2026-11-10T17:41:10.0838910Z [276/347] Compiling Clocks ImmediateClock.swift
+apple-quality	just apple-check	2026-11-10T17:41:10.0940080Z [277/347] Compiling Clocks Lock.swift
+apple-quality	just apple-check	2026-11-10T17:41:10.2118920Z [281/349] Emitting module CooeeAPITests
+apple-quality	just apple-check	2026-11-10T17:41:10.2220140Z [282/349] Compiling Clocks _AsyncTimerSequence.swift
+apple-quality	just apple-check	2026-11-10T17:41:10.2320680Z [283/349] Compiling Clocks SwiftUI.swift
+apple-quality	just apple-check	2026-11-10T17:41:10.2421750Z [284/349] Compiling Clocks TestClock.swift
+apple-quality	just apple-check	2026-11-10T17:41:10.4496090Z [288/351] Emitting module Clocks
+apple-quality	just apple-check	2026-11-10T17:41:10.4832520Z [289/351] Compiling CooeeAPITests Support.swift
+apple-quality	just apple-check	2026-11-10T17:41:10.4933770Z [290/351] Compiling CooeeAPITests resource_bundle_accessor.swift
+apple-quality	just apple-check	2026-11-10T17:41:11.4883880Z [293/379] Compiling Dependencies Assert.swift
+apple-quality	just apple-check	2026-11-10T17:41:11.4984790Z [294/379] Compiling Dependencies Calendar.swift
+apple-quality	just apple-check	2026-11-10T17:41:11.5085640Z [295/379] Compiling Dependencies Clocks.swift
+apple-quality	just apple-check	2026-11-10T17:41:11.5186100Z [296/379] Compiling Dependencies Context.swift
+apple-quality	just apple-check	2026-11-10T17:41:11.5287890Z [297/379] Compiling Dependencies Dependency.swift
+apple-quality	just apple-check	2026-11-10T17:41:11.5325250Z [298/379] Compiling Dependencies DependencyContext.swift
+apple-quality	just apple-check	2026-11-10T17:41:11.5326130Z [299/379] Compiling Dependencies DependencyKey.swift
+apple-quality	just apple-check	2026-11-10T17:41:11.5326730Z [300/379] Compiling Dependencies DependencyValues.swift
+apple-quality	just apple-check	2026-11-10T17:41:11.5327430Z [301/379] Emitting module CasePathsCore
+apple-quality	just apple-check	2026-11-10T17:41:12.1065110Z [302/382] Compiling CasePathsCore Never+CasePathable.swift
+apple-quality	just apple-check	2026-11-10T17:41:12.1165610Z [303/382] Compiling CasePathsCore Optional+CasePathable.swift
+apple-quality	just apple-check	2026-11-10T17:41:12.1267890Z [304/382] Compiling CasePathsCore Result+CasePathable.swift
+apple-quality	just apple-check	2026-11-10T17:41:12.2557310Z [307/382] Compiling Dependencies MainQueue.swift
+apple-quality	just apple-check	2026-11-10T17:41:12.2658530Z [308/382] Compiling Dependencies MainRunLoop.swift
+apple-quality	just apple-check	2026-11-10T17:41:12.2758930Z [309/382] Compiling Dependencies NotificationCenter.swift
+apple-quality	just apple-check	2026-11-10T17:41:12.2859190Z [310/382] Compiling Dependencies OpenURL.swift
+apple-quality	just apple-check	2026-11-10T17:41:12.2960400Z [311/382] Compiling Dependencies TimeZone.swift
+apple-quality	just apple-check	2026-11-10T17:41:12.3060930Z [312/382] Compiling Dependencies URLSession.swift
+apple-quality	just apple-check	2026-11-10T17:41:12.3162770Z [313/382] Compiling Dependencies UUID.swift
+apple-quality	just apple-check	2026-11-10T17:41:12.6237520Z [314/391] Emitting module Dependencies
+apple-quality	just apple-check	2026-11-10T17:41:13.5972040Z [324/391] Compiling Dependencies WithRandomNumberGenerator.swift
+apple-quality	just apple-check	2026-11-10T17:41:13.6077230Z [325/391] Compiling Dependencies AppEntryPoint.swift
+apple-quality	just apple-check	2026-11-10T17:41:13.6099740Z [326/391] Compiling Dependencies Deprecations.swift
+apple-quality	just apple-check	2026-11-10T17:41:13.6100820Z [327/391] Compiling Dependencies Exports.swift
+apple-quality	just apple-check	2026-11-10T17:41:13.6108230Z [328/391] Compiling Dependencies SendableKeyPath.swift
+apple-quality	just apple-check	2026-11-10T17:41:13.6108780Z [329/391] Compiling Dependencies TypeName.swift
+apple-quality	just apple-check	2026-11-10T17:41:13.6109190Z [330/391] Compiling Dependencies PreviewTrait.swift
+apple-quality	just apple-check	2026-11-10T17:41:13.6109610Z [331/391] Compiling Dependencies TestTrait.swift
+apple-quality	just apple-check	2026-11-10T17:41:13.6110080Z [332/391] Compiling Dependencies WithDependencies.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.1308840Z [333/409] Emitting module Sharing
+apple-quality	just apple-check	2026-11-10T17:41:16.8427680Z [334/417] Compiling Sharing Shared.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.8529140Z [335/417] Compiling Sharing SharedBinding.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.8630550Z [336/417] Compiling Sharing SharedContinuations.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.8732000Z [337/417] Compiling Sharing SharedKey.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.8833250Z [338/417] Compiling Sharing AppStorageKey.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.8934530Z [339/417] Compiling Sharing DefaultKey.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.9047280Z [340/417] Compiling Sharing FileStorageKey.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.9155740Z [341/417] Compiling Sharing InMemoryKey.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.9177290Z [342/417] Compiling Sharing Deprecations.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.9177910Z [343/417] Compiling Sharing KeyPath+Sendable.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.9178400Z [344/417] Compiling Sharing MutexBackport.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.9341210Z [345/417] Compiling Sharing NSRecursiveLock+WithLock.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.9442940Z [346/417] Compiling Sharing PassthroughRelay.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.9452190Z [347/417] Compiling Sharing PersistentReferences.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.9452750Z [348/417] Compiling Sharing Reference.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.9453260Z [349/417] Compiling Sharing SharedChangeTracker.swift
+apple-quality	just apple-check	2026-11-10T17:41:16.9453700Z [350/417] Compiling Sharing TypeName.swift
+apple-quality	just apple-check	2026-11-10T17:41:17.4354020Z [351/417] Compiling Sharing SharedPublisher.swift
+apple-quality	just apple-check	2026-11-10T17:41:17.4474790Z [352/417] Compiling Sharing SharedReader.swift
+apple-quality	just apple-check	2026-11-10T17:41:17.4524040Z [353/417] Compiling Sharing SharedReaderKey.swift
+apple-quality	just apple-check	2026-11-10T17:41:17.4524770Z [354/417] Compiling Sharing SwiftUIStateSharing.swift
+apple-quality	just apple-check	2026-11-10T17:41:17.4525720Z [355/417] Compiling Sharing CasePaths.swift
+apple-quality	just apple-check	2026-11-10T17:41:17.4528470Z [356/417] Compiling Sharing CustomDump.swift
+apple-quality	just apple-check	2026-11-10T17:41:17.4529010Z [357/417] Compiling Sharing IdentifiedCollections.swift
+apple-quality	just apple-check	2026-11-10T17:41:17.4529520Z [358/417] Compiling Sharing resource_bundle_accessor.swift
+apple-quality	just apple-check	2026-11-10T17:41:34.8322810Z [398/417] Compiling SwiftSyntax SyntaxNodesC.swift
+apple-quality	just apple-check	2026-11-10T17:41:34.8324610Z [399/417] Compiling SwiftSyntax SyntaxNodesD.swift
+apple-quality	just apple-check	2026-11-10T17:41:34.8325580Z [400/417] Compiling SwiftSyntax SyntaxNodesEF.swift
+apple-quality	just apple-check	2026-11-10T17:41:34.8326520Z [401/417] Compiling SwiftSyntax SyntaxNodesGHI.swift
+apple-quality	just apple-check	2026-11-10T17:41:34.8327670Z [402/417] Compiling SwiftSyntax SyntaxNodesJKLMN.swift
+apple-quality	just apple-check	2026-11-10T17:41:34.8328460Z [403/417] Compiling SwiftSyntax SyntaxNodesOP.swift
+apple-quality	just apple-check	2026-11-10T17:41:34.8328970Z [404/417] Compiling SwiftSyntax SyntaxNodesQRS.swift
+apple-quality	just apple-check	2026-11-10T17:41:34.8329700Z [405/417] Compiling SwiftSyntax SyntaxNodesTUVWXYZ.swift
+apple-quality	just apple-check	2026-11-10T17:41:35.9620960Z [406/462] Emitting module SwiftDiagnostics
+apple-quality	just apple-check	2026-11-10T17:41:36.5551130Z [407/465] Compiling SwiftParser CharacterInfo.swift
+apple-quality	just apple-check	2026-11-10T17:41:36.5552470Z [408/465] Compiling SwiftParser CollectionNodes+Parsable.swift
+apple-quality	just apple-check	2026-11-10T17:41:36.7930290Z [409/467] Compiling SwiftParser Attributes.swift
+apple-quality	just apple-check	2026-11-10T17:41:36.8031280Z [410/467] Compiling SwiftParser Availability.swift
+apple-quality	just apple-check	2026-11-10T17:41:36.8133600Z [413/467] Compiling SwiftBasicFormat SyntaxProtocol+Formatted.swift
+apple-quality	just apple-check	2026-11-10T17:41:36.8233730Z [414/467] Compiling SwiftBasicFormat Trivia+FormatExtensions.swift
+apple-quality	just apple-check	2026-11-10T17:41:36.8336760Z [415/467] Compiling SwiftParser Directives.swift
+apple-quality	just apple-check	2026-11-10T17:41:37.0083990Z [418/467] Compiling SwiftDiagnostics GroupedDiagnostics.swift
+apple-quality	just apple-check	2026-11-10T17:41:37.0185460Z [419/467] Compiling SwiftDiagnostics Message.swift
+apple-quality	just apple-check	2026-11-10T17:41:37.0285880Z [420/467] Compiling SwiftDiagnostics Note.swift
+apple-quality	just apple-check	2026-11-10T17:41:37.1281600Z [421/467] Emitting module SwiftBasicFormat
+apple-quality	just apple-check	2026-11-10T17:41:38.9475030Z [424/467] Compiling SwiftParser UnicodeScalarExtensions.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9476200Z [425/467] Compiling SwiftParser Lookahead.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9476870Z [426/467] Compiling SwiftParser LoopProgressCondition.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9480040Z [427/467] Compiling SwiftParser Modifiers.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9599070Z [428/467] Compiling SwiftParser Names.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9720290Z [429/467] Compiling SwiftParser Nominals.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9821400Z [430/467] Compiling SwiftParser Parameters.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9922660Z [431/467] Compiling SwiftParser ParseSourceFile.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9971910Z [432/467] Compiling SwiftParser Parser.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9972570Z [433/467] Compiling SwiftParser Patterns.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9972970Z [434/467] Compiling SwiftParser Recovery.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9973450Z [435/467] Compiling SwiftParser Specifiers.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9985380Z [436/467] Compiling SwiftParser Statements.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9991450Z [437/467] Compiling SwiftParser StringLiteralRepresentedLiteralValue.swift
+apple-quality	just apple-check	2026-11-10T17:41:38.9992130Z [438/467] Compiling SwiftParser StringLiterals.swift
+apple-quality	just apple-check	2026-11-10T17:41:39.7514580Z [439/482] Emitting module SwiftParser
+apple-quality	just apple-check	2026-11-10T17:41:39.7522740Z [450/482] Compiling SwiftParser IsValidIdentifier.swift
+apple-quality	just apple-check	2026-11-10T17:41:39.7523330Z [451/482] Compiling SwiftParser Cursor.swift
+apple-quality	just apple-check	2026-11-10T17:41:39.7523730Z [452/482] Compiling SwiftParser Lexeme.swift
+apple-quality	just apple-check	2026-11-10T17:41:39.7524130Z [453/482] Compiling SwiftParser LexemeSequence.swift
+apple-quality	just apple-check	2026-11-10T17:41:39.7524490Z [454/482] Compiling SwiftParser Lexer.swift
+apple-quality	just apple-check	2026-11-10T17:41:39.7524890Z [455/482] Compiling SwiftParser RegexLiteralLexer.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1145010Z [456/482] Compiling SwiftParser SwiftParserCompatibility.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1150760Z [457/482] Compiling SwiftParser SwiftVersion.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1152580Z [458/482] Compiling SwiftParser SyntaxUtils.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1154240Z [459/482] Compiling SwiftParser TokenConsumer.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1156420Z [460/482] Compiling SwiftParser TokenPrecedence.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1157390Z [461/482] Compiling SwiftParser TokenSpec.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1158210Z [462/482] Compiling SwiftParser TokenSpecSet.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1159140Z [463/482] Compiling SwiftParser TopLevel.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1160080Z [464/482] Compiling SwiftParser TriviaParser.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1160860Z [465/482] Compiling SwiftParser Types.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1161740Z [466/482] Compiling SwiftParser ExperimentalFeatures.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1162660Z [467/482] Compiling SwiftParser IsLexerClassified.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1163700Z [468/482] Compiling SwiftParser LayoutNodes+Parsable.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1164650Z [469/482] Compiling SwiftParser Parser+TokenSpecSet.swift
+apple-quality	just apple-check	2026-11-10T17:41:42.1167030Z [470/482] Compiling SwiftParser TokenSpecStaticMembers.swift
+apple-quality	just apple-check	2026-11-10T17:41:45.5026960Z [471/500] Compiling SwiftParserDiagnostics MultiLineStringLiteralDiagnosticsGenerator.swift
+apple-quality	just apple-check	2026-11-10T17:41:45.5145740Z [472/500] Compiling SwiftParserDiagnostics ParseDiagnosticsGenerator.swift
+apple-quality	just apple-check	2026-11-10T17:41:45.5247220Z [473/500] Compiling SwiftParserDiagnostics ParserDiagnosticMessages.swift
+apple-quality	just apple-check	2026-11-10T17:41:45.5348270Z [474/500] Emitting module SwiftOperators
+apple-quality	just apple-check	2026-11-10T17:41:45.5449460Z [475/500] Compiling SwiftParserDiagnostics DiagnosticExtensions.swift
+apple-quality	just apple-check	2026-11-10T17:41:45.5552320Z [476/500] Compiling SwiftParserDiagnostics LexerDiagnosticMessages.swift
+apple-quality	just apple-check	2026-11-10T17:41:45.5658260Z [477/500] Compiling SwiftParserDiagnostics MissingNodesError.swift
+apple-quality	just apple-check	2026-11-10T17:41:45.5756740Z [478/500] Compiling SwiftParserDiagnostics MissingTokenError.swift
+apple-quality	just apple-check	2026-11-10T17:41:45.9233620Z [479/503] Compiling SwiftOperators PrecedenceGraph.swift
+apple-quality	just apple-check	2026-11-10T17:41:45.9337070Z [480/503] Compiling SwiftOperators PrecedenceGroup.swift
+apple-quality	just apple-check	2026-11-10T17:41:45.9438730Z [481/503] Compiling SwiftOperators SyntaxSynthesis.swift
+apple-quality	just apple-check	2026-11-10T17:41:46.4045340Z [487/503] Emitting module SwiftParserDiagnostics
+apple-quality	just apple-check	2026-11-10T17:41:47.4124790Z [488/507] Compiling SwiftParserDiagnostics Utils.swift
+apple-quality	just apple-check	2026-11-10T17:41:47.4125690Z [489/507] Compiling SwiftParserDiagnostics ChildNameForDiagnostics.swift
+apple-quality	just apple-check	2026-11-10T17:41:47.4126470Z [490/507] Compiling SwiftParserDiagnostics SyntaxKindNameForDiagnostics.swift
+apple-quality	just apple-check	2026-11-10T17:41:47.4127100Z [491/507] Compiling SwiftParserDiagnostics TokenNameForDiagnostics.swift
+apple-quality	just apple-check	2026-11-10T17:41:49.1754040Z [496/518] Emitting module SwiftSyntaxBuilder
+apple-quality	just apple-check	2026-11-10T17:41:49.6781030Z [497/523] Compiling SwiftSyntaxBuilder SwiftSyntaxBuilderCompatibility.swift
+apple-quality	just apple-check	2026-11-10T17:41:49.6785110Z [498/523] Compiling SwiftSyntaxBuilder Syntax+StringInterpolation.swift
+apple-quality	just apple-check	2026-11-10T17:41:49.6785930Z [499/523] Compiling SwiftSyntaxBuilder SyntaxNodeWithBody.swift
+apple-quality	just apple-check	2026-11-10T17:41:49.6786640Z [500/523] Compiling SwiftSyntaxBuilder SyntaxParsable+ExpressibleByStringInterpolation.swift
+apple-quality	just apple-check	2026-11-10T17:41:49.6787260Z [501/523] Compiling SwiftSyntaxBuilder ValidatingSyntaxNodes.swift
+apple-quality	just apple-check	2026-11-10T17:41:49.6880380Z [502/523] Compiling SwiftSyntaxBuilder ConvenienceInitializers.swift
+apple-quality	just apple-check	2026-11-10T17:41:49.6880840Z [503/523] Compiling SwiftSyntaxBuilder DeclSyntaxParseable.swift
+apple-quality	just apple-check	2026-11-10T17:41:49.6881270Z [504/523] Compiling SwiftSyntaxBuilder Indenter.swift
+apple-quality	just apple-check	2026-11-10T17:41:49.6881750Z [505/523] Compiling SwiftSyntaxBuilder ListBuilder.swift
+apple-quality	just apple-check	2026-11-10T17:41:49.6882170Z [506/523] Compiling SwiftSyntaxBuilder ResultBuilderExtensions.swift
+apple-quality	just apple-check	2026-11-10T17:41:50.9191870Z [507/523] Compiling SwiftSyntaxBuilder WithTrailingCommaSyntax+EnsuringTrailingComma.swift
+apple-quality	just apple-check	2026-11-10T17:41:50.9193340Z [508/523] Compiling SwiftSyntaxBuilder BuildableNodes.swift
+apple-quality	just apple-check	2026-11-10T17:41:50.9194550Z [509/523] Compiling SwiftSyntaxBuilder RenamedChildrenBuilderCompatibility.swift
+apple-quality	just apple-check	2026-11-10T17:41:50.9195660Z [510/523] Compiling SwiftSyntaxBuilder ResultBuilders.swift
+apple-quality	just apple-check	2026-11-10T17:41:50.9197060Z [511/523] Compiling SwiftSyntaxBuilder SyntaxExpressibleByStringInterpolationConformances.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.2880810Z [512/534] Compiling SwiftIfConfig IfConfigDecl+IfConfig.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.2983390Z [513/534] Compiling SwiftIfConfig IfConfigDiagnostic.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.3085680Z [514/534] Compiling SwiftIfConfig IfConfigEvaluation.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.3128540Z [515/534] Compiling SwiftIfConfig IfConfigFunctions.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.3129230Z [516/534] Compiling SwiftIfConfig IfConfigRegionState.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.6311740Z [517/539] Emitting module SwiftIfConfig
+apple-quality	just apple-check	2026-11-10T17:41:52.6313270Z [518/539] Compiling SwiftIfConfig ActiveClauseEvaluator.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.6314610Z [519/539] Compiling SwiftIfConfig ActiveSyntaxRewriter.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.6315870Z [520/539] Compiling SwiftIfConfig ActiveSyntaxVisitor.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.6317270Z [521/539] Compiling SwiftIfConfig BuildConfiguration.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.6318660Z [522/539] Compiling SwiftIfConfig ConfiguredRegions.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.8720560Z [523/539] Compiling SwiftIfConfig StaticBuildConfiguration.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.8723370Z [524/539] Compiling SwiftIfConfig SyntaxLiteralUtils.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.8723850Z [525/539] Compiling SwiftIfConfig SyntaxProtocol+IfConfig.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.8725150Z [526/539] Compiling SwiftIfConfig VersionTuple+Parsing.swift
+apple-quality	just apple-check	2026-11-10T17:41:52.8726180Z [527/539] Compiling SwiftIfConfig VersionTuple.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.3619420Z [528/552] Compiling SwiftSyntaxMacros CodeItemMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.3620600Z [529/552] Compiling SwiftSyntaxMacros DeclarationMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.3737360Z [530/552] Compiling SwiftSyntaxMacros ExpressionMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.3756390Z [531/552] Compiling SwiftSyntaxMacros ExtensionMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.3757060Z [532/552] Compiling SwiftSyntaxMacros FreestandingMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.3757890Z [533/552] Compiling SwiftSyntaxMacros Macro+Format.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.4590280Z [534/558] Emitting module SwiftSyntaxMacros
+apple-quality	just apple-check	2026-11-10T17:41:53.4593050Z [535/558] Compiling SwiftSyntaxMacros AbstractSourceLocation.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.4595020Z [536/558] Compiling SwiftSyntaxMacros MacroExpansionContext.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.4596430Z [537/558] Compiling SwiftSyntaxMacros MacroExpansionDiagnosticMessages.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.4597340Z [538/558] Compiling SwiftSyntaxMacros AccessorMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.4597920Z [539/558] Compiling SwiftSyntaxMacros AttachedMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.4598450Z [540/558] Compiling SwiftSyntaxMacros BodyMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.6179210Z [541/558] Compiling SwiftSyntaxMacros Macro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.6179810Z [542/558] Compiling SwiftSyntaxMacros MemberAttributeMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.6180370Z [543/558] Compiling SwiftSyntaxMacros MemberMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.6180750Z [544/558] Compiling SwiftSyntaxMacros PeerMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.6181160Z [545/558] Compiling SwiftSyntaxMacros PreambleMacro.swift
+apple-quality	just apple-check	2026-11-10T17:41:53.6181540Z [546/558] Compiling SwiftSyntaxMacros Syntax+LexicalContext.swift
+apple-quality	just apple-check	2026-11-10T17:41:54.5561660Z [547/565] Compiling SwiftSyntaxMacroExpansion BasicMacroExpansionContext.swift
+apple-quality	just apple-check	2026-11-10T17:41:54.5564730Z [548/565] Compiling SwiftSyntaxMacroExpansion FunctionParameterUtils.swift
+apple-quality	just apple-check	2026-11-10T17:41:54.5565660Z [549/565] Compiling SwiftSyntaxMacroExpansion IndentationUtils.swift
+apple-quality	just apple-check	2026-11-10T17:41:54.5566320Z [550/565] Compiling SwiftSyntaxMacroExpansion MacroArgument.swift
+apple-quality	just apple-check	2026-11-10T17:41:54.5566930Z [551/565] Compiling SwiftSyntaxMacroExpansion MacroExpansion.swift
+apple-quality	just apple-check	2026-11-10T17:41:54.5567570Z [552/565] Compiling SwiftSyntaxMacroExpansion MacroExpansionDiagnosticMessages.swift
+apple-quality	just apple-check	2026-11-10T17:41:54.5568520Z [553/565] Emitting module SwiftSyntaxMacroExpansion
+apple-quality	just apple-check	2026-11-10T17:41:56.5477020Z [554/568] Compiling SwiftSyntaxMacroExpansion MacroReplacement.swift
+apple-quality	just apple-check	2026-11-10T17:41:56.5478890Z [555/568] Compiling SwiftSyntaxMacroExpansion MacroSpec.swift
+apple-quality	just apple-check	2026-11-10T17:41:56.5480120Z [556/568] Compiling SwiftSyntaxMacroExpansion MacroSystem.swift
+apple-quality	just apple-check	2026-11-10T17:41:57.9099430Z [557/577] Compiling SwiftCompilerPluginMessageHandling CompilerPluginMessageHandler.swift
+apple-quality	just apple-check	2026-11-10T17:41:57.9214270Z [558/577] Compiling SwiftCompilerPluginMessageHandling Diagnostics.swift
+apple-quality	just apple-check	2026-11-10T17:41:57.9337890Z [559/577] Compiling SwiftCompilerPluginMessageHandling CodingUtilities.swift
+apple-quality	just apple-check	2026-11-10T17:41:57.9448890Z [560/577] Compiling SwiftCompilerPluginMessageHandling JSON.swift
+apple-quality	just apple-check	2026-11-10T17:41:58.7493410Z [561/581] Emitting module SwiftCompilerPluginMessageHandling
+apple-quality	just apple-check	2026-11-10T17:41:58.7494340Z [562/581] Compiling SwiftCompilerPluginMessageHandling JSONDecoding.swift
+apple-quality	just apple-check	2026-11-10T17:41:58.7495030Z [563/581] Compiling SwiftCompilerPluginMessageHandling JSONEncoding.swift
+apple-quality	just apple-check	2026-11-10T17:41:58.7495730Z [564/581] Compiling SwiftCompilerPluginMessageHandling LRUCache.swift
+apple-quality	just apple-check	2026-11-10T17:41:58.7496350Z [565/581] Compiling SwiftCompilerPluginMessageHandling Macros.swift
+apple-quality	just apple-check	2026-11-10T17:41:59.0394940Z [566/581] Compiling SwiftCompilerPluginMessageHandling PluginMacroExpansionContext.swift
+apple-quality	just apple-check	2026-11-10T17:41:59.0395680Z [567/581] Compiling SwiftCompilerPluginMessageHandling PluginMessageCompatibility.swift
+apple-quality	just apple-check	2026-11-10T17:41:59.0396220Z [568/581] Compiling SwiftCompilerPluginMessageHandling PluginMessages.swift
+apple-quality	just apple-check	2026-11-10T17:41:59.0396870Z [569/581] Compiling SwiftCompilerPluginMessageHandling StandardIOMessageConnection.swift
+apple-quality	just apple-check	2026-11-10T17:41:59.4687510Z [570/583] Compiling SwiftCompilerPlugin CompilerPlugin.swift
+apple-quality	just apple-check	2026-11-10T17:41:59.4690200Z [571/583] Emitting module SwiftCompilerPlugin
+apple-quality	just apple-check	2026-11-10T17:42:01.1621730Z [572/598] Compiling ComposableArchitectureMacros Plugins.swift
+apple-quality	just apple-check	2026-11-10T17:42:01.1726640Z [573/598] Compiling ComposableArchitectureMacros PresentsMacro.swift
+apple-quality	just apple-check	2026-11-10T17:42:01.2671110Z [574/600] Compiling ComposableArchitectureMacros ObservableStateMacro.swift
+apple-quality	just apple-check	2026-11-10T17:42:01.3609790Z [576/601] Compiling PerceptionMacros PerceptibleMacro.swift
+apple-quality	just apple-check	2026-11-10T17:42:01.3712190Z [577/601] Emitting module PerceptionMacros
+apple-quality	just apple-check	2026-11-10T17:42:01.3817800Z [578/601] Compiling DependenciesMacrosPlugin DependencyClientMacro.swift
+apple-quality	just apple-check	2026-11-10T17:42:01.3914820Z [579/601] Compiling DependenciesMacrosPlugin DependencyEndpointMacro.swift
+apple-quality	just apple-check	2026-11-10T17:42:01.6593310Z [580/602] Compiling PerceptionMacros Plugins.swift
+apple-quality	just apple-check	2026-11-10T17:42:02.1642850Z [583/604] Emitting module DependenciesMacrosPlugin
+apple-quality	just apple-check	2026-11-10T17:42:02.2168770Z [584/604] Compiling DependenciesMacrosPlugin Support.swift
+apple-quality	just apple-check	2026-11-10T17:42:02.2374890Z [584/604] Write Objects.LinkFileList
+apple-quality	just apple-check	2026-11-10T17:42:02.2777710Z [587/604] Emitting module ComposableArchitectureMacros
+apple-quality	just apple-check	2026-11-10T17:42:03.0498240Z [591/604] Emitting module CasePathsMacrosSupport
+apple-quality	just apple-check	2026-11-10T17:42:03.0601140Z [592/604] Compiling CasePathsMacrosSupport CasePathableMacro.swift
+apple-quality	just apple-check	2026-11-10T17:42:03.3054260Z [593/604] Compiling ComposableArchitectureMacros ReducerMacro.swift
+apple-quality	just apple-check	2026-11-10T17:42:03.3157350Z [594/604] Compiling ComposableArchitectureMacros ViewActionMacro.swift
+apple-quality	just apple-check	2026-11-10T17:42:04.2320550Z [595/608] Compiling SwiftNavigationMacros Support.swift
+apple-quality	just apple-check	2026-11-10T17:42:04.3825590Z [596/609] Compiling SwiftNavigationMacros CaseBindableMacro.swift
+apple-quality	just apple-check	2026-11-10T17:42:04.3926020Z [597/609] Compiling SwiftNavigationMacros Plugin.swift
+apple-quality	just apple-check	2026-11-10T17:42:04.4027340Z [598/609] Emitting module SwiftNavigationMacros
+apple-quality	just apple-check	2026-11-10T17:42:04.4867460Z [599/609] Compiling SwiftNavigationMacros TransactionEntryMacro.swift
+apple-quality	just apple-check	2026-11-10T17:42:04.8997500Z [599/612] Linking PerceptionMacros-tool
+apple-quality	just apple-check	2026-11-10T17:42:04.9125890Z [599/612] Write Objects.LinkFileList
+apple-quality	just apple-check	2026-11-10T17:42:04.9355230Z [603/612] Emitting module CasePathsMacros
+apple-quality	just apple-check	2026-11-10T17:42:04.9456250Z [604/612] Compiling CasePathsMacros Plugin.swift
+apple-quality	just apple-check	2026-11-10T17:42:04.9557000Z [605/612] Compiling CasePathsMacros CasePathableMacro.swift
+apple-quality	just apple-check	2026-11-10T17:42:05.6783970Z [605/612] Linking DependenciesMacrosPlugin-tool
+apple-quality	just apple-check	2026-11-10T17:42:05.6885580Z [606/612] Write Objects.LinkFileList
+apple-quality	just apple-check	2026-11-10T17:42:07.0683450Z [608/615] Emitting module Perception
+apple-quality	just apple-check	2026-11-10T17:42:07.0786010Z [609/615] Compiling Perception Macros.swift
+apple-quality	just apple-check	2026-11-10T17:42:07.0891080Z [610/615] Compiling Perception Exports.swift
+apple-quality	just apple-check	2026-11-10T17:42:07.2458790Z [610/615] Linking SwiftNavigationMacros-tool
+apple-quality	just apple-check	2026-11-10T17:42:07.8003100Z [611/618] Linking ComposableArchitectureMacros-tool
+apple-quality	just apple-check	2026-11-10T17:42:08.4397680Z [613/618] Compiling DependenciesMacros Exports.swift
+apple-quality	just apple-check	2026-11-10T17:42:08.4513550Z [614/618] Compiling DependenciesMacros Macros.swift
+apple-quality	just apple-check	2026-11-10T17:42:08.4744860Z [615/619] Emitting module DependenciesMacros
+apple-quality	just apple-check	2026-11-10T17:42:09.3531730Z [616/619] Compiling DependenciesMacros MacrosSupport.swift
+apple-quality	just apple-check	2026-11-10T17:42:10.2391300Z [616/619] Linking CasePathsMacros-tool
+apple-quality	just apple-check	2026-11-10T17:42:11.8416050Z [618/624] Compiling CasePaths Exports.swift
+apple-quality	just apple-check	2026-11-10T17:42:11.8548730Z [619/624] Compiling CasePaths LockIsolated.swift
+apple-quality	just apple-check	2026-11-10T17:42:11.8575070Z [620/624] Emitting module CasePaths
+apple-quality	just apple-check	2026-11-10T17:42:11.8576910Z [621/624] Compiling CasePaths EnumReflection.swift
+apple-quality	just apple-check	2026-11-10T17:42:11.8610370Z [622/624] Compiling CasePaths Deprecations.swift
+apple-quality	just apple-check	2026-11-10T17:42:12.4918190Z [623/626] Compiling CasePaths Macros.swift
+apple-quality	just apple-check	2026-11-10T17:42:12.4919270Z [624/626] Compiling CasePaths XCTestSupport.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4108530Z [625/647] Compiling SwiftNavigation Deprecations.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4246740Z [626/647] Compiling SwiftNavigation ErrorMechanism.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4277340Z [627/647] Compiling SwiftNavigation Exports.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4412920Z [628/647] Compiling SwiftNavigation HashableStaticString.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4509200Z [629/647] Compiling SwiftNavigation KeyPath+Sendable.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4509790Z [630/647] Compiling SwiftNavigation LockIsolated.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4510710Z [631/647] Compiling SwiftNavigation ToOptionalUnit.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4511370Z [632/647] Compiling SwiftNavigation NSObject+Observe.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4512520Z [633/647] Compiling SwiftNavigation Observe.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4513100Z [634/647] Compiling SwiftNavigation TextState.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4513740Z [635/647] Compiling SwiftNavigation AlertState.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4514280Z [636/647] Compiling SwiftNavigation Bind.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4514690Z [637/647] Compiling SwiftNavigation Binding.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4515150Z [638/647] Compiling SwiftNavigation ButtonState.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4515650Z [639/647] Compiling SwiftNavigation ButtonStateBuilder.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4516120Z [640/647] Compiling SwiftNavigation CaseBindable.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4516630Z [641/647] Compiling SwiftNavigation ConfirmationDialogState.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4517160Z [642/647] Compiling SwiftNavigation HashableObject.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4517670Z [643/647] Compiling SwiftNavigation AnyHashableSendable.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4518190Z [644/647] Compiling SwiftNavigation AssumeIsolated.swift
+apple-quality	just apple-check	2026-11-10T17:42:15.4518580Z [645/647] Emitting module SwiftNavigation
+apple-quality	just apple-check	2026-11-10T17:42:17.1100210Z [646/657] Compiling SwiftNavigation CasePaths.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.1101160Z [647/657] Compiling SwiftNavigation CustomDump.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.1101620Z [648/657] Compiling SwiftNavigation IssueReporting.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.1119520Z [649/657] Compiling SwiftNavigation Perception.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.1121630Z [650/657] Compiling SwiftNavigation Sharing.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.1122180Z [651/657] Compiling SwiftNavigation TransactionEntry.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.1123050Z [652/657] Compiling SwiftNavigation UIBindable.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.1124840Z [653/657] Compiling SwiftNavigation UIBinding.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.1126120Z [654/657] Compiling SwiftNavigation UINavigationPath.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.1126910Z [655/657] Compiling SwiftNavigation UITransaction.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.4677130Z [656/684] Emitting module UIKitNavigation
+apple-quality	just apple-check	2026-11-10T17:42:17.4991180Z [657/691] Compiling SwiftUINavigation Alert+State.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5092910Z [658/691] Compiling SwiftUINavigation Alert.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5176820Z [659/691] Compiling SwiftUINavigation Binding.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5178170Z [660/691] Compiling SwiftUINavigation ConfirmationDialog+State.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5179180Z [661/691] Compiling SwiftUINavigation ConfirmationDialog.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5180730Z [662/691] Compiling SwiftUINavigation FullScreenCover.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5182450Z [663/691] Compiling SwiftUINavigation Binding+Internal.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5184600Z [664/691] Compiling SwiftUINavigation Deprecations.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5186310Z [665/691] Compiling SwiftUINavigation Exports.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5188150Z [666/691] Compiling SwiftUINavigation Identified.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5188860Z [667/691] Compiling SwiftUINavigation NavigationDestination.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5190390Z [668/691] Compiling UIKitNavigation PopFromViewController.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5191170Z [669/691] Compiling UIKitNavigation Dismiss.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.5191850Z [670/691] Compiling UIKitNavigation NavigationStackController.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.6500670Z [671/691] Compiling UIKitNavigation Presentation.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.6503380Z [672/691] Compiling UIKitNavigation Push.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.6504680Z [673/691] Compiling UIKitNavigation UIAlertController.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.6505320Z [674/691] Compiling UIKitNavigation Representable.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.6505950Z [675/691] Compiling UIKitNavigation UIBinding.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.6506790Z [676/691] Compiling UIKitNavigation UIKitAnimation.swift
+apple-quality	just apple-check	2026-11-10T17:42:17.6507190Z [677/691] Compiling UIKitNavigation UITransaction.swift
+apple-quality	just apple-check	2026-11-10T17:42:18.3299290Z [689/696] Emitting module SwiftUINavigation
+apple-quality	just apple-check	2026-11-10T17:42:18.5577120Z [690/696] Compiling SwiftUINavigation NavigationLink.swift
+apple-quality	just apple-check	2026-11-10T17:42:18.5577720Z [691/696] Compiling SwiftUINavigation Popover.swift
+apple-quality	just apple-check	2026-11-10T17:42:18.5578150Z [692/696] Compiling SwiftUINavigation Sheet.swift
+apple-quality	just apple-check	2026-11-10T17:42:18.5578570Z [693/696] Compiling SwiftUINavigation CasePaths.swift
+apple-quality	just apple-check	2026-11-10T17:42:18.5578960Z [694/696] Compiling SwiftUINavigation WithState.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7045480Z [695/738] Compiling ComposableArchitecture Logger.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7164910Z [696/738] Compiling ComposableArchitecture NavigationID.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7297350Z [697/738] Compiling ComposableArchitecture OpenExistential.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7399340Z [698/738] Compiling ComposableArchitecture PresentationID.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7410880Z [699/738] Compiling ComposableArchitecture ReturningLastNonNilValue.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7412620Z [700/738] Compiling ComposableArchitecture RuntimeWarnings.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7514110Z [701/738] Compiling ComposableArchitecture StackIDGenerator.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7617220Z [702/738] Compiling ComposableArchitecture Macros.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7690020Z [703/738] Compiling ComposableArchitecture Alert+Observation.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7692870Z [704/738] Compiling ComposableArchitecture Binding+Observation.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7694100Z [705/738] Compiling ComposableArchitecture IdentifiedArray+Observation.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7696090Z [706/738] Compiling ComposableArchitecture NavigationStack+Observation.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7705730Z [707/738] Compiling ComposableArchitecture ObservableState.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7706770Z [708/738] Compiling ComposableArchitecture ObservationStateRegistrar.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7707410Z [709/738] Compiling ComposableArchitecture Store+Observation.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7707930Z [710/738] Compiling ComposableArchitecture ViewAction.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7710560Z [711/738] Compiling ComposableArchitecture Reducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7711200Z [712/738] Compiling ComposableArchitecture ReducerBuilder.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7711770Z [713/738] Compiling ComposableArchitecture BindingReducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:22.7712410Z [714/738] Compiling ComposableArchitecture CombineReducers.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7381500Z [715/758] Compiling ComposableArchitecture CaseReducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7382360Z [716/758] Compiling ComposableArchitecture Core.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7383020Z [717/758] Compiling ComposableArchitecture Dismiss.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7383530Z [718/758] Compiling ComposableArchitecture IsPresented.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7384080Z [719/758] Compiling ComposableArchitecture Effect.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7384590Z [720/758] Compiling ComposableArchitecture Cancellation.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7385130Z [721/758] Compiling ComposableArchitecture Publisher.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7385700Z [722/758] Compiling ComposableArchitecture AreOrderedSetsDuplicates.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7386270Z [723/758] Compiling ComposableArchitecture Box.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7386820Z [724/758] Compiling ComposableArchitecture Create.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7387320Z [725/758] Compiling ComposableArchitecture CurrentValueRelay.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7387860Z [726/758] Compiling ComposableArchitecture Debug.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7388330Z [727/758] Compiling ComposableArchitecture DefaultSubscript.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7388890Z [728/758] Compiling ComposableArchitecture Deprecations.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7389410Z [729/758] Compiling ComposableArchitecture DispatchQueue.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7389950Z [730/758] Compiling ComposableArchitecture EffectActions.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7390480Z [731/758] Compiling ComposableArchitecture EphemeralState.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7390950Z [732/758] Compiling ComposableArchitecture Exports.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7392680Z [733/758] Compiling ComposableArchitecture HashableStaticString.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7393380Z [734/758] Compiling ComposableArchitecture KeyPath+Sendable.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7393960Z [735/758] Compiling ComposableArchitecture Locking.swift
+apple-quality	just apple-check	2026-11-10T17:42:24.7394420Z [736/758] Emitting module ComposableArchitecture
+apple-quality	just apple-check	2026-11-10T17:42:26.8397320Z [737/758] Compiling ComposableArchitecture DebugReducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8399850Z [738/758] Compiling ComposableArchitecture DependencyKeyWritingReducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8402300Z [739/758] Compiling ComposableArchitecture EmptyReducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8403510Z [740/758] Compiling ComposableArchitecture ForEachReducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8404640Z [741/758] Compiling ComposableArchitecture IfCaseLetReducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8405720Z [742/758] Compiling ComposableArchitecture IfLetReducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8406610Z [743/758] Compiling ComposableArchitecture OnChange.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8407640Z [744/758] Compiling ComposableArchitecture Optional.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8408690Z [745/758] Compiling ComposableArchitecture PresentationReducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8409650Z [746/758] Compiling ComposableArchitecture Reduce.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8410570Z [747/758] Compiling ComposableArchitecture Scope.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8411460Z [748/758] Compiling ComposableArchitecture SignpostReducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8412520Z [749/758] Compiling ComposableArchitecture StackReducer.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8413520Z [750/758] Compiling ComposableArchitecture AppStorageKeyPathKey.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8423760Z [751/758] Compiling ComposableArchitecture Store.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8425730Z [752/758] Compiling ComposableArchitecture Binding.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8426700Z [753/758] Compiling ComposableArchitecture TestStore.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8427720Z [754/758] Compiling ComposableArchitecture AlertStateUIKit.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8428890Z [755/758] Compiling ComposableArchitecture NavigationStackControllerUIKit.swift
+apple-quality	just apple-check	2026-11-10T17:42:26.8430160Z [756/758] Compiling ComposableArchitecture resource_bundle_accessor.swift
+apple-quality	just apple-check	2026-11-10T17:42:29.3991300Z [757/763] Compiling CooeeFeatures Clients.swift
+apple-quality	just apple-check	2026-11-10T17:42:29.4092810Z [758/763] Compiling CooeeFeatures HomeFeature.swift
+apple-quality	just apple-check	2026-11-10T17:42:30.4417360Z [759/764] Emitting module CooeeFeatures
+apple-quality	just apple-check	2026-11-10T17:42:30.4418190Z [760/764] Compiling CooeeFeatures AppFeature.swift
+apple-quality	just apple-check	2026-11-10T17:42:30.4418800Z [761/764] Compiling CooeeFeatures ChatFeature.swift
+apple-quality	just apple-check	2026-11-10T17:42:31.5271660Z [762/764] Compiling CooeeFeatures PairingFeature.swift
+apple-quality	just apple-check	2026-11-10T17:42:33.4618980Z [763/787] Emitting module CooeeUI
+apple-quality	just apple-check	2026-11-10T17:42:34.6151490Z [764/795] Emitting module CooeeFeaturesTests
+apple-quality	just apple-check	2026-11-10T17:42:34.6280540Z [765/795] Compiling CooeeUI BlockCards.swift
+apple-quality	just apple-check	2026-11-10T17:42:34.6402410Z [766/795] Compiling CooeeUI BlockFields.swift
+apple-quality	just apple-check	2026-11-10T17:42:34.6525570Z [767/795] Compiling CooeeUI BlockLeaves.swift
+apple-quality	just apple-check	2026-11-10T17:42:34.6647730Z [768/795] Compiling CooeeUI Blocks.swift
+apple-quality	just apple-check	2026-11-10T17:42:35.8402620Z [769/797] Compiling CooeeFeaturesTests PairingFeatureTests.swift
+apple-quality	just apple-check	2026-11-10T17:42:35.8504070Z [770/797] Compiling CooeeFeaturesTests Support.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.1604290Z [771/797] Compiling CooeeUI PairingParts.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.1705180Z [772/797] Compiling CooeeUI PersonaSheet.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.1805970Z [773/797] Compiling CooeeUI Root.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.1906160Z [774/797] Compiling CooeeUI Scanner.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.2027370Z [775/797] Compiling CooeeUI Sheets.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.2132160Z [776/797] Compiling CooeeUI Theme.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.2244440Z [777/797] Compiling CooeeUI Wide.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.2349710Z [778/797] Compiling CooeeUI resource_bundle_accessor.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.7224950Z [779/797] Compiling CooeeUI Home.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.7229090Z [780/797] Compiling CooeeUI HomeRows.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.7237210Z [781/797] Compiling CooeeUI Items.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.7240620Z [782/797] Compiling CooeeUI Layout.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.7241060Z [783/797] Compiling CooeeUI Mac.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.7243800Z [784/797] Compiling CooeeUI MacSteps.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.7247130Z [785/797] Compiling CooeeUI Onboarding.swift
+apple-quality	just apple-check	2026-11-10T17:42:37.7248180Z [786/797] Compiling CooeeUI PairingFields.swift
+apple-quality	just apple-check	2026-11-10T17:42:38.8308200Z [793/797] Compiling CooeeUI Composer.swift
+apple-quality	just apple-check	2026-11-10T17:42:38.8308620Z [794/797] Compiling CooeeUI FixtureItems.swift
+apple-quality	just apple-check	2026-11-10T17:42:38.8308970Z [795/797] Compiling CooeeUI Fixtures.swift
+apple-quality	just apple-check	2026-11-10T17:42:40.4907900Z [796/802] Compiling CooeeApp Live.swift
+apple-quality	just apple-check	2026-11-10T17:42:40.5009600Z [797/802] Emitting module CooeeApp
+apple-quality	just apple-check	2026-11-10T17:42:40.6056160Z [798/802] Compiling CooeeUITests Frames.swift
+apple-quality	just apple-check	2026-11-10T17:42:40.7961260Z [799/803] Emitting module CooeeUITests
+apple-quality	just apple-check	2026-11-10T17:42:40.7963230Z [800/803] Compiling CooeeUITests BlockRenderTests.swift
+apple-quality	just apple-check	2026-11-10T17:42:42.4791470Z [801/803] Compiling CooeeUITests SnapshotTests.swift
+apple-quality	just apple-check	2026-11-10T17:42:43.0866240Z [802/805] Compiling CooeePackageTests runner.swift
+apple-quality	just apple-check	2026-11-10T17:42:43.0866700Z [803/805] Emitting module CooeePackageTests
+apple-quality	just apple-check	2026-11-10T17:42:43.0923220Z [803/805] Write Objects.LinkFileList
+apple-quality	just apple-check	2026-11-10T17:42:45.9099500Z [804/805] Linking CooeePackageTests
+apple-quality	just apple-check	2026-11-10T17:42:45.9255760Z Build complete! (136.61s)
+apple-quality	just apple-check	2026-11-10T17:44:00.3988790Z Test Suite 'All tests' started at 2026-11-10 17:42:47.256.
+apple-quality	just apple-check	2026-11-10T17:44:00.3992260Z Test Suite 'All tests' passed at 2026-11-10 17:42:47.261.
+apple-quality	just apple-check	2026-11-10T17:44:00.3994530Z 	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.005) seconds
+apple-quality	just apple-check	2026-11-10T17:44:00.4167360Z ◇ Test run started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4189520Z ↳ Testing Library Version: 1902
+apple-quality	just apple-check	2026-11-10T17:44:00.4207150Z ↳ Target Platform: arm64e-apple-macos14.0
+apple-quality	just apple-check	2026-11-10T17:44:00.4208220Z ◇ Suite ListingTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4208520Z ◇ Suite ItemsTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4208890Z ◇ Suite ScreenTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4209270Z ◇ Suite CardClientTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4209730Z ➜ Suite LiveTests skipped.
+apple-quality	just apple-check	2026-11-10T17:44:00.4210100Z ◇ Suite ActionTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4210550Z ◇ Suite ModelsTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4211470Z ◇ Suite EventsTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4212010Z ◇ Suite ClientTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4212340Z ◇ Suite DeviceTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4212710Z ◇ Suite CardAnswerTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4215610Z ◇ Suite ChatFeatureTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4215880Z ◇ Suite BlockRenderTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4259180Z ◇ Suite PairingFeatureTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4259540Z ◇ Suite SnapshotTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4259900Z ◇ Suite AppFeatureTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4260210Z ◇ Suite HomeFeatureTests started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4261190Z ◇ Test toolsFoldCardsAreBlocksAndNotesShow() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4261650Z ◇ Test queueStreamOpsPatchTheQueueByID() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4262420Z ◇ Test markdownKeepsAnOpenFenceAndSplitsParagraphsFromBullets() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4262890Z ◇ Test timesAreRelativeToNow() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4263430Z ◇ Test everyFixtureDecodesAndEncodesBackTheSame() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4263960Z ◇ Test theReplySoFarIsDrawnLastWithItsCaret() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4264940Z ◇ Test insertGoesBeforeAfterOrAtTheEndAndScreenAndDotReplaceTheWhole() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4265580Z ◇ Test aTypedAddressOrALinkIsAServer() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4266200Z ◇ Test anActionAnswersWithItsChoiceOrOtherTextAndItsOneValue() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4266870Z ◇ Test eachPinnedPersonaIsInItsNewestChatsState() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4267290Z ◇ Test agoIsShort(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4267780Z ➜ Test pairsListsAndStreamsAReply() skipped.
+apple-quality	just apple-check	2026-11-10T17:44:00.4268270Z ◇ Test aCardComesAsItsBlockAndItsAnswerPostsTheItemsChoice() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4269130Z ◇ Test aTapSendsItsActionWithTheTapsTheSourcesAndTheGivenValues() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4269860Z ◇ Test aSheetSendsEveryFormsFieldsAndAFieldsOwnValueWins() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4270570Z ◇ Test aServerPersonaGetsInitialsATintAndACoatByItsID() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4271230Z ◇ Test aDestructiveTapIsAlwaysConfirmedTitledWithItsLabel() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4271750Z ◇ Test eachStateHasItsFigureWordAndPose() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4272350Z ◇ Test theChatListDrawsEachRowWithItsPersonaOrItsAgent() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4272830Z ◇ Test aTurnIsWorkingWhileItRunsOrConnects() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4273420Z ◇ Test aServerAdvertisedOnTheLANIsFoundAtItsAddress() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4273990Z ◇ Test aNewThreadStartsForAPersona() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4274530Z ◇ Test modelsKeepWhatTheyAreGiven() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4275070Z ◇ Test aThreadsStateIsALanesState(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4275590Z ◇ Test aResolvedServerIsAnHTTPAddress() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4276170Z ◇ Test sendQueueAndTheTurnsCallsPostTheirBodies() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4276630Z ◇ Test theKeychainKeepsOneServer() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4277200Z ◇ Test aDroppedStreamReconnectsWithLastEventIDAndGetsWhatItMissed() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4277730Z ◇ Test aCodePairsAndAClaimWaitsThenPairs() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4278230Z ◇ Test aDeclinedOrGoneClaimSaysWhy() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4278580Z ◇ Test aClientForAServerCarriesItsCookie() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4279030Z ◇ Test cooeesOwnSentenceIsTheError() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4279540Z ◇ Test aServerErrorOrABadEventIsRetried() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4280030Z ◇ Test threadsPersonasAndASliceDecodeAsDocumented() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4282350Z ◇ Test sseFramesFollowTheSpec() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4283030Z ◇ Test aRefusedCodeSaysWhy(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4283710Z ◇ Test aCancelledStreamStops() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4284320Z ◇ Test aCardsAnswerGoesBackAsItsItemsChoiceWhileTheCardWaits() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4284950Z ◇ Test aRefusedAnswerSaysWhyAndTheCardCanBeTappedAgain() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4285880Z ◇ Test aRefusedStreamEnds() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4286510Z ◇ Test everyCatalogueBlockDrawsAndAnUnknownOneIsSkipped() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4287120Z ◇ Test theQueueDrawsItsStreamsOps() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4287560Z ◇ Test everyCardDraws(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4289500Z ◇ Test everyScreenDraws(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4289870Z ◇ Test cancelTakesBackTheAskAndGoesToTheWelcome() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4290360Z ◇ Test anAddressAsksThenWaitsForApproval() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4291000Z ◇ Test aBadAddressOrAFailedAskSaysWhy() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4291410Z ◇ Test aDeclineGoesBackToTheAddressWithWhy() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4291920Z ◇ Test stepsTheAddressAndNearbyServers() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4292320Z ◇ Test aLinkWithACodePairsAndGoesHome() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4293140Z ◇ Test homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4293710Z ◇ Test withoutHomeNoChatOpens() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4294140Z ◇ Test aRefreshLoadsOnceAndClearsTheError() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4294750Z ◇ Test aChatOpensFromTheListWithItsPersona() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4295130Z ◇ Test aForgottenDevicePairsAgain() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4295590Z ◇ Test anUnpairedAppPairsThenShowsHome() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4296050Z ◇ Test frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4296890Z ◇ Test aNewChatBecomesItsThreadOnceStarted() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4297470Z ◇ Test case passing 2 arguments seconds → 999970, text → "now" to agoIsShort(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4298260Z ◇ Test case passing 2 arguments seconds → 999000, text → "16m" to agoIsShort(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4299180Z ◇ Test case passing 2 arguments seconds → 990000, text → "2h" to agoIsShort(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4299780Z ◇ Test case passing 2 arguments seconds → 800000, text → "2d" to agoIsShort(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4301360Z ◇ Test case passing 2 arguments seconds → 1000500, text → "now" to agoIsShort(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4302510Z ◇ Test case passing 2 arguments api → "working", state → .working to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4303350Z ◇ Test case passing 2 arguments api → "connecting", state → .working to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4304520Z ◇ Test case passing 2 arguments api → "blocked", state → .needs to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4305260Z ◇ Test case passing 2 arguments api → "done", state → .done to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4306110Z ◇ Test case passing 2 arguments api → "error", state → .fail to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4306840Z ◇ Test case passing 2 arguments api → "unconnected", state → .fail to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4307900Z ◇ Test case passing 2 arguments api → "", state → .idle to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4308710Z ◇ Test case passing 2 arguments api → "ended", state → .idle to aThreadsStateIsALanesState(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4310030Z ◇ Test case passing 2 arguments location → "/pair?bad=wrong&left=4", why → "That code is wrong." to aRefusedCodeSaysWhy(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4311360Z ◇ Test case passing 2 arguments location → "/pair?bad=expired", why → "That code ran out: get a new one." to aRefusedCodeSaysWhy(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4312390Z ◇ Test case passing 2 arguments location → "/pair?bad=limit&wait=30", why → "Too many wrong codes: wait a minute." to aRefusedCodeSaysWhy(_:_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4314610Z ◇ Test case passing 1 argument name → "own-cards.json" to everyCardDraws(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4315420Z ◇ Test case passing 1 argument name → "queue.json" to everyScreenDraws(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4316270Z ◇ Test case passing 1 argument name → "cards.json" to everyCardDraws(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4316970Z ◇ Test case passing 1 argument name → "events.json" to everyScreenDraws(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4317710Z ◇ Test case passing 1 argument name → "fleets.json" to everyScreenDraws(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4318370Z ◇ Test case passing 1 argument name → "hello.json" to everyScreenDraws(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4319180Z ◇ Test case passing 1 argument frame → home-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4319930Z ✔ Test toolsFoldCardsAreBlocksAndNotesShow() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4320420Z ◇ Test theFirstMessageStartsANewChat() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4320900Z ◇ Test aFailedLoadSaysWhyAndTriesAgain() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4321590Z ✔ Test markdownKeepsAnOpenFenceAndSplitsParagraphsFromBullets() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4322230Z ◇ Test aFailedCallSaysWhy() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4323340Z ◇ Test aChatLoadsItsSliceThenFollowsItsStream() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4323940Z ◇ Test aSendQueuesWhileATurnRuns() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4324340Z ◇ Test queuedMessagesAreSteeredOrTakenBack() started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4324900Z ✔ Test timesAreRelativeToNow() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4325590Z ✔ Test theReplySoFarIsDrawnLastWithItsCaret() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4326340Z ✔ Test insertGoesBeforeAfterOrAtTheEndAndScreenAndDotReplaceTheWhole() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4326980Z ✔ Test aTypedAddressOrALinkIsAServer() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4328220Z ✔ Test anActionAnswersWithItsChoiceOrOtherTextAndItsOneValue() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4328950Z ✔ Test eachPinnedPersonaIsInItsNewestChatsState() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4329630Z ✔ Test agoIsShort(_:_:) with 5 test cases passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4330240Z ✔ Test queueStreamOpsPatchTheQueueByID() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4331190Z ✔ Test aTapSendsItsActionWithTheTapsTheSourcesAndTheGivenValues() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4332170Z ✔ Test aSheetSendsEveryFormsFieldsAndAFieldsOwnValueWins() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4332990Z ✔ Test aServerPersonaGetsInitialsATintAndACoatByItsID() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4333780Z ✔ Test aDestructiveTapIsAlwaysConfirmedTitledWithItsLabel() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4334410Z ✔ Test eachStateHasItsFigureWordAndPose() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4335220Z ✔ Test theChatListDrawsEachRowWithItsPersonaOrItsAgent() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4335810Z ✔ Test aTurnIsWorkingWhileItRunsOrConnects() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4336430Z ✔ Test modelsKeepWhatTheyAreGiven() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4336990Z ✔ Test aThreadsStateIsALanesState(_:_:) with 8 test cases passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4337740Z ✔ Test aResolvedServerIsAnHTTPAddress() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4338440Z ✔ Test aClientForAServerCarriesItsCookie() passed after 0.041 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4339120Z ✔ Test sseFramesFollowTheSpec() passed after 0.058 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4339920Z ✔ Test everyFixtureDecodesAndEncodesBackTheSame() passed after 0.064 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4340610Z ✔ Test aNewThreadStartsForAPersona() passed after 0.064 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4341140Z ✔ Suite ItemsTests passed after 0.065 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4341670Z ✔ Suite ListingTests passed after 0.065 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4342200Z ✔ Suite ActionTests passed after 0.065 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4342580Z ✔ Suite ModelsTests passed after 0.065 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4344130Z ✔ Test aRefusedCodeSaysWhy(_:_:) with 3 test cases passed after 0.063 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4344730Z ✔ Suite ScreenTests passed after 0.067 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4345720Z ✔ Test aCardComesAsItsBlockAndItsAnswerPostsTheItemsChoice() passed after 0.084 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4346410Z ✔ Suite CardClientTests passed after 0.085 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4347240Z ✘ Test everyCatalogueBlockDrawsAndAnUnknownOneIsSkipped() recorded an issue at BlockRenderTests.swift:34:60: Expectation failed: (Self.height(block) → 0) > 0
+apple-quality	just apple-check	2026-11-10T17:44:00.4348000Z ↳ images
+apple-quality	just apple-check	2026-11-10T17:44:00.4348490Z ◇ Test case passing 1 argument frame → chat-streaming-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4349150Z ✔ Test theKeychainKeepsOneServer() passed after 5.028 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4349780Z ✘ Test everyCatalogueBlockDrawsAndAnUnknownOneIsSkipped() failed after 6.526 seconds with 1 issue.
+apple-quality	just apple-check	2026-11-10T17:44:00.4350420Z ✔ Test theQueueDrawsItsStreamsOps() passed after 6.526 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4351380Z ✔ Test everyCardDraws(_:) with 2 test cases passed after 6.527 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4353050Z ✔ Test aCancelledStreamStops() passed after 6.530 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4354460Z ✔ Test everyScreenDraws(_:) with 4 test cases passed after 6.534 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4355090Z ✔ Test cooeesOwnSentenceIsTheError() passed after 6.536 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4355770Z ✔ Test aServerAdvertisedOnTheLANIsFoundAtItsAddress() passed after 6.536 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4356380Z ✔ Test aRefusedStreamEnds() passed after 6.536 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4357040Z ◇ Test case passing 1 argument frame → chat-card-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4357810Z ✔ Test threadsPersonasAndASliceDecodeAsDocumented() passed after 6.536 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4358630Z ✔ Test aDeclinedOrGoneClaimSaysWhy() passed after 6.538 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4360070Z ✘ Suite BlockRenderTests failed after 6.541 seconds with 1 issue.
+apple-quality	just apple-check	2026-11-10T17:44:00.4361670Z ✔ Suite DeviceTests passed after 7.958 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4363120Z ◇ Test case passing 1 argument frame → chat-cards-more-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4364650Z ✔ Test aCodePairsAndAClaimWaitsThenPairs() passed after 7.958 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4366440Z ✔ Test sendQueueAndTheTurnsCallsPostTheirBodies() passed after 7.958 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4367820Z ◇ Test case passing 1 argument frame → chat-conductor-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4368620Z ✔ Suite ClientTests passed after 9.437 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4369210Z ◇ Test case passing 1 argument frame → persona-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4369690Z ✔ Test withoutHomeNoChatOpens() passed after 10.827 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4370220Z ✔ Test aForgottenDevicePairsAgain() passed after 10.827 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4370690Z ✔ Test anUnpairedAppPairsThenShowsHome() passed after 10.827 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4371460Z ✔ Test aRefusedAnswerSaysWhyAndTheCardCanBeTappedAgain() passed after 10.828 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4372160Z ✔ Test aDeclineGoesBackToTheAddressWithWhy() passed after 12.198 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4372930Z ◇ Test case passing 1 argument frame → avatar-menu-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4373680Z ◇ Test case passing 1 argument frame → pair-welcome-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4375050Z ✔ Test aServerErrorOrABadEventIsRetried() passed after 14.220 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4375870Z ◇ Test case passing 1 argument frame → pair-scan-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4376620Z ◇ Test case passing 1 argument frame → pair-nearby-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4377440Z ✔ Test aDroppedStreamReconnectsWithLastEventIDAndGetsWhatItMissed() passed after 17.492 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4378060Z ✔ Test aBadAddressOrAFailedAskSaysWhy() passed after 17.492 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4379490Z ✔ Test aLinkWithACodePairsAndGoesHome() passed after 18.884 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4380090Z ✔ Suite EventsTests passed after 18.886 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4380630Z ◇ Test case passing 1 argument frame → pair-address-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4381430Z ◇ Test case passing 1 argument frame → pair-waiting-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4382110Z ◇ Test case passing 1 argument frame → pair-paired-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4382910Z ✔ Test aCardsAnswerGoesBackAsItsItemsChoiceWhileTheCardWaits() passed after 23.049 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4383630Z ◇ Test case passing 1 argument frame → home-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4384370Z ✔ Test aRefreshLoadsOnceAndClearsTheError() passed after 23.049 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4385090Z ✔ Test aNewChatBecomesItsThreadOnceStarted() passed after 23.049 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4385790Z ✔ Suite CardAnswerTests passed after 24.508 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4386410Z ◇ Test case passing 1 argument frame → chat-streaming-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4387090Z ◇ Test case passing 1 argument frame → chat-card-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4388040Z ◇ Test case passing 1 argument frame → chat-cards-more-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4388910Z ◇ Test case passing 1 argument frame → chat-conductor-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4389720Z ◇ Test case passing 1 argument frame → persona-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4390530Z ◇ Test case passing 1 argument frame → avatar-menu-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4391530Z ◇ Test case passing 1 argument frame → pair-welcome-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4392260Z ◇ Test case passing 1 argument frame → pair-scan-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4392820Z ✔ Test aFailedCallSaysWhy() passed after 35.099 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4393480Z ◇ Test case passing 1 argument frame → pair-nearby-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4394350Z ◇ Test case passing 1 argument frame → pair-address-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4395250Z ◇ Test case passing 1 argument frame → pair-waiting-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4396290Z ✔ Test anAddressAsksThenWaitsForApproval() passed after 39.903 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4397070Z ✔ Test cancelTakesBackTheAskAndGoesToTheWelcome() passed after 39.903 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4397780Z ✔ Test queuedMessagesAreSteeredOrTakenBack() passed after 41.111 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4398540Z ✔ Test aChatOpensFromTheListWithItsPersona() passed after 41.151 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4399210Z ✔ Test theFirstMessageStartsANewChat() passed after 41.111 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4399830Z ◇ Test case passing 1 argument frame → pair-paired-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4400420Z ✔ Suite AppFeatureTests passed after 41.153 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4401170Z ◇ Test case passing 1 argument frame → home-terminal-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4402170Z ◇ Test case passing 1 argument frame → chat-terminal-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4402990Z ◇ Test case passing 1 argument frame → home-scene-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4403840Z ◇ Test case passing 1 argument frame → mac-setup-welcome to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4404640Z ◇ Test case passing 1 argument frame → mac-setup-folders to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4405600Z ◇ Test case passing 1 argument frame → mac-setup-signins to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4406240Z ✔ Test aFailedLoadSaysWhyAndTriesAgain() passed after 54.738 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4407730Z ◇ Test case passing 1 argument frame → mac-setup-tailscale to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4408560Z ◇ Test case passing 1 argument frame → mac-setup-qr to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4409370Z ◇ Test case passing 1 argument frame → mac-setup-approve to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4410140Z ◇ Test case passing 1 argument frame → mac-connect to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4410790Z ◇ Test case passing 1 argument frame → mac-window-dark to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4411610Z ◇ Test case passing 1 argument frame → mac-window-light to frameMatchesTheDesign(_:) started.
+apple-quality	just apple-check	2026-11-10T17:44:00.4412340Z ✔ Test frameMatchesTheDesign(_:) with 38 test cases passed after 72.953 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4412930Z ✔ Suite SnapshotTests passed after 72.960 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4413370Z ✔ Test aSendQueuesWhileATurnRuns() passed after 72.919 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4414720Z ✔ Test stepsTheAddressAndNearbyServers() passed after 72.959 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4415270Z ✔ Suite PairingFeatureTests passed after 72.961 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4415890Z ✔ Test homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() passed after 72.961 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4416460Z ✔ Suite HomeFeatureTests passed after 72.963 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4417020Z ✔ Test aChatLoadsItsSliceThenFollowsItsStream() passed after 72.925 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4422700Z ✔ Suite ChatFeatureTests passed after 72.967 seconds.
+apple-quality	just apple-check	2026-11-10T17:44:00.4429020Z ✘ Test run with 64 tests in 17 suites failed after 72.968 seconds with 1 issue.
+apple-quality	just apple-check	2026-11-10T17:44:00.4658950Z error: recipe `apple-check` failed on line 47 with exit code 1
+apple-quality	just apple-check	2026-11-10T17:44:00.4847920Z ##[error]Process completed with exit code 1.
