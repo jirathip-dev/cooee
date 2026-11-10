@@ -352,12 +352,21 @@ impl Live {
     /// Stores and then publishes `changes`, pushing the ones the owner should hear of.
     fn publish(&mut self, hub: &Hub, changes: Vec<Change>) -> Result<(), StoreError> {
         let store = &hub.store;
-        for change in changes {
+        for mut change in changes {
+            if let Change::Item(i) = &mut change
+                && matches!(i.body, Body::Approval { .. })
+                && !self.meta.room.is_empty()
+            {
+                i.speaker.clone_from(&self.meta.profile);
+                if let Some(c) = self.chat.items.iter_mut().find(|c| c.id == i.id) {
+                    c.speaker.clone_from(&i.speaker);
+                }
+            }
             let watched = self.tx.receiver_count() > 0;
             if let Some(n) = note(
                 &self.meta, &self.chat, &change, &self.was, watched, &hub.theme,
             ) {
-                hub.push.send(&n);
+                hub.push.send(&hub.routed(&self.meta, n));
             }
             if let Change::State(turn) = &change {
                 self.was.clone_from(&turn.state);
@@ -704,19 +713,14 @@ impl Hub {
             live.stuck = true;
             "blocked".clone_into(&mut live.chat.turn.state);
             live.chat.turn.note = Some("no progress for 30 minutes".to_owned());
-            let said = format!("{}: no progress for 30 minutes", live.meta.agent);
-            self.push.send(&Note {
-                title: live.meta.title.clone(),
-                body: self
-                    .theme
-                    .push_body("needs", &said)
-                    .chars()
-                    .take(120)
-                    .collect(),
-                tag: live.meta.id.clone(),
-                url: format!("/t/{}", live.meta.id),
-                item: live.chat.items.last().map_or(0, |i| i.id),
-            });
+            let item = live.chat.items.last().map_or(0, |i| i.id);
+            let said = (
+                "needs",
+                live.meta.agent.as_str(),
+                "no progress for 30 minutes",
+            );
+            let n = Note::new(&live.meta, said, item, &self.theme);
+            self.push.send(&self.routed(&live.meta, n));
             let turn = live.chat.turn.clone();
             if let Err(e) = live.publish(self, vec![Change::State(turn)]) {
                 eprintln!("cooee: {e}");
@@ -1705,6 +1709,7 @@ impl Hub {
     #[must_use]
     pub fn list(&self) -> Vec<Summary> {
         let personas = personas::list(self.config_dir(), &self.data);
+        let mut asks = Vec::new();
         let mut rows: Vec<Summary> = self
             .all()
             .iter()
@@ -1712,6 +1717,19 @@ impl Hub {
                 let live = lock(live);
                 // A room's member sessions are the room's (#154).
                 if !live.meta.room.is_empty() {
+                    let ask = live.chat.items.iter().find_map(|i| match &i.body {
+                        Body::Approval {
+                            tool,
+                            tapped: None,
+                            chosen: None,
+                            card,
+                            ..
+                        } if card.line.is_none() => {
+                            Some((live.meta.room.clone(), i.speaker.clone(), tool.clone()))
+                        }
+                        _ => None,
+                    });
+                    asks.extend(ask);
                     return None;
                 }
                 let last = live.chat.items.last();
@@ -1769,6 +1787,16 @@ impl Hub {
                 })
             })
             .collect();
+        for (room, persona, tool) in asks {
+            let Some(row) = rows.iter_mut().find(|r| r.id == room) else {
+                continue;
+            };
+            let name = personas.iter().find(|p| p.id == persona);
+            let name = name.map_or(persona.as_str(), |p| p.name.as_str());
+            row.last = format!("{name}: {tool} waiting");
+            row.unseen += 1;
+            row.unread = true;
+        }
         rows.sort_by_key(|r| std::cmp::Reverse(r.at));
         rows
     }
