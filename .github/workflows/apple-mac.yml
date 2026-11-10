@@ -16,6 +16,7 @@ on:
   pull_request:
     paths:
       - "apple/**"
+      - "crates/**"
       - "scripts/mac-app.sh"
       - "scripts/mac-bins.sh"
       - ".github/workflows/apple-mac.yml"
@@ -29,14 +30,15 @@ jobs:
   dmg:
     runs-on: macos-26
     timeout-minutes: 60
-    # Pull requests get no environment, so no secrets: they build the unsigned .dmg.
-    environment: ${{ github.event_name == 'pull_request' && '' || 'mac-release' }}
+    # Pull requests get no environment and no secrets: they build the unsigned .dmg. (`a && '' || b` is always b, as
+    # '' is falsy, so the environment name is the truthy branch.)
+    environment: ${{ github.event_name != 'pull_request' && 'mac-release' || '' }}
     env:
-      MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
-      MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
-      NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
-      NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
-      NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+      MAC_CERT_P12: ${{ github.event_name != 'pull_request' && secrets.MAC_CERT_P12 || '' }}
+      MAC_CERT_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.MAC_CERT_PASSWORD || '' }}
+      NOTARY_KEY_P8: ${{ github.event_name != 'pull_request' && secrets.NOTARY_KEY_P8 || '' }}
+      NOTARY_KEY_ID: ${{ github.event_name != 'pull_request' && secrets.NOTARY_KEY_ID || '' }}
+      NOTARY_ISSUER_ID: ${{ github.event_name != 'pull_request' && secrets.NOTARY_ISSUER_ID || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.99.1

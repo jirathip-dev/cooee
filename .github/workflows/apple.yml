@@ -72,8 +72,9 @@ jobs:
       - name: the client against it (swift test)
         working-directory: apple
         run: COOEE_PAIR_LINK="$(cat "$RUNNER_TEMP/pair")" swift test --filter LiveTests
-      # Built first: a pairing code lasts 10 minutes, so each is made just before its run. Once per appearance, set with simctl (the test's own XCUIDevice.appearance left this simulator light); each
-      # run pairs afresh, so the keychain is emptied first.
+      # Built first: a pairing code lasts 10 minutes, so each is made just before its run. Once per appearance, set
+      # with simctl (the test's own XCUIDevice.appearance left this simulator light); each run pairs afresh, so the
+      # keychain is emptied first.
       - name: the app in the simulator
         working-directory: apple
         run: |
