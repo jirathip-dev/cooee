@@ -26,4 +26,7 @@ pub use login::{Provider, Status, links, redact};
 pub use profiles::Profile;
 pub use shed::{AGENTS_FIX, Agent, Launch, Shed, ShedError};
 pub use shed_proto;
-pub use store::{FORMAT, Kind, Member, Message, Queued, Role, Store, StoreError, Thread, Workflow};
+pub use store::{
+    FORMAT, Kind, Member, Message, Queued, Reason, Role, RoomTurn, Store, StoreError, Thread,
+    Workflow,
+};

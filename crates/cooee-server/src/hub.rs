@@ -629,9 +629,11 @@ impl Hub {
         if let Some(sent) = live.sent.take_if(|_| chunk) {
             cooee_core::perf::first_token(&live.meta.id, &live.meta.agent, sent);
         }
-        // A member's final reply goes to its room (#154).
+        // A member's final reply goes to its room (#154); a cancelled one is a stopped round's, never the next's.
         let reply = changes.iter().find_map(|c| match c {
-            Change::Item(i) if matches!(i.body, Body::Agent { .. }) => Some(i.body.clone()),
+            Change::Item(i) if matches!(&i.body, Body::Agent { stop_reason, .. } if stop_reason != "cancelled") => {
+                Some(i.body.clone())
+            }
             _ => None,
         });
         let seat = (live.meta.room.clone(), live.meta.profile.clone());
@@ -674,6 +676,7 @@ impl Hub {
     /// Surfaces each working turn with no shed event for 30 minutes before `now` as needs-you, once: the thread
     /// shows blocked with a note, and a push says so.
     pub fn watch(&self, now: u64) {
+        self.deadlines(now);
         for live in self.all() {
             let mut live = lock(&live);
             if live.stuck || live.chat.turn.state != "working" || now < live.moved + STUCK {
@@ -1612,13 +1615,19 @@ impl Hub {
         Ok(item)
     }
 
-    /// Cancels the turn in progress.
+    /// Cancels the turn in progress; in a room, stop: the member taking its turn is cancelled and the rest dropped.
     ///
     /// # Errors
     /// [`HubError::Shed`] when shed fails.
     pub fn cancel(&self, id: &str) -> Result<(), HubError> {
         let live = self.live(id)?;
-        let terminal = lock(&live).meta.terminal.clone();
+        let (kind, terminal) = {
+            let l = lock(&live);
+            (l.meta.kind.clone(), l.meta.terminal.clone())
+        };
+        if kind == Kind::Room {
+            return self.stop_round(id, "stop", "");
+        }
         Ok(self.shed.cancel(&terminal)?)
     }
 
@@ -2303,6 +2312,35 @@ mod tests {
         assert_eq!(hub.list()[0].state, "blocked");
         hub.apply(event("idle", 2, EventKind::Text { text: "w".into() }));
         assert_eq!(state(&hub).state, "working");
+    }
+
+    /// #155 (G2): a room's turns on an owner message stop 10 minutes after it (a fake clock): its queued turns are
+    /// dropped, the room told and its pages sent `room-stop`, once.
+    #[test]
+    fn a_rooms_turns_stop_at_the_deadline() {
+        let dir = scratch("deadline");
+        let t0 = now();
+        let turn = |m: &str| json!({ "member": m, "reason": "round" });
+        let meta = json!({ "format": 1, "thread": { "id": "room", "title": "room", "messages": [], "kind": "room",
+            "members": [{ "persona": "ada" }, { "persona": "bo" }], "round": [turn("ada"), turn("bo")], "asked_at": t0 } });
+        fs::write(dir.join("data/threads/room.json"), meta.to_string()).unwrap();
+        fs::write(dir.join("data/threads/room.jsonl"), "").unwrap();
+        let hub = hub(&dir);
+        let round = |hub: &Hub| hub.thread("room").unwrap().0.round.len();
+        hub.watch(t0 + rooms::DEADLINE - 1);
+        assert_eq!(round(&hub), 2);
+        let (_, mut rx) = hub.subscribe("room", "").unwrap();
+        hub.watch(t0 + rooms::DEADLINE);
+        assert_eq!(round(&hub), 0);
+        let stop = rx.try_recv().unwrap();
+        assert_eq!(
+            (stop.event, stop.data),
+            ("room-stop", json!({ "reason": "deadline" }).to_string())
+        );
+        let note = rx.try_recv().unwrap();
+        assert!(note.data.contains("10 minutes passed"), "{}", note.data);
+        hub.watch(t0 + 2 * rooms::DEADLINE);
+        assert!(rx.try_recv().is_err());
     }
 
     /// #55: however often the agent list is read, `shed agents` runs once a minute (a fake clock); a failed run
