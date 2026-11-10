@@ -1,0 +1,8 @@
+Decided: the e2e fake agent reports its models through the fake shed's session.json, and models.json is seeded so /new offers them
+Because: web/e2e/serve.sh:110
+Decided: the removed provider keys models and model are dropped from the e2e config, not tolerated
+Because: crates/cooee-core/src/login.rs:20
+Rejected: accepting models/model in config with a warning — keeps a second, dead way to name models
+Rejected: renaming picker short names to opus/sonnet — opus still resolves; a short name is the id's alphabetic words
+Check: new-thread.spec.mjs:72 picks sonnet from the live list and the bar shows it; serve.sh starts cooee with no unknown fields
+Owner: the browser tests now get their model list from the fake agent, like real chats do
