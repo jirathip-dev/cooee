@@ -113,6 +113,11 @@ commit = "$(git -C "$tmp/greet" rev-parse HEAD)"
 description = "the example plugin"
 EOF
 
+# The models the fake agent reports (#193): its sessions' list, and the same kept from an earlier start so /new offers
+# them before any session.
+echo '{"id":"s1","model":"opus-2","models":[["opus-2","Opus 2"],["sonnet-2","Sonnet 2"]]}' >"$tmp/shed/session.json"
+echo '[{"agent":"fake-acp","account":"","models":[["opus-2","Opus 2"],["sonnet-2","Sonnet 2"]],"seen":'"${now}000"'}]' >"$tmp/data/models.json"
+
 cat >"$tmp/config.toml" <<EOF
 port = ${PORT:?}
 roots = ["$tmp/root"]
@@ -128,8 +133,6 @@ home = "FAKE_HOME"
 login = ["$tmp/login-390.sh"]
 status = ["$tmp/status-390.sh"]
 usage = ["$tmp/usage-390.sh"]
-models = ["opus", "sonnet"]
-model = ["FAKE_MODEL={}"]
 efforts = ["low", "high"]
 effort = ["--effort", "{}"]
 

@@ -513,29 +513,24 @@ impl Logins {
         Ok((account, launch, instructions))
     }
 
-    /// The models and efforts `agent`'s provider offers (#553 row 34).
+    /// The efforts `agent`'s provider offers (#553 row 34).
     #[must_use]
-    pub fn choices(&self, agent: &str) -> (Vec<String>, Vec<String>) {
+    pub fn efforts(&self, agent: &str) -> Vec<String> {
         let p = self.providers.iter().find(|p| p.agent == agent);
-        p.map(|p| (p.models.clone(), p.efforts.clone()))
-            .unwrap_or_default()
+        p.map(|p| p.efforts.clone()).unwrap_or_default()
     }
 
-    /// The words that start `agent` on `model` and `effort` (both may be empty).
+    /// The words that start `agent` on `effort` (empty: its default).
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a pick its provider doesn't offer.
-    pub fn picks(&self, agent: &str, model: &str, effort: &str) -> Result<Vec<String>, HubError> {
+    /// [`HubError::Refused`] for an effort its provider doesn't offer.
+    pub fn picks(&self, agent: &str, effort: &str) -> Result<Vec<String>, HubError> {
         let p = self.providers.iter().find(|p| p.agent == agent);
         let words = match p {
-            Some(p) => p.picks(model, effort),
-            None => (model.is_empty() && effort.is_empty()).then(Vec::new),
+            Some(p) => p.picks(effort),
+            None => effort.is_empty().then(Vec::new),
         };
-        words.ok_or_else(|| {
-            HubError::Refused(format!(
-                "{agent} offers no model {model:?} or effort {effort:?}"
-            ))
-        })
+        words.ok_or_else(|| HubError::Refused(format!("{agent} offers no effort {effort:?}")))
     }
 }
 
