@@ -1,0 +1,11 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-154-r2/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.33s
+     Running tests/rooms.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-verify-154-r2/debug/deps/rooms-61e58d20662ecba1)
+
+running 3 tests
+test members_are_given_final_replies_only ... ok
+test each_member_takes_a_turn_in_its_own_session_and_hears_the_others_attributed ... ok
+test members_join_and_leave_up_to_five_the_conductor_but_never_a_lane ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.32s
+

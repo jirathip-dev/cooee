@@ -1,0 +1,33 @@
+$ POST /personas {"name":"Ada","agent":"fake-acp"}
+{"id":"ada","name":"Ada","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[]}
+-> HTTP 200
+$ POST /personas {"name":"Bo","agent":"fake-acp"}
+{"id":"bo","name":"Bo","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[]}
+-> HTTP 200
+$ POST /personas {"name":"Cy","agent":"fake-acp"}
+{"id":"cy","name":"Cy","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[]}
+-> HTTP 200
+$ POST /personas {"name":"Di","agent":"fake-acp"}
+{"id":"di","name":"Di","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[]}
+-> HTTP 200
+$ GET /personas 
+[{"id":"ada","name":"Ada","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[]},{"id":"bo","name":"Bo","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[]},{"id":"cards","name":"Cards","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":["hello"]},{"id":"cy","name":"Cy","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[]},{"id":"di","name":"Di","character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[]},{"id":"reviewer","name":"Reviewer","character":"","instructions":"Be brief.\n","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[],"profile":"reviewer"}]
+-> HTTP 200
+$ POST /rooms {"members":["cards"],"random_id":"v1"}
+a room has 2 to 5 members
+-> HTTP 400
+$ POST /rooms {"members":["cards","cards"],"random_id":"v2"}
+cards is in the room twice
+-> HTTP 400
+$ POST /rooms {"members":["cards","reviewer","ada","bo","cy","di"],"random_id":"v3"}
+a room has 2 to 5 members
+-> HTTP 400
+$ POST /rooms {"members":["cards","w-lane-impl"],"random_id":"v4"}
+w-lane-impl is a lane thread: it stays a Workflow chat, never a room member
+-> HTTP 400
+$ POST /rooms {"title":"Verify room","members":["cards","reviewer"],"random_id":"v5"}
+{"id":"t1a1c49098eb"}
+-> HTTP 200
+$ POST /rooms {"title":"Verify room","members":["cards","reviewer"],"random_id":"v5"}
+{"id":"t1a1c49098eb"}
+-> HTTP 200

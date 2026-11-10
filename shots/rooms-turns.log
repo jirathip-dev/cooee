@@ -1,0 +1,67 @@
+$ POST /threads/t1a1c49098eb/send {"text":"hi all","random_id":"m1"}
+{"id":1,"at":1794299183155,"seq":0,"speaker":"owner","kind":"you","text":"hi all","random_id":"m1"}
+-> HTTP 200
+$ GET /threads/t1a1c49098eb/messages (speaker, kind, text)
+  1 'owner' you 'hi all'
+  2 'cards' agent 'Hello'
+  3 'reviewer' agent 'Hello'
+$ POST /threads/t1a1c49098eb/send {"text":"use a tool","random_id":"m2"}
+{"id":4,"at":1794299189281,"seq":0,"speaker":"owner","kind":"you","text":"use a tool","random_id":"m2"}
+-> HTTP 200
+$ GET /threads/t1a1c49098eb/messages (speaker, kind, text)
+  1 'owner' you 'hi all'
+  2 'cards' agent 'Hello'
+  3 'reviewer' agent 'Hello'
+  4 'owner' you 'use a tool'
+  5 'cards' agent 'Read it.'
+  6 'reviewer' agent 'Read it.'
+$ GET /threads (room row)
+  t1a1c49098eb Verify room ['cards', 'reviewer'] None
+  w-lane-done cooee #30 None None
+  w-lane-rev cooee #31 None None
+  w-lane-impl cooee #33 None None
+  pick-project Picked project None None
+  pick-other Picked other None None
+  long-1440 Long thread None None
+  long-390 Long thread None None
+$ POST /threads/t1a1c49098eb/members {"persona":"ada"}
+["cards","reviewer","ada"]
+-> HTTP 200
+$ POST /threads/t1a1c49098eb/members {"persona":"ada"}
+["cards","reviewer","ada"]
+-> HTTP 200
+$ POST /threads/t1a1c49098eb/members {"persona":"bo"}
+["cards","reviewer","ada","bo"]
+-> HTTP 200
+$ POST /threads/t1a1c49098eb/members {"persona":"cy"}
+["cards","reviewer","ada","bo","cy"]
+-> HTTP 200
+$ POST /threads/t1a1c49098eb/members {"persona":"di"}
+a room has at most 5 members
+-> HTTP 400
+$ POST /threads/t1a1c49098eb/members {"persona":"w-lane-rev"}
+w-lane-rev is a lane thread: it stays a Workflow chat, never a room member
+-> HTTP 400
+$ POST /threads/t1a1c49098eb/members {"persona":"cards","remove":true}
+["reviewer","ada","bo","cy"]
+-> HTTP 200
+$ POST /threads/t1a1c49098eb/members {"persona":"cards","remove":true}
+["reviewer","ada","bo","cy"]
+-> HTTP 200
+$ POST /threads/long-390/members {"persona":"ada"}
+long-390 isn't a room
+-> HTTP 400
+$ POST /threads/t1a1c49098eb/send once more (after cards removed)
+{"id":7,"at":1794299215783,"seq":0,"speaker":"owner","kind":"you","text":"once more","random_id":"m3"}
+-> HTTP 200
+  1 'owner' you 'hi all'
+  2 'cards' agent 'Hello'
+  3 'reviewer' agent 'Hello'
+  4 'owner' you 'use a tool'
+  5 'cards' agent 'Read it.'
+  6 'reviewer' agent 'Read it.'
+  7 'owner' you 'once more'
+  8 'reviewer' agent 'Hello'
+  9 'ada' agent 'Read it.'
+  10 'bo' agent 'Read it.'
+  11 'cy' agent 'Read it.'
