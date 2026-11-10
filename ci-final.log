@@ -1,0 +1,10 @@
+e434a92041d5fe9c66bdb05e72a9701be58805ba
+build (generic/platform=iOS Simulator) SUCCESS
+msrv (ubuntu-latest) SUCCESS
+build (generic/platform=macOS) SUCCESS
+msrv (macos-latest) SUCCESS
+stable (ubuntu-latest) SUCCESS
+stable (macos-latest) SUCCESS
+ts SUCCESS
+no-node SUCCESS
+ui SUCCESS
