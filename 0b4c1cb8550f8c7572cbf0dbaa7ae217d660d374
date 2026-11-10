@@ -1,0 +1,11 @@
+Decided: ask_persona lives in cooee's own MCP server and waits on the asked persona's next final reply
+Because: "starting or reusing a linked exchange thread and returning the reply"
+Decided: refuse unless the asker's can_message names the target; depth counted along asked_by, refused at 2
+Because: crates/cooee-server/src/hub/ask.rs:35
+Because: "depth 2 (an asked persona may ask one more, no further)"
+Decided: the timeout is the tool's own argument, 300 s by default, at most 600
+Because: crates/cooee-server/src/lib.rs:2111
+Rejected: a server-wide timeout setting — a config key for one knob, and tests would need a second cooee
+Check: the MCP client's read timeout (crates/cooee-server/src/mcp.rs:68) outlasts the longest ask
+Check: an exchange thread is listed and linked from the asker, and an owner reply there reaches the asked session
+Owner: the cap was raised to 23500 in #188 (q1110); the PR now fits at 22874
