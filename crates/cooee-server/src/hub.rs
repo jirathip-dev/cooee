@@ -193,6 +193,8 @@ pub struct Recipe {
     pub mcp: Vec<String>,
     /// The room it is a member's session of (#154; its persona is `profile`).
     pub room: String,
+    /// The machine it runs on (#148; empty: this host), one of [`cooee_machines::Machines::added`].
+    pub machine: String,
 }
 
 /// The threads and the shed they run on.
@@ -996,6 +998,7 @@ impl Hub {
             folder: Some(folder.to_owned()).filter(|f| !f.as_os_str().is_empty()),
             account: recipe.account.clone(),
             profile: recipe.profile.clone(),
+            machine: recipe.machine.clone(),
             model: recipe.model.clone(),
             effort: recipe.effort.clone(),
             random_id: random_id.to_owned(),
@@ -1706,6 +1709,7 @@ impl Hub {
                         .map(|p| p.id.clone())
                         .unwrap_or_default(),
                     folder: live.meta.folder.clone().unwrap_or_default(),
+                    machine: live.meta.machine.clone(),
                     state: live.chat.turn.state.clone(),
                     last: waiting.unwrap_or_else(|| {
                         text.lines().last().unwrap_or("").chars().take(80).collect()

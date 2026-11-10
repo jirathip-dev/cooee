@@ -164,6 +164,8 @@ pub struct Summary {
     pub persona: String,
     /// The working folder.
     pub folder: PathBuf,
+    /// The machine it runs on (#148; empty: this host).
+    pub machine: String,
     /// The state: `connecting`, `unconnected` (its start failed), `working`, `blocked`, `done`, `error`, `ended` or
     /// empty.
     pub state: String,

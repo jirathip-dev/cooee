@@ -69,11 +69,16 @@ impl Setup {
         (id, line, prompt["prompt"].as_str().unwrap().to_owned())
     }
 
-    /// The persona of thread `id`'s row in `GET /threads`.
-    fn row_persona(&self, id: &str) -> Value {
+    /// Thread `id`'s row in `GET /threads`.
+    fn row(&self, id: &str) -> Value {
         let rows = self.cooee.json("/threads");
         let row = rows.as_array().unwrap().iter().find(|r| r["id"] == id);
-        row.unwrap_or_else(|| panic!("no row {id}: {rows}"))["persona"].clone()
+        row.unwrap_or_else(|| panic!("no row {id}: {rows}")).clone()
+    }
+
+    /// The persona of thread `id`'s row in `GET /threads`.
+    fn row_persona(&self, id: &str) -> Value {
+        self.row(id)["persona"].clone()
     }
 
     /// `remember` called by thread `id`'s agent through cooee's own MCP server: the tool's answer.
@@ -226,7 +231,7 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
         list,
         json!([{ "id": "coder", "name": "Coder", "avatar": "idle", "character": "",
                  "instructions": "Follow the house rules.\n", "folder": "", "agent": "fake-acp",
-                 "model": "", "effort": "", "plugins": [], "profile": "coder" }])
+                 "model": "", "effort": "", "machine": "", "plugins": [], "profile": "coder" }])
     );
 
     // It runs as the profile: its env and policy on the adapter, its instructions ahead of the first message.
@@ -326,5 +331,108 @@ fn migration_attaches_drover_to_the_conductor_persona_only() {
     assert_eq!(
         (plugins("conductor"), plugins("coder")),
         (json!(["cooee-drover"]), json!([]))
+    );
+}
+
+/// #148: a persona names the machine it runs on (empty: this host), one added to shed; a thread runs on its
+/// persona's or the one picked at its start; anything else is refused; one saved before #148 is on this host with
+/// nothing lost; `GET /machines` lists the allowed ones with what shed says of them.
+#[test]
+fn a_persona_and_its_threads_name_their_machine() {
+    let s = setup("persona-machine");
+    let write = |name: &str, v: &Value| fs::write(s.shed.dir.join(name), v.to_string()).unwrap();
+    write(
+        "machines.json",
+        &json!([{ "name": "air", "target": "air.local" }]),
+    );
+    write(
+        "stats-local.json",
+        &json!({ "at": 1_800_000_000u64, "load_per_cpu": 0.42, "mem_pressure_pct": 61, "swap_used_mb": 0,
+                 "disk_free_mb": 50_000, "cpus": 10, "uptime_s": 60, "terminals": { "working": 1 } }),
+    );
+    write(
+        "stats-air.json",
+        &json!({ "machine": "air", "online": false, "last_seen": 1_700_000_000u64 }),
+    );
+
+    // Migration: a persona file from before #148 (and the profile read as one) is on this host, nothing lost.
+    let old = "name = \"Old\"\ncharacter = \"Kept.\"\ninstructions = \"Still.\"\nfolder = \"scratch\"\n\
+               agent = \"fake-acp\"\nmodel = \"\"\neffort = \"\"\nplugins = []\n";
+    fs::create_dir_all(s.dir.join("personas")).unwrap();
+    fs::write(s.dir.join("personas/old.toml"), old).unwrap();
+    let read = s.cooee.json("/personas/old");
+    assert_eq!(
+        read,
+        json!({ "id": "old", "name": "Old", "character": "Kept.", "instructions": "Still.", "folder": "scratch",
+                "agent": "fake-acp", "model": "", "effort": "", "machine": "", "plugins": [] })
+    );
+    assert_eq!(s.cooee.json("/personas/coder")["machine"], "");
+    let (plain, _, _) = s.start("old");
+    assert_eq!(s.row(&plain)["machine"], "");
+
+    // Set: kept in its file and read back; its threads run there.
+    let mut on_air = read.clone();
+    on_air["machine"] = json!("air");
+    let (status, saved) = s.call("PUT", "/personas/old", Some(&on_air));
+    assert_eq!((status, &saved["machine"]), (200, &json!("air")), "{saved}");
+    let file = fs::read_to_string(s.dir.join("personas/old.toml")).unwrap();
+    assert!(
+        file.contains("machine = \"air\"") && file.contains("character = \"Kept.\""),
+        "{file}"
+    );
+    assert_eq!(s.cooee.json("/personas/old")["machine"], "air");
+    let (id, _, _) = s.start("old");
+    assert_eq!(s.row(&id)["machine"], "air");
+
+    // Override at start: this host for one thread; the persona keeps air.
+    let new = json!({ "agent": "fake-acp", "profile": "old", "text": "hi", "random_id": "here", "machine": "" });
+    let (status, body) = s.call("POST", "/threads", Some(&new));
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(s.row(body["id"].as_str().unwrap())["machine"], "");
+    assert_eq!(s.cooee.json("/personas/old")["machine"], "air");
+
+    // Outside the allowlist: refused, for a persona and for a thread, nothing saved or started.
+    let mut nowhere = read.clone();
+    nowhere["machine"] = json!("nowhere");
+    let (status, why) = s.call("PUT", "/personas/old", Some(&nowhere));
+    assert_eq!(status, 400, "{why}");
+    assert!(why.to_string().contains("no machine nowhere"), "{why}");
+    assert_eq!(s.cooee.json("/personas/old")["machine"], "air");
+    let rows = s.cooee.json("/threads").as_array().unwrap().len();
+    let new =
+        json!({ "agent": "fake-acp", "text": "hi", "random_id": "far", "machine": "nowhere" });
+    let (status, why) = s.call("POST", "/threads", Some(&new));
+    assert_eq!(status, 400, "{why}");
+    assert_eq!(s.cooee.json("/threads").as_array().unwrap().len(), rows);
+
+    // Cleared: back on this host.
+    let (status, cleared) = s.call("PUT", "/personas/old", Some(&read));
+    assert_eq!(
+        (status, &cleared["machine"]),
+        (200, &json!("")),
+        "{cleared}"
+    );
+    let (id, _, _) = s.start("old");
+    assert_eq!(s.row(&id)["machine"], "");
+
+    // The allowed machines: this host first, then each added one, with shed's link state and health.
+    let machines = s.cooee.json("/machines");
+    let machines = machines.as_array().unwrap();
+    assert_eq!(machines.len(), 2, "{machines:?}");
+    assert_eq!(
+        (
+            &machines[0]["name"],
+            &machines[0]["online"],
+            &machines[0]["health"]["load_per_cpu"]
+        ),
+        (&json!(""), &json!(true), &json!(0.42))
+    );
+    assert_eq!(
+        (
+            &machines[1]["name"],
+            &machines[1]["online"],
+            &machines[1]["last_seen"]
+        ),
+        (&json!("air"), &json!(false), &json!(1_700_000_000u64))
     );
 }

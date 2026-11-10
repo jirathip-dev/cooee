@@ -995,6 +995,7 @@ mod tests {
             profile: String::new(),
             persona: String::new(),
             folder: PathBuf::new(),
+            machine: String::new(),
             state: "done".to_owned(),
             last: String::new(),
             at,
