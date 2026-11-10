@@ -85,6 +85,14 @@ echo 'Signed in as owner@example.com'
 EOF
   chmod +x "$tmp/login-$v.sh" "$tmp/status-$v.sh"
 done
+# The 390 provider's extra accounts' usage, shaped like Claude Code's `/usage` (#183).
+cat >"$tmp/usage-390.sh" <<'EOF'
+#!/bin/sh
+[ -n "${FAKE_HOME:-}" ] || exit 1
+echo 'Current session: 12% used · resets 4:59am (UTC)'
+echo 'Current week (all models): 40% used · resets Nov 16 at 2am (UTC)'
+EOF
+chmod +x "$tmp/usage-390.sh"
 
 # An own scheme beside the config (the built-in nord, relabelled), so the look sheet lists it.
 mkdir -p "$tmp/schemes"
@@ -119,6 +127,7 @@ agent = "fake-acp"
 home = "FAKE_HOME"
 login = ["$tmp/login-390.sh"]
 status = ["$tmp/status-390.sh"]
+usage = ["$tmp/usage-390.sh"]
 models = ["opus", "sonnet"]
 model = ["FAKE_MODEL={}"]
 efforts = ["low", "high"]
