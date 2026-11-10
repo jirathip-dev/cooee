@@ -137,6 +137,16 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
         cooee.json("/p/hello/screens/hello")["blocks"][1]["value"],
         "1"
     );
+    // A screen path its places don't declare is refused here too.
+    for off in [
+        "/p/hello/screens/other",
+        "/p/hello/screens/hellox",
+        "/p/hello/screens/hello/../../token",
+        "/p/hello/screens/hello/%2E%2E/x",
+    ] {
+        let (status, body) = cooee.get(off);
+        assert_eq!(status, 403, "{off}: {body}");
+    }
     // A plugin that isn't installed has no screens.
     assert_eq!(cooee.post("/p/nope/action", &wave).0, 404);
 

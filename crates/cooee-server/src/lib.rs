@@ -1398,7 +1398,7 @@ fn ops(e: plugin::Sse) -> Event {
 /// (`Accept` and `Last-Event-ID` go along, never the cookie); a stream of block ops comes back event by event.
 #[route(GET "/p/{name}/screens/{*rest}")]
 async fn screen(cx: &Cx) -> Result<Response> {
-    let Some((p, _)) = with_screens(cx) else {
+    let Some((p, m)) = with_screens(cx) else {
         return plain(404, "no installed plugin with screens has this name");
     };
     let uri = uri(cx);
@@ -1407,6 +1407,19 @@ async fn screen(cx: &Cx) -> Result<Response> {
         .strip_prefix(&format!("/p/{}", path_param::<Name>(cx)))
         .unwrap_or(target)
         .to_owned();
+    let path = target.split('?').next().unwrap_or_default();
+    let declared = m.places.iter().any(|pl| {
+        !pl.screen.is_empty()
+            && path
+                .strip_prefix(pl.screen.as_str())
+                .is_some_and(|r| r.is_empty() || r.starts_with('/'))
+    });
+    if !declared || path.contains("..") || path.to_ascii_lowercase().contains("%2e") {
+        return plain(
+            403,
+            &format!("{path} isn't under one of {}'s places' screens", m.name),
+        );
+    }
     let pass: Vec<(&str, String)> = ["accept", "last-event-id"]
         .into_iter()
         .filter_map(|h| Some((h, header(cx, h)?.to_owned())))
