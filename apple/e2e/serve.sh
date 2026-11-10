@@ -12,7 +12,7 @@ chat=$(cargo test --locked -p cooee --test chat --no-run 2>&1 | sed -n 's/.*Exec
 FAKE_SHED_DIR="$tmp/shed" FAKE_SHED_DELAY_MS=400 "${chat:?}" --ignored --exact fake_shed_server --quiet >/dev/null &
 fake=$!
 trap 'kill "$fake" ${srv:-} 2>/dev/null' EXIT INT TERM
-while [ ! -S "$tmp/shed/shed.sock" ]; do sleep 0.1; done
+while [ ! -S "$tmp/shed/shed.sock" ]; do kill -0 "$fake" || { echo "fake shed exited" >&2; exit 1; }; sleep 0.1; done
 cat >"$tmp/config.toml" <<EOF
 port = ${PORT:?}
 roots = ["$tmp/root"]
