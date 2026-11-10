@@ -159,7 +159,7 @@ jobs:
       - name: what the Mac ran (on failure)
         if: failure()
         run: |
-          ps -axo pid,ppid,etime,command | grep -E 'cooee|shed|zsh|security' | grep -v grep || true
+          pgrep -lf 'cooee|shed|zsh|security' || true
           for f in "$HOME/.config/cooee/cooee/config.toml" "$HOME/.local/share/cooee/cooee/devices.json"; do
             echo "== $f"; cat "$f" || true
           done
