@@ -46,6 +46,24 @@ internal struct ListingTests {
         #expect(Listing.ago(seconds * 1000, now: now) == text)
     }
 
+    @Test internal func memoryListsTheNewestNoteFirstWithWhoAddedIt() {
+        let notes = [
+            PersonaNote(text: "Renewals live in renewals.md", author: "owner", time: 913_600_000),
+            PersonaNote(text: "Dana runs finance", author: "persona", time: 992_800_000),
+        ]
+        #expect(
+            Listing.memory(notes, persona: "Chief", now: now) == [
+                Field("Dana runs finance", "from Chief · 2h"), Field("Renewals live in renewals.md", "from you · 1d"),
+            ]
+        )
+    }
+
+    @Test internal func settingsKeepTheirLookAndTokenThroughJSON() throws {
+        let settings = Settings(scheme: .dark, style: .terminal, push: "ab12")
+        let back = try JSONDecoder().decode(Settings.self, from: try JSONEncoder().encode(settings))
+        #expect(back == settings && Settings() == Settings(scheme: .system, style: .modern, push: nil))
+    }
+
     @Test internal func aTypedAddressOrALinkIsAServer() {
         #expect(PairTarget(typed: "mini.local:4100")?.url.absoluteString == "https://mini.local:4100")
         let link = PairTarget(typed: " http://127.0.0.1:4100/pair?code=123456 ")

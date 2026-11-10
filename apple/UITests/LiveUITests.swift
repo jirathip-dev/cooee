@@ -22,6 +22,46 @@ internal final class LiveUITests: XCTestCase {
         XCTAssert(new.waitForExistence(timeout: 10))
         XCTAssert(labelled(app, "Coder").exists)
         keep("home")
+        personaRoundTrip(app)
+        avatarMenu(app)
+    }
+
+    @MainActor
+    private func personaRoundTrip(_ app: XCUIApplication) {
+        let name = "Scout \(ProcessInfo.processInfo.environment["COOEE_LOOK"] ?? "look")"
+        app.buttons["New chat"].firstMatch.tap()
+        app.buttons["New persona…"].firstMatch.tap()
+        type(app, "Name", name)
+        type(app, "Character", "Finds the facts first.")
+        app.buttons["Save"].firstMatch.tap()
+        XCTAssert(labelled(app, name).waitForExistence(timeout: 10))
+        app.buttons["New chat"].firstMatch.tap()
+        app.buttons["Edit a persona"].firstMatch.tap()
+        app.buttons["Edit \(name)"].firstMatch.tap()
+        XCTAssert(labelled(app, "Finds the facts first.").waitForExistence(timeout: 10))
+        type(app, "Instructions", "Cite every source.")
+        keep("persona")
+        app.buttons["Save"].firstMatch.tap()
+        XCTAssert(app.buttons["Save"].waitForNonExistence(timeout: 10))
+    }
+
+    @MainActor
+    private func avatarMenu(_ app: XCUIApplication) {
+        app.buttons["Account"].firstMatch.tap()
+        XCTAssert(labelled(app, "Notifications").waitForExistence(timeout: 10))
+        keep("avatar-menu")
+        labelled(app, "Look").tap()
+        labelled(app, "Terminal").tap()
+        let picked = NSPredicate(format: "label == 'Terminal' AND selected == true")
+        XCTAssert(app.buttons.matching(picked).firstMatch.waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    private func type(_ app: XCUIApplication, _ hint: String, _ text: String) {
+        let box = field(app, hint)
+        XCTAssert(box.waitForExistence(timeout: 10))
+        box.tap()
+        box.typeText(text)
     }
 
     @MainActor

@@ -31,3 +31,23 @@ internal struct LiveTests {
         #expect(items.last?.text == "streamed 3 words")
     }
 }
+
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["COOEE_PERSONA_LINK"] != nil))
+internal struct LivePersonaTests {
+    @Test internal func aPersonaRoundTripsAndTheSimulatorsPersonasAreOnTheServer() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        let target = try #require(PairTarget(typed: environment["COOEE_PERSONA_LINK"] ?? ""))
+        let token = try await Client(base: target.url).pair(code: try #require(target.code))
+        let client = Client(Server(url: target.url, token: token))
+        var probe = try await client.create(APIPersona(id: "", name: "Probe", agent: "fake-acp"))
+        probe.character = "Checks the round trip."
+        #expect(try await client.save(probe) == probe)
+        #expect(try await client.personas().contains(probe))
+        #expect(try await client.memory(probe.id).isEmpty)
+        try await client.forget(probe.id)
+        for look in (environment["COOEE_SIM_LOOKS"] ?? "").split(separator: " ") {
+            let made = try await client.personas().first { $0.id == "scout-\(look)" }
+            #expect(made?.character == "Finds the facts first." && made?.instructions == "Cite every source.")
+        }
+    }
+}

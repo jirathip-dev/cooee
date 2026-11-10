@@ -28,6 +28,12 @@ public enum Listing {
         }
     }
 
+    public static func memory(_ notes: [PersonaNote], persona: String, now: Date) -> [Field] {
+        notes.reversed().map { note in
+            Field(note.text, "from \(note.author == "owner" ? "you" : persona) · \(ago(note.time, now: now))")
+        }
+    }
+
     public static func ago(_ milliseconds: Int64, now: Date) -> String {
         let seconds = max(0, Int(now.timeIntervalSince1970) - Int(milliseconds / 1000))
         switch seconds {

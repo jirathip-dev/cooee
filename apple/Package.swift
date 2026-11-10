@@ -35,6 +35,6 @@ let package = Package(
         .testTarget(
             name: "CooeeAPITests", dependencies: ["CooeeAPI"], resources: [.copy("Fixtures")], swiftSettings: strict),
         .testTarget(name: "CooeeFeaturesTests", dependencies: ["CooeeFeatures", tca], swiftSettings: strict),
-        .testTarget(name: "CooeeUITests", dependencies: ["CooeeUI"], swiftSettings: strict),
+        .testTarget(name: "CooeeUITests", dependencies: ["CooeeCore", "CooeeUI"], swiftSettings: strict),
     ]
 )

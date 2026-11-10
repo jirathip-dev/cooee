@@ -5,15 +5,18 @@ public struct HomeActions {
     public var menu: () -> Void
     public var new: (String) -> Void
     public var open: (String) -> Void
+    public var edit: (String?) -> Void
 
     public init(
         menu: @escaping () -> Void = {},
         new: @escaping (String) -> Void = { _ in },
-        open: @escaping (String) -> Void = { _ in }
+        open: @escaping (String) -> Void = { _ in },
+        edit: @escaping (String?) -> Void = { _ in }
     ) {
         self.menu = menu
         self.new = new
         self.open = open
+        self.edit = edit
     }
 }
 
@@ -94,6 +97,11 @@ internal struct TopBar: View {
             Spacer()
             Menu {
                 ForEach(personas) { persona in Button(persona.name) { actions.new(persona.id) } }
+                Divider()
+                Button("New persona…", systemImage: "person.badge.plus") { actions.edit(nil) }
+                Menu("Edit a persona", systemImage: "pencil") {
+                    ForEach(personas) { persona in Button("Edit \(persona.name)") { actions.edit(persona.id) } }
+                }
             } label: {
                 RoundButton(symbol: "plus", ascii: "+", size: 44)
             }
