@@ -1,0 +1,7 @@
+Decided: switch PRODUCT_BUNDLE_IDENTIFIER from dev.cooee.app to com.jirathip.cooee in both build configurations
+Because: q1009
+Decided: the missing-app error and docs name the owner's real record (cooee: agent chat, SKU cooee-ios)
+Because: q1009
+Rejected: renaming the APNs topic in Rust test fixtures — they are arbitrary test strings, not the project
+Check: apple/Cooee.xcodeproj/project.pbxproj has no dev.cooee.app; the workflow reads the bundle id from it
+Owner: merge, then the first staging run should upload build 1 to TestFlight for com.jirathip.cooee
