@@ -5,7 +5,8 @@
 //   .pa[data-p]             a persona's avatar in the style: Modern its symbol on its tint, Terminal its ASCII figure,
 //                           Scene its horse (apple/Sources/CooeeUI/Sprites, in its coat, acting data-pose); data-k a dot
 //   [data-x=strip]          the room's member strip (data-sel: the member whose sheet is open)
-//   [data-x=side]           the 1440 sidebar: Home with rooms and linked exchanges (data-sel: the open row)
+//   [data-x=side]           Home with rooms and linked exchanges: the 1440 sidebar, or the phone's list with data-ph
+//                           (data-sel: the open row)
 const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', F = q.get('f');
@@ -21,7 +22,7 @@ if (STYLE === 'scene') r.dataset.scene = '';
 if (F) { r.dataset.one = ''; document.querySelector(`[data-f="${F}"]`)?.closest('.fr').classList.add('one'); }
 
 // The personas (#124's fixtures): name, tint, Modern symbol, Scene coat, agent, and the machine its session runs on
-// (G7: each member on its own machine). Conductor is drover's conductor persona (G5: it may join a room).
+// (G7: each member on its own machine). Conductor is the orchestrator persona (G5: it may join a room).
 const G = {
   star: '<svg class=f viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg>',
   code: '<svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>',
@@ -80,7 +81,7 @@ function side(e) {
     : `<a class="hr${sel === (x.room || x.p) ? ' sel' : ''}" href="#"><span class=av2>${x.stk
       ? `<span class="stk v">${x.stk.split(' ').map(p => `<i class=pa data-p=${p}></i>`).join('')}</span>` : `<i class=pa data-p=${x.p}></i>`}</span>
       <span class=hn2><b>${x.n}</b><span>${x.s}</span></span><span class="age${x.u ? ' u' : ''}">${x.a}</span><span class=ln>${x.l}</span>${x.u ? `<span class=bd2>${x.u}</span>` : '<span></span>'}</a>`;
-  return `<div class=lights><i></i><i></i><i></i></div><div class=sdtop><span class=gb>G</span><b>cooee</b><span class=gb>+</span></div><h2 class=lt2>Chats</h2>${ROWS.map(row).join('')}`;
+  return `${'ph' in e.dataset ? '' : '<div class=lights><i></i><i></i><i></i></div>'}<div class=sdtop><span class=gb>G</span><b>cooee</b><span class=gb>+</span></div><h2 class=lt2>Chats</h2>${ROWS.map(row).join('')}`;
 }
 
 const SB = `<span>9:41</span><span class=si><svg viewBox="0 0 18 12"><rect y="8" width="3" height="4" rx=".7"/><rect x="5" y="5.5" width="3" height="6.5" rx=".7"/><rect x="10" y="3" width="3" height="9" rx=".7"/><rect x="15" width="3" height="12" rx=".7"/></svg><svg viewBox="0 0 16 12"><path d="M8 2.4c2.4 0 4.5.9 6.1 2.4L15.3 3.6A10.3 10.3 0 0 0 8 .6 10.3 10.3 0 0 0 .7 3.6l1.2 1.2A8.6 8.6 0 0 1 8 2.4zm0 3.5c1.4 0 2.6.5 3.6 1.4l1.2-1.2A6.8 6.8 0 0 0 8 4.1 6.8 6.8 0 0 0 3.2 6.1l1.2 1.2c1-.9 2.2-1.4 3.6-1.4zM8 11.5l2.4-2.4a3.4 3.4 0 0 0-4.8 0z"/></svg><svg viewBox="0 0 27 12" style="height:13px"><rect x=".5" y=".5" width="23" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="18" height="8" rx="2"/><path d="M25 4v4c.8-.3 1.4-1 1.4-2S25.8 4.3 25 4z" opacity=".4"/></svg></span>`;

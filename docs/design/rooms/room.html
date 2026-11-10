@@ -12,8 +12,15 @@
 <body>
 <div class="gal">
 
-<!-- New room: a sheet from Home's +. Name, members in room order (2–5, G6), Conductor may join (G5), lane threads
-     may not, and the cost note before the room exists. -->
+<!-- Home on the phone: a room is a row with its members' 2×2 stack, as at 1440; a linked exchange hangs under its
+     asker's chat. -->
+<div class="fr"><p class="cap">Home · a room's row, exchanges under their asker</p>
+<section class="ph col" data-f="home">
+  <div class="side phn" data-x="side" data-ph></div>
+</section></div>
+
+<!-- New room: a sheet from Home's +. Name, members in room order (2–5, G6), Conductor may join (G5; lane threads are
+     not listed), and the cost note before the room exists. -->
 <div class="fr"><p class="cap">New room · pick personas, set their order</p>
 <section class="ph" data-f="create">
   <div class="rdim"></div>
@@ -28,12 +35,10 @@
         <a class="fr2" href="#"><span class="ck yes">2</span><i class="pa" data-p="coder"></i><span class="tx"><b>Coder</b><small>Codex · studio</small></span><span class="ord">≡</span></a>
         <a class="fr2" href="#"><span class="ck yes">3</span><i class="pa" data-p="res"></i><span class="tx"><b>Researcher</b><small>Claude Code · air</small></span><span class="ord">≡</span></a>
         <a class="fr2" href="#"><span class="ck yes">4</span><i class="pa" data-p="am"></i><span class="tx"><b>Account Manager</b><small>Claude Code · mini</small></span><span class="ord">≡</span></a>
-        <a class="fr2" href="#"><span class="ck"></span><i class="pa" data-p="cond"></i><span class="tx"><b>Conductor</b><small>drover's conductor · mini</small></span></a>
+        <a class="fr2" href="#"><span class="ck"></span><i class="pa" data-p="cond"></i><span class="tx"><b>Conductor</b><small>orchestrator · mini</small></span></a>
       </div>
-      <p class="ft">With no @mention, members answer <b>in this order</b>, and each may pass. Drag ≡ to change it. A room holds 2 to 5.</p>
-      <p class="lb2">Can't join</p>
-      <div class="rfl"><span class="fr2 nope"><span class="tx"><b>Lane threads</b><small>herdsman-impl-641 and the rest stay Workflow chats</small></span></span></div>
-      <div class="cost"><span class="ico">≈</span><span><b>Each message you send may run up to 6 agent turns</b> across these 4, on their own machines, for at most 10 min. [Stop] ends a round.</span></div>
+      <p class="ft">A room holds 2 to 5.</p>
+      <div class="cost"><span class="ico">≈</span><span><b>Up to 6 agent turns per message</b> · 10 min</span></div>
     </div>
   </div>
 </section></div>
@@ -107,7 +112,7 @@
     <div class="rshi">
       <div class="heroic"><i class="pa" data-p="res" data-s="72"></i><b>Researcher</b><span class="agc2"><b>Claude Code</b>· sonnet 5.5</span></div>
       <div class="rfl">
-        <span class="fr2"><span class="tx"><b>In this room</b></span><span class="rsv">3rd of 4 · replied 1m ago</span></span>
+        <span class="fr2"><span class="tx"><b>In this room</b></span><span class="rsv">3rd of 4 · replied 1m ago</span><span class="ord">≡</span></span>
         <span class="fr2"><span class="tx"><b>Runs on</b></span><span class="rsv">air · its own session</span></span>
         <span class="fr2"><span class="tx"><b>Sees</b></span><span class="rsv">final replies only</span></span>
         <span class="fr2"><span class="tx"><b>May ask, outside rooms</b></span><span class="rsv">Account Manager</span></span>
@@ -153,13 +158,13 @@
   <aside class="mp">
     <h4>Members · 4 of 5</h4>
     <div class="rfl avs">
-      <a class="fr2" href="#" data-k="replied"><i class="pa" data-p="chief" data-k="replied"></i><span class="tx"><b>1 · Chief</b><small>Claude Code · mini</small></span><span class="rsv mw">replied</span></a>
-      <a class="fr2" href="#" data-k="passed"><i class="pa" data-p="coder" data-k="passed"></i><span class="tx"><b>2 · Coder</b><small>Codex · studio</small></span><span class="rsv mw">passed</span></a>
-      <a class="fr2" href="#" data-k="replied"><i class="pa" data-p="res" data-k="replied"></i><span class="tx"><b>3 · Researcher</b><small>Claude Code · air</small></span><span class="rsv mw">replied</span></a>
-      <a class="fr2 sel" href="#" data-k="replying"><i class="pa" data-p="am" data-k="replying"></i><span class="tx"><b>4 · Account Manager</b><small>Claude Code · mini</small></span><span class="rsv mw">replying</span></a>
+      <a class="fr2" href="#" data-k="replied"><i class="pa" data-p="chief" data-k="replied"></i><span class="tx"><b>1 · Chief</b><small>Claude Code · mini</small></span><span class="rsv mw">replied</span><span class="ord">≡</span></a>
+      <a class="fr2" href="#" data-k="passed"><i class="pa" data-p="coder" data-k="passed"></i><span class="tx"><b>2 · Coder</b><small>Codex · studio</small></span><span class="rsv mw">passed</span><span class="ord">≡</span></a>
+      <a class="fr2" href="#" data-k="replied"><i class="pa" data-p="res" data-k="replied"></i><span class="tx"><b>3 · Researcher</b><small>Claude Code · air</small></span><span class="rsv mw">replied</span><span class="ord">≡</span></a>
+      <a class="fr2 sel" href="#" data-k="replying"><i class="pa" data-p="am" data-k="replying"></i><span class="tx"><b>4 · Account Manager</b><small>Claude Code · mini</small></span><span class="rsv mw">replying</span><span class="ord">≡</span></a>
       <a class="fr2 lnk" href="#"><span class="tx">+ Add a member</span></a>
     </div>
-    <div class="cost"><span class="ico">≈</span><span><b>Each message may run up to 6 agent turns</b> on these 4 machines, for at most 10 min. Members see each other's final replies only.</span></div>
+    <div class="cost"><span class="ico">≈</span><span><b>Up to 6 agent turns per message</b> · 10 min</span></div>
   </aside>
 </section></div>
 

@@ -14,7 +14,7 @@ const [chrome, re] = process.argv.slice(2);
 // (Modern unnamed).
 const BOTH = ['dark', 'light'];
 const VIEWS = [
-  ['room', 'create', 390, 'modern', BOTH], ['room', 'room', 390, 'modern', BOTH], ['room', 'mention', 390, 'modern', ['dark']],
+  ['room', 'home', 390, 'modern', ['dark']], ['room', 'create', 390, 'modern', BOTH], ['room', 'room', 390, 'modern', BOTH], ['room', 'mention', 390, 'modern', ['dark']],
   ['room', 'member', 390, 'modern', ['dark']], ['room', 'wide-room', 1440, 'modern', ['dark']],
   ['linked', 'asked', 390, 'modern', BOTH], ['linked', 'linked', 390, 'modern', ['dark']], ['linked', 'approval', 390, 'modern', ['dark']], ['linked', 'push', 390, 'modern', ['dark']],
   ['linked', 'wide-linked', 1440, 'modern', ['light']],
