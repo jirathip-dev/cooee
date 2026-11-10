@@ -238,24 +238,40 @@ struct MacRow: View {
 }
 
 /// Mac and iPad: the home's chat list is the sidebar beside the open chat.
-public struct WideView: View {
+public struct WideView<Detail: View>: View {
     @Environment(\.look) var look
-    public init() {}
+    let personas: [Persona]
+    let rows: [(Row, Persona)]
+    let selected: String?
+    let actions: HomeActions
+    let detail: Detail
+    public init(personas: [Persona], rows: [(Row, Persona)], selected: String?, actions: HomeActions,
+                @ViewBuilder detail: () -> Detail) {
+        self.personas = personas; self.rows = rows; self.selected = selected; self.actions = actions; self.detail = detail()
+    }
     public var body: some View {
         let p = look.palette
         HStack(spacing: 0) {
             VStack(spacing: 0) {
-                TopBar().padding(.top, 34)
+                TopBar(personas: personas, actions: actions).padding(.top, look.still ? 34 : 8)
                 Scroller {
-                    PinnedRow().scaleEffect(0.9, anchor: .leading).padding(.top, 4)
-                    ChatList(selected: "t1").padding(.top, 8)
+                    PinnedRow(personas: personas, rows: rows.map(\.0), new: actions.new).scaleEffect(0.9, anchor: .leading).padding(.top, 4)
+                    ChatList(rows: rows, selected: selected, open: actions.open).padding(.top, 8)
                 }
             }
             .frame(width: 360).background(p.card.opacity(look.style == .modern ? 0.45 : 0.8))
             .overlay(alignment: .trailing) { Rectangle().fill(p.line).frame(width: 1) }
-            ChatView.streaming(back: false).padding(.top, 12)
+            detail.padding(.top, 12).frame(maxWidth: .infinity)
         }
         .foregroundStyle(p.fg)
+    }
+}
+
+extension WideView where Detail == ChatView {
+    /// The design's window: Coder's chat open beside the fixtures' list.
+    public init() {
+        self.init(personas: Fixtures.personas, rows: Fixtures.rows.map { ($0, Fixtures.persona($0.persona)) }, selected: "t1",
+                  actions: HomeActions()) { ChatView.streaming(back: false) }
     }
 }
 

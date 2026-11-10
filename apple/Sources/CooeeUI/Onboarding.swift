@@ -7,8 +7,14 @@ public enum PhoneStep: String, CaseIterable, Sendable { case welcome, scan, near
 
 public struct PhoneOnboarding: View {
     @Environment(\.look) var look
-    let step: PhoneStep
-    public init(step: PhoneStep) { self.step = step }
+    let fixed: PhoneStep
+    /// The live flow; nil in a still.
+    var pairing: Pairing?
+    public init(step: PhoneStep) { fixed = step }
+    public init(pairing: Pairing) { fixed = .welcome; self.pairing = pairing }
+    var step: PhoneStep { pairing?.step ?? fixed }
+    func go(_ s: PhoneStep) { pairing?.step = s; pairing?.error = nil }
+    func connect(_ typed: String) { if let pairing { Task { await pairing.connect(typed) } } }
     public var body: some View {
         let p = look.palette
         ZStack {
@@ -17,8 +23,8 @@ public struct PhoneOnboarding: View {
                 switch step {
                 case .welcome: welcome
                 case .scan: scan
-                case .nearby: titled("Nearby", "cooee servers on this Wi-Fi") { NearbyList() }
-                case .address: titled("Enter address", "The address `cooee setup` printed") { AddressField() }
+                case .nearby: titled("Nearby", "cooee servers on this Wi-Fi") { NearbyList(pairing: pairing, connect: connect) }
+                case .address: titled("Enter address", "The address `cooee setup` printed") { AddressField(pairing: pairing, connect: connect) }
                 case .waiting: waiting
                 case .paired: paired
                 }
@@ -26,6 +32,7 @@ public struct PhoneOnboarding: View {
             .padding(.horizontal, 24).padding(.bottom, 30)
         }
         .foregroundStyle(p.fg)
+        .environment(\.stepBack, { go(.welcome) })
     }
 
     var welcome: some View {
@@ -37,7 +44,7 @@ public struct PhoneOnboarding: View {
             Text("Your agents run on your Mac.\nTalk to them from here.").ui(17, .regular, look)
                 .multilineTextAlignment(.center).foregroundStyle(p.mute)
             Spacer()
-            WaysIn()
+            WaysIn(go: go, nearby: pairing.map { $0.nearby.found.count })
             Text("No server yet? Get cooee for Mac, or run `cooee setup` on a Mac or Linux box: both show a QR code.")
                 .ui(13, .regular, look).foregroundStyle(p.mute).multilineTextAlignment(.center).padding(.top, 6)
         }
@@ -49,17 +56,26 @@ public struct PhoneOnboarding: View {
             StepHeader(title: "Scan QR", subtitle: "Point at the code on your Mac, or in the terminal")
             ZStack {
                 RoundedRectangle(cornerRadius: 28).fill(Color.hex(0x1c1f1d))
-                QRCode(text: "https://server.example.com/pair?c=K7Q2MX", size: 150)
-                    .padding(16).background(Color.white, in: .rect(cornerRadius: 10))
-                    .rotationEffect(.degrees(-6)).shadow(radius: 12)
+                #if os(iOS)
+                if pairing != nil { QRScanner(found: connect).clipShape(.rect(cornerRadius: 28)) }
+                #endif
+                if pairing == nil {
+                    QRCode(text: "https://server.example.com/pair?c=K7Q2MX", size: 150)
+                        .padding(16).background(Color.white, in: .rect(cornerRadius: 10))
+                        .rotationEffect(.degrees(-6)).shadow(radius: 12)
+                }
                 ViewfinderCorners().stroke(p.l, style: StrokeStyle(lineWidth: 5, lineCap: .round)).frame(width: 240, height: 240)
             }
             .frame(height: 420)
-            Label("Found mini · cooee 0.9", systemImage: "checkmark.circle.fill").ui(15, .semibold, look).foregroundStyle(p.g)
+            if let pairing {
+                if let e = pairing.error { Text(e).ui(15, .semibold, look).foregroundStyle(p.r) }
+            } else {
+                Label("Found mini · cooee 0.9", systemImage: "checkmark.circle.fill").ui(15, .semibold, look).foregroundStyle(p.g)
+            }
             Spacer()
             HStack(spacing: 10) {
-                CardButton(title: "Nearby")
-                CardButton(title: "Enter address")
+                Button { go(.nearby) } label: { CardButton(title: "Nearby") }.buttonStyle(.plain)
+                Button { go(.address) } label: { CardButton(title: "Enter address") }.buttonStyle(.plain)
             }
         }
     }
@@ -70,18 +86,26 @@ public struct PhoneOnboarding: View {
             Spacer()
             Image(systemName: "desktopcomputer.and.arrow.down").font(.system(size: 54)).foregroundStyle(p.link)
             Text("Approve on your Mac").ui(26, .bold, look)
-            Text("mini asks you to approve this iPhone. Check that it shows the same word:").ui(16, .regular, look)
+            Text("\(pairing?.host ?? "mini") asks you to approve this iPhone. Check that it shows the same word:").ui(16, .regular, look)
                 .foregroundStyle(p.mute).multilineTextAlignment(.center)
-            Text("maple").font(.system(size: 44, weight: .bold, design: .monospaced)).tracking(4).foregroundStyle(p.l)
+            Text(pairing?.word ?? "maple").font(.system(size: 44, weight: .bold, design: .monospaced)).tracking(4).foregroundStyle(p.l)
                 .padding(.horizontal, 28).padding(.vertical, 12).surface(look, radius: 22)
             HStack(spacing: 8) {
                 Circle().fill(p.c).frame(width: 8, height: 8)
-                Text("Waiting for approval · 4:51 left").ui(14, .regular, look).foregroundStyle(p.mute)
+                if let until = pairing?.until {
+                    TimelineView(.periodic(from: .now, by: 1)) { t in
+                        let s = max(0, Int(until.timeIntervalSince(t.date)))
+                        Text("Waiting for approval · \(s / 60):\(String(format: "%02d", s % 60)) left").ui(14, .regular, look)
+                            .foregroundStyle(p.mute)
+                    }
+                } else {
+                    Text("Waiting for approval · 4:51 left").ui(14, .regular, look).foregroundStyle(p.mute)
+                }
             }
             Text("Any paired device can approve it too: it got a notification.").ui(13, .regular, look)
                 .foregroundStyle(p.mute).multilineTextAlignment(.center)
             Spacer()
-            CardButton(title: "Cancel", tint: p.r)
+            Button { pairing?.cancel() } label: { CardButton(title: "Cancel", tint: p.r) }.buttonStyle(.plain)
         }
     }
 
@@ -90,15 +114,18 @@ public struct PhoneOnboarding: View {
         return VStack(spacing: 16) {
             Spacer()
             Image(systemName: "checkmark.circle.fill").font(.system(size: 84)).foregroundStyle(p.g)
-            Text("Paired with mini").ui(28, .bold, look)
-            Text("Guy approved this iPhone from the Mac.").ui(16, .regular, look).foregroundStyle(p.mute)
+            Text("Paired with \(pairing?.host ?? "mini")").ui(28, .bold, look)
+            if pairing == nil {
+                Text("Guy approved this iPhone from the Mac.").ui(16, .regular, look).foregroundStyle(p.mute)
+            }
+            let personas = pairing.map { $0.personas.map { Persona($0) } } ?? Fixtures.personas
             HStack(spacing: -10) {
-                ForEach(Fixtures.personas) { Avatar(persona: $0, size: 48).overlay(Circle().strokeBorder(p.bg, lineWidth: look.style == .modern ? 3 : 0)) }
+                ForEach(personas) { Avatar(persona: $0, size: 48).overlay(Circle().strokeBorder(p.bg, lineWidth: look.style == .modern ? 3 : 0)) }
             }
             .padding(.top, 10)
-            Text("5 personas are waiting on Home").ui(14, .regular, look).foregroundStyle(p.mute)
+            Text("\(personas.count) personas are waiting on Home").ui(14, .regular, look).foregroundStyle(p.mute)
             Spacer()
-            CardButton(title: "Go to Home", primary: true)
+            Button { pairing?.home() } label: { CardButton(title: "Go to Home", primary: true) }.buttonStyle(.plain)
         }
     }
 
@@ -110,18 +137,32 @@ public struct PhoneOnboarding: View {
 /// The three ways to a server, shared by the iPhone welcome and the Mac's client mode.
 struct WaysIn: View {
     @Environment(\.look) var look
+    var go: (PhoneStep) -> Void = { _ in }
+    /// Servers found so far; nil in a still.
+    var nearby: Int? = nil
     var body: some View {
         let p = look.palette
         VStack(spacing: 10) {
-            way("qrcode.viewfinder", "Scan QR", "The code on your Mac, or in the terminal", primary: true)
-            way("wifi", "Nearby", "2 servers on this Wi-Fi")
-            way("keyboard", "Enter address", "server.example.com")
+            #if os(iOS)
+            way(.scan, "qrcode.viewfinder", "Scan QR", "The code on your Mac, or in the terminal", primary: true)
+            #else
+            if nearby == nil { way(.scan, "qrcode.viewfinder", "Scan QR", "The code on your Mac, or in the terminal", primary: true) }
+            #endif
+            way(.nearby, "wifi", "Nearby", nearby.map { $0 == 0 ? "Servers on this Wi-Fi" : "\($0) on this Wi-Fi" } ?? "2 servers on this Wi-Fi")
+            way(.address, "keyboard", "Enter address", "server.example.com", primary: nearby != nil && !scans)
         }
         .foregroundStyle(p.fg)
     }
-    func way(_ s: String, _ t: String, _ sub: String, primary: Bool = false) -> some View {
+    var scans: Bool {
+        #if os(iOS)
+        true
+        #else
+        false
+        #endif
+    }
+    func way(_ to: PhoneStep, _ s: String, _ t: String, _ sub: String, primary: Bool = false) -> some View {
         let p = look.palette
-        return HStack(spacing: 14) {
+        return Button { go(to) } label: { HStack(spacing: 14) {
             Image(systemName: s).font(.system(size: 20, weight: .semibold)).frame(width: 30)
                 .foregroundStyle(primary ? p.l : p.link)
             VStack(alignment: .leading, spacing: 2) {
@@ -133,15 +174,28 @@ struct WaysIn: View {
         }
         .padding(.horizontal, 16).frame(height: 64)
         .surface(look, radius: 22, interactive: true)
+        .contentShape(.rect) }.buttonStyle(.plain)
+        .accessibilityLabel(t).accessibilityHint(sub)
+    }
+}
+
+private struct StepBackKey: EnvironmentKey { static let defaultValue: @Sendable @MainActor () -> Void = {} }
+extension EnvironmentValues {
+    /// A pairing step's back button: to the welcome.
+    var stepBack: @Sendable @MainActor () -> Void {
+        get { self[StepBackKey.self] }
+        set { self[StepBackKey.self] = newValue }
     }
 }
 
 struct StepHeader: View {
     @Environment(\.look) var look
+    @Environment(\.stepBack) var back
     let title: String, subtitle: String
     var body: some View {
         HStack(alignment: .top) {
-            RoundButton(symbol: "chevron.left", ascii: "<", size: 40)
+            Button { back() } label: { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
+                .buttonStyle(.plain).accessibilityLabel("Back")
             Spacer()
         }
         .overlay {
@@ -157,11 +211,14 @@ struct StepHeader: View {
 
 struct NearbyList: View {
     @Environment(\.look) var look
+    var pairing: Pairing?
+    var connect: (String) -> Void = { _ in }
     var body: some View {
         let p = look.palette
+        let found = pairing.map { $0.nearby.found.map { ($0.name, $0.address, "desktopcomputer") } } ?? Fixtures.nearby
         VStack(spacing: 10) {
-            ForEach(Fixtures.nearby, id: \.0) { name, detail, icon in
-                HStack(spacing: 14) {
+            ForEach(found, id: \.0) { name, detail, icon in
+                Button { connect(detail) } label: { HStack(spacing: 14) {
                     Image(systemName: icon).font(.system(size: 24)).foregroundStyle(p.link).frame(width: 36)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(name).ui(17, .semibold, look)
@@ -171,7 +228,9 @@ struct NearbyList: View {
                     Text("Pair").ui(15, .semibold, look).foregroundStyle(p.link)
                 }
                 .padding(.horizontal, 16).frame(height: 68).surface(look, radius: 22, interactive: true)
+                .contentShape(.rect) }.buttonStyle(.plain)
             }
+            if let e = pairing?.error { Text(e).ui(14, .semibold, look).foregroundStyle(p.r) }
             HStack(spacing: 8) {
                 ProgressDots()
                 Text("Looking for more (Bonjour, _cooee._tcp)").ui(13, .regular, look).foregroundStyle(p.mute)
@@ -180,6 +239,7 @@ struct NearbyList: View {
             Text("Over Tailscale or far away? Scan the QR or enter its address.").ui(13, .regular, look)
                 .foregroundStyle(p.mute).multilineTextAlignment(.center)
         }
+        .onAppear { pairing?.nearby.start() }
     }
 }
 
@@ -192,18 +252,29 @@ struct ProgressDots: View {
 
 struct AddressField: View {
     @Environment(\.look) var look
+    var pairing: Pairing?
+    var connect: (String) -> Void = { _ in }
     var body: some View {
         let p = look.palette
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("server.example.com").ui(17, .regular, look)
-                Rectangle().fill(p.link).frame(width: 2, height: 22)
+                if let pairing {
+                    TextField("server.example.com", text: Bindable(pairing).address).ui(17, .regular, look)
+                        .textFieldStyle(.plain).autocorrectionDisabled().onSubmit { connect(pairing.address) }
+                        #if os(iOS)
+                        .textInputAutocapitalization(.never).keyboardType(.URL)
+                        #endif
+                } else {
+                    Text("server.example.com").ui(17, .regular, look)
+                    Rectangle().fill(p.link).frame(width: 2, height: 22)
+                }
                 Spacer()
             }
             .padding(.horizontal, 16).frame(height: 54).surface(look, radius: 18)
             Text("A name or IP, with :port if not 443. The server shows it under its QR code.").ui(13, .regular, look)
                 .foregroundStyle(p.mute)
-            CardButton(title: "Connect", primary: true)
+            if let e = pairing?.error { Text(e).ui(14, .semibold, look).foregroundStyle(p.r) }
+            Button { connect(pairing?.address ?? "") } label: { CardButton(title: "Connect", primary: true) }.buttonStyle(.plain)
         }
     }
 }

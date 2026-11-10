@@ -10,5 +10,7 @@ let package = Package(
     targets: [
         .target(name: "CooeeUI", resources: [.copy("Sprites")]),
         .executableTarget(name: "shots", dependencies: ["CooeeUI"]),
+        // #143: the API client against canned server answers (decode, the stream's reconnect and catch-up).
+        .testTarget(name: "CooeeUITests", dependencies: ["CooeeUI"]),
     ]
 )
