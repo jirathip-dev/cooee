@@ -227,7 +227,7 @@ internal struct ChipsBlock: View {
     private func chip(_ value: String, selected: Bool) -> some View {
         let label = block.list("options").first { $0.string("value") == value }?.string("label") ?? value
         return Text(label).ui(13, .semibold, look).foregroundStyle(
-            on ? look.palette.background : look.palette.foreground
+            selected ? look.palette.background : look.palette.foreground
         )
         .padding(.horizontal, 12).frame(height: 30)
         .background(selected ? look.palette.lead : look.palette.edge.opacity(0.35), in: .capsule)
