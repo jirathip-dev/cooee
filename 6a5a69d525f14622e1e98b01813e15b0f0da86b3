@@ -1,0 +1,8 @@
+Decided: the red ui check is not fixed in this PR: it is one long task (90 ms) in the 1,000-message chat test, in web/ code this PR does not change
+Because: web/e2e/chat.spec.mjs:177
+Rejected: loosening the 50 ms long-task bound — that test guards chat scrolling, not rooms; a flake there is its own issue
+Decided: merged origin/staging (#154, #188, #198) instead of rebasing: no history rewrite on a pushed branch
+Because: q1179
+Check: scripts/line-cap.sh at the head reads 23604 / 27500 (exit 0) with the cap raised in #198
+Check: the ui job at the new head; if chat.spec.mjs:177 fails again it is a flake outside this diff
+Owner: no code change this round; the branch is up to date with staging and fits the raised line cap
