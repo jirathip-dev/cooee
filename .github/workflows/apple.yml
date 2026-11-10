@@ -67,18 +67,20 @@ jobs:
         working-directory: apple
         run: COOEE_PAIR_LINK="$(cat "$RUNNER_TEMP/pair")" swift test --filter LiveTests
       # Once per appearance, set with simctl (the test's own XCUIDevice.appearance left this simulator light); each
-      # run pairs afresh, so the keychain is emptied first.
+      # run pairs afresh, so the keychain is emptied first. The app builds before any code is minted: a code lives 10 min.
       - name: the app in the simulator
         working-directory: apple
         run: |
           sim=$(xcrun simctl create cooee-e2e "iPhone 17")
           xcrun simctl bootstatus "$sim" -b
+          build=(xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim")
+          "${build[@]}" build-for-testing
           for look in dark light; do
             xcrun simctl ui "$sim" appearance "$look"
             xcrun simctl keychain "$sim" reset
             link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
-            TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" xcodebuild -skipMacroValidation -project Cooee.xcodeproj \
-              -scheme Cooee -destination "id=$sim" -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" test
+            TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" "${build[@]}" \
+              -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" test-without-building
           done
       - name: screenshots
         if: always()
