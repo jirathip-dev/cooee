@@ -81,9 +81,15 @@ pub struct Thread {
     /// A room's members, in room order.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub members: Vec<Member>,
-    /// A room's members still to take a turn on the owner's last message, in order.
+    /// A room's turns still to take on the owner's last message, in order: the first is the one taking it (#155).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub round: Vec<String>,
+    pub round: Vec<RoomTurn>,
+    /// How many member turns the owner's last message has started (at most 6, G2).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub taken: u8,
+    /// When the owner's last message in a room was sent (ms): its round stops 10 minutes on (G2).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub asked_at: u64,
     /// A member's session: the room it is a member of (hidden from the thread list).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub room: String,
@@ -107,6 +113,32 @@ impl Kind {
     fn is_chat(&self) -> bool {
         *self == Self::Chat
     }
+}
+
+fn is_zero<T: Default + PartialEq>(n: &T) -> bool {
+    *n == T::default()
+}
+
+/// A room member's turn (#155): whose, and why it has one.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RoomTurn {
+    /// The member's persona id.
+    pub member: String,
+    /// Why it has the turn.
+    pub reason: Reason,
+}
+
+/// Why a room member has a turn.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Reason {
+    /// The owner's message named it.
+    Mention,
+    /// The owner's message named no one: every member gets one turn, in room order (G1).
+    Round,
+    /// Another member's reply named it.
+    Chained,
 }
 
 /// A room's member: its persona, its session (a hidden thread, empty until its first turn) and the newest room
