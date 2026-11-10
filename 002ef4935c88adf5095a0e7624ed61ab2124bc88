@@ -1,0 +1,6 @@
+Decided: ship the approved revision-2 mockups as-is and only merge current staging before opening the PR.
+Because: q1081
+Because: "Linked threads get a composer (q1079)"
+Rejected: redrawing or re-shooting PNGs after approval — the owner approved 5cad96b and the merge touches no design file.
+Check: docs/design/rooms/README.md maps every PNG to its G1–G8 or revision-2 decision; diff is docs only.
+Owner: The approved room and linked-exchange mockups are now in a PR to staging; no app code changes.
