@@ -8,7 +8,8 @@ cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
 mkdir -p "$tmp/shed" "$tmp/root/project" "$tmp/personas"
 cargo build --quiet --locked -p cooee
-chat=$(cargo test --locked -p cooee --test chat --no-run 2>&1 | sed -n 's/.*Executable tests\/chat.rs (\(.*\))/\1/p')
+# cargo's JSON messages, not its human output: CI sets CARGO_TERM_COLOR=always, which wraps that in colour codes.
+chat=$(cargo test --locked -p cooee --test chat --no-run --message-format=json | sed -n '/"kind":\["test"\]/s/.*"executable":"\([^"]*\)".*/\1/p')
 FAKE_SHED_DIR="$tmp/shed" FAKE_SHED_DELAY_MS=400 "${chat:?}" --ignored --exact fake_shed_server --quiet >/dev/null &
 fake=$!
 trap 'kill "$fake" ${srv:-} 2>/dev/null' EXIT INT TERM
