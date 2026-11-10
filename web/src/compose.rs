@@ -1,7 +1,7 @@
 //! Who a chat runs as, said with the provider's name and never the agent's id (#48), and Settings › providers, the
 //! flat list of accounts.
 
-use cooee_core::{Account, Sheet, Status};
+use cooee_core::{Account, Sheet, Status, Usage, Window};
 use topcoat::{
     Result,
     view::{View, component, view},
@@ -78,6 +78,19 @@ pub async fn login_panel(provider: String, command: String) -> Result<impl View>
     })
 }
 
+/// A signed-in account's usage in Settings › providers (#183): `5h — · 7d 40% · read 5m`, a window past its reset
+/// at 0 %.
+fn usage_line(u: Usage) -> String {
+    let u = u.at(crate::now() / 1000);
+    let pct = |w: Option<Window>| w.map_or("—".to_owned(), |w| format!("{}%", w.used_pct));
+    let read = crate::age(u.read_at * 1000);
+    format!(
+        "5h {} · 7d {} · read {read}",
+        pct(u.five_hour),
+        pct(u.seven_day)
+    )
+}
+
 /// One account in Settings › providers: `[provider] <who> ✓ signed in [sign out]`, `signed out [sign in]`, or why
 /// it can't tell.
 #[component]
@@ -94,6 +107,9 @@ async fn account_row(provider: String, a: Account, s: Status) -> Result<impl Vie
                 }
             } else if s.signed_in {
                 <span class="st g">"✓ signed in"</span>
+                if let Some(u) = s.usage {
+                    <span class="st m">(usage_line(u))</span>
+                }
                 <button type="button" class="sec sgo">"sign out"</button>
             } else {
                 <span class="st m">"signed out"</span>

@@ -24,7 +24,8 @@ const USAGE: &str = "usage: cooee <serve | pair | devices | reports | devices rm
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
                      | theme check <path>... | accounts ls [--json] \
-                     | accounts env <provider> <name> [--require-signed-in] | mcp ls \
+                     | accounts env <provider> <name> [--require-signed-in] \
+                     | accounts add <provider> <name> --folder <path> | accounts rm <provider> <name> | mcp ls \
                      | mcp add <name> (<command> [<arg>...] | --url <url> [--type sse]) \
                      [--env K=secret:N|env:N]... [--header K=secret:N|env:N]... | mcp rm|enable|disable <name> \
                      | mcp proxy <server> --thread <id> | mcp serve --thread <id>> [--instance <name>] [--config <file>] \
