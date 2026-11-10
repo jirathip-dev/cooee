@@ -40,6 +40,8 @@ pub struct Persona {
     pub model: String,
     /// The default effort (empty: the agent's).
     pub effort: String,
+    /// The machine it runs on (#148): one added to shed (`shed machine ls`), empty: this host.
+    pub machine: String,
     /// The installed plugins attached to it (#129): their cards go only to its chats.
     pub plugins: Vec<String>,
     /// The owner profile it runs as (one read as a persona), never set over the API.

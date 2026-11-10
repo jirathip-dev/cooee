@@ -1,11 +1,11 @@
 # #144: archive the iOS app (apple/) and upload it to TestFlight from CI; no local Xcode, no Ruby/fastlane, no .p12.
 # Apple manages the distribution certificate and profiles (cloud signing through the App Store Connect API key).
-# The ASC_* secrets live in the `testflight` environment, which only `staging` may deploy from: pull_request
-# and fork runs can't read them. docs/testflight.md has the owner's one-time steps.
+# Uploads run only on a merge to `main` (#180). The ASC_* secrets live in the `testflight` environment, which only
+# `main` may deploy from: pull_request and fork runs can't read them. docs/testflight.md has the owner's one-time steps.
 name: apple-testflight
 on:
   push:
-    branches: [staging]
+    branches: [main]
     paths: ["apple/**", ".github/workflows/apple-testflight.yml", "scripts/asc-token.swift"]
   workflow_dispatch:
 permissions:
@@ -18,15 +18,18 @@ defaults:
     shell: bash
 jobs:
   testflight:
+    if: github.ref == 'refs/heads/main'
     runs-on: macos-26
     environment: testflight
     timeout-minutes: 60
     env:
-      ASC_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-      LOG: ${{ runner.temp }}/xcodebuild.log
     steps:
+      # `runner` isn't available in a job-level env, so the temp paths go through $GITHUB_ENV.
+      - name: temp paths
+        run: |
+          { echo "ASC_KEY_PATH=$RUNNER_TEMP/AuthKey.p8"; echo "LOG=$RUNNER_TEMP/xcodebuild.log"; } >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - name: App Store Connect (bundle id, team, app, next build number)
         env:

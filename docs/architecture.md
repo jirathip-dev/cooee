@@ -27,7 +27,7 @@ keeps them going while the phone is away; cooee talks to shed and pings the phon
 | `cooee-web` | `web/` | the web UI, HTML-first (ADR 0001, #49): server-rendered pages and sheets, strict TypeScript in `web/ts` stripped by `build.rs` (oxc; no Node to build) only where script is needed, `app.css`, the PWA manifest, the themes and schemes (`look.rs`, `shown.rs`, `themes/`, `schemes/`); its script calls only `docs/api.md` | not the server or binary |
 | `cooee-machines` | `crates/cooee-machines` | the first-party plugin `machines` ([plugins.md](plugins.md)): machines' health from shed, its backend and tab module | core |
 | `cooee-terminal` | `crates/cooee-terminal` | the first-party plugin `terminal` ([plugins.md](plugins.md)): the owner's shells through shed, its backend and tab module | core |
-| `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3) | core, web |
+| `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3), `GET /machines` (the machines plugin's data, #148) | core, web, machines |
 | `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
 
 `scripts/dep-direction.sh` enforces the last column in CI.

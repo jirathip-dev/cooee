@@ -1076,6 +1076,7 @@ mod tests {
                 id: 3,
                 at: 3,
                 seq: 2,
+                speaker: String::new(),
                 body: Body::Approval {
                     tool: "Edit src/lib.rs".to_owned(),
                     options: Vec::new(),

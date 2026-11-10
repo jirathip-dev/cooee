@@ -51,6 +51,9 @@ pub struct Thread {
     /// The effort, as `model`.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub effort: String,
+    /// The machine it runs on (#148): its persona's, or the one picked at its start; empty: this host.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub machine: String,
     /// The newest item id the owner has seen.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub read: Option<u64>,
@@ -72,6 +75,50 @@ pub struct Thread {
     /// Sent ahead of the next message after a folder was attached (#86): the agent started again there.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub handover: String,
+    /// A chat, or a room (#154).
+    #[serde(default, skip_serializing_if = "Kind::is_chat")]
+    pub kind: Kind,
+    /// A room's members, in room order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub members: Vec<Member>,
+    /// A room's members still to take a turn on the owner's last message, in order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub round: Vec<String>,
+    /// A member's session: the room it is a member of (hidden from the thread list).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub room: String,
+}
+
+/// What a [`Thread`] is.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Kind {
+    /// A conversation with one agent.
+    #[default]
+    Chat,
+    /// The owner with 2 to 5 member personas, each in its own session.
+    Room,
+}
+
+impl Kind {
+    fn is_chat(&self) -> bool {
+        *self == Self::Chat
+    }
+}
+
+/// A room's member: its persona, its session (a hidden thread, empty until its first turn) and the newest room
+/// item it was given.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Member {
+    /// The persona's id.
+    pub persona: String,
+    /// Its session's thread id.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub session: String,
+    /// The newest room item id its session was given.
+    #[serde(default)]
+    pub heard: u64,
 }
 
 /// A message queued during a turn.
