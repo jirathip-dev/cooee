@@ -36,7 +36,7 @@ internal struct RunBlock: View {
         var values: [String: JSONValue] = ["choice": .string(choice)]
         if choice == "approve" { values["sha"] = block["sha"] }
         let content = label()
-        return ActButton(block: block.id ?? "", action: block.string("action"), source: source, values: values) {
+        return ActButton(action: block.string("action"), source: source, values: values) {
             content
         }
     }
@@ -75,7 +75,7 @@ internal struct SecretBlock: View {
                     send
                 }.buttonStyle(.plain)
             } else {
-                ActButton(block: block.id ?? "", source: block, values: [name: .string(value)]) { send }
+                ActButton(source: block, values: [name: .string(value)]) { send }
             }
         }
         .alert(block.string("label") ?? name, isPresented: $editing) {
@@ -95,7 +95,6 @@ internal struct SecretBlock: View {
 }
 
 internal struct FieldsBlock: View {
-    @Environment(\.look) private var look
     @Environment(\.card) private var context
     @Environment(\.form) private var shared
     @State private var own: [String: JSONValue] = [:]
@@ -108,7 +107,7 @@ internal struct FieldsBlock: View {
                 FieldRow(field: field, edits: edits)
             }
             if let submit = block["submit"] {
-                ActButton(block: block.id ?? "", source: submit, values: block.fieldValues.merging(own) { $1 }) {
+                ActButton(source: submit, values: block.fieldValues.merging(own) { $1 }) {
                     CardButton(title: submit.string("label") ?? "", primary: true, tint: context.tint)
                 }
             }

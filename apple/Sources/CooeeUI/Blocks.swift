@@ -121,7 +121,7 @@ internal struct GroupBlock: View {
                 Text(block.string("title") ?? "").ui(block["large"]?.bool == false ? 17 : 30, .bold, look)
                 Spacer(minLength: 4)
                 ForEach(Array(block.list("actions").enumerated()), id: \.offset) { _, item in
-                    ToolbarItemView(screen: block.id ?? "", item: item)
+                    ToolbarItemView(item: item)
                 }
             }
             BlockStack(blocks: block.list("blocks"), spacing: 14)
@@ -142,8 +142,6 @@ internal struct GroupBlock: View {
 }
 
 internal struct ToolbarItemView: View {
-    @Environment(\.look) private var look
-    internal let screen: String
     internal let item: JSONValue
 
     private var symbol: String {
@@ -158,11 +156,11 @@ internal struct ToolbarItemView: View {
         let icon = RoundButton(symbol: symbol, ascii: item.string("label") ?? "", size: 36)
             .accessibilityLabel(item.string("label") ?? "")
         if item["menu"] == nil {
-            ActButton(block: screen, source: item) { icon }
+            ActButton(source: item) { icon }
         } else {
             Menu {
                 ForEach(Array(item.list("menu").enumerated()), id: \.offset) { _, entry in
-                    ActButton(block: screen, source: entry) { Text(entry.string("label") ?? "") }
+                    ActButton(source: entry) { Text(entry.string("label") ?? "") }
                 }
             } label: {
                 icon
@@ -186,7 +184,7 @@ internal struct SheetBlock: View {
                 Text(block.string("title") ?? "").ui(16, .semibold, look)
                 Spacer()
                 if let done = block["done"] {
-                    ActButton(block: block.id ?? "", source: done, values: block.fieldValues.merging(values) { $1 }) {
+                    ActButton(source: done, values: block.fieldValues.merging(values) { $1 }) {
                         Text(done.string("label") ?? "").ui(16, .semibold, look).foregroundStyle(palette.link)
                     }
                 }

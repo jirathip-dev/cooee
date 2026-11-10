@@ -5,7 +5,6 @@ internal struct ActButton<Label: View>: View {
     @Environment(\.act) private var act
     @Environment(\.openURL) private var openURL
     @State private var pending: JSONValue?
-    internal let block: String
     internal var action: String?
     internal let source: JSONValue
     internal var values: [String: JSONValue] = [:]
@@ -24,7 +23,7 @@ internal struct ActButton<Label: View>: View {
     private func fire() {
         if let url = source["tap"]?.string("url").flatMap(URL.init(string:)) {
             openURL(url)
-        } else if let action = BlockAction(block: block, action: action, source: source, values: values) {
+        } else if let action = BlockAction(action: action, source: source, values: values) {
             act(action)
         }
     }
@@ -161,8 +160,7 @@ internal struct ChoiceBlock: View {
         VStack(alignment: .leading, spacing: 8) {
             if let question = block.string("question") { Text(question).ui(15, .semibold, look) }
             ForEach(Array(options.enumerated()), id: \.offset) { index, option in
-                ActButton(block: block.id ?? "", action: block.string("action"), source: option, values: values(option))
-                {
+                ActButton(action: block.string("action"), source: option, values: values(option)) {
                     CardButton(
                         title: title(option),
                         primary: option.string("value") == block.string("recommended"),

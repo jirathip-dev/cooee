@@ -64,22 +64,20 @@ extension JSONValue {
 }
 
 public struct BlockAction: Sendable, Equatable {
-    public let block: String
     public let action: String
     public let values: [String: JSONValue]
 
-    public init(block: String, action: String, values: [String: JSONValue]) {
-        self.block = block
+    public init(action: String, values: [String: JSONValue]) {
         self.action = action
         self.values = values
     }
 
-    public init?(block: String, action: String?, source: JSONValue, values: [String: JSONValue]) {
+    public init?(action: String?, source: JSONValue, values: [String: JSONValue]) {
         let tap = source["tap"] ?? .null
         guard let name = action ?? source.string("action") ?? tap.string("action") else { return nil }
         let own =
             tap["values"]?.fields.merging(source["values"]?.fields ?? [:]) { $1 } ?? source["values"]?.fields ?? [:]
-        self.init(block: block, action: name, values: own.merging(values) { $1 })
+        self.init(action: name, values: own.merging(values) { $1 })
     }
 
     public var answer: (option: String, value: String?)? {

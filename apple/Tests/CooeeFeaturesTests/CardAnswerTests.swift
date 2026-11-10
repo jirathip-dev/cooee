@@ -8,7 +8,7 @@ import Testing
 internal struct CardAnswerTests {
     private let calls = Calls()
     private let run = BlockAction(
-        block: "4-answer", action: "answer", values: ["choice": .string("approve"), "sha": .string("3b7e")])
+        action: "answer", values: ["choice": .string("approve"), "sha": .string("3b7e")])
 
     private func store(
         _ target: ChatFeature.Target = .thread("a1"),
@@ -29,7 +29,7 @@ internal struct CardAnswerTests {
         let store = store()
         await store.send(.answer(4, run)) { $0.answering = [4] }
         await store.receive(\.answered) { $0.answering = [] }
-        await store.send(.answer(5, BlockAction(block: "5-answer", action: "answer", values: [:])))
+        await store.send(.answer(5, BlockAction(action: "answer", values: [:])))
         await self.store(.new(coder)).send(.answer(4, run))
         #expect(calls.all == ["answer a1 4 approve 3b7e"])
     }

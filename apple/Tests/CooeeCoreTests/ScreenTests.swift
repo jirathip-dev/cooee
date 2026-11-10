@@ -75,7 +75,7 @@ internal struct ScreenTests {
 
     @Test internal func anActionAnswersWithItsChoiceOrOtherTextAndItsOneValue() {
         let act = { (values: [String: JSONValue]) in
-            BlockAction(block: "7", action: "answer", values: values).answer.map { "\($0.option) \($0.value ?? "-")" }
+            BlockAction(action: "answer", values: values).answer.map { "\($0.option) \($0.value ?? "-")" }
         }
         #expect(act(["choice": .string("approve"), "sha": .string("3b7e")]) == "approve 3b7e")
         #expect(act(["choice": .string("revise"), "other": .string("smaller")]) == "smaller -")

@@ -21,7 +21,7 @@ internal struct LeafBlock: View {
     private var button: some View {
         let style = block.string("style")
         let tint = style == "destructive" ? look.palette.red : context.tint
-        return ActButton(block: block.id ?? "", source: block) {
+        return ActButton(source: block) {
             CardButton(title: block.string("label") ?? "", primary: style == "primary", tint: tint)
         }
     }
@@ -73,12 +73,11 @@ internal struct RowView: View {
     internal let row: JSONValue
 
     internal var body: some View {
-        let id = row.id ?? ""
         Group {
             if row["tap"] == nil {
                 line
             } else {
-                ActButton(block: id, source: row) { line }
+                ActButton(source: row) { line }
             }
         }
         .contextMenu {
@@ -121,7 +120,7 @@ internal struct RowView: View {
     }
 
     private func run(_ swipe: JSONValue) {
-        if let action = BlockAction(block: row.id ?? "", action: nil, source: swipe, values: [:]) { act(action) }
+        if let action = BlockAction(action: nil, source: swipe, values: [:]) { act(action) }
     }
 }
 
@@ -240,7 +239,7 @@ internal struct ChipsBlock: View {
         let name = block.string("name") ?? ""
         let chosen: JSONValue = multi ? .array(next.map(JSONValue.string)) : .string(value)
         if let action = block.string("action") {
-            act(BlockAction(block: block.id ?? "", action: action, values: [name: chosen]))
+            act(BlockAction(action: action, values: [name: chosen]))
         }
     }
 }

@@ -9,16 +9,16 @@ internal struct ActionTests {
 
     @Test internal func aTapSendsItsActionWithTheTapsTheSourcesAndTheGivenValues() throws {
         let row = try Self.decode(#"{"tap": {"action": "open-lane", "values": {"n": 7, "x": 1}}, "values": {"x": 2}}"#)
-        let action = BlockAction(block: "q-722", action: nil, source: row, values: ["choice": .string("y")])
+        let action = BlockAction(action: nil, source: row, values: ["choice": .string("y")])
         #expect(
             action
                 == BlockAction(
-                    block: "q-722", action: "open-lane",
+                    action: "open-lane",
                     values: ["n": .number(7), "x": .number(2), "choice": .string("y")]))
         let button = try Self.decode(#"{"action": "wave"}"#)
-        #expect(BlockAction(block: "w", action: nil, source: button, values: [:])?.action == "wave")
-        #expect(BlockAction(block: "c", action: "answer", source: .null, values: [:])?.action == "answer")
-        #expect(BlockAction(block: "c", action: nil, source: .object([:]), values: [:]) == nil)
+        #expect(BlockAction(action: nil, source: button, values: [:])?.action == "wave")
+        #expect(BlockAction(action: "answer", source: .null, values: [:])?.action == "answer")
+        #expect(BlockAction(action: nil, source: .object([:]), values: [:]) == nil)
     }
 
     @Test internal func aDestructiveTapIsAlwaysConfirmedTitledWithItsLabel() throws {
