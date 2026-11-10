@@ -157,7 +157,7 @@ internal struct MacPairPhone: View {
         let palette = look.palette
         HStack(alignment: .center, spacing: 36) {
             VStack(spacing: 10) {
-                QRCode(text: state.code?.link.absoluteString ?? "", size: 230)
+                QRCode(text: state.code?.link ?? "", size: 230)
                     .padding(18).background(.white, in: .rect(cornerRadius: 18))
                 Text("or enter \(state.code?.code ?? "…")").font(.system(size: 13, design: .monospaced))
                     .foregroundStyle(palette.mute)

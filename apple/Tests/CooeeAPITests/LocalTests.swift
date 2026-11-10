@@ -29,7 +29,7 @@
         @Test internal func theMacReadsTheCodeAndRequestsAndAnswersThroughCooee() throws {
             let server = try fake(Self.fakeCooee)
             let code = try server.code()
-            #expect(code.code == "123456" && code.link.absoluteString == "http://127.0.0.1:4747/pair?code=123456")
+            #expect(code.code == "123456" && code.link == "http://127.0.0.1:4747/pair?code=123456")
             #expect(try server.requests() == [PairRequest(id: "ab12cd34", word: "maple fox", label: "iPhone")])
             try server.answer("ab12cd34", yes: true)
             try server.answer("ab12cd34", yes: false)

@@ -116,9 +116,7 @@ public enum Fixtures {
             SignIn(provider: "codex", name: "", signedIn: false),
         ]
         state.network = Network(name: "mini", lan: "server.local · 192.0.2.20", tailnet: nil)
-        if let link = URL(string: "https://server.example.com/pair?c=K7Q2MX") {
-            state.code = PairCode(link: link, code: "K7Q2MX", minutes: 5)
-        }
+        state.code = PairCode(link: "https://server.example.com/pair?c=K7Q2MX", code: "K7Q2MX", minutes: 5)
         state.request = step == .approve ? PairRequest(id: "r1", word: "maple", label: "Guy's iPhone") : nil
         return state
     }

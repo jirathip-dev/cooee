@@ -109,14 +109,16 @@ private struct TailscalePeer: Decodable {
 }
 
 public struct PairCode: Sendable, Equatable {
-    public let link: URL
+    public let link: String
     public let code: String
     public let minutes: Int
 
-    public var host: String { link.host() ?? "" }
-    public var local: URL { URL(string: "http://127.0.0.1:\(link.port ?? 4747)") ?? link }
+    public var host: String { URL(string: link)?.host() ?? "" }
+    public var local: URL {
+        URL(string: "http://127.0.0.1:\(URL(string: link)?.port ?? 4747)") ?? URL(filePath: "/")
+    }
 
-    public init(link: URL, code: String, minutes: Int) {
+    public init(link: String, code: String, minutes: Int) {
         self.link = link
         self.code = code
         self.minutes = minutes
@@ -125,9 +127,8 @@ public struct PairCode: Sendable, Equatable {
     /// The code `cooee pair` printed: its `code  123 456  (one use, 10 minutes)` and `link  <url>` lines.
     public init?(output: String) {
         let lines = output.split(separator: "\n").map(String.init)
-        guard
-            let link = lines.first(where: { $0.hasPrefix("link  ") }).flatMap({ URL(string: String($0.dropFirst(6))) }),
-            let code = PairTarget(typed: link.absoluteString)?.code
+        guard let link = lines.first(where: { $0.hasPrefix("link  ") }).map({ String($0.dropFirst(6)) }),
+            let code = PairTarget(typed: link)?.code
         else { return nil }
         let line = lines.first { $0.hasPrefix("code  ") } ?? ""
         let minutes = line.split(separator: ",").last?.split(separator: " ").first.flatMap { Int($0) }
