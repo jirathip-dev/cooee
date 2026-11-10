@@ -1,0 +1,5 @@
+unauth GET: 401
+{"ops": [{"op": "merge", "id": "waves", "fields": {"value": "1"}}]}
+{"ops": [{"op": "merge", "id": "waves", "fields": {"value": "2"}}]}
+{"ops": [{"op": "merge", "id": "waves", "fields": {"value": "3"}}]}
+GET after 3 waves == fixtures/hello.json: True
