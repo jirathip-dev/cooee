@@ -51,7 +51,7 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
 
 public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
-        case id, name, avatar, agent, model, effort, folder, machine, character, instructions, plugins, profile
+        case id, name, avatar, agent, model, effort, folder, machine, character, instructions, plugins, pinned, profile
         case canMessage = "can_message"
     }
 
@@ -67,6 +67,7 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
     public var instructions: String
     public var plugins: [String]
     public var canMessage: [String]
+    public var pinned: Bool
     public var profile: String?
 
     public init(
@@ -78,7 +79,8 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
         folder: String = "",
         character: String = "",
         instructions: String = "",
-        plugins: [String] = []
+        plugins: [String] = [],
+        pinned: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -91,6 +93,7 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
         self.instructions = instructions
         self.plugins = plugins
         canMessage = []
+        self.pinned = pinned
     }
 }
 

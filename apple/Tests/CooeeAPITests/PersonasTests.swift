@@ -12,6 +12,7 @@ extension APIPersona {
         coder.avatar = "data:image/png;base64,AA=="
         coder.machine = "air"
         coder.canMessage = ["chief"]
+        coder.pinned = true
         coder.profile = "coder"
         return coder
     }
@@ -31,7 +32,9 @@ internal struct PersonasTests {
         #expect(put.httpMethod == "PUT")
         #expect(try server.decoded("/personas/coder", as: APIPersona.self) == edited)
         let sent = try #require(server.body("/personas/coder"))
-        #expect(sent.contains(#""can_message":["chief"]"#) && sent.contains(#""machine":"air""#))
+        #expect(
+            sent.contains(#""can_message":["chief"]"#) && sent.contains(#""machine":"air""#)
+                && sent.contains(#""pinned":true"#))
         _ = try await server.client().create(APIPersona(id: "", name: "Coder", agent: "fake-acp"))
         #expect(server.requests("/personas").first?.httpMethod == "POST")
     }

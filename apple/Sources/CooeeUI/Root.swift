@@ -50,12 +50,14 @@ public struct AppRoot: View {
         let chats = home.state.chats(now: Date())
         if size == .compact {
             NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
-                HomeView(personas: home.pinned, chats: chats, actions: actions)
+                HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
                     .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
                     .toolbar(.hidden)
             }
         } else {
-            WideView(personas: home.pinned, chats: chats, selected: store.path.last, actions: actions) {
+            WideView(
+                personas: home.pinned, all: home.everyone, chats: chats, selected: store.path.last, actions: actions
+            ) {
                 chat(back: false)
             }
         }

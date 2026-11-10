@@ -49,6 +49,7 @@ public struct MacConnect: View {
 public struct WideView<Detail: View>: View {
     @Environment(\.look) private var look
     private let personas: [Persona]
+    private let all: [Persona]
     private let chats: [ListedChat]
     private let selected: String?
     private let actions: HomeActions
@@ -58,7 +59,7 @@ public struct WideView<Detail: View>: View {
         let palette = look.palette
         HStack(spacing: 0) {
             VStack(spacing: 0) {
-                TopBar(personas: personas, actions: actions).padding(.top, look.still ? 34 : 8)
+                TopBar(personas: all, actions: actions).padding(.top, look.still ? 34 : 8)
                 Scroller {
                     PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new)
                         .scaleEffect(0.9, anchor: .leading).padding(.top, 4)
@@ -74,12 +75,14 @@ public struct WideView<Detail: View>: View {
 
     public init(
         personas: [Persona],
+        all: [Persona]? = nil,
         chats: [ListedChat],
         selected: String?,
         actions: HomeActions,
         @ViewBuilder detail: () -> Detail
     ) {
         self.personas = personas
+        self.all = all ?? personas
         self.chats = chats
         self.selected = selected
         self.actions = actions

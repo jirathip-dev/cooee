@@ -111,6 +111,10 @@ extension PersonaSheet {
                     .popover(isPresented: $agentOpen) { agent.presentationCompactAdaptation(.popover) }
                 }
                 .padding(.horizontal, 14).frame(height: 48)
+                if !look.still {
+                    Toggle("Pin to Home", isOn: $draft.pinned).ui(16, .regular, look).padding(.horizontal, 14)
+                        .frame(height: 48)
+                }
             }
             Group2(header: "Character") { paragraph("Character", $draft.character) }
             Group2(header: "Instructions") { paragraph("Instructions", $draft.instructions) }

@@ -24,6 +24,14 @@ internal struct ListingTests {
         #expect(pinned.map(\.state) == [.working, .idle])
     }
 
+    @Test internal func homesRowIsThePinnedPersonasOrEveryoneWhileNoneIsPinned() {
+        var pinned = chief
+        pinned.pinned = true
+        #expect(Listing.pinned(personas: [coder, pinned], rows: []).map(\.id) == ["chief"])
+        #expect(Listing.pinned(personas: [coder, chief], rows: []).map(\.id) == ["coder", "chief"])
+        #expect(Listing.everyone(personas: [coder, pinned], rows: []).map(\.id) == ["coder", "chief"])
+    }
+
     @Test internal func theChatListDrawsEachRowWithItsPersonaOrItsAgent() {
         let rows = [
             row("t1", persona: "coder", state: "blocked", updated: 999_990),

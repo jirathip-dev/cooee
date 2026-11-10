@@ -2,6 +2,11 @@ import Foundation
 
 public enum Listing {
     public static func pinned(personas: [APIPersona], rows: [ThreadRow]) -> [Persona] {
+        let pinned = personas.filter(\.pinned)
+        return everyone(personas: pinned.isEmpty ? personas : pinned, rows: rows)
+    }
+
+    public static func everyone(personas: [APIPersona], rows: [ThreadRow]) -> [Persona] {
         personas.map { persona in
             let newest = rows.first { $0.persona == persona.id }
             return Persona(persona, state: newest.map { LaneState(api: $0.state) } ?? .idle)

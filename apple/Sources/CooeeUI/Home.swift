@@ -24,6 +24,7 @@ public struct HomeView: View {
     @Environment(\.look) private var look
     private let menuOpen: Bool
     private let personas: [Persona]
+    private let all: [Persona]
     private let chats: [ListedChat]
     private let selected: String?
     private let actions: HomeActions
@@ -33,7 +34,7 @@ public struct HomeView: View {
         ZStack(alignment: .topLeading) {
             Backdrop()
             VStack(spacing: 0) {
-                TopBar(personas: personas, actions: actions)
+                TopBar(personas: all, actions: actions)
                 Scroller {
                     PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new).padding(.top, 6)
                     ChatList(chats: chats, selected: selected, open: actions.open)
@@ -52,12 +53,14 @@ public struct HomeView: View {
     public init(
         menuOpen: Bool = false,
         personas: [Persona] = Fixtures.personas,
+        all: [Persona]? = nil,
         chats: [ListedChat] = Fixtures.chats,
         selected: String? = nil,
         actions: HomeActions = HomeActions()
     ) {
         self.menuOpen = menuOpen
         self.personas = personas
+        self.all = all ?? personas
         self.chats = chats
         self.selected = selected
         self.actions = actions
