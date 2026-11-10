@@ -1,5 +1,4 @@
 import CooeeAPI
-import SwiftUI
 import UserNotifications
 
 #if os(iOS)

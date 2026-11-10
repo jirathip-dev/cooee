@@ -1,5 +1,4 @@
 import CooeeCore
-import Foundation
 
 extension Client {
     public func create(_ persona: APIPersona) async throws -> APIPersona {

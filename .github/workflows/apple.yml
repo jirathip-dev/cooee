@@ -73,12 +73,16 @@ jobs:
         run: |
           sim=$(xcrun simctl create cooee-e2e "iPhone 17")
           xcrun simctl bootstatus "$sim" -b
+          # #139: built once before the pairing link is made, so its code is fresh when the test types it.
+          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim" \
+            -derivedDataPath "$RUNNER_TEMP/dd" build-for-testing
           for look in dark light; do
             xcrun simctl ui "$sim" appearance "$look"
             xcrun simctl keychain "$sim" reset
             link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
             TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" xcodebuild -skipMacroValidation -project Cooee.xcodeproj \
-              -scheme Cooee -destination "id=$sim" -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" test
+              -scheme Cooee -destination "id=$sim" -derivedDataPath "$RUNNER_TEMP/dd" \
+              -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" test-without-building
           done
       # #139: the personas the simulator made and edited, read back from the server, and a client round trip.
       - name: the simulator's personas on the server (swift test)
