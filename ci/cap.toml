@@ -4,4 +4,4 @@
 # put the total over it. Trim first, then ask `--kind owner`.
 [fleet.cooee]
 line_cap = 27500
-apple_cap = 5000
+apple_cap = 7500
