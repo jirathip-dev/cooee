@@ -64,7 +64,8 @@ fn ask(path: &str, body: &Value) -> Result<Value, String> {
         .ok_or("cooee's URL is http://host:port")?;
     let body = body.to_string();
     let mut s = TcpStream::connect(host).map_err(|e| format!("cooee at {url}: {e}"))?;
-    s.set_read_timeout(Some(Duration::from_secs(30)))
+    // `ask_persona` waits up to 10 minutes for its reply.
+    s.set_read_timeout(Some(Duration::from_secs(630)))
         .map_err(|e| e.to_string())?;
     // HTTP/1.0: the whole body, never chunked.
     let head = format!(
@@ -357,7 +358,8 @@ pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
         .collect())
 }
 
-/// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126) for a persona's.
+/// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126) and
+/// `ask_persona` (#156) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -385,6 +387,15 @@ pub fn serve(thread: &str) -> Result<(), String> {
         "description": "Keep a note in your persona's memory: it reaches you with your instructions in every new session. The owner can read and clear it.",
         "inputSchema": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" } } }
     });
+    let ask_persona = json!({
+        "name": "ask_persona",
+        "description": "Ask another persona (one your persona's can_message names) and wait for its reply. The owner sees the exchange as a linked thread. A refusal starts with NOT_ALLOWED, DEPTH, TIMEOUT or OFFLINE.",
+        "inputSchema": { "type": "object", "required": ["persona", "message"], "properties": {
+            "persona": { "type": "string", "description": "its id" },
+            "message": { "type": "string" },
+            "timeout": { "type": "integer", "description": "seconds to wait, at most 600 (default 300)" }
+        } }
+    });
     for line in io::stdin().lock().lines().map_while(Result::ok) {
         let Ok(msg) = serde_json::from_str::<Value>(&line) else {
             continue;
@@ -402,7 +413,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                 }),
             ),
             "ping" => reply(id, &json!({})),
-            "tools/list" => reply(id, &json!({ "tools": [tool, remember] })),
+            "tools/list" => reply(id, &json!({ "tools": [tool, remember, ask_persona] })),
             "tools/call" => {
                 let args = msg
                     .pointer("/params/arguments")
@@ -417,20 +428,22 @@ pub fn serve(thread: &str) -> Result<(), String> {
                         "/mcp/agent/remember",
                         "Noted: it reaches you in your next sessions.",
                     )),
+                    // Its answer (a string) is the reply.
+                    Some("ask_persona") => Some(("/mcp/agent/ask", "")),
                     _ => None,
                 };
                 match call.map(|(path, said)| {
-                    ask(path, &json!({ "thread": thread, "server": args })).map(|_| said)
+                    let got = ask(path, &json!({ "thread": thread, "server": args }));
+                    got.map(|v| v.as_str().unwrap_or(said).to_owned())
                 }) {
                     Some(said) => {
-                        let (text, failed) =
-                            said.map_or_else(|e| (e, true), |s| (s.to_owned(), false));
+                        let (text, failed) = said.map_or_else(|e| (e, true), |s| (s, false));
                         reply(
                             id,
                             &json!({ "content": [{ "type": "text", "text": text }], "isError": failed }),
                         )
                     }
-                    None => error(id, -32602, "cooee's tools are propose_server and remember"),
+                    None => error(id, -32602, "cooee has no such tool"),
                 }
             }
             m => error(id, -32601, &format!("no method {m}")),

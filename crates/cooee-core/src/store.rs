@@ -87,6 +87,9 @@ pub struct Thread {
     /// A member's session: the room it is a member of (hidden from the thread list).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub room: String,
+    /// A linked exchange (#156): the thread whose persona asked this one's (`ask_persona`).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub asked_by: String,
 }
 
 /// What a [`Thread`] is.

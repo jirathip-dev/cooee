@@ -27,6 +27,7 @@ use crate::{
     push::{Note, Push, note},
 };
 
+mod ask;
 mod rooms;
 pub use rooms::Starter;
 
@@ -193,6 +194,8 @@ pub struct Recipe {
     pub mcp: Vec<String>,
     /// The room it is a member's session of (#154; its persona is `profile`).
     pub room: String,
+    /// The thread whose persona asked this one's (#156).
+    pub asked_by: String,
     /// The machine it runs on (#148; empty: this host), one of [`cooee_machines::Machines::added`].
     pub machine: String,
 }
@@ -232,6 +235,8 @@ pub struct Hub {
     turns: mpsc::Sender<String>,
     /// How a room's member session starts, given its persona.
     starter: OnceLock<Starter>,
+    /// Each pending `ask_persona` (#156) by `<asking thread>><persona>`: where its reply goes.
+    asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
 }
 
 pub(crate) fn now() -> u64 {
@@ -420,6 +425,7 @@ impl Hub {
             tools: Mutex::default(),
             turns,
             starter: OnceLock::new(),
+            asks: Mutex::default(),
         });
         let worker = Arc::clone(&hub);
         thread::spawn(move || {
@@ -635,6 +641,7 @@ impl Hub {
             _ => None,
         });
         let seat = (live.meta.room.clone(), live.meta.profile.clone());
+        let asked = format!("{}>{}", live.meta.asked_by, seat.1);
         let done = live
             .publish(self, changes)
             .map_err(HubError::from)
@@ -642,6 +649,11 @@ impl Hub {
         drop(live);
         let done = match reply {
             Some(body) if !seat.0.is_empty() => done.and(self.replied(&seat.0, &seat.1, body)),
+            // An asked persona's reply goes to its asker's pending `ask_persona` (#156).
+            Some(Body::Agent { text, .. }) => {
+                lock(&self.asks).remove(&asked).map(|tx| tx.send(text));
+                done
+            }
             _ => done,
         };
         if let Err(e) = done {
@@ -1003,6 +1015,7 @@ impl Hub {
             effort: recipe.effort.clone(),
             random_id: random_id.to_owned(),
             room: recipe.room.clone(),
+            asked_by: recipe.asked_by.clone(),
             ..Thread::default()
         })
     }

@@ -44,6 +44,8 @@ pub struct Persona {
     pub machine: String,
     /// The installed plugins attached to it (#129): their cards go only to its chats.
     pub plugins: Vec<String>,
+    /// The personas it may ask with `ask_persona` (#156, G4).
+    pub can_message: Vec<String>,
     /// The owner profile it runs as (one read as a persona), never set over the API.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub profile: Option<String>,
