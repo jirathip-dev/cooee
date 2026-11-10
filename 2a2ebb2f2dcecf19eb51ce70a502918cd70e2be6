@@ -1,0 +1,12 @@
+Decided: models come from each ACP session's reported list (shed wait result), cached per agent and account, set with acp.model
+Because: "cooee reads the models each agent offers from the ACP session"
+Decided: a short name is a model id's alphabetic words; a pick matches ids holding its words in order; newest by version then date
+Because: crates/cooee-core/src/models.rs:85
+Decided: a gone pinned id falls back to its family short name, one note on the thread and one persona memory note
+Because: "A pinned ID that's gone falls back to its family's short name"
+Decided: daily refresh probes any agent and account whose list is a day old, then closes the probe terminal
+Because: crates/cooee-server/src/hub/models.rs:106
+Rejected: keeping ANTHROPIC_MODEL launch words with resolved ids — needs a known list before the first start and only works for Claude
+Rejected: an /api/v1 prefix — cooee's API has none; GET /models documented in docs/api.md
+Check: tests/model.rs drives the real POST /threads with a fake shed whose session.json supplies the models
+Owner: model pickers now fill from what each agent reports; short names follow the newest, pinned ones fall back with a note
