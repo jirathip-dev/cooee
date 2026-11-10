@@ -1,0 +1,22 @@
+## transcript (verify-124-r1, head e434a92041d5fe9c66bdb05e72a9701be58805ba)
+npm ci exit=0
+web/e2e/serve.sh launch; ready after 1s; doctor exit=0
+drive exit=0
+unpaired / -> /pair
+paired -> /
+390 agents ok
+390 new ok
+390 chat ok
+390 settings ok
+390 plugin-hello ok
+390 plugin-machines ok
+1440 agents ok
+1440 new ok
+1440 chat ok
+1440 settings ok
+1440 plugin-hello ok
+1440 plugin-machines ok
+teardown kill exit=0; curl exit=7
+swift run --scratch-path $SCRATCH/swiftbuild shots $SCRATCH/shots -> exit=0 (38 PNGs)
+cmp each apple/design/v1/*.png vs fresh render: 38 committed, 0 byte-differ
+CI at e434a92: build (generic/platform=iOS Simulator) SUCCESS; build (generic/platform=macOS) SUCCESS; 9/9 checks green

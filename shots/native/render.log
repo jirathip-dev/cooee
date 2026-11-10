@@ -1,0 +1,83 @@
+Building for debugging...
+[Planning deferred tasks]
+[36 / 51] CooeeUI_CooeeUI
+[36 / 51]
+[37 / 52] CooeeUI
+[47 / 171]
+[50 / 171]
+[51 / 171]
+[59 / 171]
+[61 / 171]
+[62 / 171]
+[67 / 171]
+[70 / 171]
+[73 / 171]
+[79 / 171]
+[82 / 171]
+[84 / 171]
+[85 / 171]
+[97 / 171]
+[101 / 171]
+[103 / 171]
+[104 / 171]
+[111 / 171]
+[113 / 171]
+[119 / 171]
+[120 / 171]
+[123 / 171]
+[125 / 171]
+[134 / 171]
+[135 / 171]
+[139 / 171]
+[144 / 171]
+[145 / 171]
+[146 / 171]
+[156 / 171] CooeeUI
+[165 / 172] shots-product
+[167 / 174] shots-product
+[168 / 174] CooeeUI
+[168 / 174] shots-product
+[169 / 174] CooeeUI
+/Volumes/NVMe/herdsman/cooee/verify-124-r1/apple/Package.swift: CooeeUI: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+/Volumes/NVMe/herdsman/cooee/verify-124-r1/apple/Package.swift: shots-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Volumes/NVMe/herdsman/cooee/verify-124-r1/apple/Package.swift: shots-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[172 / 174] shots-product
+Build complete! (33.98 secs)
+home-dark.png 804x1748
+chat-streaming-dark.png 804x1748
+chat-card-dark.png 804x1748
+chat-cards-more-dark.png 804x1748
+chat-conductor-dark.png 804x1748
+persona-dark.png 804x1748
+avatar-menu-dark.png 804x1748
+pair-welcome-dark.png 804x1748
+pair-scan-dark.png 804x1748
+pair-nearby-dark.png 804x1748
+pair-address-dark.png 804x1748
+pair-waiting-dark.png 804x1748
+pair-paired-dark.png 804x1748
+home-light.png 804x1748
+chat-streaming-light.png 804x1748
+chat-card-light.png 804x1748
+chat-cards-more-light.png 804x1748
+chat-conductor-light.png 804x1748
+persona-light.png 804x1748
+avatar-menu-light.png 804x1748
+pair-welcome-light.png 804x1748
+pair-scan-light.png 804x1748
+pair-nearby-light.png 804x1748
+pair-address-light.png 804x1748
+pair-waiting-light.png 804x1748
+pair-paired-light.png 804x1748
+home-terminal-dark.png 804x1748
+chat-terminal-dark.png 804x1748
+home-scene-light.png 804x1748
+mac-setup-welcome.png 1920x1280
+mac-setup-folders.png 1920x1280
+mac-setup-signins.png 1920x1280
+mac-setup-tailscale.png 1920x1280
+mac-setup-qr.png 1920x1280
+mac-setup-approve.png 1920x1280
+mac-connect.png 1920x1280
+mac-window-dark.png 2560x1640
+mac-window-light.png 2560x1640
