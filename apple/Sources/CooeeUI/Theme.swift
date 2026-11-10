@@ -169,6 +169,7 @@ struct Scroller<Content: View>: View {
                 VStack(spacing: 0) { content }
             }
             .defaultScrollAnchor(end ? .bottom : .top)
+            .scrollDismissesKeyboard(.interactively)
         }
     }
 }

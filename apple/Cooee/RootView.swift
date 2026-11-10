@@ -1,53 +1,11 @@
 import CooeeUI
 import SwiftUI
 
-/// The app's root: onboarding until paired, then Home. iPhone pushes a chat over Home; Mac and iPad show the chat
-/// list as a sidebar beside the open chat. Fixtures only (#124); the API client comes with the build issues.
+/// The app's root (`AppRoot`): onboarding until paired, then Home and chats against the server (#143).
 public struct RootView: View {
-    @Environment(\.colorScheme) var scheme
-    #if os(iOS)
-    @Environment(\.horizontalSizeClass) var size
-    #else
-    let size: UserInterfaceSizeClass? = .regular
-    #endif
-    @State var paired = true
-    @State var style: LookStyle = .modern
-    @State var menu = false
-    @State var persona: String? = nil
-    @State var chat: String? = "t1"
-
     public init() {}
-
-    public var body: some View {
-        Group {
-            if !paired {
-                PhoneOnboarding(step: .welcome)
-            } else if size == .compact {
-                // iPhone: Home, a chat pushed over it.
-                NavigationStack {
-                    HomeView()
-                        .navigationDestination(for: String.self) { id in chatView(id).toolbar(.hidden) }
-                        .toolbar(.hidden)
-                }
-            } else {
-                NavigationSplitView {
-                    HomeView()
-                } detail: {
-                    chatView(chat ?? "t1")
-                }
-            }
-        }
-        .sheet(isPresented: $menu) { AvatarMenu().presentationDetents([.medium, .large]) }
-        .sheet(item: Binding(get: { persona.map(Ident.init) }, set: { persona = $0?.id })) { PersonaSheet(personaID: $0.id) }
-        .environment(\.look, Look(palette: .farm(scheme), style: style))
-    }
-
-    func chatView(_ id: String) -> ChatView {
-        id == "t2" ? .cards() : .streaming()
-    }
+    public var body: some View { AppRoot() }
 }
-
-struct Ident: Identifiable { let id: String }
 
 #Preview("Home") { HomeView().environment(\.look, Look(palette: .farmDark)) }
 #Preview("Chat") { ChatView.streaming().environment(\.look, Look(palette: .farmDark)) }

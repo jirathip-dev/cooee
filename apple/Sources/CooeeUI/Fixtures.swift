@@ -72,7 +72,7 @@ public enum Item: Identifiable, Sendable {
 }
 
 /// Agent markdown, as blocks.
-public enum Block: Sendable {
+public enum Block: Sendable, Equatable {
     case text(String)
     case code(lang: String, String)
     case bullets([String])
