@@ -9,6 +9,7 @@ mod config;
 mod devices;
 mod login;
 pub mod mcp;
+pub mod models;
 pub mod perf;
 pub mod personas;
 pub mod plugins;

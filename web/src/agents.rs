@@ -891,6 +891,9 @@ async fn hello(
     providers: Vec<Sheet>,
     places: (Vec<(PathBuf, u8)>, Vec<Summary>),
 ) -> Result<impl View> {
+    let installed = agents.as_ref().ok().zip(mate.as_ref());
+    let models = installed.and_then(|(a, (_, m))| a.iter().find(|a| a.id == m.agent));
+    let models = models.map(|a| a.models.clone());
     let none = agents.err();
     let provider = mate
         .as_ref()
@@ -900,9 +903,8 @@ async fn hello(
             .iter()
             .any(|(a, s)| a.name.is_empty() && !s.signed_in && !s.unknown)
     });
-    let choices = provider.map_or_else(Default::default, |p| {
-        (p.provider.models.clone(), p.provider.efforts.clone())
-    });
+    let efforts = provider.map(|p| p.provider.efforts.clone());
+    let choices = (models.unwrap_or_default(), efforts.unwrap_or_default());
     Ok(view! {
         <div class="chat hip">
             match mate {
