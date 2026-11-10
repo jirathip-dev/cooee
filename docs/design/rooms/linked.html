@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · linked exchanges, a member's ask, pushes (#153)</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="rm.css">
+<script type="module" src="rm.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- In the asker's own chat: each ask_persona call is a card naming who asked whom, the message and the outcome, with
+     Open › to its linked thread. One refused by G4 (can_message), as the error the agent reads. -->
+<div class="fr"><p class="cap">Coder's chat · it asks Researcher (one refused)</p>
+<section class="ph col" data-f="asked">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <i class="pa" data-p="coder"></i>
+    <span class="hdt"><b>Coder</b><span class="agc2"><b>Codex</b>· gpt-5.5 ⌄</span></span>
+    <a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+  <ol class="msgs">
+    <li class="blk me">Add Kestrel's Q3 numbers to the export summary.</li>
+    <li class="at">I'll ask Researcher for the figures.</li>
+    <li class="lx"><span class="lxh"><i class="pa" data-p="coder"></i><i>→</i><i class="pa" data-p="res"></i><span><b>Coder</b> asked <b>Researcher</b></span></span>
+      <q>What did Kestrel report for Q3 revenue? I need the number and the filing date.</q>
+      <p class="lnote"><b>Your note</b> Use the 10-Q, not the deck, if they differ.</p>
+      <p class="lo"><span>✓ replied in 48s · with your note</span><a href="#">Open ›</a></p></li>
+    <li class="at">Q3 was <b>$4.1M</b> (10-Q, 6 Nov, per your note). It's in export/summary.md. I'll check the discount too.</li>
+    <li class="lx no"><span class="lxh"><i class="pa" data-p="coder"></i><i>→</i><i class="pa" data-p="am"></i><span><b>Coder</b> asked <b>Account Manager</b></span></span>
+      <q>Is the 8% Kestrel discount final?</q>
+      <p class="lo"><span>Not sent: Coder may not ask Account Manager</span><a href="#">Persona ›</a></p></li>
+    <li class="at">I can't reach Account Manager from here; its discount is the one open line in the summary.</li>
+    <li class="te2"><b data-st="done"><i class="sd"></i>done</b> · 09:52 · 2 min · 1 linked exchange</li>
+  </ol>
+  <div class="dock">
+    <div class="comp"><a class="gb" href="#" data-tx="[+]">+</a><span class="cfld"><span>Message Coder</span></span><span class="snd">↑</span></div>
+  </div>
+</section></div>
+
+<!-- The linked exchange thread: the asker's message, the asked persona's tools (you see them; the asker got only the
+     reply), the owner's note to the answerer (the asker gets it with the reply), a depth-2 ask nested in it, the reply
+     that went back, the depth meter and the note composer. -->
+<div class="fr"><p class="cap">The linked thread · Coder ⇄ Researcher</p>
+<section class="ph col" data-f="linked">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <span class="stk"><i class="pa" data-p="coder"></i><i class="pa" data-p="res"></i></span>
+    <span class="hdt"><b>Coder ⇄ Researcher</b><small>linked from Coder · Export for Kestrel</small></span>
+    <a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+  <ol class="msgs">
+    <li class="rnd">Today 09:50 · ask_persona</li>
+    <li class="mg" data-t="coder"><i class="pa" data-p="coder"></i><span class="mname"><b>Coder</b><span>asked · 09:50</span></span>
+      <div class="mt">What did Kestrel report for Q3 revenue? I need the number and the filing date.</div></li>
+    <li class="mg" data-t="res"><i class="pa" data-p="res"></i><span class="mname"><b>Researcher</b><span>09:50</span></span>
+      <a class="mx" href="#"><b class="g">✓</b><span>fetch sec.gov · 2 tools · only you see these</span><i>›</i></a></li>
+    <li class="onote"><span class="olb">Your note · to Researcher</span><span class="blk me">Use the 10-Q, not the deck, if they differ.</span></li>
+    <li class="lx"><span class="lxh"><i class="pa" data-p="res"></i><i>→</i><i class="pa" data-p="am"></i><span><b>Researcher</b> asked <b>Account Manager</b></span></span>
+      <q>Does Kestrel's Q3 deck restate revenue?</q>
+      <p class="lo"><span>✓ replied in 21s · depth 2</span><a href="#">Open ›</a></p></li>
+    <li class="mg" data-t="res"><i class="pa" data-p="res"></i><span class="mname"><b>Researcher</b><span>replied · 09:51</span></span>
+      <div class="mt">Q3 revenue was <b>$4.1M</b>, up 12% on Q2, from the 10-Q filed 6 Nov, as you asked. Their deck agrees.</div></li>
+    <li class="rnd">returned to Coder with your note · 48s</li>
+  </ol>
+  <div class="lxf">
+    <span class="dep"><i><u></u><u class="o"></u></i>depth 1 of 2 · Researcher could ask one more</span>
+    <span class="bt2"><a href="#">Coder's chat</a><a href="#">Researcher's chat</a></span>
+  </div>
+  <div class="dock">
+    <div class="comp"><a class="gb" href="#" data-tx="[+]">+</a><span class="cfld"><span>Note to Researcher</span></span><span class="snd">↑</span></div>
+  </div>
+</section></div>
+
+<!-- An ask in a room names its member; the round waits on you with its clock paused; only you see it (G3). -->
+<div class="fr"><p class="cap">A room ask · names the member</p>
+<section class="ph col" data-f="approval">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <span class="stk"><i class="pa" data-p="chief"></i><i class="pa" data-p="coder"></i><i class="pa" data-p="res"></i><i class="pa" data-p="am"></i></span>
+    <span class="hdt"><b>Kestrel launch</b><small>4 members · 6 turns max</small></span>
+    <a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+  <nav class="mstrip" data-x="strip" data-m="chief:replied coder:passed res:asks am:waiting" aria-label="members"></nav>
+  <ol class="msgs">
+    <li class="blk me">Where is Kestrel's revenue heading? Use their last three 10-Qs.</li>
+    <li class="mg" data-t="chief"><i class="pa" data-p="chief"></i><span class="mname"><b>Chief</b><span>10:02</span></span>
+      <div class="mt"><span class="mnt">@Researcher</span> has the filings; I'll wait for the numbers.</div></li>
+    <li class="ask" data-t="res"><span class="awho">✋ Ask · <i class="pa" data-p="res"></i><span>Researcher</span></span>
+      <h3>Allow fetch sec.gov?</h3>
+      <p>fetch https://www.sec.gov/cgi-bin/browse-edgar?company=kestrel</p>
+      <div class="chc"><button type="button" class="rec">Allow once</button><button type="button">Always for sec.gov</button><button type="button" class="no">Deny</button></div>
+      <p style="margin-top:8px">Only you see this. The others see Researcher's reply.</p></li>
+  </ol>
+  <div class="dock">
+    <div class="rp wait"><span><i class="sd"></i><b>Researcher asks you</b> · turn 3 of 6</span><button type="button" class="stop">Stop</button></div>
+  </div>
+</section></div>
+
+<!-- What pushes: a member that addresses you, asks or fails. Plain replies do not. -->
+<div class="fr"><p class="cap">Pushes · addresses you, asks, fails</p>
+<section class="ph" data-f="push">
+  <div class="lock">
+    <span class="dt2">Tuesday 10 November</span><span class="clk">10:03</span>
+    <div class="stack">
+      <div class="push"><i class="ai2">co</i><b>Kestrel launch · Researcher</b><small>now</small><span>Asks you: Allow fetch sec.gov?</span></div>
+      <div class="push"><i class="ai2">co</i><b>Kestrel launch · Chief</b><small>4m</small><span>@you Can you sign the order form today?</span></div>
+      <div class="push"><i class="ai2">co</i><b>Kestrel launch · Coder</b><small>9m</small><span>Failed: export job exited 1 (studio)</span></div>
+    </div>
+    <p class="ft">A room pushes only when a member <b>addresses you</b>, <b>asks</b> or <b>fails</b>. Replies to each other, passes and a round's end stay quiet: they wait in the room's unread count.</p>
+  </div>
+</section></div>
+
+<!-- 1440: the linked thread in the Mac window; in the sidebar, each exchange hangs under its asker's chat. -->
+<div class="fr w"><p class="cap">1440 · a linked exchange in the Mac window</p>
+<section class="wd mac two" data-f="wide-linked">
+  <aside class="side" data-x="side" data-sel="lx1"></aside>
+  <div class="col2">
+    <header class="rhd"><span class="stk"><i class="pa" data-p="coder"></i><i class="pa" data-p="res"></i></span>
+      <span class="hdt"><b>Coder ⇄ Researcher</b><small>linked from Coder · Export for Kestrel · ask_persona</small></span>
+      <a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+    <ol class="msgs">
+      <li class="rnd">Today 09:50</li>
+      <li class="mg" data-t="coder"><i class="pa" data-p="coder"></i><span class="mname"><b>Coder</b><span>asked · 09:50</span></span>
+        <div class="mt">What did Kestrel report for Q3 revenue? I need the number and the filing date.</div></li>
+      <li class="mg" data-t="res"><i class="pa" data-p="res"></i><span class="mname"><b>Researcher</b><span>09:50</span></span>
+        <a class="mx" href="#"><b class="g">✓</b><span>fetch sec.gov · 2 tools · only you see these</span><i>›</i></a></li>
+      <li class="onote"><span class="olb">Your note · to Researcher</span><span class="blk me">Use the 10-Q, not the deck, if they differ.</span></li>
+      <li class="lx"><span class="lxh"><i class="pa" data-p="res"></i><i>→</i><i class="pa" data-p="am"></i><span><b>Researcher</b> asked <b>Account Manager</b></span></span>
+        <q>Does Kestrel's Q3 deck restate revenue?</q>
+        <p class="lo"><span>✓ replied in 21s · depth 2</span><a href="#">Open ›</a></p></li>
+      <li class="mg" data-t="res"><i class="pa" data-p="res"></i><span class="mname"><b>Researcher</b><span>replied · 09:51</span></span>
+        <div class="mt">Q3 revenue was <b>$4.1M</b>, up 12% on Q2, from the 10-Q filed 6 Nov, as you asked. Their deck agrees.</div></li>
+      <li class="rnd">returned to Coder with your note · 48s</li>
+    </ol>
+    <div class="lxf">
+      <span class="dep"><i><u></u><u class="o"></u></i>depth 1 of 2 · Researcher could ask one more</span>
+      <span class="bt2"><a href="#">Coder's chat</a><a href="#">Researcher's chat</a></span>
+    </div>
+    <div class="dock">
+      <div class="comp"><a class="gb" href="#" data-tx="[+]">+</a><span class="cfld"><span>Note to Researcher</span></span><span class="snd">↑</span></div>
+    </div>
+</div>
+</section></div>
+
+</div>
+</body>
+</html>
