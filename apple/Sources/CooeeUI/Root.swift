@@ -87,6 +87,8 @@ internal struct ChatScreen: View {
                 stop: { store.send(.stop) },
                 steer: { store.send(.steer($0)) },
                 unqueue: { store.send(.unqueue($0)) },
+                answer: { store.send(.answer($0, $1)) },
+                answering: store.answering,
                 back: onBack
             )
         )

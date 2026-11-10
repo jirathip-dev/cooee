@@ -85,7 +85,7 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
 
 public struct APIItem: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
-        case id, kind, text, files, title, status, tool
+        case id, kind, text, files, title, status, tool, plugin, block
         case time = "at"
     }
 
@@ -97,6 +97,8 @@ public struct APIItem: Codable, Sendable, Equatable, Identifiable {
     public var title: String?
     public var status: String?
     public var tool: String?
+    public var plugin: String?
+    public var block: JSONValue?
 
     public init(
         id: Int,
@@ -106,7 +108,9 @@ public struct APIItem: Codable, Sendable, Equatable, Identifiable {
         files: [String]? = nil,
         title: String? = nil,
         status: String? = nil,
-        tool: String? = nil
+        tool: String? = nil,
+        plugin: String? = nil,
+        block: JSONValue? = nil
     ) {
         self.id = id
         self.time = time
@@ -116,6 +120,8 @@ public struct APIItem: Codable, Sendable, Equatable, Identifiable {
         self.title = title
         self.status = status
         self.tool = tool
+        self.plugin = plugin
+        self.block = block
     }
 }
 

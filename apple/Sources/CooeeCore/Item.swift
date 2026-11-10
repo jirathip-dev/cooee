@@ -28,52 +28,16 @@ public struct Field: Sendable, Equatable {
     }
 }
 
-public struct Choice: Sendable, Equatable {
-    public let title: String
-    public let detail: String
-    public let options: [String]
-    public let recommended: Int
-
-    public init(title: String, detail: String, options: [String], recommended: Int) {
-        self.title = title
-        self.detail = detail
-        self.options = options
-        self.recommended = recommended
-    }
-}
-
-public struct RunCard: Sendable, Equatable {
-    public let why: String
-    public let command: String
-    public let sha: String
-    public let folder: String
-    public let blast: String
-    public let lapses: String
-
-    public init(why: String, command: String, sha: String, folder: String, blast: String, lapses: String) {
-        self.why = why
-        self.command = command
-        self.sha = sha
-        self.folder = folder
-        self.blast = blast
-        self.lapses = lapses
-    }
-}
-
 public enum Item: Identifiable, Sendable, Equatable {
     case you(id: Int, text: String, files: [String] = [])
     case agent(id: Int, markdown: [Block])
     case tools(id: Int, rows: [ToolRow])
-    case choice(id: Int, Choice)
-    case config(id: Int, plugin: String, title: String, fields: [Field])
-    case secret(id: Int, plugin: String, name: String, why: String)
-    case run(id: Int, RunCard)
+    case card(id: Int, poster: String?, block: JSONValue)
     case note(id: Int, text: String)
 
     public var id: Int {
         switch self {
-        case .you(let id, _, _), .agent(let id, _), .tools(let id, _), .choice(let id, _), .config(let id, _, _, _),
-            .secret(let id, _, _, _), .run(let id, _), .note(let id, _):
+        case .you(let id, _, _), .agent(let id, _), .tools(let id, _), .card(let id, _, _), .note(let id, _):
             id
         }
     }
@@ -100,8 +64,8 @@ public enum ChatItems {
         case "tool":
             fold(item, into: &out)
         case "approval":
-            out.append(
-                .note(id: item.id, text: "A card waits: \(item.tool ?? "an ask"). Answer it on the web for now."))
+            guard let block = item.block else { return }
+            out.append(.card(id: item.id, poster: item.plugin, block: block))
         default:
             guard let text = item.text, !text.isEmpty else { return }
             out.append(.note(id: item.id, text: text))
@@ -119,13 +83,13 @@ public enum ChatItems {
     }
 }
 
-internal struct Markdown {
+public struct Markdown {
     private var out: [Block] = []
     private var paragraph: [String] = []
     private var bullets: [String] = []
     private var code: (lang: String, lines: [String])?
 
-    internal static func blocks(_ markdown: String) -> [Block] {
+    public static func blocks(_ markdown: String) -> [Block] {
         var parser = Markdown()
         for line in markdown.split(separator: "\n", omittingEmptySubsequences: false) {
             parser.feed(String(line))

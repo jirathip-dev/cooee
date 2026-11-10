@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 mod accounts;
+mod blocks;
 mod chat;
 mod config;
 mod devices;

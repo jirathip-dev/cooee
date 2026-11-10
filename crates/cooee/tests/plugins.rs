@@ -759,3 +759,131 @@ fn a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused() {
     let (code, body) = s.as_backend("/plugin/card", &format!("Bearer {TOKEN_B}"), &card);
     assert_eq!(code, 200, "{body}");
 }
+
+/// `cooee plugin check` on `answer`: whether it passed, and what it printed.
+fn checked(s: &Setup, answer: &Value) -> (bool, String) {
+    let file = s.dir.join("answer.json");
+    std::fs::write(&file, answer.to_string()).unwrap();
+    let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
+        .args(["plugin", "check"])
+        .arg(&file)
+        .output()
+        .unwrap();
+    (
+        out.status.success(),
+        String::from_utf8_lossy(&out.stdout).into_owned(),
+    )
+}
+
+/// #138: cooee's own choice, config, secret and run cards go out as #125 card blocks the schema passes, in the
+/// card's answer and in the thread's slice; once settled, a card shows its line and no longer asks.
+#[test]
+fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
+    let s = setup("card-blocks");
+    let id = new_thread(&s, "Say hello");
+    let cards = [
+        json!({ "thread": id, "text": "Which first?", "options": ["#43", "#44"], "recommend": "#44" }),
+        json!({ "thread": id, "text": "config c1", "form": "config", "detail": "+max_impl = 3" }),
+        json!({ "thread": id, "text": "for the bot", "form": "secret", "detail": "BOT_TOKEN" }),
+        json!({ "thread": id, "text": "re-tag", "form": "run-card", "detail": "git tag -f v1", "sha": "9f86d081" }),
+    ];
+    let items: Vec<Value> = cards.iter().map(|c| s.card(c).1).collect();
+    let shape = |b: &Value| {
+        let inner: Vec<&Value> = b["blocks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| &x["type"])
+            .collect();
+        (b["kind"].clone(), json!(inner))
+    };
+    let blocks: Vec<&Value> = items.iter().map(|i| &i["block"]).collect();
+    assert_eq!(
+        blocks.iter().map(|b| shape(b)).collect::<Vec<_>>(),
+        [
+            (json!("ask"), json!(["choice"])),
+            (json!("config"), json!(["text", "choice"])),
+            (json!("secret"), json!(["secret"])),
+            (json!("run"), json!(["run"])),
+        ]
+    );
+    let choice = &blocks[0]["blocks"][0];
+    assert_eq!(
+        (
+            &blocks[0]["id"],
+            &blocks[0]["title"],
+            &choice["recommended"],
+            &choice["options"][0]
+        ),
+        (
+            &json!(items[0]["id"].to_string()),
+            &json!("Which first?"),
+            &json!("#44"),
+            &json!({ "value": "#44", "label": "#44" })
+        )
+    );
+    assert_eq!(blocks[2]["blocks"][0]["name"], "BOT_TOKEN");
+    assert_eq!(
+        (
+            &blocks[3]["blocks"][0]["command"],
+            &blocks[3]["blocks"][0]["sha"]
+        ),
+        (&json!("git tag -f v1"), &json!("9f86d081"))
+    );
+    let (ok, said) = checked(&s, &json!(blocks));
+    assert!(ok, "{said}");
+    let slice = s.cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
+    let sent: Vec<&Value> = slice
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|i| i.get("block"))
+        .collect();
+    assert_eq!(sent, blocks);
+
+    *s.a.choice.lock().unwrap() = Some((200, json!({ "line": "ran: exit 0" })));
+    let ran = s.tap(&id, &json!({ "item": items[3]["id"], "option": "approve" }));
+    assert_eq!(
+        ran["block"]["blocks"],
+        json!([{ "type": "text", "style": "footnote", "markdown": "ran: exit 0" }])
+    );
+}
+
+/// #138: `cooee plugin check` passes every #125 fixture and fails a broken answer, naming the field.
+#[test]
+fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
+    let fixtures = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../docs/design/screens-as-data/fixtures");
+    let mut files: Vec<_> = std::fs::read_dir(&fixtures)
+        .unwrap()
+        .map(|f| f.unwrap().path())
+        .collect();
+    files.sort();
+    let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
+        .args(["plugin", "check"])
+        .args(&files)
+        .output()
+        .unwrap();
+    let said = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        out.status.success()
+            && said.lines().count() == 10
+            && said.lines().all(|l| l.starts_with("ok")),
+        "{said}"
+    );
+
+    let s = setup("card-check");
+    let broken = json!({ "type": "screen", "title": "Queue", "blocks": [
+        { "type": "list", "rows": [{ "type": "row", "title": "#722", "badge": { "text": "impl", "tone": "red" } }] },
+        { "type": "secret", "name": "GH_TOKEN", "action": "set", "value": "leaked" },
+        { "type": "a-newer-block" } ] });
+    let (ok, said) = checked(&s, &broken);
+    assert!(!ok);
+    assert_eq!(
+        said.lines().skip(1).map(str::trim).collect::<Vec<_>>(),
+        [
+            "$.blocks[0].rows[0].badge.tone: \"red\" is not one of \"ok\", \"warn\", \"bad\", \"info\", \"mute\", \"accent\", \"working\", \"needs\", \"done\", \"fail\", \"idle\"",
+            "$.blocks[1].value: must not be sent",
+        ]
+    );
+}
