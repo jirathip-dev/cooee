@@ -1,0 +1,9 @@
+Decided: a member's session that comes up is cancelled only when [stop] (or the deadline) came while it was starting, as a flag set by the stop, not guessed from the round
+Because: crates/cooee-server/src/hub/rooms.rs:412
+Rejected: reading "its turn is gone from the round" as a stop — a fast member's reply also removes its turn, so it was sent a cancel after replying (the msrv CI failure)
+Rejected: making the integration test tolerate a cancel — the cancel was the bug, not the test
+Decided: the step after a member's session starts is its own method (Hub::started), so a unit test drives both orders without a live shed
+Because: crates/cooee-server/src/hub.rs:2365
+Check: hub::tests::only_a_stop_cancels_a_members_session_as_it_starts fails with the old round check (exit 101) and passes now; rooms.rs stop_while_a_members_session_starts_cancels_it_once_started covers stop during a start end to end
+Check: the ui job's failure (one 212 ms long task in chat.spec.mjs, 1,000 messages) is in web/, which this PR does not touch
+Owner: a member that answers very quickly is no longer told to stop right after answering; stop still works while a member is starting up
