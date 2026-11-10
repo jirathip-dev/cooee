@@ -1,0 +1,9 @@
+Decided: the allowed machines are this host ("") plus the names from shed's `machine ls`, checked at the API edge
+Because: "lists the allowed machines with shed's link state and health (reuse the machines plugin's data)"
+Rejected: a new config allowlist key — the issue says to reuse the machines plugin's data, and shed already lists the machines it can reach
+Decided: a thread stores its machine when it starts: the persona's, unless POST /threads sends `machine`
+Because: "may override its persona's machine at start"
+Decided: migration is serde defaults: no key means "", and an empty thread machine is never written
+Because: "Migration: every existing persona and thread is on this host."
+Check: crates/cooee/tests/personas.rs a_persona_and_its_threads_name_their_machine and the upgrade_compat machine assertion
+Owner: Personas and chats now record which machine they belong to; nothing runs remotely yet.
