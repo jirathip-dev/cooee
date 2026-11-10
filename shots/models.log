@@ -1,0 +1,25 @@
+1440 seeded GET /models 200 [{"agent":"fake-acp","account":"","seen":1794313581000,"models":[["opus-2","Opus 2"],["sonnet-2","Sonnet 2"]],"short":{"opus":"opus-2","sonnet":"sonnet-2"}}]
+1440 seeded /new picker values ["","opus","sonnet","opus-2","sonnet-2"] texts ["model: default","model: opus","model: sonnet","model: opus-2","model: sonnet-2"]
+1440 started opus -> /t/t1a1c56d7e1b; bar: Fake-390 · Plain · fake-390 · main login · opus · scratch · in the stable
+1440 chat switcher after new model picker values ["","opus","sonnet","opus-2","sonnet-2"] texts ["model: default","model: opus","model: sonnet","model: opus-2","model: sonnet-2"]
+1440 after opus-3 reported GET /models 200 [{"agent":"fake-acp","account":"","seen":1794313649718,"models":[["opus-2","Opus 2"],["opus-3","Opus 3"],["sonnet-2","Sonnet 2"]],"short":{"opus":"opus-3","sonnet":"sonnet-2"}}]
+1440 /new after opus-3 reported picker values ["","opus","sonnet","opus-2","opus-3","sonnet-2"] texts ["model: default","model: opus","model: sonnet","model: opus-2","model: opus-3","model: sonnet-2"]
+1440 started opus-3 -> /t/t1a1c56d84b0; bar: Fake-390 · Plain · fake-390 · main login · opus-3 · scratch · in the stable
+1440 started opus-3 -> /t/t1a1c56d8519; bar: Fake-390 · Plain · fake-390 · main login · opus-3 · scratch · saddling up
+1440 pinned-gone thread lines: ["model opus-3 is gone: now opus (opus-2) · 07:27 PM"] bar: Fake-390 · Plain · fake-390 · main login · opus · scratch · in the stable
+1440 after opus-3 removed GET /models 200 [{"agent":"fake-acp","account":"","seen":1794313651509,"models":[["opus-2","Opus 2"],["sonnet-2","Sonnet 2"]],"short":{"opus":"opus-2","sonnet":"sonnet-2"}}]
+1440 /new after opus-3 removed picker values ["","opus","sonnet","opus-2","sonnet-2"] texts ["model: default","model: opus","model: sonnet","model: opus-2","model: sonnet-2"]
+1440 short-opus thread bar now: Fake-390 · Plain · fake-390 · main login · opus · scratch · in the stable
+390 seeded GET /models 200 [{"agent":"fake-acp","account":"","seen":1794313651509,"models":[["opus-2","Opus 2"],["sonnet-2","Sonnet 2"]],"short":{"opus":"opus-2","sonnet":"sonnet-2"}}]
+390 seeded /new picker values ["","opus","sonnet","opus-2","sonnet-2"] texts ["model: default","model: opus","model: sonnet","model: opus-2","model: sonnet-2"]
+390 started opus -> /t/t1a1c56d8df8; bar: Fake-390 · Plain · fake-390 · main login · opus · scratch · in the stable
+390 chat switcher after new model picker values ["","opus","sonnet","opus-2","opus-3","sonnet-2"] texts ["model: default","model: opus","model: sonnet","model: opus-2","model: opus-3","model: sonnet-2"]
+390 after opus-3 reported GET /models 200 [{"agent":"fake-acp","account":"","seen":1794313653773,"models":[["opus-2","Opus 2"],["opus-3","Opus 3"],["sonnet-2","Sonnet 2"]],"short":{"opus":"opus-3","sonnet":"sonnet-2"}}]
+390 /new after opus-3 reported picker values ["","opus","sonnet","opus-2","opus-3","sonnet-2"] texts ["model: default","model: opus","model: sonnet","model: opus-2","model: opus-3","model: sonnet-2"]
+390 started opus-3 -> /t/t1a1c56d94a6; bar: Fake-390 · Plain · fake-390 · main login · opus-3 · scratch · saddling up
+390 started opus-3 -> /t/t1a1c56d9504; bar: Fake-390 · Plain · fake-390 · main login · opus-3 · scratch · saddling up
+390 pinned-gone thread lines: ["model opus-3 is gone: now opus (opus-2) · 07:27 PM"] bar: Fake-390 · Plain · fake-390 · main login · opus · scratch · in the stable
+390 after opus-3 removed GET /models 200 [{"agent":"fake-acp","account":"","seen":1794313655581,"models":[["opus-2","Opus 2"],["sonnet-2","Sonnet 2"]],"short":{"opus":"opus-2","sonnet":"sonnet-2"}}]
+390 /new after opus-3 removed picker values ["","opus","sonnet","opus-2","sonnet-2"] texts ["model: default","model: opus","model: sonnet","model: opus-2","model: sonnet-2"]
+390 short-opus thread bar now: Fake-390 · Plain · fake-390 · main login · opus · scratch · in the stable
+errors: 0
