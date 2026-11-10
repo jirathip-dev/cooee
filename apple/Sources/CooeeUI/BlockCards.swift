@@ -84,7 +84,11 @@ internal struct CardBlock: View {
                 Text(subtitle).ui(13, .regular, look).foregroundStyle(look.palette.mute).lineLimit(2)
             }
             if !block.list("buttons").isEmpty {
-                HStack(spacing: 8) { BlockStack(blocks: block.list("buttons")) }
+                HStack(spacing: 8) {
+                    ForEach(Array(block.list("buttons").enumerated()), id: \.offset) { _, button in
+                        BlockNode(block: button)
+                    }
+                }
             }
             BlockStack(blocks: block.list("blocks")).environment(
                 \.card, CardContext(poster: context.poster, tint: tint))

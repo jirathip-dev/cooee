@@ -32,11 +32,12 @@ internal struct RunBlock: View {
         }
     }
 
-    private func answer(_ choice: String, source: JSONValue, label: () -> some View) -> some View {
+    private func answer<Label: View>(_ choice: String, source: JSONValue, label: () -> Label) -> some View {
         var values: [String: JSONValue] = ["choice": .string(choice)]
         if choice == "approve" { values["sha"] = block["sha"] }
+        let content = label()
         return ActButton(block: block.id ?? "", action: block.string("action"), source: source, values: values) {
-            label()
+            content
         }
     }
 }
