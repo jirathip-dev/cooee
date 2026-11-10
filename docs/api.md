@@ -44,7 +44,8 @@ type File = { name: string; data: string }; // data: the bytes in base64
 | `POST /threads/{id}/title` | `{title}` | `null` |
 | `POST /threads/{id}/archive` | `{on}`: archive it, or restore it | `null` |
 | `POST /threads/{id}/approve` | `{item, option, value?}` (a plugin card's option may be free text; `value`: a secret card's, sent to its plugin only) | `Item` or `null` |
-| `POST /threads/{id}/model` | `{model, effort}` (`""`: the default; only what its provider offers) | the `note` it adds |
+| `POST /threads/{id}/model` | `{model, effort}` (`""`: the default; a model its agent reported, a short name of one, or any while none was reported yet; an effort its provider offers) | the `note` it adds |
+| `GET /models` | | each agent and account's models (#193), as its sessions last reported them: `{agent, account, seen, models: [id, name][], short: {<short name>: <id>}}[]` (`seen`: unix ms; `short`: each short name, the alphabetic words of a model's id, with the newest model of its family it runs on now). A pick (thread, persona, `POST /threads`) is a short name or an id |
 | `POST /threads/{id}/cancel` | `{}` | `null` |
 | `POST /threads/{id}/close` | `{}` | `null` (400 for a Workflow session: its tool closes it) |
 | `POST /threads/{id}/read` | `{item}`: read up to this id | `null` |

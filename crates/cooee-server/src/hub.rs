@@ -28,6 +28,7 @@ use crate::{
 };
 
 mod ask;
+mod models;
 mod rooms;
 pub use rooms::Starter;
 
@@ -237,6 +238,8 @@ pub struct Hub {
     starter: OnceLock<Starter>,
     /// Each pending `ask_persona` (#156) by `<asking thread>><persona>`: where its reply goes.
     asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
+    /// Each agent and account's models, as last seen (#193; `<data>/models.json`).
+    models: Mutex<Vec<cooee_core::models::Offered>>,
 }
 
 pub(crate) fn now() -> u64 {
@@ -426,6 +429,7 @@ impl Hub {
             turns,
             starter: OnceLock::new(),
             asks: Mutex::default(),
+            models: Mutex::new(cooee_core::models::load(&data.join("models.json"))),
         });
         let worker = Arc::clone(&hub);
         thread::spawn(move || {
@@ -994,6 +998,7 @@ impl Hub {
         if text.trim().is_empty() {
             return Err(HubError::Refused("the first message is empty".to_owned()));
         }
+        self.offers(agent, &recipe.account, &recipe.model)?;
         let title: String = text
             .trim()
             .lines()
@@ -1104,7 +1109,11 @@ impl Hub {
                 return Err(e.into());
             }
         }
-        self.shed.ready(&terminal)?;
+        if let Some(s) = self.shed.ready(&terminal)?
+            && let Err(e) = self.settle(id, &terminal, &s)
+        {
+            eprintln!("cooee: {id}: model: {e}");
+        }
         self.send_after(id, text, random_id, &[], &recipe.instructions)?;
         Ok(())
     }
@@ -1165,7 +1174,7 @@ impl Hub {
         if let Some((file, _)) = &recipe.launch.secrets {
             let _ = fs::remove_file(file);
         }
-        started?;
+        let session = started?;
         let mut live = lock(&live);
         let was = live
             .meta
@@ -1190,7 +1199,7 @@ impl Hub {
             folder.display()
         );
         handover.trim_start().clone_into(&mut live.meta.handover);
-        live.meta.terminal = terminal;
+        live.meta.terminal.clone_from(&terminal);
         live.meta.folder = Some(folder.clone());
         self.store.save(&live.meta)?;
         let text = format!(
@@ -1200,6 +1209,11 @@ impl Hub {
         let item = live.chat.push(now(), 0, Body::Note { text });
         live.publish(self, vec![Change::Item(item.clone())])?;
         drop(live);
+        if let Some(s) = session
+            && let Err(e) = self.settle(id, &terminal, &s)
+        {
+            eprintln!("cooee: {id}: model: {e}");
+        }
         if let Err(e) = self.shed.close(&old) {
             eprintln!("cooee: {e}");
         }
@@ -1601,14 +1615,16 @@ impl Hub {
         Ok(item)
     }
 
-    /// The owner's model and effort for thread `id` (#553 row 34): kept on the thread and said in it. shed can't
-    /// change a running agent's model yet, so they apply from the agent's next start.
+    /// The owner's model and effort for thread `id` (#553 row 34): kept on the thread and said in it; they apply
+    /// from the agent's next start.
     ///
     /// # Errors
-    /// [`HubError::Store`] when the thread can't be saved.
+    /// [`HubError::Refused`] for a model its agent doesn't offer (#193); [`HubError::Store`] when the thread can't
+    /// be saved.
     pub fn pick(&self, id: &str, model: &str, effort: &str) -> Result<Item, HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
+        self.offers(&live.meta.agent, &live.meta.account, model)?;
         model.clone_into(&mut live.meta.model);
         effort.clone_into(&mut live.meta.effort);
         self.store.save(&live.meta)?;

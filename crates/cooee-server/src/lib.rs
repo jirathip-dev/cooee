@@ -317,10 +317,25 @@ async fn side(cx: &Cx) -> Result<cooee_web::Side> {
     let rest = blocking(cx, move |hub| {
         let mut profiles = profiles(hub, (&data, config.as_deref()));
         profiles.retain(|p| !p.hidden);
-        Ok((hub.list(), hub.agents(), hub.folders(), profiles))
+        Ok((
+            hub.list(),
+            hub.agents(),
+            hub.folders(),
+            profiles,
+            hub.models(),
+        ))
     });
-    let (providers, (rows, agents, folders, profiles)) =
+    let (providers, (rows, mut agents, folders, profiles, models)) =
         futures_util::future::try_join(providers, rest).await?;
+    // A new chat runs on the main login: its models (#193).
+    for a in agents.iter_mut().flatten() {
+        let main = models
+            .iter()
+            .find(|o| o.agent == a.id && o.account.is_empty());
+        a.models = main
+            .map(cooee_core::models::Offered::picks)
+            .unwrap_or_default();
+    }
     Ok(cooee_web::Side {
         rows,
         profiles,
@@ -472,7 +487,9 @@ async fn chat(cx: &Cx) -> Result<impl View> {
     let side = side(cx).await?;
     let profile = side.profiles.iter().find(|p| p.id() == thread.profile);
     let label = profile.map_or(thread.profile.clone(), |p| p.label.clone());
-    let choices = logins(cx).choices(&thread.agent);
+    let models = hub(cx).offered(&thread.agent, &thread.account);
+    let models = models.map(|o| o.picks()).unwrap_or_default();
+    let choices = (models, logins(cx).efforts(&thread.agent));
     let folder = thread.folder.clone();
     let pane = cooee_web::Pane::Chat {
         thread: Box::new(thread),
@@ -743,9 +760,7 @@ fn recipe(
         };
         (p.agent, p.folder.unwrap_or(folder), recipe)
     };
-    recipe
-        .launch
-        .pick(logins.picks(&agent, &picked.0, &picked.1)?);
+    recipe.launch.pick(logins.picks(&agent, &picked.1)?);
     (recipe.model, recipe.effort) = picked;
     if let Some(p) = persona {
         recipe.instructions = p.brief(data);
@@ -1044,11 +1059,33 @@ async fn model(cx: &Cx, Json(p): Json<ModelPick>) -> Result<Answer<cooee_core::I
     Ok(Answer(
         blocking(cx, move |hub| {
             let agent = hub.thread(&id)?.0.agent;
-            logins.picks(&agent, &p.model, &p.effort)?;
+            logins.picks(&agent, &p.effort)?;
             hub.pick(&id, &p.model, &p.effort)
         })
         .await,
     ))
+}
+
+/// `GET /models` (#193): each agent and account's models as last seen, each short name with what it resolves to now.
+#[derive(Serialize)]
+struct ModelList {
+    agent: String,
+    account: String,
+    seen: u64,
+    models: Vec<[String; 2]>,
+    short: BTreeMap<String, String>,
+}
+
+#[route(GET "/models")]
+async fn model_list(cx: &Cx) -> Result<Answer<Vec<ModelList>>> {
+    let lists = hub(cx).models().into_iter().map(|o| ModelList {
+        short: o.short_names().into_iter().collect(),
+        agent: o.agent,
+        account: o.account,
+        seen: o.seen,
+        models: o.models,
+    });
+    Ok(Answer(Ok(lists.collect())))
 }
 
 #[route(POST "/threads/{id}/cancel")]
@@ -2077,10 +2114,11 @@ async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
     .await
 }
 
-/// The persona calls (#126), and `remember`'s.
+/// The persona calls (#126), the machines and models they pick from, and `remember`'s.
 fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
     b.route(persona_list)
         .route(machine_list)
+        .route(model_list)
         .route(persona_new)
         .route(persona_get)
         .route(persona_put)
@@ -2488,6 +2526,20 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         manager.tabs(),
         config.apns.clone(),
     )?;
+    // The models' daily refresh (#193): each agent and account seen a day ago or more is asked again.
+    let (daily, signins) = (Arc::clone(&hub), Arc::clone(&logins));
+    std::thread::spawn(move || {
+        loop {
+            for (agent, account) in daily.stale(hub::now()) {
+                let launch = signins.home(&agent, Some(&account));
+                let probed = launch.and_then(|(_, l)| daily.probe(&agent, &account, &l));
+                if let Err(e) = probed {
+                    eprintln!("cooee: models of {agent}: {e}");
+                }
+            }
+            std::thread::sleep(Duration::from_hours(1));
+        }
+    });
     let router = router(
         Arc::clone(&hub),
         (
