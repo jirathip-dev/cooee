@@ -8,7 +8,7 @@ No Mac needs Xcode. CI archives, signs and uploads the iOS app; TestFlight puts 
    `staging`) starts `.github/workflows/apple-testflight.yml` on GitHub's macOS runner.
 2. The job reads the App Store Connect API key from the `testflight` environment. Only `staging` may deploy from that
    environment, so pull request and fork runs can't read the key.
-3. It registers the bundle id `dev.cooee.app` if it is missing, finds the app and the latest TestFlight build, and
+3. It registers the bundle id `com.jirathip.cooee` if it is missing, finds the app and the latest TestFlight build, and
    sets the build number to that build + 1. Nobody bumps it by hand.
 4. `xcodebuild archive` and `-exportArchive` sign with `-allowProvisioningUpdates` and the API key. Apple manages
    the distribution certificate and profiles (cloud signing), so there is no `.p12`, no password and no fastlane.
@@ -21,9 +21,9 @@ No Mac needs Xcode. CI archives, signs and uploads the iOS app; TestFlight puts 
 - Secrets in the `testflight` environment: `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` (the base64 of the `.p8`).
   The key needs the **Admin** role so it may use cloud-managed distribution certificates. If it can't, the run fails
   and says so.
-- Create the app record once in App Store Connect (Apps → + → New App), after the first run has registered the bundle id:
-  platform **iOS**, name **cooee** (or any free name), primary language **English (U.S.)**, bundle id
-  **dev.cooee.app**, SKU **cooee**, user access **Full Access**. Then re-run the workflow.
+- The App Store Connect app record exists (created once by hand: Apps → + → New App): platform **iOS**, name
+  **cooee: agent chat**, primary language **English (U.S.)**, bundle id **com.jirathip.cooee** (registered with Push
+  Notifications), SKU **cooee-ios**, user access **Full Access**. If it is ever missing, the run fails and names these fields.
 - In the app's TestFlight tab, add yourself to an internal testing group, then install the TestFlight app on the phone.
 
 The build declares that it uses no non-exempt encryption (only HTTPS), so TestFlight doesn't ask about export

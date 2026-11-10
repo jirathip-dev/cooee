@@ -50,7 +50,7 @@ jobs:
           echo "::add-mask::$team"
           app=$(api "apps?filter[bundleId]=$bundle&fields[apps]=bundleId" | jq -r --arg b "$bundle" '.data | map(select(.attributes.bundleId == $b))[0].id // empty')
           if [ -z "$app" ]; then
-            echo "::error::No App Store Connect app for $bundle. Create it once (Apps → + → New App): platform iOS, name cooee, primary language English (U.S.), bundle id $bundle, SKU cooee, user access Full Access. Then re-run this workflow."
+            echo "::error::No App Store Connect app for $bundle. Create it once (Apps → + → New App): platform iOS, name cooee: agent chat, primary language English (U.S.), bundle id $bundle, SKU cooee-ios, user access Full Access. Then re-run this workflow."
             exit 1
           fi
           latest=$(api "builds?filter[app]=$app&sort=-uploadedDate&limit=1&fields[builds]=version" | jq -r '.data[0].attributes.version // "0"')
