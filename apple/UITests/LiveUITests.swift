@@ -31,20 +31,20 @@ final class LiveUITests: XCTestCase {
         app.buttons["Send"].firstMatch.tap()
 
         // The reply streams in a word at a time; a message typed meanwhile waits in the queue.
-        let words = app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'w3 '")).firstMatch
+        let words = labelled(app, "w3 ")
         XCTAssert(words.waitForExistence(timeout: 30))
         XCTAssert(app.buttons["Stop"].exists)
-        let queue = field(app, "Queue a message")
-        XCTAssert(queue.waitForExistence(timeout: 10))
-        queue.tap()
-        queue.typeText("Then open the PR")
+        box.tap()
+        box.typeText("Then open the PR")
         app.buttons["Send"].firstMatch.tap()
-        XCTAssert(app.staticTexts["Then open the PR"].waitForExistence(timeout: 10))
+        XCTAssert(labelled(app, "Then open the PR").waitForExistence(timeout: 10))
+        XCTAssert(field(app, "Queue a message").exists)
         app.scrollViews.firstMatch.swipeDown()  // the keyboard away
         keep("chat-streaming")
 
         app.buttons["Back"].firstMatch.tap()
-        XCTAssert(app.staticTexts["Coder"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssert(new.waitForExistence(timeout: 10))
+        XCTAssert(labelled(app, "Coder").exists)
         keep("home")
     }
 
@@ -53,6 +53,11 @@ final class LiveUITests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "(elementType == %d OR elementType == %d) AND (label == %@ OR placeholderValue == %@)",
                                                              XCUIElement.ElementType.textField.rawValue,
                                                              XCUIElement.ElementType.textView.rawValue, hint, hint)).firstMatch
+    }
+
+    /// Any element whose label holds `text`: a button's texts read as one label ("Coder, slow 60, …").
+    func labelled(_ app: XCUIApplication, _ text: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
 
     /// The screen now, dark then light.

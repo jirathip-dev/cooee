@@ -315,7 +315,7 @@ struct WorkingPill: View {
                 }
                 .ui(13, .semibold, look).foregroundStyle(p.r)
                 .padding(.horizontal, 10).frame(height: 28).background(p.r.opacity(0.14), in: .capsule)
-            }.buttonStyle(.plain)
+            }.buttonStyle(.plain).accessibilityLabel("Stop")
         }
         .padding(.leading, 14).padding(.trailing, 6).frame(height: 40)
         .surface(look, radius: 20)

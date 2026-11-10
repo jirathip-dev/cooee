@@ -175,6 +175,7 @@ struct WaysIn: View {
         .padding(.horizontal, 16).frame(height: 64)
         .surface(look, radius: 22, interactive: true)
         .contentShape(.rect) }.buttonStyle(.plain)
+        .accessibilityLabel(t).accessibilityHint(sub)
     }
 }
 
