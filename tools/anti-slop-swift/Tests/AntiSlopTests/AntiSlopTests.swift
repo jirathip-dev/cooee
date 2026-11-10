@@ -285,6 +285,12 @@ final class AntiSlopTests: XCTestCase {
             rules: SlopRule.allRules
         )
         let ids = Set(violations.map(\.ruleID))
-        XCTAssertEqual(ids, ["no-shape-in-symbol-names", "no-any-dictionary-value", "no-force-try"])
+        XCTAssertEqual(
+            ids,
+            [
+                "no-shape-in-symbol-names", "no-any-dictionary-value", "no-force-try", "no-any", "explicit-access",
+                "layer-imports",
+            ]
+        )
     }
 }
