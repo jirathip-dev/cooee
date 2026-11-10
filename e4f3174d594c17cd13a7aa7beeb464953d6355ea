@@ -1,0 +1,11 @@
+Decided: a room is a thread of kind room; each member's ACP session is a hidden thread started on its first turn
+Because: "one ACP session per member, started lazily on its first turn"
+Decided: others' final replies reach a member as its next turn's prompt, attributed [Name]: text
+Because: "Each member's session receives the others' new final replies as attributed text"
+Rejected: prompting idle sessions with each new reply — an ACP prompt makes the agent take a turn
+Decided: a plain round, every member one turn in room order per owner message; mentions, pass and caps left to the turn engine
+Because: "with no mention every member gets one turn in room order"
+Decided: a lane thread named as a member is refused with its own reason
+Because: "lane threads cannot (they stay Workflow chats)"
+Check: crates/cooee/tests/rooms.rs drives POST /rooms, /threads/{id}/members and /send through the fake shed and reads each member's session prompts
+Owner: rooms exist on the server; each member answers in turn in its own session and hears only the others' final replies
