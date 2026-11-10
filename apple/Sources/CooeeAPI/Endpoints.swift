@@ -26,6 +26,12 @@ extension Client {
         fileprivate let background = true
     }
 
+    private struct Answer: Encodable {
+        fileprivate let item: Int
+        fileprivate let option: String
+        fileprivate let value: String?
+    }
+
     private struct Created: Decodable {
         fileprivate let id: String
     }
@@ -101,6 +107,10 @@ extension Client {
 
     public func cancel(_ id: String) async throws {
         try await post("/threads/\(id)/cancel", [String: String]())
+    }
+
+    public func answer(_ id: String, item: Int, option: String, value: String?) async throws {
+        try await post("/threads/\(id)/approve", Answer(item: item, option: option, value: value))
     }
 
     public func read(_ id: String, upTo item: Int) async throws {
