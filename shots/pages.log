@@ -1,0 +1,6 @@
+verify-browser: http://127.0.0.1:41394/docs/design/rooms/room.html: 0 console lines, 0 failed requests, 18 a11y issues; shots/room-1440.png shots/room-390.png
+exit=0 room
+verify-browser: http://127.0.0.1:41394/docs/design/rooms/linked.html: 0 console lines, 0 failed requests, 15 a11y issues; shots/linked-1440.png shots/linked-390.png
+exit=0 linked
+verify-browser: http://127.0.0.1:41394/docs/design/rooms/styles.html: 0 console lines, 0 failed requests, 0 a11y issues; shots/styles-1440.png shots/styles-390.png
+exit=0 styles

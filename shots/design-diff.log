@@ -1,0 +1,40 @@
+diff: shots/rerender/approval-390-dark.png vs docs/design/rooms/approval-390-dark.png: 0.000 % of pixels differ (shots/rerender/approval-390-dark-diff.png)
+exit=0 approval-390-dark.png
+diff: shots/rerender/approval-scene-390-light.png vs docs/design/rooms/approval-scene-390-light.png: 0.000 % of pixels differ (shots/rerender/approval-scene-390-light-diff.png)
+exit=0 approval-scene-390-light.png
+diff: shots/rerender/asked-390-dark.png vs docs/design/rooms/asked-390-dark.png: 0.000 % of pixels differ (shots/rerender/asked-390-dark-diff.png)
+exit=0 asked-390-dark.png
+diff: shots/rerender/asked-390-light.png vs docs/design/rooms/asked-390-light.png: 0.000 % of pixels differ (shots/rerender/asked-390-light-diff.png)
+exit=0 asked-390-light.png
+diff: shots/rerender/create-390-dark.png vs docs/design/rooms/create-390-dark.png: 0.000 % of pixels differ (shots/rerender/create-390-dark-diff.png)
+exit=0 create-390-dark.png
+diff: shots/rerender/create-390-light.png vs docs/design/rooms/create-390-light.png: 0.000 % of pixels differ (shots/rerender/create-390-light-diff.png)
+exit=0 create-390-light.png
+diff: shots/rerender/home-390-dark.png vs docs/design/rooms/home-390-dark.png: 0.000 % of pixels differ (shots/rerender/home-390-dark-diff.png)
+exit=0 home-390-dark.png
+diff: shots/rerender/linked-1440.png vs docs/design/rooms/linked-1440.png: 0.000 % of pixels differ (shots/rerender/linked-1440-diff.png)
+exit=0 linked-1440.png
+diff: shots/rerender/linked-390-dark.png vs docs/design/rooms/linked-390-dark.png: 0.000 % of pixels differ (shots/rerender/linked-390-dark-diff.png)
+exit=0 linked-390-dark.png
+diff: shots/rerender/linked-terminal-390-dark.png vs docs/design/rooms/linked-terminal-390-dark.png: 0.000 % of pixels differ (shots/rerender/linked-terminal-390-dark-diff.png)
+exit=0 linked-terminal-390-dark.png
+diff: shots/rerender/member-390-dark.png vs docs/design/rooms/member-390-dark.png: 0.000 % of pixels differ (shots/rerender/member-390-dark-diff.png)
+exit=0 member-390-dark.png
+diff: shots/rerender/mention-390-dark.png vs docs/design/rooms/mention-390-dark.png: 0.000 % of pixels differ (shots/rerender/mention-390-dark-diff.png)
+exit=0 mention-390-dark.png
+diff: shots/rerender/mention-terminal-390-dark.png vs docs/design/rooms/mention-terminal-390-dark.png: 0.000 % of pixels differ (shots/rerender/mention-terminal-390-dark-diff.png)
+exit=0 mention-terminal-390-dark.png
+diff: shots/rerender/push-390-dark.png vs docs/design/rooms/push-390-dark.png: 0.000 % of pixels differ (shots/rerender/push-390-dark-diff.png)
+exit=0 push-390-dark.png
+diff: shots/rerender/room-1440.png vs docs/design/rooms/room-1440.png: 0.000 % of pixels differ (shots/rerender/room-1440-diff.png)
+exit=0 room-1440.png
+diff: shots/rerender/room-390-dark.png vs docs/design/rooms/room-390-dark.png: 0.000 % of pixels differ (shots/rerender/room-390-dark-diff.png)
+exit=0 room-390-dark.png
+diff: shots/rerender/room-390-light.png vs docs/design/rooms/room-390-light.png: 0.000 % of pixels differ (shots/rerender/room-390-light-diff.png)
+exit=0 room-390-light.png
+diff: shots/rerender/room-scene-390-light.png vs docs/design/rooms/room-scene-390-light.png: 0.000 % of pixels differ (shots/rerender/room-scene-390-light-diff.png)
+exit=0 room-scene-390-light.png
+diff: shots/rerender/room-terminal-1440.png vs docs/design/rooms/room-terminal-1440.png: 0.000 % of pixels differ (shots/rerender/room-terminal-1440-diff.png)
+exit=0 room-terminal-1440.png
+diff: shots/rerender/room-terminal-390-dark.png vs docs/design/rooms/room-terminal-390-dark.png: 0.000 % of pixels differ (shots/rerender/room-terminal-390-dark-diff.png)
+exit=0 room-terminal-390-dark.png
