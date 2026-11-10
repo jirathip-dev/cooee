@@ -1,0 +1,7 @@
+Decided: line_cap 23500 in ci/cap.toml; apple_cap stays 5000
+Because: "`ci/cap.toml`: `line_cap = 23500` (`apple_cap` unchanged)."
+Decided: history note docs/cap-history/2026-11-10-188.md in the earlier notes' style
+Because: "a short note in the style of the earlier ones (from, to, why, q1114)"
+Rejected: per-PR raises in #155 and #156 — the cap file says one raise covers the queue
+Check: scripts/line-cap.sh prints 22755 / 23500 on staging a98c922 and exits 0
+Owner: The size limit is now 23,500 lines so #155 and #156 can merge; the Apple limit is unchanged.
