@@ -1,5 +1,6 @@
-# #124: build the native app (apple/) for iOS and macOS on a GitHub-hosted macOS runner (free on this public repo).
-# Views and fixtures only for now; no signing.
+# #124: build the native app (apple/) for iOS and macOS on a GitHub-hosted macOS runner (free on this public repo); no
+# signing. #143: the API client's unit tests, and `e2e`: the app in the iOS simulator against a real `cooee serve`
+# (apple/e2e/serve.sh), its screens kept as the `simulator-shots` artifact.
 name: apple
 on:
   push:
@@ -21,7 +22,43 @@ jobs:
         run: >-
           xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination '${{ matrix.destination }}'
           CODE_SIGNING_ALLOWED=NO build
+      - name: unit tests (swift test)
+        if: matrix.destination == 'generic/platform=macOS'
+        working-directory: apple
+        run: swift test
       - name: renders (swift run shots)
         if: matrix.destination == 'generic/platform=macOS'
         working-directory: apple
         run: swift run shots /tmp/shots && ls /tmp/shots
+
+  e2e:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - uses: Swatinem/rust-cache@v2
+      - name: cooee serve (fake agent)
+        run: |
+          PORT=4100 PAIR_LINK="$RUNNER_TEMP/pair" apple/e2e/serve.sh >"$RUNNER_TEMP/serve.log" 2>&1 &
+          until curl -s -o /dev/null http://127.0.0.1:4100/pair; do sleep 2; done
+      - name: the client against it (swift test)
+        working-directory: apple
+        run: COOEE_PAIR_LINK="$(cat "$RUNNER_TEMP/pair")" swift test --filter LiveTests
+      - name: the app in the simulator
+        working-directory: apple
+        run: |
+          link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
+          TEST_RUNNER_COOEE_PAIR_LINK="$link" xcodebuild -project Cooee.xcodeproj -scheme Cooee \
+            -destination 'platform=iOS Simulator,name=iPhone 17' -resultBundlePath "$RUNNER_TEMP/e2e.xcresult" test
+      - name: screenshots
+        if: always()
+        run: |
+          mkdir -p simulator-shots
+          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/e2e.xcresult" --output-path simulator-shots || true
+          cp "$RUNNER_TEMP/serve.log" simulator-shots/ || true
+          ls simulator-shots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: simulator-shots
+          path: simulator-shots

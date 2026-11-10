@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// A chat: the persona header (avatar, name, agent chip; a tap on the name opens the persona sheet), the items, the
 /// working pill with stop, and the composer (attachments, queued messages).
@@ -7,12 +8,19 @@ public struct ChatView: View {
     let persona: Persona
     let items: [Item]
     var working = false
+    var since: Date? = nil
     var queued: [String] = []
     var draft = ""
     var back = true
+    var actions = ChatActions()
     public init(personaID: String, items: [Item], working: Bool = false, queued: [String] = [], draft: String = "", back: Bool = true) {
         persona = Fixtures.persona(personaID); self.items = items; self.working = working; self.queued = queued
         self.draft = draft; self.back = back
+    }
+    /// A live chat: `since` is when the turn's state last changed.
+    public init(persona: Persona, items: [Item], working: Bool, since: Date, queued: [String], back: Bool, actions: ChatActions) {
+        self.persona = persona; self.items = items; self.working = working; self.since = since; self.queued = queued
+        self.back = back; self.actions = actions
     }
     public static func streaming(back: Bool = true) -> ChatView {
         ChatView(personaID: "coder", items: Fixtures.streaming, working: true, queued: Fixtures.queued, back: back)
@@ -26,7 +34,7 @@ public struct ChatView: View {
         ZStack {
             Backdrop()
             VStack(spacing: 0) {
-                ChatHeader(persona: persona, back: back)
+                ChatHeader(persona: persona, back: back, onBack: actions.back)
                 Scroller(end: true) {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(items) { ItemView(item: $0, persona: persona) }
@@ -35,8 +43,9 @@ public struct ChatView: View {
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
                 VStack(spacing: 8) {
-                    if working { WorkingPill() }
-                    Composer(persona: persona, queued: queued, draft: draft, attachments: working ? ["look-sheet.png"] : [])
+                    if working { WorkingPill(since: since, stop: actions.stop) }
+                    Composer(persona: persona, queued: queued, draft: draft,
+                             attachments: working && since == nil ? ["look-sheet.png"] : [], actions: actions)
                 }
                 .padding(.horizontal, 12).padding(.bottom, 26)
             }
@@ -45,15 +54,33 @@ public struct ChatView: View {
     }
 }
 
+/// What a live chat's taps do; `send` is nil in a still.
+public struct ChatActions {
+    public var send: ((String, [Attachment]) -> Void)?
+    public var stop: () -> Void = {}
+    public var steer: (Int) -> Void = { _ in }
+    public var unqueue: (Int) -> Void = { _ in }
+    public var back: () -> Void = {}
+    public init(send: ((String, [Attachment]) -> Void)? = nil, stop: @escaping () -> Void = {},
+                steer: @escaping (Int) -> Void = { _ in }, unqueue: @escaping (Int) -> Void = { _ in },
+                back: @escaping () -> Void = {}) {
+        self.send = send; self.stop = stop; self.steer = steer; self.unqueue = unqueue; self.back = back
+    }
+}
+
 struct ChatHeader: View {
     @Environment(\.look) var look
     let persona: Persona
     var back = true
+    var onBack: () -> Void = {}
     var body: some View {
         let p = look.palette
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                if back { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
+                if back {
+                    Button(action: onBack) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
+                        .buttonStyle(.plain).accessibilityLabel("Back")
+                }
                 Avatar(persona: persona, size: 38)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(persona.name).ui(16, .semibold, look)
@@ -202,7 +229,9 @@ struct BlockView: View {
                 HStack {
                     Text(lang).font(.system(size: 12, design: .monospaced)).foregroundStyle(p.mute)
                     Spacer()
-                    Label("Copy", systemImage: "doc.on.doc").ui(12, .medium, look).foregroundStyle(p.link)
+                    Button { copy(code) } label: {
+                        Label("Copy", systemImage: "doc.on.doc").ui(12, .medium, look).foregroundStyle(p.link)
+                    }.buttonStyle(.plain)
                 }
                 .padding(.horizontal, 12).frame(height: 32)
                 .background(p.edge.opacity(0.35))
@@ -216,13 +245,32 @@ struct BlockView: View {
     }
 }
 
+func copy(_ s: String) {
+    #if os(iOS)
+    UIPasteboard.general.string = s
+    #else
+    NSPasteboard.general.clearContents()
+    NSPasteboard.general.setString(s, forType: .string)
+    #endif
+}
+
 /// Consecutive tool calls folded into one row (a tap unfolds them); the last one shows.
 struct ToolFold: View {
     @Environment(\.look) var look
     let rows: [(title: String, status: String)]
+    // `State` values, not `@State`: the package builds without Xcode's SwiftUI macros too.
+    let open = State(initialValue: false)
     var body: some View {
-        let p = look.palette, last = rows.last!, running = last.status == "running"
-        HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
+            Button { open.wrappedValue.toggle() } label: { row(rows.last!, count: rows.count) }.buttonStyle(.plain)
+            if open.wrappedValue {
+                ForEach(Array(rows.dropLast().enumerated()), id: \.offset) { _, r in row(r, count: 0).padding(.leading, 12) }
+            }
+        }
+    }
+    func row(_ last: (title: String, status: String), count: Int) -> some View {
+        let p = look.palette, running = last.status == "running"
+        return HStack(spacing: 8) {
             if look.mono {
                 Text(running ? "o>_" : "[ok]").ui(13, .bold, look).foregroundStyle(running ? p.c : p.g)
             } else {
@@ -231,9 +279,13 @@ struct ToolFold: View {
             }
             Text(last.title).ui(13, .regular, look).foregroundStyle(p.mute).lineLimit(1).truncationMode(.middle)
             Spacer(minLength: 4)
-            Text("\(rows.count) tools").ui(12, .regular, look).foregroundStyle(p.mute)
-            Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold)).foregroundStyle(p.mute)
+            if count > 0 {
+                Text("\(count) tools").ui(12, .regular, look).foregroundStyle(p.mute)
+                Image(systemName: open.wrappedValue ? "chevron.down" : "chevron.right").font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(p.mute)
+            }
         }
+        .contentShape(.rect)
         .padding(.horizontal, 12).frame(height: 34)
         .background(p.card.opacity(look.mono ? 0 : 0.7), in: .rect(cornerRadius: look.mono ? 0 : 10))
         .overlay { if look.mono { Rectangle().strokeBorder(p.line, lineWidth: 1) } }
@@ -243,22 +295,34 @@ struct ToolFold: View {
 /// The turn in progress, with stop.
 struct WorkingPill: View {
     @Environment(\.look) var look
+    var since: Date? = nil
+    var stop: () -> Void = {}
     var body: some View {
         let p = look.palette
         HStack(spacing: 8) {
             if look.mono { Text("~o=").ui(13, .bold, look).foregroundStyle(p.c) }
             else { Circle().fill(p.c).frame(width: 8, height: 8) }
-            Text(look.mono ? "working 0:42" : "Working · 0:42").ui(13, .medium, look)
-            Spacer()
-            HStack(spacing: 4) {
-                Image(systemName: "stop.fill").font(.system(size: 10))
-                Text("Stop")
+            if let since {
+                TimelineView(.periodic(from: since, by: 1)) { t in label(Int(t.date.timeIntervalSince(since))) }
+            } else {
+                label(42)
             }
-            .ui(13, .semibold, look).foregroundStyle(p.r)
-            .padding(.horizontal, 10).frame(height: 28).background(p.r.opacity(0.14), in: .capsule)
+            Spacer()
+            Button(action: stop) {
+                HStack(spacing: 4) {
+                    Image(systemName: "stop.fill").font(.system(size: 10))
+                    Text("Stop")
+                }
+                .ui(13, .semibold, look).foregroundStyle(p.r)
+                .padding(.horizontal, 10).frame(height: 28).background(p.r.opacity(0.14), in: .capsule)
+            }.buttonStyle(.plain)
         }
         .padding(.leading, 14).padding(.trailing, 6).frame(height: 40)
         .surface(look, radius: 20)
+    }
+    func label(_ s: Int) -> some View {
+        let t = "\(max(0, s) / 60):\(String(format: "%02d", max(0, s) % 60))"
+        return Text(look.mono ? "working \(t)" : "Working · \(t)").ui(13, .medium, look)
     }
 }
 
@@ -269,27 +333,43 @@ struct Composer: View {
     var queued: [String] = []
     var draft = ""
     var attachments: [String] = []
+    var actions = ChatActions()
+    let text = State(initialValue: "")
+    let files = State(initialValue: [(name: String, data: Data)]())
+    let picking = State(initialValue: false)
+    var live: Bool { actions.send != nil }
+    var chips: [String] { live ? files.wrappedValue.map(\.name) : attachments }
+    func send() {
+        let t = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty || !files.wrappedValue.isEmpty else { return }
+        actions.send?(t, files.wrappedValue.map { Attachment(name: $0.name, bytes: $0.data) })
+        text.wrappedValue = ""; files.wrappedValue = []
+    }
     var body: some View {
         let p = look.palette
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(queued, id: \.self) { q in
+            ForEach(Array(queued.enumerated()), id: \.offset) { i, q in
                 HStack(spacing: 8) {
                     Image(systemName: "clock").font(.system(size: 12)).foregroundStyle(p.mute)
                     Text(q).ui(14, .regular, look).lineLimit(1)
                     Spacer()
-                    Text("Send now").ui(12, .semibold, look).foregroundStyle(p.link)
-                    Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(p.mute)
+                    Button { actions.steer(i) } label: { Text("Send now").ui(12, .semibold, look).foregroundStyle(p.link) }
+                        .buttonStyle(.plain)
+                    Button { actions.unqueue(i) } label: {
+                        Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(p.mute)
+                    }.buttonStyle(.plain).accessibilityLabel("Take back")
                 }
                 .padding(.horizontal, 12).frame(height: 34)
                 .background(p.card.opacity(0.8), in: .rect(cornerRadius: 12))
             }
-            if !attachments.isEmpty {
+            if !chips.isEmpty {
                 HStack(spacing: 6) {
-                    ForEach(attachments, id: \.self) { a in
+                    ForEach(Array(chips.enumerated()), id: \.offset) { i, a in
                         HStack(spacing: 6) {
                             Image(systemName: a.hasSuffix(".png") ? "photo" : "doc")
                             Text(a)
-                            Image(systemName: "xmark.circle.fill")
+                            Button { if live { files.wrappedValue.remove(at: i) } } label: { Image(systemName: "xmark.circle.fill") }
+                                .buttonStyle(.plain)
                         }
                         .ui(12, .regular, look).foregroundStyle(p.mute)
                         .padding(.horizontal, 10).frame(height: 28).background(p.card, in: .capsule)
@@ -297,18 +377,33 @@ struct Composer: View {
                 }
             }
             HStack(alignment: .bottom, spacing: 8) {
-                RoundButton(symbol: "plus", ascii: "+", size: 42)
+                Button { picking.wrappedValue = true } label: { RoundButton(symbol: "plus", ascii: "+", size: 42) }
+                    .buttonStyle(.plain).accessibilityLabel("Attach")
                 HStack {
-                    Text(draft.isEmpty ? (queued.isEmpty ? "Message \(persona.name)" : "Queue a message") : draft)
-                        .ui(16, .regular, look).foregroundStyle(draft.isEmpty ? p.mute : p.fg)
+                    let hint = queued.isEmpty ? "Message \(persona.name)" : "Queue a message"
+                    if live {
+                        TextField(hint, text: text.projectedValue, axis: .vertical).ui(16, .regular, look).lineLimit(1...5)
+                            .textFieldStyle(.plain).onSubmit(send)
+                    } else {
+                        Text(draft.isEmpty ? hint : draft).ui(16, .regular, look).foregroundStyle(draft.isEmpty ? p.mute : p.fg)
+                    }
                     Spacer()
                     Image(systemName: "mic").foregroundStyle(p.mute)
                 }
-                .padding(.horizontal, 16).frame(height: 42)
+                .padding(.horizontal, 16).frame(minHeight: 42)
                 .surface(look, radius: 21)
-                Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(p.dark ? Color.black : .white)
-                    .frame(width: 42, height: 42).background(p.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Circle()))
+                Button(action: send) {
+                    Image(systemName: "arrow.up").font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(p.dark ? Color.black : .white)
+                        .frame(width: 42, height: 42).background(p.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Circle()))
+                }.buttonStyle(.plain).accessibilityLabel("Send")
+            }
+        }
+        .fileImporter(isPresented: picking.projectedValue, allowedContentTypes: [.item], allowsMultipleSelection: true) { r in
+            for url in (try? r.get()) ?? [] {
+                let ok = url.startAccessingSecurityScopedResource()
+                defer { if ok { url.stopAccessingSecurityScopedResource() } }
+                if let d = try? Data(contentsOf: url) { files.wrappedValue.append((url.lastPathComponent, d)) }
             }
         }
     }

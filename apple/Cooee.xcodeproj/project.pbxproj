@@ -10,12 +10,24 @@
 		C0EE00000000000000000101 /* CooeeUI in Frameworks */ = {isa = PBXBuildFile; productRef = C0EE00000000000000000401 /* CooeeUI */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		C0EE00000000000000000C01 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C0EE00000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0EE00000000000000000701;
+			remoteInfo = Cooee;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		C0EE00000000000000000201 /* Cooee.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cooee.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0EE00000000000000000202 /* CooeeAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CooeeAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		C0EE00000000000000000301 /* Cooee */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Cooee; sourceTree = "<group>"; };
+		C0EE00000000000000000302 /* UITests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = UITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -27,6 +39,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0EE00000000000000000502 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -34,6 +53,7 @@
 			isa = PBXGroup;
 			children = (
 				C0EE00000000000000000301 /* Cooee */,
+				C0EE00000000000000000302 /* UITests */,
 				C0EE00000000000000000602 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -42,6 +62,7 @@
 			isa = PBXGroup;
 			children = (
 				C0EE00000000000000000201 /* Cooee.app */,
+				C0EE00000000000000000202 /* CooeeAppUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -72,6 +93,27 @@
 			productReference = C0EE00000000000000000201 /* Cooee.app */;
 			productType = "com.apple.product-type.application";
 		};
+		C0EE00000000000000000702 /* CooeeAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0EE00000000000000000903 /* Build configuration list for PBXNativeTarget "CooeeAppUITests" */;
+			buildPhases = (
+				C0EE00000000000000000803 /* Sources */,
+				C0EE00000000000000000502 /* Frameworks */,
+				C0EE00000000000000000804 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C0EE00000000000000000B01 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C0EE00000000000000000302 /* UITests */,
+			);
+			name = CooeeAppUITests;
+			productName = CooeeAppUITests;
+			productReference = C0EE00000000000000000202 /* CooeeAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -84,6 +126,10 @@
 				TargetAttributes = {
 					C0EE00000000000000000701 = {
 						CreatedOnToolsVersion = 26.0;
+					};
+					C0EE00000000000000000702 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = C0EE00000000000000000701;
 					};
 				};
 			};
@@ -105,12 +151,20 @@
 			projectRoot = "";
 			targets = (
 				C0EE00000000000000000701 /* Cooee */,
+				C0EE00000000000000000702 /* CooeeAppUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		C0EE00000000000000000802 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0EE00000000000000000804 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -127,7 +181,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0EE00000000000000000803 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C0EE00000000000000000B01 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C0EE00000000000000000701 /* Cooee */;
+			targetProxy = C0EE00000000000000000C01 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		C0EE00000000000000000A01 /* Debug */ = {
@@ -170,6 +239,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = cooee;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the QR code your cooee server shows, to pair.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find cooee servers on this network.";
@@ -197,6 +267,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = cooee;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the QR code your cooee server shows, to pair.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find cooee servers on this network.";
@@ -213,6 +284,40 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C0EE00000000000000000A05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.cooee.app.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Cooee;
+			};
+			name = Debug;
+		};
+		C0EE00000000000000000A06 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.cooee.app.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Cooee;
 			};
 			name = Release;
 		};
@@ -233,6 +338,15 @@
 			buildConfigurations = (
 				C0EE00000000000000000A03 /* Debug */,
 				C0EE00000000000000000A04 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0EE00000000000000000903 /* Build configuration list for PBXNativeTarget "CooeeAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0EE00000000000000000A05 /* Debug */,
+				C0EE00000000000000000A06 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

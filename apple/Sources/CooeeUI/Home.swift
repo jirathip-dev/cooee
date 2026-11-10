@@ -5,16 +5,24 @@ import SwiftUI
 public struct HomeView: View {
     @Environment(\.look) var look
     var menuOpen = false
-    public init(menuOpen: Bool = false) { self.menuOpen = menuOpen }
+    let personas: [Persona]
+    let rows: [(Row, Persona)]
+    var selected: String?
+    let actions: HomeActions
+    public init(menuOpen: Bool = false, personas: [Persona] = Fixtures.personas,
+                rows: [(Row, Persona)] = Fixtures.rows.map { ($0, Fixtures.persona($0.persona)) }, selected: String? = nil,
+                actions: HomeActions = HomeActions()) {
+        self.menuOpen = menuOpen; self.personas = personas; self.rows = rows; self.selected = selected; self.actions = actions
+    }
     public var body: some View {
         let p = look.palette
         ZStack(alignment: .topLeading) {
             Backdrop()
             VStack(spacing: 0) {
-                TopBar()
+                TopBar(personas: personas, actions: actions)
                 Scroller {
-                    PinnedRow().padding(.top, 6)
-                    ChatList().padding(.top, look.style == .scene ? 0 : 14)
+                    PinnedRow(personas: personas, rows: rows.map(\.0), new: actions.new).padding(.top, 6)
+                    ChatList(rows: rows, selected: selected, open: actions.open).padding(.top, look.style == .scene ? 0 : 14)
                 }
             }
             .blur(radius: menuOpen ? 10 : 0)
@@ -42,15 +50,31 @@ struct AccountAvatar: View {
     }
 }
 
+/// What Home's taps do: the avatar opens the menu, + or a pinned persona starts a chat with it, a row opens its chat.
+public struct HomeActions {
+    public var menu: () -> Void = {}
+    public var new: (String) -> Void = { _ in }
+    public var open: (String) -> Void = { _ in }
+    public init(menu: @escaping () -> Void = {}, new: @escaping (String) -> Void = { _ in }, open: @escaping (String) -> Void = { _ in }) {
+        self.menu = menu; self.new = new; self.open = open
+    }
+}
+
 struct TopBar: View {
     @Environment(\.look) var look
+    let personas: [Persona]
+    let actions: HomeActions
     var body: some View {
         HStack {
-            AccountAvatar().padding(4).modifier(RoundSurface(look: look))
+            Button(action: actions.menu) { AccountAvatar().padding(4).modifier(RoundSurface(look: look)) }
+                .buttonStyle(.plain).accessibilityLabel("Account")
             Spacer()
             Text(look.mono ? "~/cooee" : "cooee").ui(19, .bold, look)
             Spacer()
-            RoundButton(symbol: "plus", ascii: "+", size: 44)
+            Menu {
+                ForEach(personas) { p in Button(p.name) { actions.new(p.id) } }
+            } label: { RoundButton(symbol: "plus", ascii: "+", size: 44) }
+                .menuIndicator(.hidden).buttonStyle(.plain).accessibilityLabel("New chat")
         }
         .padding(.horizontal, 16).frame(height: 56)
     }
@@ -59,14 +83,17 @@ struct TopBar: View {
 /// The pinned personas: big avatars with their names, scrolling sideways. Scene puts them in the farm's field.
 struct PinnedRow: View {
     @Environment(\.look) var look
+    let personas: [Persona]
+    let rows: [Row]
+    var new: (String) -> Void = { _ in }
     var body: some View {
         let p = look.palette
         let row = Scroller(axis: .horizontal) { HStack(alignment: .bottom, spacing: look.style == .scene ? 4 : 14) {
-            ForEach(Fixtures.personas) { persona in
-                VStack(spacing: 6) {
+            ForEach(personas) { persona in
+                Button { new(persona.id) } label: { VStack(spacing: 6) {
                     ZStack(alignment: .topTrailing) {
                         Avatar(persona: persona, size: look.style == .scene ? 58 : 62)
-                        if let r = Fixtures.rows.first(where: { $0.persona == persona.id && $0.unseen > 0 }) {
+                        if let r = rows.first(where: { $0.persona == persona.id && $0.unseen > 0 }) {
                             Badge(n: r.unseen).offset(x: 4, y: -2)
                         }
                     }
@@ -80,6 +107,7 @@ struct PinnedRow: View {
                     }
                 }
                 .frame(width: look.style == .scene ? 78 : 70)
+                }.buttonStyle(.plain)
             }
         }
         .padding(.horizontal, 16) }
@@ -105,16 +133,19 @@ struct PinnedRow: View {
 
 struct ChatList: View {
     @Environment(\.look) var look
+    let rows: [(Row, Persona)]
     var selected: String? = nil
+    var open: (String) -> Void = { _ in }
     var body: some View {
         let p = look.palette
         VStack(alignment: .leading, spacing: 0) {
             Text(look.mono ? "# chats" : "Chats").ui(look.mono ? 12 : 20, look.mono ? .regular : .bold, look)
                 .foregroundStyle(look.mono ? p.mute : p.fg).padding(.horizontal, 16).padding(.bottom, 6)
                 .padding(.top, look.style == .scene ? 12 : 0)
-            ForEach(Fixtures.rows) { row in
-                ChatRow(row: row, selected: row.id == selected)
-                if row.id != Fixtures.rows.last?.id {
+            ForEach(rows, id: \.0.id) { row, persona in
+                Button { open(row.id) } label: { ChatRow(row: row, persona: persona, selected: row.id == selected) }
+                    .buttonStyle(.plain)
+                if row.id != rows.last?.0.id {
                     Rectangle().fill(p.line).frame(height: look.mono ? 0 : 0.5).padding(.leading, 76)
                 }
             }
@@ -125,9 +156,10 @@ struct ChatList: View {
 struct ChatRow: View {
     @Environment(\.look) var look
     let row: Row
+    let persona: Persona
     var selected = false
     var body: some View {
-        let p = look.palette, persona = Fixtures.persona(row.persona)
+        let p = look.palette
         HStack(spacing: 12) {
             Avatar(persona: Persona(id: persona.id, name: persona.name, initials: persona.initials, symbol: persona.symbol,
                                     tint: persona.tint, coat: persona.coat, state: row.state, agent: persona.agent,
@@ -156,5 +188,6 @@ struct ChatRow: View {
         .padding(.horizontal, 16).padding(.vertical, 10)
         .background(selected ? p.link.opacity(0.16) : .clear, in: .rect(cornerRadius: look.mono ? 0 : 14))
         .padding(.horizontal, selected ? 6 : 0)
+        .contentShape(.rect)
     }
 }
