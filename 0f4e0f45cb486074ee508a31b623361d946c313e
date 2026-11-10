@@ -1,0 +1,10 @@
+Decided: only @mentioned members take turns when the owner names any; no mention gives every member one turn in room order
+Because: "with no mention every member gets one turn in room order and may **pass**"
+Decided: the 6-turn cap is the loop guard; a chained turn past it is dropped with a room note and room-stop {reason: cap}
+Because: "Caps per G2; the last turn is told it is winding down; [stop] ends the round."
+Decided: stop reuses the room's existing cancel route; the deadline runs off Hub::watch, the existing tick, so tests use a fake clock
+Because: crates/cooee-server/src/hub.rs:1618
+Rejected: a separate stop route — two ways to cancel one thread
+Rejected: blocking a member from naming the one who just named it — that would block a real back-and-forth; the cap already bounds it
+Check: a member's cancelled reply is never routed to the room (hub.rs apply), and a stop during a member's session start cancels that session after it starts (rooms.rs take_turn)
+Owner: fits the cap raised in #188 (q1112); the room now decides who answers, stops at 6 answers or 10 minutes, and stop works mid-answer
