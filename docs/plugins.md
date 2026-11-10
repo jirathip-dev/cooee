@@ -113,7 +113,7 @@ The backend authenticates with the same token (`Authorization: Bearer <token>`);
   default `plugin-<name>`) replaces the older one. It answers with the notification sent.
 - `POST /plugin/dot` `{"on": true}`: a dot on the plugin's tab (`false` clears it), until cooee restarts.
 - `POST /plugin/card` `{"thread": "<id>", "text": "Ship it?", "options": ["yes", "no"]}`: a choice card in a
-  thread, pushed like an approval, with an "other" box for a free answer. The owner's tap goes back to the backend as
+  thread of a persona the plugin is attached to (docs/api.md; any other thread's is refused, 400 with why), pushed like an approval, with an "other" box for a free answer. The owner's tap goes back to the backend as
   `POST /cooee/choice` `{"thread", "item", "option", "by"}` (with the token; `by` is the device's label); a 2xx
   marks the card answered (its ✓ line says by whom and when, or the backend's `{"line": "…"}`), a 409 closes it with
   its `line` (else `stale`), anything else lets it be tapped again. A conductor's cards (herdsman#553 rows 30–33):

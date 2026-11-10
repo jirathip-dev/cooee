@@ -35,7 +35,7 @@ jobs:
         run: just doc
       - name: deny (licences, advisories, duplicate versions)
         run: just deny
-      - name: line cap (≤ 15,500 non-test lines in crates/*/src, web/src and web/ts)
+      - name: line cap (crates/*/src, web/src and web/ts ≤ line_cap; apple/ Swift ≤ apple_cap)
         run: just cap
       - name: dependency direction (cooee-core has no workspace deps)
         run: just deps

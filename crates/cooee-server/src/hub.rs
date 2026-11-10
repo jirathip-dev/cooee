@@ -15,6 +15,7 @@ use cooee_core::{
     Agent, Body, Card, Change, Chat, Config, Item, Launch, Plugin, Queued, Shed, ShedError, Store,
     StoreError, Summary, Thread, Turn, Workflow,
     mcp::{self, COOEE, Pick, Server},
+    personas,
     shed_proto::{self, ApprovalOption, Event, TerminalInfo},
 };
 use serde::{Deserialize, Serialize};
@@ -365,6 +366,7 @@ impl Hub {
         (roots, config): (Vec<PathBuf>, Option<PathBuf>),
         theme: cooee_web::Theme,
         plugins: Vec<Plugin>,
+        apns: Option<cooee_core::Apns>,
     ) -> Result<Arc<Self>, HubError> {
         let store = Store::open(data)?;
         let key = data.join("mcp.key");
@@ -391,7 +393,7 @@ impl Hub {
             store,
             scratch: data.join("scratch"),
             files: data.join("files"),
-            push: Push::new(data),
+            push: Push::new(data).with_apns(apns),
             theme,
             roots: Mutex::new(roots),
             config,
@@ -1431,8 +1433,18 @@ impl Hub {
     /// plugin; a card the conductor answered itself may be changed for 30 minutes.
     ///
     /// # Errors
-    /// [`HubError::Refused`] without text, options, a config's diff, a secret's name or a run's command and sha.
+    /// [`HubError::Refused`] for a thread of no persona the plugin is attached to (#129), or without text, options, a
+    /// config's diff, a secret's name or a run's command and sha.
     pub fn card(&self, plugin: &Plugin, c: CardSpec) -> Result<Item, HubError> {
+        let (thread, owner) = (self.thread(&c.thread)?.0, self.plugin_of(&plugin.name));
+        let personas = personas::list(self.config_dir(), &self.data);
+        let persona = personas.iter().find(|p| p.id == thread.profile);
+        if !persona.is_some_and(|p| p.plugins.contains(&owner)) {
+            return Err(HubError::Refused(format!(
+                "plugin {owner} is not attached to thread {}'s persona",
+                c.thread
+            )));
+        }
         let plain = |o: &str| ApprovalOption {
             id: o.to_owned(),
             name: o.to_owned(),
@@ -1597,6 +1609,7 @@ impl Hub {
     /// The thread list, newest first.
     #[must_use]
     pub fn list(&self) -> Vec<Summary> {
+        let personas = personas::list(self.config_dir(), &self.data);
         let mut rows: Vec<Summary> = self
             .all()
             .iter()
@@ -1632,6 +1645,11 @@ impl Hub {
                     agent: live.meta.agent.clone(),
                     account: live.meta.account.clone(),
                     profile: live.meta.profile.clone(),
+                    persona: personas
+                        .iter()
+                        .find(|p| p.id == live.meta.profile)
+                        .map(|p| p.id.clone())
+                        .unwrap_or_default(),
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     state: live.chat.turn.state.clone(),
                     last: waiting.unwrap_or_else(|| {
@@ -1724,6 +1742,23 @@ impl Hub {
     #[must_use]
     pub fn plugins(&self) -> Vec<Plugin> {
         lock(&self.plugins).clone()
+    }
+
+    /// The installed plugin `[[plugins]]` entry `tab` is a tab of: its lock entry's name, else its own (a config's).
+    #[must_use]
+    pub fn plugin_of(&self, tab: &str) -> String {
+        let lock = cooee_core::plugins::read_lock(&self.data).unwrap_or_default();
+        let found = lock.into_iter().find(|l| l.tabs.iter().any(|t| t == tab));
+        found.map_or_else(|| tab.to_owned(), |l| l.name)
+    }
+
+    /// The plugins a persona may be attached to: the installed ones (on or off) and the config's.
+    #[must_use]
+    pub fn installed(&self) -> Vec<String> {
+        let lock = cooee_core::plugins::read_lock(&self.data).unwrap_or_default();
+        let mut names: Vec<String> = lock.into_iter().map(|l| l.name).collect();
+        names.extend(self.plugins().iter().map(|p| self.plugin_of(&p.name)));
+        names
     }
 
     /// Replaces the plugins (the supervisor, as plugins are installed or removed).
@@ -1972,6 +2007,20 @@ impl Hub {
         self.grant_of(s, pick.tools).map_err(HubError::Refused)
     }
 
+    /// An agent's `remember` in thread `id` (#126): a note by the thread's persona, for its next sessions.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an empty note.
+    pub fn remember(&self, id: &str, token: &str, text: &str) -> Result<personas::Note, HubError> {
+        let meta = self.token_of(id, token)?;
+        let found = personas::list(self.config_dir(), &self.data)
+            .into_iter()
+            .find(|p| p.id == meta.profile);
+        let p = found.ok_or_else(|| HubError::Refused(format!("thread {id} has no persona")))?;
+        personas::remember(&self.data, &p.id, "persona", text, now())
+            .map_err(|e| HubError::Refused(e.to_string()))
+    }
+
     /// An agent's `propose_server` in thread `id`: a card with the exact command or URL; nothing runs, and the
     /// server is added (off) only when the owner approves it with Face ID.
     ///
@@ -2095,6 +2144,7 @@ mod tests {
             (Vec::new(), None),
             theme,
             Vec::new(),
+            None,
         )
         .unwrap()
     }

@@ -21,6 +21,7 @@ deny:
 
 cap:
     scripts/line-cap.sh
+    ci/line-cap-test.sh
 
 deps:
     scripts/dep-direction.sh

@@ -25,7 +25,10 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Config, Device, Devices, Plugin, ShedError};
+use cooee_core::{
+    Config, Device, Devices, Plugin, ShedError,
+    personas::{self, Persona},
+};
 use futures_util::{Stream, StreamExt, stream};
 use pairing::devices;
 use passkey::Unlocks;
@@ -593,7 +596,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         let picked = (new.model, new.effort);
         let (agent, folder, recipe) = recipe(
             &logins,
-            (&data, &list),
+            (&data, config.as_deref(), &list),
             (&new.agent, new.account.as_deref(), profile),
             new.folder,
             picked,
@@ -634,7 +637,7 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
         let list = profiles(&hub, (&data, config.as_deref()));
         let (_, _, recipe) = recipe(
             &logins,
-            (&data, &list),
+            (&data, config.as_deref(), &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
             (t.model, t.effort),
@@ -663,7 +666,7 @@ async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Ite
         let list = profiles(&hub, (&data, config.as_deref()));
         let (_, _, recipe) = recipe(
             &logins,
-            (&data, &list),
+            (&data, config.as_deref(), &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
             (t.model, t.effort),
@@ -680,11 +683,33 @@ async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Ite
 /// agent and folder too.
 fn recipe(
     logins: &Logins,
-    (data, list): (&std::path::Path, &[cooee_core::Profile]),
+    (data, config, list): (
+        &std::path::Path,
+        Option<&std::path::Path>,
+        &[cooee_core::Profile],
+    ),
     (agent, account, profile): (&str, Option<&str>, &str),
     folder: PathBuf,
-    picked: (String, String),
+    mut picked: (String, String),
 ) -> Result<(String, PathBuf, Recipe), HubError> {
+    // A persona (#126): its agent, as the profile it runs as or Plain, in its folder, on its model and effort.
+    let persona = personas::find(config, data, profile).ok();
+    if let Some(p) = &persona {
+        for (pick, default) in [(&mut picked.0, &p.model), (&mut picked.1, &p.effort)] {
+            if pick.is_empty() {
+                pick.clone_from(default);
+            }
+        }
+    }
+    let (agent, profile, folder) = match &persona {
+        Some(p) if !["", "scratch"].contains(&p.folder.as_str()) => (
+            p.agent.as_str(),
+            p.profile.as_deref().unwrap_or(""),
+            PathBuf::from(&p.folder),
+        ),
+        Some(p) => (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder),
+        None => (agent, profile, folder),
+    };
     let (agent, folder, mut recipe) = if profile.is_empty() {
         let (account, launch) = logins.home(agent, account)?;
         let recipe = Recipe {
@@ -714,6 +739,10 @@ fn recipe(
         .launch
         .pick(logins.picks(&agent, &picked.0, &picked.1)?);
     (recipe.model, recipe.effort) = picked;
+    if let Some(p) = persona {
+        recipe.instructions = p.brief(data);
+        recipe.profile = p.id;
+    }
     Ok((agent, folder, recipe))
 }
 
@@ -1668,11 +1697,42 @@ async fn push_subscribe(cx: &Cx, Json(s): Json<Subscribe>) -> Result<Response> {
         p256dh: s.p256dh,
         auth: s.auth,
         reset: None,
+        apns: None,
     };
     let hub = hub(cx);
     match tokio::task::spawn_blocking(move || hub.push().subscribe(sub)).await? {
         Ok(()) => plain(200, "alerts on"),
         Err(e) if e.kind() == io::ErrorKind::InvalidInput => plain(400, &e.to_string()),
+        Err(e) => plain(500, &e.to_string()),
+    }
+}
+
+/// `POST`/`DELETE /push/apns`: this native device's APNs token (`env`: default the config's).
+#[derive(Deserialize)]
+struct Token {
+    token: String,
+    #[serde(default)]
+    env: Option<cooee_core::ApnsEnv>,
+}
+
+#[route(POST "/push/apns")]
+async fn apns_add(cx: &Cx, Json(t): Json<Token>) -> Result<Response> {
+    let (hub, me) = (hub(cx), request_context::<Paired>(cx).0.id.clone());
+    match tokio::task::spawn_blocking(move || hub.push().register_apns(&me, &t.token, t.env))
+        .await?
+    {
+        Ok(()) => plain(200, "alerts on"),
+        Err(e) if e.kind() == io::ErrorKind::InvalidInput => plain(400, &e.to_string()),
+        Err(e) => plain(500, &e.to_string()),
+    }
+}
+
+#[route(DELETE "/push/apns")]
+async fn apns_remove(cx: &Cx, Json(t): Json<Token>) -> Result<Response> {
+    let (hub, me) = (hub(cx), request_context::<Paired>(cx).0.id.clone());
+    let token = t.token.to_ascii_lowercase();
+    match tokio::task::spawn_blocking(move || hub.push().unsubscribe(&me, &token)).await? {
+        Ok(_) => plain(200, "alerts off"),
         Err(e) => plain(500, &e.to_string()),
     }
 }
@@ -1777,6 +1837,139 @@ struct AgentAsk {
 fn bearer(cx: &Cx) -> String {
     let token = header(cx, "authorization").and_then(|a| a.strip_prefix("Bearer "));
     token.unwrap_or_default().to_owned()
+}
+
+/// `POST /mcp/agent/remember` `{thread, server: {text}}`: `remember`'s note, by the thread's persona (#126).
+#[route(POST "/mcp/agent/remember")]
+async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<personas::Note>> {
+    let (token, text) = (
+        bearer(cx),
+        a.server["text"].as_str().unwrap_or_default().to_owned(),
+    );
+    Ok(Answer(
+        blocking(cx, move |hub| hub.remember(&a.thread, &token, &text)).await,
+    ))
+}
+
+/// A persona call (#126; docs/api.md) off the async workers, given the data and config folders.
+async fn on_personas<T: Send + 'static>(
+    cx: &Cx,
+    f: impl FnOnce(&std::path::Path, &std::path::Path) -> io::Result<T> + Send + 'static,
+) -> Result<Answer<T>> {
+    let d = app_context::<Data>(cx);
+    let (data, config) = (d.0.clone(), d.1.clone());
+    let done = blocking(cx, move |_| {
+        let config = config.ok_or_else(|| refused("there is no config folder for personas"))?;
+        f(&data, &config).map_err(refused)
+    });
+    Ok(Answer(done.await))
+}
+
+#[route(GET "/personas")]
+async fn persona_list(cx: &Cx) -> Result<Answer<Vec<Persona>>> {
+    on_personas(cx, |d, c| Ok(personas::list(Some(c), d))).await
+}
+
+#[route(POST "/personas")]
+async fn persona_new(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>> {
+    let p = Persona {
+        id: String::new(),
+        ..p
+    };
+    persona_save(cx, p).await
+}
+
+/// Saves `p`, its plugins (#129) each an installed one.
+async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
+    let installed = hub(cx).installed();
+    on_personas(cx, move |d, c| {
+        match p.plugins.iter().find(|n| !installed.contains(n)) {
+            Some(n) => Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("no installed plugin {n}"),
+            )),
+            None => personas::save(c, d, p),
+        }
+    })
+    .await
+}
+
+#[route(GET "/personas/{id}")]
+async fn persona_get(cx: &Cx) -> Result<Answer<Persona>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| personas::find(Some(c), d, &id)).await
+}
+
+#[route(PUT "/personas/{id}")]
+async fn persona_put(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>> {
+    let p = Persona {
+        id: thread_id(cx),
+        ..p
+    };
+    persona_save(cx, p).await
+}
+
+/// `GET /personas/{id}/places` (#129): its attached plugins' header screens; none until a plugin can have one (#125).
+#[route(GET "/personas/{id}/places")]
+async fn places(cx: &Cx) -> Result<Answer<Vec<personas::Place>>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| {
+        personas::find(Some(c), d, &id).map(|_| Vec::new())
+    })
+    .await
+}
+
+#[route(DELETE "/personas/{id}")]
+async fn persona_delete(cx: &Cx) -> Result<Answer<()>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| personas::remove(c, d, &id)).await
+}
+
+#[route(GET "/personas/{id}/memory")]
+async fn memory(cx: &Cx) -> Result<Answer<Vec<personas::Note>>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| {
+        Ok(personas::notes(d, &personas::find(Some(c), d, &id)?.id))
+    })
+    .await
+}
+
+#[route(POST "/personas/{id}/memory")]
+async fn memory_add(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<personas::Note>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| {
+        personas::remember(
+            d,
+            &personas::find(Some(c), d, &id)?.id,
+            "owner",
+            &n.text,
+            now(),
+        )
+    })
+    .await
+}
+
+#[route(DELETE "/personas/{id}/memory")]
+async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| {
+        personas::forget(d, &personas::find(Some(c), d, &id)?.id)
+    })
+    .await
+}
+
+/// The persona calls (#126), and `remember`'s.
+fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+    b.route(persona_list)
+        .route(persona_new)
+        .route(persona_get)
+        .route(persona_put)
+        .route(persona_delete)
+        .route(places)
+        .route(memory)
+        .route(memory_add)
+        .route(memory_clear)
+        .route(mcp_remember)
 }
 
 /// `POST /mcp/agent/grant` `{thread, server}`: the server resolved, in memory, and the tools it may offer.
@@ -2014,16 +2207,18 @@ pub fn router(
         devices: Devices::new(data),
         hub: Arc::clone(&hub),
     };
-    pairing::routes(
+    persona_routes(pairing::routes(
         cooee_web::assets(Router::builder(), looks)
             .layer(Timing)
             .layer(gate)
             // A message's photos come as base64.
             .layer(BodyLimit::max(64 << 20).at("/threads")),
-    )
+    ))
     .route(push_key)
     .route(push_subscribe)
     .route(push_unsubscribe)
+    .route(apns_add)
+    .route(apns_remove)
     .route(push_endpoints)
     .route(push_reset)
     .route(push_test)
@@ -2152,6 +2347,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         (config.roots.clone(), config.path.clone()),
         theme,
         manager.tabs(),
+        config.apns.clone(),
     )?;
     let router = router(
         Arc::clone(&hub),

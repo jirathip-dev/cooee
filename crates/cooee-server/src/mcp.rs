@@ -2,8 +2,8 @@
 //! --thread <id>` (stdio), which asks cooee for its grant (the command or URL, the variables and headers resolved in
 //! memory, the allowed tools) with the thread's token, starts or connects to the real server, answers `tools/list`
 //! with the allowed tools only and refuses a call to any other. `cooee mcp serve --thread <id>`, on every thread, is
-//! cooee's own server: only `propose_server`, which raises a card in the thread; nothing runs until the owner
-//! approves it with Face ID. The token is in `COOEE_MCP` (`<cooee's URL> <token>`) and is good while the thread is
+//! cooee's own server: `propose_server`, which raises a card in the thread (nothing runs until the owner approves it
+//! with Face ID), and `remember`, a note in the thread's persona's memory. The token is in `COOEE_MCP` (`<cooee's URL> <token>`) and is good while the thread is
 //! open.
 
 use std::{
@@ -357,7 +357,7 @@ pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
         .collect())
 }
 
-/// `cooee mcp serve --thread <id>`: cooee's own MCP server, with `propose_server` only.
+/// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -380,6 +380,11 @@ pub fn serve(thread: &str) -> Result<(), String> {
         "description": "Propose an MCP server for cooee's registry. The owner sees the exact command or URL and approves it with Face ID; it is added switched off, and nothing runs before that.",
         "inputSchema": schema
     });
+    let remember = json!({
+        "name": "remember",
+        "description": "Keep a note in your persona's memory: it reaches you with your instructions in every new session. The owner can read and clear it.",
+        "inputSchema": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" } } }
+    });
     for line in io::stdin().lock().lines().map_while(Result::ok) {
         let Ok(msg) = serde_json::from_str::<Value>(&line) else {
             continue;
@@ -397,22 +402,37 @@ pub fn serve(thread: &str) -> Result<(), String> {
                 }),
             ),
             "ping" => reply(id, &json!({})),
-            "tools/list" => reply(id, &json!({ "tools": [tool] })),
-            "tools/call" if msg.pointer("/params/name") == Some(&json!("propose_server")) => {
+            "tools/list" => reply(id, &json!({ "tools": [tool, remember] })),
+            "tools/call" => {
                 let args = msg
                     .pointer("/params/arguments")
                     .cloned()
                     .unwrap_or_default();
-                let (text, failed) = match ask("/mcp/agent/propose", &json!({ "thread": thread, "server": args })) {
-                    Ok(_) => ("Proposed. The owner sees a card with the exact command or URL; once approved with Face ID it is added switched off. Nothing has run.".to_owned(), false),
-                    Err(e) => (e, true),
+                let call = match msg.pointer("/params/name").and_then(Value::as_str) {
+                    Some("propose_server") => Some((
+                        "/mcp/agent/propose",
+                        "Proposed. The owner sees a card with the exact command or URL; once approved with Face ID it is added switched off. Nothing has run.",
+                    )),
+                    Some("remember") => Some((
+                        "/mcp/agent/remember",
+                        "Noted: it reaches you in your next sessions.",
+                    )),
+                    _ => None,
                 };
-                reply(
-                    id,
-                    &json!({ "content": [{ "type": "text", "text": text }], "isError": failed }),
-                )
+                match call.map(|(path, said)| {
+                    ask(path, &json!({ "thread": thread, "server": args })).map(|_| said)
+                }) {
+                    Some(said) => {
+                        let (text, failed) =
+                            said.map_or_else(|e| (e, true), |s| (s.to_owned(), false));
+                        reply(
+                            id,
+                            &json!({ "content": [{ "type": "text", "text": text }], "isError": failed }),
+                        )
+                    }
+                    None => error(id, -32602, "cooee's tools are propose_server and remember"),
+                }
             }
-            "tools/call" => error(id, -32602, "cooee's only tool is propose_server"),
             m => error(id, -32601, &format!("no method {m}")),
         };
         put(&out, &answer);

@@ -29,8 +29,8 @@ type File = { name: string; data: string }; // data: the bytes in base64
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, folder, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}}` (`unseen`: the agent's items past the read mark) |
-| `POST /threads` | `{agent, account?, model?, effort?, folder?, text, random_id, background?}` | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
+| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, folder, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}}` (`unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted) |
+| `POST /threads` | `{agent, account?, profile?, model?, effort?, folder?, text, random_id, background?}` (`profile`: a persona's or profile's id; a persona's agent, folder, model and effort are its defaults) | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
 | `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
 | `POST /threads/{id}/folder` | `{folder}` (a root or inside one): "Use a folder…"; its agent starts again there and the next message carries a hand-over | the `note` it adds |
 | `POST /agents` | a form: `name`, `profile` (`""`: Plain on the first installed agent) | 303 to its new chat; the agent is saved as `<config>/profiles/<name>.toml` |
@@ -52,6 +52,30 @@ type File = { name: string; data: string }; // data: the bytes in base64
 The event stream's events, each with an id `<boot>.<seq>` to resume after: `item` (an `Item`, new or changed), `text`
 (`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), `queue` (the `Queued[]` now), and `reset` (`{}`: too far behind or
 another run; load the newest slice again).
+
+## Personas (#126)
+
+A persona is `{id, name, avatar?, character, instructions, folder, agent, model, effort, plugins, profile?}`: `avatar` an image
+(`https://…`, `data:image/…`; none: the client draws initials), `folder` an owned folder or `scratch`, `agent`, `model`
+and `effort` its defaults. It is `<config>/personas/<id>.toml`; an owner profile with no persona of its name is read
+as one (`profile`: the profile it runs as, its account, settings, env, MCP servers and policy kept; never set over the
+API). Its Character, Instructions and notes go ahead of each new session's first message (`POST /threads` with
+`profile: <id>`). A note is `{text, by: "persona" | "owner", at}`, in `<data>/personas/<id>/memory.jsonl`; the persona
+adds one with the `remember` tool of cooee's own MCP server. `plugins` (#129) are the installed plugins (or config
+`[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. The persona read from a `conductor`
+profile has an installed `cooee-drover` attached. An unknown id or a broken rule is a 400 with the reason.
+
+| Call | Body | Answer |
+|---|---|---|
+| `GET /personas` | | every persona, by id |
+| `POST /personas` | a persona without `id` (its id is made from `name`, not taken) | the persona |
+| `GET /personas/{id}` | | the persona |
+| `PUT /personas/{id}` | the persona | the persona |
+| `DELETE /personas/{id}` | | `null`: its file, the profile it runs as and its notes go; its chats stay |
+| `GET /personas/{id}/places` | | its attached plugins' header screens, `{name, label, icon, url}[]`: none until a plugin can have one (#125) |
+| `GET /personas/{id}/memory` | | its notes, oldest first |
+| `POST /personas/{id}/memory` | `{text}` | the note, by `owner` |
+| `DELETE /personas/{id}/memory` | | `null`: the notes go, the persona and its chats stay |
 
 ## Folders
 
@@ -81,8 +105,10 @@ another run; load the newest slice again).
 | `GET /push/key` | | `{key}`: the VAPID public key, base64url |
 | `POST /push/subscribe` | `{endpoint, p256dh, auth}` (`PushSubscription.toJSON()`) | text |
 | `POST /push/unsubscribe` | `{endpoint}` | text |
-| `GET /push/endpoints` | | this device's endpoints, `string[]` |
+| `GET /push/endpoints` | | this device's endpoints and APNs tokens, `string[]` |
 | `POST /push/test` | `{}` | text |
+| `POST /push/apns` | `{token, env?}`: a native device's APNs token (hex); `env` `sandbox` or `production`, default `[apns] env` | text; 400 for a token that isn't hex |
+| `DELETE /push/apns` | `{token}` | text |
 | `GET /devices` | | `{id, label, created, used, me, by}[]`: `by`, the device that approved its request (empty if none) |
 | `POST /devices/remove` | `{id}` | text |
 | `POST /devices/pair` | `{}` | `{code, link, svg, host}`: a new code (dropping the open one), its link and the link as a QR code |
@@ -123,7 +149,8 @@ Native forms, as theme packs; `GET /mcp` is the page.
 
 A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the thread's token>`, no cookie:
 `POST /mcp/agent/grant` `{thread, server}` → the server resolved and its allowed `tools`; `POST /mcp/agent/propose`
-`{thread, server: {name, type, command, args, url, why}}` → the card.
+`{thread, server: {name, type, command, args, url, why}}` → the card; `POST /mcp/agent/remember` `{thread, server:
+{text}}` → the note, by the thread's persona.
 
 ## Theme packs (Settings › look › themes, [docs/themes.md](themes.md))
 
