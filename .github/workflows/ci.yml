@@ -14,11 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: actionlint@1.7.12
       - name: actionlint (.github/workflows/**)
-        run: actionlint
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color
 
   # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64 and macOS arm64.
   msrv:
