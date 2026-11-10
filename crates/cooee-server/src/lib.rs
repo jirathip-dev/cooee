@@ -878,6 +878,60 @@ async fn retitle(cx: &Cx, Json(t): Json<Title>) -> Result<Answer<()>> {
     ))
 }
 
+/// A room member's session starts as its persona's chat does (#154).
+fn starter(
+    logins: Arc<Logins>,
+    data: &std::path::Path,
+    config: Option<&std::path::Path>,
+) -> hub::Starter {
+    let (data, config) = (data.to_owned(), config.map(ToOwned::to_owned));
+    Box::new(move |hub, persona| {
+        let list = profiles(hub, (&data, config.as_deref()));
+        let empty = (String::new(), String::new());
+        let ask = ("", None, persona);
+        recipe(
+            &logins,
+            (&data, config.as_deref(), &list),
+            ask,
+            PathBuf::new(),
+            empty,
+        )
+    })
+}
+
+/// `POST /rooms` (#154): a room of member personas, in room order.
+#[derive(Deserialize)]
+struct NewRoom {
+    #[serde(default)]
+    title: String,
+    members: Vec<String>,
+    random_id: String,
+}
+
+#[route(POST "/rooms")]
+async fn room_new(cx: &Cx, Json(r): Json<NewRoom>) -> Result<Answer<Created>> {
+    let id = blocking(cx, move |hub| {
+        hub.create_room(&r.title, &r.members, &r.random_id)
+    });
+    Ok(Answer(id.await.map(|id| Created { id })))
+}
+
+/// `POST /threads/{id}/members`: a persona to add to the room, or to take out (its session closed).
+#[derive(Deserialize)]
+struct Seat {
+    persona: String,
+    #[serde(default)]
+    remove: bool,
+}
+
+#[route(POST "/threads/{id}/members")]
+async fn members(cx: &Cx, Json(m): Json<Seat>) -> Result<Answer<Vec<String>>> {
+    let id = thread_id(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| hub.member(&id, &m.persona, m.remove)).await,
+    ))
+}
+
 /// `POST /threads/{id}/archive`: `on` archives it, else it is restored.
 #[derive(Deserialize)]
 struct Archive {
@@ -2202,6 +2256,7 @@ pub fn router(
         });
     }
     names.extend(allowed_hosts.iter().cloned());
+    hub.set_starter(starter(Arc::clone(&logins), data, config));
     let gate = Gate {
         names,
         devices: Devices::new(data),
@@ -2247,6 +2302,8 @@ pub fn router(
     .route(steer)
     .route(retitle)
     .route(archive)
+    .route(room_new)
+    .route(members)
     .route(thread_file)
     .route(approve)
     .route(cancel)
