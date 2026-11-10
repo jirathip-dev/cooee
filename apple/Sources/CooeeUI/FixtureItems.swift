@@ -36,38 +36,45 @@ extension Fixtures {
     public static let cards: [Item] = [
         .you(id: 1, text: "Pull Kestrel's last three 10-Q filings and summarise the revenue lines."),
         .agent(id: 2, markdown: [.text("I need the web to reach EDGAR. Three things first:")]),
-        .choice(
-            id: 3,
-            Choice(
-                title: "Allow fetch sec.gov?",
-                detail: "fetch https://www.sec.gov/cgi-bin/browse-edgar?company=kestrel",
-                options: ["Allow once", "Always for sec.gov", "Deny"],
-                recommended: 0
-            )
+        card(
+            3, nil,
+            #"""
+            {"type": "card", "id": "3", "kind": "ask", "title": "Allow fetch sec.gov?",
+             "subtitle": "fetch https://www.sec.gov/cgi-bin/browse-edgar?company=kestrel",
+             "blocks": [{"type": "choice", "id": "3-answer", "action": "answer", "recommended": "once",
+               "options": [{"value": "once", "label": "Allow once"}, {"value": "always", "label": "Always for sec.gov"},
+                           {"value": "deny", "label": "Deny"}]}]}
+            """#
         ),
     ]
 
     public static let moreCards: [Item] = [
         .agent(
             id: 7, markdown: [.text("Allowed. The edgar plugin needs its settings, its key, and a run to install:")]),
-        .config(
-            id: 4,
-            plugin: "edgar",
-            title: "EDGAR plugin settings",
-            fields: [Field("User agent", "cooee research"), Field("Rate", "5 / s")]
+        card(
+            4, "edgar",
+            #"""
+            {"type": "card", "id": "4", "kind": "config", "title": "EDGAR plugin settings",
+             "blocks": [{"type": "config", "id": "edgar", "submit": {"label": "Save", "action": "save-config"}, "fields": [
+               {"type": "text", "name": "user_agent", "label": "User agent", "value": "cooee research"},
+               {"type": "picker", "name": "rate", "label": "Rate", "value": "5 / s", "options": ["1 / s", "5 / s"]}]}]}
+            """#
         ),
-        .secret(
-            id: 5, plugin: "edgar", name: "EDGAR_API_KEY", why: "Sent to the edgar plugin only, never to the agent"),
-        .run(
-            id: 6,
-            RunCard(
-                why: "Install the edgar plugin's Python deps",
-                command: "uv pip install -r plugins/edgar/requirements.txt",
-                sha: "3b7e0c55a1d9",
-                folder: "~/research",
-                blast: "~/research/.venv only, no network after",
-                lapses: "lapses in 11m"
-            )
+        card(
+            5, "edgar",
+            #"""
+            {"type": "card", "id": "5", "kind": "secret", "title": "EDGAR_API_KEY",
+             "blocks": [{"type": "secret", "id": "EDGAR_API_KEY", "name": "EDGAR_API_KEY", "action": "set-secret"}]}
+            """#
+        ),
+        card(
+            6, nil,
+            #"""
+            {"type": "card", "id": "6", "kind": "run", "title": "Install the edgar plugin's Python deps",
+             "blocks": [{"type": "run", "id": "r7", "action": "run-card",
+               "command": "uv pip install -r plugins/edgar/requirements.txt", "sha": "3b7e0c55a1d9", "dir": "~/research",
+               "touches": "~/research/.venv only, no network after", "until": "\#(Relative.stamp(in: 690))"}]}
+            """#
         ),
     ]
 
@@ -85,14 +92,19 @@ extension Fixtures {
                 .text("#124's screens are up. Approve it and impl starts on the same branch."),
             ]
         ),
-        .choice(
-            id: 4,
-            Choice(
-                title: "#124 design: native app v1 screens",
-                detail: "38 frames: home, chat, cards, persona sheet, avatar menu, pairing, Mac setup, three styles",
-                options: ["Approve", "Revise…", "Reject"],
-                recommended: 0
-            )
+        card(
+            4, nil,
+            #"""
+            {"type": "card", "id": "4", "kind": "ask", "title": "#124 design: native app v1 screens",
+             "subtitle": "38 frames: home, chat, cards, persona sheet, avatar menu, pairing, Mac setup, three styles",
+             "blocks": [{"type": "choice", "id": "4-answer", "action": "answer", "recommended": "approve",
+               "options": [{"value": "approve", "label": "Approve"}, {"value": "revise", "label": "Revise…"},
+                           {"value": "reject", "label": "Reject"}]}]}
+            """#
         ),
     ]
+
+    private static func card(_ id: Int, _ poster: String?, _ json: String) -> Item {
+        .card(id: id, poster: poster, block: JSONValue(json: json))
+    }
 }

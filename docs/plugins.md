@@ -60,6 +60,9 @@ it can attach the thread.
   otherwise the old one keeps running. The build before stays, to roll back to.
 - `cooee plugin remove <name> [--purge]` stops it and removes its entries; its folder stays unless `--purge`.
 - `cooee plugin list`: name, version, commit, source (index or url) and state.
+- `cooee plugin check <answer.json>...` (#138) validates a plugin's answers (a screen or any block, a list of them,
+  stream events, places) against `docs/plugins/screens.schema.json`, the JSON Schema of #125's blocks, and names each
+  field that breaks it (`$.blocks[0].rows[0].badge.tone: "red" is not one of …`). An unknown block type passes.
 
 `cooee serve` runs each enabled plugin's backend as its child (no launchd job per plugin) on its port, with its output
 in `<data>/plugins/<name>/plugin.log` (its builds' too). A backend that exits restarts after 1 s, then 2, 4 and 8; the

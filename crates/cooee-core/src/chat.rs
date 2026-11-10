@@ -10,7 +10,8 @@ use serde_json::Value;
 use shed_proto::{ApprovalOption, EventKind};
 
 /// One row of a thread, as stored and as the page draws it. A later version of an item replaces the earlier one.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// An approval is sent with its card block (`blocks.rs`).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Item {
     /// Counts up from 1 per thread.
     pub id: u64,
