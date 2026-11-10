@@ -1,0 +1,11 @@
+Decided: adopt a folder as a symlink under <data>/accounts/<provider>/<name>; the account's dir is the link's target path
+Because: "adopt an existing config folder as an account, without signing in again"
+Rejected: a folders map in .cooee.json — a second account source that list, sheet and server would each have to merge
+Decided: provider commands run with CLAUDE_CODE_OAUTH_TOKEN removed
+Because: "a stale Keychain login must read as signed out"
+Check: with the token inherited, B reads signed in; without it, B reads signed out (claude auth status loggedIn false)
+Decided: usage from the provider's own `claude -p /usage` with TZ=UTC; cooee never reads a token
+Rejected: herdsman's Keychain read plus /api/oauth/usage — cooee would read tokens, which docs/accounts.md rules out
+Because: "A reading past its reset time reads as reset (0 %), not the old number."
+Check: crates/cooee/tests/accounts_env.rs past-reset test sets read_at 120 s ago and resets_at 60 s ago, and expects 0 % with age_s in [120,180)
+Owner: B on the mini is really signed out; sign it in again. The line cap ask q1132 is open.
