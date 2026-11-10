@@ -1,0 +1,7 @@
+Decided: merging staging after #183 keeps its provider usage field and command and leaves models and model removed
+Because: crates/cooee-core/src/login.rs:20
+Decided: the e2e fake agent reports its models through the fake shed's session.json, and models.json is seeded so /new offers them
+Because: web/e2e/serve.sh:118
+Rejected: accepting models/model in config with a warning — keeps a second, dead way to name models
+Check: new-thread.spec.mjs:72 picks sonnet from the live list; serve.sh config carries usage but no models/model
+Owner: the browser tests now get their model list from the fake agent, and the merge keeps the new usage readout
