@@ -1003,6 +1003,7 @@ mod tests {
             unseen: usize::from(unread),
             archived: false,
             workflow: None,
+            members: Vec::new(),
         }
     }
 

@@ -6,14 +6,14 @@ use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError},
+    sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError, mpsc},
     thread,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use cooee_core::{
-    Agent, Body, Card, Change, Chat, Config, Item, Launch, Plugin, Queued, Shed, ShedError, Store,
-    StoreError, Summary, Thread, Turn, Workflow,
+    Agent, Body, Card, Change, Chat, Config, Item, Kind, Launch, Plugin, Queued, Shed, ShedError,
+    Store, StoreError, Summary, Thread, Turn, Workflow,
     mcp::{self, COOEE, Pick, Server},
     personas,
     shed_proto::{self, ApprovalOption, Event, TerminalInfo},
@@ -26,6 +26,9 @@ use crate::{
     mcp::Grant,
     push::{Note, Push, note},
 };
+
+mod rooms;
+pub use rooms::Starter;
 
 /// How many page events a thread keeps for a reconnecting page.
 const RING: usize = 4096;
@@ -188,6 +191,8 @@ pub struct Recipe {
     pub effort: String,
     /// The MCP servers its profile picks (#56), each run through cooee's proxy.
     pub mcp: Vec<String>,
+    /// The room it is a member's session of (#154; its persona is `profile`).
+    pub room: String,
     /// The machine it runs on (#148; empty: this host), one of [`cooee_machines::Machines::added`].
     pub machine: String,
 }
@@ -223,6 +228,10 @@ pub struct Hub {
     proposals: Mutex<HashMap<(String, u64), Server>>,
     /// Each server's tools as last listed, for the profile sheet; held while the registry is written.
     tools: Mutex<HashMap<String, cooee_web::Tools>>,
+    /// The rooms with a member's turn to start, for the turn worker.
+    turns: mpsc::Sender<String>,
+    /// How a room's member session starts, given its persona.
+    starter: OnceLock<Starter>,
 }
 
 pub(crate) fn now() -> u64 {
@@ -389,6 +398,7 @@ impl Hub {
             let chat = Chat::from_versions(store.items(&id)?);
             threads.insert(id, Arc::new(Mutex::new(Live::new(meta, chat))));
         }
+        let (turns, next) = mpsc::channel();
         let hub = Arc::new(Self {
             agents: Mutex::new((shed.agents().map_err(|e| e.to_string()), now())),
             shed,
@@ -408,6 +418,16 @@ impl Hub {
             mcp_key,
             proposals: Mutex::default(),
             tools: Mutex::default(),
+            turns,
+            starter: OnceLock::new(),
+        });
+        let worker = Arc::clone(&hub);
+        thread::spawn(move || {
+            for room in next {
+                if let Err(e) = worker.take_turn(&room) {
+                    eprintln!("cooee: room {room}: {e}");
+                }
+            }
         });
         let follower = Arc::clone(&hub);
         thread::spawn(move || follower.follow());
@@ -451,7 +471,7 @@ impl Hub {
         let mut since: Option<u64> = None;
         for live in self.all() {
             let mut live = lock(&live);
-            if live.meta.closed || live.chat.turn.state == "ended" {
+            if live.meta.closed || live.meta.kind == Kind::Room || live.chat.turn.state == "ended" {
                 continue;
             }
             let changes = match self.shed.get(&live.meta.terminal) {
@@ -609,11 +629,22 @@ impl Hub {
         if let Some(sent) = live.sent.take_if(|_| chunk) {
             cooee_core::perf::first_token(&live.meta.id, &live.meta.agent, sent);
         }
-        if let Err(e) = live
+        // A member's final reply goes to its room (#154).
+        let reply = changes.iter().find_map(|c| match c {
+            Change::Item(i) if matches!(i.body, Body::Agent { .. }) => Some(i.body.clone()),
+            _ => None,
+        });
+        let seat = (live.meta.room.clone(), live.meta.profile.clone());
+        let done = live
             .publish(self, changes)
             .map_err(HubError::from)
-            .and_then(|()| self.drain(&mut live))
-        {
+            .and_then(|()| self.drain(&mut live));
+        drop(live);
+        let done = match reply {
+            Some(body) if !seat.0.is_empty() => done.and(self.replied(&seat.0, &seat.1, body)),
+            _ => done,
+        };
+        if let Err(e) = done {
             eprintln!("cooee: {e}");
         }
     }
@@ -951,6 +982,38 @@ impl Hub {
         if text.trim().is_empty() {
             return Err(HubError::Refused("the first message is empty".to_owned()));
         }
+        let title: String = text
+            .trim()
+            .lines()
+            .next()
+            .unwrap_or("")
+            .chars()
+            .take(60)
+            .collect();
+        self.mint(random_id, |id| Thread {
+            terminal: format!("cooee-{id}"),
+            id,
+            title,
+            agent: agent.to_owned(),
+            folder: Some(folder.to_owned()).filter(|f| !f.as_os_str().is_empty()),
+            account: recipe.account.clone(),
+            profile: recipe.profile.clone(),
+            machine: recipe.machine.clone(),
+            model: recipe.model.clone(),
+            effort: recipe.effort.clone(),
+            random_id: random_id.to_owned(),
+            room: recipe.room.clone(),
+            ..Thread::default()
+        })
+    }
+
+    /// The thread start `random_id` opened, or a new one `make` makes of a new id, stored and listed; and whether
+    /// it is new.
+    fn mint(
+        &self,
+        random_id: &str,
+        make: impl FnOnce(String) -> Thread,
+    ) -> Result<(String, bool), HubError> {
         // Taken under the lock and counted up, so two threads started in one millisecond differ.
         let mut last = lock(&self.last);
         let started = self.all().into_iter().find_map(|l| {
@@ -966,28 +1029,7 @@ impl Hub {
             *last += 1;
         }
         let id = format!("t{:x}", *last);
-        let title: String = text
-            .trim()
-            .lines()
-            .next()
-            .unwrap_or("")
-            .chars()
-            .take(60)
-            .collect();
-        let meta = Thread {
-            id: id.clone(),
-            title,
-            agent: agent.to_owned(),
-            folder: Some(folder.to_owned()).filter(|f| !f.as_os_str().is_empty()),
-            account: recipe.account.clone(),
-            profile: recipe.profile.clone(),
-            machine: recipe.machine.clone(),
-            model: recipe.model.clone(),
-            effort: recipe.effort.clone(),
-            terminal: format!("cooee-{id}"),
-            random_id: random_id.to_owned(),
-            ..Thread::default()
-        };
+        let meta = make(id.clone());
         self.store.save(&meta)?;
         let live = Live::new(meta, Chat::default());
         lock(&self.threads).insert(id.clone(), Arc::new(Mutex::new(live)));
@@ -1020,10 +1062,15 @@ impl Hub {
             dir
         };
         if fresh || (keep && self.shed.get(&terminal).is_err()) {
-            let labels = BTreeMap::from([
+            // A member's session is labelled with its room and persona (#154).
+            let room = Some(&recipe.room).filter(|r| !r.is_empty());
+            let mut labels = BTreeMap::from([
                 (LABEL.to_owned(), "1".to_owned()),
-                (format!("{LABEL}.thread"), id.to_owned()),
+                (format!("{LABEL}.thread"), room.map_or(id, |r| r).to_owned()),
             ]);
+            if room.is_some() {
+                labels.insert(format!("{LABEL}.member"), recipe.profile.clone());
+            }
             // A profile's `{thread}` is this thread's id.
             let mut launch = self.mcp_launch(id, recipe)?;
             for (_, v) in &mut launch.env {
@@ -1061,6 +1108,10 @@ impl Hub {
         random_id: &str,
         files: &[Upload],
     ) -> Result<Item, HubError> {
+        let live = self.live(id)?;
+        if lock(&live).meta.kind == Kind::Room {
+            return self.room_send(&live, text, random_id, files);
+        }
         self.send_after(id, text, random_id, files, "")
     }
 
@@ -1616,8 +1667,12 @@ impl Hub {
         let mut rows: Vec<Summary> = self
             .all()
             .iter()
-            .map(|live| {
+            .filter_map(|live| {
                 let live = lock(live);
+                // A room's member sessions are the room's (#154).
+                if !live.meta.room.is_empty() {
+                    return None;
+                }
                 let last = live.chat.items.last();
                 let text = last.map_or("", |i| match &i.body {
                     Body::Link { text, title, .. } if text.is_empty() => title,
@@ -1642,7 +1697,7 @@ impl Hub {
                     }
                     _ => None,
                 });
-                Summary {
+                Some(Summary {
                     id: live.meta.id.clone(),
                     title: live.meta.title.clone(),
                     agent: live.meta.agent.clone(),
@@ -1664,7 +1719,13 @@ impl Hub {
                     unseen,
                     archived: live.meta.archived,
                     workflow: live.meta.workflow.clone(),
-                }
+                    members: live
+                        .meta
+                        .members
+                        .iter()
+                        .map(|m| m.persona.clone())
+                        .collect(),
+                })
             })
             .collect();
         rows.sort_by_key(|r| std::cmp::Reverse(r.at));

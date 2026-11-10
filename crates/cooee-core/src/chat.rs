@@ -19,6 +19,9 @@ pub struct Item {
     /// The shed event that last changed it (0 for the owner's own messages).
     #[serde(default)]
     pub seq: u64,
+    /// Who said it in a room (#154): `owner` or a member's persona id; empty outside rooms.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub speaker: String,
     /// What it is.
     #[serde(flatten)]
     pub body: Body,
@@ -179,6 +182,9 @@ pub struct Summary {
     /// A session a tool started (#33): its labels.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow: Option<crate::Workflow>,
+    /// A room's member personas, in room order (#154).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub members: Vec<String>,
 }
 
 /// What applying an event changed, for the page.
@@ -237,8 +243,19 @@ impl Chat {
 
     /// Adds a new item with the next id.
     pub fn push(&mut self, at: u64, seq: u64, body: Body) -> Item {
+        self.said(at, seq, String::new(), body)
+    }
+
+    /// [`Chat::push`] by `speaker` (a room's).
+    pub fn said(&mut self, at: u64, seq: u64, speaker: String, body: Body) -> Item {
         let id = self.items.last().map_or(1, |i| i.id + 1);
-        self.put(Item { id, at, seq, body })
+        self.put(Item {
+            id,
+            at,
+            seq,
+            speaker,
+            body,
+        })
     }
 
     /// Replaces item `id`'s body; `None` when there is no such item.
@@ -514,6 +531,7 @@ mod tests {
                     id,
                     at: id,
                     seq: v * 1000 + id,
+                    speaker: String::new(),
                     body: Body::Agent {
                         text: format!("reply {id} v{v}"),
                         stop_reason: "end_turn".to_owned(),
@@ -535,6 +553,7 @@ mod tests {
             id: 7,
             at: 1,
             seq: 0,
+            speaker: String::new(),
             body: Body::You {
                 text: text.to_owned(),
                 random_id: "r".to_owned(),
