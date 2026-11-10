@@ -33,7 +33,8 @@ internal struct ActionTests {
             stopping.title == "Stop" && stopping.accept == "Stop" && stopping.message == nil && stopping.destructive)
         let removing = try #require(Confirm(for: remove))
         #expect(removing.title == "Remove it?" && removing.accept == "Remove" && removing.message == "Lanes stay.")
-        #expect(removing.destructive && Confirm(for: try Self.decode(#"{"confirm": {}}"#))?.accept == "OK")
+        let bare = try Self.decode(#"{"confirm": {}}"#)
+        #expect(removing.destructive && Confirm(for: bare)?.accept == "OK")
     }
 
     @Test internal func aSheetSendsEveryFormsFieldsAndAFieldsOwnValueWins() throws {
