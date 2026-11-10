@@ -1,0 +1,7 @@
+Decided: merged origin/staging; apple.yml takes staging's build-before-pairing step and keeps the personas step after it.
+Because: .github/workflows/apple.yml:76
+Decided: LiveUITests runs the persona round trip, staging's card flow, then the avatar menu; persona helpers sit in a same-file extension.
+Because: apple/.swiftlint.yml:30
+Rejected: none
+Check: the e2e job passes with all three flows and still attaches persona-* and avatar-menu-* screenshots.
+Owner: The branch now includes the latest staging changes; nothing in the app changed beyond that merge.
