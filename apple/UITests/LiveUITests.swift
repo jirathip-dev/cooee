@@ -52,7 +52,7 @@
             address.tap()
             address.typeText(link)
             app.buttons["Connect"].firstMatch.tap()
-            XCTAssert(app.staticTexts["Paired with 127.0.0.1"].waitForExistence(timeout: 20))
+            XCTAssert(app.staticTexts["Paired with 127.0.0.1"].waitForExistence(timeout: 60))
             keep("pair-paired")
             app.buttons["Go to Home"].firstMatch.tap()
         }

@@ -7,23 +7,21 @@ internal typealias MacSend = (MacSetupFeature.Action) -> Void
 
 public struct MacSetup: View {
     @Environment(\.look) private var look
-    private let fixed: MacSetupFeature.State
-    private let store: StoreOf<MacSetupFeature>?
-
-    private var state: MacSetupFeature.State { store?.state ?? fixed }
+    private let store: StoreOf<MacSetupFeature>
+    private let fixture: Bool
 
     public var body: some View {
         let palette = look.palette
-        let step = state.step
+        let step = store.step
         HStack(spacing: 0) {
-            MacStepList(step: step, footer: footer, failed: state.error != nil)
+            MacStepList(step: step, footer: footer, failed: store.error != nil)
             ZStack {
                 Backdrop()
                 content.padding(36).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .blur(radius: step == .approve ? 8 : 0)
-                if step == .approve, let request = state.request {
+                if step == .approve, let request = store.request {
                     palette.background.opacity(0.5)
-                    ApprovePrompt(request: request, detail: store == nil ? Fixtures.macAskedFrom : nil, send: send)
+                    ApprovePrompt(request: request, detail: fixture ? Fixtures.macAskedFrom : nil, send: send)
                 }
             }
         }
@@ -31,30 +29,30 @@ public struct MacSetup: View {
     }
 
     private var footer: String {
-        state.error ?? state.items?.summary ?? "cooee and shed run as login items. Quit from the menu bar."
+        store.error ?? store.items?.summary ?? "cooee and shed run as login items. Quit from the menu bar."
     }
 
     @ViewBuilder private var content: some View {
-        switch state.step {
+        switch store.step {
         case .welcome: MacWelcome(send: send)
-        case .folders: MacFolders(state: state, send: send)
-        case .signins: MacSignins(state: state, send: send)
-        case .tailscale: MacTailscale(state: state, send: send)
-        case .pairPhone, .approve: MacPairPhone(state: state, send: send)
+        case .folders: MacFolders(store: store, send: send)
+        case .signins: MacSignins(store: store, send: send)
+        case .tailscale: MacTailscale(store: store, send: send)
+        case .pairPhone, .approve: MacPairPhone(store: store, send: send)
         }
     }
 
     public init(step: MacStep) {
-        fixed = Fixtures.macSetup(step)
-        store = nil
+        store = Store(initialState: Fixtures.macSetup(step)) { EmptyReducer() }
+        fixture = true
     }
 
     public init(store: StoreOf<MacSetupFeature>) {
-        fixed = MacSetupFeature.State()
         self.store = store
+        fixture = false
     }
 
-    private func send(_ action: MacSetupFeature.Action) { store?.send(action) }
+    private func send(_ action: MacSetupFeature.Action) { store.send(action) }
 }
 
 internal struct MacStepEntry {
