@@ -13,7 +13,8 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "agent"; text: string; stop_reason: string }
   | { kind: "tool"; call: string; title: string; status: string; ended?: number }
   | { kind: "approval"; tool: string; options: { id: string; name: string; kind: string }[]; tapped?: string; chosen?: string; plugin?: string;
-      by?: string; answered?: number; form?: "config" | "secret" | "thread"; detail?: string; line?: string; until?: number }
+      by?: string; answered?: number; form?: "config" | "secret" | "thread"; detail?: string; line?: string; until?: number;
+      block: Card }  // #138: the #125 card block the native app draws (docs/plugins/screens.schema.json)
   | { kind: "link"; text: string; thread: string; title: string; out?: boolean }
   | { kind: "plan"; entries: { content: string; status: string; priority?: string }[] }
   | { kind: "note"; text: string }

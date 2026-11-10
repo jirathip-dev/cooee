@@ -58,7 +58,7 @@ jobs:
         run: |
           PORT=4100 PAIR_LINK="$RUNNER_TEMP/pair" apple/e2e/serve.sh >"$RUNNER_TEMP/serve.log" 2>&1 &
           serve=$!
-          until curl -s -o /dev/null http://127.0.0.1:4100/pair; do
+          until [ -s "$RUNNER_TEMP/pair" ]; do
             kill -0 "$serve" 2>/dev/null || { cat "$RUNNER_TEMP/serve.log"; exit 1; }
             sleep 2
           done
