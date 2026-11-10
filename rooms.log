@@ -1,0 +1,17 @@
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-155/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-155/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.41s
+     Running tests/rooms.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-155/debug/deps/rooms-61e58d20662ecba1)
+
+running 8 tests
+test members_are_given_final_replies_only ... ok
+test mentioned_members_take_turns_in_mention_order_and_no_one_else ... ok
+test stop_cancels_the_member_taking_its_turn_and_drops_the_rest ... ok
+test with_no_mention_every_member_takes_a_turn_and_a_pass_is_hidden ... ok
+test each_member_takes_a_turn_in_its_own_session_and_hears_the_others_attributed ... ok
+test a_chain_stops_at_six_turns_on_one_message_the_last_told_to_wind_down ... ok
+test two_members_naming_each_other_stop_at_the_cap_each_message ... ok
+test members_join_and_leave_up_to_five_the_conductor_but_never_a_lane ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.59s
+

@@ -1,0 +1,8 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running tests/reliability.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-155/debug/deps/reliability-24c954ba62a5451c)
+
+running 1 test
+test a_background_start_answers_before_the_agent_runs_and_sends_once ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.66s
+

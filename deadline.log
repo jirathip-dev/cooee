@@ -1,0 +1,9 @@
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-155/crates/cooee-server)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.47s
+     Running unittests src/lib.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-155/debug/deps/cooee_server-b89c2ac581290865)
+
+running 1 test
+test hub::tests::a_rooms_turns_stop_at_the_deadline ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 25 filtered out; finished in 0.04s
+

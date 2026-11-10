@@ -1,0 +1,11 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running tests/perf.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-155/debug/deps/perf-f68191944782d3fb)
+
+running 4 tests
+test cooee_perf_turns_a_log_into_the_table ... ok
+test a_fast_request_under_the_default_threshold_is_debug_only ... ok
+test requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn ... ok
+test first_token_is_logged_once_per_prompt_and_nothing_private_is ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.23s
+
