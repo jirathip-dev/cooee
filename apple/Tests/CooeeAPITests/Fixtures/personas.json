@@ -1,0 +1,2 @@
+[{"id":"coder","name":"Coder","avatar":"data:image/png;base64,AA==","character":"Terse.","instructions":"Test first.",
+"folder":"/w","agent":"fake-acp","model":"gpt-5.5","effort":"high","plugins":["hello"],"profile":"coder"}]

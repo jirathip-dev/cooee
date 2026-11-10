@@ -1,16 +1,41 @@
 // swift-tools-version: 6.2
-// #124: the native app's views and fixtures (CooeeUI), and `shots`, which renders each design frame to a PNG with
-// SwiftUI's ImageRenderer. The Xcode project (Cooee.xcodeproj) builds the iOS and macOS app on top of CooeeUI.
 import PackageDescription
 
+let strict: [SwiftSetting] = [
+    .swiftLanguageMode(.v6),
+    .enableExperimentalFeature("StrictConcurrency=complete"),
+    .treatAllWarnings(as: .error),
+]
+let tca = Target.Dependency.product(name: "ComposableArchitecture", package: "swift-composable-architecture")
+
 let package = Package(
-    name: "CooeeUI",
+    name: "Cooee",
     platforms: [.iOS(.v26), .macOS(.v26)],
-    products: [.library(name: "CooeeUI", targets: ["CooeeUI"])],
+    products: [
+        .library(name: "CooeeApp", targets: ["CooeeApp"]),
+        .library(name: "CooeeUI", targets: ["CooeeUI"]),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/pointfreeco/swift-composable-architecture", exact: "1.26.2")
+    ],
     targets: [
-        .target(name: "CooeeUI", resources: [.copy("Sprites")]),
-        .executableTarget(name: "shots", dependencies: ["CooeeUI"]),
-        // #143: the API client against canned server answers (decode, the stream's reconnect and catch-up).
-        .testTarget(name: "CooeeUITests", dependencies: ["CooeeUI"]),
+        .target(name: "CooeeCore", swiftSettings: strict),
+        .target(name: "CooeeAPI", dependencies: ["CooeeCore"], swiftSettings: strict),
+        .target(name: "CooeeFeatures", dependencies: ["CooeeCore", "CooeeAPI", tca], swiftSettings: strict),
+        .target(
+            name: "CooeeUI",
+            dependencies: ["CooeeCore", "CooeeFeatures", tca],
+            resources: [.copy("Sprites")],
+            swiftSettings: strict
+        ),
+        .target(
+            name: "CooeeApp",
+            dependencies: ["CooeeCore", "CooeeAPI", "CooeeFeatures", "CooeeUI", tca],
+            swiftSettings: strict
+        ),
+        .testTarget(name: "CooeeCoreTests", dependencies: ["CooeeCore"], swiftSettings: strict),
+        .testTarget(name: "CooeeAPITests", dependencies: ["CooeeAPI"], resources: [.copy("Fixtures")], swiftSettings: strict),
+        .testTarget(name: "CooeeFeaturesTests", dependencies: ["CooeeFeatures", tca], swiftSettings: strict),
+        .testTarget(name: "CooeeUITests", dependencies: ["CooeeUI"], swiftSettings: strict),
     ]
 )

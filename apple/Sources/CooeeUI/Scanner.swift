@@ -1,31 +1,46 @@
 #if os(iOS)
-import SwiftUI
-import VisionKit
+    import SwiftUI
+    import VisionKit
 
-/// The camera, reading QR codes (VisionKit); the first one found goes to `found` (the server's pairing link).
-struct QRScanner: UIViewControllerRepresentable {
-    let found: (String) -> Void
-    func makeUIViewController(context: Context) -> DataScannerViewController {
-        let v = DataScannerViewController(recognizedDataTypes: [.barcode(symbologies: [.qr])], isHighlightingEnabled: true)
-        v.delegate = context.coordinator
-        if DataScannerViewController.isSupported, DataScannerViewController.isAvailable { try? v.startScanning() }
-        return v
-    }
-    func updateUIViewController(_ v: DataScannerViewController, context: Context) {}
-    func makeCoordinator() -> Coordinator { Coordinator(found: found) }
+    internal struct QRScanner: UIViewControllerRepresentable {
+        internal final class Coordinator: NSObject, DataScannerViewControllerDelegate {
+            private let found: (String) -> Void
+            private var done = false
 
-    final class Coordinator: NSObject, DataScannerViewControllerDelegate {
-        let found: (String) -> Void
-        var done = false
-        init(found: @escaping (String) -> Void) { self.found = found }
-        func dataScanner(_ s: DataScannerViewController, didAdd items: [RecognizedItem], allItems: [RecognizedItem]) {
-            for case .barcode(let b) in items {
-                guard !done, let link = b.payloadStringValue else { continue }
-                done = true
-                s.stopScanning()
-                found(link)
+            internal init(found: @escaping (String) -> Void) {
+                self.found = found
+            }
+
+            internal func dataScanner(
+                _ scanner: DataScannerViewController,
+                didAdd items: [RecognizedItem],
+                allItems: [RecognizedItem]
+            ) {
+                for case .barcode(let barcode) in items {
+                    guard !done, let link = barcode.payloadStringValue else { continue }
+                    done = true
+                    scanner.stopScanning()
+                    found(link)
+                }
             }
         }
+
+        internal let found: (String) -> Void
+
+        internal func makeUIViewController(context: Context) -> DataScannerViewController {
+            let scanner = DataScannerViewController(
+                recognizedDataTypes: [.barcode(symbologies: [.qr])],
+                isHighlightingEnabled: true
+            )
+            scanner.delegate = context.coordinator
+            if DataScannerViewController.isSupported, DataScannerViewController.isAvailable {
+                try? scanner.startScanning()
+            }
+            return scanner
+        }
+
+        internal func updateUIViewController(_ scanner: DataScannerViewController, context: Context) {}
+
+        internal func makeCoordinator() -> Coordinator { Coordinator(found: found) }
     }
-}
 #endif
