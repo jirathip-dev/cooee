@@ -72,13 +72,4 @@ internal struct PersonaFeatureTests {
         await store.send(.clearMemory)
         await store.receive(\.failed)
     }
-
-    @Test internal func closeDismissesTheSheet() async {
-        let dismissed = Calls()
-        let store = store(coder)
-        store.dependencies.dismiss = DismissEffect { dismissed.record("dismiss") }
-        await store.send(.close)
-        await store.send(.delegate(.saved(coder)))
-        #expect(dismissed.all == ["dismiss"])
-    }
 }

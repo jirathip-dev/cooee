@@ -108,6 +108,8 @@ internal struct AppFeatureTests {
             $0.persona = PersonaFeature.State(server: mini, persona: APIPersona(id: "", name: "", agent: "codex"))
         }
         #expect(store.state.persona?.isNew == true)
+        await store.send(.persona(.presented(.close)))
+        await store.receive(\.persona.dismiss) { $0.persona = nil }
         await store.send(.edit("gone")) {
             $0.persona = PersonaFeature.State(server: mini, persona: APIPersona(id: "", name: "", agent: "codex"))
         }

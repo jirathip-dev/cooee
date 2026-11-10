@@ -29,12 +29,16 @@ public final class PushDelegate: NSObject, PlatformDelegate {
         Self.waiting = nil
     }
 
-    internal static func token() async throws -> String {
+    nonisolated internal static func token() async throws -> String {
         let center = UNUserNotificationCenter.current()
         guard try await center.requestAuthorization(options: [.alert, .badge, .sound]) else {
             throw APIError(status: 0, text: "Notifications are off for cooee in Settings.")
         }
-        return try await withCheckedThrowingContinuation { continuation in
+        return try await register()
+    }
+
+    private static func register() async throws -> String {
+        try await withCheckedThrowingContinuation { continuation in
             waiting?.resume(throwing: CancellationError())
             waiting = continuation
             Platform.shared.registerForRemoteNotifications()
