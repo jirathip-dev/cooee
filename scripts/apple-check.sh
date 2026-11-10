@@ -49,6 +49,7 @@ echo "no violations"
 if [ "$xcode" = no ]; then
   skipped="build, tests, coverage, swiftlint analyze, Periphery, anti-slop's own tests (TCA needs Xcode's SwiftUI macros)"
 else
+  mkdir -p apple/.build
   log="$root/apple/.build/apple-check-build.log"
   step "build (Swift 6, complete concurrency, warnings as errors)"
   (cd apple && swift build --build-tests -v >"$log" 2>&1) || { tail -50 "$log"; exit 1; }
