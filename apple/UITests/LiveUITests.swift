@@ -64,8 +64,14 @@ internal final class LiveUITests: XCTestCase {
         keep("avatar-menu")
         labelled(app, "Look").tap()
         labelled(app, "Terminal").tap()
-        let picked = NSPredicate(format: "label == 'Terminal' AND selected == true")
-        XCTAssert(app.buttons.matching(picked).firstMatch.waitForExistence(timeout: 5))
+        XCTAssert(picked(app, "Terminal").waitForExistence(timeout: 5))
+        labelled(app, "Modern").tap()
+        XCTAssert(picked(app, "Modern").waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    private func picked(_ app: XCUIApplication, _ label: String) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label == %@ AND selected == true", label)).firstMatch
     }
 
     @MainActor
