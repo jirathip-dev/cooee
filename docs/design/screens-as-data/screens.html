@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · plugin screens as data (#125 revision 3: the header strip, one card set)</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="sd.css">
+<script type="module" src="sd.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<div class="fr"><p class="cap">Home · the avatar menu: Settings, Machines + Terminal, Plugins</p>
+<section class="ph" data-f="home"><div data-host="home" data-menu></div></section></div>
+
+<div class="fr"><p class="cap">The Conductor chat · drover's Queue and Events on the header strip, its asks and run card as chat cards (cards.json)</p>
+<section class="ph" data-f="conductor"><div data-host="chat"></div></section></div>
+
+<div class="fr"><p class="cap">cooee's own cards are blocks · config, secret and run card in the Researcher chat (own-cards.json)</p>
+<section class="ph" data-f="cards"><div data-host="research"></div></section></div>
+
+<div class="fr"><p class="cap">Queue · fixtures/queue.json as a sheet over the Conductor chat</p>
+<section class="ph" data-f="queue"><div data-host="chat" data-screen="fixtures/queue.json"></div></section></div>
+
+<div class="fr"><p class="cap">Queue · live: queue-stream.json's three events applied</p>
+<section class="ph" data-f="queue-live"><div data-host="chat" data-screen="fixtures/queue.json" data-live="fixtures/queue-stream.json"></div></section></div>
+
+<div class="fr"><p class="cap">Queue · offline: its last answer, as of 5m ago, actions off</p>
+<section class="ph" data-f="queue-offline"><div data-host="chat" data-screen="fixtures/queue.json" data-offline="5m"></div></section></div>
+
+<div class="fr"><p class="cap">Attach drover to Conductor · the manifest's permissions</p>
+<section class="ph" data-f="attach"><div data-host="home" data-attach="fixtures/permissions.json"></div></section></div>
+
+<div class="fr"><p class="cap">Events · fixtures/events.json as a sheet</p>
+<section class="ph" data-f="events"><div data-host="chat" data-screen="fixtures/events.json"></div></section></div>
+
+<div class="fr"><p class="cap">A chat card's confirm (merge anyway), the app's own action sheet</p>
+<section class="ph" data-f="confirm"><div data-host="chat" data-confirm="nh2708" data-value="merge"></div></section></div>
+
+<div class="fr"><p class="cap">hello · a third-party plugin from the avatar menu's Plugins, as a sheet</p>
+<section class="ph" data-f="hello"><div data-host="home" data-screen="fixtures/hello.json"></div></section></div>
+
+<div class="fr w"><p class="cap">Mac · the sidebar, the Conductor chat with its header strip, the Queue sheet as a panel</p>
+<section class="wd mac" data-f="wide" data-host="chat" data-wide="1" data-screen="fixtures/queue.json"></section></div>
+
+</div>
+</body>
+</html>

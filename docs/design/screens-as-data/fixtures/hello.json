@@ -1,0 +1,24 @@
+{
+  "type": "screen",
+  "id": "hello",
+  "title": "Hello",
+  "blocks": [
+    {
+      "type": "text",
+      "markdown": "Hi from **hello.py**. This screen is JSON; cooee draws it."
+    },
+    {
+      "type": "stat",
+      "id": "waves",
+      "label": "waves today",
+      "value": "3"
+    },
+    {
+      "type": "button",
+      "id": "wave",
+      "label": "Wave",
+      "style": "primary",
+      "action": "wave"
+    }
+  ]
+}
