@@ -108,7 +108,7 @@ async fn account_row(provider: String, a: Account, s: Status) -> Result<impl Vie
             } else if s.signed_in {
                 <span class="st g">"✓ signed in"</span>
                 if let Some(u) = s.usage {
-                    <span class="st m">(usage_line(u))</span>
+                    <span class="st m us">(usage_line(u))</span>
                 }
                 <button type="button" class="sec sgo">"sign out"</button>
             } else {
