@@ -94,6 +94,8 @@ struct Live {
     pending: Option<String>,
     /// When its last prompt was sent, until the reply's first chunk came (#53).
     sent: Option<Instant>,
+    /// A room's round was stopped while its working member's session was starting: cancel it once started (#155).
+    stopped_starting: bool,
 }
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
@@ -321,6 +323,7 @@ impl Live {
             stuck: false,
             pending: None,
             sent: None,
+            stopped_starting: false,
         }
     }
 
@@ -2341,6 +2344,45 @@ mod tests {
         assert!(note.data.contains("10 minutes passed"), "{}", note.data);
         hub.watch(t0 + 2 * rooms::DEADLINE);
         assert!(rx.try_recv().is_err());
+    }
+
+    /// #155: a member's session that started after its reply was already in is kept, never cancelled; one that
+    /// started after [stop] is cancelled (the cancel reaches shed, here none: a shed error), once.
+    #[test]
+    fn only_a_stop_cancels_a_members_session_as_it_starts() {
+        let dir = scratch("seated");
+        let turn = |m: &str| json!({ "member": m, "reason": "round" });
+        let room = |round: serde_json::Value| {
+            json!({ "format": 1, "thread": { "id": "room", "title": "room", "messages": [],
+            "kind": "room", "members": [{ "persona": "ada" }, { "persona": "bo" }], "round": round } })
+        };
+        let session = json!({ "format": 1, "thread": { "id": "s1", "title": "s1", "messages": [], "terminal": "cooee-s1" } });
+        fs::write(dir.join("data/threads/s1.json"), session.to_string()).unwrap();
+        fs::write(dir.join("data/threads/s1.jsonl"), "").unwrap();
+        fs::write(dir.join("data/threads/room.jsonl"), "").unwrap();
+        let seated = |hub: &Hub| hub.thread("room").unwrap().0.members[0].session.clone();
+
+        // Ada replied before its start returned: its turn is gone, Bo's is next.
+        fs::write(
+            dir.join("data/threads/room.json"),
+            room(json!([turn("bo")])).to_string(),
+        )
+        .unwrap();
+        let hub = hub(&dir);
+        hub.started("room", "ada", Ok("s1".to_owned())).unwrap();
+        assert_eq!(seated(&hub), "s1");
+
+        // [stop] while Ada's session starts: nothing to cancel then, so it is cancelled once started.
+        fs::write(
+            dir.join("data/threads/room.json"),
+            room(json!([turn("ada"), turn("bo")])).to_string(),
+        )
+        .unwrap();
+        let hub = self::hub(&dir);
+        hub.cancel("room").unwrap();
+        let cancelled = hub.started("room", "ada", Ok("s1".to_owned()));
+        assert!(matches!(cancelled, Err(HubError::Shed(_))), "{cancelled:?}");
+        hub.started("room", "ada", Ok("s1".to_owned())).unwrap();
     }
 
     /// #55: however often the agent list is read, `shed agents` runs once a minute (a fake clock); a failed run

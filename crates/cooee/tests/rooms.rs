@@ -74,14 +74,22 @@ fn run_line(dir: &Path, persona: &str) -> Option<String> {
     log.lines().find(|l| l.contains(&member)).map(str::to_owned)
 }
 
+/// Member `persona`'s session's terminal, once its session started.
+fn terminal(dir: &Path, persona: &str) -> String {
+    let line = run_line(dir, persona).expect("its session started");
+    let t = line.split([' ', '=']).find(|w| w.starts_with("cooee-t"));
+    t.unwrap().to_owned()
+}
+
+/// How many cancels member `persona`'s session was sent.
+fn cancels(dir: &Path, shed: &FakeShed, persona: &str) -> usize {
+    let sent = shed.sent(&terminal(dir, persona));
+    sent.iter().filter(|s| s.contains("\"cancel\"")).count()
+}
+
 /// The prompts member `persona`'s session was given, in order.
 fn prompts(dir: &Path, shed: &FakeShed, persona: &str) -> Vec<String> {
-    let line = run_line(dir, persona).expect("its session started");
-    let terminal = line
-        .split([' ', '='])
-        .find(|w| w.starts_with("cooee-t"))
-        .unwrap();
-    let sent = shed.sent(terminal);
+    let sent = shed.sent(&terminal(dir, persona));
     sent.iter()
         .map(|s| {
             let p: Value = serde_json::from_str(s.trim_start_matches('\x1e')).unwrap();
@@ -413,5 +421,23 @@ fn stop_cancels_the_member_taking_its_turn_and_drops_the_rest() {
             ("owner", "@bo go"),
             ("bo", "Hello")
         ])
+    );
+}
+
+/// [stop] while a member's session is starting cancels that session once it has started, and drops the rest.
+#[test]
+fn stop_while_a_members_session_starts_cancels_it_once_started() {
+    let (dir, shed, cooee) = setup("room-stop-start");
+    let id = room(&cooee, &["ada", "bo"]);
+    shed.gate("hold-run", true);
+    send(&cooee, &id, "hi all");
+    eventually(|| run_line(&dir, "ada").is_some());
+    let (status, body) = post(&cooee, &format!("/threads/{id}/cancel"), &json!({}));
+    assert_eq!(status, 200, "{body}");
+    shed.gate("hold-run", false);
+    eventually(|| cancels(&dir, &shed, "ada") == 1);
+    assert!(
+        run_line(&dir, "bo").is_none(),
+        "Bo's queued turn was dropped"
     );
 }

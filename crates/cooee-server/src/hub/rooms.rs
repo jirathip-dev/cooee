@@ -278,15 +278,27 @@ impl Hub {
             self.send(&session, &prompt, &random_id, &[])
                 .map(|_| session)
         };
+        self.started(room, &persona, started)
+    }
+
+    /// Member `persona`'s turn in room `room` started (`Ok`: its session) or couldn't: its session is kept, and
+    /// cancelled if [stop] came while it started; one that couldn't is said so in the room, and skipped.
+    pub(super) fn started(
+        &self,
+        room: &str,
+        persona: &str,
+        started: Result<String, HubError>,
+    ) -> Result<(), HubError> {
+        let live = self.live(room)?;
         let mut l = lock(&live);
+        // [stop] had no session to cancel. (Its turn may also be gone because it already replied: no stop.)
+        let stopped = std::mem::take(&mut l.stopped_starting);
         match started {
             Ok(session) => {
                 if let Some(m) = l.meta.members.iter_mut().find(|m| m.persona == persona) {
                     m.session.clone_from(&session);
                 }
                 self.store.save(&l.meta)?;
-                // Stopped while its session started: [stop] had no session to cancel.
-                let stopped = l.meta.round.first().is_none_or(|t| t.member != persona);
                 drop(l);
                 if stopped {
                     self.cancel(&session)
@@ -299,7 +311,7 @@ impl Hub {
                 let item = l.chat.push(now(), 0, Body::Note { text });
                 l.publish(self, vec![Change::Item(item)])?;
                 drop(l);
-                self.replied(room, &persona, None)
+                self.replied(room, persona, None)
             }
         }
     }
@@ -395,6 +407,7 @@ impl Hub {
         }
         let working = l.meta.members.iter().find(|m| m.persona == turn.member);
         let session = working.map(|m| m.session.clone()).unwrap_or_default();
+        l.stopped_starting = working.is_some() && session.is_empty();
         drop(l);
         if session.is_empty() {
             Ok(())
