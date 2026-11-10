@@ -1,0 +1,108 @@
+# #144: archive the iOS app (apple/) and upload it to TestFlight from CI; no local Xcode, no Ruby/fastlane, no .p12.
+# Apple manages the distribution certificate and profiles (cloud signing through the App Store Connect API key).
+# The ASC_* secrets live in the `testflight` environment, which only `staging` may deploy from: pull_request
+# and fork runs can't read them. docs/testflight.md has the owner's one-time steps.
+name: apple-testflight
+on:
+  push:
+    branches: [staging]
+    paths: ["apple/**", ".github/workflows/apple-testflight.yml", "scripts/asc-token.swift"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: apple-testflight
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  testflight:
+    runs-on: macos-26
+    environment: testflight
+    timeout-minutes: 60
+    env:
+      ASC_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      LOG: ${{ runner.temp }}/xcodebuild.log
+    steps:
+      - uses: actions/checkout@v4
+      - name: App Store Connect (bundle id, team, app, next build number)
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          umask 077
+          printf '%s' "$ASC_KEY_P8" | base64 --decode > "$ASC_KEY_PATH"
+          token=$(swift scripts/asc-token.swift)
+          echo "::add-mask::$token"
+          api() { curl -gsS --fail-with-body -H "Authorization: Bearer $token" -H 'Content-Type: application/json' "https://api.appstoreconnect.apple.com/v1/$1" "${@:2}"; }
+          pbx=apple/Cooee.xcodeproj/project.pbxproj
+          bundle=$(sed -n 's/.*PRODUCT_BUNDLE_IDENTIFIER = \(.*\);/\1/p' "$pbx" | head -1)
+          version=$(sed -n 's/.*MARKETING_VERSION = \(.*\);/\1/p' "$pbx" | head -1)
+          seed() { jq -r --arg b "$bundle" '[.data] | flatten | map(select(.attributes.identifier == $b))[0].attributes.seedId // empty'; }
+          team=$(api "bundleIds?filter[identifier]=$bundle&fields[bundleIds]=identifier,seedId" | seed)
+          if [ -z "$team" ]; then
+            body=$(jq -n --arg b "$bundle" '{data: {type: "bundleIds", attributes: {identifier: $b, name: "cooee", platform: "IOS"}}}')
+            team=$(api bundleIds -X POST -d "$body" | seed)
+            echo "registered the bundle id $bundle"
+          fi
+          echo "::add-mask::$team"
+          app=$(api "apps?filter[bundleId]=$bundle&fields[apps]=bundleId" | jq -r --arg b "$bundle" '.data | map(select(.attributes.bundleId == $b))[0].id // empty')
+          if [ -z "$app" ]; then
+            echo "::error::No App Store Connect app for $bundle. Create it once (Apps → + → New App): platform iOS, name cooee: agent chat, primary language English (U.S.), bundle id $bundle, SKU cooee-ios, user access Full Access. Then re-run this workflow."
+            exit 1
+          fi
+          latest=$(api "builds?filter[app]=$app&sort=-uploadedDate&limit=1&fields[builds]=version" | jq -r '.data[0].attributes.version // "0"')
+          { echo "TEAM=$team"; echo "APP=$app"; echo "VERSION=$version"; echo "BUILD=$((latest + 1))"; } >> "$GITHUB_ENV"
+      - name: archive (cloud signing)
+        working-directory: apple
+        run: >-
+          xcodebuild archive -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=iOS'
+          -archivePath "$RUNNER_TEMP/Cooee.xcarchive" -allowProvisioningUpdates
+          -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD"
+          INFOPLIST_KEY_ITSAppUsesNonExemptEncryption=NO 2>&1 | tee -a "$LOG"
+      - name: upload to TestFlight
+        run: |
+          cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>teamID</key><string>$TEAM</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Cooee.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath "$RUNNER_TEMP/export" -allowProvisioningUpdates -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | tee -a "$LOG"
+      - name: summary
+        run: |
+          { echo "### cooee $VERSION ($BUILD) uploaded to TestFlight"
+            echo "Apple processes it for a few minutes, then it shows in TestFlight on the phone."
+            echo "[TestFlight in App Store Connect](https://appstoreconnect.apple.com/apps/$APP/testflight/ios)"; } >> "$GITHUB_STEP_SUMMARY"
+      - name: explain a signing failure
+        if: failure()
+        run: |
+          touch "$LOG"
+          if grep -qiE 'cloud signing permission|no signing certificate|not have permission' "$LOG"; then
+            echo "::error::The App Store Connect API key can't cloud-sign. Give the key the Admin role (App Store Connect → Users and Access → Integrations → Team Keys), or ask for another signing route; this workflow adds no fallback secret."
+          fi
+          # The artifact is not masked like the job log: scrub the key id, issuer id and team before upload.
+          for s in "$ASC_KEY_ID" "$ASC_ISSUER_ID" "${TEAM:-}"; do
+            [ -n "$s" ] && sed -i '' "s/$s/***/g" "$LOG"
+          done
+          true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: xcodebuild-log
+          path: ${{ runner.temp }}/xcodebuild.log
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: remove the key
+        if: always()
+        run: rm -f "$ASC_KEY_PATH"
