@@ -1,0 +1,38 @@
+$ cooee accounts --help
+cooee: usage: cooee accounts <ls [--json] | env <provider> <name> [--require-signed-in] | add <provider> <name> --folder <path> | rm <provider> <name>>
+exit=2
+$ cooee accounts ls --json
+[{"error":null,"folder":null,"name":"","provider":"fake-390","signed_in":false,"token_age_days":null,"token_file":null,"usage":null},{"error":null,"folder":"/var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.SRZViGdNYZ/data/accounts/fake-390/lab","name":"lab","provider":"fake-390","signed_in":true,"token_age_days":null,"token_file":null,"usage":{"age_s":224,"five_hour":{"resets_at":1794373140,"used_pct":12},"read_at":1794311066,"seven_day":{"resets_at":1794794400,"used_pct":40}}},{"error":null,"folder":"/var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.SRZViGdNYZ/data/accounts/fake-390/work","name":"work","provider":"fake-390","signed_in":true,"token_age_days":null,"token_file":null,"usage":{"age_s":134,"five_hour":{"resets_at":1794373140,"used_pct":12},"read_at":1794311156,"seven_day":{"resets_at":1794794400,"used_pct":40}}},{"error":null,"folder":null,"name":"","provider":"fake-1440","signed_in":false,"token_age_days":null,"token_file":null,"usage":null}]
+exit=0
+$ cooee accounts add fake-390 A --folder /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/adopt/A
+exit=0
+$ cooee accounts add fake-390 A --folder /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/adopt/A
+exit=0
+$ cooee accounts add fake-390 bad --folder /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/adopt/missing
+cooee: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/adopt/missing: no such folder
+exit=1
+$ cooee accounts ls --json
+[{"error":null,"folder":null,"name":"","provider":"fake-390","signed_in":false,"token_age_days":null,"token_file":null,"usage":null},{"error":null,"folder":"/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/adopt/A","name":"A","provider":"fake-390","signed_in":true,"token_age_days":null,"token_file":null,"usage":{"age_s":0,"five_hour":{"resets_at":1794373140,"used_pct":12},"read_at":1794311307,"seven_day":{"resets_at":1794794400,"used_pct":40}}},{"error":null,"folder":"/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/data/accounts/fake-390/lab","name":"lab","provider":"fake-390","signed_in":true,"token_age_days":null,"token_file":null,"usage":{"age_s":241,"five_hour":{"resets_at":1794373140,"used_pct":12},"read_at":1794311066,"seven_day":{"resets_at":1794794400,"used_pct":40}}},{"error":null,"folder":"/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/data/accounts/fake-390/work","name":"work","provider":"fake-390","signed_in":true,"token_age_days":null,"token_file":null,"usage":{"age_s":151,"five_hour":{"resets_at":1794373140,"used_pct":12},"read_at":1794311156,"seven_day":{"resets_at":1794794400,"used_pct":40}}},{"error":null,"folder":null,"name":"","provider":"fake-1440","signed_in":false,"token_age_days":null,"token_file":null,"usage":null}]
+exit=0
+$ cooee accounts env fake-390 A --require-signed-in
+{"FAKE_HOME":"/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/adopt/A"}
+exit=0
+$ cooee accounts env fake-1440  --require-signed-in
+cooee: fake-1440/ is signed out
+exit=3
+$ cooee accounts add fake-1440 X --folder /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/adopt/A
+exit=0
+$ cooee accounts env fake-1440 X --require-signed-in
+{"FAKE_HOME":"/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/adopt/A"}
+exit=0
+$ cooee accounts rm fake-390 A
+exit=0
+$ ls adopt
+A
+$ cooee accounts ls --json
+[{"error":null,"folder":null,"name":"","provider":"fake-390","signed_in":false,"token_age_days":null,"token_file":null,"usage":null},{"error":null,"folder":"/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/data/accounts/fake-390/lab","name":"lab","provider":"fake-390","signed_in":true,"token_age_days":null,"token_file":null,"usage":{"age_s":241,"five_hour":{"resets_at":1794373140,"used_pct":12},"read_at":1794311066,"seven_day":{"resets_at":1794794400,"used_pct":40}}},{"error":null,"folder":"/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/data/accounts/fake-390/work","name":"work","provider":"fake-390","signed_in":true,"token_age_days":null,"token_file":null,"usage":{"age_s":151,"five_hour":{"resets_at":1794373140,"used_pct":12},"read_at":1794311156,"seven_day":{"resets_at":1794794400,"used_pct":40}}},{"error":null,"folder":null,"name":"","provider":"fake-1440","signed_in":false,"token_age_days":null,"token_file":null,"usage":null},{"error":null,"folder":"/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/adopt/A","name":"X","provider":"fake-1440","signed_in":true,"token_age_days":null,"token_file":null,"usage":null}]
+exit=0
+$ (cache: lab 5h 88% resets_at=now-10, 7d 77% resets_at=now+1d, read_at=now-60)
+$ cooee accounts ls --json | lab
+{"error": null, "folder": "/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-183-r2/cfg/data/accounts/fake-390/lab", "name": "lab", "provider": "fake-390", "signed_in": true, "token_age_days": null, "token_file": null, "usage": {"age_s": 60, "five_hour": {"resets_at": 1794311307, "used_pct": 0}, "read_at": 1794311257, "seven_day": {"resets_at": 1794397717, "used_pct": 77}}}
+exit=0

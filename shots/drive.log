@@ -1,0 +1,22 @@
+390 agents ok
+390 new ok
+390 chat ok
+390 settings ok
+390 ROW [fake-390 main login signed out sign in] sk.w=119 us=none row=y=77 h=44
+390 ROW [fake-390 lab@example.com ✓ signed in 5h 12% · 7d 40% · read 1m sign out] sk.w=103 us=x=16 y=165 w=358 row=y=121 h=69
+390 ROW [fake-390 work@example.com ✓ signed in 5h 12% · 7d 40% · read 1m sign out] sk.w=103 us=x=16 y=234 w=358 row=y=190 h=69
+390 ROW [fake-1440 main login signed out sign in] sk.w=113 us=none row=y=303 h=44
+390 providers ok
+390 plugin-hello ok
+390 plugin-machines ok
+1440 agents ok
+1440 new ok
+1440 chat ok
+1440 settings ok
+1440 ROW [fake-390 main login signed out sign in] sk.w=447 us=none row=y=125 h=44
+1440 ROW [fake-390 lab@example.com ✓ signed in 5h 12% · 7d 40% · read 2m sign out] sk.w=260 us=x=803 y=181 w=163 row=y=169 h=44
+1440 ROW [fake-390 work@example.com ✓ signed in 5h 12% · 7d 40% · read 1m sign out] sk.w=262 us=x=804 y=225 w=161 row=y=213 h=44
+1440 ROW [fake-1440 main login signed out sign in] sk.w=441 us=none row=y=301 h=44
+1440 providers ok
+1440 plugin-hello ok
+1440 plugin-machines ok
