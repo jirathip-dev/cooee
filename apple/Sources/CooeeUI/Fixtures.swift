@@ -1,4 +1,6 @@
 import CooeeCore
+import CooeeFeatures
+import SwiftUI
 
 public enum Fixtures {
     public static let personas: [Persona] = [
@@ -99,6 +101,28 @@ public enum Fixtures {
         NearbyRow(server: NearbyServer(name: "mini", address: "Guy's Mac mini · 192.0.2.20"), icon: "macmini"),
         NearbyRow(server: NearbyServer(name: "studio", address: "studio.local · 192.0.2.31"), icon: "macstudio"),
     ]
+
+    internal static let macAskedFrom = "from 192.0.2.44 · just now"
+
+    internal static func macSetup(_ step: MacStep) -> MacSetupFeature.State {
+        var state = MacSetupFeature.State(step: step)
+        state.folders = ["~/work", "~/src"]
+        state.agents = [
+            FoundAgent(name: "claude", version: "2.4.1", path: "/opt/homebrew/bin/claude"),
+            FoundAgent(name: "codex", version: "0.61", path: "~/.local/bin/codex"),
+            FoundAgent(name: "hermes"),
+        ]
+        state.signIns = [
+            SignIn(provider: "claude", name: "guy@… · Max plan", signedIn: true),
+            SignIn(provider: "codex", name: "", signedIn: false),
+        ]
+        state.network = Network(name: "mini", lan: "server.local · 192.0.2.20", tailnet: nil)
+        if let link = URL(string: "https://server.example.com/pair?c=K7Q2MX") {
+            state.code = PairCode(link: link, code: "K7Q2MX", minutes: 5)
+        }
+        state.request = step == .approve ? PairRequest(id: "r1", word: "maple", label: "Guy's iPhone") : nil
+        return state
+    }
 
     public static func persona(_ id: String) -> Persona {
         personas.first { $0.id == id } ?? Persona(APIPersona(id: id, name: id, agent: ""))

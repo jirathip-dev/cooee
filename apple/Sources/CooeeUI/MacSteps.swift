@@ -1,7 +1,10 @@
+import CooeeCore
+import CooeeFeatures
 import SwiftUI
 
 internal struct MacWelcome: View {
     @Environment(\.look) private var look
+    internal let send: MacSend
 
     internal var body: some View {
         let palette = look.palette
@@ -15,9 +18,14 @@ internal struct MacWelcome: View {
             Spacer()
             HStack {
                 Text("Only a client?").ui(13, .regular, look).foregroundStyle(palette.mute)
-                Text("Connect to a server elsewhere").ui(13, .regular, look).foregroundStyle(palette.link)
+                Button {
+                    send(.connectElsewhere)
+                } label: {
+                    Text("Connect to a server elsewhere").ui(13, .regular, look).foregroundStyle(palette.link)
+                }
+                .buttonStyle(.plain)
                 Spacer()
-                MacButton(title: "Set up this Mac", primary: true)
+                MacButton(title: "Set up this Mac", primary: true) { send(.setUp) }
             }
         }
     }
@@ -25,6 +33,8 @@ internal struct MacWelcome: View {
 
 internal struct MacFolders: View {
     @Environment(\.look) private var look
+    internal let state: MacSetupFeature.State
+    internal let send: MacSend
 
     internal var body: some View {
         let palette = look.palette
@@ -32,27 +42,37 @@ internal struct MacFolders: View {
             Text("Folders & agents").ui(26, .bold, look)
             Text("Agents work only inside these folders.").ui(14, .regular, look).foregroundStyle(palette.mute)
             MacList {
-                MacRow(icon: "folder.fill", title: "~/work", detail: "")
-                MacRow(icon: "folder.fill", title: "~/src", detail: "")
-                MacRow(icon: "plus", title: "Add a folder…", detail: "", link: true, last: true)
+                ForEach(state.folders, id: \.self) { MacRow(icon: "folder.fill", title: $0, detail: "") }
+                MacRow(icon: "plus", title: "Add a folder…", detail: "", link: true, last: true, action: pick)
             }
             Text("AGENTS FOUND").ui(11, .semibold, look).foregroundStyle(palette.mute).padding(.top, 8)
             MacList {
-                MacRow(
-                    icon: "checkmark.circle.fill", title: "Claude Code", detail: "2.4.1 · /opt/homebrew/bin/claude",
-                    done: true
-                )
-                MacRow(icon: "checkmark.circle.fill", title: "Codex", detail: "0.61 · ~/.local/bin/codex", done: true)
-                MacRow(icon: "circle.dashed", title: "Hermes", detail: "not installed · optional", last: true)
+                ForEach(state.agents, id: \.name) { agent in
+                    MacRow(
+                        icon: agent.path == nil ? "circle.dashed" : "checkmark.circle.fill", title: agent.title,
+                        detail: agent.detail, done: agent.path != nil, last: agent == state.agents.last
+                    )
+                }
             }
             Spacer()
-            MacNav()
+            MacNav(send: send)
         }
+    }
+
+    private func pick() {
+        #if os(macOS)
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            if panel.runModal() == .OK, let url = panel.url { send(.addFolder(url.path(percentEncoded: false))) }
+        #endif
     }
 }
 
 internal struct MacSignins: View {
     @Environment(\.look) private var look
+    internal let state: MacSetupFeature.State
+    internal let send: MacSend
 
     internal var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -60,40 +80,47 @@ internal struct MacSignins: View {
             Text("Each agent signs in on this Mac, with its own account. cooee never sees a password.")
                 .ui(14, .regular, look).foregroundStyle(look.palette.mute)
             MacList {
-                MacRow(
-                    icon: "checkmark.circle.fill", title: "Claude Code", detail: "guy@… · Max plan", done: true,
-                    trailing: "Sign out"
-                )
-                MacRow(
-                    icon: "exclamationmark.circle", title: "Codex", detail: "not signed in", trailing: "Sign in…",
-                    last: true
-                )
+                ForEach(state.signIns, id: \.provider) { signIn in
+                    MacRow(
+                        icon: signIn.signedIn ? "checkmark.circle.fill" : "exclamationmark.circle",
+                        title: FoundAgent.title(signIn.provider), detail: signIn.detail, done: signIn.signedIn,
+                        trailing: signIn.signedIn ? "Sign out" : "Sign in…", last: signIn == state.signIns.last
+                    ) { send(.signIn(signIn.provider)) }
+                }
             }
             Spacer()
-            MacNav()
+            MacNav(send: send)
         }
     }
 }
 
 internal struct MacTailscale: View {
     @Environment(\.look) private var look
+    @Environment(\.openURL) private var openURL
+    internal let state: MacSetupFeature.State
+    internal let send: MacSend
 
     internal var body: some View {
         let palette = look.palette
+        let tailnet = state.network?.tailnet
         VStack(alignment: .leading, spacing: 14) {
             Text("Reach it from anywhere").ui(26, .bold, look)
             Text("On this Wi-Fi your phone finds the Mac by itself. Away from home, cooee uses Tailscale.")
                 .ui(14, .regular, look).foregroundStyle(palette.mute)
-            missing
+            if state.network != nil && tailnet == nil { missing }
             MacList {
-                MacRow(icon: "checkmark.circle.fill", title: "Wi-Fi", detail: "server.local · 192.0.2.20", done: true)
-                MacRow(icon: "circle.dashed", title: "Tailscale", detail: "not found", last: true)
+                MacRow(icon: "checkmark.circle.fill", title: "Wi-Fi", detail: state.network?.lan ?? "", done: true)
+                MacRow(
+                    icon: tailnet == nil ? "circle.dashed" : "checkmark.circle.fill", title: "Tailscale",
+                    detail: tailnet ?? (state.network == nil ? "checking…" : "not found"), done: tailnet != nil,
+                    last: true
+                )
             }
             Spacer()
             HStack {
                 Spacer()
-                MacButton(title: "Wi-Fi only for now")
-                MacButton(title: "Continue", primary: true)
+                MacButton(title: "Wi-Fi only for now") { send(.next) }
+                MacButton(title: "Continue", primary: true) { send(.next) }
             }
         }
     }
@@ -109,8 +136,10 @@ internal struct MacTailscale: View {
                 )
                 .ui(13, .regular, look).foregroundStyle(palette.mute).fixedSize(horizontal: false, vertical: true)
                 HStack {
-                    MacButton(title: "Get Tailscale…")
-                    MacButton(title: "Check again")
+                    MacButton(title: "Get Tailscale…") {
+                        if let url = URL(string: "https://tailscale.com/download/mac") { openURL(url) }
+                    }
+                    MacButton(title: "Check again") { send(.checkNetwork) }
                 }
                 .padding(.top, 4)
             }
@@ -121,32 +150,41 @@ internal struct MacTailscale: View {
 
 internal struct MacPairPhone: View {
     @Environment(\.look) private var look
+    internal let state: MacSetupFeature.State
+    internal let send: MacSend
 
     internal var body: some View {
         let palette = look.palette
         HStack(alignment: .center, spacing: 36) {
             VStack(spacing: 10) {
-                QRCode(text: "https://server.example.com/pair?c=K7Q2MX", size: 230)
+                QRCode(text: state.code?.link.absoluteString ?? "", size: 230)
                     .padding(18).background(.white, in: .rect(cornerRadius: 18))
-                Text("or enter K7Q2MX").font(.system(size: 13, design: .monospaced)).foregroundStyle(palette.mute)
+                Text("or enter \(state.code?.code ?? "…")").font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(palette.mute)
             }
             VStack(alignment: .leading, spacing: 12) {
                 Text("Pair your iPhone").ui(26, .bold, look)
-                Text("Open cooee on the phone and tap Scan QR. Or pick mini under Nearby, or type its address:")
-                    .ui(14, .regular, look).foregroundStyle(palette.mute).fixedSize(horizontal: false, vertical: true)
-                Text("server.example.com").font(.system(size: 14, design: .monospaced)).padding(8)
+                Text(
+                    "Open cooee on the phone and tap Scan QR. Or pick \(state.network?.name ?? "this Mac") under Nearby, or type its address:"
+                )
+                .ui(14, .regular, look).foregroundStyle(palette.mute).fixedSize(horizontal: false, vertical: true)
+                Text(state.code?.host ?? "…").font(.system(size: 14, design: .monospaced)).padding(8)
                     .background(palette.card, in: .rect(cornerRadius: 8))
                 HStack(spacing: 8) {
                     ProgressDots()
-                    Text("Waiting for a phone · code lasts 5 min").ui(12, .regular, look)
-                        .foregroundStyle(palette.mute)
+                    Text(waiting).ui(12, .regular, look).foregroundStyle(palette.mute)
                 }
                 Text("`cooee setup` in a terminal prints this same QR.").ui(12, .regular, look)
                     .foregroundStyle(palette.mute)
                 Spacer().frame(height: 10)
-                MacButton(title: "Done")
+                MacButton(title: "Done") { send(.done) }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var waiting: String {
+        let approved = state.approved == 0 ? "" : "\(state.approved) approved · "
+        return "\(approved)Waiting for a phone · code lasts \(state.code?.minutes ?? 10) min"
     }
 }

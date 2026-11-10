@@ -7,19 +7,25 @@ public struct AppFeature: Sendable {
     public struct State: Equatable {
         public var home: HomeFeature.State?
         public var pairing: PairingFeature.State?
+        public var setup: MacSetupFeature.State?
         public var chat: ChatFeature.State?
         public var path: [String] = []
         public var menu = false
+        public let mac: Bool
 
-        public init(server: Server?) {
+        public init(server: Server?, mac: Bool = false) {
+            self.mac = mac
             home = server.map(HomeFeature.State.init)
-            pairing = server == nil ? PairingFeature.State() : nil
+            pairing = server == nil && !mac ? PairingFeature.State() : nil
+            setup = server == nil && mac ? MacSetupFeature.State() : nil
         }
     }
 
     public enum Action: Sendable {
         case home(HomeFeature.Action)
         case pairing(PairingFeature.Action)
+        case setup(MacSetupFeature.Action)
+        case setUpHere
         case chat(ChatFeature.Action)
         case open(String)
         case start(String)
@@ -36,12 +42,20 @@ public struct AppFeature: Sendable {
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .pairing(.delegate(.paired(let server))):
-                state = State(server: server)
+            case .pairing(.delegate(.paired(let server))), .setup(.delegate(.paired(let server))):
+                state = State(server: server, mac: state.mac)
                 return .none
             case .home(.delegate(.unauthorized)):
                 serverStore.clear()
-                state = State(server: nil)
+                state = State(server: nil, mac: state.mac)
+                return .none
+            case .setup(.delegate(.clientOnly)):
+                state.setup = nil
+                state.pairing = PairingFeature.State()
+                return .none
+            case .setUpHere:
+                state.pairing = nil
+                state.setup = MacSetupFeature.State()
                 return .none
             case .chat(.delegate(.started(let thread))):
                 state.path = state.path.dropLast() + [thread]
@@ -53,6 +67,7 @@ public struct AppFeature: Sendable {
         }
         .ifLet(\.home, action: \.home) { HomeFeature() }
         .ifLet(\.pairing, action: \.pairing) { PairingFeature() }
+        .ifLet(\.setup, action: \.setup) { MacSetupFeature() }
         .ifLet(\.chat, action: \.chat) { ChatFeature() }
     }
 

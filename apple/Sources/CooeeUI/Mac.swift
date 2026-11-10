@@ -1,45 +1,60 @@
+import ComposableArchitecture
+import CooeeCore
+import CooeeFeatures
 import SwiftUI
 
-public enum MacStep: String, CaseIterable, Sendable {
-    case welcome, folders, signins, tailscale
-    case pairPhone = "qr"
-    case approve
-}
+internal typealias MacSend = (MacSetupFeature.Action) -> Void
 
 public struct MacSetup: View {
     @Environment(\.look) private var look
-    private let step: MacStep
+    private let fixed: MacSetupFeature.State
+    private let store: StoreOf<MacSetupFeature>?
+
+    private var state: MacSetupFeature.State { store?.state ?? fixed }
 
     public var body: some View {
         let palette = look.palette
+        let step = state.step
         HStack(spacing: 0) {
-            MacStepList(step: step)
+            MacStepList(step: step, footer: footer, failed: state.error != nil)
             ZStack {
                 Backdrop()
                 content.padding(36).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .blur(radius: step == .approve ? 8 : 0)
-                if step == .approve {
+                if step == .approve, let request = state.request {
                     palette.background.opacity(0.5)
-                    ApprovePrompt()
+                    ApprovePrompt(request: request, detail: store == nil ? Fixtures.macAskedFrom : nil, send: send)
                 }
             }
         }
         .foregroundStyle(palette.foreground)
     }
 
+    private var footer: String {
+        state.error ?? state.items?.summary ?? "cooee and shed run as login items. Quit from the menu bar."
+    }
+
     @ViewBuilder private var content: some View {
-        switch step {
-        case .welcome: MacWelcome()
-        case .folders: MacFolders()
-        case .signins: MacSignins()
-        case .tailscale: MacTailscale()
-        case .pairPhone, .approve: MacPairPhone()
+        switch state.step {
+        case .welcome: MacWelcome(send: send)
+        case .folders: MacFolders(state: state, send: send)
+        case .signins: MacSignins(state: state, send: send)
+        case .tailscale: MacTailscale(state: state, send: send)
+        case .pairPhone, .approve: MacPairPhone(state: state, send: send)
         }
     }
 
     public init(step: MacStep) {
-        self.step = step
+        fixed = Fixtures.macSetup(step)
+        store = nil
     }
+
+    public init(store: StoreOf<MacSetupFeature>) {
+        fixed = MacSetupFeature.State()
+        self.store = store
+    }
+
+    private func send(_ action: MacSetupFeature.Action) { store?.send(action) }
 }
 
 internal struct MacStepEntry {
@@ -59,6 +74,8 @@ internal struct MacStepList: View {
 
     @Environment(\.look) private var look
     internal let step: MacStep
+    internal let footer: String
+    internal let failed: Bool
 
     internal var body: some View {
         let palette = look.palette
@@ -73,8 +90,7 @@ internal struct MacStepList: View {
                 row(index: index, current: current, title: entry.title, icon: entry.icon)
             }
             Spacer()
-            Text("cooee and shed run as login items. Quit from the menu bar.").ui(11, .regular, look)
-                .foregroundStyle(palette.mute)
+            Text(footer).ui(11, .regular, look).foregroundStyle(failed ? palette.red : palette.mute)
         }
         .padding(16).padding(.top, 30).frame(width: 220).background(palette.card.opacity(0.55))
     }
@@ -93,31 +109,36 @@ internal struct MacStepList: View {
 }
 
 internal struct MacNav: View {
+    internal let send: MacSend
+
     internal var body: some View {
         HStack {
-            MacButton(title: "Back")
+            MacButton(title: "Back") { send(.back) }
             Spacer()
-            MacButton(title: "Continue", primary: true)
+            MacButton(title: "Continue", primary: true) { send(.next) }
         }
     }
 }
 
 internal struct ApprovePrompt: View {
     @Environment(\.look) private var look
+    internal let request: PairRequest
+    internal let detail: String?
+    internal let send: MacSend
 
     internal var body: some View {
         let palette = look.palette
         VStack(spacing: 12) {
             Image(systemName: "iphone.gen3.radiowaves.left.and.right").font(.system(size: 36))
                 .foregroundStyle(palette.link)
-            Text("Guy's iPhone wants to pair").ui(17, .bold, look)
+            Text("\(request.label) wants to pair").ui(17, .bold, look)
             Text("Approve only if it shows the same word:").ui(13, .regular, look).foregroundStyle(palette.mute)
-            Text("maple").font(.system(size: 30, weight: .bold, design: .monospaced)).tracking(3)
+            Text(request.word).font(.system(size: 30, weight: .bold, design: .monospaced)).tracking(3)
                 .foregroundStyle(palette.lead)
-            Text("from 192.0.2.44 · just now").ui(12, .regular, look).foregroundStyle(palette.mute)
+            if let detail { Text(detail).ui(12, .regular, look).foregroundStyle(palette.mute) }
             HStack(spacing: 10) {
-                MacButton(title: "Decline").frame(maxWidth: .infinity)
-                MacButton(title: "Approve · Touch ID", primary: true).frame(maxWidth: .infinity)
+                MacButton(title: "Decline") { send(.answer(false)) }.frame(maxWidth: .infinity)
+                MacButton(title: "Approve · Touch ID", primary: true) { send(.answer(true)) }.frame(maxWidth: .infinity)
             }
             .padding(.top, 6)
         }
@@ -129,13 +150,17 @@ internal struct MacButton: View {
     @Environment(\.look) private var look
     internal let title: String
     internal var primary = false
+    internal var action: () -> Void = {}
 
     internal var body: some View {
         let palette = look.palette
-        Text(title).ui(13, primary ? .semibold : .regular, look)
-            .foregroundStyle(primary ? (palette.dark ? Color.black : .white) : palette.foreground)
-            .padding(.horizontal, 16).frame(height: 30)
-            .background(primary ? palette.link : palette.edge.opacity(0.45), in: .capsule)
+        Button(action: action) {
+            Text(title).ui(13, primary ? .semibold : .regular, look)
+                .foregroundStyle(primary ? (palette.dark ? Color.black : .white) : palette.foreground)
+                .padding(.horizontal, 16).frame(height: 30)
+                .background(primary ? palette.link : palette.edge.opacity(0.45), in: .capsule)
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -157,6 +182,7 @@ internal struct MacRow: View {
     internal var link = false
     internal var trailing = ""
     internal var last = false
+    internal var action: () -> Void = {}
 
     internal var body: some View {
         let palette = look.palette
@@ -166,9 +192,10 @@ internal struct MacRow: View {
             Text(title).ui(14, .regular, look).foregroundStyle(link ? palette.link : palette.foreground)
             Text(detail).ui(12, .regular, look).foregroundStyle(palette.mute)
             Spacer()
-            if !trailing.isEmpty { MacButton(title: trailing, primary: trailing.hasSuffix("…")) }
+            if !trailing.isEmpty { MacButton(title: trailing, primary: trailing.hasSuffix("…"), action: action) }
         }
         .padding(.horizontal, 12).frame(height: 40)
+        .contentShape(.rect).onTapGesture { if link { action() } }
         .overlay(alignment: .bottom) {
             if !last { Rectangle().fill(palette.line).frame(height: 0.5).padding(.leading, 42) }
         }
