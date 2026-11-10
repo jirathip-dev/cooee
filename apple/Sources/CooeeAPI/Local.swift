@@ -10,8 +10,9 @@
             true
             """#
 
-        /// `executable`'s standard output, run off the concurrency pool with no input and stopped after `limit`
-        /// seconds; an `APIError` with its standard error when it fails.
+        /// `executable`'s standard output, run off the concurrency pool with no input, its output in files (a child it
+        /// leaves running holds no pipe open) and killed after `limit` seconds; an `APIError` with its standard error
+        /// when it fails.
         public static func run(_ executable: URL, _ arguments: [String], limit: Double = 60) async throws -> String {
             try await withCheckedThrowingContinuation { done in
                 DispatchQueue.global().async {
@@ -21,28 +22,36 @@
         }
 
         private static func wait(_ executable: URL, _ arguments: [String], limit: Double) throws -> String {
+            let files = FileManager.default.temporaryDirectory.appending(path: "cooee-run-\(UUID().uuidString)")
+            let (out, err) = (files.appendingPathExtension("out"), files.appendingPathExtension("err"))
+            FileManager.default.createFile(atPath: out.path(), contents: nil)
+            FileManager.default.createFile(atPath: err.path(), contents: nil)
+            defer { try? FileManager.default.removeItem(at: out) }
+            defer { try? FileManager.default.removeItem(at: err) }
             let process = Process()
-            let (out, err) = (Pipe(), Pipe())
             process.executableURL = executable
             process.arguments = arguments
             process.standardInput = FileHandle.nullDevice
-            process.standardOutput = out
-            process.standardError = err
-            try process.run()
-            let pid = process.processIdentifier
-            let stop = DispatchWorkItem { kill(pid, SIGTERM) }
-            DispatchQueue.global().asyncAfter(deadline: .now() + limit, execute: stop)
-            let output = String(bytes: out.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-            let error = String(bytes: err.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-            process.waitUntilExit()
-            stop.cancel()
-            guard process.terminationReason == .exit else {
+            process.standardOutput = try FileHandle(forWritingTo: out)
+            process.standardError = try FileHandle(forWritingTo: err)
+            guard try exited(process, within: limit) else {
                 throw APIError(status: 0, text: "`\(executable.lastPathComponent)` took over \(Int(limit)) s.")
             }
+            let error = (try? String(contentsOf: err, encoding: .utf8)) ?? ""
             guard process.terminationStatus == 0 else {
                 throw APIError(status: Int(process.terminationStatus), text: error.trimmingCharacters(in: .newlines))
             }
-            return output
+            return (try? String(contentsOf: out, encoding: .utf8)) ?? ""
+        }
+
+        private static func exited(_ process: Process, within limit: Double) throws -> Bool {
+            try process.run()
+            let pid = process.processIdentifier
+            let stop = DispatchWorkItem { kill(pid, SIGKILL) }
+            DispatchQueue.global().asyncAfter(deadline: .now() + limit, execute: stop)
+            process.waitUntilExit()
+            stop.cancel()
+            return process.terminationReason == .exit
         }
 
         /// `script` in a login shell, so it sees the user's `PATH` as Terminal does.

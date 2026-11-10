@@ -155,8 +155,19 @@ jobs:
           status=0
           wait "$mac" || status=$?
           tail -40 "$RUNNER_TEMP/mac-test.log"
-          launchctl list | grep com.jirathip.cooee || true
           exit "$status"
+      - name: what the Mac ran (on failure)
+        if: failure()
+        run: |
+          ps -axo pid,ppid,etime,command | grep -E 'cooee|shed|zsh|security' | grep -v grep || true
+          for f in "$HOME/.config/cooee/cooee/config.toml" "$HOME/.local/share/cooee/cooee/devices.json"; do
+            echo "== $f"; cat "$f" || true
+          done
+          ls -la "$HOME/.local/share/cooee/cooee" || true
+          for label in serve shed; do launchctl print "gui/$(id -u)/com.jirathip.cooee.$label" | head -25 || true; done
+          app=$(find "$RUNNER_TEMP/mac/Build/Products" -maxdepth 2 -name Cooee.app | head -1)
+          ls -la "$app/Contents/Helpers" "$app/Contents/Library/LaunchAgents" || true
+          perl -e "alarm 60; exec @ARGV" "$app/Contents/Helpers/cooee" pair </dev/null; echo "cooee pair exit $?"
       - name: screenshots
         if: always()
         run: |
