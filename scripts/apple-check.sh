@@ -22,6 +22,7 @@ fetch() {
 
 step() { printf '\n== %s\n' "$1"; }
 
+export COOEE_STRICT=1
 xcode=no
 if xcodebuild -version >/dev/null 2>&1; then xcode=yes; else export TOOLCHAIN_DIR=/Library/Developer/CommandLineTools; fi
 

@@ -9,7 +9,7 @@
 - Don't exceed Swift file 250, type 150, function 25 lines, complexity 8 or nesting 2 — SwiftLint
 - Don't hand-format Swift — swift format lint --strict
 - Don't keep app state outside a TCA `@Reducer`, or call side effects except through a Features `@Dependency` client — anti-slop layer-imports (URLSession only in CooeeAPI), reducer TestStore tests
-- Don't let Swift warnings through: Swift 6, complete concurrency, warnings as errors — apple/Package.swift, Cooee.xcodeproj
+- Don't let Swift warnings through: Swift 6, complete concurrency, warnings as errors — apple/Package.swift (COOEE_STRICT=1 in apple-check), Cooee.xcodeproj
 - Don't drop CooeeCore, CooeeAPI or CooeeFeatures under 95% line coverage — scripts/apple-coverage.swift
 - Don't leave unused Swift code — Periphery
 - Don't change a design frame without its snapshot (apple/design/v1) — CooeeUITests SnapshotTests

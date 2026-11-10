@@ -1,11 +1,9 @@
 // swift-tools-version: 6.2
 import PackageDescription
 
-let strict: [SwiftSetting] = [
-    .swiftLanguageMode(.v6),
-    .enableExperimentalFeature("StrictConcurrency=complete"),
-    .treatAllWarnings(as: .error),
-]
+let strict: [SwiftSetting] =
+    [.swiftLanguageMode(.v6), .enableExperimentalFeature("StrictConcurrency=complete")]
+    + (Context.environment["COOEE_STRICT"] == "1" ? [.treatAllWarnings(as: .error)] : [])
 let tca = Target.Dependency.product(name: "ComposableArchitecture", package: "swift-composable-architecture")
 
 let package = Package(
