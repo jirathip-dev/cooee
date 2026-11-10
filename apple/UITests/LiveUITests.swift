@@ -52,6 +52,7 @@ internal final class LiveUITests: XCTestCase {
         XCTAssert(left.isEmpty || left == "Queue a message", "the field holds \(left)")
     }
 
+    @MainActor
     private func field(_ app: XCUIApplication, _ hint: String) -> XCUIElement {
         let types = [XCUIElement.ElementType.textField.rawValue, XCUIElement.ElementType.textView.rawValue]
         let predicate = NSPredicate(
@@ -61,6 +62,7 @@ internal final class LiveUITests: XCTestCase {
         return app.descendants(matching: .any).matching(predicate).firstMatch
     }
 
+    @MainActor
     private func labelled(_ app: XCUIApplication, _ text: String) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
