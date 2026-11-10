@@ -1,5 +1,4 @@
 import CooeeCore
-import SwiftUI
 
 extension Fixtures {
     public static let streaming: [Item] = [

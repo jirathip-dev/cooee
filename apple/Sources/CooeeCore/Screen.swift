@@ -1,5 +1,3 @@
-import Foundation
-
 public struct LiveScreen: Sendable, Equatable {
     public private(set) var root: JSONValue
     public private(set) var seq = 0
