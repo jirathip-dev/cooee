@@ -196,7 +196,9 @@ impl Hub {
             (out.0, out.1, out.2, format!("{room}-{persona}-{last}"))
         };
         let started = if session.is_empty() {
-            self.seat(room, &persona, &prompt, &random_id)
+            self.seat(&persona, (&prompt, &random_id), |r| {
+                room.clone_into(&mut r.room);
+            })
         } else {
             self.send(&session, &prompt, &random_id, &[])
                 .map(|_| session)
@@ -219,17 +221,17 @@ impl Hub {
         }
     }
 
-    /// Starts persona `persona`'s session in room `room` with `prompt`; returns its thread id.
-    fn seat(
+    /// Starts a session of persona `persona` with `prompt`, its recipe as `seat` makes it (a room's member, an
+    /// asked persona); returns its thread id.
+    pub(super) fn seat(
         &self,
-        room: &str,
         persona: &str,
-        prompt: &str,
-        random_id: &str,
+        (prompt, random_id): (&str, &str),
+        seat: impl FnOnce(&mut Recipe),
     ) -> Result<String, HubError> {
         let starter = self.starter.get().ok_or_else(|| refused("no starter"))?;
         let (agent, folder, mut recipe) = starter(self, persona)?;
-        room.clone_into(&mut recipe.room);
+        seat(&mut recipe);
         let seated = self
             .place(&folder)
             .and_then(|folder| self.start(&agent, &folder, prompt, random_id, &recipe));

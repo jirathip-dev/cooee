@@ -231,7 +231,7 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
         list,
         json!([{ "id": "coder", "name": "Coder", "avatar": "idle", "character": "",
                  "instructions": "Follow the house rules.\n", "folder": "", "agent": "fake-acp",
-                 "model": "", "effort": "", "machine": "", "plugins": [], "profile": "coder" }])
+                 "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [], "profile": "coder" }])
     );
 
     // It runs as the profile: its env and policy on the adapter, its instructions ahead of the first message.
@@ -364,7 +364,7 @@ fn a_persona_and_its_threads_name_their_machine() {
     assert_eq!(
         read,
         json!({ "id": "old", "name": "Old", "character": "Kept.", "instructions": "Still.", "folder": "scratch",
-                "agent": "fake-acp", "model": "", "effort": "", "machine": "", "plugins": [] })
+                "agent": "fake-acp", "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [] })
     );
     assert_eq!(s.cooee.json("/personas/coder")["machine"], "");
     let (plain, _, _) = s.start("old");
