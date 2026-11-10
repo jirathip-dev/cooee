@@ -1,0 +1,7 @@
+Decided: at 390 px a signed-in row's usage line wraps onto its own line under the row, as the existing "can't tell" line does
+Because: "Settings › Providers shows the same list (signed in / out, usage and its age)"
+Rejected: shortening the usage text — the account name still loses to three fixed-width spans at 390
+Check: web/e2e/new-thread.spec.mjs asserts both usage rows keep .sk wider than 80 px; it fails (0) with web/src/app.css reverted
+Decided: the e2e fake-390 provider gets a usage script for its folder accounts (work, lab)
+Because: web/e2e/serve.sh:88
+Owner: B on the mini is really signed out; sign it in again.
