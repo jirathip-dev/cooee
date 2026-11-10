@@ -30,6 +30,13 @@ internal struct ScreenTests {
         }
     }
 
+    @Test internal func jsonTextParsesAndAStampReadsBackAsItsDate() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(JSONValue(json: #"{"type": "run", "n": 2}"#) == .object(["type": .string("run"), "n": .number(2)]))
+        #expect(JSONValue(json: "{not json") == .null)
+        #expect(JSONValue.string(Relative.stamp(in: 690, from: now)).date == now.addingTimeInterval(690))
+    }
+
     @Test internal func queueStreamOpsPatchTheQueueByID() throws {
         var screen = LiveScreen(try Self.fixture("queue.json"))
         for event in try Self.fixture("queue-stream.json").items { screen.apply(event: event) }

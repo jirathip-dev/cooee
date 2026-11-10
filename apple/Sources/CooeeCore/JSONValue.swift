@@ -94,6 +94,10 @@ public enum JSONValue: Sendable, Hashable, Codable {
     }
 
     public var date: Date? { string.flatMap { try? Date($0, strategy: .iso8601) } }
+
+    public init(json: String) {
+        self = (try? JSONDecoder().decode(Self.self, from: Data(json.utf8))) ?? .null
+    }
 }
 
 public enum Relative {
@@ -103,6 +107,10 @@ public enum Relative {
         if minutes < 60 { return "\(minutes)m" }
         if minutes < 24 * 60 { return "\(minutes / 60)h" }
         return "\(minutes / (24 * 60))d"
+    }
+
+    public static func stamp(in seconds: TimeInterval, from now: Date = .now) -> String {
+        now.addingTimeInterval(seconds).ISO8601Format()
     }
 
     public static func filled(_ text: String, until: Date?, at now: Date) -> String {

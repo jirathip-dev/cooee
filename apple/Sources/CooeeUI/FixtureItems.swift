@@ -73,7 +73,7 @@ extension Fixtures {
             {"type": "card", "id": "6", "kind": "run", "title": "Install the edgar plugin's Python deps",
              "blocks": [{"type": "run", "id": "r7", "action": "run-card",
                "command": "uv pip install -r plugins/edgar/requirements.txt", "sha": "3b7e0c55a1d9", "dir": "~/research",
-               "touches": "~/research/.venv only, no network after", "until": "\#(Date.now.addingTimeInterval(690).ISO8601Format())"}]}
+               "touches": "~/research/.venv only, no network after", "until": "\#(Relative.stamp(in: 690))"}]}
             """#
         ),
     ]
@@ -105,7 +105,6 @@ extension Fixtures {
     ]
 
     private static func card(_ id: Int, _ poster: String?, _ json: String) -> Item {
-        let block = try? JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
-        return .card(id: id, poster: poster, block: block ?? .null)
+        .card(id: id, poster: poster, block: JSONValue(json: json))
     }
 }
