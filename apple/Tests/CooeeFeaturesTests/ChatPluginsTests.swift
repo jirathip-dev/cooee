@@ -2,7 +2,6 @@ import ComposableArchitecture
 import CooeeAPI
 import CooeeCore
 @testable import CooeeFeatures
-import Foundation
 import Testing
 
 @MainActor
