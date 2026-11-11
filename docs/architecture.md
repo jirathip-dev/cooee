@@ -295,6 +295,21 @@ allowed tools and refuses a call to any other (asking again each call, so a clos
 raises an approval card in the thread with the exact command or URL; approving it needs the device's passkey (Face
 ID) and adds the server off. Nothing runs before the owner turns it on and a profile picks it.
 
+## Routines (#75)
+
+A routine is a schedule (five-field cron in the Mac's local time, its UTC offset read with `date +%z` hourly, at
+least 15 minutes between due times), a place and a prompt, kept with its run state in `<data>/routines.json` (0600,
+written whole). An agent makes one in chat with cooee's own `create_routine` tool, as itself: the chat gets a `⟳
+Created routine` line; a Workflow session or a routine's own run can't. Settings › routines (`/routines`) renames,
+retimes, pauses, resumes and deletes them; there is no other way to make one. Every 30 seconds the runner runs each
+routine whose newest due time is past both its last recorded one and its making, once (missed ones run once, late),
+then records it. The run's key, `routine-<id>-<due>`, is the hub's `random_id`, so a crash between a run and its
+record runs into the same message or thread again, never a second. `chat` runs queue the prompt in the making chat
+as a message marked with the routine; a closed or deleted chat pauses the routine with one push. `new_thread` runs
+start a thread as the making chat's agent, marked with the routine, whose finished turns don't push. The list shows
+`⟳ <name>` on a thread a routine started or last wrote to. The GitHub event path is #261. The ADR and its shapes are
+in [architecture/routines](architecture/routines/adr.md).
+
 ## The app shell (#21, herdsman#553 rows 1–14)
 
 Offline, the Home Screen app opens on the service worker's last copy of a page and the chat page on its newest slice

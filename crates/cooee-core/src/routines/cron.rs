@@ -41,7 +41,8 @@ impl Schedule {
         }
         let mut fields = [0; 5];
         for (i, w) in words.iter().enumerate() {
-            fields[i] = field(w, RANGES[i]).ok_or_else(|| bad(format!("has a bad {}", NAMES[i])))?;
+            fields[i] =
+                field(w, RANGES[i]).ok_or_else(|| bad(format!("has a bad {}", NAMES[i])))?;
         }
         if (fields[4] >> 7) & 1 == 1 {
             fields[4] = (fields[4] | 1) & !(1 << 7);
@@ -70,7 +71,11 @@ impl Schedule {
         (0..=366).find_map(|back| {
             let day = today - back;
             let until = if back == 0 { minute } else { DAY - 1 };
-            let t = times.iter().rev().find(|t| **t <= until).filter(|_| self.on(day))?;
+            let t = times
+                .iter()
+                .rev()
+                .find(|t| **t <= until)
+                .filter(|_| self.on(day))?;
             u64::try_from((day * DAY + t - offset) * 60_000).ok()
         })
     }
@@ -134,7 +139,10 @@ fn field(word: &str, (lo, hi): (u8, u8)) -> Option<u64> {
         let (a, b) = match range.split_once('-') {
             _ if range == "*" => (lo, hi),
             Some((a, b)) => (a.parse().ok()?, b.parse().ok()?),
-            None => range.parse().ok().map(|n| (n, if step > 1 { hi } else { n }))?,
+            None => range
+                .parse()
+                .ok()
+                .map(|n| (n, if step > 1 { hi } else { n }))?,
         };
         if a < lo || b > hi || a > b {
             return None;

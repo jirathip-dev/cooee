@@ -41,6 +41,9 @@ pub enum Body {
         /// The files sent with it, by their stored names (`GET /threads/<id>/files/<name>`).
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         files: Vec<String>,
+        /// The routine that sent it (#75), not the owner.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        routine: Option<crate::routines::Mark>,
     },
     /// The agent's whole reply to a turn.
     Agent {
@@ -96,6 +99,17 @@ pub enum Body {
         /// Whether it points onward (`continued in`) rather than back (`from`).
         #[serde(default)]
         out: bool,
+    },
+    /// The agent made a routine (#75): `⟳ Created routine: <name> · <when> · <place>`.
+    Routine {
+        /// Its id.
+        routine: String,
+        /// Its name.
+        name: String,
+        /// Its schedule in words.
+        when: String,
+        /// Where it posts, in words.
+        place: String,
     },
     /// A line from cooee itself (`model sonnet · effort low from the next start`).
     Note {
@@ -190,6 +204,8 @@ pub struct Summary {
     /// A room's member personas, in room order (#154).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub members: Vec<String>,
+    /// The routine that started it or sent its last message (#75; empty: none).
+    pub routine: String,
 }
 
 /// What applying an event changed, for the page.
@@ -563,6 +579,7 @@ mod tests {
                 text: text.to_owned(),
                 random_id: "r".to_owned(),
                 files: Vec::new(),
+                routine: None,
             },
         };
         let chat = Chat::from_versions((0..5).map(|i| you(&format!("v{i}"))).collect());

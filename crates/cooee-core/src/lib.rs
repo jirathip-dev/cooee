@@ -17,6 +17,7 @@ pub mod plugins;
 pub mod profiles;
 pub mod provider;
 mod providers;
+pub mod routines;
 pub mod secrets;
 mod shed;
 mod store;
