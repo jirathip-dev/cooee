@@ -2,6 +2,11 @@ import Foundation
 
 public enum Listing {
     public static func pinned(personas: [APIPersona], rows: [ThreadRow]) -> [Persona] {
+        let pinned = personas.filter(\.pinned)
+        return everyone(personas: pinned.isEmpty ? personas : pinned, rows: rows)
+    }
+
+    public static func everyone(personas: [APIPersona], rows: [ThreadRow]) -> [Persona] {
         personas.map { persona in
             let newest = rows.first { $0.persona == persona.id }
             return Persona(persona, state: newest.map { LaneState(api: $0.state) } ?? .idle)
@@ -31,6 +36,12 @@ public enum Listing {
 
     private static func named(_ id: String) -> APIPersona {
         APIPersona(id: id, name: id, agent: "")
+    }
+
+    public static func memory(_ notes: [PersonaNote], persona: String, now: Date) -> [Field] {
+        notes.reversed().map { note in
+            Field(note.text, "from \(note.author == "owner" ? "you" : persona) · \(ago(note.time, now: now))")
+        }
     }
 
     public static func ago(_ milliseconds: Int64, now: Date) -> String {

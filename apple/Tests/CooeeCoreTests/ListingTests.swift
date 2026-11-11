@@ -24,6 +24,14 @@ internal struct ListingTests {
         #expect(pinned.map(\.state) == [.working, .idle])
     }
 
+    @Test internal func homesRowIsThePinnedPersonasOrEveryoneWhileNoneIsPinned() {
+        var pinned = chief
+        pinned.pinned = true
+        #expect(Listing.pinned(personas: [coder, pinned], rows: []).map(\.id) == ["chief"])
+        #expect(Listing.pinned(personas: [coder, chief], rows: []).map(\.id) == ["coder", "chief"])
+        #expect(Listing.everyone(personas: [coder, pinned], rows: []).map(\.id) == ["coder", "chief"])
+    }
+
     @Test internal func theChatListDrawsEachRowWithItsPersonaOrItsAgent() {
         let rows = [
             row("t1", persona: "coder", state: "blocked", updated: 999_990),
@@ -44,6 +52,24 @@ internal struct ListingTests {
     ])
     internal func agoIsShort(_ seconds: Int64, _ text: String) {
         #expect(Listing.ago(seconds * 1000, now: now) == text)
+    }
+
+    @Test internal func memoryListsTheNewestNoteFirstWithWhoAddedIt() {
+        let notes = [
+            PersonaNote(text: "Renewals live in renewals.md", author: "owner", time: 913_600_000),
+            PersonaNote(text: "Dana runs finance", author: "persona", time: 992_800_000),
+        ]
+        #expect(
+            Listing.memory(notes, persona: "Chief", now: now) == [
+                Field("Dana runs finance", "from Chief · 2h"), Field("Renewals live in renewals.md", "from you · 1d"),
+            ]
+        )
+    }
+
+    @Test internal func settingsKeepTheirLookAndTokenThroughJSON() throws {
+        let settings = Settings(scheme: .dark, style: .terminal, push: "ab12")
+        let back = try JSONDecoder().decode(Settings.self, from: try JSONEncoder().encode(settings))
+        #expect(back == settings && Settings() == Settings(scheme: .system, style: .modern, push: nil))
     }
 
     @Test internal func aTypedAddressOrALinkIsAServer() {

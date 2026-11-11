@@ -57,21 +57,24 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
 
 public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
-        case id, name, agent, model, effort, folder, character, instructions, plugins, machine
+        case id, name, avatar, agent, model, effort, folder, machine, character, instructions, plugins, pinned, profile
         case canMessage = "can_message"
     }
 
-    public let id: String
-    public let name: String
-    public let agent: String
-    public let model: String
-    public let effort: String
-    public let folder: String
-    public let character: String
-    public let instructions: String
-    public let plugins: [String]
-    public let machine: String
-    public let canMessage: [String]
+    public var id: String
+    public var name: String
+    public var avatar: String?
+    public var agent: String
+    public var model: String
+    public var effort: String
+    public var folder: String
+    public var machine: String
+    public var character: String
+    public var instructions: String
+    public var plugins: [String]
+    public var canMessage: [String]
+    public var pinned: Bool
+    public var profile: String?
 
     public init(
         id: String,
@@ -84,7 +87,8 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
         instructions: String = "",
         plugins: [String] = [],
         machine: String = "",
-        canMessage: [String] = []
+        canMessage: [String] = [],
+        pinned: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -92,11 +96,12 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
         self.model = model
         self.effort = effort
         self.folder = folder
+        self.machine = machine
         self.character = character
         self.instructions = instructions
         self.plugins = plugins
-        self.machine = machine
         self.canMessage = canMessage
+        self.pinned = pinned
     }
 }
 

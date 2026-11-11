@@ -13,6 +13,7 @@ public struct HomeFeature: Sendable {
         public var error: String?
 
         public var pinned: [Persona] { Listing.pinned(personas: personas, rows: rows) }
+        public var everyone: [Persona] { Listing.everyone(personas: personas, rows: rows) }
 
         public init(server: Server) {
             self.server = server

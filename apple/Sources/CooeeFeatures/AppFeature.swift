@@ -11,14 +11,16 @@ public struct AppFeature: Sendable {
         public var chat: ChatFeature.State?
         public var newRoom: NewRoomFeature.State?
         public var path: [String] = []
-        public var menu = false
+        public var menu: MenuFeature.State
+        @Presents public var persona: PersonaFeature.State?
         public let mac: Bool
 
-        public init(server: Server?, mac: Bool = false) {
+        public init(server: Server?, settings: Settings = Settings(), mac: Bool = false) {
             self.mac = mac
             home = server.map(HomeFeature.State.init)
             pairing = server == nil && !mac ? PairingFeature.State() : nil
             setup = server == nil && mac ? MacSetupFeature.State() : nil
+            menu = MenuFeature.State(server: server, settings: settings)
         }
     }
 
@@ -30,11 +32,13 @@ public struct AppFeature: Sendable {
         case chat(ChatFeature.Action)
         case newRoom(NewRoomFeature.Action)
         case room
+        case menu(MenuFeature.Action)
+        case persona(PresentationAction<PersonaFeature.Action>)
+        case edit(String?)
         case open(String)
         case start(String)
         case back
         case path([String])
-        case menu(Bool)
     }
 
     @Dependency(\.serverStore) private var serverStore
@@ -43,14 +47,15 @@ public struct AppFeature: Sendable {
     public init() {}
 
     public var body: some ReducerOf<Self> {
+        Scope(state: \.menu, action: \.menu) { MenuFeature() }
         Reduce { state, action in
             switch action {
             case .pairing(.delegate(.paired(let server))), .setup(.delegate(.paired(let server))):
-                state = State(server: server, mac: state.mac)
+                state = State(server: server, settings: state.menu.settings, mac: state.mac)
                 return .none
             case .home(.delegate(.unauthorized)):
                 serverStore.clear()
-                state = State(server: nil, mac: state.mac)
+                state = State(server: nil, settings: state.menu.settings, mac: state.mac)
                 return .none
             case .setup(.delegate(.clientOnly)):
                 state.setup = nil
@@ -60,6 +65,9 @@ public struct AppFeature: Sendable {
                 state.pairing = nil
                 state.setup = MacSetupFeature.State()
                 return .none
+            case .persona(.presented(.delegate(.saved))):
+                state.persona = nil
+                return .send(.home(.refresh))
             case .chat(.delegate(.started(let thread))):
                 state.path = state.path.dropLast() + [thread]
                 state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
@@ -85,6 +93,7 @@ public struct AppFeature: Sendable {
         .ifLet(\.setup, action: \.setup) { MacSetupFeature() }
         .ifLet(\.chat, action: \.chat) { ChatFeature() }
         .ifLet(\.newRoom, action: \.newRoom) { NewRoomFeature() }
+        .ifLet(\.$persona, action: \.persona) { PersonaFeature() }
     }
 
     private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
@@ -101,12 +110,18 @@ public struct AppFeature: Sendable {
         case .path(let path):
             state.path = path
             if path.isEmpty { state.chat = nil }
-        case .menu(let open):
-            state.menu = open
+        case .edit(let id):
+            state.persona = persona(state, id)
         default:
             break
         }
         return .none
+    }
+
+    private func persona(_ state: State, _ id: String?) -> PersonaFeature.State? {
+        guard let home = state.home else { return nil }
+        let blank = APIPersona(id: "", name: "", agent: home.personas.first?.agent ?? "")
+        return PersonaFeature.State(server: home.server, persona: id.flatMap(home.persona) ?? blank)
     }
 
     private func chat(_ state: State, _ id: String, room: (String, [String])? = nil) -> ChatFeature.State? {

@@ -94,6 +94,12 @@ jobs:
             TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" "${build[@]}" \
               -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" test-without-building
           done
+      # #139: the personas the simulator made and edited, read back from the server, and a client round trip.
+      - name: the simulator's personas on the server (swift test)
+        working-directory: apple
+        run: |
+          link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
+          COOEE_PERSONA_LINK="$link" COOEE_SIM_LOOKS="dark light" swift test --filter LivePersonaTests
       - name: screenshots
         if: always()
         run: |
