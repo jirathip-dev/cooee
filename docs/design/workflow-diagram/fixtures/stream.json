@@ -1,0 +1,26 @@
+[
+ {
+  "event": "verdict",
+  "ops": [
+   {
+    "op": "merge",
+    "id": "flow",
+    "fields": {
+     "counts": {
+      "queued": 11,
+      "architect": 0,
+      "design": 1,
+      "blocked": 1,
+      "impl": 2,
+      "review": 1,
+      "fix": 3,
+      "verify": 0,
+      "ready": 1,
+      "merged": 14,
+      "needs_human": 0
+     }
+    }
+   }
+  ]
+ }
+]

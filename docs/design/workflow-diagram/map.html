@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · workflow map (#213): the diagram block, its entry and its styles</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../screens-as-data/sd.css">
+<link rel="stylesheet" href="dg.css">
+<script type="module" src="../screens-as-data/sd.js"></script>
+</head>
+<body>
+<!-- #213: drover's workflow map as a #125 `diagram` block (fixtures/map.json), drawn by screens-as-data's one renderer
+     over the orchestrator chat. ?f=<frame>&mode=dark|light&style=modern|terminal|scene. -->
+<div class="gal">
+<div class="fr"><p class="cap">Queue · ⋯ open: Workflow map… next to Fleets…</p>
+<section class="ph" data-f="entry"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="../screens-as-data/fixtures/queue.json" data-menu="Workflow map…"></div></section></div>
+
+<div class="fr"><p class="cap">Workflow · the map, live counts per state, timers as ⏱ nodes</p>
+<section class="ph" data-f="map"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/map.json"></div></section></div>
+
+<div class="fr w"><p class="cap">Mac · the map left to right in a wide panel, fix selected and its issues under it</p>
+<section class="wd mac" data-f="wide-map" data-host="chat" data-wide="1" data-chat="fixtures/chat.json" data-screen="fixtures/map.json" data-select="fix" data-then="fixtures/fix.json"></section></div>
+</div>
+</body>
+</html>

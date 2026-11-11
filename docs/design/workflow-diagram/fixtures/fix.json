@@ -1,0 +1,58 @@
+{
+ "type": "screen",
+ "id": "state-fix",
+ "title": "fix · 2",
+ "back": "Map",
+ "blocks": [
+  {
+   "type": "section",
+   "header": "herdsman · in a fix round",
+   "footer": "Each row is the Queue's own row: its lane, its rounds and its age.",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "id": "q-641",
+       "figure": {
+        "state": "working",
+        "tool": "edit"
+       },
+       "title": "#641 hosts bootstrap: an ambiguous machine label",
+       "badge": {
+        "text": "fix 1",
+        "tone": "working"
+       },
+       "value": {
+        "since": "2026-11-09T09:35:00Z"
+       },
+       "tap": {
+        "thread": "herdsman-impl-641"
+       },
+       "subtitle": "impl ✓ · review 1 ✗ · fix 1 ▸ herdsman-impl-641 · mini"
+      },
+      {
+       "type": "row",
+       "id": "q-609",
+       "figure": {
+        "state": "working",
+        "tool": "read"
+       },
+       "title": "#609 api/v1 + CLI: every lane says where it runs",
+       "badge": {
+        "text": "fix 4",
+        "tone": "working"
+       },
+       "value": "51m",
+       "tap": {
+        "open": "/screens/issue?n=609"
+       },
+       "subtitle": "impl ✓ · review 1–3 ✗ · fix 4 ▸ herdsman-impl-609 · air"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

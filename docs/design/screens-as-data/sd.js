@@ -11,6 +11,10 @@
 //   [data-scroll=<px>]                       the sheet scrolled down by that much
 // #184 adds `?style=modern|terminal|scene` (#124's three styles, q947): Scene draws a row's figure with `coat` as its
 // horse acting the state (apple/Sources/CooeeUI/Sprites).
+// #213 adds the `diagram` block (../workflow-diagram/dg.js) and, on a host: [data-back] the pushed screen's back label,
+// [data-focus=<field name>] the field a tap opened (`tap.focus`),
+// [data-select=<state> data-then=<screen>] a state selected on the map, that screen's blocks under it (1440), [data-menu=<label>] the sheet's ⋯ menu open, that row marked.
+import { diagram } from '../workflow-diagram/dg.js';
 const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark', F = q.get('f'), STYLE = q.get('style') || 'modern';
@@ -78,7 +82,7 @@ const B = {
       b.other ? `<p class=oth${inCard ? '' : ' style="margin:0 16px"'}><input aria-label="other answer" placeholder="${esc(b.other.placeholder)}"></p>` : ''}${
       b.default ? `<p class=ds>${esc(b.default.label.replace('{rel}', rel(b.default.until)))}</p>` : ''}`;
   },
-  form: b => `<div class=gs>${b.fields.map(f => `<label class="gr${f.doc || f.was || f.error ? ' two' : ''}${f.was ? ' edt' : ''}${f.error ? ' err' : ''}"><span class=lb>${esc(f.label)}${
+  form: b => `<div class=gs>${b.fields.map(f => `<label class="gr${f.focus ? ' fcs' : ''}${f.doc || f.was || f.error ? ' two' : ''}${f.was ? ' edt' : ''}${f.error ? ' err' : ''}"><span class=lb>${esc(f.label)}${
     f.error ? `<small data-tone=bad>${esc(f.error)}</small>` : f.was ? `<small data-tone=accent>was ${esc(f.was)}</small>` : f.doc ? `<small>${esc(f.doc)}</small>` : ''}</span>${
     f.type === 'toggle' ? `<span class=sk></span><i class=tg role=switch aria-checked=${!!f.value}></i>`
     : f.type === 'picker' ? `<span class=sk></span><span class=pkv>${esc(f.value)}</span>${f.open ? `<span class="pmn${f.open === 'up' ? ' up' : ''}" role=menu>${f.options.map(o =>
@@ -99,9 +103,10 @@ const B = {
   // #184: a text editor (fleet.toml as text), its line numbers, and each validation error inline under its line.
   editor: b => `<div class=edb>${b.text.split('\n').map((l, i) => { const e = (b.errors || []).find(x => x.line === b.first + i);
     return `<code class="el${e ? ' bad' : ''}" data-n=${b.first + i}>${esc(l) || ' '}</code>${e ? `<span class=eer>${esc(e.message)}</span>` : ''}`; }).join('')}</div>`,
+  diagram: b => diagram(b, { esc, STYLE, SPR, wide: WIDE, words: theme.words }),
   web: b => `<div class=wv style="--h:${b.height || 180}px"><b>web · sandboxed</b>${esc(b.src)}</div>`,
 };
-let inCard = false, FROM = '';
+let inCard = false, FROM = '', WIDE = false;
 // A card's kind (q985): the app draws its label and the poster's name, which no plugin can set.
 const KIND = { ask: ['hand', 'ask', 'bad'], run: ['term', 'run card', 'warn'], secret: ['key', 'secret', 'warn'], config: ['gear', 'config', 'info'],
   proposal: ['gear', 'config proposal', 'info'] };
@@ -122,7 +127,7 @@ function apply(screen, ops) {
     if (o.op === 'badge') { qBadge = o.count; continue; }
     const f = find(screen, o.id || o.into);
     if (!f) continue;
-    if (o.op === 'merge') Object.assign(f.node, o.fields);
+    if (o.op === 'merge') { if (f.node.type === 'diagram' && o.fields.counts) f.node.was = f.node.counts; Object.assign(f.node, o.fields); }
     if (o.op === 'replace') { const a = kids(f.parent); a[a.indexOf(f.node)] = o.block; }
     if (o.op === 'remove') { const a = kids(f.parent); a.splice(a.indexOf(f.node), 1); }
     if (o.op === 'insert') { const a = kids(f.node), at = a.findIndex(x => x.id === (o.before || o.after)); a.splice(at < 0 ? a.length : at + (o.after ? 1 : 0), 0, o.block); }
@@ -174,7 +179,7 @@ const chat = async (k = 'chat', own) => { const o = own ? await json(own) : {}, 
     <form class=tw><button type=button class=att aria-label=attach>+</button><textarea rows=1 aria-label=message placeholder="message ${c.name}"></textarea><button type=button aria-label=send>↑</button></form></div>${chathead(c)}`;
   FROM = ''; return h; };
 // A plugin screen in a sheet: its title, its toolbar (⋯ menus), Done; the body is the screen's blocks.
-const sheet = (s, off) => `<div class=dim></div><div class="ps sdx${off ? ' off' : ''}" role=dialog aria-label="${esc(s.title)}"><div class=psh>${s.type === 'sheet'
+const sheet = (s, off) => `<div class=dim></div><div class="ps sdx${off ? ' off' : ''}${s.blocks.some(x => x.type === 'diagram') ? ' dgw' : ''}" role=dialog aria-label="${esc(s.title)}"><div class=psh>${s.type === 'sheet'
   ? `<a href="#">${esc(s.cancel || 'Cancel')}</a><b>${esc(s.title)}</b><a href="#">${esc(s.done?.label || 'Done')}</a>`
   : `<span>${s.back ? `<a href="#" class=bk2>‹ ${esc(s.back)}</a>` : ''}${(s.actions || []).map(a => `<a href="#" aria-label="${esc(a.label)}">${ic(a.icon) }</a>`).join('')}</span><b>${esc(s.title)}</b><a href="#"${s.done?.off ? ' class=off aria-disabled=true' : ''}>${esc(s.done?.label || 'Done')}</a>`}</div>
   <div class=pb><div class=in>${off ? `<div class=ofl role=status><b>Mac unreachable</b><span>drover's Queue as of ${off} ago · actions are off until it's back</span><a href="#">Retry</a></div>` : ''}${all(s.blocks)}</div></div>${s.pending ? `<div class=pnd><span><b>${esc(s.pending.count)}</b> · ${esc(s.pending.text)}</span><a href="#">Discard</a><button type=button>Review changes</button></div>` : ''}</div>`;
@@ -192,13 +197,19 @@ const confirm = c => `<div class=mdim></div><div class=acs><div><p><b>${esc(c.ti
 
 for (const e of document.querySelectorAll('[data-host]')) {
   let over = '', sc;
+  WIDE = !!e.dataset.wide;
   if (e.dataset.screen) {
     sc = await json(e.dataset.screen);
+    if (e.dataset.back) sc.back = e.dataset.back;
+    const deep = b => [b, ...(b.blocks || []).flatMap(deep)];
+    // At 1440 a tapped state lists its issues under the map, not on a pushed screen.
+    if (e.dataset.select) { sc.blocks.find(x => x.type === 'diagram').selected = e.dataset.select; sc.blocks.push(...(await json(e.dataset.then)).blocks); }
+    if (e.dataset.focus) for (const fl of sc.blocks.flatMap(deep).flatMap(x => x.fields || [])) fl.focus = fl.name === e.dataset.focus;
     if (e.dataset.live) for (const ev of await json(e.dataset.live)) apply(sc, ev.ops);
     over += sheet(sc, e.dataset.offline);
   }
   const base = e.dataset.host === 'home' ? home() : await chat(e.dataset.host, e.dataset.chat);
-  if ('menu' in e.dataset) over += menu();
+  if ('menu' in e.dataset) over += sc ? `<div class="agm sm" role=menu>${sc.actions[0].menu.map(m => `<a class="gr${m.label === e.dataset.menu ? ' nw' : ''}" href="#"><span class=sk>${esc(m.label)}</span></a>`).join('')}</div>` : menu();
   if (e.dataset.attach) over += attach(await json(e.dataset.attach));
   if (e.dataset.confirm) { const f = find(sc || { blocks: await json('fixtures/cards.json') }, e.dataset.confirm).node; over += confirm(f.confirm || f.options.find(o => o.value === e.dataset.value).confirm); }
   if (e.dataset.wide) e.innerHTML = `<aside class=side>${home()}</aside><main class=dtl>${base}</main>${over}`;

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · workflow map (#213): a state tapped, a timer tapped, a live count</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../screens-as-data/sd.css">
+<link rel="stylesheet" href="dg.css">
+<script type="module" src="../screens-as-data/sd.js"></script>
+</head>
+<body>
+<!-- #213: the map's two taps and a live op. ?f=<frame>&mode=dark|light&style=modern|terminal|scene. -->
+<div class="gal">
+<div class="fr"><p class="cap">fix tapped · its issues as the Queue's rows</p>
+<section class="ph" data-f="state"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/fix.json"></div></section></div>
+
+<div class="fr"><p class="cap">⏱ Stall after tapped · #184's Global settings, opened at that limit</p>
+<section class="ph" data-f="timer" data-scroll="440"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="../fleets-config/fixtures/global.json" data-back="Map" data-focus="limits.stall_minutes"></div></section></div>
+
+<div class="fr"><p class="cap">Live · a verdict moves one issue from review to fix, in place</p>
+<section class="ph" data-f="live"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/map.json" data-live="fixtures/stream.json"></div></section></div>
+</div>
+</body>
+</html>

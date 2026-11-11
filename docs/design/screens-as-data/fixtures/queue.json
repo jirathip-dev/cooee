@@ -15,6 +15,12 @@
      }
     },
     {
+     "label": "Workflow map…",
+     "tap": {
+      "sheet": "/screens/map"
+     }
+    },
+    {
      "label": "Drive all now",
      "action": "drive-all"
     }

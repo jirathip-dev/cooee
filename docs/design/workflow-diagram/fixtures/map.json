@@ -1,0 +1,146 @@
+{
+ "type": "screen",
+ "id": "map",
+ "title": "Workflow",
+ "back": "Queue",
+ "stream": "/screens/map/stream",
+ "blocks": [
+  {
+   "type": "chips",
+   "id": "repo",
+   "name": "repo",
+   "selected": [
+    "herdsman"
+   ],
+   "action": "filter",
+   "options": [
+    {
+     "value": "all",
+     "label": "all"
+    },
+    {
+     "value": "cooee",
+     "label": "cooee"
+    },
+    {
+     "value": "herdsman",
+     "label": "herdsman"
+    },
+    {
+     "value": "cooee-drover",
+     "label": "cooee-drover"
+    }
+   ]
+  },
+  {
+   "type": "diagram",
+   "id": "flow",
+   "title": "herdsman's workflow",
+   "source": "stateDiagram-v2\n  state queued\n  state blocked\n  state design\n  state architect\n  state impl\n  state stall\n  state review\n  state fix\n  state verify\n  state rounds\n  state \"needs human\" as needs_human\n  state ready\n  state merged\n  [*] --> queued\n  queued --> blocked : held\n  blocked --> queued\n  queued --> design : --design\n  queued --> architect : --architect\n  queued --> impl\n  architect --> design\n  architect --> impl\n  design --> impl : approved\n  impl --> review\n  impl --> stall\n  review --> fix : FAIL\n  fix --> review\n  review --> verify : PASS\n  verify --> fix : FAIL\n  verify --> ready : PASS\n  review --> rounds\n  rounds --> needs_human : over\n  stall --> needs_human\n  ready --> merged : merge",
+   "counts": {
+    "queued": 11,
+    "architect": 0,
+    "design": 1,
+    "blocked": 1,
+    "impl": 2,
+    "review": 2,
+    "fix": 2,
+    "verify": 0,
+    "ready": 1,
+    "merged": 14,
+    "needs_human": 0
+   },
+   "nodes": {
+    "queued": {
+     "state": "idle",
+     "tap": {
+      "open": "/screens/queue?state=queued"
+     }
+    },
+    "architect": {
+     "state": "needs",
+     "tap": {
+      "open": "/screens/queue?state=architect"
+     }
+    },
+    "design": {
+     "state": "needs",
+     "tap": {
+      "open": "/screens/queue?state=design"
+     }
+    },
+    "blocked": {
+     "state": "fail",
+     "tap": {
+      "open": "/screens/queue?state=blocked"
+     }
+    },
+    "impl": {
+     "state": "working",
+     "tap": {
+      "open": "/screens/queue?state=impl"
+     }
+    },
+    "review": {
+     "state": "working",
+     "tap": {
+      "open": "/screens/queue?state=review"
+     }
+    },
+    "fix": {
+     "state": "working",
+     "tap": {
+      "open": "/screens/queue?state=fix"
+     }
+    },
+    "verify": {
+     "state": "working",
+     "tap": {
+      "open": "/screens/queue?state=verify"
+     }
+    },
+    "ready": {
+     "state": "done",
+     "tap": {
+      "open": "/screens/queue?state=ready"
+     }
+    },
+    "merged": {
+     "state": "done",
+     "tap": {
+      "open": "/screens/queue?state=merged"
+     }
+    },
+    "needs_human": {
+     "state": "needs",
+     "tap": {
+      "open": "/screens/queue?state=needs_human"
+     }
+    },
+    "stall": {
+     "limit": "limits.stall_minutes",
+     "label": "Stall after",
+     "value": "30 min",
+     "tap": {
+      "sheet": "/screens/global",
+      "focus": "limits.stall_minutes"
+     }
+    },
+    "rounds": {
+     "limit": "limits.review_rounds",
+     "label": "Review rounds",
+     "value": "6",
+     "tap": {
+      "sheet": "/screens/global",
+      "focus": "limits.review_rounds"
+     }
+    }
+   }
+  },
+  {
+   "type": "text",
+   "style": "footnote",
+   "markdown": "Live: a count is the issues in that state now (merged: last 7 days). Tap a state for its issues, a ⏱ for its setting."
+  }
+ ]
+}
