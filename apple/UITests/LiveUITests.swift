@@ -24,6 +24,37 @@
             XCTAssert(labelled(app, "Coder").exists)
             keep("home")
             answersEachCard(app, new)
+            app.buttons["Back"].firstMatch.tap()
+            opensDroversScreens(app, new)
+        }
+
+        @MainActor
+        private func opensDroversScreens(_ app: XCUIApplication, _ new: XCUIElement) {
+            XCTAssert(new.waitForExistence(timeout: 10))
+            new.tap()
+            app.buttons["Conductor"].firstMatch.tap()
+            let queue = app.buttons["Queue"].firstMatch
+            if !queue.waitForExistence(timeout: 10) {
+                app.buttons["More"].firstMatch.tap()
+                app.buttons["Attach drover…"].firstMatch.tap()
+                XCTAssert(labelled(app, "Queue chip on the header strip").waitForExistence(timeout: 10))
+                keep("attach")
+                app.buttons["Attach"].firstMatch.tap()
+            }
+            XCTAssert(queue.waitForExistence(timeout: 20))
+            keep("conductor")
+            app.buttons["Events"].firstMatch.tap()
+            XCTAssert(labelled(app, "merged").waitForExistence(timeout: 20))
+            keep("events")
+            app.buttons["Done"].firstMatch.tap()
+            queue.tap()
+            XCTAssert(labelled(app, "#722").waitForExistence(timeout: 30))
+            keep("queue")
+            XCTAssert(labelled(app, "review 1 ▸ herdsman-rev-722").waitForExistence(timeout: 30))
+            keep("queue-live")
+            app.buttons["Pause"].firstMatch.tap()
+            XCTAssert(labelled(app, "actions are off").waitForExistence(timeout: 30))
+            keep("queue-offline")
         }
 
         @MainActor

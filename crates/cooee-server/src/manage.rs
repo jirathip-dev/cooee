@@ -74,6 +74,10 @@ pub struct Row {
     pub state: String,
     /// It is improved through an issue.
     pub first_party: bool,
+    /// Where its screens go (#125), shown with its permissions when it's attached to a persona.
+    pub places: Vec<plugins::Place>,
+    /// Its manifest's `[permissions]`.
+    pub permissions: plugins::Permissions,
 }
 
 /// A supervised backend: its process (none between a crash and its restart), the build it runs, its crashes.
@@ -179,7 +183,8 @@ fn on_path(tool: &str) -> bool {
         .is_ok_and(|s| s.success())
 }
 
-/// A plugin's tabs as `[[plugins]]` entries on `port` with `token`.
+/// A plugin's tabs as `[[plugins]]` entries on `port` with `token`; one with screens only gets one of its name and
+/// no module (no tab).
 fn entries(m: &Manifest, port: u16, token: &str) -> Vec<Plugin> {
     let tab = |t: &plugins::Tab| Plugin {
         name: t.name.clone(),
@@ -188,7 +193,28 @@ fn entries(m: &Manifest, port: u16, token: &str) -> Vec<Plugin> {
         module: t.module.clone(),
         token: token.to_owned(),
     };
-    m.tabs.iter().map(tab).collect()
+    let screens = plugins::Tab {
+        name: m.name.clone(),
+        label: m.name.clone(),
+        module: String::new(),
+    };
+    let tabs = if m.tabs.is_empty() {
+        std::slice::from_ref(&screens)
+    } else {
+        &m.tabs
+    };
+    tabs.iter().map(tab).collect()
+}
+
+/// What a build's backend must serve to be healthy: its first tab's module, else its first place's screen.
+fn first_path(m: &Manifest) -> String {
+    let tab = m.tabs.first().map(|t| t.module.clone());
+    let screen = m
+        .places
+        .iter()
+        .map(|p| p.screen.clone())
+        .find(|s| !s.is_empty());
+    tab.or(screen).unwrap_or_default()
 }
 
 impl Manager {
@@ -370,6 +396,14 @@ impl Manager {
             m.run,
             tabs.join(", ")
         );
+        if !m.places.is_empty() {
+            let actions = m.permissions.actions.join(", ");
+            let _ = write!(
+                text,
+                "\nscreens: {} places; actions: {actions}",
+                m.places.len()
+            );
+        }
         if !m.profiles.is_empty() {
             let labels: Vec<String> = m
                 .profiles
@@ -462,7 +496,7 @@ impl Manager {
             name: m.name.clone(),
             label: String::new(),
             url: format!("http://127.0.0.1:{port}"),
-            module: m.tabs[0].module.clone(),
+            module: first_path(m),
             token: token.to_owned(),
         };
         let started = Instant::now();
@@ -530,7 +564,10 @@ impl Manager {
             commit: plan.commit.clone(),
             version: m.version.clone(),
             listed: plan.listed,
-            tabs: m.tabs.iter().map(|t| t.name.clone()).collect(),
+            tabs: entries(&m, port, &token)
+                .into_iter()
+                .map(|p| p.name)
+                .collect(),
             port,
             enabled: true,
             ..Locked::default()
@@ -579,7 +616,7 @@ impl Manager {
         self.change(&l.name, |l| {
             l.previous = Some(std::mem::replace(&mut l.commit, commit.to_owned()));
             l.version.clone_from(&m.version);
-            l.tabs = m.tabs.iter().map(|t| t.name.clone()).collect();
+            l.tabs = entries(m, l.port, "").into_iter().map(|p| p.name).collect();
         })?;
         let keep = [commit, l.commit.as_str()];
         for e in fs::read_dir(self.dir(&l.name).join("builds"))?.flatten() {
@@ -733,10 +770,14 @@ impl Manager {
                 (if up { "running" } else { "not running" }).to_owned()
             };
             let first_party = self.index.iter().any(|x| x.name == l.name && x.first_party);
+            let m = plugins::manifest(&self.data, &l).ok();
+            let (places, permissions) = m.map(|m| (m.places, m.permissions)).unwrap_or_default();
             Row {
                 locked: l,
                 state,
                 first_party,
+                places,
+                permissions,
             }
         });
         Ok(rows.collect())

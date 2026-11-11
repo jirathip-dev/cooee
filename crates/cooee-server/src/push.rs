@@ -49,6 +49,41 @@ pub struct Note {
     pub item: u64,
 }
 
+impl Note {
+    /// `thread`'s note of `key` (`needs`, `done`, `fail`): `theme`'s words, then `who: line`, about item `item`.
+    #[must_use]
+    pub fn new(
+        thread: &Thread,
+        (key, who, line): (&str, &str, &str),
+        item: u64,
+        theme: &cooee_web::Theme,
+    ) -> Self {
+        Self {
+            title: thread.title.clone(),
+            body: theme
+                .push_body(key, &format!("{who}: {line}"))
+                .chars()
+                .take(120)
+                .collect(),
+            tag: thread.id.clone(),
+            url: format!("/t/{}", thread.id),
+            item,
+        }
+    }
+
+    /// This member session's note as room `room` says it (#158): titled `Room · name`, opening the room at `item`.
+    #[must_use]
+    pub fn in_room(self, room: &Thread, name: &str, item: u64) -> Self {
+        Self {
+            title: format!("{} · {name}", room.title),
+            tag: room.id.clone(),
+            url: format!("/t/{}", room.id),
+            item,
+            ..self
+        }
+    }
+}
+
 /// The notification for `change` in `thread`, if it is one: an approval waiting, a turn done while no page
 /// watches the thread (`watched`), or an error. `was` is the state before the change. The body is `theme`'s word,
 /// the plain word and the agent's line: `at the gate · needs you · codex: Edit src/pair.rs`.
@@ -74,7 +109,12 @@ pub fn note(
         },
         Change::State(t) if t.state == was => return None,
         // A Workflow session runs unattended: its turns end without a push (#33).
-        Change::State(t) if t.state == "done" && !watched && thread.workflow.is_none() => {
+        Change::State(t)
+            if t.state == "done"
+                && !watched
+                && thread.workflow.is_none()
+                && thread.room.is_empty() =>
+        {
             let reply = chat.items.iter().rev().find_map(|i| match &i.body {
                 Body::Agent { text, .. } => text.lines().find(|l| !l.trim().is_empty()),
                 _ => None,
@@ -88,17 +128,7 @@ pub fn note(
         ),
         Change::State(_) | Change::Text(_) => return None,
     };
-    Some(Note {
-        title: thread.title.clone(),
-        body: theme
-            .push_body(key, &format!("{}: {line}", thread.agent))
-            .chars()
-            .take(120)
-            .collect(),
-        tag: thread.id.clone(),
-        url: format!("/t/{}", thread.id),
-        item,
-    })
+    Some(Note::new(thread, (key, &thread.agent, &line), item, theme))
 }
 
 /// A browser's push subscription, or a native device's APNs token.

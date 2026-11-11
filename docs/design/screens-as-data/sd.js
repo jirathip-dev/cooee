@@ -193,7 +193,7 @@ for (const e of document.querySelectorAll('[data-host]')) {
 for (const p of document.querySelectorAll('.ph')) p.insertAdjacentHTML('beforeend', `<div class=stb>${SB}</div><i class=isl></i><i class=hind></i>`);
 // blocks.html: each example's JSON beside its drawing.
 for (const e of document.querySelectorAll('[data-cat]')) {
-  const cat = await json(e.dataset.cat), hello = await fetch('hello/hello.py').then(r => r.text());
+  const cat = await json(e.dataset.cat), hello = await fetch('../../plugins/hello-py/hello.py').then(r => r.text());
   e.innerHTML = `<h1>The block set, v1 <small>Each block's JSON (left) and this mockup's renderer draws it (right). The native app (SwiftUI, iPhone + Mac) draws the same JSON with its own views.</small></h1>
     <section><h2>hello.py <small>· a whole plugin, 22 lines of Python, no frontend code</small></h2><pre>${esc(hello)}</pre><div class="cv2 sdx">${all([(await json('fixtures/hello.json'))]
       .map(s => ({ type: 'section', blocks: s.blocks })))}</div></section>` +
