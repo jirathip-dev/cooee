@@ -3,7 +3,7 @@
 //! the agent with the owner's own setup. The owner's are `<config>/profiles/*.toml`; a plugin brings its own as
 //! `[[profiles]]` in its `cooee-plugin.toml`, or its backend serves them (`GET /cooee/profiles`), their paths in its
 //! build. A secret never sits in a profile: an `env`
-//! value is plain text or `secret:<NAME>`, the file `<data>/secrets/<NAME>`.
+//! value is plain text or `secret:<NAME>`, a saved secret ([`crate::secrets`]).
 
 use std::{
     collections::BTreeMap,
@@ -141,26 +141,20 @@ impl Profile {
         self
     }
 
-    /// Its env split into plain variables and secret ones, each secret read from `<data>/secrets/<NAME>` (its last
-    /// newline dropped).
+    /// Its env split into plain variables and secret ones, each secret read from [`crate::secrets::get`].
     ///
     /// # Errors
-    /// Names the secret file that can't be read.
+    /// Names the secret that is missing or can't be read.
     pub fn env(&self, data: &Path) -> Result<(Vars, Vars), String> {
         let (mut plain, mut secret) = (Vec::new(), Vec::new());
         for (k, v) in &self.env {
             match v.strip_prefix("secret:") {
                 Some(name) => {
-                    let path = data.join("secrets").join(name);
-                    let value = fs::read_to_string(&path).map_err(|e| {
-                        format!(
-                            "profile {} needs secret {name}: {}: {e}",
-                            self.name,
-                            path.display()
-                        )
-                    })?;
-                    let value = value.strip_suffix('\n').unwrap_or(&value);
-                    secret.push((k.clone(), value.to_owned()));
+                    let needs = format!("profile {} needs secret {name}", self.name);
+                    let value = crate::secrets::get(data, name)
+                        .map_err(|e| format!("{needs}: {e}"))?
+                        .ok_or_else(|| format!("{needs}: it isn't saved"))?;
+                    secret.push((k.clone(), value));
                 }
                 None => plain.push((k.clone(), v.clone())),
             }

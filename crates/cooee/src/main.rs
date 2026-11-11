@@ -18,7 +18,7 @@ mod accounts;
 mod keychain;
 mod setup;
 
-const USAGE: &str = "usage: cooee <serve | pair | devices | reports | devices rm <id> | install --port <p> | doctor | push migrate \
+const USAGE: &str = "usage: cooee <serve | pair | devices | reports | devices rm <id> | install --port <p> | doctor | push migrate | secrets \
                      | perf [--minutes <n>] \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list \
@@ -120,6 +120,7 @@ fn main() -> ExitCode {
         }
         ["doctor"] => doctor,
         ["push", "migrate"] => keychain::command,
+        ["secrets"] => keychain::check,
         ["accounts", rest @ ..] => {
             let run = |c: Config| accounts::run(&c, rest, json, require);
             return load(path.as_deref(), &instance).map_or_else(|e| finish(Err(e)), run);
@@ -205,10 +206,17 @@ fn serve(config: &Config) -> Result<(), String> {
         .find(|p| p.name == cooee_terminal::NAME);
     // In the background, so a keychain that never answers holds up nothing.
     if let Some(data) = config.data_dir() {
-        std::thread::spawn(move || match keychain::migrate(&data) {
-            Ok(Some(done)) => eprintln!("cooee: {done}"),
-            Ok(None) => {}
-            Err(e) => eprintln!("cooee: push key: {e}"),
+        std::thread::spawn(move || {
+            match keychain::migrate(&data) {
+                Ok(Some(done)) => eprintln!("cooee: {done}"),
+                Ok(None) => {}
+                Err(e) => eprintln!("cooee: push key: {e}"),
+            }
+            match cooee_core::secrets::migrate(&data) {
+                Ok(moved) if moved.is_empty() => {}
+                Ok(moved) => eprintln!("cooee: moved into the keychain: {}", moved.join(", ")),
+                Err(e) => eprintln!("cooee: secrets: {e}"),
+            }
         });
     }
     cooee_server::serve(config, |addr| {

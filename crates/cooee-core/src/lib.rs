@@ -12,6 +12,7 @@ pub mod perf;
 pub mod personas;
 pub mod plugins;
 pub mod profiles;
+pub mod secrets;
 mod shed;
 mod store;
 
