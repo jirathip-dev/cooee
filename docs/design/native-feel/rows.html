@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · feel pass (#232): row swipe actions and long-press preview</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../rooms/rm.css">
+<link rel="stylesheet" href="nf.css">
+<script type="module" src="nf.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- Swipe left on a Home row: Mute, then Archive (outermost, the full-swipe action). -->
+<div class="fr"><p class="cap">Home · swipe left: Mute, Archive</p>
+<section class="ph col" data-f="swipe">
+  <div class="home" data-y="home" data-sw="coder:-148"></div>
+</section></div>
+
+<!-- Swipe right: Pin (the full-swipe action); a pinned chat joins the strip at the top. -->
+<div class="fr"><p class="cap">Home · swipe right: Pin</p>
+<section class="ph col" data-f="pin">
+  <div class="home" data-y="home" data-sw="am:84"></div>
+  <span class="ann" style="top:338px;right:12px">.selection when Pin turns on</span>
+</section></div>
+
+<!-- Others takes the same actions; a full swipe archives, the system ticks at the point of no return. -->
+<div class="fr"><p class="cap">Others · full swipe archives</p>
+<section class="ph col" data-f="full">
+  <div class="home" data-y="home" data-full="lane"></div>
+  <span class="ann" style="bottom:120px;left:12px">system tick at the full-swipe point</span>
+</section></div>
+
+<!-- Released: the row leaves; Undo for 4 s. -->
+<div class="fr"><p class="cap">Archived · Undo for 4 s</p>
+<section class="ph col" data-f="undo">
+  <div class="home" data-y="home" data-hide="lane"></div>
+  <div class="toast"><span>Archived <b>herdsman #641</b></span><a href="#">Undo</a></div>
+</section></div>
+
+<!-- Long-press a row: the chat itself as the preview (a tap opens it), the menu under it. -->
+<div class="fr"><p class="cap">Long-press · preview and menu</p>
+<section class="ph col" data-f="peek">
+  <div class="home" data-y="home"></div>
+  <div class="lp">
+    <div class="pv">
+      <header class="rhd"><i class="pa" data-p="coder" data-s="36"></i><span class="hdt"><b>Coder</b><small>Export for Kestrel · studio</small></span></header>
+      <ol class="msgs">
+        <li class="rnd">Today 09:40</li>
+        <li class="blk me">Export the Kestrel numbers for the board deck.</li>
+        <li class="at"><p>On it. Pulling Q1 to Q3 from the filings folder.</p></li>
+        <li class="mx"><span>read filings/ · write export/summary.md</span><i class="okg">✓ 9 tools</i></li>
+        <li class="at"><p>Done: export/summary.md has Q1 to Q3. Q3 was $4.1M, from the press release.</p></li>
+        <li class="te2">✓ replied · 9 tools · 4:02</li>
+      </ol>
+    </div>
+    <div class="cm">
+      <a class="cmi" href="#"><span>Pin</span><svg class="ico" viewBox="0 0 24 24"><path d="M9 3h6l-1 6 4 4H6l4-4zM12 13v8"/></svg></a>
+      <a class="cmi" href="#"><span>Mute</span><i class="chv">›</i></a>
+      <a class="cmi" href="#"><span>Mark as read</span><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/></svg></a>
+      <a class="cmi" href="#"><span>Copy last reply</span><svg class="ico" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg></a>
+      <a class="cmi" href="#"><span>Coder's panel</span><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></a>
+      <a class="cmi gap" href="#"><span>Archive</span><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10h14V9M10 13h4"/></svg></a>
+    </div>
+  </div>
+</section></div>
+
+<!-- 1440: the Mac: a right-click (or two-finger tap) opens the same menu; a two-finger swipe the same actions. -->
+<div class="fr w"><p class="cap">1440 · the Mac: the same menu on right-click</p>
+<section class="wd mac two" data-f="wide-rows">
+  <aside class="side"><div class="home" data-y="home" data-wide data-sel="coder" data-sw="res:-148"></div></aside>
+  <div class="col2">
+    <header class="rhd"><i class="pa" data-p="coder" data-s="40"></i><span class="hdt"><b>Coder</b><small>Export for Kestrel · studio</small></span><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+    <ol class="msgs">
+      <li class="rnd">Today 09:40</li>
+      <li class="blk me">Export the Kestrel numbers for the board deck.</li>
+      <li class="at"><p>On it. Pulling Q1 to Q3 from the filings folder.</p></li>
+      <li class="mx"><span>read filings/ · write export/summary.md</span><i class="okg">✓ 9 tools</i></li>
+      <li class="at"><p>Done: export/summary.md has Q1 to Q3. Q3 was $4.1M, from the press release.</p></li>
+      <li class="te2">✓ replied · 9 tools · 4:02</li>
+    </ol>
+    <div class="dock"><div class="comp"><div class="cfld"><span>Message Coder</span></div><span class="snd">↑</span></div></div>
+  </div>
+  <div class="cm" style="left:230px;top:418px">
+    <a class="cmi" href="#"><span>Pin</span><span class="sc2">⌘P</span></a>
+    <a class="cmi" href="#"><span>Mute</span><i class="chv">›</i></a>
+    <a class="cmi" href="#"><span>Mark as unread</span><span class="sc2">⇧⌘U</span></a>
+    <a class="cmi" href="#"><span>Copy last reply</span></a>
+    <a class="cmi" href="#"><span>Account Manager's panel</span></a>
+    <a class="cmi gap" href="#"><span>Archive</span><span class="sc2">⌘⌫</span></a>
+  </div>
+  <span class="ann" style="left:396px;top:300px">two-finger swipe: the same actions</span>
+  <span class="ann" style="left:510px;top:424px">right-click: the iPhone's long-press menu</span>
+</section></div>
+
+</div>
+</body>
+</html>

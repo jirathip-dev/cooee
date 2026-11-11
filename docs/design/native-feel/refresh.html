@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · feel pass (#232): pull to refresh on Home and the Workflow sheet</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../rooms/rm.css">
+<link rel="stylesheet" href="nf.css">
+<script type="module" src="nf.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- Home pulled past the trigger: the system indicator in the gap, a light tap at the trigger point, no text. -->
+<div class="fr"><p class="cap">Home · pulled past the trigger</p>
+<section class="ph col" data-f="pull">
+  <div class="home" data-y="home" data-pull="72"></div><span class="ind" style="--at:103px;--gap:20px"></span>
+  <span class="ann" style="top:150px;right:12px">.impact(.light) at the trigger</span>
+</section></div>
+
+<!-- The refresh failed: one line at the top of the list, with the time the rows are from and Try again. -->
+<div class="fr"><p class="cap">Home · the refresh failed</p>
+<section class="ph col" data-f="fail">
+  <div class="home" data-y="home" data-top='<div class="rfail"><span><b>Couldn’t reach mini</b><small>Showing 9:12 · pull or try again</small></span><a href="#">Try again</a></div>'></div>
+  <span class="ann" style="top:268px;right:12px">.error, once</span>
+</section></div>
+
+<!-- The Workflow sheet (#229) at its large detent: the list pulls to refresh; the grabber and title drag the sheet. -->
+<div class="fr"><p class="cap">Workflow sheet · pulled</p>
+<section class="ph" data-f="wf">
+  <div class="rdim"></div>
+  <div class="rsh">
+    <i class="gr2"></i>
+    <div class="wfh"><b>Workflow</b><small>cooee · 7 issues</small></div>
+    <div class="wfl" style="--pull:64px"><span class="ind" style="--at:0px;--gap:18px"></span><div class="in" data-y="wf"></div></div>
+  </div>
+  <span class="ann" style="top:650px;left:12px">.impact(.light) at the trigger</span>
+  <span class="ann" style="top:684px;left:12px">the grabber and the title drag the sheet</span>
+</section></div>
+
+<!-- 1440: the Mac has no pull: ⌘R and View › Refresh; the sidebar's indicator sits where the pull's would. -->
+<div class="fr w"><p class="cap">1440 · the Mac: ⌘R, View › Refresh</p>
+<section class="wd mac two mb" data-f="wide-refresh">
+  <div class="mbar"><b>cooee</b><span>File</span><span>Edit</span><span class="on">View</span><span>Window</span><span>Help</span></div>
+  <aside class="side"><div class="home" data-y="home" data-wide data-sel="coder" data-pull="44"></div><span class="ind" style="--at:120px;--gap:4px"></span></aside>
+  <div class="col2">
+    <header class="rhd"><i class="pa" data-p="coder" data-s="40"></i><span class="hdt"><b>Coder</b><small>Export for Kestrel · studio</small></span><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+    <ol class="msgs">
+      <li class="rnd">Today 09:40</li>
+      <li class="blk me">Export the Kestrel numbers for the board deck.</li>
+      <li class="at"><p>Done: export/summary.md has Q1 to Q3. Q3 was $4.1M, from the press release.</p></li>
+      <li class="te2">✓ replied · 9 tools · 4:02</li>
+    </ol>
+    <div class="dock"><div class="comp"><div class="cfld"><span>Message Coder</span></div><span class="snd">↑</span></div></div>
+  </div>
+  <div class="cm" style="left:150px;top:28px">
+    <a class="cmi" href="#" style="background:var(--link);color:var(--bg)"><span>Refresh</span><span class="sc2" style="color:var(--bg)">⌘R</span></a>
+    <a class="cmi" href="#"><span>Show Workflow</span><span class="sc2">⇧⌘W</span></a>
+    <a class="cmi gap" href="#"><span>Enter Full Screen</span><span class="sc2">⌃⌘F</span></a>
+  </div>
+  <span class="ann" style="left:420px;top:130px">no pull on the Mac: ⌘R; a failure is the same line as the phone's</span>
+</section></div>
+
+</div>
+</body>
+</html>

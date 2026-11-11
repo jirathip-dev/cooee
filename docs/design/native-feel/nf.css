@@ -1,0 +1,142 @@
+/* #232 the native iOS feel pass, on web/src/app.css (tokens, .blk.me, .chc), native-shell's phone chrome (ns.css)
+   and rooms' native language (rm.css: .pa avatars, .stk, .gb, .rhd, .hr rows, .msgs, .dock, .comp, .ask, .rsh
+   sheets, .wd.mac, .side). Tokens only; no raw colour.
+   New class names: htop Home's top bar (acct the account avatar); scroll Home's list (--pull its pull); pins the
+   pinned strip (pin2 a pin); sh2 a section title; sw a swipeable row (nsw its actions: tr trailing, ld leading,
+   full a full swipe; sa an action: pn pin, mu mute, ar archive); rtl a row's tail (mut2 muted); lift a row under a
+   long-press; ind the activity indicator; rfail the refresh failure line; toast the undo toast; lp the long-press
+   layer (pv the preview, cm the menu, cmi an item); nkb the keyboard (pred its predictive bar, nkr a key row);
+   kbup a screen with the keyboard up; drag the finger dragging the keyboard down; wr2 a Workflow sheet row; ann a
+   design note drawn on a frame, not UI (dashed); hx the haptics board (hxr a row, hxk the feedback). */
+.ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* Home, as CooeeUI's HomeView: the top bar, then the list (pinned strip, Chats, Others) on the screen's ground. */
+.home{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
+.htop{flex:none;display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 16px}
+.htop>b{font:700 19px var(--font)}
+.acct{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--a);color:var(--bg);font:700 16px/1 var(--font);box-shadow:0 0 0 4px var(--glass),0 0 0 5px var(--rim)}
+html[data-style=terminal] .acct{background:none;box-shadow:none;color:var(--l);font:700 15px var(--mono);width:auto}
+.htop .gb{font-size:26px}
+.scroll{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;transform:translateY(var(--pull,0px))}
+.sh2{margin:14px 16px 4px;font:700 20px var(--font)}
+html[data-style=terminal] .sh2{font:400 12px var(--mono);color:var(--mute)}
+.pins{flex:none;padding:6px 8px 0}
+.prow{display:flex;gap:6px}
+.pin2{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0;color:var(--fg);text-decoration:none;font-size:12px}
+.pin2 .pa{--s:58px}.pin2 span{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.pin2.new .pa{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--l)}
+
+/* A row (rm.css .hr) on a swipeable layer: the row slides by --x over its actions. */
+.sw{position:relative;flex:none;overflow:hidden}
+.sw .hr{border-radius:0;background:var(--bg);transform:translateX(var(--x,0px));padding-inline:16px}
+.sw.on .hr{box-shadow:0 0 0 .5px var(--sep)}
+.sw+.sw::before{content:"";position:absolute;z-index:1;top:0;left:78px;right:0;border-top:.5px solid var(--sep)}
+.sw.on::before,.sw.on+.sw::before{display:none}
+.hr .rtl{align-self:start;justify-self:end;display:flex;gap:6px;align-items:center}
+.mut2{color:var(--mute)}.mut2 .ico{width:16px;height:16px}
+.hr .ln.ak2{color:var(--r)}
+.nsw{position:absolute;inset:0;display:flex}
+.nsw.tr{justify-content:flex-end}.nsw.ld{justify-content:flex-start}
+.sa{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:74px;color:var(--bg);font-size:13px}
+.sa b{font-weight:600}
+.sa.pn{background:var(--l)}.sa.mu{background:var(--mute)}.sa.ar{background:var(--link)}
+.nsw.full .sa{flex:1;align-items:flex-start;padding-left:106px}
+html[data-style=terminal] .sa{font-family:var(--mono)}
+html[data-style=terminal] .sa .ico{display:none}
+html[data-style=terminal] .sa b::before{content:"["}html[data-style=terminal] .sa b::after{content:"]"}
+
+/* The undo toast after an archive: above the home indicator, 4 s. */
+.toast{position:absolute;z-index:15;left:16px;right:16px;bottom:calc(var(--sab) + 10px);display:flex;align-items:center;gap:10px;min-height:50px;padding:0 8px 0 16px;border-radius:var(--r-pill);background:var(--card);box-shadow:0 0 0 1px var(--edge),0 10px 30px -10px var(--scrim);font-size:15px}
+.toast>span{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.toast a{flex:none;padding:8px 14px;border-radius:var(--r-pill);color:var(--link);font-weight:600;text-decoration:none}
+html[data-style=terminal] .toast{border-radius:0;font-family:var(--mono);font-size:13px}
+
+/* Pull to refresh: the system activity indicator in the gap the pull opens; nothing else. */
+.ind{position:absolute;z-index:1;left:50%;top:calc(var(--at,56px) + var(--gap,20px));width:28px;height:28px;margin-left:-14px;color:var(--mute)}
+.ind svg{width:100%;height:100%;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
+.ind.part svg line:nth-child(n+6){opacity:0}
+.rfail{display:flex;align-items:center;gap:10px;margin:4px 12px 2px;padding:10px 6px 10px 12px;border-radius:var(--r-row);background:color-mix(in srgb,var(--r) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--r) 40%,transparent);font-size:14px}
+.rfail>span{flex:1;min-width:0}.rfail b{color:var(--r);font-weight:600}.rfail small{display:block;color:var(--mute);font-size:12px}
+.rfail a{flex:none;padding:6px 12px;color:var(--link);font-weight:600;text-decoration:none;white-space:nowrap}
+html[data-style=terminal] .rfail{border-radius:0;font-family:var(--mono);font-size:13px}
+
+/* Long-press: the screen blurs under a scrim; the preview (the chat, live, scrolled to its end) over the menu. */
+.lp{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;gap:10px;padding:calc(var(--sat) + 40px) 16px 0;background:color-mix(in srgb,var(--scrim) 60%,transparent);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.pv{align-self:stretch;display:flex;flex-direction:column;height:380px;border-radius:16px;background:var(--bg);box-shadow:0 0 0 .5px var(--edge),0 20px 50px -14px var(--scrim);overflow:hidden}
+.pv .rhd{min-height:56px}.pv .msgs{gap:10px;font-size:15px}
+.cm{align-self:flex-start;width:250px;border-radius:14px;background:color-mix(in srgb,var(--card) 92%,transparent);box-shadow:0 0 0 .5px var(--edge),0 16px 40px -12px var(--scrim);overflow:hidden}
+.cmi{position:relative;display:flex;align-items:center;gap:10px;min-height:44px;padding:0 16px;color:var(--fg);font-size:17px;text-decoration:none}
+.cmi>span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmi+.cmi::before{content:"";position:absolute;top:0;left:0;right:0;border-top:.5px solid var(--sep)}
+.cmi.gap{border-top:7px solid color-mix(in srgb,var(--fg) 8%,transparent)}.cmi.gap::before{display:none}
+.cmi .chv{color:var(--mute);font-size:15px}
+html[data-style=terminal] :is(.pv,.cm){border-radius:0}html[data-style=terminal] .cmi{font:15px var(--mono)}
+html[data-style=terminal] .cmi .ico{display:none}
+.hr.lift{background:var(--card)}
+
+/* The keyboard: the system's, on the scheme (keys on a raised tint, function keys darker). */
+.nkb{position:relative;z-index:3;flex:none;display:flex;flex-direction:column;gap:11px;padding:0 3px 0;background:color-mix(in srgb,var(--fg) 9%,var(--bg));-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.pred{display:flex;height:44px;align-items:center;font-size:16px}
+.pred span{flex:1;text-align:center;color:var(--fg)}.pred span+span{border-left:.5px solid var(--sep)}
+.nkr{display:flex;gap:6px;justify-content:center;padding:0 0}
+.nkr i{flex:0 0 33px;display:grid;place-items:center;height:42px;border-radius:5px;background:color-mix(in srgb,var(--fg) 18%,var(--bg));box-shadow:0 1px 0 color-mix(in srgb,var(--scrim) 70%,transparent);font:400 22px/1 var(--sans);font-style:normal;color:var(--fg)}
+.nkr.nk2{padding:0 18px}
+.nkr i.kfn{flex:0 0 42px;background:color-mix(in srgb,var(--fg) 10%,var(--bg));font-size:16px}
+.kb4 i.kfn{flex:0 0 44px}.kb4 i.spc{flex:1;font-size:16px}.kb4 i.kret{flex:0 0 88px}
+.kbf{display:flex;justify-content:space-between;height:44px;padding:4px 22px 0;font-size:22px;opacity:.7}
+.ph.kbup{padding-bottom:0}.ph.kbup .hind{z-index:4}
+.ph.kbup .nkb{margin-bottom:var(--kbdown,0px)}
+
+/* The finger dragging the keyboard down, and a design note: dashed, not UI. */
+.drag{position:absolute;z-index:6;width:46px;height:46px;border-radius:50%;background:color-mix(in srgb,var(--fg) 22%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--fg) 45%,transparent)}
+.drag::after{content:"";position:absolute;left:21px;bottom:46px;width:4px;height:var(--trail,80px);border-radius:2px;background:linear-gradient(transparent,color-mix(in srgb,var(--fg) 35%,transparent))}
+.ann{position:absolute;z-index:30;display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:var(--r-pill);background:var(--bg);box-shadow:inset 0 0 0 1.5px var(--a);outline:1px dashed var(--a);outline-offset:2px;font:600 11px/1.3 var(--mono);color:var(--a);white-space:nowrap}
+.ann::before{content:"◉"}
+
+/* The Workflow sheet (#229): its rows, the dot in the state's colour. */
+.wr2{display:grid;grid-template-columns:12px 48px minmax(0,1fr);grid-template-rows:auto auto;column-gap:10px;align-items:center;min-height:58px;padding:6px 16px;color:var(--fg);text-decoration:none;position:relative}
+.wr2+.wr2::before{content:"";position:absolute;top:0;left:38px;right:0;border-top:.5px solid var(--sep)}
+.sd2{grid-row:span 2;width:10px;height:10px;border-radius:50%;background:var(--k)}
+.n2{grid-row:span 2;font:600 14px var(--mono);color:var(--mute)}
+.t2{font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.s2{font-size:13px;color:var(--k)}
+.wr2[data-k=passed] .s2{color:var(--mute)}
+html[data-style=terminal] .sd2{border-radius:0}
+.wfh{flex:none;display:flex;align-items:baseline;justify-content:space-between;padding:4px 16px 8px}
+.wfh b{font:700 22px var(--font)}.wfh small{color:var(--mute)}
+.wfl{flex:1;min-height:0;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.wfl>.in{transform:translateY(var(--pull,0px))}
+
+/* 1440: the Mac window; Home is the sidebar, the context menu at the pointer. */
+.side .home .htop{padding:0 6px}
+.side .sw .hr{background:var(--soft);padding-inline:10px}
+.side .sw .hr.sel{background:color-mix(in srgb,var(--link) 14%,var(--card))}
+.side .sw::before{display:none}
+.wd .cm{position:absolute;z-index:12;width:260px}
+.wd .cmi{min-height:30px;font-size:14px;padding:0 12px}
+.wd .cmi .ico{width:16px;height:16px}
+.sc2{flex:none;font:12px var(--mono);color:var(--mute)}
+.mbar{position:absolute;z-index:12;top:0;left:0;right:0;display:flex;gap:20px;align-items:center;height:28px;padding:0 16px;background:var(--bar);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);font-size:13px;box-shadow:0 .5px 0 var(--sep)}
+.mbar b{font-weight:700}.mbar .on{padding:2px 8px;border-radius:5px;background:var(--link);color:var(--bg)}
+.wd.mb{padding-top:28px;height:900px}
+
+/* The haptics board: every moment, its sensoryFeedback, where it plays and where it never does. */
+.hx{position:relative;display:flex;flex-direction:column;gap:14px;width:1440px;height:900px;padding:36px 48px;background:var(--bg);color:var(--fg);overflow:hidden}
+.hx h2{margin:0;font:700 28px var(--font)}.hx>p{margin:0;color:var(--mute);max-width:110ch}
+.hxt{display:grid;grid-template-columns:230px 250px minmax(0,1fr) 330px;border-radius:var(--r-card);box-shadow:inset 0 0 0 1px var(--edge);overflow:hidden}
+.hxt>*{padding:10px 14px;border-top:1px solid var(--line);font-size:14px;line-height:1.35}
+.hxt>.hth{border-top:0;background:var(--soft);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
+.hxt b{font-weight:600}
+.hxk{font:600 13px var(--mono);color:var(--a)}
+.hxk.sys{color:var(--mute)}
+.hxn{color:var(--mute)}
+.hxr{display:flex;gap:24px}.hxr>div{flex:1;padding:12px 14px;border-radius:var(--r-card);background:var(--soft);box-shadow:inset 0 0 0 1px var(--line);font-size:14px;line-height:1.4}
+.hxr b{display:block;margin-bottom:4px}
+html[data-style=terminal] .hx{font-family:var(--mono)}html[data-style=terminal] :is(.hxt,.hxr>div){border-radius:0}
+.hr>.av2 .stk:not(.v) .pa{--s:32px}
+.cmi .chv{font-style:normal}
+.pv{height:330px}
+.cmi>.sc2,.cmi>.chv{flex:none}
+.side{position:relative}
+html[data-scene] .hr>.av2 .pa{--s:40px}
+html[data-scene] .hr>.av2 .stk:not(.v) .pa{--s:24px}
