@@ -1,0 +1,140 @@
+{
+  "baseRefName": "staging",
+  "body": "Closes #142\n\n## For humans\n\n- On a Mac, cooee's app can now be the server: its first run sets up folders, sign-ins and Tailscale, starts cooee and shed in the background as login items, and shows a QR code for the phone.\n- When a phone asks to pair, the Mac shows the check word and an Approve button; \"Connect to a server elsewhere\" keeps the Mac a client only.\n- CI builds a downloadable `cooee.dmg`; it is signed and notarized once the owner adds the Apple Developer ID secrets, and until then the job says which secrets are missing.\n\n## What changed\n\n- `cooee pair asks` / `cooee pair approve|decline <id>`: the Mac app answers a phone's request from the server's own machine (as \"this Mac\", no passkey, like `cooee pair` makes a code without one).\n- `MacSetupFeature` (TCA): welcome → folders & agents → sign-ins → Tailscale → QR → Approve; Done pairs the Mac itself. `MacServerClient` live value (`CooeeApp/MacLive.swift`): `SMAppService` login items for the bundled `cooee` and `shed` (`apple/LaunchAgents/`), config edits, `cooee pair`, Touch ID before approving when the Mac has it.\n- The `mac-setup-*` views now render reducer state; their fixtures reproduce the `design/v1` frames unchanged.\n- CI: `apple.yml` `mac-setup` job (the first run on a macOS runner, the iPhone simulator asks, the Mac approves; screens in `mac-setup-shots`); `apple-mac.yml` builds `cooee.dmg`, notarizes and checks it with `spctl -a -vv` when the `mac-release` secrets exist.\n\n## Evidence\n\n### Head `d39676fd3e1c8d024d957ebe010d3c376cddfcce` (merge of `origin/staging` 2ab57d1; this round's only conflict was `apple/UITests/LiveUITests.swift`, and both sides were kept)\n\nLocal gates at this head, each run as `mise exec just -- just <recipe>`:\n\n| Recipe | Exit |\n|---|---|\n| `test` | 0 |\n| `clippy` | 0 |\n| `hygiene` | 0 |\n| `apple-check` | 0 (format, anti-slop, SwiftLint; build/tests/coverage/Periphery skipped: no Xcode on this host, CI runs them) |\n| `fmt` | 127: `cargo fmt --all --check` passed; `topcoat` is not installed on this host |\n| `cap` | 1 locally because it also counts the gitignored `apple/.build` folder; on tracked files only, apple lines are 6234 / 7500 |\n\nCI at this head is pending; the `apple-check` steps skipped here (build, tests, coverage, Periphery) are verified only by CI.\n\n### Previous head `6fb572a99aab09d23ad9e0098b792417cecc074e`\n\nAll at head `6fb572a99aab09d23ad9e0098b792417cecc074e` (PR #197, 14 of 14 checks `SUCCESS`, read with `herdsman pr cooee 142 --json`, exit 0).\n\n| Check | Result | Run |\n|---|---|---|\n| mac-setup (AC2) | success | [https://github.com/jirathip-dev/cooee/actions/runs/42916784938/job/130181164510](https://github.com/jirathip-dev/cooee/actions/runs/42916784938/job/130181164510) |\n| e2e | success | [job 130181164145](https://github.com/jirathip-dev/cooee/actions/runs/42916784938/job/130181164145) |\n| build (generic/platform=macOS) (AC1) | success | [job 130181164517](https://github.com/jirathip-dev/cooee/actions/runs/42916784938/job/130181164517) |\n| build (generic/platform=iOS Simulator) (AC1) | success | [job 130181164445](https://github.com/jirathip-dev/cooee/actions/runs/42916784938/job/130181164445) |\n| apple-quality (AC1: unit tests incl. `MacSetupFeatureTests`, coverage, lint) | success | [job 130181164439](https://github.com/jirathip-dev/cooee/actions/runs/42916784938/job/130181164439) |\n| dmg (AC3) | success | [job 130181163482](https://github.com/jirathip-dev/cooee/actions/runs/42916784721/job/130181163482) |\n| ui | success | [job 130181164124](https://github.com/jirathip-dev/cooee/actions/runs/42916784737/job/130181164124) |\n| msrv / stable (ubuntu, macos), ts, no-node, actionlint | success | [run 42916784737](https://github.com/jirathip-dev/cooee/actions/runs/42916784737) |\n\n- AC2: the `mac-setup` job log at this head has `Waiting 600.0s for \"Paired with 127.0.0.1\" StaticText to exist` → found at t=34.86s, and `Executed 1 test, with 0 failures` for the phone-ask and the Mac-approve tests. The head run's screenshots are artifact [`mac-setup-shots`](https://github.com/jirathip-dev/cooee/actions/runs/42916784938/artifacts/13812029500): `mac-setup-welcome`, `-folders`, `-signins`, `-tailscale`, `-qr`, `-approve`, `-approved` (Mac, footer \"cooee on · shed on\") and `pair-waiting-look` / `pair-approved-look` (iPhone simulator, \"Paired with 127.0.0.1\"). The copies in `docs/screens/142/` are from the same job at 0885ebd. I checked the head run's `-approve` and `pair-approved-look` against them and they show the same screens. I did not commit them again: a new commit would make this head stale.\n- AC3 without secrets: the `dmg` log at this head says `Building an unsigned cooee.dmg: no notarization without the secrets MAC_CERT_P12 MAC_CERT_PASSWORD NOTARY_KEY_P8 NOTARY_KEY_ID NOTARY_ISSUER_ID (environment mac-release; see apple/README.md).` Not verified: the notarized `.dmg` and `spctl -a -vv` need the owner's Apple Developer ID secrets.\n- Rust at this head: the reviewer ran `cargo test -p cooee-core devices`, `cargo test -p cooee --test pairing` and `cargo clippy` and all were clean. The same tests run in CI `stable`/`msrv` above.\n\n`src/ net`: unchanged from the earlier rounds of this PR; the apple cap was raised to 7500 (q1214, #204).\n\n## Why (round 7)\n\nDecided: merge origin/staging; LiveUITests.swift keeps this branch's iOS-only wrapper and the Mac-approve test, and adds staging's drover-screens steps inside it\nBecause: apple/UITests/LiveUITests.swift:1\nRejected: none\nCheck: LiveUITests.swift still runs testPairsStreamsAndShowsHome through opensDroversScreens and keeps testAsksAndTheMacApprovesIt\nOwner: The branch now includes the latest staging work; the only conflict was one UI test file, and both sides of it were kept.\n\n<sub>note on d39676f · git log --notes=why</sub>\n",
+  "headRefName": "issue-142",
+  "headRefOid": "d39676fd3e1c8d024d957ebe010d3c376cddfcce",
+  "labels": [],
+  "mergeStateStatus": "CLEAN",
+  "mergeable": "MERGEABLE",
+  "number": 197,
+  "state": "OPEN",
+  "statusCheckRollup": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:15:10Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711461/job/130248458293",
+      "name": "build (generic/platform=iOS Simulator)",
+      "startedAt": "2026-11-11T01:08:57Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:29:05Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711434/job/130248458274",
+      "name": "dmg",
+      "startedAt": "2026-11-11T01:11:54Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:08:33Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711585/job/130337746852",
+      "name": "actionlint",
+      "startedAt": "2026-11-11T01:08:24Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:41:49Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711461/job/130248458697",
+      "name": "build (generic/platform=macOS)",
+      "startedAt": "2026-11-11T01:35:19Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:41:06Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711461/job/130248458831",
+      "name": "apple-quality",
+      "startedAt": "2026-11-11T01:29:07Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:10:20Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711585/job/130337789299",
+      "name": "msrv (ubuntu-latest)",
+      "startedAt": "2026-11-11T01:08:23Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:39:09Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711585/job/130337801976",
+      "name": "msrv (macos-latest)",
+      "startedAt": "2026-11-11T01:35:37Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:43:41Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711461/job/130248458724",
+      "name": "e2e",
+      "startedAt": "2026-11-11T01:20:19Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:09:56Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711585/job/130337747420",
+      "name": "stable (ubuntu-latest)",
+      "startedAt": "2026-11-11T01:08:24Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:38:21Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711585/job/130337803031",
+      "name": "stable (macos-latest)",
+      "startedAt": "2026-11-11T01:35:33Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:35:31Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711461/job/130248458657",
+      "name": "mac-setup",
+      "startedAt": "2026-11-11T01:17:01Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:08:36Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711585/job/130337802376",
+      "name": "ts",
+      "startedAt": "2026-11-11T01:08:23Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T01:08:55Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711585/job/130337801157",
+      "name": "no-node",
+      "startedAt": "2026-11-11T01:08:23Z",
+      "status": "COMPLETED"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-11T05:16:31Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/jirathip-dev/cooee/actions/runs/42936711585/job/130337744659",
+      "name": "ui",
+      "startedAt": "2026-11-11T05:13:02Z",
+      "status": "COMPLETED"
+    }
+  ],
+  "title": "apple: the Mac app as the server (#142)"
+}

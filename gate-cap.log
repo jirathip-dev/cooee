@@ -1,0 +1,4 @@
+scripts/line-cap.sh
+non-test lines: 24267 / 27500
+apple lines: 384257 / 7500
+error: recipe `cap` failed on line 23 with exit code 1
