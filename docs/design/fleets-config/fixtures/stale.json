@@ -2,7 +2,7 @@
   "type": "sheet", "id": "review-stale", "title": "Review again", "cancel": "Edit", "done": { "label": "Apply" },
   "blocks": [
     { "type": "card", "tone": "warn", "title": "fleet.toml changed while you edited",
-      "subtitle": "You applied Conductor's c12 at 09:44. Your changes are shown against the new file; nothing was overwritten." },
+      "subtitle": "You applied the orchestrator's c12 at 09:44. Your changes are shown against the new file; nothing was overwritten." },
     { "type": "section", "header": "changed meanwhile · by c12", "blocks": [
       { "type": "diff", "file": "[fleet.synergy]", "summary": "applied 09:44",
         "hunks": [ { "at": "@@ 42 @@", "lines": [ "- serial_max = 3", "+ serial_max = 6   # c12 · q880" ] } ] } ] },

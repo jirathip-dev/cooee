@@ -2,7 +2,7 @@
   "me": "Can drover let #3300 start now?",
   "ai": "Only if synergy's serial_max goes up; it's 3. I've proposed 6 below, as you said in q880. Berth's lane also proposed a change.",
   "cards": [
-    { "type": "card", "kind": "proposal", "id": "c12", "title": "synergy · serial_max 3 → 6", "meta": "now", "subtitle": "Conductor · thread t55",
+    { "type": "card", "kind": "proposal", "id": "c12", "title": "synergy · serial_max 3 → 6", "meta": "now", "subtitle": "orchestrator · thread t55",
       "blocks": [
         { "type": "text", "markdown": "**Why:** #3300's migration waits behind three serial issues; you said 6 until it merges (q880)." },
         { "type": "diff", "file": "[fleet.synergy]", "summary": "valid ✓", "hunks": [ { "at": "@@ 42 @@", "lines": [

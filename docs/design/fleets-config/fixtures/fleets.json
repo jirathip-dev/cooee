@@ -14,7 +14,7 @@
      "id": "c12",
      "title": "synergy · serial_max 3 → 6",
      "meta": "now",
-     "subtitle": "Conductor · thread t55",
+     "subtitle": "orchestrator · thread t55",
      "blocks": [
       {
        "type": "text",
@@ -196,7 +196,7 @@
         "icon": "⚙"
        },
        "title": "Global settings",
-       "subtitle": "accounts, hosts, limits, notify, conductor",
+       "subtitle": "accounts, hosts, limits, notify, orchestrator",
        "tap": {
         "sheet": "/screens/fleets/global"
        }

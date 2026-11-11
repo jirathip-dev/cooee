@@ -172,49 +172,74 @@
     }
    ]
   },
-  {
-   "type": "section",
-   "header": "conductor may",
-   "footer": "Anything outside these groups is a card for you.",
-   "blocks": [
-    {
-     "type": "form",
-     "id": "groups",
-     "fields": [
-      {
-       "type": "toggle",
-       "name": "conductor.queue",
-       "label": "Queue and order",
-       "value": true
-      },
-      {
-       "type": "toggle",
-       "name": "conductor.spawn",
-       "label": "Spawn lanes",
-       "value": true
-      },
-      {
-       "type": "toggle",
-       "name": "conductor.answer",
-       "label": "Answer routine asks",
-       "value": true
-      },
-      {
-       "type": "toggle",
-       "name": "conductor.propose",
-       "label": "Propose config",
-       "value": true,
-       "doc": "you apply it"
-      },
-      {
-       "type": "toggle",
-       "name": "conductor.merge",
-       "label": "Merge",
-       "value": false
-      }
-     ]
-    }
-   ]
-  }
+ {
+  "type": "section",
+  "header": "orchestrator may",
+  "footer": "Never merge: only you and drive do. Anything else is a card for you.",
+  "blocks": [
+   {
+    "type": "form",
+    "id": "groups",
+    "fields": [
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.design",
+      "label": "Design and architect lanes",
+      "value": true,
+      "doc": "spawn … design or architect"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.clean",
+      "label": "Clean",
+      "value": true,
+      "doc": "clean --yes, --orphans, --lane"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.hosts",
+      "label": "Hosts",
+      "value": true,
+      "doc": "hosts on, off, refresh"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.reclaim",
+      "label": "Reclaim",
+      "value": true,
+      "doc": "reclaim idle build folders"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.accounts",
+      "label": "Accounts",
+      "value": true,
+      "doc": "accounts reset"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.runners",
+      "label": "Runners",
+      "value": true,
+      "doc": "runners status, add, revive, remove"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.pause",
+      "label": "Pause and resume",
+      "value": false,
+      "doc": "pause, resume"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.set",
+      "label": "Set a role",
+      "value": false,
+      "doc": "harness, model or effort"
+     }
+    ]
+   }
+  ]
+ }
  ]
 }
