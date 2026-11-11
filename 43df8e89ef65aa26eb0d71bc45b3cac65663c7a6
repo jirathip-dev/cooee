@@ -1,0 +1,8 @@
+Decided: merged origin/staging; the lib.rs, mcp.rs and personas.rs conflicts keep staging's code with every rule-breaking comment line stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop staging's new code
+Decided: no code change for the review's pending iOS Simulator build check; it was queued on macOS runners, not failing
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on the three conflicted files is only deleted comment lines
+Check: CI's macOS jobs and ui are green at the head
+Owner: the branch is up to date with staging again, and the newly merged server code follows the comment rule
