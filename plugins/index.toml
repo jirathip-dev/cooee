@@ -4,10 +4,10 @@
 # Anything else is added by its git URL, marked "not reviewed".
 
 [[plugin]]
-name = "cooee-drover"
-url = "https://github.com/jirathip-dev/cooee-drover"
-commit = "b3f8ce2e616eef8e4bc691642c45cd46b5873483"
-description = "drover's queue, asks and fleets tabs over herdsman's API"
+name = "drover"
+url = "https://github.com/jirathip-dev/herdsman"
+commit = "90ed1843d054d415591af1e8249595febdbb1d39"
+description = "herdsman's queue, events, ask cards and fleets, served by herdsman itself"
 
 # Theme packs (docs/themes.md): `cooee theme add <name>`, `cooee setup` and Settings › look › + theme list these. Each
 # is a folder (`path`) of a git repo at a reviewed commit; cooee's own live in packs/themes/ and are first-party.

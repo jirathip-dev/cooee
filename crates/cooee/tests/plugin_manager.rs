@@ -450,3 +450,63 @@ fn only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issu
     let rows = s.cooee.json("/plugins");
     assert_eq!(rows["installed"][1]["first_party"], true);
 }
+
+/// #226: a plugin whose manifest names an `attach` backend uses it while it answers: `add` and `cooee serve` run
+/// nothing (no `ran` marker) and its tab comes from that backend on its port; once it is gone, cooee runs `run` there.
+#[test]
+fn an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone() {
+    let s = setup("pm-attach");
+    let port = std::net::TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port();
+    let served = s.dir.join("served");
+    fs::create_dir_all(&served).unwrap();
+    fs::write(served.join("tab.js"), "document.body.append('attached');\n").unwrap();
+    let mut running = Command::new("python3")
+        .args([
+            "-m",
+            "http.server",
+            &port.to_string(),
+            "--bind",
+            "127.0.0.1",
+        ])
+        .current_dir(&served)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    until("the running backend answers", || {
+        std::net::TcpStream::connect(("127.0.0.1", port)).is_ok()
+    });
+    let repo = s.dir.join("attach.git");
+    commit(&repo, "att", "a1", BUILD, &format!("touch ran; {RUN}"));
+    let manifest = fs::read_to_string(repo.join("cooee-plugin.toml")).unwrap();
+    let attach = format!("attach = \"http://127.0.0.1:{port}\"\nneeds");
+    fs::write(
+        repo.join("cooee-plugin.toml"),
+        manifest.replacen("needs", &attach, 1),
+    )
+    .unwrap();
+    git(&repo, &["commit", "--quiet", "-am", "attach"]);
+    let sha = git(&repo, &["rev-parse", "HEAD"]);
+
+    s.cooee
+        .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
+    let build = s.data().join("plugins/att/builds").join(&sha);
+    assert_eq!(s.lock()[0]["port"], port);
+    s.tab_says("att", "attached");
+    until("listed as attached", || {
+        s.cooee.json("/plugins")["installed"][0]["state"] == "attached"
+    });
+    assert!(
+        !build.join("ran").exists(),
+        "run started beside the attach backend"
+    );
+
+    running.kill().unwrap();
+    running.wait().unwrap();
+    s.tab_says("att", "att a1");
+    assert!(build.join("ran").exists());
+}

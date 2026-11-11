@@ -25,7 +25,7 @@ its service, writes the config (asks for the folders threads may use, default `~
 (asks about Codex and Gemini), starts cooee's service, runs `tailscale serve`, checks it all with `cooee doctor` and
 prints a pairing code to open on your phone. Run it again any time: finished steps are skipped. `--dry-run` prints
 every command and writes nothing; `--yes` takes the defaults. A second instance:
-`cooee setup --instance cooee-drover --port 4748`.
+`cooee setup --instance drover --port 4748`.
 
 ## The three projects
 
@@ -33,19 +33,18 @@ every command and writes nothing; `--yes` takes the defaults. A second instance:
 |---|---|
 | **cooee** (this repo) | The app: chat, threads, phone pairing, push, provider logins, plugin tabs. |
 | **shed** (was berth) | The runtime: runs agents in terminals or as ACP sessions, headless, across machines. |
-| **cooee-drover** | The plugin that adds herdsman's tabs (Queue, Asks, Fleets) to cooee. A bridge: it reimplements nothing. |
-| **herdsman** (to be renamed drover, herdsman#456) | The coding workflow engine: issue queue, drive, lanes, reviews, gates, merge. A CLI plus an API (`/api/v1`). |
+| **herdsman** | The coding workflow engine: issue queue, drive, lanes, reviews, gates, merge. A CLI plus an API (`/api/v1`); its `drover` plugin shows its screens in cooee. |
 
-cooee works without cooee-drover and herdsman.
+cooee works without herdsman.
 
 ### How it fits
 
 ```text
-cooee → cooee-drover → herdsman /api/v1
+cooee → herdsman serve (drover plugin)
 ```
 
-cooee is the app. Its Queue, Asks and Fleets tabs come from the cooee-drover plugin, which passes every call through
-to herdsman's API; herdsman holds the queue and runs the lanes. Each lane is an agent session in shed, so it shows in
+cooee is the app. Its Queue, Events and Fleets screens and ask cards come from herdsman's `drover` plugin, served by
+`herdsman serve` itself; herdsman holds the queue and runs the lanes. Each lane is an agent session in shed, so it shows in
 cooee's own thread list under Workflow and opens as a normal chat, not in a plugin tab. Details:
 [docs/architecture.md](docs/architecture.md) (Plugins, Workflow).
 

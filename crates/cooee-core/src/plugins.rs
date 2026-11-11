@@ -34,6 +34,9 @@ pub struct Manifest {
     pub build: String,
     /// The backend command (`sh -c`, in the checkout), with `PORT`, `COOEE_PLUGIN_TOKEN` and `COOEE` (cooee's URL).
     pub run: String,
+    /// A backend already running at `http://127.0.0.1:<port>`: cooee uses it when it answers, else runs `run` there.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub attach: String,
     /// The tools it needs on `PATH`.
     #[serde(default)]
     pub needs: Vec<String>,
@@ -244,11 +247,23 @@ impl Manifest {
                 "cooee-plugin.toml: destructive action {a} is not in [permissions] actions"
             )));
         }
+        if !m.attach.is_empty() && m.attach_port().is_none() {
+            return Err(bad(
+                "cooee-plugin.toml: `attach` must be http://127.0.0.1:<port>",
+            ));
+        }
         for p in &m.profiles {
             p.check()
                 .map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
         }
         Ok(m)
+    }
+
+    /// The port of its `attach` backend, when it names one.
+    #[must_use]
+    pub fn attach_port(&self) -> Option<u16> {
+        let port = self.attach.strip_prefix("http://127.0.0.1:")?;
+        port.trim_end_matches('/').parse().ok().filter(|&p| p > 0)
     }
 }
 
@@ -344,7 +359,7 @@ mod tests {
         assert!(
             index
                 .iter()
-                .any(|l| l.name == "cooee-drover" && l.commit.len() == 40)
+                .any(|l| l.name == "drover" && l.commit.len() == 40)
         );
         let names: Vec<_> = themes(None).unwrap().into_iter().map(|t| t.name).collect();
         assert_eq!(names, ["farm", "kitchen", "garden"]);
@@ -372,6 +387,13 @@ mod tests {
             |p: &str| format!("{ok}[[profiles]]\nname = {p:?}\nlabel = \"C\"\nagent = \"a\"\n");
         assert_eq!(Manifest::parse(&with("c")).unwrap().profiles[0].label, "C");
         assert!(Manifest::parse(&with("C!")).is_err());
+        let at = |a: &str| Manifest::parse(&format!("attach = {a:?}\n{ok}"));
+        assert_eq!(
+            at("http://127.0.0.1:7777").unwrap().attach_port(),
+            Some(7777)
+        );
+        assert!(at("http://example.com:7777").is_err() && at("http://127.0.0.1:0").is_err());
+        assert_eq!(Manifest::parse(ok).unwrap().attach_port(), None);
     }
 
     #[test]

@@ -85,7 +85,7 @@ push (approvals and errors still push).
 
 herdsman's lanes (its impl, review and fix agents) are what fill this list: each runs as a shed ACP session labelled by
 its source (the tool), `group` its repo, `item` its issue, with its `role` and `round`. So a lane is opened as a chat in
-cooee core, never in a cooee-drover tab; those show the queue, asks and fleets ([Plugins](#plugins-m4)).
+cooee core, never in a drover screen; those show the queue, events, asks and fleets ([Plugins](#plugins-m4)).
 
 ## Pairing and push (M2)
 
@@ -195,16 +195,18 @@ proxied call counts, and 10 minutes without one locks it (403 `locked`; an open 
 Face ID again. The proxy names the device to the backend (`Cooee-Device`), which refuses any call without it. Every
 unlock and every shell started goes to `<data>/terminal.log` with the time and device; keystrokes never do.
 
-**cooee-drover** ([jirathip-dev/cooee-drover](https://github.com/jirathip-dev/cooee-drover), in the index) is the
-plugin that adds the fleet tabs: Queue, Asks and Fleets. Data flows one way:
+**drover** (in the index) is herdsman's own plugin: `cooee-plugin.toml` at the root of
+[jirathip-dev/herdsman](https://github.com/jirathip-dev/herdsman) ([herdsman#814](https://github.com/jirathip-dev/herdsman/issues/814)),
+whose `herdsman serve` answers the screens itself: Queue and Events chips on the Conductor persona's header strip, its
+asks as chat cards and a Fleets row in the menu. Data flows one way:
 
 ```text
-cooee → cooee-drover → herdsman /api/v1
+cooee → herdsman serve (/screens/…, /action)
 ```
 
-cooee proxies the tab (`/p/cooee-drover/api/…`); cooee-drover passes each call through to herdsman's `/api/v1` and
-reimplements nothing; herdsman is the engine: queue, drive, lanes, reviews, gates and merge. herdsman is to be
-renamed drover ([herdsman#456](https://github.com/jirathip-dev/herdsman/issues/456)). The lanes themselves are not in
+Its manifest's `attach` (#226) points at the `herdsman serve` already running on the Mac (`127.0.0.1:7777`), so cooee
+uses it instead of starting a second one, and runs `run` only when nothing answers there. herdsman is the engine:
+queue, drive, lanes, reviews, gates and merge; the archived bridge plugin it replaces is gone from the index. The lanes themselves are not in
 these tabs: they are shed sessions, shown as chats under Workflow (above).
 
 ## Configuration
@@ -214,7 +216,7 @@ One TOML file per instance, `$XDG_CONFIG_HOME/cooee/<instance>/config.toml` (els
 
 **Instances.** `--instance <name>` (default `cooee`) picks one: its own config, port, data folder (threads, devices,
 push key) and pairing, so two instances never share state; both use the one shed server. Plugins are per instance, so
-`cooee-drover` adds its tabs without touching `cooee`. `cooee install --instance <name> --port <p>` writes
+a `drover` instance adds its plugins without touching `cooee`. `cooee install --instance <name> --port <p>` writes
 `~/Library/LaunchAgents/dev.cooee.<name>.plist` (KeepAlive, log in the data folder) and the config's `port` if it has
 no config yet, then prints the `launchctl bootstrap`, `tailscale serve` and (if shed isn't running) shed install lines
 for the owner to run. `cooee doctor` checks the service, port, shed, APNs, push key and tailnet URL.

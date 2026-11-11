@@ -65,7 +65,7 @@ API). Its Character, Instructions and notes go ahead of each new session's first
 `profile: <id>`). A note is `{text, by: "persona" | "owner", at}`, in `<data>/personas/<id>/memory.jsonl`; the persona
 adds one with the `remember` tool of cooee's own MCP server. `plugins` (#129) are the installed plugins (or config
 `[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. The persona read from a `conductor`
-profile has an installed `cooee-drover` attached. `machine` (#148) is the one its threads run on: `""` this host (every
+profile has an installed `drover` attached. `machine` (#148) is the one its threads run on: `""` this host (every
 persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
 with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). An unknown
 id or a broken rule is a 400 with the reason.

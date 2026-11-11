@@ -272,7 +272,7 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
 
 /// drover installed (off, so nothing runs it) in `<data>/plugins.lock`.
 fn install_drover(s: &Setup) {
-    let lock = json!([{ "name": "cooee-drover", "url": "https://example.com/cooee-drover", "commit": "c0",
+    let lock = json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0",
                         "version": "0.1.0", "tabs": ["queue"], "port": 1, "enabled": false }]);
     fs::write(s.dir.join("data/plugins.lock"), lock.to_string()).unwrap();
 }
@@ -287,18 +287,18 @@ fn a_plugin_is_attached_to_a_persona_and_detached() {
     let (status, mut chief) = s.call("POST", "/personas", Some(&new));
     assert_eq!((status, &chief["plugins"]), (200, &json!([])), "{chief}");
 
-    chief["plugins"] = json!(["cooee-drover"]);
+    chief["plugins"] = json!(["drover"]);
     let (status, saved) = s.call("PUT", "/personas/chief", Some(&chief));
     assert_eq!(status, 200, "{saved}");
     assert_eq!(
         s.cooee.json("/personas/chief")["plugins"],
-        json!(["cooee-drover"])
+        json!(["drover"])
     );
     assert_eq!(s.cooee.json("/personas/coder")["plugins"], json!([]));
     assert_eq!(s.cooee.json("/personas/chief/places"), json!([]));
     assert_eq!(s.call("GET", "/personas/nobody/places", None).0, 400);
 
-    chief["plugins"] = json!(["cooee-drover", "nope"]);
+    chief["plugins"] = json!(["drover", "nope"]);
     let (status, why) = s.call("PUT", "/personas/chief", Some(&chief));
     assert_eq!(status, 400, "{why}");
     assert!(
@@ -307,7 +307,7 @@ fn a_plugin_is_attached_to_a_persona_and_detached() {
     );
     assert_eq!(
         s.cooee.json("/personas/chief")["plugins"],
-        json!(["cooee-drover"])
+        json!(["drover"])
     );
 
     chief["plugins"] = json!([]);
@@ -332,7 +332,7 @@ fn migration_attaches_drover_to_the_conductor_persona_only() {
     install_drover(&s);
     assert_eq!(
         (plugins("conductor"), plugins("coder")),
-        (json!(["cooee-drover"]), json!([]))
+        (json!(["drover"]), json!([]))
     );
 }
 

@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use crate::{plugins, profiles};
 
 /// drover's installed name (`plugins/index.toml`).
-const DROVER: &str = "cooee-drover";
+const DROVER: &str = "drover";
 
 /// One persona.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
