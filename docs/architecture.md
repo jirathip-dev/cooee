@@ -205,7 +205,8 @@ cooee → herdsman serve (/screens/…, /action)
 ```
 
 Its manifest's `attach` (#226) points at the `herdsman serve` already running on the Mac (`127.0.0.1:7777`), so cooee
-uses it instead of starting a second one, and runs `run` only when nothing answers there. herdsman is the engine:
+uses it instead of starting a second one, and runs `run` only when nothing answers there. Its `attach_token`
+(`~/.config/herdsman/cooee-token`) is the file that serve keeps its cooee token in; cooee reads it at `add`. herdsman is the engine:
 queue, drive, lanes, reviews, gates and merge; the archived bridge plugin it replaces is gone from the index. The lanes themselves are not in
 these tabs: they are shed sessions, shown as chats under Workflow (above).
 

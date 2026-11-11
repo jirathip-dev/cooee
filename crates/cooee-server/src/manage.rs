@@ -180,6 +180,12 @@ fn up(port: u16) -> bool {
     TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok()
 }
 
+/// The token in `m`'s `attach_token` file, when it names one that can be read.
+fn attach_token(m: &Manifest) -> Option<String> {
+    let text = fs::read_to_string(m.attach_token_path()?).ok()?;
+    Some(text.trim().to_owned()).filter(|t| !t.is_empty())
+}
+
 fn on_path(tool: &str) -> bool {
     Command::new("sh")
         .args(["-c", "command -v \"$1\"", "sh", tool])
@@ -562,7 +568,10 @@ impl Manager {
         {
             return Err(other(format!("a tab named {} is there already", t.name)));
         }
-        let token = cooee_core::sha256(&cooee_core::random(32)?);
+        let token = match attach_token(m) {
+            Some(t) => t,
+            None => cooee_core::sha256(&cooee_core::random(32)?),
+        };
         let m = self.build(&m.name, &plan.commit, &token)?;
         let port = m.attach_port().map_or_else(free_port, Ok)?;
         let mut all = plugins::read_entries(&self.data)?;

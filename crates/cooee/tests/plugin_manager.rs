@@ -452,7 +452,8 @@ fn only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issu
 }
 
 /// #226: a plugin whose manifest names an `attach` backend uses it while it answers: `add` and `cooee serve` run
-/// nothing (no `ran` marker) and its tab comes from that backend on its port; once it is gone, cooee runs `run` there.
+/// nothing (no `ran` marker) and its tab comes from that backend on its port, called with the token in its
+/// `attach_token` file (the backend refuses any other); once it is gone, cooee runs `run` there.
 #[test]
 fn an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone() {
     let s = setup("pm-attach");
@@ -464,14 +465,19 @@ fn an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone() 
     let served = s.dir.join("served");
     fs::create_dir_all(&served).unwrap();
     fs::write(served.join("tab.js"), "document.body.append('attached');\n").unwrap();
-    let mut running = Command::new("python3")
-        .args([
-            "-m",
-            "http.server",
-            &port.to_string(),
-            "--bind",
-            "127.0.0.1",
-        ])
+    let hello = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/plugins/hello/server.mjs");
+    fs::copy(hello, served.join("server.mjs")).unwrap();
+    let token_file = s.dir.join("cooee-token");
+    fs::write(
+        &token_file,
+        "attach-token-0123456789
+",
+    )
+    .unwrap();
+    let mut running = Command::new("node")
+        .arg("server.mjs")
+        .env("PORT", port.to_string())
+        .env("TOKEN", "attach-token-0123456789")
         .current_dir(&served)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -483,7 +489,10 @@ fn an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone() 
     let repo = s.dir.join("attach.git");
     commit(&repo, "att", "a1", BUILD, &format!("touch ran; {RUN}"));
     let manifest = fs::read_to_string(repo.join("cooee-plugin.toml")).unwrap();
-    let attach = format!("attach = \"http://127.0.0.1:{port}\"\nneeds");
+    let attach = format!(
+        "attach = \"http://127.0.0.1:{port}\"\nattach_token = {:?}\nneeds",
+        token_file.to_string_lossy()
+    );
     fs::write(
         repo.join("cooee-plugin.toml"),
         manifest.replacen("needs", &attach, 1),

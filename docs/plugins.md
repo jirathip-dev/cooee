@@ -67,7 +67,9 @@ it can attach the thread.
 
 A manifest's `attach = "http://127.0.0.1:<port>"` (#226) names a backend that may be running already, like herdsman's
 own `herdsman serve` on :7777: while that port answers, `add` checks it instead of starting `run`, and `cooee serve`
-uses it and starts nothing (`plugin list` says `attached`); when it doesn't, `run` starts on that port.
+uses it and starts nothing (`plugin list` says `attached`); when it doesn't, `run` starts on that port. Its
+`attach_token` (`~/` or absolute; q1290) names the 0600 file the running backend keeps its token in, created by the
+backend: `add` reads it and calls the backend with that token, which `run` then gets as `COOEE_PLUGIN_TOKEN` too.
 
 `cooee serve` runs each enabled plugin's backend as its child (no launchd job per plugin) on its port, with its output
 in `<data>/plugins/<name>/plugin.log` (its builds' too). A backend that exits restarts after 1 s, then 2, 4 and 8; the

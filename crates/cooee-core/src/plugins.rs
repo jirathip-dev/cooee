@@ -37,6 +37,9 @@ pub struct Manifest {
     /// A backend already running at `http://127.0.0.1:<port>`: cooee uses it when it answers, else runs `run` there.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub attach: String,
+    /// The file (`~/` or absolute) holding the token the `attach` backend accepts; cooee calls it with that one.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub attach_token: String,
     /// The tools it needs on `PATH`.
     #[serde(default)]
     pub needs: Vec<String>,
@@ -252,6 +255,12 @@ impl Manifest {
                 "cooee-plugin.toml: `attach` must be http://127.0.0.1:<port>",
             ));
         }
+        let token_ok = m.attach_token.starts_with('/') || m.attach_token.starts_with("~/");
+        if !m.attach_token.is_empty() && (m.attach.is_empty() || !token_ok) {
+            return Err(bad(
+                "cooee-plugin.toml: `attach_token` needs `attach` and a path, ~/ or absolute",
+            ));
+        }
         for p in &m.profiles {
             p.check()
                 .map_err(|e| bad(format!("cooee-plugin.toml: {e}")))?;
@@ -264,6 +273,15 @@ impl Manifest {
     pub fn attach_port(&self) -> Option<u16> {
         let port = self.attach.strip_prefix("http://127.0.0.1:")?;
         port.trim_end_matches('/').parse().ok().filter(|&p| p > 0)
+    }
+
+    /// Its `attach_token` file, `~/` under `$HOME`.
+    #[must_use]
+    pub fn attach_token_path(&self) -> Option<PathBuf> {
+        match self.attach_token.strip_prefix("~/") {
+            Some(rest) => Some(Path::new(&std::env::var_os("HOME")?).join(rest)),
+            None => (!self.attach_token.is_empty()).then(|| PathBuf::from(&self.attach_token)),
+        }
     }
 }
 
@@ -394,6 +412,17 @@ mod tests {
         );
         assert!(at("http://example.com:7777").is_err() && at("http://127.0.0.1:0").is_err());
         assert_eq!(Manifest::parse(ok).unwrap().attach_port(), None);
+        let tok =
+            |t: &str| format!("attach = \"http://127.0.0.1:7777\"\nattach_token = {t:?}\n{ok}");
+        let home = std::env::var_os("HOME").unwrap();
+        assert_eq!(
+            Manifest::parse(&tok("~/.config/herdsman/cooee-token"))
+                .unwrap()
+                .attach_token_path(),
+            Some(Path::new(&home).join(".config/herdsman/cooee-token"))
+        );
+        assert!(Manifest::parse(&tok("relative")).is_err());
+        assert!(Manifest::parse(&format!("attach_token = \"/t\"\n{ok}")).is_err());
     }
 
     #[test]
