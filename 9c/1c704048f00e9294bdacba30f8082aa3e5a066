@@ -1,0 +1,8 @@
+Decided: round 2 merges origin/staging (#216, #253) and trims apple to 7487 / 7500 with memberwise inits in apple/Sources/CooeeUI/Workflow.swift
+Because: apple/Sources/CooeeUI/Workflow.swift:27
+Because: "`apple_cap` holds"
+Rejected: waiting for #223's apple_cap raise — not on staging; standing answer is trim first
+Decided: no code change for the verify FAIL; it was infra only (no Xcode on the verify host)
+Check: CI's apple build, e2e and simulator-shots run at the new head; the apple jobs were still queued at f22c6de
+Check: the ui red at f22c6de was the chat.spec.mjs:131 long-task flake; this PR changes nothing under web/
+Owner: Same feature; this round catches up with staging and trims a few lines to stay under the Apple size limit.
