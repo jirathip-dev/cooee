@@ -1,0 +1,13 @@
+Decided: PR 1 only: schedules, create_routine in chat with its routine line, Settings › routines, thread and row routine marks, the 30 s runner tick; the GitHub path is #261
+Because: q1340
+Decided: a run's key routine-<id>-<due> is the hub's random_id, so a crash between run and record adopts the first message or thread
+Because: "a schedule fires once per due time (not again after a restart)"
+Decided: chat runs go through the hub's queue with the routine's mark on the item, so a busy turn queues them as the owner's would
+Because: docs/architecture/routines/adr.md:55
+Decided: Trigger has only Schedule and Outcome only Ran/Failed for now; #261 adds Github, Skipped and the seen list
+Rejected: the ADR's Template type for the prompt — only {{due}} exists without payloads, a string replace is enough until #261
+Rejected: an approval card for schedule routines — the owner's pick 4 needs one only for event routines
+Decided: router's host-name list moved to its own fn so router stays under clippy's 100-line limit with the runner added
+Check: crates/cooee/tests/routines.rs drives the real MCP tool, a restart, and a record dropped after the run
+Check: src/ net about +1036 against staging (ADR guessed +900 for both PRs); the cap total stays at 26017 / 27500
+Owner: an agent can now set up a recurring prompt in chat; it shows as a line there and in Settings › routines, where you pause or delete it.
