@@ -19,6 +19,10 @@
      "label": "all"
     },
     {
+     "value": "synergy",
+     "label": "synergy"
+    },
+    {
      "value": "cooee",
      "label": "cooee"
     },
@@ -27,16 +31,20 @@
      "label": "herdsman"
     },
     {
-     "value": "cooee-drover",
-     "label": "cooee-drover"
+     "value": "berth",
+     "label": "berth"
+    },
+    {
+     "value": "sendmeter",
+     "label": "sendmeter"
     }
    ]
   },
   {
    "type": "diagram",
    "id": "flow",
-   "title": "herdsman's workflow",
-   "source": "stateDiagram-v2\n  state queued\n  state blocked\n  state design\n  state architect\n  state impl\n  state stall\n  state review\n  state fix\n  state verify\n  state rounds\n  state \"needs human\" as needs_human\n  state ready\n  state merged\n  [*] --> queued\n  queued --> blocked : held\n  blocked --> queued\n  queued --> design : --design\n  queued --> architect : --architect\n  queued --> impl\n  architect --> design\n  architect --> impl\n  design --> impl : approved\n  impl --> review\n  impl --> stall\n  review --> fix : FAIL\n  fix --> review\n  review --> verify : PASS\n  verify --> fix : FAIL\n  verify --> ready : PASS\n  review --> rounds\n  rounds --> needs_human : over\n  stall --> needs_human\n  ready --> merged : merge",
+   "title": "Workflow",
+   "source": "stateDiagram-v2\n  state queued\n  state blocked\n  state \"architecture\" as architect\n  state design\n  state \"building\" as impl\n  state stall\n  state review\n  state fix\n  state verify\n  state rounds\n  state \"needs human\" as needs_human\n  state ready\n  state merged\n  [*] --> queued\n  queued --> blocked\n  blocked --> queued\n  queued --> architect\n  queued --> design\n  queued --> impl\n  architect --> design\n  architect --> impl\n  design --> impl\n  impl --> review\n  impl --> stall\n  review --> fix\n  fix --> review\n  review --> verify\n  review --> ready\n  verify --> fix\n  verify --> ready\n  review --> rounds\n  rounds --> needs_human\n  stall --> needs_human\n  ready --> merged",
    "counts": {
     "queued": 11,
     "architect": 0,
@@ -136,11 +144,6 @@
      }
     }
    }
-  },
-  {
-   "type": "text",
-   "style": "footnote",
-   "markdown": "Live: a count is the issues in that state now (merged: last 7 days). Tap a state for its issues, a ⏱ for its setting."
   }
  ]
 }

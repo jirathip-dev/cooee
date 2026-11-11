@@ -13,7 +13,7 @@
 // horse acting the state (apple/Sources/CooeeUI/Sprites).
 // #213 adds the `diagram` block (../workflow-diagram/dg.js) and, on a host: [data-back] the pushed screen's back label,
 // [data-focus=<field name>] the field a tap opened (`tap.focus`),
-// [data-select=<state> data-then=<screen>] a state selected on the map, that screen's blocks under it (1440), [data-menu=<label>] the sheet's ⋯ menu open, that row marked.
+// [data-select=<state> data-then=<screen>] a state selected on the map, that screen's blocks beside it (1440), [data-menu=<label>] the sheet's ⋯ menu open, that row marked.
 import { diagram } from '../workflow-diagram/dg.js';
 const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);

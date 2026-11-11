@@ -7,7 +7,6 @@
   {
    "type": "section",
    "header": "herdsman · in a fix round",
-   "footer": "Each row is the Queue's own row: its lane, its rounds and its age.",
    "blocks": [
     {
      "type": "list",

@@ -15,7 +15,7 @@
      }
     },
     {
-     "label": "Workflow map…",
+     "label": "Workflow…",
      "tap": {
       "sheet": "/screens/map"
      }

@@ -1,112 +1,119 @@
 // #213 mockup: the `diagram` block. herdsman sends Mermaid source (a stateDiagram-v2) with `counts` per state and
 // `nodes` (a state's tone and tap, a timer's [limits] key, label and value). The native app parses that small subset
-// and lays it out itself, no web view: a layered layout (rank by longest path, back edges reversed, long edges through
-// bends, barycentre ordering), top to bottom on a phone and left to right when the sheet is wide. This is that layout,
-// in small, for the frames. Styles (q947): Modern rounded, Terminal square and mono, Scene a horse acting each state.
+// and lays it out itself, no web view, always top to bottom (q1298): one straight spine, the states beside it in two
+// side columns, short unlabelled lines that never cross. Styles (q947): Modern rounded, Terminal square and mono, Scene
+// a horse acting each state.
 const TONE = { working: 'working', needs: 'needs', done: 'done', fail: 'fail', idle: 'idle' };
+let seq = 0;
 const POSE = { working: 'edit', needs: 'needs', done: 'merged', fail: 'fail', idle: 'idle' };
 
-// The subset: `A --> B`, `A --> B : label`, `[*]` (start before, end after), `state "Name" as id`, `state id`,
-// comments. The declaration order is the reading order: an edge to a state declared earlier is drawn going back.
+// The subset: `A --> B`, `A --> B : label` (the label is not drawn), `[*]`, `state "Name" as id`, `state id`,
+// comments. The declaration order is the reading order: an edge to a state declared earlier goes back.
 export function parse(src) {
-  const names = {}, order = ['_start'], edges = [], add = id => { if (!order.includes(id)) order.push(id); return id; };
+  const names = {}, order = [], edges = [], add = id => { if (!order.includes(id)) order.push(id); return id; };
   for (const raw of src.split('\n')) {
     const l = raw.trim();
     let m;
     if (!l || l.startsWith('%%') || /^stateDiagram|^direction/.test(l)) continue;
     if ((m = l.match(/^state\s+"([^"]+)"\s+as\s+(\w+)/))) { names[m[2]] = m[1]; add(m[2]); continue; }
     if ((m = l.match(/^state\s+(\w+)$/))) { add(m[1]); continue; }
-    if ((m = l.match(/^(\[\*\]|\w+)\s*-->\s*(\[\*\]|\w+)\s*(?::\s*(.+))?$/))) {
-      const a = add(m[1] === '[*]' ? '_start' : m[1]), b = add(m[2] === '[*]' ? '_end' : m[2]);
-      edges.push({ a, b, label: m[3] || '' });
+    if ((m = l.match(/^(\[\*\]|\w+)\s*-->\s*(\[\*\]|\w+)/))) {
+      const a = m[1] === '[*]' ? '_start' : add(m[1]), b = m[2] === '[*]' ? '_end' : add(m[2]);
+      edges.push({ a, b });
     }
   }
-  return { order: edges.some(e => e.a === '_start') ? order : order.slice(1), names, edges };
+  return { order, names, edges };
 }
 
-export function layout(g, size) {
-  for (const e of g.edges) e.back = g.order.indexOf(e.b) <= g.order.indexOf(e.a);
-  const fw = g.edges.map(e => e.back ? { ...e, a: e.b, b: e.a, e } : { ...e, e });
-  const rank = Object.fromEntries(g.order.map(id => [id, 0]));
-  for (let i = 0; i < g.order.length; i++) for (const e of fw) if (!e.e.back) rank[e.b] = Math.max(rank[e.b], rank[e.a] + 1);
-  const R = [];
-  const put = (r, item) => (R[r] ||= []).push(item);
-  for (const id of g.order) put(rank[id], { id, ...size(id) });
-  for (const f of fw) {
-    f.via = [];
-    for (let r = rank[f.a] + 1; r < rank[f.b]; r++) { const d = { id: `${f.a}>${f.b}@${r}`, dummy: true, w: 14, h: 14 }; put(r, d); f.via.push(d); }
+// The rules, so the app needs no layout heuristic and herdsman's source alone decides the picture:
+// 1. The spine is the longest forward path from the state `[*]` enters (the first edge wins a tie). It is one column.
+// 2. A forward edge that jumps over spine states is not drawn; the states it jumps are marked "optional".
+// 3. Every other state sits beside the first spine state it touches: right (side 1) if it leads back into the spine
+//    (blocked, fix), left (side -1) if it leads away (the timers); one touching no spine state goes under its
+//    predecessors (needs human). Two edges between the same states are one line with two heads.
+export function layout(g) {
+  const at = id => g.order.indexOf(id), fwd = g.edges.filter(e => at(e.a) >= 0 && at(e.b) > at(e.a));
+  const len = {}, next = {};
+  for (const id of [...g.order].reverse()) {
+    len[id] = 1;
+    for (const e of fwd) if (e.a === id && len[e.b] + 1 > len[id]) { len[id] = len[e.b] + 1; next[id] = e.b; }
   }
-  const pos = new Map();
-  const idx = () => R.forEach(row => row.forEach((n, i) => pos.set(n.id, i)));
-  const ins = n => fw.flatMap(f => [f.a, ...f.via.map(v => v.id), f.b].flatMap((x, i, a) => a[i + 1] === n ? [x] : []));
-  const outs = n => fw.flatMap(f => [f.a, ...f.via.map(v => v.id), f.b].flatMap((x, i, a) => a[i - 1] === n ? [x] : []));
-  idx();
-  for (let s = 0; s < 6; s++) {
-    const down = s % 2 === 0, rows = down ? R.slice(1) : R.slice(0, -1).reverse();
-    for (const row of rows) {
-      const bc = n => { const nb = down ? ins(n.id) : outs(n.id); return nb.length ? nb.reduce((t, x) => t + pos.get(x), 0) / nb.length : pos.get(n.id); };
-      row.sort((x, y) => bc(x) - bc(y)); idx();
-    }
+  const spine = [];
+  for (let id = g.edges.find(e => e.a === '_start')?.b || g.order[0]; id; id = next[id]) spine.push(id);
+  const row = {}, side = {}, optional = new Set(), taken = new Set();
+  spine.forEach((id, i) => { row[id] = i; side[id] = 0; taken.add(`0:${i}`); });
+  for (const e of fwd) {
+    const i = spine.indexOf(e.a), j = spine.indexOf(e.b);
+    if (i >= 0 && j > i + 1) spine.slice(i + 1, j).forEach(x => optional.add(x));
   }
-  return { R, fw, rank };
+  for (const id of g.order.filter(s => !spine.includes(s))) {
+    const touch = g.edges.flatMap(e => e.a === id ? [e.b] : e.b === id ? [e.a] : []).filter(x => side[x] === 0);
+    const pre = g.edges.filter(e => e.b === id && e.a in row).map(e => e.a);
+    let s = 1, r = 0;
+    if (touch.length) { r = Math.min(...touch.map(x => row[x])); s = g.edges.some(e => e.a === id && side[e.b] === 0) ? 1 : -1; }
+    else if (pre.length) { r = Math.max(...pre.map(x => row[x])) + 1; s = side[pre[0]] || 1; }
+    while (taken.has(`${s}:${r}`)) r++;
+    row[id] = r; side[id] = s; taken.add(`${s}:${r}`);
+  }
+  const edges = [];
+  for (const e of g.edges) {
+    if (!(e.a in row && e.b in row) || (side[e.a] === 0 && side[e.b] === 0 && Math.abs(row[e.a] - row[e.b]) > 1)) continue;
+    const twin = edges.find(d => d.a === e.b && d.b === e.a);
+    if (twin) twin.both = true; else edges.push({ a: e.a, b: e.b });
+  }
+  return { spine, row, side, optional, edges };
 }
+
+// A polyline with its corners rounded by r (0 in Terminal).
+const poly = (P, r) => P.reduce((d, [x, y], i) => {
+  if (i === 0) return `M${x} ${y}`;
+  if (i === P.length - 1 || !r) return `${d} L${x} ${y}`;
+  const [px, py] = P[i - 1], [nx, ny] = P[i + 1], k = (a, b) => Math.sign(b - a) * Math.min(r, Math.abs(b - a) / 2);
+  return `${d} L${x - k(px, x)} ${y - k(py, y)} Q${x} ${y} ${x + k(x, nx)} ${y + k(y, ny)}`;
+}, '');
 
 export function diagram(b, { esc, STYLE, SPR, wide, words }) {
   const g = parse(b.source), nodes = b.nodes || {}, counts = b.counts || {}, was = b.was || {};
-  const term = STYLE === 'terminal', scene = STYLE === 'scene', V = !wide;
+  const term = STYLE === 'terminal', scene = STYLE === 'scene';
   const isT = id => !!nodes[id]?.limit, label = id => g.names[id] || id;
-  const size = id => id.startsWith('_') ? { w: 14, h: 14 } : { w: wide ? 112 : isT(id) ? 106 : 100, h: 52 };
-  const { R, fw } = layout(g, size);
-  const GAP = V ? 10 : 30, SEP = V ? 28 : 44, PAD = 12;
-  const crossOf = n => V ? n.w : n.h, alongOf = n => V ? n.h : n.w;
-  const span = Math.max(...R.map(row => row.reduce((t, n) => t + crossOf(n), 0) + GAP * (row.length - 1)));
-  const at = new Map();
-  let end = PAD - SEP;
-  for (const row of R) {
-    const deep = Math.max(...row.map(alongOf)), mid = end + SEP + deep / 2;
-    let c = (span - (row.reduce((t, n) => t + crossOf(n), 0) + GAP * (row.length - 1))) / 2;
-    for (const n of row) { at.set(n.id, { ...n, c: c + crossOf(n) / 2, r: mid }); c += crossOf(n) + GAP; }
-    end = mid + deep / 2;
-  }
-  const XY = (c, r) => V ? [c + PAD, r] : [r, c + PAD], xy = (c, r) => XY(c, r).join(' ');
-  const W = V ? span + 2 * PAD : end + PAD, H = V ? end + PAD : span + 2 * PAD;
-  // Two edges both ways between two states (review ⇄ fix) are drawn as two curves side by side.
-  const pair = f => fw.some(o => o !== f && o.a === f.a && o.b === f.b);
-  const edges = fw.map(f => {
-    const A = at.get(f.a), Bn = at.get(f.b), tl = isT(f.e.a) || isT(f.e.b), cls = `de${f.e.back ? ' bk' : ''}${tl ? ' tl' : ''}`;
-    const lab = !f.e.label || (!wide && f.e.label.length > 11) ? '' : f.e.label;
-    let d, lp;
-    if (A.r === Bn.r) {
-      // A back edge within one rank (verify → fix): from side to side, bowing past the rank.
-      const [l, rt] = A.c < Bn.c ? [A, Bn] : [Bn, A], c0 = l.c + crossOf(l) / 2, c1 = rt.c - crossOf(rt) / 2, bow = alongOf(A) / 2 + 12;
-      d = `M${xy(c0, A.r + 8)} C${xy(c0 + 18, A.r + bow)} ${xy(c1 - 18, A.r + bow)} ${xy(c1, A.r + 8)}`;
-      lp = [(c0 + c1) / 2, A.r + bow - 2];
-    } else {
-      const pts = [f.a, ...f.via.map(v => v.id), f.b].map(id => at.get(id)), off = pair(f) ? (f.e.back ? -12 : 12) : 0;
-      const P = pts.map((p, i) => [p.c + (i === 0 || i === pts.length - 1 ? off : 0), p.r + (i === 0 ? alongOf(p) / 2 : i === pts.length - 1 ? -alongOf(p) / 2 : 0)]);
-      d = `M${xy(...P[0])}`;
-      for (let i = 1; i < P.length; i++) { const [c0, r0] = P[i - 1], [c, r] = P[i], m = (r0 + r) / 2;
-        d += term ? ` L${xy(c0, m)} L${xy(c, m)} L${xy(c, r)}` : ` C${xy(c0, m)} ${xy(c, m)} ${xy(c, r)}`; }
-      const [s0, s1] = f.e.back ? [P[P.length - 1], P[P.length - 2]] : [P[0], P[1]];
-      lp = [s0[0] + (s1[0] - s0[0]) * .62 + (V ? 6 : 0), s0[1] + (s1[1] - s0[1]) * .62 + (V ? 4 : -5)];
-    }
-    const [lx, ly] = XY(...lp);
-    return `<path class="${cls}" d="${d}" marker-${f.e.back && A.r !== Bn.r ? 'start' : 'end'}="url(#dga)"/>${lab
-      ? `<text class=del x="${lx}" y="${ly}"${V ? '' : ' text-anchor=middle'}>${esc(lab)}</text>` : ''}`;
+  const { row, side, optional, edges, spine } = layout(g);
+  const used = new Set(Object.values(side));
+  const CW = wide ? { '-1': 156, 0: 176, 1: 140 } : { '-1': 108, 0: 100, 1: 78 };
+  const GAP = wide ? 40 : 22, GUT = wide ? 18 : 12, NH = wide ? 54 : 46, RG = wide ? 22 : 20, TOP = 34;
+  const cols = [-1, 0, 1].filter(s => used.has(s));
+  const cx = {};
+  let x = GUT;
+  for (const s of cols) { cx[s] = x + CW[s] / 2; x += CW[s] + GAP; }
+  const W = x - GAP + GUT, rows = Math.max(...Object.values(row)) + 1, H = TOP + rows * (NH + RG) - RG + 12;
+  const box = id => { const w = CW[side[id]], X = cx[side[id]], Y = TOP + row[id] * (NH + RG) + NH / 2; return { X, Y, w, l: X - w / 2, r: X + w / 2, t: Y - NH / 2, b: Y + NH / 2 }; };
+  const R = term ? 0 : 8, mk = `dga${++seq}`;
+  const lines = edges.map(({ a, b: to, both }) => {
+    const A = box(a), B = box(to), cls = `de${isT(a) || isT(to) ? ' tl' : ''}`;
+    let P;
+    if (A.Y === B.Y) P = A.X < B.X ? [[A.r, A.Y], [B.l, B.Y]] : [[A.l, A.Y], [B.r, B.Y]];
+    else if (A.X === B.X && Math.abs(row[a] - row[to]) === 1) P = A.Y < B.Y ? [[A.X, A.b], [B.X, B.t]] : [[A.X, A.t], [B.X, B.b]];
+    else if (A.X === B.X) {
+      // Down the outer gutter, past the states between them in that column.
+      const o = side[a] < 0 ? A.l : A.r, gx = side[a] < 0 ? o - GUT + 3 : o + GUT - 3;
+      P = [[o, A.Y], [gx, A.Y], [gx, B.Y], [o, B.Y]];
+    } else if (side[a] === 0) P = [[B.X > A.X ? A.r : A.l, A.Y], [B.X, A.Y], [B.X, B.Y > A.Y ? B.t : B.b]];
+    else P = [[A.X, B.Y > A.Y ? A.b : A.t], [A.X, B.Y], [B.X > A.X ? B.l : B.r, B.Y]];
+    return `<path class="${cls}" d="${poly(P, R)}" marker-end="url(#${mk})"${both ? ` marker-start="url(#${mk})"` : ''}/>`;
   }).join('');
+  const S = box(spine[0]);
+  const start = `<circle class=dst cx="${S.X}" cy="10" r=6 /><path class=de d="M${S.X} 16 L${S.X} ${S.t}" marker-end="url(#${mk})"/>`;
   const node = id => {
-    const n = at.get(id), [x, y] = XY(n.c, n.r), x0 = x - n.w / 2, y0 = y - n.h / 2, s = nodes[id] || {}, rr = term ? 0 : isT(id) ? 26 : 12;
-    if (id === '_start') return `<circle class=dst cx="${x}" cy="${y}" r=6 />`;
-    if (id === '_end') return `<circle class=den cx="${x}" cy="${y}" r=7 /><circle class=dst cx="${x}" cy="${y}" r=4 />`;
-    if (isT(id)) return `<g class=dt data-limit="${esc(s.limit)}" role=button aria-label="${esc(`${s.label} ${s.value}, opens its setting`)}"><rect x="${x0}" y="${y0}" width="${n.w}" height="${n.h}" rx="${rr}"/>
-      <text class=dti x="${x0 + 9}" y="${y + 6}">${term ? '⧗' : '⏱'}</text><text class=dtl x="${x0 + 27}" y="${y - 4}">${esc(s.label)}</text><text class=dtv x="${x0 + 27}" y="${y + 14}">${esc(s.value)}</text></g>`;
-    const k = counts[id] ?? 0, t = TONE[s.state] || 'idle', moved = id in was && was[id] !== k;
-    const fig = scene ? `<image href="${SPR}horse-${s.coat || 'bay'}-${POSE[t]}.png" x="${x0 + n.w - 42}" y="${y - 6}" width="36" height="28" style="image-rendering:pixelated"><title>${esc(words[t] || t)}</title></image>` : '';
-    return `<g class="dn${k ? '' : ' z'}${moved ? ' mv' : ''}${b.selected === id ? ' on' : ''}" data-tone=${t} role=button aria-label="${esc(`${label(id)}, ${k} issue${k === 1 ? '' : 's'}`)}">
-      <rect x="${x0}" y="${y0}" width="${n.w}" height="${n.h}" rx="${rr}"/><text class=dnl x="${x0 + 10}" y="${y - 6}">${esc(label(id))}</text>
-      <text class=dnc x="${x0 + 10}" y="${y + 16}">${term ? `[${k}]` : k}</text>${moved ? `<text class=dwas x="${x0 + 10 + (term ? 34 : 24)}" y="${y + 15}">was ${was[id]}</text>` : ''}${fig}</g>`;
+    const n = box(id), s = nodes[id] || {}, rr = term ? 0 : isT(id) ? NH / 2 : 12;
+    if (isT(id)) return `<g class=dt data-limit="${esc(s.limit)}" role=button aria-label="${esc(`${s.label} ${s.value}, opens its setting`)}"><rect x="${n.l}" y="${n.t}" width="${n.w}" height="${NH}" rx="${rr}"/>
+      <text class=dti x="${n.l + 10}" y="${n.Y + 5}">${term ? '⧗' : '⏱'}</text><text class=dtl x="${n.l + 26}" y="${n.Y - 4}">${esc(s.label)}</text><text class=dtv x="${n.l + 26}" y="${n.Y + 13}">${esc(s.value)}</text></g>`;
+    const k = counts[id] ?? 0, t = TONE[s.state] || 'idle', moved = id in was && was[id] !== k, cw = (term ? 10 : 12) * String(term ? `[${k}]` : k).length;
+    const fig = scene && k ? `<image href="${SPR}horse-${s.coat || 'bay'}-${POSE[t]}.png" x="${n.r - 28}" y="${n.Y - 1}" width="24" height="18" style="image-rendering:pixelated"><title>${esc(words[t] || t)}</title></image>` : '';
+    const tail = moved ? `<text class=dwas x="${n.l + 16 + cw}" y="${n.Y + 15}">was ${was[id]}</text>` : optional.has(id) ? `<text class=dop x="${n.l + 16 + cw}" y="${n.Y + 15}">optional</text>` : '';
+    return `<g class="dn${k ? '' : ' z'}${moved ? ' mv' : ''}${b.selected === id ? ' on' : ''}" data-tone=${t} role=button aria-label="${esc(`${label(id)}, ${k} issue${k === 1 ? '' : 's'}${optional.has(id) ? ', optional' : ''}`)}">
+      <rect x="${n.l}" y="${n.t}" width="${n.w}" height="${NH}" rx="${rr}"/><text class=dnl x="${n.l + 10}" y="${n.Y - 6}">${esc(label(id))}</text>
+      <text class=dnc x="${n.l + 10}" y="${n.Y + 16}">${term ? `[${k}]` : k}</text>${tail}${fig}</g>`;
   };
-  return `<div class="dgm${wide ? ' wd2' : ''}" data-id="${esc(b.id || '')}"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role=img aria-label="${esc(b.title || 'workflow')}">
-    <defs><marker id=dga viewBox="0 0 10 10" refX=9 refY=5 markerWidth=7 markerHeight=7 orient=auto-start-reverse><path d="M0 0 10 5 0 10z"/></marker></defs>
-    ${edges}${g.order.map(node).join('')}</svg></div>`;
+  return `<div class="dgm${wide ? ' wd2' : ''}" data-id="${esc(b.id || '')}"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role=img aria-label="${esc(b.title || 'Workflow')}">
+    <defs><marker id=${mk} viewBox="0 0 10 10" refX=9 refY=5 markerWidth=7 markerHeight=7 orient=auto-start-reverse><path d="M0 0 10 5 0 10z"/></marker></defs>
+    ${start}${lines}${g.order.map(node).join('')}</svg></div>`;
 }

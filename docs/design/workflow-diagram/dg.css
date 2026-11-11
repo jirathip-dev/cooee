@@ -1,26 +1,24 @@
-/* #213: the diagram block on the design system's tokens. dgm the block, dn a state (dnl its name, dcb/dnc its count,
-   z no issues, mv a count that just changed, dwas its old value), dt a timer node (dtl label, dtv the limit's value),
-   de an edge (bk drawn back, tl to or from a timer, del its label), dst/den start and end, dgw a sheet that holds a
-   diagram (wider at 1440), fcs the field a timer's tap opened, sm a sheet's ⋯ menu (nw its new row). */
+/* #213: the diagram block on the design system's tokens. dgm the block, dn a state (dnl its name, dnc its count,
+   z no issues, mv a count that just changed, dwas its old value, dop "optional"), dt a timer node (dtl label, dtv the
+   limit's value), de a line (tl to or from a timer), dst the start, dgw a sheet that holds a diagram (wider at 1440,
+   the map left and a tapped state's issues beside it), fcs the field a timer's tap opened, sm a sheet's ⋯ menu. */
 .dgm{margin:4px 16px 8px;padding:6px 0;background:var(--card);border-radius:var(--r-card);overflow:hidden;display:flex;justify-content:center}
 .dgm svg{display:block;max-width:100%;height:auto;font-family:var(--font);overflow:visible}
 .dgm .de{fill:none;stroke:color-mix(in srgb,var(--mute) 70%,transparent);stroke-width:1.4}
-.dgm .de.bk{stroke-dasharray:4 3}.dgm .de.tl{stroke:color-mix(in srgb,var(--link) 60%,transparent);stroke-dasharray:2 3}
+.dgm .de.tl{stroke:color-mix(in srgb,var(--link) 60%,transparent);stroke-dasharray:2 3}
 .dgm marker path{fill:var(--mute)}
-.dgm .del{font-size:10.5px;fill:var(--mute);paint-order:stroke;stroke:var(--card);stroke-width:4px;stroke-linejoin:round}
-.dgm .dst{fill:var(--fg)}.dgm .den{fill:none;stroke:var(--fg);stroke-width:1.4}
+.dgm .dst{fill:var(--fg)}
 .dn rect:first-child{fill:var(--bg);stroke:var(--edge);stroke-width:1}
 .dn .dnl{font-size:14px;font-weight:600;fill:var(--fg)}
-.dn .dcb{fill:color-mix(in srgb,var(--k) 18%,transparent)}.dn .dnc{font-size:14px;font-weight:700;fill:var(--k)}
-.dn.z .dnl{fill:var(--mute);font-weight:500}.dn.z .dcb{fill:color-mix(in srgb,var(--mute) 12%,transparent)}.dn.z .dnc{fill:var(--mute)}
+.dn .dop{font-size:10.5px;fill:var(--mute);font-style:italic}
 .dn.on rect:first-child{stroke:var(--l);stroke-width:2.5}
 .dn.mv rect:first-child{stroke:var(--k);stroke-width:2;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--k) 55%,transparent))}
 .dn .dwas{font-size:10.5px;fill:var(--k);font-weight:600}
 .dt rect{fill:color-mix(in srgb,var(--link) 10%,var(--bg));stroke:var(--link);stroke-width:1;stroke-dasharray:3 2}
-.dt .dti{font-size:14px;fill:var(--link)}.dt .dtl{font-size:11px;fill:var(--mute)}.dt .dtv{font-size:13px;font-weight:600;fill:var(--link)}
+.dt .dti{font-size:14px;fill:var(--link)}.dt .dtl{font-size:10.5px;fill:var(--mute)}.dt .dtv{font-size:13px;font-weight:600;fill:var(--link)}
 .dgm.wd2 .dn .dnl{font-size:15px}
-.ps.dgw .pb .txt.ds{margin:4px 24px}
 .wd .ps.dgw{left:calc(50% - 560px);width:1120px}
+.wd .ps.dgw .dgm{float:left;margin-right:0}.wd .ps.dgw .pb>.in>:not(.dch,.dgm){margin-left:636px}.wd .ps.dgw .pb>.in>.ch{margin-top:8px}
 /* the field a timer's tap opened: the app scrolls to it and rings it once */
 .ps .gr.fcs{box-shadow:inset 0 0 0 2px var(--l);border-radius:var(--r-row);background:color-mix(in srgb,var(--l) 10%,var(--card))}
 .ps .gr.fcs::before{display:none}
@@ -32,7 +30,7 @@ html[data-style=terminal] .dgm{border-radius:0;outline:1px dashed var(--edge);ba
 html[data-style=terminal] .dgm svg,html[data-style=terminal] .dgm text{font-family:var(--mono)}
 html[data-style=terminal] .dn rect:first-child{stroke:var(--fg);stroke-width:1}
 html[data-style=terminal] .dn .dnl{font-weight:400}
-html[data-style=terminal] .dgm .del{stroke:var(--bg)}
+html[data-style=terminal] .dn .dop{font-style:normal}
 html[data-style=terminal] .dt rect{fill:none}
 html[data-scene=on] .dn rect:first-child{stroke:color-mix(in srgb,var(--k) 45%,var(--edge))}
 .dn .dnl{font-size:12.5px;font-weight:500;fill:var(--mute)}.dn .dnc{font-size:20px;font-weight:700;fill:var(--k)}
