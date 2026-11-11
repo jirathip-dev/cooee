@@ -1,0 +1,6 @@
+Decided: ship the approved HTML design in docs/design/persona-text/ as-is, no app code in this PR
+Because: "the build issues are filed from the approved design"
+Because: q1366
+Rejected: writing SwiftUI views now — the issue is design first; build issues follow the approval
+Check: the diff against staging touches only docs/design/persona-text/
+Owner: the approved persona-text drawings land as docs; the app changes in the build issues
