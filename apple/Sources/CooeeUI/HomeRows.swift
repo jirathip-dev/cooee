@@ -10,10 +10,6 @@ internal struct PinnedRow: View {
     private var scene: Bool { look.style == .scene }
 
     internal var body: some View {
-        if !personas.isEmpty { styled }
-    }
-
-    @ViewBuilder private var styled: some View {
         switch look.style {
         case .scene:
             ZStack(alignment: .bottom) {
