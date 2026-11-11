@@ -16,9 +16,9 @@ const BOTH = ['dark', 'light'];
 const VIEWS = [
   ['rows', 'swipe', 390, 'modern', BOTH], ['rows', 'pin', 390, 'modern', BOTH], ['rows', 'full', 390, 'modern', BOTH],
   ['rows', 'undo', 390, 'modern', BOTH], ['rows', 'peek', 390, 'modern', BOTH], ['rows', 'wide-rows', 1440, 'modern', ['dark']],
-  ['rows', 'swipe', 390, 'terminal', ['dark']], ['rows', 'peek', 390, 'scene', ['light']],
-  ['refresh', 'pull', 390, 'modern', BOTH], ['refresh', 'fail', 390, 'modern', BOTH], ['refresh', 'wf', 390, 'modern', BOTH],
-  ['refresh', 'wide-refresh', 1440, 'modern', ['dark']], ['refresh', 'pull', 390, 'terminal', ['dark']], ['refresh', 'pull', 390, 'scene', ['light']],
+  ['rows', 'swipe', 390, 'terminal', ['dark']], ['rows', 'full', 390, 'terminal', ['dark']], ['rows', 'peek', 390, 'scene', ['light']],
+  ['live', 'live', 390, 'modern', BOTH], ['live', 'others-live', 390, 'modern', BOTH], ['live', 'wf', 390, 'modern', BOTH],
+  ['live', 'wide-live', 1440, 'modern', ['dark']], ['live', 'live', 390, 'terminal', ['dark']], ['live', 'live', 390, 'scene', ['light']],
   ['compose', 'keys', 390, 'modern', BOTH], ['compose', 'dismiss', 390, 'modern', BOTH], ['compose', 'ask', 390, 'modern', BOTH],
   ['compose', 'wide-haptics', 1440, 'modern', ['dark', 'light']], ['compose', 'keys', 390, 'terminal', ['dark']], ['compose', 'keys', 390, 'scene', ['light']],
 ];
