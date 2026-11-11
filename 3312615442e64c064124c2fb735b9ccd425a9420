@@ -1,0 +1,5 @@
+Decided: merged origin/staging; conflicts keep staging's code with comments dropped, and staging's new rule-breaking comments are stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: none
+Check: just comments is green at the head and the merge's diff -w against staging is only deleted comment lines
+Owner: the branch is up to date with staging and the new secrets and fleets-config code follows the same comment rule
