@@ -1,0 +1,6 @@
+Decided: ship the approved HTML design in docs/design/home-v2 as is, with no SwiftUI views in this PR
+Because: q1342
+Because: q1352
+Rejected: writing SwiftUI views and snapshots under apple/design/home-v2 now — q1349 keeps that for build issue 1
+Check: every changed file is under docs/design/home-v2; the README maps each PNG to q1321-q1324 and q1349
+Owner: the approved Home v2 design (pictures and README) lands; the app changes in the build issues filed from it
