@@ -106,6 +106,7 @@ internal struct CardButton: View {
                 primary ? tint : tint.opacity(look.mono ? 0 : 0.12),
                 in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule())
             )
+            .accessibilityLabel(title)
     }
 }
 

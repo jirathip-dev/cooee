@@ -51,7 +51,14 @@ jobs:
       - name: just apple-check
         env:
           GH_TOKEN: ${{ github.token }}
+          COOEE_SNAPSHOT_OUT: ${{ github.workspace }}/snapshots
         run: just apple-check
+      # #141: every design frame as rendered, in each of the three styles (`name@style.png`).
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: snapshots
+          path: snapshots
 
   e2e:
     runs-on: macos-26

@@ -34,6 +34,19 @@ internal struct Pixels: Equatable {
         }
         return Double(count) / Double(width * height)
     }
+
+    internal func spilled(beyond inset: Int) -> Int {
+        let rows = 0..<height
+        let columns = 0..<width
+        return rows.reduce(0) { total, row in
+            total
+                + columns.count { column in
+                    let inside = (inset..<width - inset).contains(column) && (inset..<height - inset).contains(row)
+                    let start = (row * width + column) * 4
+                    return !inside && bytes[start + 3] > 0
+                }
+        }
+    }
 }
 
 @Suite(.serialized)
@@ -49,15 +62,34 @@ internal struct SnapshotTests {
     internal func frameMatchesTheDesign(_ frame: Frame) throws {
         let rendered = try #require(frame.render())
         let file = Self.designs.appendingPathComponent("\(frame.name).png")
-        if ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" {
-            let png = try #require(NSBitmapImageRep(cgImage: rendered).representation(using: .png, properties: [:]))
-            try png.write(to: file)
-        }
+        if ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" { try Self.write(rendered, to: file) }
+        try Self.keep(rendered, frame.name)
         let design = try #require(NSImage(contentsOf: file)?.cgImage(forProposedRect: nil, context: nil, hints: nil))
         let got = try #require(Pixels(rendered))
         let want = try #require(Pixels(design))
         #expect(got.width == want.width && got.height == want.height)
         let off = got.differing(from: want, by: Self.channelTolerance)
         #expect(off <= Self.pixelTolerance, "\(frame.name): \(off * 100)% of pixels differ")
+    }
+
+    @Test(arguments: Frame.everyStyle)
+    internal func frameFitsInEveryStyle(_ frame: Frame) throws {
+        let margin = 24
+        let rendered = try #require(frame.render(margin: CGFloat(margin)))
+        try Self.keep(rendered, frame.name)
+        let pixels = try #require(Pixels(rendered))
+        #expect(pixels.spilled(beyond: margin * 2) == 0, "\(frame.name) draws outside its frame")
+    }
+
+    private static func write(_ image: CGImage, to file: URL) throws {
+        let png = try #require(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
+        try png.write(to: file)
+    }
+
+    private static func keep(_ image: CGImage, _ name: String) throws {
+        guard let folder = ProcessInfo.processInfo.environment["COOEE_SNAPSHOT_OUT"] else { return }
+        let url = URL(fileURLWithPath: folder)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        try write(image, to: url.appendingPathComponent("\(name).png"))
     }
 }

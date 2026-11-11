@@ -135,7 +135,7 @@
         }
 
         @MainActor
-        private func field(_ app: XCUIApplication, _ hint: String) -> XCUIElement {
+        internal func field(_ app: XCUIApplication, _ hint: String) -> XCUIElement {
             let types = [XCUIElement.ElementType.textField.rawValue, XCUIElement.ElementType.textView.rawValue]
             let predicate = NSPredicate(
                 format: "(elementType == %d OR elementType == %d) AND (label == %@ OR placeholderValue == %@)",
@@ -145,12 +145,12 @@
         }
 
         @MainActor
-        private func labelled(_ app: XCUIApplication, _ text: String) -> XCUIElement {
+        internal func labelled(_ app: XCUIApplication, _ text: String) -> XCUIElement {
             app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
         }
 
         @MainActor
-        private func keep(_ name: String) {
+        internal func keep(_ name: String) {
             let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             shot.name = "\(name)-\(ProcessInfo.processInfo.environment["COOEE_LOOK"] ?? "look")"
             shot.lifetime = .keepAlways
@@ -199,14 +199,13 @@
             XCTAssert(labelled(app, "Notifications").waitForExistence(timeout: 10))
             keep("avatar-menu")
             labelled(app, "Look").tap()
-            labelled(app, "Terminal").tap()
-            XCTAssert(picked(app, "Terminal").waitForExistence(timeout: 5))
+            everyStyle(app, new)
             labelled(app, "Modern").tap()
             XCTAssert(picked(app, "Modern").waitForExistence(timeout: 5))
         }
 
         @MainActor
-        private func picked(_ app: XCUIApplication, _ label: String) -> XCUIElement {
+        internal func picked(_ app: XCUIApplication, _ label: String) -> XCUIElement {
             app.buttons.matching(NSPredicate(format: "label == %@ AND selected == true", label)).firstMatch
         }
 

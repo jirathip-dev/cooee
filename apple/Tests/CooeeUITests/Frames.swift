@@ -15,14 +15,22 @@ internal struct Frame: Sendable, CustomTestStringConvertible {
 
     internal var testDescription: String { name }
 
+    internal func styled(_ other: LookStyle) -> Frame {
+        Frame(
+            name: "\(name)@\(other.rawValue)", width: width, height: height, palette: palette, style: other,
+            phone: phone, view: view
+        )
+    }
+
     @MainActor
-    internal func render() -> CGImage? {
+    internal func render(margin: CGFloat = 0, around: Color = .clear) -> CGImage? {
         let look = Look(palette: palette, style: style, still: true)
         let content = Group {
             if phone { PhoneChrome { view() } } else { MacChrome { view() } }
         }
         .frame(width: width, height: height).background(palette.background)
         .environment(\.look, look).environment(\.colorScheme, palette.dark ? .dark : .light)
+        .padding(margin).background(around)
         let renderer = ImageRenderer(content: content)
         renderer.scale = 2
         return renderer.cgImage
@@ -33,8 +41,14 @@ extension Frame {
     private static let phoneWidth: CGFloat = 402
     private static let phoneHeight: CGFloat = 874
 
-    internal static var all: [Frame] {
-        [("dark", Palette.farmDark), ("light", Palette.farmLight)].flatMap { phoneFrames($0.0, $0.1) } + styled + mac
+    internal static var all: [Frame] { designs + styled }
+
+    internal static var everyStyle: [Frame] {
+        designs.flatMap { frame in LookStyle.allCases.map(frame.styled) }
+    }
+
+    private static var designs: [Frame] {
+        [("dark", Palette.farmDark), ("light", Palette.farmLight)].flatMap { phoneFrames($0.0, $0.1) } + mac
     }
 
     private static func phone(
@@ -79,9 +93,13 @@ extension Frame {
 
     private static var styled: [Frame] {
         [
-            phone("home-terminal-dark", .farmDark, style: .terminal) { HomeView() },
-            phone("chat-terminal-dark", .farmDark, style: .terminal) { ChatView.streaming() },
-            phone("home-scene-light", .farmLight, style: .scene) { HomeView() },
+            phone("style-terminal-home-dark", .farmDark, style: .terminal) { HomeView() },
+            phone("style-terminal-chat-dark", .farmDark, style: .terminal) { ChatView.streaming() },
+            phone("style-terminal-card-dark", .farmDark, style: .terminal) { ChatView.cards() },
+            phone("style-terminal-persona-dark", .farmDark, style: .terminal) { PersonaSheet() },
+            phone("style-scene-home-light", .farmLight, style: .scene) { HomeView() },
+            phone("style-scene-chat-light", .farmLight, style: .scene) { ChatView.streaming() },
+            phone("style-scene-card-light", .farmLight, style: .scene) { ChatView.cards() },
         ]
     }
 
