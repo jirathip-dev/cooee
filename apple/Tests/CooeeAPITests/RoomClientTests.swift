@@ -1,6 +1,5 @@
 @testable import CooeeAPI
 import CooeeCore
-import Foundation
 import Testing
 
 internal struct RoomClientTests {
