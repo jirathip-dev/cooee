@@ -1,24 +1,24 @@
-// #86 mockup: the chat-first pages on the live design system. It reads web/'s own schemes, themes and sprites and
+// #86 mockup: the chat-first pages on the live design system. It reads design-system/'s schemes and the packs' themes and sprites and
 // sets them as cooee's first byte does (shown.rs): `?style=modern|terminal|scene`, `?theme=farm|kitchen|garden|plain`,
 // `?mode=dark|light`. Scene draws the agents as the theme's scene (#34); the chat beside it keeps Modern.
 // Then it fills the page:
 //   [data-st=working|needs|done|fail|idle]  the figure (sprite, else ascii), the theme word (data-plain: `· plain`)
 //   [data-s=<id>]                           a 132 × 100 figure: edit read run idle done needs merged fail
 //   #agents[data-cur][data-sub]             the agents: the list (Modern, Terminal) or the scene
-const W = '../../../web/';
+const W = '../../../design-system/', P = '../../../packs/themes/';
 const q = new URLSearchParams(location.search);
 export const STYLE = q.get('style') || 'modern', T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark';
-const theme = await fetch(`${W}themes/${T}/theme.json`).then(r => r.json());
+const theme = await fetch(`${P}${T}/theme.json`).then(r => r.json());
 const scheme = await fetch(`${W}schemes/${theme.scheme[MODE]}.json`).then(r => r.json());
 const r = document.documentElement;
 for (const [k, v] of Object.entries(scheme.tokens)) r.style.setProperty(k, v);
 r.style.colorScheme = scheme['color-scheme'];
 Object.assign(r.dataset, { theme: T, style: STYLE === 'terminal' ? 'terminal' : 'modern', scene: STYLE === 'scene' ? 'on' : 'off' });
 if (theme.sprites) {
-  const svg = await fetch(`${W}themes/${T}/sprites.svg`).then(r => r.text());
+  const svg = await fetch(`${P}${T}/sprites.svg`).then(r => r.text());
   document.body.insertAdjacentHTML('afterbegin', `<svg width=0 height=0 style="position:absolute" aria-hidden=true><defs>${svg.replace(/^[\s\S]*?<svg[^>]*>|<\/svg>\s*$/g, '')}</defs></svg>`);
 }
-// web/src/look.rs ASCII (herdsman#335), for a theme without sprites.
+// crates/cooee-server/src/look.rs ASCII (herdsman#335), for a theme without sprites.
 const ASCII = { edit: ['~o=', '=o~'], read: ['o.o', 'o.-'], run: ['o>_', 'o> '], needs: ['(!)', '[!]'], done: ['\\o/', '|o|'],
   merged: ['\\o/', '-o-'], fail: ['x_x', 'x.x'], idle: ['-.-', '-_-'] };
 const PLAIN = { working: 'working', needs: 'needs you', done: 'done', fail: 'failed', idle: 'idle' };

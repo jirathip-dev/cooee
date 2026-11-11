@@ -55,7 +55,7 @@ cooee's own thread list under Workflow and opens as a normal chat, not in a plug
 - A new repo and its own product; drover moves its chat and tabs onto it later, in stages.
 - v1 is chat only: phone/web chat with any ACP agent, pairing, push, logins. Telegram, scheduled jobs and memory stay
   with Hermes for now.
-- The client is a web app (installable PWA) for phone and desktop, served by a Rust server.
+- The client is the native app (iOS and macOS, `apple/`), talking to a Rust server's JSON API.
 - Self-hosted, one owner per install; public open-source repo.
 - Provider logins happen from the phone: cooee runs the CLI's own login command in a shed terminal and shows it in
   the app; tokens stay with the CLI and are never shown in cooee.

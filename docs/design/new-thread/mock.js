@@ -1,8 +1,8 @@
 // #48 mockup: the app's own look on static pages. Served from the repo root (`node docs/design/new-thread/shoot.mjs
-// --serve`), so the pages load web/src/app.css, web/src/look.js, web/themes/ and web/schemes/ as they are today:
-// nothing here copies the design system. A classic script before look.js: it builds `LOOK` (as the server does) and
-// puts the URL's pick in localStorage, where look.js reads it.
-//   ?theme=farm|kitchen|garden|terminal  &mode=system|light|dark  &style=modern|terminal  &sprites=on|ascii|off
+// --serve`), so the pages load design-system/app.css, packs/themes/ and design-system/schemes/ as they are today:
+// nothing here copies the design system. A classic script: it builds `LOOK` (as the server did) and
+// puts the URL's pick in localStorage, where the PWA's look.js read it (gone with #189).
+//   ?theme=farm|kitchen|garden|plain  &mode=system|light|dark  &style=modern|terminal  &sprites=on|ascii|off
 //   [data-only="a b"]  shown only on those screens; [data-exp=<screen>] aria-expanded on that screen
 //   [data-ld="claude · jk@work.com"]  the connecting line: what look.js gains for the `loading` state (below)
 //   <aside class="side" data-cur=<id>>  the desktop sidebar: side.html put in, its [data-id=<id>] row aria-current
@@ -11,13 +11,13 @@
 (() => {
   const q = new URLSearchParams(location.search);
   const get = (u) => { const x = new XMLHttpRequest(); x.open("GET", u, false); x.send(); return JSON.parse(x.responseText); };
-  const THEMES = ["farm", "kitchen", "garden", "terminal"];
+  const THEMES = ["farm", "kitchen", "garden", "plain"];
   const SCHEMES = ["github-dark", "solarized-dark", "gruvbox", "nord", "dracula", "farm", "kitchen", "garden-dark", "paper",
     "farm-light", "kitchen-light", "garden-light"];
   globalThis.LOOK = {
     default: "farm",
-    themes: Object.fromEntries(THEMES.map((t) => [t, get(`/web/themes/${t}/theme.json`)])),
-    schemes: Object.fromEntries(SCHEMES.map((s) => [s, get(`/web/schemes/${s}.json`)])),
+    themes: Object.fromEntries(THEMES.map((t) => [t, get(t === "plain" ? "/design-system/themes/plain/theme.json" : `/packs/themes/${t}/theme.json`)])),
+    schemes: Object.fromEntries(SCHEMES.map((s) => [s, get(`/design-system/schemes/${s}.json`)])),
   };
   const pick = {};
   for (const k of ["theme", "mode", "style", "sprites"]) if (q.get(k)) pick[k] = q.get(k);

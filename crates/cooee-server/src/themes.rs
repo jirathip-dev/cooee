@@ -1,8 +1,6 @@
-//! Theme packs (docs/themes.md): `cooee theme add|remove|list` and Settings › look › themes. A pack is a folder or
-//! a folder of a git repo; an installed one is copied into `<config dir>/themes/<name>/` once it passes the theme
-//! gate, and pinned in `<data>/themes.lock` (its source and commit). `[new theme]` and `[remix]` make one in
-//! `<config dir>/themes-dev/<name>/` for an agent to build; `[keep]` moves it into `themes/` only once it passes the
-//! gate, and `[publish]` makes it a git repo of its own.
+//! Theme packs (docs/themes.md): `cooee theme add|remove|list`. A pack is a folder or a folder of a git repo; an
+//! installed one is copied into `<config dir>/themes/<name>/` once it passes the theme gate, and pinned in
+//! `<data>/themes.lock` (its source and commit).
 
 use std::{
     fs, io,
@@ -15,22 +13,6 @@ use cooee_core::{Config, plugins::Listed};
 use serde::{Deserialize, Serialize};
 
 use crate::hub::lock;
-
-/// The starter pack `[new theme]` begins from: the plain words, placeholder sprites and scene.
-const STARTER: [(&str, &str); 3] = [
-    (
-        "theme.json",
-        include_str!("../../../packs/starter/theme.json"),
-    ),
-    (
-        "sprites.svg",
-        include_str!("../../../packs/starter/sprites.svg"),
-    ),
-    (
-        "scene.svg",
-        include_str!("../../../packs/starter/scene.svg"),
-    ),
-];
 
 fn other(why: impl Into<String>) -> io::Error {
     io::Error::other(why.into())
@@ -128,7 +110,7 @@ fn valid(name: &str) -> io::Result<()> {
 }
 
 fn gate(dir: &Path) -> io::Result<()> {
-    cooee_web::check(dir).map_err(|fails| {
+    crate::look::check(dir).map_err(|fails| {
         other(format!(
             "it fails the theme gate:\n  {}",
             fails.join("\n  ")
@@ -166,12 +148,6 @@ impl Themes {
 
     fn installed_dir(&self, name: &str) -> PathBuf {
         self.dir.join("themes").join(name)
-    }
-
-    /// Theme `name`'s folder in `themes-dev/`.
-    #[must_use]
-    pub fn dev_dir(&self, name: &str) -> PathBuf {
-        self.dir.join("themes-dev").join(name)
     }
 
     fn lock_path(&self) -> PathBuf {
@@ -390,110 +366,4 @@ impl Themes {
         rows.sort_by(|a, b| a.name.cmp(&b.name));
         Ok(rows)
     }
-
-    /// `[new theme]` (`from` none: the starter pack) or `[remix]` of installed theme `from`: theme `name`'s folder in
-    /// `themes-dev/`, for an agent to build.
-    ///
-    /// # Errors
-    /// When the name is taken or `from` isn't installed.
-    pub fn start(&self, name: &str, from: Option<&str>) -> io::Result<PathBuf> {
-        let _one = lock(&self.ops);
-        valid(name)?;
-        let dev = self.dev_dir(name);
-        if dev.exists() || self.installed_dir(name).exists() {
-            return Err(other(format!("a theme named {name} is there already")));
-        }
-        if let Some(from) = from {
-            valid(from)?;
-            let src = self.installed_dir(from);
-            if !src.is_dir() {
-                return Err(other(format!("{from} isn't installed")));
-            }
-            copy(&src, &dev)?;
-        } else {
-            fs::create_dir_all(&dev)?;
-            for (file, text) in STARTER {
-                fs::write(dev.join(file), text)?;
-            }
-        }
-        Ok(dev)
-    }
-
-    /// `[keep]`: theme `name` from `themes-dev/` into `themes/`, only once it passes the theme gate.
-    ///
-    /// # Errors
-    /// The gate's failures, or when the name is taken by now.
-    pub fn keep(&self, name: &str) -> io::Result<()> {
-        let _one = lock(&self.ops);
-        valid(name)?;
-        let (dev, to) = (self.dev_dir(name), self.installed_dir(name));
-        if !dev.is_dir() {
-            return Err(other(format!("no theme {name} is being built")));
-        }
-        gate(&dev)?;
-        if to.exists() {
-            return Err(other(format!("a theme named {name} is installed already")));
-        }
-        fs::create_dir_all(to.parent().unwrap_or(&to))?;
-        fs::rename(dev, to)?;
-        let made = Pinned {
-            name: name.to_owned(),
-            source: "made here".to_owned(),
-            ..Pinned::default()
-        };
-        self.pin(name, Some(made))
-    }
-
-    /// `[publish]`: installed theme `name` as a git repo of its own (its changes committed); returns the folder and
-    /// commit, to push and to propose for the index by PR.
-    ///
-    /// # Errors
-    /// When it isn't installed or git fails.
-    pub fn publish(&self, name: &str) -> io::Result<(PathBuf, String)> {
-        let _one = lock(&self.ops);
-        valid(name)?;
-        let dir = self.installed_dir(name);
-        if !dir.is_dir() {
-            return Err(other(format!("{name} isn't installed")));
-        }
-        if !dir.join(".git").exists() {
-            git(&dir, &["init", "--quiet", "-b", "main"])?;
-        }
-        git(&dir, &["add", "-A"])?;
-        if !git(&dir, &["status", "--porcelain"])?.is_empty() {
-            git(&dir, &["commit", "--quiet", "-m", &format!("theme {name}")])?;
-        }
-        let commit = git(&dir, &["rev-parse", "HEAD"])?;
-        let mut p = self.pinned()?.into_iter().find(|p| p.name == name);
-        let p = p.get_or_insert_with(|| Pinned {
-            name: name.to_owned(),
-            source: "made here".to_owned(),
-            ..Pinned::default()
-        });
-        p.commit.clone_from(&commit);
-        self.pin(name, Some(p.clone()))?;
-        Ok((dir, commit))
-    }
-}
-
-/// A fingerprint of the files in `dir` (names, sizes and change times): the preview reloads when it changes.
-#[must_use]
-pub fn stamp(dir: &Path) -> u64 {
-    use std::hash::{DefaultHasher, Hash, Hasher};
-    fn walk(dir: &Path, h: &mut DefaultHasher) {
-        let Ok(list) = fs::read_dir(dir) else { return };
-        let mut list: Vec<_> = list.flatten().collect();
-        list.sort_by_key(fs::DirEntry::file_name);
-        for e in list {
-            e.file_name().hash(h);
-            match e.metadata() {
-                Ok(m) if m.is_dir() => walk(&e.path(), h),
-                Ok(m) => (m.len(), m.modified().ok()).hash(h),
-                Err(_) => {}
-            }
-        }
-    }
-    let mut h = DefaultHasher::new();
-    walk(dir, &mut h);
-    h.finish()
 }

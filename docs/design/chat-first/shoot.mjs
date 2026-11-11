@@ -20,7 +20,8 @@ const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascrip
 const srv = createServer((q, r) => {
   try {
     const p = join(root, decodeURIComponent(new URL(q.url, 'http://x').pathname));
-    r.writeHead(200, { 'content-type': TYPES[extname(p)] || 'application/octet-stream' }).end(readFileSync(p));
+    const b = readFileSync(p);
+    r.writeHead(200, { 'content-type': TYPES[extname(p)] || 'application/octet-stream' }).end(b);
   } catch { r.writeHead(404).end(); }
 }).listen(0, '127.0.0.1');
 await new Promise(ok => srv.on('listening', ok));

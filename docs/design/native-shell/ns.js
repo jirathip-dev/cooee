@@ -1,4 +1,4 @@
-// #116 mockup: the native shell on the live design system. As chat-first's cf.js, it reads web/'s schemes and the
+// #116 mockup: the native shell on the live design system. As chat-first's cf.js, it reads design-system/'s schemes and the
 // farm pack and sets them as cooee's first byte does (shown.rs): `?theme=farm&mode=dark|light`, Modern (Terminal is
 // not drawn). `?f=<frame>` shows that frame alone at its own size (the shots); without it the page is a gallery.
 // Then it fills:
@@ -6,7 +6,7 @@
 //   [data-x=tabs|rail][data-on]           the tab bar (390) or the left rail (1440), the current tab
 //   [data-x=personas|threads|scene|workflow|queue|asks|more|persona|chat]   a screen's content
 //   [data-st] [data-av] [data-s]          a state's figure and word, an avatar, a 132 × 100 vector horse
-const W = '../../../web/', P = '../../../packs/themes/';
+const W = '../../../design-system/', P = '../../../packs/themes/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark', F = q.get('f');
 const theme = await fetch(`${P}${T}/theme.json`).then(r => r.json());

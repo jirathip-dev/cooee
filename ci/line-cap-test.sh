@@ -5,7 +5,7 @@ set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
 t=$(mktemp -d)
 trap 'rm -rf "${t:?}"' EXIT
-mkdir -p "$t/scripts" "$t/ci" "$t/crates/a/src" "$t/web/src" "$t/web/ts" \
+mkdir -p "$t/scripts" "$t/ci" "$t/crates/a/src" \
   "$t/apple/App/Views" "$t/apple/AppTests" "$t/apple/design" "$t/apple/App/Fixtures"
 cp "$here/scripts/line-cap.sh" "$t/scripts/"
 printf '[fleet.cooee]\nline_cap = 100\napple_cap = 5\n' > "$t/ci/cap.toml"

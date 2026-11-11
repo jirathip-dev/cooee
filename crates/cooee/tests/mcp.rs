@@ -3,8 +3,7 @@
 //! (their own `initialize`, id styles and order) and talks MCP to it. A fake stdio server offers tools a, b and c.
 //! The registry refuses a literal token; a profile's allowlist is all the agent sees and may call; references
 //! resolve when the proxy starts and their values reach no file, log or event; a closed thread's token stops
-//! working; `propose_server` only raises a card, which needs Face ID and adds the server off; the phone toggles and
-//! picks tools but can't change a command or URL.
+//! working; `propose_server` only raises a card, which needs Face ID and adds the server off.
 
 mod support;
 
@@ -105,16 +104,6 @@ impl Setup {
     /// The servers' list as `cooee mcp ls` prints it.
     fn ls(&self) -> String {
         self.cooee.cli(&["mcp", "ls"])
-    }
-
-    /// A form POST as the phone's page sends it: the status, and the body.
-    fn form(&self, path: &str, body: &str) -> (u16, String) {
-        let headers = [
-            ("Content-Type", "application/x-www-form-urlencoded"),
-            ("Cookie", self.cooee.cookie.as_str()),
-        ];
-        let (head, body) = self.cooee.raw("POST", path, &headers, body);
-        (head[9..12].parse().unwrap(), body)
     }
 }
 
@@ -500,121 +489,6 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
     let ls = s.ls();
     assert!(ls.contains(&format!("[stdio] web · off · {exact}")), "{ls}");
     assert!(!ran.exists(), "approving adds it off; nothing ran");
-}
-
-#[test]
-fn the_phone_toggles_and_picks_tools_but_a_command_or_url_change_is_refused_server_side() {
-    let s = setup("mcp-phone");
-    let page = s.cooee.get("/mcp").1;
-    for part in [
-        r#"<div class="acr" data-server="fs"><span class="ptg">stdio</span>"#,
-        r#"<span class="st m">edit on Mac</span>"#,
-        r#"name="t:fs:a" checked"#,
-        r#"name="t:fs:b">"#,
-    ] {
-        assert!(page.contains(part), "{part} not in {page}");
-    }
-    let config = || fs::read_to_string(&s.cooee.config).unwrap();
-    let before = config();
-    for edit in [
-        "enabled=on&command=%2Fbin%2Fevil",
-        "url=https%3A%2F%2Fevil",
-        "args=x&enabled=off",
-        "env=T",
-    ] {
-        let (status, body) = s.form("/mcp/servers/fs", edit);
-        assert_eq!(status, 403, "{edit}: {body}");
-        assert!(body.contains("on the Mac only"), "{body}");
-    }
-    assert_eq!(config(), before, "a refused edit changes nothing");
-    assert_eq!(s.form("/mcp/servers/fs", "enabled=off").0, 303);
-    assert!(s.ls().contains("[stdio] fs · off"));
-    assert_eq!(s.form("/mcp/servers/fs", "enabled=on").0, 303);
-    assert!(s.ls().contains("[stdio] fs · on"));
-    assert!(config().contains("secret:TOKEN"), "{}", config());
-
-    // The profile's tools: a and c of a, b and c; then every one ticked is all of them.
-    assert_eq!(
-        s.form(
-            "/profiles/coder/mcp",
-            "s%3Afs=on&t%3Afs%3Aa=on&t%3Afs%3Ac=on"
-        )
-        .0,
-        303
-    );
-    let profile = || fs::read_to_string(s.dir.join("profiles/coder.toml")).unwrap();
-    assert!(
-        profile().ends_with("[[mcp]]\nserver = \"fs\"\ntools = [\"a\",\"c\"]\n"),
-        "{}",
-        profile()
-    );
-    let mut m = Mcp::start(named(&s.thread("coder").1, "fs"), Agent::Claude);
-    assert_eq!(m.tools(), ["a", "c"]);
-    drop(m);
-    assert_eq!(
-        s.form(
-            "/profiles/coder/mcp",
-            "s%3Afs=on&t%3Afs%3Aa=on&t%3Afs%3Ab=on&t%3Afs%3Ac=on"
-        )
-        .0,
-        303
-    );
-    assert!(
-        profile().ends_with("[[mcp]]\nserver = \"fs\"\n"),
-        "{}",
-        profile()
-    );
-
-    // `+ server` needs Face ID, then adds it off.
-    let add = "name=docs&type=http&target=https%3A%2F%2Fdocs.example%2Fmcp";
-    assert_eq!(s.form("/mcp/servers", add).0, 403);
-    let phone = Authenticator::new(&s.cooee);
-    phone.save(&s.cooee);
-    let passkey: String = url(&phone.get(&s.cooee).to_string());
-    let (status, body) = s.form("/mcp/servers", &format!("{add}&passkey={passkey}"));
-    assert_eq!(
-        (status, body.as_str()),
-        (200, "added docs, off: turn it on in settings › mcp servers")
-    );
-    assert!(
-        s.ls()
-            .contains("[http] docs · off · https://docs.example/mcp")
-    );
-    // Adding a name that exists would change its command: refused.
-    let passkey: String = url(&phone.get(&s.cooee).to_string());
-    let (status, body) = s.form(
-        "/mcp/servers",
-        &format!("name=fs&type=stdio&target=%2Fbin%2Fevil&passkey={passkey}"),
-    );
-    assert!(
-        status == 400 && body.contains("change it on the Mac"),
-        "{body}"
-    );
-    assert_eq!(s.form("/mcp/servers/docs/remove", "").0, 303);
-    assert!(!s.ls().contains("docs"));
-
-    // A secret from the phone goes straight to the store (never the config).
-    if !cfg!(target_os = "macos") {
-        assert_eq!(s.form("/mcp/secret", "name=NEW&value=s3cr3t-value").0, 303);
-        assert_eq!(
-            fs::read_to_string(s.dir.join("data/secrets/NEW")).unwrap(),
-            "s3cr3t-value"
-        );
-        assert!(!config().contains("s3cr3t-value"));
-    }
-}
-
-/// `s`, percent-encoded for a form.
-fn url(s: &str) -> String {
-    s.bytes()
-        .map(|b| {
-            if b.is_ascii_alphanumeric() {
-                (b as char).to_string()
-            } else {
-                format!("%{b:02X}")
-            }
-        })
-        .collect()
 }
 
 #[test]

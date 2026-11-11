@@ -1,4 +1,4 @@
-// #153 mockup: rooms and linked exchanges, on the live design system. As native-shell's ns.js, it reads web/'s schemes
+// #153 mockup: rooms and linked exchanges, on the live design system. As native-shell's ns.js, it reads design-system/'s schemes
 // and the farm pack and sets them as shown.rs does: `?theme=farm&mode=dark|light&style=modern|terminal|scene`.
 // `?f=<frame>` shows one frame alone at its own size (the shots); without it the page is a gallery. Then it fills:
 //   .ph                     a phone screen's status bar, island and home indicator (ns.css)
@@ -7,7 +7,7 @@
 //   [data-x=strip]          the room's member strip (data-sel: the member whose sheet is open)
 //   [data-x=side]           Home with rooms and linked exchanges: the 1440 sidebar, or the phone's list with data-ph
 //                           (data-sel: the open row)
-const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
+const W = '../../../design-system/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', F = q.get('f');
 const STYLE = q.get('style') || document.body.dataset.style || 'modern';

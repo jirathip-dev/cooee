@@ -1,6 +1,6 @@
 //! #553 row 34 and #193 end to end: a thread starts on a picked model and effort. The models are the ones the fake
 //! ACP agent's session reports (no list in cooee): a short name runs on its family's newest (set with `acp.model`),
-//! a model the agent adds shows in the picker and `GET /models` with no code change, a pinned model that is gone
+//! a model the agent adds shows in `GET /models` with no code change, a pinned model that is gone
 //! falls back to its family's short name with one line, and a pick it doesn't offer is refused. The effort is the
 //! provider row's words after the agent; the composer's chips change both, kept on the thread and said as a line.
 
@@ -81,20 +81,17 @@ fn row_34_a_thread_starts_on_its_pick_and_a_new_model_shows() {
     // The adapter's command line comes from the hub's list, not another `shed agents` (#55).
     assert_eq!(log.matches(" agents\n").count(), 1, "{log}");
     assert!(line.ends_with(" -- env fake-acp --effort high"), "{line}");
-    let page = cooee.get(&format!("/t/{id}")).1;
-    assert!(
-        // The provider's name and the main login (#48: never the agent's id), then the model.
-        page.contains("fake · main login · opus · "),
-        "{page}"
-    );
-    assert!(
-        page.contains(r#"<option value="fake-opus">model: fake-opus</option>"#)
-            && page.contains(r#"<option value="fake-sonnet-1">model: fake-sonnet-1</option>"#),
-        "{page}"
+    // The thread keeps its pick; the picker's short names come from what the session reported.
+    assert_eq!(stored(&dir, &id), (json!("opus"), json!("high")));
+    let lists = cooee.json("/models");
+    assert_eq!(
+        lists[0]["short"],
+        json!({ "fake-opus": "fake-opus-2", "fake-sonnet": "fake-sonnet-1" }),
+        "{lists}"
     );
     assert_eq!(start("gpt", "r0").0, 400, "a model it doesn't offer");
 
-    // The agent ships a model: the picker and the API have it, and `opus` runs on it.
+    // The agent ships a model: the API has it, and `opus` runs on it.
     reports(
         &shed,
         &["fake-opus-1", "fake-opus-2", "fake-opus-3", "fake-sonnet-1"],
@@ -102,11 +99,6 @@ fn row_34_a_thread_starts_on_its_pick_and_a_new_model_shows() {
     let (code, id) = start("opus", "r2");
     assert_eq!(code, 200, "{id}");
     assert_eq!(set_on(&shed, &id).as_deref(), Some("fake-opus-3"));
-    let page = cooee.get(&format!("/t/{id}")).1;
-    assert!(
-        page.contains(r#"<option value="fake-opus-3">model: fake-opus-3</option>"#),
-        "{page}"
-    );
     let lists = cooee.json("/models");
     assert_eq!(lists.as_array().unwrap().len(), 1, "{lists}");
     let fake = &lists[0];
@@ -178,11 +170,6 @@ fn a_gone_pin_falls_back_with_one_line_and_a_short_name_moves_on() {
             &json!("note"),
             &json!("model sonnet · effort low from the next start")
         )
-    );
-    let page = cooee.get(&format!("/t/{id}")).1;
-    assert!(
-        page.contains(r#"<option value="low" selected="">effort: low</option>"#),
-        "{page}"
     );
     assert_eq!(stored(&dir, &id), (json!("sonnet"), json!("low")));
 }

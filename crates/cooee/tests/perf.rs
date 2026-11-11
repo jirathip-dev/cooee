@@ -56,9 +56,9 @@ fn requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn() {
     let cooee = Cooee::start_with(&dir, &shed.dir, "[perf]\nslow_ms = 0\n");
     let id = create(&cooee, &dir.join("root/project"), "hi");
     assert_eq!(cooee.get(&format!("/threads/{id}/messages?limit=5")).0, 200);
-    assert_eq!(cooee.get("/").0, 200);
+    assert_eq!(cooee.get("/models").0, 200);
     let log = lines(&dir);
-    assert_eq!(named(&log, "http", "GET /").len(), 1, "{log:?}");
+    assert_eq!(named(&log, "http", "GET /models").len(), 1, "{log:?}");
 
     let messages = named(&log, "http", "GET /threads/{id}/messages");
     assert!(!messages.is_empty(), "{log:?}");

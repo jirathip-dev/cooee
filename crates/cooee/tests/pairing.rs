@@ -5,7 +5,7 @@
 
 mod support;
 
-use std::{fs, path::Path};
+use std::fs;
 
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
 use p256::{
@@ -27,12 +27,11 @@ fn status(head: &str) -> u16 {
     head[9..12].parse().unwrap()
 }
 
-/// Every page, read and write, with `cookie` (maybe none): its status.
+/// Every read and write, with `cookie` (maybe none): its status.
 fn statuses(c: &Cooee, cookie: &str) -> Vec<(&'static str, u16)> {
     let json = ("Content-Type", "application/json");
-    let calls: [(&str, &str, &str); 9] = [
-        ("GET", "/", ""),
-        ("GET", "/t/t1", ""),
+    let calls: [(&str, &str, &str); 8] = [
+        ("GET", "/threads", ""),
         ("GET", "/threads/t1/messages", ""),
         ("GET", "/threads/t1/events", ""),
         (
@@ -71,55 +70,17 @@ fn unpaired_reads_and_writes_are_refused() {
     let (_dir, _shed, c) = setup("unpaired", "");
     for cookie in ["", "cooee=", "cooee=0123456789abcdef"] {
         for (path, code) in statuses(&c, cookie) {
-            // Pages send the browser to pairing; everything else is 401.
-            let want = if path == "/" || path.starts_with("/t/") {
-                303
-            } else {
-                401
-            };
-            assert_eq!(code, want, "{path} with {cookie:?}");
+            assert_eq!(code, 401, "{path} with {cookie:?}");
         }
     }
-    let (head, _) = c.raw("GET", "/", &[], "");
-    assert!(head.contains("location: /pair"), "{head}");
-    // The shell only (q528): the welcome, three steps and six code boxes, no thread data; the look loads.
-    let (head, page) = c.raw("GET", "/pair", &[], "");
-    assert_eq!(status(&head), 200);
-    assert!(
-        page.contains("pair this device")
-            && page.contains("Open cooee on your Mac or a paired phone")
-            && page.matches("inputmode=\"numeric\"").count() == 6
-            && !page.contains("sign in with passkey")
-            && !page.contains("Add cooee to your Home Screen"),
-        "{page}"
-    );
-    // Safari on an iPhone gets the Home Screen hint; iOS 26 says where Share is.
-    let safari = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) Version/26.0 Mobile/15E148 Safari/604.1";
-    let (_, page) = c.raw("GET", "/pair", &[("User-Agent", safari)], "");
-    assert!(
-        page.contains("Add cooee to your Home Screen first.") && page.contains("(in the ⋯ menu)"),
-        "{page}"
-    );
-    let chrome = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) CriOS/140.0 Mobile/15E148 Safari/604.1";
-    assert!(
-        !c.raw("GET", "/pair", &[("User-Agent", chrome)], "")
-            .1
-            .contains("Home Screen first")
-    );
-    assert_eq!(status(&c.raw("GET", "/look.js", &[], "").0), 200);
-    assert_eq!(
-        status(&c.raw("GET", "/look/plain/theme.json", &[], "").0),
-        200
-    );
 }
 
 #[test]
 fn pair_use_remove_and_only_the_hash_on_disk() {
     let (dir, _shed, c) = setup("pair", "");
     let cookie = c.cookie.clone();
-    let (head, page) = c.raw("GET", "/", &[("Cookie", &cookie)], "");
+    let (head, _) = c.raw("GET", "/threads", &[("Cookie", &cookie)], "");
     assert_eq!(status(&head), 200, "{head}");
-    assert!(page.contains("<h1>cooee</h1>"));
 
     let token = cookie.strip_prefix("cooee=").unwrap();
     let disk = fs::read_to_string(dir.join("data/devices.json")).unwrap();
@@ -135,9 +96,14 @@ fn pair_use_remove_and_only_the_hash_on_disk() {
 
     assert!(c.cli(&["devices", "rm", &id]).contains("removed"));
     for (path, code) in statuses(&c, &cookie) {
-        assert!(code == 401 || code == 303, "{path}: {code}");
+        assert_eq!(code, 401, "{path}");
     }
-    let (head, _) = c.raw("GET", "/", &[("Cookie", &format!("cooee={second}"))], "");
+    let (head, _) = c.raw(
+        "GET",
+        "/threads",
+        &[("Cookie", &format!("cooee={second}"))],
+        "",
+    );
     assert_eq!(status(&head), 200, "the other device stays paired: {head}");
 }
 
@@ -164,7 +130,7 @@ fn enter(c: &Cooee, addr: &str, body: &str) -> (String, Option<String>) {
 }
 
 #[test]
-fn a_qr_code_is_prefilled_and_pairs_at_once() {
+fn a_qr_codes_link_carries_a_code_that_pairs_at_once() {
     let (_dir, _shed, c) = setup("qr", "");
     // A paired device shows the QR: the link with a new code, as an SVG.
     let (code, body) = c.post("/devices/pair", &json!({}));
@@ -174,15 +140,6 @@ fn a_qr_code_is_prefilled_and_pairs_at_once() {
     let link = qr["link"].as_str().unwrap();
     assert_eq!(link, format!("https://{}/pair?code={pin}", c.addr));
     assert!(qr["svg"].as_str().unwrap().contains("<svg"), "{qr}");
-    // The Camera opens the link: the six boxes are filled in and say so; the page sends them itself.
-    let (_, page) = c.raw("GET", &format!("/pair?code={pin}"), &[], "");
-    assert!(
-        page.contains(r#"class="cbx ok""#) && page.contains("pairing…"),
-        "{page}"
-    );
-    for d in pin.chars() {
-        assert!(page.contains(&format!(r#"value="{d}""#)), "{d}: {page}");
-    }
     // The six boxes, as the form posts them: `code` then `d2`…`d6`.
     let six: Vec<String> = (2..=6)
         .zip(pin.chars().skip(1))
@@ -193,7 +150,7 @@ fn a_qr_code_is_prefilled_and_pairs_at_once() {
     assert_eq!(to, "/?paired");
     let cookie = format!("cooee={}", cookie.unwrap());
     assert_eq!(
-        status(&c.raw("GET", "/", &[("Cookie", &cookie)], "").0),
+        status(&c.raw("GET", "/threads", &[("Cookie", &cookie)], "").0),
         200
     );
 }
@@ -205,11 +162,6 @@ fn a_wrong_expired_or_reused_code_says_so() {
     let wrong = if pin == "000000" { "111111" } else { "000000" };
     let (to, cookie) = enter(&c, "203.0.113.2", &format!("code={wrong}"));
     assert_eq!((to.as_str(), cookie), ("/pair?bad=wrong&left=4", None));
-    let (_, page) = c.raw("GET", &to, &[], "");
-    assert!(
-        page.contains("That code isn't right.") && page.contains("4 tries left this minute"),
-        "{page}"
-    );
     // Used once, it has run out.
     assert!(enter(&c, "203.0.113.2", &format!("code={pin}")).1.is_some());
     let (to, cookie) = enter(&c, "203.0.113.2", &format!("code={pin}"));
@@ -217,18 +169,6 @@ fn a_wrong_expired_or_reused_code_says_so() {
         (to.as_str(), cookie),
         (format!("/pair?bad=expired&code={pin}").as_str(), None)
     );
-    let (_, page) = c.raw("GET", &to, &[], "");
-    assert!(
-        page.contains("That code has run out.") && page.contains("type a new code"),
-        "{page}"
-    );
-    // The used code stays in the boxes, muted.
-    assert!(page.contains(r#"class="cbx dim""#), "{page}");
-    for (i, d) in pin.chars().enumerate() {
-        let digit = format!(r#"aria-label="digit {}""#, i + 1);
-        let tag = page.split("<input").find(|t| t.contains(&digit)).unwrap();
-        assert!(tag.contains(&format!(r#"value="{d}""#)), "{tag}");
-    }
     // After 10 minutes, too.
     let pin = new_code(&c);
     let file = dir.join("data/devices.json");
@@ -242,7 +182,7 @@ fn a_wrong_expired_or_reused_code_says_so() {
 }
 
 #[test]
-fn five_wrong_codes_a_minute_close_the_boxes_for_that_address() {
+fn five_wrong_codes_a_minute_refuse_that_address() {
     let (_dir, _shed, c) = setup("rate", "");
     let pin = new_code(&c);
     let wrong = if pin == "000000" { "111111" } else { "000000" };
@@ -260,11 +200,6 @@ fn five_wrong_codes_a_minute_close_the_boxes_for_that_address() {
     assert!(
         to.starts_with("/pair?bad=limit&wait=") && cookie.is_none(),
         "{to}"
-    );
-    let (_, page) = c.raw("GET", &to, &[], "");
-    assert!(
-        page.contains("Too many tries.") && page.contains("disabled"),
-        "{page}"
     );
     // Another address may still pair.
     assert!(enter(&c, "203.0.113.4", &format!("code={pin}")).1.is_some());
@@ -487,7 +422,7 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
         .unwrap();
     let cookie = format!("cooee={}", token.split(';').next().unwrap());
     assert_eq!(
-        status(&c.raw("GET", "/", &[("Cookie", &cookie)], "").0),
+        status(&c.raw("GET", "/threads", &[("Cookie", &cookie)], "").0),
         200
     );
     assert_eq!(c.json("/pair/asks"), json!([]));
@@ -573,12 +508,6 @@ fn a_passkey_signs_a_device_back_in_and_can_be_removed() {
     let (_dir, _shed, c) = setup("passkey", "");
     let phone = Authenticator::new(&c, 7);
     save_passkey(&c, &phone);
-    // The pairing page offers it once there is one.
-    assert!(
-        c.raw("GET", "/pair", &[], "")
-            .1
-            .contains("sign in with passkey")
-    );
 
     // The cookie is gone (Safari's data cleared): the passkey pairs this browser again, with no code.
     let signed = phone.get(&challenge(&c));
@@ -590,7 +519,7 @@ fn a_passkey_signs_a_device_back_in_and_can_be_removed() {
         .unwrap();
     let cookie = format!("cooee={}", token.split(';').next().unwrap());
     assert_eq!(
-        status(&c.raw("GET", "/", &[("Cookie", &cookie)], "").0),
+        status(&c.raw("GET", "/threads", &[("Cookie", &cookie)], "").0),
         200
     );
     assert_ne!(c.json("/passkeys")[0]["used"], 0);
@@ -732,92 +661,5 @@ fn the_new_calls_need_a_paired_device_but_pairing_requests_do_not() {
     assert_eq!(
         status(&c.raw("POST", "/pair/request", &foreign, "{}").0),
         403
-    );
-}
-
-#[test]
-fn the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it() {
-    // #49: the look sheet with no script posts the key tapped; the cookie it sets draws the next page from its first byte.
-    // kitchen, installed beside the config (#38: only plain is built in).
-    let dir = scratch("look");
-    let kitchen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/themes/kitchen");
-    fs::create_dir_all(dir.join("themes/kitchen")).unwrap();
-    for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
-        fs::copy(kitchen.join(f), dir.join("themes/kitchen").join(f)).unwrap();
-    }
-    let shed = FakeShed::start(&dir.join("shed"), version());
-    let c = Cooee::start(&dir, &shed.dir);
-    let form = "to=%2Fpair&style=terminal";
-    let form_type = ("Content-Type", "application/x-www-form-urlencoded");
-    let (head, _) = c.raw("POST", "/look", &[form_type], form);
-    assert_eq!(status(&head), 303, "{head}");
-    assert!(head.contains("location: /pair"), "{head}");
-    let set = head
-        .lines()
-        .find_map(|l| l.strip_prefix("set-cookie: "))
-        .unwrap();
-    assert!(set.starts_with("cooee-look=style:terminal;"), "{set}");
-    let pick = "cooee-look=theme:kitchen/style:terminal/figures:none/mode:dark";
-    let (_, page) = c.raw("GET", "/pair", &[("Cookie", pick)], "");
-    assert!(
-        page.contains(r#"<html lang="en" data-theme="kitchen" data-mode="dark" data-style="terminal" data-figures="none""#),
-        "{page}"
-    );
-    // #35: Figures none hides Scene from Style (still in the page for `look.ts`, not listed); Sprite stays offered.
-    assert!(
-        page.contains(r#"<button hidden="" type="submit" role="radio" name="style" value="scene""#),
-        "{page}"
-    );
-    assert!(
-        page.contains(r#"<button type="submit" role="radio" name="figures" value="sprite""#),
-        "{page}"
-    );
-    // A saved `terminal` theme is plain, which has no sprites: ASCII, and Sprite not offered.
-    let (_, plain) = c.raw(
-        "GET",
-        "/pair",
-        &[("Cookie", "cooee-look=theme:terminal")],
-        "",
-    );
-    assert!(
-        plain.contains(r#"data-theme="plain" data-style="modern" data-figures="ascii""#),
-        "{plain}"
-    );
-    assert!(
-        plain.contains(
-            r#"<button hidden="" type="submit" role="radio" name="figures" value="sprite""#
-        ),
-        "{plain}"
-    );
-    assert!(
-        page.contains("<style id=\"scheme\">:root{") && page.contains("--bg:#1a1816;"),
-        "{page}"
-    );
-    // The sheet is server HTML, its keys checked for the pick.
-    assert!(
-        page.contains(r#"data-k="style" data-v="terminal" aria-checked="true""#),
-        "{page}"
-    );
-    // Back to this server only.
-    let (head, _) = c.raw(
-        "POST",
-        "/look",
-        &[form_type],
-        "to=%2F%2Fevil.example&theme=farm",
-    );
-    assert!(
-        head.contains("location: /\n") || head.ends_with("location: /"),
-        "{head}"
-    );
-    // A browser drops the tab, so `/\t/evil.example` would become `//evil.example`.
-    let (head, _) = c.raw(
-        "POST",
-        "/look",
-        &[form_type],
-        "to=%2F%09%2Fevil.example&theme=farm",
-    );
-    assert!(
-        head.contains("location: /\n") || head.ends_with("location: /"),
-        "{head}"
     );
 }

@@ -591,7 +591,7 @@ fn theme(config: &Config, args: &[&str], rev: Option<&str>, yes: bool) -> Result
     if let ["check", paths @ ..] = args {
         let mut failed = 0;
         for p in paths {
-            match cooee_web::check(Path::new(p)) {
+            match cooee_server::check(Path::new(p)) {
                 Ok(()) => println!("ok   {p}"),
                 Err(fails) => {
                     failed += 1;

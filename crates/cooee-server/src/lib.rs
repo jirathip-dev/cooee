@@ -1,13 +1,13 @@
-//! cooee's HTTP server: the web UI's pages (`cooee-web`), the threads' JSON API and their live events over SSE
-//! (replayed from the last seen event on reconnect), provider logins, pairing and web push. Every request must name one of the
-//! server's own hosts (`Host`, and `Origin` when sent: no DNS rebinding), and every page and API call but pairing
-//! and the static files needs a paired device's cookie; a plugin's backend posts with its token instead. Plugin tabs
-//! (docs/plugins.md) run their module in a sandboxed frame and reach their backend through cooee's proxy.
+//! cooee's HTTP server: the native app's JSON API (docs/api.md), the threads' live events over SSE (replayed from the
+//! last seen event on reconnect), provider logins, pairing and push. Every request must name one of the server's own
+//! hosts (`Host`, and `Origin` when sent: no DNS rebinding), and every call but pairing needs a paired device's
+//! cookie; a plugin's backend posts with its token instead and is reached through cooee's proxy (docs/plugins.md).
 
 #![forbid(unsafe_code)]
 
 mod hub;
 mod login;
+mod look;
 mod manage;
 pub mod mcp;
 mod pairing;
@@ -41,43 +41,32 @@ use topcoat::{
     router::{
         Body, BodyLimit, Layer, LayerFuture, Next, Path, Router,
         content::{
-            Form, Json,
+            Json,
             sse::{Event, KeepAlive, Sse, last_event_id},
         },
         error::not_found,
-        page, parse_query_params, path_param,
+        parse_query_params, path_param,
         request::{headers, method, uri},
         response::{IntoResponse, Response},
         route, try_endpoint,
     },
-    view::View,
 };
 
 pub use hub::{CardSpec, Hub, HubError, Listing, Out, Recipe, Resume, Slice, Upload};
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
+pub use look::check;
 pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
-pub use themes::{Pack, Pinned, Themes, stamp};
+pub use themes::{Pack, Pinned, Themes};
 
-/// The paths an unpaired browser may load: pairing and the static files (and the themes' files under `/look/`).
-const OPEN: [&str; 17] = [
+/// The paths an unpaired device may call: pairing.
+const OPEN: [&str; 6] = [
     "/pair",
-    "/look",
-    "/look.js",
-    "/pair.js",
     "/pair/request",
     "/pair/claim",
     "/pair/cancel",
     "/passkey/challenge",
     "/passkey/signin",
-    "/manifest.webmanifest",
-    "/icon.svg",
-    "/icon-192.png",
-    "/icon-512.png",
-    "/app.css",
-    "/chat.js",
-    "/md.js",
-    "/sw.js",
 ];
 
 /// The pairing cookie.
@@ -108,8 +97,8 @@ struct Paired(Device);
 /// The plugin whose token a `/plugin/` request carries, put in the request context by the [`Gate`].
 struct Caller(Plugin);
 
-/// Checks every request: its `Host` (and `Origin`, when sent) must be one of `names`, and a page or API call must
-/// carry a paired device's cookie (an unpaired page load goes to `/pair`).
+/// Checks every request: its `Host` (and `Origin`, when sent) must be one of `names`, and an API call must carry a
+/// paired device's cookie.
 struct Gate {
     /// localhost, the bind address and `allowed_hosts`; matched exactly, so a `*` never widens them.
     names: Vec<String>,
@@ -147,7 +136,7 @@ impl Layer for Gate {
                 return plain(403, "forbidden: foreign Host or Origin");
             }
             let path = uri(cx).path();
-            if OPEN.contains(&path) || path.starts_with("/look/") {
+            if OPEN.contains(&path) {
                 return next.run(cx, body).await;
             }
             // A thread's MCP proxy carries the thread's token, checked by the call.
@@ -179,17 +168,6 @@ impl Layer for Gate {
             };
             match found {
                 Some(d) => next.run(&cx.with(Paired(d)), body).await,
-                None if method(cx) == "GET"
-                    && (path == "/"
-                        || path == "/new"
-                        || path.starts_with("/t/")
-                        || path.strip_prefix("/p/").is_some_and(|p| !p.contains('/'))) =>
-                {
-                    Ok(Response::builder()
-                        .status(303)
-                        .header("Location", "/pair")
-                        .body(Body::from(()))?)
-                }
                 None => plain(
                     401,
                     "pair this device first: run `cooee pair` on the machine",
@@ -296,125 +274,6 @@ async fn on_logins<T: Send + 'static>(
 #[derive(Default)]
 struct Dots(std::sync::Mutex<std::collections::BTreeSet<String>>);
 
-/// The plugin tabs (a plugin with screens only has none): each one's name, label and dot.
-fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
-    let hub = app_context::<Arc<Hub>>(cx);
-    let dots = app_context::<Arc<Dots>>(cx).0.lock().map(|d| d.clone());
-    let dots = dots.unwrap_or_default();
-    let tabs = hub.plugins().into_iter().filter(|p| !p.module.is_empty());
-    tabs.map(|p| {
-        let dot = dots.contains(&p.name);
-        (p.name, p.label, dot)
-    })
-    .collect()
-}
-
-/// The sidebar's and a new chat's data (#86).
-async fn side(cx: &Cx) -> Result<cooee_web::Side> {
-    let providers = on_logins(cx, |l| Ok(l.statuses()));
-    let d = app_context::<Data>(cx);
-    let (data, config) = (d.0.clone(), d.1.clone());
-    let rest = blocking(cx, move |hub| {
-        let mut profiles = profiles(hub, (&data, config.as_deref()));
-        profiles.retain(|p| !p.hidden);
-        Ok((
-            hub.list(),
-            hub.agents(),
-            hub.folders(),
-            profiles,
-            hub.models(),
-        ))
-    });
-    let (providers, (rows, mut agents, folders, profiles, models)) =
-        futures_util::future::try_join(providers, rest).await?;
-    // A new chat runs on the main login: its models (#193).
-    for a in agents.iter_mut().flatten() {
-        let main = models
-            .iter()
-            .find(|o| o.agent == a.id && o.account.is_empty());
-        a.models = main
-            .map(cooee_core::models::Offered::picks)
-            .unwrap_or_default();
-    }
-    Ok(cooee_web::Side {
-        rows,
-        profiles,
-        agents,
-        providers,
-        folders,
-        tabs: tabs(cx),
-    })
-}
-
-/// `/new?agent=<ACP id>` (Plain) or `?profile=<id>`: a new chat with that agent; on `/` (`?list` keeps a phone on
-/// the agents list) the agent on show.
-#[derive(Deserialize)]
-struct NewChat {
-    list: Option<String>,
-    agent: Option<String>,
-    profile: Option<String>,
-}
-
-/// The query's agent as a [`cooee_web::Mate`] key (empty: none), and whether it has `?list`.
-fn agent_key(cx: &Cx) -> (String, bool) {
-    let q = parse_query_params::<NewChat>(cx).ok();
-    let list = q.as_ref().is_some_and(|q| q.list.is_some());
-    let key = match q {
-        Some(NewChat {
-            profile: Some(p), ..
-        }) => format!("profile={p}"),
-        Some(NewChat { agent: Some(a), .. }) => format!("agent={a}"),
-        _ => String::new(),
-    };
-    (key, list)
-}
-
-#[page("/")]
-async fn home(cx: &Cx) -> Result<impl View> {
-    let (key, list) = agent_key(cx);
-    let pane = cooee_web::Pane::Home { list, key };
-    Ok(cooee_web::page(cx, side(cx).await?, pane))
-}
-
-#[page("/new")]
-async fn new_chat(cx: &Cx) -> Result<impl View> {
-    let (key, _) = agent_key(cx);
-    Ok(cooee_web::page(
-        cx,
-        side(cx).await?,
-        cooee_web::Pane::New { key },
-    ))
-}
-
-/// `POST /agents` (a form): `+ new agent`, a name and the profile it starts from (empty: Plain on the first
-/// installed agent); saved as a profile of its own, then its new chat opens.
-#[derive(Deserialize)]
-struct NewAgent {
-    name: String,
-    #[serde(default)]
-    profile: String,
-}
-
-#[route(POST "/agents")]
-async fn new_agent(cx: &Cx, Form(a): Form<NewAgent>) -> Result<Response> {
-    let data = app_context::<Data>(cx);
-    let (data, config) = (data.0.clone(), data.1.clone());
-    let made = blocking(cx, move |hub| {
-        let first = hub.agents().ok().and_then(|a| a.into_iter().next());
-        let agent = first.map(|a| a.id).unwrap_or_default();
-        let config = config.ok_or_else(|| refused("there is no config folder for profiles"))?;
-        cooee_core::profiles::create(&config, &data, &a.name, &a.profile, &agent).map_err(refused)
-    })
-    .await;
-    match made {
-        Ok(p) => Ok(Response::builder()
-            .status(303)
-            .header("Location", format!("/new?profile={}", p.id()))
-            .body(Body::from(()))?),
-        Err(e) => plain(400, &e.to_string()),
-    }
-}
-
 /// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account.
 #[derive(Deserialize, Default)]
 struct Start {
@@ -476,29 +335,6 @@ async fn login_send(cx: &Cx, Json(c): Json<Code>) -> Result<Answer<()>> {
 async fn login_cancel(cx: &Cx) -> Result<Answer<()>> {
     let name = thread_id(cx);
     Ok(Answer(on_logins(cx, move |l| l.cancel(&name)).await))
-}
-
-#[page("/t/{id}")]
-async fn chat(cx: &Cx) -> Result<impl View> {
-    let id = thread_id(cx);
-    let Ok((thread, turn)) = blocking(cx, move |hub| hub.thread(&id)).await else {
-        return Err(not_found().into());
-    };
-    let side = side(cx).await?;
-    let profile = side.profiles.iter().find(|p| p.id() == thread.profile);
-    let label = profile.map_or(thread.profile.clone(), |p| p.label.clone());
-    let models = hub(cx).offered(&thread.agent, &thread.account);
-    let models = models.map(|o| o.picks()).unwrap_or_default();
-    let choices = (models, logins(cx).efforts(&thread.agent));
-    let folder = thread.folder.clone();
-    let pane = cooee_web::Pane::Chat {
-        thread: Box::new(thread),
-        turn,
-        profile: label,
-        folder,
-        choices,
-    };
-    Ok(cooee_web::page(cx, side, pane))
 }
 
 /// `?around=<id>&before=N&after=N`.
@@ -627,7 +463,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         }
         allowed(&machines, &recipe.machine).map_err(HubError::Refused)?;
         let id = if new.background {
-            let name = cooee_web::named(&agent, &logins.statuses());
+            let name = provider_name(&agent, &logins.statuses());
             hub.create_later(
                 (&agent, &name),
                 &folder,
@@ -651,6 +487,17 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     Ok(Answer(id.map(|id| Created { id })))
 }
 
+/// A provider's name for ACP agent `agent` (`acme` for `acme-acp`): never the agent's id on screen.
+fn provider_name(agent: &str, providers: &[cooee_core::Sheet]) -> String {
+    providers
+        .iter()
+        .find(|s| s.provider.agent == agent)
+        .map_or_else(
+            || agent.strip_suffix("-acp").unwrap_or(agent).to_owned(),
+            |s| s.provider.name.clone(),
+        )
+}
+
 /// `POST /threads/{id}/retry`: starts a thread whose start failed again, with its first message (#48).
 #[route(POST "/threads/{id}/retry")]
 async fn retry(cx: &Cx) -> Result<Answer<()>> {
@@ -667,7 +514,7 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
             PathBuf::new(),
             (t.model, t.effort),
         )?;
-        let name = cooee_web::named(&t.agent, &logins.statuses());
+        let name = provider_name(&t.agent, &logins.statuses());
         hub.retry(&id, recipe, &name)
     });
     Ok(Answer(
@@ -1258,25 +1105,6 @@ fn named(cx: &Cx) -> Result<Plugin> {
     Ok(found.ok_or_else(not_found)?)
 }
 
-#[page("/p/{name}")]
-async fn tab(cx: &Cx) -> Result<impl View> {
-    let p = named(cx)?;
-    Ok(cooee_web::plugin_page(cx, tabs(cx), p.name, p.label))
-}
-
-#[route(GET "/p/{name}/frame")]
-async fn frame(cx: &Cx) -> Result<Response> {
-    let p = named(cx)?;
-    match tokio::task::spawn_blocking(move || plugin::frame(&p, cooee_web::FRAME_JS)).await? {
-        Ok((page, csp)) => Ok(Response::builder()
-            .header("Content-Type", "text/html; charset=utf-8")
-            .header("Content-Security-Policy", csp)
-            .header("Cache-Control", "no-store")
-            .body(Body::from(page))?),
-        Err(e) => plain(502, &format!("plugin {}: {e}", path_param::<Name>(cx))),
-    }
-}
-
 /// A backend's event as one `{event, data}` message (a page's `EventSource` hears only those), its id kept.
 fn relay(e: plugin::Sse) -> Event {
     let event = if e.event.is_empty() {
@@ -1602,150 +1430,6 @@ fn agent_thread(
         ..Recipe::default()
     };
     hub.start(&agent.id, folder, prompt, rid, &recipe)
-}
-
-fn themes(cx: &Cx) -> Arc<Themes> {
-    Arc::clone(app_context::<Arc<Themes>>(cx))
-}
-
-fn looks(cx: &Cx) -> Arc<cooee_web::LookAssets> {
-    Arc::clone(app_context::<Arc<cooee_web::LookAssets>>(cx))
-}
-
-/// `POST /themes/<action>`, Settings › look › themes' forms and a theme thread's `[keep]` (no script): `add`
-/// (`source`), `remove` and `publish` (`name`), `new` and `remix` (`name`, `from`, `text`), `keep` (`name`, `thread`).
-#[derive(Deserialize, Default)]
-#[serde(default)]
-struct ThemeAct {
-    name: String,
-    source: String,
-    from: String,
-    text: String,
-    thread: String,
-}
-
-/// What the agent building theme `name` is told, before the owner's `text`.
-fn theme_prompt(name: &str, text: &str) -> String {
-    let ask = if text.trim().is_empty() {
-        "Ask me what it should look like."
-    } else {
-        text.trim()
-    };
-    format!(
-        "Theme {name}: {ask}\n\nYou're building the cooee theme {name}: this folder is its pack \
-         (docs/themes.md in cooee's repo). theme.json has label, scheme {{dark, light}} (scheme names), sprites, \
-         moments, words (keys: {}) and optionally scene (element ids in scene.svg, viewBox at most \"0 0 400 320\"; scene.svg is needed with sprites). \
-         sprites.svg holds <symbol>s {} (each s-<state>). Your own colour schemes go in schemes/<name>.json (label, \
-         color-scheme, tokens {}), each passing WCAG AA. My phone shows a live preview that reloads on each save. \
-         When I tap [keep], cooee runs the theme gate and lists here anything to fix.",
-        cooee_web::WORDS.join(" "),
-        cooee_web::SPRITES.map(|s| format!("s-{s}")).join(" "),
-        cooee_web::TOKENS.join(" ")
-    )
-}
-
-#[route(POST "/themes/{id}")]
-async fn theme_act(cx: &Cx, Form(a): Form<ThemeAct>) -> Result<Response> {
-    let (act, t, hub, logins, looks) = (thread_id(cx), themes(cx), hub(cx), logins(cx), looks(cx));
-    let done = tokio::task::spawn_blocking(move || {
-        let e = |e: io::Error| e.to_string();
-        let back = "/#settings/look".to_owned();
-        let done = match act.as_str() {
-            "add" => t.plan(&a.source, None).and_then(|p| t.add(&p)).map_err(e).map(|()| back),
-            "remove" => t.remove(&a.name).map_err(e).map(|()| back),
-            "publish" => t.publish(&a.name).map_err(e).map(|(dir, commit)| {
-                format!(
-                    "{} is a git repo now, at {}: {}. Push it (gh repo create --source {2} --push), then \
-                     propose it for cooee's plugins/index.toml by PR.",
-                    a.name,
-                    &commit[..7],
-                    dir.display()
-                )
-            }),
-            "new" | "remix" => {
-                let from = (act == "remix").then_some(a.from.as_str());
-                let dir = t.start(&a.name, from).map_err(e)?;
-                let rid = format!("theme-{}-{}", a.name, now());
-                let prompt = theme_prompt(&a.name, &a.text);
-                let thread = agent_thread(&hub, &logins, &dir, &prompt, &rid);
-                if thread.is_err() {
-                    let _ = std::fs::remove_dir_all(&dir);
-                }
-                thread.map(|id| format!("/t/{id}")).map_err(|e| e.to_string())
-            }
-            "keep" => match t.keep(&a.name) {
-                Ok(()) => Ok(back),
-                Err(why) if !a.thread.is_empty() => {
-                    let text = format!("[keep] {why}\n\nFix these; I'll tap keep again.");
-                    let rid = format!("keep-{}", now());
-                    let sent = hub.send(&a.thread, &text, &rid, &[]).map_err(|e| e.to_string());
-                    sent.map(|_| format!("/t/{}", a.thread))
-                }
-                Err(why) => Err(why.to_string()),
-            },
-            _ => Err(format!("no theme action {act}")),
-        };
-        looks.reload();
-        done
-    });
-    match done.await? {
-        Ok(to) if to.starts_with('/') => Ok(Response::builder()
-            .status(303)
-            .header("Location", to)
-            .body(Body::from(()))?),
-        // `publish` says where its repo is.
-        Ok(said) => plain(200, &said),
-        Err(why) => plain(409, &why),
-    }
-}
-
-/// `GET /themes/dev/<name>`: the live preview of a theme being built (`?thread=`: its chat too), its gate's result
-/// and `[keep]`.
-#[derive(Deserialize)]
-struct PreviewQuery {
-    thread: Option<String>,
-}
-
-#[page("/themes/dev/{id}")]
-async fn preview(cx: &Cx) -> Result<impl View> {
-    let name = thread_id(cx);
-    let looks = looks(cx);
-    let fails = tokio::task::spawn_blocking(move || {
-        looks.reload();
-        looks.looks().dev.get(&name).cloned()
-    });
-    let fails = fails.await?.ok_or_else(not_found)?;
-    let q: Option<PreviewQuery> = parse_query_params(cx).ok();
-    let thread = q.and_then(|q| q.thread).unwrap_or_default();
-    Ok(cooee_web::preview_page(cx, thread_id(cx), fails, thread))
-}
-
-/// `GET /themes/dev/<name>/events`: a `saved` event each time a file of the theme changes, after the looks reload.
-#[route(GET "/themes/dev/{id}/events")]
-async fn theme_saves(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>>> {
-    let name = thread_id(cx);
-    let looks = looks(cx);
-    if !looks.looks().dev.contains_key(&name) {
-        return Err(not_found().into());
-    }
-    let dir = themes(cx).dev_dir(&name);
-    let was = stamp(&dir);
-    let saves = stream::unfold((dir, was, looks), |(dir, was, looks)| async move {
-        loop {
-            tokio::time::sleep(Duration::from_millis(500)).await;
-            let now = stamp(&dir);
-            // Kept or gone: nothing more to preview.
-            if !dir.exists() {
-                return None;
-            }
-            if now != was {
-                looks.reload();
-                let saved = Event::new().event("saved").data("{}");
-                return Some((Ok(saved), (dir, now, looks)));
-            }
-        }
-    });
-    Ok(Sse::new(saves).keep_alive(KeepAlive::new()))
 }
 
 #[route(POST "/plugins/{id}")]
@@ -2299,202 +1983,15 @@ async fn mcp_propose(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<cooee_co
     ))
 }
 
-/// `GET /mcp`: Settings › mcp servers.
-#[page("/mcp")]
-async fn mcp_settings(cx: &Cx) -> Result<impl View> {
-    let data = app_context::<Data>(cx);
-    let (d, c) = (data.0.clone(), data.1.clone());
-    let page = blocking(cx, move |hub| {
-        let servers = hub.mcp()?;
-        let on = servers.iter().filter(|s| s.enabled);
-        let tools = on
-            .map(|s| (s.name.clone(), hub.mcp_tools(&s.name)))
-            .collect();
-        let profiles = cooee_core::profiles::list(c.as_deref(), &d, |_| None);
-        let profiles = profiles
-            .into_iter()
-            .filter(|p| p.plugin.is_none())
-            .collect();
-        Ok(cooee_web::McpPage {
-            servers,
-            profiles,
-            tools,
-        })
-    });
-    Ok(cooee_web::mcp_page(
-        cx,
-        page.await.map_err(io::Error::from)?,
-    ))
-}
-
-/// Back to Settings › mcp servers, or the reason.
-fn to_mcp<T>(done: Result<T, HubError>) -> Result<Response> {
-    match done {
-        Ok(_) => Ok(Response::builder()
-            .status(303)
-            .header("Location", "/mcp")
-            .body(Body::from(()))?),
-        Err(e) => plain(400, &e.to_string()),
-    }
-}
-
-/// The phone's `+ server`: its name, type, command line or URL, and the Face ID assertion (JSON) its card got.
-#[derive(Deserialize)]
-struct NewServer {
-    name: String,
-    #[serde(rename = "type")]
-    kind: String,
-    target: String,
-    #[serde(default)]
-    passkey: Option<String>,
-}
-
-/// `POST /mcp/servers`: adds a server, off, after Face ID.
-#[route(POST "/mcp/servers")]
-async fn mcp_add(cx: &Cx, Form(n): Form<NewServer>) -> Result<Response> {
-    let Some(p) = n.passkey.and_then(|p| serde_json::from_str(&p).ok()) else {
-        return plain(
-            403,
-            "Adding an MCP server needs Face ID: approve it on its card.",
-        );
-    };
-    if let Err(why) = pairing::assert(cx, p).await? {
-        return plain(403, why);
-    }
-    let mut words = n.target.split_whitespace().map(str::to_owned);
-    let stdio = n.kind == "stdio";
-    let p = hub::Proposal {
-        name: n.name.trim().to_owned(),
-        command: words.next().filter(|_| stdio).unwrap_or_default(),
-        args: if stdio { words.collect() } else { Vec::new() },
-        url: if stdio {
-            String::new()
-        } else {
-            n.target.trim().to_owned()
-        },
-        kind: n.kind,
-        why: String::new(),
-    };
-    match blocking(cx, move |hub| hub.add_mcp(p.server())).await {
-        Ok(said) => plain(200, &said),
-        Err(e) => plain(400, &e.to_string()),
-    }
-}
-
-/// `POST /mcp/servers/{name}` `enabled=on|off`: turns a server on or off. Its command, args, URL, env and headers
-/// are the Mac's to change: a phone that sends one is refused.
-#[route(POST "/mcp/servers/{id}")]
-async fn mcp_toggle(cx: &Cx, Form(f): Form<BTreeMap<String, String>>) -> Result<Response> {
-    if f.keys().any(|k| k != "enabled") {
-        return plain(
-            403,
-            "A server's command, URL, env and headers change on the Mac only: `cooee mcp add` there.",
-        );
-    }
-    let on = match f.get("enabled").map(String::as_str) {
-        Some("on") => true,
-        Some("off") => false,
-        _ => return plain(400, "`enabled` is on or off."),
-    };
-    let name = thread_id(cx);
-    to_mcp(
-        blocking(cx, move |hub| {
-            hub.edit_mcp(|list| {
-                let s = list.iter_mut().find(|s| s.name == name);
-                s.ok_or(format!("no MCP server {name}"))?.enabled = on;
-                Ok(String::new())
-            })
-        })
-        .await,
-    )
-}
-
-/// `POST /mcp/servers/{name}/remove`.
-#[route(POST "/mcp/servers/{id}/remove")]
-async fn mcp_remove(cx: &Cx) -> Result<Response> {
-    let name = thread_id(cx);
-    to_mcp(
-        blocking(cx, move |hub| {
-            hub.edit_mcp(|list| {
-                let had = list.len();
-                list.retain(|s| s.name != name);
-                (list.len() < had)
-                    .then(String::new)
-                    .ok_or(format!("no MCP server {name}"))
-            })
-        })
-        .await,
-    )
-}
-
-/// A secret for `secret:<NAME>`.
-#[derive(Deserialize)]
-struct NewSecret {
-    name: String,
-    value: String,
-}
-
-/// `POST /mcp/secret` `name, value`: saved straight to the keychain, never shown again.
-#[route(POST "/mcp/secret")]
-async fn mcp_secret(cx: &Cx, Form(s): Form<NewSecret>) -> Result<Response> {
-    let data = app_context::<Data>(cx).0.clone();
-    let saved = tokio::task::spawn_blocking(move || {
-        cooee_core::mcp::set_secret(&data, s.name.trim(), &s.value)
-    });
-    to_mcp(saved.await?.map_err(|e| HubError::Refused(e.to_string())))
-}
-
-/// `POST /profiles/{id}/mcp`: the profile's servers (`s:<server>`) and tools (`t:<server>:<tool>`); every tool of a
-/// server ticked is all of them, and a server whose tools couldn't be listed keeps the ones it had.
-#[route(POST "/profiles/{id}/mcp")]
-async fn profile_mcp(cx: &Cx, Form(f): Form<BTreeMap<String, String>>) -> Result<Response> {
-    let (id, data) = (thread_id(cx), app_context::<Data>(cx));
-    let (d, c) = (data.0.clone(), data.1.clone());
-    to_mcp(
-        blocking(cx, move |hub| {
-            let had = cooee_core::profiles::find(c.as_deref(), &d, &id)
-                .map_err(|e| HubError::Refused(e.to_string()))?
-                .mcp;
-            let picks: Vec<cooee_core::mcp::Pick> = f
-                .keys()
-                .filter_map(|k| k.strip_prefix("s:"))
-                .map(|s| {
-                    let tools = match hub.mcp_tools(s) {
-                        Ok(all) if !all.is_empty() => {
-                            let on: Vec<String> = all
-                                .iter()
-                                .map(|t| t.0.clone())
-                                .filter(|t| f.contains_key(&format!("t:{s}:{t}")))
-                                .collect();
-                            (on.len() < all.len()).then_some(on)
-                        }
-                        _ => had
-                            .iter()
-                            .find(|k| k.server == s)
-                            .and_then(|k| k.tools.clone()),
-                    };
-                    cooee_core::mcp::Pick {
-                        server: s.to_owned(),
-                        tools,
-                    }
-                })
-                .collect();
-            hub.set_picks(&id, &picks)
-        })
-        .await,
-    )
-}
-
-/// The web UI (with `looks`, its themes and schemes), the threads' API over `hub`, the providers' `logins`, the plugin `manager` and pairing, behind the gate: requests must name `bind`, localhost
+/// The threads' API over `hub`, the providers' `logins`, the plugin `manager` and pairing, behind the gate: requests must name `bind`, localhost
 /// or one of `allowed_hosts`; devices are paired in `data`.
 #[must_use]
 pub fn router(
     hub: Arc<Hub>,
-    (logins, manager, themes, machines): (Arc<Logins>, Arc<Manager>, Arc<Themes>, Arc<Machines>),
+    (logins, manager, machines): (Arc<Logins>, Arc<Manager>, Arc<Machines>),
     (data, config): (&std::path::Path, Option<&std::path::Path>),
     bind: IpAddr,
     allowed_hosts: &[String],
-    looks: Arc<cooee_web::LookAssets>,
 ) -> Router {
     let mut names: Vec<String> = ["localhost", "127.0.0.1", "[::1]"]
         .map(str::to_owned)
@@ -2513,7 +2010,7 @@ pub fn router(
         hub: Arc::clone(&hub),
     };
     room_routes(persona_routes(pairing::routes(
-        cooee_web::assets(Router::builder(), looks)
+        Router::builder()
             .layer(Timing)
             .layer(gate)
             // A message's photos come as base64.
@@ -2533,15 +2030,11 @@ pub fn router(
     .route(passkey_options)
     .route(passkey_check)
     .route(report)
-    .page(home)
-    .page(chat)
-    .page(new_chat)
     .route(thread_list)
     .route(messages)
     .route(events)
     .route(create)
     .route(retry)
-    .route(new_agent)
     .route(attach)
     .route(browse)
     .route(root)
@@ -2564,8 +2057,6 @@ pub fn router(
     .route(login_send)
     .route(login_cancel)
     .route(login_signout)
-    .page(tab)
-    .route(frame)
     .route(proxy)
     .route(plugin_push)
     .route(plugin_card)
@@ -2575,33 +2066,22 @@ pub fn router(
     .route(plugin_log)
     .route(plugin_act)
     .route(plugin_dot)
-    .route(theme_act)
-    .page(preview)
-    .route(theme_saves)
     .route(mcp_grant)
     .route(mcp_propose)
     .route(mcp_ask)
-    .page(mcp_settings)
-    .route(mcp_add)
-    .route(mcp_toggle)
-    .route(mcp_remove)
-    .route(mcp_secret)
-    .route(profile_mcp)
     .app_context(hub)
     .app_context(Arc::new(Dots::default()))
     .app_context(Arc::new(Unlocks::default()))
     .app_context(logins)
     .app_context(manager)
-    .app_context(themes)
     .app_context(machines)
     .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))
     .app_context(Arc::new(pairing::Pairing::default()))
     .build()
 }
 
-/// Opens the threads (`config`'s data folder and shed) and the looks (the built-in and own themes and schemes), and
-/// serves the web UI on `bind:port` until Ctrl+C or
-/// `SIGTERM`. `ready` gets the bound address first (port 0 picks a free one).
+/// Opens the threads (`config`'s data folder and shed) and the default theme (for push wording), and serves the API
+/// on `bind:port` until Ctrl+C or `SIGTERM`. `ready` gets the bound address first (port 0 picks a free one).
 ///
 /// # Errors
 ///
@@ -2621,32 +2101,11 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
     cooee_core::perf::init(&data, config.perf.slow_ms)?;
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
-    let themes = Themes::new(config)?;
-    let (looks, refused) = cooee_web::LookAssets::load(
-        config.dir.as_deref(),
-        config.theme.as_deref(),
-        themes.index().to_vec(),
-    );
+    let (looks, refused) = look::Looks::load(config.dir.as_deref(), config.theme.as_deref());
     for why in refused {
         eprintln!("cooee: refused {why}");
     }
-    // A theme added, removed or saved anywhere (the CLI, an agent) shows within a second.
-    if let Some(dir) = config.dir.clone() {
-        let looks = Arc::clone(&looks);
-        std::thread::spawn(move || {
-            let seen =
-                || stamp(&dir.join("themes")) ^ stamp(&dir.join("themes-dev")).rotate_left(1);
-            let mut was = seen();
-            loop {
-                std::thread::sleep(Duration::from_secs(1));
-                if seen() != was {
-                    was = seen();
-                    looks.reload();
-                }
-            }
-        });
-    }
-    let theme = looks.looks().themes[&looks.looks().default].clone();
+    let theme = looks.themes[&looks.default].clone();
     let logins = Logins::new(
         shed.clone(),
         cooee_core::Providers::new(&config.providers),
@@ -2679,7 +2138,6 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         (
             logins,
             Arc::clone(&manager),
-            Arc::new(themes),
             Arc::new(Machines::new(
                 config.shed.clone(),
                 config.shed_dir.clone(),
@@ -2689,7 +2147,6 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         (&data, config.dir.as_deref()),
         config.bind,
         &config.allowed_hosts,
-        looks,
     );
     let served = tokio::runtime::Builder::new_multi_thread()
         .enable_all()

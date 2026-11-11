@@ -19,11 +19,9 @@ use topcoat::{
     router::{
         Body,
         content::{Form, Json},
-        page, parse_query_params,
         response::{IntoResponse, Response},
         route,
     },
-    view::View,
 };
 
 use super::{COOKIE, Data, Note, Paired, header, hub, now, plain};
@@ -90,45 +88,6 @@ pub(crate) fn cookie(cx: &Cx, token: &str) -> String {
         "{COOKIE}={token}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Strict{}",
         if secure { "; Secure" } else { "" }
     )
-}
-
-/// `?code=` (the QR code's link fills it in), and after a refused code `?bad=wrong&left=`, `?bad=expired&code=` (kept, muted) or
-/// `?bad=limit&wait=`.
-#[derive(Deserialize, Default)]
-struct PairQuery {
-    code: Option<String>,
-    bad: Option<String>,
-    left: Option<u32>,
-    wait: Option<u64>,
-}
-
-#[page("/pair")]
-async fn pairing_page(cx: &Cx) -> Result<impl View> {
-    let q: PairQuery = parse_query_params(cx).unwrap_or_default();
-    let agent = header(cx, "user-agent").unwrap_or_default();
-    // Safari on an iPhone or iPad (not another browser there): the Home Screen hint; iOS 26 keeps Share in ⋯.
-    let ios = ["iPhone", "iPad"].iter().any(|d| agent.contains(d))
-        && agent.contains("Safari/")
-        && !["CriOS", "FxiOS", "EdgiOS"]
-            .iter()
-            .any(|b| agent.contains(b));
-    let newer = agent
-        .split("Version/")
-        .nth(1)
-        .and_then(|v| v.split('.').next()?.parse::<u32>().ok())
-        .is_some_and(|v| v >= 26);
-    let passkeys = !store(cx, Devices::passkeys).await?.is_empty();
-    let state = cooee_web::PairState {
-        code: q
-            .code
-            .filter(|c| c.len() == 6 && c.bytes().all(|b| b.is_ascii_digit())),
-        bad: q.bad,
-        left: q.left.unwrap_or(0),
-        wait: q.wait.unwrap_or(60),
-        passkeys,
-        ios: ios.then_some(newer),
-    };
-    Ok(cooee_web::pair_page(cx, state))
 }
 
 /// `POST /pair`: the code `cooee pair` or a paired device shows, as one field or the six boxes.
@@ -488,8 +447,7 @@ async fn passkey_signin(cx: &Cx, Json(a): Json<Assertion>) -> Result<Response> {
 
 /// The pairing routes.
 pub(crate) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
-    b.page(pairing_page)
-        .route(pair)
+    b.route(pair)
         .route(pair_request)
         .route(pair_claim)
         .route(pair_cancel)

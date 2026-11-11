@@ -1,14 +1,14 @@
-# Every CI gate, locally (the ui gate needs `npm ci` in web/e2e once).
-check: fmt clippy test doc deny cap deps hygiene neutral themes ts ui
+# Every CI gate, locally.
+check: fmt clippy test doc deny cap deps hygiene neutral themes
 
 fmt:
     cargo fmt --all --check
-    topcoat fmt --check $(git ls-files 'crates/*.rs' 'web/*.rs')
+    topcoat fmt --check $(git ls-files 'crates/*.rs')
 
 clippy:
     cargo clippy --workspace --all-targets --locked -- -D warnings
     # At most 10 allows in the workspace, each with a reason (clippy checks the reason).
-    test "$(grep -rE 'allow\(' crates web/src | wc -l)" -le 10
+    test "$(grep -rE 'allow\(' crates | wc -l)" -le 10
 
 test:
     cargo test --workspace --locked
@@ -37,15 +37,6 @@ neutral:
 # The theme gate (docs/themes.md) on the first-party packs and the starter.
 themes:
     cargo run --quiet --locked -p cooee -- theme check packs/themes/* packs/starter
-
-# web/ts: tsc strict and Biome (blocking), then tsc-rs as a trial (needs `npm ci` in web once).
-ts:
-    cd web && npx tsc -p ts && npx tsc -p ts/tsconfig.sw.json && npx biome check ts
-    -cd web && npx tsc-rs -p ts && npx tsc-rs -p ts/tsconfig.sw.json
-
-# Playwright at 390 and 1440 px with axe; screenshots in ui-390/ and ui-1440/.
-ui:
-    cd web/e2e && npx playwright test
 
 # The Swift quality gate on apple/ (#147): format, anti-slop, SwiftLint, build, tests, coverage, Periphery.
 apple-check:
