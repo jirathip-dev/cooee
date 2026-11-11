@@ -70,6 +70,13 @@ fn offline(dir: &Path, machine: &str, last_seen: u64) {
 }
 
 #[test]
+fn every_test_runs_the_one_fake_shed_written_before_any_test_forks() {
+    let (a, b) = (scratch("one-a"), scratch("one-b"));
+    let real = |dir: PathBuf| fs::canonicalize(dir.join("shed")).unwrap();
+    assert_eq!(real(a), real(b));
+}
+
+#[test]
 fn online_and_offline_with_last_seen() {
     let dir = scratch("online");
     answer(&dir, "local", &sample(NOW, 0.4, 50, 50_000));
