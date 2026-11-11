@@ -50,7 +50,7 @@ internal struct AppIconPicker: View {
 
     private func label(_ icon: AppIcon) -> String { "\(icon.name) · \(icon.set.rawValue.capitalized)" }
 
-    private func tile(_ icon: AppIcon, _ settings: Settings) -> some View {
+    private func tile(_ icon: AppIcon, _ settings: CooeeCore.Settings) -> some View {
         let picked = settings.icon == icon
         let now = settings.icon == nil && settings.appIcon == icon
         return Button {
