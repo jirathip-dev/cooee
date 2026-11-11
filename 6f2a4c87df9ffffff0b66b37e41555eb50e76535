@@ -1,0 +1,6 @@
+Decided: ship the approved HTML design in docs/design/native-feel/, no SwiftUI views in this PR
+Because: q1339
+Rejected: writing SwiftUI views and snapshots now — q1339 moves them to build issue 1
+Rejected: pull to refresh frames — q1349, lists are live; a reconnecting line replaces them
+Check: the diff touches only docs/design/native-feel/, so the iOS target build is unchanged from staging
+Owner: the approved feel-pass drawings land as docs; the app itself changes in the build issues
