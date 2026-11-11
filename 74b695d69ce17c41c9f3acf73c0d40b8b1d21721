@@ -1,0 +1,10 @@
+Decided: a thread on another machine names its terminal <machine>/cooee-<id>, so send, approve, cancel, events and the restart's get go through shed's machine view with no second code path
+Because: "send, approve, cancel and events go through shed's machine view"
+Decided: the offline check reads shed's machine.links (link state and since) instead of the machines plugin's stats poll
+Because: "saying when the machine was last seen"
+Decided: reattach keeps a session whose machine has no link instead of returning the error
+Because: crates/cooee-server/src/hub.rs:525
+Rejected: refusing secret variables on a remote start — an untested guard outside the issue scope, noted in the PR as not verified
+Check: crates/cooee/tests/remote.rs fails with hub.rs reverted, and its offline test fails with only the reattach no_link arm removed
+Check: shed-proto pin bump to 4585d504 is shed's #62 merge on staging, which carries S1b (q1159)
+Owner: threads on another machine now start and run there, and an offline machine is refused with when it was last seen
