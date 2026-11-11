@@ -1,0 +1,15 @@
+Decided: one pending-proposal map holds a server or a skill; both cards share one raise and one answer path
+Because: "raises a card in the thread, as `propose_server` does (#56)"
+Decided: approving a skill card is a plain tap, no Face ID; Face ID stays on MCP server cards only
+Because: crates/cooee-server/src/hub.rs:1477
+Decided: clearing a persona's notes now removes memory.jsonl only; deleting the persona still removes its whole data folder
+Because: crates/cooee-core/src/personas.rs:310
+Decided: front matter is written and parsed by hand (three fixed lines), no YAML dependency
+Because: "No model call on the server: no embeddings, no summarising on read. Search and caps are plain code."
+Decided: an edit's card shows a line diff (common head and tail kept, the middle as - then +)
+Because: "an edit to an existing skill shows as a diff"
+Decided: a skill name is lowercase letters, digits and -, so a path like ../bo/skills/x is refused before any file read
+Because: crates/cooee-server/src/hub.rs:2278
+Rejected: storing skills in the persona's toml — the spec asks for plain SKILL.md files the owner can edit
+Check: tests/skills.rs drives the real MCP server and approve route; a declined or unanswered card leaves no SKILL.md
+Owner: A persona can now keep skills: it proposes one, you approve the card, and later sessions see it listed.
