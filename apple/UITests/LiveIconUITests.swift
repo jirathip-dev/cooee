@@ -9,7 +9,7 @@
             XCTAssert(picked(app, "Follow the look").waitForExistence(timeout: 5))
             keep("app-icon-following")
             app.buttons["Koala"].firstMatch.tap()
-            confirmIcon(app)
+            confirmIcon()
             XCTAssert(picked(app, "Koala").waitForExistence(timeout: 5))
             keep("app-icon-picked")
             app.navigationBars.buttons.element(boundBy: 0).tap()
@@ -18,22 +18,27 @@
             homeScreen(app, "home-icon-koala-after-scene")
             app.buttons.matching(NSPredicate(format: "label CONTAINS 'App icon'")).firstMatch.tap()
             app.buttons["Follow the look"].firstMatch.tap()
-            confirmIcon(app)
+            confirmIcon()
             XCTAssert(picked(app, "Follow the look").waitForExistence(timeout: 5))
             app.navigationBars.buttons.element(boundBy: 0).tap()
         }
 
         @MainActor
-        internal func confirmIcon(_ app: XCUIApplication) {
-            let done = app.alerts.buttons["OK"].firstMatch
+        internal var springboard: XCUIApplication { XCUIApplication(bundleIdentifier: "com.apple.springboard") }
+
+        @MainActor
+        internal func confirmIcon() {
+            let done = springboard.alerts.buttons["OK"].firstMatch
             if done.waitForExistence(timeout: 5) { done.tap() }
         }
 
         @MainActor
         internal func homeScreen(_ app: XCUIApplication, _ name: String) {
             XCUIDevice.shared.press(.home)
-            let icon = XCUIApplication(bundleIdentifier: "com.apple.springboard").icons["cooee"]
-            XCTAssert(icon.waitForExistence(timeout: 10))
+            let icon = springboard.icons["cooee"]
+            _ = icon.waitForExistence(timeout: 10)
+            for _ in 0..<2 where !(icon.exists && icon.isHittable) { springboard.swipeLeft() }
+            XCTAssert(icon.isHittable)
             keep(name)
             keep("\(name)-icon", icon.screenshot())
             app.activate()

@@ -200,11 +200,11 @@
             keep("avatar-menu")
             labelled(app, "Look").tap()
             labelled(app, "Terminal").tap()
-            confirmIcon(app)
+            confirmIcon()
             XCTAssert(picked(app, "Terminal").waitForExistence(timeout: 5))
             appIcon(app)
             labelled(app, "Modern").tap()
-            confirmIcon(app)
+            confirmIcon()
             XCTAssert(picked(app, "Modern").waitForExistence(timeout: 5))
         }
 
