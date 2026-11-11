@@ -1,0 +1,14 @@
+Decided: the design pages' shared files move to design-system/ (app.css, schemes/, themes/plain/); look.rs moves into cooee-server and includes them from there
+Because: "Move what the design pages still link (`web/src/app.css`, `web/schemes/`, the farm pack references) to a shared design-system folder"
+Decided: delete the whole web/ crate and the server's HTML pages, static files, theme building with live preview, MCP settings forms and the new-agent form; every JSON route the app and plugins call stays
+Because: "Keep everything the native app and plugins use (`/api`, `/screens`, streams, auth, pairing)."
+Decided: the gate no longer redirects unpaired page loads to /pair; only the pairing calls are open, everything else is 401
+Because: crates/cooee-server/src/lib.rs:64
+Decided: POST /plugin/dot stays (plugins post it), though nothing shows the dot until the app does
+Rejected: dropping /plugin/dot — machines and other plugins call it, and a 404 would break their backends
+Decided: line_cap 17100 = 16575 counted plus about 500
+Because: "lower `line_cap` to the new count plus about 500 of margin"
+Decided: fixed two shot scripts that failed on staging already (a 404 crashed their file server; chat-first read farm from the old web/themes)
+Rejected: keeping the ui/ts/no-node CI jobs — they test web/ and web/ts, which are gone
+Check: scripts/line-cap.sh prints non-test 16575 / 17100; every docs/design/*/shoot.mjs exits 0; the apple e2e job is green
+Owner: The web app is gone; the native app is the only client, and the overall line limit drops from 27,500 to 17,100.
