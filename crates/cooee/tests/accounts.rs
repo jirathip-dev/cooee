@@ -66,7 +66,7 @@ fn setup(name: &str) -> Setup {
     );
     let shed = FakeShed::start(&dir.join("shed"), version());
     let extra = format!(
-        "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\nlogin = [{:?}]\n\
+        "[[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\nlogin = [{:?}]\n\
          status = [{:?}]\nlogout = [{:?}]\n",
         login.to_string_lossy(),
         status.to_string_lossy(),

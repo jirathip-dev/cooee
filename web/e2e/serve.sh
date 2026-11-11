@@ -128,6 +128,7 @@ plugin_index = "$tmp/index.toml"
 
 [[providers]]
 name = "fake-390"
+base = "claude"
 agent = "fake-acp"
 home = "FAKE_HOME"
 login = ["$tmp/login-390.sh"]
@@ -138,6 +139,7 @@ effort = ["--effort", "{}"]
 
 [[providers]]
 name = "fake-1440"
+base = "claude"
 agent = "other-acp"
 home = "FAKE_HOME"
 login = ["$tmp/login-1440.sh"]

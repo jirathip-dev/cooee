@@ -464,7 +464,7 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     )
     .unwrap();
     // The built-in Claude Code provider, on the fake shed's agent.
-    let mut provider = cooee_core::Provider::defaults().remove(0);
+    let mut provider = cooee_core::provider::defaults().remove(0);
     provider.agent = "fake-acp".to_owned();
     (provider.login, provider.status) = (vec!["true".to_owned()], vec!["true".to_owned()]);
     // Its fields are strings and lists of them: as JSON, they are TOML too.
