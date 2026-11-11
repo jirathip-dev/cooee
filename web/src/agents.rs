@@ -997,6 +997,8 @@ mod tests {
             account: String::new(),
             profile: String::new(),
             persona: String::new(),
+            persona_name: String::new(),
+            persona_role: cooee_core::personas::Role::Plain,
             folder: PathBuf::new(),
             machine: String::new(),
             state: "done".to_owned(),

@@ -30,7 +30,7 @@ type File = { name: string; data: string }; // data: the bytes in base64
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, folder, machine, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}}` (`unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted; `machine`: the one it runs on, `""` this host) |
+| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, persona_name, persona_role, folder, machine, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}}` (`unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted, `persona_name` and `persona_role` its name and role; `machine`: the one it runs on, `""` this host) |
 | `POST /threads` | `{agent, account?, profile?, model?, effort?, folder?, machine?, text, random_id, background?}` (`profile`: a persona's or profile's id; a persona's agent, folder, model, effort and machine are its defaults; `machine` overrides its persona's, `""` this host, one not in `GET /machines` a 400) | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
 | `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
 | `POST /threads/{id}/folder` | `{folder}` (a root or inside one): "Use a folder…"; its agent starts again there and the next message carries a hand-over | the `note` it adds |
@@ -57,15 +57,17 @@ another run; load the newest slice again).
 
 ## Personas (#126)
 
-A persona is `{id, name, avatar?, character, instructions, folder, agent, model, effort, machine, plugins, can_message, pinned, profile?}`: `avatar` an image
+A persona is `{id, name, role, fleets, avatar?, character, instructions, folder, agent, model, effort, machine, plugins, can_message, pinned, profile?}`: `avatar` an image
 (`https://…`, `data:image/…`; none: the client draws initials), `folder` an owned folder or `scratch`, `agent`, `model`
 and `effort` its defaults. It is `<config>/personas/<id>.toml`; an owner profile with no persona of its name is read
 as one (`profile`: the profile it runs as, its account, settings, env, MCP servers and policy kept; never set over the
 API). Its Character, Instructions and notes go ahead of each new session's first message (`POST /threads` with
 `profile: <id>`). A note is `{text, by: "persona" | "owner", at}`, in `<data>/personas/<id>/memory.jsonl`; the persona
 adds one with the `remember` tool of cooee's own MCP server. `plugins` (#129) are the installed plugins (or config
-`[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. The persona read from a `conductor`
-profile has an installed `cooee-drover` attached. `machine` (#148) is the one its threads run on: `""` this host (every
+`[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. `role` (#159) is `""` (a plain persona)
+or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos or fleets it covers, which another may
+cover too): an installed `cooee-drover` is attached to each orchestrator by its role, never its name. The persona read
+from a `conductor` profile (or saved from one before #159) is an orchestrator, its name kept. `machine` (#148) is the one its threads run on: `""` this host (every
 persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
 with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). An unknown
 id or a broken rule is a 400 with the reason.
@@ -161,6 +163,10 @@ A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the
 thread (the owner reads it and may reply to steer), waiting `timeout` seconds (300, at most 600). A refusal is a 400
 starting `NOT_ALLOWED`, `DEPTH` (an asked persona may ask one more, no further), `TIMEOUT` or `OFFLINE` (its session
 can't start).
+`POST /mcp/agent/history` `{thread, server: {query?, thread?, before?, limit?}}` (#217) → `history`'s text: with
+`query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
+at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending
+`older: before=<item>` when more are left. Another persona's thread is a 400.
 
 ## Theme packs (Settings › look › themes, [docs/themes.md](themes.md))
 
