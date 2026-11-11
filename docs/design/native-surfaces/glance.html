@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · at a glance (#234): Live Activity, Dynamic Island, widgets</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../rooms/rm.css">
+<link rel="stylesheet" href="nsf.css">
+<script type="module" src="nsf.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- The lock screen: the inline and accessory widgets, and cooee's one Live Activity: Coder's running turn. -->
+<div class="fr"><p class="cap">Lock screen · a running turn, the lock widgets</p>
+<section class="ph" data-f="live">
+  <div class="lk">
+    <span class="inl"><span class="co">co</span>Wed 11 · 3 need you</span>
+    <span class="clk">9:41</span>
+    <div class="acc">
+      <span class="ac1" data-k="asks"><span>3<small>NEED</small></span></span>
+      <span class="ac2"><b class="nw">Researcher asks</b><span class="nw">Allow fetch on sec.gov?</span></span>
+    </div>
+    <span class="spc"></span>
+    <div class="la" data-k="replying">
+      <div class="lah"><i class="pa" data-p="coder" data-k="replying"></i>
+        <span class="tx"><b class="nw">Coder</b><small class="nw">Export for Kestrel · studio</small></span>
+        <span class="tm">2:14</span></div>
+      <p class="lal"><span>$ cargo test -p export · 41 passed. Writing export/summary.md with the Q3 numbers…</span></p>
+      <div class="lbar" style="--w:58%"><i></i></div>
+      <div class="laf"><span class="nw"><span class="st">working</span> · 6 tools · +2 running</span><span class="stop">Stop</span></div>
+    </div>
+
+  </div>
+</section></div>
+
+<!-- An ask arrives while another app is open: the island expands as an alert. Tap opens the ask in cooee. -->
+<div class="fr"><p class="cap">Dynamic Island · an ask waiting on you</p>
+<section class="ph" data-f="island">
+  <div class="othr"><i style="--h:30px;--w:60%"></i><i style="--h:120px"></i><i></i><i style="--w:80%"></i><i style="--h:120px"></i><i style="--w:70%"></i>
+    <p class="ft">Another app. The island is cooee's.</p></div>
+  <div class="di die" data-k="asks">
+    <div class="lah"><i class="pa" data-p="res" data-k="asks"></i>
+      <span class="tx"><b class="nw">Researcher asks you</b><small class="nw">Kestrel filings · air</small></span>
+      <span class="tm">0:04</span></div>
+    <p class="sq">Allow fetch on sec.gov?</p>
+    <p class="lal"><span>GET https://www.sec.gov/cgi-bin/browse-edgar?company=kestrel&amp;type=10-Q</span></p>
+    <div class="dia"><span>Later</span><span class="go">Open the ask</span></div>
+  </div>
+</section></div>
+
+<!-- The home screen: Needs you and Running (small), and the large widget with both. Every row opens its thread. -->
+<div class="fr"><p class="cap">Home screen · widgets</p>
+<section class="ph" data-f="widgets">
+  <div class="hs">
+    <div class="wgw"><div class="wg" data-k="asks">
+      <h5><span class="co">co</span>NEEDS YOU</h5>
+      <span class="bign">3<small>need you</small></span>
+      <div class="row"><i class="pa" data-p="res" data-k="asks"></i><span class="tx"><b>Allow fetch?</b><small>Researcher</small></span></div>
+      <span class="foot">2 asks · 1 blocked</span></div><span class="wgl">cooee</span></div>
+    <div class="wgw"><div class="wg">
+      <h5><span class="co">co</span>RUNNING</h5>
+      <div class="row" data-k="replying"><i class="pa" data-p="coder" data-k="replying"></i><span class="tx"><b>Coder</b><small>Export for…</small></span><span class="tm">2:14</span></div>
+      <div class="row" data-k="replying"><i class="pa" data-p="chief" data-k="replying"></i><span class="tx"><b>Chief</b><small>Renewals</small></span><span class="tm">0:48</span></div>
+      <span class="foot">+1 lane · cooee#231</span></div><span class="wgl">cooee</span></div>
+    <div class="wgw wide"><div class="wg l">
+      <h5><span class="co">co</span>NEEDS YOU<span class="n">3</span></h5>
+      <div class="row" data-k="asks"><i class="pa" data-p="res" data-k="asks"></i><span class="tx"><b>Allow fetch on sec.gov?</b><small>Researcher · Kestrel filings</small></span><span class="st">asks</span></div>
+      <div class="row" data-k="asks"><i class="pa" data-p="am" data-k="asks"></i><span class="tx"><b>A 1- or 3-year term?</b><small>Account Manager · Pricing</small></span><span class="st">asks</span></div>
+      <div class="row" data-k="asks"><i class="pa" data-p="cond" data-k="asks"></i><span class="tx"><b>cooee#218 blocked</b><small>Conductor · impl lane · needs a secret</small></span><span class="st">blocked</span></div>
+      <div class="sep"></div>
+      <h5>RUNNING<span class="n" style="color:var(--a)">3</span></h5>
+      <div class="row" data-k="replying"><i class="pa" data-p="coder" data-k="replying"></i><span class="tx"><b>Coder · Export for Kestrel</b><small>Writing export/summary.md…</small></span><span class="tm">2:14</span></div>
+      <div class="row" data-k="replying"><i class="pa" data-p="chief" data-k="replying"></i><span class="tx"><b>Chief · Renewals</b><small>Reading the renewals sheet</small></span><span class="tm">0:48</span></div>
+      <div class="row" data-k="replying"><i class="pa" data-p="cond" data-k="replying"></i><span class="tx"><b>cooee#231 · impl</b><small>Conductor · lane on studio</small></span><span class="tm">12:05</span></div>
+      <span class="foot">as of 9:41 · mini</span></div><span class="wgl">cooee</span></div>
+    <div class="icons"><i></i><i></i><i></i><i class="me">co</i></div>
+  </div>
+</section></div>
+
+<!-- 1440: the board: each Live Activity state, the island's three sizes, the medium widget and the lock widgets. -->
+<div class="fr w"><p class="cap">1440 · every state of the glance surfaces</p>
+<section class="wd brd" data-f="wide-board">
+  <h3>At a glance: what the extensions draw</h3>
+  <p class="sub3">CooeeWidgets (WidgetKit + ActivityKit): one Live Activity at a time, ranked asks you › failed › running; widgets read the App Group cache.</p>
+  <div class="grid">
+    <div class="cell"><p class="cl">Live Activity · running <span>· Stop is an App Intent</span></p><div class="wall">
+      <div class="la" data-k="replying"><div class="lah"><i class="pa" data-p="coder" data-k="replying"></i><span class="tx"><b class="nw">Coder</b><small class="nw">Export for Kestrel · studio</small></span><span class="tm">2:14</span></div>
+        <p class="lal"><span>Writing export/summary.md with the Q3 numbers…</span></p>
+        <div class="laf"><span class="nw"><span class="st">working</span> · +2 running</span><span class="stop">Stop</span></div></div></div></div>
+    <div class="cell"><p class="cl">Live Activity · asks you <span>· tap opens the ask</span></p><div class="wall">
+      <div class="la ask" data-k="asks"><div class="lah"><i class="pa" data-p="res" data-k="asks"></i><span class="tx"><b class="nw">Researcher asks you</b><small class="nw">Kestrel filings · air</small></span><span class="tm">0:04</span></div>
+        <p class="sq">Allow fetch on sec.gov?</p>
+        <div class="open"><span class="nw">Allow · Always · Deny in cooee</span>Open ›</div></div></div></div>
+    <div class="cell"><p class="cl">Live Activity · ended <span>· stays 15 min, then goes</span></p><div class="wall">
+      <div class="la" data-k="replied"><div class="lah"><i class="pa" data-p="coder" data-k="replied"></i><span class="tx"><b class="nw">Coder replied</b><small class="nw">Export for Kestrel · 4:02</small></span><span class="tm">done</span></div>
+        <p class="lal"><span>Q3 was $4.1M. It's in export/summary.md.</span></p>
+        <div class="laf"><span class="nw"><span class="st">replied</span> · 9 tools</span><span class="open" style="color:var(--link);font-weight:600">Open ›</span></div></div></div></div>
+    <div class="cell"><p class="cl">Island · compact and minimal</p><div class="wall row3">
+      <span class="di dic" data-k="replying"><i class="pa" data-p="coder" data-k="replying"></i><span class="tm">2:14</span></span>
+      <span class="di dic" data-k="asks"><i class="pa" data-p="res" data-k="asks"></i><span class="tm">ask</span></span>
+      <span class="di dmin" data-k="replying"><i class="pa" data-p="coder" data-k="replying"></i></span></div></div>
+    <div class="cell"><p class="cl">Island · expanded <span>· long-press</span></p><div class="wall">
+      <div class="di die" data-k="replying" style="width:376px"><div class="lah"><i class="pa" data-p="coder" data-k="replying"></i><span class="tx"><b class="nw">Coder</b><small class="nw">Export for Kestrel</small></span><span class="tm">2:14</span></div>
+        <p class="lal"><span>Writing export/summary.md…</span></p>
+        <div class="dia"><span>Open</span><span class="stop">Stop</span></div></div></div></div>
+    <div class="cell"><p class="cl">Widget · medium</p><div class="wall">
+      <div class="wg wm"><div class="cols">
+        <div><h5><span class="co">co</span>NEEDS YOU<span class="n">3</span></h5>
+          <div class="row" data-k="asks"><i class="pa" data-p="res" data-k="asks"></i><span class="tx"><b>Allow fetch?</b><small>Researcher</small></span></div>
+          <div class="row" data-k="asks"><i class="pa" data-p="am" data-k="asks"></i><span class="tx"><b>1 or 3 years?</b><small>Account Mgr</small></span></div></div>
+        <div><h5>RUNNING<span class="n" style="color:var(--a)">3</span></h5>
+          <div class="row" data-k="replying"><i class="pa" data-p="coder" data-k="replying"></i><span class="tx"><b>Coder</b><small>2:14</small></span></div>
+          <div class="row" data-k="replying"><i class="pa" data-p="cond" data-k="replying"></i><span class="tx"><b>cooee#231</b><small>12:05</small></span></div></div>
+      </div></div></div></div>
+    <div class="cell"><p class="cl">Lock widgets <span>· inline, circular, rectangular</span></p><div class="wall lks" style="color:var(--fg)">
+      <span class="inl" style="display:flex;gap:6px;align-items:center;font-weight:600"><span class="co">co</span>3 need you · 3 running</span>
+      <div class="acc"><span class="ac1"><span>3<small>NEED</small></span></span><span class="ac2"><b class="nw">Researcher asks</b><span class="nw">Allow fetch on sec.gov?</span></span></div></div></div>
+    <div class="cell"><p class="cl">Widget · nothing waiting</p><div class="wall">
+      <div class="wg" style="height:120px"><h5><span class="co">co</span>NEEDS YOU</h5><span class="none">Nothing needs you</span><span class="foot">3 running · as of 9:41</span></div></div></div>
+    <div class="cell"><p class="cl">Offline <span>· the Mac is unreachable</span></p><div class="wall">
+      <div class="wg" style="height:120px"><h5><span class="co">co</span>NEEDS YOU</h5><span class="bign" style="color:var(--mute)">3<small>as of 9:12</small></span><span class="foot">mini unreachable · tap to retry</span></div></div></div>
+  </div>
+</section></div>
+
+</div>
+</body>
+</html>

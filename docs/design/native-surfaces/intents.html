@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · Siri, Shortcuts and the Action button (#234)</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../rooms/rm.css">
+<link rel="stylesheet" href="nsf.css">
+<script type="module" src="nsf.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- Siri: "Tell Coder in cooee …": the snippet names the persona and thread, shows the dictated text, Send. -->
+<div class="fr"><p class="cap">Siri · dictate to a thread</p>
+<section class="ph" data-f="siri">
+  <div class="dimw"></div><div class="glow"></div>
+  <div class="siri">
+    <p class="said"><small>You said</small>Tell Coder in cooee to rerun the Kestrel export with the Q3 filing</p>
+    <div class="snip">
+      <div class="lah"><span class="co">co</span><span class="tx"><b class="nw">Send to Coder?</b><small class="nw">Export for Kestrel · studio</small></span></div>
+      <div class="lah"><i class="pa" data-p="coder"></i><p class="msg" style="flex:1;margin:0">Rerun the Kestrel export with the Q3 filing.</p></div>
+      <div class="chc"><button>Send</button><button>Edit in cooee</button></div>
+      <p class="ft">Coder starts at once. The island follows the turn.</p>
+    </div>
+  </div>
+</section></div>
+
+<!-- The Action button: its default, Open what needs you: asks first, then blocked, then what is running. -->
+<div class="fr"><p class="cap">Action button · Needs you</p>
+<section class="ph col" data-f="action">
+  <i class="abtn"></i>
+  <header class="rhd"><span class="hdt"><b>Needs you</b><small>3 waiting · 3 running · mini</small></span><a class="gb" href="#" data-tx="[x]" aria-label="close">✕</a></header>
+  <div class="rshi">
+    <p class="lb2">Asks <span>2</span></p>
+    <div class="rfl nyou">
+      <a class="rw" data-k="asks"><i class="pa" data-p="res" data-k="asks"></i><span class="tx"><b>Allow fetch on sec.gov?</b><small>Researcher · Kestrel filings · 1m</small></span><span class="st">asks</span></a>
+      <a class="rw" data-k="asks"><i class="pa" data-p="am" data-k="asks"></i><span class="tx"><b>A 1- or 3-year term?</b><small>Account Manager · Pricing · 6m</small></span><span class="st">asks</span></a>
+    </div>
+    <p class="lb2">Blocked <span>1</span></p>
+    <div class="rfl nyou">
+      <a class="rw" data-k="asks"><i class="pa" data-p="cond" data-k="asks"></i><span class="tx"><b>cooee#218 · impl lane</b><small>Conductor · needs a secret · 22m</small></span><span class="st">blocked</span></a>
+    </div>
+    <p class="lb2">Running <span>3</span></p>
+    <div class="rfl nyou">
+      <a class="rw" data-k="replying"><i class="pa" data-p="coder" data-k="replying"></i><span class="tx"><b>Export for Kestrel</b><small>Coder · writing export/summary.md</small></span><span class="st">2:14</span></a>
+      <a class="rw" data-k="replying"><i class="pa" data-p="chief" data-k="replying"></i><span class="tx"><b>Renewals</b><small>Chief · reading the sheet</small></span><span class="st">0:48</span></a>
+      <a class="rw" data-k="replying"><i class="pa" data-p="cond" data-k="replying"></i><span class="tx"><b>cooee#231 · impl lane</b><small>Conductor · studio</small></span><span class="st">12:05</span></a>
+    </div>
+    <p class="ft">Press and hold again to dictate an answer to the top ask.</p>
+  </div>
+</section></div>
+
+<!-- Shortcuts: cooee's App Shortcuts, ready with no setup; each is also a Siri phrase and an Action button choice. -->
+<div class="fr"><p class="cap">Shortcuts · cooee's App Shortcuts</p>
+<section class="ph col" data-f="shortcuts">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><span class="hdt"><b>cooee</b><small>App Shortcuts · no setup</small></span></header>
+  <div class="scg">
+    <div class="sct" data-t="chief"><i class="pa" data-p="chief"></i><b>New chat with Chief</b></div>
+    <div class="sct" data-t="coder"><i class="pa" data-p="coder"></i><b>Tell Coder…</b></div>
+    <div class="sct" data-t="res"><i class="pa" data-p="res"></i><b>Call Researcher</b></div>
+    <div class="sct" style="--t:var(--r)"><span class="co">co</span><b>What needs me</b></div>
+    <div class="sct" style="--t:var(--a)"><span class="co">co</span><b>Stop the running turn</b></div>
+    <div class="sct" data-t="am"><i class="pa" data-p="am"></i><b>Open Pricing</b></div>
+  </div>
+  <p class="lb2" style="margin-inline:20px">Siri phrases</p>
+  <div class="rfl" style="margin:0 16px">
+    <span class="fr2"><span class="tx"><b>"Start a chat with Chief in cooee"</b><small>persona: any of yours</small></span></span>
+    <span class="fr2"><span class="tx"><b>"Tell Coder in cooee …"</b><small>its latest thread, or say which</small></span></span>
+    <span class="fr2"><span class="tx"><b>"What needs me in cooee?"</b><small>Siri reads: 2 asks, 1 blocked</small></span></span>
+  </div>
+</section></div>
+
+<!-- 1440: the board: each App Intent, its phrase, parameters, where it shows and what it does. -->
+<div class="fr w"><p class="cap">1440 · the App Intents</p>
+<section class="wd brd" data-f="wide-intents">
+  <h3>Siri, Shortcuts, the Action button: six App Intents</h3>
+  <p class="sub3">In the app target (App Intents need no extension); PersonaEntity and ThreadEntity read the App Group cache the widgets share.</p>
+  <div class="grid">
+    <div class="it"><h4><i class="pa" data-p="chief" data-s="26"></i>Start a chat<code>StartChatIntent</code></h4><p class="phr">"Start a chat with Chief in cooee"</p>
+      <dl><dt>asks for</dt><dd>persona; first message (optional)</dd><dt>does</dt><dd>opens a new thread with it, the composer ready</dd><dt>shows in</dt><dd><span class="chips"><span>Siri</span><span>Shortcuts</span><span>Spotlight</span><span>Action button</span></span></dd></dl></div>
+    <div class="it"><h4><i class="pa" data-p="coder" data-s="26"></i>Tell a persona<code>SendToThreadIntent</code></h4><p class="phr">"Tell Coder in cooee …"</p>
+      <dl><dt>asks for</dt><dd>thread (default: the persona's latest); text, dictated</dd><dt>does</dt><dd>shows the text to confirm, sends without opening; a Live Activity follows</dd><dt>shows in</dt><dd><span class="chips"><span>Siri</span><span>Shortcuts</span><span>Action button</span></span></dd></dl></div>
+    <div class="it"><h4><span class="co">co</span>Open what needs you<code>OpenNeedsYouIntent</code></h4><p class="phr">"What needs me in cooee?"</p>
+      <dl><dt>asks for</dt><dd>nothing</dd><dt>does</dt><dd>opens Needs you; by voice Siri reads the counts and the top ask</dd><dt>shows in</dt><dd><span class="chips"><span>Action button default</span><span>Control Center</span><span>Siri</span><span>widgets' head</span></span></dd></dl></div>
+    <div class="it"><h4><i class="pa" data-p="res" data-s="26"></i>Call a persona<code>CallPersonaIntent</code></h4><p class="phr">"Call Researcher in cooee"</p>
+      <dl><dt>asks for</dt><dd>persona; thread (default: a new one)</dd><dt>does</dt><dd>opens a voice call (voice.html); the transcript stays in the thread</dd><dt>shows in</dt><dd><span class="chips"><span>Siri</span><span>Shortcuts</span><span>Action button</span></span></dd></dl></div>
+    <div class="it"><h4><span class="co">co</span>Stop a turn<code>StopTurnIntent</code></h4><p class="phr">"Stop Coder in cooee"</p>
+      <dl><dt>asks for</dt><dd>thread (default: the running one)</dd><dt>does</dt><dd>stops it; from the Live Activity at once, from Siri after a confirm</dd><dt>shows in</dt><dd><span class="chips"><span>Live Activity</span><span>island</span><span>Siri</span></span></dd></dl></div>
+    <div class="it"><h4><span class="co">co</span>Open an ask<code>OpenAskIntent</code></h4><p class="phr">a tap, no phrase</p>
+      <dl><dt>asks for</dt><dd>the ask</dd><dt>does</dt><dd>opens cooee on its card; an ask is answered only in the app, unlocked</dd><dt>shows in</dt><dd><span class="chips"><span>Live Activity</span><span>island</span><span>widgets</span><span>lock widgets</span></span></dd></dl></div>
+  </div>
+</section></div>
+
+</div>
+</body>
+</html>

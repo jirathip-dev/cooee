@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · voice (#234): dictation in the composer, a call with a persona</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../rooms/rm.css">
+<link rel="stylesheet" href="nsf.css">
+<script type="module" src="nsf.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- Dictation: the mic in the composer; speech lands as text in the field, on device, never sent by itself. -->
+<div class="fr"><p class="cap">Dictation · listening</p>
+<section class="ph col" data-f="dictate">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><i class="pa" data-p="coder" data-s="38"></i><span class="hdt"><b>Coder</b><small>Export for Kestrel · studio</small></span><a class="gb" href="#" data-tx="[call]" aria-label="call"><svg class="ico" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></a></header>
+  <ol class="msgs"><li class="rnd">Today 09:40</li><li class="blk me">Export the Kestrel numbers for the board deck.</li><li class="at" data-t="coder"><p>Done: export/summary.md has Q1 to Q3. Q3 was $4.1M, from the press release.</p></li><li class="te2">✓ replied · 9 tools · 4:02</li></ol>
+  <div class="dock">
+    <div class="dct">
+      <div class="txt">Rerun the export, but take the Q3 number from the <span class="pend">ten Q filing▍</span></div>
+      <div class="row2"><span class="wv"><i style="--h:6px"></i><i style="--h:14px"></i><i style="--h:22px"></i><i style="--h:10px"></i><i style="--h:18px"></i><i style="--h:8px"></i><i style="--h:20px"></i><i style="--h:12px"></i><i style="--h:5px"></i><i style="--h:16px"></i></span><span>Listening · on this iPhone</span><span class="mic on" aria-label="stop dictation"><svg class="ico" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></div>
+    </div>
+  </div>
+</section></div>
+
+<!-- Stopped: the text is the composer's, to edit; a word the recognizer was unsure of is underlined with its
+     alternatives. Send is the user's tap. -->
+<div class="fr"><p class="cap">Dictation · edit, then send</p>
+<section class="ph col" data-f="edit">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><i class="pa" data-p="coder" data-s="38"></i><span class="hdt"><b>Coder</b><small>Export for Kestrel · studio</small></span><a class="gb" href="#" data-tx="[call]" aria-label="call"><svg class="ico" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></a></header>
+  <ol class="msgs"><li class="rnd">Today 09:40</li><li class="blk me">Export the Kestrel numbers for the board deck.</li><li class="at" data-t="coder"><p>Done: export/summary.md has Q1 to Q3. Q3 was $4.1M, from the press release.</p></li><li class="te2">✓ replied · 9 tools · 4:02</li></ol>
+  <div class="dock">
+    <div class="sug"><span>Replace <b>ten Q</b>:</span><span>10-Q</span><span>10Q</span><span>tenkey</span></div>
+    <div class="comp">
+      <span class="mic" aria-label="dictate"><svg class="ico" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+      <div class="dct ed" style="flex:1;min-width:0"><div class="txt">Rerun the export, but take the Q3 number from the <span class="lo">ten Q</span> filing.▍</div></div>
+      <span class="snd" aria-label="send">↑</span>
+    </div>
+  </div>
+</section></div>
+
+<!-- A call: the persona speaks its replies (on-device voice), the transcript runs live; Mute, Speaker,
+     Transcript and End. The thread keeps every line. -->
+<div class="fr"><p class="cap">Call · with a thread's persona</p>
+<section class="ph" data-f="call">
+  <div class="call" data-t="res">
+    <span class="cav"><i class="pa" data-p="res" data-pose="edit"></i></span>
+    <b>Researcher</b><small>Kestrel filings · 3:12</small>
+    <div class="tr">
+      <p class="me"><b>You</b>What did Q2 come in at?</p>
+      <p><b>Researcher</b>Q2 was 3.66 million, so Q3 is up twelve percent.</p>
+      <p class="me"><b>You</b>Check it against the 10-Q.</p>
+      <p class="now"><b>Researcher · speaking</b>Fetching the 10-Q now. Revenue on page four reads</p>
+    </div>
+    <p class="cnote">Every line is kept in the thread · speech stays on this iPhone</p>
+    <div class="cbt">
+      <a href="#"><i><svg class="ico" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></i>Mute</a><a class="on" href="#"><i><svg class="ico" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg></i>Speaker</a><a href="#"><i><svg class="ico" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></i>Thread</a><a class="end" href="#"><i><svg class="ico" viewBox="0 0 24 24" style="transform:rotate(135deg)"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></i>End</a>
+    </div>
+  </div>
+</section></div>
+
+<!-- After the call: one call block in the thread, the transcript folded open; the persona's tools ran as in any turn. -->
+<div class="fr"><p class="cap">After the call · the transcript in the thread</p>
+<section class="ph col" data-f="after">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><i class="pa" data-p="res" data-s="38"></i><span class="hdt"><b>Researcher</b><small>Kestrel filings · air</small></span><a class="gb" href="#" data-tx="[call]" aria-label="call"><svg class="ico" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></a></header>
+  <ol class="msgs">
+    <li class="rnd">Today 10:12</li>
+    <li class="cbk" data-t="res">
+      <span class="hd2"><svg class="ico" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg><b>Call · 4:12</b><span>6 lines · 2 tools</span></span>
+      <p class="ln2"><b>You</b>What did Q2 come in at?</p>
+      <p class="ln2 p"><b>Researcher</b>Q2 was 3.66 million, so Q3 is up twelve percent.</p>
+      <p class="ln2"><b>You</b>Check it against the 10-Q.</p>
+      <p class="ln2 p"><b>Researcher</b>Page four confirms 4.1 million. I'll put the page in writing.</p>
+      <span class="more">Show all 6 lines</span>
+      <a class="mx" href="#"><span>fetch sec.gov · read 10-Q p.4</span><i class="okg">✓ 2 tools</i></a>
+    </li>
+    <li class="at"><p>As promised: Kestrel's 10-Q, page 4, reports Q3 revenue of $4.1M (Q2 $3.66M, +12%).</p></li>
+    <li class="te2">✓ replied after the call · 0:21</li>
+  </ol>
+  <div class="dock"><div class="comp"><span class="mic" aria-label="dictate"><svg class="ico" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><div class="cfld"><span>Message Researcher</span></div></div></div>
+</section></div>
+
+<!-- 1440: a call on the Mac: the thread fills with the live transcript; the call is a pill over the composer. -->
+<div class="fr w"><p class="cap">1440 · a call in the Mac window</p>
+<section class="wd mac two" data-f="wide-call">
+  <aside class="side" data-x="side" data-sel="res"></aside>
+  <div class="col2">
+    <header class="rhd"><i class="pa" data-p="res" data-s="40"></i><span class="hdt"><b>Researcher</b><small>Kestrel filings · air · on a call</small></span><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+    <ol class="msgs">
+      <li class="rnd">Today 10:12</li>
+      <li class="cbk" data-t="res">
+        <span class="hd2"><svg class="ico" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg><b>Call · live</b><span>4 lines so far</span></span>
+        <p class="ln2"><b>You</b>What did Q2 come in at?</p>
+        <p class="ln2 p"><b>Researcher</b>Q2 was 3.66 million, so Q3 is up twelve percent.</p>
+        <p class="ln2"><b>You</b>Check it against the 10-Q.</p>
+        <p class="ln2 p"><b>Researcher</b><span class="typing">Fetching the 10-Q now. Revenue on page four reads</span></p>
+      </li>
+    </ol>
+    <div class="dock">
+      <div class="rp" data-k="replying"><span><span class="st">speaking</span> · Call with Researcher · <b>3:12</b></span><span class="stop mute">Mute</span><span class="stop">End</span></div>
+      <div class="comp"><span class="mic" aria-label="dictate"><svg class="ico" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><div class="cfld"><span>Type during the call: it joins the transcript</span></div></div>
+    </div>
+  </div>
+</section></div>
+
+</div>
+</body>
+</html>
