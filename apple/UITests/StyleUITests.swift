@@ -8,13 +8,22 @@
                 labelled(app, style).tap()
                 XCTAssert(picked(app, style).waitForExistence(timeout: 5))
                 keep("look-\(style.lowercased())")
-                app.navigationBars.firstMatch.swipeDown(velocity: .fast)
+                closeMenu(app, picked(app, style))
                 XCTAssert(new.waitForExistence(timeout: 10))
                 keep("home-\(style.lowercased())")
                 cardsIn(app, new, style)
                 app.buttons["Account"].firstMatch.tap()
                 labelled(app, "Look").tap()
             }
+        }
+
+        @MainActor
+        private func closeMenu(_ app: XCUIApplication, _ look: XCUIElement) {
+            for _ in 0..<3 where look.exists {
+                app.navigationBars.firstMatch.swipeDown(velocity: .fast)
+                _ = look.waitForNonExistence(timeout: 3)
+            }
+            XCTAssertFalse(look.exists, "the menu sheet is still open")
         }
 
         @MainActor
