@@ -1,5 +1,5 @@
 {
-  "type": "sheet", "id": "add", "title": "Add a repo", "cancel": "Cancel", "done": { "label": "Review" },
+  "type": "sheet", "id": "add", "title": "Add a repo", "cancel": "Cancel", "done": { "label": "Review", "action": "review" },
   "blocks": [
     { "type": "section", "header": "repo", "blocks": [
       { "type": "form", "id": "add-repo", "fields": [

@@ -111,6 +111,7 @@
     {
      "type": "form",
      "id": "limits",
+     "action": "edit",
      "fields": [
       {
        "type": "picker",
@@ -180,6 +181,7 @@
    {
     "type": "form",
     "id": "groups",
+    "action": "edit",
     "fields": [
      {
       "type": "toggle",

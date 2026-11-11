@@ -5,7 +5,8 @@
  "back": "cooee",
  "done": {
   "label": "Review",
-  "off": true
+  "off": true,
+  "action": "review"
  },
  "blocks": [
   {
@@ -28,7 +29,9 @@
      "line": 177,
      "message": "effort: one of none, low, medium, high, xhigh"
     }
-   ]
+   ],
+   "name": "toml",
+   "action": "check"
   }
  ]
 }

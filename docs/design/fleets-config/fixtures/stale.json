@@ -1,5 +1,5 @@
 {
-  "type": "sheet", "id": "review-stale", "title": "Review again", "cancel": "Edit", "done": { "label": "Apply" },
+  "type": "sheet", "id": "review-stale", "title": "Review again", "cancel": "Edit", "done": { "label": "Apply", "action": "apply", "off": false },
   "blocks": [
     { "type": "card", "tone": "warn", "title": "fleet.toml changed while you edited",
       "subtitle": "You applied the orchestrator's c12 at 09:44. Your changes are shown against the new file; nothing was overwritten." },

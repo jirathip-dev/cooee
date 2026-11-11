@@ -91,3 +91,20 @@ proposal's Apply is one tap on its card; the groups are herdsman's eight, never 
    Renaming the persona is #125's call, so this design leaves it. Rename it to Orchestrator there?
 2. **Global settings' home.** Should Global settings (accounts, hosts) also be reachable from app Settings,
    beside #183's accounts?
+
+## Impl: what the app draws, and what drover sends (#184)
+
+The native app draws every block above; `docs/plugins/screens.schema.json` is the contract and `cooee plugin check`
+passes all nine fixtures here. What drover sends for each interaction:
+
+- A row's `tap: {sheet}` pushes that screen inside the sheet; `‹ <back>` pops it. An action's answer `{open}` pushes too.
+- A row's `button` (Pause, Resume) is an action with its `values` (`{fleet}`).
+- A form with `action` sends each edit as it happens (`{<name>: value}`); drover answers with ops that mark it
+  (`was`, `changed`) and set the screen's `pending`.
+- `pending: {count, text, discard, review}`: the bar under the sheet; `discard` and `review` are taps.
+- A list with `reorder: {action, name}` sends its rows' ids in their new order when a `handle` row is dropped.
+- `editor: {name, text, action, first, errors}`: its text goes out (`{<name>: text}`) a moment after each edit, and
+  drover answers with the block's new `errors`.
+- A screen's or sheet's `done` with `off: true` stays disabled (Review while the text has errors; Apply on a stale
+  edit touching the same line).
+- Card kind `proposal` is drawn as **config proposal**; its `choice` answers apply or discard.

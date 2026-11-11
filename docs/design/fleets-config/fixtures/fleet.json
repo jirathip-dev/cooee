@@ -3,12 +3,15 @@
  "id": "fleet-cooee",
  "title": "cooee",
  "back": "Fleets",
- "done": {
-  "label": "Done"
- },
  "pending": {
   "count": "2 changes",
-  "text": "unsaved"
+  "text": "unsaved",
+  "discard": {
+   "action": "discard"
+  },
+  "review": {
+   "sheet": "/screens/fleets/review"
+  }
  },
  "blocks": [
   {
@@ -23,7 +26,11 @@
      "title": "Driving · 3 lanes",
      "subtitle": "jirathip-dev/cooee → staging",
      "button": {
-      "label": "Pause"
+      "label": "Pause",
+      "action": "pause",
+      "values": {
+       "fleet": "cooee"
+      }
      }
     }
    ]
@@ -110,7 +117,8 @@
        "value": "",
        "placeholder": "none"
       }
-     ]
+     ],
+     "action": "edit"
     }
    ]
   },
@@ -153,7 +161,8 @@
        "doc": "unset uses Global settings",
        "options": []
       }
-     ]
+     ],
+     "action": "edit"
     }
    ]
   },
@@ -193,7 +202,8 @@
         "off"
        ]
       }
-     ]
+     ],
+     "action": "edit"
     }
    ]
   },

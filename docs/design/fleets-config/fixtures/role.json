@@ -5,7 +5,13 @@
  "back": "cooee",
  "pending": {
   "count": "2 changes",
-  "text": "unsaved"
+  "text": "unsaved",
+  "discard": {
+   "action": "discard"
+  },
+  "review": {
+   "sheet": "/screens/fleets/review"
+  }
  },
  "blocks": [
   {
@@ -64,7 +70,8 @@
         "least busy"
        ]
       }
-     ]
+     ],
+     "action": "edit"
     }
    ]
   },
@@ -83,7 +90,8 @@
        },
        "title": "A · Claude Max",
        "subtitle": "5h 42% · week 61%",
-       "handle": true
+       "handle": true,
+       "id": "A"
       },
       {
        "type": "row",
@@ -93,7 +101,8 @@
        "title": "C · Claude Pro",
        "subtitle": "5h 8% · week 22%",
        "handle": true,
-       "lifted": true
+       "lifted": true,
+       "id": "C"
       },
       {
        "type": "row",
@@ -105,9 +114,14 @@
         "text": "capped · resets 14:00",
         "tone": "warn"
        },
-       "handle": true
+       "handle": true,
+       "id": "B"
       }
-     ]
+     ],
+     "reorder": {
+      "action": "order",
+      "name": "accounts"
+     }
     }
    ]
   },
