@@ -348,11 +348,7 @@ fn migration_keeps_the_name_and_sets_the_orchestrator_role() {
     .unwrap();
     assert_eq!(
         seen("conductor"),
-        (
-            json!("Navi"),
-            json!("orchestrator"),
-            json!(["drover"])
-        )
+        (json!("Navi"), json!("orchestrator"), json!(["drover"]))
     );
 }
 
