@@ -1,0 +1,47 @@
+   Compiling bitflags v2.13.2
+   Compiling core-foundation-sys v0.8.7
+   Compiling security-framework-sys v2.17.0
+   Compiling core-foundation v0.10.1
+   Compiling oxc_syntax v0.157.0
+   Compiling oxc_regular_expression v0.157.0
+   Compiling security-framework v3.7.0
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-253/crates/cooee-core)
+   Compiling oxc_compat v0.157.0
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-253/crates/cooee-machines)
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-253/crates/cooee-terminal)
+   Compiling oxc_ast v0.157.0
+   Compiling oxc_ecmascript v0.157.0
+   Compiling oxc_ast_visit v0.157.0
+   Compiling oxc_parser v0.157.0
+   Compiling oxc_semantic v0.157.0
+   Compiling oxc_traverse v0.157.0
+   Compiling oxc_codegen v0.157.0
+   Compiling oxc_transformer v0.157.0
+   Compiling oxc_transformer_plugins v0.157.0
+   Compiling oxc v0.157.0
+   Compiling cooee-web v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-253/web)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-253/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-253/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.91s
+     Running tests/chat.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-253/debug/deps/chat-ddfb9cd390651152)
+
+running 1 test
+test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... FAILED
+
+failures:
+
+---- a_message_to_a_stopped_agent_is_refused_never_stored_as_sent stdout ----
+
+thread 'a_message_to_a_stopped_agent_is_refused_never_stored_as_sent' (49544583) panicked at crates/cooee/tests/chat.rs:447:5:
+assertion `left == right` failed: {"id":3,"at":1794408771425,"seq":0,"kind":"you","text":"are you there","random_id":"r1"}
+  left: 200
+ right: 400
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_message_to_a_stopped_agent_is_refused_never_stored_as_sent
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.84s
+
+error: test failed, to rerun pass `-p cooee --test chat`
