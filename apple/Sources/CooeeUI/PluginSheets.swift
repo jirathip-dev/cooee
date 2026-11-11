@@ -35,13 +35,19 @@ internal struct PluginScreenSheet: View {
     internal var body: some View {
         let palette = look.palette
         VStack(spacing: 0) {
-            SheetBar(title: store.offline ? "" : store.place.label, done: "Done") { dismiss() }
+            SheetBar(cancel: back, title: store.offline ? "" : store.place.label, done: "Done") { dismiss() }
             if let who = store.unreachable { offline(who) }
             ScrollView {
                 Group {
                     if let screen = store.screen {
-                        BlocksView(screen.root, act: { store.send(.act($0)) }, open: { store.send(.open($0)) })
-                            .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
+                        BlocksView(screen.root) {
+                            store.send(.act($0))
+                        } open: {
+                            store.send(.navigate($0))
+                        } openThread: {
+                            store.send(.open($0))
+                        }
+                        .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
                     } else if store.offline {
                         Text("Nothing kept from \(store.place.label) yet.").foregroundStyle(palette.mute)
                     } else {
@@ -51,9 +57,18 @@ internal struct PluginScreenSheet: View {
                 .frame(maxWidth: .infinity, alignment: .leading).padding(16)
             }
             if let said = store.said { Text(said).ui(13, .regular, look).foregroundStyle(palette.mute).padding(8) }
+            if let pending = store.screen?.root["pending"] {
+                PendingBar(pending: pending).environment(\.act, { store.send(.act($0)) })
+                    .environment(\.open, { store.send(.navigate($0)) })
+            }
         }
         .background(palette.background).foregroundStyle(palette.foreground)
         .task { await store.send(.task).finish() }
+    }
+
+    private var back: (label: String, run: () -> Void)? {
+        guard !store.path.isEmpty else { return nil }
+        return ("‹ \(store.screen?.root.string("back") ?? "Back")", { store.send(.navigate(nil)) })
     }
 
     private func offline(_ who: String) -> some View {

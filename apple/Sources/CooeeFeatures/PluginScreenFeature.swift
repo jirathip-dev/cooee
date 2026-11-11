@@ -14,10 +14,12 @@ public struct PluginScreenFeature: Sendable {
         public var unreachable: String?
         public var acting = false
         public var said: String?
+        public var path: [String] = []
 
         public var offline: Bool { unreachable != nil }
         public var title: String { screen?.root.string("title") ?? place.label }
-        public var key: String { "\(server.url.absoluteString)|\(place.plugin)|\(place.screen)" }
+        public var current: String { path.last ?? place.screen }
+        public var key: String { "\(server.url.absoluteString)|\(place.plugin)|\(current)" }
 
         public init(server: Server, place: Place) {
             self.server = server
@@ -33,6 +35,7 @@ public struct PluginScreenFeature: Sendable {
         case failed(String)
         case act(BlockAction)
         case acted(JSONValue?, String?)
+        case navigate(String?)
         case open(String)
         case delegate(Delegate)
 
@@ -67,7 +70,9 @@ public struct PluginScreenFeature: Sendable {
             case .act(let action):
                 return act(&state, action)
             case .acted(let answer, let error):
-                acted(&state, answer, error)
+                return acted(&state, answer, error)
+            case .navigate(let path):
+                return navigate(&state, to: path)
             case .open, .delegate:
                 return Self.opened(action)
             }
@@ -83,11 +88,11 @@ extension PluginScreenFeature {
     }
 
     private func follow(_ state: State) -> Effect<Action> {
-        let (plugins, clock, server, place) = (plugins, clock, state.server, state.place)
+        let (plugins, clock, server, place, path) = (plugins, clock, state.server, state.place, state.current)
         return .run { send in
             while true {
                 do {
-                    let screen = try await plugins.screen(server, place.plugin, place.screen)
+                    let screen = try await plugins.screen(server, place.plugin, path)
                     await send(.loaded(screen))
                     guard let stream = screen.string("stream") else { return }
                     for try await event in plugins.events(server, place.plugin, stream) { await send(.event(event)) }
@@ -131,11 +136,20 @@ extension PluginScreenFeature {
         }
     }
 
-    private func acted(_ state: inout State, _ answer: JSONValue?, _ error: String?) {
+    private func acted(_ state: inout State, _ answer: JSONValue?, _ error: String?) -> Effect<Action> {
         state.acting = false
         state.said = error ?? answer?.string("toast")
-        guard let answer else { return }
+        guard let answer else { return .none }
         state.screen?.apply(event: answer)
         keep(&state)
+        guard let open = answer.string("open") else { return .none }
+        return navigate(&state, to: open)
+    }
+
+    private func navigate(_ state: inout State, to path: String?) -> Effect<Action> {
+        if let path { state.path.append(path) } else if state.path.popLast() == nil { return .none }
+        state.screen = nil
+        state.unreachable = nil
+        return follow(state)
     }
 }

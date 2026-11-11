@@ -1,0 +1,235 @@
+{
+ "type": "screen",
+ "id": "fleet-cooee",
+ "title": "cooee",
+ "back": "Fleets",
+ "pending": {
+  "count": "2 changes",
+  "text": "unsaved",
+  "discard": {
+   "action": "discard"
+  },
+  "review": {
+   "sheet": "/screens/fleets/review"
+  }
+ },
+ "blocks": [
+  {
+   "type": "list",
+   "rows": [
+    {
+     "type": "row",
+     "figure": {
+      "state": "working",
+      "coat": "wht"
+     },
+     "title": "Driving · 3 lanes",
+     "subtitle": "jirathip-dev/cooee → staging",
+     "button": {
+      "label": "Pause",
+      "action": "pause",
+      "values": {
+       "fleet": "cooee"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "roles",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "title": "impl",
+       "subtitle": "Claude Code · opus 5.5 · A → B → C",
+       "tap": {
+        "sheet": "/screens/fleets/cooee/role/impl"
+       }
+      },
+      {
+       "type": "row",
+       "title": "rev",
+       "subtitle": {
+        "text": "Claude Code · sonnet 5.5 · high · A → B → C",
+        "tone": "accent"
+       },
+       "changed": true,
+       "tap": {
+        "sheet": "/screens/fleets/cooee/role/rev"
+       }
+      },
+      {
+       "type": "row",
+       "title": "design · architect · verify",
+       "subtitle": "Claude Code · opus 5.5 · high",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "title": "+ Add a role",
+       "style": "link",
+       "tap": {}
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "queue",
+   "blocks": [
+    {
+     "type": "form",
+     "id": "queue",
+     "fields": [
+      {
+       "type": "picker",
+       "name": "integration",
+       "label": "Merges to",
+       "value": "staging",
+       "options": [
+        "staging"
+       ]
+      },
+      {
+       "type": "text",
+       "name": "ui_paths",
+       "label": "UI paths",
+       "value": "web/**",
+       "doc": "a PR here gets the verify stage"
+      },
+      {
+       "type": "text",
+       "name": "required_checks",
+       "label": "Checks",
+       "value": "",
+       "placeholder": "every check",
+       "doc": "the CI checks merge waits for"
+      },
+      {
+       "type": "text",
+       "name": "premerge",
+       "label": "Pre-merge",
+       "value": "",
+       "placeholder": "none"
+      }
+     ],
+     "action": "edit"
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "serial groups",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "title": "apple",
+       "subtitle": "apple/Cooee.xcodeproj/** · 1 at a time",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "title": "+ Add a group",
+       "style": "link",
+       "tap": {}
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "limits · this fleet",
+   "blocks": [
+    {
+     "type": "form",
+     "id": "flimits",
+     "fields": [
+      {
+       "type": "picker",
+       "name": "review_rounds",
+       "label": "Review rounds",
+       "value": "6 · global",
+       "doc": "unset uses Global settings",
+       "options": []
+      }
+     ],
+     "action": "edit"
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "verify · notify · lessons",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "title": "Verify recipe",
+       "subtitle": ".herdsman/verify.md · in the repo",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "title": "Notifiers",
+       "value": "global",
+       "tap": {}
+      }
+     ]
+    },
+    {
+     "type": "form",
+     "id": "lessons",
+     "fields": [
+      {
+       "type": "picker",
+       "name": "lessons",
+       "label": "Lessons",
+       "value": "off",
+       "was": "weekly",
+       "options": [
+        "weekly",
+        "off"
+       ]
+      }
+     ],
+     "action": "edit"
+    }
+   ]
+  },
+  {
+   "type": "list",
+   "rows": [
+    {
+     "type": "row",
+     "id": "text",
+     "title": "Edit as text",
+     "subtitle": "[fleet.cooee] in fleet.toml",
+     "tap": {}
+    }
+   ]
+  },
+  {
+   "type": "button",
+   "id": "rm-cooee",
+   "label": "Remove cooee from herdsman…",
+   "style": "destructive",
+   "action": "remove-fleet",
+   "confirm": {
+    "title": "Remove cooee from herdsman?",
+    "ok": "Remove its config",
+    "message": "Removes [fleet.cooee] and its 5 roles from fleet.toml (a backup is kept). Stays: jirathip-dev/cooee on GitHub, ~/Projects/cooee, its 3 live worktrees and its event history. Live lanes finish first."
+   }
+  }
+ ]
+}

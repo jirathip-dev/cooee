@@ -56,46 +56,13 @@ internal struct ListBlock: View {
         let rows = block.list("rows")
         VStack(spacing: 0) {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
-                RowView(row: row)
+                RowView(row: row).modifier(Reordering(list: block, row: row))
                 if index < rows.count - 1 {
                     Rectangle().fill(look.palette.line).frame(height: 0.5).padding(.leading, 12)
                 }
             }
         }
         .surface(look, radius: 16)
-    }
-}
-
-internal struct RelativeValue: View {
-    internal let value: JSONValue
-
-    internal var body: some View {
-        TimelineView(.everyMinute) { context in Text(value.text(at: context.date) ?? "") }
-    }
-}
-
-internal struct Figure: View {
-    @Environment(\.look) private var look
-    internal let figure: JSONValue
-    internal var title = ""
-
-    internal var body: some View {
-        let palette = look.palette
-        let lane = figure.string("state").flatMap(LaneState.init(rawValue:))
-        if let lane, look.style == .terminal {
-            Text(lane.figure).ui(13, .bold, look).foregroundStyle(palette.round(lane)).frame(width: 40)
-        } else if let lane, look.style == .scene {
-            Sprite(name: "horse-\(SceneLane.coat(title))-\(lane.pose)").frame(width: 40, height: 30)
-        } else if let icon = figure.string("icon") {
-            Image(systemName: icon).font(.system(size: 14, weight: .semibold)).foregroundStyle(palette.link).frame(
-                width: 28)
-        } else if let avatar = figure.string("avatar") {
-            Text(avatar.prefix(2).uppercased()).ui(12, .bold, look).frame(width: 28, height: 28)
-                .background(palette.edge.opacity(0.5), in: .circle)
-        } else {
-            Circle().fill(palette.tone(figure.string("state")) ?? palette.mute).frame(width: 10, height: 10).frame(
-                width: 28)
-        }
     }
 }
 

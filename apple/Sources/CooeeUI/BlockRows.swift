@@ -60,13 +60,27 @@ internal struct RowView: View {
             if let value = row["value"] {
                 RelativeValue(value: value).ui(13, .regular, look).foregroundStyle(palette.mute)
             }
-            if !rounds.isEmpty || (row["tap"] != nil && row.string("accessory") != "none") {
-                Image(systemName: unfolded ? "chevron.down" : "chevron.right").font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(palette.mute)
-            }
+            if let button = row["button"] { RowButton(button: button) }
+            trailing
         }
         .padding(.leading, CGFloat(row["indent"]?.number ?? 0) * 18).padding(.horizontal, 12).frame(minHeight: 44)
         .contentShape(.rect)
+        .overlay(alignment: .leading) {
+            if row["changed"]?.bool == true {
+                RoundedRectangle(cornerRadius: 2).fill(palette.lead).frame(width: 3).padding(.vertical, 10)
+            }
+        }
+        .modifier(Lifted(lifted: row["lifted"]?.bool == true))
+    }
+
+    @ViewBuilder private var trailing: some View {
+        if row["handle"]?.bool == true {
+            Image(systemName: "line.3.horizontal").font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(look.palette.mute).accessibilityLabel("Reorder")
+        } else if !rounds.isEmpty || (row["tap"] != nil && row.string("accessory") != "none") {
+            Image(systemName: unfolded ? "chevron.down" : "chevron.right").font(.system(size: 11, weight: .bold))
+                .foregroundStyle(look.palette.mute)
+        }
     }
 
     private func run(_ swipe: JSONValue) {
@@ -74,132 +88,64 @@ internal struct RowView: View {
     }
 }
 
-extension Palette {
-    internal func round(_ state: LaneState) -> Color {
-        switch state {
-        case .done, .merged: green
-        case .fail, .needs: red
-        case .working: amber
-        case .idle: mute
-        }
-    }
-}
-
-private struct Rail: Shape {
-    fileprivate func path(in rect: CGRect) -> Path {
-        Path { path in
-            path.move(to: CGPoint(x: rect.midX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
-        }
-    }
-}
-
-internal struct RoundsView: View {
-    @Environment(\.look) private var look
-    internal let rounds: [JSONValue]
+internal struct RelativeValue: View {
+    internal let value: JSONValue
 
     internal var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            ForEach(Array(rounds.enumerated()), id: \.offset) { index, round in
-                RoundView(round: round, current: index == rounds.count - 1)
-            }
-        }
-        .padding(.leading, 22).padding(.trailing, 12).padding(.bottom, 12)
-        .background(alignment: .leading) {
-            Rail().stroke(look.palette.edge, style: StrokeStyle(lineWidth: 1.5, dash: look.mono ? [4, 3] : []))
-                .frame(width: 20).padding(.leading, 22).padding(.vertical, 12)
-        }
+        TimelineView(.everyMinute) { context in Text(value.text(at: context.date) ?? "") }
     }
 }
 
-internal struct RoundView: View {
+internal struct Figure: View {
     @Environment(\.look) private var look
-    internal let round: JSONValue
-    internal let current: Bool
-
-    private var state: LaneState { LaneState(rawValue: round.string("state") ?? "") ?? .idle }
+    internal let figure: JSONValue
+    internal var title = ""
 
     internal var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            marker.frame(width: 20, height: 34)
-            VStack(alignment: .leading, spacing: 6) {
-                if current || round["tap"] == nil { line } else { ActButton(source: round) { line } }
-                if current { RoundBody(round: round, state: state) }
-            }
-        }
-    }
-
-    @ViewBuilder private var marker: some View {
-        let tint = look.palette.round(state)
-        if look.mono {
-            let glyphs: [LaneState: String] = [.done: "+", .fail: "x", .working: ">", .needs: "!"]
-            Text(glyphs[state] ?? "-").ui(15, .bold, look).foregroundStyle(tint)
+        let palette = look.palette
+        let lane = figure.string("state").flatMap(LaneState.init(rawValue:))
+        if let lane, look.style == .terminal {
+            Text(lane.figure).ui(13, .bold, look).foregroundStyle(palette.round(lane)).frame(width: 40)
+        } else if look.style == .scene, let coat = figure.string("coat") ?? lane.map({ _ in SceneLane.coat(title) }) {
+            Sprite(name: "horse-\(coat)-\(lane?.pose ?? "idle")").frame(width: 40, height: 30)
+        } else if let icon = figure.string("icon") {
+            Image(systemName: icon).font(.system(size: 14, weight: .semibold)).foregroundStyle(palette.link).frame(
+                width: 28)
+        } else if let avatar = figure.string("avatar") {
+            Text(avatar.prefix(2).uppercased()).ui(12, .bold, look).frame(width: 28, height: 28)
+                .background(palette.edge.opacity(0.5), in: .circle)
         } else {
-            Circle().fill(tint).frame(width: current ? 14 : 10, height: current ? 14 : 10)
+            Circle().fill(palette.tone(figure.string("state")) ?? palette.mute).frame(width: 10, height: 10).frame(
+                width: 28)
         }
-    }
-
-    private var line: some View {
-        let palette = look.palette
-        return HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(round.string("name") ?? "").ui(15, .semibold, look).lineLimit(1).layoutPriority(1)
-            Text(round.string("summary") ?? "").ui(13, .regular, look).foregroundStyle(palette.round(state))
-                .lineLimit(1)
-            Spacer(minLength: 4)
-            if let since = round["since"] {
-                RelativeValue(value: .object(["since": since])).ui(13, .regular, look).foregroundStyle(palette.mute)
-            }
-            if !current && round["tap"] != nil {
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundStyle(palette.mute)
-            }
-        }
-        .frame(minHeight: 34).contentShape(.rect)
     }
 }
 
-internal struct RoundBody: View {
+internal struct RowButton: View {
     @Environment(\.look) private var look
-    internal let round: JSONValue
-    internal let state: LaneState
+    internal let button: JSONValue
 
     internal var body: some View {
-        let palette = look.palette
-        VStack(alignment: .leading, spacing: 10) {
-            if let lane = round["lane"] { self.lane(lane) }
-            if !round.list("blocks").isEmpty { BlockStack(blocks: round.list("blocks")) }
-            if !round.list("links").isEmpty { links }
-        }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(
-            RoundedRectangle(cornerRadius: look.mono ? 4 : 14)
-                .stroke(state == .needs ? palette.red.opacity(0.7) : palette.edge, lineWidth: 1)
-        )
-    }
-
-    private func lane(_ lane: JSONValue) -> some View {
-        let palette = look.palette
-        let head = ["name", "harness", "model", "host"].compactMap { lane.string($0) }.joined(separator: " · ")
-        let lines = lane.list("lines").compactMap(\.string)
-        return VStack(alignment: .leading, spacing: 4) {
-            Text(head).ui(13, .regular, look).foregroundStyle(palette.mute)
-            ForEach(Array(lines.enumerated()), id: \.offset) { index, text in
-                let live = state == .working && index == lines.count - 1
-                Text(live ? "▍ \(text)" : text).font(.system(size: 13, design: .monospaced)).lineLimit(1)
-                    .foregroundStyle(live ? palette.amber : palette.mute)
-            }
+        let tint = look.palette.tone(button.string("tone")) ?? look.palette.link
+        ActButton(source: button) {
+            Text(button.string("label") ?? "").ui(13, .semibold, look).foregroundStyle(tint)
+                .padding(.horizontal, 12).frame(minHeight: 30)
+                .background(look.mono ? Color.clear : tint.opacity(0.16), in: .capsule)
         }
     }
+}
 
-    private var links: some View {
-        let palette = look.palette
-        return HStack(spacing: 8) {
-            ForEach(Array(round.list("links").enumerated()), id: \.offset) { _, link in
-                ActButton(source: link) {
-                    Text("\(link.string("label") ?? "") ›").ui(14, .medium, look).foregroundStyle(palette.link)
-                        .padding(.horizontal, 12).frame(height: 32)
-                        .overlay(RoundedRectangle(cornerRadius: look.mono ? 4 : 16).stroke(palette.edge, lineWidth: 1))
-                }
-            }
+internal struct Lifted: ViewModifier {
+    @Environment(\.look) private var look
+    internal let lifted: Bool
+
+    @ViewBuilder
+    internal func body(content: Content) -> some View {
+        if lifted {
+            content.background(look.palette.background, in: .rect(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.4), radius: 12, y: 8).scaleEffect(1.02).offset(y: -6).zIndex(1)
+        } else {
+            content
         }
     }
 }

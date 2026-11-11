@@ -5,15 +5,18 @@ public struct HomeActions {
     public var menu: () -> Void
     public var new: (String) -> Void
     public var open: (String) -> Void
+    public var edit: (String?) -> Void
 
     public init(
         menu: @escaping () -> Void = {},
         new: @escaping (String) -> Void = { _ in },
-        open: @escaping (String) -> Void = { _ in }
+        open: @escaping (String) -> Void = { _ in },
+        edit: @escaping (String?) -> Void = { _ in }
     ) {
         self.menu = menu
         self.new = new
         self.open = open
+        self.edit = edit
     }
 }
 
@@ -21,6 +24,7 @@ public struct HomeView: View {
     @Environment(\.look) private var look
     private let menuOpen: Bool
     private let personas: [Persona]
+    private let all: [Persona]
     private let chats: [ListedChat]
     private let selected: String?
     private let actions: HomeActions
@@ -30,7 +34,7 @@ public struct HomeView: View {
         ZStack(alignment: .topLeading) {
             Backdrop()
             VStack(spacing: 0) {
-                TopBar(personas: personas, actions: actions)
+                TopBar(personas: all, actions: actions)
                 Scroller {
                     PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new).padding(.top, 6)
                     ChatList(chats: chats, selected: selected, open: actions.open)
@@ -49,12 +53,14 @@ public struct HomeView: View {
     public init(
         menuOpen: Bool = false,
         personas: [Persona] = Fixtures.personas,
+        all: [Persona]? = nil,
         chats: [ListedChat] = Fixtures.chats,
         selected: String? = nil,
         actions: HomeActions = HomeActions()
     ) {
         self.menuOpen = menuOpen
         self.personas = personas
+        self.all = all ?? personas
         self.chats = chats
         self.selected = selected
         self.actions = actions
@@ -94,6 +100,11 @@ internal struct TopBar: View {
             Spacer()
             Menu {
                 ForEach(personas) { persona in Button(persona.name) { actions.new(persona.id) } }
+                Divider()
+                Button("New persona…", systemImage: "person.badge.plus") { actions.edit(nil) }
+                Menu("Edit a persona", systemImage: "pencil") {
+                    ForEach(personas) { persona in Button("Edit \(persona.name)") { actions.edit(persona.id) } }
+                }
             } label: {
                 RoundButton(symbol: "plus", ascii: "+", size: 44)
             }

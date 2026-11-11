@@ -60,7 +60,7 @@ internal struct AppFeatureTests {
             $0.path = []
             $0.chat = nil
         }
-        await store.send(.menu(true)) { $0.menu = true }
+        await store.send(.menu(.open(true))) { $0.menu.open = true }
     }
 
     @Test internal func aNewChatBecomesItsThreadOnceStarted() async {
@@ -100,9 +100,44 @@ internal struct AppFeatureTests {
         #expect(store.state.setup != nil)
     }
 
-    @Test internal func withoutHomeNoChatOpens() async {
+    @Test internal func withoutHomeNoChatOrPersonaOpens() async {
         let store = store(AppFeature.State(server: nil))
         await store.send(.open("t1")) { $0.path = ["t1"] }
+        await store.send(.edit(nil))
+    }
+
+    @Test internal func aSavedPersonaClosesItsSheetAndHomeReloads() async {
+        let store = store(paired())
+        store.dependencies.personas.save = { _, persona in persona }
+        await store.send(.edit("coder")) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
+        await store.send(.persona(.presented(.binding(.set(\.draft.character, "Terse."))))) {
+            $0.persona?.draft.character = "Terse."
+        }
+        await store.send(.persona(.presented(.save))) { $0.persona?.busy = true }
+        await store.receive(\.persona.presented.delegate.saved) { $0.persona = nil }
+        await store.receive(\.home.refresh)
+        await store.receive(\.home.loaded) { $0.home?.rows = [row("n1")] }
+    }
+
+    @Test internal func aNewPersonaStartsBlankOnTheFirstPersonasAgent() async {
+        let store = store(paired())
+        await store.send(.edit(nil)) {
+            $0.persona = PersonaFeature.State(server: mini, persona: APIPersona(id: "", name: "", agent: "codex"))
+        }
+        #expect(store.state.persona?.isNew == true)
+        await store.send(.persona(.presented(.close)))
+        await store.receive(\.persona.dismiss) { $0.persona = nil }
+        await store.send(.edit("gone")) {
+            $0.persona = PersonaFeature.State(server: mini, persona: APIPersona(id: "", name: "", agent: "codex"))
+        }
+    }
+
+    @Test internal func theLookOutlivesPairingAgain() async {
+        let dark = Settings(scheme: .dark, style: .terminal)
+        let store = store(AppFeature.State(server: mini, settings: dark))
+        await store.send(.home(.delegate(.unauthorized))) { $0 = AppFeature.State(server: nil, settings: dark) }
+        await store.send(.pairing(.delegate(.paired(mini)))) { $0 = AppFeature.State(server: mini, settings: dark) }
+        #expect(store.state.menu.server == mini)
     }
 
     @Test internal func aChatAskingToOpenAThreadOpensIt() async {

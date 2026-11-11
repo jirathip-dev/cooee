@@ -57,6 +57,7 @@ internal struct HomeFeatureTests {
             $0.error = nil
         }
         #expect(store.state.pinned.map(\.state) == [.done])
+        #expect(store.state.everyone.map(\.id) == ["coder"])
         #expect(store.state.chats(now: epoch).map(\.id) == ["t1"])
         #expect(store.state.persona("coder") == coder && store.state.persona("x") == nil)
         await store.send(.delegate(.unauthorized))

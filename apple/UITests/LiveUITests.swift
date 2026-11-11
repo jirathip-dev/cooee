@@ -23,9 +23,11 @@
             XCTAssert(new.waitForExistence(timeout: 10))
             XCTAssert(labelled(app, "Coder").exists)
             keep("home")
+            personaRoundTrip(app)
             answersEachCard(app, new)
             app.buttons["Back"].firstMatch.tap()
             opensDroversScreens(app, new)
+            avatarMenu(app, new)
         }
 
         @MainActor
@@ -166,6 +168,65 @@
             keep("queue-row-open")
             labelled(app, "#641").tap()
             XCTAssert(link.waitForNonExistence(timeout: 10))
+        }
+
+        @MainActor
+        private func personaRoundTrip(_ app: XCUIApplication) {
+            let name = "Scout \(ProcessInfo.processInfo.environment["COOEE_LOOK"] ?? "look")"
+            app.buttons["New chat"].firstMatch.tap()
+            app.buttons["New persona…"].firstMatch.tap()
+            type(app, "Name", name)
+            pin(app)
+            type(app, "Character", "Finds the facts first.")
+            app.buttons["Save"].firstMatch.tap()
+            XCTAssert(labelled(app, name).waitForExistence(timeout: 10))
+            app.buttons["New chat"].firstMatch.tap()
+            app.buttons["Edit a persona"].firstMatch.tap()
+            app.buttons["Edit \(name)"].firstMatch.tap()
+            let character = NSPredicate(format: "value CONTAINS 'Finds the facts first.'")
+            XCTAssert(app.descendants(matching: .any).matching(character).firstMatch.waitForExistence(timeout: 10))
+            XCTAssertEqual(app.switches["Pin to Home"].firstMatch.value as? String, "1")
+            type(app, "Instructions", "Cite every source.")
+            keep("persona")
+            app.buttons["Save"].firstMatch.tap()
+            XCTAssert(app.buttons["Save"].waitForNonExistence(timeout: 10))
+        }
+
+        @MainActor
+        private func pin(_ app: XCUIApplication) {
+            let toggle = app.switches["Pin to Home"].firstMatch
+            XCTAssert(toggle.waitForExistence(timeout: 10))
+            let knob = toggle.switches.firstMatch
+            (knob.exists ? knob : toggle).tap()
+            XCTAssertEqual(toggle.value as? String, "1")
+        }
+
+        @MainActor
+        private func avatarMenu(_ app: XCUIApplication, _ new: XCUIElement) {
+            app.buttons["Done"].firstMatch.tap()
+            app.buttons["Back"].firstMatch.tap()
+            XCTAssert(new.waitForExistence(timeout: 10))
+            app.buttons["Account"].firstMatch.tap()
+            XCTAssert(labelled(app, "Notifications").waitForExistence(timeout: 10))
+            keep("avatar-menu")
+            labelled(app, "Look").tap()
+            labelled(app, "Terminal").tap()
+            XCTAssert(picked(app, "Terminal").waitForExistence(timeout: 5))
+            labelled(app, "Modern").tap()
+            XCTAssert(picked(app, "Modern").waitForExistence(timeout: 5))
+        }
+
+        @MainActor
+        private func picked(_ app: XCUIApplication, _ label: String) -> XCUIElement {
+            app.buttons.matching(NSPredicate(format: "label == %@ AND selected == true", label)).firstMatch
+        }
+
+        @MainActor
+        private func type(_ app: XCUIApplication, _ hint: String, _ text: String) {
+            let box = field(app, hint)
+            XCTAssert(box.waitForExistence(timeout: 10))
+            box.tap()
+            box.typeText(text)
         }
     }
 #endif

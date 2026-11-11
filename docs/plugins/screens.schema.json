@@ -59,14 +59,19 @@
         "type": { "enum": ["text", "toggle", "picker", "secret"] }, "name": { "type": "string" },
         "label": { "type": "string" }, "placeholder": { "type": "string" },
         "keyboard": { "enum": ["default", "url", "number"] }, "value": { "type": ["string", "number", "boolean"] },
-        "options": { "type": "array", "items": { "type": "string" } }, "set": { "type": "boolean" }
+        "options": { "type": "array", "items": { "type": "string" } }, "set": { "type": "boolean" },
+        "doc": { "type": "string" }, "was": { "type": "string" }, "error": { "type": "string" }
       },
       "allOf": [
         { "if": { "properties": { "type": { "const": "picker" } } }, "then": { "required": ["options"] } },
         { "if": { "properties": { "type": { "const": "secret" } } }, "then": { "not": { "required": ["value"] } } }
       ]
     },
-    "submit": { "type": "object", "required": ["label", "action"], "properties": { "label": { "type": "string" }, "action": { "type": "string" } } },
+    "submit": {
+      "type": "object",
+      "required": ["label", "action"],
+      "properties": { "label": { "type": "string" }, "action": { "type": "string" }, "off": { "type": "boolean" } }
+    },
     "block": {
       "type": "object",
       "required": ["type"],
@@ -89,6 +94,8 @@
         { "if": { "properties": { "type": { "const": "text" } } }, "then": { "$ref": "#/$defs/text" } },
         { "if": { "properties": { "type": { "const": "images" } } }, "then": { "$ref": "#/$defs/images" } },
         { "if": { "properties": { "type": { "const": "web" } } }, "then": { "$ref": "#/$defs/web" } },
+        { "if": { "properties": { "type": { "const": "diff" } } }, "then": { "$ref": "#/$defs/diff" } },
+        { "if": { "properties": { "type": { "const": "editor" } } }, "then": { "$ref": "#/$defs/editor" } },
         { "if": { "properties": { "type": { "const": "scene" } } }, "then": { "$ref": "#/$defs/scene" } }
       ]
     },
@@ -96,7 +103,16 @@
       "required": ["title", "blocks"],
       "properties": {
         "title": { "type": "string" }, "large": { "type": "boolean" }, "stream": { "type": "string" },
-        "actions": { "type": "array", "items": { "$ref": "#/$defs/act" } }, "blocks": { "$ref": "#/$defs/blocks" }
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/act" } }, "blocks": { "$ref": "#/$defs/blocks" },
+        "back": { "type": "string" }, "done": { "$ref": "#/$defs/submit" },
+        "pending": {
+          "type": "object",
+          "required": ["count", "text", "discard", "review"],
+          "properties": {
+            "count": { "type": "string" }, "text": { "type": "string" },
+            "discard": { "$ref": "#/$defs/tap" }, "review": { "$ref": "#/$defs/tap" }
+          }
+        }
       }
     },
     "sheet": {
@@ -110,18 +126,33 @@
       "required": ["blocks"],
       "properties": { "header": { "type": "string" }, "footer": { "type": "string" }, "blocks": { "$ref": "#/$defs/blocks" } }
     },
-    "list": { "required": ["rows"], "properties": { "rows": { "$ref": "#/$defs/blocks" } } },
+    "list": {
+      "required": ["rows"],
+      "properties": {
+        "rows": { "$ref": "#/$defs/blocks" },
+        "reorder": {
+          "type": "object",
+          "required": ["action", "name"],
+          "properties": { "action": { "type": "string" }, "name": { "type": "string" } }
+        }
+      }
+    },
     "row": {
       "required": ["title"],
       "properties": {
         "title": { "type": "string" }, "subtitle": { "$ref": "#/$defs/toned" }, "badge": { "$ref": "#/$defs/badge" },
         "figure": {
           "type": "object",
-          "properties": { "state": { "$ref": "#/$defs/tone" }, "tool": { "type": "string" }, "icon": { "type": "string" }, "avatar": { "type": "string" } }
+          "properties": {
+            "state": { "$ref": "#/$defs/tone" }, "tool": { "type": "string" }, "icon": { "type": "string" },
+            "avatar": { "type": "string" }, "coat": { "type": "string" }
+          }
         },
         "value": { "$ref": "#/$defs/value" }, "accessory": { "enum": ["chevron", "none"] },
         "swipe": { "type": "array", "items": { "$ref": "#/$defs/act" } }, "tap": { "$ref": "#/$defs/tap" },
         "indent": { "type": "integer", "minimum": 0, "maximum": 2 }, "style": { "enum": ["link", "destructive"] },
+        "button": { "$ref": "#/$defs/act" }, "handle": { "type": "boolean" }, "lifted": { "type": "boolean" },
+        "changed": { "type": "boolean" },
         "rounds": { "type": "array", "items": { "$ref": "#/$defs/round" } }
       }
     },
@@ -161,7 +192,7 @@
     },
     "card": {
       "properties": {
-        "kind": { "enum": ["ask", "run", "secret", "config"] }, "tone": { "$ref": "#/$defs/tone" },
+        "kind": { "enum": ["ask", "run", "secret", "config", "proposal"] }, "tone": { "$ref": "#/$defs/tone" },
         "title": { "type": "string" }, "subtitle": { "type": "string" }, "meta": { "type": "string" },
         "badge": { "$ref": "#/$defs/badge" }, "buttons": { "$ref": "#/$defs/blocks" }, "tap": { "$ref": "#/$defs/tap" },
         "push": { "type": "boolean" }, "blocks": { "$ref": "#/$defs/blocks" }
@@ -192,7 +223,10 @@
     },
     "form": {
       "required": ["fields"],
-      "properties": { "submit": { "$ref": "#/$defs/submit" }, "fields": { "type": "array", "items": { "$ref": "#/$defs/field" } } }
+      "properties": {
+        "submit": { "$ref": "#/$defs/submit" }, "action": { "type": "string" },
+        "fields": { "type": "array", "items": { "$ref": "#/$defs/field" } }
+      }
     },
     "secret": {
       "required": ["name", "action"],
@@ -255,6 +289,35 @@
       }
     },
     "web": { "required": ["src", "height"], "properties": { "src": { "type": "string" }, "height": { "type": "number" } } },
+    "diff": {
+      "required": ["file", "hunks"],
+      "properties": {
+        "file": { "type": "string" }, "summary": { "type": "string" },
+        "hunks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["at", "lines"],
+            "properties": { "at": { "type": "string" }, "lines": { "type": "array", "items": { "type": "string" } } }
+          }
+        }
+      }
+    },
+    "editor": {
+      "required": ["name", "text", "action"],
+      "properties": {
+        "name": { "type": "string" }, "text": { "type": "string" }, "action": { "type": "string" },
+        "first": { "type": "integer", "minimum": 1 },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["line", "message"],
+            "properties": { "line": { "type": "integer" }, "message": { "type": "string" } }
+          }
+        }
+      }
+    },
     "op": {
       "type": "object",
       "required": ["op"],

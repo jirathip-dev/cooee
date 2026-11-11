@@ -1,0 +1,24 @@
+{
+  "type": "sheet", "id": "review", "title": "Review changes", "cancel": "Edit", "done": { "label": "Apply", "action": "apply" },
+  "blocks": [
+    { "type": "list", "rows": [
+      { "type": "row", "figure": { "icon": "✓" }, "title": "2 changes to cooee", "subtitle": { "text": "valid · herdsman checked them", "tone": "ok" } } ] },
+    { "type": "section", "header": "what changes", "blocks": [
+      { "type": "list", "rows": [
+        { "type": "row", "title": "rev · effort", "value": "model default → high" },
+        { "type": "row", "title": "lessons", "value": "weekly → off" } ] } ] },
+    { "type": "section", "header": "the diff", "blocks": [
+      { "type": "diff", "file": "~/.config/herdsman/fleet.toml", "summary": "+2 −0",
+        "hunks": [
+          { "at": "@@ 158 @@ [fleet.cooee]", "lines": [
+            "  integration = \"staging\"",
+            "  ui_paths = [\"web/**\"]   # t21 owner q619",
+            "+ lessons = \"off\"" ] },
+          { "at": "@@ 172 @@ [fleet.cooee.role.rev]", "lines": [
+            "  accounts = [\"A\", \"B\", \"C\"]   # q1080: \"A then B then C\"",
+            "  profile = \"fleet-rev\"",
+            "  model = \"claude-sonnet-5-5\"",
+            "+ effort = \"high\"" ] } ] } ] },
+    { "type": "text", "style": "footnote", "markdown": "Apply writes fleet.toml once, keeps the old one as `fleet.toml.bak-…` and runs doctor. Comments stay as they are." }
+  ]
+}

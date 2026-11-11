@@ -7,6 +7,7 @@ mod blocks;
 mod chat;
 mod config;
 mod devices;
+pub mod history;
 mod login;
 pub mod mcp;
 pub mod models;
@@ -16,6 +17,7 @@ pub mod plugins;
 pub mod profiles;
 pub mod provider;
 mod providers;
+pub mod secrets;
 mod shed;
 mod store;
 
