@@ -108,6 +108,8 @@ internal struct Figure: View {
             Text(lane.figure).ui(13, .bold, look).foregroundStyle(palette.round(lane)).frame(width: 40)
         } else if look.style == .scene, let coat = figure.string("coat") ?? lane.map({ _ in SceneLane.coat(title) }) {
             Sprite(name: "horse-\(coat)-\(lane?.pose ?? "idle")").frame(width: 40, height: 30)
+        } else if let lane {
+            Sprite(name: "row-\(sprite(lane))").frame(width: 22, height: 22).frame(width: 28)
         } else if let icon = figure.string("icon") {
             Image(systemName: icon).font(.system(size: 14, weight: .semibold)).foregroundStyle(palette.link).frame(
                 width: 28)
@@ -118,6 +120,11 @@ internal struct Figure: View {
             Circle().fill(palette.tone(figure.string("state")) ?? palette.mute).frame(width: 10, height: 10).frame(
                 width: 28)
         }
+    }
+
+    private func sprite(_ lane: LaneState) -> String {
+        guard lane == .working else { return lane.rawValue }
+        return ["read", "run"].first { $0 == figure.string("tool") } ?? "edit"
     }
 }
 

@@ -30,6 +30,14 @@ internal enum QueueFrames {
         }
     }
 
+    private static let figures: JSONValue = {
+        let tools = ["", #", "tool": "read""#, #", "tool": "run""#].map { #""state": "working"\#($0)"# }
+        let figures = tools + ["needs", "fail", "done", "idle"].map { #""state": "\#($0)""# }
+        let rows = figures.map { #"{"type": "row", "figure": {\#($0)}}"# }
+        let json = #"{"type": "list", "rows": [\#(rows.joined(separator: ","))]}"#
+        return (try? JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))) ?? .null
+    }()
+
     @MainActor private static func sheet() -> some View {
         Color.clear.overlay(alignment: .top) { BlocksView(screen).padding(16) }.clipped()
     }
@@ -53,6 +61,10 @@ internal enum QueueFrames {
                 name: "queue-mac-\(style.rawValue)-dark", width: 1440, height: 900, palette: .farmDark, style: style,
                 phone: false, view: { AnyView(panel()) })
         }
-        return phones + macs
+        let lanes = Frame(
+            name: "queue-figures-modern-dark", width: 64, height: 360, palette: .farmDark, style: .modern,
+            phone: false,
+            view: { AnyView(Color.clear.overlay(alignment: .top) { BlocksView(figures).padding(.top, 36) }) })
+        return phones + macs + [lanes]
     }
 }

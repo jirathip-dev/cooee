@@ -62,9 +62,10 @@ field left out because `ImageRenderer` cannot draw it) as the sheet's blocks.
 | PNG | shows |
 |---|---|
 | `queue-scene-dark.png`, `queue-scene-light.png` | **Scene**: the `scene` block, a horse per lane in its place: #730 at the gate (red-ringed card), #655 refused at the fence (its own pose, q1244), the trail, the stable, grazing. The rows below carry the same horse. #730's needs-you round is folded open with the ask. |
-| `queue-modern-dark.png`, `queue-modern-light.png` | **Modern**: no strip; #730 folded open (the rounds line, the lane, the ask's buttons, `lane chat ›`), #655 and the in-progress rows folded with their subtitle. |
+| `queue-modern-dark.png`, `queue-modern-light.png` | **Modern**: no strip; the rows' figures are the farm pack's row sprites (`row-<state>.png`); #730 folded open (the rounds line, the lane, the ask's buttons, `lane chat ›`), #655 and the in-progress rows folded with their subtitle. |
 | `queue-terminal-dark.png`, `queue-terminal-light.png` | **Terminal**: the ASCII figures, the dashed round line with a glyph per state, bracketed buttons; no strip. |
 | `queue-mac-scene-dark.png`, `queue-mac-modern-dark.png`, `queue-mac-terminal-dark.png` | The Queue panel at 1440: the strip shows all seven lanes. |
+| `queue-figures-modern-dark.png` | Modern's row figure for every lane state (working: edit, read, run; needs, fail, done, idle), cropped tight so a figure change shows. |
 
 ## Not drawn
 
