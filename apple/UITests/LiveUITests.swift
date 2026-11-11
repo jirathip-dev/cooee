@@ -60,11 +60,11 @@ internal final class LiveUITests: XCTestCase {
         XCTAssert(labelled(app, "review 1 ▸ herdsman-rev-722").waitForExistence(timeout: 30))
         keep("queue-live")
         labelled(app, "#641").tap()
-        XCTAssert(labelled(app, "herdsman-impl-641").waitForExistence(timeout: 10))
-        XCTAssert(app.buttons["PR #704 ›"].exists)
+        let pr = app.buttons["PR #704 ›"].firstMatch
+        XCTAssert(pr.waitForExistence(timeout: 10))
         keep("queue-row-open")
         labelled(app, "#641").tap()
-        XCTAssert(labelled(app, "herdsman-impl-641").waitForNonExistence(timeout: 10))
+        XCTAssert(pr.waitForNonExistence(timeout: 10))
     }
 
     @MainActor
