@@ -1,0 +1,9 @@
+Decided: merge staging so the live app has the look picker and Scene is reachable, as the review note asked
+Because: apple/Sources/CooeeUI/Root.swift:33
+Decided: BlocksView carries two taps, open pushes a plugin sheet and openThread opens a chat
+Because: apple/Sources/CooeeUI/BlockCards.swift:30
+Decided: one Figure, where an explicit coat wins and a lane state alone takes the coat from the row title, at 40x30
+Because: apple/Sources/CooeeUI/BlockRows.swift:105
+Rejected: adding an iOS section to .herdsman/verify.md here — verify recipe is fleet tooling, not #181's spec
+Check: CI apple and e2e jobs green at the new head; SnapshotTests still hold the nine queue-* frames
+Owner: The queue strip and fold-open rows now sit on top of the latest app, including the look picker.
