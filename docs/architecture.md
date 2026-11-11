@@ -286,7 +286,7 @@ exact command or URL and needs Face ID; it is added off), saves a secret to the 
 profiles' servers and tools. A command or URL changes on the Mac only: the server refuses it from the phone.
 
 Every thread's agent gets, through shed's `--mcp` file (0600, removed once shed read it): `cooee` (`cooee mcp serve
---thread <id>`), whose only tool is `propose_server {name, type, command|url, args, why}`; and for each server its
+--thread <id>`), whose tools are `propose_server {name, type, command|url, args, why}`, `remember`, `ask_persona` and `history` ([api.md](api.md)); and for each server its
 profile picks (on, its references resolving), `cooee mcp proxy <server> --thread <id>`. Each carries `COOEE_MCP`
 (cooee's URL and the thread's token, `sha256(<data>/mcp.key:<thread>)`), good while the thread is open. The proxy asks
 `POST /mcp/agent/grant` for its server, its references resolved in memory then and never written, starts it (stdio) or
