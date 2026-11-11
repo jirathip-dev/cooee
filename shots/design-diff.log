@@ -1,0 +1,64 @@
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/add-390-dark.png vs docs/design/fleets-config/add-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/add-390-dark-diff.png)
+add-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/add-390-light.png vs docs/design/fleets-config/add-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/add-390-light-diff.png)
+add-390-light exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleet-1440.png vs docs/design/fleets-config/fleet-1440.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleet-1440-diff.png)
+fleet-1440 exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleet-390-dark.png vs docs/design/fleets-config/fleet-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleet-390-dark-diff.png)
+fleet-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleet-390-light.png vs docs/design/fleets-config/fleet-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleet-390-light-diff.png)
+fleet-390-light exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleet-end-390-dark.png vs docs/design/fleets-config/fleet-end-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleet-end-390-dark-diff.png)
+fleet-end-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleet-scene-390-light.png vs docs/design/fleets-config/fleet-scene-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleet-scene-390-light-diff.png)
+fleet-scene-390-light exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-1440.png vs docs/design/fleets-config/fleets-1440.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-1440-diff.png)
+fleets-1440 exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-390-dark.png vs docs/design/fleets-config/fleets-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-390-dark-diff.png)
+fleets-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-390-light.png vs docs/design/fleets-config/fleets-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-390-light-diff.png)
+fleets-390-light exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-end-390-dark.png vs docs/design/fleets-config/fleets-end-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-end-390-dark-diff.png)
+fleets-end-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-scene-390-light.png vs docs/design/fleets-config/fleets-scene-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-scene-390-light-diff.png)
+fleets-scene-390-light exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-terminal-390-dark.png vs docs/design/fleets-config/fleets-terminal-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/fleets-terminal-390-dark-diff.png)
+fleets-terminal-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/global-390-dark.png vs docs/design/fleets-config/global-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/global-390-dark-diff.png)
+global-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/global-390-light.png vs docs/design/fleets-config/global-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/global-390-light-diff.png)
+global-390-light exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/global-end-390-dark.png vs docs/design/fleets-config/global-end-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/global-end-390-dark-diff.png)
+global-end-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/proposal-390-dark.png vs docs/design/fleets-config/proposal-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/proposal-390-dark-diff.png)
+proposal-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/proposal-390-light.png vs docs/design/fleets-config/proposal-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/proposal-390-light-diff.png)
+proposal-390-light exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/proposal-scene-390-light.png vs docs/design/fleets-config/proposal-scene-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/proposal-scene-390-light-diff.png)
+proposal-scene-390-light exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/remove-390-dark.png vs docs/design/fleets-config/remove-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/remove-390-dark-diff.png)
+remove-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/review-1440.png vs docs/design/fleets-config/review-1440.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/review-1440-diff.png)
+review-1440 exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/review-390-dark.png vs docs/design/fleets-config/review-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/review-390-dark-diff.png)
+review-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/review-390-light.png vs docs/design/fleets-config/review-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/review-390-light-diff.png)
+review-390-light exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/review-terminal-1440.png vs docs/design/fleets-config/review-terminal-1440.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/review-terminal-1440-diff.png)
+review-terminal-1440 exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/review-terminal-390-dark.png vs docs/design/fleets-config/review-terminal-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/review-terminal-390-dark-diff.png)
+review-terminal-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/role-390-dark.png vs docs/design/fleets-config/role-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/role-390-dark-diff.png)
+role-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/role-390-light.png vs docs/design/fleets-config/role-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/role-390-light-diff.png)
+role-390-light exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/role-terminal-390-dark.png vs docs/design/fleets-config/role-terminal-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/role-terminal-390-dark-diff.png)
+role-terminal-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/stale-390-dark.png vs docs/design/fleets-config/stale-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/stale-390-dark-diff.png)
+stale-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/stale-390-light.png vs docs/design/fleets-config/stale-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/stale-390-light-diff.png)
+stale-390-light exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/text-390-dark.png vs docs/design/fleets-config/text-390-dark.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/text-390-dark-diff.png)
+text-390-dark exit=0
+diff: /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/text-390-light.png vs docs/design/fleets-config/text-390-light.png: 0.000 % of pixels differ (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-184-r3/design-head/docs/design/fleets-config/text-390-light-diff.png)
+text-390-light exit=0
