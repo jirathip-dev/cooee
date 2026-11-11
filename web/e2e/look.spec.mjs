@@ -132,6 +132,19 @@ test("Settings: the look rows show the pick and open the look sheet", async ({ p
   await expect(sheet(page).getByText("dark colours · showing")).toBeVisible();
 });
 
+test("Settings › routines: a row shows its name, line, resume and delete on screen", async ({ page }, info) => {
+  await page.goto("/routines");
+  const row = page.locator(".acr[data-routine]");
+  await expect(row.locator(".sk")).toHaveText("renewals");
+  await expect(row.locator(".st")).toContainText("Mondays 09:00 · in its chat · not run yet · paused");
+  expect((await row.locator(".sk").boundingBox()).width).toBeGreaterThan(40);
+  for (const name of ["resume renewals: it will be resumed", "delete renewals"]) {
+    await expect(row.getByRole("button", { name })).toBeInViewport({ ratio: 1 });
+  }
+  await shot(page, info, "routines");
+  await audit(page);
+});
+
 // Each Figures value on each Style, and plain's two, with a fixture list and a waiting thread (#35).
 test("each Style × Figures combination renders at 390", async ({ page, context, baseURL }, info) => {
   test.skip(info.project.name !== "390", "the combinations are a phone audit");
