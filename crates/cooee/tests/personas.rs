@@ -129,16 +129,18 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
         400
     );
 
-    // Edited: its id stays, the edit is kept and read back.
+    assert_eq!(chief["pinned"], false);
+
+    // Edited and pinned (#139): its id stays, the edit is kept and read back.
     let edit = json!({ "name": "Chief", "character": "A calm chef.", "instructions": "Answer in two lines.",
-                       "agent": "fake-acp", "folder": "scratch" });
+                       "agent": "fake-acp", "folder": "scratch", "pinned": true });
     let (status, edited) = s.call("PUT", "/personas/chief-cook", Some(&edit));
     assert_eq!(status, 200, "{edited}");
     let read = s.cooee.json("/personas/chief-cook");
-    assert_eq!(
-        (read["name"].as_str(), read["instructions"].as_str()),
-        (Some("Chief"), Some("Answer in two lines."))
-    );
+    assert_eq!(read["name"], "Chief");
+    assert_eq!(read["instructions"], "Answer in two lines.");
+    assert_eq!(read["pinned"], true);
+    assert!(fs::read_to_string(&file).unwrap().contains("pinned = true"));
     assert_eq!(s.call("PUT", "/personas/nobody", Some(&edit)).0, 400);
 
     // Its chat: its agent, Character and Instructions ahead of the first message; the row names it.
@@ -231,7 +233,7 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
         list,
         json!([{ "id": "coder", "name": "Coder", "avatar": "idle", "character": "",
                  "instructions": "Follow the house rules.\n", "folder": "", "agent": "fake-acp",
-                 "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [], "profile": "coder" }])
+                 "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [], "pinned": false, "profile": "coder" }])
     );
 
     // It runs as the profile: its env and policy on the adapter, its instructions ahead of the first message.
@@ -364,7 +366,8 @@ fn a_persona_and_its_threads_name_their_machine() {
     assert_eq!(
         read,
         json!({ "id": "old", "name": "Old", "character": "Kept.", "instructions": "Still.", "folder": "scratch",
-                "agent": "fake-acp", "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [] })
+                "agent": "fake-acp", "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [],
+                "pinned": false })
     );
     assert_eq!(s.cooee.json("/personas/coder")["machine"], "");
     let (plain, _, _) = s.start("old");

@@ -10,7 +10,7 @@ public struct AppRoot: View {
     #else
         private let size: UserInterfaceSizeClass? = .regular
     #endif
-    private let store: StoreOf<AppFeature>
+    @Bindable private var store: StoreOf<AppFeature>
 
     public var body: some View {
         Group {
@@ -26,10 +26,20 @@ public struct AppRoot: View {
                 }
             }
         }
-        .sheet(isPresented: Binding(get: { store.menu }, set: { store.send(.menu($0)) })) {
-            AvatarMenu().presentationDetents([.medium, .large])
+        .sheet(isPresented: Binding(get: { store.menu.open }, set: { store.send(.menu(.open($0))) })) {
+            MenuSheet(store: store.scope(state: \.menu, action: \.menu)).presentationDetents([.medium, .large])
         }
-        .environment(\.look, Look(palette: .farm(scheme)))
+        .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in PersonaScreen(store: persona) }
+        .environment(\.look, Look(palette: .farm(dark ? .dark : .light), style: store.menu.settings.style))
+        .preferredColorScheme(store.menu.settings.scheme == .system ? nil : dark ? .dark : .light)
+    }
+
+    private var dark: Bool {
+        switch store.menu.settings.scheme {
+        case .system: scheme == .dark
+        case .light: false
+        case .dark: true
+        }
     }
 
     public init(store: StoreOf<AppFeature>) {
@@ -38,19 +48,22 @@ public struct AppRoot: View {
 
     @ViewBuilder private func content(_ home: StoreOf<HomeFeature>) -> some View {
         let actions = HomeActions(
-            menu: { store.send(.menu(true)) },
+            menu: { store.send(.menu(.open(true))) },
             new: { store.send(.start($0)) },
-            open: { store.send(.open($0)) }
+            open: { store.send(.open($0)) },
+            edit: { store.send(.edit($0)) }
         )
         let chats = home.state.chats(now: Date())
         if size == .compact {
             NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
-                HomeView(personas: home.pinned, chats: chats, actions: actions)
+                HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
                     .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
                     .toolbar(.hidden)
             }
         } else {
-            WideView(personas: home.pinned, chats: chats, selected: store.path.last, actions: actions) {
+            WideView(
+                personas: home.pinned, all: home.everyone, chats: chats, selected: store.path.last, actions: actions
+            ) {
                 chat(back: false)
             }
         }
@@ -106,5 +119,25 @@ internal struct ChatScreen: View {
         .task { await store.send(.plugins(.load)).finish() }
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachSheet(store: $0) }
+    }
+}
+
+internal struct PersonaScreen: View {
+    @Bindable internal var store: StoreOf<PersonaFeature>
+
+    internal var body: some View {
+        PersonaSheet(
+            draft: $store.draft,
+            agentOpen: $store.agentOpen,
+            memory: PersonaMemory(
+                notes: Listing.memory(store.notes, persona: store.draft.name, now: Date()), count: store.notes.count
+            ),
+            error: store.error,
+            actions: PersonaActions(
+                close: { store.send(.close) }, save: { store.send(.save) }, clear: { store.send(.clearMemory) }
+            )
+        )
+        .disabled(store.busy)
+        .task { await store.send(.task).finish() }
     }
 }

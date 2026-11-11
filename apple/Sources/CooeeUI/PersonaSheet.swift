@@ -1,9 +1,38 @@
 import CooeeCore
 import SwiftUI
 
+public struct PersonaActions {
+    public var close: () -> Void
+    public var save: () -> Void
+    public var clear: () -> Void
+
+    public init(close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {}) {
+        self.close = close
+        self.save = save
+        self.clear = clear
+    }
+}
+
+public struct PersonaMemory {
+    public let notes: [Field]
+    public let count: Int
+    public var more = ""
+
+    public init(notes: [Field], count: Int, more: String = "") {
+        self.notes = notes
+        self.count = count
+        self.more = more
+    }
+}
+
 public struct PersonaSheet: View {
     @Environment(\.look) private var look
+    @Binding private var draft: APIPersona
+    @Binding private var agentOpen: Bool
     private let persona: Persona
+    private let memory: PersonaMemory
+    private let error: String?
+    private let actions: PersonaActions
 
     public var body: some View {
         let palette = look.palette
@@ -12,11 +41,13 @@ public struct PersonaSheet: View {
             VStack(spacing: 0) {
                 Capsule().fill(palette.mute.opacity(0.5)).frame(width: 36, height: 5).padding(.top, 6)
                 HStack {
-                    RoundButton(symbol: "xmark", ascii: "x", size: 36)
+                    Button(action: actions.close) { RoundButton(symbol: "xmark", ascii: "x", size: 36) }
+                        .buttonStyle(.plain).accessibilityLabel("Close")
                     Spacer()
-                    Text(persona.name).ui(17, .semibold, look)
+                    Text(draft.name.isEmpty ? "New persona" : draft.name).ui(17, .semibold, look)
                     Spacer()
-                    RoundButton(symbol: "checkmark", ascii: "ok", size: 36)
+                    Button(action: actions.save) { RoundButton(symbol: "checkmark", ascii: "ok", size: 36) }
+                        .buttonStyle(.plain).accessibilityLabel("Save")
                 }
                 .padding(.horizontal, 16).padding(.vertical, 8)
                 Scroller { sections.padding(.horizontal, 16).padding(.bottom, 30) }
@@ -34,6 +65,32 @@ public struct PersonaSheet: View {
         .foregroundStyle(palette.foreground)
     }
 
+    public init(personaID: String = "chief") {
+        persona = Fixtures.persona(personaID)
+        _draft = .constant(persona.api)
+        _agentOpen = .constant(false)
+        memory = PersonaMemory(notes: Fixtures.chiefMemory, count: 12, more: "Show all 12")
+        error = nil
+        actions = PersonaActions()
+    }
+
+    public init(
+        draft: Binding<APIPersona>,
+        agentOpen: Binding<Bool>,
+        memory: PersonaMemory,
+        error: String?,
+        actions: PersonaActions
+    ) {
+        _draft = draft
+        _agentOpen = agentOpen
+        persona = Persona(draft.wrappedValue)
+        self.memory = memory
+        self.error = error
+        self.actions = actions
+    }
+}
+
+extension PersonaSheet {
     private var sections: some View {
         VStack(spacing: 18) {
             VStack(spacing: 8) {
@@ -41,29 +98,49 @@ public struct PersonaSheet: View {
                 Text("Edit avatar").ui(14, .medium, look).foregroundStyle(look.palette.link)
             }
             Group2 {
-                field("Name", persona.name)
+                field("Name", $draft.name)
                 HStack {
                     Text("Agent").ui(16, .regular, look)
                     Spacer()
-                    AgentChip(persona: persona, effort: true)
+                    Button {
+                        agentOpen = true
+                    } label: {
+                        AgentChip(persona: Persona(draft), effort: true)
+                    }
+                    .buttonStyle(.plain).accessibilityLabel("Agent")
+                    .popover(isPresented: $agentOpen) { agent.presentationCompactAdaptation(.popover) }
                 }
                 .padding(.horizontal, 14).frame(height: 48)
+                if !look.still {
+                    Toggle("Pin to Home", isOn: $draft.pinned).ui(16, .regular, look).padding(.horizontal, 14)
+                        .frame(height: 48)
+                }
             }
-            Group2(header: "Character") { paragraph(persona.api.character) }
-            Group2(header: "Instructions") { paragraph(persona.api.instructions) }
-            Group2(header: "Memory · 12 notes") { memory }
+            Group2(header: "Character") { paragraph("Character", $draft.character) }
+            Group2(header: "Instructions") { paragraph("Instructions", $draft.instructions) }
+            if memory.count > 0 { Group2(header: "Memory · \(memory.count) notes") { notes } }
             Group2 {
                 SettingRow(
-                    symbol: "folder.fill", title: "Folder", tint: look.palette.amber, value: persona.api.folder,
-                    divider: false
+                    symbol: "folder.fill", title: "Folder", tint: look.palette.amber, value: draft.folder,
+                    divider: false, edit: $draft.folder
                 )
             }
+            if let error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
         }
     }
 
-    @ViewBuilder private var memory: some View {
+    private var agent: some View {
+        Group2 {
+            field("Agent", $draft.agent)
+            field("Model", $draft.model)
+            field("Effort", $draft.effort)
+        }
+        .frame(minWidth: 300).padding(12)
+    }
+
+    @ViewBuilder private var notes: some View {
         let palette = look.palette
-        ForEach(Fixtures.chiefMemory, id: \.key) { note in
+        ForEach(Array(memory.notes.enumerated()), id: \.offset) { _, note in
             VStack(alignment: .leading, spacing: 2) {
                 Text(note.key).ui(15, .regular, look).lineLimit(1)
                 Text(note.value).ui(12, .regular, look).foregroundStyle(palette.mute)
@@ -75,22 +152,30 @@ public struct PersonaSheet: View {
             }
         }
         HStack {
-            Text("Show all 12").foregroundStyle(palette.link)
+            Text(memory.more).foregroundStyle(palette.link)
             Spacer()
-            Text("Clear memory…").foregroundStyle(palette.red)
+            if look.still {
+                Text("Clear memory…").foregroundStyle(palette.red)
+            } else {
+                Menu("Clear memory…") {
+                    Button("Clear all \(memory.count) notes", role: .destructive, action: actions.clear)
+                }
+                .foregroundStyle(palette.red)
+            }
         }
         .ui(15, .regular, look).padding(.horizontal, 14).frame(height: 44)
     }
 
-    public init(personaID: String = "chief") {
-        persona = Fixtures.persona(personaID)
-    }
-
-    private func field(_ key: String, _ value: String) -> some View {
+    private func field(_ key: String, _ value: Binding<String>) -> some View {
         HStack {
             Text(key).ui(16, .regular, look)
             Spacer()
-            Text(value).ui(16, .regular, look).foregroundStyle(look.palette.mute)
+            if look.still {
+                Text(value.wrappedValue).ui(16, .regular, look).foregroundStyle(look.palette.mute)
+            } else {
+                TextField(key, text: value).multilineTextAlignment(.trailing).ui(16, .regular, look)
+                    .foregroundStyle(look.palette.mute)
+            }
         }
         .padding(.horizontal, 14).frame(height: 48)
         .overlay(alignment: .bottom) {
@@ -98,8 +183,13 @@ public struct PersonaSheet: View {
         }
     }
 
-    private func paragraph(_ text: String) -> some View {
-        Text(text).ui(15, .regular, look).padding(14).frame(maxWidth: .infinity, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
+    @ViewBuilder private func paragraph(_ key: String, _ text: Binding<String>) -> some View {
+        if look.still {
+            Text(text.wrappedValue).ui(15, .regular, look).padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+        } else {
+            TextField(key, text: text, axis: .vertical).ui(15, .regular, look).padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }
