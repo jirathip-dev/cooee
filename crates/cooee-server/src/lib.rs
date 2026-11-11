@@ -2242,7 +2242,8 @@ async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
     .await
 }
 
-/// The persona calls (#126), the machines and models they pick from, `remember`'s, and their plugins' screens (#125).
+/// The persona calls (#126), the machines and models they pick from, `remember`'s and `history`'s (#217), and their
+/// plugins' screens (#125).
 fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
     b.route(persona_list)
         .route(machine_list)
@@ -2258,6 +2259,7 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
         .route(memory_add)
         .route(memory_clear)
         .route(mcp_remember)
+        .route(mcp_history)
 }
 
 /// `POST /mcp/agent/grant` `{thread, server}`: the server resolved, in memory, and the tools it may offer.
@@ -2280,6 +2282,21 @@ async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     Ok(Answer(
         blocking(cx, move |hub| {
             hub.ask_persona((&a.thread, &token), &persona, &message, wait)
+        })
+        .await,
+    ))
+}
+
+/// `POST /mcp/agent/history` `{thread, server: {query, thread, before, limit}}`: `history`'s text (#217).
+#[route(POST "/mcp/agent/history")]
+async fn mcp_history(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let (token, s) = (bearer(cx), a.server);
+    let text = |k: &str| s[k].as_str().unwrap_or_default().to_owned();
+    let (query, thread, before) = (text("query"), text("thread"), s["before"].as_u64());
+    let limit = usize::try_from(s["limit"].as_u64().unwrap_or(5)).unwrap_or(5);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.history((&a.thread, &token), (&query, limit), &thread, before)
         })
         .await,
     ))
