@@ -32,6 +32,19 @@ public struct Palette: Sendable, Equatable {
 
     public static func farm(_ scheme: ColorScheme) -> Palette { scheme == .dark ? farmDark : farmLight }
 
+    public func tint(_ tint: Tint) -> Color {
+        switch tint {
+        case .lead: lead
+        case .link: link
+        case .cyan: cyan
+        case .purple: purple
+        case .green: green
+        case .amber: amber
+        }
+    }
+}
+
+extension Palette {
     /// A pack's scheme, from its `--bg`, `--fg`, … tokens; nil when one is missing or not `#rrggbb`.
     public init?(tokens: [String: String], dark: Bool) {
         let keys = [
@@ -47,17 +60,6 @@ public struct Palette: Sendable, Equatable {
             mute: colors[5], lead: colors[6], link: colors[7], green: colors[8], amber: colors[9], red: colors[10],
             purple: colors[11], cyan: colors[12], dark: dark
         )
-    }
-
-    public func tint(_ tint: Tint) -> Color {
-        switch tint {
-        case .lead: lead
-        case .link: link
-        case .cyan: cyan
-        case .purple: purple
-        case .green: green
-        case .amber: amber
-        }
     }
 }
 
