@@ -1,0 +1,10 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.37s
+     Running tests/chat_first.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-167/debug/deps/chat_first-67c40570986fa2c2)
+
+running 3 tests
+test a_new_agent_is_saved_as_a_profile_and_listed ... ok
+test an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_picked ... ok
+test a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.13s
+

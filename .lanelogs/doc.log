@@ -1,0 +1,13 @@
+    Checking cooee-core v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-167/crates/cooee-core)
+   Compiling cooee-web v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-167/web)
+ Documenting cooee-core v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-167/crates/cooee-core)
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-167/crates/cooee-machines)
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-167/crates/cooee-terminal)
+ Documenting cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-167/crates/cooee-machines)
+ Documenting cooee-web v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-167/web)
+ Documenting cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-167/crates/cooee-terminal)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-167/crates/cooee-server)
+ Documenting cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-167/crates/cooee-server)
+ Documenting cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-167/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 12.39s
+   Generated /Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-167/doc/cooee/index.html and 5 other files
