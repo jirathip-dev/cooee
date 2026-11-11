@@ -1,0 +1,5 @@
+Decided: merge origin/staging (d212168) and rerun every workflow instead of editing tests outside #184
+Because: web/e2e/chat.spec.mjs:177
+Rejected: changing the cooee-machines or web/ tests — neither is in this diff, and the machines test passes locally
+Check: all apple jobs and the ui and stable jobs at head 075315d; the diff touches nothing under web/ or crates/cooee-machines
+Owner: CI was still running, not failing, on the old head; the branch is updated to current staging so it can run again
