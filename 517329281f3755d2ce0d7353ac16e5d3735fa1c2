@@ -1,0 +1,7 @@
+Decided: merged origin/staging (#142, #200); AppFeature.State keeps the menu and persona sheet and adds staging's mac flag, init takes settings and mac.
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:17
+Decided: LiveUITests takes staging's iOS-only wrapper; the persona round trip and avatar menu run inside it.
+Because: apple/UITests/LiveUITests.swift:26
+Rejected: none
+Check: the apple job builds and the e2e job still attaches persona-* and avatar-menu-* screenshots.
+Owner: The branch now includes the Mac-as-server work from staging; the app is unchanged beyond that merge.
