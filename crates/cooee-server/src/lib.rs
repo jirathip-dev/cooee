@@ -940,19 +940,22 @@ async fn room_new(cx: &Cx, Json(r): Json<NewRoom>) -> Result<Answer<Created>> {
     Ok(Answer(id.await.map(|id| Created { id })))
 }
 
-/// `POST /threads/{id}/members`: a persona to add to the room, or to take out (its session closed).
+/// `POST /threads/{id}/members`: a persona to add to the room or move (`at`: its place in room order, from 0;
+/// none: the end), or to take out (its session closed).
 #[derive(Deserialize)]
 struct Seat {
     persona: String,
     #[serde(default)]
     remove: bool,
+    #[serde(default)]
+    at: Option<usize>,
 }
 
 #[route(POST "/threads/{id}/members")]
 async fn members(cx: &Cx, Json(m): Json<Seat>) -> Result<Answer<Vec<String>>> {
     let id = thread_id(cx);
     Ok(Answer(
-        blocking(cx, move |hub| hub.member(&id, &m.persona, m.remove)).await,
+        blocking(cx, move |hub| hub.member(&id, &m.persona, m.remove, m.at)).await,
     ))
 }
 

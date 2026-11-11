@@ -118,12 +118,18 @@ impl Hub {
         Ok(self.mint(random_id, make)?.0)
     }
 
-    /// Adds persona `persona` to room `room` at its end, or (`remove`) takes it out and closes its session. Either
-    /// twice does it once. Returns the members.
+    /// Adds persona `persona` to room `room` at room order `at` (`None`: its end), moves a member there, or
+    /// (`remove`) takes it out and closes its session. Any of them twice does it once. Returns the members.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a thread that isn't a room, a sixth member or one that can't join.
-    pub fn member(&self, room: &str, persona: &str, remove: bool) -> Result<Vec<String>, HubError> {
+    pub fn member(
+        &self,
+        room: &str,
+        persona: &str,
+        remove: bool,
+        to: Option<usize>,
+    ) -> Result<Vec<String>, HubError> {
         if !remove {
             self.joinable(persona)?;
         }
@@ -142,10 +148,19 @@ impl Hub {
             (None, false) if l.meta.members.len() >= MEMBERS => {
                 return Err(refused(format!("a room has at most {MEMBERS} members")));
             }
-            (None, false) => l.meta.members.push(Member {
-                persona: persona.to_owned(),
-                ..Member::default()
-            }),
+            (None, false) => {
+                let seat = Member {
+                    persona: persona.to_owned(),
+                    ..Member::default()
+                };
+                let to = to.unwrap_or(usize::MAX).min(l.meta.members.len());
+                l.meta.members.insert(to, seat);
+            }
+            (Some(at), false) if to.is_some_and(|to| to != at) => {
+                let seat = l.meta.members.remove(at);
+                let to = to.unwrap_or(at).min(l.meta.members.len());
+                l.meta.members.insert(to, seat);
+            }
             _ => return Ok(l.meta.members.iter().map(|m| m.persona.clone()).collect()),
         }
         self.store.save(&l.meta)?;
@@ -224,6 +239,11 @@ impl Hub {
         let (persona, session, prompt, random_id) = {
             let mut l = lock(&live);
             let Some(turn) = l.meta.round.first().cloned() else {
+                if l.meta.taken > 0 {
+                    l.meta.taken = 0;
+                    self.store.save(&l.meta)?;
+                    l.emit("room-stop", json!({ "reason": "done" }).to_string());
+                }
                 return Ok(());
             };
             let (persona, reason) = (turn.member, turn.reason);
