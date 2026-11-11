@@ -1,0 +1,14 @@
+Decided: search is a raw-byte pre-check then a JSON parse of only the files that hold every word, so 1,000 threads scan in ~11 ms release
+Because: "in the server: no index, no database"
+Rejected: scanning the hub's in-memory chats — not the file scan the spec asks for, and untestable against 1,000 fixture files
+Decided: the persona scope guard lives in Hub::history (thread meta.profile against the caller's persona); core takes the ids
+Because: crates/cooee-server/src/hub.rs:2170
+Decided: a word JSON escapes (a quote or backslash) skips the pre-check, so it can't miss a match
+Because: crates/cooee-core/src/history.rs:52
+Decided: W4 (#163) is not merged; only You/Agent rows are read (secret cards excluded) and each line is redacted
+Because: crates/cooee-core/src/history.rs:15
+Decided: the route sits in persona_routes, since router() hit clippy's 100-line limit
+Because: crates/cooee-server/src/lib.rs:2262
+Check: tests/history.rs drives the tool through cooee mcp serve with a real thread token: search, read without tool rows, and another persona refused
+Check: history::tests checks the 5-hit and 200-char caps, the 4,000-char page and before paging, and 1,000 threads under 200 ms
+Owner: a persona can search and read back its own past conversations, capped and without tool output
