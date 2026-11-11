@@ -144,3 +144,25 @@ html[data-style=scene] .h2r .hav{grid-row:span 2;width:52px;height:40px;object-f
 .tl{position:absolute;z-index:9;top:22px;left:16px;display:flex;gap:8px}.tl i{width:12px;height:12px;border-radius:50%;background:#ff5f57}.tl i+i{background:#febc2e}.tl i+i+i{background:#28c840}
 html[data-style=scene] .wd.mac .side .h2s{padding-top:0}
 .ch2 .hav{width:44px;height:34px;object-fit:contain}
+/* q1349: pulled past the top, the strip stretches into the full Herd: the ranch keeps its size, the sky grows above and
+   the pasture (--md) grows in front; the trail runs across the pasture, the gate stays in the fence. */
+.hd2.pasture .rs{top:auto;bottom:calc(40px + var(--md));height:290px}
+.hd2.pasture::before{height:calc(41px + var(--md))}
+.hd2.pasture .trail{bottom:calc(var(--md) * .42);height:30px}
+.hd2 .sk{position:absolute;left:0;top:calc(var(--sat) + 20px);width:100%;height:225px}
+.hd2.pasture .hnt{font-size:11px;line-height:14px}
+/* The reconnecting line (q1349): sits where a title would, between the two buttons, only while the link is down; a tap
+   retries. Modern: glass; Terminal: plain mono; Scene: a parchment tag on the sky. */
+.h2x{position:absolute;z-index:8;top:calc(var(--sat) + 13px);left:50%;translate:-50% 0;display:flex;align-items:center;gap:7px;height:30px;padding:0 13px;border-radius:15px;
+  color:var(--fg);font:600 14px/1 var(--sans);text-decoration:none;white-space:nowrap;
+  background:color-mix(in srgb,var(--card) 70%,transparent);box-shadow:0 2px 8px #0000001f,inset 0 0 0 .5px var(--sep);-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6)}
+.h2x small{font:400 13px/1 var(--sans);color:var(--link)}
+.h2x .spn{width:13px;height:13px;border-radius:50%;border:2px solid color-mix(in srgb,var(--mute) 35%,transparent);border-top-color:var(--mute);animation:h2sp .9s linear infinite}
+@keyframes h2sp{to{rotate:1turn}}
+html[data-style=terminal] .h2x{border-radius:0;background:var(--bg);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;font:13px/1 var(--mono);color:var(--r);padding:0 4px}
+html[data-style=terminal] .h2x small{font:13px/1 var(--mono);color:var(--mute)}
+html[data-style=scene] .h2x{background:#f4ecd8;color:#3a332e;box-shadow:0 1px 3px #0004;-webkit-backdrop-filter:none;backdrop-filter:none;border-radius:8px}
+html[data-style=scene] .h2x small{color:#1f639b}
+.tms .s0.x{background:var(--r)}
+@media (prefers-reduced-motion:reduce){.h2x .spn{animation:none}}
+.hh2.l .bd{right:auto;left:-2px}

@@ -64,14 +64,26 @@ const row = ids => {
 const HERD = { coder: { x: 0, y: 26, w: 74, k: 'wk', run: 70 }, cond: { x: 90, y: 24, w: 72, k: 'wk', run: 60 }, res: { x: 248, y: 30, w: 78, k: 'nd' },
   chief: { x: 168, y: 80, w: 42, k: 'dn' }, acct: { x: 40, y: 100, w: 44, k: 'id' }, writer: { x: 96, y: 104, w: 38, k: 'id', left: true }, design: { x: 222, y: 102, w: 38, k: 'id' } };
 const herdOf = ids => ids.map(id => ({ ...HERD[id], coat: PERS[id][3], pose: POSE[PERS[id][4]], name: PERS[id][0].split(' ')[0], word: HERD[id].w > 60 ? word(PERS[id][4]) : (PERS[id][4] === 'done' ? word('done') : ''), badge: UNREAD[id] }));
+// The full Herd (q1349): bands by state on a 340 px pasture. Working on the trail across the front, waiting at the gate,
+// done in the barn door, idle grazing the pasture between. `t` (0 strip … 1 full) places a horse mid-pull.
+const MD = 340;
+const FULL = { coder: { x: 14, y: 134, w: 118 }, cond: { x: 200, y: 122, w: 112, left: true }, res: { x: 286, y: MD + 26, w: 84 },
+  chief: { x: 166, y: MD + 80, w: 46 }, acct: { x: 16, y: 248, w: 72 }, writer: { x: 110, y: 276, w: 64, left: true }, design: { x: 190, y: 240, w: 68 } };
+const herdFull = (ids, t) => herdOf(ids).map((h, i) => {
+  const f = FULL[ids[i]], m = (a, b) => Math.round(a + (b - a) * t);
+  return { ...h, x: m(h.x, f.x), y: m(h.y, f.y), w: m(h.w, f.w), left: t > .5 ? f.left : h.left, run: h.run && (t < 1 ? h.run : 90), word: t > .5 ? word(PERS[ids[i]][4]) : h.word };
+});
 
-const home = ({ y = 0, ids = ORDER, sel, night = false, weather = 'calm', wide = false } = {}) => {
-  const top = sceneOn() ? (ids.length ? ranch({ night, weather, horses: herdOf(ids), h: wide ? 290 : 330, inner: search() }) : `<div style="height:calc(var(--sat) + 56px)"></div>${search()}`) : search() + (ids.length ? row(ids) : '');
+const reconnecting = () => `<a class=h2x href="#" aria-label="Reconnecting, tap to retry">${mono() ? 'reconnecting…' : '<i class=spn></i>Reconnecting…'}<small>${mono() ? '[tap to retry]' : 'Tap to retry'}</small></a>`;
+const home = ({ y = 0, ids = ORDER, sel, night = false, weather = 'calm', wide = false, x = false, pull = 0 } = {}) => {
+  const strip = () => pull ? ranch({ night, weather, horses: herdFull(ids, pull), h: Math.round(330 + (844 - 330) * pull), meadow: Math.round(MD * pull), inner: pull < 1 ? search() : '' })
+    : ranch({ night, weather, horses: herdOf(ids), h: wide ? 290 : 330, inner: search() });
+  const top = sceneOn() ? (ids.length ? strip() : `<div style="height:calc(var(--sat) + 56px)"></div>${search()}`) : search() + (ids.length ? row(ids) : '');
   const t = y ? `<i class="h2t${night ? ' night' : ''}${weather === 'held' ? ' held' : ''}"></i>` : '';
   return `<div class="scr h2s"><div class=in style="--y:${y}px">${top}${CHATS.filter(c => ids.includes(c[0])).map((c, i) => chatRow(c, sel === i)).join('')}${othersRow()}</div></div>${t}
-  <a class="h2b l" href="#" aria-label=You>${mono() ? '[g]' : '<i class=me>G</i>'}</a><a class="h2b r" href="#" aria-label="New chat">${mono() ? '[+]' : ic('new')}</a>${mono() ? status() : ''}`;
+  <a class="h2b l" href="#" aria-label=You>${mono() ? '[g]' : '<i class=me>G</i>'}</a><a class="h2b r" href="#" aria-label="New chat">${mono() ? '[+]' : ic('new')}</a>${x ? reconnecting() : ''}${mono() ? status(x) : ''}`;
 };
-const status = () => `<p class=tms><span class=s0>mini</span><span>load 0.42 calm</span><span class=sp></span><span><b>2</b> working</span><span class=wt><b>1</b> waiting</span><span>09:41</span></p>`;
+const status = x => `<p class=tms><span class="s0${x ? ' x' : ''}">${x ? 'mini ✗' : 'mini'}</span><span>${x ? 'load –' : 'load 0.42 calm'}</span><span class=sp></span><span><b>2</b> working</span><span class=wt><b>1</b> waiting</span><span>09:41</span></p>`;
 
 // The chat beside Home in the Mac window (#124's Coder chat).
 const chat = () => `<div class=cvw><ol class=tc aria-label=messages><li class="blk me"><div class=md>The look sheet e2e flakes on CI. Find out why.</div><span class=ct>09:20</span></li>
@@ -100,16 +112,22 @@ const FRAMES = {
     ['scrolled', 'Scrolled · no search, no row; the chats run under the glassy top', () => phone(home({ y: 206 }))],
     ['empty', 'No personas · search, then Others; no row (as #249)', () => phone(home({ ids: [] }))],
     ['wide-top', 'Mac · Home as the sidebar, Coder open', () => mac(home({ sel: 0, wide: true }), chat())],
-    ['wide-scrolled', 'Mac · the sidebar scrolled', () => mac(home({ sel: 0, y: 250, wide: true }), chat())]],
+    ['wide-scrolled', 'Mac · the sidebar scrolled', () => mac(home({ sel: 0, y: 250, wide: true }), chat())],
+    ['reconnect', 'The link to the Mac dropped · Reconnecting…, tap to retry; no pull to refresh', () => phone(home({ x: true }))]],
   terminal: [['term-top', 'Terminal at the top · $ grep with its cursor, the figures, the status line', () => phone(home())],
     ['term-scrolled', 'Terminal scrolled · [g] and [+] on a solid top, a dashed rule', () => phone(home({ y: 236 }))],
     ['term-empty', 'Terminal, no personas', () => phone(home({ ids: [] }))],
-    ['wide-term', 'Mac · Terminal', () => mac(home({ sel: 0, wide: true }), chat())]],
+    ['wide-term', 'Mac · Terminal', () => mac(home({ sel: 0, wide: true }), chat())],
+    ['term-reconnect', 'Terminal, the link dropped · reconnecting… [tap to retry], mini ✗ on the status line', () => phone(home({ x: true }))]],
   scene: [['scene-top', 'Scene, day, calm · each persona acts its state on the ranch', () => phone(home())],
     ['scene-busy', 'Busy · the Mac is loaded: gusts, overcast, haze', () => phone(home({ weather: 'busy' }))],
     ['scene-held', 'Held · the Mac refuses new work: storm and rain', () => phone(home({ weather: 'held' }), 'dk')],
     ['scene-night', 'Night (19:00–07:00) · stars and moon, lit barn window', () => phone(home({ night: true }), 'dk')],
     ['scene-scrolled', 'Scene scrolled · the sky and a fence rail over the rows', () => phone(home({ y: 330 }))],
+    ['scene-pull', 'Mid-pull · the strip stretches: sky grows, the pasture opens, the horses walk to their bands', () => phone(home({ pull: .45 }))],
+    ['scene-herd', 'The full Herd · trail, gate, barn, grazing; tap a horse for its chat; scroll up snaps back', () => phone(home({ pull: 1 }))],
+    ['scene-herd-night', 'The full Herd at night', () => phone(home({ pull: 1, night: true }), 'dk')],
+    ['scene-reconnect', 'Scene, the link dropped · the tag on the sky', () => phone(home({ x: true }))],
     ['scene-motion', 'The motion by state (ghosts: where the loop goes)', () => phone(motion())],
     ['wide-scene', 'Mac · Scene', () => mac(home({ sel: 0, wide: true }), chat())]] };
 

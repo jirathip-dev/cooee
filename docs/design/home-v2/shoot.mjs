@@ -13,12 +13,13 @@ const [chrome, re] = process.argv.slice(2);
 // [page, frame, width, modes]: the PNG is `<frame>-390-<mode>.png`, or `<frame without wide->-1440.png`.
 const BOTH = ['dark', 'light'];
 const VIEWS = [
-  ['modern', 'top', 390, BOTH], ['modern', 'scrolled', 390, BOTH], ['modern', 'empty', 390, BOTH],
+  ['modern', 'top', 390, BOTH], ['modern', 'scrolled', 390, BOTH], ['modern', 'empty', 390, BOTH], ['modern', 'reconnect', 390, ['light']],
   ['modern', 'wide-top', 1440, ['light']], ['modern', 'wide-scrolled', 1440, ['dark']],
-  ['terminal', 'term-top', 390, BOTH], ['terminal', 'term-scrolled', 390, BOTH], ['terminal', 'term-empty', 390, ['dark']],
+  ['terminal', 'term-top', 390, BOTH], ['terminal', 'term-scrolled', 390, BOTH], ['terminal', 'term-empty', 390, ['dark']], ['terminal', 'term-reconnect', 390, ['dark']],
   ['terminal', 'wide-term', 1440, ['dark']],
   ['scene', 'scene-top', 390, ['light', 'dark']], ['scene', 'scene-busy', 390, ['light']], ['scene', 'scene-held', 390, ['light']],
   ['scene', 'scene-night', 390, ['dark']], ['scene', 'scene-scrolled', 390, ['light']], ['scene', 'scene-motion', 390, ['light']],
+  ['scene', 'scene-pull', 390, ['light']], ['scene', 'scene-herd', 390, ['light']], ['scene', 'scene-herd-night', 390, ['dark']], ['scene', 'scene-reconnect', 390, ['light']],
   ['scene', 'wide-scene', 1440, ['light']],
 ];
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };

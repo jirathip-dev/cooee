@@ -4,7 +4,9 @@ Home loses the v1 `cooee` bar (`apple/design/v1/home-*`). In every Style, two bu
 avatar (opens the You sheet) is top-left and + (new chat) is top-right. The scroll holds the search field, then one
 row of all your personas (pinned first), then #229's content: your personas' chats, then Others. Scrolled, the search
 and the row are gone and the chats run under the top. There is no `cooee`, `~/cooee` or `Chats` heading in any Style.
-Owner decisions: q1321–q1324 and the notes in conductor thread t70.
+Owner decisions: q1321–q1324 and the notes in conductor thread t70. **Revision q1342 / q1349:** Home has no pull to
+refresh in any Style, because the list is live. A dropped link shows a reconnecting line that you tap to retry. In Scene, pulling
+down past the top stretches the strip into the full Herd. In Modern and Terminal, pulling down only reveals search.
 
 There are three pages, one per Style, built on the live design system as #229's `home-workflow` was. They link
 `web/src/app.css`, `web/schemes/farm*.json` (the same palette as `apple/Sources/CooeeUI/Theme.swift`), #116's
@@ -15,7 +17,7 @@ the copy are the gate in the fence, the trail, and where each horse stands.
 
 `node docs/design/home-v2/shoot.mjs <chrome-headless-shell>`, run from the repo root, regenerates every PNG under
 reduced motion. It checks each shot for sideways scroll, anything past the right edge, and cut text without an
-ellipsis. **All 22 pass.** Open a page without a query to see its gallery. `?f=<frame>` shows one frame, and
+ellipsis. **All 28 pass.** Open a page without a query to see its gallery. `?f=<frame>` shows one frame, and
 `?mode=dark|light` sets the mode. Serve the repo root over http. Phone shots are 390 × 844 at 2×. Mac shots are the
 window at 1440 × 900 at 1×. **Data:** #124's fixtures, with Writer and Designer added so the row overflows.
 
@@ -30,6 +32,7 @@ window at 1440 × 900 at 1×. **Data:** #124's fixtures, with Writer and Designe
 | `empty-390-light.png`, `empty-390-dark.png` | No personas. Search, then Others. There is no row and no gap (as #249). | #251 item 5 |
 | `top-1440.png` (light) | Mac window. Home is the 390 pt sidebar: traffic lights, then the avatar and + floating, search, the row, and the chats (Coder open). | #251: Mac window |
 | `scrolled-1440.png` (dark) | Mac, the sidebar scrolled under its glassy top. | |
+| `reconnect-390-light.png` | The link to the Mac dropped. A glass pill sits between the two buttons, where a title would be: a spinner, **Reconnecting…**, and **Tap to retry**. It shows only while the link is down, and it stays when scrolled because it floats like the buttons. | q1349 (1): no pull to refresh, a reconnecting line, tap to retry |
 
 ### Terminal (`terminal.html`)
 
@@ -39,6 +42,7 @@ window at 1440 × 900 at 1×. **Data:** #124's fixtures, with Writer and Designe
 | `term-scrolled-390-dark.png`, `term-scrolled-390-light.png` | Scrolled. The top is the background itself with a dashed rule under `[g]` and `[+]`: no glass and no blur. The status line stays. | #251 item 2, Terminal |
 | `term-empty-390-dark.png` | No personas: the prompt, then Others. | #251 item 5 |
 | `term-1440.png` (dark) | Mac window in Terminal. The status line runs under the sidebar. | |
+| `term-reconnect-390-dark.png` | Link dropped: `reconnecting… [tap to retry]` between `[g]` and `[+]`. On the status line, the machine segment turns red (`mini ✗`) and the load reads `load –`. | q1349 (1) |
 
 ### Scene (`scene.html`)
 
@@ -50,14 +54,23 @@ window at 1440 × 900 at 1×. **Data:** #124's fixtures, with Writer and Designe
 | `scene-night-390-dark.png` | **Night** (19:00–07:00, as herdsman's `auto` light): herdsman's night palette, stars, the moon, the lit barn window and dimmed coats. | q1323 day/night by the clock |
 | `scene-scrolled-390-light.png` | Scrolled. The top is a band of the same sky with a **fence rail** along its lower edge, and the signs stay on it. It follows the weather and night, as the strip does. | #251 item 2, Scene |
 | `scene-motion-390-light.png` | The motion by state, one strip each, with ghosts where the loop goes. On the trail the horse walks and turns at each end (with a stride bob). At the gate it paws. In the stable it stays still. Grazing, it dips to the grass. Clouds drift with the load, and rain falls when held. | #251 item 3: a frame per state |
+| `scene-pull-390-light.png` | **Mid-pull** (about 45 %). The strip stretches: the sky grows above the ranch, a pasture opens in front of the fence, and the horses walk toward their bands. The ranch itself is not scaled. The chats are pushed down below it. | q1349 (2): Scene mid-pull |
+| `scene-herd-390-light.png` | **The full Herd**, day. Full screen, with only the two signs left on top. The horses stand in bands by state: **working** on the trail across the front, **waiting** at the gate, **idle** grazing the pasture between them, and **done** in the barn door (as in the strip). Every horse has its name tag and farm word. A tap on a horse opens that persona's chat. Scrolling back up snaps it back to the strip with the chats below. There is no mode button. | q1349 (2): full Herd, tap a horse |
+| `scene-herd-night-390-dark.png` | The full Herd at night: herdsman's night palette, stars across the whole taller sky, one moon, the lit barn window and dimmed coats. Weather works as in the strip. | q1349 (2): day + night |
+| `scene-reconnect-390-light.png` | Link dropped in Scene: a parchment tag on the sky between the signs, with the same words. | q1349 (1) |
 | `scene-1440.png` (light) | Mac window in Scene. The strip fills the sidebar's top, under the traffic lights. | |
 
 ## Behaviour
 
 - **One scroll.** The search field and the personas row are the top of the list, not a header. Scrolled, they are
-  gone. **Pull down** at the top shows search with the keyboard up, as Telegram does. #232's pull to refresh moves to
-  pulling past a further threshold, with its spinner under the search field, so the two never fight. A tap on the
-  status bar scrolls back to the top and brings both back.
+  gone. A tap on the status bar scrolls back to the top and brings both back.
+- **No pull to refresh, in any Style** (q1349). The list is live. #232's pull to refresh is not on Home. In **Modern
+  and Terminal**, pulling down only reveals search, with the keyboard up, as Telegram does. In **Scene**, pulling down
+  past the top stretches the Herd strip into the **full Herd** (`scene-pull`, then `scene-herd`). Scrolling back up
+  snaps it back to the strip with the chats below. There is no mode button.
+- **Reconnecting.** When the link to the paired Mac drops, a line appears in the title slot between the two buttons:
+  **Reconnecting…**, then **Tap to retry**. A tap retries at once. The line goes away when the link is back, and
+  meanwhile the list keeps the last state it had.
 - **The top once scrolled:** glass in Modern (`.glassEffect`, iOS 26's scroll edge), the background and a dashed rule
   in Terminal, and the sky and a fence rail in Scene. The two buttons never move.
 - **Pinned first:** pinned personas lead the row in their pin order, then a hairline, then the rest by last activity.
@@ -81,26 +94,27 @@ window at 1440 × 900 at 1×. **Data:** #124's fixtures, with Writer and Designe
 ## Suggested build issues, once this is approved
 
 1. **Home v2 shell (all Styles):** the floating avatar and + over one `ScrollView`, search and the personas row
-   inside it (pinned first, hidden with none), the scrolled top for each Style, and pull-down search next to #232's
-   refresh. Snapshot every frame here.
-2. **Terminal Home:** the prompt-line search with a blinking cursor, the animated figures, and the status line. This
-   needs the paired Mac's load and the working and waiting counts from the server (likely one more field on `/api/v1`).
-3. **Scene Herd strip:** port herdsman's ranch to SwiftUI `Canvas` (one `TimelineView` clock). Horses take their
-   places by state on #246's frames, with load weather and day/night. Reduce Motion gives the still.
+   inside it (pinned first, a hairline after the pins, hidden with none), and the scrolled top for each Style. Pulling
+   down reveals search. There is no pull to refresh on Home, and the reconnecting line has a tap to retry. This issue
+   writes the SwiftUI views and their snapshots, which creates `apple/design/home-v2/`.
+2. **Terminal Home:** the prompt-line search with a blinking cursor, the animated figures, and the status line for the
+   **connected** Mac. This needs that Mac's load and the working and waiting counts from the server (likely one more
+   field on `/api/v1`).
+3. **Scene Herd:** port herdsman's ranch to SwiftUI `Canvas` (one `TimelineView` clock). Horses take their places by
+   state on #246's frames, with load weather and day/night. Past about 8 horses, the grazers go smaller and further
+   back, and the strip never scrolls sideways. Pulling down stretches the strip into the full Herd, where a tap on a
+   horse opens its chat. Reduce Motion gives the still.
+
+## Settled (q1349)
+
+HTML now, and build issue 1 writes the SwiftUI views and snapshots. The hairline after the pinned personas stays.
+The status line shows the connected Mac. In Scene, grazers shrink past about 8 horses, and the strip never scrolls
+sideways. Reduce Motion stops all of it, the full Herd included.
 
 ## Open questions for the owner
 
-1. **Where the design lives.** The issue asks for SwiftUI views and snapshots in `apple/design/home-v2/` "as #124".
-   This lane's role allows mockups only, with no product code, so this design is HTML on the shared design system in
-   `docs/design/home-v2/`, as #229 and #232 were. **Recommend:** build issue 1 writes the SwiftUI views and their
-   snapshots, and `apple/design/home-v2/` is created then. The alternative is a design revision that adds SwiftUI
-   views now.
-2. **Pull to refresh vs. pull-down search (#232).** **Recommend:** pulling down reveals search first, and pulling
-   further refreshes. The alternative is to drop pull to refresh on Home, since the list is live.
-3. **Pinned separator.** **Recommend:** the hairline after the pinned personas, as drawn. The alternative is no mark,
-   so order alone shows the pins.
-4. **The status line's machine.** With several Macs paired, **recommend** the one this phone is connected to, which
-   is the same Mac that sets Scene's weather. The alternative is the busiest one.
-5. **Scene at 390 with many personas.** The strip fits about 8 horses. **Recommend:** past that, the grazers go
-   smaller and further back, and the strip never scrolls sideways. The alternative is a sideways-scrolling herd, which
-   would fight the list's vertical scroll.
+1. **Done horses in the full Herd.** q1349 names three bands: trail, gate and grazing. This design keeps **done** in
+   the barn door, as the strip has it, so a finished persona still looks different from an idle one. The alternative
+   is to put done horses in with the grazers.
+2. **The reconnecting line on the Mac.** It is drawn on the phone only. **Recommend:** the same pill, centred in the
+   sidebar's top between the avatar and +.

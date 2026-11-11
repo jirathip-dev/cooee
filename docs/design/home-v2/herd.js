@@ -22,13 +22,13 @@ function clouds(n) {
   }
   return `<div class=hcl><svg viewBox="0 0 1560 90" preserveAspectRatio=none aria-hidden=true>${s}</svg></div>`;
 }
-function sky() {
+function sky(moon = true) {
   let s = '';
   for (let i = 0; i < 130; i++) {
     const r = 0.35 + noise(i, 7) * 0.7;
     s += ell(i * 3 + noise(i, 8) * 3, noise(i, 3) * 225, r, r, '#e7e5f4', f1((0.3 + 0.45 * noise(i, 9) + 0.08 * Math.sin(i)) * 100) / 100);
   }
-  return `<g>${s}</g>${ell(232, 106, 13, 13, '#d3dfeb', 0.84)}${ell(228, 102, 12, 12, '#1d2841')}`;
+  return `<g>${s}</g>${moon ? ell(232, 106, 13, 13, '#d3dfeb', 0.84) + ell(228, 102, 12, 12, '#1d2841') : ''}`;
 }
 function scene(night) {
   let s = night ? sky() : '';
@@ -71,9 +71,12 @@ const SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 export const horse = h => `<a class="hh2 ${h.k || ''}${h.left ? ' l' : ''}${h.ghost ? ' gh' : ''}" href="#" style="left:${h.x}px;bottom:${h.y}px;--w:${h.w || 66}px${h.run ? `;--run:${h.run}px` : ''}">
   <img src="${SPR}horse-${h.coat}-${h.pose}.png" alt="">${h.name ? `<span class=hnt>${h.name}${h.word ? `<i${h.k === 'nd' ? ' class=r' : ''}>${h.word}</i>` : ''}</span>` : ''}${h.badge ? `<i class=bd>${h.badge}</i>` : ''}</a>`;
 
-// The strip: {night, weather: calm|busy|held, horses, h (px tall), inner (the search field, a label)}.
-export function ranch({ night = false, weather = 'calm', horses = [], h = 330, inner = '' } = {}) {
+// The strip: {night, weather: calm|busy|held, horses, h (px tall), inner (the search field, a label), meadow}. Pulled down
+// past the top (q1349), the strip stretches: `meadow` px of pasture grow in front of the ranch (the trail runs there) and
+// the sky grows above it, the ranch itself unscaled, so the horses keep their marks.
+export function ranch({ night = false, weather = 'calm', horses = [], h = 330, inner = '', meadow = 0 } = {}) {
   const vars = [DAY, night ? NIGHT : '', weather === 'held' ? STORM : weather === 'busy' && !night ? BUSY : ''].join(';');
-  const cls = ['hd2', night ? 'night' : '', weather].join(' ');
-  return `<div class="${cls}" style="${vars};--hh:${h}px">${scene(night)}${clouds(weather === 'calm' ? 4 : 9)}<i class=trail></i><i class=fog></i>${horses.map(horse).join('')}<i class=rain></i>${inner}</div>`;
+  const cls = ['hd2', night ? 'night' : '', weather, meadow ? 'pasture' : ''].join(' ');
+  const stars = night && meadow ? `<svg class=sk viewBox="0 0 390 225" aria-hidden=true>${sky(false)}</svg>` : '';
+  return `<div class="${cls}" style="${vars};--hh:${h}px;--md:${meadow}px">${stars}${scene(night)}${clouds(weather === 'calm' ? 4 : 9)}<i class=trail></i><i class=fog></i>${horses.map(horse).join('')}<i class=rain></i>${inner}</div>`;
 }
