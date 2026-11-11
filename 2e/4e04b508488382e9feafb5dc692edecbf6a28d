@@ -1,0 +1,11 @@
+Decided: PR 1 only: schedules, create_routine in chat with its routine line, Settings › routines, thread and row routine marks, the 30 s runner tick; the GitHub path is #261
+Because: q1340
+Decided: a run's key routine-<id>-<due> is the hub's random_id, so a crash between run and record adopts the first message or thread
+Because: "a schedule fires once per due time (not again after a restart)"
+Decided: fix round 2 wraps a routine row's line onto its own line under 600 px, as the providers rows already do, so name, pause and delete fit at 390
+Because: web/src/app.css:334
+Decided: serve.sh seeds one paused routine so the ui job can check the row at both widths without a chat turn
+Rejected: shrinking or truncating the line in place — at 390 it still leaves the name and buttons no room
+Check: web/e2e/look.spec.mjs routines test fails with the app.css change reverted (.sk width 0) and passes with it
+Check: WebKit crashes on this host, so local e2e paired in Chromium via an uncommitted config; CI's ui job runs WebKit
+Owner: on a phone, each routine in Settings now shows its name, pause and delete, with its schedule line underneath.
