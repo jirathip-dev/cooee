@@ -1,12 +1,16 @@
 # #124: build the native app (apple/) for iOS and macOS on a GitHub-hosted macOS runner (free on this public repo); no
 # signing. #147: `apple-quality` runs `just apple-check`, every Swift gate (format, anti-slop, SwiftLint, tests,
 # coverage, Periphery). #143: `e2e`: the app in the iOS simulator against a real `cooee serve` (apple/e2e/serve.sh), its
-# screens kept as the `simulator-shots` artifact.
+# screens kept as the `simulator-shots` artifact. #142: `mac-setup`: the Mac app's first run on the runner starts cooee
+# and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac approves it;
+# the screens kept as the `mac-setup-shots` artifact.
 name: apple
 on:
   push:
     branches: [staging]
     paths:
+      - "scripts/mac-bins.sh"
+      - "crates/cooee/src/main.rs"
       - "apple/**"
       - "tools/anti-slop-swift/**"
       - "scripts/apple-check.sh"
@@ -14,6 +18,8 @@ on:
       - ".github/workflows/apple.yml"
   pull_request:
     paths:
+      - "scripts/mac-bins.sh"
+      - "crates/cooee/src/main.rs"
       - "apple/**"
       - "tools/anti-slop-swift/**"
       - "scripts/apple-check.sh"
@@ -97,3 +103,81 @@ jobs:
         with:
           name: simulator-shots
           path: simulator-shots
+
+  mac-setup:
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      SHOTS: ${{ github.workspace }}/mac-setup-shots
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - uses: Swatinem/rust-cache@v2
+      - name: cooee and shed for the app
+        run: scripts/mac-bins.sh "$RUNNER_TEMP/bin"
+      - name: build for testing (the Mac app with them inside, and the app in the simulator)
+        working-directory: apple
+        run: |
+          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/mac" COOEE_BIN_DIR="$RUNNER_TEMP/bin" CODE_SIGN_IDENTITY=- \
+            CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= build-for-testing
+          sim=$(xcrun simctl create cooee-ask "iPhone 17")
+          echo "SIM=$sim" >> "$GITHUB_ENV"
+          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim" \
+            -derivedDataPath "$RUNNER_TEMP/ios" build-for-testing
+      # The Mac test sets the Mac up and waits on its QR screen; once its pairing code is open (devices.json), the
+      # phone asks by address, and the Mac test approves it.
+      - name: the Mac sets itself up; the phone asks and the Mac approves it
+        working-directory: apple
+        run: |
+          sudo automationmodetool enable-automationmode-without-authentication || true
+          TEST_RUNNER_COOEE_MAC_SETUP=1 xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination 'platform=macOS' \
+            -derivedDataPath "$RUNNER_TEMP/mac" -only-testing:CooeeAppUITests/MacSetupUITests \
+            -resultBundlePath "$RUNNER_TEMP/mac-setup.xcresult" test-without-building >"$RUNNER_TEMP/mac-test.log" 2>&1 &
+          mac=$!
+          devices="$HOME/.local/share/cooee/cooee/devices.json"
+          waited=0
+          until grep -q '"code": \[' "$devices" 2>/dev/null; do
+            if ! kill -0 "$mac" 2>/dev/null || [ "$waited" -ge 1200 ]; then
+              tail -120 "$RUNNER_TEMP/mac-test.log"
+              exit 1
+            fi
+            sleep 5
+            waited=$((waited + 5))
+          done
+          curl -sS -o /dev/null -w 'cooee answers %{http_code}\n' http://127.0.0.1:4747/pair
+          xcrun simctl bootstatus "$SIM" -b
+          TEST_RUNNER_COOEE_ASK_ADDRESS=http://127.0.0.1:4747 xcodebuild -project Cooee.xcodeproj -scheme Cooee \
+            -destination "id=$SIM" -derivedDataPath "$RUNNER_TEMP/ios" \
+            -only-testing:CooeeAppUITests/LiveUITests/testAsksAndTheMacApprovesIt \
+            -resultBundlePath "$RUNNER_TEMP/phone-ask.xcresult" test-without-building
+          status=0
+          wait "$mac" || status=$?
+          tail -40 "$RUNNER_TEMP/mac-test.log"
+          exit "$status"
+      - name: what the Mac ran (on failure)
+        if: failure()
+        run: |
+          pgrep -lf 'cooee|shed|zsh|security' || true
+          for f in "$HOME/.config/cooee/cooee/config.toml" "$HOME/.local/share/cooee/cooee/devices.json"; do
+            echo "== $f"; cat "$f" || true
+          done
+          ls -la "$HOME/.local/share/cooee/cooee" || true
+          for label in serve shed; do launchctl print "gui/$(id -u)/com.jirathip.cooee.$label" | head -25 || true; done
+          app=$(find "$RUNNER_TEMP/mac/Build/Products" -maxdepth 2 -name Cooee.app | head -1)
+          ls -la "$app/Contents/Helpers" "$app/Contents/Library/LaunchAgents" || true
+          perl -e "alarm 60; exec @ARGV" "$app/Contents/Helpers/cooee" pair </dev/null; echo "cooee pair exit $?"
+      - name: screenshots
+        if: always()
+        run: |
+          mkdir -p "$SHOTS"
+          for run in mac-setup phone-ask; do
+            xcrun xcresulttool export attachments --path "$RUNNER_TEMP/$run.xcresult" --output-path "$SHOTS/$run" || true
+          done
+          cp "$RUNNER_TEMP/mac-test.log" "$SHOTS/" || true
+          ls -R "$SHOTS"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mac-setup-shots
+          path: mac-setup-shots

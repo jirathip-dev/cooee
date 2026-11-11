@@ -1,0 +1,108 @@
+# #142: the Mac app as the server, as a .dmg (scripts/mac-app.sh): cooee and shed inside, run as login items. With the
+# five secrets below (an Apple Developer ID: a paid Apple Developer membership) it is signed with the Developer ID,
+# notarized, stapled and checked with `spctl -a -vv`; without them the .dmg is unsigned and the job says which secrets
+# are missing. The secrets go in the `mac-release` environment (staging and main only, set up by the owner);
+# apple/README.md lists them.
+name: apple-mac
+on:
+  push:
+    branches: [staging, main]
+    paths:
+      - "apple/**"
+      - "crates/**"
+      - "scripts/mac-app.sh"
+      - "scripts/mac-bins.sh"
+      - ".github/workflows/apple-mac.yml"
+  pull_request:
+    paths:
+      - "apple/**"
+      - "crates/**"
+      - "scripts/mac-app.sh"
+      - "scripts/mac-bins.sh"
+      - ".github/workflows/apple-mac.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  dmg:
+    runs-on: macos-26
+    timeout-minutes: 60
+    # Pull requests get no environment and no secrets: they build the unsigned .dmg. (`a && '' || b` is always b, as
+    # '' is falsy, so the environment name is the truthy branch.)
+    environment: ${{ github.event_name != 'pull_request' && 'mac-release' || '' }}
+    env:
+      MAC_CERT_P12: ${{ github.event_name != 'pull_request' && secrets.MAC_CERT_P12 || '' }}
+      MAC_CERT_PASSWORD: ${{ github.event_name != 'pull_request' && secrets.MAC_CERT_PASSWORD || '' }}
+      NOTARY_KEY_P8: ${{ github.event_name != 'pull_request' && secrets.NOTARY_KEY_P8 || '' }}
+      NOTARY_KEY_ID: ${{ github.event_name != 'pull_request' && secrets.NOTARY_KEY_ID || '' }}
+      NOTARY_ISSUER_ID: ${{ github.event_name != 'pull_request' && secrets.NOTARY_ISSUER_ID || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - uses: Swatinem/rust-cache@v2
+      - name: the Developer ID, if its secrets are set
+        run: |
+          missing=""
+          for name in MAC_CERT_P12 MAC_CERT_PASSWORD NOTARY_KEY_P8 NOTARY_KEY_ID NOTARY_ISSUER_ID; do
+            [ -n "${!name:-}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "MISSING=$missing" >> "$GITHUB_ENV"
+            echo "::notice::Building an unsigned cooee.dmg: no notarization without the secrets$missing (environment mac-release; see apple/README.md)."
+            exit 0
+          fi
+          keychain="$RUNNER_TEMP/sign.keychain-db"
+          pass=$(uuidgen)
+          security create-keychain -p "$pass" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$pass" "$keychain"
+          umask 077
+          printf '%s' "$MAC_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
+          rm -f "$RUNNER_TEMP/cert.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$pass" "$keychain" >/dev/null
+          read -r -a keychains <<<"$(security list-keychains -d user | tr -d '"')"
+          security list-keychains -d user -s "$keychain" "${keychains[@]}"
+          identity=$(security find-identity -v -p codesigning "$keychain" | sed -n 's/.*"\(Developer ID Application: .*\)"/\1/p' | head -1)
+          [ -n "$identity" ] || { echo "::error::MAC_CERT_P12 holds no \"Developer ID Application\" certificate."; exit 1; }
+          team=$(printf '%s' "$identity" | sed -n 's/.*(\([A-Z0-9]*\))$/\1/p')
+          echo "::add-mask::$team"
+          { echo "MAC_SIGN_IDENTITY=$identity"; echo "MAC_TEAM=$team"; } >> "$GITHUB_ENV"
+      - name: build the app and cooee.dmg
+        run: scripts/mac-app.sh "$RUNNER_TEMP/mac"
+      - name: notarize, staple and check with spctl
+        if: env.MISSING == ''
+        run: |
+          dmg="$RUNNER_TEMP/mac/cooee.dmg"
+          umask 077
+          printf '%s' "$NOTARY_KEY_P8" | base64 --decode > "$RUNNER_TEMP/notary.p8"
+          xcrun notarytool submit "$dmg" --key "$RUNNER_TEMP/notary.p8" --key-id "$NOTARY_KEY_ID" \
+            --issuer "$NOTARY_ISSUER_ID" --wait
+          xcrun stapler staple "$dmg"
+          spctl -a -vv -t open --context context:primary-signature "$dmg"
+          mount=$(hdiutil attach -nobrowse -readonly "$dmg" | sed -n 's/.*\(\/Volumes\/.*\)$/\1/p' | tail -1)
+          spctl -a -vv "$mount/Cooee.app"
+          hdiutil detach "$mount"
+      - name: summary
+        if: always()
+        run: |
+          if [ -n "${MISSING:-}" ]; then
+            { echo "### cooee.dmg: unsigned, not notarized"
+              echo "Missing secrets in the \`mac-release\` environment:$MISSING."
+              echo "They need an Apple Developer ID (a paid Apple Developer membership); apple/README.md says how to make each."; } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### cooee.dmg: signed with the Developer ID, notarized and stapled" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cooee-dmg
+          path: ${{ runner.temp }}/mac/cooee.dmg
+          if-no-files-found: error
+      - name: remove the keys
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/notary.p8" "$RUNNER_TEMP/cert.p12"
+          [ ! -f "$RUNNER_TEMP/sign.keychain-db" ] || security delete-keychain "$RUNNER_TEMP/sign.keychain-db"

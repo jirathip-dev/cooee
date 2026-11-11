@@ -64,7 +64,14 @@ extension NearbyClient: DependencyKey {
 }
 
 public struct CooeeRoot: View {
-    private let store = Store(initialState: AppFeature.State(server: ServerStore.liveValue.load())) { AppFeature() }
+    #if os(macOS)
+        private static let mac = true
+    #else
+        private static let mac = false
+    #endif
+    private let store = Store(initialState: AppFeature.State(server: ServerStore.liveValue.load(), mac: Self.mac)) {
+        AppFeature()
+    }
 
     public var body: some View {
         AppRoot(store: store)
