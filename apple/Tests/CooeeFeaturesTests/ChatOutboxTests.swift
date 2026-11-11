@@ -18,7 +18,7 @@ internal struct ChatOutboxTests {
                 if let refused = refusals.next() { throw refused }
                 calls.record("send \(text)")
             }
-            $0.threads.start = { _, _, _ in throw refusal }
+            $0.threads.start = { _, _, _, _ in throw refusal }
         }
     }
 

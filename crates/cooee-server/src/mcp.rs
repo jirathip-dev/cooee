@@ -404,11 +404,19 @@ fn own_tools() -> Value {
             "limit": { "type": "integer", "description": "fewer hits, at most 5" }
         } }
     });
-    json!([tool, remember, ask_persona, history])
+    let update = json!({
+        "name": "update_persona",
+        "description": "Rewrite your persona's Character or Instructions (the whole text of each given). In a setup chat it is saved at once; elsewhere the owner approves a card with the diff first. It reaches your next session.",
+        "inputSchema": { "type": "object", "properties": {
+            "character": { "type": "string", "description": "who you are, your tone" },
+            "instructions": { "type": "string", "description": "your standing rules" }
+        } }
+    });
+    json!([tool, remember, ask_persona, history, update])
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156) and `history` (#217) for a persona's.
+/// `ask_persona` (#156), `history` (#217) and `update_persona` (#270) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -447,6 +455,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     // Its answer (a string) is the reply.
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
                     Some("history") => Some(("/mcp/agent/history", "")),
+                    Some("update_persona") => Some(("/mcp/agent/persona", "")),
                     _ => None,
                 };
                 match call.map(|(path, said)| {

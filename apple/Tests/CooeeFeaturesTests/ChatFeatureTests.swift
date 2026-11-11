@@ -38,8 +38,8 @@ internal struct ChatFeatureTests {
             $0.threads.send = { _, thread, text, files, queue in
                 calls.record("\(queue ? "queue" : "send") \(thread) \(text) \(files.count)")
             }
-            $0.threads.start = { _, persona, text in
-                calls.record("start \(persona.id) \(text)")
+            $0.threads.start = { _, persona, text, setup in
+                calls.record("start \(persona.id) \(text)\(setup ? " setup" : "")")
                 return "n1"
             }
             $0.threads.stop = { _, thread in calls.record("stop \(thread)") }
@@ -134,6 +134,18 @@ internal struct ChatFeatureTests {
         }
         await store.send(.steer(0))
         #expect(calls.all == ["start coder hi"])
+    }
+
+    @Test internal func aSetupChatStartsInSetupMode() async {
+        let store = store(.setup(coder))
+        await store.send(.draftChanged("hi")) { $0.draft = "hi" }
+        await store.send(.send) {
+            $0.draft = ""
+            $0.outbox = [Outgoing(id: -1, text: "hi")]
+        }
+        await store.receive(\.delivered) { $0.outbox = [] }
+        await store.receive(\.delegate.started)
+        #expect(calls.all == ["start coder hi setup"])
     }
 
     @Test internal func queuedMessagesAreSteeredOrTakenBack() async {

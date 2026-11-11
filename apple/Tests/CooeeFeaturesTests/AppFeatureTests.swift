@@ -119,6 +119,23 @@ internal struct AppFeatureTests {
         await store.receive(\.home.loaded) { $0.home?.rows = [row("n1")] }
     }
 
+    @Test internal func refineByChatOpensASetupChat() async {
+        let store = store(paired())
+        store.dependencies.personas.save = { _, persona in persona }
+        await store.send(.edit("coder")) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
+        await store.send(.persona(.presented(.chat))) { $0.persona?.busy = true }
+        await store.receive(\.persona.presented.delegate.chat) {
+            $0.persona = nil
+            $0.path = ["setup:coder"]
+            $0.chat = ChatFeature.State(server: mini, target: .setup(coder), persona: Persona(coder))
+        }
+        await store.receive(\.home.refresh)
+        await store.receive(\.home.loaded) { $0.home?.rows = [row("n1")] }
+        await store.send(.chat(.delegate(.viewPersona))) {
+            $0.persona = PersonaFeature.State(server: mini, persona: coder)
+        }
+    }
+
     @Test internal func aNewPersonaStartsBlankOnTheFirstPersonasAgent() async {
         let store = store(paired())
         await store.send(.edit(nil)) {

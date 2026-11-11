@@ -184,6 +184,8 @@ pub struct Summary {
     pub unseen: usize,
     /// Archived: listed apart until restored.
     pub archived: bool,
+    /// A setup chat (#270).
+    pub setup: bool,
     /// A session a tool started (#33): its labels.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow: Option<crate::Workflow>,

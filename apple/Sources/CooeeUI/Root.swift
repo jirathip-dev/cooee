@@ -98,6 +98,7 @@ internal struct ChatScreen: View {
             back: onBack
         )
         actions.retry = { store.send(.retry($0)) }
+        actions.view = { store.send(.delegate(.viewPersona)) }
         let (places, attachable) = (store.places, store.attachable)
         actions.places = places.map(\.label)
         actions.open = { store.send(.plugins(.open(places[$0]))) }
@@ -135,7 +136,8 @@ internal struct PersonaScreen: View {
             ),
             error: store.error,
             actions: PersonaActions(
-                close: { store.send(.close) }, save: { store.send(.save) }, clear: { store.send(.clearMemory) }
+                close: { store.send(.close) }, save: { store.send(.save) }, clear: { store.send(.clearMemory) },
+                chat: { store.send(.chat) }
             )
         )
         .disabled(store.busy)

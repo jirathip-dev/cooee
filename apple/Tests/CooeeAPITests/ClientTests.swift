@@ -17,7 +17,7 @@ internal struct ClientTests {
 
     private struct Started: Decodable, Equatable {
         private enum CodingKeys: String, CodingKey {
-            case agent, profile, text, background
+            case agent, profile, text, background, setup
             case randomID = "random_id"
         }
 
@@ -26,6 +26,7 @@ internal struct ClientTests {
         fileprivate let text: String
         fileprivate let randomID: String
         fileprivate let background: Bool
+        fileprivate var setup = false
     }
 
     @Test internal func threadsPersonasAndASliceDecodeAsDocumented() async throws {
@@ -80,6 +81,16 @@ internal struct ClientTests {
         #expect(try await server.client().newThread(persona: persona, text: "hi", randomID: "r9") == "n1")
         let body = try server.decoded("/threads", as: Started.self)
         #expect(body == Started(agent: "fake-acp", profile: "coder", text: "hi", randomID: "r9", background: true))
+    }
+
+    @Test internal func aSetupChatSaysSo() async throws {
+        let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n2"}"#])]])
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp")
+        #expect(try await server.client().newThread(persona: persona, text: "hi", setup: true, randomID: "r8") == "n2")
+        let body = try server.decoded("/threads", as: Started.self)
+        let want = Started(
+            agent: "fake-acp", profile: "coder", text: "hi", randomID: "r8", background: true, setup: true)
+        #expect(body == want)
     }
 
     @Test internal func cooeesOwnSentenceIsTheError() async throws {

@@ -84,6 +84,11 @@ pub struct Place {
     pub screen: String,
 }
 
+/// What a setup chat's brief adds (#270).
+pub const SETUP: &str = "This is a setup chat. Interview the owner, one question at a time, about your purpose, \
+tone, boundaries and way of working; then write your Character and Instructions with your update_persona tool. \
+Here each update is saved at once.";
+
 /// The most characters a persona's notes hold in all (#216).
 pub const CAP: usize = 2000;
 

@@ -5,11 +5,16 @@ public struct PersonaActions {
     public var close: () -> Void
     public var save: () -> Void
     public var clear: () -> Void
+    public var chat: () -> Void
 
-    public init(close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {}) {
+    public init(
+        close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {},
+        chat: @escaping () -> Void = {}
+    ) {
         self.close = close
         self.save = save
         self.clear = clear
+        self.chat = chat
     }
 }
 
@@ -118,6 +123,13 @@ extension PersonaSheet {
             }
             Group2(header: "Character") { paragraph("Character", $draft.character) }
             Group2(header: "Instructions") { paragraph("Instructions", $draft.instructions) }
+            if !look.still {
+                Button(action: actions.chat) {
+                    Text(draft.id.isEmpty ? "Set up by chat instead" : "Refine by chat").ui(15, .medium, look)
+                        .foregroundStyle(look.palette.link)
+                }
+                .buttonStyle(.plain)
+            }
             if memory.count > 0 { Group2(header: "Memory · \(memory.count) notes") { notes } }
             Group2 {
                 SettingRow(

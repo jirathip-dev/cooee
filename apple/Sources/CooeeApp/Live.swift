@@ -30,7 +30,9 @@ extension ThreadsClient: DependencyKey {
         answer: { server, thread, item, option, value in
             try await Client(server).answer(thread, item: item, option: option, value: value)
         },
-        start: { server, persona, text in try await Client(server).newThread(persona: persona, text: text) }
+        start: { server, persona, text, setup in
+            try await Client(server).newThread(persona: persona, text: text, setup: setup)
+        }
     )
 }
 

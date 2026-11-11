@@ -598,6 +598,9 @@ struct New {
     /// The machine it runs on (#148): none, its persona's (this host without one); empty: this host.
     #[serde(default)]
     machine: Option<String>,
+    /// A setup chat (#270): its persona interviews the owner and writes its own Character and Instructions.
+    #[serde(default)]
+    setup: bool,
 }
 
 /// A new thread's id.
@@ -620,7 +623,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
             (&data, config.as_deref(), &list),
             (&new.agent, new.account.as_deref(), profile),
             new.folder,
-            picked,
+            (picked, new.setup),
         )?;
         if let Some(m) = new.machine {
             recipe.machine = m;
@@ -665,7 +668,7 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
             (&data, config.as_deref(), &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
-            (t.model, t.effort),
+            ((t.model, t.effort), t.setup),
         )?;
         let name = cooee_web::named(&t.agent, &logins.statuses());
         hub.retry(&id, recipe, &name)
@@ -694,7 +697,7 @@ async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Ite
             (&data, config.as_deref(), &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
-            (t.model, t.effort),
+            ((t.model, t.effort), t.setup),
         )?;
         hub.attach(&id, &a.folder, &recipe)
     });
@@ -704,8 +707,8 @@ async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Ite
 }
 
 /// How a thread of `agent` starts in `folder`: Plain with `account`, or as agent profile `profile` (non-empty: its
-/// agent, and its folder if it has one; one of `list`, not hidden), on the model and effort `picked`. Returns its
-/// agent and folder too.
+/// agent, and its folder if it has one; one of `list`, not hidden), on the model and effort `picked`; a `setup` chat
+/// (#270) needs a persona, whose brief asks for the interview. Returns its agent and folder too.
 fn recipe(
     logins: &Logins,
     (data, config, list): (
@@ -715,7 +718,7 @@ fn recipe(
     ),
     (agent, account, profile): (&str, Option<&str>, &str),
     folder: PathBuf,
-    mut picked: (String, String),
+    (mut picked, setup): ((String, String), bool),
 ) -> Result<(String, PathBuf, Recipe), HubError> {
     // A persona (#126): its agent, as the profile it runs as or Plain, in its folder, on its model and effort.
     let persona = personas::find(config, data, profile).ok();
@@ -766,6 +769,15 @@ fn recipe(
         recipe.instructions = p.brief(data);
         recipe.profile = p.id;
         recipe.machine = p.machine;
+    } else if setup {
+        return Err(refused("a setup chat needs a persona"));
+    }
+    if setup {
+        if !recipe.instructions.is_empty() {
+            recipe.instructions.push_str("\n\n");
+        }
+        recipe.instructions.push_str(personas::SETUP);
+        recipe.setup = true;
     }
     Ok((agent, folder, recipe))
 }
@@ -918,7 +930,7 @@ fn starter(
             (&data, config.as_deref(), &list),
             ask,
             PathBuf::new(),
-            empty,
+            (empty, false),
         )
     })
 }
@@ -2085,6 +2097,19 @@ async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>
     ))
 }
 
+/// `POST /mcp/agent/persona` `{thread, server: {character?, instructions?}}`: `update_persona` (#270).
+#[route(POST "/mcp/agent/persona")]
+async fn mcp_persona(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let token = bearer(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let u = serde_json::from_value(a.server).map_err(refused)?;
+            hub.update_persona(&a.thread, &token, u)
+        })
+        .await,
+    ))
+}
+
 /// A persona call (#126; docs/api.md) off the async workers, given the data and config folders.
 async fn on_personas<T: Send + 'static>(
     cx: &Cx,
@@ -2281,6 +2306,7 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
         .route(memory_drop)
         .route(memory_clear)
         .route(mcp_remember)
+        .route(mcp_persona)
         .route(mcp_history)
 }
 

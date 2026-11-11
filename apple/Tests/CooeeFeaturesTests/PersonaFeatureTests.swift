@@ -56,6 +56,14 @@ internal struct PersonaFeatureTests {
         #expect(calls.all == ["post Scout"])
     }
 
+    @Test internal func setUpByChatSavesThePersonaThenAsksForItsChat() async {
+        let store = store(APIPersona(id: "", name: "", agent: "codex"))
+        await store.send(.binding(.set(\.draft.name, "Scout"))) { $0.draft.name = "Scout" }
+        await store.send(.chat) { $0.busy = true }
+        await store.receive(\.delegate.chat, APIPersona(id: "scout", name: "Scout", agent: "codex"))
+        #expect(calls.all == ["post Scout"])
+    }
+
     @Test internal func aRefusalShowsTheServersReason() async {
         let store = store(coder)
         let refused = APIError(status: 400, text: "a persona needs a name")

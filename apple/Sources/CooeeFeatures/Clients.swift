@@ -28,7 +28,8 @@ public struct ThreadsClient: Sendable {
     public var answer:
         @Sendable (_ server: Server, _ thread: String, _ item: Int, _ option: String, _ value: String?) async throws
             -> Void
-    public var start: @Sendable (_ server: Server, _ persona: APIPersona, _ text: String) async throws -> String
+    public var start:
+        @Sendable (_ server: Server, _ persona: APIPersona, _ text: String, _ setup: Bool) async throws -> String
 }
 
 @DependencyClient

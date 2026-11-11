@@ -5,6 +5,7 @@ internal struct ItemView: View {
     @Environment(\.look) private var look
     internal let item: Item
     internal var retry: () -> Void = {}
+    internal var view: () -> Void = {}
 
     internal var body: some View {
         switch item {
@@ -22,7 +23,13 @@ internal struct ItemView: View {
         case .tools(_, let rows):
             ToolFold(rows: rows)
         case .note(_, let text):
-            Text(text).ui(13, .regular, look).foregroundStyle(look.palette.mute).frame(maxWidth: .infinity)
+            HStack(spacing: 6) {
+                Text(text).foregroundStyle(look.palette.mute)
+                if text.hasPrefix("Updated ") {
+                    Button("View", action: view).buttonStyle(.plain).foregroundStyle(look.palette.link)
+                }
+            }
+            .ui(13, .regular, look).frame(maxWidth: .infinity)
         case .card(_, let poster, let block):
             BlockNode(block: block).environment(\.card, CardContext(poster: poster))
         }

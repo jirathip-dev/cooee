@@ -7,6 +7,7 @@ public struct ChatFeature: Sendable {
     public enum Target: Equatable, Sendable {
         case thread(String)
         case new(APIPersona)
+        case setup(APIPersona)
     }
 
     @ObservableState
@@ -64,6 +65,7 @@ public struct ChatFeature: Sendable {
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case started(String)
+            case viewPersona
         }
 
         @CasePathable
