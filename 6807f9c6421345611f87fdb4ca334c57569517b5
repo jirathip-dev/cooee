@@ -1,0 +1,9 @@
+Decided: no doc names cooee-drover as a repo or plugin; Drover is served by herdsman (herdsman#814)
+Because: "No doc may describe cooee-drover as a separate repo or plugin to install"
+Decided: the plugin chain in architecture.md reads cooee → herdsman (Drover) /api/v1
+Because: docs/architecture.md:202
+Decided: Today keeps only the merged fleet screens (#211); Drover in the app stays under next (#226)
+Because: "Every \"Today\" line names a merged PR or file that proves it"
+Rejected: renaming cooee-drover in code, tests and design fixtures — the owner note leaves them to cooee#226
+Check: rg cooee-drover --glob '*.md' finds only .brief.md; the PR body lists every code and fixture name left
+Owner: Docs now say Drover comes from herdsman itself, with no separate plugin to install.
