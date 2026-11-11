@@ -2116,6 +2116,7 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
         .route(memory_add)
         .route(memory_clear)
         .route(mcp_remember)
+        .route(mcp_history)
 }
 
 #[route(POST "/mcp/agent/grant")]
@@ -2135,6 +2136,20 @@ async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     Ok(Answer(
         blocking(cx, move |hub| {
             hub.ask_persona((&a.thread, &token), &persona, &message, wait)
+        })
+        .await,
+    ))
+}
+
+#[route(POST "/mcp/agent/history")]
+async fn mcp_history(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let (token, s) = (bearer(cx), a.server);
+    let text = |k: &str| s[k].as_str().unwrap_or_default().to_owned();
+    let (query, thread, before) = (text("query"), text("thread"), s["before"].as_u64());
+    let limit = usize::try_from(s["limit"].as_u64().unwrap_or(5)).unwrap_or(5);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.history((&a.thread, &token), (&query, limit), &thread, before)
         })
         .await,
     ))

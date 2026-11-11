@@ -424,8 +424,22 @@ impl Store {
     ///
     /// Returns [`StoreError`] if the id is invalid or the file can't be read.
     pub fn items<T: DeserializeOwned>(&self, id: &str) -> Result<Vec<T>, StoreError> {
+        self.items_if(id, |_| true)
+    }
+
+    /// [`Store::items`], or none when `keep` says no to the whole file's bytes, read once and never parsed then.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if the id is invalid or the file can't be read.
+    pub fn items_if<T: DeserializeOwned>(
+        &self,
+        id: &str,
+        keep: impl FnOnce(&[u8]) -> bool,
+    ) -> Result<Vec<T>, StoreError> {
         let path = self.path(id)?.with_extension("jsonl");
         match fs::read(&path) {
+            Ok(bytes) if !keep(&bytes) => Ok(Vec::new()),
             Ok(bytes) => Ok(bytes
                 .split(|b| *b == b'\n')
                 .filter_map(|line| serde_json::from_slice(line).ok())
