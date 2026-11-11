@@ -1,0 +1,6 @@
+verify-browser: http://127.0.0.1:58874/docs/design/home-v2/modern.html: 0 console lines, 0 failed requests, 12 a11y issues; shots/design-modern-1440.png shots/design-modern-390.png
+verify-browser modern exit=0
+verify-browser: http://127.0.0.1:58874/docs/design/home-v2/terminal.html: 0 console lines, 0 failed requests, 12 a11y issues; shots/design-terminal-1440.png shots/design-terminal-390.png
+verify-browser terminal exit=0
+verify-browser: http://127.0.0.1:58874/docs/design/home-v2/scene.html: 0 console lines, 0 failed requests, 35 a11y issues; shots/design-scene-1440.png shots/design-scene-390.png
+verify-browser scene exit=0

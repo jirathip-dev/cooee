@@ -1,0 +1,66 @@
+{
+ "url": "http://127.0.0.1:58874/docs/design/home-v2/terminal.html",
+ "nodes": 1647,
+ "issues": [
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 13
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 14
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 15
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 24
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 25
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 26
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 405
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 410
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 412
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 770
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 775
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 777
+  }
+ ]
+}

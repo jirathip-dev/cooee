@@ -1,0 +1,56 @@
+diff: shots/frames/empty-390-dark.png vs docs/design/home-v2/empty-390-dark.png: 0.000 % of pixels differ (shots/frames/empty-390-dark-diff.png)
+  exit=0
+diff: shots/frames/empty-390-light.png vs docs/design/home-v2/empty-390-light.png: 0.000 % of pixels differ (shots/frames/empty-390-light-diff.png)
+  exit=0
+diff: shots/frames/reconnect-390-light.png vs docs/design/home-v2/reconnect-390-light.png: 0.000 % of pixels differ (shots/frames/reconnect-390-light-diff.png)
+  exit=0
+diff: shots/frames/scene-1440.png vs docs/design/home-v2/scene-1440.png: 0.000 % of pixels differ (shots/frames/scene-1440-diff.png)
+  exit=0
+diff: shots/frames/scene-busy-390-light.png vs docs/design/home-v2/scene-busy-390-light.png: 0.000 % of pixels differ (shots/frames/scene-busy-390-light-diff.png)
+  exit=0
+diff: shots/frames/scene-held-390-light.png vs docs/design/home-v2/scene-held-390-light.png: 0.000 % of pixels differ (shots/frames/scene-held-390-light-diff.png)
+  exit=0
+diff: shots/frames/scene-herd-390-light.png vs docs/design/home-v2/scene-herd-390-light.png: 0.000 % of pixels differ (shots/frames/scene-herd-390-light-diff.png)
+  exit=0
+diff: shots/frames/scene-herd-night-390-dark.png vs docs/design/home-v2/scene-herd-night-390-dark.png: 0.000 % of pixels differ (shots/frames/scene-herd-night-390-dark-diff.png)
+  exit=0
+diff: shots/frames/scene-motion-390-light.png vs docs/design/home-v2/scene-motion-390-light.png: 0.000 % of pixels differ (shots/frames/scene-motion-390-light-diff.png)
+  exit=0
+diff: shots/frames/scene-night-390-dark.png vs docs/design/home-v2/scene-night-390-dark.png: 0.000 % of pixels differ (shots/frames/scene-night-390-dark-diff.png)
+  exit=0
+diff: shots/frames/scene-pull-390-light.png vs docs/design/home-v2/scene-pull-390-light.png: 0.000 % of pixels differ (shots/frames/scene-pull-390-light-diff.png)
+  exit=0
+diff: shots/frames/scene-reconnect-390-light.png vs docs/design/home-v2/scene-reconnect-390-light.png: 0.000 % of pixels differ (shots/frames/scene-reconnect-390-light-diff.png)
+  exit=0
+diff: shots/frames/scene-scrolled-390-light.png vs docs/design/home-v2/scene-scrolled-390-light.png: 0.000 % of pixels differ (shots/frames/scene-scrolled-390-light-diff.png)
+  exit=0
+diff: shots/frames/scene-top-390-dark.png vs docs/design/home-v2/scene-top-390-dark.png: 0.000 % of pixels differ (shots/frames/scene-top-390-dark-diff.png)
+  exit=0
+diff: shots/frames/scene-top-390-light.png vs docs/design/home-v2/scene-top-390-light.png: 0.000 % of pixels differ (shots/frames/scene-top-390-light-diff.png)
+  exit=0
+diff: shots/frames/scrolled-1440.png vs docs/design/home-v2/scrolled-1440.png: 0.000 % of pixels differ (shots/frames/scrolled-1440-diff.png)
+  exit=0
+diff: shots/frames/scrolled-390-dark.png vs docs/design/home-v2/scrolled-390-dark.png: 0.000 % of pixels differ (shots/frames/scrolled-390-dark-diff.png)
+  exit=0
+diff: shots/frames/scrolled-390-light.png vs docs/design/home-v2/scrolled-390-light.png: 0.000 % of pixels differ (shots/frames/scrolled-390-light-diff.png)
+  exit=0
+diff: shots/frames/term-1440.png vs docs/design/home-v2/term-1440.png: 0.000 % of pixels differ (shots/frames/term-1440-diff.png)
+  exit=0
+diff: shots/frames/term-empty-390-dark.png vs docs/design/home-v2/term-empty-390-dark.png: 0.000 % of pixels differ (shots/frames/term-empty-390-dark-diff.png)
+  exit=0
+diff: shots/frames/term-reconnect-390-dark.png vs docs/design/home-v2/term-reconnect-390-dark.png: 0.000 % of pixels differ (shots/frames/term-reconnect-390-dark-diff.png)
+  exit=0
+diff: shots/frames/term-scrolled-390-dark.png vs docs/design/home-v2/term-scrolled-390-dark.png: 0.000 % of pixels differ (shots/frames/term-scrolled-390-dark-diff.png)
+  exit=0
+diff: shots/frames/term-scrolled-390-light.png vs docs/design/home-v2/term-scrolled-390-light.png: 0.000 % of pixels differ (shots/frames/term-scrolled-390-light-diff.png)
+  exit=0
+diff: shots/frames/term-top-390-dark.png vs docs/design/home-v2/term-top-390-dark.png: 0.000 % of pixels differ (shots/frames/term-top-390-dark-diff.png)
+  exit=0
+diff: shots/frames/term-top-390-light.png vs docs/design/home-v2/term-top-390-light.png: 0.000 % of pixels differ (shots/frames/term-top-390-light-diff.png)
+  exit=0
+diff: shots/frames/top-1440.png vs docs/design/home-v2/top-1440.png: 0.000 % of pixels differ (shots/frames/top-1440-diff.png)
+  exit=0
+diff: shots/frames/top-390-dark.png vs docs/design/home-v2/top-390-dark.png: 0.000 % of pixels differ (shots/frames/top-390-dark-diff.png)
+  exit=0
+diff: shots/frames/top-390-light.png vs docs/design/home-v2/top-390-light.png: 0.000 % of pixels differ (shots/frames/top-390-light-diff.png)
+  exit=0
