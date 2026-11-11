@@ -1,0 +1,8 @@
+Decided: apple_cap 13000 in ci/cap.toml; line_cap stays 27500
+Because: "`ci/cap.toml`: `apple_cap = 13000` (`line_cap` unchanged at 27,500)."
+Because: q1275
+Decided: history note docs/cap-history/2026-11-11-223.md in the style of 2026-11-11-204.md
+Because: "a short note in the style of the earlier ones (from, to, measured, why, q1275)"
+Rejected: a smaller raise sized to the open PRs only (8,833) — the owner chose one raise covering queued native issues too
+Check: scripts/line-cap.sh prints apple 7123 / 13000 and non-test 24638 / 27500 on staging 9ab48cbf and exits 0
+Owner: The Apple app's size limit is now 13,000 lines; the overall limit is unchanged.
