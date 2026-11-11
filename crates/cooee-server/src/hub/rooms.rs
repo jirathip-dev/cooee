@@ -20,6 +20,7 @@ use cooee_core::{
 use serde_json::json;
 
 use super::{Hub, HubError, Live, Recipe, Upload, lock, now};
+use crate::push::Note;
 
 /// How a room member's session starts, given its persona: its agent, folder and recipe.
 pub type Starter =
@@ -43,20 +44,29 @@ const PASS: &str = "[pass]";
 /// Told to the member taking the last turn an owner message allows.
 const WIND_DOWN: &str = "(This is the last turn on the owner's message: wind down; naming a member starts no more turns.)";
 
-/// The members `text` names with `@` and their id or name (spaces dropped, any case), in the order named, once each.
-fn named(text: &str, members: &[Member], names: &[Persona]) -> Vec<String> {
-    let key = |s: &str| s.replace(' ', "").to_lowercase();
-    let mut out: Vec<String> = Vec::new();
-    for (at, _) in text.match_indices('@') {
+/// The words `text` names with `@`, keyed (spaces dropped, any case), in order.
+fn mentions(text: &str) -> impl Iterator<Item = String> {
+    text.match_indices('@').filter_map(|(at, _)| {
         let before = text[..at].chars().next_back();
         if before.is_some_and(char::is_alphanumeric) {
-            continue;
+            return None;
         }
         let word: String = text[at + 1..]
             .chars()
             .take_while(|c| c.is_alphanumeric() || "-_".contains(*c))
             .collect();
-        let word = key(&word);
+        Some(key(&word))
+    })
+}
+
+fn key(s: &str) -> String {
+    s.replace(' ', "").to_lowercase()
+}
+
+/// The members `text` names with `@` and their id or name (spaces dropped, any case), in the order named, once each.
+fn named(text: &str, members: &[Member], names: &[Persona]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for word in mentions(text) {
         let hit = members.iter().find(|m| {
             key(&m.persona) == word
                 || names
@@ -70,11 +80,45 @@ fn named(text: &str, members: &[Member], names: &[Persona]) -> Vec<String> {
     out
 }
 
+/// A reply addresses the owner when it names `@you` or `@owner` (#158).
+fn addresses_owner(text: &str) -> bool {
+    mentions(text).any(|w| w == "you" || w == OWNER)
+}
+
+/// How the room shows `id`: the owner, a persona's name, else the id.
+fn display(names: &[Persona], id: &str) -> String {
+    match names.iter().find(|p| p.id == id) {
+        _ if id == OWNER => "Owner".to_owned(),
+        Some(p) => p.name.clone(),
+        None => id.to_owned(),
+    }
+}
+
 fn refused(why: impl Into<String>) -> HubError {
     HubError::Refused(why.into())
 }
 
 impl Hub {
+    /// `note` about thread `meta`, said by its room when `meta` is a member's session (#158).
+    pub(super) fn routed(&self, meta: &Thread, note: Note) -> Note {
+        let room = Some(&meta.room).filter(|r| !r.is_empty());
+        let Some(room) = room.and_then(|r| self.live(r).ok()) else {
+            return note;
+        };
+        let room = lock(&room);
+        let names = personas::list(self.config_dir(), &self.data);
+        let last = room.chat.items.last().map_or(0, |i| i.id);
+        note.in_room(&room.meta, &display(&names, &meta.profile), last)
+    }
+
+    /// Pushes room `room`'s `key` (`needs`, `fail`) about member `persona`, `line`, at item `item` (#158).
+    fn room_push(&self, room: &Thread, persona: &str, (key, line): (&str, &str), item: u64) {
+        let names = personas::list(self.config_dir(), &self.data);
+        let name = display(&names, persona);
+        let note = Note::new(room, (key, &name, line), item, &self.theme);
+        self.push.send(&note.in_room(room, &name, item));
+    }
+
     /// Sets how a member's session starts (once).
     pub fn set_starter(&self, starter: Starter) {
         let _ = self.starter.set(starter);
@@ -252,11 +296,7 @@ impl Hub {
             let event = json!({ "member": persona, "reason": reason });
             l.emit("room-turn", event.to_string());
             let names = personas::list(self.config_dir(), &self.data);
-            let name = |s: &str| match names.iter().find(|p| p.id == s) {
-                _ if s == OWNER => "Owner".to_owned(),
-                Some(p) => p.name.clone(),
-                None => s.to_owned(),
-            };
+            let name = |s: &str| display(&names, s);
             let last = l.chat.items.last().map_or(0, |i| i.id);
             let Live { meta, chat, .. } = &mut *l;
             let others = meta.members.iter().filter(|m| m.persona != persona);
@@ -331,6 +371,7 @@ impl Hub {
             Err(e) => {
                 let text = format!("{persona} couldn't take its turn: {e}");
                 let item = l.chat.push(now(), 0, Body::Note { text });
+                self.room_push(&l.meta, persona, ("fail", &e.to_string()), item.id);
                 l.publish(self, vec![Change::Item(item)])?;
                 drop(l);
                 self.replied(room, persona, None)
@@ -396,6 +437,13 @@ impl Hub {
         }
         if let Some(body) = reply {
             let item = l.chat.said(now(), 0, persona.to_owned(), body);
+            if let Body::Agent { text, .. } = &item.body
+                && addresses_owner(text)
+            {
+                let first = text.lines().find(|l| !l.trim().is_empty());
+                let said = ("needs", first.unwrap_or_default());
+                self.room_push(&l.meta, persona, said, item.id);
+            }
             changes.push(Change::Item(item));
         }
         if capped {

@@ -459,3 +459,109 @@ fn stop_while_a_members_session_starts_cancels_it_once_started() {
         "Bo's queued turn was dropped"
     );
 }
+
+/// cooee with personas Ada and Bo, sending its pushes to APNs through a fake `curl` that keeps each push's body in
+/// the folder it returns, and one device's APNs token.
+fn with_pushes(name: &str) -> (std::path::PathBuf, FakeShed, Cooee, std::path::PathBuf) {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = scratch(name);
+    for n in ["Ada", "Bo"] {
+        let file = dir.join(format!("personas/{}.toml", n.to_lowercase()));
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(file, format!("name = \"{n}\"\nagent = \"fake-acp\"\n")).unwrap();
+    }
+    let (bin, log) = (dir.join("bin"), dir.join("pushed"));
+    fs::create_dir_all(&bin).unwrap();
+    fs::create_dir_all(&log).unwrap();
+    let curl = format!(
+        "#!/bin/sh\ncat >\"{}/$$.json\"\nprintf '\\n200'\n",
+        log.display()
+    );
+    fs::write(bin.join("curl"), curl).unwrap();
+    fs::set_permissions(bin.join("curl"), fs::Permissions::from_mode(0o755)).unwrap();
+    let key = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg/FMQqoOmZU6bop6k\n\
+               jwzlkZBiOA5CCW7ngc03CgGpgsKhRANCAASkJsDwiTE2wL6OIdpH5tfnsdyw5UK8\n\
+               NOnlJZkFHy9kIEFLJ8uttasmC9v/MsS+Cbb3MJBa25UlVnmKe8xoXskq";
+    let p = "PRIVATE KEY-----";
+    fs::create_dir_all(dir.join("data")).unwrap();
+    let pem = format!("-----BEGIN {p}\n{key}\n-----END {p}\n");
+    fs::write(dir.join("data/apns.p8"), pem).unwrap();
+    let apns = "[apns]\nkey_id = \"K\"\nteam_id = \"T\"\ntopic = \"dev.cooee.app\"\nenv = \"sandbox\"\nurl = \"https://apns.test\"\n";
+    let path = format!("{}:{}", bin.display(), std::env::var("PATH").unwrap());
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start_env(&dir, &shed.dir, apns, &[("PATH", path.as_str())]);
+    let token = json!({ "token": "ab".repeat(32) });
+    assert_eq!(cooee.post("/push/apns", &token).0, 200);
+    (dir, shed, cooee, log)
+}
+
+/// The pushes in `log` once there are `n`: each one's title and body, sorted.
+fn pushed(log: &Path, n: usize) -> Vec<(String, String)> {
+    let mut got = Vec::new();
+    eventually(|| {
+        got = fs::read_dir(log)
+            .unwrap()
+            .map(|f| serde_json::from_str(&fs::read_to_string(f.unwrap().path()).unwrap()))
+            .collect::<Result<Vec<Value>, _>>()
+            .unwrap_or_default();
+        got.len() >= n
+    });
+    let mut got: Vec<(String, String)> = got
+        .iter()
+        .map(|p| {
+            let alert = &p["aps"]["alert"];
+            let s = |k: &str| alert[k].as_str().unwrap().to_owned();
+            (s("title"), s("body"))
+        })
+        .collect();
+    got.sort();
+    got
+}
+
+/// #158: a room pushes only when a member addresses the owner, asks or fails, each titled with the room and the
+/// member; replies to each other, passes and a round's end stay quiet, and a member's ask shows on the room's row.
+#[test]
+fn a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails() {
+    let (dir, shed, cooee, log) = with_pushes("room-push");
+    let id = room(&cooee, &["ada", "bo"]);
+    shed.cue(
+        "ada",
+        &["Over to @Bo.", "@you can you sign the order form?"],
+    );
+    shed.cue("bo", &["[pass]"]);
+    send(&cooee, &id, "hi all");
+    replies(&cooee, &id, 1);
+    send(&cooee, &id, "@ada over to you");
+    replies(&cooee, &id, 2);
+    let at_you = (
+        "ada, bo · Ada".to_owned(),
+        "needs you · Ada: @you can you sign the order form?".to_owned(),
+    );
+    let quiet = "a reply to each other, a pass and a turn's end push nothing";
+    assert_eq!(pushed(&log, 1), std::slice::from_ref(&at_you), "{quiet}");
+
+    let ada = terminal(&dir, "ada");
+    shed.ask(&ada);
+    let asks = (
+        "ada, bo · Ada".to_owned(),
+        "needs you · fake-acp: Edit early.rs".to_owned(),
+    );
+    assert_eq!(pushed(&log, 2), [at_you.clone(), asks.clone()]);
+    let session = ada.trim_start_matches("cooee-");
+    let items = cooee.json(&format!("/threads/{session}/messages"));
+    let items = items["items"].as_array().unwrap();
+    let card = items.iter().find(|i| i["kind"] == "approval");
+    assert_eq!(card.unwrap()["speaker"], "ada", "the card names its member");
+    let rows = cooee.json("/threads");
+    let rows = rows.as_array().unwrap();
+    let row = rows.iter().find(|r| r["id"] == id.as_str()).unwrap();
+    let ask = (&json!("Ada: Edit early.rs waiting"), &json!(true));
+    assert_eq!((&row["last"], &row["unread"]), ask, "{row}");
+
+    shed.report(&terminal(&dir, "bo"), "error", Some("rate limited"));
+    let fails = (
+        "ada, bo · Bo".to_owned(),
+        "failed · fake-acp: rate limited".to_owned(),
+    );
+    assert_eq!(pushed(&log, 3), [at_you, asks, fails]);
+}
