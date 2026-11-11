@@ -24,14 +24,11 @@ const wallpaper = (kind, title) => `<div class="wp ${kind}"><h3>${title}</h3>${S
 // The picker: Follow the look, then every set as four tiles.
 function picker(picked) {
   const follow = `<div class="rw two">${img('modern', 'laughing', 44)}<div class="tx">Follow the look<small>${picked ? "Off · would show Laughing · Modern" : "Now: Laughing · Modern"}</small></div>${picked ? '' : '<span class="ck">✓</span>'}</div>`;
-  const foot = picked
-    ? `<p class="sf">${picked[1]} stays through Style and Theme changes until you choose Follow the look.</p>`
-    : `<p class="sf">The icon changes with Style and Theme: Modern and Terminal show their set's first icon, Scene its theme's.</p>`;
   const sets = SETS.map(([set, label, , icons]) => group(label, `<div class="tg4">${icons.map(([n, name]) => {
     const cls = picked ? (picked[0] === `${set}-${n}` ? ' on' : '') : (set === 'modern' && n === 'laughing' ? ' now' : '');
     return `<div class="tl${cls}"><div class="fr">${img(set, n, 64)}</div><span>${name}</span></div>`;
   }).join('')}</div>`)).join('');
-  return phone(group('', follow) + foot + sets, 'Look', 'App icon');
+  return phone(group('', follow) + sets, 'Look', 'App icon');
 }
 
 function look() {
@@ -48,7 +45,7 @@ const mapping = `<div class="map">${MAP.map(([when, set, n, what]) => `<b>${when
 
 const FRAMES = {
   sheet: () => `<div class="ph">${status}<div class="lt">App icons</div><div class="pg">${wallpaper('d', 'Dark wallpaper')}${wallpaper('l', 'Light wallpaper')}</div></div>`,
-  'wide-sheet': () => `<div class="bd"><h1>cooee app icons · 24 in 6 sets of 4</h1><p>At home-screen size (60 pt), on a dark and a light wallpaper. Flat vector in Corral's look: a head-and-shoulders portrait, soft shading, one solid dark background per set. Farm is Corral's four horses as they ship. Following the look, the icon is a set's first:</p>
+  'wide-sheet': () => `<div class="bd"><h1>cooee app icons · 24 in 6 sets of 4</h1><p>At home-screen size (60 pt), on a dark and a light wallpaper. Flat vector in Corral's look: a head-and-shoulders portrait, soft shading, one solid dark background per set. Farm is Corral's four horses, Bay and Black moved onto Farm's dark grounds. Following the look, the icon is a set's first:</p>
     <div class="cols" style="grid-template-columns:400px 1fr 1fr"><div><p class="cap">Follow the look</p>${mapping}</div>${wallpaper('d', 'Dark wallpaper')}${wallpaper('l', 'Light wallpaper')}</div></div>`,
   look, picker: () => picker(null), picked: () => picker(['bush-koala', 'Koala']),
   'wide-picker': () => {
