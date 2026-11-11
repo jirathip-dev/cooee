@@ -5,15 +5,18 @@ public struct HomeActions {
     public var menu: () -> Void
     public var new: (String) -> Void
     public var open: (String) -> Void
+    public var room: () -> Void
 
     public init(
         menu: @escaping () -> Void = {},
         new: @escaping (String) -> Void = { _ in },
-        open: @escaping (String) -> Void = { _ in }
+        open: @escaping (String) -> Void = { _ in },
+        room: @escaping () -> Void = {}
     ) {
         self.menu = menu
         self.new = new
         self.open = open
+        self.room = room
     }
 }
 
@@ -93,6 +96,7 @@ internal struct TopBar: View {
             Text(look.mono ? "~/cooee" : "cooee").ui(19, .bold, look)
             Spacer()
             Menu {
+                Button("New room", systemImage: "person.3", action: actions.room)
                 ForEach(personas) { persona in Button(persona.name) { actions.new(persona.id) } }
             } label: {
                 RoundButton(symbol: "plus", ascii: "+", size: 44)
@@ -119,7 +123,7 @@ internal struct ChatList: View {
                 Button {
                     open(chat.id)
                 } label: {
-                    ChatRow(row: chat.row, persona: chat.persona, selected: chat.id == selected)
+                    ChatRow(row: chat.row, persona: chat.persona, members: chat.members, selected: chat.id == selected)
                 }
                 .buttonStyle(.plain)
                 if chat.id != chats.last?.id {

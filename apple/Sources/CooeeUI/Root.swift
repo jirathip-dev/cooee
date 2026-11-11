@@ -23,6 +23,12 @@ public struct AppRoot: View {
         .sheet(isPresented: Binding(get: { store.menu }, set: { store.send(.menu($0)) })) {
             AvatarMenu().presentationDetents([.medium, .large])
         }
+        .sheet(
+            isPresented: Binding(
+                get: { store.newRoom != nil }, set: { if !$0 { store.send(.newRoom(.delegate(.cancel))) } })
+        ) {
+            if let room = store.scope(state: \.newRoom, action: \.newRoom) { NewRoomScreen(store: room) }
+        }
         .environment(\.look, Look(palette: .farm(scheme)))
     }
 
@@ -34,7 +40,8 @@ public struct AppRoot: View {
         let actions = HomeActions(
             menu: { store.send(.menu(true)) },
             new: { store.send(.start($0)) },
-            open: { store.send(.open($0)) }
+            open: { store.send(.open($0)) },
+            room: { store.send(.room) }
         )
         let chats = home.state.chats(now: Date())
         if size == .compact {
@@ -52,7 +59,14 @@ public struct AppRoot: View {
 
     @ViewBuilder private func chat(back: Bool) -> some View {
         if let chat = store.scope(state: \.chat, action: \.chat) {
-            ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
+            if chat.room != nil {
+                RoomScreen(
+                    store: chat, back: back, persona: { store.send(.start($0)) }, onBack: { store.send(.back) }
+                )
+                .id(store.path.last)
+            } else {
+                ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
+            }
         } else if !back {
             Text("Pick a chat, or start one with +").foregroundStyle(.secondary).frame(maxHeight: .infinity)
         }

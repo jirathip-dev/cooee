@@ -58,3 +58,14 @@ Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the f
 
 - The CLI-only path (`scripts/install.sh`, `cooee setup` on Mac or Linux) prints the same pairing QR in the terminal (q962).
 - Terminal, Machines and the Conductor plugin's sheets (Queue, Events) are v2 (q955); only their entry points are drawn (`avatar-menu-*`, `chat-conductor-*`).
+
+## Rooms (#157, R4a, from the approved R0 design `docs/design/rooms/`)
+
+| PNG | matches | shows |
+|---|---|---|
+| `room-dark.png`, `room-light.png` | `room-390-*` | The room mid-round: the header's stack, name and `4 members · 6 turns max`; the member strip in room order (Chief *replied*, Coder *passed*, Researcher *replied*, Account Manager *replying*); attributed replies; Researcher's folded tools, "only you see these"; the round pill `Turn 4 of 6 · 2:14 of 10:00` with Stop. |
+| `room-create-dark.png`, `room-create-light.png` | `create-390-*` | New room from Home's `+`: the name, Members 4 of 5 numbered in room order with ≡ to reorder, Conductor offered, "A room holds 2 to 5.", the one-line cost note. |
+| `room-member-dark.png` | `member-390-dark` | Researcher's sheet over the room: In this room (3rd of 4, ≡), Runs on, Sees, May ask outside rooms, Open persona, Remove. The prose line cut in q1081 is not drawn. |
+| `room-home-dark.png` | `home-390-dark` | Rooms in Home's list as a 2×2 stack with `N members` (linked exchanges are R4c). |
+| `room-wide-dark.png` | `room-1440` | At 1440 the strip is the members pane: order, agent and machine, state, ≡ and drag to reorder, `+ Add a member`, the cost note. |
+| `room-terminal-dark.png`, `room-terminal-wide.png`, `room-scene-light.png` | `room-terminal-*`, `room-scene-*` | The same room in Terminal and Scene with the styles' existing avatars; the strip's own figures and Scene's farm strip are R4e. |

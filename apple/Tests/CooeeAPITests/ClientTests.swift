@@ -28,6 +28,11 @@ internal struct ClientTests {
         fileprivate let background: Bool
     }
 
+    private static let coder = APIPersona(
+        id: "coder", name: "Coder", agent: "fake-acp", model: "gpt-5.5", effort: "high", folder: "/w",
+        character: "Terse.", instructions: "Test first.", plugins: ["hello"], machine: "studio", canMessage: ["res"]
+    )
+
     @Test internal func threadsPersonasAndASliceDecodeAsDocumented() async throws {
         let server = CannedServer([
             "/threads": [try Fixture.answer("threads.json")],
@@ -38,15 +43,7 @@ internal struct ClientTests {
         let rows = try await client.threads()
         #expect(rows.map(\.id) == ["a1b2", "old"])
         #expect(rows[0].persona == "coder" && rows[0].unseen == 2 && rows[0].state == "working" && rows[1].archived)
-        let personas = try await client.personas()
-        #expect(
-            personas == [
-                APIPersona(
-                    id: "coder", name: "Coder", agent: "fake-acp", model: "gpt-5.5", effort: "high", folder: "/w",
-                    character: "Terse.", instructions: "Test first.", plugins: ["hello"]
-                )
-            ]
-        )
+        #expect(try await client.personas() == [Self.coder])
         let slice = try await client.messages("a1b2")
         #expect(slice.cursor == "boot.5" && slice.turn == Turn(text: "Hel", state: "working", note: "retrying"))
         #expect(slice.queue == [Queued(text: "Then open the PR", randomID: "q1")])

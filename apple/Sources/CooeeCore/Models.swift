@@ -14,6 +14,7 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
         case id, title, agent, persona, state, last, unseen, archived
         case updated = "at"
+        case roster = "members"
     }
 
     public let id: String
@@ -25,6 +26,9 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
     public let updated: Int64
     public let unseen: Int
     public let archived: Bool
+    private let roster: [String]?
+
+    public var members: [String] { roster ?? [] }
 
     public init(
         id: String,
@@ -35,7 +39,8 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         last: String,
         updated: Int64,
         unseen: Int,
-        archived: Bool
+        archived: Bool,
+        members: [String] = []
     ) {
         self.id = id
         self.title = title
@@ -46,10 +51,16 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         self.updated = updated
         self.unseen = unseen
         self.archived = archived
+        roster = members.isEmpty ? nil : members
     }
 }
 
 public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
+    private enum CodingKeys: String, CodingKey {
+        case id, name, agent, model, effort, folder, character, instructions, plugins, machine
+        case canMessage = "can_message"
+    }
+
     public let id: String
     public let name: String
     public let agent: String
@@ -59,6 +70,8 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
     public let character: String
     public let instructions: String
     public let plugins: [String]
+    public let machine: String
+    public let canMessage: [String]
 
     public init(
         id: String,
@@ -69,7 +82,9 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
         folder: String = "",
         character: String = "",
         instructions: String = "",
-        plugins: [String] = []
+        plugins: [String] = [],
+        machine: String = "",
+        canMessage: [String] = []
     ) {
         self.id = id
         self.name = name
@@ -80,12 +95,14 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
         self.character = character
         self.instructions = instructions
         self.plugins = plugins
+        self.machine = machine
+        self.canMessage = canMessage
     }
 }
 
 public struct APIItem: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
-        case id, kind, text, files, title, status, tool, plugin, block
+        case id, kind, text, files, title, status, tool, plugin, block, speaker
         case time = "at"
     }
 
@@ -99,6 +116,7 @@ public struct APIItem: Codable, Sendable, Equatable, Identifiable {
     public var tool: String?
     public var plugin: String?
     public var block: JSONValue?
+    public var speaker: String?
 
     public init(
         id: Int,
@@ -110,7 +128,8 @@ public struct APIItem: Codable, Sendable, Equatable, Identifiable {
         status: String? = nil,
         tool: String? = nil,
         plugin: String? = nil,
-        block: JSONValue? = nil
+        block: JSONValue? = nil,
+        speaker: String? = nil
     ) {
         self.id = id
         self.time = time
@@ -122,6 +141,7 @@ public struct APIItem: Codable, Sendable, Equatable, Identifiable {
         self.tool = tool
         self.plugin = plugin
         self.block = block
+        self.speaker = speaker
     }
 }
 
@@ -183,6 +203,8 @@ public enum StreamEvent: Sendable, Equatable {
     case text(String)
     case state(Turn)
     case queue([Queued])
+    case roomTurn(String)
+    case roomStop(String)
     case reset
 }
 

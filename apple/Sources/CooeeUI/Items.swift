@@ -19,6 +19,10 @@ internal struct ItemView: View {
             Text(text).ui(13, .regular, look).foregroundStyle(look.palette.mute).frame(maxWidth: .infinity)
         case .card(_, let poster, let block):
             BlockNode(block: block).environment(\.card, CardContext(poster: poster))
+        case .said(_, let speaker, let time, let blocks):
+            Said(speaker: speaker, time: time, blocks: blocks)
+        case .divider(_, let text):
+            RoundDivider(text: text)
         }
     }
 }
@@ -100,6 +104,7 @@ internal struct CodeBlock: View {
 
 internal struct ToolFold: View {
     @Environment(\.look) private var look
+    @Environment(\.members) private var members
     private let open = State(initialValue: false)
     internal let rows: [ToolRow]
 
@@ -124,17 +129,16 @@ internal struct ToolFold: View {
     private func row(_ last: ToolRow, count: Int) -> some View {
         let palette = look.palette
         return HStack(spacing: 8) {
-            if look.mono {
-                Text(last.running ? "o>_" : "[ok]").ui(13, .bold, look)
-                    .foregroundStyle(last.running ? palette.cyan : palette.green)
-            } else {
-                Image(systemName: last.running ? "gearshape.2.fill" : "checkmark.circle.fill")
-                    .font(.system(size: 13)).foregroundStyle(last.running ? palette.cyan : palette.green)
-            }
+            mark(last)
             Text(last.title).ui(13, .regular, look).foregroundStyle(palette.mute).lineLimit(1).truncationMode(.middle)
+                .layoutPriority(members.isEmpty ? 0 : 1)
+            if count > 0 && !members.isEmpty {
+                Text("· \(count) tools · only you see these").ui(13, .regular, look).foregroundStyle(palette.mute)
+                    .lineLimit(1)
+            }
             Spacer(minLength: 4)
             if count > 0 {
-                Text("\(count) tools").ui(12, .regular, look).foregroundStyle(palette.mute)
+                if members.isEmpty { Text("\(count) tools").ui(12, .regular, look).foregroundStyle(palette.mute) }
                 Image(systemName: open.wrappedValue ? "chevron.down" : "chevron.right").font(
                     .system(size: 10, weight: .bold)
                 )
@@ -146,6 +150,16 @@ internal struct ToolFold: View {
         .background(palette.card.opacity(look.mono ? 0 : 0.7), in: .rect(cornerRadius: look.mono ? 0 : 10))
         .overlay {
             if look.mono { Rectangle().strokeBorder(palette.line, lineWidth: 1) }
+        }
+    }
+
+    @ViewBuilder private func mark(_ last: ToolRow) -> some View {
+        let tint = last.running ? look.palette.cyan : look.palette.green
+        if look.mono {
+            Text(last.running ? "o>_" : "[ok]").ui(13, .bold, look).foregroundStyle(tint).fixedSize()
+        } else {
+            Image(systemName: last.running ? "gearshape.2.fill" : "checkmark.circle.fill")
+                .font(.system(size: 13)).foregroundStyle(tint)
         }
     }
 }

@@ -7,14 +7,14 @@ internal struct Composer: View {
     private let picking = State(initialValue: false)
     private let sending = State(initialValue: false)
     @FocusState private var typing: Bool
-    internal let persona: Persona
+    internal let hint: String
     internal var queued: [String] = []
     internal var draft = ""
     internal var attachments: [String] = []
     internal var actions = ChatActions()
 
     private var chips: [String] { actions.send == nil ? attachments : actions.files }
-    private var hint: String { queued.isEmpty ? "Message \(persona.name)" : "Queue a message" }
+    private var shown: String { queued.isEmpty ? hint : "Queue a message" }
 
     internal var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -41,11 +41,11 @@ internal struct Composer: View {
         let palette = look.palette
         return HStack {
             if let text = actions.draft {
-                TextField(hint, text: text, axis: .vertical).ui(16, .regular, look).lineLimit(1...5)
+                TextField(shown, text: text, axis: .vertical).ui(16, .regular, look).lineLimit(1...5)
                     .textFieldStyle(.plain).onSubmit(send).focused($typing)
                     .onChange(of: typing) { _, now in if !now && sending.wrappedValue { post() } }
             } else {
-                Text(draft.isEmpty ? hint : draft).ui(16, .regular, look)
+                Text(draft.isEmpty ? shown : draft).ui(16, .regular, look)
                     .foregroundStyle(draft.isEmpty ? palette.mute : palette.foreground)
             }
             Spacer()

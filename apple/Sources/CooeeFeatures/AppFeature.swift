@@ -8,6 +8,7 @@ public struct AppFeature: Sendable {
         public var home: HomeFeature.State?
         public var pairing: PairingFeature.State?
         public var chat: ChatFeature.State?
+        public var newRoom: NewRoomFeature.State?
         public var path: [String] = []
         public var menu = false
 
@@ -21,6 +22,8 @@ public struct AppFeature: Sendable {
         case home(HomeFeature.Action)
         case pairing(PairingFeature.Action)
         case chat(ChatFeature.Action)
+        case newRoom(NewRoomFeature.Action)
+        case room
         case open(String)
         case start(String)
         case back
@@ -47,6 +50,18 @@ public struct AppFeature: Sendable {
                 state.path = state.path.dropLast() + [thread]
                 state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
                 return .send(.home(.refresh))
+            case .room:
+                state.newRoom = state.home.map { NewRoomFeature.State(server: $0.server, personas: $0.personas) }
+                return .none
+            case .newRoom(.delegate(.created(let thread, let members))):
+                let title = state.newRoom?.title ?? ""
+                state.newRoom = nil
+                state.path = [thread]
+                state.chat = chat(state, thread, room: (title, members))
+                return .send(.home(.refresh))
+            case .newRoom(.delegate(.cancel)):
+                state.newRoom = nil
+                return .none
             default:
                 return navigate(&state, action)
             }
@@ -54,6 +69,7 @@ public struct AppFeature: Sendable {
         .ifLet(\.home, action: \.home) { HomeFeature() }
         .ifLet(\.pairing, action: \.pairing) { PairingFeature() }
         .ifLet(\.chat, action: \.chat) { ChatFeature() }
+        .ifLet(\.newRoom, action: \.newRoom) { NewRoomFeature() }
     }
 
     private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
@@ -78,8 +94,14 @@ public struct AppFeature: Sendable {
         return .none
     }
 
-    private func chat(_ state: State, _ id: String) -> ChatFeature.State? {
+    private func chat(_ state: State, _ id: String, room: (String, [String])? = nil) -> ChatFeature.State? {
         guard let home = state.home else { return nil }
+        let row = home.rows.first { $0.id == id && !$0.members.isEmpty }
+        if let (title, members) = room ?? row.map({ ($0.title, $0.members) }) {
+            let room = Room(title: title, members: members, cast: home.personas)
+            let persona = Persona(APIPersona(id: "", name: title, agent: ""))
+            return ChatFeature.State(server: home.server, target: .thread(id), persona: persona, room: room)
+        }
         if id.hasPrefix("new:") {
             guard let persona = home.persona(String(id.dropFirst(4))) else { return nil }
             return ChatFeature.State(server: home.server, target: .new(persona), persona: Persona(persona))
