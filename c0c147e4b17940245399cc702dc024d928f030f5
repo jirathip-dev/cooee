@@ -1,0 +1,8 @@
+Decided: just comments takes the TODO(#N) numbers from the checker's own lexer (comments.py --todos), not a raw grep over the source
+Because: ci/comments-test.sh:26
+Rejected: rewording the anti-slop Swift fixture so the grep misses it — the grep would still count any comment-shaped text in a string
+Decided: --todos reuses the same Lexer the rule check uses, so a string literal's "// TODO(#147)" is never a comment
+Because: scripts/comments.py:218
+Check: ci/comments-test.sh:26 fails unless --todos prints only 201 for a file with a TODO in a Swift multi-line string and one real TODO comment
+Check: the msrv job's comments step is green at the head
+Owner: the comment check no longer trips over a TODO written inside a test's text, so CI's comment step passes
