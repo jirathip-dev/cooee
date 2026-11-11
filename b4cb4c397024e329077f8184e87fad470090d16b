@@ -1,0 +1,5 @@
+Decided: merged origin/staging (#140); Live.swift keeps both sides' DependencyKey clients, LiveUITests runs the drover screens before the avatar menu.
+Because: apple/UITests/LiveUITests.swift:29
+Rejected: none
+Check: the e2e job passes and attaches persona-*, avatar-menu-* and staging's conductor/queue screenshots.
+Owner: The branch now includes the plugin-screens work from staging; the app itself is unchanged beyond that merge.
