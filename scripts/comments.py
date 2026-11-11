@@ -6,7 +6,8 @@ declaration: Rust `pub`, Swift `public`/`open`, TypeScript `export`, or a case, 
 enum, trait, protocol or interface; Rust's //! only on a crate root or a `pub mod`. Allowed: `// SAFETY: ...`,
 `// TODO(#N) ...` (`just comments` checks #N is open), Swift's `// swift-tools-version:` first line and Biome's
 `// biome-ignore <rule>: <reason>`.
-Exit 1 with `file:line: why` for each violation; paths default to `git ls-files`.
+Exit 1 with `file:line: why` for each violation; paths default to `git ls-files`. `--todos` prints the N of
+each `// TODO(#N)` comment instead.
 """
 import re
 import subprocess
@@ -214,10 +215,25 @@ def violations(path, src):
     return found
 
 
-def main(paths):
+def todos(paths):
+    numbers = set()
+    for path in paths:
+        with open(path, encoding="utf-8") as f:
+            src = f.read()
+        lexer = Lexer(src, EXTS["." + path.rsplit(".", 1)[-1]])
+        lexer.code(0)
+        numbers |= {m.group(1) for s, e in lexer.comments for m in [re.match(r"// TODO\(#([0-9]+)\)", src[s:e])] if m}
+    print("\n".join(sorted(numbers, key=int)))
+    return 0
+
+
+def main(args):
+    paths = [a for a in args if a != "--todos"]
     if not paths:
         out = subprocess.run(["git", "ls-files", *("*" + e for e in EXTS)], capture_output=True, text=True, check=True)
         paths = out.stdout.split()
+    if "--todos" in args:
+        return todos(paths)
     found = []
     for path in paths:
         with open(path, encoding="utf-8") as f:

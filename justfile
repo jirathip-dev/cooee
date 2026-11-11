@@ -38,7 +38,7 @@ neutral:
 comments:
     scripts/comments.py
     ci/comments-test.sh
-    for n in $(git ls-files '*.rs' '*.swift' '*.ts' '*.js' '*.mjs' | xargs grep -ohE '// TODO\(#[0-9]+\)' | tr -dc '0-9\n' | sort -u); do test "$(gh issue view "$n" --json state -q .state)" = OPEN || { echo "TODO(#$n): issue #$n is not open"; exit 1; }; done
+    for n in $(scripts/comments.py --todos); do test "$(gh issue view "$n" --json state -q .state)" = OPEN || { echo "TODO(#$n): issue #$n is not open"; exit 1; }; done
 
 # The theme gate (docs/themes.md) on the first-party packs and the starter.
 themes:
