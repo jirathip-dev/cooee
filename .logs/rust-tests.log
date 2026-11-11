@@ -1,0 +1,35 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-252/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.08s
+     Running tests/pairing.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-252/debug/deps/pairing-b756295eb6eb4589)
+
+running 17 tests
+test a_foreign_host_or_origin_is_refused_even_paired ... ok
+test a_report_is_kept_and_listed ... ok
+test push_subscriptions_are_checked_and_tied_to_the_device ... ok
+test a_declined_request_tells_the_new_device_who_said_no ... ok
+test a_qr_code_is_prefilled_and_pairs_at_once ... ok
+test pair_use_remove_and_only_the_hash_on_disk ... ok
+test devices_are_listed_and_removed_from_the_phone ... ok
+test alerts_status_test_and_off_are_this_devices ... ok
+test five_wrong_codes_a_minute_close_the_boxes_for_that_address ... ok
+test the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it ... ok
+test a_wrong_expired_or_reused_code_says_so ... ok
+test the_mac_declines_a_request_from_the_cli ... ok
+test the_new_calls_need_a_paired_device_but_pairing_requests_do_not ... ok
+test a_passkey_signs_a_device_back_in_and_can_be_removed ... ok
+test unpaired_reads_and_writes_are_refused ... ok
+test the_mac_lists_and_approves_a_request_from_the_cli ... ok
+test a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.84s
+
+     Running tests/themes.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-252/debug/deps/themes-904cc3b997db5b83)
+
+running 4 tests
+test check_passes_the_first_party_packs_and_fails_a_broken_one ... ok
+test a_pack_with_a_symlink_is_never_installed_or_served ... ok
+test remix_preview_keep_and_publish_from_the_phone ... ok
+test add_remove_and_list_with_the_lock ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.26s
+
