@@ -1,0 +1,41 @@
+unpaired / -> /pair
+paired -> /
+390 agents ok
+390 new ok
+390 new: model options = ["model: default","model: opus","model: sonnet","model: opus-2","model: sonnet-2"]
+390 chat ok
+390 settings ok
+390 providers row: fake-390 main login signed out sign in
+390 providers row: fake-390 lab@example.com ✓ signed in 5h 12% · 7d 40% · read now sign out
+390 providers row: fake-390 work@example.com ✓ signed in 5h 12% · 7d 40% · read now sign out
+390 providers row: fake-390 + account
+390 providers row: fake-1440 main login signed out sign in
+390 providers row: fake-1440 + account
+390 providers ok
+390 fake-390 main state before: signed out
+390 login link: https://login.example.com/device?client_id=cooee-390
+390 signin-panel ok
+390 fake-390 main state after: ✓ signed in
+390 signed-in ok
+390 plugin-hello ok
+390 plugin-machines ok
+1440 agents ok
+1440 new ok
+1440 new: model options = ["model: default","model: opus","model: sonnet","model: opus-2","model: sonnet-2"]
+1440 chat ok
+1440 settings ok
+1440 providers row: fake-390 main login ✓ signed in sign out
+1440 providers row: fake-390 lab@example.com ✓ signed in 5h 12% · 7d 40% · read now sign out
+1440 providers row: fake-390 work@example.com ✓ signed in 5h 12% · 7d 40% · read now sign out
+1440 providers row: fake-390 + account
+1440 providers row: fake-1440 main login signed out sign in
+1440 providers row: fake-1440 + account
+1440 providers ok
+1440 fake-1440 main state before: signed out
+1440 login link: https://login.example.com/device?client_id=cooee-1440
+1440 signin-panel ok
+1440 fake-1440 main state after: ✓ signed in
+1440 signed-in ok
+1440 plugin-hello ok
+1440 plugin-machines ok
+console/network problems: 0
