@@ -1,0 +1,9 @@
+Decided: Modern row figures are the farm pack's row sprites, rasterised to row-<state|tool>.png beside the horses
+Because: docs/design/queue-scene/README.md:13
+Decided: a working lane picks its tool's sprite (read, run), any other tool falls back to edit
+Because: apple/Sources/CooeeUI/BlockRows.swift:125
+Decided: a 64x360 queue-figures-modern-dark frame, so a regression to dots exceeds the snapshot tolerance
+Because: apple/Tests/CooeeUITests/SnapshotTests.swift:43
+Rejected: relying on the full queue frames alone — the figures are ~0.1% of a 402x874 frame, under the 2.5% tolerance
+Check: SnapshotTests pass on CI for the ten queue-* frames, and the e2e queue shots show farm figures, not dots
+Owner: In the Modern look, Queue rows now show the farm figures from the approved design instead of coloured dots.
