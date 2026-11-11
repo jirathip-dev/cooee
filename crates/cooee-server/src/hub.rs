@@ -1132,7 +1132,8 @@ impl Hub {
     /// again). The message is stored only once shed took it; the agent gets the files' paths under its text.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a closed thread or an empty message; [`HubError::Shed`] when shed fails.
+    /// [`HubError::Refused`] for a closed thread, an empty message or a stopped agent; [`HubError::Shed`] when shed
+    /// fails.
     pub fn send(
         &self,
         id: &str,
@@ -1296,9 +1297,16 @@ impl Hub {
         })
     }
 
-    /// Sends `q` to the agent, `before` ahead of it, then stores and publishes it.
+    /// Sends `q` to the agent, `before` ahead of it, then stores and publishes it; refused when the agent stopped,
+    /// whose session would drop it (#253).
     fn deliver(&self, live: &mut Live, q: Queued, before: &str) -> Result<Item, HubError> {
         let start = Instant::now();
+        let runs = |t: TerminalInfo| t.state == shed_proto::State::Running;
+        if live.chat.turn.state == "ended" && !self.shed.get(&live.meta.terminal).is_ok_and(runs) {
+            return Err(HubError::Refused(
+                "the agent stopped, so it can't take the message".to_owned(),
+            ));
+        }
         // After Use a folder…, the hand-over goes once ahead of the next message.
         let before = if before.trim().is_empty() {
             live.meta.handover.clone()
@@ -2140,18 +2148,65 @@ impl Hub {
         self.grant_of(s, pick.tools).map_err(HubError::Refused)
     }
 
-    /// An agent's `remember` in thread `id` (#126): a note by the thread's persona, for its next sessions.
+    /// An agent's `remember` in thread `id` (#126, #216): an edit of its persona's notes, for its next sessions; the
+    /// answer names the note's id and the characters used.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an empty note.
-    pub fn remember(&self, id: &str, token: &str, text: &str) -> Result<personas::Note, HubError> {
+    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an edit refused.
+    pub fn remember(&self, id: &str, token: &str, e: &personas::Edit) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
         let found = personas::list(self.config_dir(), &self.data)
             .into_iter()
             .find(|p| p.id == meta.profile);
         let p = found.ok_or_else(|| HubError::Refused(format!("thread {id} has no persona")))?;
-        personas::remember(&self.data, &p.id, "persona", text, now())
-            .map_err(|e| HubError::Refused(e.to_string()))
+        let kept = personas::remember(&self.data, &p.id, "persona", e, now())
+            .map_err(|e| HubError::Refused(e.to_string()))?;
+        let used = personas::used(&personas::notes(&self.data, &p.id));
+        let what = kept.map_or_else(|| "Forgotten".to_owned(), |n| format!("Kept as [{}]", n.id));
+        Ok(format!(
+            "{what}; {used} of {} characters used.",
+            personas::CAP
+        ))
+    }
+
+    /// An agent's `history` in thread `id` (#217): a search of its persona's threads (`query`, at most `limit`
+    /// hits), or a page of one of them (`thread`, before item `before`).
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or a thread of another persona.
+    pub fn history(
+        &self,
+        (id, token): (&str, &str),
+        (query, limit): (&str, usize),
+        thread: &str,
+        before: Option<u64>,
+    ) -> Result<String, HubError> {
+        let meta = self.token_of(id, token)?;
+        let persona = personas::find(self.config_dir(), &self.data, &meta.profile)
+            .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
+        let refused = |e: cooee_core::StoreError| HubError::Refused(e.to_string());
+        if thread.is_empty() && query.trim().is_empty() {
+            return Err(HubError::Refused("give a query or a thread".to_owned()));
+        }
+        if thread.is_empty() {
+            let mine: Vec<String> = self
+                .all()
+                .iter()
+                .map(|l| lock(l).meta.clone())
+                .filter(|m| m.profile == persona.id)
+                .map(|m| m.id)
+                .collect();
+            return cooee_core::history::search(&self.store, &mine, query, limit).map_err(refused);
+        }
+        match self.thread(thread) {
+            Ok((t, _)) if t.profile == persona.id => {
+                cooee_core::history::read(&self.store, thread, before).map_err(refused)
+            }
+            _ => Err(HubError::Refused(format!(
+                "thread {thread} isn't one of {}'s",
+                persona.id
+            ))),
+        }
     }
 
     /// An agent's `propose_server` in thread `id`: a card with the exact command or URL; nothing runs, and the
