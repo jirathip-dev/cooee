@@ -2054,18 +2054,25 @@ impl Hub {
         self.grant_of(s, pick.tools).map_err(HubError::Refused)
     }
 
-    /// An agent's `remember` in thread `id` (#126): a note by the thread's persona, for its next sessions.
+    /// An agent's `remember` in thread `id` (#126, #216): an edit of its persona's notes, for its next sessions; the
+    /// answer names the note's id and the characters used.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an empty note.
-    pub fn remember(&self, id: &str, token: &str, text: &str) -> Result<personas::Note, HubError> {
+    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an edit refused.
+    pub fn remember(&self, id: &str, token: &str, e: &personas::Edit) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
         let found = personas::list(self.config_dir(), &self.data)
             .into_iter()
             .find(|p| p.id == meta.profile);
         let p = found.ok_or_else(|| HubError::Refused(format!("thread {id} has no persona")))?;
-        personas::remember(&self.data, &p.id, "persona", text, now())
-            .map_err(|e| HubError::Refused(e.to_string()))
+        let kept = personas::remember(&self.data, &p.id, "persona", e, now())
+            .map_err(|e| HubError::Refused(e.to_string()))?;
+        let used = personas::used(&personas::notes(&self.data, &p.id));
+        let what = kept.map_or_else(|| "Forgotten".to_owned(), |n| format!("Kept as [{}]", n.id));
+        Ok(format!(
+            "{what}; {used} of {} characters used.",
+            personas::CAP
+        ))
     }
 
     /// An agent's `history` in thread `id` (#217): a search of its persona's threads (`query`, at most `limit`

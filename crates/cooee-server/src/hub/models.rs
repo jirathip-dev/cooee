@@ -73,12 +73,12 @@ impl Hub {
             let persona = personas::list(self.config_dir(), &self.data).into_iter();
             let persona = persona.filter(|p| p.id == live.meta.profile && p.model == pick);
             for p in persona {
-                if !personas::notes(&self.data, &p.id)
-                    .iter()
-                    .any(|n| n.text == text)
-                {
-                    let noted = personas::remember(&self.data, &p.id, "owner", &text, now());
-                    noted.map_err(|e| HubError::Refused(e.to_string()))?;
+                let e = personas::Edit {
+                    text: Some(text.clone()),
+                    ..personas::Edit::default()
+                };
+                if let Err(e) = personas::remember(&self.data, &p.id, "owner", &e, now()) {
+                    eprintln!("cooee: persona {}: {e}", p.id);
                 }
             }
         }
