@@ -1,0 +1,13 @@
+Decided: a `scene` block the app draws only in the Scene look, plus `rounds` on rows that fold open in place
+Because: "In Modern and Terminal it is not shown (or falls back to rows); the app picks the art from the theme"
+Decided: the refused/fail horse gets its own pose at a fence in the farm pack, re-rasterised to the five fail PNGs
+Because: q1244
+Decided: a row opens by itself when its current round needs you; otherwise the tap toggles it per row
+Because: docs/design/queue-scene/README.md:83
+Decided: a `tap: {thread}` closes the sheet and opens that chat through AppFeature.open
+Rejected: pushing the chat inside the sheet — needs a chat feature nested in the screen feature; a follow-up
+Decided: snapshot PNGs recorded with a scratch CLT build of CooeeUI's TCA-free files on the MacOSX26 SDK
+Because: apple/Tests/CooeeUITests/SnapshotTests.swift:49
+Check: SnapshotTests pass on CI for the nine queue-* frames, and the e2e simulator-shots hold queue-row-open
+Check: the e2e drover now serves docs/design/queue-scene/fixtures (scene block, rounds, its own stream)
+Owner: Queue shows a horse per lane in Scene, rows fold open to their rounds, and the refused horse has its own pose.
