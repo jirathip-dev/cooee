@@ -1,0 +1,21 @@
+
+> check
+> tsc -p ts && tsc -p ts/tsconfig.sw.json && biome check ts
+
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-201/web/biome.json:5:13 deserialize  DEPRECATED  ━━━━━━━━━━
+
+  i The use of the recommended field has been deprecated, and will removed in the next major version of Biome. Use preset instead.
+  
+    3 │   "files": { "includes": ["ts/**/*.ts", "ts/**/*.json"] },
+    4 │   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
+  > 5 │   "linter": { "rules": { "recommended": true, "suspicious": { "noExplicitAny": "error" } } }
+      │             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    6 │ }
+    7 │ 
+  
+  i Migrate the configuration with the proper command
+  
+  $ biome migrate
+  
+
+Checked 8 files in 51ms. No fixes applied.

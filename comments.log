@@ -1,0 +1,7 @@
+crates/cooee-core/src/history.rs:14: doc comment on a non-public item: /// Item `i`'s text if it is the owner's message or a final reply, on one line, redacted, and who said it.
+crates/cooee-core/src/history.rs:28: doc comment on a non-public item: /// The UTC date of `ms` Unix milliseconds, `YYYY-MM-DD`.
+crates/cooee-core/src/history.rs:58: comment: // Only a file whose raw bytes hold every word is parsed; a word JSON escapes can't be looked for that way.
+crates/cooee/tests/history.rs:36: doc comment on a non-public item: /// A thread of `persona`'s started with `text`, its first reply in.
+crates/cooee/tests/history.rs:61: doc comment on a non-public item: /// `history` called by thread `id`'s agent through cooee's own MCP server: the tool's text and whether it is an
+crates/cooee/tests/history.rs:62: doc comment on a non-public item: /// error.
+comments break the rule (#201): say it in a name, a type or a test; /// only on public API
