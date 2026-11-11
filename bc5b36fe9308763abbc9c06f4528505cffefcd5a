@@ -1,0 +1,12 @@
+Decided: each provider is one module in crates/cooee-core/src/providers/ behind trait Provider; the registry is one macro line
+Because: crates/cooee-core/src/providers/mod.rs:1
+Decided: Claude's JSON status, /usage parser and token scrub move to claude.rs; a configured fake gets them only with base = "claude"
+Because: crates/cooee-core/src/providers/claude.rs:40
+Decided: codex.rs and gemini.rs build Plain instead of a struct whose only method is spec(); same behaviour, fewer lines
+Rejected: one struct per provider with spec() only — no behaviour to hold, so it is dead weight until a hook is needed
+Decided: token files come from any provider's token_var(), not a hard-coded provider name
+Because: crates/cooee/src/accounts.rs:77
+Check: scripts/neutral-core.sh exits 0 at the head and ci/neutral-core-test.sh shows it failing on a provider name in web/src and crates/x/src
+Check: providers::fake::tests::a_new_file_and_one_registry_line_is_a_provider passes: a new file plus one registry line is a provider
+Check: tests/setup.rs fails locally only when the OS ephemeral port is above 64535 (port + 1000 overflow, pre-existing)
+Owner: providers each live in their own file and the core no longer names any; sign-in, accounts and usage work as before
