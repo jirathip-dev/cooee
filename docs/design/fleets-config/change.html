@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · fleets config (#184): review changes, a stale edit, proposals</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../screens-as-data/sd.css">
+<script type="module" src="../screens-as-data/sd.js"></script>
+</head>
+<body>
+<!-- #184: drover's Fleets screens as #125 blocks (fixtures/*.json), drawn by screens-as-data's one renderer over the
+     Conductor chat, as drover's Queue is. ?f=<frame>&mode=dark|light&style=modern|terminal|scene. -->
+<div class="gal">
+<div class="fr"><p class="cap">Review changes · the diff, Apply</p>
+<section class="ph" data-f="review"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/review.json"></div></section></div>
+
+<div class="fr"><p class="cap">Stale · the file changed meanwhile: review again</p>
+<section class="ph" data-f="stale"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/stale.json"></div></section></div>
+
+<div class="fr"><p class="cap">Proposals · cards in the Conductor chat (Asks)</p>
+<section class="ph" data-f="proposal"><div data-host="chat" data-chat="fixtures/chat.json"></div></section></div>
+
+<div class="fr w"><p class="cap">Mac · Review changes</p>
+<section class="wd mac" data-f="wide-review" data-host="chat" data-wide="1" data-chat="fixtures/chat.json" data-screen="fixtures/review.json"></section></div>
+
+</div>
+</body>
+</html>

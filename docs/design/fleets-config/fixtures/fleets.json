@@ -1,0 +1,221 @@
+{
+ "type": "screen",
+ "id": "fleets",
+ "title": "Fleets",
+ "back": "Queue",
+ "blocks": [
+  {
+   "type": "section",
+   "header": "proposals · 1",
+   "blocks": [
+    {
+     "type": "card",
+     "kind": "proposal",
+     "id": "c12",
+     "title": "synergy · serial_max 3 → 6",
+     "meta": "now",
+     "subtitle": "Conductor · thread t55",
+     "blocks": [
+      {
+       "type": "text",
+       "markdown": "**Why:** #3300's migration waits behind three serial issues; you said 6 until it merges (q880)."
+      },
+      {
+       "type": "diff",
+       "file": "[fleet.synergy]",
+       "summary": "valid ✓",
+       "hunks": [
+        {
+         "at": "@@ 42 @@",
+         "lines": [
+          "- serial_max = 3",
+          "+ serial_max = 6   # c12 · q880"
+         ]
+        }
+       ]
+      },
+      {
+       "type": "choice",
+       "id": "c12-a",
+       "options": [
+        {
+         "value": "apply",
+         "label": "Apply"
+        },
+        {
+         "value": "discard",
+         "label": "Discard"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "fleets · 6",
+   "footer": "Pause stops new lanes; live ones finish. Drive runs every 5 min on mini.",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "id": "f-synergy",
+       "figure": {
+        "state": "working",
+        "coat": "ch"
+       },
+       "title": "synergy",
+       "subtitle": "4 lanes · synergy-apps",
+       "button": {
+        "label": "Pause"
+       },
+       "tap": {
+        "sheet": "/screens/fleets/synergy"
+       }
+      },
+      {
+       "type": "row",
+       "id": "f-cooee",
+       "figure": {
+        "state": "working",
+        "coat": "wht"
+       },
+       "title": "cooee",
+       "subtitle": "3 lanes · cooee",
+       "button": {
+        "label": "Pause"
+       },
+       "tap": {
+        "sheet": "/screens/fleets/cooee"
+       }
+      },
+      {
+       "type": "row",
+       "id": "f-herdsman",
+       "figure": {
+        "state": "working",
+        "coat": "bay"
+       },
+       "title": "herdsman",
+       "subtitle": "2 lanes · herdsman",
+       "button": {
+        "label": "Pause"
+       },
+       "tap": {
+        "sheet": "/screens/fleets/herdsman"
+       }
+      },
+      {
+       "type": "row",
+       "id": "f-berth",
+       "figure": {
+        "state": "working",
+        "coat": "gry"
+       },
+       "title": "berth",
+       "subtitle": "no lanes · shed",
+       "button": {
+        "label": "Pause"
+       },
+       "tap": {
+        "sheet": "/screens/fleets/berth"
+       }
+      },
+      {
+       "type": "row",
+       "id": "f-drover",
+       "figure": {
+        "state": "idle",
+        "coat": "blk"
+       },
+       "title": "cooee-drover",
+       "subtitle": {
+        "text": "paused · 2 queued",
+        "tone": "warn"
+       },
+       "button": {
+        "label": "Resume",
+        "tone": "ok"
+       },
+       "tap": {
+        "sheet": "/screens/fleets/cooee-drover"
+       }
+      },
+      {
+       "type": "row",
+       "id": "f-sendmeter",
+       "figure": {
+        "state": "idle",
+        "coat": "bay"
+       },
+       "title": "sendmeter",
+       "subtitle": {
+        "text": "paused · queue empty",
+        "tone": "warn"
+       },
+       "button": {
+        "label": "Resume",
+        "tone": "ok"
+       },
+       "tap": {
+        "sheet": "/screens/fleets/sendmeter"
+       }
+      }
+     ]
+    },
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "id": "add",
+       "title": "+ Add a repo",
+       "style": "link",
+       "tap": {
+        "sheet": "/screens/fleets/new"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "every fleet",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "id": "global",
+       "figure": {
+        "icon": "⚙"
+       },
+       "title": "Global settings",
+       "subtitle": "accounts, hosts, limits, notify, conductor",
+       "tap": {
+        "sheet": "/screens/fleets/global"
+       }
+      },
+      {
+       "type": "row",
+       "id": "text",
+       "figure": {
+        "icon": "{}"
+       },
+       "title": "Edit fleet.toml as text",
+       "subtitle": "~/.config/herdsman/fleet.toml",
+       "tap": {
+        "sheet": "/screens/fleets/text"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,220 @@
+{
+ "type": "screen",
+ "id": "global",
+ "title": "Global settings",
+ "back": "Fleets",
+ "blocks": [
+  {
+   "type": "section",
+   "header": "accounts",
+   "footer": "Usage and sign-in as in Settings (#183). Each role uses them in its own order.",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "figure": {
+        "icon": "A"
+       },
+       "title": "A · Claude Max",
+       "subtitle": "5h 42% · week 61%",
+       "badge": {
+        "text": "in use",
+        "tone": "ok"
+       },
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "figure": {
+        "icon": "B"
+       },
+       "title": "B · Claude Max",
+       "subtitle": {
+        "text": "capped · resets 14:00",
+        "tone": "warn"
+       },
+       "badge": {
+        "text": "capped",
+        "tone": "warn"
+       },
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "figure": {
+        "icon": "C"
+       },
+       "title": "C · Claude Pro",
+       "subtitle": "5h 8% · week 22%",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "title": "+ Sign in another account",
+       "style": "link",
+       "tap": {}
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "hosts",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "figure": {
+        "state": "working",
+        "coat": "wht"
+       },
+       "title": "mini",
+       "subtitle": "main · 2 roots · 9 lanes",
+       "value": "on",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "figure": {
+        "state": "idle",
+        "coat": "gry"
+       },
+       "title": "air",
+       "subtitle": "small · shed-acp",
+       "value": "off",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "figure": {
+        "state": "idle",
+        "coat": "blk"
+       },
+       "title": "boat1",
+       "subtitle": "cloud · $40/month · 6 h/day",
+       "value": "off",
+       "tap": {}
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "limits",
+   "blocks": [
+    {
+     "type": "form",
+     "id": "limits",
+     "fields": [
+      {
+       "type": "picker",
+       "name": "limits.review_rounds",
+       "label": "Review rounds",
+       "value": "6",
+       "doc": "then the issue needs you",
+       "options": [
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "8"
+       ]
+      },
+      {
+       "type": "picker",
+       "name": "limits.stall_minutes",
+       "label": "Stall after",
+       "value": "30 min",
+       "options": []
+      },
+      {
+       "type": "picker",
+       "name": "limits.worktree_budget_gb",
+       "label": "Worktrees",
+       "value": "80 GB",
+       "doc": "then drive frees idle build folders",
+       "options": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "notify",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "figure": {
+        "icon": "!"
+       },
+       "title": "Web push",
+       "subtitle": "paired devices · every fleet",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "title": "+ Add a notifier",
+       "style": "link",
+       "tap": {}
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "conductor may",
+   "footer": "Anything outside these groups is a card for you.",
+   "blocks": [
+    {
+     "type": "form",
+     "id": "groups",
+     "fields": [
+      {
+       "type": "toggle",
+       "name": "conductor.queue",
+       "label": "Queue and order",
+       "value": true
+      },
+      {
+       "type": "toggle",
+       "name": "conductor.spawn",
+       "label": "Spawn lanes",
+       "value": true
+      },
+      {
+       "type": "toggle",
+       "name": "conductor.answer",
+       "label": "Answer routine asks",
+       "value": true
+      },
+      {
+       "type": "toggle",
+       "name": "conductor.propose",
+       "label": "Propose config",
+       "value": true,
+       "doc": "you apply it"
+      },
+      {
+       "type": "toggle",
+       "name": "conductor.merge",
+       "label": "Merge",
+       "value": false
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

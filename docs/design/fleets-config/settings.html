@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · fleets config (#184): a fleet's settings, a role, edit as text, remove</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../screens-as-data/sd.css">
+<script type="module" src="../screens-as-data/sd.js"></script>
+</head>
+<body>
+<!-- #184: drover's Fleets screens as #125 blocks (fixtures/*.json), drawn by screens-as-data's one renderer over the
+     Conductor chat, as drover's Queue is. ?f=<frame>&mode=dark|light&style=modern|terminal|scene. -->
+<div class="gal">
+<div class="fr"><p class="cap">cooee's settings · grouped, two changes pending</p>
+<section class="ph" data-f="fleet"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/fleet.json"></div></section></div>
+
+<div class="fr"><p class="cap">cooee's settings · scrolled to the end</p>
+<section class="ph" data-f="fleet-end" data-scroll="560"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/fleet.json"></div></section></div>
+
+<div class="fr"><p class="cap">A role · native pickers from herdsman's values, accounts in order (drag)</p>
+<section class="ph" data-f="role"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/role.json"></div></section></div>
+
+<div class="fr"><p class="cap">Edit as text · errors inline</p>
+<section class="ph" data-f="text"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/text.json"></div></section></div>
+
+<div class="fr"><p class="cap">Remove a repo · what goes, what stays</p>
+<section class="ph" data-f="remove" data-scroll="560"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/fleet.json" data-confirm="rm-cooee"></div></section></div>
+
+<div class="fr w"><p class="cap">Mac · a fleet's settings</p>
+<section class="wd mac" data-f="wide-fleet" data-host="chat" data-wide="1" data-chat="fixtures/chat.json" data-screen="fixtures/fleet.json"></section></div>
+
+</div>
+</body>
+</html>
