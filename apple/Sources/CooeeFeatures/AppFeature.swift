@@ -7,14 +7,18 @@ public struct AppFeature: Sendable {
     public struct State: Equatable {
         public var home: HomeFeature.State?
         public var pairing: PairingFeature.State?
+        public var setup: MacSetupFeature.State?
         public var chat: ChatFeature.State?
         public var path: [String] = []
         public var menu: MenuFeature.State
         @Presents public var persona: PersonaFeature.State?
+        public let mac: Bool
 
-        public init(server: Server?, settings: Settings = Settings()) {
+        public init(server: Server?, settings: Settings = Settings(), mac: Bool = false) {
+            self.mac = mac
             home = server.map(HomeFeature.State.init)
-            pairing = server == nil ? PairingFeature.State() : nil
+            pairing = server == nil && !mac ? PairingFeature.State() : nil
+            setup = server == nil && mac ? MacSetupFeature.State() : nil
             menu = MenuFeature.State(server: server, settings: settings)
         }
     }
@@ -22,6 +26,8 @@ public struct AppFeature: Sendable {
     public enum Action: Sendable {
         case home(HomeFeature.Action)
         case pairing(PairingFeature.Action)
+        case setup(MacSetupFeature.Action)
+        case setUpHere
         case chat(ChatFeature.Action)
         case menu(MenuFeature.Action)
         case persona(PresentationAction<PersonaFeature.Action>)
@@ -41,12 +47,20 @@ public struct AppFeature: Sendable {
         Scope(state: \.menu, action: \.menu) { MenuFeature() }
         Reduce { state, action in
             switch action {
-            case .pairing(.delegate(.paired(let server))):
-                state = State(server: server, settings: state.menu.settings)
+            case .pairing(.delegate(.paired(let server))), .setup(.delegate(.paired(let server))):
+                state = State(server: server, settings: state.menu.settings, mac: state.mac)
                 return .none
             case .home(.delegate(.unauthorized)):
                 serverStore.clear()
-                state = State(server: nil, settings: state.menu.settings)
+                state = State(server: nil, settings: state.menu.settings, mac: state.mac)
+                return .none
+            case .setup(.delegate(.clientOnly)):
+                state.setup = nil
+                state.pairing = PairingFeature.State()
+                return .none
+            case .setUpHere:
+                state.pairing = nil
+                state.setup = MacSetupFeature.State()
                 return .none
             case .persona(.presented(.delegate(.saved))):
                 state.persona = nil
@@ -61,6 +75,7 @@ public struct AppFeature: Sendable {
         }
         .ifLet(\.home, action: \.home) { HomeFeature() }
         .ifLet(\.pairing, action: \.pairing) { PairingFeature() }
+        .ifLet(\.setup, action: \.setup) { MacSetupFeature() }
         .ifLet(\.chat, action: \.chat) { ChatFeature() }
         .ifLet(\.$persona, action: \.persona) { PersonaFeature() }
     }

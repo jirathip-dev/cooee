@@ -83,6 +83,23 @@ internal struct AppFeatureTests {
         }
     }
 
+    @Test internal func anUnpairedMacSetsItselfUpOrConnectsElsewhere() async {
+        let store = store(AppFeature.State(server: nil, mac: true))
+        #expect(store.state.setup == MacSetupFeature.State() && store.state.pairing == nil)
+        await store.send(.setup(.connectElsewhere))
+        await store.receive(\.setup.delegate.clientOnly) {
+            $0.setup = nil
+            $0.pairing = PairingFeature.State()
+        }
+        await store.send(.setUpHere) {
+            $0.pairing = nil
+            $0.setup = MacSetupFeature.State()
+        }
+        await store.send(.setup(.delegate(.paired(mini)))) { $0 = AppFeature.State(server: mini, mac: true) }
+        await store.send(.home(.delegate(.unauthorized))) { $0 = AppFeature.State(server: nil, mac: true) }
+        #expect(store.state.setup != nil)
+    }
+
     @Test internal func withoutHomeNoChatOrPersonaOpens() async {
         let store = store(AppFeature.State(server: nil))
         await store.send(.open("t1")) { $0.path = ["t1"] }

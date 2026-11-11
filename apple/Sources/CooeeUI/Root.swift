@@ -16,8 +16,14 @@ public struct AppRoot: View {
         Group {
             if let home = store.scope(state: \.home, action: \.home) {
                 content(home).task { await home.send(.task).finish() }
+            } else if let setup = store.scope(state: \.setup, action: \.setup) {
+                MacSetup(store: setup)
             } else if let pairing = store.scope(state: \.pairing, action: \.pairing) {
-                PhoneOnboarding(store: pairing)
+                if store.mac && [.welcome, .nearby, .address].contains(pairing.step) {
+                    MacConnect(store: pairing) { store.send(.setUpHere) }
+                } else {
+                    PhoneOnboarding(store: pairing)
+                }
             }
         }
         .sheet(isPresented: Binding(get: { store.menu.open }, set: { store.send(.menu(.open($0))) })) {

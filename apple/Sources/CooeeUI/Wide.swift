@@ -1,8 +1,12 @@
+import ComposableArchitecture
 import CooeeCore
+import CooeeFeatures
 import SwiftUI
 
 public struct MacConnect: View {
     @Environment(\.look) private var look
+    private let store: StoreOf<PairingFeature>?
+    private let setUp: () -> Void
 
     public var body: some View {
         let palette = look.palette
@@ -16,14 +20,17 @@ public struct MacConnect: View {
                 HStack(alignment: .top, spacing: 18) {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("NEARBY").ui(11, .semibold, look).foregroundStyle(palette.mute)
-                        NearbyList()
+                        NearbyList(store: store) { store?.send(.connect($0)) }
                     }
                     address
                 }
                 .frame(maxWidth: 760)
                 Spacer()
-                Text("Want this Mac to be the server? Set it up instead").ui(13, .regular, look)
-                    .foregroundStyle(palette.link)
+                Button(action: setUp) {
+                    Text("Want this Mac to be the server? Set it up instead").ui(13, .regular, look)
+                        .foregroundStyle(palette.link)
+                }
+                .buttonStyle(.plain)
             }
             .padding(36)
         }
@@ -34,7 +41,7 @@ public struct MacConnect: View {
         let palette = look.palette
         return VStack(alignment: .leading, spacing: 10) {
             Text("ADDRESS").ui(11, .semibold, look).foregroundStyle(palette.mute)
-            AddressField()
+            AddressField(store: store) { store?.send(.connect($0)) }
             HStack(spacing: 8) {
                 Image(systemName: "qrcode.viewfinder").foregroundStyle(palette.link)
                 Text("Scan its QR with this Mac's camera").ui(14, .regular, look).foregroundStyle(palette.link)
@@ -43,7 +50,15 @@ public struct MacConnect: View {
         }
     }
 
-    public init() {}
+    public init() {
+        store = nil
+        setUp = {}
+    }
+
+    public init(store: StoreOf<PairingFeature>, setUp: @escaping () -> Void) {
+        self.store = store
+        self.setUp = setUp
+    }
 }
 
 public struct WideView<Detail: View>: View {

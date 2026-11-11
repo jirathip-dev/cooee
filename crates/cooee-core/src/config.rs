@@ -8,7 +8,7 @@ use std::{
 
 use serde::Deserialize;
 
-use crate::Provider;
+use crate::{Spec, provider};
 
 /// cooee's settings, read from `config.toml`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -29,8 +29,8 @@ pub struct Config {
     pub shed_dir: Option<PathBuf>,
     /// Where threads are stored; default `$XDG_DATA_HOME/cooee/<instance>`, else `~/.local/share/cooee/<instance>`.
     pub data: Option<PathBuf>,
-    /// The sign-ins sheet's providers (`[[providers]]`); default Claude Code, Codex and Gemini.
-    pub providers: Vec<Provider>,
+    /// The sign-ins sheet's providers (`[[providers]]`); default every registered provider's.
+    pub providers: Vec<Spec>,
     /// The theme a device shows until it picks its own (default farm).
     pub theme: Option<String>,
     /// The config file's folder, where the owner's own `themes/` and `schemes/` live (set by [`Config::load`]).
@@ -123,7 +123,7 @@ impl Default for Config {
             shed: PathBuf::from("shed"),
             shed_dir: None,
             data: None,
-            providers: Provider::defaults(),
+            providers: provider::defaults(),
             plugins: Vec::new(),
             plugin_index: None,
             theme: None,
@@ -154,6 +154,14 @@ pub enum ConfigError {
     /// An `[[mcp]]` server breaks a rule (a value where only a reference may be): the key, never the value.
     #[error("{path}: {why}")]
     Mcp {
+        /// The config file.
+        path: PathBuf,
+        /// What is wrong.
+        why: String,
+    },
+    /// A key's value breaks a rule (a `base` no provider has).
+    #[error("{path}: {why}")]
+    Invalid {
         /// The config file.
         path: PathBuf,
         /// What is wrong.
@@ -213,6 +221,10 @@ impl Config {
             source,
         })?;
         crate::mcp::check(&config.mcp).map_err(|why| ConfigError::Mcp {
+            path: path.to_owned(),
+            why,
+        })?;
+        provider::check(&config.providers).map_err(|why| ConfigError::Invalid {
             path: path.to_owned(),
             why,
         })?;

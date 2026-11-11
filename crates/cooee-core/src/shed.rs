@@ -72,13 +72,10 @@ const CALL: Duration = Duration::from_secs(10);
 /// How many idle, helloed connections a [`Shed`] keeps for reuse (#54).
 const POOL: usize = 4;
 
-/// The fix for no installed agents, as the agent picker and `cooee doctor` print it.
-pub const AGENTS_FIX: &str = "shed agents add claude-acp";
-
 /// An installed ACP agent, as `shed agents` lists it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Agent {
-    /// The registry id (`claude-acp`, …).
+    /// The registry id (`<agent>-acp`, …).
     pub id: String,
     /// The pinned version.
     pub version: String,
