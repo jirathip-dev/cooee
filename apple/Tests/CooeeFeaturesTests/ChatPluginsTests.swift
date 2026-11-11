@@ -64,6 +64,15 @@ internal struct ChatPluginsTests {
         #expect(calls.all == ["attach hello cond", "places cond"])
     }
 
+    @Test internal func theWorkflowSheetOpensAndUnfoldsOneIssueAtATime() async {
+        let store = store()
+        await store.send(.workflow(.show(true))) { $0.workflowOpen = true }
+        await store.send(.workflow(.unfold("cooee #33"))) { $0.unfolded = "cooee #33" }
+        await store.send(.workflow(.unfold("cooee #31"))) { $0.unfolded = "cooee #31" }
+        await store.send(.workflow(.unfold("cooee #31"))) { $0.unfolded = nil }
+        await store.send(.workflow(.show(false))) { $0.workflowOpen = false }
+    }
+
     @Test internal func aChatWithNoPersonaLoadsNoStripAndAFailedLoadSaysWhy() async {
         await store(APIPersona(id: "", name: "Chat", agent: "")).send(.plugins(.load))
         let failing = store()

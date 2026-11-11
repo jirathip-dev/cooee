@@ -27,6 +27,9 @@ pub struct Manifest {
     /// Where the native app shows its screens (#125's places).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub places: Vec<Place>,
+    /// The workflow `source` labels it owns (#229): the native app draws those sessions in its place, not as chats.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub claims: Vec<String>,
     /// What it may do: shown when it's attached, refused beyond.
     #[serde(default)]
     pub permissions: Permissions,

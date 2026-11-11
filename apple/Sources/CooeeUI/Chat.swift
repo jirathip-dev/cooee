@@ -17,6 +17,8 @@ public struct ChatActions {
     public var open: (Int) -> Void = { _ in }
     public var attachable: [String] = []
     public var attachPlugin: (Int) -> Void = { _ in }
+    public var workflow: Int?
+    public var showWorkflow: () -> Void = {}
 
     public init(
         draft: Binding<String>? = nil,
@@ -158,7 +160,7 @@ internal struct ChatHeader: View {
                 Spacer(minLength: 4)
                 more
             }
-            if !chips.isEmpty { plugins }
+            if !chips.isEmpty || actions.workflow != nil { plugins }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(palette.line).frame(height: 0.5) }
@@ -192,6 +194,7 @@ internal struct ChatHeader: View {
                 }
                 .buttonStyle(.plain)
             }
+            if let count = actions.workflow { WorkflowChip(count: count, open: actions.showWorkflow) }
         }
         .padding(.leading, back ? 50 : 0)
     }

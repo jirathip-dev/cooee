@@ -3,6 +3,8 @@ import CooeeCore
 
 @Reducer
 public struct AppFeature: Sendable {
+    public static let others = "others"
+
     @ObservableState
     public struct State: Equatable {
         public var home: HomeFeature.State?
@@ -69,6 +71,13 @@ public struct AppFeature: Sendable {
                 state.path = state.path.dropLast() + [thread]
                 state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
                 return .send(.home(.refresh))
+            case .chat(.delegate(.open(let thread))):
+                return .send(.open(thread))
+            case .home(.loaded):
+                if let id = state.chat?.persona.id, let home = state.home {
+                    state.chat?.workflow = home.lists(now: now).workflow[id]
+                }
+                return .none
             default:
                 return navigate(&state, action)
             }
@@ -83,7 +92,7 @@ public struct AppFeature: Sendable {
     private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .open(let thread):
-            state.path = [thread]
+            state.path = (state.path.first == Self.others && thread != Self.others ? [Self.others] : []) + [thread]
             state.chat = chat(state, thread)
         case .start(let persona):
             state.path = ["new:\(persona)"]
@@ -109,13 +118,18 @@ public struct AppFeature: Sendable {
     }
 
     private func chat(_ state: State, _ id: String) -> ChatFeature.State? {
-        guard let home = state.home else { return nil }
+        guard let home = state.home, id != Self.others else { return nil }
+        let lists = home.lists(now: now)
+        var chat: ChatFeature.State
         if id.hasPrefix("new:") {
             guard let persona = home.persona(String(id.dropFirst(4))) else { return nil }
-            return ChatFeature.State(server: home.server, target: .new(persona), persona: Persona(persona))
+            chat = ChatFeature.State(server: home.server, target: .new(persona), persona: Persona(persona))
+        } else {
+            let listed = lists.all.first { $0.id == id }?.persona
+            let persona = listed ?? Persona(APIPersona(id: "", name: "Chat", agent: ""))
+            chat = ChatFeature.State(server: home.server, target: .thread(id), persona: persona)
         }
-        let listed = home.chats(now: now).first { $0.id == id }?.persona
-        let persona = listed ?? Persona(APIPersona(id: "", name: "Chat", agent: ""))
-        return ChatFeature.State(server: home.server, target: .thread(id), persona: persona)
+        chat.workflow = lists.workflow[chat.persona.id]
+        return chat
     }
 }

@@ -113,11 +113,13 @@ public struct Row: Identifiable, Sendable, Equatable {
 public struct ListedChat: Identifiable, Sendable, Equatable {
     public let row: Row
     public let persona: Persona
+    public let workflow: WorkflowLabel?
 
     public var id: String { row.id }
 
-    public init(row: Row, persona: Persona) {
+    public init(row: Row, persona: Persona, workflow: WorkflowLabel? = nil) {
         self.row = row
         self.persona = persona
+        self.workflow = workflow
     }
 }

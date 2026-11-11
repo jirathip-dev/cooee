@@ -9,14 +9,15 @@ internal struct PluginsTests {
              "state": "running", "places": [{"type": "header-strip", "id": "queue", "persona": "conductor",
              "label": "Queue", "screen": "/screens/queue"}, {"type": "chat-cards", "id": "", "persona": "conductor",
              "label": "", "screen": ""}, {"type": "menu-row", "id": "", "persona": "", "label": "drover",
-             "screen": "/screens/fleets"}], "permissions": {"places": ["header-strip"], "push": true,
+             "screen": "/screens/fleets"}], "claims": ["drover"], "permissions": {"places": ["header-strip"], "push": true,
              "actions": ["drive", "drop"], "destructive": ["drop"], "network": []}}
             """
         let row = try JSONDecoder().decode(PluginRow.self, from: Data(json.utf8))
         #expect(row.id == "drover" && row.source == "https://x/d")
         #expect(
             row.may == [
-                "Queue chip on the header strip", "cards in its chats", "drover row in Plugins", "notifications",
+                "Queue chip on the header strip", "cards in its chats", "drover row in Plugins",
+                "sessions labelled source=drover in its Workflow sheet", "notifications",
             ]
         )
         #expect(row.permissions.destructive == ["drop"])

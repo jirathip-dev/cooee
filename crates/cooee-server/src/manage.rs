@@ -76,6 +76,8 @@ pub struct Row {
     pub first_party: bool,
     /// Where its screens go (#125), shown with its permissions when it's attached to a persona.
     pub places: Vec<plugins::Place>,
+    /// The workflow sources it claims (#229).
+    pub claims: Vec<String>,
     /// Its manifest's `[permissions]`.
     pub permissions: plugins::Permissions,
 }
@@ -771,12 +773,15 @@ impl Manager {
             };
             let first_party = self.index.iter().any(|x| x.name == l.name && x.first_party);
             let m = plugins::manifest(&self.data, &l).ok();
-            let (places, permissions) = m.map(|m| (m.places, m.permissions)).unwrap_or_default();
+            let (places, claims, permissions) = m
+                .map(|m| (m.places, m.claims, m.permissions))
+                .unwrap_or_default();
             Row {
                 locked: l,
                 state,
                 first_party,
                 places,
+                claims,
                 permissions,
             }
         });

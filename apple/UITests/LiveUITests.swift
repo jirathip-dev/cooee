@@ -22,11 +22,12 @@
             app.buttons["Back"].firstMatch.tap()
             XCTAssert(new.waitForExistence(timeout: 10))
             XCTAssert(labelled(app, "Coder").exists)
-            keep("home")
+            othersHoldsTheLanesNoPluginClaims(app, new)
             personaRoundTrip(app)
             answersEachCard(app, new)
             app.buttons["Back"].firstMatch.tap()
             opensDroversScreens(app, new)
+            opensTheWorkflowSheet(app, new)
             avatarMenu(app, new)
         }
 
@@ -159,6 +160,39 @@
     }
 
     extension LiveUITests {
+        @MainActor
+        private func othersHoldsTheLanesNoPluginClaims(_ app: XCUIApplication, _ new: XCUIElement) {
+            keep("home")
+            let others = labelled(app, "Others")
+            guard others.waitForExistence(timeout: 10) else { return }
+            others.tap()
+            XCTAssert(labelled(app, "cooee #33").waitForExistence(timeout: 10))
+            keep("others")
+            app.buttons["Back"].firstMatch.tap()
+            XCTAssert(new.waitForExistence(timeout: 10))
+        }
+
+        @MainActor
+        private func opensTheWorkflowSheet(_ app: XCUIApplication, _ new: XCUIElement) {
+            app.buttons["Done"].firstMatch.tap()
+            let workflow = app.buttons["Workflow"].firstMatch
+            XCTAssert(workflow.waitForExistence(timeout: 20))
+            workflow.tap()
+            let issue = labelled(app, "cooee #33")
+            XCTAssert(issue.waitForExistence(timeout: 20))
+            issue.tap()
+            let round = labelled(app, "open chat")
+            XCTAssert(round.waitForExistence(timeout: 10))
+            keep("workflow")
+            round.tap()
+            XCTAssert(app.buttons["Back"].waitForExistence(timeout: 10))
+            keep("workflow-round")
+            app.buttons["Back"].firstMatch.tap()
+            XCTAssert(new.waitForExistence(timeout: 10))
+            XCTAssertFalse(labelled(app, "cooee #33").exists)
+            keep("home-no-lanes")
+        }
+
         @MainActor
         private func personaRoundTrip(_ app: XCUIApplication) {
             let name = "Scout \(ProcessInfo.processInfo.environment["COOEE_LOOK"] ?? "look")"

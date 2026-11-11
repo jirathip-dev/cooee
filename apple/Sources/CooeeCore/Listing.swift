@@ -29,7 +29,7 @@ public enum Listing {
                 unseen: thread.unseen,
                 state: state
             )
-            return ListedChat(row: row, persona: persona)
+            return ListedChat(row: row, persona: persona, workflow: thread.workflow)
         }
     }
 

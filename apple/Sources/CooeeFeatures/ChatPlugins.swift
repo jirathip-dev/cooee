@@ -1,6 +1,15 @@
 import ComposableArchitecture
 import CooeeCore
 
+extension ChatFeature.Action {
+    @CasePathable
+    public enum WorkflowAction: Sendable, Equatable {
+        case show(Bool)
+        case unfold(String)
+        case open(String)
+    }
+}
+
 extension ChatFeature {
     internal func plugins(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
@@ -9,9 +18,17 @@ extension ChatFeature {
         case .attaching(.presented(.delegate(.attached))):
             state.attaching = nil
             return .send(.plugins(.load))
+        case .workflow(.show(let open)):
+            state.workflowOpen = open
+        case .workflow(.unfold(let issue)):
+            state.unfolded = state.unfolded == issue ? nil : issue
+        case .workflow(.open(let thread)):
+            state.workflowOpen = false
+            return .send(.delegate(.open(thread)))
         default:
-            return .none
+            break
         }
+        return .none
     }
 
     private func plugin(_ state: inout State, _ action: Action.PluginAction) -> Effect<Action> {
