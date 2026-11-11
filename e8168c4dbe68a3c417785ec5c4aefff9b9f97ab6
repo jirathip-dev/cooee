@@ -1,0 +1,11 @@
+Decided: Role is a typed enum (Plain "" | Orchestrator), so an unknown role is refused rather than stored.
+Because: "empty = a plain persona) separate from"
+Decided: drover is attached at read time to every orchestrator persona while drover is installed.
+Because: "The drover plugin attaches to personas by role, not by name"
+Decided: a personas/conductor.toml with no role key (saved before #159) is read as an orchestrator.
+Because: "name kept as the owner set it"
+Rejected: migrating only the profile-read persona — an owner who had already edited or renamed it has a file, which would lose the role.
+Decided: fleets is a plain list with no uniqueness check across personas.
+Because: "two may cover the same fleet"
+Check: the Swift APIPersona round-trips role/fleets; Xcode tests were not run on this host.
+Owner: Personas get a role apart from their name; every orchestrator gets drover and keeps it through a rename.
