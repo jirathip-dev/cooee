@@ -1,0 +1,9 @@
+scripts/neutral-core.sh
+core names no provider
+ci/neutral-core-test.sh
+core names no provider
+web/src/app.css:2: /* connecting OpenAI */
+a provider is named outside crates/cooee-core/src/providers/: move it into its module
+crates/x/src/lib.rs:1: /// Asks Hermes.
+a provider is named outside crates/cooee-core/src/providers/: move it into its module
+neutral-core test ok

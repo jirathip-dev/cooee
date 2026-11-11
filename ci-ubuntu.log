@@ -1,0 +1,508 @@
+﻿2026-11-11T21:21:15.3101011Z Current runner version: '2.338.2'
+2026-11-11T21:21:15.3127391Z ##[group]Runner Image Provisioner
+2026-11-11T21:21:15.3128457Z Hosted Compute Agent
+2026-11-11T21:21:15.3129111Z Version: 20261028.624
+2026-11-11T21:21:15.3129920Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+2026-11-11T21:21:15.3130736Z Build Date: 2026-10-28T21:51:42Z
+2026-11-11T21:21:15.3131473Z Worker ID: {e06ae363-2be3-43a1-98b1-a6054336890f}
+2026-11-11T21:21:15.3132296Z Region: westcentralus
+2026-11-11T21:21:15.3132985Z Cloud: Azure
+2026-11-11T21:21:15.3133595Z ##[endgroup]
+2026-11-11T21:21:15.3135492Z ##[group]Operating System
+2026-11-11T21:21:15.3136183Z Ubuntu
+2026-11-11T21:21:15.3136821Z 24.04.5
+2026-11-11T21:21:15.3137456Z LTS
+2026-11-11T21:21:15.3138094Z ##[endgroup]
+2026-11-11T21:21:15.3138767Z ##[group]Runner Image
+2026-11-11T21:21:15.3139411Z Image: ubuntu-24.04
+2026-11-11T21:21:15.3140051Z Version: 20261101.360.1
+2026-11-11T21:21:15.3141514Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-11T21:21:15.3143246Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+2026-11-11T21:21:15.3144549Z ##[endgroup]
+2026-11-11T21:21:15.3145877Z ##[group]GITHUB_TOKEN Permissions
+2026-11-11T21:21:15.3147922Z Contents: read
+2026-11-11T21:21:15.3148636Z Metadata: read
+2026-11-11T21:21:15.3149270Z Packages: read
+2026-11-11T21:21:15.3149995Z ##[endgroup]
+2026-11-11T21:21:15.3152194Z Secret source: Actions
+2026-11-11T21:21:15.3153262Z Cache mode: write
+2026-11-11T21:21:15.3154092Z Prepare workflow directory
+2026-11-11T21:21:15.3553905Z Prepare all required actions
+2026-11-11T21:21:15.3604956Z Getting action download info
+2026-11-11T21:21:15.6571766Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-11-11T21:21:15.7449378Z Download action repository 'dtolnay/rust-toolchain@stable' (SHA:b725eda525362e7cf34af9a7243cac1e3f01a7ec)
+2026-11-11T21:21:15.9595795Z Download action repository 'Swatinem/rust-cache@v2' (SHA:d1527c8f67ef9af357290475d4af4b0fab8f12e0)
+2026-11-11T21:21:16.6252639Z Complete job name: stable (ubuntu-latest)
+2026-11-11T21:21:16.7190833Z ##[group]Run actions/checkout@v4
+2026-11-11T21:21:16.7191747Z with:
+2026-11-11T21:21:16.7192289Z   repository: jirathip-dev/cooee
+2026-11-11T21:21:16.7197053Z   token: ***
+2026-11-11T21:21:16.7197553Z   ssh-strict: true
+2026-11-11T21:21:16.7198049Z   ssh-user: git
+2026-11-11T21:21:16.7198560Z   persist-credentials: true
+2026-11-11T21:21:16.7199139Z   clean: true
+2026-11-11T21:21:16.7199644Z   sparse-checkout-cone-mode: true
+2026-11-11T21:21:16.7200226Z   fetch-depth: 1
+2026-11-11T21:21:16.7200713Z   fetch-tags: false
+2026-11-11T21:21:16.7201218Z   show-progress: true
+2026-11-11T21:21:16.7201722Z   lfs: false
+2026-11-11T21:21:16.7202199Z   submodules: false
+2026-11-11T21:21:16.7202719Z   set-safe-directory: true
+2026-11-11T21:21:16.7203298Z   allow-unsafe-pr-checkout: false
+2026-11-11T21:21:16.7204063Z env:
+2026-11-11T21:21:16.7204662Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:16.7205238Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:16.7205773Z ##[endgroup]
+2026-11-11T21:21:16.9239904Z Syncing repository: jirathip-dev/cooee
+2026-11-11T21:21:16.9242863Z ##[group]Getting Git version info
+2026-11-11T21:21:16.9243932Z Working directory is '/home/runner/work/cooee/cooee'
+2026-11-11T21:21:16.9245531Z [command]/usr/bin/git version
+2026-11-11T21:21:16.9280429Z git version 2.56.0
+2026-11-11T21:21:16.9300401Z ##[endgroup]
+2026-11-11T21:21:16.9315841Z Temporarily overriding HOME='/home/runner/work/_temp/b7258bcc-75fe-4e23-9e2a-ad8fcc5d578d' before making global git config changes
+2026-11-11T21:21:16.9318631Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-11T21:21:16.9320724Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+2026-11-11T21:21:16.9367845Z Deleting the contents of '/home/runner/work/cooee/cooee'
+2026-11-11T21:21:16.9371552Z ##[group]Initializing the repository
+2026-11-11T21:21:16.9375539Z [command]/usr/bin/git init /home/runner/work/cooee/cooee
+2026-11-11T21:21:16.9461270Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-11T21:21:16.9463324Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-11T21:21:16.9465312Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-11T21:21:16.9466797Z hint: call:
+2026-11-11T21:21:16.9467644Z hint:
+2026-11-11T21:21:16.9468628Z hint: 	git config --global init.defaultBranch <name>
+2026-11-11T21:21:16.9469873Z hint:
+2026-11-11T21:21:16.9471317Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-11T21:21:16.9473339Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-11T21:21:16.9475087Z hint:
+2026-11-11T21:21:16.9476148Z hint: 	git branch -m <name>
+2026-11-11T21:21:16.9477244Z hint:
+2026-11-11T21:21:16.9478571Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-11T21:21:16.9480742Z Initialized empty Git repository in /home/runner/work/cooee/cooee/.git/
+2026-11-11T21:21:16.9489297Z [command]/usr/bin/git remote add origin https://github.com/jirathip-dev/cooee
+2026-11-11T21:21:16.9530660Z ##[endgroup]
+2026-11-11T21:21:16.9532093Z ##[group]Disabling automatic garbage collection
+2026-11-11T21:21:16.9536679Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-11T21:21:16.9576467Z ##[endgroup]
+2026-11-11T21:21:16.9578942Z ##[group]Setting up auth
+2026-11-11T21:21:16.9581957Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-11T21:21:16.9622604Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-11T21:21:16.9973689Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-11T21:21:17.0022274Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-11T21:21:17.0312261Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-11T21:21:17.0359996Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-11T21:21:17.0622325Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-11T21:21:17.0674351Z ##[endgroup]
+2026-11-11T21:21:17.0685481Z ##[group]Fetching the repository
+2026-11-11T21:21:17.0687495Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +7271bb16209bdbd9cb7004150d3ece21592eb027:refs/remotes/pull/258/merge
+2026-11-11T21:21:19.9198416Z From https://github.com/jirathip-dev/cooee
+2026-11-11T21:21:19.9200750Z  * [new ref]         7271bb16209bdbd9cb7004150d3ece21592eb027 -> pull/258/merge
+2026-11-11T21:21:19.9205688Z ##[endgroup]
+2026-11-11T21:21:19.9207020Z ##[group]Determining the checkout info
+2026-11-11T21:21:19.9208627Z ##[endgroup]
+2026-11-11T21:21:19.9247880Z [command]/usr/bin/git sparse-checkout disable
+2026-11-11T21:21:19.9308990Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-11T21:21:19.9350423Z ##[group]Checking out the ref
+2026-11-11T21:21:19.9353669Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/258/merge
+2026-11-11T21:21:20.2809363Z Note: switching to 'refs/remotes/pull/258/merge'.
+2026-11-11T21:21:20.2809945Z 
+2026-11-11T21:21:20.2810307Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-11T21:21:20.2811074Z changes and commit them, and you can discard any commits you make in this
+2026-11-11T21:21:20.2813610Z state without impacting any branches by switching back to a branch.
+2026-11-11T21:21:20.2814340Z 
+2026-11-11T21:21:20.2815246Z If you want to create a new branch to retain commits you create, you may
+2026-11-11T21:21:20.2816022Z do so (now or later) by using -c with the switch command. Example:
+2026-11-11T21:21:20.2816450Z 
+2026-11-11T21:21:20.2816642Z   git switch -c <new-branch-name>
+2026-11-11T21:21:20.2816948Z 
+2026-11-11T21:21:20.2817138Z Or undo this operation with:
+2026-11-11T21:21:20.2817425Z 
+2026-11-11T21:21:20.2817592Z   git switch -
+2026-11-11T21:21:20.2817861Z 
+2026-11-11T21:21:20.2818237Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-11T21:21:20.2818780Z 
+2026-11-11T21:21:20.2819342Z HEAD is now at 7271bb1 Merge 1c9d8a6dfe39a59ec0919b853ea9969a1f8f7895 into 78ef2a8f0a69774c124053d75df614e4ef6f092e
+2026-11-11T21:21:20.2835598Z ##[endgroup]
+2026-11-11T21:21:20.2892637Z [command]/usr/bin/git log -1 --format=%H
+2026-11-11T21:21:20.2930809Z 7271bb16209bdbd9cb7004150d3ece21592eb027
+2026-11-11T21:21:20.3312272Z ##[group]Run dtolnay/rust-toolchain@stable
+2026-11-11T21:21:20.3312669Z with:
+2026-11-11T21:21:20.3312931Z   toolchain: stable
+2026-11-11T21:21:20.3313205Z env:
+2026-11-11T21:21:20.3313462Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.3313765Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.3314050Z ##[endgroup]
+2026-11-11T21:21:20.3380467Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+2026-11-11T21:21:20.3492922Z ##[group]Run if [[ -z $toolchain ]]; then
+2026-11-11T21:21:20.3493421Z if [[ -z $toolchain ]]; then
+2026-11-11T21:21:20.3494035Z   # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+2026-11-11T21:21:20.3494921Z   echo "'toolchain' is a required input" >&2
+2026-11-11T21:21:20.3495289Z   exit 1
+2026-11-11T21:21:20.3495687Z elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+2026-11-11T21:21:20.3496209Z   if [[ Linux == macOS ]]; then
+2026-11-11T21:21:20.3496793Z     echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+2026-11-11T21:21:20.3497356Z   else
+2026-11-11T21:21:20.3497809Z     echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+2026-11-11T21:21:20.3498300Z   fi
+2026-11-11T21:21:20.3498658Z elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+2026-11-11T21:21:20.3499231Z   echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+2026-11-11T21:21:20.3499741Z elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+2026-11-11T21:21:20.3500295Z   echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+2026-11-11T21:21:20.3500836Z else
+2026-11-11T21:21:20.3501110Z   delimiter=EOF
+2026-11-11T21:21:20.3501489Z   while [[ $toolchain == *$delimiter* ]]; do delimiter+=_; done
+2026-11-11T21:21:20.3502057Z   printf 'toolchain<<%s\n%s\n%s\n' "$delimiter" "$toolchain" "$delimiter" >> $GITHUB_OUTPUT
+2026-11-11T21:21:20.3502539Z fi
+2026-11-11T21:21:20.3529284Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T21:21:20.3529702Z env:
+2026-11-11T21:21:20.3529991Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.3530292Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.3530576Z   toolchain: stable
+2026-11-11T21:21:20.3530841Z ##[endgroup]
+2026-11-11T21:21:20.3633089Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=25]
+2026-11-11T21:21:20.3638409Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+2026-11-11T21:21:20.3680236Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+2026-11-11T21:21:20.3680796Z echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+2026-11-11T21:21:20.3702038Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T21:21:20.3702619Z env:
+2026-11-11T21:21:20.3702902Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.3703200Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.3703478Z ##[endgroup]
+2026-11-11T21:21:20.3756807Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=11]
+2026-11-11T21:21:20.3759189Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+2026-11-11T21:21:20.3795920Z ##[group]Run if ! command -v rustup &>/dev/null; then
+2026-11-11T21:21:20.3796362Z if ! command -v rustup &>/dev/null; then
+2026-11-11T21:21:20.3797186Z   curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+2026-11-11T21:21:20.3798167Z   echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+2026-11-11T21:21:20.3798511Z fi
+2026-11-11T21:21:20.3819681Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T21:21:20.3820094Z env:
+2026-11-11T21:21:20.3820361Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.3820661Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.3820959Z   CARGO_HOME: /home/runner/.cargo
+2026-11-11T21:21:20.3821258Z ##[endgroup]
+2026-11-11T21:21:20.3871641Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=11]
+2026-11-11T21:21:20.3874057Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+2026-11-11T21:21:20.3881567Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-11-11T21:21:20.3895949Z ##[start-action display=rustup toolchain install stable;id=__dtolnay_rust-toolchain.__run_4]
+2026-11-11T21:21:20.3924972Z ##[group]Run set -f  # split targets and components on commas and whitespace, without glob expansion
+2026-11-11T21:21:20.3925721Z set -f  # split targets and components on commas and whitespace, without glob expansion
+2026-11-11T21:21:20.3926228Z flags=()
+2026-11-11T21:21:20.3926577Z for t in ${targets//,/ }; do flags+=(--target "$t"); done
+2026-11-11T21:21:20.3927053Z for c in ${components//,/ }; do flags+=(--component "$c"); done
+2026-11-11T21:21:20.3927601Z if [[ $toolchain == nightly && -n $components ]]; then flags+=(--allow-downgrade); fi
+2026-11-11T21:21:20.3928068Z log=$(mktemp)
+2026-11-11T21:21:20.3928361Z trap 'rm -f "$log"' EXIT
+2026-11-11T21:21:20.3928678Z for attempt in 1 2 3 4 5; do
+2026-11-11T21:21:20.3929303Z   if rustup toolchain install "$toolchain" "${flags[@]}" --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then
+2026-11-11T21:21:20.3929896Z     break
+2026-11-11T21:21:20.3930159Z   else
+2026-11-11T21:21:20.3930418Z     status=$?
+2026-11-11T21:21:20.3930713Z   fi
+2026-11-11T21:21:20.3931123Z   if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \
+2026-11-11T21:21:20.3931722Z       || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then
+2026-11-11T21:21:20.3932222Z     exit "$status"
+2026-11-11T21:21:20.3932501Z   fi
+2026-11-11T21:21:20.3932905Z   echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2
+2026-11-11T21:21:20.3933388Z   sleep 30
+2026-11-11T21:21:20.3933664Z done
+2026-11-11T21:21:20.3954865Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T21:21:20.3955263Z env:
+2026-11-11T21:21:20.3955521Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.3955817Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.3956103Z   CARGO_HOME: /home/runner/.cargo
+2026-11-11T21:21:20.3956404Z   toolchain: stable
+2026-11-11T21:21:20.3956662Z   targets: 
+2026-11-11T21:21:20.3956928Z   components: 
+2026-11-11T21:21:20.3957202Z   RUSTUP_PERMIT_COPY_RENAME: 1
+2026-11-11T21:21:20.3957701Z ##[endgroup]
+2026-11-11T21:21:20.5324482Z info: syncing channel updates for stable-x86_64-unknown-linux-gnu
+2026-11-11T21:21:20.6485536Z 
+2026-11-11T21:21:20.6576299Z   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.99.1 (58cf8f9c3 2026-10-13)
+2026-11-11T21:21:20.6576711Z 
+2026-11-11T21:21:20.6633043Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=273]
+2026-11-11T21:21:20.6639242Z ##[start-action display=rustup default stable;id=__dtolnay_rust-toolchain.__run_5]
+2026-11-11T21:21:20.6666953Z ##[group]Run rustup default "$toolchain" --force-non-host
+2026-11-11T21:21:20.6667377Z rustup default "$toolchain" --force-non-host
+2026-11-11T21:21:20.6690083Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T21:21:20.6690433Z env:
+2026-11-11T21:21:20.6690642Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.6691114Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.6691367Z   CARGO_HOME: /home/runner/.cargo
+2026-11-11T21:21:20.6691641Z   toolchain: stable
+2026-11-11T21:21:20.6691854Z ##[endgroup]
+2026-11-11T21:21:20.6783695Z info: using existing install for stable-x86_64-unknown-linux-gnu
+2026-11-11T21:21:20.6790453Z info: default toolchain set to stable-x86_64-unknown-linux-gnu
+2026-11-11T21:21:20.6790904Z 
+2026-11-11T21:21:20.6878824Z info: note that the toolchain 'stable-x86_64-unknown-linux-gnu' is currently in use (overridden by environment variable RUSTUP_TOOLCHAIN)
+2026-11-11T21:21:20.6879633Z   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.99.1 (58cf8f9c3 2026-10-13)
+2026-11-11T21:21:20.6880174Z 
+2026-11-11T21:21:20.6897393Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=25]
+2026-11-11T21:21:20.6901009Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+2026-11-11T21:21:20.6957206Z ##[group]Run DATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+2026-11-11T21:21:20.6958098Z DATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+2026-11-11T21:21:20.6958812Z HASH=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-hash: //p')
+2026-11-11T21:21:20.6959331Z echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+2026-11-11T21:21:20.6982396Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T21:21:20.6982736Z env:
+2026-11-11T21:21:20.6982943Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.6983188Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.6983426Z   CARGO_HOME: /home/runner/.cargo
+2026-11-11T21:21:20.6983682Z   toolchain: stable
+2026-11-11T21:21:20.6983897Z ##[endgroup]
+2026-11-11T21:21:20.7367733Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=46]
+2026-11-11T21:21:20.7370511Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+2026-11-11T21:21:20.7400158Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+2026-11-11T21:21:20.7400565Z if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+2026-11-11T21:21:20.7400909Z   echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+2026-11-11T21:21:20.7401202Z fi
+2026-11-11T21:21:20.7425559Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T21:21:20.7425907Z env:
+2026-11-11T21:21:20.7426115Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.7426359Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.7426602Z   CARGO_HOME: /home/runner/.cargo
+2026-11-11T21:21:20.7426858Z ##[endgroup]
+2026-11-11T21:21:20.7479546Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=10]
+2026-11-11T21:21:20.7481686Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+2026-11-11T21:21:20.7509372Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+2026-11-11T21:21:20.7509753Z if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+2026-11-11T21:21:20.7510312Z   echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+2026-11-11T21:21:20.7510618Z fi
+2026-11-11T21:21:20.7532855Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T21:21:20.7533202Z env:
+2026-11-11T21:21:20.7533414Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.7533656Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.7533906Z   CARGO_HOME: /home/runner/.cargo
+2026-11-11T21:21:20.7534338Z   CARGO_INCREMENTAL: 0
+2026-11-11T21:21:20.7534564Z ##[endgroup]
+2026-11-11T21:21:20.7584545Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=10]
+2026-11-11T21:21:20.7588028Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+2026-11-11T21:21:20.7617426Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+2026-11-11T21:21:20.7618115Z # implemented in 1.66, stabilized in 1.68, made default in 1.70
+2026-11-11T21:21:20.7618854Z if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then
+2026-11-11T21:21:20.7619601Z   if rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+2026-11-11T21:21:20.7620184Z     touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true
+2026-11-11T21:21:20.7620721Z     echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+2026-11-11T21:21:20.7621232Z   elif rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+2026-11-11T21:21:20.7621788Z     touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true
+2026-11-11T21:21:20.7622288Z     echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+2026-11-11T21:21:20.7622644Z   fi
+2026-11-11T21:21:20.7622852Z fi
+2026-11-11T21:21:20.7645361Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T21:21:20.7645725Z env:
+2026-11-11T21:21:20.7645937Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.7646296Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.7646647Z   CARGO_HOME: /home/runner/.cargo
+2026-11-11T21:21:20.7646966Z   CARGO_INCREMENTAL: 0
+2026-11-11T21:21:20.7647187Z   toolchain: stable
+2026-11-11T21:21:20.7647403Z ##[endgroup]
+2026-11-11T21:21:20.8001858Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=41]
+2026-11-11T21:21:20.8006376Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+2026-11-11T21:21:20.8036545Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+2026-11-11T21:21:20.8037346Z # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+2026-11-11T21:21:20.8037976Z if rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+2026-11-11T21:21:20.8038465Z   echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+2026-11-11T21:21:20.8038788Z fi
+2026-11-11T21:21:20.8062909Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T21:21:20.8063259Z env:
+2026-11-11T21:21:20.8063475Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.8063728Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.8063976Z   CARGO_HOME: /home/runner/.cargo
+2026-11-11T21:21:20.8064388Z   CARGO_INCREMENTAL: 0
+2026-11-11T21:21:20.8064618Z   toolchain: stable
+2026-11-11T21:21:20.8064837Z ##[endgroup]
+2026-11-11T21:21:20.8255203Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=24]
+2026-11-11T21:21:20.8259773Z ##[start-action display=rustc +stable --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+2026-11-11T21:21:20.8288301Z ##[group]Run rustc +"$toolchain" --version --verbose
+2026-11-11T21:21:20.8288696Z rustc +"$toolchain" --version --verbose
+2026-11-11T21:21:20.8311618Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T21:21:20.8311963Z env:
+2026-11-11T21:21:20.8312170Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.8312419Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.8312669Z   CARGO_HOME: /home/runner/.cargo
+2026-11-11T21:21:20.8312931Z   CARGO_INCREMENTAL: 0
+2026-11-11T21:21:20.8313156Z   toolchain: stable
+2026-11-11T21:21:20.8313369Z ##[endgroup]
+2026-11-11T21:21:20.8479988Z rustc 1.99.1 (58cf8f9c3 2026-10-13)
+2026-11-11T21:21:20.8480444Z binary: rustc
+2026-11-11T21:21:20.8480849Z commit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67
+2026-11-11T21:21:20.8481339Z commit-date: 2026-10-13
+2026-11-11T21:21:20.8481720Z host: x86_64-unknown-linux-gnu
+2026-11-11T21:21:20.8482093Z release: 1.99.1
+2026-11-11T21:21:20.8482428Z LLVM version: 23.1.1
+2026-11-11T21:21:20.8505500Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=24]
+2026-11-11T21:21:20.8620290Z ##[group]Run Swatinem/rust-cache@v2
+2026-11-11T21:21:20.8620607Z with:
+2026-11-11T21:21:20.8620818Z   prefix-key: v0-rust
+2026-11-11T21:21:20.8621054Z   add-job-id-key: true
+2026-11-11T21:21:20.8621298Z   add-rust-environment-hash-key: true
+2026-11-11T21:21:20.8621572Z   cache-targets: true
+2026-11-11T21:21:20.8621803Z   cache-all-crates: false
+2026-11-11T21:21:20.8622058Z   cache-workspace-crates: false
+2026-11-11T21:21:20.8622316Z   save-if: true
+2026-11-11T21:21:20.8622537Z   cache-provider: github
+2026-11-11T21:21:20.8622771Z   cache-bin: true
+2026-11-11T21:21:20.8622985Z   lookup-only: false
+2026-11-11T21:21:20.8623206Z   cmd-format: {0}
+2026-11-11T21:21:20.8623403Z env:
+2026-11-11T21:21:20.8623607Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:20.8623849Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:20.8624089Z   CARGO_HOME: /home/runner/.cargo
+2026-11-11T21:21:20.8624550Z   CARGO_INCREMENTAL: 0
+2026-11-11T21:21:20.8624778Z ##[endgroup]
+2026-11-11T21:21:21.3806011Z ##[group]Cache Configuration
+2026-11-11T21:21:21.3823539Z Cache Provider:
+2026-11-11T21:21:21.3825257Z     github
+2026-11-11T21:21:21.3850871Z Workspaces:
+2026-11-11T21:21:21.3851557Z     /home/runner/work/cooee/cooee
+2026-11-11T21:21:21.3852090Z Cache Paths:
+2026-11-11T21:21:21.3894761Z     /home/runner/.cargo/bin
+2026-11-11T21:21:21.3895230Z     /home/runner/.cargo/.crates.toml
+2026-11-11T21:21:21.3895655Z     /home/runner/.cargo/.crates2.json
+2026-11-11T21:21:21.3896096Z     /home/runner/.cargo/registry
+2026-11-11T21:21:21.3896480Z     /home/runner/.cargo/git
+2026-11-11T21:21:21.3896896Z     /home/runner/work/cooee/cooee/target
+2026-11-11T21:21:21.3897322Z Restore Key:
+2026-11-11T21:21:21.3897729Z     v0-rust-stable-Linux-x64-08b02bb0
+2026-11-11T21:21:21.3898157Z Cache Key:
+2026-11-11T21:21:21.3898532Z     v0-rust-stable-Linux-x64-08b02bb0-5ea546ff
+2026-11-11T21:21:21.3899017Z .. Prefix:
+2026-11-11T21:21:21.3899363Z   - v0-rust-stable-Linux-x64
+2026-11-11T21:21:21.3899773Z .. Environment considered:
+2026-11-11T21:21:21.3900171Z   - Rust Versions:
+2026-11-11T21:21:21.3900728Z     - 1.99.1 x86_64-unknown-linux-gnu 58cf8f9c35b355199727627d07ae34a4e2846d67
+2026-11-11T21:21:21.3901301Z   - CARGO_HOME
+2026-11-11T21:21:21.3901620Z   - CARGO_INCREMENTAL
+2026-11-11T21:21:21.3901987Z   - CARGO_TERM_COLOR
+2026-11-11T21:21:21.3902320Z   - RUSTUP_TOOLCHAIN
+2026-11-11T21:21:21.3902665Z .. Lockfiles considered:
+2026-11-11T21:21:21.3903077Z   - /home/runner/work/cooee/cooee/Cargo.lock
+2026-11-11T21:21:21.3903655Z   - /home/runner/work/cooee/cooee/crates/cooee-core/Cargo.toml
+2026-11-11T21:21:21.3916971Z   - /home/runner/work/cooee/cooee/crates/cooee-machines/Cargo.toml
+2026-11-11T21:21:21.3917790Z   - /home/runner/work/cooee/cooee/crates/cooee-server/Cargo.toml
+2026-11-11T21:21:21.3918536Z   - /home/runner/work/cooee/cooee/crates/cooee-terminal/Cargo.toml
+2026-11-11T21:21:21.3919203Z   - /home/runner/work/cooee/cooee/crates/cooee/Cargo.toml
+2026-11-11T21:21:21.3919797Z   - /home/runner/work/cooee/cooee/rust-toolchain.toml
+2026-11-11T21:21:21.3920371Z   - /home/runner/work/cooee/cooee/web/Cargo.toml
+2026-11-11T21:21:21.3921674Z ##[endgroup]
+2026-11-11T21:21:21.3921889Z 
+2026-11-11T21:21:21.3922039Z ... Restoring cache ...
+2026-11-11T21:21:21.5638773Z Cache hit for: v0-rust-stable-Linux-x64-08b02bb0-5ea546ff
+2026-11-11T21:21:22.7796691Z Received 46137344 of 327840453 (14.1%), 44.0 MBs/sec
+2026-11-11T21:21:23.7807776Z Received 167772160 of 327840453 (51.2%), 79.9 MBs/sec
+2026-11-11T21:21:24.7813203Z Received 323646149 of 327840453 (98.7%), 102.8 MBs/sec
+2026-11-11T21:21:24.8574434Z Received 327840453 of 327840453 (100.0%), 101.5 MBs/sec
+2026-11-11T21:21:24.8575098Z Cache Size: ~313 MB (327840453 B)
+2026-11-11T21:21:24.8607924Z [command]/usr/bin/tar -xf /home/runner/work/_temp/7d6a7186-163c-42e2-bca6-17f466b17f94/cache.tzst -P -C /home/runner/work/cooee/cooee --use-compress-program unzstd
+2026-11-11T21:21:26.8416386Z Cache restored successfully
+2026-11-11T21:21:26.9801842Z Restored from cache key "v0-rust-stable-Linux-x64-08b02bb0-5ea546ff" full match: true.
+2026-11-11T21:21:27.0122925Z ##[group]Run cargo test --workspace --locked
+2026-11-11T21:21:27.0123323Z cargo test --workspace --locked
+2026-11-11T21:21:27.0146427Z shell: /usr/bin/bash -e {0}
+2026-11-11T21:21:27.0146701Z env:
+2026-11-11T21:21:27.0146916Z   CARGO_TERM_COLOR: always
+2026-11-11T21:21:27.0147165Z   RUSTUP_TOOLCHAIN: stable
+2026-11-11T21:21:27.0147414Z   CARGO_HOME: /home/runner/.cargo
+2026-11-11T21:21:27.0147682Z   CARGO_INCREMENTAL: 0
+2026-11-11T21:21:27.0147916Z   CACHE_ON_FAILURE: false
+2026-11-11T21:21:27.0148152Z ##[endgroup]
+2026-11-11T21:21:27.0890193Z     Updating crates.io index
+2026-11-11T21:21:28.3306944Z    Compiling cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+2026-11-11T21:21:28.3360793Z    Compiling cooee-web v0.1.0 (/home/runner/work/cooee/cooee/web)
+2026-11-11T21:21:30.7593544Z    Compiling cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+2026-11-11T21:21:31.6706389Z    Compiling cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+2026-11-11T21:21:36.2747501Z    Compiling cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+2026-11-11T21:21:50.5677412Z    Compiling cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+2026-11-11T21:22:08.1621757Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 41.13s
+2026-11-11T21:22:08.1938319Z      Running unittests src/main.rs (target/debug/deps/cooee-98608e2aec0311e4)
+2026-11-11T21:22:08.1952342Z 
+2026-11-11T21:22:08.1952581Z running 0 tests
+2026-11-11T21:22:08.1952810Z 
+2026-11-11T21:22:08.1953343Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-11T21:22:08.1953897Z 
+2026-11-11T21:22:08.1955422Z      Running tests/accounts.rs (target/debug/deps/accounts-4996b221883a8b13)
+2026-11-11T21:22:08.1965605Z 
+2026-11-11T21:22:08.1965817Z running 2 tests
+2026-11-11T21:22:08.3763399Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+2026-11-11T21:22:08.3946871Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+2026-11-11T21:22:08.3947419Z 
+2026-11-11T21:22:08.3947693Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+2026-11-11T21:22:08.3948139Z 
+2026-11-11T21:22:08.3956138Z      Running tests/accounts_env.rs (target/debug/deps/accounts_env-13975c93fdf5ba08)
+2026-11-11T21:22:08.3969257Z 
+2026-11-11T21:22:08.3969427Z running 7 tests
+2026-11-11T21:22:08.4133188Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+2026-11-11T21:22:08.4304320Z test an_inherited_token_never_signs_a_folder_in ... ok
+2026-11-11T21:22:08.5226008Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+2026-11-11T21:22:08.5327701Z test unknown_provider_or_account_refuses_on_one_line ... ok
+2026-11-11T21:22:08.5361893Z test ls_json_lists_every_account_without_its_token ... ok
+2026-11-11T21:22:08.5965863Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+2026-11-11T21:22:08.6058295Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+2026-11-11T21:22:08.6058862Z 
+2026-11-11T21:22:08.6059296Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+2026-11-11T21:22:08.6059824Z 
+2026-11-11T21:22:08.6061532Z      Running tests/ask.rs (target/debug/deps/ask-e13b9ae6470bbbc3)
+2026-11-11T21:22:08.6072342Z 
+2026-11-11T21:22:08.6072831Z running 4 tests
+2026-11-11T21:22:08.6896558Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+2026-11-11T21:22:08.6981152Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+2026-11-11T21:22:08.7029574Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+2026-11-11T21:22:09.7068604Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+2026-11-11T21:22:09.7069158Z 
+2026-11-11T21:22:09.7069429Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.10s
+2026-11-11T21:22:09.7069781Z 
+2026-11-11T21:22:09.7078444Z      Running tests/chat.rs (target/debug/deps/chat-19b389d2960097f1)
+2026-11-11T21:22:09.7089307Z 
+2026-11-11T21:22:09.7089456Z running 10 tests
+2026-11-11T21:22:09.7543389Z test a_shed_of_another_version_is_refused_naming_both_versions ... ok
+2026-11-11T21:22:09.7853578Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+2026-11-11T21:22:09.7885815Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+2026-11-11T21:22:09.8186532Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+2026-11-11T21:22:09.8187337Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+2026-11-11T21:22:09.8188076Z test fake_shed_server ... ignored, a server for web/e2e, not a test
+2026-11-11T21:22:09.8422203Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+2026-11-11T21:22:09.8456083Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+2026-11-11T21:22:09.8723127Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+2026-11-11T21:22:09.8892717Z test scene_draws_the_agents_as_sprites_and_the_current_ones_chats_as_chips ... ok
+2026-11-11T21:22:09.8893963Z 
+2026-11-11T21:22:09.8894525Z test result: ok. 9 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.18s
+2026-11-11T21:22:09.8895047Z 
+2026-11-11T21:22:09.8903878Z      Running tests/chat_first.rs (target/debug/deps/chat_first-bd8e81c3d071f3f6)
+2026-11-11T21:22:09.8916068Z 
+2026-11-11T21:22:09.8916347Z running 3 tests
+2026-11-11T21:22:09.9264657Z test a_new_agent_is_saved_as_a_profile_and_listed ... ok
+2026-11-11T21:22:09.9575312Z test an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_picked ... FAILED
+2026-11-11T21:22:09.9675313Z test a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns ... ok
+2026-11-11T21:22:09.9675828Z 
+2026-11-11T21:22:09.9675925Z failures:
+2026-11-11T21:22:09.9676047Z 
+2026-11-11T21:22:09.9676331Z ---- an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_picked stdout ----
+2026-11-11T21:22:09.9676712Z 
+2026-11-11T21:22:09.9677168Z thread 'an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_picked' (4506) panicked at crates/cooee/tests/chat_first.rs:164:5:
+2026-11-11T21:22:09.9750420Z <nav class="ags" aria-label="agents"><p class="lb">agents</p><a class="agr on" href="/t/t1a1cc7d5b88" data-id="t1a1cc7d5b88"><i class="av" style="--av:var(--l)" aria-hidden="true">FA</i><span class="tt"><i class="ur" aria-hidden="true"></i>fake-acp</span><span class="ta">now<b class="bd" aria-label="1 unread">1</b></span><span class="tp"><b data-st="working"><i class="rsa" aria-hidden="true"><b>~o=</b><b>=o~</b></i> <span class="thw">working</span></b>second</span></a><div class="sth"><a class="str" href="/t/t1a1cc7d5b93" data-id="t1a1cc7d5b93"><span class="tt">second</span><span class="ta">now</span></a><a class="str nw" href="/t/t1a1cc7d5b93" aria-label="newest side thread of fake-acp">newest</a><a class="str nw" href="/new?agent=fake-acp">+ new chat</a></div><details class="nwa"><summary>+ new agent</summary><form method="post" action="/agents"><input name="name" aria-label="name" placeholder="name" required="" autocomplete="off"><label class="pk"><span class="lb">profile</span><select name="profile"><option value="">Plain</option></select></label><button type="submit">add</button></form></details></nav></div><div class="chat hip"><div class="th"><a class="gl bk" href="/?list&amp;agent=fake-acp" aria-label="back to agents">‹</a><i class="av" style="--av:var(--l)" aria-hidden="true">FA</i><div class="tb"><h2>New chat</h2><span class="ds"><i class="dt" data-sync="on"></i>fake-acp · Plain · <span id="bf">scratch</span></span></div></div><div class="tc"><div class="hi"><i class="av big-av" style="--av:var(--l)" aria-hidden="true">FA</i><b>New chat with fake-acp</b><p class="ds">It starts in a scratch folder of its own. Use a folder… whenever this should work in a repo.</p></div></div><form id="new"><input type="hidden" name="agent" value="fake-acp"><div class="mc"><button type="button" class="fo" popovertarget="ufs">folder: scratch ▾</button><div class="ufs" id="ufs" popover="auto" role="dialog" aria-label="Use a folder"><div class="fh"><b>Use a folder…</b><button type="button" class="gl" popovertarget="ufs" popovertargetaction="hide" aria-label="close">×</button></div><fieldset class="fl"><legend class="vh">folder</legend><input id="fq" type="search" aria-label="search folders" placeholder="search folders" autocomplete="off"><label><input type="radio" name="folder" value="" checked="">scratch<span class="ds">this chat's own</span></label><label data-d="0" title="/tmp/cooee-chat-first-side-4503/root"><input type="radio" name="folder" value="/tmp/cooee-chat-first-side-4503/root">/tmp/cooee-chat-first-side-4503/root<span class="ds"></span></label><label data-d="1" title="/tmp/cooee-chat-first-side-4503/root/project"><input type="radio" name="folder" value="/tmp/cooee-chat-first-side-4503/root/project">project<span class="ds"></span></label></fieldset><p class="ds">Later turns run in the folder you pick. What the chat made in scratch stays there.</p><button type="button" id="mkdir">+ new folder</button></div></div><div class="tw"><textarea name="text" rows="1" aria-label="message" placeholder="message fake-acp"></textarea><button type="submit">send</button></div><p class="err" id="new-err" hidden=""></p></form></div></main></div><p id="ld" role="status" hidden=""><span class="lw" data-w="loading">loading</span><span class="ago"></span></p><p id="toast" role="status" popover="manual"></p><div id="sheet"><div class="sh lks" id="sh-look" popover="auto" role="dialog" aria-modal="false" aria-labelledby="sht-look"><div class="hd"><b id="sht-look">look</b><button type="button" class="gl" data-close="" popovertarget="sh-look" popovertargetaction="hide" aria-label="close">×</button></div><form class="top" method="post" action="/look"><input type="hidden" name="to" value="/?list&amp;agent=fake-acp"><div class="lrw"><span>style</span><div class="seg" role="radiogroup" aria-label="style"><button type="submit" role="radio" name="style" value="modern" data-k="style" data-v="modern" aria-checked="true">modern</button><button type="submit" role="radio" name="style" value="terminal" data-k="style" data-v="terminal" aria-checked="false">terminal</button><button hidden="" type="submit" role="radio" name="style" value="scene" data-k="style" data-v="scene" aria-checked="false">scene</button></div></div><div class="lrw"><span>figures</span><div class="seg" role="radiogroup" aria-label="figures"><button hidden="" type="submit" role="radio" name="figures" value="sprite" data-k="figures" data-v="sprite" aria-checked="false">sprite</button><button type="submit" role="radio" name="figures" value="ascii" data-k="figures" data-v="ascii" aria-checked="true">ascii</button><button type="submit" role="radio" name="figures" value="none" data-k="figures" data-v="none" aria-checked="false">none</button></div></div><p class="ch">theme</p><div class="lth" role="listbox" aria-label="theme"><button type="submit" role="option" class="pick" name="theme" value="plain" data-k="theme" data-v="plain" aria-selected="true"><img alt="" loading="lazy" src="/look/plain/icon.png"><span>plain</span><i class="tk">✓</i></button></div><p class="ch">appearance</p><div class="seg" role="radiogroup" aria-label="mode"><button type="submit" role="radio" name="mode" value="system" data-k="mode" data-v="system" aria-checked="true">system</button><button type="submit" role="radio" name="mode" value="light" data-k="mode" data-v="light" aria-checked="false">light</button><button type="submit" role="radio" name="mode" value="dark" data-k="mode" data-v="dark" aria-checked="false">dark</button></div><p class="ch" data-m="dark">dark colours<span class="shw"> · showing</span></p><div class="lsl" role="listbox" aria-label="dark colours"><button type="submit" role="option" class="pick" name="dark" value="github-dark" data-k="dark" data-v="github-dark" aria-selected="true"><span class="swa" style="--sbg:#0d1117;--sfg:#c9d1d9;--sl:#58a6ff"><b>Aa</b><i style="background:#3fb950"></i><i style="background:#d29922"></i><i style="background:#f85149"></i></span><span class="nm">github</span><small>default</small><i class="tk">✓</i></button><button type="submit" role="option" class="pick" name="dark" value="solarized-dark" data-k="dark" data-v="solarized-dark" aria-selected="false"><span class="swa" style="--sbg:#002b36;--sfg:#93a1a1;--sl:#4fa1db"><b>Aa</b><i style="background:#74b041"></i><i style="background:#c99a1a"></i><i style="background:#df4341"></i></span><span class="nm">solarized</span></button><button type="submit" role="option" class="pick" name="dark" value="gruvbox" data-k="dark" data-v="gruvbox" aria-selected="false"><span class="swa" style="--sbg:#282828;--sfg:#ebdbb2;--sl:#83a598"><b>Aa</b><i style="background:#8fbf5a"></i><i style="background:#fabd2f"></i><i style="background:#fb4934"></i></span><span class="nm">gruvbox</span></button><button type="submit" role="option" class="pick" name="dark" value="nord" data-k="dark" data-v="nord" aria-selected="false"><span class="swa" style="--sbg:#2e3440;--sfg:#e5e9f0;--sl:#88c0d0"><b>Aa</b><i style="background:#9ccc8c"></i><i style="background:#ebcb8b"></i><i style="background:#ff6b76"></i></span><span class="nm">nord</span></button><button type="submit" role="option" class="pick" name="dark" value="dracula" data-k="dark" data-v="dracula" aria-selected="false"><span class="swa" style="--sbg:#282a36;--sfg:#f8f8f2;--sl:#bd93f9"><b>Aa</b><i style="background:#50fa7b"></i><i style="background:#ffb86c"></i><i style="background:#ff5555"></i></span><span class="nm">dracula</span></button><button type="submit" role="option" class="pick" name="dark" value="farm" data-k="dark" data-v="farm" aria-selected="false"><span class="swa" style="--sbg:#0f1a13;--sfg:#ece4cc;--sl:#ecdba6"><b>Aa</b><i style="background:#7fd06a"></i><i style="background:#f29b4b"></i><i style="background:#ff7d6e"></i></span><span class="nm">farm</span></button><button type="submit" role="option" class="pick" name="dark" value="kitchen" data-k="dark" data-v="kitchen" aria-selected="false"><span class="swa" style="--sbg:#1a1816;--sfg:#efe3cb;--sl:#e89a62"><b>Aa</b><i style="background:#6cc96e"></i><i style="background:#f4d24e"></i><i style="background:#ff5c84"></i></span><span class="nm">kitchen</span></button><button type="submit" role="option" class="pick" name="dark" value="garden-dark" data-k="dark" data-v="garden-dark" aria-selected="false"><span class="swa" style="--sbg:#181c15;--sfg:#ece4cf;--sl:#eda055"><b>Aa</b><i style="background:#74c760"></i><i style="background:#f5df63"></i><i style="background:#ff6f7a"></i></span><span class="nm">garden</span></button></div><p class="ch" data-m="light">light colours</p><div class="lsl" role="listbox" aria-label="light colours"><button type="submit" role="option" class="pick" name="light" value="paper" data-k="light" data-v="paper" aria-selected="true"><span class="swa" style="--sbg:#fbf8f1;--sfg:#24292f;--sl:#0b5cad"><b>Aa</b><i style="background:#197b35"></i><i style="background:#8a5a00"></i><i style="background:#c4202b"></i></span><span class="nm">paper</span><small>default</small><i class="tk">✓</i></button><button type="submit" role="option" class="pick" name="light" value="farm-light" data-k="light" data-v="farm-light" aria-selected="false"><span class="swa" style="--sbg:#f5efda;--sfg:#29251a;--sl:#6b3410"><b>Aa</b><i style="background:#2a6d1c"></i><i style="background:#7a5f00"></i><i style="background:#b81d3c"></i></span><span class="nm">farm</span></button><button type="submit" role="option" class="pick" name="light" value="kitchen-light" data-k="light" data-v="kitchen-light" aria-selected="false"><span class="swa" style="--sbg:#f8f5f0;--sfg:#2a2420;--sl:#94431a"><b>Aa</b><i style="background:#2a7030"></i><i style="background:#7d6400"></i><i style="background:#b8174f"></i></span><span class="nm">kitchen</span></button><button type="submit" role="option" class="pick" name="light" value="garden-light" data-k="light" data-v="garden-light" aria-selected="false"><span class="swa" style="--sbg:#f7f2e6;--sfg:#2a2b22;--sl:#9a3f1a"><b>Aa</b><i style="background:#33721c"></i><i style="background:#7a5f00"></i><i style="background:#a8164f"></i></span><span class="nm">garden</span></button></div><p class="lft">this device only · iOS keeps the icon it installed with</p></form></div><div class="sh set" id="sh-settings" popover="auto" role="dialog" aria-modal="true" aria-labelledby="sht-settings"><div class="hd"><b id="sht-settings">settings</b><button type="button" class="gl" data-close="" popovertarget="sh-settings" popovertargetaction="hide" aria-label="close">×</button></div><div class="top"><nav class="six" aria-label="sections"><a href="#settings/sign-ins">sign-ins</a><a href="#settings/folders">folders</a><a href="#settings/look">look</a><a href="#settings/alerts">alerts</a><a href="#settings/devices">devices</a><a href="#settings/plugins">plugins</a><a href="#settings/report">report</a></nav><p class="ch" id="s-sign-ins">sign-ins</p><button type="button" class="sr" data-open="providers" popovertarget="sh-providers"><span class="sk">providers</span><i class="cv">▸</i></button><p class="ch" id="s-folders">folders</p><button type="button" class="sr" data-open="folders" popovertarget="sh-folders"><span class="sk">roots</span><i class="cv">▸</i></button><p class="ch" id="s-look">look</p><button type="button" class="sr" data-open="look" popovertarget="sh-look"><span class="sk">style</span><span class="sv" data-sv="style">modern</span><i class="cv">▸</i></button><button type="button" class="sr" data-open="look" popovertarget="sh-look"><span class="sk">figures</span><span class="sv" data-sv="figures">ascii</span><i class="cv">▸</i></button><button type="button" class="sr" data-open="look" popovertarget="sh-look"><span class="sk">theme</span><span class="sv" data-sv="theme">plain</span><i class="cv">▸</i></button><button type="button" class="sr" data-open="look" popovertarget="sh-look"><span class="sk">appearance</span><span class="sv" data-sv="appearance">system · dark now</span><i class="cv">▸</i></button><button type="button" class="sr" data-open="look" popovertarget="sh-look"><span class="sk">colours</span><span class="sv" data-sv="colours">dark github · light paper</span><i class="cv">▸</i></button><p class="ch" id="s-themes">themes</p><details class="thx"><summary>+ theme</summary><form method="post" action="/themes/add" class="thf"><input type="hidden" name="source" value="farm"><span>horses on the trail, at the gate, in the stable</span><button type="submit">add farm</button></form><form method="post" action="/themes/add" class="thf"><input type="hidden" name="source" value="kitchen"><span>chefs at the pass, the bell when one needs you</span><button type="submit">add kitchen</button></form><form method="post" action="/themes/add" class="thf"><input type="hidden" name="source" value="garden"><span>plants being tended, thirsty when one needs you</span><button type="submit">add garden</button></form><form method="post" action="/themes/add" class="thf"><input name="source" required="" aria-label="a theme's git URL" placeholder="git URL"><button type="submit">add · not reviewed</button></form></details><details class="thx"><summary>new theme</summary><form method="post" action="/themes/new" class="thf"><input type="hidden" name="from" value=""><input name="name" required="" pattern="[a-z0-9\-]+" aria-label="the new theme's name" placeholder="name: a-z, 0-9, -"><input name="text" aria-label="what it should look like" placeholder="what it should look like"><button type="submit">start with an agent</button></form></details><p class="ch" id="s-alerts">alerts</p><div id="s-alerts-box"></div><p class="ch" id="s-devices">devices</p><div id="s-devices-box"></div><div id="s-pair-box"></div><p class="ch" id="s-passkeys">passkeys</p><div id="s-passkeys-box"></div><p class="ch" id="s-plugins">plugins</p><div id="s-plugins-box"></div><p class="ch" id="s-mcp">mcp servers</p><a class="sr" href="/mcp"><span class="sk">mcp servers</span><i class="cv">▸</i></a><p class="ch" id="s-report">report</p><button type="button" class="sr" data-report=""><span class="sk">report a problem</span><i class="cv">▸</i></button></div></div><div class="sh set" id="sh-providers" popover="auto" role="dialog" aria-modal="true" aria-labelledby="sht-providers"><div class="hd pvh"><button type="button" class="gl" data-open="settings" aria-label="back to settings">‹</button><b id="sht-providers">providers</b><button type="button" class="gl" data-close="" popovertarget="sh-providers" popovertargetaction="hide" aria-label="close">×</button></div><div class="top"><p class="ds"><a href="https://github.com/jirathip-dev/cooee/blob/main/docs/logins.md" target="_blank" rel="noopener">Where logins live</a> · on a headless Mac, keep the login Keychain unlocked</p></div></div><div class="sh set" id="sh-folders" popover="auto" role="dialog" aria-modal="true" aria-labelledby="sht-folders"><div class="hd"><b id="sht-folders">folders</b><button type="button" class="gl" data-close="" popovertarget="sh-folders" popovertargetaction="hide" aria-label="close">×</button></div><div class="top"></div></div></div></body></html>
+2026-11-11T21:22:09.9817697Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+2026-11-11T21:22:09.9818009Z 
+2026-11-11T21:22:09.9818013Z 
+2026-11-11T21:22:09.9818095Z failures:
+2026-11-11T21:22:09.9818432Z     an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_picked
+2026-11-11T21:22:09.9818767Z 
+2026-11-11T21:22:09.9819037Z test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+2026-11-11T21:22:09.9819374Z 
+2026-11-11T21:22:09.9819771Z error: test failed, to rerun pass `-p cooee --test chat_first`
+2026-11-11T21:22:09.9830680Z ##[error]Process completed with exit code 101.
+2026-11-11T21:22:09.9972344Z Post job cleanup.
+2026-11-11T21:22:10.0917320Z [command]/usr/bin/git version
+2026-11-11T21:22:10.0962876Z git version 2.56.0
+2026-11-11T21:22:10.1001381Z Temporarily overriding HOME='/home/runner/work/_temp/27306cdf-e26a-4194-9913-a167ca15fd4b' before making global git config changes
+2026-11-11T21:22:10.1002690Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-11T21:22:10.1007332Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+2026-11-11T21:22:10.1053257Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-11T21:22:10.1094402Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-11T21:22:10.1373410Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-11T21:22:10.1406508Z http.https://github.com/.extraheader
+2026-11-11T21:22:10.1418807Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-11-11T21:22:10.1461048Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-11T21:22:10.1766532Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-11T21:22:10.1820252Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-11T21:22:10.2273008Z Cleaning up orphan processes
+2026-11-11T21:22:10.2653571Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

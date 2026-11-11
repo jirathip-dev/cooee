@@ -1,0 +1,10 @@
+cargo clippy --workspace --all-targets --locked -- -D warnings
+    Checking cooee-core v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-core)
+   Compiling cooee-web v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/web)
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-machines)
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-terminal)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-server)
+    Checking cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.96s
+# At most 10 allows in the workspace, each with a reason (clippy checks the reason).
+test "$(grep -rE 'allow\(' crates web/src | wc -l)" -le 10

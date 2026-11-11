@@ -1,0 +1,14 @@
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+    Checking cooee-core v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-core)
+ Documenting cooee-core v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-core)
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-machines)
+    Checking cooee-web v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/web)
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-terminal)
+ Documenting cooee-web v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/web)
+ Documenting cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-terminal)
+ Documenting cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-machines)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-server)
+ Documenting cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee-server)
+ Documenting cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-218/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.40s
+   Generated /Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-218/doc/cooee/index.html and 5 other files
