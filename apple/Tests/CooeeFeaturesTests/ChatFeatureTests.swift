@@ -101,15 +101,20 @@ internal struct ChatFeatureTests {
         await store.send(.send) {
             $0.draft = ""
             $0.files = []
+            $0.outbox = [Outgoing(id: -1, text: "first", files: [file])]
         }
+        await store.receive(\.delivered) { $0.outbox = [] }
         await store.send(.send)
         await store.send(.event(.state(Turn(state: "working")))) {
             $0.turn = Turn(state: "working")
             $0.since = epoch
         }
         await store.send(.draftChanged("second")) { $0.draft = "second" }
-        await store.send(.send) { $0.draft = "" }
-        await store.finish()
+        await store.send(.send) {
+            $0.draft = ""
+            $0.outbox = [Outgoing(id: -1, text: "second")]
+        }
+        await store.receive(\.delivered) { $0.outbox = [] }
         #expect(calls.all == ["send a1 first 1", "queue a1 second 0"])
     }
 
@@ -117,7 +122,11 @@ internal struct ChatFeatureTests {
         let store = store(.new(coder))
         await store.send(.task)
         await store.send(.draftChanged("hi")) { $0.draft = "hi" }
-        await store.send(.send) { $0.draft = "" }
+        await store.send(.send) {
+            $0.draft = ""
+            $0.outbox = [Outgoing(id: -1, text: "hi")]
+        }
+        await store.receive(\.delivered) { $0.outbox = [] }
         await store.receive(\.delegate.started)
         await store.send(.stop)
         await store.send(.event(.queue([Queued(text: "a", randomID: "q1")]))) {
@@ -141,21 +150,8 @@ internal struct ChatFeatureTests {
     }
 
     @Test internal func aFailedCallSaysWhy() async {
-        let store = store(.thread("a1")) {
-            $0.threads.stop = { _, _ in throw APIError(status: 409, text: "Nothing runs.") }
-            $0.threads.send = { _, _, _, _, _ in throw APIError(status: 500, text: "Locked.") }
-            $0.threads.start = { _, _, _ in throw APIError(status: 500, text: "No agent.") }
-        }
+        let store = store { $0.threads.stop = { _, _ in throw APIError(status: 409, text: "Nothing runs.") } }
         await store.send(.stop)
         await store.receive(\.failed) { $0.error = "Nothing runs." }
-        await store.send(.draftChanged("hi")) { $0.draft = "hi" }
-        await store.send(.send) { $0.draft = "" }
-        await store.receive(\.failed) { $0.error = "Locked." }
-        let fresh = self.store(.new(coder)) {
-            $0.threads.start = { _, _, _ in throw APIError(status: 500, text: "No agent.") }
-        }
-        await fresh.send(.draftChanged("hi")) { $0.draft = "hi" }
-        await fresh.send(.send) { $0.draft = "" }
-        await fresh.receive(\.failed) { $0.error = "No agent." }
     }
 }

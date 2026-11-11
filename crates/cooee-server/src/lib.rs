@@ -2075,15 +2075,13 @@ fn bearer(cx: &Cx) -> String {
     token.unwrap_or_default().to_owned()
 }
 
-/// `POST /mcp/agent/remember` `{thread, server: {text}}`: `remember`'s note, by the thread's persona (#126).
+/// `POST /mcp/agent/remember` `{thread, server: {text?, replaces?, forget?}}`: `remember`'s edit (#126, #216).
 #[route(POST "/mcp/agent/remember")]
-async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<personas::Note>> {
-    let (token, text) = (
-        bearer(cx),
-        a.server["text"].as_str().unwrap_or_default().to_owned(),
-    );
+async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let (token, e) = (bearer(cx), serde_json::from_value(a.server));
+    let e: personas::Edit = e.map_err(|e| refused(format!("remember: {e}")))?;
     Ok(Answer(
-        blocking(cx, move |hub| hub.remember(&a.thread, &token, &text)).await,
+        blocking(cx, move |hub| hub.remember(&a.thread, &token, &e)).await,
     ))
 }
 
@@ -2218,19 +2216,41 @@ async fn memory(cx: &Cx) -> Result<Answer<Vec<personas::Note>>> {
     .await
 }
 
-#[route(POST "/personas/{id}/memory")]
-async fn memory_add(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<personas::Note>> {
+async fn owner_edit(cx: &Cx, e: personas::Edit) -> Result<Answer<Option<personas::Note>>> {
     let id = thread_id(cx);
     on_personas(cx, move |d, c| {
-        personas::remember(
-            d,
-            &personas::find(Some(c), d, &id)?.id,
-            "owner",
-            &n.text,
-            now(),
-        )
+        let id = personas::find(Some(c), d, &id)?.id;
+        personas::remember(d, &id, "owner", &e, now())
     })
     .await
+}
+
+#[route(POST "/personas/{id}/memory")]
+async fn memory_add(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<personas::Note>>> {
+    let e = personas::Edit {
+        text: Some(n.text),
+        ..personas::Edit::default()
+    };
+    owner_edit(cx, e).await
+}
+
+#[route(PUT "/personas/{id}/memory/{name}")]
+async fn memory_put(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<personas::Note>>> {
+    let e = personas::Edit {
+        text: Some(n.text),
+        replaces: Some(path_param::<Name>(cx).to_owned()),
+        ..personas::Edit::default()
+    };
+    owner_edit(cx, e).await
+}
+
+#[route(DELETE "/personas/{id}/memory/{name}")]
+async fn memory_drop(cx: &Cx) -> Result<Answer<Option<personas::Note>>> {
+    let e = personas::Edit {
+        forget: vec![path_param::<Name>(cx).to_owned()],
+        ..personas::Edit::default()
+    };
+    owner_edit(cx, e).await
 }
 
 #[route(DELETE "/personas/{id}/memory")]
@@ -2242,7 +2262,8 @@ async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
     .await
 }
 
-/// The persona calls (#126), the machines and models they pick from, `remember`'s, and their plugins' screens (#125).
+/// The persona calls (#126), the machines and models they pick from, `remember`'s and `history`'s (#217), and their
+/// plugins' screens (#125).
 fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
     b.route(persona_list)
         .route(machine_list)
@@ -2256,8 +2277,11 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
         .route(screen_action)
         .route(memory)
         .route(memory_add)
+        .route(memory_put)
+        .route(memory_drop)
         .route(memory_clear)
         .route(mcp_remember)
+        .route(mcp_history)
 }
 
 /// `POST /mcp/agent/grant` `{thread, server}`: the server resolved, in memory, and the tools it may offer.
@@ -2280,6 +2304,21 @@ async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     Ok(Answer(
         blocking(cx, move |hub| {
             hub.ask_persona((&a.thread, &token), &persona, &message, wait)
+        })
+        .await,
+    ))
+}
+
+/// `POST /mcp/agent/history` `{thread, server: {query, thread, before, limit}}`: `history`'s text (#217).
+#[route(POST "/mcp/agent/history")]
+async fn mcp_history(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let (token, s) = (bearer(cx), a.server);
+    let text = |k: &str| s[k].as_str().unwrap_or_default().to_owned();
+    let (query, thread, before) = (text("query"), text("thread"), s["before"].as_u64());
+    let limit = usize::try_from(s["limit"].as_u64().unwrap_or(5)).unwrap_or(5);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            hub.history((&a.thread, &token), (&query, limit), &thread, before)
         })
         .await,
     ))
