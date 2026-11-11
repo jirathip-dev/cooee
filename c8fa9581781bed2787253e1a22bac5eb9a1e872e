@@ -1,0 +1,12 @@
+Decided: a write is refused only when the notes end over the cap and larger than before, so shrinking always works
+Because: "a persona already over the cap keeps its notes and reads them all, but can't add until under it"
+Decided: one personas::remember(Edit) path serves the tool, POST, PUT and DELETE of one note
+Because: "One tool, not three"
+Decided: note ids are a hash prefix of text and time, written back on first read
+Because: "Old notes get one on first read"
+Rejected: a counter id (max + 1) — forgetting the last note would hand its id to the next one
+Decided: the model-fallback note logs a refusal instead of failing the model switch
+Because: crates/cooee-server/src/hub/models.rs:84
+Check: tests/personas.rs old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief and remember_adds_replaces_and_forgets_one_note_under_the_cap
+Check: topcoat fmt and cargo deny were not run locally (not installed); CI runs them
+Owner: Persona notes are capped at 2,000 characters, each has an id, and the persona can replace or drop one.
