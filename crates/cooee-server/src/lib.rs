@@ -29,6 +29,7 @@ use std::{
 use cooee_core::{
     Config, Device, Devices, Plugin, ShedError,
     personas::{self, Persona},
+    skills,
 };
 use cooee_machines::Machines;
 use futures_util::{Stream, StreamExt, stream};
@@ -2290,8 +2291,8 @@ async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
     .await
 }
 
-/// The persona calls (#126), the machines and models they pick from, `remember`'s and `history`'s (#217), and their
-/// plugins' screens (#125).
+/// The persona calls (#126), the machines and models they pick from, `remember`'s, `history`'s (#217) and `skill`'s
+/// (#218), their skills, and their plugins' screens (#125).
 fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
     b.route(persona_list)
         .route(machine_list)
@@ -2310,6 +2311,79 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
         .route(memory_clear)
         .route(mcp_remember)
         .route(mcp_history)
+        .route(skill_list)
+        .route(skill_add)
+        .route(skill_get)
+        .route(skill_put)
+        .route(skill_delete)
+        .route(mcp_skill)
+}
+
+#[route(GET "/personas/{id}/skills")]
+async fn skill_list(cx: &Cx) -> Result<Answer<Vec<skills::Skill>>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| {
+        Ok(skills::list(d, &personas::find(Some(c), d, &id)?.id))
+    })
+    .await
+}
+
+#[route(POST "/personas/{id}/skills")]
+async fn skill_add(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| {
+        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, None)
+    })
+    .await
+}
+
+#[route(GET "/personas/{id}/skills/{name}")]
+async fn skill_get(cx: &Cx) -> Result<Answer<skills::Skill>> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    on_personas(cx, move |d, c| {
+        skills::read(d, &personas::find(Some(c), d, &id)?.id, &name)
+    })
+    .await
+}
+
+#[route(PUT "/personas/{id}/skills/{name}")]
+async fn skill_put(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    on_personas(cx, move |d, c| {
+        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, Some(&name))
+    })
+    .await
+}
+
+#[route(DELETE "/personas/{id}/skills/{name}")]
+async fn skill_delete(cx: &Cx) -> Result<Answer<()>> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    on_personas(cx, move |d, c| {
+        skills::remove(d, &personas::find(Some(c), d, &id)?.id, &name)
+    })
+    .await
+}
+
+/// `POST /mcp/agent/skill` `{thread, server: {read} | {propose: {name, description, body, replaces?}}}`: `skill`'s
+/// text (#218): the body read, or that the card is up.
+#[route(POST "/mcp/agent/skill")]
+async fn mcp_skill(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let token = bearer(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let me = (a.thread.as_str(), token.as_str());
+            if let Some(name) = a.server["read"].as_str() {
+                return hub.read_skill(me, name);
+            }
+            let p = serde_json::from_value(a.server["propose"].clone())
+                .map_err(|_| HubError::Refused("give read or propose".to_owned()))?;
+            hub.propose_skill(me, p).map(|_| {
+                "Proposed. The owner sees a card; nothing is saved until they approve it."
+                    .to_owned()
+            })
+        })
+        .await,
+    ))
 }
 
 /// `POST /mcp/agent/grant` `{thread, server}`: the server resolved, in memory, and the tools it may offer.

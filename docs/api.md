@@ -74,8 +74,11 @@ or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos o
 cover too): an installed `cooee-drover` is attached to each orchestrator by its role, never its name. The persona read
 from a `conductor` profile (or saved from one before #159) is an orchestrator, its name kept. `machine` (#148) is the one its threads run on: `""` this host (every
 persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
-with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). An unknown
-id or a broken rule is a 400 with the reason.
+with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). A skill
+(#218) is `<data>/personas/<id>/skills/<name>/SKILL.md`, front matter (`name`, `description`) and a body, at most 20;
+each session's brief lists them `name: description` by name, never a body, which the persona reads with the `skill`
+tool. Clearing the notes leaves the skills; deleting the persona removes both. An unknown id or a broken rule is a
+400 with the reason.
 
 | Call | Body | Answer |
 |---|---|---|
@@ -91,6 +94,11 @@ id or a broken rule is a 400 with the reason.
 | `PUT /personas/{id}/memory/{note}` | `{text}` | the note, its text replaced, by `owner` |
 | `DELETE /personas/{id}/memory/{note}` | | `null`: that note goes, the others stay |
 | `DELETE /personas/{id}/memory` | | `null`: the notes go, the persona and its chats stay |
+| `GET /personas/{id}/skills` | | its skills (#218), `{name, description, body}[]`, by name |
+| `POST /personas/{id}/skills` | `{name, description, body}` | the skill; a name taken, a 21st skill, or a description not one line of at most 120 characters is a 400 |
+| `GET /personas/{id}/skills/{name}` | | the skill |
+| `PUT /personas/{id}/skills/{name}` | `{name, description, body}` | the skill, renamed when `name` differs |
+| `DELETE /personas/{id}/skills/{name}` | | `null` |
 
 ## Folders
 
@@ -177,6 +185,10 @@ at most); with `thread`, its owner messages and final replies (no tool rows), at
 `POST /mcp/agent/routine` `{thread, server: {name, when, prompt, place?}}` (#75) → `create_routine`'s item, the
 `routine` line it adds to the thread. A refusal is a 400 starting `BAD_SCHEDULE`, `BAD_NAME`, `BAD_PROMPT`,
 `BAD_PLACE`, `TOO_MANY` or `NOT_HERE` (a Workflow session or a routine's own run).
+`POST /mcp/agent/skill` `{thread, server: {read} | {propose: {name, description, body, replaces?}}}` (#218) → `skill`'s
+text: with `read`, the persona's skill's body (8,000 characters at most; another persona's is a 400); with `propose`,
+a card (`form: "skill"`, `detail` the new file, or for `replaces` its diff) whose `approve` saves it, `decline` or no
+answer nothing.
 
 ## Routines (Settings › routines, #75)
 

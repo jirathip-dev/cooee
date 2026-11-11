@@ -20,6 +20,7 @@ mod providers;
 pub mod routines;
 pub mod secrets;
 mod shed;
+pub mod skills;
 mod store;
 
 pub use accounts::{Account, Accounts, Sheet, Usage, Window};
