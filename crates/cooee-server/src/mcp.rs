@@ -358,13 +358,7 @@ pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
         .collect())
 }
 
-/// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156) and `history` (#217) for a persona's.
-///
-/// # Errors
-/// Never past a broken stdin; each refused proposal is the tool's error.
-pub fn serve(thread: &str) -> Result<(), String> {
-    let out = Mutex::new(io::stdout());
+fn own_tools() -> Value {
     let schema = json!({
         "type": "object",
         "required": ["name", "type", "why"],
@@ -410,6 +404,17 @@ pub fn serve(thread: &str) -> Result<(), String> {
             "limit": { "type": "integer", "description": "fewer hits, at most 5" }
         } }
     });
+    json!([tool, remember, ask_persona, history])
+}
+
+/// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
+/// `ask_persona` (#156) and `history` (#217) for a persona's.
+///
+/// # Errors
+/// Never past a broken stdin; each refused proposal is the tool's error.
+pub fn serve(thread: &str) -> Result<(), String> {
+    let out = Mutex::new(io::stdout());
+    let tools = own_tools();
     for line in io::stdin().lock().lines().map_while(Result::ok) {
         let Ok(msg) = serde_json::from_str::<Value>(&line) else {
             continue;
@@ -427,10 +432,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                 }),
             ),
             "ping" => reply(id, &json!({})),
-            "tools/list" => reply(
-                id,
-                &json!({ "tools": [tool, remember, ask_persona, history] }),
-            ),
+            "tools/list" => reply(id, &json!({ "tools": tools })),
             "tools/call" => {
                 let args = msg
                     .pointer("/params/arguments")
