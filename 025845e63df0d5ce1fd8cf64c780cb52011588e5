@@ -1,0 +1,5 @@
+Decided: drop the unused `import Foundation` from RoomClientTests and merge origin/staging; no other change this round.
+Because: apple/Tests/CooeeAPITests/RoomClientTests.swift:1
+Rejected: disabling unused_import for the test target — the rule is a repo gate (.herdsman/rules.md).
+Check: CI apple-quality is green at 025845e (swiftlint analyze runs only there; this host has no Xcode).
+Owner: The room screens PR had one lint error in a test file; it is fixed and CI re-runs.
