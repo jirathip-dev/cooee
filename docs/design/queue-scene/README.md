@@ -77,6 +77,9 @@ the right edge and cut lines without an ellipsis; all 16 pass.
    stand without a gate, stable or fence. Here the place is carried by the order, the word and the red card.
    **Recommend:** a follow-up that adds the gate, stable and fence to the farm pack's `s-scene-needs|done|fail` (as
    #116's `horses.svg` drew them) and re-runs `apple/design/sprites.mjs`; no schema change.
+   **Decided (q1243, q1244, in #181's Amendments):** the refused/fail lane gets its own pose at the fence in the strip,
+   distinct from the needs-you pose at the gate. Impl builds that pose; the frames here show `fail` only by its place
+   (second, after the gate), its word and its card, and are otherwise unchanged.
 3. **Fold state.** **Recommend:** the app remembers which rows are open per sheet for the session, and opens a row
    whose current round turns needs-you. The alternative is the plugin's `open: true` on a row.
 4. **The strip's name card** shows `#n stage`, not the issue title (it does not fit at 92 pt). The row below has the
