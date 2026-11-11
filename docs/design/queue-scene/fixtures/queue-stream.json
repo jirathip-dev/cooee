@@ -1,0 +1,28 @@
+[
+ {
+  "seq": 41,
+  "ops": [
+   { "op": "merge", "id": "l-722", "fields": { "stage": "review 1", "tool": "read", "tap": { "thread": "herdsman-rev-722" } } },
+   { "op": "merge", "id": "q-722", "fields": { "badge": { "text": "review 1", "tone": "working" }, "figure": { "state": "working", "tool": "read" }, "subtitle": "impl ✓ · review 1 ▸ herdsman-rev-722 · mini" } },
+   { "op": "merge", "id": "r-722-impl", "fields": { "state": "done", "summary": "✓ 2 commits" } },
+   { "op": "insert", "into": "q-722", "block": { "id": "r-722-rev1", "name": "review 1", "state": "working", "summary": "reading the diff", "since": "2026-11-09T09:40:00Z",
+     "lane": { "name": "herdsman-rev-722", "harness": "Claude Code", "model": "opus 5.5", "host": "mini", "lines": ["read crates/core/src/spawn.rs"] },
+     "links": [{ "label": "lane chat", "tap": { "thread": "herdsman-rev-722" } }] } }
+  ]
+ },
+ {
+  "seq": 42,
+  "ops": [
+   { "op": "remove", "id": "q-708" },
+   { "op": "merge", "id": "l-708", "fields": { "state": "merged" } }
+  ]
+ },
+ {
+  "seq": 43,
+  "ops": [
+   { "op": "replace", "id": "q-456", "block": { "type": "row", "id": "q-456", "figure": { "state": "working", "tool": "edit" }, "title": "#456 Rename herdsman to drover", "badge": { "text": "impl", "tone": "working" }, "value": "now" } },
+   { "op": "insert", "into": "lanes", "block": { "id": "l-456", "title": "#456", "stage": "impl", "state": "working", "tool": "edit", "tap": { "thread": "herdsman-impl-456" } } },
+   { "op": "badge", "count": 6 }
+  ]
+ }
+]

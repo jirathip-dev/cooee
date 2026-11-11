@@ -66,64 +66,6 @@ internal struct ListBlock: View {
     }
 }
 
-internal struct RowView: View {
-    @Environment(\.look) private var look
-    @Environment(\.act) private var act
-    @State private var pending: JSONValue?
-    internal let row: JSONValue
-
-    internal var body: some View {
-        Group {
-            if row["tap"] == nil {
-                line
-            } else {
-                ActButton(source: row) { line }
-            }
-        }
-        .contextMenu {
-            ForEach(Array(row.list("swipe").enumerated()), id: \.offset) { _, swipe in
-                Button(swipe.string("label") ?? "", role: swipe.string("tone") == "bad" ? .destructive : nil) {
-                    if Confirm(for: swipe) == nil { run(swipe) } else { pending = swipe }
-                }
-            }
-        }
-        .modifier(Confirming(pending: $pending, run: run))
-    }
-
-    private var line: some View {
-        let palette = look.palette
-        let subtitle = row["subtitle"]
-        return HStack(spacing: 10) {
-            if let figure = row["figure"] { Figure(figure: figure) }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(row.string("title") ?? "").ui(15, .medium, look)
-                    .foregroundStyle(
-                        row.string("style") == "destructive"
-                            ? palette.red : row.string("style") == "link" ? palette.link : palette.foreground)
-                if let text = subtitle?.string ?? subtitle?.string("text") {
-                    Text(text).ui(12, .regular, look).foregroundStyle(
-                        palette.tone(subtitle?.string("tone")) ?? palette.mute
-                    ).lineLimit(1)
-                }
-            }
-            Spacer(minLength: 4)
-            if let badge = row["badge"] { Pill(badge: badge) }
-            if let value = row["value"] {
-                RelativeValue(value: value).ui(13, .regular, look).foregroundStyle(palette.mute)
-            }
-            if row["tap"] != nil && row.string("accessory") != "none" {
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundStyle(palette.mute)
-            }
-        }
-        .padding(.leading, CGFloat(row["indent"]?.number ?? 0) * 18).padding(.horizontal, 12).frame(minHeight: 44)
-        .contentShape(.rect)
-    }
-
-    private func run(_ swipe: JSONValue) {
-        if let action = BlockAction(action: nil, source: swipe, values: [:]) { act(action) }
-    }
-}
-
 internal struct RelativeValue: View {
     internal let value: JSONValue
 
@@ -135,10 +77,16 @@ internal struct RelativeValue: View {
 internal struct Figure: View {
     @Environment(\.look) private var look
     internal let figure: JSONValue
+    internal var title = ""
 
     internal var body: some View {
         let palette = look.palette
-        if let icon = figure.string("icon") {
+        let lane = figure.string("state").flatMap(LaneState.init(rawValue:))
+        if let lane, look.style == .terminal {
+            Text(lane.figure).ui(13, .bold, look).foregroundStyle(palette.round(lane)).frame(width: 40)
+        } else if let lane, look.style == .scene {
+            Sprite(name: "horse-\(SceneLane.coat(title))-\(lane.pose)").frame(width: 40, height: 30)
+        } else if let icon = figure.string("icon") {
             Image(systemName: icon).font(.system(size: 14, weight: .semibold)).foregroundStyle(palette.link).frame(
                 width: 28)
         } else if let avatar = figure.string("avatar") {

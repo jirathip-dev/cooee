@@ -4,6 +4,7 @@ import SwiftUI
 internal struct ActButton<Label: View>: View {
     @Environment(\.act) private var act
     @Environment(\.openURL) private var openURL
+    @Environment(\.openThread) private var openThread
     @State private var pending: JSONValue?
     internal var action: String?
     internal let source: JSONValue
@@ -23,6 +24,8 @@ internal struct ActButton<Label: View>: View {
     private func fire() {
         if let url = source["tap"]?.string("url").flatMap(URL.init(string:)) {
             openURL(url)
+        } else if let thread = source["tap"]?.string("thread") {
+            openThread(thread)
         } else if let action = BlockAction(action: action, source: source, values: values) {
             act(action)
         }

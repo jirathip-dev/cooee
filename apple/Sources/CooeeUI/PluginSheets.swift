@@ -40,7 +40,7 @@ internal struct PluginScreenSheet: View {
             ScrollView {
                 Group {
                     if let screen = store.screen {
-                        BlocksView(screen.root) { store.send(.act($0)) }
+                        BlocksView(screen.root, act: { store.send(.act($0)) }, open: { store.send(.open($0)) })
                             .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
                     } else if store.offline {
                         Text("Nothing kept from \(store.place.label) yet.").foregroundStyle(palette.mute)

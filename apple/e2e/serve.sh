@@ -4,8 +4,8 @@
 # `cooee pair` written to $PAIR_LINK (the command for another in $PAIR_LINK.again). `slow N` streams N words and holds
 # the turn open until stopped. #138: the `cards` plugin (cards.mjs, on $PORT+1) is attached to Coder and posts its four
 # cards into a chat that starts "Show me the cards"; it reads the thread list as a device paired first. #140: a fixture
-# `drover` (screens.py with #125's queue and events JSON) is installed with header-strip places for Conductor, a persona
-# it isn't attached to yet: the app attaches it.
+# `drover` (screens.py with #181's queue, a scene block and rows with rounds, and #125's events JSON) is installed with
+# header-strip places for Conductor, a persona it isn't attached to yet: the app attaches it.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -33,8 +33,8 @@ token = "e2e-cards-plugin-token"
 EOF
 drover="$tmp/drover"
 mkdir -p "$drover"
-cp apple/e2e/screens.py docs/design/screens-as-data/fixtures/queue.json docs/design/screens-as-data/fixtures/events.json \
-  docs/design/screens-as-data/fixtures/queue-stream.json "$drover/"
+cp apple/e2e/screens.py docs/design/screens-as-data/fixtures/events.json docs/design/queue-scene/fixtures/queue.json \
+  docs/design/queue-scene/fixtures/queue-stream.json "$drover/"
 cat >"$drover/cooee-plugin.toml" <<'TOML'
 name = "drover"
 version = "0.0.1"

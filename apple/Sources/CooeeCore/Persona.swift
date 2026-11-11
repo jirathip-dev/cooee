@@ -24,6 +24,17 @@ public enum LaneState: String, Sendable, Equatable {
 
     public var pose: String { self == .working ? "edit" : rawValue }
 
+    public var place: Int {
+        switch self {
+        case .needs: 0
+        case .fail: 1
+        case .working: 2
+        case .done: 3
+        case .idle: 4
+        case .merged: 5
+        }
+    }
+
     public init(api state: String) {
         switch state {
         case "working", "connecting": self = .working
@@ -51,6 +62,13 @@ public struct PersonaLook: Sendable, Equatable {
         self.tint = tint
         self.coat = coat
     }
+
+    public static func seed(_ key: String) -> Int { key.unicodeScalars.reduce(0) { $0 + Int($1.value) } }
+
+    public static func coat(_ key: String) -> String {
+        let coats = ["ch", "gry", "blk", "bay", "wht"]
+        return coats[seed(key) % coats.count]
+    }
 }
 
 public struct Persona: Identifiable, Sendable, Equatable {
@@ -74,13 +92,11 @@ public struct Persona: Identifiable, Sendable, Equatable {
         let words = api.name.split(separator: " ")
         let initials =
             words.count > 1 ? words.prefix(2).compactMap(\.first).map(String.init).joined() : String(api.name.prefix(2))
-        let seed = api.id.unicodeScalars.reduce(0) { $0 + Int($1.value) }
-        let coats = ["ch", "gry", "blk", "bay", "wht"]
         let look = PersonaLook(
             initials: initials.uppercased(),
             symbol: "person.fill",
-            tint: Tint.allCases[seed % Tint.allCases.count],
-            coat: coats[seed % coats.count]
+            tint: Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count],
+            coat: PersonaLook.coat(api.id)
         )
         self.init(api: api, look: look, state: state)
     }

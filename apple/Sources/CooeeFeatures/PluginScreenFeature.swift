@@ -33,6 +33,13 @@ public struct PluginScreenFeature: Sendable {
         case failed(String)
         case act(BlockAction)
         case acted(JSONValue?, String?)
+        case open(String)
+        case delegate(Delegate)
+
+        @CasePathable
+        public enum Delegate: Sendable, Equatable {
+            case open(String)
+        }
     }
 
     private enum CancelID { case follow }
@@ -61,6 +68,8 @@ public struct PluginScreenFeature: Sendable {
                 return act(&state, action)
             case .acted(let answer, let error):
                 acted(&state, answer, error)
+            case .open, .delegate:
+                return Self.opened(action)
             }
             return .none
         }
@@ -89,6 +98,11 @@ extension PluginScreenFeature {
             }
         }
         .cancellable(id: CancelID.follow, cancelInFlight: true)
+    }
+
+    private static func opened(_ action: Action) -> Effect<Action> {
+        guard case .open(let thread) = action else { return .none }
+        return .send(.delegate(.open(thread)))
     }
 
     private func keep(_ state: inout State) {

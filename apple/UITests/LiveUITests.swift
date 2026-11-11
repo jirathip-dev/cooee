@@ -49,11 +49,22 @@ internal final class LiveUITests: XCTestCase {
         queue.tap()
         XCTAssert(labelled(app, "#722").waitForExistence(timeout: 30))
         keep("queue")
-        XCTAssert(labelled(app, "review 1 ▸ herdsman-rev-722").waitForExistence(timeout: 30))
-        keep("queue-live")
+        followsTheQueueAndFoldsARowOpen(app)
         app.buttons["Pause"].firstMatch.tap()
         XCTAssert(labelled(app, "actions are off").waitForExistence(timeout: 30))
         keep("queue-offline")
+    }
+
+    @MainActor
+    private func followsTheQueueAndFoldsARowOpen(_ app: XCUIApplication) {
+        XCTAssert(labelled(app, "review 1 ▸ herdsman-rev-722").waitForExistence(timeout: 30))
+        keep("queue-live")
+        labelled(app, "#641").tap()
+        XCTAssert(labelled(app, "herdsman-impl-641").waitForExistence(timeout: 10))
+        XCTAssert(app.buttons["PR #704 ›"].exists)
+        keep("queue-row-open")
+        labelled(app, "#641").tap()
+        XCTAssert(labelled(app, "herdsman-impl-641").waitForNonExistence(timeout: 10))
     }
 
     @MainActor

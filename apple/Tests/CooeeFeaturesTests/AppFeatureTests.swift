@@ -87,4 +87,19 @@ internal struct AppFeatureTests {
         let store = store(AppFeature.State(server: nil))
         await store.send(.open("t1")) { $0.path = ["t1"] }
     }
+
+    @Test internal func aChatAskingToOpenAThreadOpensIt() async {
+        let store = store(paired())
+        await store.send(.open("t1")) {
+            $0.path = ["t1"]
+            $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
+        }
+        await store.send(.chat(.delegate(.open("gone"))))
+        await store.receive(\.open, "gone") {
+            $0.path = ["gone"]
+            $0.chat = ChatFeature.State(
+                server: mini, target: .thread("gone"), persona: Persona(APIPersona(id: "", name: "Chat", agent: ""))
+            )
+        }
+    }
 }

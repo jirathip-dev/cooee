@@ -47,6 +47,8 @@ public struct AppFeature: Sendable {
                 state.path = state.path.dropLast() + [thread]
                 state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
                 return .send(.home(.refresh))
+            case .chat(.delegate(.open(let thread))):
+                return .send(.open(thread))
             default:
                 return navigate(&state, action)
             }
