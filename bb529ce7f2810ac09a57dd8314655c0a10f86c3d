@@ -1,0 +1,12 @@
+Decided: a manifest's attach = "http://127.0.0.1:<port>" is that backend's port; while it answers, add checks it and serve starts nothing, else run starts on that same port
+Because: "used when that URL answers, else `run`"
+Decided: attach_token names the backend's own token file; add reads it and calls the backend with it
+Because: q1290
+Rejected: re-reading the token file every supervision tick — add only attaches to a backend that answers, which wrote its file already
+Decided: drover is pinned at herdsman 90ed1843 (#814's manifest) until herdsman's manifest gains attach and attach_token
+Because: plugins/index.toml:9
+Decided: cooee plugin check takes a cooee-plugin.toml and runs Manifest::parse on it
+Because: "`cooee plugin check` passes herdsman's manifest"
+Rejected: renaming cooee-drover in docs/design mockups and fixtures — dated design records that feed fixture and snapshot tests
+Check: crates/cooee/tests/plugin_manager.rs attach test: a token-checking backend on the attach port serves the tab, run starts only after it is killed
+Owner: herdsman's drover replaces the archived plugin, and cooee uses the herdsman serve already running instead of starting another
