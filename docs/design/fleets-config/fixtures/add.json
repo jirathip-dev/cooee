@@ -1,0 +1,20 @@
+{
+  "type": "sheet", "id": "add", "title": "Add a repo", "cancel": "Cancel", "done": { "label": "Review", "action": "review" },
+  "blocks": [
+    { "type": "section", "header": "repo", "blocks": [
+      { "type": "form", "id": "add-repo", "fields": [
+        { "type": "picker", "name": "repo", "label": "GitHub", "value": "jirathip-dev/kestrel-site", "doc": "repos your gh sign-in reaches", "options": ["jirathip-dev/kestrel-site", "jirathip-dev/ledger"] },
+        { "type": "text", "name": "name", "label": "Fleet", "value": "kestrel-site" },
+        { "type": "picker", "name": "local", "label": "Folder", "value": "~/Projects/kestrel-site", "doc": "on mini · cloned there if missing", "options": [] },
+        { "type": "picker", "name": "integration", "label": "Merges to", "value": "staging", "doc": "never main", "options": ["staging", "develop"] } ] } ] },
+    { "type": "section", "header": "roles · from defaults", "footer": "Each is the default role's harness, model and account order. Change them after adding.", "blocks": [
+      { "type": "list", "rows": [
+        { "type": "row", "title": "impl", "subtitle": "Claude Code · opus 5.5 · A → B → C", "tap": {} },
+        { "type": "row", "title": "rev", "subtitle": "Claude Code · sonnet 5.5 · A → B → C", "tap": {} },
+        { "type": "row", "title": "design, architect, verify", "subtitle": "Claude Code · opus 5.5 · high", "tap": {} } ] } ] },
+    { "type": "section", "header": "start", "blocks": [
+      { "type": "form", "id": "add-start", "fields": [
+        { "type": "toggle", "name": "paused", "label": "Paused", "value": true, "doc": "Resume when its queue is ready" } ] } ] },
+    { "type": "text", "style": "footnote", "markdown": "Review shows the `[fleet.kestrel-site]` table this adds to fleet.toml, before anything is written." }
+  ]
+}

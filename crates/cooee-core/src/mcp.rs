@@ -1,16 +1,8 @@
 //! MCP servers (#56): the registry (`[[mcp]]` in the config), what a profile picks from it, and the references their
-//! variables and headers hold. A value is never written down: only `secret:<NAME>` (the Mac's keychain, else
-//! `<data>/secrets/<NAME>`) or `env:<NAME>` (the Mac's environment), resolved in memory when a thread's proxy starts.
+//! variables and headers hold. A value is never written down: only `secret:<NAME>` ([`crate::secrets`]) or
+//! `env:<NAME>` (the Mac's environment), resolved in memory when a thread's proxy starts.
 
-use std::{
-    collections::BTreeMap,
-    env, fs,
-    io::{self, Write as _},
-    path::Path,
-    process::{Command, Stdio},
-    thread,
-    time::{Duration, Instant},
-};
+use std::{collections::BTreeMap, env, fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
 
@@ -291,79 +283,7 @@ pub fn save_picks(path: &Path, picks: &[Pick]) -> io::Result<()> {
     fs::write(path, with_tables(&read(path)?, &tables))
 }
 
-const KEYCHAIN: Duration = Duration::from_secs(5);
-
-/// Runs macOS's `security` with `input` on its stdin, for 5 s at most: whether it succeeded, and its stdout.
-///
-/// # Errors
-/// When it can't start or doesn't answer in time.
-pub fn security(args: &[&str], input: &str) -> io::Result<(bool, String)> {
-    let mut child = Command::new("security")
-        .args(args)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()?;
-    child
-        .stdin
-        .take()
-        .map(|mut i| i.write_all(input.as_bytes()));
-    let deadline = Instant::now() + KEYCHAIN;
-    while child.try_wait()?.is_none() {
-        if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Err(io::Error::new(
-                io::ErrorKind::TimedOut,
-                "the keychain didn't answer in 5 s: unlock it, or allow cooee in Keychain Access",
-            ));
-        }
-        thread::sleep(Duration::from_millis(20));
-    }
-    let out = child.wait_with_output()?;
-    Ok((
-        out.status.success(),
-        String::from_utf8_lossy(&out.stdout)
-            .trim_end_matches('\n')
-            .to_owned(),
-    ))
-}
-
-fn account(data: &Path, name: &str) -> String {
-    let hash = crate::sha256(data.as_os_str().as_encoded_bytes());
-    format!("secret-{}-{name}", &hash[..16])
-}
-
-/// Secret `name`: the keychain's (macOS), else `<data>/secrets/<name>` (its last newline dropped).
-///
-/// # Errors
-/// When the keychain or the file can't be read.
-pub fn secret(data: &Path, name: &str) -> io::Result<Option<String>> {
-    if cfg!(target_os = "macos") {
-        let (found, v) = security(
-            &[
-                "find-generic-password",
-                "-s",
-                "cooee",
-                "-a",
-                &account(data, name),
-                "-w",
-            ],
-            "",
-        )?;
-        if found {
-            return Ok(Some(v));
-        }
-    }
-    match fs::read_to_string(data.join("secrets").join(name)) {
-        Ok(v) => Ok(Some(v.strip_suffix('\n').unwrap_or(&v).to_owned())),
-        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
-        Err(e) => Err(e),
-    }
-}
-
-/// Saves secret `name`: in the keychain on macOS (read from stdin, so it never shows in a process list), else
-/// `<data>/secrets/<name>` (0600).
+/// Saves secret `name` (see [`crate::secrets::set`]).
 ///
 /// # Errors
 /// A bad name, a value with a line break, or a store that can't be written.
@@ -374,21 +294,10 @@ pub fn set_secret(data: &Path, name: &str, value: &str) -> io::Result<()> {
             "a secret is a NAME and one line",
         ));
     }
-    if cfg!(target_os = "macos") {
-        let v = value.replace('\\', r"\\").replace('"', "\\\"");
-        let add = format!(
-            "add-generic-password -U -s cooee -a {} -w \"{v}\"\n",
-            account(data, name)
-        );
-        if !security(&["-i"], &add)?.0 {
-            return Err(io::Error::other("the keychain refused the secret"));
-        }
-        return Ok(());
-    }
-    crate::write_private(&data.join("secrets").join(name), value.as_bytes())
+    crate::secrets::set(data, name, value)
 }
 
-/// Resolves reference `r`: `env:<NAME>` from the Mac's environment, `secret:<NAME>` from [`secret`].
+/// Resolves reference `r`: `env:<NAME>` from the Mac's environment, `secret:<NAME>` from [`crate::secrets::get`].
 ///
 /// # Errors
 /// Names what is missing, never a value.
@@ -397,7 +306,7 @@ pub fn resolve(r: &str, data: &Path) -> Result<String, String> {
         return env::var(n).map_err(|_| format!("env:{n} isn't set on the Mac"));
     }
     let n = r.strip_prefix("secret:").ok_or("not a reference")?;
-    secret(data, n)
+    crate::secrets::get(data, n)
         .map_err(|e| format!("secret:{n}: {e}"))?
         .ok_or_else(|| format!("secret:{n} isn't saved: set it in settings › mcp servers"))
 }

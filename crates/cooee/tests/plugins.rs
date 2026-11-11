@@ -822,10 +822,10 @@ fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
 
 #[test]
 fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
-    let fixtures = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../docs/design/screens-as-data/fixtures");
-    let mut files: Vec<_> = std::fs::read_dir(&fixtures)
-        .unwrap()
+    let design = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/design");
+    let mut files: Vec<_> = ["screens-as-data", "fleets-config"]
+        .iter()
+        .flat_map(|d| std::fs::read_dir(design.join(d).join("fixtures")).unwrap())
         .map(|f| f.unwrap().path())
         .collect();
     files.sort();
@@ -837,7 +837,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let said = String::from_utf8_lossy(&out.stdout);
     assert!(
         out.status.success()
-            && said.lines().count() == 10
+            && said.lines().count() == 19
             && said.lines().all(|l| l.starts_with("ok")),
         "{said}"
     );
@@ -846,6 +846,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let broken = json!({ "type": "screen", "title": "Queue", "blocks": [
         { "type": "list", "rows": [{ "type": "row", "title": "#722", "badge": { "text": "impl", "tone": "red" } }] },
         { "type": "secret", "name": "GH_TOKEN", "action": "set", "value": "leaked" },
+        { "type": "editor", "name": "toml", "text": "" },
         { "type": "a-newer-block" } ] });
     let (ok, said) = checked(&s, &broken);
     assert!(!ok);
@@ -854,6 +855,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
         [
             "$.blocks[0].rows[0].badge.tone: \"red\" is not one of \"ok\", \"warn\", \"bad\", \"info\", \"mute\", \"accent\", \"working\", \"needs\", \"done\", \"fail\", \"idle\"",
             "$.blocks[1].value: must not be sent",
+            "$.blocks[2].action: is required",
         ]
     );
 }

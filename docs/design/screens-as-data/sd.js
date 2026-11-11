@@ -1,12 +1,12 @@
-const W = '../../../web/', P = '../../../packs/themes/';
+const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);
-const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark', F = q.get('f');
+const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark', F = q.get('f'), STYLE = q.get('style') || 'modern';
 const theme = await fetch(`${P}${T}/theme.json`).then(r => r.json());
 const scheme = await fetch(`${W}schemes/${theme.scheme[MODE]}.json`).then(r => r.json());
 const r = document.documentElement;
 for (const [k, v] of Object.entries(scheme.tokens)) r.style.setProperty(k, v);
 r.style.colorScheme = scheme['color-scheme'];
-Object.assign(r.dataset, { theme: T, style: 'modern', scene: 'off', mode: MODE });
+Object.assign(r.dataset, { theme: T, style: STYLE === 'terminal' ? 'terminal' : 'modern', scene: STYLE === 'scene' ? 'on' : 'off', mode: MODE });
 const defs = async u => (await fetch(u).then(r => r.text())).replace(/^[\s\S]*?<svg[^>]*>|<\/svg>\s*$/g, '');
 document.body.insertAdjacentHTML('afterbegin', `<svg width=0 height=0 style="position:absolute" aria-hidden=true><defs>${await defs(`${P}${T}/sprites.svg`)}</defs></svg>`);
 if (F) { r.dataset.one = ''; document.querySelector(`[data-f="${F}"]`)?.closest('.fr').classList.add('one'); }
@@ -25,7 +25,8 @@ const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)
 const md = (s, b) => s.replace('{rel}', b.until || b.since ? rel(b.until || b.since) : '').split(/\n\n+/).map(p => p.startsWith('```')
   ? `<pre class=diff>${esc(p.replace(/^```\w*\n?|\n?```$/g, ''))}</pre>` : `<p>${inl(p)}</p>`).join('');
 
-const fig = f => !f ? '' : f.state ? `<svg class=rsp viewBox="0 0 24 24" aria-label="${esc(theme.words[f.state] || PLAIN[f.state])}"><use href="#s-${f.state === 'working' ? f.tool || 'edit' : f.state}"/></svg>`
+const POSE = { working: 'edit', needs: 'needs', done: 'done', fail: 'fail', idle: 'idle' };
+const fig = f => !f ? '' : f.coat && STYLE === 'scene' ? `<img class=hrs src="${SPR}horse-${f.coat}-${POSE[f.state]}.png" alt="${esc(theme.words[f.state])}">` : f.state ? `<svg class=rsp viewBox="0 0 24 24" aria-label="${esc(theme.words[f.state] || PLAIN[f.state])}"><use href="#s-${f.state === 'working' ? f.tool || 'edit' : f.state}"/></svg>`
   : f.icon ? `<i class=ms style="--k:var(--l)">${ICON[f.icon] || esc(f.icon)}</i>` : '';
 const spark = a => { const lo = Math.min(...a), hi = Math.max(...a), d = hi - lo || 1;
   return `<svg class=spk viewBox="0 0 100 22" preserveAspectRatio=none aria-hidden=true><polyline points="${a.map((v, i) => `${i * 100 / (a.length - 1)},${20 - (v - lo) / d * 18}`).join(' ')}"/></svg>`; };
@@ -36,9 +37,10 @@ const B = {
   row: b => {
     const sub = b.subtitle && (typeof b.subtitle === 'string' ? { text: b.subtitle } : b.subtitle);
     const acc = b.accessory === 'chevron' || (b.tap && !b.accessory && b.style !== 'link');
-    return `<a class="gr${sub ? ' two' : ''}${b.indent ? ' in1' : ''}${b.style === 'link' ? ' lk' : ''}${b.style === 'destructive' ? ' rd' : ''}" href="#" data-id="${b.id || ''}">${fig(b.figure)}
+    return `<a class="gr${sub ? ' two' : ''}${b.indent ? ' in1' : ''}${b.style === 'link' ? ' lk' : ''}${b.style === 'destructive' ? ' rd' : ''}${b.changed ? ' edt' : ''}${b.lifted ? ' lift' : ''}" href="#" data-id="${b.id || ''}">${fig(b.figure)}
       <span class=sk>${esc(b.title)}${sub ? `<small${tone(sub.tone)}>${esc(sub.text)}</small>` : ''}</span>${b.badge ? `<span class=sbd${tone(b.badge.tone)}>${esc(b.badge.text)}</span>` : ''}${
-      b.value != null ? `<span class=sv>${val(b.value)}</span>` : ''}${acc ? '<span class=cv></span>' : ''}</a>`;
+      b.value != null ? `<span class=sv>${val(b.value)}</span>` : ''}${b.button ? `<button type=button class=rbn${tone(b.button.tone)}>${esc(b.button.label)}</button>` : ''}${
+      b.handle ? '<span class=ord aria-label=reorder>≡</span>' : acc ? '<span class=cv></span>' : ''}</a>`;
   },
   card: b => { const k = KIND[b.kind];
     return `<div class=ak${tone(b.tone || k?.[2])} data-id="${b.id || ''}">${k ? `<p class=ckd>${ic(k[0])}<b>${k[1]}</b>${FROM && b.kind !== 'ask' ? ` · ${esc(FROM)}` : ''}</p>` : ''}${b.title || b.meta ? `<div class=cd><span class=cdt>${esc(b.title || '')}</span>` : '<div hidden>'}${
@@ -59,9 +61,11 @@ const B = {
       b.other ? `<p class=oth${inCard ? '' : ' style="margin:0 16px"'}><input aria-label="other answer" placeholder="${esc(b.other.placeholder)}"></p>` : ''}${
       b.default ? `<p class=ds>${esc(b.default.label.replace('{rel}', rel(b.default.until)))}</p>` : ''}`;
   },
-  form: b => `<div class=gs>${b.fields.map(f => `<label class=gr><span class=lb>${esc(f.label)}</span>${
+  form: b => `<div class=gs>${b.fields.map(f => `<label class="gr${f.doc || f.was || f.error ? ' two' : ''}${f.was ? ' edt' : ''}${f.error ? ' err' : ''}"><span class=lb>${esc(f.label)}${
+    f.error ? `<small data-tone=bad>${esc(f.error)}</small>` : f.was ? `<small data-tone=accent>was ${esc(f.was)}</small>` : f.doc ? `<small>${esc(f.doc)}</small>` : ''}</span>${
     f.type === 'toggle' ? `<span class=sk></span><i class=tg role=switch aria-checked=${!!f.value}></i>`
-    : f.type === 'picker' ? `<span class=sk></span><span class=pkv>${esc(f.value)}</span>`
+    : f.type === 'picker' ? `<span class=sk></span><span class=pkv>${esc(f.value)}</span>${f.open ? `<span class="pmn${f.open === 'up' ? ' up' : ''}" role=menu>${f.options.map(o =>
+      `<i${o === f.value ? ' class=on' : ''}>${esc(o)}</i>`).join('')}</span>` : ''}`
     : f.type === 'secret' ? (f.set ? `<span class=sk></span><span class=sv>•••••••• <small>set ✓</small></span>` : `<input type=password placeholder="${esc(f.placeholder || '')}">`)
     : `<input value="${esc(f.value || '')}" placeholder="${esc(f.placeholder || '')}">`}</label>`).join('')}</div>${
     b.submit ? B.button({ label: b.submit.label, style: 'primary' }) : ''}`,
@@ -72,10 +76,15 @@ const B = {
     return `<div class="st${it.length === 1 ? ' one' : ''}">${it.map(s => `<div class=sti${tone(s.tone)}><b>${esc(s.value)}${s.unit ? ` <small>${esc(s.unit)}</small>` : ''}</b><span>${esc(s.label)}</span>${s.spark ? spark(s.spark) : ''}</div>`).join('')}</div>`; },
   text: b => `<div class="txt${b.style === 'footnote' ? ' ds' : ''}">${md(b.markdown, b)}</div>`,
   images: b => `<div class="sim${b.size === 'large' ? ' lg' : ''}">${b.items.map(i => `<figure><img src="${src(i.src)}" alt="${esc(i.alt)}">${i.caption ? `<figcaption class=sic>${esc(i.caption)}</figcaption>` : ''}</figure>`).join('')}</div>`,
+  diff: b => `<div class=dfb><p class=dff>${esc(b.file)}${b.summary ? `<span>${esc(b.summary)}</span>` : ''}</p>${b.hunks.map(h => `<p class=dfh>${esc(h.at)}</p>${
+    h.lines.map(l => `<code class=dl${l[0] === '+' ? ' data-d=add' : l[0] === '-' ? ' data-d=del' : ''}>${esc(l)}</code>`).join('')}`).join('')}</div>`,
+  editor: b => `<div class=edb>${b.text.split('\n').map((l, i) => { const e = (b.errors || []).find(x => x.line === b.first + i);
+    return `<code class="el${e ? ' bad' : ''}" data-n=${b.first + i}>${esc(l) || ' '}</code>${e ? `<span class=eer>${esc(e.message)}</span>` : ''}`; }).join('')}</div>`,
   web: b => `<div class=wv style="--h:${b.height || 180}px"><b>web · sandboxed</b>${esc(b.src)}</div>`,
 };
 let inCard = false, FROM = '';
-const KIND = { ask: ['hand', 'ask', 'bad'], run: ['term', 'run card', 'warn'], secret: ['key', 'secret', 'warn'], config: ['gear', 'config', 'info'] };
+const KIND = { ask: ['hand', 'ask', 'bad'], run: ['term', 'run card', 'warn'], secret: ['key', 'secret', 'warn'], config: ['gear', 'config', 'info'],
+  proposal: ['gear', 'config proposal', 'info'] };
 const one = b => { if (b.type !== 'card') return B[b.type](b); const was = inCard; inCard = true; const h = B.card(b); inCard = was; return h; };
 const all = bs => (bs || []).map(one).join('');
 
@@ -130,7 +139,7 @@ const CHAT = {
 const strip = () => `<nav class=hs aria-label="drover"><a class=hsc href="#">Queue<i class=hsn>${qBadge}</i></a><a class=hsc href="#">Events</a></nav>`;
 const chathead = c => `<header class="nb sc ch2${c.strip ? ' hs2' : ''}"><a class=bk href="#"><b>‹</b></a><span class=ph2>${av(c.p)}<span><b>${c.name}</b><small class=ds>${c.sub}</small></span></span>
   <a class=hbt href="#" aria-label="more">${ic('more')}</a>${c.strip ? strip() : ''}</header>`;
-const chat = async (k = 'chat') => { const c = CHAT[k], cards = await json(c.cards); FROM = c.from;
+const chat = async (k = 'chat', own) => { const o = own ? await json(own) : {}, c = { ...CHAT[k], ...o }, cards = o.cards || await json(c.cards); FROM = c.from;
   const h = `<div class="cvw${c.strip ? ' hs2' : ''}"><ol class=tc aria-label=messages>
     <li class="blk me"><div class=md>${esc(c.me)}</div><span class=ct>09:37</span></li>
     <li class="blk ai"><b class=k>${c.name}</b><div class=md>${esc(c.ai)}</div></li>
@@ -139,8 +148,8 @@ const chat = async (k = 'chat') => { const c = CHAT[k], cards = await json(c.car
   FROM = ''; return h; };
 const sheet = (s, off) => `<div class=dim></div><div class="ps sdx${off ? ' off' : ''}" role=dialog aria-label="${esc(s.title)}"><div class=psh>${s.type === 'sheet'
   ? `<a href="#">${esc(s.cancel || 'Cancel')}</a><b>${esc(s.title)}</b><a href="#">${esc(s.done?.label || 'Done')}</a>`
-  : `<span>${(s.actions || []).map(a => `<a href="#" aria-label="${esc(a.label)}">${ic(a.icon) }</a>`).join('')}</span><b>${esc(s.title)}</b><a href="#">Done</a>`}</div>
-  <div class=pb><div class=in>${off ? `<div class=ofl role=status><b>Mac unreachable</b><span>drover's Queue as of ${off} ago · actions are off until it's back</span><a href="#">Retry</a></div>` : ''}${all(s.blocks)}</div></div></div>`;
+  : `<span>${s.back ? `<a href="#" class=bk2>‹ ${esc(s.back)}</a>` : ''}${(s.actions || []).map(a => `<a href="#" aria-label="${esc(a.label)}">${ic(a.icon) }</a>`).join('')}</span><b>${esc(s.title)}</b><a href="#"${s.done?.off ? ' class=off aria-disabled=true' : ''}>${esc(s.done?.label || 'Done')}</a>`}</div>
+  <div class=pb><div class=in>${off ? `<div class=ofl role=status><b>Mac unreachable</b><span>drover's Queue as of ${off} ago · actions are off until it's back</span><a href="#">Retry</a></div>` : ''}${all(s.blocks)}</div></div>${s.pending ? `<div class=pnd><span><b>${esc(s.pending.count)}</b> · ${esc(s.pending.text)}</span><a href="#">Discard</a><button type=button>Review changes</button></div>` : ''}</div>`;
 const attach = m => { const p = m.permissions, row = (ic, t, sub, tone) => ({ type: 'row', figure: { icon: ic }, title: t, subtitle: sub && (tone ? { text: sub, tone } : sub) });
   return sheet({ type: 'sheet', title: 'Attach drover', cancel: 'Cancel', done: { label: 'Attach' }, blocks: [
     { type: 'text', markdown: `**cooee-drover ${m.version}** · \`${m.commit}\` · from the index\n\nAttach it to **Conductor**. It may do only what is listed; cooee refuses anything else.` },
@@ -159,14 +168,15 @@ for (const e of document.querySelectorAll('[data-host]')) {
     if (e.dataset.live) for (const ev of await json(e.dataset.live)) apply(sc, ev.ops);
     over += sheet(sc, e.dataset.offline);
   }
-  const base = e.dataset.host === 'home' ? home() : await chat(e.dataset.host);
+  const base = e.dataset.host === 'home' ? home() : await chat(e.dataset.host, e.dataset.chat);
   if ('menu' in e.dataset) over += menu();
   if (e.dataset.attach) over += attach(await json(e.dataset.attach));
-  if (e.dataset.confirm) { const f = find({ blocks: await json('fixtures/cards.json') }, e.dataset.confirm).node; over += confirm(f.options.find(o => o.value === e.dataset.value).confirm); }
+  if (e.dataset.confirm) { const f = find(sc || { blocks: await json('fixtures/cards.json') }, e.dataset.confirm).node; over += confirm(f.confirm || f.options.find(o => o.value === e.dataset.value).confirm); }
   if (e.dataset.wide) e.innerHTML = `<aside class=side>${home()}</aside><main class=dtl>${base}</main>${over}`;
   else e.outerHTML = base + over;
   qBadge = 7;
 }
+for (const p of document.querySelectorAll('[data-scroll]')) p.querySelector('.pb').style.setProperty('--y', p.dataset.scroll + 'px');
 for (const p of document.querySelectorAll('.ph')) p.insertAdjacentHTML('beforeend', `<div class=stb>${SB}</div><i class=isl></i><i class=hind></i>`);
 for (const e of document.querySelectorAll('[data-cat]')) {
   const cat = await json(e.dataset.cat), hello = await fetch('../../plugins/hello-py/hello.py').then(r => r.text());

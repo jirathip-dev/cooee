@@ -56,7 +56,7 @@ internal struct ListBlock: View {
         let rows = block.list("rows")
         VStack(spacing: 0) {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
-                RowView(row: row)
+                RowView(row: row).modifier(Reordering(list: block, row: row))
                 if index < rows.count - 1 {
                     Rectangle().fill(look.palette.line).frame(height: 0.5).padding(.leading, 12)
                 }
@@ -111,43 +111,31 @@ internal struct RowView: View {
             if let value = row["value"] {
                 RelativeValue(value: value).ui(13, .regular, look).foregroundStyle(palette.mute)
             }
-            if row["tap"] != nil && row.string("accessory") != "none" {
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundStyle(palette.mute)
-            }
+            if let button = row["button"] { RowButton(button: button) }
+            trailing
         }
         .padding(.leading, CGFloat(row["indent"]?.number ?? 0) * 18).padding(.horizontal, 12).frame(minHeight: 44)
         .contentShape(.rect)
+        .overlay(alignment: .leading) {
+            if row["changed"]?.bool == true {
+                RoundedRectangle(cornerRadius: 2).fill(palette.lead).frame(width: 3).padding(.vertical, 10)
+            }
+        }
+        .modifier(Lifted(lifted: row["lifted"]?.bool == true))
+    }
+
+    @ViewBuilder private var trailing: some View {
+        if row["handle"]?.bool == true {
+            Image(systemName: "line.3.horizontal").font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(look.palette.mute).accessibilityLabel("Reorder")
+        } else if row["tap"] != nil && row.string("accessory") != "none" {
+            Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                .foregroundStyle(look.palette.mute)
+        }
     }
 
     private func run(_ swipe: JSONValue) {
         if let action = BlockAction(action: nil, source: swipe, values: [:]) { act(action) }
-    }
-}
-
-internal struct RelativeValue: View {
-    internal let value: JSONValue
-
-    internal var body: some View {
-        TimelineView(.everyMinute) { context in Text(value.text(at: context.date) ?? "") }
-    }
-}
-
-internal struct Figure: View {
-    @Environment(\.look) private var look
-    internal let figure: JSONValue
-
-    internal var body: some View {
-        let palette = look.palette
-        if let icon = figure.string("icon") {
-            Image(systemName: icon).font(.system(size: 14, weight: .semibold)).foregroundStyle(palette.link).frame(
-                width: 28)
-        } else if let avatar = figure.string("avatar") {
-            Text(avatar.prefix(2).uppercased()).ui(12, .bold, look).frame(width: 28, height: 28)
-                .background(palette.edge.opacity(0.5), in: .circle)
-        } else {
-            Circle().fill(palette.tone(figure.string("state")) ?? palette.mute).frame(width: 10, height: 10).frame(
-                width: 28)
-        }
     }
 }
 
