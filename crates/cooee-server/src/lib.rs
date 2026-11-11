@@ -2650,7 +2650,11 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         });
     }
     let theme = looks.looks().themes[&looks.looks().default].clone();
-    let logins = Logins::new(shed.clone(), config.providers.clone(), &data);
+    let logins = Logins::new(
+        shed.clone(),
+        cooee_core::Providers::new(&config.providers),
+        &data,
+    );
     let hub = Hub::open(
         shed,
         &data,

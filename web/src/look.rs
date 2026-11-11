@@ -91,7 +91,7 @@ impl Theme {
         }
     }
 
-    /// A push's body: the theme word, the plain word, then the agent's line (`at the gate · needs you · codex: …`);
+    /// A push's body: the theme word, the plain word, then the agent's line (`at the gate · needs you · acme: …`);
     /// a theme without its own word says the plain word once.
     #[must_use]
     pub fn push_body(&self, key: &str, line: &str) -> String {
