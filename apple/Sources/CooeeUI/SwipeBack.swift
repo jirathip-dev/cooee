@@ -8,7 +8,8 @@
             internal weak var stack: UINavigationController?
 
             internal func gestureRecognizerShouldBegin(_ gesture: UIGestureRecognizer) -> Bool {
-                (stack?.viewControllers.count ?? 0) > 1
+                guard let stack, stack.transitionCoordinator == nil else { return false }
+                return stack.viewControllers.count > 1
             }
         }
 
