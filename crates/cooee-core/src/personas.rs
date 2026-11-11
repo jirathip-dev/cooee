@@ -16,6 +16,18 @@ use crate::{plugins, profiles};
 /// drover's installed name (`plugins/index.toml`).
 const DROVER: &str = "drover";
 
+/// What a persona is (#159), apart from its name: drover attaches by it.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Role {
+    /// A plain persona.
+    #[default]
+    #[serde(rename = "")]
+    Plain,
+    /// One of herdsman's orchestrators: an installed drover is attached to it.
+    Orchestrator,
+}
+
 /// One persona.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
@@ -23,8 +35,12 @@ pub struct Persona {
     /// Its id, its file's name (never in the file): lowercase letters, digits and `-`.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub id: String,
-    /// Its name.
+    /// Its name, for display only.
     pub name: String,
+    /// Its role (#159).
+    pub role: Role,
+    /// The repos or fleets it covers (#159); another persona may cover them too.
+    pub fleets: Vec<String>,
     /// An image (as a profile's avatar); none: the client draws its initials.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub avatar: Option<String>,
@@ -99,21 +115,11 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
             continue;
         }
         let read = fs::read_to_string(&file).map_err(|e| e.to_string());
-        match read.and_then(|t| toml::from_str::<Persona>(&t).map_err(|e| e.message().to_owned())) {
-            Ok(p) => out.push(Persona {
-                id: id.to_owned(),
-                ..p
-            }),
+        match read.and_then(|t| from_file(id, &t).map_err(|e| e.message().to_owned())) {
+            Ok(p) => out.push(p),
             Err(e) => eprintln!("cooee: {}: {e}", file.display()),
         }
     }
-    // Migrated (#129): an installed drover goes with the conductor profile's persona.
-    let lock = plugins::read_lock(data).unwrap_or_default();
-    let drover: Vec<String> = lock
-        .into_iter()
-        .map(|l| l.name)
-        .filter(|n| n == DROVER)
-        .collect();
     for p in profiles::list(config, data, |_| None) {
         if p.plugin.is_none() && out.iter().all(|o| o.id != p.name) {
             let text = p.instructions.and_then(|f| fs::read_to_string(f).ok());
@@ -127,18 +133,43 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
                     .map(|f| f.display().to_string())
                     .unwrap_or_default(),
                 agent: p.agent,
-                plugins: if p.name == "conductor" {
-                    drover.clone()
-                } else {
-                    Vec::new()
-                },
+                role: role(&p.name, None),
                 profile: Some(p.name),
                 ..Persona::default()
             });
         }
     }
+    let lock = plugins::read_lock(data).unwrap_or_default();
+    if lock.iter().any(|l| l.name == DROVER) {
+        let orchestrators = out.iter_mut().filter(|p| p.role == Role::Orchestrator);
+        for p in orchestrators.filter(|p| !p.plugins.iter().any(|n| n == DROVER)) {
+            p.plugins.push(DROVER.to_owned());
+        }
+    }
     out.sort_by(|a, b| a.id.cmp(&b.id));
     out
+}
+
+/// Persona `id` from its file's `text`.
+fn from_file(id: &str, text: &str) -> Result<Persona, toml::de::Error> {
+    let table: toml::Table = toml::from_str(text)?;
+    let set = table.contains_key("role");
+    let p: Persona = toml::Value::Table(table).try_into()?;
+    Ok(Persona {
+        id: id.to_owned(),
+        role: role(id, set.then_some(p.role)),
+        ..p
+    })
+}
+
+/// The role of the persona `id` (or read from profile `id`): the one it has, else (saved before #159) the conductor's
+/// is an orchestrator.
+fn role(id: &str, set: Option<Role>) -> Role {
+    set.unwrap_or(if id == "conductor" {
+        Role::Orchestrator
+    } else {
+        Role::Plain
+    })
 }
 
 /// Persona `id`'s header strip: the `header-strip` places of the plugins attached to it, in its order and theirs.

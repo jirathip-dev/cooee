@@ -1,8 +1,8 @@
 //! Personas over the API (#126) with the fake shed (tests/support): one is created, edited and deleted; today's
 //! profile is read as a persona with nothing lost and runs as that profile; a note by the persona (its `remember`
 //! tool through cooee's MCP server) and one by the owner both list and reach its next session; clearing its memory,
-//! or deleting it, leaves its chats. Plugins attach to a persona and detach (#129); an installed drover goes with the
-//! conductor profile's.
+//! or deleting it, leaves its chats. Plugins attach to a persona and detach (#129); an installed drover goes with every
+//! orchestrator persona, by its role (#159).
 
 mod support;
 
@@ -233,7 +233,8 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
         list,
         json!([{ "id": "coder", "name": "Coder", "avatar": "idle", "character": "",
                  "instructions": "Follow the house rules.\n", "folder": "", "agent": "fake-acp",
-                 "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [], "pinned": false, "profile": "coder" }])
+                 "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [], "pinned": false, "profile": "coder",
+                 "role": "", "fleets": [] }])
     );
 
     // It runs as the profile: its env and policy on the adapter, its instructions ahead of the first message.
@@ -315,25 +316,159 @@ fn a_plugin_is_attached_to_a_persona_and_detached() {
     assert_eq!(s.cooee.json("/personas/chief")["plugins"], json!([]));
 }
 
-/// #129: an installed drover is attached to the persona read from the conductor profile, and to no other.
+/// #129, #159: the conductor profile's persona, and a persona file of it saved before #159, become orchestrators with
+/// the name the owner set; drover goes with them and with no other.
 #[test]
-fn migration_attaches_drover_to_the_conductor_persona_only() {
+fn migration_keeps_the_name_and_sets_the_orchestrator_role() {
     let s = setup("personas-drover");
     fs::write(
         s.dir.join("profiles/conductor.toml"),
-        "name = \"conductor\"\nlabel = \"Conductor\"\nagent = \"fake-acp\"\n",
+        "name = \"conductor\"\nlabel = \"Maestro\"\nagent = \"fake-acp\"\n",
     )
     .unwrap();
-    let plugins = |id: &str| s.cooee.json(&format!("/personas/{id}"))["plugins"].clone();
+    let read = |id: &str| s.cooee.json(&format!("/personas/{id}"));
+    let seen = |id: &str| {
+        let p = read(id);
+        (p["name"].clone(), p["role"].clone(), p["plugins"].clone())
+    };
     assert_eq!(
-        (plugins("conductor"), plugins("coder")),
-        (json!([]), json!([]))
+        seen("conductor"),
+        (json!("Maestro"), json!("orchestrator"), json!([]))
     );
+    assert_eq!(seen("coder"), (json!("Coder"), json!(""), json!([])));
     install_drover(&s);
+    assert_eq!(seen("conductor").2, json!(["drover"]));
+    assert_eq!(seen("coder").2, json!([]));
+
+    fs::create_dir_all(s.dir.join("personas")).unwrap();
+    fs::write(
+        s.dir.join("personas/conductor.toml"),
+        "name = \"Navi\"\nagent = \"fake-acp\"\nplugins = []\n",
+    )
+    .unwrap();
     assert_eq!(
-        (plugins("conductor"), plugins("coder")),
-        (json!(["drover"]), json!([]))
+        seen("conductor"),
+        (
+            json!("Navi"),
+            json!("orchestrator"),
+            json!(["drover"])
+        )
     );
+}
+
+/// #159: renaming the orchestrator keeps its role, its drover and its fleets; its thread's row shows the new name.
+#[test]
+fn renaming_the_orchestrator_changes_no_attachment() {
+    let s = setup("personas-rename");
+    install_drover(&s);
+    let new = json!({ "name": "Conductor", "role": "orchestrator", "fleets": ["cooee"], "agent": "fake-acp" });
+    let (status, mut p) = s.call("POST", "/personas", Some(&new));
+    assert_eq!(status, 200, "{p}");
+    let (id, ..) = s.start("conductor");
+    p["name"] = json!("Navi");
+    assert_eq!(s.call("PUT", "/personas/conductor", Some(&p)).0, 200);
+    let read = s.cooee.json("/personas/conductor");
+    assert_eq!(
+        (
+            &read["name"],
+            &read["role"],
+            &read["plugins"],
+            &read["fleets"]
+        ),
+        (
+            &json!("Navi"),
+            &json!("orchestrator"),
+            &json!(["drover"]),
+            &json!(["cooee"])
+        )
+    );
+    let row = s.row(&id);
+    assert_eq!(
+        (&row["persona"], &row["persona_name"], &row["persona_role"]),
+        (&json!("conductor"), &json!("Navi"), &json!("orchestrator"))
+    );
+}
+
+/// #159: any number of orchestrators, each with its own fleets (two may share one), each with drover; a plain
+/// persona's row has role `""`.
+#[test]
+fn two_orchestrator_personas_each_with_their_own_fleets() {
+    let s = setup("personas-two");
+    install_drover(&s);
+    for (name, fleets) in [
+        ("Ada", json!(["cooee"])),
+        ("Bo", json!(["herdsman", "cooee"])),
+    ] {
+        let new =
+            json!({ "name": name, "role": "orchestrator", "fleets": fleets, "agent": "fake-acp" });
+        assert_eq!(s.call("POST", "/personas", Some(&new)).0, 200);
+    }
+    let all = s.cooee.json("/personas");
+    let seen: Vec<_> = all
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| {
+            (
+                p["id"].clone(),
+                p["role"].clone(),
+                p["fleets"].clone(),
+                p["plugins"].clone(),
+            )
+        })
+        .collect();
+    let drover = json!(["drover"]);
+    assert_eq!(
+        seen,
+        [
+            (
+                json!("ada"),
+                json!("orchestrator"),
+                json!(["cooee"]),
+                drover.clone()
+            ),
+            (
+                json!("bo"),
+                json!("orchestrator"),
+                json!(["herdsman", "cooee"]),
+                drover
+            ),
+            (json!("coder"), json!(""), json!([]), json!([])),
+        ]
+    );
+    let (bo, ..) = s.start("bo");
+    let (coder, ..) = s.start("coder");
+    let (bo, coder) = (s.row(&bo), s.row(&coder));
+    assert_eq!(
+        (&bo["persona_name"], &bo["persona_role"]),
+        (&json!("Bo"), &json!("orchestrator"))
+    );
+    assert_eq!(
+        (&coder["persona_name"], &coder["persona_role"]),
+        (&json!("Coder"), &json!(""))
+    );
+}
+
+/// #159: drover attaches by role, whatever the name: setting a persona's role attaches it, clearing it detaches it;
+/// an unknown role is refused.
+#[test]
+fn the_plugin_attaches_by_role() {
+    let s = setup("personas-role");
+    install_drover(&s);
+    let new = json!({ "name": "Conductor", "agent": "fake-acp" });
+    let (status, mut p) = s.call("POST", "/personas", Some(&new));
+    assert_eq!((status, &p["plugins"]), (200, &json!([])), "{p}");
+    p["role"] = json!("orchestrator");
+    assert_eq!(s.call("PUT", "/personas/conductor", Some(&p)).0, 200);
+    let read = s.cooee.json("/personas/conductor");
+    assert_eq!(read["plugins"], json!(["drover"]));
+    let mut read = read;
+    read["role"] = json!("");
+    read["plugins"] = json!([]);
+    assert_eq!(s.call("PUT", "/personas/conductor", Some(&read)).0, 200);
+    assert_eq!(s.cooee.json("/personas/conductor")["plugins"], json!([]));
+    read["role"] = json!("boss");
+    assert!(s.call("PUT", "/personas/conductor", Some(&read)).0 >= 400);
 }
 
 /// #148: a persona names the machine it runs on (empty: this host), one added to shed; a thread runs on its
@@ -367,7 +502,7 @@ fn a_persona_and_its_threads_name_their_machine() {
         read,
         json!({ "id": "old", "name": "Old", "character": "Kept.", "instructions": "Still.", "folder": "scratch",
                 "agent": "fake-acp", "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [],
-                "pinned": false })
+                "pinned": false, "role": "", "fleets": [] })
     );
     assert_eq!(s.cooee.json("/personas/coder")["machine"], "");
     let (plain, _, _) = s.start("old");
