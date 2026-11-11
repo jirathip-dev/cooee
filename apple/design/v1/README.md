@@ -33,13 +33,21 @@ Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the f
 | `pair-waiting-*` | Waiting for approval, **the check word shown** (`maple`, from `POST /pair/request`), 4:51 left; any paired device can approve; Cancel. | |
 | `pair-paired-*` | Paired with mini: the personas waiting, then Go to Home. | |
 
-## Styles (q947)
+## Styles (q947, #141)
+
+Every frame above also renders in all three styles: `CooeeUITests`' `frameFitsInEveryStyle` draws each one in Modern,
+Terminal and Scene and fails if anything spills outside the frame (CI keeps the renders as the `snapshots` artifact).
+These are the style frames kept as designs:
 
 | PNG | shows |
 |---|---|
-| `home-terminal-dark.png` | Terminal: SF Mono throughout, the ASCII figures (`web/src/look.rs`) in ruled boxes as avatars, the farm's state words, `# pinned`, `# chats`, `[g]` and `[+]`. |
-| `chat-terminal-dark.png` | A Terminal chat: `> you`, `[ok]` and `o>_` tool rows, `~o= working`, bracketed buttons. |
-| `home-scene-light.png` | Scene: the pinned personas are the farm's horses in their coats, acting their state, standing in the farm strip (`scene.svg`) with their names and words (`at the gate` in red); the chat list's avatars are their horses too. |
+| `style-terminal-home-dark.png` | Terminal: SF Mono throughout, the ASCII figures (`web/src/look.rs`) in ruled boxes as avatars, the farm's state words, `# pinned`, `# chats`, `[g]` and `[+]`. |
+| `style-terminal-chat-dark.png` | A Terminal chat: `> you`, `[ok]` and `o>_` tool rows, `~o= working`, bracketed buttons. |
+| `style-terminal-card-dark.png` | A block-rendered choice card in Terminal: `## ask`, square edges, `[ Allow once ]`. |
+| `style-terminal-persona-dark.png` | A sheet in Terminal: the persona sheet with `# headers` and ruled groups. |
+| `style-scene-home-light.png` | Scene: the pinned personas are the farm's horses in their coats, acting their state, standing in the farm strip (`scene.svg`) with their names and words (`at the gate` in red); the chat list's avatars are their horses too. |
+| `style-scene-chat-light.png` | A Scene chat: the persona's horse in the header. |
+| `style-scene-card-light.png` | A block-rendered choice card in Scene: the pack's card with its edge. |
 
 ## Mac (the app as the server, q962 option 1)
 

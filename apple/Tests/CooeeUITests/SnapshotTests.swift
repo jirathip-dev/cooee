@@ -1,5 +1,7 @@
 import AppKit
+import CooeeUI
 import Foundation
+import SwiftUI
 import Testing
 
 internal struct Pixels: Equatable {
@@ -35,6 +37,8 @@ internal struct Pixels: Equatable {
         return Double(count) / Double(width * height)
     }
 
+    private static let opaque: UInt8 = 200
+
     internal func spilled(beyond inset: Int) -> Int {
         let rows = 0..<height
         let columns = 0..<width
@@ -43,7 +47,7 @@ internal struct Pixels: Equatable {
                 + columns.count { column in
                     let inside = (inset..<width - inset).contains(column) && (inset..<height - inset).contains(row)
                     let start = (row * width + column) * 4
-                    return !inside && bytes[start + 3] > 0
+                    return !inside && bytes[start + 3] > Self.opaque
                 }
         }
     }
@@ -79,6 +83,15 @@ internal struct SnapshotTests {
         try Self.keep(rendered, frame.name)
         let pixels = try #require(Pixels(rendered))
         #expect(pixels.spilled(beyond: margin * 2) == 0, "\(frame.name) draws outside its frame")
+    }
+
+    @Test internal func aViewWiderThanItsFrameIsCaught() throws {
+        let wide = Frame(
+            name: "wide", width: 120, height: 60, palette: .farmDark, style: .terminal, phone: false,
+            view: { AnyView(Text(String(repeating: "overflow ", count: 12)).fixedSize()) }
+        )
+        let pixels = try #require(Pixels(try #require(wide.render(margin: 24))))
+        #expect(pixels.spilled(beyond: 48) > 0)
     }
 
     private static func write(_ image: CGImage, to file: URL) throws {

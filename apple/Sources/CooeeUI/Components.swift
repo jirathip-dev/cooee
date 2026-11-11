@@ -61,12 +61,12 @@ internal struct RoundButton: View {
     internal var body: some View {
         Group {
             if look.mono {
-                Text("[\(ascii)]").ui(15, .bold, look)
+                Text("[\(ascii)]").ui(15, .bold, look).fixedSize()
             } else {
                 Image(systemName: symbol).font(.system(size: size * 0.42, weight: .semibold))
             }
         }
-        .foregroundStyle(look.palette.foreground).frame(width: size, height: size)
+        .foregroundStyle(look.palette.foreground).frame(minWidth: size, minHeight: size)
         .modifier(RoundSurface(look: look))
     }
 }
