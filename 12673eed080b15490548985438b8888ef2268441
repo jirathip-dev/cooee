@@ -1,0 +1,7 @@
+Decided: compile the keychain account prefix on macOS only and use assert_eq in the Linux-only test, the reviewer's exact fix for the red Linux clippy job.
+Because: crates/cooee-core/src/secrets.rs:27
+Because: "on Linux the file path is used"
+Rejected: an allow(dead_code) on prefix — it spends one of the 10 workspace allows on code Linux never needs.
+Check: CI job msrv (ubuntu-latest) is green at this head; the Mini can't build for Linux.
+Check: only_the_signed_cooee_reads_its_secrets_across_rebuilds still skips: the Mini has 0 code-signing identities.
+Owner: Linux lint fixed; the signed-keychain acceptance test still needs your Apple Development cert on the Mini (q1261).
