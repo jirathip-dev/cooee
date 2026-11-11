@@ -1,0 +1,84 @@
+[1m[92m   Compiling[0m cooee v0.1.0 (/Users/runner/work/cooee/cooee/crates/cooee)
+[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 1.67s
+drover 0.0.1 from /var/folders/h5/t85nd63d71x27_8gl5gw3l_w0000gn/T/tmp.mvf4gGqYRr/drover
+commit f79f0326c6482199bb8f3c1867b391b3301933ec
+build: python3 -m py_compile screens.py
+run: TOKEN=$COOEE_PLUGIN_TOKEN exec python3 screens.py
+  (its backend runs as you on this Mac)
+tabs: 
+screens: 2 places; actions: filter, drive, pause, drive-all, top, stop, drop
+needs: python3
+not reviewed: this plugin isn't in cooee's index; read its code before you add it
+added drover: cooee serve runs it
+cooee: listening on http://127.0.0.1:4100
+cooee: plugin drover: its profiles: EOF while parsing a value at line 1 column 0
+cooee: slow: GET /threads 200 426 ms
+cooee: slow: GET /threads 200 332 ms
+cooee: slow: GET /threads 200 354 ms
+cooee: slow: GET /threads 200 2557 ms
+cooee: slow: GET /threads 200 571 ms
+cooee: slow: GET /threads 200 570 ms
+cooee: slow: GET /threads 200 410 ms
+cooee: slow: GET /threads 200 752 ms
+cooee: slow: GET /threads 200 258 ms
+cooee: slow: GET /threads 200 306 ms
+cooee: slow: GET /threads 200 702 ms
+cooee: slow: GET /threads 200 1485 ms
+cooee: slow: GET /threads 200 575 ms
+cooee: slow: GET /threads 200 336 ms
+cooee: slow: GET /threads 200 909 ms
+cooee: slow: GET /threads 200 336 ms
+cooee: slow: GET /threads 200 426 ms
+cooee: slow: GET /threads 200 428 ms
+cooee: slow: GET /threads 200 2721 ms
+cooee: slow: GET /threads 200 358 ms
+cooee: slow: GET /threads 200 1554 ms
+cooee: slow: GET /threads 200 1119 ms
+cooee: slow: GET /threads 200 409 ms
+cooee: slow: GET /threads 200 270 ms
+cooee: slow: GET /threads 200 556 ms
+cooee: slow: GET /threads 200 603 ms
+cooee: slow: GET /threads 200 408 ms
+cooee: slow: GET /threads 200 252 ms
+cooee: slow: GET /threads 200 1169 ms
+cooee: slow: GET /threads 200 359 ms
+cooee: slow: GET /threads 200 496 ms
+cooee: slow: GET /threads 200 439 ms
+cooee: slow: GET /threads 200 487 ms
+cooee: slow: GET /threads 200 749 ms
+cooee: slow: GET /threads 200 889 ms
+cooee: slow: GET /threads 200 381 ms
+cooee: slow: GET /threads 200 332 ms
+cooee: slow: GET /threads 200 258 ms
+cooee: slow: GET /threads 200 531 ms
+cooee: slow: GET /threads 200 1652 ms
+cooee: slow: GET /threads 200 683 ms
+cooee: slow: GET /threads 200 327 ms
+cooee: slow: GET /threads 200 332 ms
+cooee: slow: GET /threads 200 292 ms
+cooee: slow: GET /threads 200 320 ms
+cooee: slow: GET /threads 200 441 ms
+cooee: slow: GET /threads 200 467 ms
+cooee: slow: GET /threads 200 806 ms
+cooee: slow: GET /threads 200 1397 ms
+cooee: slow: GET /threads 200 684 ms
+cooee: slow: GET /threads 200 425 ms
+cooee: plugin drover: its profiles: EOF while parsing a value at line 1 column 0
+cooee: slow: POST /threads 200 661 ms
+cooee: plugin drover: its profiles: EOF while parsing a value at line 1 column 0
+card Allow fetch sec.gov?: 200
+card EDGAR plugin settings: 200
+card EDGAR_API_KEY: 200
+card Install the edgar plugin's Python deps: 200
+cooee: slow: GET /threads 200 370 ms
+cooee: slow: GET /p/{name}/screens/{*rest} 200 579 ms
+cooee: slow: GET /p/{name}/screens/{*rest} 200 519 ms
+cooee: slow: GET /threads 200 281 ms
+cooee: slow: GET /personas/{id}/places 200 512 ms
+cooee: plugin drover: its profiles: EOF while parsing a value at line 1 column 0
+cooee: slow: POST /threads 200 603 ms
+cooee: plugin drover: its profiles: EOF while parsing a value at line 1 column 0
+card Allow fetch sec.gov?: 200
+card EDGAR plugin settings: 200
+card EDGAR_API_KEY: 200
+card Install the edgar plugin's Python deps: 200

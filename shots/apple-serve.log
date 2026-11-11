@@ -1,0 +1,13 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-181-r1/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.80s
+drover 0.0.1 from /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.sM8QfhHAtv/drover
+commit 41677b917aab5a193ce59767a0b3324ef369c3f5
+build: python3 -m py_compile screens.py
+run: TOKEN=$COOEE_PLUGIN_TOKEN exec python3 screens.py
+  (its backend runs as you on this Mac)
+tabs: 
+screens: 2 places; actions: filter, drive, pause, drive-all, top, stop, drop
+needs: python3
+not reviewed: this plugin isn't in cooee's index; read its code before you add it
+added drover: cooee serve runs it
+cooee: listening on http://127.0.0.1:41147

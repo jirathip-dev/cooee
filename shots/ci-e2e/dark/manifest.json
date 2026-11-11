@@ -1,0 +1,116 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "7A2475BB-5CD7-4A46-A6E9-302723573C0D.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "queue-offline-dark_0_10BCF975-7BFA-40F9-8264-32A408E0EB92.png",
+        "timestamp" : 1794379915.006
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "C40B4D42-A15F-47D3-BE9E-CBAB8F63E564.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "queue-row-open-dark_0_9571A5E3-2399-4A1A-BB4D-9ACFAC714827.png",
+        "timestamp" : 1794379904.894
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "E6A0E1A3-0B87-46E4-B34A-EEF9C9B88E98.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "queue-live-dark_0_2EC0BD1C-C4B0-49C9-AF2E-2401BB7C9C2B.png",
+        "timestamp" : 1794379901.973
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "2355B333-FD21-4BC4-ADB5-7C31AB5591B8.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "queue-dark_0_9EDFA69A-31FE-4B07-9F76-1499FBCCA482.png",
+        "timestamp" : 1794379898.237
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "E84FFD99-6148-4A05-A8E3-76F1E757B0A7.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "events-dark_0_682A0CE8-2429-4E46-93AD-D656FA833CBB.png",
+        "timestamp" : 1794379892.91
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "19BF5F52-2230-4F96-A4BB-4D2485B22A80.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "conductor-dark_0_5A4CDE87-4D3D-4597-AB19-D02CFDB669DB.png",
+        "timestamp" : 1794379889.837
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "9E747293-8708-4063-92D3-2A000D69B602.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "attach-dark_0_2AF2D0A5-5BD2-4803-BF1A-975ECF9432FF.png",
+        "timestamp" : 1794379887.003
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "9CBE3D3E-5AA0-4C9A-8B22-778457CE59B0.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "chat-cards-answered-dark_0_E384EA70-7962-4937-90E0-B3D28544CAA8.png",
+        "timestamp" : 1794379865.104
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "276D1D9C-51DF-4DE0-A965-73B58998C217.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "chat-cards-dark_0_373C1A7B-C2E4-40F1-B397-44B2BB69E077.png",
+        "timestamp" : 1794379848.955
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "2D1E6761-11B8-4225-804C-16B137B670B9.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "home-dark_0_23F67091-DF06-4C31-BD65-5888ADDC9714.png",
+        "timestamp" : 1794379839.785
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "C5537502-2B85-46D0-9AE5-408D8FF897A6.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "chat-streaming-dark_0_D9CFA210-C145-4979-9584-47C05CC29DE1.png",
+        "timestamp" : 1794379836.788
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "CEDD3894-51B5-421D-A2BA-E7194BA102BE.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "pair-paired-dark_0_2FBEC70F-8DB5-4A86-9400-C56CC56688AE.png",
+        "timestamp" : 1794379814.336
+      }
+    ],
+    "testIdentifier" : "LiveUITests/testPairsStreamsAndShowsHome()",
+    "testIdentifierURL" : "test://com.apple.xcode/Cooee/CooeeAppUITests/LiveUITests/testPairsStreamsAndShowsHome"
+  }
+]

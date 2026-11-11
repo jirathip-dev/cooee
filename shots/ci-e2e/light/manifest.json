@@ -1,0 +1,107 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "DC28750D-6A69-4ED7-AD2D-825D0143F25E.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "queue-offline-light_0_E577D1BF-26C6-47F0-999A-3A83F9296E69.png",
+        "timestamp" : 1794380078.352
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "D83088CF-0766-4CE4-B18E-7F0EC88CA28E.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "queue-row-open-light_0_66F85DC6-31E5-4467-8C8A-8D73437D34F7.png",
+        "timestamp" : 1794380068.167
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "DC5F710A-BB20-47BC-A05A-415082CC6834.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "queue-live-light_0_E1E7BCB6-86E4-44D5-9304-CD2C63966287.png",
+        "timestamp" : 1794380065.502
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "043CFB1A-4F5E-4D32-B094-CA7E9B7769E9.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "queue-light_0_EA8C32FA-F3B7-4DE6-9B03-86A933CF3DF6.png",
+        "timestamp" : 1794380062.085
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "42C4EEEB-237C-466F-8EA5-9A3982B16B5B.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "events-light_0_D1A76D5D-FA57-4F58-992E-41A792F1B441.png",
+        "timestamp" : 1794380058.008
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "B5D74724-CC7C-49BF-9F80-F7E0CFC276D8.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "conductor-light_0_2544EAC0-053A-47B5-A22C-59BFCCE25455.png",
+        "timestamp" : 1794380055.172
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "0131194B-A418-4BD9-AD6D-71E2A55DA827.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "chat-cards-answered-light_0_EA2E8369-F51C-4CD2-B190-529EF2133305.png",
+        "timestamp" : 1794380044.438
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "EDD5F2C1-7214-49BC-9F25-0042D6715853.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "chat-cards-light_0_56D8F837-E10A-497D-B4D2-9CF5F702E381.png",
+        "timestamp" : 1794380031.163
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "EBE14D8A-4ECF-4B5C-B559-CC3716233FC0.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "home-light_0_D4223E72-A098-4050-90A9-A88EC7C1593D.png",
+        "timestamp" : 1794380022.59
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "2E688A41-28A0-48D7-81BF-EA7EC2D00E09.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "chat-streaming-light_0_F48A8A5C-A386-481C-98B3-EC90B78965D2.png",
+        "timestamp" : 1794380019.868
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "4ECF6540-E931-4316-888E-24D74271FA41",
+        "deviceName" : "cooee-e2e",
+        "exportedFileName" : "BA58E00F-3487-457B-80D2-2CCD348288F7.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "pair-paired-light_0_30BA86A4-603C-4F2B-8510-9B002AF4C767.png",
+        "timestamp" : 1794380000.671
+      }
+    ],
+    "testIdentifier" : "LiveUITests/testPairsStreamsAndShowsHome()",
+    "testIdentifierURL" : "test://com.apple.xcode/Cooee/CooeeAppUITests/LiveUITests/testPairsStreamsAndShowsHome"
+  }
+]
