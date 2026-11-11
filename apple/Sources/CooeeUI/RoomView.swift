@@ -127,9 +127,9 @@ internal struct RoomHeader: View {
             }
             RoomStack(members: scene.members, size: 30, grid: false, state: .done)
             VStack(alignment: .leading, spacing: 2) {
-                Text(scene.title).ui(17, .semibold, look).lineLimit(1)
+                Text(scene.title).ui(17, .semibold, look).lineLimit(1).minimumScaleFactor(0.8)
                 Text("\(scene.members.count) members · \(RoomRound.turns) turns max").ui(13, .regular, look)
-                    .foregroundStyle(look.palette.mute).lineLimit(1)
+                    .foregroundStyle(look.palette.mute).lineLimit(1).minimumScaleFactor(0.8)
             }
             Spacer(minLength: 4)
             RoundButton(symbol: "ellipsis", ascii: "…", size: 40)

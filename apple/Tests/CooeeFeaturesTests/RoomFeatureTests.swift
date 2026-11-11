@@ -25,7 +25,7 @@ internal struct RoomFeatureTests {
         values.threads.seat = { _, room, persona, place, remove in
             calls.record("seat \(room) \(persona) \(place.map(String.init) ?? "end") \(remove)")
             if persona == "f" { throw APIError(status: 400, text: "a room has at most 5 members") }
-            return remove ? ["b", "a"] : ["b", "a", persona]
+            return remove || place != nil ? ["b", "a"] : ["b", "a", persona]
         }
     }
 

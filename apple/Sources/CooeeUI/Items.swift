@@ -164,7 +164,7 @@ internal struct ToolFold: View {
         return HStack(spacing: 8) {
             mark(last)
             Text(count > 0 && !members.isEmpty ? "\(last.title) · \(count) tools · only you see these" : last.title)
-                .ui(13, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+                .ui(13, .regular, look).foregroundStyle(palette.mute).lineLimit(1).minimumScaleFactor(0.85)
                 .truncationMode(members.isEmpty ? .middle : .tail)
             Spacer(minLength: 4)
             if count > 0 {

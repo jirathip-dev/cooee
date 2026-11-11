@@ -160,6 +160,6 @@ internal struct RoundPill: View {
     private func label(_ seconds: Int) -> some View {
         let clock = "\(Clock.round(seconds)) of \(Clock.round(RoomRound.deadline))"
         let lead = Text("Turn \(max(turn, 1)) of \(RoomRound.turns)").fontWeight(.semibold)
-        return Text("\(lead) · \(clock)").ui(14, .regular, look)
+        return Text("\(lead) · \(clock)").ui(14, .regular, look).lineLimit(1).minimumScaleFactor(0.8)
     }
 }
