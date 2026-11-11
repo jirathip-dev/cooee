@@ -25,6 +25,10 @@ public struct RoomScene {
         self.items = items
         self.inspecting = inspecting
     }
+
+    internal var acting: [Persona] {
+        members.map { $0.with(state: round.state($0.id).lane) }
+    }
 }
 
 public struct RoomActions {
@@ -82,7 +86,7 @@ public struct RoomView: View {
                         ItemView(item: item).padding(.leading, Self.indented(item) ? 42 : 0)
                     }
                 }
-                .padding(.horizontal, wide ? 24 : 14).padding(.top, 8).padding(.bottom, 16)
+                .padding(.horizontal, wide ? 24 : 2).padding(.top, 8).padding(.bottom, 16)
             }
             .frame(maxHeight: .infinity, alignment: .top)
             if scene.round.running {
@@ -94,7 +98,7 @@ public struct RoomView: View {
             Composer(hint: "Message the room", actions: actions.chat)
         }
         .padding(.horizontal, wide ? 24 : 12).padding(.bottom, wide ? 14 : 26)
-        .environment(\.members, scene.members)
+        .environment(\.members, scene.acting)
     }
 
     private static func indented(_ item: Item) -> Bool {
@@ -121,7 +125,7 @@ internal struct RoomHeader: View {
                 Button(action: onBack) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                     .buttonStyle(.plain).accessibilityLabel("Back")
             }
-            RoomStack(members: scene.members, size: 30, grid: false)
+            RoomStack(members: scene.members, size: 30, grid: false, state: .done)
             VStack(alignment: .leading, spacing: 2) {
                 Text(scene.title).ui(17, .semibold, look).lineLimit(1)
                 Text("\(scene.members.count) members · \(RoomRound.turns) turns max").ui(13, .regular, look)
@@ -132,49 +136,5 @@ internal struct RoomHeader: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(look.palette.line).frame(height: 1) }
-    }
-}
-
-internal struct MemberStrip: View {
-    @Environment(\.look) private var look
-    internal let scene: RoomScene
-    internal var inspect: (String?) -> Void = { _ in }
-
-    internal var body: some View {
-        HStack(spacing: 4) {
-            ForEach(Array(scene.members.enumerated()), id: \.element.id) { index, member in
-                Button {
-                    inspect(member.id)
-                } label: {
-                    cell(index + 1, member)
-                }
-                .buttonStyle(.plain).accessibilityLabel(member.name)
-            }
-        }
-        .padding(.horizontal, 10).padding(.vertical, 10)
-        .background(look.palette.card.opacity(0.3))
-        .overlay(alignment: .bottom) { Rectangle().fill(look.palette.line).frame(height: 1) }
-    }
-
-    private func cell(_ place: Int, _ member: Persona) -> some View {
-        let palette = look.palette
-        let state = scene.round.state(member.id)
-        return VStack(spacing: 3) {
-            Avatar(persona: member.with(state: .idle), size: 40)
-                .overlay(alignment: .bottomTrailing) { StateDot(state: state).offset(x: 3, y: 3) }
-            Text(member.name).ui(13, .semibold, look).lineLimit(1)
-            Text(state.rawValue).ui(12, .regular, look).foregroundStyle(state.color(palette))
-        }
-        .padding(.vertical, 6).padding(.horizontal, 2).frame(maxWidth: .infinity)
-        .overlay(alignment: .topLeading) {
-            Text("\(place)").ui(10, .semibold, look).foregroundStyle(palette.mute).padding(4)
-        }
-        .background(state == .replying ? palette.amber.opacity(0.10) : .clear, in: .rect(cornerRadius: 12))
-        .overlay {
-            if scene.inspecting == member.id {
-                RoundedRectangle(cornerRadius: 12).strokeBorder(palette.mute, lineWidth: 1.5)
-            }
-        }
-        .contentShape(.rect)
     }
 }

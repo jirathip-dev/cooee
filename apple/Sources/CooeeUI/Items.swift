@@ -29,6 +29,7 @@ internal struct ItemView: View {
 
 internal struct YouBubble: View {
     @Environment(\.look) private var look
+    @Environment(\.members) private var members
     internal let text: String
     internal let files: [String]
 
@@ -40,23 +41,42 @@ internal struct YouBubble: View {
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(palette.card, in: .rect(cornerRadius: 10))
             }
-            Text(look.mono ? "> \(text)" : text).ui(16, .regular, look)
-                .padding(.horizontal, 14).padding(.vertical, 10)
-                .background(look.mono ? Color.clear : palette.link.opacity(0.22), in: .rect(cornerRadius: 20))
-                .foregroundStyle(look.mono ? palette.lead : palette.foreground)
+            if members.isEmpty {
+                Text(look.mono ? "> \(text)" : text).ui(16, .regular, look)
+                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .background(look.mono ? Color.clear : palette.link.opacity(0.22), in: .rect(cornerRadius: 20))
+                    .foregroundStyle(look.mono ? palette.lead : palette.foreground)
+            } else {
+                roomBubble
+            }
         }
         .frame(maxWidth: .infinity, alignment: .trailing).padding(.leading, look.mono ? 0 : 48)
+    }
+
+    private var roomBubble: some View {
+        let palette = look.palette
+        return Text(text).ui(16, .regular, look).foregroundStyle(palette.foreground)
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .frame(maxWidth: look.mono ? .infinity : nil, alignment: .leading)
+            .background(
+                look.mono ? palette.card : palette.amber.opacity(0.2), in: .rect(cornerRadius: look.mono ? 6 : 20)
+            )
+            .overlay(alignment: .leading) {
+                if look.mono { Rectangle().fill(palette.lead).frame(width: 3) }
+            }
     }
 }
 
 internal struct BlockView: View {
     @Environment(\.look) private var look
+    @Environment(\.members) private var members
     internal let block: Block
 
     internal var body: some View {
         switch block {
         case .text(let text):
-            Text(Self.marked(text)).ui(16, .regular, look).fixedSize(horizontal: false, vertical: true)
+            Text(Self.mentioned(Self.marked(text), members, look.palette.link)).ui(16, .regular, look)
+                .fixedSize(horizontal: false, vertical: true)
         case .bullets(let bullets):
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(bullets, id: \.self) { bullet in
@@ -70,6 +90,19 @@ internal struct BlockView: View {
 
     internal static func marked(_ markdown: String, plain: String? = nil) -> AttributedString {
         (try? AttributedString(markdown: markdown)) ?? AttributedString(plain ?? markdown)
+    }
+
+    internal static func mentioned(_ text: AttributedString, _ members: [Persona], _ tint: Color) -> AttributedString {
+        var text = text
+        for member in members {
+            var start = text.startIndex
+            while let range = text[start...].range(of: "@\(member.name)") {
+                text[range].foregroundColor = tint
+                text[range].inlinePresentationIntent = .stronglyEmphasized
+                start = range.upperBound
+            }
+        }
+        return text
     }
 }
 
@@ -130,12 +163,9 @@ internal struct ToolFold: View {
         let palette = look.palette
         return HStack(spacing: 8) {
             mark(last)
-            Text(last.title).ui(13, .regular, look).foregroundStyle(palette.mute).lineLimit(1).truncationMode(.middle)
-                .layoutPriority(members.isEmpty ? 0 : 1)
-            if count > 0 && !members.isEmpty {
-                Text("· \(count) tools · only you see these").ui(13, .regular, look).foregroundStyle(palette.mute)
-                    .lineLimit(1)
-            }
+            Text(count > 0 && !members.isEmpty ? "\(last.title) · \(count) tools · only you see these" : last.title)
+                .ui(13, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+                .truncationMode(members.isEmpty ? .middle : .tail)
             Spacer(minLength: 4)
             if count > 0 {
                 if members.isEmpty { Text("\(count) tools").ui(12, .regular, look).foregroundStyle(palette.mute) }

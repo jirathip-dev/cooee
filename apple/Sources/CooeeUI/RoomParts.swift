@@ -21,6 +21,14 @@ extension MemberState {
         case .waiting, .passed: palette.mute
         }
     }
+
+    internal var lane: LaneState {
+        switch self {
+        case .replied: .done
+        case .replying: .working
+        case .waiting, .upNext, .passed: .idle
+        }
+    }
 }
 
 internal struct Said: View {
@@ -33,7 +41,7 @@ internal struct Said: View {
     internal var body: some View {
         let persona = members.first { $0.id == speaker } ?? Fixtures.persona(speaker)
         HStack(alignment: .top, spacing: 10) {
-            Avatar(persona: persona.with(state: .idle), size: 32)
+            Avatar(persona: persona, size: 32)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(persona.name).ui(14, .semibold, look).foregroundStyle(look.palette.tint(persona.look.tint))
@@ -62,9 +70,11 @@ internal struct RoundDivider: View {
 }
 
 internal struct RoomStack: View {
+    @Environment(\.look) private var look
     internal let members: [Persona]
     internal var size: CGFloat = 22
     internal var grid = true
+    internal var state = LaneState.idle
 
     internal var body: some View {
         let shown = Array(members.prefix(4))
@@ -74,12 +84,12 @@ internal struct RoomStack: View {
                 GridRow { avatars(shown.dropFirst(2)) }
             }
         } else {
-            HStack(spacing: grid ? 4 : -size * 0.45) { avatars(shown[...]) }
+            HStack(spacing: grid || look.mono ? 4 : -size * 0.45) { avatars(shown[...]) }
         }
     }
 
     private func avatars(_ some: ArraySlice<Persona>) -> some View {
-        ForEach(some) { persona in Avatar(persona: persona.with(state: .idle), size: size) }
+        ForEach(some) { persona in Avatar(persona: persona.with(state: state), size: size) }
     }
 }
 
@@ -88,9 +98,10 @@ internal struct StateDot: View {
     internal let state: MemberState
 
     internal var body: some View {
-        Circle().fill(state.color(look.palette)).frame(width: 11, height: 11)
-            .overlay(Circle().strokeBorder(look.palette.background, lineWidth: 2)).frame(width: 14, height: 14)
-            .background(look.palette.background, in: .circle)
+        let dot = RoundedRectangle(cornerRadius: look.mono ? 0 : 5.5)
+        dot.fill(state.color(look.palette)).frame(width: 11, height: 11)
+            .overlay(dot.strokeBorder(look.palette.background, lineWidth: 2)).frame(width: 14, height: 14)
+            .background(look.palette.background, in: .rect(cornerRadius: look.mono ? 0 : 7))
     }
 }
 
@@ -101,9 +112,9 @@ internal struct CostNote: View {
         let palette = look.palette
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text("≈").ui(15, .bold, look).foregroundStyle(palette.amber)
-            (Text("Up to \(RoomRound.turns) agent turns per message").fontWeight(.semibold)
-                + Text(" · \(RoomRound.deadline / 60) min").foregroundColor(palette.mute))
-                .ui(14, .regular, look)
+            let lead = Text("Up to \(RoomRound.turns) agent turns per message").fontWeight(.semibold)
+            let tail = Text(" · \(RoomRound.deadline / 60) min").foregroundStyle(palette.mute)
+            Text("\(lead)\(tail)").ui(14, .regular, look)
         }
         .padding(.horizontal, 14).padding(.vertical, 11).frame(maxWidth: .infinity, alignment: .leading)
         .background(palette.card.opacity(0.6), in: .rect(cornerRadius: look.mono ? 0 : 12))
@@ -132,11 +143,13 @@ internal struct RoundPill: View {
             Spacer()
             Button(action: stop) {
                 HStack(spacing: 4) {
+                    if look.mono { Text("[") }
                     Image(systemName: "stop.fill").font(.system(size: 10))
-                    Text("Stop")
+                    Text(look.mono ? "Stop]" : "Stop")
                 }
                 .ui(14, .semibold, look).foregroundStyle(palette.red)
-                .padding(.horizontal, 12).frame(height: 30).background(palette.red.opacity(0.16), in: .capsule)
+                .padding(.horizontal, 12).frame(height: 30)
+                .background(look.mono ? .clear : palette.red.opacity(0.16), in: .capsule)
             }
             .buttonStyle(.plain).accessibilityLabel("Stop")
         }
@@ -146,7 +159,7 @@ internal struct RoundPill: View {
 
     private func label(_ seconds: Int) -> some View {
         let clock = "\(Clock.round(seconds)) of \(Clock.round(RoomRound.deadline))"
-        return (Text("Turn \(max(turn, 1)) of \(RoomRound.turns)").fontWeight(.semibold) + Text(" · \(clock)"))
-            .ui(14, .regular, look)
+        let lead = Text("Turn \(max(turn, 1)) of \(RoomRound.turns)").fontWeight(.semibold)
+        return Text("\(lead) · \(clock)").ui(14, .regular, look)
     }
 }

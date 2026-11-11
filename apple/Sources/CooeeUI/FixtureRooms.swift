@@ -17,6 +17,7 @@ extension Fixtures {
     }
 
     public static let roomItems: [Item] = [
+        .divider(id: 0, text: "Today 09:40"),
         .you(id: 1, text: "Kestrel signs on the 28th. What's still open before then?"),
         .said(
             id: 2, speaker: "chief", time: "09:40",

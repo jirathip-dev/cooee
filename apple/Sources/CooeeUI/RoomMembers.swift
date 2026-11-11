@@ -61,7 +61,7 @@ internal struct MembersPane: View {
         let palette = look.palette
         let state = scene.round.state(member.id)
         return HStack(spacing: 10) {
-            Avatar(persona: member.with(state: .idle), size: 38)
+            Avatar(persona: member.with(state: state.lane), size: 38)
                 .overlay(alignment: .bottomTrailing) { StateDot(state: state).offset(x: 3, y: 3) }
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(index + 1) · \(member.name)").ui(14, .semibold, look).lineLimit(1)

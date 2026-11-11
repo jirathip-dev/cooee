@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 internal struct Composer: View {
     @Environment(\.look) private var look
+    @Environment(\.members) private var members
     private let picking = State(initialValue: false)
     private let sending = State(initialValue: false)
     @FocusState private var typing: Bool
@@ -49,7 +50,7 @@ internal struct Composer: View {
                     .foregroundStyle(draft.isEmpty ? palette.mute : palette.foreground)
             }
             Spacer()
-            Image(systemName: "mic").foregroundStyle(palette.mute)
+            if members.isEmpty { Image(systemName: "mic").foregroundStyle(palette.mute) }
         }
         .padding(.horizontal, 16).frame(minHeight: 42)
         .surface(look, radius: 21)
