@@ -1,7 +1,7 @@
 //! The models each agent offers (#193), as its ACP sessions report them, kept per agent and account. A pick is a
 //! model's full id (pinned) or a short name (`opus`, `gpt-5`) that means the newest model of its family: the models
 //! whose id holds the short name's words in order. A model's own short name is its id's alphabetic words
-//! (`claude-opus-4-5` → `claude-opus`); a pinned id that is gone falls back to it.
+//! (`acme-large-4-5` → `acme-large`); a pinned id that is gone falls back to it.
 
 use std::{fs, io, path::Path};
 
@@ -37,7 +37,7 @@ fn words(s: &str) -> Vec<String> {
         .collect()
 }
 
-/// Model `id`'s short name: its alphabetic words (`gpt-5.1-codex` → `gpt-codex`).
+/// Model `id`'s short name: its alphabetic words (`acme-5.1-coder` → `acme-coder`).
 #[must_use]
 pub fn family(id: &str) -> String {
     let alpha = words(id).into_iter();

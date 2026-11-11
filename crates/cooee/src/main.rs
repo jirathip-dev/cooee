@@ -11,7 +11,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{AGENTS_FIX, Config, Devices, ROOTS_FIX, Shed};
+use cooee_core::{Config, Devices, ROOTS_FIX, Shed, agents_fix};
 use qrcode::{QrCode, render::unicode::Dense1x2};
 
 mod accounts;
@@ -730,7 +730,10 @@ fn doctor(config: &Config) -> Result<(), String> {
         Ok(()) => {
             check(true, format!("shed at {}", shed.socket.display()));
             if shed.agents().is_ok_and(|a| a.is_empty()) {
-                println!("warn no agents installed in shed\n     fix: {AGENTS_FIX}");
+                println!(
+                    "warn no agents installed in shed\n     fix: {}",
+                    agents_fix()
+                );
             }
         }
         Err(e) => check(

@@ -44,7 +44,7 @@ fn fixture(name: &str) -> Fixture {
         dir.join("config.toml"),
         format!(
             "data = {:?}\n\
-             [[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\nlogin = [\"true\"]\n\
+             [[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\nlogin = [\"true\"]\n\
              status = [\"sh\", \"-c\", \"test -n \\\"$CLAUDE_CODE_OAUTH_TOKEN\\\" || cat \\\"$FAKE_HOME/creds\\\"\"]\n\
              usage = [\"sh\", \"-c\", \"cat \\\"$FAKE_HOME/usage.txt\\\"\"]\n\
              [[providers]]\nname = \"claude\"\nagent = \"claude-acp\"\nhome = \"CLAUDE_CONFIG_DIR\"\n\

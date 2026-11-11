@@ -14,6 +14,8 @@ pub mod perf;
 pub mod personas;
 pub mod plugins;
 pub mod profiles;
+pub mod provider;
+mod providers;
 mod shed;
 mod store;
 
@@ -24,9 +26,10 @@ pub use devices::{
     Asking, Claim, Credential, Device, Devices, Passkey, append_line, label, random, sha256,
     write_private,
 };
-pub use login::{Provider, Status, links, redact};
+pub use login::{Ran, Spec, Status, links, redact};
 pub use profiles::Profile;
-pub use shed::{AGENTS_FIX, Agent, Launch, Shed, ShedError};
+pub use provider::{Entry, Plain, Provider, Providers, agents_fix};
+pub use shed::{Agent, Launch, Shed, ShedError};
 pub use shed_proto;
 pub use store::{
     FORMAT, Kind, Member, Message, Queued, Reason, Role, RoomTurn, Store, StoreError, Thread,
