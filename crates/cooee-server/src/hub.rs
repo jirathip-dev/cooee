@@ -28,6 +28,7 @@ use crate::{
 };
 
 mod ask;
+mod models;
 mod rooms;
 pub use rooms::Starter;
 
@@ -95,6 +96,8 @@ struct Live {
     pending: Option<String>,
     /// When its last prompt was sent, until the reply's first chunk came (#53).
     sent: Option<Instant>,
+    /// A room's round was stopped while its working member's session was starting: cancel it once started (#155).
+    stopped_starting: bool,
 }
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
@@ -237,6 +240,8 @@ pub struct Hub {
     starter: OnceLock<Starter>,
     /// Each pending `ask_persona` (#156) by `<asking thread>><persona>`: where its reply goes.
     asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
+    /// Each agent and account's models, as last seen (#193; `<data>/models.json`).
+    models: Mutex<Vec<cooee_core::models::Offered>>,
 }
 
 pub(crate) fn now() -> u64 {
@@ -326,6 +331,7 @@ impl Live {
             stuck: false,
             pending: None,
             sent: None,
+            stopped_starting: false,
         }
     }
 
@@ -346,12 +352,21 @@ impl Live {
     /// Stores and then publishes `changes`, pushing the ones the owner should hear of.
     fn publish(&mut self, hub: &Hub, changes: Vec<Change>) -> Result<(), StoreError> {
         let store = &hub.store;
-        for change in changes {
+        for mut change in changes {
+            if let Change::Item(i) = &mut change
+                && matches!(i.body, Body::Approval { .. })
+                && !self.meta.room.is_empty()
+            {
+                i.speaker.clone_from(&self.meta.profile);
+                if let Some(c) = self.chat.items.iter_mut().find(|c| c.id == i.id) {
+                    c.speaker.clone_from(&i.speaker);
+                }
+            }
             let watched = self.tx.receiver_count() > 0;
             if let Some(n) = note(
                 &self.meta, &self.chat, &change, &self.was, watched, &hub.theme,
             ) {
-                hub.push.send(&n);
+                hub.push.send(&hub.routed(&self.meta, n));
             }
             if let Change::State(turn) = &change {
                 self.was.clone_from(&turn.state);
@@ -426,6 +441,7 @@ impl Hub {
             turns,
             starter: OnceLock::new(),
             asks: Mutex::default(),
+            models: Mutex::new(cooee_core::models::load(&data.join("models.json"))),
         });
         let worker = Arc::clone(&hub);
         thread::spawn(move || {
@@ -635,9 +651,11 @@ impl Hub {
         if let Some(sent) = live.sent.take_if(|_| chunk) {
             cooee_core::perf::first_token(&live.meta.id, &live.meta.agent, sent);
         }
-        // A member's final reply goes to its room (#154).
+        // A member's final reply goes to its room (#154); a cancelled one is a stopped round's, never the next's.
         let reply = changes.iter().find_map(|c| match c {
-            Change::Item(i) if matches!(i.body, Body::Agent { .. }) => Some(i.body.clone()),
+            Change::Item(i) if matches!(&i.body, Body::Agent { stop_reason, .. } if stop_reason != "cancelled") => {
+                Some(i.body.clone())
+            }
             _ => None,
         });
         let seat = (live.meta.room.clone(), live.meta.profile.clone());
@@ -686,6 +704,7 @@ impl Hub {
     /// Surfaces each working turn with no shed event for 30 minutes before `now` as needs-you, once: the thread
     /// shows blocked with a note, and a push says so.
     pub fn watch(&self, now: u64) {
+        self.deadlines(now);
         for live in self.all() {
             let mut live = lock(&live);
             if live.stuck || live.chat.turn.state != "working" || now < live.moved + STUCK {
@@ -694,19 +713,14 @@ impl Hub {
             live.stuck = true;
             "blocked".clone_into(&mut live.chat.turn.state);
             live.chat.turn.note = Some("no progress for 30 minutes".to_owned());
-            let said = format!("{}: no progress for 30 minutes", live.meta.agent);
-            self.push.send(&Note {
-                title: live.meta.title.clone(),
-                body: self
-                    .theme
-                    .push_body("needs", &said)
-                    .chars()
-                    .take(120)
-                    .collect(),
-                tag: live.meta.id.clone(),
-                url: format!("/t/{}", live.meta.id),
-                item: live.chat.items.last().map_or(0, |i| i.id),
-            });
+            let item = live.chat.items.last().map_or(0, |i| i.id);
+            let said = (
+                "needs",
+                live.meta.agent.as_str(),
+                "no progress for 30 minutes",
+            );
+            let n = Note::new(&live.meta, said, item, &self.theme);
+            self.push.send(&self.routed(&live.meta, n));
             let turn = live.chat.turn.clone();
             if let Err(e) = live.publish(self, vec![Change::State(turn)]) {
                 eprintln!("cooee: {e}");
@@ -994,6 +1008,7 @@ impl Hub {
         if text.trim().is_empty() {
             return Err(HubError::Refused("the first message is empty".to_owned()));
         }
+        self.offers(agent, &recipe.account, &recipe.model)?;
         let title: String = text
             .trim()
             .lines()
@@ -1104,7 +1119,11 @@ impl Hub {
                 return Err(e.into());
             }
         }
-        self.shed.ready(&terminal)?;
+        if let Some(s) = self.shed.ready(&terminal)?
+            && let Err(e) = self.settle(id, &terminal, &s)
+        {
+            eprintln!("cooee: {id}: model: {e}");
+        }
         self.send_after(id, text, random_id, &[], &recipe.instructions)?;
         Ok(())
     }
@@ -1165,7 +1184,7 @@ impl Hub {
         if let Some((file, _)) = &recipe.launch.secrets {
             let _ = fs::remove_file(file);
         }
-        started?;
+        let session = started?;
         let mut live = lock(&live);
         let was = live
             .meta
@@ -1190,7 +1209,7 @@ impl Hub {
             folder.display()
         );
         handover.trim_start().clone_into(&mut live.meta.handover);
-        live.meta.terminal = terminal;
+        live.meta.terminal.clone_from(&terminal);
         live.meta.folder = Some(folder.clone());
         self.store.save(&live.meta)?;
         let text = format!(
@@ -1200,6 +1219,11 @@ impl Hub {
         let item = live.chat.push(now(), 0, Body::Note { text });
         live.publish(self, vec![Change::Item(item.clone())])?;
         drop(live);
+        if let Some(s) = session
+            && let Err(e) = self.settle(id, &terminal, &s)
+        {
+            eprintln!("cooee: {id}: model: {e}");
+        }
         if let Err(e) = self.shed.close(&old) {
             eprintln!("cooee: {e}");
         }
@@ -1601,14 +1625,16 @@ impl Hub {
         Ok(item)
     }
 
-    /// The owner's model and effort for thread `id` (#553 row 34): kept on the thread and said in it. shed can't
-    /// change a running agent's model yet, so they apply from the agent's next start.
+    /// The owner's model and effort for thread `id` (#553 row 34): kept on the thread and said in it; they apply
+    /// from the agent's next start.
     ///
     /// # Errors
-    /// [`HubError::Store`] when the thread can't be saved.
+    /// [`HubError::Refused`] for a model its agent doesn't offer (#193); [`HubError::Store`] when the thread can't
+    /// be saved.
     pub fn pick(&self, id: &str, model: &str, effort: &str) -> Result<Item, HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);
+        self.offers(&live.meta.agent, &live.meta.account, model)?;
         model.clone_into(&mut live.meta.model);
         effort.clone_into(&mut live.meta.effort);
         self.store.save(&live.meta)?;
@@ -1625,13 +1651,19 @@ impl Hub {
         Ok(item)
     }
 
-    /// Cancels the turn in progress.
+    /// Cancels the turn in progress; in a room, stop: the member taking its turn is cancelled and the rest dropped.
     ///
     /// # Errors
     /// [`HubError::Shed`] when shed fails.
     pub fn cancel(&self, id: &str) -> Result<(), HubError> {
         let live = self.live(id)?;
-        let terminal = lock(&live).meta.terminal.clone();
+        let (kind, terminal) = {
+            let l = lock(&live);
+            (l.meta.kind.clone(), l.meta.terminal.clone())
+        };
+        if kind == Kind::Room {
+            return self.stop_round(id, "stop", "");
+        }
         Ok(self.shed.cancel(&terminal)?)
     }
 
@@ -1677,6 +1709,7 @@ impl Hub {
     #[must_use]
     pub fn list(&self) -> Vec<Summary> {
         let personas = personas::list(self.config_dir(), &self.data);
+        let mut asks = Vec::new();
         let mut rows: Vec<Summary> = self
             .all()
             .iter()
@@ -1684,6 +1717,19 @@ impl Hub {
                 let live = lock(live);
                 // A room's member sessions are the room's (#154).
                 if !live.meta.room.is_empty() {
+                    let ask = live.chat.items.iter().find_map(|i| match &i.body {
+                        Body::Approval {
+                            tool,
+                            tapped: None,
+                            chosen: None,
+                            card,
+                            ..
+                        } if card.line.is_none() => {
+                            Some((live.meta.room.clone(), i.speaker.clone(), tool.clone()))
+                        }
+                        _ => None,
+                    });
+                    asks.extend(ask);
                     return None;
                 }
                 let last = live.chat.items.last();
@@ -1741,6 +1787,16 @@ impl Hub {
                 })
             })
             .collect();
+        for (room, persona, tool) in asks {
+            let Some(row) = rows.iter_mut().find(|r| r.id == room) else {
+                continue;
+            };
+            let name = personas.iter().find(|p| p.id == persona);
+            let name = name.map_or(persona.as_str(), |p| p.name.as_str());
+            row.last = format!("{name}: {tool} waiting");
+            row.unseen += 1;
+            row.unread = true;
+        }
         rows.sort_by_key(|r| std::cmp::Reverse(r.at));
         rows
     }
@@ -2316,6 +2372,74 @@ mod tests {
         assert_eq!(hub.list()[0].state, "blocked");
         hub.apply(event("idle", 2, EventKind::Text { text: "w".into() }));
         assert_eq!(state(&hub).state, "working");
+    }
+
+    /// #155 (G2): a room's turns on an owner message stop 10 minutes after it (a fake clock): its queued turns are
+    /// dropped, the room told and its pages sent `room-stop`, once.
+    #[test]
+    fn a_rooms_turns_stop_at_the_deadline() {
+        let dir = scratch("deadline");
+        let t0 = now();
+        let turn = |m: &str| json!({ "member": m, "reason": "round" });
+        let meta = json!({ "format": 1, "thread": { "id": "room", "title": "room", "messages": [], "kind": "room",
+            "members": [{ "persona": "ada" }, { "persona": "bo" }], "round": [turn("ada"), turn("bo")], "asked_at": t0 } });
+        fs::write(dir.join("data/threads/room.json"), meta.to_string()).unwrap();
+        fs::write(dir.join("data/threads/room.jsonl"), "").unwrap();
+        let hub = hub(&dir);
+        let round = |hub: &Hub| hub.thread("room").unwrap().0.round.len();
+        hub.watch(t0 + rooms::DEADLINE - 1);
+        assert_eq!(round(&hub), 2);
+        let (_, mut rx) = hub.subscribe("room", "").unwrap();
+        hub.watch(t0 + rooms::DEADLINE);
+        assert_eq!(round(&hub), 0);
+        let stop = rx.try_recv().unwrap();
+        assert_eq!(
+            (stop.event, stop.data),
+            ("room-stop", json!({ "reason": "deadline" }).to_string())
+        );
+        let note = rx.try_recv().unwrap();
+        assert!(note.data.contains("10 minutes passed"), "{}", note.data);
+        hub.watch(t0 + 2 * rooms::DEADLINE);
+        assert!(rx.try_recv().is_err());
+    }
+
+    /// #155: a member's session that started after its reply was already in is kept, never cancelled; one that
+    /// started after [stop] is cancelled (the cancel reaches shed, here none: a shed error), once.
+    #[test]
+    fn only_a_stop_cancels_a_members_session_as_it_starts() {
+        let dir = scratch("seated");
+        let turn = |m: &str| json!({ "member": m, "reason": "round" });
+        let room = |round: serde_json::Value| {
+            json!({ "format": 1, "thread": { "id": "room", "title": "room", "messages": [],
+            "kind": "room", "members": [{ "persona": "ada" }, { "persona": "bo" }], "round": round } })
+        };
+        let session = json!({ "format": 1, "thread": { "id": "s1", "title": "s1", "messages": [], "terminal": "cooee-s1" } });
+        fs::write(dir.join("data/threads/s1.json"), session.to_string()).unwrap();
+        fs::write(dir.join("data/threads/s1.jsonl"), "").unwrap();
+        fs::write(dir.join("data/threads/room.jsonl"), "").unwrap();
+        let seated = |hub: &Hub| hub.thread("room").unwrap().0.members[0].session.clone();
+
+        // Ada replied before its start returned: its turn is gone, Bo's is next.
+        fs::write(
+            dir.join("data/threads/room.json"),
+            room(json!([turn("bo")])).to_string(),
+        )
+        .unwrap();
+        let hub = hub(&dir);
+        hub.started("room", "ada", Ok("s1".to_owned())).unwrap();
+        assert_eq!(seated(&hub), "s1");
+
+        // [stop] while Ada's session starts: nothing to cancel then, so it is cancelled once started.
+        fs::write(
+            dir.join("data/threads/room.json"),
+            room(json!([turn("ada"), turn("bo")])).to_string(),
+        )
+        .unwrap();
+        let hub = self::hub(&dir);
+        hub.cancel("room").unwrap();
+        let cancelled = hub.started("room", "ada", Ok("s1".to_owned()));
+        assert!(matches!(cancelled, Err(HubError::Shed(_))), "{cancelled:?}");
+        hub.started("room", "ada", Ok("s1".to_owned())).unwrap();
     }
 
     /// #55: however often the agent list is read, `shed agents` runs once a minute (a fake clock); a failed run

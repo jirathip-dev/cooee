@@ -15,13 +15,15 @@ use std::os::unix::process::CommandExt;
 
 use serde::{Deserialize, Serialize};
 
-/// A provider the sign-ins sheet lists: its CLI's own login, logout and read-only status commands.
+use crate::{Provider, accounts::Usage};
+
+/// A provider as data: what `[[providers]]` sets and each provider module's defaults return.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Provider {
-    /// Its name on the sheet (`claude`); also part of its login terminal's name and its accounts' folder.
+pub struct Spec {
+    /// Its name on the sheet; also part of its login terminal's name and its accounts' folder.
     pub name: String,
-    /// The ACP agent id it signs in (`claude-acp`), for the new-thread picker.
+    /// The ACP agent id it signs in, for the new-thread picker.
     pub agent: String,
     /// The login command, run in a shed terminal.
     pub login: Vec<String>,
@@ -30,7 +32,7 @@ pub struct Provider {
     /// The line that installs its CLI, shown when the login command isn't found.
     #[serde(default)]
     pub install: String,
-    /// The variable that points its CLI at a config folder (`CLAUDE_CONFIG_DIR`): each added account is one.
+    /// The variable that points its CLI at a config folder: each added account is one.
     /// Without it the provider has only the system default account.
     #[serde(default)]
     pub home: String,
@@ -38,119 +40,55 @@ pub struct Provider {
     #[serde(default)]
     pub logout: Vec<String>,
     /// The variable its ACP adapter reads an extra settings file from and enforces, hooks included. Without it an
-    /// agent profile with `settings` can't start with its agent. Claude Code's is `CLAUDE_CONFIG_DIR` (herdsman#565:
-    /// claude-acp enforces the user settings there), so its profile's `settings` is a config folder, in place of the
-    /// account's.
+    /// agent profile with `settings` can't start with its agent.
     #[serde(default)]
     pub settings: String,
-    /// The models a thread may pick (#553 row 34).
+    /// The usage command (#183), its output read by the provider's module. None: no usage.
     #[serde(default)]
-    pub models: Vec<String>,
-    /// The words that start its agent on a model: `{}` is the pick; a `NAME=value` word goes to its environment,
-    /// any other after its command.
-    #[serde(default)]
-    pub model: Vec<String>,
-    /// The efforts a thread may pick.
+    pub usage: Vec<String>,
+    /// The efforts a thread may pick (#553 row 34; its models are the agent's own, #193).
     #[serde(default)]
     pub efforts: Vec<String>,
-    /// The words for an effort, as `model`.
+    /// The words that start its agent on an effort: `{}` is the pick; a `NAME=value` word goes to its environment,
+    /// any other after its command.
     #[serde(default)]
     pub effort: Vec<String>,
+    /// The registered provider whose behaviour it gets (default: the one named `name`, else none).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base: Option<String>,
 }
 
-impl Provider {
-    /// Claude Code, Codex and Gemini.
-    #[must_use]
-    pub fn defaults() -> Vec<Self> {
-        let v = |a: &[&str]| a.iter().map(|s| (*s).to_owned()).collect();
-        let p = |name: &str,
-                 agent: &str,
-                 [login, status, logout]: [&[&str]; 3],
-                 npm: &str,
-                 home: &str| Self {
-            name: name.to_owned(),
-            agent: agent.to_owned(),
-            login: v(login),
-            status: v(status),
-            install: format!("npm install -g {npm}"),
-            home: home.to_owned(),
-            logout: v(logout),
-            ..Self::default()
-        };
-        let creds = "\"${GEMINI_CLI_HOME:-$HOME}/.gemini/oauth_creds.json\"";
-        let mut list = vec![
-            p(
-                "claude",
-                "claude-acp",
-                [
-                    &["claude", "auth", "login"],
-                    &["claude", "auth", "status"],
-                    &["claude", "auth", "logout"],
-                ],
-                "@anthropic-ai/claude-code",
-                "CLAUDE_CONFIG_DIR",
-            ),
-            p(
-                "codex",
-                "codex-acp",
-                [
-                    &["codex", "login", "--device-auth"],
-                    &["codex", "login", "status"],
-                    &["codex", "logout"],
-                ],
-                "@openai/codex",
-                "CODEX_HOME",
-            ),
-            p(
-                "gemini",
-                "gemini",
-                [
-                    &["gemini"],
-                    &[
-                        "sh",
-                        "-c",
-                        &format!("test -s {creds} && echo signed in with Google"),
-                    ],
-                    &["sh", "-c", &format!("rm -f {creds}")],
-                ],
-                "@google/gemini-cli",
-                "GEMINI_CLI_HOME",
-            ),
-        ];
-        let v = |a: &[&str]| -> Vec<String> { a.iter().map(|s| (*s).to_owned()).collect() };
-        list[0].models = v(&["opus", "sonnet", "haiku"]);
-        list[0].model = v(&["ANTHROPIC_MODEL={}"]);
-        "CLAUDE_CONFIG_DIR".clone_into(&mut list[0].settings);
-        list[1].efforts = v(&["low", "medium", "high"]);
-        list[1].effort = v(&["-c", "model_reasoning_effort={}"]);
-        list
-    }
+/// One command's run: whether it exited 0, its stdout and its stderr.
+#[derive(Debug, Clone, Default)]
+pub struct Ran {
+    /// It exited 0.
+    pub ok: bool,
+    /// Its stdout.
+    pub stdout: String,
+    /// Its stderr.
+    pub stderr: String,
+}
 
-    /// The words that start its agent on `model` and `effort` (empty: its own default); `None` when it offers no
-    /// such pick.
+impl dyn Provider + '_ {
+    /// The words that start its agent on `effort` (empty: its own default); `None` when it offers no such pick.
     #[must_use]
-    pub fn picks(&self, model: &str, effort: &str) -> Option<Vec<String>> {
-        let mut words = Vec::new();
-        for (pick, offered, template) in [
-            (model, &self.models, &self.model),
-            (effort, &self.efforts, &self.effort),
-        ] {
-            if pick.is_empty() {
-                continue;
-            }
-            if !offered.iter().any(|o| o == pick) {
-                return None;
-            }
-            words.extend(template.iter().map(|w| w.replace("{}", pick)));
+    pub fn picks(&self, effort: &str) -> Option<Vec<String>> {
+        if effort.is_empty() {
+            return Some(Vec::new());
         }
-        Some(words)
+        let s = self.spec();
+        let words = s.effort.iter().map(|w| w.replace("{}", effort));
+        s.efforts
+            .iter()
+            .any(|o| o == effort)
+            .then(|| words.collect())
     }
 
     /// The variable and folder that point its CLI at the account in `home` (none for the system default).
     #[must_use]
     pub fn env<'a>(&'a self, home: Option<&'a Path>) -> Option<(&'a str, &'a Path)> {
-        home.filter(|_| !self.home.is_empty())
-            .map(|dir| (self.home.as_str(), dir))
+        home.filter(|_| !self.spec().home.is_empty())
+            .map(|dir| (self.spec().home.as_str(), dir))
     }
 
     /// `cmd` for the account in `home`: `env <variable>=<folder> cmd…`, as is for the system default.
@@ -169,21 +107,20 @@ impl Provider {
     /// Whether its CLI (the login command's program) is missing.
     #[must_use]
     pub fn missing(&self) -> bool {
-        self.login.first().is_some_and(|b| !installed(b))
+        self.spec().login.first().is_some_and(|b| !installed(b))
     }
 
-    /// Runs `cmd` (10 s at most) for the account in `home`: whether it exited 0, its stdout and its stderr; none when
-    /// it timed out. On unix it leads its own process group, so a timeout also ends what it started (#105: `security`
-    /// on a locked Keychain).
-    fn run(
-        &self,
-        cmd: &[String],
-        home: Option<&Path>,
-    ) -> Result<Option<(bool, String, String)>, String> {
+    /// Runs `cmd` (10 s at most) for the account in `home`, without its scrubbed variables; none when it timed out.
+    /// On unix it leads its own process group, so a timeout also ends what it started (#105: `security` on a locked
+    /// Keychain).
+    fn run(&self, cmd: &[String], home: Option<&Path>) -> Result<Option<Ran>, String> {
         let Some((bin, args)) = cmd.split_first() else {
             return Err("no command".to_owned());
         };
         let mut command = Command::new(bin);
+        for var in self.scrub() {
+            command.env_remove(var);
+        }
         if let Some((var, dir)) = self.env(home) {
             command.env(var, dir);
         }
@@ -218,11 +155,11 @@ impl Provider {
                 }
             }
         };
-        let (stdout, stderr) = (
-            stdout.join().unwrap_or_default(),
-            stderr.join().unwrap_or_default(),
-        );
-        Ok(Some((ok, stdout, stderr)))
+        Ok(Some(Ran {
+            ok,
+            stdout: stdout.join().unwrap_or_default(),
+            stderr: stderr.join().unwrap_or_default(),
+        }))
     }
 
     /// Runs the logout command for the account in `home`.
@@ -230,65 +167,56 @@ impl Provider {
     /// # Errors
     /// Its output on one line, redacted, when it fails or can't run.
     pub fn sign_out(&self, home: Option<&Path>) -> Result<(), String> {
-        match self.run(&self.logout, home)? {
-            Some((true, ..)) => Ok(()),
-            Some((false, out, err)) => {
-                Err(one_line(if err.trim().is_empty() { &out } else { &err }))
-            }
-            None => Err(format!("`{}` timed out", self.logout.join(" "))),
+        let logout = &self.spec().logout;
+        match self.run(logout, home)? {
+            Some(r) if r.ok => Ok(()),
+            Some(r) => Err(one_line(if r.stderr.trim().is_empty() {
+                &r.stdout
+            } else {
+                &r.stderr
+            })),
+            None => Err(format!("`{}` timed out", logout.join(" "))),
         }
     }
 
-    /// Runs the status command (10 s at most) for the account in `home`: signed in when it exits 0; unknown when it
-    /// times out.
+    /// Runs the status command (10 s at most) for the account in `home` and reads it; unknown when it times out.
     #[must_use]
     pub fn check(&self, home: Option<&Path>) -> Status {
-        let out = |signed_in, line: &str| Status {
-            install: None,
-            signed_in,
-            unknown: false,
-            line: one_line(line),
-            who: None,
-            usage: None,
-        };
         if self.missing() {
             return Status {
-                install: Some(self.install.clone()),
-                ..out(false, "not installed on this Mac")
+                install: Some(self.spec().install.clone()),
+                ..Status::said(false, "not installed on this Mac")
             };
         }
-        let (ok, stdout, stderr) = match self.run(&self.status, home) {
-            Ok(Some(r)) => r,
-            Ok(None) => return Status::unknown(TIMED_OUT),
-            Err(e) => return out(false, &e),
-        };
-        // A JSON status (`claude auth status`): its `loggedIn` as one plain line, who, and usage when it says.
-        if let Ok(v @ serde_json::Value::Object(_)) = serde_json::from_str(&stdout) {
-            let who = v["email"].as_str().or(v["orgName"].as_str());
-            let s = match (v["loggedIn"].as_bool(), v["authMethod"].as_str(), who) {
-                (Some(true), Some(how), Some(who)) => {
-                    out(true, &format!("signed in · {how} ({who})"))
-                }
-                (Some(true), Some(how), None) => out(true, &format!("signed in · {how}")),
-                (Some(true), None, _) => out(true, "signed in"),
-                (Some(false), ..) => out(false, "signed out"),
-                (None, ..) => out(ok, "status unknown"),
-            };
-            return Status {
-                who: who.map(one_line),
-                usage: v["usage"].as_str().map(one_line),
-                ..s
-            };
+        match self.run(&self.spec().status, home) {
+            Ok(Some(r)) => self.read_status(&r),
+            Ok(None) => Status::unknown(TIMED_OUT),
+            Err(e) => Status::said(false, &e),
         }
-        out(
-            ok,
-            if stdout.trim().is_empty() {
-                &stderr
-            } else {
-                &stdout
-            },
-        )
     }
+
+    /// The usage command's reading at `now` (s) for the account in `home`; none when it fails or reads no window.
+    #[must_use]
+    pub fn usage(&self, home: Option<&Path>, now: u64) -> Option<Usage> {
+        let cmd = &self.spec().usage;
+        if cmd.is_empty() {
+            return None;
+        }
+        match self.run(cmd, home) {
+            Ok(Some(r)) if r.ok => self.read_usage(&r.stdout, now),
+            _ => None,
+        }
+    }
+}
+
+/// A status command's plain reading: signed in when it exited 0, its output (stdout, else stderr) the line.
+pub(crate) fn plain_status(ran: &Ran) -> Status {
+    let out = if ran.stdout.trim().is_empty() {
+        &ran.stderr
+    } else {
+        &ran.stdout
+    };
+    Status::said(ran.ok, out)
 }
 
 /// An account's signed-in state, from its provider's status command.
@@ -304,8 +232,8 @@ pub struct Status {
     pub install: Option<String>,
     /// The email or org it is signed in as, when the status says.
     pub who: Option<String>,
-    /// Its usage, when the status reports it.
-    pub usage: Option<String>,
+    /// Its usage reading, when it is signed in and its provider has a usage command.
+    pub usage: Option<Usage>,
 }
 
 /// The status line of a status command that timed out.
@@ -322,6 +250,17 @@ impl Status {
             install: None,
             who: None,
             usage: None,
+        }
+    }
+
+    /// A known status, `line` on one line and redacted.
+    #[must_use]
+    pub fn said(signed_in: bool, line: &str) -> Self {
+        Self {
+            signed_in,
+            unknown: false,
+            line: one_line(line),
+            ..Self::unknown("")
         }
     }
 }
@@ -350,7 +289,7 @@ fn kill_group(child: &mut Child) {
 }
 
 /// `text` on one line, redacted, at most 80 characters.
-fn one_line(text: &str) -> String {
+pub(crate) fn one_line(text: &str) -> String {
     redact(&text.split_whitespace().collect::<Vec<_>>().join(" "))
         .chars()
         .take(80)
@@ -455,75 +394,47 @@ mod tests {
         );
     }
 
-    /// #553 row 34: a pick's words, `{}` filled in; nothing for the defaults; `None` for a pick not offered.
-    #[test]
-    fn picks_fill_the_providers_words() {
-        let codex = &Provider::defaults()[1];
-        assert_eq!(
-            codex.picks("", "high"),
-            Some(vec![
-                "-c".to_owned(),
-                "model_reasoning_effort=high".to_owned()
-            ])
-        );
-        assert_eq!(codex.picks("", ""), Some(Vec::new()));
-        assert_eq!(codex.picks("", "max"), None);
-        assert_eq!(codex.picks("opus", ""), None);
+    fn plain(spec: Spec) -> Box<dyn Provider> {
+        Box::new(crate::Plain(spec))
     }
 
     #[test]
     fn status_from_the_exit_code_and_output() {
-        let p = |status: &str| Provider {
+        let spec = |status: &str| Spec {
             name: "p".to_owned(),
             agent: "a".to_owned(),
-            login: Vec::new(),
             status: vec!["sh".to_owned(), "-c".to_owned(), status.to_owned()],
             install: "npm install -g p".to_owned(),
             home: "COOEE_TEST_HOME".to_owned(),
-            logout: Vec::new(),
-            ..Provider::default()
+            ..Spec::default()
         };
+        let p = |status: &str| plain(spec(status));
         let s = p("echo '  Logged in\n  as owner'").check(None);
         assert_eq!((s.signed_in, s.line.as_str()), (true, "Logged in as owner"));
         let s = p("echo not signed in >&2; exit 1").check(None);
         assert_eq!((s.signed_in, s.line.as_str()), (false, "not signed in"));
-        let s =
-            p(r#"echo '{"loggedIn": true, "authMethod": "claude.ai", "email": "o@example.com"}'"#)
-                .check(None);
-        assert_eq!(
-            (s.signed_in, s.line.as_str()),
-            (true, "signed in · claude.ai (o@example.com)")
-        );
-        assert_eq!(s.who.as_deref(), Some("o@example.com"));
         // An account's status runs with its folder in the provider's variable.
-        let s = p(r#"echo "{\"loggedIn\": true, \"orgName\": \"Acme\", \"usage\": \"$COOEE_TEST_HOME 40% of the week\"}""#)
-            .check(Some(Path::new("/x/work")));
-        assert_eq!(
-            (s.line.as_str(), s.who.as_deref(), s.usage.as_deref()),
-            ("signed in", Some("Acme"), Some("/x/work 40% of the week"))
-        );
+        let s = p("echo \"in $COOEE_TEST_HOME\"").check(Some(Path::new("/x/work")));
+        assert_eq!((s.signed_in, s.line.as_str()), (true, "in /x/work"));
         assert_eq!(p("echo \"$COOEE_TEST_HOME\"").check(None).line, "");
         assert_eq!(
             p("").with_home(&["c".to_owned()], Some(Path::new("/x/work"))),
             ["env", "COOEE_TEST_HOME=/x/work", "c"]
         );
-        let s = p(r#"echo '{"loggedIn": false, "authMethod": "none"}'; exit 1"#).check(None);
-        assert_eq!((s.signed_in, s.line.as_str()), (false, "signed out"));
-        assert_eq!(p(r#"echo '{"a": 1}'"#).check(None).line, "status unknown");
-        let s = Provider {
+        let s = plain(Spec {
             login: vec!["no-such-cooee-cli".to_owned()],
-            ..p("exit 0")
-        }
+            ..spec("exit 0")
+        })
         .check(None);
         assert_eq!(
             (s.signed_in, s.line.as_str(), s.install.as_deref()),
             (false, "not installed on this Mac", Some("npm install -g p"))
         );
         assert!(
-            !Provider {
+            !plain(Spec {
                 status: vec!["/no/such/cooee-bin".to_owned()],
-                ..p("")
-            }
+                ..spec("")
+            })
             .check(None)
             .signed_in
         );
@@ -533,13 +444,13 @@ mod tests {
     #[test]
     fn a_timeout_kills_the_command_and_what_it_started() {
         let pids = env::temp_dir().join(format!("cooee-hung-{}", std::process::id()));
-        let p = Provider {
+        let p = plain(Spec {
             status: ["sh", "-c", r#"sleep 600 & echo $$ $! > "$H"; sleep 600"#]
                 .map(String::from)
                 .into(),
             home: "H".to_owned(),
-            ..Provider::default()
-        };
+            ..Spec::default()
+        });
         let started = Instant::now();
         let s = p.check(Some(&pids));
         assert!(started.elapsed() < LIMIT + Duration::from_secs(2));

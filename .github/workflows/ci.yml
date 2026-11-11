@@ -51,6 +51,8 @@ jobs:
         run: just deps
       - name: public hygiene (ci/denylist.txt)
         run: just hygiene
+      - name: neutral core (no provider named outside crates/cooee-core/src/providers and tests)
+        run: just neutral
       - name: theme gate (packs/themes and the starter)
         run: just themes
 

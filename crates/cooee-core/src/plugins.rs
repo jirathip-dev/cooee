@@ -21,8 +21,15 @@ pub struct Manifest {
     pub name: String,
     /// Its version, as the owner sees it.
     pub version: String,
-    /// Its tabs: one or more.
+    /// Its PWA tabs (none: it has screens only).
+    #[serde(default)]
     pub tabs: Vec<Tab>,
+    /// Where the native app shows its screens (#125's places).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub places: Vec<Place>,
+    /// What it may do: shown when it's attached, refused beyond.
+    #[serde(default)]
+    pub permissions: Permissions,
     /// The build command (`sh -c`, in the checkout).
     pub build: String,
     /// The backend command (`sh -c`, in the checkout), with `PORT`, `COOEE_PLUGIN_TOKEN` and `COOEE` (cooee's URL).
@@ -45,6 +52,58 @@ pub struct Tab {
     pub label: String,
     /// Its module's path on the backend.
     pub module: String,
+}
+
+/// Where a place goes: a chip on a persona's header strip, cards in its chats, or a row in the avatar menu.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PlaceKind {
+    /// A chip under a persona's chat header that opens `screen` as a sheet.
+    HeaderStrip,
+    /// Cards in a persona's chats.
+    ChatCards,
+    /// A row under the avatar menu's Plugins that opens `screen`.
+    MenuRow,
+}
+
+/// One place of a plugin's screens (#125).
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Place {
+    /// Where it goes.
+    #[serde(rename = "type")]
+    pub kind: PlaceKind,
+    /// Its id among the plugin's places.
+    #[serde(default)]
+    pub id: String,
+    /// The persona it attaches to by default.
+    #[serde(default)]
+    pub persona: String,
+    /// What the chip or row says.
+    #[serde(default)]
+    pub label: String,
+    /// A menu row's second line.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub subtitle: String,
+    /// Its screen's path on the backend, under `/screens/`.
+    #[serde(default)]
+    pub screen: String,
+}
+
+/// `[permissions]`: what a plugin may do (#125). The app shows them at attach; cooee refuses the rest.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Permissions {
+    /// The kinds of place it may have.
+    pub places: Vec<PlaceKind>,
+    /// It may notify.
+    pub push: bool,
+    /// The actions its screens and cards may send.
+    pub actions: Vec<String>,
+    /// Those the app always confirms first.
+    pub destructive: Vec<String>,
+    /// The hosts its backend, images and web blocks reach.
+    pub network: Vec<String>,
 }
 
 /// A plugin or theme pack in the index: reviewed, pinned to a commit.
@@ -145,7 +204,8 @@ pub fn themes(path: Option<&Path>) -> io::Result<Vec<Listed>> {
 }
 
 impl Manifest {
-    /// Parses and checks a manifest: a name of lowercase letters, digits and `-`, and at least one tab.
+    /// Parses and checks a manifest: a name of lowercase letters, digits and `-`, a tab or a place, each place
+    /// permitted, with a label and a `/screens/` path where it opens one, and destructive actions among its actions.
     ///
     /// # Errors
     /// When it isn't valid TOML for a manifest or breaks a rule.
@@ -157,8 +217,32 @@ impl Manifest {
                 "cooee-plugin.toml: `name` must be lowercase letters, digits and -",
             ));
         }
-        if m.tabs.is_empty() {
-            return Err(bad("cooee-plugin.toml: a plugin needs at least one tab"));
+        if m.tabs.is_empty() && m.places.is_empty() {
+            return Err(bad("cooee-plugin.toml: a plugin needs a tab or a place"));
+        }
+        let perms = &m.permissions;
+        for p in &m.places {
+            if !perms.places.contains(&p.kind) {
+                return Err(bad(format!(
+                    "cooee-plugin.toml: {:?} is not in [permissions] places",
+                    p.kind
+                )));
+            }
+            let opens = p.kind != PlaceKind::ChatCards;
+            if opens && (p.label.is_empty() || !p.screen.starts_with("/screens/")) {
+                return Err(bad(
+                    "cooee-plugin.toml: a place needs a label and a screen under /screens/",
+                ));
+            }
+        }
+        if let Some(a) = perms
+            .destructive
+            .iter()
+            .find(|a| !perms.actions.contains(a))
+        {
+            return Err(bad(format!(
+                "cooee-plugin.toml: destructive action {a} is not in [permissions] actions"
+            )));
         }
         for p in &m.profiles {
             p.check()
@@ -178,6 +262,15 @@ pub fn lock_path(data: &Path) -> PathBuf {
 #[must_use]
 pub fn build_dir(data: &Path, name: &str, commit: &str) -> PathBuf {
     data.join("plugins").join(name).join("builds").join(commit)
+}
+
+/// Installed plugin `l`'s manifest, from its running build.
+///
+/// # Errors
+/// When the build's manifest can't be read or parsed.
+pub fn manifest(data: &Path, l: &Locked) -> io::Result<Manifest> {
+    let file = build_dir(data, &l.name, &l.commit).join("cooee-plugin.toml");
+    Manifest::parse(&fs::read_to_string(file)?)
 }
 
 /// `<data>/plugins/plugins.toml`, the installed plugins' `[[plugins]]` entries.
@@ -258,12 +351,23 @@ mod tests {
     }
 
     #[test]
-    fn a_manifest_needs_a_name_and_a_tab() {
+    fn a_manifest_needs_a_name_a_tab_or_a_permitted_place() {
         let ok = "name = \"x\"\nversion = \"1\"\nbuild = \"true\"\nrun = \"true\"\n\
                   [[tabs]]\nname = \"x\"\nlabel = \"X\"\nmodule = \"/tab.js\"\n";
         assert_eq!(Manifest::parse(ok).unwrap().tabs[0].label, "X");
         assert!(Manifest::parse(&ok.replace("\"x\"\nversion", "\"X\"\nversion")).is_err());
-        assert!(Manifest::parse(ok.split("[[tabs]]").next().unwrap()).is_err());
+        let bare = ok.split("[[tabs]]").next().unwrap();
+        assert!(Manifest::parse(bare).is_err());
+        let place = "[[places]]\ntype = \"menu-row\"\nlabel = \"Hi\"\nscreen = \"/screens/hi\"\n";
+        let perms = "[permissions]\nplaces = [\"menu-row\"]\nactions = [\"wave\"]\n";
+        let m = Manifest::parse(&format!("{bare}{place}{perms}")).unwrap();
+        assert_eq!(m.places[0].kind, PlaceKind::MenuRow);
+        assert_eq!(m.permissions.actions, ["wave"]);
+        assert!(Manifest::parse(&format!("{bare}{place}")).is_err());
+        let off = place.replace("/screens/hi", "/hi");
+        assert!(Manifest::parse(&format!("{bare}{off}{perms}")).is_err());
+        let wild = perms.replace("actions", "destructive = [\"rm\"]\nactions");
+        assert!(Manifest::parse(&format!("{bare}{place}{wild}")).is_err());
         let with =
             |p: &str| format!("{ok}[[profiles]]\nname = {p:?}\nlabel = \"C\"\nagent = \"a\"\n");
         assert_eq!(Manifest::parse(&with("c")).unwrap().profiles[0].label, "C");

@@ -10,10 +10,7 @@ use std::{
     io::{self, Read, Write},
     os::unix::fs::OpenOptionsExt,
     path::{Path, PathBuf},
-    sync::{
-        Mutex, PoisonError,
-        atomic::{AtomicU64, Ordering},
-    },
+    sync::atomic::{AtomicU64, Ordering},
 };
 
 use serde::{Deserialize, Serialize};
@@ -176,9 +173,6 @@ pub struct Devices {
     path: PathBuf,
 }
 
-/// Held across a load → change → save in this process.
-static LOCK: Mutex<()> = Mutex::new(());
-
 /// SHA-256 of `data`, lowercase hex.
 #[must_use]
 pub fn sha256(data: &[u8]) -> String {
@@ -283,7 +277,9 @@ impl Devices {
     }
 
     fn change<T>(&self, f: impl FnOnce(&mut File) -> io::Result<T>) -> io::Result<T> {
-        let _g = LOCK.lock().unwrap_or_else(PoisonError::into_inner);
+        fs::create_dir_all(self.path.parent().unwrap_or(&self.path))?;
+        let lock = fs::File::create(self.path.with_extension("lock"))?;
+        lock.lock()?;
         let mut file = self.load()?;
         let out = f(&mut file)?;
         self.save(&file)?;
@@ -582,6 +578,20 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("cooee-devices-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         Devices::new(&dir)
+    }
+
+    #[test]
+    fn another_process_waits_while_a_change_is_in_progress() {
+        let d = scratch("lock");
+        d.pair(0).unwrap();
+        let other = d.change(|_| {
+            let lock = fs::File::create(d.path.with_extension("lock"))?;
+            Ok(lock.try_lock())
+        });
+        assert!(
+            matches!(other.unwrap(), Err(fs::TryLockError::WouldBlock)),
+            "the CLI's approve can't land between the server's load and save"
+        );
     }
 
     #[test]

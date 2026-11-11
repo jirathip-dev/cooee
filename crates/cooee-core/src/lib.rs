@@ -3,28 +3,36 @@
 #![forbid(unsafe_code)]
 
 mod accounts;
+mod blocks;
 mod chat;
 mod config;
 mod devices;
 mod login;
 pub mod mcp;
+pub mod models;
 pub mod perf;
 pub mod personas;
 pub mod plugins;
 pub mod profiles;
+pub mod provider;
+mod providers;
 pub mod secrets;
 mod shed;
 mod store;
 
-pub use accounts::{Account, Accounts, Sheet};
+pub use accounts::{Account, Accounts, Sheet, Usage, Window};
 pub use chat::{Body, Card, Change, Chat, Item, Summary, Turn};
 pub use config::{Apns, ApnsEnv, Config, ConfigError, Perf, Plugin, ROOTS_FIX, save_roots};
 pub use devices::{
     Asking, Claim, Credential, Device, Devices, Passkey, append_line, label, random, sha256,
     write_private,
 };
-pub use login::{Provider, Status, links, redact};
+pub use login::{Ran, Spec, Status, links, redact};
 pub use profiles::Profile;
-pub use shed::{AGENTS_FIX, Agent, Launch, Shed, ShedError};
+pub use provider::{Entry, Plain, Provider, Providers, agents_fix};
+pub use shed::{Agent, Launch, Shed, ShedError};
 pub use shed_proto;
-pub use store::{FORMAT, Kind, Member, Message, Queued, Role, Store, StoreError, Thread, Workflow};
+pub use store::{
+    FORMAT, Kind, Member, Message, Queued, Reason, Role, RoomTurn, Store, StoreError, Thread,
+    Workflow,
+};

@@ -121,6 +121,12 @@ test("Settings › providers is one flat list: a row per account, [+ account] pe
     await expect(r.locator(".ptg")).toHaveText("fake-390");
     await expect(r.getByRole("button", { name: /^(sign in|sign out)$/ })).toHaveCount(1);
   }
+  // #183: a signed-in account's usage line beside it, its name still shown (a 390 row wraps the usage under it).
+  await expect(rows.locator(".us")).toHaveCount(2);
+  for (const r of await rows.filter({ has: page.locator(".us") }).all()) {
+    await expect(r.locator(".us")).toHaveText(/^5h \d+% · 7d 40% · read /);
+    expect(await r.locator(".sk").evaluate((e) => e.getBoundingClientRect().width)).toBeGreaterThan(80);
+  }
   await expect(sheet.locator(".acr.add .ptg")).toHaveText(["fake-390", "fake-1440"]);
   await expect(sheet).not.toContainText("default");
   await shot(page, info, "providers");

@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jirathip-dev/cooee/docs/plugins/screens.schema.json",
+  "title": "A plugin's answer as cooee blocks (#125, docs/design/screens-as-data)",
+  "description": "A screen or any block, a list of blocks, a stream event or a list of them, an action's answer, a plugin's places, or its [permissions]. An unknown block type is allowed (the app skips it), so a newer plugin works on an older app. `cooee plugin check` validates against this file.",
+  "allOf": [
+    { "if": { "type": "array" }, "then": { "items": { "$ref": "#" } } },
+    { "if": { "type": "object", "required": ["type"] }, "then": { "$ref": "#/$defs/block" } },
+    { "if": { "type": "object", "required": ["ops"] }, "then": { "$ref": "#/$defs/answer" } },
+    { "if": { "type": "object", "required": ["places"] }, "then": { "$ref": "#/$defs/places" } },
+    { "if": { "type": "object", "required": ["permissions"] }, "then": { "$ref": "#/$defs/attach" } },
+    { "if": { "type": "object", "required": ["block"] }, "then": { "properties": { "block": { "$ref": "#/$defs/block" } } } },
+    { "type": ["array", "object"] }
+  ],
+  "$defs": {
+    "tone": { "enum": ["ok", "warn", "bad", "info", "mute", "accent", "working", "needs", "done", "fail", "idle"] },
+    "time": {
+      "type": "object",
+      "anyOf": [{ "required": ["since"] }, { "required": ["until"] }],
+      "properties": { "since": { "type": "string" }, "until": { "type": "string" } }
+    },
+    "value": { "anyOf": [{ "type": ["string", "number"] }, { "$ref": "#/$defs/time" }] },
+    "toned": {
+      "anyOf": [
+        { "type": "string" },
+        { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" }, "tone": { "$ref": "#/$defs/tone" } } }
+      ]
+    },
+    "badge": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" }, "tone": { "$ref": "#/$defs/tone" } } },
+    "tap": {
+      "type": "object",
+      "properties": {
+        "open": { "type": "string" }, "sheet": { "type": "string" }, "action": { "type": "string" },
+        "values": { "type": "object" }, "thread": { "type": "string" }, "url": { "type": "string" }
+      }
+    },
+    "confirm": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string" }, "message": { "type": "string" }, "ok": { "type": "string" },
+        "destructive": { "type": "boolean" }
+      }
+    },
+    "act": {
+      "type": "object",
+      "required": ["label"],
+      "properties": {
+        "label": { "type": "string" }, "icon": { "type": "string" }, "action": { "type": "string" },
+        "values": { "type": "object" }, "tone": { "$ref": "#/$defs/tone" }, "tap": { "$ref": "#/$defs/tap" },
+        "confirm": { "$ref": "#/$defs/confirm" }, "menu": { "type": "array", "items": { "$ref": "#/$defs/act" } }
+      }
+    },
+    "blocks": { "type": "array", "items": { "$ref": "#/$defs/block" } },
+    "field": {
+      "type": "object",
+      "required": ["type", "name"],
+      "properties": {
+        "type": { "enum": ["text", "toggle", "picker", "secret"] }, "name": { "type": "string" },
+        "label": { "type": "string" }, "placeholder": { "type": "string" },
+        "keyboard": { "enum": ["default", "url", "number"] }, "value": { "type": ["string", "number", "boolean"] },
+        "options": { "type": "array", "items": { "type": "string" } }, "set": { "type": "boolean" }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "picker" } } }, "then": { "required": ["options"] } },
+        { "if": { "properties": { "type": { "const": "secret" } } }, "then": { "not": { "required": ["value"] } } }
+      ]
+    },
+    "submit": { "type": "object", "required": ["label", "action"], "properties": { "label": { "type": "string" }, "action": { "type": "string" } } },
+    "block": {
+      "type": "object",
+      "required": ["type"],
+      "properties": { "type": { "type": "string" }, "id": { "type": "string" } },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "screen" } } }, "then": { "$ref": "#/$defs/screen" } },
+        { "if": { "properties": { "type": { "const": "sheet" } } }, "then": { "$ref": "#/$defs/sheet" } },
+        { "if": { "properties": { "type": { "const": "section" } } }, "then": { "$ref": "#/$defs/section" } },
+        { "if": { "properties": { "type": { "const": "list" } } }, "then": { "$ref": "#/$defs/list" } },
+        { "if": { "properties": { "type": { "const": "row" } } }, "then": { "$ref": "#/$defs/row" } },
+        { "if": { "properties": { "type": { "const": "card" } } }, "then": { "$ref": "#/$defs/card" } },
+        { "if": { "properties": { "type": { "const": "choice" } } }, "then": { "$ref": "#/$defs/choice" } },
+        { "if": { "properties": { "type": { "const": "form" } } }, "then": { "$ref": "#/$defs/form" } },
+        { "if": { "properties": { "type": { "const": "config" } } }, "then": { "$ref": "#/$defs/form" } },
+        { "if": { "properties": { "type": { "const": "secret" } } }, "then": { "$ref": "#/$defs/secret" } },
+        { "if": { "properties": { "type": { "const": "run" } } }, "then": { "$ref": "#/$defs/run" } },
+        { "if": { "properties": { "type": { "const": "button" } } }, "then": { "$ref": "#/$defs/button" } },
+        { "if": { "properties": { "type": { "const": "chips" } } }, "then": { "$ref": "#/$defs/chips" } },
+        { "if": { "properties": { "type": { "const": "stat" } } }, "then": { "$ref": "#/$defs/stat" } },
+        { "if": { "properties": { "type": { "const": "text" } } }, "then": { "$ref": "#/$defs/text" } },
+        { "if": { "properties": { "type": { "const": "images" } } }, "then": { "$ref": "#/$defs/images" } },
+        { "if": { "properties": { "type": { "const": "web" } } }, "then": { "$ref": "#/$defs/web" } }
+      ]
+    },
+    "screen": {
+      "required": ["title", "blocks"],
+      "properties": {
+        "title": { "type": "string" }, "large": { "type": "boolean" }, "stream": { "type": "string" },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/act" } }, "blocks": { "$ref": "#/$defs/blocks" }
+      }
+    },
+    "sheet": {
+      "required": ["title", "blocks"],
+      "properties": {
+        "title": { "type": "string" }, "cancel": { "type": "string" }, "done": { "$ref": "#/$defs/submit" },
+        "blocks": { "$ref": "#/$defs/blocks" }
+      }
+    },
+    "section": {
+      "required": ["blocks"],
+      "properties": { "header": { "type": "string" }, "footer": { "type": "string" }, "blocks": { "$ref": "#/$defs/blocks" } }
+    },
+    "list": { "required": ["rows"], "properties": { "rows": { "$ref": "#/$defs/blocks" } } },
+    "row": {
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string" }, "subtitle": { "$ref": "#/$defs/toned" }, "badge": { "$ref": "#/$defs/badge" },
+        "figure": {
+          "type": "object",
+          "properties": { "state": { "$ref": "#/$defs/tone" }, "tool": { "type": "string" }, "icon": { "type": "string" }, "avatar": { "type": "string" } }
+        },
+        "value": { "$ref": "#/$defs/value" }, "accessory": { "enum": ["chevron", "none"] },
+        "swipe": { "type": "array", "items": { "$ref": "#/$defs/act" } }, "tap": { "$ref": "#/$defs/tap" },
+        "indent": { "type": "integer", "minimum": 0, "maximum": 2 }, "style": { "enum": ["link", "destructive"] }
+      }
+    },
+    "card": {
+      "properties": {
+        "kind": { "enum": ["ask", "run", "secret", "config"] }, "tone": { "$ref": "#/$defs/tone" },
+        "title": { "type": "string" }, "subtitle": { "type": "string" }, "meta": { "type": "string" },
+        "badge": { "$ref": "#/$defs/badge" }, "buttons": { "$ref": "#/$defs/blocks" }, "tap": { "$ref": "#/$defs/tap" },
+        "push": { "type": "boolean" }, "blocks": { "$ref": "#/$defs/blocks" }
+      }
+    },
+    "choice": {
+      "required": ["action", "options"],
+      "properties": {
+        "action": { "type": "string" }, "question": { "type": "string" }, "recommended": { "type": "string" },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["value", "label"],
+            "properties": {
+              "value": { "type": "string" }, "label": { "type": "string" }, "values": { "type": "object" },
+              "confirm": { "$ref": "#/$defs/confirm" }
+            }
+          }
+        },
+        "other": { "type": "object", "properties": { "placeholder": { "type": "string" }, "for": { "type": "string" } } },
+        "default": {
+          "type": "object",
+          "required": ["value", "until"],
+          "properties": { "value": { "type": "string" }, "until": { "type": "string" }, "label": { "type": "string" } }
+        }
+      }
+    },
+    "form": {
+      "required": ["fields"],
+      "properties": { "submit": { "$ref": "#/$defs/submit" }, "fields": { "type": "array", "items": { "$ref": "#/$defs/field" } } }
+    },
+    "secret": {
+      "required": ["name", "action"],
+      "not": { "required": ["value"] },
+      "properties": {
+        "name": { "type": "string" }, "action": { "type": "string" }, "label": { "type": "string" },
+        "placeholder": { "type": "string" }, "set": { "type": "boolean" }, "values": { "type": "object" }
+      }
+    },
+    "run": {
+      "required": ["action", "command", "sha"],
+      "properties": {
+        "action": { "type": "string" }, "command": { "type": "string" }, "sha": { "type": "string" },
+        "dir": { "type": "string" }, "touches": { "type": "string" }, "until": { "type": "string" }
+      }
+    },
+    "button": {
+      "required": ["label"],
+      "properties": {
+        "label": { "type": "string" }, "style": { "enum": ["primary", "plain", "destructive"] },
+        "action": { "type": "string" }, "values": { "type": "object" }, "tap": { "$ref": "#/$defs/tap" },
+        "confirm": { "$ref": "#/$defs/confirm" }
+      }
+    },
+    "chips": {
+      "required": ["name", "options"],
+      "properties": {
+        "name": { "type": "string" }, "multi": { "type": "boolean" }, "action": { "type": "string" },
+        "selected": { "type": "array", "items": { "type": "string" } },
+        "options": {
+          "type": "array",
+          "items": { "type": "object", "required": ["value", "label"], "properties": { "value": { "type": "string" }, "label": { "type": "string" } } }
+        }
+      }
+    },
+    "tile": {
+      "type": "object",
+      "required": ["label", "value"],
+      "properties": {
+        "label": { "type": "string" }, "value": { "$ref": "#/$defs/value" }, "unit": { "type": "string" },
+        "tone": { "$ref": "#/$defs/tone" }, "spark": { "type": "array", "maxItems": 48, "items": { "type": "number" } }
+      }
+    },
+    "stat": {
+      "anyOf": [{ "required": ["items"] }, { "$ref": "#/$defs/tile" }],
+      "properties": { "items": { "type": "array", "items": { "$ref": "#/$defs/tile" } } }
+    },
+    "text": {
+      "required": ["markdown"],
+      "properties": { "markdown": { "type": "string" }, "style": { "enum": ["body", "footnote"] }, "until": { "type": "string" } }
+    },
+    "images": {
+      "required": ["items"],
+      "properties": {
+        "size": { "enum": ["small", "large"] },
+        "items": {
+          "type": "array",
+          "items": { "type": "object", "required": ["src"], "properties": { "src": { "type": "string" }, "alt": { "type": "string" }, "caption": { "type": "string" } } }
+        }
+      }
+    },
+    "web": { "required": ["src", "height"], "properties": { "src": { "type": "string" }, "height": { "type": "number" } } },
+    "op": {
+      "type": "object",
+      "required": ["op"],
+      "properties": { "op": { "enum": ["replace", "merge", "remove", "insert", "screen", "badge", "dot"] } },
+      "allOf": [
+        { "if": { "properties": { "op": { "const": "replace" } } }, "then": { "required": ["id", "block"], "properties": { "block": { "$ref": "#/$defs/block" } } } },
+        { "if": { "properties": { "op": { "const": "merge" } } }, "then": { "required": ["id", "fields"], "properties": { "fields": { "type": "object" } } } },
+        { "if": { "properties": { "op": { "const": "remove" } } }, "then": { "required": ["id"] } },
+        { "if": { "properties": { "op": { "const": "insert" } } }, "then": { "required": ["into", "block"], "properties": { "block": { "$ref": "#/$defs/block" } } } },
+        { "if": { "properties": { "op": { "const": "screen" } } }, "then": { "required": ["screen"], "properties": { "screen": { "$ref": "#/$defs/block" } } } },
+        { "if": { "properties": { "op": { "const": "badge" } } }, "then": { "required": ["count"], "properties": { "count": { "type": "integer" } } } },
+        { "if": { "properties": { "op": { "const": "dot" } } }, "then": { "required": ["on"], "properties": { "on": { "type": "boolean" } } } }
+      ]
+    },
+    "answer": {
+      "description": "A stream event ({seq, ops}) or an action's 2xx answer ({ops, toast, close, open}).",
+      "properties": {
+        "seq": { "type": "integer" }, "ops": { "type": "array", "items": { "$ref": "#/$defs/op" } },
+        "toast": { "type": "string" }, "close": { "type": "boolean" }, "open": { "type": "string" }
+      }
+    },
+    "places": {
+      "properties": {
+        "places": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": { "enum": ["header-strip", "chat-cards", "menu-row"] }, "id": { "type": "string" },
+              "persona": { "type": "string" }, "label": { "type": "string" }, "subtitle": { "type": "string" },
+              "screen": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "attach": {
+      "description": "The attach sheet's data: the manifest's [permissions] with the plugin's version and source.",
+      "properties": {
+        "permissions": {
+          "type": "object",
+          "properties": {
+            "places": { "type": "array", "items": { "type": "string" } }, "push": { "type": "boolean" },
+            "chat_cards": { "type": "boolean" }, "actions": { "type": "array", "items": { "type": "string" } },
+            "destructive": { "type": "array", "items": { "type": "string" } },
+            "network": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    }
+  }
+}

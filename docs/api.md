@@ -13,7 +13,8 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "agent"; text: string; stop_reason: string }
   | { kind: "tool"; call: string; title: string; status: string; ended?: number }
   | { kind: "approval"; tool: string; options: { id: string; name: string; kind: string }[]; tapped?: string; chosen?: string; plugin?: string;
-      by?: string; answered?: number; form?: "config" | "secret" | "thread"; detail?: string; line?: string; until?: number }
+      by?: string; answered?: number; form?: "config" | "secret" | "thread"; detail?: string; line?: string; until?: number;
+      block: Card }  // #138: the #125 card block the native app draws (docs/plugins/screens.schema.json)
   | { kind: "link"; text: string; thread: string; title: string; out?: boolean }
   | { kind: "plan"; entries: { content: string; status: string; priority?: string }[] }
   | { kind: "note"; text: string }
@@ -44,7 +45,8 @@ type File = { name: string; data: string }; // data: the bytes in base64
 | `POST /threads/{id}/title` | `{title}` | `null` |
 | `POST /threads/{id}/archive` | `{on}`: archive it, or restore it | `null` |
 | `POST /threads/{id}/approve` | `{item, option, value?}` (a plugin card's option may be free text; `value`: a secret card's, sent to its plugin only) | `Item` or `null` |
-| `POST /threads/{id}/model` | `{model, effort}` (`""`: the default; only what its provider offers) | the `note` it adds |
+| `POST /threads/{id}/model` | `{model, effort}` (`""`: the default; a model its agent reported, a short name of one, or any while none was reported yet; an effort its provider offers) | the `note` it adds |
+| `GET /models` | | each agent and account's models (#193), as its sessions last reported them: `{agent, account, seen, models: [id, name][], short: {<short name>: <id>}}[]` (`seen`: unix ms; `short`: each short name, the alphabetic words of a model's id, with the newest model of its family it runs on now). A pick (thread, persona, `POST /threads`) is a short name or an id |
 | `POST /threads/{id}/cancel` | `{}` | `null` |
 | `POST /threads/{id}/close` | `{}` | `null` (400 for a Workflow session: its tool closes it) |
 | `POST /threads/{id}/read` | `{item}`: read up to this id | `null` |
@@ -75,7 +77,7 @@ with `ask_persona`. An unknown id or a broken rule is a 400 with the reason.
 | `GET /personas/{id}` | | the persona |
 | `PUT /personas/{id}` | the persona | the persona |
 | `DELETE /personas/{id}` | | `null`: its file, the profile it runs as and its notes go; its chats stay |
-| `GET /personas/{id}/places` | | its attached plugins' header screens, `{name, label, icon, url}[]`: none until a plugin can have one (#125) |
+| `GET /personas/{id}/places` | | its header strip (#125, q984): the `header-strip` places of its attached plugins, `{plugin, id, label, screen}[]`; a tap opens `GET /p/{plugin}{screen}` as a sheet |
 | `GET /personas/{id}/memory` | | its notes, oldest first |
 | `POST /personas/{id}/memory` | `{text}` | the note, by `owner` |
 | `DELETE /personas/{id}/memory` | | `null`: the notes go, the persona and its chats stay |
@@ -129,7 +131,7 @@ with `ask_persona`. An unknown id or a broken rule is a 400 with the reason.
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /plugins` | | `{installed: {name, version, commit, listed, state, enabled, first_party, improving?, previous?, tabs}[], index: {name, description}[], jobs: {name: text}, issues}` |
+| `GET /plugins` | | `{installed: {name, version, commit, listed, state, enabled, first_party, improving?, previous?, tabs, places, permissions}[], index: {name, description}[], jobs: {name: text}, issues}` |
 | `GET /plugins/log?name=N` | | the plugin's log, text |
 | `POST /plugins/plan` | `{source}` or `{name, at}` | `{commit, text}`: what would run, to confirm |
 | `POST /plugins/add`, `/plugins/update` | the plan's body and its `commit` (a confirm holds for that commit only) | a JSON string (`"installing"`, …) |
@@ -191,6 +193,16 @@ A page with `?preview=<name>` shows the theme being built in `themes-dev/<name>/
 A plugin's frame asks the page, which calls `GET` or `POST /p/{name}/api/{path}` (the plugin's own backend through
 cooee's proxy, with its token, never the cookie). An event stream comes back as SSE messages of `{event, data}`. The
 `terminal` tab's calls need the device unlocked with its passkey: else 403 `locked` (header `Cooee-Locked: 1`).
+
+## Plugin screens (#125)
+
+A plugin whose manifest has `[[places]]` serves its screens as blocks ([plugins.md](plugins.md#screens)). A device
+reaches them through cooee, with the plugin's token, never the cookie:
+
+| Call | Body | Answer |
+|---|---|---|
+| `GET /p/{plugin}/screens/{path}` | | the backend's `GET /screens/{path}`: a screen (JSON), or its stream (SSE, each event `{seq, ops}` as sent, its id kept; `Last-Event-ID` goes along) |
+| `POST /p/{plugin}/action` | `{screen, block, action, values}` | the backend's answer to `POST /action` (`by`: the device), as it sent it; 403 for an action not in its `[permissions] actions` (never sent); 404 for no installed plugin with places; 502 when the backend can't be reached |
 
 ## The look
 

@@ -16,9 +16,10 @@ use std::{
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 use shed_proto::{
-    ErrorCode, Event, EventsParams, Hello, KeysParams, LsParams, Method, ReadParams, ReadResult,
-    Reported, Request, ResizeParams, Response, RpcError, RunParams, ScreenUpdate, SendParams,
-    StateParams, Target, TerminalInfo, WaitOutcome, WaitParams, WaitResult, WatchParams,
+    AcpSession, ErrorCode, Event, EventsParams, Hello, KeysParams, LsParams, Method, ModelParams,
+    ReadParams, ReadResult, Reported, Request, ResizeParams, Response, RpcError, RunParams,
+    ScreenUpdate, SendParams, StateParams, Target, TerminalInfo, WaitOutcome, WaitParams,
+    WaitResult, WatchParams,
 };
 
 /// Why a call to shed failed.
@@ -71,19 +72,19 @@ const CALL: Duration = Duration::from_secs(10);
 /// How many idle, helloed connections a [`Shed`] keeps for reuse (#54).
 const POOL: usize = 4;
 
-/// The fix for no installed agents, as the agent picker and `cooee doctor` print it.
-pub const AGENTS_FIX: &str = "shed agents add claude-acp";
-
 /// An installed ACP agent, as `shed agents` lists it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Agent {
-    /// The registry id (`claude-acp`, …).
+    /// The registry id (`<agent>-acp`, …).
     pub id: String,
     /// The pinned version.
     pub version: String,
     /// Its ACP adapter's command line.
     #[serde(default)]
     pub cmd: Vec<String>,
+    /// Its models on the main login, as a picker offers them: cooee's, from its sessions (#193).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub models: Vec<String>,
 }
 
 /// What a thread's agent runs with besides its folder: variables on its adapter's command line, secret ones through
@@ -358,11 +359,11 @@ impl Shed {
         self.call(Method::Get, &json!(Target { name: name.into() }))
     }
 
-    /// Waits up to a minute for ACP terminal `name`'s session to be ready for a prompt.
+    /// Waits up to a minute for ACP terminal `name`'s session to be ready for a prompt; the session as reported.
     ///
     /// # Errors
     /// [`ShedError`] when the call fails, or [`ShedError::Bad`] when the session never got ready.
-    pub fn ready(&self, name: &str) -> Result<(), ShedError> {
+    pub fn ready(&self, name: &str) -> Result<Option<AcpSession>, ShedError> {
         let wait = WaitParams {
             name: name.into(),
             until: Vec::new(),
@@ -372,11 +373,23 @@ impl Shed {
         let mut conn = self.connect_for(CALL + Duration::from_secs(60))?;
         let result: WaitResult = conn.call(Method::Wait, json!(wait))?;
         match result.outcome {
-            WaitOutcome::Matched => Ok(()),
+            WaitOutcome::Matched => Ok(result.terminal.session),
             outcome => Err(ShedError::Bad(format!(
                 "{name}: no ACP session ({outcome:?})"
             ))),
         }
+    }
+
+    /// Switches ACP terminal `name`'s session to `model`, one of its reported models (`acp.model`).
+    ///
+    /// # Errors
+    /// [`ShedError`] when the call fails.
+    pub fn set_model(&self, name: &str, model: &str) -> Result<(), ShedError> {
+        let params = ModelParams {
+            name: name.into(),
+            model: model.into(),
+        };
+        self.call::<Value>(Method::Model, &json!(params)).map(drop)
     }
 
     /// Sends `text` to ACP terminal `name` as a prompt, reported `working` first as `shed send` does.

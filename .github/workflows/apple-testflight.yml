@@ -61,7 +61,7 @@ jobs:
       - name: archive (cloud signing)
         working-directory: apple
         run: >-
-          xcodebuild archive -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=iOS'
+          xcodebuild archive -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=iOS'
           -archivePath "$RUNNER_TEMP/Cooee.xcarchive" -allowProvisioningUpdates
           -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
           DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD"

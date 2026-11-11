@@ -296,12 +296,12 @@ async fn on_logins<T: Send + 'static>(
 #[derive(Default)]
 struct Dots(std::sync::Mutex<std::collections::BTreeSet<String>>);
 
-/// The plugin tabs: each one's name, label and dot.
+/// The plugin tabs (a plugin with screens only has none): each one's name, label and dot.
 fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
     let hub = app_context::<Arc<Hub>>(cx);
     let dots = app_context::<Arc<Dots>>(cx).0.lock().map(|d| d.clone());
     let dots = dots.unwrap_or_default();
-    let tabs = hub.plugins().into_iter();
+    let tabs = hub.plugins().into_iter().filter(|p| !p.module.is_empty());
     tabs.map(|p| {
         let dot = dots.contains(&p.name);
         (p.name, p.label, dot)
@@ -317,10 +317,25 @@ async fn side(cx: &Cx) -> Result<cooee_web::Side> {
     let rest = blocking(cx, move |hub| {
         let mut profiles = profiles(hub, (&data, config.as_deref()));
         profiles.retain(|p| !p.hidden);
-        Ok((hub.list(), hub.agents(), hub.folders(), profiles))
+        Ok((
+            hub.list(),
+            hub.agents(),
+            hub.folders(),
+            profiles,
+            hub.models(),
+        ))
     });
-    let (providers, (rows, agents, folders, profiles)) =
+    let (providers, (rows, mut agents, folders, profiles, models)) =
         futures_util::future::try_join(providers, rest).await?;
+    // A new chat runs on the main login: its models (#193).
+    for a in agents.iter_mut().flatten() {
+        let main = models
+            .iter()
+            .find(|o| o.agent == a.id && o.account.is_empty());
+        a.models = main
+            .map(cooee_core::models::Offered::picks)
+            .unwrap_or_default();
+    }
     Ok(cooee_web::Side {
         rows,
         profiles,
@@ -472,7 +487,9 @@ async fn chat(cx: &Cx) -> Result<impl View> {
     let side = side(cx).await?;
     let profile = side.profiles.iter().find(|p| p.id() == thread.profile);
     let label = profile.map_or(thread.profile.clone(), |p| p.label.clone());
-    let choices = logins(cx).choices(&thread.agent);
+    let models = hub(cx).offered(&thread.agent, &thread.account);
+    let models = models.map(|o| o.picks()).unwrap_or_default();
+    let choices = (models, logins(cx).efforts(&thread.agent));
     let folder = thread.folder.clone();
     let pane = cooee_web::Pane::Chat {
         thread: Box::new(thread),
@@ -743,9 +760,7 @@ fn recipe(
         };
         (p.agent, p.folder.unwrap_or(folder), recipe)
     };
-    recipe
-        .launch
-        .pick(logins.picks(&agent, &picked.0, &picked.1)?);
+    recipe.launch.pick(logins.picks(&agent, &picked.1)?);
     (recipe.model, recipe.effort) = picked;
     if let Some(p) = persona {
         recipe.instructions = p.brief(data);
@@ -1044,11 +1059,33 @@ async fn model(cx: &Cx, Json(p): Json<ModelPick>) -> Result<Answer<cooee_core::I
     Ok(Answer(
         blocking(cx, move |hub| {
             let agent = hub.thread(&id)?.0.agent;
-            logins.picks(&agent, &p.model, &p.effort)?;
+            logins.picks(&agent, &p.effort)?;
             hub.pick(&id, &p.model, &p.effort)
         })
         .await,
     ))
+}
+
+/// `GET /models` (#193): each agent and account's models as last seen, each short name with what it resolves to now.
+#[derive(Serialize)]
+struct ModelList {
+    agent: String,
+    account: String,
+    seen: u64,
+    models: Vec<[String; 2]>,
+    short: BTreeMap<String, String>,
+}
+
+#[route(GET "/models")]
+async fn model_list(cx: &Cx) -> Result<Answer<Vec<ModelList>>> {
+    let lists = hub(cx).models().into_iter().map(|o| ModelList {
+        short: o.short_names().into_iter().collect(),
+        agent: o.agent,
+        account: o.account,
+        seen: o.seen,
+        models: o.models,
+    });
+    Ok(Answer(Ok(lists.collect())))
 }
 
 #[route(POST "/threads/{id}/cancel")]
@@ -1213,11 +1250,11 @@ fn backend(hub: &Hub, data: &std::path::Path, name: &str) -> Option<Plugin> {
 path_param!(name);
 path_param!(rest);
 
-/// The plugin the path names.
+/// The plugin tab the path names (a plugin with screens only has none).
 fn named(cx: &Cx) -> Result<Plugin> {
     let name = path_param::<Name>(cx);
     let hub = app_context::<Arc<Hub>>(cx);
-    let found = hub.plugins().into_iter().find(|p| p.name == name);
+    let found = (hub.plugins().into_iter()).find(|p| p.name == name && !p.module.is_empty());
     Ok(found.ok_or_else(not_found)?)
 }
 
@@ -1292,16 +1329,27 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
         Ok(r) => r,
         Err(e) => return plain(502, &format!("{prefix}: {e}")),
     };
+    // A locked device's stream ends at its next event.
+    let open = move || !gated || unlocks.open(&me, now());
+    pass_on(cx, reply, relay, open).await
+}
+
+/// A backend's answer passed on: an event stream event by event (each through `relay` while `open`), else its
+/// status, content type and body.
+async fn pass_on(
+    cx: &Cx,
+    reply: plugin::Reply,
+    relay: fn(plugin::Sse) -> Event,
+    open: impl Fn() -> bool + Send + 'static,
+) -> Result<Response> {
     if reply
         .header("content-type")
         .is_some_and(|t| t.starts_with("text/event-stream"))
     {
         reply.body.get_ref().set_read_timeout(None)?;
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        // A locked device's stream ends at its next event.
-        let open = move || !gated || unlocks.open(&me, now());
         std::thread::spawn(move || plugin::events(reply, |e| open() && tx.send(e).is_ok()));
-        let stream = stream::unfold(rx, |mut rx| async move {
+        let stream = stream::unfold(rx, move |mut rx| async move {
             let e = rx.recv().await?;
             Some((Result::<Event>::Ok(relay(e)), rx))
         });
@@ -1320,6 +1368,126 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
         .header("Content-Type", kind)
         .header("Cache-Control", "no-store")
         .body(Body::from(bytes))?)
+}
+
+/// Installed plugin `{name}`'s backend and manifest, when it has places: only those have screens (#125).
+fn with_screens(cx: &Cx) -> Option<(Plugin, cooee_core::plugins::Manifest)> {
+    let name = path_param::<Name>(cx);
+    let data = &app_context::<Data>(cx).0;
+    let lock = cooee_core::plugins::read_lock(data).ok()?;
+    let m = cooee_core::plugins::manifest(data, lock.iter().find(|l| l.name == name)?).ok()?;
+    let p = backend(app_context::<Arc<Hub>>(cx), data, name)?;
+    (!m.places.is_empty()).then_some((p, m))
+}
+
+/// A screen stream's event as the backend sent it: its `{seq, ops}` data, its name and id.
+fn ops(e: plugin::Sse) -> Event {
+    let out = Event::new().data(e.data);
+    let out = if e.event.is_empty() {
+        out
+    } else {
+        out.event(e.event)
+    };
+    match e.id {
+        Some(id) => out.id(id),
+        None => out,
+    }
+}
+
+/// `GET /p/<plugin>/screens/<path>` (#125): a screen from a plugin with places, off its backend with its token
+/// (`Accept` and `Last-Event-ID` go along, never the cookie); a stream of block ops comes back event by event.
+#[route(GET "/p/{name}/screens/{*rest}")]
+async fn screen(cx: &Cx) -> Result<Response> {
+    let Some((p, m)) = with_screens(cx) else {
+        return plain(404, "no installed plugin with screens has this name");
+    };
+    let uri = uri(cx);
+    let target = uri.path_and_query().map_or("/", |t| t.as_str());
+    let target = target
+        .strip_prefix(&format!("/p/{}", path_param::<Name>(cx)))
+        .unwrap_or(target)
+        .to_owned();
+    let path = target.split('?').next().unwrap_or_default();
+    let declared = m.places.iter().any(|pl| {
+        !pl.screen.is_empty()
+            && path
+                .strip_prefix(pl.screen.as_str())
+                .is_some_and(|r| r.is_empty() || r.starts_with('/'))
+    });
+    if !declared || path.contains("..") || path.to_ascii_lowercase().contains("%2e") {
+        return plain(
+            403,
+            &format!("{path} isn't under one of {}'s places' screens", m.name),
+        );
+    }
+    let pass: Vec<(&str, String)> = ["accept", "last-event-id"]
+        .into_iter()
+        .filter_map(|h| Some((h, header(cx, h)?.to_owned())))
+        .collect();
+    let reply = tokio::task::spawn_blocking(move || {
+        let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
+        plugin::call(
+            &p,
+            "GET",
+            &target,
+            &headers,
+            &[],
+            Some(Duration::from_secs(5)),
+        )
+    })
+    .await?;
+    match reply {
+        Ok(r) => pass_on(cx, r, ops, || true).await,
+        Err(e) => plain(502, &format!("{}: {e}", path_param::<Name>(cx))),
+    }
+}
+
+/// One action from a plugin's screen or card (#125): the block it came from and its values.
+#[derive(Deserialize)]
+struct BlockAct {
+    #[serde(default)]
+    screen: String,
+    #[serde(default)]
+    block: String,
+    action: String,
+    #[serde(default)]
+    values: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `POST /p/<plugin>/action` (#125): one action to its backend's `POST /action`, with the device that sent it as
+/// `by`; one not in its manifest's `[permissions]` actions is refused (403) and never sent.
+#[route(POST "/p/{name}/action")]
+async fn screen_action(cx: &Cx, Json(a): Json<BlockAct>) -> Result<Response> {
+    let Some((p, m)) = with_screens(cx) else {
+        return plain(404, "no installed plugin with screens has this name");
+    };
+    if !m.permissions.actions.contains(&a.action) {
+        return plain(
+            403,
+            &format!("{} isn't in {}'s [permissions] actions", a.action, m.name),
+        );
+    }
+    let by = request_context::<Paired>(cx).0.label.clone();
+    let body = serde_json::json!({
+        "screen": a.screen, "block": a.block, "action": a.action, "values": a.values, "by": by,
+    });
+    let reply = tokio::task::spawn_blocking(move || {
+        let json = [("Content-Type", "application/json")];
+        let timeout = Some(Duration::from_secs(10));
+        plugin::call(
+            &p,
+            "POST",
+            "/action",
+            &json,
+            body.to_string().as_bytes(),
+            timeout,
+        )
+    })
+    .await?;
+    match reply {
+        Ok(r) => pass_on(cx, r, ops, || true).await,
+        Err(e) => plain(502, &format!("{}: {e}", m.name)),
+    }
 }
 
 fn manager(cx: &Cx) -> Arc<Manager> {
@@ -2028,14 +2196,11 @@ async fn persona_put(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
     persona_save(cx, p).await
 }
 
-/// `GET /personas/{id}/places` (#129): its attached plugins' header screens; none until a plugin can have one (#125).
+/// `GET /personas/{id}/places`: its header strip, its attached plugins' `header-strip` chips (#125, q984).
 #[route(GET "/personas/{id}/places")]
 async fn places(cx: &Cx) -> Result<Answer<Vec<personas::Place>>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| {
-        personas::find(Some(c), d, &id).map(|_| Vec::new())
-    })
-    .await
+    on_personas(cx, move |d, c| personas::places(Some(c), d, &id)).await
 }
 
 #[route(DELETE "/personas/{id}")]
@@ -2077,15 +2242,18 @@ async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
     .await
 }
 
-/// The persona calls (#126), and `remember`'s.
+/// The persona calls (#126), the machines and models they pick from, `remember`'s, and their plugins' screens (#125).
 fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
     b.route(persona_list)
         .route(machine_list)
+        .route(model_list)
         .route(persona_new)
         .route(persona_get)
         .route(persona_put)
         .route(persona_delete)
         .route(places)
+        .route(screen)
+        .route(screen_action)
         .route(memory)
         .route(memory_add)
         .route(memory_clear)
@@ -2479,7 +2647,11 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         });
     }
     let theme = looks.looks().themes[&looks.looks().default].clone();
-    let logins = Logins::new(shed.clone(), config.providers.clone(), &data);
+    let logins = Logins::new(
+        shed.clone(),
+        cooee_core::Providers::new(&config.providers),
+        &data,
+    );
     let hub = Hub::open(
         shed,
         &data,
@@ -2488,6 +2660,20 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         manager.tabs(),
         config.apns.clone(),
     )?;
+    // The models' daily refresh (#193): each agent and account seen a day ago or more is asked again.
+    let (daily, signins) = (Arc::clone(&hub), Arc::clone(&logins));
+    std::thread::spawn(move || {
+        loop {
+            for (agent, account) in daily.stale(hub::now()) {
+                let launch = signins.home(&agent, Some(&account));
+                let probed = launch.and_then(|(_, l)| daily.probe(&agent, &account, &l));
+                if let Err(e) = probed {
+                    eprintln!("cooee: models of {agent}: {e}");
+                }
+            }
+            std::thread::sleep(Duration::from_hours(1));
+        }
+    });
     let router = router(
         Arc::clone(&hub),
         (

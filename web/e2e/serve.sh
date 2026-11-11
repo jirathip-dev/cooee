@@ -85,6 +85,14 @@ echo 'Signed in as owner@example.com'
 EOF
   chmod +x "$tmp/login-$v.sh" "$tmp/status-$v.sh"
 done
+# The 390 provider's extra accounts' usage, shaped like Claude Code's `/usage` (#183).
+cat >"$tmp/usage-390.sh" <<'EOF'
+#!/bin/sh
+[ -n "${FAKE_HOME:-}" ] || exit 1
+echo 'Current session: 12% used · resets 4:59am (UTC)'
+echo 'Current week (all models): 40% used · resets Nov 16 at 2am (UTC)'
+EOF
+chmod +x "$tmp/usage-390.sh"
 
 # An own scheme beside the config (the built-in nord, relabelled), so the look sheet lists it.
 mkdir -p "$tmp/schemes"
@@ -105,6 +113,11 @@ commit = "$(git -C "$tmp/greet" rev-parse HEAD)"
 description = "the example plugin"
 EOF
 
+# The models the fake agent reports (#193): its sessions' list, and the same kept from an earlier start so /new offers
+# them before any session.
+echo '{"id":"s1","model":"opus-2","models":[["opus-2","Opus 2"],["sonnet-2","Sonnet 2"]]}' >"$tmp/shed/session.json"
+echo '[{"agent":"fake-acp","account":"","models":[["opus-2","Opus 2"],["sonnet-2","Sonnet 2"]],"seen":'"${now}000"'}]' >"$tmp/data/models.json"
+
 cat >"$tmp/config.toml" <<EOF
 port = ${PORT:?}
 roots = ["$tmp/root"]
@@ -115,17 +128,18 @@ plugin_index = "$tmp/index.toml"
 
 [[providers]]
 name = "fake-390"
+base = "claude"
 agent = "fake-acp"
 home = "FAKE_HOME"
 login = ["$tmp/login-390.sh"]
 status = ["$tmp/status-390.sh"]
-models = ["opus", "sonnet"]
-model = ["FAKE_MODEL={}"]
+usage = ["$tmp/usage-390.sh"]
 efforts = ["low", "high"]
 effort = ["--effort", "{}"]
 
 [[providers]]
 name = "fake-1440"
+base = "claude"
 agent = "other-acp"
 home = "FAKE_HOME"
 login = ["$tmp/login-1440.sh"]

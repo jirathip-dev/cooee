@@ -5,7 +5,7 @@
 #![allow(dead_code, reason = "each test file uses part of the support")]
 
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{BTreeMap, BTreeSet, VecDeque},
     env, fs,
     io::{BufRead, BufReader, Read, Write},
     net::Shutdown,
@@ -49,6 +49,8 @@ struct Shared {
     agents: BTreeMap<String, Sender<Input>>,
     /// The terminals a tool started (`lane`), with their labels; every other one is cooee's.
     lanes: BTreeMap<String, BTreeMap<String, String>>,
+    /// A room member's next replies, by persona (`cue`).
+    cues: BTreeMap<String, VecDeque<String>>,
 }
 
 /// A plain terminal's program (`run`): its stdin, its output so far, its exit and whether its wait timed out.
@@ -222,6 +224,33 @@ impl FakeShed {
         s.lanes.insert(name.to_owned(), labels.collect());
         drop(s);
         self.emit(name, EventKind::Started);
+    }
+
+    /// Room member `persona`'s session replies `replies`, one a turn, before its prompt's words pick the script; the
+    /// last is repeated.
+    pub fn cue(&self, persona: &str, replies: &[&str]) {
+        let replies = replies.iter().map(|r| (*r).to_owned()).collect();
+        self.shared
+            .lock()
+            .unwrap()
+            .cues
+            .insert(persona.to_owned(), replies);
+    }
+
+    /// Terminal `name`'s cued reply, when it is a room member's session (its `run` line labels it) with a cue.
+    fn cued(&self, name: &str) -> Option<String> {
+        let log = self.cli_log();
+        let line = log
+            .lines()
+            .find(|l| l.contains(&format!("--name {name} ")))?;
+        let persona = line.split("cooee.member=").nth(1)?.split(' ').next()?;
+        let mut s = self.shared.lock().unwrap();
+        let cue = s.cues.get_mut(persona)?;
+        if cue.len() > 1 {
+            cue.pop_front()
+        } else {
+            cue.front().cloned()
+        }
     }
 
     /// Terminal `name` is gone, as after a shed restart.
@@ -440,7 +469,8 @@ impl FakeShed {
     }
 
     /// The session-ready `wait`: held while `hold-ready` is shut, timed out while `ready-timeout` (or, for this
-    /// terminal only, `ready-timeout-<name>`) is.
+    /// terminal only, `ready-timeout-<name>`) is. The session is `session.json`'s, when there is one (#193: the
+    /// models the fake agent reports).
     fn ready_wait(&self, name: &str) -> Result<Value, RpcError> {
         self.hold("hold-ready");
         let timeout = ["ready-timeout".to_owned(), format!("ready-timeout-{name}")];
@@ -449,7 +479,10 @@ impl FakeShed {
         } else {
             "matched"
         };
-        let t = self.terminal(name)?;
+        let mut t = self.terminal(name)?;
+        if let Ok(session) = fs::read_to_string(self.dir.join("session.json")) {
+            t["session"] = serde_json::from_str(&session).unwrap();
+        }
         Ok(json!({ "outcome": outcome, "terminal": t }))
     }
 
@@ -564,7 +597,7 @@ impl FakeShed {
                 "get" => self.terminal(&name),
                 "run" => self.run(&req.params),
                 "ls" => Ok(self.ls(&req.params["labels"])),
-                "resize" | "terminal.resize" => Ok(json!({})),
+                "resize" | "terminal.resize" | "acp.model" => Ok(json!({})),
                 "screen.watch" => return self.watch(id, &req.params, &mut writer),
                 "terminal.input" | "terminal.keys" => Ok(self.type_keys(&req.params)),
                 "read" => {
@@ -685,7 +718,9 @@ impl FakeShed {
                 .unwrap_or(0),
         );
         let read = "Read src/lib.rs";
-        Some(if prompt.contains("approve") {
+        Some(if let Some(said) = self.cued(name) {
+            (vec![reply(&said, "end_turn")], "end_turn")
+        } else if prompt.contains("approve") {
             self.approval(name, rx)
         } else if prompt.contains("markdown") {
             // Streamed a line at a time, then the whole reply.

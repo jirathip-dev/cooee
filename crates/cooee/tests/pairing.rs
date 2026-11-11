@@ -525,6 +525,49 @@ fn a_declined_request_tells_the_new_device_who_said_no() {
     assert_eq!(c.cli(&["devices"]).lines().count(), 1, "not paired");
 }
 
+/// #142: the Mac app answers from the server's own machine: `cooee pair asks` lists the request as `/pair/asks` does,
+/// and `cooee pair approve` pairs it without a passkey (the owner at its keyboard), by "this Mac".
+#[test]
+fn the_mac_lists_and_approves_a_request_from_the_cli() {
+    let (_dir, _shed, c) = setup("cli-approve", "");
+    let (word, claim) = ask(&c);
+    let asks: Value = serde_json::from_str(&c.cli(&["pair", "asks"])).unwrap();
+    assert_eq!(asks, c.json("/pair/asks"));
+    assert_eq!(asks[0]["word"].as_str(), Some(word.as_str()));
+    let id = asks[0]["id"].as_str().unwrap();
+    let out = c
+        .command()
+        .args(["pair", "approve", "ffffffff"])
+        .output()
+        .unwrap();
+    assert!(!out.status.success(), "an unknown id is refused");
+    assert!(String::from_utf8_lossy(&out.stderr).contains("no request ffffffff is waiting"));
+    c.cli(&["pair", "approve", id]);
+    let (head, _) = open_post(&c, "/pair/claim", &claim);
+    assert_eq!(status(&head), 200, "{head}");
+    assert!(head.contains("set-cookie: cooee="), "{head}");
+    assert_eq!(c.cli(&["pair", "asks"]).trim(), "[]");
+    let devices = c.json("/devices");
+    let ipad = devices
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|d| d["label"] == "iPad")
+        .unwrap();
+    assert_eq!(ipad["by"], "this Mac");
+}
+
+#[test]
+fn the_mac_declines_a_request_from_the_cli() {
+    let (_dir, _shed, c) = setup("cli-decline", "");
+    let (_, claim) = ask(&c);
+    let asks: Value = serde_json::from_str(&c.cli(&["pair", "asks"])).unwrap();
+    c.cli(&["pair", "decline", asks[0]["id"].as_str().unwrap()]);
+    let (head, body) = open_post(&c, "/pair/claim", &claim);
+    assert_eq!(status(&head), 403, "{head}");
+    assert_eq!(body, "this Mac said no.");
+}
+
 #[test]
 fn a_passkey_signs_a_device_back_in_and_can_be_removed() {
     let (_dir, _shed, c) = setup("passkey", "");

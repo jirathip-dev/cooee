@@ -14,7 +14,7 @@ use std::{
 };
 
 use cooee_core::{
-    Account, Accounts, Launch, Profile, Provider, Shed, Sheet, Status, links, redact,
+    Account, Accounts, Launch, Profile, Provider, Providers, Shed, Sheet, Status, links, redact,
     shed_proto::{RunParams, WaitOutcome},
 };
 use serde::Serialize;
@@ -120,7 +120,7 @@ impl Check {
 /// The providers, their accounts and logins.
 pub struct Logins {
     shed: Shed,
-    providers: Vec<Provider>,
+    providers: Providers,
     accounts: Accounts,
     live: Mutex<BTreeMap<String, Login>>,
     /// Each account's status checks, by provider and account: a request never runs a status command itself
@@ -132,7 +132,7 @@ pub struct Logins {
 impl Logins {
     /// The providers' logins on `shed`, their accounts in `data`; removes login terminals a previous run left behind.
     #[must_use]
-    pub fn new(shed: Shed, providers: Vec<Provider>, data: &Path) -> Arc<Self> {
+    pub fn new(shed: Shed, providers: Providers, data: &Path) -> Arc<Self> {
         let logins = Arc::new(Self {
             shed,
             providers,
@@ -157,10 +157,9 @@ impl Logins {
         logins
     }
 
-    fn provider(&self, name: &str) -> Result<&Provider, HubError> {
+    fn provider(&self, name: &str) -> Result<&Arc<dyn Provider>, HubError> {
         self.providers
-            .iter()
-            .find(|p| p.name == name)
+            .named(name)
             .ok_or_else(|| HubError::Refused(format!("no provider {name}")))
     }
 
@@ -183,10 +182,11 @@ impl Logins {
         let at = now();
         let checks = lock(&self.checks);
         let live = lock(&self.live);
-        let sheet = |p: &Provider| {
-            let mut accounts: Vec<_> = (self.accounts.list(&p.name).into_iter())
+        let sheet = |p: &Arc<dyn Provider>| {
+            let name = &p.spec().name;
+            let mut accounts: Vec<_> = (self.accounts.list(name).into_iter())
                 .map(|a| {
-                    let check = checks.get(&(p.name.clone(), a.name.clone()));
+                    let check = checks.get(&(name.clone(), a.name.clone()));
                     let status = check.map_or_else(|| Check::default().known(at), |c| c.known(at));
                     (a, status.0)
                 })
@@ -194,12 +194,12 @@ impl Logins {
             if p.missing() {
                 accounts.truncate(1);
             }
-            let why = match live.get(&p.name) {
+            let why = match live.get(name) {
                 Some(Login::Ended(why, _)) => Some(why.clone()),
                 _ => None,
             };
             Sheet {
-                provider: p.clone(),
+                provider: p.spec().clone(),
                 accounts,
                 why,
             }
@@ -209,9 +209,9 @@ impl Logins {
 
     /// Starts each account's status check that is due, each on its own thread.
     fn tick(self: &Arc<Self>) {
-        for p in &self.providers {
-            for a in self.accounts.list(&p.name) {
-                let key = (p.name.clone(), a.name.clone());
+        for p in self.providers.iter() {
+            for a in self.accounts.list(&p.spec().name) {
+                let key = (p.spec().name.clone(), a.name.clone());
                 if !lock(&self.checks)
                     .entry(key.clone())
                     .or_default()
@@ -219,14 +219,23 @@ impl Logins {
                 {
                     continue;
                 }
-                let (logins, p) = (Arc::clone(self), p.clone());
+                let (logins, p) = (Arc::clone(self), Arc::clone(p));
                 thread::spawn(move || {
                     // A panicking check still settles, so the account is checked again.
-                    let status =
-                        std::panic::catch_unwind(AssertUnwindSafe(|| p.check(a.dir.as_deref())))
-                            .unwrap_or_else(|_| {
-                                Status::unknown("can't tell: the status check failed")
-                            });
+                    // A signed-in account's usage reading comes with its status (#183).
+                    let check = || {
+                        let mut s = p.check(a.dir.as_deref());
+                        if s.signed_in {
+                            let at = now() / 1000;
+                            s.usage =
+                                logins
+                                    .accounts
+                                    .usage(p.as_ref(), &a.name, a.dir.as_deref(), at);
+                        }
+                        s
+                    };
+                    let status = std::panic::catch_unwind(AssertUnwindSafe(check))
+                        .unwrap_or_else(|_| Status::unknown("can't tell: the status check failed"));
                     let mut checks = lock(&logins.checks);
                     if let Some(c) = checks.get_mut(&key) {
                         c.busy = false;
@@ -264,7 +273,7 @@ impl Logins {
             return Ok(());
         }
         let (account, home) = if new {
-            if provider.home.is_empty() {
+            if provider.spec().home.is_empty() {
                 return Err(HubError::Refused(format!(
                     "{name} has only its system default account"
                 )));
@@ -285,7 +294,7 @@ impl Logins {
             cwd: env::var_os("HOME").map_or_else(|| PathBuf::from("/"), PathBuf::from),
             keep: false,
             idle_after: None,
-            cmd: provider.with_home(&provider.login, home.as_deref()),
+            cmd: provider.with_home(&provider.spec().login, home.as_deref()),
             acp: None,
             resume: None,
             mcp_servers: Vec::new(),
@@ -339,7 +348,8 @@ impl Logins {
             "the login command finished, but the account isn't signed in".clone_into(&mut why);
         }
         // A new account's folder moved when it was listed: its status is checked there.
-        let moved = |p: &Provider| Some(p.check(self.accounts.get(name, account)?.dir.as_deref()));
+        let moved =
+            |p: &Arc<dyn Provider>| Some(p.check(self.accounts.get(name, account)?.dir.as_deref()));
         let status = if new && signed_in {
             self.provider(name).ok().and_then(moved)
         } else {
@@ -380,7 +390,7 @@ impl Logins {
             Some(Login::Ended(why, account)) => (Some(why.clone()), account.clone()),
             _ => (None, String::new()),
         };
-        let key = (provider.name.clone(), account);
+        let key = (provider.spec().name.clone(), account);
         let (status, age) = lock(&self.checks)
             .get(&key)
             .map_or_else(|| Check::default().known(now()), |c| c.known(now()));
@@ -453,10 +463,10 @@ impl Logins {
     /// # Errors
     /// [`HubError::Refused`] for an account the agent's provider doesn't have.
     pub fn home(&self, agent: &str, account: Option<&str>) -> Result<(String, Launch), HubError> {
-        let Some(p) = self.providers.iter().find(|p| p.agent == agent) else {
+        let Some(p) = self.providers.for_agent(agent) else {
             return Ok((String::new(), Launch::default()));
         };
-        let a = self.account(&p.name, account.unwrap_or_default())?;
+        let a = self.account(&p.spec().name, account.unwrap_or_default())?;
         let env = p.env(a.dir.as_deref()).into_iter();
         let env = env.map(|(var, dir)| (var.to_owned(), dir.display().to_string()));
         let launch = Launch {
@@ -478,8 +488,10 @@ impl Logins {
         let refused = |why: String| HubError::Refused(why);
         let (account, mut launch) = self.home(&p.agent, p.account.as_deref())?;
         if let Some(settings) = &p.settings {
-            let var = self.providers.iter().find(|v| v.agent == p.agent);
-            let var = var.map(|v| v.settings.as_str()).filter(|v| !v.is_empty());
+            let var = self.providers.for_agent(&p.agent);
+            let var = var
+                .map(|v| v.spec().settings.as_str())
+                .filter(|v| !v.is_empty());
             let Some(var) = var else {
                 return Err(refused(format!(
                     "this profile's guard can't run with {}: its ACP adapter has no settings variable",
@@ -507,29 +519,23 @@ impl Logins {
         Ok((account, launch, instructions))
     }
 
-    /// The models and efforts `agent`'s provider offers (#553 row 34).
+    /// The efforts `agent`'s provider offers (#553 row 34).
     #[must_use]
-    pub fn choices(&self, agent: &str) -> (Vec<String>, Vec<String>) {
-        let p = self.providers.iter().find(|p| p.agent == agent);
-        p.map(|p| (p.models.clone(), p.efforts.clone()))
-            .unwrap_or_default()
+    pub fn efforts(&self, agent: &str) -> Vec<String> {
+        let p = self.providers.for_agent(agent);
+        p.map(|p| p.spec().efforts.clone()).unwrap_or_default()
     }
 
-    /// The words that start `agent` on `model` and `effort` (both may be empty).
+    /// The words that start `agent` on `effort` (empty: its default).
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a pick its provider doesn't offer.
-    pub fn picks(&self, agent: &str, model: &str, effort: &str) -> Result<Vec<String>, HubError> {
-        let p = self.providers.iter().find(|p| p.agent == agent);
-        let words = match p {
-            Some(p) => p.picks(model, effort),
-            None => (model.is_empty() && effort.is_empty()).then(Vec::new),
+    /// [`HubError::Refused`] for an effort its provider doesn't offer.
+    pub fn picks(&self, agent: &str, effort: &str) -> Result<Vec<String>, HubError> {
+        let words = match self.providers.for_agent(agent) {
+            Some(p) => p.picks(effort),
+            None => effort.is_empty().then(Vec::new),
         };
-        words.ok_or_else(|| {
-            HubError::Refused(format!(
-                "{agent} offers no model {model:?} or effort {effort:?}"
-            ))
-        })
+        words.ok_or_else(|| HubError::Refused(format!("{agent} offers no effort {effort:?}")))
     }
 }
 

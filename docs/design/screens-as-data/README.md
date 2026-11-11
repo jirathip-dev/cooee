@@ -11,7 +11,7 @@ q943, q946/q947, q954, q984, q985, and the answers to revision 0's questions (be
 
 **Proof it fits:** drover's Queue, Events and asks are written as fixtures (`fixtures/*.json`). One mockup renderer
 (`sd.js`, one function per block) draws them in the native app's new home (q954) on the design system. The PNGs
-below are those fixtures drawn, not hand-made HTML. `fixtures/hello.json` is the real answer of `hello/hello.py`, a
+below are those fixtures drawn, not hand-made HTML. `fixtures/hello.json` is the real answer of `docs/plugins/hello-py/hello.py`, a
 whole plugin in 22 lines of Python.
 
 ## Revision 1 (q946, q947, q954)

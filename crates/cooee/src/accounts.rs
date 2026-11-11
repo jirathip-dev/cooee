@@ -1,30 +1,28 @@
-//! `cooee accounts ls [--json]` and `cooee accounts env <provider> <name> [--require-signed-in]`: the credential
-//! helper herdsman calls for a lane's login environment (docs/accounts.md). A folder account's environment is its
-//! provider's variable and folder; its token stays the CLI's. A Claude account may instead be a hand-placed token
-//! file, `<data>/accounts/claude/<name>.token` (0600 or tighter), whose value goes in `CLAUDE_CODE_OAUTH_TOKEN`.
+//! `cooee accounts ls [--json]`, `cooee accounts env <provider> <name> [--require-signed-in]`: the credential
+//! helper herdsman calls for a lane's login environment (docs/accounts.md), and `cooee accounts add <provider> <name>
+//! --folder <path>` / `rm <provider> <name>`, which adopt an existing config folder and drop one (#183). A folder account's environment is its
+//! provider's variable and folder; its token stays the CLI's. A provider with a token variable may instead have
+//! hand-placed token files, `<data>/accounts/<provider>/<name>.token` (0600 or tighter), whose value goes in it.
 
 use std::{
     fs,
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::ExitCode,
-    time::SystemTime,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Accounts, Config, Provider};
+use cooee_core::{Accounts, Config, Provider, Providers};
 use serde_json::{Map, Value, json};
-
-/// The provider whose accounts may be token files, and the variable the token goes in.
-const TOKEN: (&str, &str) = ("claude", "CLAUDE_CODE_OAUTH_TOKEN");
 
 /// How an account logs in: a config folder (none: the system default) or a token file.
 enum Login {
     Folder(Option<PathBuf>),
-    Token(PathBuf),
+    Token(PathBuf, &'static str),
 }
 
 struct Entry<'a> {
-    provider: &'a Provider,
+    provider: &'a dyn Provider,
     name: String,
     login: Login,
 }
@@ -34,7 +32,7 @@ impl Entry<'_> {
     fn state(&self) -> (bool, Option<String>) {
         match &self.login {
             Login::Folder(dir) => (self.provider.check(dir.as_deref()).signed_in, None),
-            Login::Token(path) => match token_age(path) {
+            Login::Token(path, _) => match token_age(path) {
                 Ok(_) => (true, None),
                 Err(e) => (false, Some(e)),
             },
@@ -61,12 +59,14 @@ fn token_age(path: &Path) -> Result<u64, String> {
 
 /// Every provider's accounts: its folder accounts, the system default first, then its token files (a token file
 /// replaces a folder of the same name).
-fn entries<'a>(config: &'a Config, data: &Path) -> Vec<Entry<'a>> {
+fn entries<'a>(providers: &'a Providers, data: &Path) -> Vec<Entry<'a>> {
     let accounts = Accounts::new(data);
     let mut all = Vec::new();
-    for provider in &config.providers {
+    for provider in providers.iter() {
+        let provider = provider.as_ref();
+        let name = &provider.spec().name;
         let mut list: Vec<Entry> = accounts
-            .list(&provider.name)
+            .list(name)
             .into_iter()
             .map(|a| Entry {
                 provider,
@@ -74,8 +74,8 @@ fn entries<'a>(config: &'a Config, data: &Path) -> Vec<Entry<'a>> {
                 login: Login::Folder(a.dir),
             })
             .collect();
-        if provider.name == TOKEN.0 {
-            let dir = data.join("accounts").join(&provider.name);
+        if let Some(var) = provider.token_var() {
+            let dir = data.join("accounts").join(name);
             let mut tokens: Vec<(String, PathBuf)> = fs::read_dir(&dir)
                 .into_iter()
                 .flatten()
@@ -96,7 +96,7 @@ fn entries<'a>(config: &'a Config, data: &Path) -> Vec<Entry<'a>> {
                 list.push(Entry {
                     provider,
                     name,
-                    login: Login::Token(path),
+                    login: Login::Token(path, var),
                 });
             }
         }
@@ -114,10 +114,30 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
     let Some(data) = config.data_dir() else {
         return refuse(1, "no data folder: set `data` or HOME");
     };
-    let all = entries(config, &data);
+    let providers = Providers::new(&config.providers);
+    let all = entries(&providers, &data);
+    let accounts = Accounts::new(&data);
     match args {
+        ["add", p, name, "--folder", folder] => {
+            if providers.named(p).is_none_or(|p| p.spec().home.is_empty()) {
+                return refuse(1, &format!("no provider `{p}` with account folders"));
+            }
+            match accounts.add(p, name, Path::new(folder)) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => refuse(1, &e.to_string()),
+            }
+        }
+        ["rm", p, name] => {
+            if name.is_empty() || accounts.get(p, name).is_none() {
+                return refuse(1, &format!("no account `{name}` of provider `{p}`"));
+            }
+            match accounts.remove(p, name) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => refuse(1, &e.to_string()),
+            }
+        }
         ["ls"] => {
-            let rows: Vec<Value> = all.iter().map(row).collect();
+            let rows: Vec<Value> = all.iter().map(|e| row(e, &accounts)).collect();
             if json {
                 println!("{}", Value::Array(rows));
             } else {
@@ -140,12 +160,12 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
             ExitCode::SUCCESS
         }
         ["env", provider, name] => {
-            if !config.providers.iter().any(|p| p.name == *provider) {
+            if providers.named(provider).is_none() {
                 return refuse(1, &format!("no provider `{provider}`"));
             }
             let Some(e) = all
                 .iter()
-                .find(|e| e.provider.name == *provider && e.name == *name)
+                .find(|e| e.provider.spec().name == *provider && e.name == *name)
             else {
                 return refuse(1, &format!("no account `{name}` of provider `{provider}`"));
             };
@@ -160,9 +180,9 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
                         env.insert(var.to_owned(), json!(dir));
                     }
                 }
-                Login::Token(path) => match fs::read_to_string(path) {
+                Login::Token(path, var) => match fs::read_to_string(path) {
                     Ok(t) if !t.trim().is_empty() => {
-                        env.insert(TOKEN.1.to_owned(), json!(t.trim()));
+                        env.insert((*var).to_owned(), json!(t.trim()));
                     }
                     _ => return refuse(1, &format!("{}: empty or unreadable", path.display())),
                 },
@@ -178,25 +198,40 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
         }
         _ => refuse(
             2,
-            "usage: cooee accounts <ls [--json] | env <provider> <name> [--require-signed-in]>",
+            "usage: cooee accounts <ls [--json] | env <provider> <name> [--require-signed-in] \
+             | add <provider> <name> --folder <path> | rm <provider> <name>>",
         ),
     }
 }
 
-/// An account as `accounts ls --json` lists it (never its token).
-fn row(e: &Entry) -> Value {
+/// An account as `accounts ls --json` lists it (never its token), with a signed-in folder account's usage and the
+/// reading's age in seconds.
+fn row(e: &Entry, accounts: &Accounts) -> Value {
     let (signed_in, error) = e.state();
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
+    let usage = match &e.login {
+        Login::Folder(dir) if signed_in => accounts.usage(e.provider, &e.name, dir.as_deref(), now),
+        _ => None,
+    };
+    let usage = usage.map(|u| {
+        let mut v = json!(u);
+        v["age_s"] = json!(now.saturating_sub(u.read_at));
+        v
+    });
     let (folder, token) = match &e.login {
         Login::Folder(dir) => (dir.as_deref(), None),
-        Login::Token(path) => (None, Some(path)),
+        Login::Token(path, _) => (None, Some(path)),
     };
     json!({
-        "provider": e.provider.name,
+        "provider": e.provider.spec().name,
         "name": e.name,
         "folder": folder,
         "signed_in": signed_in,
         "token_file": token,
         "token_age_days": token.and_then(|p| token_age(p).ok()),
         "error": error,
+        "usage": usage,
     })
 }

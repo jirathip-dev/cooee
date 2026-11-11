@@ -11,20 +11,22 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{AGENTS_FIX, Config, Devices, ROOTS_FIX, Shed};
+use cooee_core::{Config, Devices, ROOTS_FIX, Shed, agents_fix};
 use qrcode::{QrCode, render::unicode::Dense1x2};
 
 mod accounts;
+mod check;
 mod keychain;
 mod setup;
 
-const USAGE: &str = "usage: cooee <serve | pair | devices | reports | devices rm <id> | install --port <p> | doctor | push migrate | secrets \
+const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | push migrate | secrets \
                      | perf [--minutes <n>] \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
-                     | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list \
+                     | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json>... \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
                      | theme check <path>... | accounts ls [--json] \
-                     | accounts env <provider> <name> [--require-signed-in] | mcp ls \
+                     | accounts env <provider> <name> [--require-signed-in] \
+                     | accounts add <provider> <name> --folder <path> | accounts rm <provider> <name> | mcp ls \
                      | mcp add <name> (<command> [<arg>...] | --url <url> [--type sse]) \
                      [--env K=secret:N|env:N]... [--header K=secret:N|env:N]... | mcp rm|enable|disable <name> \
                      | mcp proxy <server> --thread <id> | mcp serve --thread <id>> [--instance <name>] [--config <file>] \
@@ -65,6 +67,14 @@ fn usage() -> ExitCode {
     ExitCode::from(2)
 }
 
+/// Whether `instance` is a valid instance name: lowercase letters, digits and `-`.
+fn named(instance: &str) -> bool {
+    !instance.is_empty()
+        && instance
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+}
+
 fn main() -> ExitCode {
     let mut args: Vec<String> = env::args().skip(1).collect();
     let mut switch = |name: &str| {
@@ -83,11 +93,7 @@ fn main() -> ExitCode {
         return usage();
     };
     let instance = instance.unwrap_or_else(|| "cooee".to_owned());
-    let named = !instance.is_empty()
-        && instance
-            .bytes()
-            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-');
-    if !named {
+    if !named(&instance) {
         eprintln!("cooee: an instance name is lowercase letters, digits and `-`");
         return ExitCode::from(2);
     }
@@ -106,7 +112,9 @@ fn main() -> ExitCode {
             return ExitCode::SUCCESS;
         }
         ["serve"] => serve,
-        ["pair"] => pair,
+        ["pair", rest @ ..] => {
+            return with_config(path.as_deref(), &instance, |c| pairing(c, rest));
+        }
         ["devices"] => devices,
         ["reports"] => reports,
         ["perf"] => {
@@ -125,6 +133,7 @@ fn main() -> ExitCode {
             let run = |c: Config| accounts::run(&c, rest, json, require);
             return load(path.as_deref(), &instance).map_or_else(|e| finish(Err(e)), run);
         }
+        ["plugin", "check", files @ ..] => return finish(check::run(files)),
         ["plugin", rest @ ..] => {
             let rest: Vec<String> = rest.iter().map(|a| (*a).to_owned()).collect();
             let rest: Vec<&str> = rest.iter().map(String::as_str).collect();
@@ -251,11 +260,6 @@ fn devices_of(config: &Config) -> Result<Devices, String> {
 /// Prints a new pairing code, the link to enter it at and that link as a QR code; in a terminal, then waits for it
 /// to be used (Ctrl-C leaves the code open until it runs out).
 fn pair(config: &Config) -> Result<(), String> {
-    let now = || {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
-    };
     let devices = devices_of(config)?;
     let had = devices.list().map_err(|e| e.to_string())?.len();
     let code = devices.pair(now()).map_err(|e| e.to_string())?;
@@ -288,6 +292,49 @@ fn pair(config: &Config) -> Result<(), String> {
         None => println!("the code ran out: run cooee pair again"),
     }
     Ok(())
+}
+
+/// `cooee pair`, `cooee pair asks` and `cooee pair approve|decline <id>`.
+fn pairing(config: &Config, args: &[&str]) -> Result<(), String> {
+    match args {
+        [] => pair(config),
+        ["asks"] => asks(config),
+        [verb @ ("approve" | "decline"), id] => answer(config, id, *verb == "approve"),
+        _ => Err(USAGE.to_owned()),
+    }
+}
+
+/// Unix milliseconds.
+fn now() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
+}
+
+/// The requests to pair still waiting, as `GET /pair/asks` lists them (JSON): the Mac app's Approve prompt reads it.
+fn asks(config: &Config) -> Result<(), String> {
+    let asking = devices_of(config)?
+        .asking(now())
+        .map_err(|e| e.to_string())?;
+    println!(
+        "{}",
+        serde_json::to_string(&asking).map_err(|e| e.to_string())?
+    );
+    Ok(())
+}
+
+/// Approves (`yes`) or declines the waiting request `id` as "this Mac": the owner at its keyboard, so no passkey,
+/// as `cooee pair` makes a code without one.
+fn answer(config: &Config, id: &str, yes: bool) -> Result<(), String> {
+    let devices = devices_of(config)?;
+    if devices
+        .answer(id, yes, "this Mac", now())
+        .map_err(|e| e.to_string())?
+    {
+        Ok(())
+    } else {
+        Err(format!("no request {id} is waiting"))
+    }
 }
 
 fn devices(config: &Config) -> Result<(), String> {
@@ -735,7 +782,10 @@ fn doctor(config: &Config) -> Result<(), String> {
         Ok(()) => {
             check(true, format!("shed at {}", shed.socket.display()));
             if shed.agents().is_ok_and(|a| a.is_empty()) {
-                println!("warn no agents installed in shed\n     fix: {AGENTS_FIX}");
+                println!(
+                    "warn no agents installed in shed\n     fix: {}",
+                    agents_fix()
+                );
             }
         }
         Err(e) => check(

@@ -1,6 +1,11 @@
 //! Rooms (#154): a thread of the owner and 2 to 5 member personas, each in its own ACP session (a hidden thread,
-//! started on its first turn). An owner message gives every member one turn in room order; each turn sends the
-//! member the room's final replies it hasn't had, attributed (`[Name]: …`): never tool rows, approvals or files.
+//! started on its first turn). Each turn sends the member the room's final replies it hasn't had, attributed
+//! (`[Name]: …`): never tool rows, approvals or files.
+//!
+//! The turn engine (#155): an owner message's @mentioned members take turns in mention order; with no mention every
+//! member gets one turn in room order and may pass (a reply of exactly [`PASS`], never shown). A reply naming another
+//! member gives it a turn. At most [`TURNS`] turns per owner message, the last told it is winding down, and none
+//! after [`DEADLINE`]; stop (the room's cancel) cancels the member taking its turn and drops the rest.
 
 use std::{
     fs,
@@ -8,9 +13,14 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use cooee_core::{Body, Change, Item, Kind, Member, Thread, personas};
+use cooee_core::{
+    Body, Change, Item, Kind, Member, Reason, RoomTurn, Thread,
+    personas::{self, Persona},
+};
+use serde_json::json;
 
 use super::{Hub, HubError, Live, Recipe, Upload, lock, now};
+use crate::push::Note;
 
 /// How a room member's session starts, given its persona: its agent, folder and recipe.
 pub type Starter =
@@ -22,11 +32,93 @@ const MEMBERS: usize = 5;
 /// Who speaks for the owner in a room.
 const OWNER: &str = "owner";
 
+/// The most member turns one owner message starts (G2).
+const TURNS: usize = 6;
+
+/// How long after the owner's message its turns may run, in milliseconds (G2).
+pub(super) const DEADLINE: u64 = 10 * 60 * 1000;
+
+/// A member's whole reply when it passes: not shown in the room.
+const PASS: &str = "[pass]";
+
+/// Told to the member taking the last turn an owner message allows.
+const WIND_DOWN: &str = "(This is the last turn on the owner's message: wind down; naming a member starts no more turns.)";
+
+/// The words `text` names with `@`, keyed (spaces dropped, any case), in order.
+fn mentions(text: &str) -> impl Iterator<Item = String> {
+    text.match_indices('@').filter_map(|(at, _)| {
+        let before = text[..at].chars().next_back();
+        if before.is_some_and(char::is_alphanumeric) {
+            return None;
+        }
+        let word: String = text[at + 1..]
+            .chars()
+            .take_while(|c| c.is_alphanumeric() || "-_".contains(*c))
+            .collect();
+        Some(key(&word))
+    })
+}
+
+fn key(s: &str) -> String {
+    s.replace(' ', "").to_lowercase()
+}
+
+/// The members `text` names with `@` and their id or name (spaces dropped, any case), in the order named, once each.
+fn named(text: &str, members: &[Member], names: &[Persona]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for word in mentions(text) {
+        let hit = members.iter().find(|m| {
+            key(&m.persona) == word
+                || names
+                    .iter()
+                    .any(|p| p.id == m.persona && key(&p.name) == word)
+        });
+        if let Some(m) = hit.filter(|m| !out.contains(&m.persona)) {
+            out.push(m.persona.clone());
+        }
+    }
+    out
+}
+
+/// A reply addresses the owner when it names `@you` or `@owner` (#158).
+fn addresses_owner(text: &str) -> bool {
+    mentions(text).any(|w| w == "you" || w == OWNER)
+}
+
+/// How the room shows `id`: the owner, a persona's name, else the id.
+fn display(names: &[Persona], id: &str) -> String {
+    match names.iter().find(|p| p.id == id) {
+        _ if id == OWNER => "Owner".to_owned(),
+        Some(p) => p.name.clone(),
+        None => id.to_owned(),
+    }
+}
+
 fn refused(why: impl Into<String>) -> HubError {
     HubError::Refused(why.into())
 }
 
 impl Hub {
+    /// `note` about thread `meta`, said by its room when `meta` is a member's session (#158).
+    pub(super) fn routed(&self, meta: &Thread, note: Note) -> Note {
+        let room = Some(&meta.room).filter(|r| !r.is_empty());
+        let Some(room) = room.and_then(|r| self.live(r).ok()) else {
+            return note;
+        };
+        let room = lock(&room);
+        let names = personas::list(self.config_dir(), &self.data);
+        let last = room.chat.items.last().map_or(0, |i| i.id);
+        note.in_room(&room.meta, &display(&names, &meta.profile), last)
+    }
+
+    /// Pushes room `room`'s `key` (`needs`, `fail`) about member `persona`, `line`, at item `item` (#158).
+    fn room_push(&self, room: &Thread, persona: &str, (key, line): (&str, &str), item: u64) {
+        let names = personas::list(self.config_dir(), &self.data);
+        let name = display(&names, persona);
+        let note = Note::new(room, (key, &name, line), item, &self.theme);
+        self.push.send(&note.in_room(room, &name, item));
+    }
+
     /// Sets how a member's session starts (once).
     pub fn set_starter(&self, starter: Starter) {
         let _ = self.starter.set(starter);
@@ -89,7 +181,7 @@ impl Hub {
         match (at, remove) {
             (Some(at), true) => {
                 gone = l.meta.members.remove(at).session;
-                l.meta.round.retain(|p| p != persona);
+                l.meta.round.retain(|t| t.member != persona);
             }
             (None, false) if l.meta.members.len() >= MEMBERS => {
                 return Err(refused(format!("a room has at most {MEMBERS} members")));
@@ -124,8 +216,8 @@ impl Hub {
             .map_err(|e| refused(e.to_string()))
     }
 
-    /// The owner's message to room `live`: stored as the owner's, then every member gets a turn after the one
-    /// taking its turn now, in room order (G1).
+    /// The owner's message to room `live`: stored as the owner's; then, after the member taking its turn now, its
+    /// mentioned members take turns, else every member in room order (G1). Earlier messages' queued turns are dropped.
     pub(super) fn room_send(
         &self,
         live: &Arc<Mutex<Live>>,
@@ -145,10 +237,19 @@ impl Hub {
         };
         let item = l.chat.said(now(), 0, OWNER.to_owned(), body);
         let idle = l.meta.round.is_empty();
-        let after = l.meta.round.get(1..).unwrap_or_default().to_vec();
-        let turns = l.meta.members.iter().map(|m| m.persona.clone());
-        let turns: Vec<String> = turns.filter(|p| !after.contains(p)).collect();
+        let names = personas::list(self.config_dir(), &self.data);
+        let mut turns = named(text, &l.meta.members, &names);
+        let reason = if turns.is_empty() {
+            turns = l.meta.members.iter().map(|m| m.persona.clone()).collect();
+            Reason::Round
+        } else {
+            Reason::Mention
+        };
+        l.meta.round.truncate(1);
+        let turns = turns.into_iter().map(|member| RoomTurn { member, reason });
         l.meta.round.extend(turns);
+        l.meta.taken = 0;
+        l.meta.asked_at = now();
         self.store.save(&l.meta)?;
         l.publish(self, vec![Change::Item(item.clone())])?;
         let id = l.meta.id.clone();
@@ -159,23 +260,27 @@ impl Hub {
         Ok(item)
     }
 
-    /// Starts the turn of room `room`'s next member: its session (started now if it has none) gets the room's
-    /// final replies since its last turn, attributed. One that can't take it is said so in the room, and skipped.
+    /// Starts the turn of room `room`'s next member: its session (started now if it has none, told who is in the
+    /// room) gets the room's final replies since its last turn, attributed; the last turn is told it is winding down.
+    /// One that can't take it is said so in the room, and skipped.
     pub(super) fn take_turn(&self, room: &str) -> Result<(), HubError> {
         let live = self.live(room)?;
         let (persona, session, prompt, random_id) = {
             let mut l = lock(&live);
-            let Some(persona) = l.meta.round.first().cloned() else {
+            let Some(turn) = l.meta.round.first().cloned() else {
                 return Ok(());
             };
+            let (persona, reason) = (turn.member, turn.reason);
+            l.meta.taken = l.meta.taken.saturating_add(1);
+            let last_turn = usize::from(l.meta.taken) >= TURNS;
+            let event = json!({ "member": persona, "reason": reason });
+            l.emit("room-turn", event.to_string());
             let names = personas::list(self.config_dir(), &self.data);
-            let name = |s: &str| match names.iter().find(|p| p.id == s) {
-                _ if s == OWNER => "Owner".to_owned(),
-                Some(p) => p.name.clone(),
-                None => s.to_owned(),
-            };
+            let name = |s: &str| display(&names, s);
             let last = l.chat.items.last().map_or(0, |i| i.id);
             let Live { meta, chat, .. } = &mut *l;
+            let others = meta.members.iter().filter(|m| m.persona != persona);
+            let others: Vec<String> = others.map(|m| name(&m.persona)).collect();
             let m = meta.members.iter_mut().find(|m| m.persona == persona);
             let m = m.ok_or_else(|| refused(format!("{persona} left")))?;
             let new = chat
@@ -191,7 +296,19 @@ impl Hub {
                 })
                 .collect();
             m.heard = last;
-            let out = (persona.clone(), m.session.clone(), lines.join("\n\n"));
+            let mut prompt = lines.join("\n\n");
+            if m.session.is_empty() {
+                let me = name(&persona);
+                let others = others.join(", ");
+                prompt = format!(
+                    "You are {me}, a member of a room with the owner and {others}. Write @ and a member's name to \
+                     give them the next turn. Reply exactly {PASS} when you have nothing to add.\n\n{prompt}"
+                );
+            }
+            if last_turn {
+                prompt = format!("{prompt}\n\n{WIND_DOWN}");
+            }
+            let out = (persona.clone(), m.session.clone(), prompt);
             self.store.save(meta)?;
             (out.0, out.1, out.2, format!("{room}-{persona}-{last}"))
         };
@@ -203,20 +320,41 @@ impl Hub {
             self.send(&session, &prompt, &random_id, &[])
                 .map(|_| session)
         };
+        self.started(room, &persona, started)
+    }
+
+    /// Member `persona`'s turn in room `room` started (`Ok`: its session) or couldn't: its session is kept, and
+    /// cancelled if [stop] came while it started; one that couldn't is said so in the room, and skipped.
+    pub(super) fn started(
+        &self,
+        room: &str,
+        persona: &str,
+        started: Result<String, HubError>,
+    ) -> Result<(), HubError> {
+        let live = self.live(room)?;
         let mut l = lock(&live);
+        // [stop] had no session to cancel. (Its turn may also be gone because it already replied: no stop.)
+        let stopped = std::mem::take(&mut l.stopped_starting);
         match started {
             Ok(session) => {
                 if let Some(m) = l.meta.members.iter_mut().find(|m| m.persona == persona) {
-                    m.session = session;
+                    m.session.clone_from(&session);
                 }
-                Ok(self.store.save(&l.meta)?)
+                self.store.save(&l.meta)?;
+                drop(l);
+                if stopped {
+                    self.cancel(&session)
+                } else {
+                    Ok(())
+                }
             }
             Err(e) => {
                 let text = format!("{persona} couldn't take its turn: {e}");
                 let item = l.chat.push(now(), 0, Body::Note { text });
+                self.room_push(&l.meta, persona, ("fail", &e.to_string()), item.id);
                 l.publish(self, vec![Change::Item(item)])?;
                 drop(l);
-                self.replied(room, &persona, None)
+                self.replied(room, persona, None)
             }
         }
     }
@@ -242,8 +380,9 @@ impl Hub {
         seated
     }
 
-    /// Member `persona`'s turn in room `room` ended with `reply` (its final reply, `None`: none): stored as its, and
-    /// the next member's turn starts. A reply out of turn (a member taken out) is dropped.
+    /// Member `persona`'s turn in room `room` ended with `reply` (its final reply, `None`: none): stored as its unless
+    /// it passed, the members it names queued (up to the turn cap: past it they are dropped and the room told), and
+    /// the next member's turn starts. A reply out of turn (a member taken out, a stopped round) is dropped.
     pub(super) fn replied(
         &self,
         room: &str,
@@ -252,18 +391,97 @@ impl Hub {
     ) -> Result<(), HubError> {
         let live = self.live(room)?;
         let mut l = lock(&live);
-        if l.meta.round.first().is_none_or(|p| p != persona) {
+        if l.meta.round.first().is_none_or(|t| t.member != persona) {
             return Ok(());
         }
         l.meta.round.remove(0);
-        self.store.save(&l.meta)?;
-        if let Some(body) = reply.into() {
-            let item = l.chat.said(now(), 0, persona.to_owned(), body);
-            l.publish(self, vec![Change::Item(item)])?;
+        let mut changes = Vec::new();
+        let mut capped = false;
+        let reply = reply.into().filter(|b| match b {
+            Body::Agent { text, .. } => text.trim() != PASS,
+            _ => true,
+        });
+        if let Some(Body::Agent { text, .. }) = &reply {
+            let names = personas::list(self.config_dir(), &self.data);
+            for member in named(text, &l.meta.members, &names) {
+                if member == persona || l.meta.round.iter().any(|t| t.member == member) {
+                    continue;
+                }
+                if usize::from(l.meta.taken) + l.meta.round.len() >= TURNS {
+                    capped = true;
+                    continue;
+                }
+                let reason = Reason::Chained;
+                l.meta.round.push(RoomTurn { member, reason });
+            }
         }
+        if let Some(body) = reply {
+            let item = l.chat.said(now(), 0, persona.to_owned(), body);
+            if let Body::Agent { text, .. } = &item.body
+                && addresses_owner(text)
+            {
+                let first = text.lines().find(|l| !l.trim().is_empty());
+                let said = ("needs", first.unwrap_or_default());
+                self.room_push(&l.meta, persona, said, item.id);
+            }
+            changes.push(Change::Item(item));
+        }
+        if capped {
+            let text = format!("{TURNS} turns on one message: no more start until your next");
+            changes.push(Change::Item(l.chat.push(now(), 0, Body::Note { text })));
+            l.emit("room-stop", json!({ "reason": "cap" }).to_string());
+        }
+        self.store.save(&l.meta)?;
+        l.publish(self, changes)?;
         drop(l);
         self.turns
             .send(room.to_owned())
             .map_err(|e| refused(e.to_string()))
+    }
+
+    /// Ends room `room`'s round, `why` (`stop`, `deadline`), with `note` (if any) said in the room: its queued turns
+    /// are dropped and the member taking its turn is cancelled. Twice, or with no round, does nothing.
+    pub(super) fn stop_round(&self, room: &str, why: &str, note: &str) -> Result<(), HubError> {
+        let live = self.live(room)?;
+        let mut l = lock(&live);
+        let Some(turn) = l.meta.round.first().cloned() else {
+            return Ok(());
+        };
+        l.meta.round.clear();
+        self.store.save(&l.meta)?;
+        l.emit("room-stop", json!({ "reason": why }).to_string());
+        if !note.is_empty() {
+            let text = note.to_owned();
+            let item = l.chat.push(now(), 0, Body::Note { text });
+            l.publish(self, vec![Change::Item(item)])?;
+        }
+        let working = l.meta.members.iter().find(|m| m.persona == turn.member);
+        let session = working.map(|m| m.session.clone()).unwrap_or_default();
+        l.stopped_starting = working.is_some() && session.is_empty();
+        drop(l);
+        if session.is_empty() {
+            Ok(())
+        } else {
+            self.cancel(&session)
+        }
+    }
+
+    /// Stops each room's round whose owner message is [`DEADLINE`] old at `now` (G2).
+    pub(super) fn deadlines(&self, now: u64) {
+        let due: Vec<String> = self
+            .all()
+            .iter()
+            .filter_map(|live| {
+                let l = lock(live);
+                let due = !l.meta.round.is_empty() && now >= l.meta.asked_at + DEADLINE;
+                due.then(|| l.meta.id.clone())
+            })
+            .collect();
+        for room in due {
+            let note = "10 minutes passed: this message's turns stopped";
+            if let Err(e) = self.stop_round(&room, "deadline", note) {
+                eprintln!("cooee: room {room}: {e}");
+            }
+        }
     }
 }
