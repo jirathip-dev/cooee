@@ -33,7 +33,6 @@ fn setup(name: &str) -> Setup {
 }
 
 impl Setup {
-    /// A thread of `persona`'s started with `text`, its first reply in.
     fn start(&self, persona: &str, text: &str) -> String {
         let new =
             json!({ "agent": "fake-acp", "profile": persona, "text": text, "random_id": text });
@@ -58,8 +57,6 @@ impl Setup {
         panic!("no reply in {id}");
     }
 
-    /// `history` called by thread `id`'s agent through cooee's own MCP server: the tool's text and whether it is an
-    /// error.
     fn history(&self, id: &str, args: &Value) -> (String, bool) {
         let file = self.shed.dir.join(format!("mcp-cooee-{id}.json"));
         let servers: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();

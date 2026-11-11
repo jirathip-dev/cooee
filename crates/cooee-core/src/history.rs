@@ -11,7 +11,6 @@ pub const SNIPPET: usize = 200;
 /// A read is at most this many characters.
 pub const PAGE: usize = 4000;
 
-/// Item `i`'s text if it is the owner's message or a final reply, on one line, redacted, and who said it.
 fn said(i: &Item) -> Option<(&str, String)> {
     let (who, text) = match &i.body {
         Body::You { text, .. } => ("owner", text),
@@ -25,7 +24,6 @@ fn said(i: &Item) -> Option<(&str, String)> {
     ))
 }
 
-/// The UTC date of `ms` Unix milliseconds, `YYYY-MM-DD`.
 fn date(ms: u64) -> String {
     let days = i64::try_from(ms / 86_400_000).unwrap_or(0) + 719_468;
     let (era, doe) = (days.div_euclid(146_097), days.rem_euclid(146_097));
@@ -55,7 +53,6 @@ pub fn search(
     limit: usize,
 ) -> Result<String, StoreError> {
     let words: Vec<String> = query.split_whitespace().map(str::to_lowercase).collect();
-    // Only a file whose raw bytes hold every word is parsed; a word JSON escapes can't be looked for that way.
     let raw = words.iter().all(|w| !w.contains(['"', '\\']));
     let holds = |bytes: &[u8]| {
         let lower = String::from_utf8_lossy(bytes).to_lowercase();
