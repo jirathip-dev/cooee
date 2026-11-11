@@ -15,8 +15,8 @@ use sha2::{Digest, Sha256};
 /// The largest answer cooee passes on.
 const MAX_BODY: u64 = 16 << 20;
 
-/// Checks the plugins: unique names of lowercase letters, digits and `-`, an `http://` backend, a module path and
-/// a token of at least 16 characters.
+/// Checks the plugins: unique names of lowercase letters, digits and `-`, an `http://` backend, a module path (or
+/// none: screens only) and a token of at least 16 characters.
 ///
 /// # Errors
 /// The first plugin that breaks a rule, and why.
@@ -33,7 +33,7 @@ pub fn check(plugins: &[Plugin]) -> io::Result<()> {
         if !p.url.starts_with("http://") {
             return bad("`url` must be http://host:port");
         }
-        if !p.module.starts_with('/') {
+        if !p.module.is_empty() && !p.module.starts_with('/') {
             return bad("`module` must be a path on the backend, like /tab.js");
         }
         if p.token.len() < 16 || !p.token.bytes().all(|b| b.is_ascii_graphic()) {

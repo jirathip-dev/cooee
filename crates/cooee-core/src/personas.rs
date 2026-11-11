@@ -53,17 +53,17 @@ pub struct Persona {
     pub profile: Option<String>,
 }
 
-/// One of its attached plugins' screens in a persona's header (#129, as #125 draws them).
+/// One of its attached plugins' chips on a persona's header strip (#125's `header-strip`, q984).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Place {
     /// Its plugin.
-    pub name: String,
-    /// What the header shows.
+    pub plugin: String,
+    /// Its id among the plugin's places.
+    pub id: String,
+    /// What the chip says.
     pub label: String,
-    /// Its icon.
-    pub icon: String,
-    /// Its screen's URL.
-    pub url: String,
+    /// Its screen's path on the plugin's backend (`/p/<plugin>` + it through cooee).
+    pub screen: String,
 }
 
 /// One note in a persona's memory.
@@ -139,6 +139,36 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
     }
     out.sort_by(|a, b| a.id.cmp(&b.id));
     out
+}
+
+/// Persona `id`'s header strip: the `header-strip` places of the plugins attached to it, in its order and theirs.
+///
+/// # Errors
+/// When there is no such persona.
+pub fn places(config: Option<&Path>, data: &Path, id: &str) -> io::Result<Vec<Place>> {
+    let attached = find(config, data, id)?.plugins;
+    let lock = plugins::read_lock(data).unwrap_or_default();
+    let mut out = Vec::new();
+    for l in attached
+        .iter()
+        .filter_map(|a| lock.iter().find(|l| &l.name == a))
+    {
+        let places = plugins::manifest(data, l)
+            .map(|m| m.places)
+            .unwrap_or_default();
+        out.extend(
+            places
+                .into_iter()
+                .filter(|p| p.kind == plugins::PlaceKind::HeaderStrip)
+                .map(|p| Place {
+                    plugin: l.name.clone(),
+                    id: p.id,
+                    label: p.label,
+                    screen: p.screen,
+                }),
+        );
+    }
+    Ok(out)
 }
 
 /// Persona `id`.

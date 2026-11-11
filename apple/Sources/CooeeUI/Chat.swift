@@ -13,6 +13,10 @@ public struct ChatActions {
     public var answer: (Int, BlockAction) -> Void
     public var answering: Set<Int>
     public var back: () -> Void
+    public var places: [String] = []
+    public var open: (Int) -> Void = { _ in }
+    public var attachable: [String] = []
+    public var attachPlugin: (Int) -> Void = { _ in }
 
     public init(
         draft: Binding<String>? = nil,
@@ -50,13 +54,14 @@ public struct ChatView: View {
     private var queued: [String] = []
     private var draft = ""
     private var back = true
+    private var chips: [String]
     private var actions = ChatActions()
 
     public var body: some View {
         ZStack {
             Backdrop()
             VStack(spacing: 0) {
-                ChatHeader(persona: persona, back: back, onBack: actions.back)
+                ChatHeader(persona: persona, chips: chips, back: back, actions: actions)
                 Scroller(end: true) {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(items) { item in
@@ -92,6 +97,7 @@ public struct ChatView: View {
         back: Bool = true
     ) {
         persona = Fixtures.persona(personaID)
+        chips = persona.api.plugins
         self.items = items
         self.working = working
         self.queued = queued
@@ -115,6 +121,7 @@ public struct ChatView: View {
         self.queued = queued
         self.back = back
         self.actions = actions
+        chips = actions.places
     }
 
     public static func streaming(back: Bool = true) -> ChatView {
@@ -131,15 +138,16 @@ public struct ChatView: View {
 internal struct ChatHeader: View {
     @Environment(\.look) private var look
     internal let persona: Persona
+    internal let chips: [String]
     internal var back = true
-    internal var onBack: () -> Void = {}
+    internal var actions = ChatActions()
 
     internal var body: some View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 if back {
-                    Button(action: onBack) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
+                    Button(action: actions.back) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("Back")
                 }
                 Avatar(persona: persona, size: 38)
@@ -148,21 +156,41 @@ internal struct ChatHeader: View {
                     AgentChip(persona: persona)
                 }
                 Spacer(minLength: 4)
-                RoundButton(symbol: "ellipsis", ascii: "…", size: 40)
+                more
             }
-            if !persona.api.plugins.isEmpty { plugins }
+            if !chips.isEmpty { plugins }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(palette.line).frame(height: 0.5) }
     }
 
+    @ViewBuilder private var more: some View {
+        if actions.attachable.isEmpty {
+            RoundButton(symbol: "ellipsis", ascii: "…", size: 40)
+        } else {
+            Menu {
+                ForEach(Array(actions.attachable.enumerated()), id: \.offset) { index, name in
+                    Button("Attach \(name)…") { actions.attachPlugin(index) }
+                }
+            } label: {
+                RoundButton(symbol: "ellipsis", ascii: "…", size: 40)
+            }
+            .buttonStyle(.plain).accessibilityLabel("More")
+        }
+    }
+
     private var plugins: some View {
         HStack(spacing: 8) {
-            ForEach(persona.api.plugins, id: \.self) { plugin in
-                Text(look.mono ? "[\(plugin.lowercased())]" : plugin).ui(13, .semibold, look)
-                    .foregroundStyle(look.palette.green)
-                    .padding(.horizontal, 12).frame(height: 30)
-                    .modifier(RoundSurface(look: look))
+            ForEach(Array(chips.enumerated()), id: \.offset) { index, plugin in
+                Button {
+                    actions.open(index)
+                } label: {
+                    Text(look.mono ? "[\(plugin.lowercased())]" : plugin).ui(13, .semibold, look)
+                        .foregroundStyle(look.palette.green)
+                        .padding(.horizontal, 12).frame(height: 30)
+                        .modifier(RoundSurface(look: look))
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.leading, back ? 50 : 0)

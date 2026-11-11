@@ -23,6 +23,10 @@ public struct ChatFeature: Sendable {
         public var draft = ""
         public var files: [Attachment] = []
         public var answering: Set<Int> = []
+        public var places: [Place] = []
+        public var attachable: [PluginRow] = []
+        @Presents public var screen: PluginScreenFeature.State?
+        @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
         public var drawn: [Item] { ChatItems.build(items, live: live) }
@@ -49,14 +53,26 @@ public struct ChatFeature: Sendable {
         case answer(Int, BlockAction)
         case answered(Int, String?)
         case delegate(Delegate)
+        case plugins(PluginAction)
+        case screen(PresentationAction<PluginScreenFeature.Action>)
+        case attaching(PresentationAction<AttachFeature.Action>)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case started(String)
         }
+
+        @CasePathable
+        public enum PluginAction: Sendable, Equatable {
+            case load
+            case loaded([Place], [PluginRow])
+            case open(Place)
+            case attach(PluginRow)
+        }
     }
 
     @Dependency(\.threads) private var threads
+    @Dependency(\.plugins) internal var pluginAPI
     @Dependency(\.continuousClock) private var clock
     @Dependency(\.date.now) private var now
 
@@ -86,6 +102,9 @@ public struct ChatFeature: Sendable {
                 return compose(&state, action)
             }
         }
+        Reduce { state, action in plugins(&state, action) }
+            .ifLet(\.$screen, action: \.screen) { PluginScreenFeature() }
+            .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
     }
 }
 
