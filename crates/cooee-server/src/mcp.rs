@@ -347,8 +347,8 @@ pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
         .collect())
 }
 
-/// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126) and
-/// `ask_persona` (#156) for a persona's.
+/// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
+/// `ask_persona` (#156) and `history` (#217) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -385,6 +385,16 @@ pub fn serve(thread: &str) -> Result<(), String> {
             "timeout": { "type": "integer", "description": "seconds to wait, at most 600 (default 300)" }
         } }
     });
+    let history = json!({
+        "name": "history",
+        "description": "Search your persona's past threads (query: words; at most 5 hits, each a thread ref, date and snippet), or read one (thread: its ref; paged with before).",
+        "inputSchema": { "type": "object", "properties": {
+            "query": { "type": "string" },
+            "thread": { "type": "string" },
+            "before": { "type": "integer", "description": "the older: before= a read ended with" },
+            "limit": { "type": "integer", "description": "fewer hits, at most 5" }
+        } }
+    });
     for line in io::stdin().lock().lines().map_while(Result::ok) {
         let Ok(msg) = serde_json::from_str::<Value>(&line) else {
             continue;
@@ -402,7 +412,10 @@ pub fn serve(thread: &str) -> Result<(), String> {
                 }),
             ),
             "ping" => reply(id, &json!({})),
-            "tools/list" => reply(id, &json!({ "tools": [tool, remember, ask_persona] })),
+            "tools/list" => reply(
+                id,
+                &json!({ "tools": [tool, remember, ask_persona, history] }),
+            ),
             "tools/call" => {
                 let args = msg
                     .pointer("/params/arguments")
@@ -418,6 +431,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                         "Noted: it reaches you in your next sessions.",
                     )),
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
+                    Some("history") => Some(("/mcp/agent/history", "")),
                     _ => None,
                 };
                 match call.map(|(path, said)| {

@@ -163,6 +163,10 @@ A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the
 thread (the owner reads it and may reply to steer), waiting `timeout` seconds (300, at most 600). A refusal is a 400
 starting `NOT_ALLOWED`, `DEPTH` (an asked persona may ask one more, no further), `TIMEOUT` or `OFFLINE` (its session
 can't start).
+`POST /mcp/agent/history` `{thread, server: {query?, thread?, before?, limit?}}` (#217) → `history`'s text: with
+`query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
+at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending
+`older: before=<item>` when more are left. Another persona's thread is a 400.
 
 ## Theme packs (Settings › look › themes, [docs/themes.md](themes.md))
 
