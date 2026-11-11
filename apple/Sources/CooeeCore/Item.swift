@@ -28,8 +28,23 @@ public struct Field: Sendable, Equatable {
     }
 }
 
+public struct Outgoing: Sendable, Equatable {
+    public let id: Int
+    public let text: String
+    public let files: [Attachment]
+    public var failure: String?
+
+    public init(id: Int, text: String, files: [Attachment] = [], failure: String? = nil) {
+        self.id = id
+        self.text = text
+        self.files = files
+        self.failure = failure
+    }
+}
+
 public enum Item: Identifiable, Sendable, Equatable {
     case you(id: Int, text: String, files: [String] = [])
+    case outgoing(Outgoing)
     case agent(id: Int, markdown: [Block])
     case tools(id: Int, rows: [ToolRow])
     case trace(id: Int, steps: [ToolRow], seconds: Int)
@@ -41,6 +56,8 @@ public enum Item: Identifiable, Sendable, Equatable {
         case .you(let id, _, _), .agent(let id, _), .tools(let id, _), .trace(let id, _, _), .card(let id, _, _),
             .note(let id, _):
             id
+        case .outgoing(let message):
+            message.id
         }
     }
 }
@@ -49,6 +66,7 @@ public enum ChatItems {
     public static func build(
         _ items: [APIItem],
         live: String,
+        outbox: [Outgoing] = [],
         style: ChatStyle = .detailed,
         working: Bool = false
     ) -> [Item] {
@@ -58,6 +76,7 @@ public enum ChatItems {
         } else {
             for item in items { append(item, to: &out) }
         }
+        out += outbox.map(Item.outgoing)
         if !live.isEmpty {
             out.append(.agent(id: Int.max, markdown: Markdown.blocks(live + " ▍")))
         }
@@ -77,6 +96,7 @@ public enum ChatItems {
             out.append(.card(id: item.id, poster: item.plugin, block: block))
         default:
             guard let text = item.text, !text.isEmpty else { return }
+            if case .note(_, text)? = out.last { return }
             out.append(.note(id: item.id, text: text))
         }
     }

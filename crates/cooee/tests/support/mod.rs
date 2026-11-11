@@ -761,7 +761,11 @@ impl FakeShed {
             self.emit(name, text("w0 "));
             while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
             (vec![reply("w0 ", "cancelled")], "cancelled")
-        } else if let Some(n) = prompt.strip_prefix("slow ") {
+        } else if let Some(n) = prompt
+            .rsplit("\n\n")
+            .next()
+            .and_then(|m| m.strip_prefix("slow "))
+        {
             let n: usize = n.trim().parse().unwrap();
             let mut stop = "end_turn";
             for i in 0..n {

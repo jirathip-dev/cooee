@@ -62,8 +62,13 @@ A persona is `{id, name, role, style, fleets, avatar?, character, instructions, 
 and `effort` its defaults. It is `<config>/personas/<id>.toml`; an owner profile with no persona of its name is read
 as one (`profile`: the profile it runs as, its account, settings, env, MCP servers and policy kept; never set over the
 API). Its Character, Instructions and notes go ahead of each new session's first message (`POST /threads` with
-`profile: <id>`). A note is `{text, by: "persona" | "owner", at}`, in `<data>/personas/<id>/memory.jsonl`; the persona
-adds one with the `remember` tool of cooee's own MCP server. `plugins` (#129) are the installed plugins (or config
+`profile: <id>`), each note as `- [id] text`; that brief is built once when a session starts. A note is `{id, text, by:
+"persona" | "owner", at}`, in `<data>/personas/<id>/memory.jsonl`; `id` is short, and a note kept before #216 gets one
+on first read. The persona edits its notes with the `remember` tool of cooee's own MCP server: `{text?, replaces?,
+forget?}` adds `text`, puts it in place of note `replaces`, or drops the ids in `forget`; an exact duplicate adds
+nothing. Notes hold at most 2,000 characters in all (#216): a write that would pass that is a 400 naming the use and
+the ids, so notes are merged or forgotten first; a persona already past it keeps and reads every note, and may only
+shrink them. `plugins` (#129) are the installed plugins (or config
 `[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. `role` (#159) is `""` (a plain persona)
 or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos or fleets it covers, which another may
 cover too): an installed `cooee-drover` is attached to each orchestrator by its role, never its name. The persona read
@@ -86,6 +91,8 @@ id or a broken rule is a 400 with the reason.
 | `GET /personas/{id}/places` | | its header strip (#125, q984): the `header-strip` places of its attached plugins, `{plugin, id, label, screen}[]`; a tap opens `GET /p/{plugin}{screen}` as a sheet |
 | `GET /personas/{id}/memory` | | its notes, oldest first |
 | `POST /personas/{id}/memory` | `{text}` | the note, by `owner` |
+| `PUT /personas/{id}/memory/{note}` | `{text}` | the note, its text replaced, by `owner` |
+| `DELETE /personas/{id}/memory/{note}` | | `null`: that note goes, the others stay |
 | `DELETE /personas/{id}/memory` | | `null`: the notes go, the persona and its chats stay |
 
 ## Folders
@@ -161,7 +168,7 @@ Native forms, as theme packs; `GET /mcp` is the page.
 A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the thread's token>`, no cookie:
 `POST /mcp/agent/grant` `{thread, server}` → the server resolved and its allowed `tools`; `POST /mcp/agent/propose`
 `{thread, server: {name, type, command, args, url, why}}` → the card; `POST /mcp/agent/remember` `{thread, server:
-{text}}` → the note, by the thread's persona; `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
+{text?, replaces?, forget?}}` → `remember`'s edit by the thread's persona, its answer the note's id and the use; `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
 (#156) → `ask_persona`'s reply (a string), the thread's persona asking one its `can_message` names in a linked exchange
 thread (the owner reads it and may reply to steer), waiting `timeout` seconds (300, at most 600). A refusal is a 400
 starting `NOT_ALLOWED`, `DEPTH` (an asked persona may ask one more, no further), `TIMEOUT` or `OFFLINE` (its session
