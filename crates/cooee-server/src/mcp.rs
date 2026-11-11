@@ -358,7 +358,6 @@ pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
         .collect())
 }
 
-/// cooee's own tools, as `tools/list` gives them.
 fn own_tools() -> Value {
     let schema = json!({
         "type": "object",
@@ -379,8 +378,12 @@ fn own_tools() -> Value {
     });
     let remember = json!({
         "name": "remember",
-        "description": "Keep a note in your persona's memory: it reaches you with your instructions in every new session. The owner can read and clear it.",
-        "inputSchema": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" } } }
+        "description": "Add a note to your persona's memory (2,000 characters in all), replace one with text, or forget some by id. Your notes reach you as `- [id] text` in every new session.",
+        "inputSchema": { "type": "object", "properties": {
+            "text": { "type": "string" },
+            "replaces": { "type": "string", "description": "the id of the note text replaces" },
+            "forget": { "type": "array", "items": { "type": "string" }, "description": "ids of notes to drop" }
+        } }
     });
     let ask_persona = json!({
         "name": "ask_persona",
@@ -424,6 +427,7 @@ fn own_tools() -> Value {
 /// Never past a broken stdin; each refused proposal is the tool's error.
 pub fn serve(thread: &str) -> Result<(), String> {
     let out = Mutex::new(io::stdout());
+    let tools = own_tools();
     for line in io::stdin().lock().lines().map_while(Result::ok) {
         let Ok(msg) = serde_json::from_str::<Value>(&line) else {
             continue;
@@ -441,7 +445,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                 }),
             ),
             "ping" => reply(id, &json!({})),
-            "tools/list" => reply(id, &json!({ "tools": own_tools() })),
+            "tools/list" => reply(id, &json!({ "tools": tools })),
             "tools/call" => {
                 let args = msg
                     .pointer("/params/arguments")
@@ -452,10 +456,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                         "/mcp/agent/propose",
                         "Proposed. The owner sees a card with the exact command or URL; once approved with Face ID it is added switched off. Nothing has run.",
                     )),
-                    Some("remember") => Some((
-                        "/mcp/agent/remember",
-                        "Noted: it reaches you in your next sessions.",
-                    )),
+                    Some("remember") => Some(("/mcp/agent/remember", "")),
                     // Its answer (a string) is the reply.
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
                     Some("history") => Some(("/mcp/agent/history", "")),
