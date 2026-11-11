@@ -158,4 +158,51 @@ internal struct ChatFeatureTests {
         await fresh.send(.send) { $0.draft = "" }
         await fresh.receive(\.failed) { $0.error = "No agent." }
     }
+
+    @Test internal func aMessageTheAgentNeverGotKeepsItsBubbleAndComesBack() async {
+        let refusals = Queue<APIError>([APIError(status: 400, text: "The agent stopped.")])
+        let store = store {
+            $0.threads.send = { _, _, text, _, _ in
+                if let refused = refusals.next() { throw refused }
+                calls.record("send \(text)")
+            }
+        }
+        await store.send(.event(.state(Turn(state: "ended")))) {
+            $0.turn = Turn(state: "ended")
+            $0.since = epoch
+        }
+        await store.send(.draftChanged("hi")) { $0.draft = "hi" }
+        await store.send(.send) {
+            $0.draft = ""
+            $0.outbox = [Outgoing(id: -1, text: "hi")]
+        }
+        await store.receive(\.undelivered) {
+            $0.outbox[0].failure = "The agent stopped."
+            $0.draft = "hi"
+        }
+        #expect(store.state.drawn == [.outgoing(Outgoing(id: -1, text: "hi", failure: "The agent stopped."))])
+        await store.send(.retry(-1)) {
+            $0.outbox[0].failure = nil
+            $0.draft = ""
+        }
+        await store.receive(\.delivered) { $0.outbox = [] }
+        #expect(calls.all == ["send hi"])
+    }
+
+    @Test internal func aFailedFirstMessageStaysOnItsBubble() async {
+        let store = store(.new(coder)) {
+            $0.threads.start = { _, _, _ in throw APIError(status: 500, text: "No agent.") }
+        }
+        await store.send(.draftChanged("hi")) { $0.draft = "hi" }
+        await store.send(.send) {
+            $0.draft = ""
+            $0.outbox = [Outgoing(id: -1, text: "hi")]
+        }
+        await store.receive(\.undelivered) {
+            $0.outbox[0].failure = "No agent."
+            $0.draft = "hi"
+        }
+        await store.send(.retry(7))
+        #expect(store.state.error == nil)
+    }
 }
