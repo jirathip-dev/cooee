@@ -5,7 +5,9 @@
 
 use std::{
     fmt::Write as _,
-    fs, io,
+    fs,
+    hash::{DefaultHasher, Hash, Hasher},
+    io,
     path::{Path, PathBuf},
 };
 
@@ -82,9 +84,15 @@ pub struct Place {
     pub screen: String,
 }
 
+/// The most characters a persona's notes hold in all (#216).
+pub const CAP: usize = 2000;
+
 /// One note in a persona's memory.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Note {
+    /// Its short id, shown in the brief; a note kept before #216 gets one on first read.
+    #[serde(default)]
+    pub id: String,
     /// The note.
     pub text: String,
     /// Who added it: `persona` or `owner`.
@@ -278,29 +286,113 @@ fn gone(r: io::Result<()>) -> io::Result<()> {
     }
 }
 
-/// Persona `id`'s notes, oldest first.
+/// A `remember` (#216): drop the notes in `forget`, then add `text`, or put it in place of note `replaces`.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct Edit {
+    /// The note's text.
+    pub text: Option<String>,
+    /// The id of the note it replaces.
+    pub replaces: Option<String>,
+    /// The ids of the notes to drop.
+    pub forget: Vec<String>,
+}
+
+/// Persona `id`'s notes, oldest first; any without an id get one, kept in the file.
 #[must_use]
 pub fn notes(data: &Path, id: &str) -> Vec<Note> {
     let text = fs::read_to_string(memory(data, id)).unwrap_or_default();
-    text.lines()
+    let mut notes: Vec<Note> = text
+        .lines()
         .filter_map(|l| serde_json::from_str(l).ok())
-        .collect()
+        .collect();
+    if notes.iter().any(|n| n.id.is_empty()) {
+        for i in 0..notes.len() {
+            if notes[i].id.is_empty() {
+                notes[i].id = fresh(&notes, &notes[i]);
+            }
+        }
+        if let Err(e) = write(data, id, &notes) {
+            eprintln!("cooee: persona {id}: notes: {e}");
+        }
+    }
+    notes
 }
 
-/// Adds a note `by` (`persona` or `owner`) at `at` to persona `id`'s memory.
+fn fresh(notes: &[Note], n: &Note) -> String {
+    let mut h = DefaultHasher::new();
+    (n.text.as_str(), n.at).hash(&mut h);
+    let hex = format!("{:016x}", h.finish());
+    let id = (2..hex.len())
+        .map(|k| &hex[..k])
+        .find(|c| notes.iter().all(|o| o.id != *c));
+    id.unwrap_or(&hex).to_owned()
+}
+
+/// The characters `notes` use against [`CAP`].
+#[must_use]
+pub fn used(notes: &[Note]) -> usize {
+    notes.iter().map(|n| n.text.chars().count()).sum()
+}
+
+fn write(data: &Path, id: &str, notes: &[Note]) -> io::Result<()> {
+    let mut lines = String::new();
+    for n in notes {
+        lines.push_str(&serde_json::to_string(n)?);
+        lines.push('\n');
+    }
+    crate::write_private(&memory(data, id), lines.as_bytes())
+}
+
+/// Applies `e` `by` (`persona` or `owner`) at `at` to persona `id`'s notes: the note added or replaced (an exact
+/// duplicate is the note already there), none when it only forgets.
 ///
 /// # Errors
-/// An empty note, or a file that can't be written.
-pub fn remember(data: &Path, id: &str, by: &str, text: &str, at: u64) -> io::Result<Note> {
-    let (text, by) = (text.trim().to_owned(), by.to_owned());
-    if text.is_empty() {
-        return Err(refused("a note needs text".to_owned()));
+/// An unknown note id, no text where one is needed, notes that would grow past [`CAP`] (the refusal names the use
+/// and the ids), or a file that can't be written.
+pub fn remember(data: &Path, id: &str, by: &str, e: &Edit, at: u64) -> io::Result<Option<Note>> {
+    let mut notes = notes(data, id);
+    let before = used(&notes);
+    let ids: Vec<&str> = notes.iter().map(|n| n.id.as_str()).take(100).collect();
+    let ids = ids.join(", ");
+    let mut named = e.forget.iter().chain(&e.replaces);
+    if let Some(gone) = named.find(|f| notes.iter().all(|n| n.id != **f)) {
+        return Err(refused(format!("no note {gone}; the notes are: {ids}")));
     }
-    let file = memory(data, id);
-    fs::create_dir_all(file.parent().unwrap_or(data))?;
-    let note = Note { text, by, at };
-    crate::append_line(&file, &serde_json::to_string(&note)?)?;
-    Ok(note)
+    notes.retain(|n| !e.forget.contains(&n.id));
+    let (text, by) = (e.text.as_deref().unwrap_or_default().trim(), by.to_owned());
+    let kept = match (text, &e.replaces) {
+        ("", None) if !e.forget.is_empty() => None,
+        ("", _) => return Err(refused("a note needs text".to_owned())),
+        (text, Some(r)) => {
+            let n = notes.iter_mut().find(|n| n.id == *r);
+            let n = n.ok_or_else(|| refused(format!("note {r} is forgotten too")))?;
+            (n.text, n.by, n.at) = (text.to_owned(), by, at);
+            Some(n.clone())
+        }
+        (text, None) => {
+            let duplicate = notes.iter().find(|n| n.text == text).cloned();
+            duplicate.or_else(|| {
+                let mut n = Note {
+                    id: String::new(),
+                    text: text.to_owned(),
+                    by,
+                    at,
+                };
+                n.id = fresh(&notes, &n);
+                notes.push(n.clone());
+                Some(n)
+            })
+        }
+    };
+    let after = used(&notes);
+    if after > CAP && after > before {
+        return Err(refused(format!(
+            "memory full: {before} of {CAP} characters used, this makes {after}; merge or forget notes first ({ids})"
+        )));
+    }
+    write(data, id, &notes)?;
+    Ok(kept)
 }
 
 /// Clears persona `id`'s notes, and only them.
@@ -315,9 +407,9 @@ impl Persona {
     /// What its agent gets ahead of a new session's first message: its Character, Instructions and notes.
     #[must_use]
     pub fn brief(&self, data: &Path) -> String {
-        let mut notes = String::from("Your notes (keep one with cooee's remember tool):");
+        let mut notes = String::from("Your notes (edit them with your remember tool):");
         for n in self::notes(data, &self.id) {
-            let _ = write!(notes, "\n- {} ({})", n.text, n.by);
+            let _ = write!(notes, "\n- [{}] {}", n.id, n.text);
         }
         let parts = [self.character.trim(), self.instructions.trim(), &notes];
         let parts = parts

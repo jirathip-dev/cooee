@@ -113,6 +113,7 @@ internal struct ChatScreen: View {
             answering: store.answering,
             back: onBack
         )
+        actions.retry = { store.send(.retry($0)) }
         let (places, attachable) = (store.places, store.attachable)
         actions.places = places.map(\.label)
         actions.open = { store.send(.plugins(.open(places[$0]))) }
