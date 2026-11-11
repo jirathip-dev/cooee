@@ -112,6 +112,7 @@ extension PersonaSheet {
                 }
                 .padding(.horizontal, 14).frame(height: 48)
                 if !look.still {
+                    style
                     Toggle("Pin to Home", isOn: $draft.pinned).ui(16, .regular, look).padding(.horizontal, 14)
                         .frame(height: 48)
                 }
@@ -126,6 +127,22 @@ extension PersonaSheet {
                 )
             }
             if let error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
+        }
+    }
+
+    private var style: some View {
+        HStack {
+            Text("Style").ui(16, .regular, look)
+            Spacer()
+            Picker("Style", selection: $draft.style) {
+                Text("Chat").tag(ChatStyle.chat)
+                Text("Detailed").tag(ChatStyle.detailed)
+            }
+            .pickerStyle(.segmented).fixedSize()
+        }
+        .padding(.horizontal, 14).frame(height: 48)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(look.palette.line).frame(height: 0.5).padding(.leading, 14)
         }
     }
 

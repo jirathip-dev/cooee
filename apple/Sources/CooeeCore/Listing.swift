@@ -18,7 +18,7 @@ public enum Listing {
             let state = LaneState(api: thread.state)
             let api =
                 personas.first { $0.id == thread.persona }
-                ?? APIPersona(id: thread.agent, name: thread.agent, agent: thread.agent)
+                ?? APIPersona(id: thread.agent, name: thread.agent, agent: thread.agent, style: .detailed)
             let persona = Persona(api, state: state)
             let row = Row(
                 id: thread.id,

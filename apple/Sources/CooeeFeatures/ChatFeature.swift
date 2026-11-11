@@ -29,7 +29,8 @@ public struct ChatFeature: Sendable {
         @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
-        public var drawn: [Item] { ChatItems.build(items, live: live) }
+        public var drawn: [Item] { ChatItems.build(items, live: live, style: persona.api.style, working: working) }
+        public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
 
         public init(server: Server, target: Target, persona: Persona) {
             self.server = server

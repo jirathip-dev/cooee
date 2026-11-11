@@ -48,7 +48,7 @@ internal struct LivePersonaTests {
         for look in (environment["COOEE_SIM_LOOKS"] ?? "").split(separator: " ") {
             let made = try await client.personas().first { $0.id == "scout-\(look)" }
             #expect(made?.character == "Finds the facts first." && made?.instructions == "Cite every source.")
-            #expect(made?.pinned == true)
+            #expect(made?.pinned == true && made?.style == .detailed)
         }
     }
 }

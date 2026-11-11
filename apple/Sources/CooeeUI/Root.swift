@@ -102,6 +102,7 @@ internal struct ChatScreen: View {
         actions.open = { store.send(.plugins(.open(places[$0]))) }
         actions.attachable = attachable.map(\.name)
         actions.attachPlugin = { store.send(.plugins(.attach(attachable[$0]))) }
+        actions.step = store.step
         return actions
     }
 

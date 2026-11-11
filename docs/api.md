@@ -57,7 +57,7 @@ another run; load the newest slice again).
 
 ## Personas (#126)
 
-A persona is `{id, name, role, fleets, avatar?, character, instructions, folder, agent, model, effort, machine, plugins, can_message, pinned, profile?}`: `avatar` an image
+A persona is `{id, name, role, style, fleets, avatar?, character, instructions, folder, agent, model, effort, machine, plugins, can_message, pinned, profile?}`: `avatar` an image
 (`https://…`, `data:image/…`; none: the client draws initials), `folder` an owned folder or `scratch`, `agent`, `model`
 and `effort` its defaults. It is `<config>/personas/<id>.toml`; an owner profile with no persona of its name is read
 as one (`profile`: the profile it runs as, its account, settings, env, MCP servers and policy kept; never set over the
@@ -69,7 +69,10 @@ or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos o
 cover too): an installed `cooee-drover` is attached to each orchestrator by its role, never its name. The persona read
 from a `conductor` profile (or saved from one before #159) is an orchestrator, its name kept. `machine` (#148) is the one its threads run on: `""` this host (every
 persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
-with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). An unknown
+with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). `style`
+(#242) is how the native app draws its chats: `chat` (only each turn's reply, its tool steps folded into one row that
+opens a trace sheet; each new session is also told to answer short and plain) or `detailed` (every step, as before).
+A file without one reads as `detailed` for an orchestrator and `chat` for any other persona. An unknown
 id or a broken rule is a 400 with the reason.
 
 | Call | Body | Answer |
