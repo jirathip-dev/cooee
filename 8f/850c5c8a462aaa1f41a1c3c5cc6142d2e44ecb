@@ -1,0 +1,6 @@
+Decided: keep the approved design unchanged; merge origin/staging for a fresh CI run on the ui flake
+Because: q1352
+Because: q1342
+Rejected: editing web/e2e/chat.spec.mjs timing budget — out of scope for a docs/design-only PR
+Check: git diff --name-only origin/staging...HEAD lists only docs/design/home-v2 files; ui is green at the new head
+Owner: the approved Home v2 design lands; the earlier red check was a web timing flake this PR does not touch
