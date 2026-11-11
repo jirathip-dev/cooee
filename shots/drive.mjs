@@ -1,0 +1,68 @@
+import { chromium } from "@playwright/test";
+import fs from "node:fs";
+const out = process.env.OUT, base = `http://127.0.0.1:${process.env.P}`;
+const browser = await chromium.launch();
+const pair = await browser.newPage({ baseURL: base });
+await pair.goto("/");
+console.log("unpaired / ->", new URL(pair.url()).pathname);
+await pair.getByLabel("digit 1").click();
+await pair.keyboard.type(fs.readFileSync(`${out}/code`, "utf8").trim());
+await pair.waitForURL(/\/(\?paired)?$/, { waitUntil: "commit" });
+await pair.context().storageState({ path: `${out}/state.json` });
+console.log("paired ->", new URL(pair.url()).pathname);
+// API: the persona/thread contract (#159)
+const api = pair.context().request;
+const show = async (label, r) => { const t = await r.text(); console.log(`API ${label} -> ${r.status()} ${t.slice(0, 400)}`); try { return JSON.parse(t); } catch { return null; } };
+const pick = (p) => p && JSON.stringify({ id: p.id, name: p.name, role: p.role, fleets: p.fleets, plugins: p.plugins });
+const list0 = await show("GET /personas", await api.get("/personas"));
+console.log("list:", (list0 || []).map(pick).join(" | "));
+const c = await show("GET /personas/conductor", await api.get("/personas/conductor"));
+console.log("CHECK migration name kept + role orchestrator:", c?.name === "Maestro" && c?.role === "orchestrator");
+const a = await show("POST /personas Ada", await api.post("/personas", { data: { name: "Ada", role: "orchestrator", fleets: ["cooee"], agent: "fake-acp" } }));
+const b = await show("POST /personas Bea", await api.post("/personas", { data: { name: "Bea", role: "orchestrator", fleets: ["cooee", "herdsman"], agent: "fake-acp" } }));
+const ga = await show("GET /personas/ada", await api.get("/personas/ada"));
+const gb = await show("GET /personas/bea", await api.get("/personas/bea"));
+console.log("CHECK two orchestrators, own fleets, shared fleet ok:", ga?.role === "orchestrator" && gb?.role === "orchestrator" && JSON.stringify(ga.fleets) === '["cooee"]' && JSON.stringify(gb.fleets) === '["cooee","herdsman"]');
+const ra = await show("PUT /personas/ada rename", await api.put("/personas/ada", { data: { ...ga, name: "Ada Lovelace" } }));
+const ga2 = await show("GET /personas/ada after rename", await api.get("/personas/ada"));
+console.log("CHECK rename keeps id/role/fleets:", ga2?.id === "ada" && ga2?.name === "Ada Lovelace" && ga2?.role === "orchestrator" && JSON.stringify(ga2.fleets) === '["cooee"]');
+const bad = await api.put("/personas/bea", { data: { ...gb, role: "conductor" } });
+console.log(`API PUT /personas/bea role=conductor -> ${bad.status()} ${(await bad.text()).slice(0, 200)}`);
+console.log("CHECK unknown role refused (4xx):", bad.status() >= 400 && bad.status() < 500);
+const plain = await show("GET /personas/cards", await api.get("/personas/cards"));
+console.log("CHECK plain persona role empty:", plain?.role === "");
+const t = await show("POST /threads profile=ada", await api.post("/threads", { data: { agent: "fake-acp", profile: "ada", text: "hello from verify", random_id: "verify-159-1" } }));
+const rows = await show("GET /threads", await api.get("/threads"));
+const row = (rows || []).find((r) => r.id === t?.id);
+console.log("row:", JSON.stringify(row && { id: row.id, persona: row.persona, persona_name: row.persona_name, persona_role: row.persona_role }));
+console.log("CHECK thread row carries persona name+role:", row?.persona === "ada" && row?.persona_name === "Ada Lovelace" && row?.persona_role === "orchestrator");
+const other = (rows || []).find((r) => r.id === "long-390");
+console.log("row long-390:", JSON.stringify(other && { persona: other.persona, persona_name: other.persona_name, persona_role: other.persona_role }));
+for (const w of [390, 1440]) {
+  const page = await browser.newPage({ baseURL: base, viewport: { width: w, height: w === 390 ? 844 : 900 }, storageState: `${out}/state.json` });
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error") errs.push(`console ${m.text()}`); });
+  page.on("requestfailed", (r) => errs.push(`failed ${r.url()} ${r.failure()?.errorText}`));
+  page.on("response", (r) => { if (r.status() >= 400) errs.push(`http ${r.status()} ${r.url()}`); });
+  const shot = async (name, ready) => {
+    await ready.waitFor();
+    await page.screenshot({ path: `${out}/${w}-${name}.png`, fullPage: true });
+    console.log(`${w} ${name} ok`);
+  };
+  await page.goto("/?list");
+  await shot("agents", page.locator(".ags .agr").first());
+  await page.goto("/new");
+  await shot("new", page.getByLabel("message", { exact: true }));
+  await page.goto(`/t/long-${w}`);
+  await shot("chat", page.getByLabel("message", { exact: true }));
+  if (t?.id) { await page.goto(`/t/${t.id}`); await shot("persona-chat", page.getByLabel("message", { exact: true })); }
+  await page.goto("/#settings/sign-ins");
+  await shot("settings", page.locator("#sheet .sh:popover-open .six"));
+  await page.goto("/p/hello");
+  await shot("plugin-hello", page.locator("iframe.pf"));
+  await page.goto("/p/machines");
+  await shot("plugin-machines", page.frameLocator("iframe.pf").locator("article.on"));
+  console.log(`${w} errors: ${errs.length ? errs.join("\n  ") : "none"}`);
+  await page.close();
+}
+await browser.close();

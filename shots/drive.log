@@ -1,0 +1,39 @@
+unpaired / -> /pair
+paired -> /
+API GET /personas -> 200 [{"id":"cards","name":"Cards","role":"","fleets":[],"character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":["hello"],"can_message":[],"pinned":false},{"id":"conductor","name":"Maestro","role":"orchestrator","fleets":[],"character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[],"can_message"
+list: {"id":"cards","name":"Cards","role":"","fleets":[],"plugins":["hello"]} | {"id":"conductor","name":"Maestro","role":"orchestrator","fleets":[],"plugins":[]} | {"id":"reviewer","name":"Reviewer","role":"","fleets":[],"plugins":[]}
+API GET /personas/conductor -> 200 {"id":"conductor","name":"Maestro","role":"orchestrator","fleets":[],"character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[],"can_message":[],"pinned":false}
+CHECK migration name kept + role orchestrator: true
+API POST /personas Ada -> 200 {"id":"ada","name":"Ada","role":"orchestrator","fleets":["cooee"],"character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[],"can_message":[],"pinned":false}
+API POST /personas Bea -> 200 {"id":"bea","name":"Bea","role":"orchestrator","fleets":["cooee","herdsman"],"character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[],"can_message":[],"pinned":false}
+API GET /personas/ada -> 200 {"id":"ada","name":"Ada","role":"orchestrator","fleets":["cooee"],"character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[],"can_message":[],"pinned":false}
+API GET /personas/bea -> 200 {"id":"bea","name":"Bea","role":"orchestrator","fleets":["cooee","herdsman"],"character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[],"can_message":[],"pinned":false}
+CHECK two orchestrators, own fleets, shared fleet ok: true
+API PUT /personas/ada rename -> 200 {"id":"ada","name":"Ada Lovelace","role":"orchestrator","fleets":["cooee"],"character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[],"can_message":[],"pinned":false}
+API GET /personas/ada after rename -> 200 {"id":"ada","name":"Ada Lovelace","role":"orchestrator","fleets":["cooee"],"character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":[],"can_message":[],"pinned":false}
+CHECK rename keeps id/role/fleets: true
+API PUT /personas/bea role=conductor -> 400 bad request: invalid JSON value: unknown variant `conductor`, expected `` or `orchestrator` at line 1 column 43 (at `role`)
+CHECK unknown role refused (4xx): true
+API GET /personas/cards -> 200 {"id":"cards","name":"Cards","role":"","fleets":[],"character":"","instructions":"","folder":"","agent":"fake-acp","model":"","effort":"","machine":"","plugins":["hello"],"can_message":[],"pinned":false}
+CHECK plain persona role empty: true
+API POST /threads profile=ada -> 200 {"id":"t1a1ca07591c"}
+API GET /threads -> 200 [{"id":"t1a1ca07591c","title":"hello from verify","agent":"fake-acp","account":"","profile":"ada","persona":"ada","persona_name":"Ada Lovelace","persona_role":"orchestrator","folder":"","machine":"","state":"done","last":"Hello","at":1794390841872,"unread":true,"unseen":1,"archived":false},{"id":"w-lane-done","title":"cooee #30","agent":"fake-acp","account":"","profile":"","persona":"","persona_na
+row: {"id":"t1a1ca07591c","persona":"ada","persona_name":"Ada Lovelace","persona_role":"orchestrator"}
+CHECK thread row carries persona name+role: true
+row long-390: {"persona":"","persona_name":"","persona_role":""}
+390 agents ok
+390 new ok
+390 chat ok
+390 persona-chat ok
+390 settings ok
+390 plugin-hello ok
+390 plugin-machines ok
+390 errors: none
+1440 agents ok
+1440 new ok
+1440 chat ok
+1440 persona-chat ok
+1440 settings ok
+1440 plugin-hello ok
+1440 plugin-machines ok
+1440 errors: none
