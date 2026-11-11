@@ -1,0 +1,15 @@
+scripts/apple-check.sh
+
+== swift format
+
+== anti-slop
+no violations
+
+== TODO(#N) names an open issue
+every TODO names an open issue
+
+== SwiftLint 0.65.1
+no violations
+
+apple-check: ok
+skipped (no Xcode): build, tests, coverage, swiftlint analyze, Periphery, anti-slop's own tests (TCA needs Xcode's SwiftUI macros)
