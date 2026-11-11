@@ -26,9 +26,9 @@ internal struct OthersRow: View {
 
 internal struct OthersView: View {
     @Environment(\.look) private var look
-    private let chats: [ListedChat]
-    private let open: (String) -> Void
-    private let back: () -> Void
+    internal let chats: [ListedChat]
+    internal let open: (String) -> Void
+    internal let back: () -> Void
 
     internal var body: some View {
         ZStack(alignment: .topLeading) {
@@ -45,21 +45,15 @@ internal struct OthersView: View {
         }
         .foregroundStyle(look.palette.foreground)
     }
-
-    internal init(chats: [ListedChat], open: @escaping (String) -> Void, back: @escaping () -> Void) {
-        self.chats = chats
-        self.open = open
-        self.back = back
-    }
 }
 
 internal struct WorkflowSheet: View {
     @Environment(\.look) private var look
-    private let issues: [WorkflowIssue]
-    private let unfolded: String?
-    private let unfold: (String) -> Void
-    private let open: (String) -> Void
-    private let done: () -> Void
+    internal let issues: [WorkflowIssue]
+    internal let unfolded: String?
+    internal let unfold: (String) -> Void
+    internal let open: (String) -> Void
+    internal let done: () -> Void
 
     internal var body: some View {
         VStack(spacing: 0) {
@@ -82,20 +76,6 @@ internal struct WorkflowSheet: View {
             }
         }
         .foregroundStyle(look.palette.foreground).background(look.palette.background)
-    }
-
-    internal init(
-        issues: [WorkflowIssue],
-        unfolded: String?,
-        unfold: @escaping (String) -> Void,
-        open: @escaping (String) -> Void,
-        done: @escaping () -> Void
-    ) {
-        self.issues = issues
-        self.unfolded = unfolded
-        self.unfold = unfold
-        self.open = open
-        self.done = done
     }
 
     private func rounds(_ issue: WorkflowIssue) -> some View {
