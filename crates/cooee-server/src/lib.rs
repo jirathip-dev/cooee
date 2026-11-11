@@ -59,7 +59,6 @@ pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
 pub use themes::{Pack, Pinned, Themes, stamp};
 
-/// The paths an unpaired browser may load: pairing and the static files (and the themes' files under `/look/`).
 const OPEN: [&str; 17] = [
     "/pair",
     "/look",
@@ -80,7 +79,6 @@ const OPEN: [&str; 17] = [
     "/sw.js",
 ];
 
-/// The pairing cookie.
 const COOKIE: &str = "cooee";
 
 fn now() -> u64 {
@@ -89,7 +87,6 @@ fn now() -> u64 {
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
 
-/// cooee's own error: one plain sentence, marked so the page shows it (`chat.ts` words any other failure itself).
 fn plain(status: u16, text: &str) -> Result<Response> {
     Ok(Response::builder()
         .status(status)
@@ -102,24 +99,17 @@ fn header<'a>(cx: &'a Cx, name: &str) -> Option<&'a str> {
     headers(cx).get(name).and_then(|v| v.to_str().ok())
 }
 
-/// The request's paired device, put in the request context by the [`Gate`].
 struct Paired(Device);
 
-/// The plugin whose token a `/plugin/` request carries, put in the request context by the [`Gate`].
 struct Caller(Plugin);
 
-/// Checks every request: its `Host` (and `Origin`, when sent) must be one of `names`, and a page or API call must
-/// carry a paired device's cookie (an unpaired page load goes to `/pair`).
 struct Gate {
-    /// localhost, the bind address and `allowed_hosts`; matched exactly, so a `*` never widens them.
     names: Vec<String>,
     devices: Devices,
-    /// Its plugins are the ones a backend's token may name.
     hub: Arc<Hub>,
 }
 
 impl Gate {
-    /// Whether `host` (`name` or `name:port`) is one of ours.
     fn ours(&self, host: &str) -> bool {
         let name = if host.starts_with('[') {
             host.split_inclusive(']').next().unwrap_or(host)
@@ -150,7 +140,6 @@ impl Layer for Gate {
             if OPEN.contains(&path) || path.starts_with("/look/") {
                 return next.run(cx, body).await;
             }
-            // A thread's MCP proxy carries the thread's token, checked by the call.
             if path.starts_with("/mcp/agent/") {
                 return next.run(cx, body).await;
             }
@@ -169,7 +158,6 @@ impl Layer for Gate {
                 c.split(';')
                     .find_map(|c| c.trim().strip_prefix(COOKIE)?.strip_prefix('='))
             });
-            // A store that can't be read is a 503: never taken for "unpaired" (herdsman#501).
             let found = match token.map(|t| self.devices.find(t, now())).transpose() {
                 Ok(found) => found.flatten(),
                 Err(e) => {
@@ -199,7 +187,6 @@ impl Layer for Gate {
     }
 }
 
-/// Times every request (#53): its method, route pattern, status and duration go to `perf.log`.
 struct Timing;
 
 impl Layer for Timing {
@@ -235,7 +222,6 @@ fn hub(cx: &Cx) -> Arc<Hub> {
     Arc::clone(app_context::<Arc<Hub>>(cx))
 }
 
-/// Runs a blocking hub call off the async workers.
 async fn blocking<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&Hub) -> Result<T, HubError> + Send + 'static,
@@ -246,7 +232,6 @@ async fn blocking<T: Send + 'static>(
         .map_err(|e| HubError::Refused(e.to_string()))?
 }
 
-/// A JSON answer: the value, or the error's status and message.
 struct Answer<T>(Result<T, HubError>);
 
 impl<T: Serialize> IntoResponse for Answer<T> {
@@ -255,12 +240,10 @@ impl<T: Serialize> IntoResponse for Answer<T> {
             Ok(value) => return Json(value).into_response(cx),
             Err(e @ HubError::NoThread(_)) => (404, e.to_string()),
             Err(e @ HubError::Refused(_)) => (400, e.to_string()),
-            // An answer or message to a session that is gone says so (herdsman#325).
             Err(HubError::Shed(e)) if e.no_such_terminal() => (
                 410,
                 "Not delivered: this thread's agent is gone.".to_owned(),
             ),
-            // shed's own errors go to the log; the page gets a sentence.
             Err(HubError::Shed(
                 e @ (ShedError::Rpc(_) | ShedError::Bad(_) | ShedError::Cli { .. }),
             )) => {
@@ -281,7 +264,6 @@ fn logins(cx: &Cx) -> Arc<Logins> {
     Arc::clone(app_context::<Arc<Logins>>(cx))
 }
 
-/// Runs a blocking login call off the async workers.
 async fn on_logins<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&Arc<Logins>) -> Result<T, HubError> + Send + 'static,
@@ -292,11 +274,9 @@ async fn on_logins<T: Send + 'static>(
         .map_err(|e| HubError::Refused(e.to_string()))?
 }
 
-/// The plugins whose tab shows a dot (`POST /plugin/dot`), by name; kept in memory only.
 #[derive(Default)]
 struct Dots(std::sync::Mutex<std::collections::BTreeSet<String>>);
 
-/// The plugin tabs (a plugin with screens only has none): each one's name, label and dot.
 fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
     let hub = app_context::<Arc<Hub>>(cx);
     let dots = app_context::<Arc<Dots>>(cx).0.lock().map(|d| d.clone());
@@ -309,7 +289,6 @@ fn tabs(cx: &Cx) -> Vec<(String, String, bool)> {
     .collect()
 }
 
-/// The sidebar's and a new chat's data (#86).
 async fn side(cx: &Cx) -> Result<cooee_web::Side> {
     let providers = on_logins(cx, |l| Ok(l.statuses()));
     let d = app_context::<Data>(cx);
@@ -327,7 +306,6 @@ async fn side(cx: &Cx) -> Result<cooee_web::Side> {
     });
     let (providers, (rows, mut agents, folders, profiles, models)) =
         futures_util::future::try_join(providers, rest).await?;
-    // A new chat runs on the main login: its models (#193).
     for a in agents.iter_mut().flatten() {
         let main = models
             .iter()
@@ -346,8 +324,6 @@ async fn side(cx: &Cx) -> Result<cooee_web::Side> {
     })
 }
 
-/// `/new?agent=<ACP id>` (Plain) or `?profile=<id>`: a new chat with that agent; on `/` (`?list` keeps a phone on
-/// the agents list) the agent on show.
 #[derive(Deserialize)]
 struct NewChat {
     list: Option<String>,
@@ -355,7 +331,6 @@ struct NewChat {
     profile: Option<String>,
 }
 
-/// The query's agent as a [`cooee_web::Mate`] key (empty: none), and whether it has `?list`.
 fn agent_key(cx: &Cx) -> (String, bool) {
     let q = parse_query_params::<NewChat>(cx).ok();
     let list = q.as_ref().is_some_and(|q| q.list.is_some());
@@ -386,8 +361,6 @@ async fn new_chat(cx: &Cx) -> Result<impl View> {
     ))
 }
 
-/// `POST /agents` (a form): `+ new agent`, a name and the profile it starts from (empty: Plain on the first
-/// installed agent); saved as a profile of its own, then its new chat opens.
 #[derive(Deserialize)]
 struct NewAgent {
     name: String,
@@ -415,7 +388,6 @@ async fn new_agent(cx: &Cx, Form(a): Form<NewAgent>) -> Result<Response> {
     }
 }
 
-/// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account.
 #[derive(Deserialize, Default)]
 struct Start {
     #[serde(default)]
@@ -433,7 +405,6 @@ async fn login_start(cx: &Cx, Json(s): Json<Option<Start>>) -> Result<Answer<()>
     ))
 }
 
-/// `POST /logins/{id}/signout`: account `account` (empty: the system default).
 #[derive(Deserialize)]
 struct Pick {
     account: String,
@@ -447,7 +418,6 @@ async fn login_signout(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
     ))
 }
 
-/// `POST /logins`: the sign-ins card opened; checks the accounts' status again, never waiting on it (#106).
 #[route(POST "/logins")]
 async fn logins_check(cx: &Cx) -> Result<Answer<()>> {
     logins(cx).ask();
@@ -460,7 +430,6 @@ async fn login_view(cx: &Cx) -> Result<Answer<LoginView>> {
     Ok(Answer(on_logins(cx, move |l| l.view(&name)).await))
 }
 
-/// `POST /logins/{id}/send`: a code from the sign-in page.
 #[derive(Deserialize)]
 struct Code {
     text: String,
@@ -501,7 +470,6 @@ async fn chat(cx: &Cx) -> Result<impl View> {
     Ok(cooee_web::page(cx, side, pane))
 }
 
-/// `?around=<id>&before=N&after=N`.
 #[derive(Deserialize)]
 struct SliceQuery {
     around: Option<u64>,
@@ -532,7 +500,6 @@ fn sse(hub: &Hub, out: &Out) -> Event {
         .data(out.data.as_str())
 }
 
-/// `?since=<cursor>`, for the first connection (a reconnect sends `Last-Event-ID`).
 #[derive(Deserialize)]
 struct Since {
     since: Option<String>,
@@ -556,7 +523,6 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
         if !live {
             return None;
         }
-        // A page that fell behind gets disconnected and resumes from its last event.
         match rx.recv().await {
             Ok(out) => Some((Ok(sse(&hub, &out)), (hub, rx, live))),
             Err(RecvError::Lagged(_) | RecvError::Closed) => None,
@@ -565,42 +531,32 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
-/// `GET /threads`: every thread's row, newest first (docs/api.md).
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
     Ok(Answer(blocking(cx, |hub| Ok(hub.list())).await))
 }
 
-/// `POST /threads`: a new thread.
 #[derive(Deserialize)]
 struct New {
     agent: String,
-    /// None or empty: the thread's own scratch folder (#48).
     #[serde(default)]
     folder: PathBuf,
     text: String,
     random_id: String,
-    /// The agent's provider account (none: the system default).
     #[serde(default)]
     account: Option<String>,
-    /// Answer with the id at once and connect behind it (#48: the page opens the chat on send); else once the
-    /// agent took the first message.
     #[serde(default)]
     background: bool,
-    /// The agent profile's id (none or empty: Plain, with `agent` and `account`).
     #[serde(default)]
     profile: Option<String>,
-    /// The model and effort (#553 row 34; empty: the agent's default).
     #[serde(default)]
     model: String,
     #[serde(default)]
     effort: String,
-    /// The machine it runs on (#148): none, its persona's (this host without one); empty: this host.
     #[serde(default)]
     machine: Option<String>,
 }
 
-/// A new thread's id.
 #[derive(Serialize)]
 struct Created {
     id: String,
@@ -637,7 +593,6 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         } else {
             hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)?
         };
-        // A plugin's profile: its backend is told the thread's id (so it can attach it).
         let ours = list.into_iter().find(|p| p.id() == profile);
         let ours = ours.and_then(|p| Some((backend(&hub, &data, p.plugin.as_deref()?)?, p.name)));
         if let Some((b, name)) = ours
@@ -651,7 +606,6 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     Ok(Answer(id.map(|id| Created { id })))
 }
 
-/// `POST /threads/{id}/retry`: starts a thread whose start failed again, with its first message (#48).
 #[route(POST "/threads/{id}/retry")]
 async fn retry(cx: &Cx) -> Result<Answer<()>> {
     let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
@@ -675,7 +629,6 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
     ))
 }
 
-/// `POST /threads/{id}/folder`: "Use a folder…" (#86).
 #[derive(Deserialize)]
 struct Attach {
     folder: PathBuf,
@@ -703,9 +656,6 @@ async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Ite
     ))
 }
 
-/// How a thread of `agent` starts in `folder`: Plain with `account`, or as agent profile `profile` (non-empty: its
-/// agent, and its folder if it has one; one of `list`, not hidden), on the model and effort `picked`. Returns its
-/// agent and folder too.
 fn recipe(
     logins: &Logins,
     (data, config, list): (
@@ -717,7 +667,6 @@ fn recipe(
     folder: PathBuf,
     mut picked: (String, String),
 ) -> Result<(String, PathBuf, Recipe), HubError> {
-    // A persona (#126): its agent, as the profile it runs as or Plain, in its folder, on its model and effort.
     let persona = personas::find(config, data, profile).ok();
     if let Some(p) = &persona {
         for (pick, default) in [(&mut picked.0, &p.model), (&mut picked.1, &p.effort)] {
@@ -770,7 +719,6 @@ fn recipe(
     Ok((agent, folder, recipe))
 }
 
-/// `?path=<folder>&hidden=1`: Settings › Folders.
 #[derive(Deserialize)]
 struct Browse {
     path: Option<PathBuf>,
@@ -786,7 +734,6 @@ async fn browse(cx: &Cx) -> Result<Answer<Listing>> {
     ))
 }
 
-/// `POST /roots`: a folder to add as a root, or to remove.
 #[derive(Deserialize)]
 struct Root {
     path: PathBuf,
@@ -801,7 +748,6 @@ async fn root(cx: &Cx, Json(r): Json<Root>) -> Result<Answer<Vec<PathBuf>>> {
     ))
 }
 
-/// `POST /folders/new`: a folder to make inside `parent`.
 #[derive(Deserialize)]
 struct Folder {
     parent: PathBuf,
@@ -815,7 +761,6 @@ async fn new_folder(cx: &Cx, Json(f): Json<Folder>) -> Result<Answer<PathBuf>> {
     ))
 }
 
-/// `POST /threads/{id}/send` and `/queue`: the text and its files.
 #[derive(Deserialize)]
 struct Message {
     text: String,
@@ -824,7 +769,6 @@ struct Message {
     files: Vec<File>,
 }
 
-/// A file sent with a message, its bytes in base64.
 #[derive(Deserialize)]
 struct File {
     name: String,
@@ -866,7 +810,6 @@ async fn queue(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<Vec<cooee_core:
     ))
 }
 
-/// `POST /threads/{id}/unqueue` and `/steer`: a queued message.
 #[derive(Deserialize)]
 struct Queued {
     random_id: String,
@@ -888,7 +831,6 @@ async fn steer(cx: &Cx, Json(q): Json<Queued>) -> Result<Answer<Vec<cooee_core::
     ))
 }
 
-/// `POST /threads/{id}/title`.
 #[derive(Deserialize)]
 struct Title {
     title: String,
@@ -902,7 +844,6 @@ async fn retitle(cx: &Cx, Json(t): Json<Title>) -> Result<Answer<()>> {
     ))
 }
 
-/// A room member's session starts as its persona's chat does (#154).
 fn starter(
     logins: Arc<Logins>,
     data: &std::path::Path,
@@ -923,7 +864,6 @@ fn starter(
     })
 }
 
-/// `POST /rooms` (#154): a room of member personas, in room order.
 #[derive(Deserialize)]
 struct NewRoom {
     #[serde(default)]
@@ -940,7 +880,6 @@ async fn room_new(cx: &Cx, Json(r): Json<NewRoom>) -> Result<Answer<Created>> {
     Ok(Answer(id.await.map(|id| Created { id })))
 }
 
-/// `POST /threads/{id}/members`: a persona to add to the room, or to take out (its session closed).
 #[derive(Deserialize)]
 struct Seat {
     persona: String,
@@ -956,12 +895,10 @@ async fn members(cx: &Cx, Json(m): Json<Seat>) -> Result<Answer<Vec<String>>> {
     ))
 }
 
-/// The room calls (#154).
 fn room_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
     b.route(room_new).route(members)
 }
 
-/// `POST /threads/{id}/archive`: `on` archives it, else it is restored.
 #[derive(Deserialize)]
 struct Archive {
     on: bool,
@@ -975,8 +912,6 @@ async fn archive(cx: &Cx, Json(a): Json<Archive>) -> Result<Answer<()>> {
     ))
 }
 
-/// `GET /threads/{id}/files/{name}`: a file sent in the thread. Only images show as themselves; anything else
-/// downloads, and nothing runs (`sandbox`, `nosniff`).
 #[route(GET "/threads/{id}/files/{name}")]
 async fn thread_file(cx: &Cx) -> Result<Response> {
     let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
@@ -1011,14 +946,12 @@ async fn thread_file(cx: &Cx) -> Result<Response> {
     Ok(r.body(Body::from(bytes))?)
 }
 
-/// `POST /threads/{id}/approve`: a choice, an "other" text, or a secret card's `value` (passed to its plugin only).
 #[derive(Deserialize)]
 struct Approve {
     item: u64,
     option: String,
     #[serde(default)]
     value: Option<String>,
-    /// Approving an MCP server an agent proposed needs Face ID (#56).
     #[serde(default)]
     passkey: Option<pairing::Assertion>,
 }
@@ -1044,7 +977,6 @@ async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Response> {
     .into_response(cx)
 }
 
-/// `POST /threads/{id}/model` `{model, effort}`: the composer's chip (#553 row 34; empty: the default).
 #[derive(Deserialize)]
 struct ModelPick {
     #[serde(default)]
@@ -1066,7 +998,6 @@ async fn model(cx: &Cx, Json(p): Json<ModelPick>) -> Result<Answer<cooee_core::I
     ))
 }
 
-/// `GET /models` (#193): each agent and account's models as last seen, each short name with what it resolves to now.
 #[derive(Serialize)]
 struct ModelList {
     agent: String,
@@ -1100,7 +1031,6 @@ async fn close(cx: &Cx) -> Result<Answer<()>> {
     Ok(Answer(blocking(cx, move |hub| hub.close(&id)).await))
 }
 
-/// `POST /threads/{id}/read`.
 #[derive(Deserialize)]
 struct Read {
     item: u64,
@@ -1112,7 +1042,6 @@ async fn read(cx: &Cx, Json(r): Json<Read>) -> Result<Answer<()>> {
     Ok(Answer(blocking(cx, move |hub| hub.read(&id, r.item)).await))
 }
 
-/// `GET /devices`: the paired devices, this one marked `me`.
 #[route(GET "/devices")]
 async fn device_list(cx: &Cx) -> Result<Response> {
     let (devices, me) = (devices(cx), request_context::<Paired>(cx).0.id.clone());
@@ -1126,13 +1055,11 @@ async fn device_list(cx: &Cx) -> Result<Response> {
     Json(list).into_response(cx)
 }
 
-/// A device to unpair.
 #[derive(Deserialize)]
 struct DeviceId {
     id: String,
 }
 
-/// `POST /devices/remove`: unpairs a device (its pushes stop too).
 #[route(POST "/devices/remove")]
 async fn device_remove(cx: &Cx, Json(d): Json<DeviceId>) -> Result<Response> {
     let devices = devices(cx);
@@ -1144,14 +1071,12 @@ async fn device_remove(cx: &Cx, Json(d): Json<DeviceId>) -> Result<Response> {
     }
 }
 
-/// A device's new name.
 #[derive(Deserialize)]
 struct Rename {
     id: String,
     label: String,
 }
 
-/// `POST /devices/rename`: names a device (or the one an approved request becomes).
 #[route(POST "/devices/rename")]
 async fn device_rename(cx: &Cx, Json(r): Json<Rename>) -> Result<Response> {
     let (devices, label) = (
@@ -1169,8 +1094,6 @@ async fn device_rename(cx: &Cx, Json(r): Json<Rename>) -> Result<Response> {
     }
 }
 
-/// `POST /passkey/options`: a challenge for this device's passkey ceremony, and its passkey's id once it has one
-/// (none: the page registers one).
 #[route(POST "/passkey/options")]
 async fn passkey_options(cx: &Cx) -> Result<Response> {
     let me = &request_context::<Paired>(cx).0;
@@ -1180,8 +1103,6 @@ async fn passkey_options(cx: &Cx) -> Result<Response> {
     Json(serde_json::json!({ "challenge": challenge, "id": id })).into_response(cx)
 }
 
-/// `POST /passkey/register` (the device's first passkey) and `/passkey/unlock`: either unlocks the gated tab for
-/// [`passkey::IDLE`]; each unlock goes to `<data>/terminal.log` with the time and device.
 #[route(POST "/passkey/{rest}")]
 async fn passkey_check(cx: &Cx, Json(p): Json<passkey::Proof>) -> Result<Response> {
     let me = request_context::<Paired>(cx).0.clone();
@@ -1217,11 +1138,8 @@ async fn passkey_check(cx: &Cx, Json(p): Json<passkey::Proof>) -> Result<Respons
     plain(200, "unlocked")
 }
 
-/// The data folder, and the config's folder (its `profiles/`).
 struct Data(PathBuf, Option<PathBuf>);
 
-/// The agent profiles (Plain aside), hidden ones too; a plugin's from its backend when it serves them, a `/path`
-/// avatar through its proxy.
 fn profiles(
     hub: &Hub,
     (data, config): (&std::path::Path, Option<&std::path::Path>),
@@ -1240,7 +1158,6 @@ fn profiles(
     list
 }
 
-/// Installed plugin `name`'s backend: its first tab's entry (its URL and token).
 fn backend(hub: &Hub, data: &std::path::Path, name: &str) -> Option<Plugin> {
     let lock = cooee_core::plugins::read_lock(data).ok()?;
     let tabs = lock.into_iter().find(|l| l.name == name)?.tabs;
@@ -1250,7 +1167,6 @@ fn backend(hub: &Hub, data: &std::path::Path, name: &str) -> Option<Plugin> {
 path_param!(name);
 path_param!(rest);
 
-/// The plugin tab the path names (a plugin with screens only has none).
 fn named(cx: &Cx) -> Result<Plugin> {
     let name = path_param::<Name>(cx);
     let hub = app_context::<Arc<Hub>>(cx);
@@ -1277,7 +1193,6 @@ async fn frame(cx: &Cx) -> Result<Response> {
     }
 }
 
-/// A backend's event as one `{event, data}` message (a page's `EventSource` hears only those), its id kept.
 fn relay(e: plugin::Sse) -> Event {
     let event = if e.event.is_empty() {
         "message"
@@ -1291,8 +1206,6 @@ fn relay(e: plugin::Sse) -> Event {
     }
 }
 
-/// `/p/<name>/api/<path>`: `<path>` on the plugin's backend with its token. Only the content type, `Accept` and
-/// `Last-Event-ID` go along (never the cookie); an event stream comes back as `{event, data}` messages.
 #[route([GET, POST] "/p/{name}/api/{*rest}")]
 async fn proxy(cx: &Cx, body: String) -> Result<Response> {
     let p = named(cx)?;
@@ -1305,8 +1218,6 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
         .into_iter()
         .filter_map(|h| Some((h, header(cx, h)?.to_owned())))
         .collect();
-    // The gated tab: only an unlocked device's calls get through, and each counts as use; the backend learns which
-    // device (it refuses calls without one).
     let me = request_context::<Paired>(cx).0.id.clone();
     let unlocks = Arc::clone(app_context::<Arc<Unlocks>>(cx));
     let gated = p.name == passkey::GATED;
@@ -1329,13 +1240,10 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
         Ok(r) => r,
         Err(e) => return plain(502, &format!("{prefix}: {e}")),
     };
-    // A locked device's stream ends at its next event.
     let open = move || !gated || unlocks.open(&me, now());
     pass_on(cx, reply, relay, open).await
 }
 
-/// A backend's answer passed on: an event stream event by event (each through `relay` while `open`), else its
-/// status, content type and body.
 async fn pass_on(
     cx: &Cx,
     reply: plugin::Reply,
@@ -1370,7 +1278,6 @@ async fn pass_on(
         .body(Body::from(bytes))?)
 }
 
-/// Installed plugin `{name}`'s backend and manifest, when it has places: only those have screens (#125).
 fn with_screens(cx: &Cx) -> Option<(Plugin, cooee_core::plugins::Manifest)> {
     let name = path_param::<Name>(cx);
     let data = &app_context::<Data>(cx).0;
@@ -1380,7 +1287,6 @@ fn with_screens(cx: &Cx) -> Option<(Plugin, cooee_core::plugins::Manifest)> {
     (!m.places.is_empty()).then_some((p, m))
 }
 
-/// A screen stream's event as the backend sent it: its `{seq, ops}` data, its name and id.
 fn ops(e: plugin::Sse) -> Event {
     let out = Event::new().data(e.data);
     let out = if e.event.is_empty() {
@@ -1394,8 +1300,6 @@ fn ops(e: plugin::Sse) -> Event {
     }
 }
 
-/// `GET /p/<plugin>/screens/<path>` (#125): a screen from a plugin with places, off its backend with its token
-/// (`Accept` and `Last-Event-ID` go along, never the cookie); a stream of block ops comes back event by event.
 #[route(GET "/p/{name}/screens/{*rest}")]
 async fn screen(cx: &Cx) -> Result<Response> {
     let Some((p, m)) = with_screens(cx) else {
@@ -1442,7 +1346,6 @@ async fn screen(cx: &Cx) -> Result<Response> {
     }
 }
 
-/// One action from a plugin's screen or card (#125): the block it came from and its values.
 #[derive(Deserialize)]
 struct BlockAct {
     #[serde(default)]
@@ -1454,8 +1357,6 @@ struct BlockAct {
     values: serde_json::Map<String, serde_json::Value>,
 }
 
-/// `POST /p/<plugin>/action` (#125): one action to its backend's `POST /action`, with the device that sent it as
-/// `by`; one not in its manifest's `[permissions]` actions is refused (403) and never sent.
 #[route(POST "/p/{name}/action")]
 async fn screen_action(cx: &Cx, Json(a): Json<BlockAct>) -> Result<Response> {
     let Some((p, m)) = with_screens(cx) else {
@@ -1498,7 +1399,6 @@ fn refused(e: impl std::fmt::Display) -> HubError {
     HubError::Refused(e.to_string())
 }
 
-/// `GET /plugins`: Settings › Plugins: the installed plugins with their state, the index, the jobs in progress.
 #[route(GET "/plugins")]
 async fn plugin_list(cx: &Cx) -> Result<Answer<serde_json::Value>> {
     let m = manager(cx);
@@ -1514,13 +1414,11 @@ async fn plugin_list(cx: &Cx) -> Result<Answer<serde_json::Value>> {
     ))
 }
 
-/// `?name=`: whose log.
 #[derive(Deserialize)]
 struct LogQuery {
     name: String,
 }
 
-/// `GET /plugins/log?name=`: the end of a plugin's log (its builds' and backend's output).
 #[route(GET "/plugins/log")]
 async fn plugin_log(cx: &Cx) -> Result<Response> {
     let q: LogQuery =
@@ -1541,22 +1439,18 @@ async fn plugin_log(cx: &Cx) -> Result<Response> {
     )
 }
 
-/// `POST /plugins/<action>`: Settings › Plugins' buttons.
 #[derive(Deserialize, Default)]
 #[serde(default)]
 struct Act {
     name: String,
     source: String,
     rev: Option<String>,
-    /// The commit the owner confirmed (add, update).
     commit: String,
     purge: bool,
     on: bool,
     text: String,
 }
 
-/// `[improve]`: a thread with the first agent (its default account) in the plugin's checkout, on its
-/// `cooee-improve` branch, with the owner's `text`.
 fn improve(
     m: &Manager,
     hub: &Hub,
@@ -1583,7 +1477,6 @@ fn improve(
     Ok(thread)
 }
 
-/// A thread with the first agent in shed (its default account) in `folder`, starting with `prompt`.
 fn agent_thread(
     hub: &Hub,
     logins: &Logins,
@@ -1612,8 +1505,6 @@ fn looks(cx: &Cx) -> Arc<cooee_web::LookAssets> {
     Arc::clone(app_context::<Arc<cooee_web::LookAssets>>(cx))
 }
 
-/// `POST /themes/<action>`, Settings › look › themes' forms and a theme thread's `[keep]` (no script): `add`
-/// (`source`), `remove` and `publish` (`name`), `new` and `remix` (`name`, `from`, `text`), `keep` (`name`, `thread`).
 #[derive(Deserialize, Default)]
 #[serde(default)]
 struct ThemeAct {
@@ -1624,7 +1515,6 @@ struct ThemeAct {
     thread: String,
 }
 
-/// What the agent building theme `name` is told, before the owner's `text`.
 fn theme_prompt(name: &str, text: &str) -> String {
     let ask = if text.trim().is_empty() {
         "Ask me what it should look like."
@@ -1693,14 +1583,11 @@ async fn theme_act(cx: &Cx, Form(a): Form<ThemeAct>) -> Result<Response> {
             .status(303)
             .header("Location", to)
             .body(Body::from(()))?),
-        // `publish` says where its repo is.
         Ok(said) => plain(200, &said),
         Err(why) => plain(409, &why),
     }
 }
 
-/// `GET /themes/dev/<name>`: the live preview of a theme being built (`?thread=`: its chat too), its gate's result
-/// and `[keep]`.
 #[derive(Deserialize)]
 struct PreviewQuery {
     thread: Option<String>,
@@ -1720,7 +1607,6 @@ async fn preview(cx: &Cx) -> Result<impl View> {
     Ok(cooee_web::preview_page(cx, thread_id(cx), fails, thread))
 }
 
-/// `GET /themes/dev/<name>/events`: a `saved` event each time a file of the theme changes, after the looks reload.
 #[route(GET "/themes/dev/{id}/events")]
 async fn theme_saves(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>>> {
     let name = thread_id(cx);
@@ -1734,7 +1620,6 @@ async fn theme_saves(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + 
         loop {
             tokio::time::sleep(Duration::from_millis(500)).await;
             let now = stamp(&dir);
-            // Kept or gone: nothing more to preview.
             if !dir.exists() {
                 return None;
             }
@@ -1753,7 +1638,6 @@ async fn plugin_act(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<serde_json::Va
     let (act, m, hub, logins) = (thread_id(cx), manager(cx), hub(cx), logins(cx));
     let done = tokio::task::spawn_blocking(move || {
         let said = |what: &str| Ok(serde_json::json!(what));
-        // A confirm holds for the exact commit it showed.
         let confirmed = |p: &Plan| {
             let again = "It changed since you confirmed: confirm again.";
             (p.commit == a.commit)
@@ -1803,7 +1687,6 @@ async fn plugin_act(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<serde_json::Va
                 .map(|t| serde_json::json!({ "thread": t })),
             _ => Err(HubError::Refused(format!("no plugin action {act}"))),
         };
-        // The tabs follow at once (the supervisor would within half a second).
         hub.set_plugins(m.tabs());
         done
     });
@@ -1812,8 +1695,6 @@ async fn plugin_act(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<serde_json::Va
     ))
 }
 
-/// `POST /plugin/push`: a line from a plugin; a tap opens its tab (at `#<path>`, when given). A newer push of the same
-/// `tag` (default `plugin-<name>`) replaces the older one.
 #[derive(Deserialize)]
 struct PluginPush {
     text: String,
@@ -1849,7 +1730,6 @@ async fn plugin_push(cx: &Cx, Json(b): Json<PluginPush>) -> Result<Response> {
     Json(note).into_response(cx)
 }
 
-/// `POST /plugin/dot` `{"on": bool}`: shows or clears the dot on the plugin's tab.
 #[derive(Deserialize)]
 struct Dot {
     on: bool,
@@ -1868,15 +1748,12 @@ async fn plugin_dot(cx: &Cx, Json(d): Json<Dot>) -> Result<Response> {
     Json(d.on).into_response(cx)
 }
 
-/// `POST /plugin/card`: a plugin's card in a thread ([`CardSpec`]).
 #[route(POST "/plugin/card")]
 async fn plugin_card(cx: &Cx, Json(c): Json<CardSpec>) -> Result<Answer<cooee_core::Item>> {
     let p = request_context::<Caller>(cx).0.clone();
     Ok(Answer(blocking(cx, move |hub| hub.card(&p, c)).await))
 }
 
-/// `POST /plugin/handoff` `{from, to, text}`: `from` shows `continued in` `to`, which gets `text` `from` it; `POST
-/// /plugin/line` `{thread, from, text}`: a line flowing back into `thread` from thread `from` (#553 row 35).
 #[derive(Deserialize)]
 struct Handoff {
     #[serde(alias = "thread")]
@@ -1917,7 +1794,6 @@ async fn push_key(cx: &Cx) -> Result<Response> {
     }
 }
 
-/// `POST /push/subscribe`: the browser's subscription (`PushSubscription.toJSON()`'s endpoint and keys).
 #[derive(Deserialize)]
 struct Subscribe {
     endpoint: String,
@@ -1943,7 +1819,6 @@ async fn push_subscribe(cx: &Cx, Json(s): Json<Subscribe>) -> Result<Response> {
     }
 }
 
-/// `POST`/`DELETE /push/apns`: this native device's APNs token (`env`: default the config's).
 #[derive(Deserialize)]
 struct Token {
     token: String,
@@ -1973,7 +1848,6 @@ async fn apns_remove(cx: &Cx, Json(t): Json<Token>) -> Result<Response> {
     }
 }
 
-/// A subscription to drop.
 #[derive(Deserialize)]
 struct Endpoint {
     endpoint: String,
@@ -1988,21 +1862,18 @@ async fn push_unsubscribe(cx: &Cx, Json(e): Json<Endpoint>) -> Result<Response> 
     }
 }
 
-/// `GET /push/endpoints`: this device's subscriptions, so the page says truly whether alerts are on.
 #[route(GET "/push/endpoints")]
 async fn push_endpoints(cx: &Cx) -> Result<Response> {
     let me = &request_context::<Paired>(cx).0.id;
     Json(hub(cx).push().endpoints(me)).into_response(cx)
 }
 
-/// `GET /push/reset`: why this device's alerts stopped (`null` unless they did), so the page asks to turn them on.
 #[route(GET "/push/reset")]
 async fn push_reset(cx: &Cx) -> Result<Response> {
     let me = &request_context::<Paired>(cx).0.id;
     Json(hub(cx).push().reset(me)).into_response(cx)
 }
 
-/// `POST /push/test`: "alerts are on" to this device only.
 #[route(POST "/push/test")]
 async fn push_test(cx: &Cx) -> Result<Response> {
     let (hub, me) = (hub(cx), request_context::<Paired>(cx).0.id.clone());
@@ -2020,7 +1891,6 @@ async fn push_test(cx: &Cx) -> Result<Response> {
     plain(200, "test alert sent")
 }
 
-/// `POST /report`: a problem reported from the page (report mode): the note and the element it is about.
 #[derive(Deserialize, Serialize)]
 struct Report {
     note: String,
@@ -2036,7 +1906,6 @@ struct Report {
     viewport: String,
 }
 
-/// Appends the report to `<data>/reports.jsonl`, with when and which device; `cooee reports` lists them.
 #[route(POST "/report")]
 async fn report(cx: &Cx, Json(r): Json<Report>) -> Result<Response> {
     if r.note.trim().is_empty() {
@@ -2061,7 +1930,6 @@ async fn report(cx: &Cx, Json(r): Json<Report>) -> Result<Response> {
     plain(200, "report sent")
 }
 
-/// A thread's MCP proxy or cooee's own server asking (#56): `{thread, server}`, with the thread's token.
 #[derive(Deserialize)]
 struct AgentAsk {
     thread: String,
@@ -2069,13 +1937,11 @@ struct AgentAsk {
     server: serde_json::Value,
 }
 
-/// The `Authorization: Bearer` token.
 fn bearer(cx: &Cx) -> String {
     let token = header(cx, "authorization").and_then(|a| a.strip_prefix("Bearer "));
     token.unwrap_or_default().to_owned()
 }
 
-/// `POST /mcp/agent/remember` `{thread, server: {text}}`: `remember`'s note, by the thread's persona (#126).
 #[route(POST "/mcp/agent/remember")]
 async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<personas::Note>> {
     let (token, text) = (
@@ -2087,7 +1953,6 @@ async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<persona
     ))
 }
 
-/// A persona call (#126; docs/api.md) off the async workers, given the data and config folders.
 async fn on_personas<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&std::path::Path, &std::path::Path) -> io::Result<T> + Send + 'static,
@@ -2115,7 +1980,6 @@ async fn persona_new(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
     persona_save(cx, p).await
 }
 
-/// Saves `p`, its plugins (#129) each an installed one and its machine (#148) an allowed one.
 async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
     let installed = hub(cx).installed();
     let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
@@ -2130,7 +1994,6 @@ async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
     .await
 }
 
-/// Whether `machine` may run a thread (#148): this host (empty), or one added to shed (`shed machine ls`).
 fn allowed(machines: &Machines, machine: &str) -> std::result::Result<(), String> {
     if machine.is_empty() || machines.added().iter().any(|m| m == machine) {
         Ok(())
@@ -2141,8 +2004,6 @@ fn allowed(machines: &Machines, machine: &str) -> std::result::Result<(), String
     }
 }
 
-/// One machine a thread may run on (#148): its name (empty: this host, `host` its host name), whether shed reaches
-/// it, when it last answered and its health now (the machines plugin's card).
 #[derive(Serialize)]
 struct MachineRow {
     name: String,
@@ -2153,7 +2014,6 @@ struct MachineRow {
     error: Option<String>,
 }
 
-/// `GET /machines`: the allowed machines, this host first.
 #[route(GET "/machines")]
 async fn machine_list(cx: &Cx) -> Result<Answer<Vec<MachineRow>>> {
     let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
@@ -2196,7 +2056,6 @@ async fn persona_put(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
     persona_save(cx, p).await
 }
 
-/// `GET /personas/{id}/places`: its header strip, its attached plugins' `header-strip` chips (#125, q984).
 #[route(GET "/personas/{id}/places")]
 async fn places(cx: &Cx) -> Result<Answer<Vec<personas::Place>>> {
     let id = thread_id(cx);
@@ -2242,7 +2101,6 @@ async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
     .await
 }
 
-/// The persona calls (#126), the machines and models they pick from, `remember`'s, and their plugins' screens (#125).
 fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
     b.route(persona_list)
         .route(machine_list)
@@ -2260,7 +2118,6 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
         .route(mcp_remember)
 }
 
-/// `POST /mcp/agent/grant` `{thread, server}`: the server resolved, in memory, and the tools it may offer.
 #[route(POST "/mcp/agent/grant")]
 async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant>> {
     let (token, server) = (bearer(cx), a.server.as_str().unwrap_or_default().to_owned());
@@ -2269,8 +2126,6 @@ async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant
     ))
 }
 
-/// `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout}}`: `ask_persona`'s reply (#156); `timeout`
-/// in seconds, 300 unless given, at most 600.
 #[route(POST "/mcp/agent/ask")]
 async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let (token, s) = (bearer(cx), a.server);
@@ -2285,7 +2140,6 @@ async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     ))
 }
 
-/// `POST /mcp/agent/propose` `{thread, server: {name, type, command, args, url, why}}`: `propose_server`'s card.
 #[route(POST "/mcp/agent/propose")]
 async fn mcp_propose(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<cooee_core::Item>> {
     let token = bearer(cx);
@@ -2299,7 +2153,6 @@ async fn mcp_propose(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<cooee_co
     ))
 }
 
-/// `GET /mcp`: Settings › mcp servers.
 #[page("/mcp")]
 async fn mcp_settings(cx: &Cx) -> Result<impl View> {
     let data = app_context::<Data>(cx);
@@ -2327,7 +2180,6 @@ async fn mcp_settings(cx: &Cx) -> Result<impl View> {
     ))
 }
 
-/// Back to Settings › mcp servers, or the reason.
 fn to_mcp<T>(done: Result<T, HubError>) -> Result<Response> {
     match done {
         Ok(_) => Ok(Response::builder()
@@ -2338,7 +2190,6 @@ fn to_mcp<T>(done: Result<T, HubError>) -> Result<Response> {
     }
 }
 
-/// The phone's `+ server`: its name, type, command line or URL, and the Face ID assertion (JSON) its card got.
 #[derive(Deserialize)]
 struct NewServer {
     name: String,
@@ -2349,7 +2200,6 @@ struct NewServer {
     passkey: Option<String>,
 }
 
-/// `POST /mcp/servers`: adds a server, off, after Face ID.
 #[route(POST "/mcp/servers")]
 async fn mcp_add(cx: &Cx, Form(n): Form<NewServer>) -> Result<Response> {
     let Some(p) = n.passkey.and_then(|p| serde_json::from_str(&p).ok()) else {
@@ -2381,8 +2231,6 @@ async fn mcp_add(cx: &Cx, Form(n): Form<NewServer>) -> Result<Response> {
     }
 }
 
-/// `POST /mcp/servers/{name}` `enabled=on|off`: turns a server on or off. Its command, args, URL, env and headers
-/// are the Mac's to change: a phone that sends one is refused.
 #[route(POST "/mcp/servers/{id}")]
 async fn mcp_toggle(cx: &Cx, Form(f): Form<BTreeMap<String, String>>) -> Result<Response> {
     if f.keys().any(|k| k != "enabled") {
@@ -2409,7 +2257,6 @@ async fn mcp_toggle(cx: &Cx, Form(f): Form<BTreeMap<String, String>>) -> Result<
     )
 }
 
-/// `POST /mcp/servers/{name}/remove`.
 #[route(POST "/mcp/servers/{id}/remove")]
 async fn mcp_remove(cx: &Cx) -> Result<Response> {
     let name = thread_id(cx);
@@ -2427,14 +2274,12 @@ async fn mcp_remove(cx: &Cx) -> Result<Response> {
     )
 }
 
-/// A secret for `secret:<NAME>`.
 #[derive(Deserialize)]
 struct NewSecret {
     name: String,
     value: String,
 }
 
-/// `POST /mcp/secret` `name, value`: saved straight to the keychain, never shown again.
 #[route(POST "/mcp/secret")]
 async fn mcp_secret(cx: &Cx, Form(s): Form<NewSecret>) -> Result<Response> {
     let data = app_context::<Data>(cx).0.clone();
@@ -2444,8 +2289,6 @@ async fn mcp_secret(cx: &Cx, Form(s): Form<NewSecret>) -> Result<Response> {
     to_mcp(saved.await?.map_err(|e| HubError::Refused(e.to_string())))
 }
 
-/// `POST /profiles/{id}/mcp`: the profile's servers (`s:<server>`) and tools (`t:<server>:<tool>`); every tool of a
-/// server ticked is all of them, and a server whose tools couldn't be listed keeps the ones it had.
 #[route(POST "/profiles/{id}/mcp")]
 async fn profile_mcp(cx: &Cx, Form(f): Form<BTreeMap<String, String>>) -> Result<Response> {
     let (id, data) = (thread_id(cx), app_context::<Data>(cx));
@@ -2516,7 +2359,6 @@ pub fn router(
         cooee_web::assets(Router::builder(), looks)
             .layer(Timing)
             .layer(gate)
-            // A message's photos come as base64.
             .layer(BodyLimit::max(64 << 20).at("/threads")),
     )))
     .route(push_key)
@@ -2630,7 +2472,6 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     for why in refused {
         eprintln!("cooee: refused {why}");
     }
-    // A theme added, removed or saved anywhere (the CLI, an agent) shows within a second.
     if let Some(dir) = config.dir.clone() {
         let looks = Arc::clone(&looks);
         std::thread::spawn(move || {
@@ -2660,7 +2501,6 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         manager.tabs(),
         config.apns.clone(),
     )?;
-    // The models' daily refresh (#193): each agent and account seen a day ago or more is asked again.
     let (daily, signins) = (Arc::clone(&hub), Arc::clone(&logins));
     std::thread::spawn(move || {
         loop {

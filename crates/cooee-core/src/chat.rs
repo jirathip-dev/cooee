@@ -1,8 +1,3 @@
-//! A thread's chat: its committed items and the turn in progress, built from shed's ACP events.
-//!
-//! Every shed event maps through one exhaustive `match` (no wildcard arm): a new shed event kind fails the build
-//! here instead of being guessed at. An event line this build can't read is dropped and logged by the client.
-
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -210,7 +205,6 @@ pub struct Chat {
     pub items: Vec<Item>,
     /// The turn in progress.
     pub turn: Turn,
-    /// Where the current turn's items start in `items`.
     start: usize,
 }
 
@@ -232,8 +226,6 @@ impl Chat {
         self.items.iter().map(|i| i.seq).max().unwrap_or(0)
     }
 
-    /// Adds or replaces `item`. `items` stay sorted by id, so each lookup is a binary search: folding a long
-    /// history is never quadratic (herdsman#447), and a repeated id is one row.
     fn put(&mut self, item: Item) -> Item {
         match self.items.binary_search_by_key(&item.id, |i| i.id) {
             Ok(at) => self.items[at].clone_from(&item),
@@ -268,7 +260,6 @@ impl Chat {
         Some(item.clone())
     }
 
-    /// The id of the current turn's last item matching `f`.
     fn find(&self, f: impl Fn(&Body) -> bool) -> Option<u64> {
         self.items[self.start.min(self.items.len())..]
             .iter()
@@ -283,8 +274,6 @@ impl Chat {
         Change::State(self.turn.clone())
     }
 
-    /// Ends the turn: the reply so far is dropped and tool calls still going are written back as ended (and as
-    /// `status`, if given).
     fn end(&mut self, at: u64, seq: u64, status: Option<&str>) -> Vec<Change> {
         self.turn.text.clear();
         let open: Vec<u64> = self.items[self.start.min(self.items.len())..]
@@ -316,7 +305,6 @@ impl Chat {
     /// Applies shed event `seq` of this thread's terminal at time `at`.
     pub fn apply(&mut self, at: u64, seq: u64, event: EventKind) -> Vec<Change> {
         match event {
-            // Not shown: the start, resources, the agent's mode and session; the prompt is stored when it is sent.
             EventKind::Started
             | EventKind::Resources(_)
             | EventKind::Mode { .. }
@@ -486,8 +474,6 @@ mod tests {
         );
     }
 
-    /// #553 row 31: a conductor's answer takes the owner's change until its `until`, then none; an owner's own
-    /// answer takes no second tap.
     #[test]
     fn a_conductors_answer_may_be_changed_for_its_window_only() {
         let mut chat = Chat::default();
@@ -522,8 +508,6 @@ mod tests {
         assert!(chat.tap(id, "yes", "iPhone", 99).is_none(), "once");
     }
 
-    /// R6 (herdsman#447): folding 30,000 stored versions of 1,000 rows (a thread's load) takes under 300 ms: each
-    /// version finds its row by binary search, never by a scan.
     #[test]
     fn r6_folding_a_long_log_is_within_budget() {
         let versions: Vec<Item> = (0..30)
@@ -547,7 +531,6 @@ mod tests {
         assert!(took < std::time::Duration::from_millis(300), "{took:?}");
     }
 
-    /// R16 (herdsman#516): versions repeating one id fold into one row, however often they repeat.
     #[test]
     fn a_repeated_id_is_one_row() {
         let you = |text: &str| Item {

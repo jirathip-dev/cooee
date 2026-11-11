@@ -53,6 +53,10 @@ jobs:
         run: just hygiene
       - name: neutral core (no provider named outside crates/cooee-core/src/providers and tests)
         run: just neutral
+      - name: comments (no // or /* */; /// only on public API)
+        run: just comments
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: theme gate (packs/themes and the starter)
         run: just themes
 

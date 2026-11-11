@@ -20,13 +20,9 @@ struct Setup {
     dir: PathBuf,
     shed: FakeShed,
     cooee: Cooee,
-    /// A secret-shaped value, built at runtime: `secret:API_KEY`.
     token: String,
 }
 
-/// cooee with provider `fake` for `fake-acp` (accounts in `FAKE_HOME`, settings in `FAKE_SETTINGS`), its account
-/// `work`, the secret `API_KEY`, and in `<config>/profiles/`: `coder` (all of it), `guard` (settings for an agent
-/// with no settings variable) and `leak` (a secret inline).
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     let token = format!("sk-{}", "p4".repeat(16));
@@ -72,7 +68,6 @@ fn setup(name: &str) -> Setup {
 }
 
 impl Setup {
-    /// `POST /threads` in the root with `profile`: the status and body.
     fn start(&self, profile: &str, text: &str) -> (u16, String) {
         let random = format!("start-{}", self.shed.cli_log().len());
         let new = json!({ "agent": "fake-acp", "profile": profile, "folder": self.dir.join("root"),
@@ -80,7 +75,6 @@ impl Setup {
         self.cooee.post("/threads", &new)
     }
 
-    /// A started thread's id and its `shed run` line.
     fn thread(&self, profile: &str, text: &str) -> (String, String) {
         let (status, body) = self.start(profile, text);
         assert_eq!(status, 200, "{body}");
@@ -94,15 +88,12 @@ impl Setup {
         (id, line.to_owned())
     }
 
-    /// The sidebar's agents (#86): Plain on each agent, then each profile.
     fn picker(&self) -> String {
         let page = self.cooee.get("/").1;
         let at = page.find(r#"<nav class="ags""#).expect("the agents");
         page[at..at + page[at..].find("</nav>").unwrap()].to_owned()
     }
 
-    /// The agents once they have `what` (up to 20 s: the server runs a plugin's backend within half a second of its
-    /// add, and asks it for its profiles once it answers).
     fn picker_with(&self, what: &str) -> String {
         for _ in 0..400 {
             let agents = self.picker();
@@ -114,7 +105,6 @@ impl Setup {
         panic!("never {what}: {}", self.picker());
     }
 
-    /// Every file under `dir`, as text.
     fn files(dir: &Path, out: &mut String) {
         for e in fs::read_dir(dir).into_iter().flatten().flatten() {
             if e.file_type().unwrap().is_dir() {
@@ -140,7 +130,6 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         "{picker}"
     );
 
-    // Plain: the agent as it is.
     let (id, line) = s.thread("", "hi");
     assert!(
         !line.contains(" -- ") && !line.contains("--policy"),
@@ -155,8 +144,6 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         "{chat}"
     );
 
-    // A file profile: its account, settings, env and policy on the adapter, its secret through the adapter's shell,
-    // its instructions ahead of the first message (stored alone).
     let (id, line) = s.thread("coder", "hi");
     let data = s.dir.join("data");
     let work = data.join("accounts/fake/work");
@@ -198,10 +185,8 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Coder · "),
         "{chat}"
     );
-    // Coder's ongoing chat is this one.
     assert!(s.picker().contains(&format!(r#"href="/t/{id}""#)));
 
-    // A guard its agent can't run: refused, nothing started.
     let runs = s.shed.cli_log().matches(" run ").count();
     let (status, body) = s.start("guard", "hi");
     assert_eq!(status, 400, "{body}");
@@ -215,12 +200,10 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         2,
         "two threads, the refused start none"
     );
-    // An unknown profile, and one left out for a secret inline, are refused too.
     for id in ["nope", "leak"] {
         assert_eq!(s.start(id, "hi").0, 400, "{id}");
     }
 
-    // No secret in cooee's config, files or log, nor in what it told shed.
     let mut written = fs::read_to_string(s.dir.join("cooee.err")).unwrap();
     assert!(
         written.contains("leak.toml"),
@@ -276,8 +259,6 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
         out.contains("agent profiles: Conductor (fake-acp)"),
         "{out}"
     );
-    // Until its backend runs the manifest's profile is offered; once it does, an unreachable one offers none: wait for
-    // it so the chat page below sees the backend's 404 (its manifest's), not a backend still starting.
     for _ in 0..400 {
         if s.cooee.get("/p/plug/api/whoami").0 == 200 {
             break;
@@ -304,8 +285,6 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
     let _ = Command::new("kill").args(["-TERM", &pid]).status();
 }
 
-/// A plugin backend (docs/plugins/hello's checks) that serves the profiles in the JSON file `list` at
-/// `GET /cooee/profiles` (read at each call) and appends each `POST /cooee/thread-started` body to `log`.
 fn serving(list: &Path, log: &Path) -> String {
     format!(
         r#"import fs from "node:fs";
@@ -356,8 +335,6 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
     s.cooee
         .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
 
-    // The backend's list is the plugin's agents (once the server runs it), under its name after the owner's, with
-    // their names and avatars (none: the initials); a hidden one, and the manifest's it doesn't list, aren't there.
     let agents = s.picker_with(r#"href="/new?profile=plug/fleet-a""#);
     let group = agents.find(r#"<p class="lb">plug</p>"#).expect(&agents);
     let a = agents.find(r#"href="/new?profile=plug/fleet-a""#).unwrap();
@@ -385,7 +362,6 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
     assert_eq!(s.shed.cli_log().matches(" run ").count(), runs);
     assert!(!log.exists(), "nothing started");
 
-    // `{thread}` is the new thread's id in the agent's env, and the backend is told the thread started.
     let (id, _) = s.thread("plug/fleet-a", "go");
     let env = s.shed.adapter_env();
     for var in [format!("HERDSMAN_THREAD={id}"), "FLEET=a".to_owned()] {
@@ -394,7 +370,6 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
     let told: Value = serde_json::from_str(fs::read_to_string(&log).unwrap().trim()).unwrap();
     assert_eq!(told, json!({ "thread": id, "profile": "fleet-a" }));
 
-    // Threads the backend lists as the agent's are its side threads, the newest its ongoing chat.
     let (old, _) = s.thread("", "older");
     let (new, _) = s.thread("", "newer");
     served(&[&old, &new]);
@@ -415,12 +390,10 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
             && under.contains(&format!(r#"href="/t/{id}""#)),
         "{side}"
     );
-    // They are no longer Plain's.
     assert!(
         side.contains(r#"<a class="agr" href="/new?agent=fake-acp">"#),
         "{side}"
     );
-    // A phone's `‹` goes back to the agent that lists it, whose side threads they are.
     let back = r#"href="/?list&amp;profile=plug/fleet-a" aria-label="back to agents""#;
     assert!(chat.contains(back), "{chat}");
 
@@ -434,7 +407,6 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     let dir = scratch("profiles-claude");
     let data = dir.join("data");
     fs::create_dir_all(data.join("accounts/claude/work")).unwrap();
-    // The guard: a fake of herdsman's hook, refusing a push to main.
     let claude = dir.join("profiles/claude");
     fs::create_dir_all(&claude).unwrap();
     let guard = claude.join("guard.sh");
@@ -452,8 +424,6 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     )
     .unwrap();
     let shed = FakeShed::start(&dir.join("shed"), version());
-    // A fake claude-acp: runs the PreToolUse hook of `$CLAUDE_CONFIG_DIR/settings.json` on one Bash call, as
-    // Claude Code does, noting its output and exit.
     let adapter = shed.dir.join("fake-acp");
     fs::write(
         &adapter,
@@ -463,11 +433,9 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
          echo \"exit $?\" >>\"$out\"\n",
     )
     .unwrap();
-    // The built-in Claude Code provider, on the fake shed's agent.
     let mut provider = cooee_core::provider::defaults().remove(0);
     provider.agent = "fake-acp".to_owned();
     (provider.login, provider.status) = (vec!["true".to_owned()], vec!["true".to_owned()]);
-    // Its fields are strings and lists of them: as JSON, they are TOML too.
     let mut extra = "[[providers]]\n".to_owned();
     for (k, v) in serde_json::to_value(&provider)
         .unwrap()

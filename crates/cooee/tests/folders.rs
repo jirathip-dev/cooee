@@ -9,7 +9,6 @@ use std::{fs, os::unix::fs::symlink, path::Path};
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
 
-/// An instance with `HOME` at `dir/home`, holding `Projects/app/src`, a hidden folder, a file and a symlink out.
 fn start(name: &str) -> (std::path::PathBuf, FakeShed, Cooee) {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), version());
@@ -128,7 +127,6 @@ fn picker_lists_sub_folders_two_levels_deep_never_symlinks() {
     ] {
         assert!(page.contains(&row(&p, d, short)), "{}: {page}", p.display());
     }
-    // A root heads its group; a folder in it shows by name.
     assert!(
         page.contains(">~/Projects<span") && page.contains(">src<span"),
         "{page}"

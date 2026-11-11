@@ -1,14 +1,9 @@
-//! `ask_persona` (#156): a thread's persona asks another, one its `can_message` names (G4), in a linked exchange
-//! thread the owner reads and may reply in to steer; the asked persona's next final reply is the answer. Each
-//! refusal starts with a code the agent can read: `NOT_ALLOWED`, `DEPTH`, `TIMEOUT` or `OFFLINE`.
-
 use std::{sync::mpsc, time::Duration};
 
 use cooee_core::personas;
 
 use super::{Hub, HubError, lock, now};
 
-/// How many asks deep a chain goes: an asked persona may ask one more, no further (G4).
 const DEPTH: usize = 2;
 
 fn no<T>(code: &str, why: &str) -> Result<T, HubError> {

@@ -1,13 +1,7 @@
-// herdsman#553 parity, rows 30–35 (#44): a plugin's (the conductor's) cards in a thread. Choice rows with the
-// recommended one first, an "other" box and a ✓ line with who and when; a conductor's answer with [change]; a config
-// card's diff, waiting bar and [apply]; a secret card's masked field; the model and effort chips; handoff chips and a
-// pick-a-thread row. The example plugin `hello` answers each tap 200. Each row's shot is
-// ui-<viewport>/parity-<row>-….png.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const shot = (page, info, name) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png` });
-// The plugin's own calls, with its token (serve.sh's `hello`).
 const plugin = async (page, path, data) => {
   const r = await page.request.post(path, { headers: { authorization: "Bearer hello-token-0123456789" }, data });
   expect(r.status(), await r.text()).toBe(200);
@@ -22,7 +16,6 @@ async function audit(page) {
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 }
 
-// A new thread of persona `cards` (serve.sh: `hello` is attached to it, #129) whose turn is done, open; its id.
 async function thread(page, text) {
   const r = await page.request.post("/threads", { data: { agent: "fake-acp", profile: "cards", text, random_id: text } });
   expect(r.status(), await r.text()).toBe(200);
@@ -86,12 +79,10 @@ test("row 32: a config card shows its diff, the bar says it waits, [apply] settl
   await expect(row.locator(".diff .r")).toHaveText("-max_impl = 2");
   await expect(row.locator(".diff .g")).toHaveText("+max_impl = 3");
   await expect(page.locator("#cw")).toHaveText("config c1 waiting");
-  // The bar keeps its own look: not the pairing check word's big centred type (#47).
   await expect(page.locator("#cw")).toHaveCSS("text-align", "left");
   await expect(page.locator("#cw")).toHaveCSS("font-weight", "400");
   await audit(page);
   await shot(page, info, "parity-32-config");
-  // Opened again, the bar is there from the first slice.
   await page.reload();
   await expect(page.locator("#cw")).toHaveText("config c1 waiting");
   await page.locator("#cw").click();

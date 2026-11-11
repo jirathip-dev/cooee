@@ -1,26 +1,15 @@
-// #7 mockup: apply a theme and a colour scheme as cooee's head script will. `?theme=farm|kitchen|garden|terminal`,
-// `?mode=system|light|dark` (the Appearance pick; system follows prefers-color-scheme live), `?dark=<scheme>` /
-// `?light=<scheme>` (a COLOURS pick per mode; else the theme's default), `?style=modern|terminal` (default modern: only
-// shapes, radii, type and buttons differ, modern.css) and `?sprites=on|off` (default on; off: a coloured dot for every
-// sprite or glyph, the loading and empty figures hidden). Then it fills the page from the theme:
-//   [data-st=working|needs|done|fail|idle]  a state label: the sprite (the glyph; sprites off, the dot), the theme word, `· plain word`
-//   [data-s=<id>]                           a sprite: edit read run idle done needs merged fail (24 px), loading empty (132 × 100)
-//   [data-w=<key>]                          a theme word (data-plain adds `· <plain>`)
 const q = new URLSearchParams(location.search);
 const mq = matchMedia('(prefers-color-scheme: dark)');
-// Data sits next to this file, so pages in other folders (docs/design/pair, #47) can import it.
 const at = f => new URL(f, import.meta.url);
 export const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'system';
 export const STYLE = q.get('style') || 'modern', SPRITES = q.get('sprites') !== 'off';
 export const theme = await fetch(at(`themes/${T}.json`)).then(r => r.json());
-// Sprites off keeps the theme's words and moments and drops its art: `sprites` reads false for the page.
 const art = theme.sprites && SPRITES;
 export const NAMES = ['github-dark', 'solarized-dark', 'gruvbox', 'nord', 'dracula', 'farm', 'kitchen', 'garden-dark',
   'paper', 'farm-light', 'kitchen-light', 'garden-light'];
 export const S = Object.fromEntries(await Promise.all(NAMES.map(async n => [n, await fetch(at(`schemes/${n}.json`)).then(r => r.json())])));
 export const mode = () => MODE === 'system' ? (mq.matches ? 'dark' : 'light') : MODE;
 export const pick = m => q.get(m) || theme.scheme[m];
-// The plain words: what each state says in every theme, and all terminal says.
 export const PLAIN = { working: 'working', needs: 'needs you', done: 'done', fail: 'failed', idle: 'idle', merged: 'done',
   loading: 'loading', 'empty-threads': 'no threads' };
 const GLYPH = { working: '✻', needs: '!', done: '✓', fail: '✕', idle: '·' };
@@ -39,7 +28,6 @@ function paint() {
 paint();
 mq.addEventListener('change', paint);
 
-// The 24 px sprites follow the agent's current tool: a label may name it (data-tool=edit|read|run), else working is edit.
 export const sprite = (id, cls = 'rsp') => !SPRITES && cls === 'rsp' ? '<i class=sd></i>' : art
   ? `<svg class=${cls} viewBox="${/^(loading|empty)$/.test(id) ? '0 0 132 100' : '0 0 24 24'}" aria-hidden=true><use href="#s-${id}"/></svg>` : '';
 if (art) {

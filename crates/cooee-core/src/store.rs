@@ -1,10 +1,3 @@
-//! The thread store: one typed JSON file per thread under `<dir>/threads/`, and its items as JSON lines beside it.
-//!
-//! An item line is appended whole and fsynced under the thread's lock; a torn last line (a crash mid-append) is
-//! skipped on reading. Every thread file write is write-temp → fsync → rename (then fsync the folder), under the thread's lock, so a crash leaves
-//! either the old file or the new one, never half of either. `tests/upgrade_compat.rs` reads every earlier release's
-//! files from `tests/fixtures/upgrade/<version>/`.
-
 use std::{
     collections::{BTreeMap, HashMap},
     fs::{self, File},
@@ -233,7 +226,6 @@ pub enum Role {
     Agent,
 }
 
-/// A thread file as stored: the format version, then the thread.
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Stored<T> {
@@ -354,8 +346,6 @@ impl Store {
             .map_err(io_err(&self.threads))
     }
 
-    /// The first half of [`Store::save`]: writes `thread` to `<id>.json.tmp` and fsyncs it. Returns the temp file
-    /// and the file it replaces.
     fn stage(&self, thread: &Thread) -> Result<(PathBuf, PathBuf), StoreError> {
         let path = self.path(&thread.id)?;
         let mut bytes = serde_json::to_vec_pretty(&Stored {
@@ -413,7 +403,6 @@ impl Store {
             .append(true)
             .open(&path)
             .map_err(io_err(&path))?;
-        // After a torn line (a crash mid-append), start on a line of its own.
         let len = file.metadata().map_err(io_err(&path))?.len();
         let mut last = *b"\n";
         if len > 0 {
@@ -514,7 +503,6 @@ mod tests {
         assert!(!dir.join("threads/a.json.tmp").exists());
     }
 
-    /// Item lines append in order; a torn last line (a crash mid-append) is skipped, and the next append still lands.
     #[test]
     fn item_lines_append_and_a_torn_last_line_is_skipped() {
         let dir = scratch("items");
@@ -555,8 +543,6 @@ mod tests {
         ));
     }
 
-    /// Many writers of one thread: the lock keeps them from sharing the temp file, so every save succeeds and the
-    /// file is always one whole version.
     #[test]
     fn concurrent_saves_of_one_thread_never_tear() {
         let dir = scratch("concurrent");
@@ -574,8 +560,6 @@ mod tests {
         assert_eq!(store.load("c").unwrap().messages, sample("c", "").messages);
     }
 
-    /// The process is killed (SIGABRT) after the temp file is written and before the rename: the old file is
-    /// intact, the half-done write is ignored, and the next save replaces the stale temp.
     #[test]
     fn crash_between_temp_write_and_rename_keeps_old_file() {
         let dir = scratch("crash");

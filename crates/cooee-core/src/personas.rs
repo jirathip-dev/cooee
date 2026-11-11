@@ -13,7 +13,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{plugins, profiles};
 
-/// drover's installed name (`plugins/index.toml`).
 const DROVER: &str = "cooee-drover";
 
 /// One persona.
@@ -81,7 +80,6 @@ fn refused(why: String) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, why)
 }
 
-/// Its notes' file.
 fn memory(data: &Path, id: &str) -> PathBuf {
     data.join("personas").join(id).join("memory.jsonl")
 }
@@ -107,7 +105,6 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
             Err(e) => eprintln!("cooee: {}: {e}", file.display()),
         }
     }
-    // Migrated (#129): an installed drover goes with the conductor profile's persona.
     let lock = plugins::read_lock(data).unwrap_or_default();
     let drover: Vec<String> = lock
         .into_iter()
@@ -208,7 +205,6 @@ pub fn save(config: &Path, data: &Path, mut p: Persona) -> io::Result<Persona> {
             "a persona needs a name, an agent, and an image or none as its avatar".to_owned(),
         ));
     }
-    // TOML's basic strings and arrays read JSON's; every field is a string or a list of them.
     let fields = serde_json::to_value(Persona {
         id: String::new(),
         ..p.clone()
@@ -239,7 +235,6 @@ pub fn remove(config: &Path, data: &Path, id: &str) -> io::Result<()> {
     forget(data, id)
 }
 
-/// `r`, a missing file being no error.
 fn gone(r: io::Result<()>) -> io::Result<()> {
     match r {
         Err(e) if e.kind() != io::ErrorKind::NotFound => Err(e),

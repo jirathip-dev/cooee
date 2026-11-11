@@ -1,12 +1,3 @@
-//! Rooms (#154): a thread of the owner and 2 to 5 member personas, each in its own ACP session (a hidden thread,
-//! started on its first turn). Each turn sends the member the room's final replies it hasn't had, attributed
-//! (`[Name]: …`): never tool rows, approvals or files.
-//!
-//! The turn engine (#155): an owner message's @mentioned members take turns in mention order; with no mention every
-//! member gets one turn in room order and may pass (a reply of exactly [`PASS`], never shown). A reply naming another
-//! member gives it a turn. At most [`TURNS`] turns per owner message, the last told it is winding down, and none
-//! after [`DEADLINE`]; stop (the room's cancel) cancels the member taking its turn and drops the rest.
-
 use std::{
     fs,
     path::PathBuf,
@@ -26,25 +17,18 @@ use crate::push::Note;
 pub type Starter =
     Box<dyn Fn(&Hub, &str) -> Result<(String, PathBuf, Recipe), HubError> + Send + Sync>;
 
-/// The most members a room has (G6).
 const MEMBERS: usize = 5;
 
-/// Who speaks for the owner in a room.
 const OWNER: &str = "owner";
 
-/// The most member turns one owner message starts (G2).
 const TURNS: usize = 6;
 
-/// How long after the owner's message its turns may run, in milliseconds (G2).
 pub(super) const DEADLINE: u64 = 10 * 60 * 1000;
 
-/// A member's whole reply when it passes: not shown in the room.
 const PASS: &str = "[pass]";
 
-/// Told to the member taking the last turn an owner message allows.
 const WIND_DOWN: &str = "(This is the last turn on the owner's message: wind down; naming a member starts no more turns.)";
 
-/// The words `text` names with `@`, keyed (spaces dropped, any case), in order.
 fn mentions(text: &str) -> impl Iterator<Item = String> {
     text.match_indices('@').filter_map(|(at, _)| {
         let before = text[..at].chars().next_back();
@@ -63,7 +47,6 @@ fn key(s: &str) -> String {
     s.replace(' ', "").to_lowercase()
 }
 
-/// The members `text` names with `@` and their id or name (spaces dropped, any case), in the order named, once each.
 fn named(text: &str, members: &[Member], names: &[Persona]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for word in mentions(text) {
@@ -80,12 +63,10 @@ fn named(text: &str, members: &[Member], names: &[Persona]) -> Vec<String> {
     out
 }
 
-/// A reply addresses the owner when it names `@you` or `@owner` (#158).
 fn addresses_owner(text: &str) -> bool {
     mentions(text).any(|w| w == "you" || w == OWNER)
 }
 
-/// How the room shows `id`: the owner, a persona's name, else the id.
 fn display(names: &[Persona], id: &str) -> String {
     match names.iter().find(|p| p.id == id) {
         _ if id == OWNER => "Owner".to_owned(),
@@ -99,7 +80,6 @@ fn refused(why: impl Into<String>) -> HubError {
 }
 
 impl Hub {
-    /// `note` about thread `meta`, said by its room when `meta` is a member's session (#158).
     pub(super) fn routed(&self, meta: &Thread, note: Note) -> Note {
         let room = Some(&meta.room).filter(|r| !r.is_empty());
         let Some(room) = room.and_then(|r| self.live(r).ok()) else {
@@ -111,7 +91,6 @@ impl Hub {
         note.in_room(&room.meta, &display(&names, &meta.profile), last)
     }
 
-    /// Pushes room `room`'s `key` (`needs`, `fail`) about member `persona`, `line`, at item `item` (#158).
     fn room_push(&self, room: &Thread, persona: &str, (key, line): (&str, &str), item: u64) {
         let names = personas::list(self.config_dir(), &self.data);
         let name = display(&names, persona);
@@ -201,7 +180,6 @@ impl Hub {
         Ok(members)
     }
 
-    /// Persona `persona` may join a room: the conductor's may, a lane thread may not (G5).
     fn joinable(&self, persona: &str) -> Result<(), HubError> {
         if self
             .live(persona)
@@ -216,8 +194,6 @@ impl Hub {
             .map_err(|e| refused(e.to_string()))
     }
 
-    /// The owner's message to room `live`: stored as the owner's; then, after the member taking its turn now, its
-    /// mentioned members take turns, else every member in room order (G1). Earlier messages' queued turns are dropped.
     pub(super) fn room_send(
         &self,
         live: &Arc<Mutex<Live>>,
@@ -260,9 +236,6 @@ impl Hub {
         Ok(item)
     }
 
-    /// Starts the turn of room `room`'s next member: its session (started now if it has none, told who is in the
-    /// room) gets the room's final replies since its last turn, attributed; the last turn is told it is winding down.
-    /// One that can't take it is said so in the room, and skipped.
     pub(super) fn take_turn(&self, room: &str) -> Result<(), HubError> {
         let live = self.live(room)?;
         let (persona, session, prompt, random_id) = {
@@ -323,8 +296,6 @@ impl Hub {
         self.started(room, &persona, started)
     }
 
-    /// Member `persona`'s turn in room `room` started (`Ok`: its session) or couldn't: its session is kept, and
-    /// cancelled if [stop] came while it started; one that couldn't is said so in the room, and skipped.
     pub(super) fn started(
         &self,
         room: &str,
@@ -333,7 +304,6 @@ impl Hub {
     ) -> Result<(), HubError> {
         let live = self.live(room)?;
         let mut l = lock(&live);
-        // [stop] had no session to cancel. (Its turn may also be gone because it already replied: no stop.)
         let stopped = std::mem::take(&mut l.stopped_starting);
         match started {
             Ok(session) => {
@@ -359,8 +329,6 @@ impl Hub {
         }
     }
 
-    /// Starts a session of persona `persona` with `prompt`, its recipe as `seat` makes it (a room's member, an
-    /// asked persona); returns its thread id.
     pub(super) fn seat(
         &self,
         persona: &str,
@@ -373,16 +341,12 @@ impl Hub {
         let seated = self
             .place(&folder)
             .and_then(|folder| self.start(&agent, &folder, prompt, random_id, &recipe));
-        // As in [`Hub::start`], which a folder outside the roots never reaches.
         if let Some((file, _)) = &recipe.launch.secrets {
             let _ = fs::remove_file(file);
         }
         seated
     }
 
-    /// Member `persona`'s turn in room `room` ended with `reply` (its final reply, `None`: none): stored as its unless
-    /// it passed, the members it names queued (up to the turn cap: past it they are dropped and the room told), and
-    /// the next member's turn starts. A reply out of turn (a member taken out, a stopped round) is dropped.
     pub(super) fn replied(
         &self,
         room: &str,
@@ -439,8 +403,6 @@ impl Hub {
             .map_err(|e| refused(e.to_string()))
     }
 
-    /// Ends room `room`'s round, `why` (`stop`, `deadline`), with `note` (if any) said in the room: its queued turns
-    /// are dropped and the member taking its turn is cancelled. Twice, or with no round, does nothing.
     pub(super) fn stop_round(&self, room: &str, why: &str, note: &str) -> Result<(), HubError> {
         let live = self.live(room)?;
         let mut l = lock(&live);
@@ -466,7 +428,6 @@ impl Hub {
         }
     }
 
-    /// Stops each room's round whose owner message is [`DEADLINE`] old at `now` (G2).
     pub(super) fn deadlines(&self, now: u64) {
         let due: Vec<String> = self
             .all()

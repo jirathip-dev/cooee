@@ -123,8 +123,6 @@ fn civil_days(y: u64, m: u64, d: u64) -> Option<u64> {
 mod tests {
     use super::*;
 
-    /// #183: `/usage`'s reset times, read at a fixed clock: a date's next occurrence (the next year's past
-    /// December), a time alone today or tomorrow; a line in another shape is no window.
     #[test]
     fn usage_windows_from_the_usage_lines() {
         let day = |y, m, d| civil_days(y, m, d).unwrap() * 86_400;

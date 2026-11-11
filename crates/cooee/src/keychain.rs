@@ -1,6 +1,3 @@
-//! The one read of the macOS keychain: before #99 cooee kept the VAPID key there (service `cooee`); now it lives only
-//! in `<data>/vapid.key`. While there is no key file, a start copies the old key over, once.
-
 use std::{
     io::Read,
     path::Path,
@@ -12,16 +9,13 @@ use std::{
 use cooee_core::Config;
 use cooee_server::Push;
 
-/// Past this a keychain read gives up: a locked keychain can hang behind a prompt no one sees.
 const WAIT: Duration = Duration::from_secs(5);
 
-/// The keychain account of data folder `data`'s old key.
 fn account(data: &Path) -> String {
     let hash = cooee_core::sha256(data.as_os_str().as_encoded_bytes());
     format!("vapid-{}", &hash[..16])
 }
 
-/// The old key, if the keychain has one; `Err` when the read took over [`WAIT`].
 fn read(data: &Path) -> Result<Option<String>, ()> {
     let a = account(data);
     let find = ["find-generic-password", "-s", "cooee", "-a", &a, "-w"];
@@ -68,7 +62,6 @@ pub fn migrate(data: &Path) -> Result<Option<String>, String> {
         Ok(Some(key)) if push.adopt(&key).map_err(|e| e.to_string())? => Ok(Some(
             "push key copied from the keychain to vapid.key".to_owned(),
         )),
-        // A phone asked for the key while the keychain was read: the new key stays, the old subscriptions go.
         Ok(Some(_)) => renew(
             &push,
             "cooee made a new push key before the old one was copied: turn alerts on again",

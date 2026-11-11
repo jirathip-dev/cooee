@@ -52,7 +52,6 @@ pub fn token(key: &str, thread: &str) -> String {
     cooee_core::sha256(format!("{key}:{thread}").as_bytes())
 }
 
-/// `POST <path>` to cooee with the thread's token; the answer's JSON, or cooee's sentence.
 fn ask(path: &str, body: &Value) -> Result<Value, String> {
     let var =
         env::var(VAR).map_err(|_| format!("{VAR} isn't set: run me as a thread's MCP server"))?;
@@ -64,10 +63,8 @@ fn ask(path: &str, body: &Value) -> Result<Value, String> {
         .ok_or("cooee's URL is http://host:port")?;
     let body = body.to_string();
     let mut s = TcpStream::connect(host).map_err(|e| format!("cooee at {url}: {e}"))?;
-    // `ask_persona` waits up to 10 minutes for its reply.
     s.set_read_timeout(Some(Duration::from_secs(630)))
         .map_err(|e| e.to_string())?;
-    // HTTP/1.0: the whole body, never chunked.
     let head = format!(
         "POST {path} HTTP/1.0\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {token}\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n",
         body.len()
@@ -84,7 +81,6 @@ fn ask(path: &str, body: &Value) -> Result<Value, String> {
     }
 }
 
-/// The thread's grant for `server`.
 fn grant(server: &str, thread: &str) -> Result<Grant, String> {
     let g = ask(
         "/mcp/agent/grant",
@@ -101,13 +97,11 @@ fn error(id: &Value, code: i64, message: &str) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
 }
 
-/// Writes one message as a line.
 fn put(out: &Mutex<io::Stdout>, msg: &Value) {
     let mut out = out.lock().unwrap_or_else(PoisonError::into_inner);
     let _ = writeln!(out, "{msg}").and_then(|()| out.flush());
 }
 
-/// The real server: a child on stdio, or an http endpoint; its messages arrive on the channel given to [`open`].
 enum Upstream {
     Stdio(Child, ChildStdin),
     Http {
@@ -118,7 +112,6 @@ enum Upstream {
     },
 }
 
-/// Starts (stdio) or names (http) `g`'s server; what it sends goes to `tx`.
 fn open(g: &Grant, tx: Sender<Value>) -> Result<Upstream, String> {
     match g.kind.as_str() {
         "stdio" => {
@@ -155,13 +148,11 @@ fn open(g: &Grant, tx: Sender<Value>) -> Result<Upstream, String> {
     }
 }
 
-/// A curl config line's quoted value.
 fn quoted(v: &str) -> String {
     format!("\"{}\"", v.replace('\\', r"\\").replace('"', "\\\""))
 }
 
 impl Upstream {
-    /// Sends one message; an http server's answer (JSON or an event stream) goes to the channel.
     fn send(&mut self, msg: &Value) -> Result<(), String> {
         let (url, headers, session, tx) = match self {
             Self::Stdio(_, stdin) => return writeln!(stdin, "{msg}").map_err(|e| e.to_string()),
@@ -172,7 +163,6 @@ impl Upstream {
                 tx,
             } => (url, headers, session, tx),
         };
-        // The headers and the body go on curl's stdin, never its command line.
         let mut config = format!(
             "url = {}\nrequest = \"POST\"\nsilent\ninclude\n",
             quoted(url)
@@ -234,7 +224,6 @@ impl Upstream {
     }
 }
 
-/// `result.tools` of a `tools/list` answer, only the allowed ones.
 fn only(mut msg: Value, tools: Option<&[String]>) -> Value {
     if let (Some(allow), Some(list)) = (
         tools,
@@ -428,7 +417,6 @@ pub fn serve(thread: &str) -> Result<(), String> {
                         "/mcp/agent/remember",
                         "Noted: it reaches you in your next sessions.",
                     )),
-                    // Its answer (a string) is the reply.
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
                     _ => None,
                 };

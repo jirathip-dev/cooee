@@ -1,10 +1,3 @@
-// cooee's service worker: push, and the last copy of each page for offline (#21). A push is one line about a thread,
-// tagged with the thread's id so a newer one replaces the older; none shows while that thread is open in view; a tap
-// opens the thread; the page closes a thread's notifications once it has read past their item. The pages and their
-// static files go to the network first; a good answer is kept, stamped `cooee-at`, and given back when the network
-// fails, so the Home Screen app opens offline on its last copy and says how old it is (a thread's newest messages are
-// kept by chat.ts).
-// A classic worker script (no imports), so the scope is typed by a cast, not a declaration.
 const sw = self as unknown as ServiceWorkerGlobalScope;
 type Push = { title: string; body: string; tag: string; url: string; item?: number };
 
@@ -33,8 +26,6 @@ sw.addEventListener("fetch", (e) => {
   );
 });
 
-// Push and read marks change the notifications one event at a time, in the order they came: two pushes close
-// together show the newer, and a read mark never closes a push that came after it.
 let turn: Promise<unknown> = Promise.resolve();
 const inTurn = (f: () => Promise<unknown>): Promise<unknown> => {
   turn = turn.then(f, f);
@@ -65,7 +56,6 @@ sw.addEventListener("notificationclick", (e) => {
   );
 });
 
-// `{thread, read}` from the page: that thread's notifications up to item `read` go.
 sw.addEventListener("message", (e) => {
   const { thread, read } = e.data ?? {};
   if (!thread) return;

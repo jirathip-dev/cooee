@@ -1,12 +1,8 @@
-// herdsman#553 parity, rows 1–14 (#21): the Home Screen app's offline copy, the sync dot, the loading strip, toasts,
-// refresh, pairing approved on a paired device (#47) and the devices list, truthful alerts, moments, ascii figures, Settings' index
-// and deep links, and report mode. Each row's shot is ui-<viewport>/parity-<row>-….png.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-// The full Chromium (new headless): the headless shell has no notifications, so row 8 would read as blocked.
 test.use({ channel: "chromium" });
 
 const shot = (page, info, name, fullPage = false) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png`, fullPage });
@@ -20,7 +16,6 @@ async function audit(page) {
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 }
 
-// A new thread whose turn is done, open.
 async function thread(page, text = "Say hello") {
   await page.goto("/new");
   await page.getByLabel("message", { exact: true }).fill(text);
@@ -38,7 +33,6 @@ test("row 1: installable, no double-tap zoom, and offline it opens on its last c
   await page.goto("/");
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).touchAction)).toBe("manipulation");
   await page.evaluate(() => navigator.serviceWorker.ready);
-  // Controlled by the worker from the next load, which it keeps.
   await page.reload();
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   await thread(page);
@@ -51,7 +45,6 @@ test("row 1: installable, no double-tap zoom, and offline it opens on its last c
   await expect(page.locator("#ld")).toBeVisible();
   await expect(page.locator("#ld .ago")).toHaveText(/^as of 1\dm ago$/);
   await shot(page, info, "parity-1-offline");
-  // A thread opened before opens too, on its newest messages.
   await page.goto(url);
   await expect(page.locator(".blk.ai")).toContainText("Hello");
   await expect(page.locator("#ld .ago")).toHaveText(/^as of 1\dm ago$/);
@@ -86,7 +79,6 @@ test("rows 3 and 5: ↻ spins while the thin strip shows and the page stays tapp
   await expect(page.locator("#rf")).toHaveClass(/rfs/);
   await expect(page.locator("#ld .lw")).not.toBeEmpty();
   await shot(page, info, "parity-3-strip");
-  // The strip is under the thread bar's title and lets taps through.
   await page.locator(".th h1").click();
   await audit(page);
   release();
@@ -94,7 +86,6 @@ test("rows 3 and 5: ↻ spins while the thin strip shows and the page stays tapp
   await expect(page.locator("#rf")).not.toHaveClass(/rfs/);
   await page.unroute("**/messages?*");
 
-  // A pull down from the top of the messages.
   const n = reloads.length;
   await page.locator("#msgs").evaluate((m) => { m.scrollTop = 0; });
   await page.evaluate(() => {
@@ -139,7 +130,6 @@ test("row 4: an action's toast is one short line on screen, then it clears", asy
   await expect(toast).toBeHidden();
 });
 
-// A browser on http://localhost (WebAuthn takes no IP address), paired with the setup's cookie unless `paired` is false.
 async function onLocalhost(browser, info, baseURL, paired = true) {
   const state = JSON.parse(fs.readFileSync(new URL("./.auth/state.json", import.meta.url), "utf8"));
   const host = new URL(baseURL).port;
@@ -157,26 +147,22 @@ test("row 6 (#47): a new device asks, a paired one approves with its passkey (a 
   await cdp.send("WebAuthn.addVirtualAuthenticator", {
     options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true },
   });
-  // Right after pairing the list offers a passkey.
   await phone.goto("/?paired");
   await expect(phone).toHaveURL(/\/$/);
   const offer = phone.locator("#pairing .pc").filter({ hasText: "Save a passkey?" });
   await offer.getByRole("button", { name: "save a passkey" }).click();
   await expect(phone.locator("#pairing")).toContainText("✓ passkey saved");
 
-  // The new device asks: its check word, waiting.
   const [fresh, ipad] = await onLocalhost(browser, info, baseURL, false);
   await ipad.goto("/pair");
   await ipad.getByRole("button", { name: "ask to pair" }).click();
   await expect(ipad.locator("#ask-word")).toHaveText(/^[a-z]+ [a-z]+$/);
   const word = (await ipad.locator("#ask-word").textContent()).trim();
   await expect(ipad.locator("#ask-wait")).toContainText("waiting for approval");
-  // The check word is plain text on the card, not the chat's tool bar.
   await expect(ipad.locator("#ask-word")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await shot(ipad, info, "pair-waiting", true);
   await audit(ipad);
 
-  // The paired device's card: approve with its passkey; the new device pairs by itself.
   const card = phone.getByRole("group", { name: new RegExp(`asks to pair: ${word}$`) });
   await expect(card).toContainText("Pair a new device?");
   await shot(phone, info, "pair-approve-card");
@@ -186,7 +172,6 @@ test("row 6 (#47): a new device asks, a paired one approves with its passkey (a 
   await expect(card).toHaveAttribute("data-k", "g");
   await ipad.waitForURL(/\/$/);
   await expect(ipad.locator(".ags")).toBeVisible();
-  // [rename it]: the new device's row in settings takes the name.
   await card.getByRole("button", { name: "rename it" }).click();
   await card.getByRole("textbox", { name: "its name" }).fill("Kim's iPad");
   await card.getByRole("button", { name: "save" }).click();
@@ -194,14 +179,12 @@ test("row 6 (#47): a new device asks, a paired one approves with its passkey (a 
   const named = await (await ipad.request.get("/devices")).json();
   expect(named.find((d) => d.me).label).toBe("Kim's iPad");
 
-  // Declined: the card can be undone for 10 s, then the new device hears who said no.
   const [, other] = await onLocalhost(browser, info, baseURL, false);
   await phone.clock.install();
   await other.goto("/pair");
   await other.getByRole("button", { name: "ask to pair" }).click();
   await expect(other.locator("#ask-word")).toHaveText(/^[a-z]+ [a-z]+$/);
   const word2 = (await other.locator("#ask-word").textContent()).trim();
-  // .last(): the newest card; the check word can repeat (16 × 16 words).
   const card2 = phone.getByRole("group", { name: new RegExp(`asks to pair: ${word2}$`) }).last();
   await card2.getByRole("button", { name: "decline" }).click();
   await expect(card2).toContainText("Declined");
@@ -211,15 +194,12 @@ test("row 6 (#47): a new device asks, a paired one approves with its passkey (a 
   await expect(other.locator("#ask-no")).toContainText(`(${word2}) was declined`);
   await shot(other, info, "pair-declined", true);
   await audit(other);
-  // [use a code] goes back to the six boxes (a red card is no look picker).
   await other.locator("#ask-no").getByRole("link", { name: "use a code" }).click();
   await expect(other.getByLabel("digit 1")).toBeVisible();
   await expect(other.locator("#ask-no")).toBeHidden();
 
-  // Settings lists the devices and the passkey; the new device removes itself and goes back to pairing.
   await ipad.goto("/#settings/devices");
   await expect(ipad.locator("#s-passkeys-box .pkr").first()).toBeVisible();
-  // A passkey's [remove] is the quiet outline button (approve.html), not the filled primary.
   await expect(ipad.locator("#s-passkeys-box .pkr button").first()).not.toHaveCSS("box-shadow", "none");
   const mine = ipad.locator("#s-devices-box .lrw").filter({ hasText: "this device" });
   await expect(mine).toHaveCount(1);
@@ -248,7 +228,6 @@ test("row 7: an unpaired browser gets the shell only: pairing, no thread data", 
 const viewport = (info) => (info.project.name === "390" ? { width: 390, height: 844 } : { width: 1440, height: 900 });
 
 test("rows 8 and 13: Settings opens at a section from its link, has an index, and says truly that alerts are off", async ({ page, context }, info) => {
-  // Allowed but not subscribed: off.
   await context.grantPermissions(["notifications"]);
   await page.goto("/#settings/alerts");
   const sheet = page.locator("#sheet .sh:popover-open");

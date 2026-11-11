@@ -1,6 +1,3 @@
-//! `cooee plugin check <answer.json>...` (#138, #125 Q4): validates a plugin's answers against
-//! docs/plugins/screens.schema.json, naming each field that breaks it. It reads the schema keywords that file uses.
-
 use std::fs;
 
 use serde_json::Value;

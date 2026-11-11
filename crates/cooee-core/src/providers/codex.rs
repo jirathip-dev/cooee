@@ -28,7 +28,6 @@ fn defaults() -> Spec {
 mod tests {
     use crate::Providers;
 
-    /// #553 row 34: an effort's words, `{}` filled in; nothing for the default; `None` for an effort not offered.
     #[test]
     fn picks_fill_the_providers_words() {
         let p = Providers::new(&[super::defaults()]);

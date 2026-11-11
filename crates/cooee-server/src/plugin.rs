@@ -1,7 +1,3 @@
-//! Plugins (docs/plugins.md): a tab whose UI module, served by the plugin's own backend, runs in a sandboxed frame.
-//! Its calls reach that backend through cooee with the plugin's token, never the device's cookie: one HTTP/1.0
-//! request per call (so the answer is never chunked), an event stream read line by line.
-
 use std::{
     io::{self, BufRead, BufReader, Read, Write},
     net::{TcpStream, ToSocketAddrs},
@@ -12,7 +8,6 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use cooee_core::{Plugin, Profile};
 use sha2::{Digest, Sha256};
 
-/// The largest answer cooee passes on.
 const MAX_BODY: u64 = 16 << 20;
 
 /// Checks the plugins: unique names of lowercase letters, digits and `-`, an `http://` backend, a module path (or

@@ -317,7 +317,6 @@ pub fn read_entries(data: &Path) -> io::Result<Vec<Plugin>> {
 /// # Errors
 /// When it can't be written.
 pub fn write_entries(data: &Path, entries: &[Plugin]) -> io::Result<()> {
-    // A JSON string is a TOML basic string too.
     let q = |s: &str| serde_json::to_string(s).unwrap_or_default();
     let mut text = String::from("# Written by cooee plugin add/update/remove.\n");
     for p in entries {

@@ -1,8 +1,3 @@
-//! Provider logins and accounts: a provider's own login command for one account's config folder in a shed terminal
-//! (terminal mode), its screen read live for the page (redacted, never stored or logged), typed codes, and the
-//! terminal killed and removed when the command exits, is cancelled or after 10 minutes. A new account's folder is
-//! listed only once its login succeeds; a sign-out runs the CLI's logout, then removes the folder.
-
 use std::{
     collections::BTreeMap,
     env,
@@ -24,14 +19,10 @@ use crate::hub::{HubError, lock, now};
 /// How long a login terminal may run, in seconds.
 pub const LOGIN_TIMEOUT: f64 = 600.0;
 
-/// The label every login terminal carries.
 const LABEL: &str = "cooee-login";
 
-/// A provider's login.
 enum Login {
-    /// Its terminal runs.
     Running(String),
-    /// It ended, and why; the account it was for.
     Ended(String, String),
 }
 
@@ -52,37 +43,26 @@ pub struct View {
     pub age: Option<u64>,
 }
 
-/// How often an account's status is checked when nothing asks, in ms (#106).
 const EVERY: u64 = 10 * 60_000;
-/// The longest that interval grows to, doubling after each timeout.
 const SLOWEST: u64 = 80 * 60_000;
-/// How soon after a check another may be asked for (the sign-ins card opened), in ms.
 const GAP: u64 = 30_000;
 
-/// One account's status checks: the last result, and when the next is due.
 #[derive(Default)]
 struct Check {
     status: Option<Status>,
-    /// When the last check finished (ms).
     at: u64,
-    /// The interval after it: [`EVERY`], doubled after each timeout up to [`SLOWEST`].
     every: u64,
-    /// When the next check is due (ms).
     next: u64,
-    /// A check runs: never two at once.
     busy: bool,
 }
 
 impl Check {
-    /// Whether a check is due at `at`; it is then marked running.
     fn start(&mut self, at: u64) -> bool {
         let due = !self.busy && at >= self.next;
         self.busy |= due;
         due
     }
 
-    /// Notes check result `s` at `at`: a timeout keeps the signed-in state last known and doubles the interval, any
-    /// other result resets it.
     fn settle(&mut self, s: Status, at: u64) {
         self.every = if s.unknown {
             (self.every.max(EVERY) * 2).min(SLOWEST)
@@ -101,14 +81,12 @@ impl Check {
         });
     }
 
-    /// Asked for at `at`: due now, unless it backs off after a timeout or ran in the last [`GAP`].
     fn ask(&mut self, at: u64) {
         if self.every <= EVERY && at >= self.at + GAP {
             self.next = self.next.min(at);
         }
     }
 
-    /// Its status as last checked, and its age in seconds at `at`.
     fn known(&self, at: u64) -> (Status, Option<u64>) {
         match &self.status {
             Some(s) => (s.clone(), Some(at.saturating_sub(self.at) / 1000)),
@@ -123,9 +101,6 @@ pub struct Logins {
     providers: Providers,
     accounts: Accounts,
     live: Mutex<BTreeMap<String, Login>>,
-    /// Each account's status checks, by provider and account: a request never runs a status command itself
-    /// (herdsman#337, #106). Checked at start, every 10 minutes (longer after a timeout), when the sign-ins card
-    /// opens, and after a login or sign-out.
     checks: Mutex<BTreeMap<(String, String), Check>>,
 }
 
@@ -207,7 +182,6 @@ impl Logins {
         self.providers.iter().map(sheet).collect()
     }
 
-    /// Starts each account's status check that is due, each on its own thread.
     fn tick(self: &Arc<Self>) {
         for p in self.providers.iter() {
             for a in self.accounts.list(&p.spec().name) {
@@ -221,8 +195,6 @@ impl Logins {
                 }
                 let (logins, p) = (Arc::clone(self), Arc::clone(p));
                 thread::spawn(move || {
-                    // A panicking check still settles, so the account is checked again.
-                    // A signed-in account's usage reading comes with its status (#183).
                     let check = || {
                         let mut s = p.check(a.dir.as_deref());
                         if s.signed_in {
@@ -305,7 +277,6 @@ impl Logins {
             }
             return Err(e.into());
         }
-        // Wide, so a long sign-in link stays on one line.
         let _ = self.shed.resize(&terminal, 40, 500);
         live.insert(name.to_owned(), Login::Running(terminal.clone()));
         let logins = Arc::clone(self);
@@ -314,8 +285,6 @@ impl Logins {
         Ok(())
     }
 
-    /// Waits for login terminal `terminal` to exit (or for the timeout), then kills and removes it. A login that
-    /// exited 0 and left the account signed in is noted; a new account's folder is then listed, else removed.
     fn reap(&self, name: &str, terminal: &str, account: &str, new: bool, home: Option<&Path>) {
         let (ok, mut why) = match self.shed.exited(terminal, LOGIN_TIMEOUT) {
             Ok(r) if r.outcome == WaitOutcome::Timeout => {
@@ -347,7 +316,6 @@ impl Logins {
         } else if ok && !signed_in {
             "the login command finished, but the account isn't signed in".clone_into(&mut why);
         }
-        // A new account's folder moved when it was listed: its status is checked there.
         let moved =
             |p: &Arc<dyn Provider>| Some(p.check(self.accounts.get(name, account)?.dir.as_deref()));
         let status = if new && signed_in {
@@ -444,7 +412,6 @@ impl Logins {
                 .remove(name, account)
                 .map_err(|e| HubError::Refused(e.to_string()))?;
         }
-        // Checked again within a second, whatever its backoff; unknown until then, unless nothing was signed out.
         let key = (name.to_owned(), account.to_owned());
         if let Some(c) = lock(&self.checks).get_mut(&key) {
             c.next = 0;
@@ -554,8 +521,6 @@ mod tests {
         }
     }
 
-    /// #106: a check that hangs runs once at a time; each timeout doubles the interval up to 80 minutes, a card
-    /// opening doesn't cut that short, and a result resets it to 10 minutes.
     #[test]
     fn a_hanging_check_starts_once_per_growing_interval() {
         let min = 60_000;
@@ -569,7 +534,6 @@ mod tests {
                 t += 1000;
             }
             started.push(t / min);
-            // It hangs for 10 s: nothing else starts, asked for or not.
             for _ in 0..10 {
                 c.ask(t);
                 t += 1000;
@@ -578,7 +542,6 @@ mod tests {
             c.busy = false;
             c.settle(timeout.clone(), t);
         }
-        // Each start is 10 s after the last ended: 20, 40, then 80 minutes apart.
         assert_eq!(started, [0, 20, 60, 140, 220, 300]);
         assert_eq!(c.every, 80 * min);
 
@@ -586,14 +549,12 @@ mod tests {
         c.busy = false;
         c.settle(status(true, "signed in"), t + 80 * min);
         assert_eq!(c.every, 10 * min);
-        // Healthy: a card opening checks again once 30 s have passed.
         c.ask(t + 80 * min + 29_000);
         assert!(!c.start(t + 80 * min + 29_000));
         c.ask(t + 80 * min + 30_000);
         assert!(c.start(t + 80 * min + 30_000));
     }
 
-    /// #106: a timeout leaves a signed-in account signed in, as unknown; never signed out.
     #[test]
     fn a_timeout_keeps_a_signed_in_account_signed_in_as_unknown() {
         let mut c = Check::default();

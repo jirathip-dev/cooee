@@ -1,5 +1,3 @@
-// #138: the `cards` plugin for the app's end-to-end run (serve.sh). Each new chat whose first message starts
-// "Show me the cards" gets a choice, a config, a secret and a run card; each answer gets a line back, never the value.
 import http from "node:http";
 
 const { PORT, COOEE, TOKEN, COOKIE } = process.env;

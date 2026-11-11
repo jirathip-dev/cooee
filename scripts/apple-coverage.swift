@@ -1,7 +1,3 @@
-// Line coverage per layer from `swift test --enable-code-coverage`, as `llvm-cov export -summary-only` over every test
-// bundle (scripts/apple-check.sh).
-// Fails unless CooeeCore, CooeeAPI and CooeeFeatures each cover at least 95% of their lines, naming each layer's number.
-// Usage: swift scripts/apple-coverage.swift <codecov.json>
 import Foundation
 
 struct Export: Decodable {

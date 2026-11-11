@@ -1,5 +1,3 @@
-// Workflow (#33, #86): the fake shed's lanes are drover's, never among the agents; a running impl lane opens as a
-// normal chat with its repo, issue, role and round.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -26,7 +24,6 @@ test("Workflow: lanes are never among the agents, and a running impl lane opens 
   await expect(page.locator("#pill .stop")).toBeVisible();
   await expect(page.getByRole("textbox", { name: "message" })).toBeEnabled();
   await expect(page.locator("#close")).toBeHidden();
-  // A lane's folder is its tool's: no folder chip.
   await expect(page.locator(".fo")).toHaveCount(0);
   await shot(page, info, "workflow-chat");
   await axe(page);

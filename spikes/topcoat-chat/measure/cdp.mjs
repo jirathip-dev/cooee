@@ -1,4 +1,3 @@
-// Minimal Chrome DevTools Protocol driver (Node 22+, no deps): launch Chrome for Testing, open one page.
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,7 +11,6 @@ export async function launch() {
   const proc = spawn(CHROME, [...(process.env.HEADFUL ? ['--window-size=390,844', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling'] : ['--headless=new']), '--no-first-run', '--no-default-browser-check', '--hide-scrollbars',
     '--remote-debugging-port=0', `--user-data-dir=${dir}`, 'about:blank'], { stdio: 'ignore' });
   const f = join(dir, 'DevToolsActivePort');
-  // The file appears before Chrome writes it: wait for both lines.
   let port, path;
   for (let i = 0; i < 300 && !path; i++) {
     if (existsSync(f)) [port, path] = readFileSync(f, 'utf8').trim().split('\n');

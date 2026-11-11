@@ -12,7 +12,6 @@ fn run_line<'a>(log: &'a str, name: &str) -> &'a str {
         .unwrap_or_else(|| panic!("no run of {name}: {log}"))
 }
 
-/// A new chat with no folder; its id.
 fn start(cooee: &Cooee, rid: &str) -> String {
     let new = json!({ "agent": "fake-acp", "text": "Say hello", "random_id": rid });
     let (status, body) = cooee.post("/threads", &new);
@@ -21,7 +20,6 @@ fn start(cooee: &Cooee, rid: &str) -> String {
     id.as_str().unwrap().to_owned()
 }
 
-/// The terminal thread `id` moved to.
 fn moved_to(log: &str, id: &str) -> String {
     let moved = log.lines().find_map(|l| {
         let name = l.split("--name ").nth(1)?.split(' ').next()?;
@@ -37,7 +35,6 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
 
-    // No folder in the request at all.
     let id = start(&cooee, "a");
     let own = dir.join("data/scratch").join(&id);
     assert!(own.is_dir(), "{}", own.display());
@@ -52,12 +49,10 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
     let mut events = cooee.events(&id, &format!("{boot}.0"), false);
     events.until(|e| is_item(e, "agent"));
 
-    // A second chat gets another scratch folder.
     let other = start(&cooee, "b");
     assert_ne!(other, id);
     assert!(dir.join("data/scratch").join(&other).is_dir());
 
-    // A folder outside the roots is refused, and the chat stays where it was.
     let attach = |folder: &std::path::Path| {
         cooee.post(
             &format!("/threads/{id}/folder"),
@@ -95,10 +90,8 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
         "{run}"
     );
     assert!(run.contains(&format!("--label cooee.thread={id}")), "{run}");
-    // The old terminal is closed.
     assert_eq!(shed.calls("kill", &format!("cooee-{id}")).len(), 1);
 
-    // The next message goes to the agent in the new folder, after the hand-over; the one after that alone.
     let say = |text: &str, rid: &str| {
         let (status, body) = cooee.post(
             &format!("/threads/{id}/send"),
@@ -120,7 +113,6 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
         "{handover}"
     );
     assert_eq!(sent[1], "\x1e{\"prompt\":\"again\"}\n");
-    // Nothing more went to the old terminal.
     assert_eq!(shed.sent(&format!("cooee-{id}")).len(), 1);
     let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
     let you: Vec<&str> = items
@@ -133,8 +125,6 @@ fn a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_t
     assert_eq!(you, ["Say hello", "and now?", "again"]);
 }
 
-/// The sidebar: an agent's oldest open chat is its ongoing one (a tap opens it); its other chats are side threads,
-/// listed under it when it is the agent on show, with `+ new chat`; a new chat with it opens with nothing picked.
 #[test]
 fn an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_picked() {
     let dir = scratch("chat-first-side");
@@ -158,7 +148,6 @@ fn an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_p
     };
     let ongoing = start("first");
     let side = start("second");
-    // The list (a phone's `‹` back to agents): the agent's row opens its ongoing chat, its side thread under it.
     let (_, home) = cooee.get("/?list&agent=fake-acp");
     let nav = &home[home.find(r#"<nav class="ags""#).unwrap()..];
     assert!(
@@ -177,7 +166,6 @@ fn an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_p
         )) && nav.contains(r#"<a class="str nw" href="/new?agent=fake-acp">+ new chat</a>"#),
         "{nav}"
     );
-    // The side thread's bar: its title, its agent before the rest; in its scratch folder.
     assert!(
         page.contains(">second</button></h1>") && page.contains("fake-acp · Plain · fake · "),
         "{page}"
@@ -188,7 +176,6 @@ fn an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_p
     );
 }
 
-/// `+ new agent`: a name and the profile it starts from, saved as a profile of its own; its new chat opens.
 #[test]
 fn a_new_agent_is_saved_as_a_profile_and_listed() {
     let dir = scratch("chat-first-agent");
@@ -215,7 +202,6 @@ fn a_new_agent_is_saved_as_a_profile_and_listed() {
             && page.contains(r#"<input type="hidden" name="profile" value="account-manager">"#),
         "{page}"
     );
-    // A name taken is refused, and nothing is written over.
     let (head, body) = cooee.raw("POST", "/agents", &form, "name=account+manager");
     assert!(
         head.contains(" 400") && body.contains("already"),

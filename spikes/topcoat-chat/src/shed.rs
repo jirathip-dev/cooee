@@ -1,6 +1,3 @@
-//! A fake shed: an in-process stream of ACP-like events (`text` chunks, `tool_call` status changes, an
-//! `approval_request`, the final `reply`) at a configurable rate. The server keeps the run's state; a render reads it.
-
 use std::{sync::Mutex, time::Duration};
 use tokio::sync::broadcast;
 
@@ -78,7 +75,6 @@ impl Shed {
             for i in 0..n {
                 tick.tick().await;
                 if self.run.lock().unwrap().epoch != epoch { return }
-                // Each token is numbered, so a client can prove nothing was dropped or duplicated.
                 self.apply(Ev::Text(format!("w{i} ")));
                 let at = |f: usize| i == n * f / 10;
                 if at(1) { self.apply(Ev::ToolCall(0, "read_file src/main.rs", Status::Pending)) }

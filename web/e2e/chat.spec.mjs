@@ -1,5 +1,3 @@
-// The chat against the fake shed (web/e2e/serve.sh): each event kind, approvals, stop, the outbox, drafts, a
-// reconnect mid-stream, and the 1,000-message window.
 import net from "node:net";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
@@ -35,7 +33,6 @@ test("each event kind renders: reply, tool call, plan, approval, state, stop", a
   await say(page, "make a plan");
   await expect(msgs.locator(".blk.plan li")).toHaveText(["Read the code", "Fix the bug"]);
 
-  // An approval: the options as buttons, the thread waiting on you; a double tap sends one answer.
   await say(page, "approve an edit");
   const ask = msgs.locator(".blk.ap");
   await expect(ask.getByRole("button")).toHaveText(["Allow", "Always allow", "Reject"]);
@@ -50,7 +47,6 @@ test("each event kind renders: reply, tool call, plan, approval, state, stop", a
   expect(taps).toHaveLength(1);
   await expect(msgs.locator(".blk.ai").last()).toContainText("Edited.");
 
-  // Working: the pill with its timer and stop, a running tool row with its timer; stop cancels.
   await say(page, "hang on");
   await expect(page.locator("#pill")).toBeVisible();
   await expect(msgs.locator(".blk.run", { hasText: "cargo test" }).locator(".ts")).toHaveText(/⋯ \d+:\d\d/);
@@ -69,9 +65,7 @@ test("each event kind renders: reply, tool call, plan, approval, state, stop", a
 });
 
 test("a reconnect mid-stream loses and doubles no text", async ({ page }, info) => {
-  // The fake streams a word per 20 ms sleep, which a busy or power-saving host can stretch many times over.
   test.setTimeout(90_000);
-  // The page talks to cooee through a proxy that can cut every connection, as a phone losing its network would.
   const sockets = new Set();
   const proxy = net.createServer((client) => {
     const up = net.connect(new URL(info.project.use.baseURL).port, "127.0.0.1");
@@ -95,7 +89,6 @@ test("a reconnect mid-stream loses and doubles no text", async ({ page }, info) 
   await expect(live).toContainText("w20 ");
   for (const s of sockets) s.destroy();
   await expect(live).toContainText("w149 ", { timeout: 60_000 });
-  // It reconnected, resuming after the last event it had.
   expect(streams.length).toBeGreaterThanOrEqual(2);
   expect(streams.at(-1)).toMatch(/^[0-9a-f]+\.\d+$/);
   const want = Array.from({ length: 150 }, (_, i) => `w${i} `).join("");
@@ -134,21 +127,17 @@ test("1,000 messages: a window around the anchor, no long tasks, the anchor kept
     new PerformanceObserver((l) => window.longTasks.push(...l.getEntries().map((e) => e.duration))).observe({ type: "longtask" });
   });
   await page.goto(`/t/long-${info.project.name}`);
-  // Opened at the first unread message, with the bar there.
   await expect(page.locator("#msgs .unread")).toBeVisible();
   await expect(page.locator(".unread + li")).toContainText("#991");
   await shot(page, info, "chat-long");
 
   const list = page.locator("#msgs");
-  // The first row in view and its offset from the viewport's top.
   const anchor = () => list.evaluate((l) => {
     const r = [...l.children].find((r) => r.dataset.id && r.offsetTop + r.offsetHeight > l.scrollTop);
     return { id: r.dataset.id, top: Math.round(r.getBoundingClientRect().top) };
   });
   const minId = () => list.evaluate((l) => Math.min(...[...l.children].filter((r) => r.dataset.id).map((r) => +r.dataset.id)));
-  // Long tasks are counted from the first paint on: scrolling through the thread and the keyboard.
   await page.evaluate(() => { window.longTasks = []; });
-  // Each older slice is held until the row in view is recorded, so the prepend happens after it.
   const held = [];
   await page.route(/\/messages\?around=/, (route) => held.push(route));
   for (let i = 0; i < 100 && (await minId()) > 1; i++) {
@@ -158,21 +147,17 @@ test("1,000 messages: a window around the anchor, no long tasks, the anchor kept
     const before = await anchor();
     await held.shift().continue();
     await expect.poll(minId).toBeLessThan(first);
-    // The prepend kept the row in view where it was.
     expect(await anchor()).toEqual(before);
   }
   await page.unroute(/\/messages\?around=/);
   for (const r of held) await r.continue();
   expect(await minId()).toBe(1);
-  // Rows outside the window left the DOM.
   expect(await list.locator("li").count()).toBeLessThan(200);
 
-  // The keyboard opening (a shorter viewport) keeps the anchor.
   const size = page.viewportSize();
   const before = await anchor();
   await page.setViewportSize({ width: size.width, height: size.height - 300 });
   await page.waitForTimeout(100);
   expect(await anchor()).toEqual(before);
-  // Neither the scrolling nor the keyboard made a task over 50 ms.
   expect(await page.evaluate(() => window.longTasks.filter((d) => d > 50))).toEqual([]);
 });

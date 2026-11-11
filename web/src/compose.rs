@@ -1,6 +1,3 @@
-//! Who a chat runs as, said with the provider's name and never the agent's id (#48), and Settings › providers, the
-//! flat list of accounts.
-
 use cooee_core::{Account, Sheet, Status, Usage, Window};
 use topcoat::{
     Result,
@@ -34,7 +31,6 @@ pub fn who(agent: &str, account: &str, providers: &[Sheet]) -> String {
     }
 }
 
-/// `<provider> · <account>`, or the provider alone.
 pub(crate) fn said(name: &str, who: &str) -> String {
     if who.is_empty() {
         name.to_owned()
@@ -78,8 +74,6 @@ pub async fn login_panel(provider: String, command: String) -> Result<impl View>
     })
 }
 
-/// A signed-in account's usage in Settings › providers (#183): `5h — · 7d 40% · read 5m`, a window past its reset
-/// at 0 %.
 fn usage_line(u: Usage) -> String {
     let u = u.at(crate::now() / 1000);
     let pct = |w: Option<Window>| w.map_or("—".to_owned(), |w| format!("{}%", w.used_pct));
@@ -91,8 +85,6 @@ fn usage_line(u: Usage) -> String {
     )
 }
 
-/// One account in Settings › providers: `[provider] <who> ✓ signed in [sign out]`, `signed out [sign in]`, or why
-/// it can't tell.
 #[component]
 async fn account_row(provider: String, a: Account, s: Status) -> Result<impl View> {
     Ok(view! {
@@ -100,7 +92,6 @@ async fn account_row(provider: String, a: Account, s: Status) -> Result<impl Vie
             <span class="ptg">(provider.clone())</span>
             <span class="sk">(a.shown(&s))</span>
             if s.unknown {
-                // #106: can't tell (a status check timed out, or none ran yet): no sign-in offered as the fix.
                 <span class="st m un">(s.line.clone())</span>
                 if a.dir.is_some() {
                     <button type="button" class="sec sgo">"sign out"</button>
@@ -183,7 +174,6 @@ pub async fn providers_sheet(providers: Vec<Sheet>) -> Result<impl View> {
                             <button type="button" class="sec ad">"+ account"</button>
                         </div>
                     }
-                    // How its last sign-in ended, when it didn't simply finish.
                     if let Some(why) = sheet
                         .why
                         .clone()

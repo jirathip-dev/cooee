@@ -1,5 +1,5 @@
 # Every CI gate, locally (the ui gate needs `npm ci` in web/e2e once).
-check: fmt clippy test doc deny cap deps hygiene neutral themes ts ui
+check: fmt clippy test doc deny cap deps hygiene neutral comments themes ts ui
 
 fmt:
     cargo fmt --all --check
@@ -33,6 +33,12 @@ hygiene:
 neutral:
     scripts/neutral-core.sh
     ci/neutral-core-test.sh
+
+# One comment rule (#201): no // or /* */; /// only on public API; // SAFETY: and // TODO(#N) allowed.
+comments:
+    scripts/comments.py
+    ci/comments-test.sh
+    for n in $(git ls-files '*.rs' '*.swift' '*.ts' '*.js' '*.mjs' | xargs grep -ohE '// TODO\(#[0-9]+\)' | tr -dc '0-9\n' | sort -u); do test "$(gh issue view "$n" --json state -q .state)" = OPEN || { echo "TODO(#$n): issue #$n is not open"; exit 1; }; done
 
 # The theme gate (docs/themes.md) on the first-party packs and the starter.
 themes:

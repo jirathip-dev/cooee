@@ -22,8 +22,6 @@ struct Setup {
     cooee: Cooee,
 }
 
-/// cooee with personas Ada (may ask Bo), Bo (may ask Cy), Cy (may ask Ada and Ed) and Di (may ask no one); Ed
-/// works in the folder `away`.
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     fs::create_dir_all(dir.join("personas")).unwrap();
@@ -54,7 +52,6 @@ fn setup(name: &str) -> Setup {
     Setup { shed, cooee }
 }
 
-/// Polls `f` for up to 10 s.
 fn eventually(mut f: impl FnMut() -> bool) {
     for _ in 0..200 {
         if f() {
@@ -66,7 +63,6 @@ fn eventually(mut f: impl FnMut() -> bool) {
 }
 
 impl Setup {
-    /// A thread of `persona`'s, its first reply in.
     fn start(&self, persona: &str) -> String {
         let new =
             json!({ "agent": "fake-acp", "profile": persona, "text": "hi", "random_id": persona });
@@ -85,8 +81,6 @@ impl Setup {
         all["items"].as_array().unwrap().clone()
     }
 
-    /// `ask_persona` called by thread `id`'s agent through cooee's own MCP server: the tool's text and whether it
-    /// is an error.
     fn ask(&self, id: &str, args: &Value) -> (String, bool) {
         let file = self.shed.dir.join(format!("mcp-cooee-{id}.json"));
         let servers: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
@@ -109,7 +103,6 @@ impl Setup {
         (text, result["isError"] == json!(true))
     }
 
-    /// The exchange threads linked from thread `id`.
     fn linked(&self, id: &str) -> Vec<String> {
         let items = self.items(id);
         let links = items.iter().filter(|i| i["kind"] == "link");
@@ -133,7 +126,6 @@ fn an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steer
     );
     assert_eq!((reply.as_str(), failed), ("Hello", false));
 
-    // The owner sees the exchange: listed, linked from Ada's thread, the question attributed and Bo's reply.
     let linked = s.linked(&ada);
     assert_eq!(linked.len(), 1, "{:?}", s.items(&ada));
     let x = &linked[0].clone();
@@ -155,14 +147,12 @@ fn an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steer
         ]
     );
 
-    // The next ask reuses it: no other thread.
     let (reply, _) = s.ask(&ada, &json!({ "persona": "bo", "message": "and dessert?" }));
     assert_eq!(reply, "Hello");
     assert_eq!((s.linked(&ada), s.threads()), (linked, 2));
     let replies = s.items(x).iter().filter(|i| i["kind"] == "agent").count();
     assert_eq!(replies, 2);
 
-    // The owner replies in it to steer: it reaches Bo's session.
     let steer = json!({ "text": "keep it short", "random_id": "steer" });
     assert_eq!(s.cooee.post(&format!("/threads/{x}/send"), &steer).0, 200);
     eventually(|| {
@@ -182,7 +172,6 @@ fn a_persona_its_can_message_doesnt_name_is_not_allowed() {
     let di = s.start("di");
     let (why, failed) = s.ask(&di, &json!({ "persona": "bo", "message": "hi" }));
     assert!(failed && why.starts_with("NOT_ALLOWED: "), "{why}");
-    // Nothing started, nothing linked.
     assert_eq!(s.threads(), 2);
     assert!(s.linked(&ada).is_empty() && s.linked(&di).is_empty());
 }
@@ -214,7 +203,6 @@ fn no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline() {
     assert!(at.elapsed() >= Duration::from_secs(1));
 
     let cy = s.start("cy");
-    // Ed's session never comes up in `away`.
     s.shed.gate("fails-in-away", true);
     let (why, failed) = s.ask(&cy, &json!({ "persona": "ed", "message": "hi" }));
     assert!(failed && why.starts_with("OFFLINE: "), "{why}");

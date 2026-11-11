@@ -22,9 +22,7 @@ struct Setup {
     dir: PathBuf,
     shed: FakeShed,
     cooee: Cooee,
-    /// A secret-shaped value the fake CLI prints and keeps in its folder, built at runtime.
     token: String,
-    /// The config lines naming provider `fake`, to start cooee again.
     extra: String,
 }
 
@@ -33,9 +31,6 @@ fn script(path: &Path, body: &str) {
     fs::set_permissions(path, fs::Permissions::from_mode(0o755)).unwrap();
 }
 
-/// cooee with provider `fake` for agent `fake-acp`, its config folder in `FAKE_HOME` (unset: `dir/system`). Its
-/// login prints a token and reads a code (`good-code` keeps the token in the folder); its status prints JSON with
-/// the folder's name as the email; its logout notes the folder in `dir/logouts`, then forgets the token.
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     let token = format!("sk-{}", "k3".repeat(16));
@@ -87,7 +82,6 @@ impl Setup {
         self.dir.join("data/accounts/fake")
     }
 
-    /// `GET /logins/fake` until `f` holds (10 s at most, for the fake program).
     fn until(&self, f: impl Fn(&Value) -> bool) -> Value {
         let start = Instant::now();
         loop {
@@ -100,7 +94,6 @@ impl Setup {
         }
     }
 
-    /// [+ account] with `code` typed in; returns the login's `run` params and how it ended.
     fn add(&self, code: &str) -> (Value, Value) {
         let before = self.shed.runs();
         let (status, body) = self.cooee.post("/logins/fake", &json!({ "new": true }));
@@ -131,11 +124,9 @@ impl Setup {
         self.cooee.get("/new").1
     }
 
-    /// Starts a thread on `fake-acp` with `account` (none: the default); returns its id and its `shed run` line.
     fn thread(&self, account: Option<&str>) -> (String, String) {
         let root = self.dir.join("root");
         fs::create_dir_all(&root).unwrap();
-        // Each start its own id, as the page makes one: a repeated id adopts the thread it started.
         let random = format!("start-{}", self.shed.cli_log().len());
         let new = json!({ "agent": "fake-acp", "account": account, "folder": root, "text": "hi", "random_id": random });
         let (status, body) = self.cooee.post("/threads", &new);
@@ -150,8 +141,6 @@ impl Setup {
         (id, line.to_owned())
     }
 
-    /// cooee's own files under its data folder (not the CLI's account folders), its stderr, what it sent shed and
-    /// the fake shed CLI's arguments.
     fn written(&self) -> String {
         let mut out = fs::read_to_string(self.dir.join("cooee.err")).unwrap();
         out.push_str(&self.shed.cli_log());
@@ -186,7 +175,6 @@ fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_ou
         "{page}"
     );
 
-    // A failed login: no row, the folder gone.
     let (run, v) = s.add("bad-code");
     let pending = s.accounts().join(".new-account-2");
     assert_eq!(
@@ -201,7 +189,6 @@ fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_ou
     assert!(!pending.exists() && !s.accounts().join("account-2").exists());
     assert!(!s.page().contains(r#"data-account="account-2""#));
 
-    // A successful one: the folder is listed, its status a plain row.
     let (_, v) = s.add("good-code");
     assert_eq!(v["why"], "the login command finished");
     let folder = s.accounts().join("account-2");
@@ -213,7 +200,6 @@ fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_ou
             && !page.contains("default for new threads"),
         "{page}"
     );
-    // The page's own data (the looks, #49) aside.
     let (head, rest) = page
         .split_once(r#"<script type="application/json" id="looks">"#)
         .unwrap();
@@ -222,7 +208,6 @@ fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_ou
         !page.contains("loggedIn") && !page.contains("{\""),
         "no raw JSON: {page}"
     );
-    // No account named: the system default, no folder.
     let (id, line) = s.thread(None);
     assert!(!line.contains("env"), "{line}");
     assert!(
@@ -231,7 +216,6 @@ fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_ou
             .1
             .contains("fake · main login · ")
     );
-    // A thread's own pick: that account's folder.
     let (id, line) = s.thread(Some("account-2"));
     assert!(
         line.ends_with(&format!(" -- env FAKE_HOME={} fake-acp", folder.display())),
@@ -247,7 +231,6 @@ fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_ou
         400
     );
 
-    // Sign out: the logout runs for the folder, then the folder is removed.
     let (status, body) = s
         .cooee
         .post("/logins/fake/signout", &json!({ "account": "account-2" }));
@@ -271,19 +254,16 @@ fn signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted() {
     assert_eq!(v["why"], "the login command finished");
     let row = r#"data-account="account-2"><span class="ptg">fake</span><span class="sk">account-2</span><span class="st m">signed out</span>"#;
     assert!(s.page().contains(r#"data-account="account-2"><span class="ptg">fake</span><span class="sk">account-2@example.com</span><span class="st g">✓ signed in</span>"#));
-    // The help says where logins live.
     assert!(
         s.page()
             .contains(r#"<a href="https://github.com/jirathip-dev/cooee/blob/main/docs/logins.md" target="_blank" rel="noopener">Where logins live</a>"#)
     );
 
-    // The login is lost outside cooee (revoked, its Keychain item gone); the sign-in stays noted.
     fs::remove_file(s.accounts().join("account-2/creds")).unwrap();
     let noted = fs::read_to_string(s.accounts().join(".cooee.json")).unwrap();
     assert!(noted.contains("account-2"), "{noted}");
     s.cooee.child.kill().unwrap();
     s.cooee.child.wait().unwrap();
-    // A fresh start checks every account's status: signed out, whatever was noted.
     s.cooee = Cooee::start_with(&s.dir, &s.shed.dir, &s.extra);
     let start = Instant::now();
     let page = loop {

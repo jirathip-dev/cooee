@@ -1,10 +1,3 @@
-//! The plugin manager (docs/plugins.md): `cooee plugin add|update|remove|list` and Settings › Plugins. A plugin's
-//! checkout is `<data>/plugins/<name>/repo`; each commit it runs is built in a folder of its own, `builds/<commit>` (a
-//! git worktree), and goes live only once it built and its backend served its first tab's module. The one before stays
-//! to roll back to. `cooee serve` runs each enabled backend as its child (no launchd job per plugin), its output in
-//! `plugin.log` beside the checkout, and restarts one that exits with backoff: 5 crashes in 10 minutes turn it off,
-//! with an alert.
-
 use std::{
     collections::{BTreeMap, VecDeque},
     fmt::Write as _,
@@ -34,7 +27,6 @@ use crate::{
     push::Note,
 };
 
-/// How long a new build's backend has to serve its first tab's module.
 const HEALTH: Duration = Duration::from_secs(30);
 
 /// Where a first-party plugin is improved instead.
@@ -80,7 +72,6 @@ pub struct Row {
     pub permissions: plugins::Permissions,
 }
 
-/// A supervised backend: its process (none between a crash and its restart), the build it runs, its crashes.
 struct Run {
     child: Option<Child>,
     commit: String,
@@ -109,14 +100,10 @@ impl Backoff {
 pub struct Manager {
     data: PathBuf,
     index: Vec<Listed>,
-    /// The config's own plugins, whose names an installed tab can't take.
     fixed: Vec<Plugin>,
-    /// cooee's URL, a backend's `COOEE`.
     url: Mutex<String>,
     runs: Mutex<BTreeMap<String, Run>>,
-    /// The phone's installs and updates in progress (`…`), or how they failed.
     jobs: Mutex<BTreeMap<String, String>>,
-    /// One change to the lock at a time.
     ops: Mutex<()>,
     stopping: AtomicBool,
 }
@@ -140,7 +127,6 @@ fn path(p: &Path) -> &str {
     p.to_str().unwrap_or_default()
 }
 
-/// `sh -c cmd` in `dir`, its own process group, its output appended to `log`.
 fn sh(cmd: &str, dir: &Path, log: &Path) -> io::Result<Command> {
     let out = fs::OpenOptions::new().create(true).append(true).open(log)?;
     let mut c = Command::new("sh");
@@ -159,7 +145,6 @@ fn note(log: &Path, line: &str) {
     let _ = f.and_then(|mut f| writeln!(f, "== cooee: {line}"));
 }
 
-/// Stops a backend and everything it started (its process group).
 fn stop(child: &mut Child) {
     let _ = Command::new("kill")
         .args(["-TERM", &format!("-{}", child.id())])
@@ -183,8 +168,6 @@ fn on_path(tool: &str) -> bool {
         .is_ok_and(|s| s.success())
 }
 
-/// A plugin's tabs as `[[plugins]]` entries on `port` with `token`; one with screens only gets one of its name and
-/// no module (no tab).
 fn entries(m: &Manifest, port: u16, token: &str) -> Vec<Plugin> {
     let tab = |t: &plugins::Tab| Plugin {
         name: t.name.clone(),
@@ -206,7 +189,6 @@ fn entries(m: &Manifest, port: u16, token: &str) -> Vec<Plugin> {
     tabs.iter().map(tab).collect()
 }
 
-/// What a build's backend must serve to be healthy: its first tab's module, else its first place's screen.
 fn first_path(m: &Manifest) -> String {
     let tab = m.tabs.first().map(|t| t.module.clone());
     let screen = m
@@ -275,7 +257,6 @@ impl Manager {
         found.ok_or_else(|| other(format!("{name} isn't installed")))
     }
 
-    /// Changes plugin `name`'s lock entry.
     fn change(&self, name: &str, f: impl FnOnce(&mut Locked)) -> io::Result<()> {
         let mut all = self.installed()?;
         let l = all.iter_mut().find(|l| l.name == name);
@@ -302,7 +283,6 @@ impl Manager {
         all
     }
 
-    /// The checkout for `url`: plugin `name`'s, fetched, or else a new clone (`.clone-<stamp>`).
     fn checkout(&self, url: &str, name: Option<&str>) -> io::Result<PathBuf> {
         if let Some(repo) = name.map(|n| self.repo(n)).filter(|r| r.exists()) {
             git(&repo, &["remote", "set-url", "origin", url])?;
@@ -344,7 +324,6 @@ impl Manager {
             .file_name()
             .is_some_and(|n| n.to_string_lossy().starts_with(".clone-"))
         {
-            // A new clone becomes its plugin's checkout, unless that is kept from before: then that one is fetched.
             let to = plan.as_ref().ok().map(|p| self.repo(&p.manifest.name));
             if let Some(to) = to.filter(|to| !to.exists()) {
                 fs::create_dir_all(to.parent().unwrap_or(&to))?;
@@ -360,7 +339,6 @@ impl Manager {
         plan
     }
 
-    /// The plan for `repo` at `rev`; `listed`: the index's name for it.
     fn plan_at(repo: &Path, url: &str, rev: &str, listed: Option<&str>) -> io::Result<Plan> {
         let commit = [rev.to_owned(), format!("origin/{rev}")]
             .iter()
@@ -431,8 +409,6 @@ impl Manager {
         })
     }
 
-    /// Builds plugin `name` at `commit` in a new folder and checks its backend serves its first tab's module with
-    /// `token`; a failed build's folder goes. Returns the manifest at that commit.
     fn build(&self, name: &str, commit: &str, token: &str) -> io::Result<Manifest> {
         let (repo, dir, log) = (
             self.repo(name),
@@ -488,7 +464,6 @@ impl Manager {
         Ok(c)
     }
 
-    /// Runs the build's backend on a spare port until it serves its first tab's module (200), then stops it.
     fn health(&self, dir: &Path, m: &Manifest, token: &str, log: &Path) -> io::Result<()> {
         let port = free_port()?;
         let mut child = self.backend(dir, m, port, token, log)?.spawn()?;
@@ -604,8 +579,6 @@ impl Manager {
         self.switch(&l, &plan.commit, &m)
     }
 
-    /// Makes `commit`'s build (built already) the one that runs, keeping the one before to roll back to, and
-    /// removes any older builds.
     fn switch(&self, l: &Locked, commit: &str, m: &Manifest) -> io::Result<()> {
         let token = self.token(l)?;
         let mut all = plugins::read_entries(&self.data)?;
@@ -817,7 +790,6 @@ impl Manager {
         Ok(())
     }
 
-    /// Starts plugin `l`'s backend from its build.
     fn spawn(&self, l: &Locked) -> io::Result<Child> {
         let dir = self.build_dir(&l.name, &l.commit);
         let m = Manifest::parse(&fs::read_to_string(dir.join("cooee-plugin.toml"))?)?;
@@ -943,7 +915,6 @@ mod tests {
             waits,
             [Some(1000), Some(2000), Some(4000), Some(8000), None]
         );
-        // Crashes 11 minutes apart never add up to 5.
         let mut b = Backoff::default();
         assert!((0..20).all(|i| b.crash(i * 11 * MIN) == Some(1000)));
     }
@@ -985,8 +956,6 @@ mod tests {
                 .lines()
                 .count()
         };
-        // The fake clock: each pass is a second after the last restart's wait, so nothing waits for real but
-        // the backend's own exit.
         let mut at = 0;
         let mut alerts = Vec::new();
         for _ in 0..200 {
@@ -1006,7 +975,6 @@ mod tests {
         let x = &m.installed().unwrap()[0];
         assert!(!x.enabled && x.note.contains("5 crashes"), "{x:?}");
         assert!(m.list().unwrap()[0].state.contains("5 crashes"));
-        // Off, it stays off.
         m.tick(at + 60 * MIN);
         assert_eq!(runs(), 5);
         let log = fs::read_to_string(data.join("plugins/x/plugin.log")).unwrap();

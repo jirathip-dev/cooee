@@ -1,7 +1,3 @@
-// Scene (#34, #86): Style's third value draws the agents sidebar as the theme's scene: one page, a sprite per agent
-// acting out its ongoing chat, a tap opens that chat in the style chosen before, the current agent ringed with its
-// chats as chips; refreshes never copy a sprite; Scene is offered only with Figures Sprite (ASCII, None or the plain
-// theme hide it); and the audit at 390 in each theme, farm's at 1440 too, every pose a vector figure (#115).
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -9,7 +5,6 @@ const sheet = (page) => page.locator("#sheet .sh:popover-open");
 const pickOn = (context, url, pick) =>
   context.addCookies([{ name: "cooee-look", value: Object.entries(pick).map(([k, v]) => `${k}:${v}`).join("/"), url }]);
 const hrefs = (l) => l.evaluateAll((as) => as.map((a) => a.getAttribute("href")));
-// Every Scene pose's symbol, from the sheet the page uses: a 132 × 100 figure, never a 16 px row sprite blown up (#115).
 async function poses(page, theme) {
   const svg = await (await page.request.get(`/look/${theme}/sprites.svg`)).text();
   for (const k of ["edit", "idle", "done", "needs", "merged", "fail"]) {
@@ -24,7 +19,6 @@ async function poses(page, theme) {
 }
 
 test.beforeEach(async ({ page }) => { await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" }); });
-// The device's clock by day (noon) or night (05:00), as now or before it, so the page never reads as an old copy.
 async function clock(page, night) {
   const at = new Date();
   const h = at.getHours();
@@ -34,8 +28,6 @@ async function clock(page, night) {
 }
 
 test("Scene draws a sprite per agent on one page; a tap opens its chat, ringed, with its chats as chips", async ({ page, context, baseURL }) => {
-  // The agents as Modern lists them, then as the scene: the same agents (other tests open and close chats meanwhile,
-  // so where each goes may move).
   await page.goto("/?list");
   const rows = await page.locator(".ags .agr .tt").allTextContents();
   expect(rows.length).toBeGreaterThanOrEqual(1);
@@ -43,25 +35,20 @@ test("Scene draws a sprite per agent on one page; a tap opens its chat, ringed, 
   await page.goto("/?list");
   await expect(page.locator(".ags .agr")).toHaveCount(0);
   await expect(page.locator("#scene .sp")).toHaveCount(1);
-  // Other tests add agents meanwhile: every agent listed is a sprite, and the bar counts the sprites.
   const names = await page.locator("#scene .sb .sn b").allTextContents();
   expect(names).toEqual(expect.arrayContaining(rows));
   await expect(page.locator("#scene .fh .ds")).toHaveText(`${names.length} agents`);
-  // Each sprite acts out its state with the theme's art.
   const pose = await page.locator("#scene .sb .sf use").first().getAttribute("href");
   expect(pose).toMatch(/^\/look\/farm\/sprites\.svg#s-scene-(edit|needs|done|fail|merged|idle)$/);
   await expect(page.locator("#scene .sky")).toHaveAttribute("src", /^\/look\/farm\/scene\.svg/);
-  // The list's current agent is the first (a phone's ‹ names its own): ringed, its chats as chips (the approved 390).
   await expect(page.locator("#scene .sb").first()).toHaveAttribute("aria-current", "true");
   await expect(page.locator(".scc .chip").last()).toHaveText("+ new chat");
-  // A tap opens the first agent's chat (or a new one), in Terminal, the style chosen before Scene.
   const first = page.locator("#scene .sb").first();
   const name = await first.locator(".sn b").textContent();
   const to = await first.getAttribute("href");
   await first.click();
   await expect(page).toHaveURL(new RegExp(`${to.replace("?", "\\?")}$`));
   await expect(page.locator("html")).toHaveAttribute("data-style", "terminal");
-  // From 1000 px the scene stays beside it: that agent ringed, its chats as chips ending in + new chat.
   if (test.info().project.name !== "1440") return;
   const ringed = page.locator("#scene .sb[aria-current]");
   await expect(ringed).toHaveCount(1);
@@ -81,7 +68,6 @@ test("refreshed 5 times, Scene keeps one sprite per agent", async ({ page, conte
     await expect(page.locator("#scene")).toHaveCount(1);
     const keys = await hrefs(page.locator("#scene .sb"));
     expect(new Set(keys).size).toBe(keys.length);
-    // Other tests add agents meanwhile, never take one away.
     expect(keys.length).toBeGreaterThanOrEqual(want);
   }
 });
@@ -91,12 +77,10 @@ test("Scene is offered only with Figures Sprite; ASCII, None or the plain theme 
   await page.getByRole("button", { name: "look: theme and colours" }).click();
   const scene = sheet(page).locator('[data-k=style][data-v=scene]');
   await scene.click();
-  // The sidebar is drawn again as the scene.
   await expect(page.locator("#scene")).toBeVisible();
   await page.getByRole("button", { name: "look: theme and colours" }).click();
   await expect(scene).toHaveAttribute("aria-checked", "true");
   await page.screenshot({ path: `../../ui-${info.project.name}/scene-look.png` });
-  // Modern again: the agents' rows.
   await sheet(page).locator('[data-k=style][data-v=modern]').click();
   await expect(page.locator("#scene")).toHaveCount(0);
   await expect(page.locator(".agr").first()).toBeVisible();
@@ -116,7 +100,6 @@ test("Scene is offered only with Figures Sprite; ASCII, None or the plain theme 
 for (const theme of ["farm", "kitchen", "garden"])
   for (const mode of ["dark", "light"])
     test(`Scene's audit: ${theme}, ${mode}`, async ({ page, context, baseURL }, info) => {
-      // farm's vector horses are shot at 1440 too (#115).
       test.skip(info.project.name !== "390" && theme !== "farm", "the audit is at 390");
       await clock(page, false);
       await pickOn(context, baseURL, { theme, mode, scene: "on" });

@@ -1,8 +1,3 @@
-// Pairing (#47, docs/design/pair): the unpaired page at 390 and 1440 in dark and light, the six boxes (typing moves
-// on, a paste fills all six, the sixth sends it), a wrong and a used code, a QR link that pairs at once with the
-// passkey offer after it, Settings › devices › pair a device (the QR), and the approve card's no-passkey, approved
-// elsewhere and ran-out states. Codes are one at a time per server, so this runs in the 390 project only and shoots
-// both widths itself. Shots: ui-<width>/pair-….png.
 import { execFileSync } from "node:child_process";
 import { createHash, generateKeyPairSync, randomBytes, sign } from "node:crypto";
 import fs from "node:fs";
@@ -10,7 +5,6 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const read = (name) => fs.readFileSync(new URL(`./.auth/${name}`, import.meta.url), "utf8").trim();
-/// A new code from `cooee pair` (it drops the open one).
 const newCode = () =>
   execFileSync(read("code.bin"), ["pair", "--config", read("code.config")], { encoding: "utf8" })
     .match(/^code {2}(\d{3}) (\d{3})/m)
@@ -23,7 +17,6 @@ async function audit(page) {
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 }
-/// The page at 390 and 1440 (full height), audited at each.
 async function shots(page, name, mode = "dark") {
   await page.emulateMedia({ colorScheme: mode, reducedMotion: "reduce" });
   await page.waitForLoadState("networkidle");
@@ -35,7 +28,6 @@ async function shots(page, name, mode = "dark") {
   await page.setViewportSize({ width: 390, height: 844 });
 }
 
-// Each test shoots and audits both widths, some in both schemes.
 test.describe.configure({ mode: "serial", timeout: 90_000 });
 test.beforeEach(({}, info) => test.skip(info.project.name !== "390", "one code at a time: the 390 project shoots both widths"));
 
@@ -61,7 +53,6 @@ test("typing moves on, ⌫ goes back, a paste fills all six; a wrong code says s
   await page.keyboard.press("Backspace");
   await expect(page.getByLabel("digit 2")).toBeFocused();
   await expect(page.getByLabel("digit 2")).toHaveValue("");
-  // A paste into the first box fills all six, and the sixth sends it.
   await page.getByLabel("digit 1").focus();
   await page.evaluate((text) => {
     const data = new DataTransfer();
@@ -111,8 +102,6 @@ test("settings › devices › pair a device shows the QR and its code", async (
   await shots(page, "pair-qr");
 });
 
-/// A fake platform authenticator (P-256), signing as WebAuthn does for `base`: the bodies `POST /passkeys` and an
-/// approve's `passkey` take.
 function authenticator(base) {
   const { privateKey, publicKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
   const b64 = (b) => Buffer.from(b).toString("base64url");
@@ -131,7 +120,6 @@ function authenticator(base) {
 }
 const IPAD = { "user-agent": "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) Version/18.0 Mobile/15E148 Safari/604.1" };
 
-/// A browser paired now from a QR link, on the thread list.
 async function paired(browser) {
   const context = await browser.newContext(unpaired);
   const page = await context.newPage();
@@ -141,7 +129,6 @@ async function paired(browser) {
 }
 
 test("the approve card: no passkey on this device, approved elsewhere, and a request that ran out", async ({ browser, baseURL }) => {
-  // This device (A) has no passkey; another paired device (B) holds the only new one.
   const { context: a, page } = await paired(browser);
   const { context: b } = await paired(browser);
   const challenge = async () => (await (await b.request.post("/passkey/challenge", { data: {} })).json()).challenge;
@@ -149,22 +136,18 @@ test("the approve card: no passkey on this device, approved elsewhere, and a req
   expect((await b.request.post("/passkeys", { data: key.create(await challenge()) })).status()).toBe(200);
   const me = async (ctx) => (await (await ctx.request.get("/devices")).json()).find((d) => d.me);
   const bLabel = (await me(b)).label;
-  // Removed after, by B, newest first so that B goes last.
   const mine = [(await me(b)).id, (await me(a)).id];
   const c = await browser.newContext(unpaired);
   try {
-    // Other specs may leave requests open on this server: the cards here are found by their check word.
     const { claim, word } = await (await c.request.post("/pair/request", { headers: IPAD, data: {} })).json();
     await page.reload();
     const card = page.getByRole("group", { name: `iPad asks to pair: ${word}` });
-    // It names a device that has one (another spec's may be first).
     const holder = (await (await a.request.get("/passkeys")).json()).find((k) => !k.mine).label;
     await expect(card).toContainText(`Approving needs a passkey. Save one on this device, or approve on ${holder}.`);
     await expect(card.getByRole("button", { name: "save a passkey" })).toBeVisible();
     await expect(card.getByRole("button", { name: /^approve/ })).toHaveCount(0);
     await shots(page, "approve-no-passkey");
 
-    // B approves with its passkey, the iPad collects its cookie: the card here says so.
     const ask = (await (await b.request.get("/pair/asks")).json()).find((x) => x.word === word);
     mine.push(ask.id);
     const answer = await b.request.post("/pair/answer", { data: { id: ask.id, yes: true, passkey: key.get(await challenge()) } });
@@ -173,7 +156,6 @@ test("the approve card: no passkey on this device, approved elsewhere, and a req
     await expect(card).toContainText(`✓ iPad paired on ${bLabel}`);
     await shots(page, "approve-elsewhere");
 
-    // A request nobody answers leaves the list after 5 minutes: the card says it ran out.
     const late = await browser.newContext(unpaired);
     const r = await (await late.request.post("/pair/request", { headers: IPAD, data: {} })).json();
     const lateCard = page.getByRole("group", { name: `iPad asks to pair: ${r.word}` });

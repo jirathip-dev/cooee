@@ -1,6 +1,3 @@
-// Folders (#31): Settings › Folders browses the home folder (serve.sh: the temp folder) by folder names only, hidden
-// ones behind a toggle, and adds or removes a root; Use a folder…'s search (#86) finds a sub-folder 2 levels in, and
-// [+ new folder] makes one inside a root and picks it. Each viewport uses its own folders.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -23,7 +20,6 @@ test("Settings › Folders: browse from home, add a root and remove it", async (
   await expect(sheet.locator(".hd b")).toHaveText("folders");
   await expect(sheet.locator(".lrw .sk").first()).toHaveText("~/root");
   await expect(sheet.locator("[data-go]", { hasText: folder })).toBeVisible();
-  // Folder names only: no config.toml, no hidden folder until the toggle.
   await expect(sheet.getByText("config.toml")).toHaveCount(0);
   await expect(sheet.getByText(".hidden-folder")).toHaveCount(0);
   await sheet.getByRole("radio", { name: "on" }).click();
@@ -38,7 +34,6 @@ test("Settings › Folders: browse from home, add a root and remove it", async (
   await sheet.getByRole("button", { name: "add as root" }).click();
   await expect(sheet.locator(".lrw .sk", { hasText: `~/${folder}` })).toHaveCount(2);
   await shot(page, info, "folders-added");
-  // Closing reloads the page: the picker lists the new root.
   const reloaded = page.waitForEvent("load");
   await sheet.getByRole("button", { name: "close" }).click();
   await reloaded;
@@ -59,7 +54,6 @@ test("Use a folder…: search finds a sub-folder, [+ new folder] makes one in a 
   const panel = page.locator("#ufs");
   await expect(panel).toBeVisible();
   await expect(panel.getByRole("radio", { name: /^scratch/ })).toBeChecked();
-  // Search first, then scratch; a root heads its group and its folders show by name.
   await expect(panel.locator(".fl > :not(legend)").first()).toHaveAttribute("id", "fq");
   await expect(panel.locator('label[title="~/root"]')).toHaveText("~/root");
   await expect(panel.locator('label[title="~/root/project"]')).toHaveText(/^project/);
@@ -90,7 +84,6 @@ test("Use a folder… in a chat: its later turns run in the folder, the chat say
   await page.waitForURL(/\/t\//);
   await expect(page.locator("#st")).toHaveAttribute("data-st", "done");
   await expect(page.locator(".th .ds")).toContainText("scratch");
-  // Beside the agents the messages keep the design's centred column, at most 100ch wide.
   const [inner, ch100] = await page.locator("#msgs").evaluate((el) => {
     const s = getComputedStyle(el), p = document.createElement("div");
     p.style.width = "100ch";
@@ -105,10 +98,8 @@ test("Use a folder… in a chat: its later turns run in the folder, the chat say
   await page.locator("#ufs").getByRole("radio", { name: /^project( |$)/ }).check();
   await expect(page.locator("#msgs .qs").last()).toHaveText(/^now in ~\/root\/project · later turns run here · \d\d?:\d\d/);
   await expect(page.getByRole("button", { name: "folder: project ▾" })).toBeVisible();
-  // The thread bar names the folder at once, as the chip does.
   await expect(page.locator("#bf")).toHaveText("~/root/project");
   await shot(page, info, "chat-folder-attached");
-  // A reload draws the folder; scratch is no way back.
   await page.reload();
   await expect(page.locator(".th .ds")).toContainText("~/root/project");
   await expect(page.locator('#ufs input[value=""]')).toBeDisabled();

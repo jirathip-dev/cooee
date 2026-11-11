@@ -1,5 +1,3 @@
-// The machines tab (crates/cooee-machines): the backend's cards, asked for every 30 s. A tapped number opens its
-// 24 h chart (a <details>), which stays open across refreshes.
 document.head.appendChild(document.createElement("style")).textContent = `
 .ml{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
 .m{background:var(--card);border:1px solid var(--edge);border-radius:12px;padding:12px 14px}

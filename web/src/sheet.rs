@@ -1,8 +1,3 @@
-//! The sheets (#49): the look sheet, Settings, Settings › Folders and › providers (#48) as server-rendered popovers in `#sheet`, so they
-//! open with no script. The look sheet is a form: with no script a key posts the pick (`POST /look` sets the cookie
-//! and goes back); `look.ts` applies it in place instead and keeps the marks in step. `chat.ts` fills Settings'
-//! alerts, devices and plugins, and `look.ts` Settings › Folders, from the JSON API.
-
 use std::sync::Arc;
 
 use serde::Deserialize;
@@ -44,7 +39,6 @@ pub fn shown(cx: &Cx) -> Shown {
     }
 }
 
-/// Built-in themes and schemes in the design's order, then the owner's own by name; none being built (`dev.`).
 fn sorted<'a, T>(all: impl Iterator<Item = (&'a String, &'a T)>, order: &[&str]) -> Vec<&'a String>
 where
     T: 'a,
@@ -55,7 +49,6 @@ where
     names
 }
 
-/// The themes in the design's order (the first-party packs, then plain).
 const ORDER: [&str; 4] = ["farm", "kitchen", "garden", "plain"];
 
 const SECTIONS: [&str; 7] = [
@@ -66,7 +59,6 @@ fn aria(on: bool) -> &'static str {
     if on { "true" } else { "false" }
 }
 
-/// A sheet's header: its title and ×.
 #[component]
 async fn head(which: &str) -> Result<impl View> {
     Ok(view! {
@@ -86,7 +78,6 @@ async fn head(which: &str) -> Result<impl View> {
     })
 }
 
-/// A key's values as one radio group (`cur` checked); one not in `shown` is hidden (`look.ts` shows it once offered).
 #[component]
 async fn seg(
     k: &str,
@@ -133,7 +124,6 @@ async fn swatch(s: Scheme) -> Result<impl View> {
     })
 }
 
-/// One mode's COLOURS: its schemes, the pick checked and the theme's default marked.
 #[component]
 async fn colours(cx: &Cx, m: &str, showing: String) -> Result<impl View> {
     let look = shown(cx);
@@ -185,7 +175,6 @@ async fn colours(cx: &Cx, m: &str, showing: String) -> Result<impl View> {
     })
 }
 
-/// The look sheet: STYLE, FIGURES (Scene and Sprite only where offered), THEME, APPEARANCE and the dark and light COLOURS.
 #[component]
 async fn look_sheet(cx: &Cx) -> Result<impl View> {
     let look = shown(cx);
@@ -270,7 +259,6 @@ async fn look_sheet(cx: &Cx) -> Result<impl View> {
     })
 }
 
-/// A Settings row that opens the look sheet, with its value.
 #[component]
 async fn look_row(k: &str, v: String) -> Result<impl View> {
     Ok(view! {
@@ -282,7 +270,6 @@ async fn look_row(k: &str, v: String) -> Result<impl View> {
     })
 }
 
-/// A form posting `name` to `/themes/<act>`, its one button saying `act`.
 #[component]
 async fn theme_button(act: &'static str, name: String) -> Result<impl View> {
     Ok(view! {
@@ -293,7 +280,6 @@ async fn theme_button(act: &'static str, name: String) -> Result<impl View> {
     })
 }
 
-/// A form starting a theme in `themes-dev/` with an agent: `[new theme]` (`from` empty) or `[remix]` of `from`.
 #[component]
 async fn theme_start(from: String) -> Result<impl View> {
     let act = if from.is_empty() { "new" } else { "remix" };
@@ -317,9 +303,6 @@ async fn theme_start(from: String) -> Result<impl View> {
     })
 }
 
-/// Settings › look › themes (#38): the installed packs, each with `[remix]`, `[remove]` and (not the index's)
-/// `[publish]`; the ones being built, each to its preview; `[+ theme]` from the index or a URL; `[new theme]`. Native
-/// forms.
 #[component]
 async fn themes(cx: &Cx) -> Result<impl View> {
     let assets = app_context::<Arc<LookAssets>>(cx);
@@ -391,7 +374,6 @@ async fn themes(cx: &Cx) -> Result<impl View> {
     })
 }
 
-/// Settings: its index, sign-ins, folders, the look's rows, alerts, devices and report.
 #[component]
 async fn settings(cx: &Cx) -> Result<impl View> {
     let look = shown(cx);
@@ -491,7 +473,6 @@ pub async fn sheets(providers: Vec<Sheet>) -> Result<impl View> {
     })
 }
 
-/// `POST /look`, the look sheet with no script: the key tapped (one of these) and the page to go back to.
 #[derive(Deserialize)]
 struct Tap {
     to: String,
@@ -518,7 +499,6 @@ pub async fn look_set(cx: &Cx, Form(t): Form<Tap>) -> Result<Response> {
         .iter()
         .find_map(|(k, v)| Some(look.with(k, v.as_deref()?)))
         .unwrap_or_default();
-    // Back to a page of this server only.
     let to = if t.to.starts_with('/')
         && !t.to.starts_with("//")
         && !t.to.contains('\\')

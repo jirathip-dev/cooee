@@ -1,15 +1,3 @@
-// cooee's pages, where a browser needs script (the rest is server HTML: the sheets, the new-thread and sign-ins
-// cards). The chat: a window of about 9 screens of items around an anchor (slices by id as the reader nears an edge),
-// scroll kept on a message rather than pixels, live events over SSE resumed from the last one seen, the outbox
-// (sending → sent → failed, tap to retry), the per-thread draft in IndexedDB, approvals that lock once tapped, and
-// debounced read marks (which also close the thread's notifications). Every page but pairing registers the service
-// worker (sw.ts: push and the last copy of each page); the thread list's 🔔 turns alerts on. On every page (#21):
-// short toasts, the loading strip (with a copy's age when it is an old one), refresh (↻, a pull down, coming back
-// after 30 s or the network returning), Settings' alerts, devices and report mode (pairing is pair.ts). It talks to
-// the server only through the JSON and SSE API in docs/api.md.
-// States are theme keys (data-st) that look.ts draws: the thread bar, the working pill (its sprite following the
-// running tool), the live line and a turn's end.
-// A plugin tab hosts the plugin's sandboxed frame (frame.ts is the frame's side).
 import { $, make, show } from "./look.js";
 import { render as markdown, settled } from "./md.js";
 import { sign } from "./pair.js";
@@ -25,7 +13,6 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "note"; text: string }
   | { kind: "ended"; text: string }
 );
-// Who answered and when, and a plugin card's form (#553 rows 30-33).
 type Form = {
   by?: string;
   answered?: number;
@@ -52,7 +39,6 @@ type Slice = {
 
 const rid = (): string => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 const message = (x: unknown): string => (x instanceof Error ? x.message : String(x));
-// A failed answer as one plain sentence: cooee's own (marked `cooee-error`), else a general one, never raw JSON.
 const why = async (r: Response): Promise<Error> =>
   new Error(
     r.headers.has("cooee-error") ? await r.text() : `cooee couldn't do that (error ${r.status}): reload and try again.`,
@@ -67,8 +53,6 @@ async function post<T = unknown>(url: string, body: unknown): Promise<T> {
   return r.headers.get("content-type")?.includes("json") ? r.json() : (r.text() as Promise<T>);
 }
 
-// A toast: one short line under the header that clears itself (an error stays longer and may wrap); a tap clears it.
-// It is a manual popover, so it shows over an open sheet too. `act` adds a button (undo) and keeps it 5 s.
 let toastTimer = 0;
 function toast(text: string, bad = false, act?: [string, () => unknown]): void {
   const t = $("#toast");
@@ -94,8 +78,6 @@ const hide = (t: HTMLElement): void => {
 };
 $("#toast")?.addEventListener("click", (e) => hide(e.currentTarget as HTMLElement));
 
-// The loading strip: thin, under the header, never in the way of a tap, and only once a load takes 300 ms (a quick
-// one shows nothing); `at` (an old copy's time) adds its age.
 const ago = (at: number): string => {
   const m = Math.round((Date.now() - at) / 60000);
   return m < 1 ? "just now" : m < 120 ? `${m}m ago` : `${Math.round(m / 60)}h ago`;
@@ -118,8 +100,6 @@ function strip(loading: boolean, now = false): void {
 }
 strip(false);
 
-// Refresh: ↻, a pull down from the very top, the app coming back after 30 s away, or the network coming back. The
-// chat reloads its newest slice and stream (page.refresh); the agents list is drawn again; any other page reloads.
 const page: { refresh: (() => Promise<unknown>) | null; top: () => boolean } = { refresh: null, top: () => true };
 let refreshing: Promise<unknown> | null = null;
 function refresh(): Promise<unknown> | null {
@@ -142,9 +122,6 @@ function refresh(): Promise<unknown> | null {
 }
 $("#rf")?.addEventListener("click", refresh);
 
-// The agents list drawn again in place from the page (no reload: a navigation away is never raced), a folded list
-// that was open staying open; it follows the threads every 5 s while it shows, and the app's badge counts the unread
-// chats (#43).
 async function agentsNow(): Promise<void> {
   const r = await fetch(location.href);
   if (!r.ok) throw await why(r);
@@ -155,7 +132,6 @@ async function agentsNow(): Promise<void> {
   const key = (d: Element): string => $("summary", d)?.textContent?.replace(/^\d+ /, "") ?? "";
   const open = new Set([...now.querySelectorAll("details[open]")].map(key));
   for (const d of next.querySelectorAll<HTMLDetailsElement>("details")) d.open = open.has(key(d));
-  // Unchanged, it stays: no layout beside a long chat.
   if (next.outerHTML === now.outerHTML) return;
   now.replaceWith(next);
   light();
@@ -166,7 +142,6 @@ const badge = (): void => {
   if ("setAppBadge" in navigator) (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {});
 };
 
-// A chat's row swiped left is archived, with 5 s to undo; an archived one's [restore] brings it back.
 let swipe: { row: HTMLElement; x: number; y: number; dx: number } | null = null;
 const shelf = (id: string, on: boolean): Promise<void> => post(`/threads/${id}/archive`, { on }).then(agentsNow);
 const side = $(".sdb");
@@ -186,7 +161,6 @@ if (side) {
       const t = e.touches[0];
       if (!swipe || !t) return;
       swipe.dx = Math.min(0, t.clientX - swipe.x);
-      // Up or down is a scroll.
       if (Math.abs(t.clientY - swipe.y) > Math.abs(swipe.dx)) swipe.dx = 0;
       swipe.row.style.transform = swipe.dx ? `translateX(${swipe.dx}px)` : "";
     },
@@ -219,7 +193,6 @@ if (side) {
   badge();
 }
 
-// Scene (#34): night on the strip (the scene's `#night`) from 19:00 to 07:00 on this device's clock.
 function light(): void {
   const scn = $("#scene");
   const h = new Date().getHours();
@@ -261,7 +234,6 @@ addEventListener("pageshow", (e) => {
   if (e.persisted) refresh();
 });
 
-// A new chat (#86): sent with nothing picked (its own scratch folder, or the folder picked), then opened.
 const form = $<HTMLFormElement>("#new");
 const say = (e: HTMLElement | null, text: string): void => {
   if (!e) return;
@@ -274,7 +246,6 @@ if (form) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = new FormData(form);
-    // One id per start until it succeeds, so a retry after a timeout adopts the thread it started.
     form.dataset.rid ||= rid();
     const body = {
       agent: f.get("agent") ?? "",
@@ -300,8 +271,6 @@ if (form) {
   text?.focus();
 }
 
-// Use a folder… (#86): the search shows the folders whose name has it (up to 2 levels in), else the first level; a
-// pick names the chip, and in a chat attaches the folder (its later turns run there).
 const ufs = $("#ufs");
 const fq = $<HTMLInputElement>("#fq");
 if (fq && ufs)
@@ -312,7 +281,6 @@ if (fq && ufs)
       l.hidden = q ? !base.includes(q) : Number(l.dataset.d) > 1;
     }
   };
-// [+ new folder] makes one inside the folder picked, and picks it.
 const mkdir = $<HTMLButtonElement>("#mkdir");
 if (mkdir && ufs)
   mkdir.onclick = async () => {
@@ -357,7 +325,6 @@ ufs?.addEventListener("change", async (e) => {
   if (bf) bf.textContent = t.value ? (t.parentElement?.title ?? name) : "scratch";
 });
 
-// A hint's copy button puts its line on the clipboard (Settings › providers' [copy install] too).
 document.addEventListener("click", (e) => {
   const b = (e.target as Element).closest?.<HTMLElement>("[data-copy]");
   if (!b?.dataset.copy) return;
@@ -371,8 +338,6 @@ document.addEventListener("click", (e) => {
   );
 });
 
-// A code block's [▸ terminal] (#29): only the owner's own tap (never a script's click) keeps its text for this tab
-// only and opens the Terminal tab, which types it in (never Enter) once Face ID has unlocked it.
 const INSERT = "cooee-terminal-insert";
 document.addEventListener("click", (e) => {
   const b = (e.target as Element).closest?.<HTMLElement>("[data-term]");
@@ -381,10 +346,6 @@ document.addEventListener("click", (e) => {
   location.assign("/p/terminal");
 });
 
-// Sign-ins, in Settings › providers: [sign in] starts the provider's own login for that account
-// in a shed terminal ([+ account]: in a new account's folder); its terminal opens under the row, its screen
-// (redacted by the server) drawn every second with its links tappable, and a code typed there goes to it. Once it
-// ends the page reloads with the accounts' state (Settings › providers open again). [sign out] (after a confirm) reloads it too.
 type LoginView = { state: string; screen: string; links: string[] };
 let loginTimer = 0;
 const tell = (row: HTMLElement, m: string): void => {
@@ -474,24 +435,18 @@ document.addEventListener("click", (e) => {
     );
 });
 
-// Not while pairing: a worker installing and claiming the page as the pair redirects can leave a home-screen app on
-// a bare background until a reload (the first run, #25).
 if ("serviceWorker" in navigator && location.pathname !== "/pair")
   navigator.serviceWorker.register("/sw.js").catch(() => {});
-// Closes thread `thread`'s notifications up to item `read`.
 const cleared = (thread: string, read: number): void => {
   navigator.serviceWorker?.ready.then((r) => r.active?.postMessage({ thread, read }));
 };
 
-// Alerts, truthfully: on only when this browser has a subscription the server keeps for this device. The 🔔 and a
-// dot on ⚙ show where push works and isn't on; Settings' alerts section turns them on or off and sends a test.
 type Alerts = { state: "unsupported" | "blocked" | "off" | "on"; sub?: PushSubscription | null; why?: string | null };
 async function alertState(): Promise<Alerts> {
   if (!("PushManager" in window) || !navigator.serviceWorker) return { state: "unsupported" };
   if (Notification.permission === "denied") return { state: "blocked" };
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription();
-  // Why the server set this device's alerts aside (its push key changed), so the page asks to turn them on again.
   const why: string | null = await fetch("/push/reset").then(
     (r) => (r.ok ? r.json() : null),
     () => null,
@@ -509,7 +464,6 @@ async function alertsOn(): Promise<void> {
   const r = await fetch("/push/key");
   if (!r.ok) throw await why(r);
   const key: string = (await r.json()).key.replace(/-/g, "+").replace(/_/g, "/");
-  // A subscription made with an old key can't be renewed in place.
   await (await reg.pushManager.getSubscription())?.unsubscribe();
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
@@ -580,7 +534,6 @@ const bell = $("#alerts");
 if (bell) bell.onclick = () => alertsDo(alertsOn, "alerts are on");
 if (location.pathname !== "/pair") alertMarks().catch(() => {});
 
-// Settings' devices section: each paired device, this one marked, with [remove] (removing this one unpairs it).
 type Device = { id: string; label: string; created: number; used: number; me: boolean };
 async function fillDevices(): Promise<void> {
   const box = $("#s-devices-box");
@@ -614,9 +567,6 @@ async function fillDevices(): Promise<void> {
     }),
   );
 }
-// Settings' plugins section (docs/plugins.md): each installed plugin with its version, commit, source and state, on/off,
-// [update], [logs], [improve] (or "improve via an issue" for a first-party one), [roll back] and [remove]; [+ add]
-// lists the index, or takes a git URL ("not reviewed"). Adding, updating and approving show what will run, to confirm.
 type Plugin = {
   name: string;
   version: string;
@@ -777,7 +727,6 @@ async function fillPlugins(): Promise<void> {
   }
   box.replaceChildren(...rows.flat(), ...busy, add, ...more);
   clearTimeout(plugPoll);
-  // While a job runs or a backend is starting, the section follows it.
   const settling =
     Object.values(jobs).some((j) => j.endsWith("…")) ||
     installed.some((p) => ["starting", "not running"].includes(p.state));
@@ -790,13 +739,10 @@ addEventListener("cooee-sheet", (e) => {
     fillPlugins();
   }
 });
-// The sign-ins card opened: the accounts' status is checked again (#106); a reload shows it.
 addEventListener("cooee-sheet", (e) => {
   if ((e as CustomEvent).detail === "providers") post("/logins", {}).catch(() => {});
 });
 
-// Report mode (Settings → report a problem, or `/report` sent in a thread): the next tap picks an element, outlined;
-// the note box at the bottom sends it with the page, the element and the look; `cooee reports` lists them.
 const where = (start: Element | null): string => {
   const out: string[] = [];
   for (let n = start; n && out.length < 6; n = n.parentElement) {
@@ -858,8 +804,6 @@ addEventListener("click", (e) => {
 });
 if (location.hash === "#report") reportMode();
 
-// A plugin tab: the frame (sandboxed, see frame.ts) asks this page to fetch or stream paths of its own backend only
-// (/p/<name>/api/…; anything else is refused), gets the theme's CSS variables, and its URL's #hash (a push's link).
 type Ask = { op?: string; id?: number; path?: unknown; method?: string; type?: string; body?: string };
 const frame = $<HTMLIFrameElement>("iframe.pf");
 if (frame) {
@@ -892,7 +836,6 @@ if (frame) {
       if (!u) return to({ op: "event", id: m.id, event: "error", data: "not this plugin's backend" });
       const es = new EventSource(u);
       es.onmessage = (ev) => to({ op: "event", id: m.id, ...JSON.parse(ev.data) });
-      // A stream refused for good (a locked tab's 403) says so: `closed`.
       es.onerror = () => {
         if (es.readyState === EventSource.CLOSED) to({ op: "event", id: m.id, event: "closed", data: "" });
       };
@@ -902,8 +845,6 @@ if (frame) {
       streams.delete(m.id);
     } else if (m.op === "unlock") lock.hidden = false;
   });
-  // The passkey gate (#28): the ceremony runs here, never in the sandboxed frame. The first time, this device
-  // registers its passkey; then each unlock signs a fresh challenge. The tap is on this page's own button.
   const lock = document.createElement("button");
   lock.className = "pkl";
   lock.hidden = true;
@@ -965,7 +906,6 @@ if (frame) {
       toast(message(x), true);
     }
   };
-  // The tab fills what the keyboard leaves (#443): a bar at the frame's foot sits on the keyboard.
   const vv = visualViewport;
   const tab = frame.parentElement;
   const fit = (): void => {
@@ -999,11 +939,8 @@ if (frame) {
     to({ op: "theme", vars: Object.fromEntries(vars.map((v) => [v, css.getPropertyValue(v).trim()])) });
   };
   frame.onload = theme;
-  // look.ts sets the scheme's colours on <html>: a new pick or a system switch goes to the frame too.
   new MutationObserver(theme).observe(document.documentElement, { attributes: true });
   matchMedia("(prefers-color-scheme: light)").addEventListener("change", theme);
-  // A code block's text from a tap in a chat: typed into the shell used last (the backend's /insert never presses
-  // Enter), Face ID first when the tab is locked; the frame then opens on that shell (its #name).
   const text = frame.dataset.plugin === "terminal" ? sessionStorage.getItem(INSERT) : null;
   sessionStorage.removeItem(INSERT);
   const insert = async (text: string): Promise<void> => {
@@ -1025,7 +962,6 @@ if (frame) {
   (text === null ? Promise.resolve() : insert(text).catch((x) => toast(message(x), true))).then(() => {
     frame.src = (frame.dataset.src ?? "") + location.hash;
   });
-  // An installed plugin's update, roll back or improvement reloads just this tab's frame.
   let built = "";
   setInterval(async () => {
     const r = await fetch("/plugins").catch(() => null);
@@ -1059,7 +995,6 @@ function chat(main: HTMLElement): void {
   let read = Number(main.dataset.read);
   let seen = read;
   let readTimer = 0;
-  // Sends and history loads of this thread run one after another.
   let chain: Promise<unknown> = Promise.resolve();
   const inOrder = <T>(f: () => Promise<T>): Promise<T> => {
     const next = chain.then(f, f);
@@ -1078,11 +1013,9 @@ function chat(main: HTMLElement): void {
   };
   const el = make;
   const md = (row: HTMLElement): HTMLElement => $(".md", row) as HTMLElement;
-  // A row's text as it came (the long-press menu's copy as markdown and quote).
   const raw = new WeakMap<Element, string>();
   const fileUrl = (name: string): string => `${api}/files/${encodeURIComponent(name)}`;
   const IMAGE = /\.(png|jpe?g|gif|webp|heic|avif)$/i;
-  // A message's files: an image as a thumbnail that opens the viewer, anything else as its name to download.
   const thumbs = (files: [string, string][]): HTMLElement => {
     const box = el("div", "fis");
     for (const [name, url] of files) {
@@ -1099,13 +1032,10 @@ function chat(main: HTMLElement): void {
     }
     return box;
   };
-  // The stored name less its stamp: `1730000000000-0-photo.jpg` is photo.jpg.
   const shown = (name: string): string => name.replace(/^\d+-\d+-/, "");
 
-  // Runs of 2 or more tool calls fold under one row, `▸ 3 commands`; one opened stays open as the run grows.
   const opened = new Set<string>();
   function fold(): void {
-    // Most changes (a chunk of text, a slice of replies) have nothing to fold: no walk.
     if (!list.querySelector(":scope > .run, :scope > .fold")) return;
     const used = new Set<Element>();
     let run: HTMLElement[] = [];
@@ -1148,7 +1078,6 @@ function chat(main: HTMLElement): void {
     if (!opened.delete(key)) opened.add(key);
     keep(() => {});
   });
-  // Thread refs (#84): a whole-word id of a thread cooee knows opens it; code spans and unknown ids stay plain.
   const known = new Set((main.dataset.ids ?? "").split(" "));
   const refs = (text: string): (string | Node)[] =>
     text.split(/(```[\s\S]*?```|`[^`\n]*`)/).flatMap((part, i) =>
@@ -1161,7 +1090,6 @@ function chat(main: HTMLElement): void {
             return a;
           }),
     );
-  // The same in rendered markdown `src`: its text outside code and links, walked only when it names a known id.
   const linkRefs = (root: DocumentFragment, src: string): DocumentFragment => {
     if (!src.match(/(?<![\w-])t[0-9a-z]+(?![\w-])/g)?.some((w) => known.has(w))) return root;
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -1178,7 +1106,6 @@ function chat(main: HTMLElement): void {
     e.append(...refs(s));
     return e;
   };
-  // Back goes to the thread a ref or chip came from, else to the list.
   const from = document.referrer ? new URL(document.referrer) : null;
   const bk = $<HTMLAnchorElement>(".th .bk");
   if (
@@ -1188,14 +1115,12 @@ function chat(main: HTMLElement): void {
     from.pathname !== location.pathname
   ) {
     bk.href = from.pathname;
-    // Beside the agents (from 1000 px) the ‹ shows only to go back from a ref or chip tapped in a chat (#84, #86).
     if (sessionStorage.getItem("cooee-from") === from.pathname) bk.dataset.ref = "";
   }
   sessionStorage.removeItem("cooee-from");
   list.addEventListener("click", (e) => {
     if ((e.target as Element).closest?.('a[href^="/t/"]')) sessionStorage.setItem("cooee-from", location.pathname);
   });
-  // A config card that waits (#553 row 32): the bar under the header names it, wherever it is; a tap brings it in.
   const cw = $("#cw") as HTMLButtonElement;
   function waiting(it?: Item | null): void {
     if (it?.kind === "approval" && it.form === "config" && !it.chosen && !it.line) {
@@ -1210,7 +1135,6 @@ function chat(main: HTMLElement): void {
     rowOf(at)?.scrollIntoView({ block: "center" });
   };
 
-  // Scroll is kept on a message: the first row in view and its offset are restored after any change of layout.
   function keep(change: () => void): void {
     const stick = atBottom();
     const anchor = rows().find((r) => r.offsetTop + r.offsetHeight > list.scrollTop);
@@ -1221,7 +1145,6 @@ function chat(main: HTMLElement): void {
     else if (anchor?.isConnected) list.scrollTop = anchor.offsetTop - offset;
   }
 
-  // The working sprite follows the tool that runs: reading and searching, running a command, else editing.
   const toolKind = (title: string): string =>
     /^(read|search|grep|glob|find|list|fetch|view)\b/i.test(title)
       ? "read"
@@ -1239,8 +1162,6 @@ function chat(main: HTMLElement): void {
   };
   const who = main.dataset.who ?? agent;
 
-  // While the agent connects (#48): the connecting line where the reply will come, in the theme's loading word,
-  // until the agent's first output; a failed connect puts its card there instead, with why and [retry].
   let greeting = state === "connecting";
   function connecting(): void {
     $(".cnx, .cfl", list)?.remove();
@@ -1275,14 +1196,12 @@ function chat(main: HTMLElement): void {
       list.append(card);
     }
   }
-  // The agent answers: its first output replaces the connecting line.
   const answered = (): void => {
     if (!greeting) return;
     greeting = false;
     connecting();
   };
 
-  // A turn's end: one quiet line under its last block, `[sprite] in the stable · done 09:21 · 9 min · 6 tools`.
   function turnEnd(): void {
     $(".te", list)?.remove();
     if ((state !== "done" && state !== "error") || after > 0) return;
@@ -1344,19 +1263,13 @@ function chat(main: HTMLElement): void {
           pre.append(el("span", l.startsWith("+") ? "g" : l.startsWith("-") ? "r" : "", `${l}\n`));
         row.append(pre);
       }
-      // An MCP server an agent proposes (#56): the exact command or URL.
       if (it.form === "mcp" && it.detail) row.append(el("pre", "diff", it.detail));
-      // A herdsman run card (#83): the exact command and the sha its [approve] carries.
-      // Its long lines scroll, so the block takes focus (axe: scrollable-region-focusable).
       const scroll = (s: string): HTMLElement => Object.assign(el("pre", "diff", s), { tabIndex: 0 });
       if (it.form === "run-card" && it.detail)
         row.append(scroll(it.detail), el("p", "m", `sha ${it.sha?.slice(0, 12)}`));
-      // A run's line is herdsman's `… exit N`, then its output tail in a fence.
       const [line, ...tail] = it.form === "run-card" && it.line ? it.line.split("\n") : [it.line];
       const out = tail.filter((l) => !l?.startsWith("```")).join("\n");
       if (it.chosen) {
-        // The ✓ line: what was picked (or the plugin's own line), by whom and when; a conductor's answer keeps
-        // [change] for its 30 minutes.
         const name = it.options.find((o) => o.id === it.chosen)?.name ?? it.chosen;
         const said =
           line ??
@@ -1381,7 +1294,6 @@ function chat(main: HTMLElement): void {
       } else if (it.line) row.append(el("p", "ans st", it.line));
       else row.append(choices(row, it));
     } else if (it.kind === "link") {
-      // A handoff or a line from another thread: its chip opens that thread (#553 row 35).
       row.className = "qs ln";
       const chip = el("a", "chip", `${it.out ? "continued in" : "from"} ${it.title}`) as HTMLAnchorElement;
       chip.href = `/t/${encodeURIComponent(it.thread)}`;
@@ -1399,8 +1311,6 @@ function chat(main: HTMLElement): void {
     return row;
   }
 
-  // An open card's answers: a button per choice (the recommended one first), and on a plugin's card an "other"
-  // box; a secret card is a masked field with [save] and [dismiss]. Locked once tapped.
   function choices(row: HTMLElement, it: Choice): HTMLElement {
     const chc = el("div", "chc");
     const button = (text: string, then: () => void, cls = ""): HTMLButtonElement => {
@@ -1439,7 +1349,6 @@ function chat(main: HTMLElement): void {
             o.kind === "recommended" ? "rec" : "",
           ),
         );
-      // A ref in an option's label opens its thread from a link after the buttons (a link can't sit inside one).
       chc.append(...it.options.flatMap((o) => refs(o.name).filter((n) => typeof n !== "string")));
       if (it.plugin && !it.form) {
         const f = field("other", "text", (v) => approve(row, it.id, v));
@@ -1454,8 +1363,6 @@ function chat(main: HTMLElement): void {
     return chc;
   }
 
-  // A tap locks the row's answers (spinner) until the server answers; the server sends it to shed once. Approving an
-  // MCP server (`face`) signs with the passkey first (Face ID).
   async function approve(row: HTMLElement, item: number, option: string, value?: string, face = false): Promise<void> {
     const chc = $(".chc", row);
     if (!chc) return;
@@ -1464,7 +1371,6 @@ function chat(main: HTMLElement): void {
       for (const b of chc.querySelectorAll<HTMLButtonElement | HTMLInputElement>("button, input")) b.disabled = on;
     };
     lock(true);
-    // The answer comes back over the event stream (tapped, then chosen), never older than what is shown.
     try {
       const passkey = face && option === "approve" ? await sign() : undefined;
       await post(`${api}/approve`, { item, option, value, passkey });
@@ -1474,7 +1380,6 @@ function chat(main: HTMLElement): void {
     }
   }
 
-  // An item, new or changed: replaced in place, appended at the newest end, or counted beyond the window.
   function put(it: Item): void {
     if (it.kind === "approval" && it.form === "config") waiting(it);
     const row = rowOf(it.id);
@@ -1490,7 +1395,6 @@ function chat(main: HTMLElement): void {
     keep(() => {
       $(".te", list)?.remove();
       let row = it.kind === "you" ? list.querySelector<HTMLElement>(`[data-rid="${it.random_id}"]`) : null;
-      // The final reply takes over the streaming row's node.
       if (!row && it.kind === "agent" && live) {
         row = live;
         live = null;
@@ -1505,8 +1409,6 @@ function chat(main: HTMLElement): void {
     markRead();
   }
 
-  // The reply so far: its whole blocks rendered as they settle (up to its last blank line outside a code fence),
-  // each once; the open tail as plain text, so a half-typed table or fence never shows broken.
   let liveText = "";
   let liveAt = 0;
   function text(chunk: string): void {
@@ -1541,7 +1443,6 @@ function chat(main: HTMLElement): void {
 
   function setState(t: Turn): void {
     if (t.state !== state) since = Date.now();
-    // Only a change into connecting shows the connecting line: an answer that came first has already replaced it.
     if (t.state !== state && t.state === "connecting") greeting = true;
     if (t.state !== state && ["done", "blocked", "error", "unconnected"].includes(t.state)) recopy();
     state = t.state;
@@ -1567,8 +1468,6 @@ function chat(main: HTMLElement): void {
     });
   }
 
-  // Drops the rows more than (KEEP - 1) / 2 screens past the viewport, on the side away from the reader, so the
-  // window is about KEEP screens around the anchor. Called inside keep(), with the scroll position current.
   function trim(fromTop: boolean): void {
     const far = ((KEEP - 1) / 2) * screen();
     const top = list.scrollTop;
@@ -1585,16 +1484,11 @@ function chat(main: HTMLElement): void {
     return frag;
   }
 
-  // Loads a slice: `q` is the query; `where` is "replace", "before" (older) or "after" (newer).
-  // The newest slice is kept on the device, so the thread opens offline on its last copy; a turn that settles
-  // after the page opened (a thread that connected behind it, #48) keeps it again.
   const kept = `cooee.slice.${id}`;
   const keepCopy = (s: Slice): void => {
     try {
       localStorage.setItem(kept, JSON.stringify({ ...s, at: Date.now() }));
-    } catch {
-      // Full: no copy.
-    }
+    } catch {}
   };
   const recopy = (): void => {
     fetch(`${api}/messages?before=${SLICE}`).then(
@@ -1614,12 +1508,10 @@ function chat(main: HTMLElement): void {
       if (newest && r) keepCopy(s);
       if (where === "replace") {
         copyAt = r ? 0 : (s.at ?? 0);
-        // The outbox's rows (sending, failed) stay, unless the server has them.
         const stored = new Set(s.items.map((it) => (it.kind === "you" ? it.random_id : "")));
         const outbox = [...list.querySelectorAll<HTMLElement>(":scope > [data-rid]")];
         const kept = outbox.filter((r) => !stored.has(r.dataset.rid ?? ""));
         list.replaceChildren(render(s.items), ...kept);
-        // The first message while the thread connects: the item it becomes takes its row.
         const p = s.pending;
         if (p && !s.skipped_after && !kept.some((r) => r.dataset.rid === p.random_id)) {
           const row = el("li", "blk me");
@@ -1654,7 +1546,6 @@ function chat(main: HTMLElement): void {
       return s;
     });
 
-  // The first slice is held up to ~300 ms and painted at once; a skeleton shows only after that.
   async function open(): Promise<Slice> {
     const skeleton = setTimeout(() => {
       list.classList.add("skeleton");
@@ -1684,8 +1575,6 @@ function chat(main: HTMLElement): void {
     return s;
   }
 
-  // The sync dot: amber until the stream is open, green while it is, amber again when it drops, with a word:
-  // reconnecting (it was open), or offline.
   let wasOpen = false;
   const sync = (on: boolean): void => {
     const dot = $(".dt");
@@ -1709,7 +1598,6 @@ function chat(main: HTMLElement): void {
       moment(t.state);
       setState(t);
     });
-    // Another run or a page too far behind: load the newest slice again.
     stream.addEventListener("reset", () => {
       stream.close();
       open();
@@ -1720,8 +1608,6 @@ function chat(main: HTMLElement): void {
     };
   }
 
-  // A moment (the theme's, when it has them): a turn done hops the bar's sprite with the theme word as a tag, needs
-  // you flashes the bar, a failed turn shakes it; 2.4 s, silent, still under reduced motion.
   function moment(next: string): void {
     const key = ({ done: "done", blocked: "needs", error: "fail" } as Record<string, string>)[next];
     const bar = $(".th");
@@ -1740,7 +1626,6 @@ function chat(main: HTMLElement): void {
     }, 2400);
   }
 
-  // Within EDGE screens of an end of the window, the next slice loads, until there are EDGE screens to go.
   let loading = false;
   async function preload(): Promise<void> {
     if (loading) return;
@@ -1761,8 +1646,6 @@ function chat(main: HTMLElement): void {
     },
     { passive: true },
   );
-  // The keyboard opening (or any resize) keeps the anchor: the first row in view stays put, and a reader at the
-  // newest message stays there.
   let stuck = true;
   list.addEventListener(
     "scroll",
@@ -1775,7 +1658,6 @@ function chat(main: HTMLElement): void {
     if (stuck && after === 0) list.scrollTop = list.scrollHeight;
   }).observe(list);
 
-  // Read marks: the newest row in view, sent at most every ~3 s.
   function markRead(): void {
     const bottom = list.scrollTop + list.clientHeight;
     const was = seen;
@@ -1791,7 +1673,6 @@ function chat(main: HTMLElement): void {
     }
   }
 
-  // A message's files for the API: each one's name and its bytes in base64.
   const payload = (files: File[]): Promise<{ name: string; data: string }[]> =>
     Promise.all(
       files.map(
@@ -1805,7 +1686,6 @@ function chat(main: HTMLElement): void {
       ),
     );
 
-  // The outbox: a row per send, `sending…` until the server stored it (then ✓), `failed` with tap-to-retry.
   function deliver(row: HTMLElement, text: string, random: string, files: File[]): void {
     row.className = "blk me sending";
     inOrder(async () => post<Item>(`${api}/send`, { text, random_id: random, files: await payload(files) })).then(
@@ -1830,7 +1710,6 @@ function chat(main: HTMLElement): void {
     );
   }
 
-  // The files picked for the next message, shown above the box with [×].
   let picked: File[] = [];
   let urls: string[] = [];
   function drawPicked(): void {
@@ -1870,8 +1749,6 @@ function chat(main: HTMLElement): void {
       draft.changed();
     };
 
-  // Messages queued during a turn (the server sends each as a turn ends): [send now] steers it into the turn in
-  // progress, [edit] takes it back into the box, [×] drops it.
   function drawQueue(queue: Queued[]): void {
     const q = $("#queue");
     if (!q) return;
@@ -1921,7 +1798,6 @@ function chat(main: HTMLElement): void {
     drawPicked();
     grow();
     draft.save(true);
-    // During a turn it waits for the turn to end.
     if (state === "working" || state === "blocked") {
       try {
         drawQueue(
@@ -1946,7 +1822,6 @@ function chat(main: HTMLElement): void {
     deliver(row, value, random, files);
   }
 
-  // [stop]: `stopping…` until the turn is no longer working.
   function stopping(on: boolean): void {
     const b = $<HTMLButtonElement>("#pill .stop");
     if (!b) return;
@@ -1961,15 +1836,11 @@ function chat(main: HTMLElement): void {
     });
   }
 
-  // The box grows with its text up to 6 lines (the style sheet's max-height), then scrolls.
   function grow(): void {
     box.style.height = "auto";
     box.style.height = `${box.scrollHeight + 2}px`;
   }
 
-  // The keyboard: where the browser doesn't shrink the page for it (iOS), the chat takes the visual viewport's
-  // height, so the composer sits on the keyboard, and the page never scrolls away under it.
-  // Elsewhere the page itself shrinks, and 100dvh is right.
   const vv = window.visualViewport;
   if (vv) {
     const fit = (): void => {
@@ -1984,7 +1855,6 @@ function chat(main: HTMLElement): void {
     fit();
   }
 
-  // A long press (or right click) on a message: copy, copy as markdown, quote (as `> ` lines in the box).
   const menu = $("#menu");
   let pressed: HTMLElement | null = null;
   let hold = 0;
@@ -2028,15 +1898,12 @@ function chat(main: HTMLElement): void {
     },
     { passive: true },
   );
-  // The release of a press that opened the menu clicks nothing under the finger.
   list.addEventListener("touchend", (e) => {
     clearTimeout(hold);
     if (held) e.preventDefault();
     held = false;
   });
   list.addEventListener("touchcancel", () => clearTimeout(hold), { passive: true });
-  // A manual popover: a touch's release lands on the reply it pressed, which would light-dismiss an auto one.
-  // A press elsewhere, or Esc, closes it.
   document.addEventListener("pointerdown", (e) => {
     if (menu?.matches(":popover-open") && !menu.contains(e.target as Node)) menu.hidePopover();
   });
@@ -2064,7 +1931,6 @@ function chat(main: HTMLElement): void {
     );
   });
 
-  // The image viewer: a thumbnail opens it full size; back (or a tap, or Esc) closes it.
   const viewer = $("#viewer");
   const shot = viewer && $<HTMLImageElement>("img", viewer);
   list.addEventListener("click", (e) => {
@@ -2084,7 +1950,6 @@ function chat(main: HTMLElement): void {
     if (viewer?.matches(":popover-open")) viewer.hidePopover();
   });
 
-  // Rename: the title opens a box with it.
   const rt = $<HTMLFormElement>("#rt");
   if (rt)
     rt.onsubmit = async (e) => {
@@ -2105,8 +1970,6 @@ function chat(main: HTMLElement): void {
       toast("renamed");
     };
 
-  // The draft: kept per thread in IndexedDB with its picked files, written 1 s after typing stops and when the page
-  // hides; newest wins.
   type Draft = { text: string; at: number; files?: File[] };
   const draft = (() => {
     const db = new Promise<IDBDatabase>((ok, no) => {
@@ -2162,7 +2025,6 @@ function chat(main: HTMLElement): void {
   box.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(e);
   });
-  // The model and effort chips (#553 row 34): a pick is kept on the thread, which says from when it applies.
   for (const s of document.querySelectorAll<HTMLSelectElement>(".mc select"))
     s.onchange = () => {
       const pick = (n: string): string => $<HTMLSelectElement>(`#${n}`)?.value ?? "";
@@ -2179,7 +2041,6 @@ function chat(main: HTMLElement): void {
         (x) => toast(message(x), true),
       );
     };
-  // Live timers: the working pill and each running tool call.
   setInterval(() => {
     const elapsed = $("#el");
     if (elapsed) elapsed.textContent = clock(Date.now() - since);

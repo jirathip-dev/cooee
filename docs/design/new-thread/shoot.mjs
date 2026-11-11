@@ -1,14 +1,3 @@
-// #48: shoot the mockup's pages and check the shared size scale. No deps: Chrome's --remote-debugging-pipe, as
-// docs/design/v1/shoot.mjs. It serves the repo root (so the pages load web/src/app.css, web/src/look.js and the
-// themes as they are), with /look/<theme>/<file> mapped to web/themes/<theme>/<file> as cooee serves it.
-// Usage (repo root):  node docs/design/new-thread/shoot.mjs <chrome-headless-shell> [name regexp]
-//                     node docs/design/new-thread/shoot.mjs --serve   (prints the URL; open the pages yourself)
-// Every screen is checked, at 390 and 1440, in each look below: no sideways scroll; every chip, button and one-line
-// input in the composer, the sheets and Settings › providers is --ctl tall with the --r-ctl radius and --fs text
-// (inputs 16 px); every sheet and Settings row is 44 px; a cut line is ellipsised; at 390 the composer screen fits
-// one 844 px screen. Text an ellipsised ancestor cuts (the thread bar's line) may run past the edge. From 1024 px the
-// sidebar shows (320 px; [+ new thread], folders and rows --ctl tall) and the header's [+] doesn't; below it, the
-// reverse. No dev text anywhere: no agent id (`…-acp`), no `System default`. Prints one line per shot, exits 1 on a failure.
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -17,7 +6,7 @@ import { extname, join } from 'node:path';
 
 const here = new URL('.', import.meta.url).pathname, root = join(here, '../../..');
 const [chrome, only] = process.argv.slice(2);
-const REV = 'r2'; // in every PNG name: a revised shot gets a new URL, so no viewer shows a cached older round
+const REV = 'r2';
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png' };
 const srv = createServer((q, r) => {
   try {
@@ -31,8 +20,6 @@ const base = `http://127.0.0.1:${srv.address().port}/docs/design/new-thread/`;
 if (chrome === '--serve') { console.log(`${base}composer.html · chat.html · providers.html (?theme=…&mode=…&style=…&sprites=…)`); await new Promise(() => {}); }
 
 const PAGES = { composer: ['composer', 'profile', 'folder', 'profiled'], chat: ['connecting', 'failed'], providers: ['providers'] };
-// [file suffix, query]: farm in Modern, dark, is the main pair; then each other theme once, light and dark mixed, and
-// terminal in its own style.
 const LOOKS = [
   ['', 'theme=farm&mode=dark'],
   ['-kitchen-light', 'theme=kitchen&mode=light'],
@@ -57,7 +44,6 @@ const send = (method, params = {}, sessionId) => new Promise((ok, no) => {
 });
 const sleep = ms => new Promise(ok => setTimeout(ok, ms));
 
-// Runs in one screen: every rule above, as a list of "what · where" strings.
 function audit(screen) {
   const bad = [], W = innerWidth, cs = getComputedStyle(document.documentElement);
   const px = k => parseFloat(cs.getPropertyValue(k)), CTL = px('--ctl'), RC = px('--r-ctl'), FS = px('--fs'), ROW = px('--row');
@@ -80,7 +66,6 @@ function audit(screen) {
     if (r.right > W + 0.5 && !clip) bad.push(`past the right edge ${Math.round(r.right)} · ${name(e)}`);
     const own = [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim());
     if (own && e.scrollWidth > e.clientWidth + 1 && s.overflowX !== 'visible' && s.textOverflow !== 'ellipsis' && !e.matches('pre,textarea,input')) bad.push(`text cut without an ellipsis · ${name(e)}`);
-    // The scale: controls, then rows.
     if (e.matches('.chip, :is(.nc,.pop,.acr) button:not(.sr,.gl), .pop input, .nc textarea')) {
       if (!near(r.height, CTL)) bad.push(`control ${r.height}px, not --ctl ${CTL} · ${name(e)}`);
       if (!near(parseFloat(s.borderTopLeftRadius), RC)) bad.push(`radius ${s.borderTopLeftRadius}, not --r-ctl ${RC} · ${name(e)}`);
@@ -105,7 +90,7 @@ let fail = 0;
 for (const [page, screens] of Object.entries(PAGES)) for (const [suffix, look] of LOOKS) for (const [w, dpr] of [[390, 2], [1440, 1]]) {
   const out = `${page}-${w}${suffix}-${REV}.png`;
   if (only && !new RegExp(only).test(out)) continue;
-  if (suffix && w === 1440 && `${page}${suffix}` !== 'chat-terminal-light') continue; // the other looks at 390 only, but the Terminal sidebar once
+  if (suffix && w === 1440 && `${page}${suffix}` !== 'chat-terminal-light') continue;
   const h0 = w < 1000 ? 844 : 900;
   await cmd('Emulation.setDeviceMetricsOverride', { width: w, height: h0, deviceScaleFactor: dpr, mobile: w < 1000 });
   const bad = [];

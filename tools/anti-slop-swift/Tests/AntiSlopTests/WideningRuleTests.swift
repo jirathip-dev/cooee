@@ -3,7 +3,6 @@ import XCTest
 @testable import AntiSlopCore
 
 final class WideningRuleTests: XCTestCase {
-    // MARK: Helpers
 
     private func lint(_ source: String, _ ruleType: SlopRule.Type) -> [Violation] {
         AntiSlop.lint(source: source, fileName: "test.swift", rules: [ruleType])
@@ -40,8 +39,6 @@ final class WideningRuleTests: XCTestCase {
         )
     }
 
-    // MARK: no-known-value-widening
-
     func testAnyAnnotationOnLiteralIsRejected() {
         assertViolation("let payload: Any = [\"a\": 1]", NoKnownValueWideningRule.self)
     }
@@ -51,8 +48,6 @@ final class WideningRuleTests: XCTestCase {
     }
 
     func testOpenDictionaryAnnotationWithKnownKeysIsAllowed() {
-        // Idiomatic Swift for small typed constants; upstream's Record slice
-        // does not port.
         assertClean(
             "struct Handler {}; let h = Handler(); let handlers: [String: Handler] = [\"start\": h]",
             NoKnownValueWideningRule.self
@@ -94,8 +89,6 @@ final class WideningRuleTests: XCTestCase {
     func testQualifiedOtherMemberTypeIsClean() {
         assertClean("struct Foo { struct Any {} }; let v: Foo.Any = Foo.Any()", NoKnownValueWideningRule.self)
     }
-
-    // MARK: no-widen-then-assert
 
     func testWidenThenForceCastIsRejected() {
         assertViolation(
@@ -180,8 +173,6 @@ final class WideningRuleTests: XCTestCase {
             NoWidenThenAssertRule.self
         )
     }
-
-    // MARK: no-runtime-type-sniffing (metatype comparison slice)
 
     func testDynamicTypeEqualityIsRejected() {
         assertViolation(

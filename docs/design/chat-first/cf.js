@@ -1,10 +1,3 @@
-// #86 mockup: the chat-first pages on the live design system. It reads web/'s own schemes, themes and sprites and
-// sets them as cooee's first byte does (shown.rs): `?style=modern|terminal|scene`, `?theme=farm|kitchen|garden|plain`,
-// `?mode=dark|light`. Scene draws the agents as the theme's scene (#34); the chat beside it keeps Modern.
-// Then it fills the page:
-//   [data-st=working|needs|done|fail|idle]  the figure (sprite, else ascii), the theme word (data-plain: `· plain`)
-//   [data-s=<id>]                           a 132 × 100 figure: edit read run idle done needs merged fail
-//   #agents[data-cur][data-sub]             the agents: the list (Modern, Terminal) or the scene
 const W = '../../../web/';
 const q = new URLSearchParams(location.search);
 export const STYLE = q.get('style') || 'modern', T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark';
@@ -18,7 +11,6 @@ if (theme.sprites) {
   const svg = await fetch(`${W}themes/${T}/sprites.svg`).then(r => r.text());
   document.body.insertAdjacentHTML('afterbegin', `<svg width=0 height=0 style="position:absolute" aria-hidden=true><defs>${svg.replace(/^[\s\S]*?<svg[^>]*>|<\/svg>\s*$/g, '')}</defs></svg>`);
 }
-// web/src/look.rs ASCII (herdsman#335), for a theme without sprites.
 const ASCII = { edit: ['~o=', '=o~'], read: ['o.o', 'o.-'], run: ['o>_', 'o> '], needs: ['(!)', '[!]'], done: ['\\o/', '|o|'],
   merged: ['\\o/', '-o-'], fail: ['x_x', 'x.x'], idle: ['-.-', '-_-'] };
 const PLAIN = { working: 'working', needs: 'needs you', done: 'done', fail: 'failed', idle: 'idle' };
@@ -27,8 +19,6 @@ const fig = (id, big) => theme.sprites
   ? `<svg class=${big ? 'big' : 'rsp'} viewBox="0 0 ${big ? '132 100' : '24 24'}" aria-hidden=true><use href="#s-${id}"/></svg>`
   : `<i class=${big ? 'lsa' : 'rsa'} aria-hidden=true><b>${ASCII[id][0]}</b><b>${ASCII[id][1]}</b></i>${big ? '' : ' '}`;
 
-// The agents (illustrative): each a #40 profile, a name and an avatar (its initials in a scheme colour when the
-// profile names no picture), with one ongoing chat and its side threads.
 const AGENTS = [
   { id: 'chief', name: 'Chief', av: 'CH', c: '--l', profile: 'Plain', st: 'done', age: '2m', last: 'Every Monday at 09:00 I\'ll check the renewals and tell you here.',
     subs: [['Q3 board deck', '2d']] },
@@ -51,8 +41,6 @@ function list(cur, sub) {
       ? `<a class="str nw" href="#">+ new chat</a>` : ''}</div>` : ''}`).join('') +
     `<a class=agn href="#">+ new agent</a>`;
 }
-// Scene: one page, the agents as the scene's sprites over their name cards (#34's markup); the current one's chats
-// as a row of chips under the scene.
 function scene(cur, sub) {
   const pose = a => a.st === 'working' ? a.tool || 'edit' : a.st;
   const c = AGENTS.find(a => a.id === cur);
@@ -69,7 +57,6 @@ function scene(cur, sub) {
       .map(([t]) => `<a class=chip href="#">${t}</a>`).join('')}${sub ? '<a class=chip href="#" aria-current=page>New chat</a>' : ''}<a class=chip href="#">+ new chat</a></nav>`;
 }
 
-// A 390 shot shows each phone screen in turn: [data-twin] is drawn again under its caption, there with its sheet open.
 for (const e of document.querySelectorAll('[data-twin]')) {
   const c = e.cloneNode(true);
   c.classList.add('ph390');

@@ -1,9 +1,3 @@
-// #47: shoot the pairing design (pair.html: an unpaired device; approve.html: a paired one) and measure each shot
-// against herdsman's docs/ui.md gate 2, as the look's shoot.mjs (#7) does: no sideways scroll or box past the right
-// edge, text 11/13 px (Modern 13/15/17; inputs 16), controls 28 px (Modern 36) with a ≥ 44 px tap, tap rows ≥ 44 px,
-// one-line cells ellipsised. One addition: the code boxes, a shown code and the check word are --fs-code (32 px),
-// herdsman's own pairing-code size. No deps: Chrome's --remote-debugging-pipe. Serves docs/design/, since the pages
-// use ../look/. Usage (repo root): node docs/design/pair/shoot.mjs <chrome-headless-shell> [name regexp].
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -11,13 +5,10 @@ import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
 
 const here = new URL('.', import.meta.url).pathname, root = new URL('..', import.meta.url).pathname;
-const [chrome] = process.argv.slice(2); // and an optional regexp: shoot only the names it matches
-// [page, query, name, width, height: full (the page), DPR, the system's mode]
+const [chrome] = process.argv.slice(2);
 const VIEWS = [];
 for (const [w, dpr] of [[390, 2], [1440, 1]]) for (const m of ['dark', 'light']) for (const p of ['pair', 'approve'])
   VIEWS.push([`pair/${p}.html`, '?theme=farm', `${p}-${w}-${m}`, w, 'full', dpr, m]);
-// The other style and themes once each: Terminal (garden on a light phone, kitchen on a dark one), and the terminal
-// theme with Modern, whose figure is its icon.
 VIEWS.push(['pair/pair.html', '?theme=garden&style=terminal', 'pair-terminal-390-light', 390, 'full', 2, 'light'],
   ['pair/approve.html', '?theme=kitchen&style=terminal', 'approve-terminal-390-dark', 390, 'full', 2, 'dark'],
   ['pair/pair.html', '?theme=terminal', 'pair-themeterminal-390-dark', 390, 'full', 2, 'dark']);
@@ -49,7 +40,6 @@ const send = (method, params = {}, sessionId) => new Promise((ok, no) => {
 });
 const sleep = ms => new Promise(ok => setTimeout(ok, ms));
 
-// Runs in the page: every rule above, as a list of "what · where" strings.
 function audit() {
   const modern = document.documentElement.dataset.style === 'modern', SIZES = modern ? [13, 15, 17] : [11, 13], CTL = modern ? 36 : 28;
   const bad = [], W = innerWidth, name = e => e.tagName.toLowerCase() + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\s+/).join('.') : '') + ` "${(e.textContent || e.placeholder || '').trim().slice(0, 30)}"`;

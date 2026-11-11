@@ -45,8 +45,6 @@ public final class NoKnownValueWideningRule: SlopRule {
         }
     }
 
-    /// Mirrors upstream's `isKnownEvidenceExpression`: expressions whose shape
-    /// the compiler already knows without any annotation.
     static func hasKnownEvidence(_ expression: ExprSyntax) -> Bool {
         switch Syntax(expression).as(SyntaxEnum.self) {
         case .stringLiteralExpr, .integerLiteralExpr, .floatLiteralExpr,
@@ -80,9 +78,6 @@ public final class NoWidenThenAssertRule: SlopRule {
     }
 
     private var widenedBindings: [String: Int] = [:]
-    /// Every identifier declaration (variables and function parameters) with
-    /// its position, used to detect shadowing between a widened binding and a
-    /// later cast.
     private var identifierDeclarations: [(name: String, offset: Int)] = []
 
     public required init(
@@ -123,7 +118,6 @@ public final class NoWidenThenAssertRule: SlopRule {
     public override func visit(_ node: FunctionDeclSyntax) -> SyntaxVisitorContinueKind {
         let offset = node.positionAfterSkippingLeadingTrivia.utf8Offset
         for parameter in node.signature.parameterClause.parameters {
-            // `first second: Type` binds `second`; bare `first: Type` binds `first`.
             let name = parameter.secondName?.text ?? parameter.firstName.text
             identifierDeclarations.append((name, offset))
         }
@@ -139,15 +133,12 @@ public final class NoWidenThenAssertRule: SlopRule {
     }
 
     public override func visitPost(_ node: AsExprSyntax) {
-        // The cast must narrow; casting to Any is the widening side.
         guard !SimplifiedType.of(node.type).isAnyLike else { return }
         guard let operand = unwrappedOperand(node.expression),
             let declarationOffset = widenedBindings[operand]
         else { return }
         guard node.positionAfterSkippingLeadingTrivia.utf8Offset > declarationOffset else { return }
 
-        // A same-named declaration between the widened binding and this cast
-        // means the operand refers to something else; do not fire.
         let castOffset = node.positionAfterSkippingLeadingTrivia.utf8Offset
         let isShadowed = identifierDeclarations.contains { declaration in
             declaration.name == operand
@@ -168,7 +159,6 @@ public final class NoWidenThenAssertRule: SlopRule {
         case .declReferenceExpr(let reference):
             return reference.baseName.text
         case .tupleExpr(let tuple):
-            // Parenthesized expressions parse as one-element tuples.
             guard tuple.elements.count == 1, let only = tuple.elements.first else {
                 return nil
             }

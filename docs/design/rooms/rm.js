@@ -1,12 +1,3 @@
-// #153 mockup: rooms and linked exchanges, on the live design system. As native-shell's ns.js, it reads web/'s schemes
-// and the farm pack and sets them as shown.rs does: `?theme=farm&mode=dark|light&style=modern|terminal|scene`.
-// `?f=<frame>` shows one frame alone at its own size (the shots); without it the page is a gallery. Then it fills:
-//   .ph                     a phone screen's status bar, island and home indicator (ns.css)
-//   .pa[data-p]             a persona's avatar in the style: Modern its symbol on its tint, Terminal its ASCII figure,
-//                           Scene its horse (apple/Sources/CooeeUI/Sprites, in its coat, acting data-pose); data-k a dot
-//   [data-x=strip]          the room's member strip (data-sel: the member whose sheet is open)
-//   [data-x=side]           Home with rooms and linked exchanges: the 1440 sidebar, or the phone's list with data-ph
-//                           (data-sel: the open row)
 const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', F = q.get('f');
@@ -21,8 +12,6 @@ Object.assign(r.dataset, { theme: T, style: STYLE === 'terminal' ? 'terminal' : 
 if (STYLE === 'scene') r.dataset.scene = '';
 if (F) { r.dataset.one = ''; document.querySelector(`[data-f="${F}"]`)?.closest('.fr').classList.add('one'); }
 
-// The personas (#124's fixtures): name, tint, Modern symbol, Scene coat, agent, and the machine its session runs on
-// (G7: each member on its own machine). Conductor is the orchestrator persona (G5: it may join a room).
 const G = {
   star: '<svg class=f viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3 6.1 20.6l1.3-6.6L2.5 9.4l6.6-.8z"/></svg>',
   code: '<svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>',
@@ -37,7 +26,6 @@ export const PER = {
   am: { name: 'Account Manager', t: '--link', g: 'case', coat: 'bay', agent: 'Claude Code', model: 'sonnet 5.5', machine: 'mini' },
   cond: { name: 'Conductor', t: '--g', g: 'node', coat: 'wht', agent: 'Claude Code', model: 'opus 5.5', machine: 'mini' },
 };
-// A member's state in a round, its word, its ASCII figure (look.rs) and Scene pose (the farm's words act it).
 const KS = {
   replying: ['replying', '~o=', 'edit'], replied: ['replied', '\\o/', 'done'], passed: ['passed', '-.-', 'idle'],
   next: ['up next', '-.-', 'idle'], waiting: ['waiting', '-.-', 'idle'], asks: ['asks you', '(!)', 'needs'],
@@ -54,7 +42,6 @@ function avatar(e) {
     : STYLE === 'terminal' ? (k ? KS[k][1] : e.dataset.fig || '\\o/') : G[p.g]) + dot;
 }
 
-// The member strip, in room order: `res:replying` etc., data-sel the member whose sheet is open.
 function strip(e) {
   return e.dataset.m.split(' ').map((m, i) => {
     const [id, k] = m.split(':'), p = PER[id];
@@ -63,8 +50,6 @@ function strip(e) {
   }).join('');
 }
 
-// Home as the 1440 sidebar (#124's mac-window): rooms are rows with their members' stack; a linked exchange hangs
-// under its asker's chat (⇄), as the owner sees every exchange.
 const ROWS = [
   { room: 'kestrel', stk: 'chief coder res am', n: 'Kestrel launch', s: '4 members', l: 'Account Manager: Pricing: a 3-year term at…', a: 'now', u: 1 },
   { p: 'coder', n: 'Coder', s: 'Export for Kestrel', l: "Q3 was $4.1M. It's in export/summary.md.", a: '1m', u: 0 },
@@ -91,6 +76,5 @@ const X = { strip, side };
 for (const e of document.querySelectorAll('[data-x]')) e.innerHTML = X[e.dataset.x](e);
 for (const e of document.querySelectorAll('[data-t]')) e.style.setProperty('--t', `var(${PER[e.dataset.t].t})`);
 for (const e of document.querySelectorAll('.pa[data-p]')) avatar(e);
-// Terminal draws buttons and glass glyphs bracketed (app.css); the back chevron is `[<]` there.
 if (STYLE === 'terminal') for (const e of document.querySelectorAll('.gb[data-tx]')) e.textContent = e.dataset.tx;
 document.body.dataset.ready = 1;

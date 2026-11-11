@@ -3,7 +3,6 @@ import XCTest
 @testable import AntiSlopCore
 
 final class AntiSlopConfigTests: XCTestCase {
-    // New instance per test method, so the lazy directory is per-test fresh.
     private lazy var temporaryDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent("anti-slop-config-\(UUID().uuidString)")
         .standardizedFileURL

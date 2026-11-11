@@ -1,21 +1,3 @@
-// cooee's look (docs/design/look) once the page is up. The server draws the device's pick from its `cooee-look`
-// cookie on the first byte (theme, mode system | light | dark, style modern | terminal | scene, figures sprite | ascii |
-// none, and a scheme per mode; unset: the theme's default; #35; Scene, #34, draws the agents sidebar as the theme's scene), with every theme and scheme in `<script id="looks">`. This module
-// keeps it live: a pick in the look sheet applies at once without a reload (the cookie keeps it), System follows
-// prefers-color-scheme, and elements added later are filled as they come, so chat.ts only names what it shows:
-//   [data-st=working|needs|done|fail|idle|ended]  a state: the sprite (data-tool=edit|read|run while working) or the
-//                                                 ascii figure, then the theme word (data-plain adds `· plain word`);
-//                                                 figures none: a dot and the plain word
-//   [data-st=loading]                             a thread connecting (#48): the loading figure at line height and
-//                                                 the theme's loading word, else `connecting`; data-who adds
-//                                                 `· connecting <who>` (`<who>` when the word is `connecting`)
-//   [data-w=<key>]                                a theme word (data-plain adds `· plain word`)
-//   [data-s=loading|empty]                        the theme's 132 × 100 figure (figures none: none)
-//   [data-open=look|settings|folders]             opens that sheet (#settings/<section> opens Settings there)
-// The sheets are server-rendered popovers in #sheet (they open with no script); this keeps their marks in step, fills
-// Settings › Folders from /folders, and fires `cooee-sheet` when one opens, for chat.ts's sections. A plugin tab
-// (iframe[data-plugin]) gets the look as a message (`cooee-look`) when it asks (`cooee-look?`) and on every change.
-
 export interface Scheme {
   label: string;
   "color-scheme": string;
@@ -66,18 +48,15 @@ const PLAIN: Record<string, string> = {
 const ASCII = Object.fromEntries(LOOK.ascii);
 const SEL = "[data-st],[data-w],[data-s]";
 
-// The pick, as the cookie keeps it: `theme:kitchen/style:terminal`.
 const read = (): Pick => {
   const raw = document.cookie.split("; ").find((c) => c.startsWith(`${COOKIE}=`)) ?? "";
   const pick: Pick = {};
   for (const kv of raw.slice(COOKIE.length + 1).split("/")) {
     const [k, v] = kv.split(":");
-    // The Sprites switch and the terminal theme before #35.
     if (k === "sprites" && v) pick.figures = v === "on" ? "sprite" : v === "off" ? "none" : v;
     else if (k === "theme" && v === "terminal" && !LOOK.themes.terminal) pick.theme = "plain";
     else if (k && v) pick[k as Key] = v;
   }
-  // A theme being built shows in its preview's frames (`?preview=<name>`).
   const preview = new URLSearchParams(location.search).get("preview");
   if (preview) pick.theme = `dev.${preview}`;
   return pick;
@@ -91,13 +70,10 @@ const scheme = (m: Mode): string => {
   const p = pick[m];
   return p && LOOK.schemes[p]?.["color-scheme"] === m ? p : theme().scheme[m];
 };
-// Figures sprite | ascii | none (a theme without sprites: ascii | none); Scene only with sprites, else the Modern or
-// Terminal pick under it.
 const figs = (): string =>
   pick.figures === "ascii" || pick.figures === "none" ? pick.figures : theme().sprites ? "sprite" : "ascii";
 const style = (): string =>
   pick.scene === "on" && figs() === "sprite" ? "scene" : pick.style === "terminal" ? "terminal" : "modern";
-// The shape pages take: in Scene only the agents sidebar is the scene, the rest keeps the Modern or Terminal pick.
 const shape = (): string => (pick.style === "terminal" ? "terminal" : "modern");
 const scene = (): boolean => style() === "scene";
 const word = (k: string): string => theme().words[k] || PLAIN[k] || k;
@@ -140,7 +116,6 @@ function fill(e: HTMLElement): void {
 const fillAll = (root: ParentNode = document): void => {
   for (const e of root.querySelectorAll<HTMLElement>(SEL)) fill(e);
 };
-// The server filled what it rendered; this fills what comes after, and a state that changes.
 new MutationObserver((ms) => {
   for (const m of ms) {
     if (m.type === "attributes") fill(m.target as HTMLElement);
@@ -153,7 +128,6 @@ new MutationObserver((ms) => {
   }
 }).observe(html, { subtree: true, childList: true, attributes: true, attributeFilter: ["data-st", "data-tool"] });
 
-// The look as a plugin tab gets it.
 function forPlugin(): object {
   const t = theme();
   return {
@@ -196,8 +170,6 @@ function paint(): void {
   marks();
 }
 
-// A change keeps the reader where they were: the row at the top of the view stays there, cut at the same share
-// of its height, however much the new style grows or shrinks it.
 function hold(change: () => void): void {
   const box = document.getElementById("msgs") ?? $("main.list");
   const rows = box ? box.children : document.querySelectorAll(".fh,.tr");
@@ -218,7 +190,6 @@ function set(k: Key, v: string | undefined): void {
   if (k === "dark" || k === "light") {
     if (v === theme().scheme[k]) delete pick[k];
     else if (v) pick[k] = v;
-    // A tap on the other mode's list shows it: Appearance switches to that mode.
     if (k !== mode()) pick.mode = k;
   } else if (k === "style" && v === "scene") pick.scene = "on";
   else if (v === undefined) delete pick[k];
@@ -231,13 +202,10 @@ function set(k: Key, v: string | undefined): void {
     .join("/");
   // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is newer than the iPhones cooee serves.
   document.cookie = `${COOKIE}=${value}; path=/; max-age=315360000; samesite=lax`;
-  // Scene in or out, or another theme's scene: the agents sidebar is drawn again by the server.
   if ($(".ags") && (scene() && name()) !== was) location.reload();
   else hold(paint);
 }
 
-// The sheets' marks: each key's current value checked, the theme's default schemes, the mode showing, and Settings'
-// values. The server rendered them for the pick it saw; a pick here changes them in place.
 const label = (n: string): string => LOOK.schemes[n]?.label.toLowerCase() ?? n;
 function marks(): void {
   const now: Record<Key, string> = {
@@ -254,7 +222,6 @@ function marks(): void {
     const on = now[k] === b.dataset.v;
     if (b.getAttribute("role") === "radio") {
       b.setAttribute("aria-checked", String(on));
-      // Not offered, so not listed: Scene without sprites, Sprite on a theme without them.
       b.hidden = (b.dataset.v === "scene" && figs() !== "sprite") || (b.dataset.v === "sprite" && !theme().sprites);
       continue;
     }
@@ -281,8 +248,6 @@ function marks(): void {
     v.textContent = values[v.dataset.sv ?? ""] ?? "";
 }
 
-// Settings › Folders: the roots, each with [remove], and the Mac's folders from the home folder down (names only,
-// hidden ones behind a toggle), the one shown with [add as root]. Closing it after a change reloads the page.
 interface Listing {
   path: string;
   home: string;
@@ -345,8 +310,6 @@ function drawFolders(): void {
     ${a.path === a.home ? "" : go(a.path.replace(/\/[^/]*$/, ""), "‹ up")}${a.dirs.map((d) => go(`${a.path}/${d}`, d, '<i class="cv">▸</i>')).join("")}`;
 }
 
-// The open sheet. A sheet opens with its header button (also with no script); from inside another sheet, it takes
-// that one's place.
 const sheets = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>("#sheet > .sh")];
 const sheetOf = (which: string): HTMLElement | null => document.getElementById(`sh-${which}`);
 let open = "";
@@ -376,7 +339,6 @@ for (const s of sheets()) {
       history.replaceState(null, "", location.pathname + location.search);
   });
 }
-// A deep link: #settings, or #settings/<section> scrolled to that section.
 function deep(): void {
   const m = location.hash.match(/^#settings(?:\/([\w-]+))?$/);
   if (!m) return;
@@ -397,13 +359,11 @@ addEventListener("click", (e) => {
   if (!t) return;
   const d = t.dataset;
   if (d.open) {
-    // In a sheet, the next one takes its place; a header button toggles its sheet itself.
     if (t.closest(".sh")) {
       e.preventDefault();
       show(d.open);
     }
   } else if (d.k) {
-    // Applied here at once; with no script the button posts the pick instead.
     e.preventDefault();
     set(d.k as Key, d.v === "system" ? undefined : d.v);
   } else if (d.f) {
@@ -418,7 +378,6 @@ addEventListener("click", (e) => {
       folders({ path: d.rm, remove: true });
   } else if ("close" in d) show("");
 });
-// A tap outside an open sheet closes it (the popover's light dismiss) and goes no further, as a scrim's tap did.
 let outside = false;
 const inSheet = (e: Event): boolean => !!(e.target as Element).closest?.("#sheet .sh, header [data-open]");
 addEventListener(
@@ -445,7 +404,6 @@ addEventListener(
   },
   true,
 );
-// System follows the phone live; another tab's pick shows here once this one is in view again.
 mq.addEventListener("change", () => hold(paint));
 document.addEventListener("visibilitychange", () => {
   if (document.hidden || JSON.stringify(read()) === JSON.stringify(pick)) return;
@@ -454,11 +412,9 @@ document.addEventListener("visibilitychange", () => {
 });
 html.dataset.mode = mode();
 marks();
-// A theme's live preview (/themes/dev/<name>) reloads on each save.
 const building = $("[data-preview]")?.dataset.preview;
 if (building) {
   const saves = new EventSource(`/themes/dev/${building}/events`);
   saves.addEventListener("saved", () => location.reload());
-  // [keep] moves it away: no reload races the form.
   addEventListener("submit", () => saves.close());
 }

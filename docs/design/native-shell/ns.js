@@ -1,11 +1,3 @@
-// #116 mockup: the native shell on the live design system. As chat-first's cf.js, it reads web/'s schemes and the
-// farm pack and sets them as cooee's first byte does (shown.rs): `?theme=farm&mode=dark|light`, Modern (Terminal is
-// not drawn). `?f=<frame>` shows that frame alone at its own size (the shots); without it the page is a gallery.
-// Then it fills:
-//   .ph                                   a phone screen's status bar, island and home indicator
-//   [data-x=tabs|rail][data-on]           the tab bar (390) or the left rail (1440), the current tab
-//   [data-x=personas|threads|scene|workflow|queue|asks|more|persona|chat]   a screen's content
-//   [data-st] [data-av] [data-s]          a state's figure and word, an avatar, a 132 × 100 vector horse
 const W = '../../../web/', P = '../../../packs/themes/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark', F = q.get('f');
@@ -26,12 +18,8 @@ if (F) {
 const PLAIN = { working: 'working', needs: 'needs you', done: 'done', fail: 'failed', idle: 'idle' };
 const word = k => theme.words[k] || PLAIN[k];
 const fig = (st, tool) => `<svg class=rsp viewBox="0 0 24 24" aria-hidden=true><use href="#s-${st === 'working' ? tool || 'edit' : st}"/></svg>`;
-// Scene: each state acts its theme word (q902): on the trail ploughs, at the gate rears at it, in the stable stands
-// in it, grazing grazes, refused balks at the fence.
 const HORSE = { working: 'plough', done: 'stable', needs: 'rear', fail: 'refuse-plant', idle: 'graze' };
 
-// The personas (illustrative): a name, an avatar (initials in a scheme colour unless it has a picture), Character and
-// Instructions, a memory, a folder and an agent + model; each has one ongoing chat.
 const PERSONAS = [
   { id: 'chief', name: 'Chief', av: 'CH', c: '--l', coat: 'ch', st: 'done', age: '2m', last: 'Every Monday at 09:00 I\'ll check the renewals and tell you here.' },
   { id: 'am', name: 'Account Manager', av: 'AM', c: '--link', coat: 'bay', st: 'idle', age: '1h', last: 'Due this month: Acme 14 Nov, Birch & Co 21 Nov, Kestrel 28 Nov.' },
@@ -43,8 +31,6 @@ const per = id => PERSONAS.find(p => p.id === id);
 const av = (id, cls = '') => `<i class="av ${cls}" style="--av:var(${per(id).c})" aria-hidden=true>${per(id).av}</i>`;
 const st = (s, tool) => `<b data-st=${s}${tool ? ` data-tool=${tool}` : ''}></b>`;
 
-// Workflow: one row per open issue; its rounds in order, the last the current one. A finished (merged) issue leaves.
-// Revision 1 (q902): the issues, titles and PR links are the real ones (2026-11-09); the stages are illustrative.
 const ISSUES = [
   { repo: 'cooee', n: 116, st: 'needs', age: '4m', title: 'Design: native-feel PWA shell, persona agents, one Workflow row per issue',
     rounds: [['design', 'needs', 'needs you · revise 1', '4m', 'design']] },
@@ -93,7 +79,6 @@ const TABS = [
 const tabs = on => TABS.map(([id, label, d]) => `<a href="#"${id === on ? ' aria-current=page' : ''}><svg viewBox="0 0 24 24" aria-hidden=true>${d}</svg>${label}${
   id === 'asks' ? '<i class=tbd>4</i>' : id === 'workflow' ? '<i class=tdt aria-label="needs you"></i>' : ''}</a>`).join('');
 
-// The system keyboard (the phone's own chrome, as the status bar): predictions, three letter rows, 123 · space · return.
 const keys = (s, cls = '') => [...s].map(k => `<i class="ky ${cls}">${k}</i>`).join('');
 const KB = `<div class=kb aria-hidden=true><div class=kp><span>"Kestrel"</span><span>Kestrel's</span><span>Kestrels</span></div>
   <div class=kr>${keys('qwertyuiop')}</div><div class="kr k2">${keys('asdfghjkl')}</div>
@@ -131,8 +116,6 @@ const X = {
         <div class=qr><b class=m>○</b> #553 <span class=m>queued</span> <span class=m>#2</span> <span class=tl>Parity list: every board and chat feature</span></div>
         <div class=qr><b class=m>○</b> #725 <span class=m>queued</span> <span class=m>#3</span> <span class=tl>lifeboat: small fallback page in herdsman</span></div></div>
       <a class=lk href="#">done today: 6</a></div>`,
-  // Asks: a herdsman run card first (it lapses 15 min after its post), then the owner's design ask, a lane's routine
-  // ask and a needs-human issue. The run card is #83's: the command, its sha, [approve] once with the sha, [deny].
   asks: () => `<div class="ak run"><p class=ah><span><b>cooee</b> · run card c41</span><span>t53 · 4m</span></p>
       <p class=aq>Delete #48's wip snapshots: merged, they carry build output</p>
       <pre class=diff>git push origin --delete wip/cooee-impl-48-20261108-2115 wip/cooee-impl-48-20261109-0116</pre>
@@ -158,7 +141,6 @@ const X = {
       g('fleets', [['--g', '⟳', 'cooee', '<i class=dt data-sync=on></i>driving'], ['--g', '⟳', 'herdsman', '<i class=dt data-sync=on></i>driving'], ['--a', 'Ⅱ', 'cooee-drover', '<i class=dt></i>paused']]) +
       g('settings', [['--link', '⚿', 'Sign-ins', '2 accounts'], ['--l', '⇄', 'MCP servers', '3'], ['--a', '⟲', 'Routines', '1']]);
   },
-  // The persona sheet's body: new (empty, Create) or edit (Chief).
   persona: e => {
     const nw = 'new' in e.dataset;
     return `<div class=pav>${nw ? '<i class="av xl" style="--av:var(--c)" aria-hidden=true>+</i><a href="#">Choose avatar</a>' : `${av('chief', 'xl')}<a href="#">Edit</a>`}</div>
@@ -175,11 +157,7 @@ const X = {
     <h2 class=ch>folder</h2><div class=gs><a class=gr href="#"><span class=sk>${nw ? 'scratch' : '~/Clients/crm'}</span><span class=sv>${nw ? 'each chat its own' : '3 chats'}</span><span class=cv></span></a></div>
     ${nw ? '' : '<div style="height:28px"></div><div class=gs><a class="gr rd cn" href="#">Delete Chief</a></div>'}`;
   },
-  // A chat's nav bar (q902): ‹ Chats; the persona's avatar and name (a tap opens its sheet) over its agent chip (a tap
-  // opens the next-turn menu).
   chathead: () => `<a class=bk href="shell.html"><b>‹</b>Chats</a><span class=ph2>${av('chief')}<span><b>Chief</b><button type=button class="agc sm"><b>Claude Code</b>· opus 5.5</button></span></span><span></span>`,
-  // Chief's ongoing chat (chat-first's blocks), then the composer. The agent chip lives in the chat's header (q902);
-  // data-kb draws the keyboard under the composer.
   chat: e => `<ol class=tc aria-label=messages>
       <li class="blk me"><div class=md>Which client renewals are due this month? Draft a short note for each.</div><span class=ct>09:12</span></li>
       <li class="blk run"><span class=k>tool</span><span class=cmd>message_agent Account Manager</span><span class="ts g">✓</span></li>
