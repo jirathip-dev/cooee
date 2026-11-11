@@ -1,0 +1,5 @@
+scripts/comments.py
+no comments break the rule
+ci/comments-test.sh
+comments test ok
+for n in $(scripts/comments.py --todos); do test "$(gh issue view "$n" --json state -q .state)" = OPEN || { echo "TODO(#$n): issue #$n is not open"; exit 1; }; done

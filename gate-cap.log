@@ -1,0 +1,9 @@
+scripts/line-cap.sh
+non-test lines: 23586 / 27500
+apple lines: 7123 / 7500
+ci/line-cap-test.sh
+non-test lines: 1 / 100
+apple lines: 5 / 5
+non-test lines: 1 / 100
+apple lines: 6 / 5
+line-cap test ok
