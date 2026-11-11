@@ -73,8 +73,18 @@ async fn row(r: Routine) -> Result<impl View> {
         <details class="thx">
             <summary>(format!("edit {}", r.name))</summary>
             <form method="post" action=(to)>
-                <input name="name" required=(true) aria-label="name" value=(r.name.clone())>
-                <input name="when" required=(true) aria-label="schedule (cron)" value=(when)>
+                <input
+                    name="name"
+                    required=(true)
+                    aria-label="name"
+                    value=(r.name.clone())
+                >
+                <input
+                    name="when"
+                    required=(true)
+                    aria-label="schedule (cron)"
+                    value=(when)
+                >
                 <textarea name="prompt" required=(true) aria-label="prompt">
                     (r.prompt.clone())
                 </textarea>

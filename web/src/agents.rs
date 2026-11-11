@@ -395,7 +395,10 @@ async fn sidebar(
                             unseen: m.chats.iter().map(|c| c.unseen).sum(),
                             choose: m.chats.iter().any(|c| c.state == "blocked"),
                             at: latest.as_ref().map(|c| c.at),
-                            routine: latest.as_ref().map(|c| c.routine.clone()).unwrap_or_default(),
+                            routine: latest
+                                .as_ref()
+                                .map(|c| c.routine.clone())
+                                .unwrap_or_default(),
                             agent: Some((n, latest)),
                             src: m.avatar.clone(),
                         }
