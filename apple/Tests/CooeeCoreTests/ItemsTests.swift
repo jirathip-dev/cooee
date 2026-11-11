@@ -54,4 +54,20 @@ internal struct ItemsTests {
         #expect(Markdown.blocks("intro\n- a\n```sh\nls") == [.text("intro"), .bullets(["a"]), .code(lang: "sh", "ls")])
         #expect(Markdown.blocks("") == [])
     }
+
+    @Test internal func theSameNoteTwiceInARowIsOneRow() {
+        let stopped = [
+            APIItem(id: 1, time: 1, kind: "ended", text: "The agent stopped."),
+            APIItem(id: 2, time: 2, kind: "ended", text: "The agent stopped."),
+            APIItem(id: 3, time: 3, kind: "ended", text: "The agent stopped."),
+            APIItem(id: 4, time: 4, kind: "you", text: "Again"),
+            APIItem(id: 5, time: 5, kind: "ended", text: "The agent stopped."),
+        ]
+        #expect(
+            ChatItems.build(stopped, live: "") == [
+                .note(id: 1, text: "The agent stopped."), .you(id: 4, text: "Again"),
+                .note(id: 5, text: "The agent stopped."),
+            ]
+        )
+    }
 }
