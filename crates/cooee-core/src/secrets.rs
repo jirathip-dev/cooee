@@ -14,8 +14,9 @@ use std::{
 /// Past this a keychain call is an error: a locked keychain can hang behind a prompt no one sees (#713).
 pub const WAIT: Duration = Duration::from_secs(5);
 
-/// The code-signing identity every install signs cooee with (herdsman#781).
-pub const IDENTITY: &str = "herdsman-local";
+/// The code-signing identity every install signs cooee with (q1261): an Apple-issued one, whose team the keychain
+/// keeps the item for (a self-signed one ties it to one build).
+pub const IDENTITY: &str = "Apple Development";
 
 /// Secret `name`'s file: where Linux keeps it, and where a Mac's waits to be moved.
 fn file(data: &Path, name: &str) -> PathBuf {
@@ -165,7 +166,7 @@ mod keychain {
     const SERVICE: &str = "cooee-secret";
     const NOT_FOUND: i32 = -25300;
 
-    fn error(e: &Error) -> io::Error {
+    fn error(e: Error) -> io::Error {
         io::Error::other(format!(
             "the keychain refused cooee ({e}): install a signed cooee (scripts/install.sh)"
         ))
@@ -179,7 +180,8 @@ mod keychain {
 
     /// Whether this cooee is signed with [`IDENTITY`]: an item it saves opens to its next build.
     pub fn signed() -> bool {
-        let req = format!("identifier \"cooee\" and certificate leaf[subject.CN] = \"{IDENTITY}\"");
+        let req =
+            "anchor apple generic and identifier \"cooee\" and certificate leaf[subject.OU] exists";
         let req = req.parse::<SecRequirement>();
         req.and_then(|r| SecCode::for_self(Flags::NONE)?.check_validity(Flags::NONE, &r))
             .is_ok()
@@ -191,7 +193,7 @@ mod keychain {
             match find_generic_password(None, SERVICE, &account) {
                 Ok((v, _)) => Ok(Some(String::from_utf8_lossy(&v).into_owned())),
                 Err(e) if e.code() == NOT_FOUND => Ok(None),
-                Err(e) => Err(error(&e)),
+                Err(e) => Err(error(e)),
             }
         })
     }
@@ -205,9 +207,9 @@ mod keychain {
         }
         limited(WAIT, move || {
             quiet();
-            let k = SecKeychain::default().map_err(|e| error(&e))?;
+            let k = SecKeychain::default().map_err(error)?;
             k.set_generic_password(SERVICE, &account, value.as_bytes())
-                .map_err(|e| error(&e))
+                .map_err(error)
         })
     }
 
@@ -222,7 +224,7 @@ mod keychain {
                 .search();
             let found = match found {
                 Err(e) if e.code() == NOT_FOUND => return Ok(Vec::new()),
-                f => f.map_err(|e| error(&e))?,
+                f => f.map_err(error)?,
             };
             let mut all: Vec<String> = found
                 .iter()

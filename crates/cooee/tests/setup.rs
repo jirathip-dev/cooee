@@ -447,7 +447,7 @@ fn install_sh_checks_its_tools_then_installs_cooee_and_runs_setup() {
     let home = scratch("install-sh");
     let bin = home.join("bin");
     fs::create_dir_all(&bin).unwrap();
-    for name in ["cargo", "cooee"] {
+    for name in ["cargo", "cooee", "codesign"] {
         let file = bin.join(name);
         fs::write(
             &file,
@@ -476,14 +476,36 @@ fn install_sh_checks_its_tools_then_installs_cooee_and_runs_setup() {
     assert!(!home.join("calls.log").exists());
 
     fs::copy(bin.join("cooee"), bin.join("tailscale")).unwrap();
+    let crate_dir = script.parent().unwrap().join("../crates/cooee");
+    let install = format!("cargo install --locked --path {}\n", crate_dir.display());
+    let mut sign = String::new();
+    if cfg!(target_os = "macos") {
+        // #167: no Apple Development identity, no install: an unsigned cooee couldn't keep its secrets.
+        let security = bin.join("security");
+        fs::write(&security, "#!/bin/sh\necho '  0 valid identities found'\n").unwrap();
+        fs::set_permissions(&security, fs::Permissions::from_mode(0o755)).unwrap();
+        let out = run();
+        assert_eq!(out.status.code(), Some(1), "{out:?}");
+        let err = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            err.contains("no \"Apple Development\" signing identity"),
+            "{err}"
+        );
+        assert_eq!(fs::read_to_string(home.join("calls.log")).unwrap(), install);
+        fs::remove_file(home.join("calls.log")).unwrap();
+        let id = "Apple Development: Test (ABCDE12345)";
+        let found = format!("#!/bin/sh\necho '  1) 0123 \"{id}\"'\n");
+        fs::write(&security, found).unwrap();
+        let cooee = home.join(".cargo/bin/cooee");
+        sign = format!(
+            "codesign --force --sign {id} --identifier cooee {}\n",
+            cooee.display()
+        );
+    }
     let out = run();
     assert!(out.status.success(), "{out:?}");
-    let crate_dir = script.parent().unwrap().join("../crates/cooee");
     assert_eq!(
         fs::read_to_string(home.join("calls.log")).unwrap(),
-        format!(
-            "cargo install --locked --path {}\ncooee setup --instance cooee-drover\n",
-            crate_dir.display()
-        )
+        format!("{install}{sign}cooee setup --instance cooee-drover\n")
     );
 }
