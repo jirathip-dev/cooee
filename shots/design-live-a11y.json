@@ -1,0 +1,101 @@
+{
+ "url": "http://127.0.0.1:56241/docs/design/native-feel/live.html",
+ "nodes": 706,
+ "issues": [
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 56
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 185
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 190
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 192
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 9
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 10
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 11
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 363
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 368
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 370
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 42
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 175
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 206
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 302
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 402
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 171
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 388
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 521
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 517
+  }
+ ]
+}

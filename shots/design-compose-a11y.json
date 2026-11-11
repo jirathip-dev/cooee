@@ -1,0 +1,66 @@
+{
+ "url": "http://127.0.0.1:56241/docs/design/native-feel/compose.html",
+ "nodes": 718,
+ "issues": [
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 123
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 128
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 130
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 14
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 15
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 16
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 24
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 25
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 26
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 56
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 139
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 218
+  }
+ ]
+}
