@@ -1,0 +1,9 @@
+Decided: round 2 merges origin/staging; ChatItems.build takes staging's outbox with this PR's style and working
+Because: apple/Sources/CooeeCore/Item.swift:69
+Decided: the fake agent reads `slow N` from the prompt's last paragraph, after any persona brief
+Because: crates/cooee/tests/support/mod.rs:767
+Because: "the persona is told to answer short and plain"
+Rejected: making the e2e Coder Detailed — LiveUITests needs Coder in Chat for the fold and trace screenshots
+Check: e2e passes; at d9bb27e LiveTests hung because Coder's first prompt began with the Chat line, not `slow 3`
+Check: the ui red at d9bb27e was apt failing to reach security.ubuntu.com, no code involved
+Owner: Same feature; this round catches up with staging and fixes the test agent that made the app's live test hang.
