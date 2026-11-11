@@ -1,8 +1,8 @@
 # v1 live: the plain `cooee` instance on the Mini
 
 The owner runs the install commands (they change the host); the conductor confirms with `cooee doctor` and records
-each checklist result in the v1-live PR. `cooee-drover` (the herdsman plugins, jirathip-dev/cooee-drover) is set up
-later the same way with its own port and `[[plugins]]` entries.
+each checklist result in the v1-live PR. Drover's tabs come
+from herdsman itself, not a separate plugin repo.
 
 ## Install
 

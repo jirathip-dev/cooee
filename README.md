@@ -23,7 +23,7 @@ On `staging`, each line with the PR or file that proves it:
 - **Sign-ins and accounts:** the provider's own login runs from the phone; several accounts per provider, each with usage (#18, #46, #191).
 - **Models:** each agent's live model list; short names track the newest model (#194).
 - **Plugins:** git repos added from a curated index, supervised backends, tabs and screens as data (#51, #205, [`plugins/index.toml`](plugins/index.toml)).
-- **Drover:** the `cooee-drover` plugin adds herdsman's Queue, Asks and Fleets; the app draws fleet settings (#71, #211).
+- **Fleet screens:** the app draws herdsman's fleet settings and pushes the screens it taps (#211).
 - **First-party plugins:** `machines` (per-machine health) and `terminal` (your shells, behind Face ID) (#50, #91).
 - **Workflow:** sessions other tools start in shed list beside your chats and open as chats (#61).
 - **Run cards:** herdsman's commands shown with their sha, approved or denied from the phone (#114).
@@ -39,7 +39,7 @@ On `staging`, each line with the PR or file that proves it:
 - **Native feel:** [#232](https://github.com/jirathip-dev/cooee/issues/232), [#251](https://github.com/jirathip-dev/cooee/issues/251), [#254](https://github.com/jirathip-dev/cooee/issues/254), [#234](https://github.com/jirathip-dev/cooee/issues/234)
 - **Native chat and Home:** [#229](https://github.com/jirathip-dev/cooee/issues/229), [#242](https://github.com/jirathip-dev/cooee/issues/242), [#243](https://github.com/jirathip-dev/cooee/issues/243), [#245](https://github.com/jirathip-dev/cooee/issues/245), [#249](https://github.com/jirathip-dev/cooee/issues/249), [#231](https://github.com/jirathip-dev/cooee/issues/231)
 - **Native screens:** [#236](https://github.com/jirathip-dev/cooee/issues/236), [#237](https://github.com/jirathip-dev/cooee/issues/237), [#239](https://github.com/jirathip-dev/cooee/issues/239), [#240](https://github.com/jirathip-dev/cooee/issues/240), [#244](https://github.com/jirathip-dev/cooee/issues/244), [#230](https://github.com/jirathip-dev/cooee/issues/230)
-- **Drover in the app:** [#226](https://github.com/jirathip-dev/cooee/issues/226), [#181](https://github.com/jirathip-dev/cooee/issues/181), [#213](https://github.com/jirathip-dev/cooee/issues/213)
+- **Drover in the app**, served by herdsman itself ([herdsman#814](https://github.com/jirathip-dev/herdsman/issues/814)): [#226](https://github.com/jirathip-dev/cooee/issues/226), [#181](https://github.com/jirathip-dev/cooee/issues/181), [#213](https://github.com/jirathip-dev/cooee/issues/213)
 - **Routines:** [#75](https://github.com/jirathip-dev/cooee/issues/75), [#261](https://github.com/jirathip-dev/cooee/issues/261)
 - **Personas:** skills [#218](https://github.com/jirathip-dev/cooee/issues/218), consolidation [#219](https://github.com/jirathip-dev/cooee/issues/219), inbox [#220](https://github.com/jirathip-dev/cooee/issues/220)
 - **Rooms, native:** [#157](https://github.com/jirathip-dev/cooee/issues/157), [#176](https://github.com/jirathip-dev/cooee/issues/176), [#177](https://github.com/jirathip-dev/cooee/issues/177), [#178](https://github.com/jirathip-dev/cooee/issues/178), [#179](https://github.com/jirathip-dev/cooee/issues/179)
