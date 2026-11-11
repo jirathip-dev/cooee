@@ -5,7 +5,7 @@
 
 use std::path::{Path, PathBuf};
 
-use cooee_core::{AGENTS_FIX, Agent, Profile, ROOTS_FIX, Sheet, Summary, Thread, Turn};
+use cooee_core::{Agent, Profile, ROOTS_FIX, Sheet, Summary, Thread, Turn, agents_fix};
 use topcoat::{
     Result,
     context::Cx,
@@ -895,6 +895,7 @@ async fn hello(
     let models = installed.and_then(|(a, (_, m))| a.iter().find(|a| a.id == m.agent));
     let models = models.map(|a| a.models.clone());
     let none = agents.err();
+    let fix = agents_fix();
     let provider = mate
         .as_ref()
         .and_then(|(_, m)| providers.iter().find(|p| p.provider.agent == m.agent));
@@ -920,7 +921,7 @@ async fn hello(
                             None => {
                                 hint(
                                     why: "no agents installed · on the Mac:",
-                                    fix: AGENTS_FIX,
+                                    fix: &fix,
                                     then: ""
                                 )
                             }

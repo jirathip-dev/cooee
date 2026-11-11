@@ -15,15 +15,15 @@ use std::os::unix::process::CommandExt;
 
 use serde::{Deserialize, Serialize};
 
-use crate::accounts::{Usage, Window};
+use crate::{Provider, accounts::Usage};
 
-/// A provider the sign-ins sheet lists: its CLI's own login, logout and read-only status commands.
+/// A provider as data: what `[[providers]]` sets and each provider module's defaults return.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Provider {
-    /// Its name on the sheet (`claude`); also part of its login terminal's name and its accounts' folder.
+pub struct Spec {
+    /// Its name on the sheet; also part of its login terminal's name and its accounts' folder.
     pub name: String,
-    /// The ACP agent id it signs in (`claude-acp`), for the new-thread picker.
+    /// The ACP agent id it signs in, for the new-thread picker.
     pub agent: String,
     /// The login command, run in a shed terminal.
     pub login: Vec<String>,
@@ -32,7 +32,7 @@ pub struct Provider {
     /// The line that installs its CLI, shown when the login command isn't found.
     #[serde(default)]
     pub install: String,
-    /// The variable that points its CLI at a config folder (`CLAUDE_CONFIG_DIR`): each added account is one.
+    /// The variable that points its CLI at a config folder: each added account is one.
     /// Without it the provider has only the system default account.
     #[serde(default)]
     pub home: String,
@@ -40,13 +40,10 @@ pub struct Provider {
     #[serde(default)]
     pub logout: Vec<String>,
     /// The variable its ACP adapter reads an extra settings file from and enforces, hooks included. Without it an
-    /// agent profile with `settings` can't start with its agent. Claude Code's is `CLAUDE_CONFIG_DIR` (herdsman#565:
-    /// claude-acp enforces the user settings there), so its profile's `settings` is a config folder, in place of the
-    /// account's.
+    /// agent profile with `settings` can't start with its agent.
     #[serde(default)]
     pub settings: String,
-    /// The usage command (#183): its output's `Current session` (5 h) and `Current week (all models)` (7 d) lines,
-    /// `N% used · resets [Mon D at ]H[:MM]am|pm (UTC)`, as Claude Code's `/usage` prints them. None: no usage.
+    /// The usage command (#183), its output read by the provider's module. None: no usage.
     #[serde(default)]
     pub usage: Vec<String>,
     /// The efforts a thread may pick (#553 row 34; its models are the agent's own, #193).
@@ -56,85 +53,32 @@ pub struct Provider {
     /// any other after its command.
     #[serde(default)]
     pub effort: Vec<String>,
+    /// The registered provider whose behaviour it gets (default: the one named `name`, else none).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base: Option<String>,
 }
 
-impl Provider {
-    /// Claude Code, Codex and Gemini.
-    #[must_use]
-    pub fn defaults() -> Vec<Self> {
-        let v = |a: &[&str]| a.iter().map(|s| (*s).to_owned()).collect();
-        let p = |name: &str,
-                 agent: &str,
-                 [login, status, logout]: [&[&str]; 3],
-                 npm: &str,
-                 home: &str| Self {
-            name: name.to_owned(),
-            agent: agent.to_owned(),
-            login: v(login),
-            status: v(status),
-            install: format!("npm install -g {npm}"),
-            home: home.to_owned(),
-            logout: v(logout),
-            ..Self::default()
-        };
-        let creds = "\"${GEMINI_CLI_HOME:-$HOME}/.gemini/oauth_creds.json\"";
-        let mut list = vec![
-            p(
-                "claude",
-                "claude-acp",
-                [
-                    &["claude", "auth", "login"],
-                    &["claude", "auth", "status"],
-                    &["claude", "auth", "logout"],
-                ],
-                "@anthropic-ai/claude-code",
-                "CLAUDE_CONFIG_DIR",
-            ),
-            p(
-                "codex",
-                "codex-acp",
-                [
-                    &["codex", "login", "--device-auth"],
-                    &["codex", "login", "status"],
-                    &["codex", "logout"],
-                ],
-                "@openai/codex",
-                "CODEX_HOME",
-            ),
-            p(
-                "gemini",
-                "gemini",
-                [
-                    &["gemini"],
-                    &[
-                        "sh",
-                        "-c",
-                        &format!("test -s {creds} && echo signed in with Google"),
-                    ],
-                    &["sh", "-c", &format!("rm -f {creds}")],
-                ],
-                "@google/gemini-cli",
-                "GEMINI_CLI_HOME",
-            ),
-        ];
-        let v = |a: &[&str]| -> Vec<String> { a.iter().map(|s| (*s).to_owned()).collect() };
-        // `/usage` reads nothing with nonessential traffic off, and prints its reset times in UTC with TZ=UTC.
-        let usage = "env -u CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC TZ=UTC claude -p /usage";
-        list[0].usage = usage.split(' ').map(str::to_owned).collect();
-        "CLAUDE_CONFIG_DIR".clone_into(&mut list[0].settings);
-        list[1].efforts = v(&["low", "medium", "high"]);
-        list[1].effort = v(&["-c", "model_reasoning_effort={}"]);
-        list
-    }
+/// One command's run: whether it exited 0, its stdout and its stderr.
+#[derive(Debug, Clone, Default)]
+pub struct Ran {
+    /// It exited 0.
+    pub ok: bool,
+    /// Its stdout.
+    pub stdout: String,
+    /// Its stderr.
+    pub stderr: String,
+}
 
+impl dyn Provider + '_ {
     /// The words that start its agent on `effort` (empty: its own default); `None` when it offers no such pick.
     #[must_use]
     pub fn picks(&self, effort: &str) -> Option<Vec<String>> {
         if effort.is_empty() {
             return Some(Vec::new());
         }
-        let words = self.effort.iter().map(|w| w.replace("{}", effort));
-        self.efforts
+        let s = self.spec();
+        let words = s.effort.iter().map(|w| w.replace("{}", effort));
+        s.efforts
             .iter()
             .any(|o| o == effort)
             .then(|| words.collect())
@@ -143,8 +87,8 @@ impl Provider {
     /// The variable and folder that point its CLI at the account in `home` (none for the system default).
     #[must_use]
     pub fn env<'a>(&'a self, home: Option<&'a Path>) -> Option<(&'a str, &'a Path)> {
-        home.filter(|_| !self.home.is_empty())
-            .map(|dir| (self.home.as_str(), dir))
+        home.filter(|_| !self.spec().home.is_empty())
+            .map(|dir| (self.spec().home.as_str(), dir))
     }
 
     /// `cmd` for the account in `home`: `env <variable>=<folder> cmd…`, as is for the system default.
@@ -163,23 +107,20 @@ impl Provider {
     /// Whether its CLI (the login command's program) is missing.
     #[must_use]
     pub fn missing(&self) -> bool {
-        self.login.first().is_some_and(|b| !installed(b))
+        self.spec().login.first().is_some_and(|b| !installed(b))
     }
 
-    /// Runs `cmd` (10 s at most) for the account in `home`: whether it exited 0, its stdout and its stderr; none when
-    /// it timed out. On unix it leads its own process group, so a timeout also ends what it started (#105: `security`
-    /// on a locked Keychain).
-    fn run(
-        &self,
-        cmd: &[String],
-        home: Option<&Path>,
-    ) -> Result<Option<(bool, String, String)>, String> {
+    /// Runs `cmd` (10 s at most) for the account in `home`, without its scrubbed variables; none when it timed out.
+    /// On unix it leads its own process group, so a timeout also ends what it started (#105: `security` on a locked
+    /// Keychain).
+    fn run(&self, cmd: &[String], home: Option<&Path>) -> Result<Option<Ran>, String> {
         let Some((bin, args)) = cmd.split_first() else {
             return Err("no command".to_owned());
         };
         let mut command = Command::new(bin);
-        // An inherited token signs the CLI in whatever the folder (#183): the folder's own login must answer.
-        command.env_remove("CLAUDE_CODE_OAUTH_TOKEN");
+        for var in self.scrub() {
+            command.env_remove(var);
+        }
         if let Some((var, dir)) = self.env(home) {
             command.env(var, dir);
         }
@@ -214,11 +155,11 @@ impl Provider {
                 }
             }
         };
-        let (stdout, stderr) = (
-            stdout.join().unwrap_or_default(),
-            stderr.join().unwrap_or_default(),
-        );
-        Ok(Some((ok, stdout, stderr)))
+        Ok(Some(Ran {
+            ok,
+            stdout: stdout.join().unwrap_or_default(),
+            stderr: stderr.join().unwrap_or_default(),
+        }))
     }
 
     /// Runs the logout command for the account in `home`.
@@ -226,128 +167,56 @@ impl Provider {
     /// # Errors
     /// Its output on one line, redacted, when it fails or can't run.
     pub fn sign_out(&self, home: Option<&Path>) -> Result<(), String> {
-        match self.run(&self.logout, home)? {
-            Some((true, ..)) => Ok(()),
-            Some((false, out, err)) => {
-                Err(one_line(if err.trim().is_empty() { &out } else { &err }))
-            }
-            None => Err(format!("`{}` timed out", self.logout.join(" "))),
+        let logout = &self.spec().logout;
+        match self.run(logout, home)? {
+            Some(r) if r.ok => Ok(()),
+            Some(r) => Err(one_line(if r.stderr.trim().is_empty() {
+                &r.stdout
+            } else {
+                &r.stderr
+            })),
+            None => Err(format!("`{}` timed out", logout.join(" "))),
         }
     }
 
-    /// Runs the status command (10 s at most) for the account in `home`: signed in when it exits 0; unknown when it
-    /// times out.
+    /// Runs the status command (10 s at most) for the account in `home` and reads it; unknown when it times out.
     #[must_use]
     pub fn check(&self, home: Option<&Path>) -> Status {
-        let out = |signed_in, line: &str| Status {
-            install: None,
-            signed_in,
-            unknown: false,
-            line: one_line(line),
-            who: None,
-            usage: None,
-        };
         if self.missing() {
             return Status {
-                install: Some(self.install.clone()),
-                ..out(false, "not installed on this Mac")
+                install: Some(self.spec().install.clone()),
+                ..Status::said(false, "not installed on this Mac")
             };
         }
-        let (ok, stdout, stderr) = match self.run(&self.status, home) {
-            Ok(Some(r)) => r,
-            Ok(None) => return Status::unknown(TIMED_OUT),
-            Err(e) => return out(false, &e),
-        };
-        // A JSON status (`claude auth status`): its `loggedIn` as one plain line, and who when it says.
-        if let Ok(v @ serde_json::Value::Object(_)) = serde_json::from_str(&stdout) {
-            let who = v["email"].as_str().or(v["orgName"].as_str());
-            let s = match (v["loggedIn"].as_bool(), v["authMethod"].as_str(), who) {
-                (Some(true), Some(how), Some(who)) => {
-                    out(true, &format!("signed in · {how} ({who})"))
-                }
-                (Some(true), Some(how), None) => out(true, &format!("signed in · {how}")),
-                (Some(true), None, _) => out(true, "signed in"),
-                (Some(false), ..) => out(false, "signed out"),
-                (None, ..) => out(ok, "status unknown"),
-            };
-            return Status {
-                who: who.map(one_line),
-                ..s
-            };
+        match self.run(&self.spec().status, home) {
+            Ok(Some(r)) => self.read_status(&r),
+            Ok(None) => Status::unknown(TIMED_OUT),
+            Err(e) => Status::said(false, &e),
         }
-        out(
-            ok,
-            if stdout.trim().is_empty() {
-                &stderr
-            } else {
-                &stdout
-            },
-        )
     }
 
     /// The usage command's reading at `now` (s) for the account in `home`; none when it fails or reads no window.
     #[must_use]
     pub fn usage(&self, home: Option<&Path>, now: u64) -> Option<Usage> {
-        if self.usage.is_empty() {
+        let cmd = &self.spec().usage;
+        if cmd.is_empty() {
             return None;
         }
-        let Ok(Some((true, out, _))) = self.run(&self.usage, home) else {
-            return None;
-        };
-        let read =
-            |label: &str| (out.lines()).find_map(|l| window(l.trim().strip_prefix(label)?, now));
-        let u = Usage {
-            five_hour: read("Current session"),
-            seven_day: read("Current week (all models)"),
-            read_at: now,
-        };
-        (u.five_hour.is_some() || u.seven_day.is_some()).then_some(u)
+        match self.run(cmd, home) {
+            Ok(Some(r)) if r.ok => self.read_usage(&r.stdout, now),
+            _ => None,
+        }
     }
 }
 
-/// `: N% used · resets [Mon D at ]H[:MM]am|pm (UTC)` read at `now`: the next such time (today or tomorrow without a
-/// date).
-fn window(line: &str, now: u64) -> Option<Window> {
-    const MONTHS: [&str; 12] = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ];
-    let (pct, when) = line.strip_prefix(':')?.split_once("% used · resets ")?;
-    let when = when.trim().strip_suffix(" (UTC)")?;
-    let (date, time) = when
-        .rsplit_once(" at ")
-        .map_or((None, when), |(d, t)| (Some(d), t));
-    let (time, half) = match time.strip_suffix("pm") {
-        Some(t) => (t, 12),
-        None => (time.strip_suffix("am")?, 0),
+/// A status command's plain reading: signed in when it exited 0, its output (stdout, else stderr) the line.
+pub(crate) fn plain_status(ran: &Ran) -> Status {
+    let out = if ran.stdout.trim().is_empty() {
+        &ran.stderr
+    } else {
+        &ran.stdout
     };
-    let (h, m) = time.split_once(':').unwrap_or((time, "0"));
-    let secs = (h.parse::<u64>().ok()? % 12 + half) * 3600 + m.parse::<u64>().ok()? * 60;
-    let resets_at = match date {
-        None => {
-            let t = now - now % 86_400 + secs;
-            if t < now { t + 86_400 } else { t }
-        }
-        Some(d) => {
-            let (mon, day) = d.split_once(' ')?;
-            let month = MONTHS.iter().position(|m| *m == mon)? as u64 + 1;
-            let (day, year) = (day.parse().ok()?, 1970 + now / 31_556_952);
-            (year - 1..=year + 1)
-                .filter_map(|y| Some(civil_days(y, month, day)? * 86_400 + secs))
-                .find(|t| t + 86_400 >= now)?
-        }
-    };
-    Some(Window {
-        used_pct: pct.trim().parse().ok()?,
-        resets_at,
-    })
-}
-
-/// Days from 1970-01-01 to `y-m-d` (Gregorian, `y` ≥ 1970).
-fn civil_days(y: u64, m: u64, d: u64) -> Option<u64> {
-    let y = if m <= 2 { y - 1 } else { y };
-    let doy = (153 * ((m + 9) % 12) + 2) / 5 + d - 1;
-    let doe = (y % 400) * 365 + (y % 400) / 4 - (y % 400) / 100 + doy;
-    ((y / 400) * 146_097 + doe).checked_sub(719_468)
+    Status::said(ran.ok, out)
 }
 
 /// An account's signed-in state, from its provider's status command.
@@ -383,6 +252,17 @@ impl Status {
             usage: None,
         }
     }
+
+    /// A known status, `line` on one line and redacted.
+    #[must_use]
+    pub fn said(signed_in: bool, line: &str) -> Self {
+        Self {
+            signed_in,
+            unknown: false,
+            line: one_line(line),
+            ..Self::unknown("")
+        }
+    }
 }
 
 /// How long a provider command may run (shorter in tests, so the timeout test is quick).
@@ -409,7 +289,7 @@ fn kill_group(child: &mut Child) {
 }
 
 /// `text` on one line, redacted, at most 80 characters.
-fn one_line(text: &str) -> String {
+pub(crate) fn one_line(text: &str) -> String {
     redact(&text.split_whitespace().collect::<Vec<_>>().join(" "))
         .chars()
         .take(80)
@@ -514,108 +394,47 @@ mod tests {
         );
     }
 
-    /// #553 row 34: an effort's words, `{}` filled in; nothing for the default; `None` for an effort not offered.
-    #[test]
-    fn picks_fill_the_providers_words() {
-        let codex = &Provider::defaults()[1];
-        assert_eq!(
-            codex.picks("high"),
-            Some(vec![
-                "-c".to_owned(),
-                "model_reasoning_effort=high".to_owned()
-            ])
-        );
-        assert_eq!(codex.picks(""), Some(Vec::new()));
-        assert_eq!(codex.picks("max"), None);
-    }
-
-    /// #183: `/usage`'s reset times, read at a fixed clock: a date's next occurrence (the next year's past
-    /// December), a time alone today or tomorrow; a line in another shape is no window.
-    #[test]
-    fn usage_windows_from_the_usage_lines() {
-        let day = |y, m, d| civil_days(y, m, d).unwrap() * 86_400;
-        let now = day(2026, 11, 10) + 9 * 3600;
-        let w = |line: &str, now| window(line, now).map(|w| (w.used_pct, w.resets_at));
-        assert_eq!(day(1970, 1, 1), 0);
-        assert_eq!(
-            w(": 4% used · resets Nov 16 at 2am (UTC)", now),
-            Some((4, day(2026, 11, 16) + 2 * 3600))
-        );
-        assert_eq!(
-            w(": 83% used · resets 3:30pm (UTC)", now),
-            Some((83, day(2026, 11, 10) + 15 * 3600 + 1800))
-        );
-        assert_eq!(
-            w(": 12% used · resets 4:59am (UTC)", now),
-            Some((12, day(2026, 11, 11) + 4 * 3600 + 59 * 60))
-        );
-        assert_eq!(
-            w(": 1% used · resets Jan 2 at 12am (UTC)", day(2026, 12, 30)),
-            Some((1, day(2027, 1, 2)))
-        );
-        assert_eq!(
-            w(": 4% used · resets Nov 16 at 2am (Asia/Bangkok)", now),
-            None
-        );
-        assert_eq!(
-            w(" (Fable): 0% used · resets Nov 16 at 2am (UTC)", now),
-            None
-        );
+    fn plain(spec: Spec) -> Box<dyn Provider> {
+        Box::new(crate::Plain(spec))
     }
 
     #[test]
     fn status_from_the_exit_code_and_output() {
-        let p = |status: &str| Provider {
+        let spec = |status: &str| Spec {
             name: "p".to_owned(),
             agent: "a".to_owned(),
-            login: Vec::new(),
             status: vec!["sh".to_owned(), "-c".to_owned(), status.to_owned()],
             install: "npm install -g p".to_owned(),
             home: "COOEE_TEST_HOME".to_owned(),
-            logout: Vec::new(),
-            ..Provider::default()
+            ..Spec::default()
         };
+        let p = |status: &str| plain(spec(status));
         let s = p("echo '  Logged in\n  as owner'").check(None);
         assert_eq!((s.signed_in, s.line.as_str()), (true, "Logged in as owner"));
         let s = p("echo not signed in >&2; exit 1").check(None);
         assert_eq!((s.signed_in, s.line.as_str()), (false, "not signed in"));
-        let s =
-            p(r#"echo '{"loggedIn": true, "authMethod": "claude.ai", "email": "o@example.com"}'"#)
-                .check(None);
-        assert_eq!(
-            (s.signed_in, s.line.as_str()),
-            (true, "signed in · claude.ai (o@example.com)")
-        );
-        assert_eq!(s.who.as_deref(), Some("o@example.com"));
         // An account's status runs with its folder in the provider's variable.
-        let s = p(r#"echo "{\"loggedIn\": true, \"orgName\": \"Acme $COOEE_TEST_HOME\"}""#)
-            .check(Some(Path::new("/x/work")));
-        assert_eq!(
-            (s.line.as_str(), s.who.as_deref()),
-            ("signed in", Some("Acme /x/work"))
-        );
+        let s = p("echo \"in $COOEE_TEST_HOME\"").check(Some(Path::new("/x/work")));
+        assert_eq!((s.signed_in, s.line.as_str()), (true, "in /x/work"));
         assert_eq!(p("echo \"$COOEE_TEST_HOME\"").check(None).line, "");
         assert_eq!(
             p("").with_home(&["c".to_owned()], Some(Path::new("/x/work"))),
             ["env", "COOEE_TEST_HOME=/x/work", "c"]
         );
-        let s = p(r#"echo '{"loggedIn": false, "authMethod": "none"}'; exit 1"#).check(None);
-        assert_eq!((s.signed_in, s.line.as_str()), (false, "signed out"));
-        assert_eq!(p(r#"echo '{"a": 1}'"#).check(None).line, "status unknown");
-        let s = Provider {
+        let s = plain(Spec {
             login: vec!["no-such-cooee-cli".to_owned()],
-            ..p("exit 0")
-        }
+            ..spec("exit 0")
+        })
         .check(None);
         assert_eq!(
             (s.signed_in, s.line.as_str(), s.install.as_deref()),
             (false, "not installed on this Mac", Some("npm install -g p"))
         );
         assert!(
-            !Provider {
+            !plain(Spec {
                 status: vec!["/no/such/cooee-bin".to_owned()],
-                ..p("")
-            }
+                ..spec("")
+            })
             .check(None)
             .signed_in
         );
@@ -625,13 +444,13 @@ mod tests {
     #[test]
     fn a_timeout_kills_the_command_and_what_it_started() {
         let pids = env::temp_dir().join(format!("cooee-hung-{}", std::process::id()));
-        let p = Provider {
+        let p = plain(Spec {
             status: ["sh", "-c", r#"sleep 600 & echo $$ $! > "$H"; sleep 600"#]
                 .map(String::from)
                 .into(),
             home: "H".to_owned(),
-            ..Provider::default()
-        };
+            ..Spec::default()
+        });
         let started = Instant::now();
         let s = p.check(Some(&pids));
         assert!(started.elapsed() < LIMIT + Duration::from_secs(2));

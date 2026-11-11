@@ -7,7 +7,7 @@ use topcoat::{
     view::{View, component, view},
 };
 
-/// A provider's name for ACP agent `agent` (`claude` for `claude-acp`): never the agent's id on screen.
+/// A provider's name for ACP agent `agent` (`acme` for `acme-acp`): never the agent's id on screen.
 #[must_use]
 pub fn named(agent: &str, providers: &[Sheet]) -> String {
     providers

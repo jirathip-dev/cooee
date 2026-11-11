@@ -1,5 +1,5 @@
 # Every CI gate, locally (the ui gate needs `npm ci` in web/e2e once).
-check: fmt clippy test doc deny cap deps hygiene themes ts ui
+check: fmt clippy test doc deny cap deps hygiene neutral themes ts ui
 
 fmt:
     cargo fmt --all --check
@@ -28,6 +28,11 @@ deps:
 
 hygiene:
     scripts/hygiene.sh
+
+# Core names no provider (#200): only crates/cooee-core/src/providers/ and tests may.
+neutral:
+    scripts/neutral-core.sh
+    ci/neutral-core-test.sh
 
 # The theme gate (docs/themes.md) on the first-party packs and the starter.
 themes:

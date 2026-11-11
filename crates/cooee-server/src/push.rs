@@ -86,7 +86,7 @@ impl Note {
 
 /// The notification for `change` in `thread`, if it is one: an approval waiting, a turn done while no page
 /// watches the thread (`watched`), or an error. `was` is the state before the change. The body is `theme`'s word,
-/// the plain word and the agent's line: `at the gate · needs you · codex: Edit src/pair.rs`.
+/// the plain word and the agent's line: `at the gate · needs you · acme: Edit src/pair.rs`.
 #[must_use]
 pub fn note(
     thread: &Thread,
