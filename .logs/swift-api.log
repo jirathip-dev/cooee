@@ -1,0 +1,116 @@
+Fetching https://github.com/swiftlang/swift-syntax from cache
+Fetching https://github.com/apple/swift-collections from cache
+Fetching https://github.com/pointfreeco/swift-custom-dump from cache
+Fetching https://github.com/pointfreeco/swift-navigation from cache
+Fetching https://github.com/pointfreeco/swift-identified-collections from cache
+Fetching https://github.com/pointfreeco/swift-concurrency-extras from cache
+Fetching https://github.com/pointfreeco/swift-sharing from cache
+Fetching https://github.com/pointfreeco/combine-schedulers from cache
+Fetching https://github.com/pointfreeco/swift-dependencies from cache
+Fetched https://github.com/pointfreeco/combine-schedulers from cache (0.79s)
+Fetched https://github.com/pointfreeco/swift-navigation from cache (0.79s)
+Fetched https://github.com/pointfreeco/swift-concurrency-extras from cache (0.79s)
+Fetched https://github.com/pointfreeco/swift-identified-collections from cache (0.79s)
+Fetched https://github.com/pointfreeco/swift-custom-dump from cache (0.79s)
+Fetched https://github.com/pointfreeco/swift-sharing from cache (0.79s)
+Fetched https://github.com/apple/swift-collections from cache (0.80s)
+Fetched https://github.com/pointfreeco/swift-dependencies from cache (0.80s)
+Fetching https://github.com/pointfreeco/swift-perception from cache
+Fetching https://github.com/pointfreeco/swift-issue-reporting from cache
+Fetching https://github.com/pointfreeco/swift-clocks from cache
+Fetching https://github.com/pointfreeco/swift-composable-architecture from cache
+Fetching https://github.com/pointfreeco/swift-case-paths from cache
+Fetched https://github.com/swiftlang/swift-syntax from cache (0.93s)
+Fetched https://github.com/pointfreeco/swift-clocks from cache (0.77s)
+warning: 'swift-composable-architecture': skipping cache due to an error: The file “maintenance.lock” doesn’t exist.
+Fetched https://github.com/pointfreeco/swift-issue-reporting from cache (0.80s)
+Fetched https://github.com/pointfreeco/swift-case-paths from cache (0.80s)
+Fetched https://github.com/pointfreeco/swift-perception from cache (0.80s)
+[1/313782] Fetching swift-composable-architecture
+Fetched https://github.com/pointfreeco/swift-composable-architecture (14.24s)
+Computing version for https://github.com/pointfreeco/swift-composable-architecture
+Computed https://github.com/pointfreeco/swift-composable-architecture at 1.26.2 (15.56s)
+Computing version for https://github.com/swiftlang/swift-syntax
+Computed https://github.com/swiftlang/swift-syntax at 604.0.0 (0.60s)
+Computing version for https://github.com/pointfreeco/swift-sharing
+Computed https://github.com/pointfreeco/swift-sharing at 2.10.1 (0.58s)
+Computing version for https://github.com/pointfreeco/swift-perception
+Computed https://github.com/pointfreeco/swift-perception at 2.0.12 (0.46s)
+Computing version for https://github.com/pointfreeco/swift-navigation
+Computed https://github.com/pointfreeco/swift-navigation at 2.11.2 (0.58s)
+Computing version for https://github.com/pointfreeco/swift-issue-reporting
+Computed https://github.com/pointfreeco/swift-issue-reporting at 2.1.2 (0.56s)
+Computing version for https://github.com/pointfreeco/swift-identified-collections
+Computed https://github.com/pointfreeco/swift-identified-collections at 1.1.1 (0.47s)
+Computing version for https://github.com/pointfreeco/swift-dependencies
+Computed https://github.com/pointfreeco/swift-dependencies at 1.17.2 (0.49s)
+Computing version for https://github.com/pointfreeco/swift-custom-dump
+Computed https://github.com/pointfreeco/swift-custom-dump at 1.7.3 (0.52s)
+Computing version for https://github.com/pointfreeco/swift-concurrency-extras
+Computed https://github.com/pointfreeco/swift-concurrency-extras at 1.4.3 (0.50s)
+Computing version for https://github.com/pointfreeco/swift-clocks
+Computed https://github.com/pointfreeco/swift-clocks at 1.1.1 (0.50s)
+Computing version for https://github.com/pointfreeco/swift-case-paths
+Computed https://github.com/pointfreeco/swift-case-paths at 1.10.0 (0.56s)
+Computing version for https://github.com/pointfreeco/combine-schedulers
+Computed https://github.com/pointfreeco/combine-schedulers at 1.2.2 (0.50s)
+Computing version for https://github.com/apple/swift-collections
+Computed https://github.com/apple/swift-collections at 1.7.5 (0.70s)
+Creating working copy for https://github.com/pointfreeco/combine-schedulers
+Working copy of https://github.com/pointfreeco/combine-schedulers resolved at 1.2.2
+Creating working copy for https://github.com/pointfreeco/swift-navigation
+Working copy of https://github.com/pointfreeco/swift-navigation resolved at 2.11.2
+Creating working copy for https://github.com/apple/swift-collections
+Working copy of https://github.com/apple/swift-collections resolved at 1.7.5
+Creating working copy for https://github.com/pointfreeco/swift-sharing
+Working copy of https://github.com/pointfreeco/swift-sharing resolved at 2.10.1
+Creating working copy for https://github.com/pointfreeco/swift-concurrency-extras
+Working copy of https://github.com/pointfreeco/swift-concurrency-extras resolved at 1.4.3
+Creating working copy for https://github.com/swiftlang/swift-syntax
+Working copy of https://github.com/swiftlang/swift-syntax resolved at 604.0.0
+Creating working copy for https://github.com/pointfreeco/swift-clocks
+Working copy of https://github.com/pointfreeco/swift-clocks resolved at 1.1.1
+Creating working copy for https://github.com/pointfreeco/swift-issue-reporting
+Working copy of https://github.com/pointfreeco/swift-issue-reporting resolved at 2.1.2
+Creating working copy for https://github.com/pointfreeco/swift-case-paths
+Working copy of https://github.com/pointfreeco/swift-case-paths resolved at 1.10.0
+Creating working copy for https://github.com/pointfreeco/swift-perception
+Working copy of https://github.com/pointfreeco/swift-perception resolved at 2.0.12
+Creating working copy for https://github.com/pointfreeco/swift-custom-dump
+Working copy of https://github.com/pointfreeco/swift-custom-dump resolved at 1.7.3
+Creating working copy for https://github.com/pointfreeco/swift-composable-architecture
+Working copy of https://github.com/pointfreeco/swift-composable-architecture resolved at 1.26.2
+Creating working copy for https://github.com/pointfreeco/swift-dependencies
+Working copy of https://github.com/pointfreeco/swift-dependencies resolved at 1.17.2
+Creating working copy for https://github.com/pointfreeco/swift-identified-collections
+Working copy of https://github.com/pointfreeco/swift-identified-collections resolved at 1.1.1
+Building for debugging...
+[Planning deferred tasks]
+[24 / 40]
+[25 / 41] CooeeCore
+[38 / 104]
+[43 / 104]
+[45 / 104]
+[50 / 104]
+[54 / 104]
+[57 / 104]
+[59 / 104]
+[60 / 104]
+[67 / 104]
+[68 / 104]
+[72 / 104]
+[73 / 104]
+[75 / 104]
+[77 / 104]
+[88 / 104] CooeeCore
+[95 / 105] CooeeCore
+[95 / 105] CooeeAPI
+[101 / 123]
+[102 / 123]
+[103 / 123] CooeeCore
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-252/apple/Package.swift: CooeeCore: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[105 / 123]
+[115 / 123] CooeeAPI
+[121 / 123] CooeeAPI
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-252/apple/Package.swift: CooeeAPI: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+Build complete! (15.64 secs)
