@@ -1,0 +1,9 @@
+Decided: write the fake shed once behind a OnceLock and symlink it into each test's scratch dir
+Because: crates/cooee-machines/tests/machines.rs:37
+Because: "Find why it is timing-dependent (port, startup wait, shared state across tests) and make it deterministic"
+Decided: the cause is ETXTBSY: a sibling test's fork inherits the shed write fd, so `machine ls` fails and added() drops the air card
+Because: crates/cooee-machines/src/lib.rs:205
+Rejected: retrying the shed call or #[ignore] on the test — the issue forbids both and the race would stay
+Rejected: write to a temp name then rename — same inode, so the forked child still holds it open for writing
+Check: commit 1's test fails on base (two shed paths) and passes at head; CI msrv (ubuntu-latest) is green
+Owner: a machines test no longer fails at random on Linux CI
