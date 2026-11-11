@@ -12,7 +12,8 @@ internal struct MenuRenderTests {
     private static func pixels(_ view: some View) throws -> Pixels {
         let framed = view.frame(width: 402, height: 600).background(Color.red)
             .environment(\.look, Look(palette: palette, still: true))
-        return try #require(Pixels(try #require(ImageRenderer(content: framed).cgImage)))
+        let image = try #require(ImageRenderer(content: framed).cgImage)
+        return try #require(Pixels(image))
     }
 
     private static func pixel(_ pixels: Pixels, column: Int) -> ArraySlice<UInt8> {
