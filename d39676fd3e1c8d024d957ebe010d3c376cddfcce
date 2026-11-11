@@ -1,0 +1,5 @@
+Decided: merge origin/staging; LiveUITests.swift keeps this branch's iOS-only wrapper and the Mac-approve test, and adds staging's drover-screens steps inside it
+Because: apple/UITests/LiveUITests.swift:1
+Rejected: none
+Check: LiveUITests.swift still runs testPairsStreamsAndShowsHome through opensDroversScreens and keeps testAsksAndTheMacApprovesIt
+Owner: The branch now includes the latest staging work; the only conflict was one UI test file, and both sides of it were kept.
