@@ -35,6 +35,8 @@ oxc = { version = "=0.157.0", default-features = false, features = ["codegen", "
 # Pinned exactly (ADR 0001): Topcoat is pre-1.0 and its minors break.
 topcoat = { version = "=0.11.0", default-features = false, features = ["serve", "sse"] }
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "net", "sync"] }
+# cooee-core's secrets (#167): in-process keychain calls, so an item's access list names the signed cooee.
+security-framework = { version = "=3.7.0", default-features = false, features = ["OSX_10_14"] }
 toml = { version = "=1.2.0", default-features = false, features = ["parse", "serde"] }
 
 [workspace.lints.rust]
