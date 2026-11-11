@@ -175,9 +175,9 @@
             let character = NSPredicate(format: "value CONTAINS 'Finds the facts first.'")
             XCTAssert(app.descendants(matching: .any).matching(character).firstMatch.waitForExistence(timeout: 10))
             XCTAssertEqual(app.switches["Pin to Home"].firstMatch.value as? String, "1")
+            picksAgentAndFolder(app)
             type(app, "Instructions", "Cite every source.")
             keep("persona")
-            picksAgentAndFolder(app)
             app.buttons["Save"].firstMatch.tap()
             XCTAssert(app.buttons["Save"].waitForNonExistence(timeout: 10))
         }

@@ -78,7 +78,7 @@ internal struct PersonasTests {
         let agents = #"[{"id":"fake-acp","efforts":["low","high"]},{"id":"codex","efforts":[]}]"#
         let models =
             #"[{"agent":"fake-acp","account":"","seen":5,"models":[["fake-opus-3","Opus"]],"short":{"opus":"fake-opus-3"}}]"#
-        let folders = #"{"path":"/w/my app","home":"/Users/o","dirs":["src"],"roots":["/w"]}"#
+        let folders = #"{"path":"/w/my app","home":"/home/user","dirs":["src"],"roots":["/w"]}"#
         let server = CannedServer([
             "/agents": [Answer(headers: json, chunks: [agents])],
             "/models": [Answer(headers: json, chunks: [models])],

@@ -17,7 +17,7 @@ internal struct AgentMenu: View {
     @Environment(\.look) private var look
     @Binding internal var draft: APIPersona
     internal let choices: PersonaChoices
-    internal let pick: (String) -> Void
+    internal let pick: @MainActor @Sendable (String) -> Void
 
     internal var body: some View {
         if look.still {

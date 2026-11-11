@@ -5,7 +5,7 @@ public struct PersonaActions {
     public var close: () -> Void
     public var save: () -> Void
     public var clear: () -> Void
-    public var agent: (String) -> Void = { _ in }
+    public var agent: @MainActor @Sendable (String) -> Void = { _ in }
     public var browse: () -> Void = {}
 
     public init(close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {}) {
