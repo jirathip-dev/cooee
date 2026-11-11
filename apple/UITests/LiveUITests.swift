@@ -177,8 +177,30 @@
             XCTAssertEqual(app.switches["Pin to Home"].firstMatch.value as? String, "1")
             type(app, "Instructions", "Cite every source.")
             keep("persona")
+            picksAgentAndFolder(app)
             app.buttons["Save"].firstMatch.tap()
             XCTAssert(app.buttons["Save"].waitForNonExistence(timeout: 10))
+        }
+
+        @MainActor
+        private func picksAgentAndFolder(_ app: XCUIApplication) {
+            app.buttons["Agent"].firstMatch.tap()
+            let agent = app.buttons["fake-acp"].firstMatch
+            XCTAssert(agent.waitForExistence(timeout: 10))
+            keep("persona-menu")
+            agent.tap()
+            app.buttons["Folder"].firstMatch.tap()
+            let root = app.buttons["root"].firstMatch
+            XCTAssert(root.waitForExistence(timeout: 10))
+            keep("persona-folders")
+            root.tap()
+            let project = app.buttons["project"].firstMatch
+            XCTAssert(project.waitForExistence(timeout: 10))
+            project.tap()
+            let use = app.buttons["Use project"].firstMatch
+            XCTAssert(use.waitForExistence(timeout: 10))
+            use.tap()
+            XCTAssert(labelled(app, "/root/project").waitForExistence(timeout: 10))
         }
 
         @MainActor

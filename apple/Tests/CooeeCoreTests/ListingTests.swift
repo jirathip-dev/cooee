@@ -80,3 +80,13 @@ internal struct ListingTests {
         #expect(PairTarget(typed: "http://") == nil)
     }
 }
+
+internal struct FolderListingTests {
+    @Test internal func aSubFolderGoesUpToItsParentAndItsSearchMatchesNamesOnly() {
+        let listing = FolderListing(path: "/w/app", dirs: ["src", "docs", "Spec"], roots: ["/w", "/x/"])
+        #expect(!listing.top && listing.parent == "/w")
+        #expect(listing.shown("s") == ["/w/app/src", "/w/app/docs", "/w/app/Spec"])
+        #expect(listing.shown(" sp ") == ["/w/app/Spec"] && listing.shown("app").isEmpty)
+        #expect(listing.holds("/x/y") && !listing.holds("/wx") && !listing.holds("/x/../etc"))
+    }
+}

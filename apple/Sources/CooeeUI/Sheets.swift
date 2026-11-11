@@ -32,7 +32,6 @@ internal struct SettingRow: View {
     internal var tint: Color?
     internal var value = ""
     internal var divider = true
-    internal var edit: Binding<String>?
 
     internal var body: some View {
         let palette = look.palette
@@ -43,14 +42,9 @@ internal struct SettingRow: View {
             }
             Text(title).ui(16, .regular, look)
             Spacer()
-            if let edit, !look.still {
-                TextField(title, text: edit).multilineTextAlignment(.trailing).ui(15, .regular, look)
-                    .foregroundStyle(palette.mute)
-            } else {
-                Text(value).ui(15, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
-                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(palette.mute)
-            }
+            Text(value).ui(15, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+            Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(palette.mute)
         }
         .padding(.horizontal, 14).frame(height: 48)
         .overlay(alignment: .bottom) {

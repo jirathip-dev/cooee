@@ -75,6 +75,7 @@ id or a broken rule is a 400 with the reason.
 | Call | Body | Answer |
 |---|---|---|
 | `GET /machines` | | the machines a persona or thread may name, this host first: `{name, host, online, last_seen?, health?, error?}[]` (`name` `""` for this host, `host` its host name; `online` and `last_seen` shed's link to it, `health` its last sample from the machines plugin's `shed machine stats`) |
+| `GET /agents` | | the installed agents a persona or thread may name (#230), as `shed agents` last listed them: `{id, efforts: string[]}[]` (`efforts`: the ones its provider offers, `[]` for none); shed failing is a 400 with why |
 | `GET /personas` | | every persona, by id |
 | `POST /personas` | a persona without `id` (its id is made from `name`, not taken) | the persona |
 | `GET /personas/{id}` | | the persona |

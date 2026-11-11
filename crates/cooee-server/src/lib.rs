@@ -1076,6 +1076,26 @@ struct ModelList {
     short: BTreeMap<String, String>,
 }
 
+/// `GET /agents` (#230): each installed agent with the efforts its provider offers.
+#[derive(Serialize)]
+struct AgentRow {
+    id: String,
+    efforts: Vec<String>,
+}
+
+#[route(GET "/agents")]
+async fn agent_list(cx: &Cx) -> Result<Answer<Vec<AgentRow>>> {
+    let logins = logins(cx);
+    let rows = hub(cx).agents().map_err(refused).map(|agents| {
+        let rows = agents.into_iter().map(|a| AgentRow {
+            efforts: logins.efforts(&a.id),
+            id: a.id,
+        });
+        rows.collect()
+    });
+    Ok(Answer(rows))
+}
+
 #[route(GET "/models")]
 async fn model_list(cx: &Cx) -> Result<Answer<Vec<ModelList>>> {
     let lists = hub(cx).models().into_iter().map(|o| ModelList {
@@ -2247,6 +2267,7 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
     b.route(persona_list)
         .route(machine_list)
         .route(model_list)
+        .route(agent_list)
         .route(persona_new)
         .route(persona_get)
         .route(persona_put)
