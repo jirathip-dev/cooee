@@ -41,6 +41,26 @@ public enum Item: Identifiable, Sendable, Equatable {
             id
         }
     }
+
+    /// The message as Copy gives it: plain text, or nil for an item that is no message.
+    public var plainText: String? {
+        switch self {
+        case .you(_, let text, _): text
+        case .agent(_, let blocks): blocks.map(\.plainText).joined(separator: "\n\n")
+        case .tools, .card, .note: nil
+        }
+    }
+}
+
+extension Block {
+    fileprivate var plainText: String {
+        switch self {
+        case .text(let text): String(Markdown.inline(text).characters)
+        case .code(_, let code): code
+        case .bullets(let bullets):
+            bullets.map { "• " + String(Markdown.inline($0).characters) }.joined(separator: "\n")
+        }
+    }
 }
 
 public enum ChatItems {
@@ -88,6 +108,12 @@ public struct Markdown {
     private var paragraph: [String] = []
     private var bullets: [String] = []
     private var code: (lang: String, lines: [String])?
+
+    /// One block's inline markup (bold, code, links), each line break kept as the source has it.
+    public static func inline(_ markdown: String) -> AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        return (try? AttributedString(markdown: markdown, options: options)) ?? AttributedString(markdown)
+    }
 
     public static func blocks(_ markdown: String) -> [Block] {
         var parser = Markdown()

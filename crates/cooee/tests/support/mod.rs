@@ -727,6 +727,9 @@ impl FakeShed {
             let mut events: Vec<EventKind> = MARKDOWN.split_inclusive('\n').map(text).collect();
             events.push(reply(MARKDOWN, "end_turn"));
             (events, "end_turn")
+        } else if prompt.contains("paragraphs") {
+            let said = "Questions for you:\n1. **HTML or SwiftUI?**\n\n**Call voice:** the iOS target building.";
+            (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("commands") {
             let mut events = Vec::new();
             for (id, title) in [

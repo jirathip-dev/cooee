@@ -8,11 +8,12 @@ internal struct ItemView: View {
     internal var body: some View {
         switch item {
         case .you(_, let text, let files):
-            YouBubble(text: text, files: files)
+            YouBubble(text: text, files: files).modifier(Copyable(text: text))
         case .agent(_, let blocks):
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in BlockView(block: block) }
             }
+            .modifier(Copyable(text: item.plainText ?? ""))
         case .tools(_, let rows):
             ToolFold(rows: rows)
         case .note(_, let text):
@@ -52,20 +53,16 @@ internal struct BlockView: View {
     internal var body: some View {
         switch block {
         case .text(let text):
-            Text(Self.marked(text)).ui(16, .regular, look).fixedSize(horizontal: false, vertical: true)
+            Text(Markdown.inline(text)).ui(16, .regular, look).fixedSize(horizontal: false, vertical: true)
         case .bullets(let bullets):
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(bullets, id: \.self) { bullet in
-                    Text(Self.marked("•  " + bullet, plain: bullet)).ui(16, .regular, look)
+                    Text(Markdown.inline("•  " + bullet)).ui(16, .regular, look)
                 }
             }
         case .code(let lang, let code):
             CodeBlock(lang: lang, code: code)
         }
-    }
-
-    internal static func marked(_ markdown: String, plain: String? = nil) -> AttributedString {
-        (try? AttributedString(markdown: markdown)) ?? AttributedString(plain ?? markdown)
     }
 }
 
