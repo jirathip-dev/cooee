@@ -1,0 +1,7 @@
+Decided: the FAIL was CI infra (ui: apt DNS failures; e2e: artifact upload 5xx), so no code change; merged origin/staging to clear the conflict and rerun CI
+Decided: a pending outgoing bubble gets the same Copy menu as a sent one
+Because: "Long-press a message: a menu with **Copy** (the whole message as plain text)"
+Because: apple/Sources/CooeeUI/Items.swift:15
+Rejected: leaving outgoing out of Item.plainText — the switch must be exhaustive, and an unsent message is still a message
+Check: CI at 639c3eb6 is green, ui and e2e included; simulator-shots holds chat-paragraphs, message-menu, select-text
+Owner: Merged the latest staging; the earlier red checks were GitHub runner network errors, not this change.
