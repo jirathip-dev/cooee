@@ -1,0 +1,8 @@
+Decided: apple_cap 13000 in ci/cap.toml; line_cap stays 27500
+Because: "`ci/cap.toml`: `apple_cap = 13000` (`line_cap` unchanged at 27,500)."
+Because: q1275
+Decided: round 3 merges origin/staging and re-runs CI; msrv macos finished green, ui red is the chat.spec.mjs:131 long-task flake
+Because: "`scripts/line-cap.sh` passes on staging with the new cap."
+Rejected: editing web/e2e/chat.spec.mjs — out of scope for a cap-only issue
+Check: scripts/line-cap.sh prints apple 7212 / 13000 and non-test 24997 / 27500 at a7af03c and exits 0
+Owner: The Apple app's size limit is now 13,000 lines; the overall limit is unchanged.
