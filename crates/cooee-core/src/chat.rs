@@ -331,7 +331,9 @@ impl Chat {
                 self.turn.text.push_str(&text);
                 vec![Change::Text(text)]
             }
-            EventKind::ToolCall { id, title, status } => {
+            EventKind::ToolCall {
+                id, title, status, ..
+            } => {
                 let done = matches!(status.as_str(), "completed" | "failed");
                 let ended = done.then_some(at);
                 let call = |b: &Body| matches!(b, Body::Tool { call, .. } if *call == id);
