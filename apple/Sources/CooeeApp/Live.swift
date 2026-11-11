@@ -18,6 +18,7 @@ extension ThreadsClient: DependencyKey {
     public static let liveValue = ThreadsClient(
         threads: { server in try await Client(server).threads() },
         personas: { server in try await Client(server).personas() },
+        looks: { server in try await Client(server).looks() },
         messages: { server, thread in try await Client(server).messages(thread) },
         events: { server, thread, since in Client(server).events(thread, since: since) },
         send: { server, thread, text, files, queue in

@@ -1,0 +1,283 @@
+{
+ "default": "farm",
+ "themes": {
+  "farm": {
+   "label": "farm",
+   "scheme": {
+    "dark": "farm",
+    "light": "farm-light"
+   },
+   "sprites": true,
+   "moments": true,
+   "words": {
+    "working": "on the trail",
+    "needs": "at the gate",
+    "done": "in the stable",
+    "fail": "refused",
+    "idle": "grazing",
+    "merged": "over the fence",
+    "loading": "saddling up",
+    "empty-threads": "no horses out"
+   }
+  },
+  "kitchen": {
+   "label": "kitchen",
+   "scheme": {
+    "dark": "kitchen",
+    "light": "kitchen-light"
+   },
+   "sprites": true,
+   "moments": true,
+   "words": {
+    "working": "on the line",
+    "needs": "the bell",
+    "done": "at the pass",
+    "fail": "sent back",
+    "idle": "standing by",
+    "merged": "order up",
+    "loading": "firing up",
+    "empty-threads": "nobody on the line"
+   }
+  },
+  "garden": {
+   "label": "garden",
+   "scheme": {
+    "dark": "garden-dark",
+    "light": "garden-light"
+   },
+   "sprites": true,
+   "moments": true,
+   "words": {
+    "working": "being tended",
+    "needs": "thirsty",
+    "done": "ready",
+    "fail": "leaf drop",
+    "idle": "resting",
+    "merged": "sold!",
+    "loading": "watering",
+    "empty-threads": "the shop's quiet"
+   }
+  },
+  "plain": {
+   "label": "plain",
+   "scheme": {
+    "dark": "github-dark",
+    "light": "paper"
+   },
+   "sprites": false,
+   "moments": false,
+   "words": {}
+  }
+ },
+ "schemes": {
+  "farm": {
+   "label": "Farm",
+   "color-scheme": "dark",
+   "tokens": {
+    "--bg": "#0f1a13",
+    "--card": "#1d1a12",
+    "--edge": "#3b3a27",
+    "--line": "#26301f",
+    "--scrim": "#050b08aa",
+    "--fg": "#ece4cc",
+    "--mute": "#a3a68a",
+    "--l": "#ecdba6",
+    "--link": "#7cc4f0",
+    "--g": "#7fd06a",
+    "--a": "#f29b4b",
+    "--r": "#ff7d6e",
+    "--p": "#c7a4ff",
+    "--c": "#5fd0c4",
+    "--fk-l": "#7cc4f0",
+    "--fk-p": "#c7a4ff",
+    "--fk-c": "#5fd0c4",
+    "--fk-g": "#7fd06a",
+    "--fk-a": "#f29b4b"
+   }
+  },
+  "farm-light": {
+   "label": "Farm",
+   "color-scheme": "light",
+   "tokens": {
+    "--bg": "#f5efda",
+    "--card": "#ebe2c4",
+    "--edge": "#cbbd90",
+    "--line": "#e0d6b4",
+    "--scrim": "#2b241866",
+    "--fg": "#29251a",
+    "--mute": "#5c573f",
+    "--l": "#6b3410",
+    "--link": "#1f639b",
+    "--g": "#2a6d1c",
+    "--a": "#7a5f00",
+    "--r": "#b81d3c",
+    "--p": "#7a4aa8",
+    "--c": "#1c6e70",
+    "--fk-l": "#1f639b",
+    "--fk-p": "#7a4aa8",
+    "--fk-c": "#1c6e70",
+    "--fk-g": "#2a6d1c",
+    "--fk-a": "#7a5f00"
+   }
+  },
+  "kitchen": {
+   "label": "Kitchen",
+   "color-scheme": "dark",
+   "tokens": {
+    "--bg": "#1a1816",
+    "--card": "#24201c",
+    "--edge": "#4a3f2e",
+    "--line": "#2e2a26",
+    "--scrim": "#0a0908aa",
+    "--fg": "#efe3cb",
+    "--mute": "#a89a87",
+    "--l": "#e89a62",
+    "--link": "#c4a88f",
+    "--g": "#6cc96e",
+    "--a": "#f4d24e",
+    "--r": "#ff5c84",
+    "--p": "#d39ad0",
+    "--c": "#62c9c0",
+    "--fk-l": "#e89a62",
+    "--fk-p": "#d39ad0",
+    "--fk-c": "#62c9c0",
+    "--fk-g": "#6cc96e",
+    "--fk-a": "#f4d24e"
+   }
+  },
+  "kitchen-light": {
+   "label": "Kitchen",
+   "color-scheme": "light",
+   "tokens": {
+    "--bg": "#f8f5f0",
+    "--card": "#eee8df",
+    "--edge": "#d2c4ae",
+    "--line": "#e6ddd0",
+    "--scrim": "#2a242066",
+    "--fg": "#2a2420",
+    "--mute": "#5e554b",
+    "--l": "#94431a",
+    "--link": "#3f5878",
+    "--g": "#2a7030",
+    "--a": "#7d6400",
+    "--r": "#b8174f",
+    "--p": "#8a4a88",
+    "--c": "#1b6e68",
+    "--fk-l": "#94431a",
+    "--fk-p": "#8a4a88",
+    "--fk-c": "#1b6e68",
+    "--fk-g": "#2a7030",
+    "--fk-a": "#7d6400"
+   }
+  },
+  "garden-dark": {
+   "label": "Garden",
+   "color-scheme": "dark",
+   "tokens": {
+    "--bg": "#181c15",
+    "--card": "#24231b",
+    "--edge": "#463f2c",
+    "--line": "#2b2e23",
+    "--scrim": "#080a06aa",
+    "--fg": "#ece4cf",
+    "--mute": "#a7a28a",
+    "--l": "#eda055",
+    "--link": "#93c9c0",
+    "--g": "#74c760",
+    "--a": "#f5df63",
+    "--r": "#ff6f7a",
+    "--p": "#c9a2e8",
+    "--c": "#66c8bd",
+    "--fk-l": "#7fb8ec",
+    "--fk-p": "#c9a2e8",
+    "--fk-c": "#66c8bd",
+    "--fk-g": "#74c760",
+    "--fk-a": "#f5df63"
+   }
+  },
+  "garden-light": {
+   "label": "Garden",
+   "color-scheme": "light",
+   "tokens": {
+    "--bg": "#f7f2e6",
+    "--card": "#eee6d3",
+    "--edge": "#d3c6a6",
+    "--line": "#e3d9c2",
+    "--scrim": "#2a261c66",
+    "--fg": "#2a2b22",
+    "--mute": "#5b5a49",
+    "--l": "#9a3f1a",
+    "--link": "#1f6470",
+    "--g": "#33721c",
+    "--a": "#7a5f00",
+    "--r": "#a8164f",
+    "--p": "#7b4a9e",
+    "--c": "#1d6a6d",
+    "--fk-l": "#2f5fa0",
+    "--fk-p": "#7b4a9e",
+    "--fk-c": "#1d6a6d",
+    "--fk-g": "#33721c",
+    "--fk-a": "#7a5f00"
+   }
+  },
+  "github-dark": {
+   "label": "GitHub",
+   "color-scheme": "dark",
+   "tokens": {
+    "--bg": "#0d1117",
+    "--card": "#161b22",
+    "--edge": "#30363d",
+    "--line": "#21262d",
+    "--scrim": "#000000aa",
+    "--fg": "#c9d1d9",
+    "--mute": "#8b949e",
+    "--l": "#58a6ff",
+    "--link": "#58a6ff",
+    "--g": "#3fb950",
+    "--a": "#d29922",
+    "--r": "#f85149",
+    "--p": "#bc8cff",
+    "--c": "#39c5cf",
+    "--fk-l": "#58a6ff",
+    "--fk-p": "#bc8cff",
+    "--fk-c": "#39c5cf",
+    "--fk-g": "#3fb950",
+    "--fk-a": "#d29922"
+   }
+  },
+  "paper": {
+   "label": "Paper",
+   "color-scheme": "light",
+   "tokens": {
+    "--bg": "#fbf8f1",
+    "--card": "#f3eee2",
+    "--edge": "#d8d0bf",
+    "--line": "#e7e0d0",
+    "--scrim": "#2b241866",
+    "--fg": "#24292f",
+    "--mute": "#5b616a",
+    "--l": "#0b5cad",
+    "--link": "#0b5cad",
+    "--g": "#197b35",
+    "--a": "#8a5a00",
+    "--r": "#c4202b",
+    "--p": "#7c4dcf",
+    "--c": "#0b7480",
+    "--fk-l": "#0b5cad",
+    "--fk-p": "#7c4dcf",
+    "--fk-c": "#0b7480",
+    "--fk-g": "#197b35",
+    "--fk-a": "#8a5a00"
+   }
+  }
+ },
+ "ascii": [
+  [
+   "idle",
+   [
+    "(-.-)",
+    "(-.-)"
+   ]
+  ]
+ ]
+}

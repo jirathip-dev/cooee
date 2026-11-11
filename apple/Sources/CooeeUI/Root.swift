@@ -15,7 +15,10 @@ public struct AppRoot: View {
     public var body: some View {
         Group {
             if let home = store.scope(state: \.home, action: \.home) {
-                content(home).task { await home.send(.task).finish() }
+                content(home).task {
+                    store.send(.menu(.load))
+                    await home.send(.task).finish()
+                }
             } else if let setup = store.scope(state: \.setup, action: \.setup) {
                 MacSetup(store: setup)
             } else if let pairing = store.scope(state: \.pairing, action: \.pairing) {
@@ -30,8 +33,15 @@ public struct AppRoot: View {
             MenuSheet(store: store.scope(state: \.menu, action: \.menu)).presentationDetents([.medium, .large])
         }
         .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in PersonaScreen(store: persona) }
-        .environment(\.look, Look(palette: .farm(dark ? .dark : .light), style: store.menu.settings.style))
+        .environment(\.look, look)
         .preferredColorScheme(store.menu.settings.scheme == .system ? nil : dark ? .dark : .light)
+    }
+
+    private var look: Look {
+        let (menu, theme) = (store.menu, store.menu.settings.theme)
+        let picked = menu.looks.tokens(theme, dark: dark).flatMap { Palette(tokens: $0, dark: dark) }
+        let art = menu.server.flatMap { menu.looks.art(theme, on: $0.url) }
+        return Look(palette: picked ?? .farm(dark ? .dark : .light), style: menu.settings.style, art: art)
     }
 
     private var dark: Bool {

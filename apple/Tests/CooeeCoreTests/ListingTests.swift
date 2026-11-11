@@ -70,6 +70,13 @@ internal struct ListingTests {
         let settings = Settings(scheme: .dark, style: .terminal, push: "ab12")
         let back = try JSONDecoder().decode(Settings.self, from: try JSONEncoder().encode(settings))
         #expect(back == settings && Settings() == Settings(scheme: .system, style: .modern, push: nil))
+        let picked = Settings(theme: "kitchen")
+        #expect(try JSONDecoder().decode(Settings.self, from: try JSONEncoder().encode(picked)).theme == "kitchen")
+        let saved = Data(#"{"scheme":"dark","style":"scene","push":"ab12"}"#.utf8)
+        #expect(
+            try JSONDecoder().decode(Settings.self, from: saved) == Settings(scheme: .dark, style: .scene, push: "ab12")
+        )
+        #expect(Settings().theme == "farm")
     }
 
     @Test internal func aTypedAddressOrALinkIsAServer() {

@@ -180,8 +180,14 @@ fn add_remove_and_list_with_the_lock() {
         s.lock(),
         json!([{ "name": "farm", "source": "index", "commit": s.commit, "listed": true }])
     );
-    // The server shows it without a restart.
+    // The server shows it without a restart, in the native look sheet's list too (#252).
     until("farm is served", || s.serves("farm"));
+    let looks = s.cooee.json("/api/v1/looks");
+    assert_eq!(
+        looks["themes"]["farm"]["scheme"],
+        json!({"dark": "farm", "light": "farm-light"})
+    );
+    assert_eq!(looks["schemes"]["farm"]["tokens"]["--bg"], "#0f1a13");
 
     // A pack failing the gate is never installed.
     let (ok, out) = s.run(&["theme", "add", "broken"]);
@@ -231,6 +237,16 @@ fn add_remove_and_list_with_the_lock() {
     assert!(!themes.join("farm").exists());
     assert_eq!(s.lock().as_array().unwrap().len(), 2);
     until("farm is gone", || !s.serves("farm"));
+    assert!(
+        s.cooee.json("/api/v1/looks")["themes"]
+            .get("farm")
+            .is_none()
+    );
+    assert!(
+        s.cooee.json("/api/v1/looks")["themes"]
+            .get("kitchen")
+            .is_some()
+    );
     let (ok, out) = s.run(&["theme", "remove", "farm"]);
     assert!(!ok && out.contains("farm isn't installed"), "{out}");
 }

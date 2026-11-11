@@ -50,7 +50,7 @@ macro_rules! built {
 
 /// The static routes: the manifest, the icons, the style sheet, the scripts and the service worker; the look:
 /// `POST /look` (a pick with no script) and each theme's data at
-/// `/look/<theme>/{theme.json,sprites.svg,scene.svg,icon.png}`.
+/// `/look/<theme>/{theme.json,sprites.svg,scene.svg,icon.png}`, and all of them as JSON at `/api/v1/looks`.
 #[must_use]
 pub fn assets(builder: RouterBuilder, looks: Arc<LookAssets>) -> RouterBuilder {
     builder
@@ -66,6 +66,7 @@ pub fn assets(builder: RouterBuilder, looks: Arc<LookAssets>) -> RouterBuilder {
         .route(look_js)
         .route(sheet::look_set)
         .route(look_file)
+        .route(looks_json)
         .app_context(looks)
 }
 
@@ -161,6 +162,13 @@ const FRAMES: &[u8] = b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var
 
 /// A scene's calm layers only (#34): herdsman's scenes draw each host-load level as a layer, and cooee has no load.
 const CALM: &[u8] = b"<style>.h-busy,.h-held,.l-overcast,.l-rain{display:none}</style>";
+
+/// The installed themes and schemes as JSON (#252), for the native look sheet.
+#[route(GET "/api/v1/looks")]
+async fn looks_json(cx: &Cx) -> Result<Owned> {
+    let json = app_context::<Arc<LookAssets>>(cx).json();
+    Ok(Owned("application/json", json.as_bytes().to_vec()))
+}
 
 #[route(GET "/look/{look}/{file}")]
 async fn look_file(cx: &Cx) -> Result<Owned> {

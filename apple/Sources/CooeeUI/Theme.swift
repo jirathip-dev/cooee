@@ -1,7 +1,7 @@
 import CooeeCore
 import SwiftUI
 
-public struct Palette: Sendable {
+public struct Palette: Sendable, Equatable {
     public static let farmDark = Palette(
         background: .hex(0x0f1a13), card: .hex(0x1d1a12), edge: .hex(0x3b3a27), line: .hex(0x26301f),
         foreground: .hex(0xece4cc), mute: .hex(0xa3a68a), lead: .hex(0xecdba6), link: .hex(0x7cc4f0),
@@ -32,6 +32,23 @@ public struct Palette: Sendable {
 
     public static func farm(_ scheme: ColorScheme) -> Palette { scheme == .dark ? farmDark : farmLight }
 
+    /// A pack's scheme, from its `--bg`, `--fg`, … tokens; nil when one is missing or not `#rrggbb`.
+    public init?(tokens: [String: String], dark: Bool) {
+        let keys = [
+            "--bg", "--card", "--edge", "--line", "--fg", "--mute", "--l", "--link", "--g", "--a", "--r", "--p", "--c",
+        ]
+        let colors = keys.compactMap { key in
+            tokens[key].flatMap { $0.count == 7 && $0.hasPrefix("#") ? UInt32($0.dropFirst(), radix: 16) : nil }
+                .map(Color.hex)
+        }
+        guard colors.count == keys.count else { return nil }
+        self.init(
+            background: colors[0], card: colors[1], edge: colors[2], line: colors[3], foreground: colors[4],
+            mute: colors[5], lead: colors[6], link: colors[7], green: colors[8], amber: colors[9], red: colors[10],
+            purple: colors[11], cyan: colors[12], dark: dark
+        )
+    }
+
     public func tint(_ tint: Tint) -> Color {
         switch tint {
         case .lead: lead
@@ -58,13 +75,15 @@ public struct Look: Sendable {
     public var palette: Palette
     public var style: LookStyle
     public var still: Bool
+    public var art: URL?
 
     internal var mono: Bool { style == .terminal }
 
-    public init(palette: Palette = .farmDark, style: LookStyle = .modern, still: Bool = false) {
+    public init(palette: Palette = .farmDark, style: LookStyle = .modern, still: Bool = false, art: URL? = nil) {
         self.palette = palette
         self.style = style
         self.still = still
+        self.art = art
     }
 }
 

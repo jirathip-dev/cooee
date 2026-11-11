@@ -26,7 +26,8 @@ internal struct Avatar: View {
                 .foregroundStyle(tint).frame(width: size, height: size)
                 .overlay(Rectangle().strokeBorder(tint.opacity(0.7), lineWidth: 1))
         case .scene:
-            Sprite(name: "horse-\(persona.look.coat)-\(persona.pose)").frame(width: size * 1.32, height: size)
+            Sprite(name: "horse-\(persona.look.coat)-\(persona.pose)", pack: "sprites.svg#s-\(persona.pose)").frame(
+                width: size * 1.32, height: size)
         }
     }
 }

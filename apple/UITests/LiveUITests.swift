@@ -28,6 +28,7 @@
             app.buttons["Back"].firstMatch.tap()
             opensDroversScreens(app, new)
             avatarMenu(app, new)
+            themes(app, new)
         }
 
         @MainActor
@@ -203,6 +204,39 @@
             XCTAssert(picked(app, "Terminal").waitForExistence(timeout: 5))
             labelled(app, "Modern").tap()
             XCTAssert(picked(app, "Modern").waitForExistence(timeout: 5))
+        }
+
+        @MainActor
+        private func themes(_ app: XCUIApplication, _ new: XCUIElement) {
+            for theme in ["Kitchen", "Garden", "Farm"] {
+                look(app, theme, "Modern")
+                keep("theme-\(theme.lowercased())-modern")
+                new.tap()
+                app.buttons["Coder"].firstMatch.tap()
+                XCTAssert(field(app, "Message Coder").waitForExistence(timeout: 10))
+                keep("theme-\(theme.lowercased())-chat")
+                app.buttons["Back"].firstMatch.tap()
+                XCTAssert(new.waitForExistence(timeout: 10))
+                look(app, theme, "Scene")
+                keep("theme-\(theme.lowercased())-scene")
+            }
+            look(app, "Farm", "Modern")
+        }
+
+        @MainActor
+        private func look(_ app: XCUIApplication, _ theme: String, _ style: String) {
+            if !app.buttons[theme].firstMatch.exists {
+                app.buttons["Account"].firstMatch.tap()
+                labelled(app, "Look").tap()
+            }
+            XCTAssert(app.buttons[theme].firstMatch.waitForExistence(timeout: 10))
+            app.buttons[theme].firstMatch.tap()
+            XCTAssert(picked(app, theme).waitForExistence(timeout: 5))
+            app.buttons[style].firstMatch.tap()
+            XCTAssert(picked(app, style).waitForExistence(timeout: 5))
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap()
+            XCTAssert(app.buttons[theme].firstMatch.waitForNonExistence(timeout: 10))
+            sleep(2)
         }
 
         @MainActor

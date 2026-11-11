@@ -17,7 +17,7 @@ internal struct Figure: View {
         let palette = look.palette
         if look.style == .scene, let coat = figure.string("coat") {
             let pose = LaneState(rawValue: figure.string("state") ?? "")?.pose ?? "idle"
-            Sprite(name: "horse-\(coat)-\(pose)").frame(width: 37, height: 28)
+            Sprite(name: "horse-\(coat)-\(pose)", pack: "sprites.svg#s-\(pose)").frame(width: 37, height: 28)
         } else if let icon = figure.string("icon") {
             Image(systemName: icon).font(.system(size: 14, weight: .semibold)).foregroundStyle(palette.link).frame(
                 width: 28)

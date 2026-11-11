@@ -1,4 +1,5 @@
 import SwiftUI
+import WebKit
 
 #if canImport(UIKit)
     import UIKit
@@ -19,16 +20,41 @@ import SwiftUI
 #endif
 
 internal struct Sprite: View {
+    @Environment(\.look) private var look
     internal let name: String
+    internal var pack: String?
 
     internal var body: some View {
-        if let url = Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Sprites"),
+        if let pack, let art = look.art {
+            PackArt(art: art, path: pack)
+        } else if let url = Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Sprites"),
             let image = PlatformImage(contentsOfFile: url.path)
         {
             Image(platform: image).resizable().interpolation(.high).scaledToFit()
         } else {
             Color.clear
         }
+    }
+}
+
+internal struct PackArt: View {
+    @State private var page = WebPage()
+    internal let art: URL
+    internal let path: String
+
+    private var html: String {
+        let url = URL(string: path, relativeTo: art)?.absoluteString ?? ""
+        let shown =
+            path.contains("#")
+            ? "<svg><use href=\"\(url)\" width=\"100%\" height=\"100%\"/></svg>" : "<img src=\"\(url)\">"
+        return "<meta name=\"viewport\" content=\"width=device-width\"><style>*{margin:0}"
+            + "html,body,svg,img{width:100%;height:100%;display:block;overflow:hidden;background:none}"
+            + "img{object-fit:cover;object-position:bottom}</style>\(shown)"
+    }
+
+    internal var body: some View {
+        WebView(page).webViewContentBackground(.hidden).allowsHitTesting(false).accessibilityHidden(true)
+            .task(id: html) { _ = page.load(html: html, baseURL: art) }
     }
 }
 

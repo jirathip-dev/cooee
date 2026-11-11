@@ -16,6 +16,7 @@ internal struct AppFeatureTests {
             $0.serverStore.clear = { calls.record("clear") }
             $0.threads.threads = { _ in [row("n1")] }
             $0.threads.personas = { _ in [coder] }
+            $0.threads.looks = { _ in Looks() }
         }
     }
 
@@ -61,6 +62,7 @@ internal struct AppFeatureTests {
             $0.chat = nil
         }
         await store.send(.menu(.open(true))) { $0.menu.open = true }
+        await store.receive(\.menu.looks)
     }
 
     @Test internal func aNewChatBecomesItsThreadOnceStarted() async {
