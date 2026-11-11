@@ -1,3 +1,4 @@
+import CooeeFeatures
 import SwiftUI
 
 internal struct Group2<Content: View>: View {
@@ -31,6 +32,7 @@ internal struct SettingRow: View {
     internal var tint: Color?
     internal var value = ""
     internal var divider = true
+    internal var edit: Binding<String>?
 
     internal var body: some View {
         let palette = look.palette
@@ -41,8 +43,14 @@ internal struct SettingRow: View {
             }
             Text(title).ui(16, .regular, look)
             Spacer()
-            Text(value).ui(15, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
-            Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(palette.mute)
+            if let edit, !look.still {
+                TextField(title, text: edit).multilineTextAlignment(.trailing).ui(15, .regular, look)
+                    .foregroundStyle(palette.mute)
+            } else {
+                Text(value).ui(15, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(palette.mute)
+            }
         }
         .padding(.horizontal, 14).frame(height: 48)
         .overlay(alignment: .bottom) {
@@ -55,6 +63,10 @@ internal struct SettingRow: View {
 
 internal struct AvatarMenu: View {
     @Environment(\.look) private var look
+    internal var name = "Guy"
+    internal var place = "this iPhone · paired to mini"
+    internal var values = ["Modern · Farm", "Asks, done", "Claude, Codex", "3", "mini, air · Terminal", "4"]
+    internal var pick: (MenuFeature.Page) -> Void = { _ in }
 
     internal var body: some View {
         let palette = look.palette
@@ -62,26 +74,21 @@ internal struct AvatarMenu: View {
             HStack(spacing: 12) {
                 AccountAvatar(size: 48)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Guy").ui(18, .semibold, look)
-                    Text("this iPhone · paired to mini").ui(13, .regular, look).foregroundStyle(palette.mute)
+                    Text(name).ui(18, .semibold, look)
+                    Text(place).ui(13, .regular, look).foregroundStyle(palette.mute)
                 }
                 Spacer()
             }
             .padding(.horizontal, 6)
             Group2(header: "Settings") {
-                SettingRow(symbol: "paintpalette.fill", title: "Look", tint: palette.amber, value: "Modern · Farm")
-                SettingRow(symbol: "bell.badge.fill", title: "Notifications", tint: palette.red, value: "Asks, done")
-                SettingRow(
-                    symbol: "person.badge.key.fill", title: "Sign-ins", tint: palette.purple, value: "Claude, Codex")
-                SettingRow(symbol: "iphone.gen3", title: "Devices", tint: palette.link, value: "3", divider: false)
+                row(.look, "paintpalette.fill", "Look", palette.amber)
+                row(.notifications, "bell.badge.fill", "Notifications", palette.red)
+                row(.signIns, "person.badge.key.fill", "Sign-ins", palette.purple)
+                row(.devices, "iphone.gen3", "Devices", palette.link, divider: false)
             }
             Group2 {
-                SettingRow(
-                    symbol: "desktopcomputer", title: "Machines", tint: palette.cyan, value: "mini, air · Terminal")
-                SettingRow(
-                    symbol: "puzzlepiece.extension.fill", title: "Plugins", tint: palette.green, value: "4",
-                    divider: false
-                )
+                row(.machines, "desktopcomputer", "Machines", palette.cyan)
+                row(.plugins, "puzzlepiece.extension.fill", "Plugins", palette.green, divider: false)
             }
             Text(look.mono ? "-- v2: these open their screens" : "Machines, Terminal and the plugin sheets open in v2.")
                 .ui(12, .regular, look).foregroundStyle(palette.mute).padding(.leading, 6)
@@ -91,5 +98,19 @@ internal struct AvatarMenu: View {
         .foregroundStyle(palette.foreground)
     }
 
-    internal init() {}
+    private func row(
+        _ page: MenuFeature.Page,
+        _ symbol: String,
+        _ title: String,
+        _ tint: Color,
+        divider: Bool = true
+    ) -> some View {
+        let value = MenuFeature.Page.allCases.firstIndex(of: page).map { values[$0] } ?? ""
+        return Button {
+            pick(page)
+        } label: {
+            SettingRow(symbol: symbol, title: title, tint: tint, value: value, divider: divider).contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
 }

@@ -46,6 +46,8 @@ pub struct Persona {
     pub plugins: Vec<String>,
     /// The personas it may ask with `ask_persona` (#156, G4).
     pub can_message: Vec<String>,
+    /// Pinned to the native app's Home row (#139).
+    pub pinned: bool,
     /// The owner profile it runs as (one read as a persona), never set over the API.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub profile: Option<String>,

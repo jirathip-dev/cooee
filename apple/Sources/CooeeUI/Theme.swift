@@ -1,10 +1,6 @@
 import CooeeCore
 import SwiftUI
 
-public enum LookStyle: String, CaseIterable, Sendable {
-    case modern, terminal, scene
-}
-
 public struct Palette: Sendable {
     public static let farmDark = Palette(
         background: .hex(0x0f1a13), card: .hex(0x1d1a12), edge: .hex(0x3b3a27), line: .hex(0x26301f),

@@ -32,6 +32,26 @@ public struct ThreadsClient: Sendable {
 }
 
 @DependencyClient
+public struct PersonasClient: Sendable {
+    public var create: @Sendable (_ server: Server, _ persona: APIPersona) async throws -> APIPersona
+    public var save: @Sendable (_ server: Server, _ persona: APIPersona) async throws -> APIPersona
+    public var memory: @Sendable (_ server: Server, _ persona: String) async throws -> [PersonaNote]
+    public var forget: @Sendable (_ server: Server, _ persona: String) async throws -> Void
+}
+
+@DependencyClient
+public struct PushClient: Sendable {
+    public var token: @Sendable () async throws -> String
+    public var register: @Sendable (_ server: Server, _ token: String, _ enabled: Bool) async throws -> Void
+}
+
+@DependencyClient
+public struct SettingsStore: Sendable {
+    public var load: @Sendable () -> Settings = { Settings() }
+    public var save: @Sendable (_ settings: Settings) -> Void
+}
+
+@DependencyClient
 public struct ServerStore: Sendable {
     public var load: @Sendable () -> Server? = { nil }
     public var save: @Sendable (_ server: Server) -> Void
@@ -65,6 +85,18 @@ extension ThreadsClient: TestDependencyKey {
     public static let testValue = ThreadsClient()
 }
 
+extension PersonasClient: TestDependencyKey {
+    public static let testValue = PersonasClient()
+}
+
+extension PushClient: TestDependencyKey {
+    public static let testValue = PushClient()
+}
+
+extension SettingsStore: TestDependencyKey {
+    public static let testValue = SettingsStore()
+}
+
 extension ServerStore: TestDependencyKey {
     public static let testValue = ServerStore()
 }
@@ -86,6 +118,21 @@ extension DependencyValues {
     public var threads: ThreadsClient {
         get { self[ThreadsClient.self] }
         set { self[ThreadsClient.self] = newValue }
+    }
+
+    public var personas: PersonasClient {
+        get { self[PersonasClient.self] }
+        set { self[PersonasClient.self] = newValue }
+    }
+
+    public var push: PushClient {
+        get { self[PushClient.self] }
+        set { self[PushClient.self] = newValue }
+    }
+
+    public var settingsStore: SettingsStore {
+        get { self[SettingsStore.self] }
+        set { self[SettingsStore.self] = newValue }
     }
 
     public var serverStore: ServerStore {
