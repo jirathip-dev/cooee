@@ -164,7 +164,10 @@ public final class LayerImportsRule: SlopRule {
             "AppKit", "ComposableArchitecture", "CooeeCore", "CooeeFeatures", "CoreImage", "SwiftUI", "UIKit",
             "UniformTypeIdentifiers", "VisionKit", "WebKit",
         ],
-        "CooeeApp": ["ComposableArchitecture", "CooeeAPI", "CooeeCore", "CooeeFeatures", "CooeeUI", "SwiftUI"],
+        "CooeeApp": [
+            "ComposableArchitecture", "CooeeAPI", "CooeeCore", "CooeeFeatures", "CooeeUI", "Foundation",
+            "LocalAuthentication", "ServiceManagement", "SwiftUI",
+        ],
         "Cooee": ["CooeeApp", "CooeeUI", "SwiftUI"],
         "UITests": ["XCTest"],
     ]

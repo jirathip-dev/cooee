@@ -13,3 +13,4 @@
 - Don't drop CooeeCore, CooeeAPI or CooeeFeatures under 95% line coverage — scripts/apple-coverage.swift
 - Don't leave unused Swift code — Periphery
 - Don't change a design frame without its snapshot (apple/design/v1) — CooeeUITests SnapshotTests
+- Don't name a provider (claude, anthropic, codex, openai, gemini, hermes) outside crates/cooee-core/src/providers/ and tests — scripts/neutral-core.sh

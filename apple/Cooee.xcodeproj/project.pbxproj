@@ -79,6 +79,7 @@
 				C0EE00000000000000000801 /* Sources */,
 				C0EE00000000000000000501 /* Frameworks */,
 				C0EE00000000000000000802 /* Resources */,
+				C0EE00000000000000000805 /* Login items */,
 			);
 			buildRules = (
 			);
@@ -176,6 +177,24 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		C0EE00000000000000000805 /* Login items */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Login items";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "[ \"$PLATFORM_NAME\" = macosx ] || exit 0\ncontents=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH\"\nmkdir -p \"$contents/Library/LaunchAgents\" \"$contents/Helpers\"\ncp \"$SRCROOT/LaunchAgents/\"*.plist \"$contents/Library/LaunchAgents/\"\nif [ -z \"${COOEE_BIN_DIR:-}\" ]; then\n  echo \"COOEE_BIN_DIR is not set: this Mac app has no cooee or shed inside (scripts/mac-app.sh builds them)\"\n  exit 0\nfi\nfor bin in cooee shed; do\n  cp \"$COOEE_BIN_DIR/$bin\" \"$contents/Helpers/$bin\"\n  codesign --force --options runtime ${OTHER_CODE_SIGN_FLAGS:-} --sign \"${EXPANDED_CODE_SIGN_IDENTITY:--}\" \"$contents/Helpers/$bin\"\ndone\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		C0EE00000000000000000801 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -239,6 +258,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -269,6 +289,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;

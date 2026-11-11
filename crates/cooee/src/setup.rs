@@ -10,7 +10,7 @@ use std::{
     time::Duration,
 };
 
-use cooee_core::{Config, Shed};
+use cooee_core::{Config, Shed, provider};
 
 use super::{SHED_CARGO, doctor, label, load, pair, plist, tailnet_name, write_plist};
 
@@ -285,24 +285,21 @@ impl Setup {
         Ok(())
     }
 
-    /// Claude's ACP agent in shed, and Codex's and Gemini's if asked for.
+    /// The first registered provider's ACP agent in shed, and each other one's if asked for.
     fn agents(&self, config: &Config) -> Result<(), String> {
         let have: Vec<String> = Shed::new(config.shed.clone(), config.shed_dir.clone())
             .agents()
             .map(|a| a.into_iter().map(|a| a.id).collect())
             .unwrap_or_default();
-        let mut want = Vec::new();
-        if !have.iter().any(|a| a == "claude-acp") {
-            want.push("claude-acp");
-        }
-        for (name, id) in [("Codex", "codex-acp"), ("Gemini", "gemini")] {
-            let missing = !have.iter().any(|a| a == id);
-            if missing
-                && self
-                    .ask(&format!("also {name}? [y/N]"), "n")
-                    .starts_with(['y', 'Y'])
+        let mut specs = provider::defaults().into_iter();
+        let first = specs.next().filter(|s| !have.contains(&s.agent));
+        let mut want: Vec<String> = first.map(|s| s.agent).into_iter().collect();
+        for s in specs.filter(|s| !have.contains(&s.agent)) {
+            if self
+                .ask(&format!("also {}? [y/N]", s.name), "n")
+                .starts_with(['y', 'Y'])
             {
-                want.push(id);
+                want.push(s.agent);
             }
         }
         step("agents", want.is_empty());
@@ -313,7 +310,7 @@ impl Setup {
             if let Some(dir) = &dir {
                 argv.extend(["--dir", dir]);
             }
-            argv.extend(["agents", "add", id]);
+            argv.extend(["agents", "add", &id]);
             self.exec(&argv)?;
         }
         Ok(())

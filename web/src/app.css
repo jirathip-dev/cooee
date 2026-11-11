@@ -313,7 +313,7 @@ html[data-style=terminal]{--r-ctl:6px}
 html[data-style=terminal] .sec{background:none;box-shadow:none}
 #composer.nc{align-items:flex-end}
 /* The chat right after send: your message, then the state line where the reply will come, in the theme's loading
-   word: `[sprite] saddling up · connecting claude · jk@work.com`. The reply replaces it. A failed connect puts the
+   word: `[sprite] saddling up · connecting acme · jk@work.com`. The reply replaces it. A failed connect puts the
    error and [retry] there instead, and your message stays. */
 .cnx{display:flex;align-items:center;flex-wrap:wrap;gap:0 .5ch;min-height:var(--row);color:var(--mute);font-size:var(--fs-meta);white-space:normal}
 .cnx .thw{font-size:var(--fs)}

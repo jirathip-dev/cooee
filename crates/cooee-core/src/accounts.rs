@@ -1,5 +1,5 @@
-//! A provider's accounts: the system default login (`~/.claude`, …) and the ones added in cooee, each a config folder
-//! `<data>/accounts/<provider>/<name>/` that its CLI gets through the provider's variable (`CLAUDE_CONFIG_DIR`, …).
+//! A provider's accounts: the system default login (its CLI's own folder) and the ones added in cooee, each a config
+//! folder `<data>/accounts/<provider>/<name>/` that its CLI gets through the provider's `home` variable.
 //! The CLI keeps its own login there or in its keychain; cooee never reads or stores a token. An existing folder is
 //! adopted as a link to it (#183). Beside the folders, `.cooee.json` keeps when each one's login last succeeded and
 //! its last usage reading. There is no default account: a new thread takes the last one used in its folder (#48).
@@ -12,13 +12,13 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Provider, Status, write_private};
+use crate::{Provider, Spec, Status, write_private};
 
 /// A provider as the sign-ins sheet and the new-thread picker show it.
 #[derive(Debug, Clone)]
 pub struct Sheet {
     /// The provider.
-    pub provider: Provider,
+    pub provider: Spec,
     /// Its accounts, the system default first, each with its status.
     pub accounts: Vec<(Account, Status)>,
     /// How its last login ended.
@@ -206,15 +206,21 @@ impl Accounts {
     /// Account `name` of provider `p`'s usage at `now` (s), its folder `dir`: its last reading while fresh, else a new
     /// one from the usage command (kept), else the last one; each window past its reset reads as reset.
     #[must_use]
-    pub fn usage(&self, p: &Provider, name: &str, dir: Option<&Path>, now: u64) -> Option<Usage> {
-        let mut meta = self.meta(&p.name);
+    pub fn usage(
+        &self,
+        p: &dyn Provider,
+        name: &str,
+        dir: Option<&Path>,
+        now: u64,
+    ) -> Option<Usage> {
+        let mut meta = self.meta(&p.spec().name);
         let last = meta.usage.get(name).copied();
         let reading = match last {
             Some(u) if now < u.read_at + FRESH => last,
             _ => match p.usage(dir, now) {
                 Some(u) => {
                     meta.usage.insert(name.to_owned(), u);
-                    let _ = self.save(&p.name, &meta);
+                    let _ = self.save(&p.spec().name, &meta);
                     Some(u)
                 }
                 None => last,
