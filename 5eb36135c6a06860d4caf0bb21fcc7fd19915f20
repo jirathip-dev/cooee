@@ -1,0 +1,5 @@
+Decided: qualify the picker's settings parameter as CooeeCore.Settings
+Because: apple/Sources/CooeeUI/AppIconPicker.swift:53
+Rejected: renaming CooeeCore.Settings — touches every layer for a one-site clash
+Check: CI dmg and build (generic/platform=macOS) jobs compile AppIconPicker.swift
+Owner: The Mac build broke on a name clash in the icon picker; fixed with a one-word change.
