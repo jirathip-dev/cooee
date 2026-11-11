@@ -90,7 +90,8 @@ internal struct SnapshotTests {
             name: "wide", width: 120, height: 60, palette: .farmDark, style: .terminal, phone: false,
             view: { AnyView(Text(String(repeating: "overflow ", count: 12)).fixedSize()) }
         )
-        let pixels = try #require(Pixels(try #require(wide.render(margin: 24))))
+        let rendered = try #require(wide.render(margin: 24))
+        let pixels = try #require(Pixels(rendered))
         #expect(pixels.spilled(beyond: 48) > 0)
     }
 
