@@ -158,6 +158,10 @@ pub struct Summary {
     pub profile: String,
     /// Its persona's id (#126; empty: none, or one deleted).
     pub persona: String,
+    /// Its persona's name (#159; empty: none).
+    pub persona_name: String,
+    /// Its persona's role (#159).
+    pub persona_role: crate::personas::Role,
     /// The working folder.
     pub folder: PathBuf,
     /// The machine it runs on (#148; empty: this host).

@@ -1677,17 +1677,16 @@ impl Hub {
                     }
                     _ => None,
                 });
+                let persona = personas.iter().find(|p| p.id == live.meta.profile);
                 Some(Summary {
                     id: live.meta.id.clone(),
                     title: live.meta.title.clone(),
                     agent: live.meta.agent.clone(),
                     account: live.meta.account.clone(),
                     profile: live.meta.profile.clone(),
-                    persona: personas
-                        .iter()
-                        .find(|p| p.id == live.meta.profile)
-                        .map(|p| p.id.clone())
-                        .unwrap_or_default(),
+                    persona: persona.map(|p| p.id.clone()).unwrap_or_default(),
+                    persona_name: persona.map(|p| p.name.clone()).unwrap_or_default(),
+                    persona_role: persona.map(|p| p.role).unwrap_or_default(),
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     machine: live.meta.machine.clone(),
                     state: live.chat.turn.state.clone(),
