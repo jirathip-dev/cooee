@@ -1,0 +1,9 @@
+Decided: Today lists only work merged on staging, each line naming its PR numbers or a file
+Because: "Every \"Today\" line names a merged PR or file that proves it"
+Decided: Drover under Today is the cooee-drover plugin; herdsman's drover replacing it stays under next
+Because: plugins/index.toml:8
+Rejected: keeping the dated owner decisions and milestone lists — history, not today's cooee
+Decided: architecture.md's MCP line names remember, ask_persona and history beside propose_server
+Because: crates/cooee-server/src/mcp.rs:380
+Check: every next line links an open issue; every Today PR number is merged into staging
+Owner: The README now says what cooee does today and what is next, each line linked to its proof.
