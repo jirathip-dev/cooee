@@ -2161,6 +2161,46 @@ impl Hub {
         ))
     }
 
+    /// An agent's `history` in thread `id` (#217): a search of its persona's threads (`query`, at most `limit`
+    /// hits), or a page of one of them (`thread`, before item `before`).
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or a thread of another persona.
+    pub fn history(
+        &self,
+        (id, token): (&str, &str),
+        (query, limit): (&str, usize),
+        thread: &str,
+        before: Option<u64>,
+    ) -> Result<String, HubError> {
+        let meta = self.token_of(id, token)?;
+        let persona = personas::find(self.config_dir(), &self.data, &meta.profile)
+            .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
+        let refused = |e: cooee_core::StoreError| HubError::Refused(e.to_string());
+        if thread.is_empty() && query.trim().is_empty() {
+            return Err(HubError::Refused("give a query or a thread".to_owned()));
+        }
+        if thread.is_empty() {
+            let mine: Vec<String> = self
+                .all()
+                .iter()
+                .map(|l| lock(l).meta.clone())
+                .filter(|m| m.profile == persona.id)
+                .map(|m| m.id)
+                .collect();
+            return cooee_core::history::search(&self.store, &mine, query, limit).map_err(refused);
+        }
+        match self.thread(thread) {
+            Ok((t, _)) if t.profile == persona.id => {
+                cooee_core::history::read(&self.store, thread, before).map_err(refused)
+            }
+            _ => Err(HubError::Refused(format!(
+                "thread {thread} isn't one of {}'s",
+                persona.id
+            ))),
+        }
+    }
+
     /// An agent's `propose_server` in thread `id`: a card with the exact command or URL; nothing runs, and the
     /// server is added (off) only when the owner approves it with Face ID.
     ///
