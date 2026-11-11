@@ -1,0 +1,7 @@
+Decided: round 3 changes no code; it merges origin/staging (#253) again for a fresh CI run
+Because: crates/cooee/tests/chat_first.rs:164
+Decided: the ubuntu red is a timing race in a sidebar test this PR does not touch; it passed 5 of 5 runs locally
+Because: crates/cooee/tests/chat_first.rs:164
+Rejected: pushing the lane's wip snapshot commit — it held only gate logs, and build output stays out of git
+Check: CI at 05dabba is green, including dmg and stable (ubuntu-latest)
+Owner: No change to the skills feature; this round only refreshes the branch so CI can run cleanly.
