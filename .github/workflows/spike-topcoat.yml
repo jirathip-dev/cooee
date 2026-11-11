@@ -7,9 +7,13 @@ on:
   push:
     branches: [staging]
     paths: ["spikes/topcoat-chat/**", ".github/workflows/spike-topcoat.yml"]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: spikes/topcoat-chat

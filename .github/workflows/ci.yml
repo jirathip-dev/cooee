@@ -5,6 +5,10 @@ on:
   pull_request:
     branches: [main, staging]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -12,6 +16,7 @@ jobs:
   # #180: a workflow file GitHub can't parse fails here, on the PR, not silently after the merge.
   actionlint:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: actionlint (.github/workflows/**)
@@ -26,6 +31,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.99.1
@@ -62,6 +68,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
     env:
       RUSTUP_TOOLCHAIN: stable
     steps:
@@ -74,6 +81,7 @@ jobs:
   # web/ts (#49): tsc strict and Biome block; tsc-rs runs the same check as a trial, its result in the log only.
   ts:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -96,6 +104,7 @@ jobs:
   # cargo build strips web/ts itself (web/build.rs, oxc): it must work with no Node on the machine.
   no-node:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.99.1
@@ -110,6 +119,7 @@ jobs:
   # Playwright at 390 and 1440 px with axe accessibility checks; the screenshots are artifacts.
   ui:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.99.1
@@ -121,7 +131,20 @@ jobs:
         working-directory: web/e2e
         run: |
           npm ci
-          npx playwright install --with-deps chromium webkit
+          echo "PLAYWRIGHT_VERSION=$(jq -r '.packages["node_modules/playwright"].version' package-lock.json)" >> "$GITHUB_ENV"
+      - id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ env.PLAYWRIGHT_VERSION }}
+      - name: playwright browsers (cache miss)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: web/e2e
+        run: npx playwright install --with-deps chromium webkit
+      - name: playwright system deps (cache hit, browsers restored)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: web/e2e
+        run: npx playwright install-deps chromium webkit
       - name: build
         run: cargo build --locked -p cooee
       - name: playwright (390, 1440, axe)
