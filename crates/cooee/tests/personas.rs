@@ -83,8 +83,8 @@ impl Setup {
         self.row(id)["persona"].clone()
     }
 
-    /// `remember` called by thread `id`'s agent through cooee's own MCP server: the tool's answer.
-    fn remember(&self, id: &str, text: &str) -> Value {
+    /// `remember` called with `args` by thread `id`'s agent through cooee's own MCP server: the tool's answer.
+    fn remember(&self, id: &str, args: &Value) -> Value {
         let file = self.shed.dir.join(format!("mcp-cooee-{id}.json"));
         let servers: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
         let cooee = &servers[0];
@@ -103,7 +103,7 @@ impl Setup {
             .spawn()
             .unwrap();
         let call = json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/call",
-                           "params": { "name": "remember", "arguments": { "text": text } } });
+                           "params": { "name": "remember", "arguments": args } });
         writeln!(child.stdin.take().unwrap(), "{call}").unwrap();
         let out = child.wait_with_output().unwrap();
         serde_json::from_slice::<Value>(&out.stdout).unwrap()["result"].clone()
@@ -152,7 +152,7 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     assert_eq!(s.row_persona(&id), "chief-cook");
 
     // A note by the persona (its remember tool) and one by the owner: both listed, both in its next session.
-    let said = s.remember(&id, "The owner takes tea, no sugar.");
+    let said = s.remember(&id, &json!({ "text": "The owner takes tea, no sugar." }));
     assert_eq!(said["isError"], false, "{said}");
     let (status, owner) = s.call(
         "POST",
@@ -161,30 +161,31 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     );
     assert_eq!((status, &owner["by"]), (200, &json!("owner")), "{owner}");
     let notes = s.cooee.json("/personas/chief-cook/memory");
-    let notes: Vec<(&str, &str)> = notes
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|n| (n["by"].as_str().unwrap(), n["text"].as_str().unwrap()))
-        .collect();
+    let notes = notes.as_array().unwrap();
     assert_eq!(
-        notes,
+        notes
+            .iter()
+            .map(|n| (n["by"].as_str().unwrap(), n["text"].as_str().unwrap()))
+            .collect::<Vec<_>>(),
         [
             ("persona", "The owner takes tea, no sugar."),
             ("owner", "Call me Sam.")
         ]
     );
     let (next, _, prompt) = s.start("chief-cook");
+    let ids: Vec<&str> = notes.iter().map(|n| n["id"].as_str().unwrap()).collect();
     assert!(
         prompt.starts_with("A calm chef.\n\nAnswer in two lines.\n\nYour notes")
-            && prompt
-                .contains("- The owner takes tea, no sugar. (persona)\n- Call me Sam. (owner)")
+            && prompt.contains(&format!(
+                "- [{}] The owner takes tea, no sugar.\n- [{}] Call me Sam.",
+                ids[0], ids[1]
+            ))
             && prompt.ends_with("\n\nhi"),
         "{prompt}"
     );
     // A thread with no persona has nothing to remember for.
     let (plain, _, _) = s.start("");
-    assert_eq!(s.remember(&plain, "x")["isError"], true);
+    assert_eq!(s.remember(&plain, &json!({ "text": "x" }))["isError"], true);
 
     // Clearing its memory removes the notes only: it and its chats stay.
     assert_eq!(s.call("DELETE", "/personas/chief-cook/memory", None).0, 200);
@@ -577,4 +578,131 @@ fn a_persona_and_its_threads_name_their_machine() {
         ),
         (&json!("air"), &json!(false), &json!(1_700_000_000u64))
     );
+}
+
+/// cooee with the persona `cook` and a thread of its: the thread's id.
+fn cook(s: &Setup) -> String {
+    let new = json!({ "name": "Cook", "agent": "fake-acp", "folder": "scratch" });
+    assert_eq!(s.call("POST", "/personas", Some(&new)).0, 200);
+    s.start("cook").0
+}
+
+/// `cook`'s notes.
+fn memory(s: &Setup) -> Vec<Value> {
+    let notes = s.cooee.json("/personas/cook/memory");
+    notes.as_array().unwrap().clone()
+}
+
+#[test]
+fn old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief() {
+    let s = setup("personas-memory-old");
+    let new = json!({ "name": "Cook", "agent": "fake-acp", "folder": "scratch" });
+    assert_eq!(s.call("POST", "/personas", Some(&new)).0, 200);
+
+    // Notes kept before ids, already past the cap: each gets an id on first read, and all reach the brief.
+    let big = "y".repeat(2000);
+    let file = s.dir.join("data/personas/cook/memory.jsonl");
+    fs::create_dir_all(file.parent().unwrap()).unwrap();
+    let old = [
+        json!({ "text": "Tea, no sugar.", "by": "persona", "at": 1 }),
+        json!({ "text": big, "by": "owner", "at": 2 }),
+    ];
+    fs::write(&file, format!("{}\n{}\n", old[0], old[1])).unwrap();
+    let (first, _, brief) = s.start("cook");
+    let notes = memory(&s);
+    let (tea, long) = (
+        notes[0]["id"].as_str().unwrap(),
+        notes[1]["id"].as_str().unwrap(),
+    );
+    assert!(
+        !tea.is_empty() && !long.is_empty() && tea != long,
+        "{notes:?}"
+    );
+    assert_eq!(
+        brief,
+        format!(
+            "Your notes (edit them with your remember tool):\n- [{tea}] Tea, no sugar.\n- [{long}] {big}\n\nhi"
+        )
+    );
+    // Unchanged notes: the next session's brief is byte-identical.
+    let (second, _, again) = s.start("cook");
+    assert_eq!(again, brief);
+
+    // Past the cap nothing is added; the refusal names the use and the ids.
+    let full = s.remember(&first, &json!({ "text": "New." }));
+    let said = full["content"][0]["text"].as_str().unwrap();
+    assert_eq!(full["isError"], true, "{full}");
+    assert!(
+        said.contains("2014 of 2000") && said.contains(tea) && said.contains(long),
+        "{said}"
+    );
+    assert_eq!(memory(&s), notes);
+
+    // Replacing the long note shrinks it: only that note changes, its id kept.
+    let path = format!("/personas/cook/memory/{long}");
+    let (status, put) = s.call("PUT", &path, Some(&json!({ "text": "Short." })));
+    assert_eq!((status, put["id"].as_str()), (200, Some(long)), "{put}");
+    let now = memory(&s);
+    assert_eq!(now[0], notes[0]);
+    assert_eq!((now[1]["text"].as_str(), now.len()), (Some("Short."), 2));
+
+    // The change mid-session leaves that session alone: its next message goes without a brief.
+    let say = json!({ "text": "again", "random_id": "r2" });
+    let (status, body) = s.call("POST", &format!("/threads/{second}/send"), Some(&say));
+    assert_eq!(status, 200, "{body}");
+    let sent = s.shed.sent(&format!("cooee-{second}"));
+    assert_eq!(sent[1], "\x1e{\"prompt\":\"again\"}\n");
+}
+
+#[test]
+fn remember_adds_replaces_and_forgets_one_note_under_the_cap() {
+    let s = setup("personas-memory");
+    let id = cook(&s);
+
+    // A new note is kept and named; an exact duplicate adds nothing.
+    let tea = s.remember(&id, &json!({ "text": "Tea, no sugar." }));
+    assert_eq!(tea["isError"], false, "{tea}");
+    let tea = memory(&s)[0]["id"].as_str().unwrap().to_owned();
+    let dup = s.remember(&id, &json!({ "text": "Tea, no sugar." }));
+    let kept = format!("Kept as [{tea}]; 14 of 2000 characters used.");
+    assert_eq!(dup["content"][0]["text"], kept, "{dup}");
+    assert_eq!(memory(&s).len(), 1);
+    for text in ["Call me Sam.", "Lunch at one."] {
+        assert_eq!(s.remember(&id, &json!({ "text": text }))["isError"], false);
+    }
+    let notes = memory(&s);
+    let sam = notes[1]["id"].as_str().unwrap();
+
+    // Replace changes only its note, keeping its id.
+    let swap = s.remember(&id, &json!({ "text": "Call me Sammy.", "replaces": sam }));
+    assert_eq!(swap["isError"], false, "{swap}");
+    let now = memory(&s);
+    assert_eq!((&now[0], &now[2]), (&notes[0], &notes[2]));
+    assert_eq!(
+        (now[1]["id"].as_str(), now[1]["text"].as_str()),
+        (Some(sam), Some("Call me Sammy."))
+    );
+
+    // Forget drops only its note, by the tool or the API; an unknown id is refused.
+    let gone = s.remember(&id, &json!({ "forget": [tea] }));
+    let said = "Forgotten; 27 of 2000 characters used.";
+    assert_eq!(gone["content"][0]["text"], said, "{gone}");
+    assert_eq!(memory(&s), now[1..]);
+    let path = format!("/personas/cook/memory/{sam}");
+    assert_eq!(s.call("DELETE", &path, None).0, 200);
+    assert_eq!(memory(&s), now[2..]);
+    assert_eq!(
+        s.remember(&id, &json!({ "forget": ["zz"] }))["isError"],
+        true
+    );
+
+    // Up to the cap is kept; past it is a 400 naming the use.
+    let up_to = json!({ "text": "z".repeat(1987) });
+    assert_eq!(s.call("POST", "/personas/cook/memory", Some(&up_to)).0, 200);
+    let one = json!({ "text": "1" });
+    let (status, body) = s.call("POST", "/personas/cook/memory", Some(&one));
+    assert_eq!(status, 400, "{body}");
+    let body = body.as_str().unwrap();
+    assert!(body.contains("2000 of 2000 characters used"), "{body}");
+    assert_eq!(memory(&s).len(), 2);
 }
