@@ -1132,7 +1132,8 @@ impl Hub {
     /// again). The message is stored only once shed took it; the agent gets the files' paths under its text.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a closed thread or an empty message; [`HubError::Shed`] when shed fails.
+    /// [`HubError::Refused`] for a closed thread, an empty message or a stopped agent; [`HubError::Shed`] when shed
+    /// fails.
     pub fn send(
         &self,
         id: &str,
@@ -1296,9 +1297,16 @@ impl Hub {
         })
     }
 
-    /// Sends `q` to the agent, `before` ahead of it, then stores and publishes it.
+    /// Sends `q` to the agent, `before` ahead of it, then stores and publishes it; refused when the agent stopped,
+    /// whose session would drop it (#253).
     fn deliver(&self, live: &mut Live, q: Queued, before: &str) -> Result<Item, HubError> {
         let start = Instant::now();
+        let runs = |t: TerminalInfo| t.state == shed_proto::State::Running;
+        if live.chat.turn.state == "ended" && !self.shed.get(&live.meta.terminal).is_ok_and(runs) {
+            return Err(HubError::Refused(
+                "the agent stopped, so it can't take the message".to_owned(),
+            ));
+        }
         // After Use a folder…, the hand-over goes once ahead of the next message.
         let before = if before.trim().is_empty() {
             live.meta.handover.clone()
