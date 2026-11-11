@@ -24,6 +24,7 @@ fn file(data: &Path, name: &str) -> PathBuf {
 }
 
 /// The keychain account prefix of data folder `data`, so two instances never share a secret.
+#[cfg(target_os = "macos")]
 fn prefix(data: &Path) -> String {
     let hash = crate::sha256(data.as_os_str().as_encoded_bytes());
     format!("{}-", &hash[..16])
@@ -277,7 +278,7 @@ mod tests {
         assert_eq!(get(&data, "TOKEN").unwrap().as_deref(), Some("s3cret"));
         fs::write(data.join("secrets/.run-x"), "handoff").unwrap();
         assert_eq!(names(&data).unwrap(), ["TOKEN"]);
-        assert!(migrate(&data).unwrap().is_empty());
+        assert_eq!(migrate(&data).unwrap(), Vec::<String>::new());
         assert!(path.exists());
     }
 
