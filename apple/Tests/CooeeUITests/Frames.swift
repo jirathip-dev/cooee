@@ -11,6 +11,7 @@ internal struct Frame: Sendable, CustomTestStringConvertible {
     internal let palette: Palette
     internal let style: LookStyle
     internal let phone: Bool
+    internal var folder = "v1"
     internal let view: @MainActor @Sendable () -> AnyView
 
     internal var testDescription: String { name }
@@ -35,6 +36,7 @@ extension Frame {
 
     internal static var all: [Frame] {
         [("dark", Palette.farmDark), ("light", Palette.farmLight)].flatMap { phoneFrames($0.0, $0.1) } + styled + mac
+            + settings
     }
 
     private static func phone(
@@ -92,5 +94,30 @@ extension Frame {
                 mac("mac-window-dark", 1280, 820, .farmDark) { WideView() },
                 mac("mac-window-light", 1280, 820, .farmLight) { WideView() },
             ]
+    }
+
+    private static var settings: [Frame] {
+        let pages: [(String, MenuFeature.Page, @MainActor @Sendable () -> AnyView)] = [
+            ("sign-ins", .signIns, { AnyView(SignInsView()) }),
+            ("devices", .devices, { AnyView(DevicesView()) }),
+            ("machines", .machines, { AnyView(MachinesView()) }),
+            ("plugins", .plugins, { AnyView(PluginsView()) }),
+        ]
+        let phones = pages.flatMap { name, _, view in
+            [("dark", Palette.farmDark), ("light", Palette.farmLight)].map { phone("\(name)-\($0.0)", $0.1, view) }
+        }
+        let macs = pages.map { name, page, _ in mac("mac-\(name)", 1180, 780, .farmDark) { SettingsWindow(page: page) }
+        }
+        let more = [
+            phone("terminal-dark", .farmDark) { MachineTerminal() },
+            phone("sign-ins-terminal-dark", .farmDark, style: .terminal) { SignInsView() },
+            phone("machines-scene-light", .farmLight, style: .scene) { MachinesView() },
+            mac("mac-plugins-light", 1180, 780, .farmLight) { SettingsWindow(page: .plugins) },
+        ]
+        return (phones + macs + more).map { frame in
+            var frame = frame
+            frame.folder = "v2-settings"
+            return frame
+        }
     }
 }

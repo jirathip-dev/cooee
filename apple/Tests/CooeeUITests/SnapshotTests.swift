@@ -43,12 +43,12 @@ internal struct SnapshotTests {
     private static let pixelTolerance = 0.025
     private static let designs = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        .appendingPathComponent("design/v1")
+        .appendingPathComponent("design")
 
     @Test(arguments: Frame.all)
     internal func frameMatchesTheDesign(_ frame: Frame) throws {
         let rendered = try #require(frame.render())
-        let file = Self.designs.appendingPathComponent("\(frame.name).png")
+        let file = Self.designs.appendingPathComponent(frame.folder).appendingPathComponent("\(frame.name).png")
         if ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" {
             let png = try #require(NSBitmapImageRep(cgImage: rendered).representation(using: .png, properties: [:]))
             try png.write(to: file)
