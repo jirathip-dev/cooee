@@ -22,4 +22,6 @@ fails private.rs '/// A.\nfn a() {}\n'
 fails private.swift '/// A.\nstruct A {}\n'
 fails block.ts 'export const a = 1; /* note */\n'
 fails inner.rs '//! The crate.\npub fn a() {}\n'
+printf 'let s = """\n// TODO(#1) in a string\n"""\n// TODO(#201) one rule.\n' > "$t/todo.swift"
+test "$(python3 "$here/scripts/comments.py" --todos "$t/todo.swift" "$t/ok.rs")" = 201 || { echo "expected --todos to print 201 only"; exit 1; }
 echo "comments test ok"
