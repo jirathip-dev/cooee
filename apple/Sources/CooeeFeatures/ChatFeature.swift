@@ -52,6 +52,7 @@ public struct ChatFeature: Sendable {
         case unqueue(Int)
         case answer(Int, BlockAction)
         case answered(Int, String?)
+        case new
         case delegate(Delegate)
         case plugins(PluginAction)
         case screen(PresentationAction<PluginScreenFeature.Action>)
@@ -60,6 +61,7 @@ public struct ChatFeature: Sendable {
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case started(String)
+            case new(String)
         }
 
         @CasePathable
@@ -73,6 +75,7 @@ public struct ChatFeature: Sendable {
 
     @Dependency(\.threads) private var threads
     @Dependency(\.plugins) internal var pluginAPI
+    @Dependency(\.ownerCheck) private var ownerCheck
     @Dependency(\.continuousClock) private var clock
     @Dependency(\.date.now) private var now
 
@@ -98,6 +101,8 @@ public struct ChatFeature: Sendable {
                 state.answering.remove(item)
                 state.error = error ?? state.error
                 return .none
+            case .new:
+                return .send(.delegate(.new(state.persona.api.id)))
             default:
                 return compose(&state, action)
             }
@@ -207,8 +212,12 @@ extension ChatFeature {
     private func answer(_ state: inout State, _ item: Int, _ action: BlockAction) -> Effect<Action> {
         guard case .thread(let thread) = state.target, let answer = action.answer else { return .none }
         state.answering.insert(item)
-        let (threads, server) = (threads, state.server)
+        let secret = state.items.first { $0.id == item }?.block?.string("kind") == "secret"
+        let (threads, server, owner) = (threads, state.server, ownerCheck)
         return .run { send in
+            if secret, await !owner.confirm("Send the secret to its plugin") {
+                return await send(.answered(item, "Not sent: it wasn't confirmed it's you."))
+            }
             try await threads.answer(server, thread, item, answer.option, answer.value)
             await send(.answered(item, nil))
         } catch: { error, send in

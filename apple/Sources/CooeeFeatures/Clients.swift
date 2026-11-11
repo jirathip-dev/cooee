@@ -46,6 +46,11 @@ public struct PushClient: Sendable {
 }
 
 @DependencyClient
+public struct OwnerCheck: Sendable {
+    public var confirm: @Sendable (_ reason: String) async -> Bool = { _ in false }
+}
+
+@DependencyClient
 public struct SettingsStore: Sendable {
     public var load: @Sendable () -> Settings = { Settings() }
     public var save: @Sendable (_ settings: Settings) -> Void
@@ -93,6 +98,10 @@ extension PushClient: TestDependencyKey {
     public static let testValue = PushClient()
 }
 
+extension OwnerCheck: TestDependencyKey {
+    public static let testValue = OwnerCheck()
+}
+
 extension SettingsStore: TestDependencyKey {
     public static let testValue = SettingsStore()
 }
@@ -128,6 +137,11 @@ extension DependencyValues {
     public var push: PushClient {
         get { self[PushClient.self] }
         set { self[PushClient.self] = newValue }
+    }
+
+    public var ownerCheck: OwnerCheck {
+        get { self[OwnerCheck.self] }
+        set { self[OwnerCheck.self] = newValue }
     }
 
     public var settingsStore: SettingsStore {

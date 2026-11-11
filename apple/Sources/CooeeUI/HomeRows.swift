@@ -5,7 +5,7 @@ internal struct PinnedRow: View {
     @Environment(\.look) private var look
     internal let personas: [Persona]
     internal let rows: [Row]
-    internal var new: (String) -> Void = { _ in }
+    internal var tap: (String) -> Void = { _ in }
 
     private var scene: Bool { look.style == .scene }
 
@@ -32,7 +32,7 @@ internal struct PinnedRow: View {
             HStack(alignment: .bottom, spacing: scene ? 4 : 14) {
                 ForEach(personas) { persona in
                     Button {
-                        new(persona.id)
+                        tap(persona.id)
                     } label: {
                         pin(persona)
                     }

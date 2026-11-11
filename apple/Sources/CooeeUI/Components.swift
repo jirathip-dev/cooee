@@ -82,11 +82,12 @@ internal struct RoundSurface: ViewModifier {
 internal struct Badge: View {
     @Environment(\.look) private var look
     internal let count: Int
+    internal var tint: Color?
 
     internal var body: some View {
         Text("\(count)").ui(12, .bold, look).foregroundStyle(look.palette.dark ? .black : .white)
             .padding(.horizontal, 6).frame(minWidth: 20, minHeight: 20)
-            .background(look.palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule()))
+            .background(tint ?? look.palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule()))
     }
 }
 

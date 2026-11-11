@@ -47,12 +47,13 @@ public struct AppRoot: View {
     }
 
     @ViewBuilder private func content(_ home: StoreOf<HomeFeature>) -> some View {
-        let actions = HomeActions(
+        var actions = HomeActions(
             menu: { store.send(.menu(.open(true))) },
             new: { store.send(.start($0)) },
             open: { store.send(.open($0)) },
             edit: { store.send(.edit($0)) }
         )
+        actions.pinned = { store.send(.pinned($0)) }
         let chats = home.state.chats(now: Date())
         if size == .compact {
             NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
@@ -99,6 +100,8 @@ internal struct ChatScreen: View {
         )
         let (places, attachable) = (store.places, store.attachable)
         actions.places = places.map(\.label)
+        actions.counts = places.map(\.count)
+        actions.new = store.persona.api.id.isEmpty ? nil : { store.send(.new) }
         actions.open = { store.send(.plugins(.open(places[$0]))) }
         actions.attachable = attachable.map(\.name)
         actions.attachPlugin = { store.send(.plugins(.attach(attachable[$0]))) }

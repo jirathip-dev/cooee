@@ -14,6 +14,8 @@ public struct ChatActions {
     public var answering: Set<Int>
     public var back: () -> Void
     public var places: [String] = []
+    public var counts: [Int?] = []
+    public var new: (() -> Void)?
     public var open: (Int) -> Void = { _ in }
     public var attachable: [String] = []
     public var attachPlugin: (Int) -> Void = { _ in }
@@ -156,6 +158,10 @@ internal struct ChatHeader: View {
                     AgentChip(persona: persona)
                 }
                 Spacer(minLength: 4)
+                if let new = actions.new {
+                    Button(action: new) { RoundButton(symbol: "plus", ascii: "+", size: 40) }
+                        .buttonStyle(.plain).accessibilityLabel("New chat")
+                }
                 more
             }
             if !chips.isEmpty { plugins }
@@ -185,10 +191,15 @@ internal struct ChatHeader: View {
                 Button {
                     actions.open(index)
                 } label: {
-                    Text(look.mono ? "[\(plugin.lowercased())]" : plugin).ui(13, .semibold, look)
-                        .foregroundStyle(look.palette.green)
-                        .padding(.horizontal, 12).frame(height: 30)
-                        .modifier(RoundSurface(look: look))
+                    HStack(spacing: 6) {
+                        Text(look.mono ? "[\(plugin.lowercased())]" : plugin)
+                        if let count = actions.counts.indices.contains(index) ? actions.counts[index] : nil {
+                            Badge(count: count, tint: look.palette.red)
+                        }
+                    }
+                    .ui(13, .semibold, look).foregroundStyle(look.palette.green)
+                    .padding(.horizontal, 12).frame(height: 30)
+                    .modifier(RoundSurface(look: look))
                 }
                 .buttonStyle(.plain)
             }

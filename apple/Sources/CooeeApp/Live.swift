@@ -5,6 +5,10 @@ import CooeeFeatures
 import CooeeUI
 import SwiftUI
 
+#if os(iOS)
+    import LocalAuthentication
+#endif
+
 extension PairingClient: DependencyKey {
     public static let liveValue = PairingClient(
         pair: { url, code in try await Client(base: url).pair(code: code) },
@@ -48,6 +52,18 @@ extension PushClient: DependencyKey {
         token: { try await PushDelegate.token() },
         register: { server, token, enabled in try await Client(server).push(token, enabled: enabled) }
     )
+}
+
+extension OwnerCheck: DependencyKey {
+    public static let liveValue = OwnerCheck { reason in
+        #if os(iOS)
+            let context = LAContext()
+            guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: nil) else { return true }
+            return (try? await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason)) ?? false
+        #else
+            return true
+        #endif
+    }
 }
 
 extension SettingsStore: DependencyKey {

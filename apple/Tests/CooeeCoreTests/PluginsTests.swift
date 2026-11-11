@@ -29,6 +29,8 @@ internal struct PluginsTests {
         let place = try JSONDecoder().decode(Place.self, from: Data(json.utf8))
         #expect(place == Place(plugin: "drover", key: "queue", label: "Queue", screen: "/screens/queue"))
         #expect(place.id == "drover/screens/queue")
+        let counted = #"{"plugin": "drover", "id": "queue", "label": "Queue", "screen": "/q", "count": 7}"#
+        #expect(try JSONDecoder().decode(Place.self, from: Data(counted.utf8)).count == 7)
     }
 
     @Test internal func theOfflineLineSaysWhoAndHowOld() {

@@ -83,6 +83,27 @@ internal struct AppFeatureTests {
         }
     }
 
+    @Test internal func aPinnedPersonaOpensItsLatestChatElseANewOne() async {
+        var state = paired()
+        let old = ThreadRow(
+            id: "t0", title: "", agent: "codex", persona: "coder", state: "done", last: "", updated: 1, unseen: 0,
+            archived: false)
+        state.home?.rows = [old, row("t1"), row("x1", persona: "other")]
+        let store = store(state)
+        await store.send(.pinned("coder")) {
+            $0.path = ["t1"]
+            $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder))
+        }
+        await store.send(.chat(.new))
+        await store.receive(\.chat.delegate.new)
+        await store.receive(\.start) {
+            $0.path = ["new:coder"]
+            $0.chat = ChatFeature.State(server: mini, target: .new(coder), persona: Persona(coder))
+        }
+        await store.send(.home(.loaded([], [coder]))) { $0.home?.rows = [] }
+        await store.send(.pinned("coder"))
+    }
+
     @Test internal func anUnpairedMacSetsItselfUpOrConnectsElsewhere() async {
         let store = store(AppFeature.State(server: nil, mac: true))
         #expect(store.state.setup == MacSetupFeature.State() && store.state.pairing == nil)

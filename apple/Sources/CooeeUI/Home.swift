@@ -6,6 +6,7 @@ public struct HomeActions {
     public var new: (String) -> Void
     public var open: (String) -> Void
     public var edit: (String?) -> Void
+    public var pinned: (String) -> Void = { _ in }
 
     public init(
         menu: @escaping () -> Void = {},
@@ -36,7 +37,7 @@ public struct HomeView: View {
             VStack(spacing: 0) {
                 TopBar(personas: all, actions: actions)
                 Scroller {
-                    PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new).padding(.top, 6)
+                    PinnedRow(personas: personas, rows: chats.map(\.row), tap: actions.pinned).padding(.top, 6)
                     ChatList(chats: chats, selected: selected, open: actions.open)
                         .padding(.top, look.style == .scene ? 0 : 14)
                 }

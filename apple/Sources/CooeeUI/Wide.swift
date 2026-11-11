@@ -7,6 +7,7 @@ public struct MacConnect: View {
     @Environment(\.look) private var look
     private let store: StoreOf<PairingFeature>?
     private let setUp: () -> Void
+    @State private var scanning = false
 
     public var body: some View {
         let palette = look.palette
@@ -42,11 +43,21 @@ public struct MacConnect: View {
         return VStack(alignment: .leading, spacing: 10) {
             Text("ADDRESS").ui(11, .semibold, look).foregroundStyle(palette.mute)
             AddressField(store: store) { store?.send(.connect($0)) }
-            HStack(spacing: 8) {
-                Image(systemName: "qrcode.viewfinder").foregroundStyle(palette.link)
-                Text("Scan its QR with this Mac's camera").ui(14, .regular, look).foregroundStyle(palette.link)
+            Button {
+                scanning.toggle()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "qrcode.viewfinder")
+                    Text("Scan its QR with this Mac's camera").ui(14, .regular, look)
+                }
+                .foregroundStyle(palette.link)
             }
-            .padding(.top, 8)
+            .buttonStyle(.plain).padding(.top, 8)
+            #if os(macOS)
+                if scanning, let store {
+                    MacQRScanner { store.send(.connect($0)) }.frame(height: 200).clipShape(.rect(cornerRadius: 12))
+                }
+            #endif
         }
     }
 
@@ -76,7 +87,7 @@ public struct WideView<Detail: View>: View {
             VStack(spacing: 0) {
                 TopBar(personas: all, actions: actions).padding(.top, look.still ? 34 : 8)
                 Scroller {
-                    PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new)
+                    PinnedRow(personas: personas, rows: chats.map(\.row), tap: actions.pinned)
                         .scaleEffect(0.9, anchor: .leading).padding(.top, 4)
                     ChatList(chats: chats, selected: selected, open: actions.open).padding(.top, 8)
                 }
