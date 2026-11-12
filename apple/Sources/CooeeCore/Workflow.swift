@@ -79,7 +79,7 @@ extension Listing {
         }
         for (thread, listed) in zip(rows, chats(rows: rows, personas: personas, now: now)) {
             guard let source = thread.workflow?.source else {
-                if personas.contains(where: { $0.id == thread.persona }) {
+                if !thread.members.isEmpty || personas.contains(where: { $0.id == thread.persona }) {
                     lists.chats.append(listed)
                 } else {
                     lists.others.append(listed)

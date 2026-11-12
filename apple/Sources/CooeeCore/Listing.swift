@@ -21,13 +21,14 @@ public enum Listing {
             let row = Row(
                 id: thread.id,
                 persona: persona.id,
-                title: owner == nil && thread.workflow == nil ? thread.agent : thread.title,
+                title: owner == nil && thread.workflow == nil && thread.members.isEmpty ? thread.agent : thread.title,
                 last: thread.last,
                 ago: ago(thread.updated, now: now),
                 unseen: thread.unseen,
                 state: state
             )
-            return ListedChat(row: row, persona: persona, workflow: thread.workflow)
+            let members = thread.members.map { id in Persona(personas.first { $0.id == id } ?? named(id)) }
+            return ListedChat(row: row, persona: persona, workflow: thread.workflow, members: members)
         }
     }
 
@@ -38,6 +39,10 @@ public enum Listing {
         let look = PersonaLook(
             initials: String(name.prefix(1)).uppercased(), symbol: "", tint: .lead, coat: label == nil ? "" : "bay")
         return Persona(api: api, look: look, state: state)
+    }
+
+    private static func named(_ id: String) -> APIPersona {
+        APIPersona(id: id, name: id, agent: "")
     }
 
     public static func memory(_ notes: [PersonaNote], persona: String, now: Date) -> [Field] {
