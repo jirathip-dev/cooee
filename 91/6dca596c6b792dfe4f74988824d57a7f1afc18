@@ -1,0 +1,11 @@
+Decided: apply q1379 to the approved HTML design; no SwiftUI in this PR
+Because: "HTML accepted as the spec, the build draws the real SwiftUI with snapshots"
+Decided: Live Activity keeps Not now, drops Take control
+Because: "Lock screen: no Take control button on the Live Activity, a tap opens the app behind Face ID"
+Decided: island frame now shows the 30 s warning with Hand back only
+Because: "Lease ends at 0:00 with a 30 s warning in the band and the island"
+Rejected: a new control-band frame at 0:28 — the island frame and README rule carry the warning without a new frame
+Decided: kept the 1440 settings intro line above the table; removed only lines under buttons and lists
+Because: "Strip the prose lines under the buttons and lists"
+Check: activity-390-dark.png and island-390-light.png have no Take control or +10 min; secret sheet has one Keychain line
+Owner: The Screen design now matches your amendment; the app itself is built in later issues.
