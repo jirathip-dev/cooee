@@ -1,0 +1,5 @@
+Decided: pin the filmstrip caption font with font-optical-sizing:none and re-shoot the six filmstrip frames
+Because: docs/design/screen/sc.css:48
+Rejected: re-shoot only, with no CSS change — the same command gave a narrow caption in 3 of 12 runs, so a re-shoot alone would drift again
+Check: re-run shoot.mjs several times; all 25 PNGs should be byte-identical to the committed ones each time
+Owner: The six Screen pictures with a filmstrip now come out the same every time they are regenerated.
