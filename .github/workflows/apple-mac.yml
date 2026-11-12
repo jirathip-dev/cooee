@@ -31,7 +31,7 @@ defaults:
     shell: bash
 jobs:
   dmg:
-    runs-on: ${{ vars.APPLE_RUNNER || 'macos-26' }}
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.APPLE_RUNNER || 'macos-26' }}
     timeout-minutes: 60
     # Pull requests get no environment and no secrets: they build the unsigned .dmg. (`a && '' || b` is always b, as
     # '' is falsy, so the environment name is the truthy branch.)

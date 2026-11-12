@@ -29,7 +29,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "macos-latest"]') }}
-    runs-on: ${{ matrix.os == 'macos-latest' && (vars.APPLE_RUNNER || 'macos-latest') || matrix.os }}
+    runs-on: ${{ matrix.os == 'macos-latest' && ((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.APPLE_RUNNER || 'macos-latest') || matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.99.1
@@ -65,7 +65,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["ubuntu-latest", "macos-latest"]') }}
-    runs-on: ${{ matrix.os == 'macos-latest' && (vars.APPLE_RUNNER || 'macos-latest') || matrix.os }}
+    runs-on: ${{ matrix.os == 'macos-latest' && ((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.APPLE_RUNNER || 'macos-latest') || matrix.os }}
     env:
       RUSTUP_TOOLCHAIN: stable
     steps:
