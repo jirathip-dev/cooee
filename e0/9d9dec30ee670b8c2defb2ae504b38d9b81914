@@ -1,0 +1,9 @@
+Decided: drover is pinned to herdsman 3ebaf6c5 (herdsman#882 merged), whose manifest names attach and attach_token
+Because: q1343
+Decided: a manifest's attach = "http://127.0.0.1:<port>" is that backend's port; while it answers, add checks it and serve starts nothing, else run starts on that same port
+Because: "used when that URL answers, else `run`"
+Decided: attach_token names the backend's own token file; add reads it and calls the backend with it
+Because: q1290
+Rejected: renaming cooee-drover in docs/design mockups and fixtures — dated design records that feed fixture and snapshot tests
+Check: plugins/index.toml:9 commit's cooee-plugin.toml has attach and attach_token, and cooee plugin check passes it
+Owner: herdsman's drover replaces the archived plugin, and cooee uses the herdsman serve already running instead of starting another
