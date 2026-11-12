@@ -1,0 +1,5 @@
+Decided: merge origin/staging (e6317df7) and push so CI reruns, with no code change
+Because: apple/e2e/serve.sh:36
+Rejected: a code fix for the red ubuntu jobs — staging's own ci run at 7f6b7d19 died of the same runner shutdown signal
+Check: CI apple (iOS Simulator and macOS builds), e2e and Rust jobs green at a335b37e once a runner picks them up
+Owner: The Queue farm strip branch sits on the latest staging again so its stuck app checks can run.
