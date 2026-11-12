@@ -412,6 +412,16 @@ fn own_tools() -> Value {
             "instructions": { "type": "string", "description": "your standing rules" }
         } }
     });
+    let routine = json!({
+        "name": "create_routine",
+        "description": "Make a routine (when the owner asks for something on a schedule): at each due time its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines. {{due}} in the prompt is the due time. A refusal starts with BAD_SCHEDULE, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY or NOT_HERE.",
+        "inputSchema": { "type": "object", "required": ["name", "when", "prompt"], "properties": {
+            "name": { "type": "string", "description": "1 to 60 characters" },
+            "when": { "type": "string", "description": "5-field cron in the Mac's local time (minute hour day-of-month month day-of-week; numbers, *, a-b, */n, lists), at least 15 minutes apart: 0 9 * * 1 is Mondays 09:00" },
+            "prompt": { "type": "string" },
+            "place": { "type": "string", "enum": ["chat", "new_thread"] }
+        } }
+    });
     let skill = json!({
         "name": "skill",
         "description": "Read one of your skills (read: its name), or propose a new one or an edit (propose); the owner approves a proposal before it is saved.",
@@ -425,7 +435,7 @@ fn own_tools() -> Value {
             } }
         } }
     });
-    json!([tool, remember, ask_persona, history, update, skill])
+    json!([tool, remember, ask_persona, history, update, routine, skill])
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
@@ -469,6 +479,10 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
                     Some("history") => Some(("/mcp/agent/history", "")),
                     Some("update_persona") => Some(("/mcp/agent/persona", "")),
+                    Some("create_routine") => Some((
+                        "/mcp/agent/routine",
+                        "Made. The owner sees it in this chat and can change it in Settings › routines.",
+                    )),
                     Some("skill") => Some(("/mcp/agent/skill", "")),
                     _ => None,
                 };

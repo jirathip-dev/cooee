@@ -64,7 +64,9 @@ impl Setup {
             .unwrap()
             .to_owned();
         assert!(line.contains(&format!("cooee-{id}")), "{line}");
-        let sent = self.shed.sent(&format!("cooee-{id}"));
+        let on = line.split("--on ").nth(1).and_then(|r| r.split(' ').next());
+        let terminal = on.map_or(format!("cooee-{id}"), |m| format!("{m}/cooee-{id}"));
+        let sent = self.shed.sent(&terminal);
         let prompt: Value = serde_json::from_str(sent[0].trim_start_matches('\x1e')).unwrap();
         (id, line, prompt["prompt"].as_str().unwrap().to_owned())
     }
@@ -493,6 +495,8 @@ fn a_persona_and_its_threads_name_their_machine() {
         "stats-air.json",
         &json!({ "machine": "air", "online": false, "last_seen": 1_700_000_000u64 }),
     );
+    // Its link is up: a thread on air starts there (#149).
+    s.shed.link("air", "up", 1_700_000_000, None);
 
     // Migration: a persona file from before #148 (and the profile read as one) is on this host, nothing lost.
     let old = "name = \"Old\"\ncharacter = \"Kept.\"\ninstructions = \"Still.\"\nfolder = \"scratch\"\n\

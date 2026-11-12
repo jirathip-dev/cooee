@@ -447,6 +447,7 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
             "ask_persona",
             "history",
             "update_persona",
+            "create_routine",
             "skill"
         ]
     );

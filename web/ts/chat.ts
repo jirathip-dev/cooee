@@ -16,7 +16,7 @@ import { sign } from "./pair.js";
 
 type Option = { id: string; name: string; kind: string };
 type Item = { id: number; at: number; seq?: number } & (
-  | { kind: "you"; text: string; random_id: string; files?: string[] }
+  | { kind: "you"; text: string; random_id: string; files?: string[]; routine?: { id: string; name: string } }
   | { kind: "agent"; text: string; stop_reason: string }
   | { kind: "tool"; call: string; title: string; status: string; ended?: number }
   | ({ kind: "approval"; tool: string; options: Option[]; tapped?: string; chosen?: string; plugin?: string } & Form)
@@ -24,6 +24,7 @@ type Item = { id: number; at: number; seq?: number } & (
   | { kind: "link"; text: string; thread: string; title: string; out?: boolean }
   | { kind: "note"; text: string }
   | { kind: "ended"; text: string }
+  | { kind: "routine"; routine: string; name: string; when: string; place: string }
 );
 // Who answered and when, and a plugin card's form (#553 rows 30-33).
 type Form = {
@@ -1314,7 +1315,8 @@ function chat(main: HTMLElement): void {
       raw.set(row, it.text);
       row.append(withRefs("div", "md pl", it.text));
       if (it.files?.length) row.append(thumbs(it.files.map((n) => [shown(n), fileUrl(n)])));
-      row.append(el("span", "ct", `${time(it.at)} ✓`));
+      // A routine's run (#75) says which routine sent it.
+      row.append(el("span", "ct", `${it.routine ? `⟳ ${it.routine.name} · ` : ""}${time(it.at)} ✓`));
     } else if (it.kind === "agent") {
       row.className = "blk ai";
       raw.set(row, it.text);
@@ -1388,6 +1390,12 @@ function chat(main: HTMLElement): void {
       chip.href = `/t/${encodeURIComponent(it.thread)}`;
       if (it.text) row.append(...refs(it.text), " ");
       row.append(chip);
+    } else if (it.kind === "routine") {
+      // The agent made a routine (#75): its line, and Settings › routines to change it.
+      row.className = "qs ln";
+      const edit = el("a", "chip", "edit ▸") as HTMLAnchorElement;
+      edit.href = "/routines";
+      row.append(`⟳ Created routine: ${it.name} · ${it.when} · ${it.place} `, edit);
     } else if (it.kind === "plan") {
       row.className = "blk plan";
       const ol = el("ol");

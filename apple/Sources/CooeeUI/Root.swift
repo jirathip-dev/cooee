@@ -59,6 +59,9 @@ public struct AppRoot: View {
                 HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
                     .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
                     .toolbar(.hidden)
+                    #if os(iOS)
+                        .background(SwipeBack())
+                    #endif
             }
         } else {
             WideView(
