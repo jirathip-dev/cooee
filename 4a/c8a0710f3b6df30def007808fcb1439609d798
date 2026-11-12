@@ -1,0 +1,10 @@
+Decided: the pin is packs/swag.toml (url, commit, a sha256 per file); cooee-core's build.rs vendors those files into git-ignored packs/themes/ and embeds them
+Because: "the pinned packs are vendored at build time or shipped in the release, not fetched on first run"
+Decided: first-party installs come from the embedded copy, each file checked against its sha256 (cooee_core::swag), then the theme gate
+Because: crates/cooee-server/src/themes.rs:287
+Decided: dropped the [[theme]] index, its code path, and [publish]
+Because: q1538
+Rejected: a git submodule for swag — its gitlink and the checksums would be two pins to keep in step
+Rejected: keeping docs/design/look/sprites/ as copies — the same hand-copying the issue removes; look.js reads the vendored packs
+Check: changing one sum in packs/swag.toml makes `cargo test -p cooee-core swag` fail; the look shoot gives 44 byte-identical PNGs
+Owner: Farm, kitchen and garden now come from the swag repo at one pinned commit; a bad file can't be installed.
