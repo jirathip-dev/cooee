@@ -1,0 +1,7 @@
+Decided: merge origin/staging; the persona card answer arm stays beside staging's new shed_approve(&live, &terminal, ..) signature
+Because: crates/cooee-server/src/hub.rs:1713
+Decided: ThreadsClient keeps start's setup argument beside staging's new room and seat closures
+Because: apple/Sources/CooeeFeatures/Clients.swift:31
+Rejected: re-run CI without merging — the PR was CONFLICTING with staging, and the red checks were runner cancellations plus an unrelated ui timing test
+Check: apple/Sources/CooeeApp/Live.swift wires start with setup, and room and seat as staging wrote them
+Owner: Same feature; this round catches up with staging, which added rooms and machine checks.
