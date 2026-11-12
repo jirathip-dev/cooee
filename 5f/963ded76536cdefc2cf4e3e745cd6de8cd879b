@@ -1,0 +1,5 @@
+Decided: the six v2 settings design views are named *Preview.swift, the cap's design-fixture exclusion, so apple/ is 7214 of apple_cap 7500
+Because: scripts/line-cap.sh:5
+Rejected: an owner cap raise — these views are design mockups the app never opens (the menu still says v2), so trimming by classification fits the rule "trim first"
+Check: the cap step in msrv (ubuntu) is green, and SnapshotTests still passes with 55 frames
+Owner: The design screens stay the same; their mock code is now counted as design material, so the app stays under its size limit.
