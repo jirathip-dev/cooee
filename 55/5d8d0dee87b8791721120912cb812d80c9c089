@@ -1,0 +1,7 @@
+Decided: merge origin/staging; hub.rs keeps staging's Proposed proposals and this PR's updates map side by side
+Because: crates/cooee-server/src/hub.rs:239
+Decided: mcp.rs lists both update_persona and skill for a persona's thread and routes each to its own endpoint
+Because: crates/cooee-server/src/mcp.rs:407
+Rejected: folding update_persona into staging's Proposed and raise() — its cards say decline, this PR's tests and card say deny; a refactor outside a merge round
+Check: crates/cooee/tests/mcp.rs expects both update_persona and skill in the tool list
+Owner: Same feature; this round catches up with staging, which added persona skills next to it.
