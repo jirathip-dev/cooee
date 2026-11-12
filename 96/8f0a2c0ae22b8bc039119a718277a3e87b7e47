@@ -1,0 +1,8 @@
+Decided: merged origin/staging (#149); the html.rs conflict keeps staging's side, whose ago is now pub so its /// stays
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop staging's pub and must_use on ago
+Decided: no code change for the pending iOS Simulator build; it was queued on macOS runners, not failing
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on html.rs, hub.rs and the remote, personas and support tests is only deleted comment lines
+Check: the iOS Simulator and macOS build checks are green at the head
+Owner: the branch is up to date with staging again, and the new remote-machine code follows the comment rule
