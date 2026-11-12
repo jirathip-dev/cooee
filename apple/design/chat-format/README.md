@@ -46,9 +46,8 @@ Fold rule for both diffs and output: `Fold.limit` 12, `Fold.shown` 8 (`Model.swi
 - `diff` fences and edit tool items share `DiffView`; shell tool items with output use `RunView`.
 - Tests per element: one fixture per row of the table above, asserting the typed `Part`s, and snapshots of this page.
 
-## Open questions
+## Decided (q1380, owner approved)
 
-1. Done tasks: mute, or also struck through? (Drawn: mute only.)
-2. Terminal output folding to the tail (last 8) and diffs folding to the head (first 8). Is that the right split?
-3. Apple's `.full` parser on soft breaks and tables needs a check on device; if it falls short, the fallback is our own
-   block scanner (no dependency) with `AttributedString` for inline runs.
+1. Done tasks: mute only, never struck through.
+2. Folds as drawn: diffs keep the head (first 8), terminal output keeps the tail (last 8).
+3. Apple's `.full` parser first; our own block scanner (no dependency) only if it fails on device.
