@@ -14,6 +14,7 @@ mod pairing;
 mod passkey;
 mod plugin;
 mod push;
+mod routines;
 mod themes;
 
 use std::{
@@ -28,6 +29,7 @@ use std::{
 use cooee_core::{
     Config, Device, Devices, Plugin, ShedError,
     personas::{self, Persona},
+    skills,
 };
 use cooee_machines::Machines;
 use futures_util::{Stream, StreamExt, stream};
@@ -921,6 +923,33 @@ fn starter(
             empty,
         )
     })
+}
+
+/// The routines' runner (#75): a `new_thread` run starts as the chat that made it did.
+fn runner(
+    hub: &Arc<Hub>,
+    logins: Arc<Logins>,
+    data: &std::path::Path,
+    config: Option<&std::path::Path>,
+) -> Arc<routines::Runner> {
+    let (dir, config) = (data.to_owned(), config.map(ToOwned::to_owned));
+    let data = dir.clone();
+    let start: routines::Start = Box::new(move |hub, who| {
+        let list = profiles(hub, (&data, config.as_deref()));
+        let (agent, folder, mut recipe) = recipe(
+            &logins,
+            (&data, config.as_deref(), &list),
+            (&who.agent, Some(&who.account), &who.profile),
+            who.folder.clone(),
+            (who.model.clone(), who.effort.clone()),
+        )?;
+        if recipe.machine.is_empty() {
+            recipe.machine.clone_from(&who.machine);
+        }
+        let name = cooee_web::named(&agent, &logins.statuses());
+        Ok((agent, name, folder, recipe))
+    });
+    Arc::new(routines::Runner::new(Arc::clone(hub), &dir, start))
 }
 
 /// `POST /rooms` (#154): a room of member personas, in room order.
@@ -2075,15 +2104,13 @@ fn bearer(cx: &Cx) -> String {
     token.unwrap_or_default().to_owned()
 }
 
-/// `POST /mcp/agent/remember` `{thread, server: {text}}`: `remember`'s note, by the thread's persona (#126).
+/// `POST /mcp/agent/remember` `{thread, server: {text?, replaces?, forget?}}`: `remember`'s edit (#126, #216).
 #[route(POST "/mcp/agent/remember")]
-async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<personas::Note>> {
-    let (token, text) = (
-        bearer(cx),
-        a.server["text"].as_str().unwrap_or_default().to_owned(),
-    );
+async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let (token, e) = (bearer(cx), serde_json::from_value(a.server));
+    let e: personas::Edit = e.map_err(|e| refused(format!("remember: {e}")))?;
     Ok(Answer(
-        blocking(cx, move |hub| hub.remember(&a.thread, &token, &text)).await,
+        blocking(cx, move |hub| hub.remember(&a.thread, &token, &e)).await,
     ))
 }
 
@@ -2218,19 +2245,41 @@ async fn memory(cx: &Cx) -> Result<Answer<Vec<personas::Note>>> {
     .await
 }
 
-#[route(POST "/personas/{id}/memory")]
-async fn memory_add(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<personas::Note>> {
+async fn owner_edit(cx: &Cx, e: personas::Edit) -> Result<Answer<Option<personas::Note>>> {
     let id = thread_id(cx);
     on_personas(cx, move |d, c| {
-        personas::remember(
-            d,
-            &personas::find(Some(c), d, &id)?.id,
-            "owner",
-            &n.text,
-            now(),
-        )
+        let id = personas::find(Some(c), d, &id)?.id;
+        personas::remember(d, &id, "owner", &e, now())
     })
     .await
+}
+
+#[route(POST "/personas/{id}/memory")]
+async fn memory_add(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<personas::Note>>> {
+    let e = personas::Edit {
+        text: Some(n.text),
+        ..personas::Edit::default()
+    };
+    owner_edit(cx, e).await
+}
+
+#[route(PUT "/personas/{id}/memory/{name}")]
+async fn memory_put(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<personas::Note>>> {
+    let e = personas::Edit {
+        text: Some(n.text),
+        replaces: Some(path_param::<Name>(cx).to_owned()),
+        ..personas::Edit::default()
+    };
+    owner_edit(cx, e).await
+}
+
+#[route(DELETE "/personas/{id}/memory/{name}")]
+async fn memory_drop(cx: &Cx) -> Result<Answer<Option<personas::Note>>> {
+    let e = personas::Edit {
+        forget: vec![path_param::<Name>(cx).to_owned()],
+        ..personas::Edit::default()
+    };
+    owner_edit(cx, e).await
 }
 
 #[route(DELETE "/personas/{id}/memory")]
@@ -2242,8 +2291,8 @@ async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
     .await
 }
 
-/// The persona calls (#126), the machines and models they pick from, `remember`'s and `history`'s (#217), and their
-/// plugins' screens (#125).
+/// The persona calls (#126), the machines and models they pick from, `remember`'s, `history`'s (#217) and `skill`'s
+/// (#218), their skills, and their plugins' screens (#125).
 fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
     b.route(persona_list)
         .route(machine_list)
@@ -2257,9 +2306,84 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
         .route(screen_action)
         .route(memory)
         .route(memory_add)
+        .route(memory_put)
+        .route(memory_drop)
         .route(memory_clear)
         .route(mcp_remember)
         .route(mcp_history)
+        .route(skill_list)
+        .route(skill_add)
+        .route(skill_get)
+        .route(skill_put)
+        .route(skill_delete)
+        .route(mcp_skill)
+}
+
+#[route(GET "/personas/{id}/skills")]
+async fn skill_list(cx: &Cx) -> Result<Answer<Vec<skills::Skill>>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| {
+        Ok(skills::list(d, &personas::find(Some(c), d, &id)?.id))
+    })
+    .await
+}
+
+#[route(POST "/personas/{id}/skills")]
+async fn skill_add(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| {
+        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, None)
+    })
+    .await
+}
+
+#[route(GET "/personas/{id}/skills/{name}")]
+async fn skill_get(cx: &Cx) -> Result<Answer<skills::Skill>> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    on_personas(cx, move |d, c| {
+        skills::read(d, &personas::find(Some(c), d, &id)?.id, &name)
+    })
+    .await
+}
+
+#[route(PUT "/personas/{id}/skills/{name}")]
+async fn skill_put(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    on_personas(cx, move |d, c| {
+        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, Some(&name))
+    })
+    .await
+}
+
+#[route(DELETE "/personas/{id}/skills/{name}")]
+async fn skill_delete(cx: &Cx) -> Result<Answer<()>> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    on_personas(cx, move |d, c| {
+        skills::remove(d, &personas::find(Some(c), d, &id)?.id, &name)
+    })
+    .await
+}
+
+/// `POST /mcp/agent/skill` `{thread, server: {read} | {propose: {name, description, body, replaces?}}}`: `skill`'s
+/// text (#218): the body read, or that the card is up.
+#[route(POST "/mcp/agent/skill")]
+async fn mcp_skill(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let token = bearer(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let me = (a.thread.as_str(), token.as_str());
+            if let Some(name) = a.server["read"].as_str() {
+                return hub.read_skill(me, name);
+            }
+            let p = serde_json::from_value(a.server["propose"].clone())
+                .map_err(|_| HubError::Refused("give read or propose".to_owned()))?;
+            hub.propose_skill(me, p).map(|_| {
+                "Proposed. The owner sees a card; nothing is saved until they approve it."
+                    .to_owned()
+            })
+        })
+        .await,
+    ))
 }
 
 /// `POST /mcp/agent/grant` `{thread, server}`: the server resolved, in memory, and the tools it may offer.
@@ -2502,17 +2626,8 @@ async fn profile_mcp(cx: &Cx, Form(f): Form<BTreeMap<String, String>>) -> Result
     )
 }
 
-/// The web UI (with `looks`, its themes and schemes), the threads' API over `hub`, the providers' `logins`, the plugin `manager` and pairing, behind the gate: requests must name `bind`, localhost
-/// or one of `allowed_hosts`; devices are paired in `data`.
-#[must_use]
-pub fn router(
-    hub: Arc<Hub>,
-    (logins, manager, themes, machines): (Arc<Logins>, Arc<Manager>, Arc<Themes>, Arc<Machines>),
-    (data, config): (&std::path::Path, Option<&std::path::Path>),
-    bind: IpAddr,
-    allowed_hosts: &[String],
-    looks: Arc<cooee_web::LookAssets>,
-) -> Router {
+/// The names a request may give as its Host: localhost, `bind` unless it is unspecified, and `allowed_hosts`.
+fn names(bind: IpAddr, allowed_hosts: &[String]) -> Vec<String> {
     let mut names: Vec<String> = ["localhost", "127.0.0.1", "[::1]"]
         .map(str::to_owned)
         .into();
@@ -2523,19 +2638,36 @@ pub fn router(
         });
     }
     names.extend(allowed_hosts.iter().cloned());
+    names
+}
+
+/// The web UI (with `looks`, its themes and schemes), the threads' API over `hub`, the providers' `logins`, the plugin `manager` and pairing, behind the gate: requests must name `bind`, localhost
+/// or one of `allowed_hosts`; devices are paired in `data`.
+#[must_use]
+pub fn router(
+    (hub, runner): (Arc<Hub>, Arc<routines::Runner>),
+    (logins, manager, themes, machines): (Arc<Logins>, Arc<Manager>, Arc<Themes>, Arc<Machines>),
+    (data, config): (&std::path::Path, Option<&std::path::Path>),
+    bind: IpAddr,
+    allowed_hosts: &[String],
+    looks: Arc<cooee_web::LookAssets>,
+) -> Router {
     hub.set_starter(starter(Arc::clone(&logins), data, config));
     let gate = Gate {
-        names,
+        names: names(bind, allowed_hosts),
         devices: Devices::new(data),
         hub: Arc::clone(&hub),
     };
-    room_routes(persona_routes(pairing::routes(
-        cooee_web::assets(Router::builder(), looks)
-            .layer(Timing)
-            .layer(gate)
-            // A message's photos come as base64.
-            .layer(BodyLimit::max(64 << 20).at("/threads")),
-    )))
+    routines::routes(
+        runner,
+        room_routes(persona_routes(pairing::routes(
+            cooee_web::assets(Router::builder(), looks)
+                .layer(Timing)
+                .layer(gate)
+                // A message's photos come as base64.
+                .layer(BodyLimit::max(64 << 20).at("/threads")),
+        ))),
+    )
     .route(push_key)
     .route(push_subscribe)
     .route(push_unsubscribe)
@@ -2691,8 +2823,9 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             std::thread::sleep(Duration::from_hours(1));
         }
     });
+    let runner = runner(&hub, Arc::clone(&logins), &data, config.dir.as_deref());
     let router = router(
-        Arc::clone(&hub),
+        (Arc::clone(&hub), Arc::clone(&runner)),
         (
             logins,
             Arc::clone(&manager),
@@ -2716,6 +2849,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             let addr = listener.local_addr()?;
             hub.listening(format!("http://127.0.0.1:{}", addr.port()));
             manager.supervise(hub, format!("http://127.0.0.1:{}", addr.port()));
+            routines::Runner::every(runner, Duration::from_secs(30));
             ready(addr);
             topcoat::serve(listener, router).await
         });

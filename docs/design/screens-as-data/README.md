@@ -192,9 +192,9 @@ sends the `sha` the owner saw (`{"choice": "approve", "sha": …}`), so the plug
 (`title`, `message`, `ok`, `destructive`) is drawn by the client as its own action sheet or alert before anything is
 sent. **A destructive button without a `confirm` gets one anyway**, titled with its label.
 ```json
-{ "type": "button", "id": "rm", "label": "Remove cooee-drover…", "style": "destructive", "action": "remove-fleet",
-  "values": { "fleet": "cooee-drover" },
-  "confirm": { "title": "Remove cooee-drover?", "message": "Its queue and lanes stay on disk.", "ok": "Remove" } }
+{ "type": "button", "id": "rm", "label": "Remove shed…", "style": "destructive", "action": "remove-fleet",
+  "values": { "fleet": "shed" },
+  "confirm": { "title": "Remove shed?", "message": "Its queue and lanes stay on disk.", "ok": "Remove" } }
 ```
 
 **chips**: filters. `multi` allows more than one, and a change POSTs `action` with `{name: selected}`.
@@ -371,7 +371,7 @@ older app.
    and attaching a plugin to a persona.
 3. **Schema, `[permissions]` and `cooee plugin check`:** the attach sheet, and the refusals.
 4. **Offline:** the per-screen cache, the offline line, and actions off.
-5. **drover on screens:** cooee-drover serves Queue, Events, Fleets and its cards in these shapes, attached to the
+5. **drover on screens:** herdsman serves Queue, Events, Fleets and its cards in these shapes, attached to the
    Conductor.
 6. **Docs:** `docs/plugins.md` gets the hello example and the block and place reference.
 

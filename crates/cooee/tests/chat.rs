@@ -435,3 +435,20 @@ fn fake_shed_server() {
         thread::park();
     }
 }
+
+#[test]
+fn a_message_to_a_stopped_agent_is_refused_never_stored_as_sent() {
+    // #253: shed takes a prompt for a stopped session and drops it; the send says so instead of returning 200.
+    let s = setup("stopped");
+    let id = s.create("exit now");
+    s.events(&id)
+        .until(|e| e.event == "state" && e.data["state"] == "ended");
+    let (status, body) = s.send(&id, "are you there", "r1");
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains("stopped"), "{body}");
+    let mine = s.items(&id);
+    assert!(
+        !mine.iter().any(|i| i["text"] == "are you there"),
+        "{mine:?}"
+    );
+}
