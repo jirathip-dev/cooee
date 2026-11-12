@@ -1,0 +1,7 @@
+Decided: cache the parsed File per Devices instance keyed by (mtime, size, inode); save refreshes it
+Because: "reload only when the file's mtime (or size) changes; writes through cooee update the cache"
+Because: crates/cooee-core/src/devices.rs:232 write_private renames a new file in, so the inode tells two saves apart within one mtime tick
+Rejected: a process-wide cache keyed by path — more code; the middleware's own Devices sees other instances' writes via the stamp on the next request
+Rejected: a parse counter in production code for the test — test-only code; same-size in-place overwrite with mtime restored proves no reparse instead
+Check: an unreadable or torn file is still an error, never cached (R3 test), and a missing file is still empty
+Owner: The server stops re-reading its paired-devices file on every request; changes still apply on the next request.
