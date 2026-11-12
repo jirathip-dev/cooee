@@ -1,0 +1,8 @@
+Decided: round 7 changes no code; it merges origin/staging so CI reruns on a new head
+Because: "Every gate is green; `apple_cap` holds."
+Rejected: a code change for the FAIL — it was only macOS CI jobs queued for 2.5 h, not a red check
+Decided: drover's real manifest now lives in herdsman (#226); its claims line is herdsman's change, until then its lanes land in Others
+Because: plugins/index.toml:8
+Check: git diff 7bf8697 HEAD -- apple is empty, so the apple-check from round 6 still holds
+Check: the macOS jobs (build, apple-quality, e2e, simulator-shots) finish green at this head
+Owner: No change to the feature; this round catches up with staging so the Mac CI jobs run again.
