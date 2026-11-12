@@ -1,0 +1,9 @@
+Decided: plugin profiles are cached on the Hub and refreshed by a background thread every 5 s; pages read only the cache
+Because: "Page renders read the cache only and never call a plugin."
+Decided: a failed or timed-out ask keeps the last answer; a plugin that has never answered shows none
+Because: "show the last known profiles (none before the first answer)"
+Rejected: refreshing in the 30 s ticker — a hung plugin would hold up stuck-turn watching and pruning, and 30 s is longer than the tests' 20 s wait
+Decided: Hub::backend replaces lib.rs's backend so the refresher and the handlers share one lookup
+Because: crates/cooee-server/src/hub.rs:780
+Check: rg plugin::profiles crates shows only the hub refresher; the new test fails on staging with a 5.00 s page
+Owner: a slow or stopped plugin can no longer slow any page; its agent list updates within about 5 seconds
