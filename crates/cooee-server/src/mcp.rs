@@ -3,7 +3,7 @@
 //! memory, the allowed tools) with the thread's token, starts or connects to the real server, answers `tools/list`
 //! with the allowed tools only and refuses a call to any other. `cooee mcp serve --thread <id>`, on every thread, is
 //! cooee's own server: `propose_server`, which raises a card in the thread (nothing runs until the owner approves it
-//! with Face ID), and `remember`, a note in the thread's persona's memory. The token is in `COOEE_MCP` (`<cooee's URL> <token>`) and is good while the thread is
+//! with Face ID), `remember`, a note in the thread's persona's memory, and `skill` (#218), its persona's skills. The token is in `COOEE_MCP` (`<cooee's URL> <token>`) and is good while the thread is
 //! open.
 
 use std::{
@@ -412,11 +412,24 @@ fn own_tools() -> Value {
             "instructions": { "type": "string", "description": "your standing rules" }
         } }
     });
-    json!([tool, remember, ask_persona, history, update])
+    let skill = json!({
+        "name": "skill",
+        "description": "Read one of your skills (read: its name), or propose a new one or an edit (propose); the owner approves a proposal before it is saved.",
+        "inputSchema": { "type": "object", "properties": {
+            "read": { "type": "string" },
+            "propose": { "type": "object", "required": ["name", "description", "body"], "properties": {
+                "name": { "type": "string", "description": "lowercase letters, digits and -" },
+                "description": { "type": "string", "description": "one line, at most 120 characters" },
+                "body": { "type": "string" },
+                "replaces": { "type": "string", "description": "the skill it edits" }
+            } }
+        } }
+    });
+    json!([tool, remember, ask_persona, history, update, skill])
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `history` (#217) and `update_persona` (#270) for a persona's.
+/// `ask_persona` (#156), `history` (#217), `update_persona` (#270) and `skill` (#218) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -456,6 +469,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
                     Some("history") => Some(("/mcp/agent/history", "")),
                     Some("update_persona") => Some(("/mcp/agent/persona", "")),
+                    Some("skill") => Some(("/mcp/agent/skill", "")),
                     _ => None,
                 };
                 match call.map(|(path, said)| {
