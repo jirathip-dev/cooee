@@ -357,61 +357,23 @@ fn an_existing_config_keeps_its_keys() {
 }
 
 #[test]
-fn setup_installs_the_first_party_themes_chosen_from_the_index() {
+fn setup_installs_the_first_party_themes_chosen_with_no_network() {
     let mac = Mac::new("su-themes", false);
-    // An index whose first-party packs (and one that isn't) are folders of a local repo.
-    let repo = mac.home.join("packs.git");
-    fs::create_dir_all(&repo).unwrap();
-    let packs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/themes");
-    for t in ["farm", "kitchen", "garden"] {
-        fs::create_dir_all(repo.join(t)).unwrap();
-        for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
-            fs::copy(packs.join(t).join(f), repo.join(t).join(f)).unwrap();
-        }
-    }
-    let git = |args: &[&str]| {
-        let out = Command::new("git")
-            .arg("-C")
-            .arg(&repo)
-            .args(["-c", "user.name=t", "-c", "user.email=t@t"])
-            .args(args)
-            .output()
-            .unwrap();
-        assert!(out.status.success(), "{out:?}");
-        String::from_utf8(out.stdout).unwrap().trim().to_owned()
-    };
-    git(&["init", "--quiet", "-b", "main"]);
-    git(&["add", "-A"]);
-    git(&["commit", "--quiet", "-m", "packs"]);
-    let commit = git(&["rev-parse", "HEAD"]);
-    let entry = |name: &str, first: bool| {
-        format!(
-            "[[theme]]\nname = \"{name}\"\nurl = {:?}\npath = \"{name}\"\ncommit = \"{commit}\"\n\
-             description = \"x\"\nfirst_party = {first}\n\n",
-            repo.display().to_string()
-        )
-    };
-    let index = mac.home.join("index.toml");
-    let text = entry("farm", true) + &entry("kitchen", true) + &entry("garden", false);
-    fs::write(&index, text).unwrap();
+    let swag = cooee_core::swag::Swag::pinned();
     fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
     fs::write(
         mac.config(),
-        format!(
-            "port = {}\nroots = [\"/srv\"]\nplugin_index = {:?}\n",
-            mac.port,
-            index.display().to_string()
-        ),
+        format!("port = {}\nroots = [\"/srv\"]\n", mac.port),
     )
     .unwrap();
-    // Asked which (farm and kitchen are first-party), kitchen is typed; no Codex, no Gemini.
+    // Asked which (swag's packs, from the build's own copy: no fetch), kitchen is typed; no Codex, no Gemini.
     let args = ["setup", "--port", &mac.port.to_string()];
     let out = mac.cooee_typing(&args, Some("kitchen\n\n\n"));
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{out:?}");
     assert!(
         stdout.contains(
-            "themes:\n  themes to install, or none [farm kitchen]:\n  installed theme kitchen\n"
+            "themes:\n  themes to install, or none [farm garden kitchen]:\n  installed theme kitchen\n"
         ),
         "{stdout}"
     );
@@ -431,13 +393,22 @@ fn setup_installs_the_first_party_themes_chosen_from_the_index() {
     .unwrap();
     assert_eq!(
         lock,
-        serde_json::json!([{ "name": "kitchen", "source": "index", "commit": commit, "listed": true }])
+        serde_json::json!([{ "name": "kitchen", "source": swag.url, "commit": swag.commit, "listed": true }])
     );
-    // The default is all of them: farm, the one left.
+    assert!(
+        !mac.home
+            .join(".local/share/cooee/cooee/themes/kitchen.git")
+            .exists()
+    );
+    // The default is all of them: farm and garden, the ones left.
     let out = mac.setup(&["--yes"]);
     assert!(out.status.success(), "{out:?}");
-    assert!(String::from_utf8_lossy(&out.stdout).contains("installed theme farm\n"));
-    assert!(themes.join("farm/theme.json").exists() && !themes.join("garden").exists());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("installed theme farm\n  installed theme garden\n"),
+        "{stdout}"
+    );
+    assert!(themes.join("farm/theme.json").exists() && themes.join("garden/theme.json").exists());
     let out = mac.setup(&["--yes"]);
     assert!(String::from_utf8_lossy(&out.stdout).contains("themes: done, skipped\n"));
 }

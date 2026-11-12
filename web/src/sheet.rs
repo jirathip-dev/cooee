@@ -317,24 +317,22 @@ async fn theme_start(from: String) -> Result<impl View> {
     })
 }
 
-/// Settings › look › themes (#38): the installed packs, each with `[remix]`, `[remove]` and (not the index's)
-/// `[publish]`; the ones being built, each to its preview; `[+ theme]` from the index or a URL; `[new theme]`. Native
-/// forms.
+/// Settings › look › themes (#38): the installed packs, each with `[remix]` and `[remove]`; the ones being built, each
+/// to its preview; `[+ theme]`, a first-party pack or a URL; `[new theme]`. Native forms.
 #[component]
 async fn themes(cx: &Cx) -> Result<impl View> {
     let assets = app_context::<Arc<LookAssets>>(cx);
     let looks = assets.looks();
-    let listed = |n: &str| assets.index.iter().any(|l| l.name == n);
-    let installed: Vec<(String, String, bool)> = sorted(looks.themes.iter(), &ORDER)
+    let installed: Vec<(String, String)> = sorted(looks.themes.iter(), &ORDER)
         .into_iter()
         .filter(|n| *n != "plain")
-        .map(|n| (n.clone(), looks.themes[n].label.clone(), listed(n)))
+        .map(|n| (n.clone(), looks.themes[n].label.clone()))
         .collect();
-    let more: Vec<(String, String)> = assets
-        .index
+    let more: Vec<String> = assets
+        .first_party
         .iter()
-        .filter(|l| !looks.themes.contains_key(&l.name))
-        .map(|l| (l.name.clone(), l.description.clone()))
+        .filter(|n| !looks.themes.contains_key(*n))
+        .cloned()
         .collect();
     let dev: Vec<(String, bool)> = looks
         .dev
@@ -343,12 +341,9 @@ async fn themes(cx: &Cx) -> Result<impl View> {
         .collect();
     Ok(view! {
         <p class="ch" id="s-themes">"themes"</p>
-        for (n, label, first) in installed {
+        for (n, label) in installed {
             <div class="thm">
                 <span class="thn">(label)</span>
-                if !first {
-                    theme_button(act: "publish", name: n.clone())
-                }
                 theme_button(act: "remove", name: n.clone())
                 <details class="thx">
                     <summary>"remix"</summary>
@@ -367,10 +362,9 @@ async fn themes(cx: &Cx) -> Result<impl View> {
         }
         <details class="thx">
             <summary>"+ theme"</summary>
-            for (n, about) in more {
+            for n in more {
                 <form method="post" action="/themes/add" class="thf">
                     <input type="hidden" name="source" value=(n.clone())>
-                    <span>(about)</span>
                     <button type="submit">(format!("add {n}"))</button>
                 </form>
             }

@@ -75,24 +75,24 @@ pub fn assets(builder: RouterBuilder, looks: Arc<LookAssets>) -> RouterBuilder {
 /// theme is added, removed or kept, or one in `themes-dev/` is saved.
 pub struct LookAssets {
     dir: Option<PathBuf>,
-    /// The index's theme packs, for Settings › look › + theme.
-    index: Vec<cooee_core::plugins::Listed>,
+    /// The first-party packs' names, for Settings › look › + theme.
+    first_party: Vec<String>,
     default: Option<String>,
     now: RwLock<(Arc<Looks>, Arc<str>)>,
 }
 
 impl LookAssets {
-    /// The looks of config folder `dir` with the server's `default` theme ([`Looks::load`]) and the `index`'s theme
-    /// packs, and why own files were refused.
+    /// The looks of config folder `dir` with the server's `default` theme ([`Looks::load`]) and the `first_party`
+    /// packs' names, and why own files were refused.
     #[must_use]
     pub fn load(
         dir: Option<&Path>,
         default: Option<&str>,
-        index: Vec<cooee_core::plugins::Listed>,
+        first_party: Vec<String>,
     ) -> (Arc<Self>, Vec<String>) {
         let assets = Self {
             dir: dir.map(Path::to_owned),
-            index,
+            first_party,
             default: default.map(str::to_owned),
             now: RwLock::new((Arc::new(Looks::load(None, None).0), "{}".into())),
         };

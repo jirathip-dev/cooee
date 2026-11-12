@@ -53,7 +53,7 @@ jobs:
         run: just hygiene
       - name: neutral core (no provider named outside crates/cooee-core/src/providers and tests)
         run: just neutral
-      - name: theme gate (packs/themes and the starter)
+      - name: theme gate (swag's pinned packs and the starter)
         run: just themes
 
   stable:

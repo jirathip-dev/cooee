@@ -1,7 +1,6 @@
 //! Installed plugins (docs/plugins.md): a plugin is a git repo with a `cooee-plugin.toml` at its root. cooee keeps
 //! it in `<data>/plugins/<name>/`, pins it in `<data>/plugins.lock` and writes its tabs as `[[plugins]]` entries in
-//! `<data>/plugins/plugins.toml`, read beside the config's own. The curated index, `plugins/index.toml`, is built in;
-//! its `[[theme]]` entries are the theme packs (docs/themes.md).
+//! `<data>/plugins/plugins.toml`, read beside the config's own. The curated index, `plugins/index.toml`, is built in.
 
 use std::{
     fmt::Write as _,
@@ -112,7 +111,7 @@ pub struct Permissions {
     pub network: Vec<String>,
 }
 
-/// A plugin or theme pack in the index: reviewed, pinned to a commit.
+/// A plugin in the index: reviewed, pinned to a commit.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Listed {
@@ -122,9 +121,6 @@ pub struct Listed {
     pub url: String,
     /// The reviewed commit.
     pub commit: String,
-    /// A theme pack's folder in the repo (none: its root).
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub path: String,
     /// One line on what it does.
     pub description: String,
     /// It lives with cooee: improved through an issue, not `[improve]`.
@@ -171,8 +167,6 @@ pub const INDEX: &str = include_str!("../../../plugins/index.toml");
 struct IndexFile {
     #[serde(default)]
     plugin: Vec<Listed>,
-    #[serde(default)]
-    theme: Vec<Listed>,
 }
 
 #[derive(Deserialize)]
@@ -199,14 +193,6 @@ fn read_index(path: Option<&Path>) -> io::Result<IndexFile> {
 /// When the file can't be read or parsed.
 pub fn index(path: Option<&Path>) -> io::Result<Vec<Listed>> {
     Ok(read_index(path)?.plugin)
-}
-
-/// The index's theme packs: the index at `path`, else the built-in one.
-///
-/// # Errors
-/// When the file can't be read or parsed.
-pub fn themes(path: Option<&Path>) -> io::Result<Vec<Listed>> {
-    Ok(read_index(path)?.theme)
 }
 
 impl Manifest {
@@ -379,8 +365,6 @@ mod tests {
                 .iter()
                 .any(|l| l.name == "drover" && l.commit.len() == 40)
         );
-        let names: Vec<_> = themes(None).unwrap().into_iter().map(|t| t.name).collect();
-        assert_eq!(names, ["farm", "kitchen", "garden"]);
     }
 
     #[test]

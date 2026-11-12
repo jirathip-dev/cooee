@@ -1,4 +1,4 @@
-# cooee's curated plugin and theme index (docs/plugins.md): Settings › Plugins and `cooee plugin add <name>` list these.
+# cooee's curated plugin index (docs/plugins.md): Settings › Plugins and `cooee plugin add <name>` list these.
 # Each is a git repo with a `cooee-plugin.toml`, pinned to a reviewed commit; adding or moving one is a normal
 # reviewed PR. `first_party = true`: the plugin lives with cooee and is improved through an issue, not [improve].
 # Anything else is added by its git URL, marked "not reviewed".
@@ -9,29 +9,3 @@ url = "https://github.com/jirathip-dev/herdsman"
 commit = "3ebaf6c5633464a4ef228a0ac082b84b89fd486d"
 description = "herdsman's queue, events, ask cards and fleets, served by herdsman itself"
 
-# Theme packs (docs/themes.md): `cooee theme add <name>`, `cooee setup` and Settings › look › + theme list these. Each
-# is a folder (`path`) of a git repo at a reviewed commit; cooee's own live in packs/themes/ and are first-party.
-
-[[theme]]
-name = "farm"
-url = "https://github.com/jirathip-dev/cooee"
-path = "packs/themes/farm"
-commit = "4af1ac24576280e9e33ede78c5555613929a30a3"
-description = "horses on the trail, at the gate, in the stable"
-first_party = true
-
-[[theme]]
-name = "kitchen"
-url = "https://github.com/jirathip-dev/cooee"
-path = "packs/themes/kitchen"
-commit = "4af1ac24576280e9e33ede78c5555613929a30a3"
-description = "chefs at the pass, the bell when one needs you"
-first_party = true
-
-[[theme]]
-name = "garden"
-url = "https://github.com/jirathip-dev/cooee"
-path = "packs/themes/garden"
-commit = "9fba319226d86c7e4c286cb67f219fb9afba2f08"
-description = "plants being tended, thirsty when one needs you"
-first_party = true

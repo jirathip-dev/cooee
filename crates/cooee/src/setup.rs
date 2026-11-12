@@ -243,7 +243,8 @@ impl Setup {
         Ok((config, changed))
     }
 
-    /// The first-party theme packs asked for (default: all of them) from the index, the installed ones skipped.
+    /// The first-party theme packs asked for (default: all of them), the installed ones skipped: from the build's own
+    /// copy, so no network is needed.
     fn themes(&self, config: &Config) -> Result<(), String> {
         let e = |e: io::Error| e.to_string();
         let t = match cooee_server::Themes::new(config) {
@@ -255,10 +256,9 @@ impl Setup {
         };
         let have: Vec<String> = t.list().map_err(e)?.into_iter().map(|p| p.name).collect();
         let first: Vec<&str> = t
-            .index()
-            .iter()
-            .filter(|l| l.first_party && !have.contains(&l.name))
-            .map(|l| l.name.as_str())
+            .first_party()
+            .into_iter()
+            .filter(|n| !have.iter().any(|h| h == n))
             .collect();
         if step("themes", first.is_empty()) {
             return Ok(());
@@ -276,7 +276,6 @@ impl Setup {
                 println!("  would install theme {name}");
                 continue;
             }
-            // One that can't be fetched now (offline) is no reason to stop.
             match t.plan(name, None).and_then(|p| t.add(&p)) {
                 Ok(()) => println!("  installed theme {name}"),
                 Err(why) => println!("  theme {name}: {why}\n  later: cooee theme add {name}"),

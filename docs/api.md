@@ -208,11 +208,10 @@ Native forms (`application/x-www-form-urlencoded`); each answers with a redirect
 
 | Call | Body | Answer |
 |---|---|---|
-| `POST /themes/add` | `source`: the index's name or a git URL | 303 to `/#settings/look` |
+| `POST /themes/add` | `source`: a first-party pack's name or a git URL | 303 to `/#settings/look` |
 | `POST /themes/remove` | `name` | 303 to `/#settings/look` |
 | `POST /themes/new`, `/themes/remix` | `name`, `text`, and for remix `from` | 303 to the agent's chat, `/t/<id>` |
 | `POST /themes/keep` | `name`, `thread` | 303 to `/#settings/look`; failing the gate, to the chat, where the failures were sent |
-| `POST /themes/publish` | `name` | 200, text: where its git repo is |
 | `GET /themes/dev/<name>?thread=<id>` | | the live preview page |
 | `GET /themes/dev/<name>/events` | | SSE: `saved` each time a file of the theme changes (the looks reloaded) |
 

@@ -2,15 +2,15 @@
 // against herdsman's docs/ui.md gate 2, as the look's shoot.mjs (#7) does: no sideways scroll or box past the right
 // edge, text 11/13 px (Modern 13/15/17; inputs 16), controls 28 px (Modern 36) with a ≥ 44 px tap, tap rows ≥ 44 px,
 // one-line cells ellipsised. One addition: the code boxes, a shown code and the check word are --fs-code (32 px),
-// herdsman's own pairing-code size. No deps: Chrome's --remote-debugging-pipe. Serves docs/design/, since the pages
-// use ../look/. Usage (repo root): node docs/design/pair/shoot.mjs <chrome-headless-shell> [name regexp].
+// herdsman's own pairing-code size. No deps: Chrome's --remote-debugging-pipe. Serves the repo root, since the pages
+// use ../look/ and it the vendored packs/themes/. Usage (repo root): node docs/design/pair/shoot.mjs <chrome-headless-shell> [name regexp].
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
 
-const here = new URL('.', import.meta.url).pathname, root = new URL('..', import.meta.url).pathname;
+const here = new URL('.', import.meta.url).pathname, root = new URL('../../..', import.meta.url).pathname;
 const [chrome] = process.argv.slice(2); // and an optional regexp: shoot only the names it matches
 // [page, query, name, width, height: full (the page), DPR, the system's mode]
 const VIEWS = [];
@@ -30,7 +30,7 @@ const srv = createServer((q, r) => {
   } catch { r.writeHead(404).end(); }
 }).listen(0, '127.0.0.1');
 await new Promise(ok => srv.on('listening', ok));
-const base = `http://127.0.0.1:${srv.address().port}/`;
+const base = `http://127.0.0.1:${srv.address().port}/docs/design/`;
 
 const c = spawn(chrome, ['--headless', '--no-sandbox', '--hide-scrollbars', '--remote-debugging-pipe', '--no-first-run',
   `--user-data-dir=${mkdtempSync(join(tmpdir(), 'cooee-prof-'))}`], { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });
