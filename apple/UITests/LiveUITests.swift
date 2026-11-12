@@ -24,6 +24,7 @@
             XCTAssert(labelled(app, "Coder").exists)
             keep("home")
             personaRoundTrip(app)
+            copiesAReply(app, new)
             answersEachCard(app, new)
             swipeBack(app, new)
             opensDroversScreens(app, new)
@@ -144,13 +145,13 @@
         }
 
         @MainActor
-        private func labelled(_ app: XCUIApplication, _ text: String) -> XCUIElement {
+        internal func labelled(_ app: XCUIApplication, _ text: String) -> XCUIElement {
             app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
         }
 
         @MainActor
-        private func keep(_ name: String) {
-            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        internal func keep(_ name: String, _ screenshot: XCUIScreenshot = XCUIScreen.main.screenshot()) {
+            let shot = XCTAttachment(screenshot: screenshot)
             shot.name = "\(name)-\(ProcessInfo.processInfo.environment["COOEE_LOOK"] ?? "look")"
             shot.lifetime = .keepAlways
             add(shot)
@@ -202,6 +203,26 @@
         }
 
         @MainActor
+        private func copiesAReply(_ app: XCUIApplication, _ new: XCUIElement) {
+            new.tap()
+            app.buttons["Coder"].firstMatch.tap()
+            type(app, "Message Coder", "paragraphs")
+            app.buttons["Send"].firstMatch.tap()
+            let reply = labelled(app, "HTML or SwiftUI?")
+            XCTAssert(reply.waitForExistence(timeout: 30))
+            keep("chat-paragraphs")
+            reply.press(forDuration: 1.2)
+            XCTAssert(app.buttons["Copy"].firstMatch.waitForExistence(timeout: 10))
+            keep("message-menu")
+            app.buttons["Select text"].firstMatch.tap()
+            XCTAssert(app.textViews.firstMatch.waitForExistence(timeout: 10))
+            keep("select-text")
+            app.buttons["Done"].firstMatch.tap()
+            app.buttons["Back"].firstMatch.tap()
+            XCTAssert(new.waitForExistence(timeout: 10))
+        }
+
+        @MainActor
         private func pin(_ app: XCUIApplication) {
             let toggle = app.switches["Pin to Home"].firstMatch
             XCTAssert(toggle.waitForExistence(timeout: 10))
@@ -220,13 +241,16 @@
             keep("avatar-menu")
             labelled(app, "Look").tap()
             labelled(app, "Terminal").tap()
+            confirmIcon()
             XCTAssert(picked(app, "Terminal").waitForExistence(timeout: 5))
+            appIcon(app)
             labelled(app, "Modern").tap()
+            confirmIcon()
             XCTAssert(picked(app, "Modern").waitForExistence(timeout: 5))
         }
 
         @MainActor
-        private func picked(_ app: XCUIApplication, _ label: String) -> XCUIElement {
+        internal func picked(_ app: XCUIApplication, _ label: String) -> XCUIElement {
             app.buttons.matching(NSPredicate(format: "label == %@ AND selected == true", label)).firstMatch
         }
 

@@ -55,6 +55,13 @@ internal struct ItemsTests {
         #expect(Markdown.blocks("") == [])
     }
 
+    @Test internal func aMessageCopiesAsPlainText() {
+        let reply = Markdown.blocks("Questions for you:\n1. **HTML** or `SwiftUI`?\n\n- a\n\n```sh\nls\n```")
+        #expect(Item.agent(id: 1, markdown: reply).plainText == "Questions for you:\n1. HTML or SwiftUI?\n\n• a\n\nls")
+        #expect(Item.you(id: 2, text: "hi **there**").plainText == "hi **there**")
+        #expect(Item.note(id: 3, text: "Model set").plainText == nil)
+    }
+
     @Test internal func theSameNoteTwiceInARowIsOneRow() {
         let stopped = [
             APIItem(id: 1, time: 1, kind: "ended", text: "The agent stopped."),
