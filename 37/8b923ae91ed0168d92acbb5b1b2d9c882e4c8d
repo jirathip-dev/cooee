@@ -1,0 +1,10 @@
+Decided: the iOS section copies apple.yml's e2e commands, swapping only $RUNNER_TEMP, the port and the simulator name
+Because: "mirroring `apple.yml`'s `e2e` job so the two never drift"
+Decided: without Xcode the lane finds the head's apple run id and downloads simulator-shots
+Because: "fall back to CI: `gh run download <run id> -n simulator-shots`"
+Decided: teardown deletes only the UDID saved in $OUT/sim and checks simctl no longer lists it
+Because: "`xcrun simctl delete` only the simulator this run created (never `delete all`)"
+Decided: drop the Xcode Package.resolved the supersede snapshot committed; staging does not track it
+Rejected: keeping it — a local build byproduct outside the issue's scope
+Check: diff vs staging is .herdsman/verify.md only, byte-identical to 6ca8fcf; stable (macos-latest) red at 6ca8fcf was chat_first.rs:164, passes 3/3 locally
+Owner: The verify check can now run the iPhone app in its own simulator and screenshot it in dark and light.
