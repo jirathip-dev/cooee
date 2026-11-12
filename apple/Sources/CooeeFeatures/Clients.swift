@@ -56,6 +56,11 @@ public struct SettingsStore: Sendable {
 }
 
 @DependencyClient
+public struct AppIconClient: Sendable {
+    public var set: @Sendable (_ icon: AppIcon) async throws -> Void
+}
+
+@DependencyClient
 public struct ServerStore: Sendable {
     public var load: @Sendable () -> Server? = { nil }
     public var save: @Sendable (_ server: Server) -> Void
@@ -101,6 +106,10 @@ extension SettingsStore: TestDependencyKey {
     public static let testValue = SettingsStore()
 }
 
+extension AppIconClient: TestDependencyKey {
+    public static let testValue = AppIconClient()
+}
+
 extension ServerStore: TestDependencyKey {
     public static let testValue = ServerStore()
 }
@@ -137,6 +146,11 @@ extension DependencyValues {
     public var settingsStore: SettingsStore {
         get { self[SettingsStore.self] }
         set { self[SettingsStore.self] = newValue }
+    }
+
+    public var appIcon: AppIconClient {
+        get { self[AppIconClient.self] }
+        set { self[AppIconClient.self] = newValue }
     }
 
     public var serverStore: ServerStore {

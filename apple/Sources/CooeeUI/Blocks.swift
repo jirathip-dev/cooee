@@ -4,14 +4,20 @@ import SwiftUI
 public struct BlocksView: View {
     private let block: JSONValue
     private let act: @MainActor (BlockAction) -> Void
+    private let open: @MainActor (String) -> Void
 
     public var body: some View {
-        BlockNode(block: block).environment(\.act, act)
+        BlockNode(block: block).environment(\.act, act).environment(\.open, open)
     }
 
-    public init(_ block: JSONValue, act: @escaping @MainActor (BlockAction) -> Void = { _ in }) {
+    public init(
+        _ block: JSONValue,
+        act: @escaping @MainActor (BlockAction) -> Void = { _ in },
+        open: @escaping @MainActor (String) -> Void = { _ in }
+    ) {
         self.block = block
         self.act = act
+        self.open = open
     }
 }
 
@@ -22,6 +28,10 @@ internal struct CardContext {
 
 private struct ActKey: EnvironmentKey {
     fileprivate static var defaultValue: @MainActor (BlockAction) -> Void { { _ in } }
+}
+
+private struct OpenKey: EnvironmentKey {
+    fileprivate static var defaultValue: @MainActor (String) -> Void { { _ in } }
 }
 
 private struct CardKey: EnvironmentKey {
@@ -36,6 +46,11 @@ extension EnvironmentValues {
     internal var act: @MainActor (BlockAction) -> Void {
         get { self[ActKey.self] }
         set { self[ActKey.self] = newValue }
+    }
+
+    internal var open: @MainActor (String) -> Void {
+        get { self[OpenKey.self] }
+        set { self[OpenKey.self] = newValue }
     }
 
     internal var card: CardContext {
@@ -75,6 +90,8 @@ internal struct BlockNode: View {
         case "choice", "secret", "run": AnswerBlock(block: block)
         case "form", "config": FieldsBlock(block: block)
         case "images": ImagesBlock(block: block)
+        case "diff": DiffBlock(block: block)
+        case "editor": EditorBlock(block: block)
         default: EmptyView()
         }
     }
@@ -123,6 +140,7 @@ internal struct GroupBlock: View {
                 ForEach(Array(block.list("actions").enumerated()), id: \.offset) { _, item in
                     ToolbarItemView(item: item)
                 }
+                if let done = block["done"] { DoneButton(done: done) }
             }
             BlockStack(blocks: block.list("blocks"), spacing: 14)
         }
@@ -183,11 +201,7 @@ internal struct SheetBlock: View {
                 Spacer()
                 Text(block.string("title") ?? "").ui(16, .semibold, look)
                 Spacer()
-                if let done = block["done"] {
-                    ActButton(source: done, values: block.fieldValues.merging(values) { $1 }) {
-                        Text(done.string("label") ?? "").ui(16, .semibold, look).foregroundStyle(palette.link)
-                    }
-                }
+                if let done = block["done"] { DoneButton(done: done, values: block.fieldValues.merging(values) { $1 }) }
             }
             BlockStack(blocks: block.list("blocks"), spacing: 14).environment(\.form, $values)
         }

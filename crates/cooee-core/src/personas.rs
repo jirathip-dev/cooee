@@ -1,20 +1,34 @@
 //! Personas (#126): a named agent (who it is, its standing rules, its folder and default agent) with notes it keeps,
 //! for the native app. The owner's are `<config>/personas/<id>.toml`; an owner profile with no persona of its name is
 //! read as one that runs as that profile (its account, settings, env, MCP servers and policy), so nothing is lost.
-//! Its notes are `<data>/personas/<id>/memory.jsonl`.
+//! Its notes are `<data>/personas/<id>/memory.jsonl`, its skills (#218) under `<data>/personas/<id>/skills/`.
 
 use std::{
     fmt::Write as _,
-    fs, io,
+    fs,
+    hash::{DefaultHasher, Hash, Hasher},
+    io,
     path::{Path, PathBuf},
 };
 
 use serde::{Deserialize, Serialize};
 
-use crate::{plugins, profiles};
+use crate::{plugins, profiles, skills};
 
 /// drover's installed name (`plugins/index.toml`).
 const DROVER: &str = "cooee-drover";
+
+/// What a persona is (#159), apart from its name: drover attaches by it.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Role {
+    /// A plain persona.
+    #[default]
+    #[serde(rename = "")]
+    Plain,
+    /// One of herdsman's orchestrators: an installed drover is attached to it.
+    Orchestrator,
+}
 
 /// One persona.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -23,8 +37,12 @@ pub struct Persona {
     /// Its id, its file's name (never in the file): lowercase letters, digits and `-`.
     #[serde(skip_serializing_if = "String::is_empty")]
     pub id: String,
-    /// Its name.
+    /// Its name, for display only.
     pub name: String,
+    /// Its role (#159).
+    pub role: Role,
+    /// The repos or fleets it covers (#159); another persona may cover them too.
+    pub fleets: Vec<String>,
     /// An image (as a profile's avatar); none: the client draws its initials.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub avatar: Option<String>,
@@ -66,9 +84,15 @@ pub struct Place {
     pub screen: String,
 }
 
+/// The most characters a persona's notes hold in all (#216).
+pub const CAP: usize = 2000;
+
 /// One note in a persona's memory.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Note {
+    /// Its short id, shown in the brief; a note kept before #216 gets one on first read.
+    #[serde(default)]
+    pub id: String,
     /// The note.
     pub text: String,
     /// Who added it: `persona` or `owner`.
@@ -99,21 +123,11 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
             continue;
         }
         let read = fs::read_to_string(&file).map_err(|e| e.to_string());
-        match read.and_then(|t| toml::from_str::<Persona>(&t).map_err(|e| e.message().to_owned())) {
-            Ok(p) => out.push(Persona {
-                id: id.to_owned(),
-                ..p
-            }),
+        match read.and_then(|t| from_file(id, &t).map_err(|e| e.message().to_owned())) {
+            Ok(p) => out.push(p),
             Err(e) => eprintln!("cooee: {}: {e}", file.display()),
         }
     }
-    // Migrated (#129): an installed drover goes with the conductor profile's persona.
-    let lock = plugins::read_lock(data).unwrap_or_default();
-    let drover: Vec<String> = lock
-        .into_iter()
-        .map(|l| l.name)
-        .filter(|n| n == DROVER)
-        .collect();
     for p in profiles::list(config, data, |_| None) {
         if p.plugin.is_none() && out.iter().all(|o| o.id != p.name) {
             let text = p.instructions.and_then(|f| fs::read_to_string(f).ok());
@@ -127,18 +141,43 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
                     .map(|f| f.display().to_string())
                     .unwrap_or_default(),
                 agent: p.agent,
-                plugins: if p.name == "conductor" {
-                    drover.clone()
-                } else {
-                    Vec::new()
-                },
+                role: role(&p.name, None),
                 profile: Some(p.name),
                 ..Persona::default()
             });
         }
     }
+    let lock = plugins::read_lock(data).unwrap_or_default();
+    if lock.iter().any(|l| l.name == DROVER) {
+        let orchestrators = out.iter_mut().filter(|p| p.role == Role::Orchestrator);
+        for p in orchestrators.filter(|p| !p.plugins.iter().any(|n| n == DROVER)) {
+            p.plugins.push(DROVER.to_owned());
+        }
+    }
     out.sort_by(|a, b| a.id.cmp(&b.id));
     out
+}
+
+/// Persona `id` from its file's `text`.
+fn from_file(id: &str, text: &str) -> Result<Persona, toml::de::Error> {
+    let table: toml::Table = toml::from_str(text)?;
+    let set = table.contains_key("role");
+    let p: Persona = toml::Value::Table(table).try_into()?;
+    Ok(Persona {
+        id: id.to_owned(),
+        role: role(id, set.then_some(p.role)),
+        ..p
+    })
+}
+
+/// The role of the persona `id` (or read from profile `id`): the one it has, else (saved before #159) the conductor's
+/// is an orchestrator.
+fn role(id: &str, set: Option<Role>) -> Role {
+    set.unwrap_or(if id == "conductor" {
+        Role::Orchestrator
+    } else {
+        Role::Plain
+    })
 }
 
 /// Persona `id`'s header strip: the `header-strip` places of the plugins attached to it, in its order and theirs.
@@ -236,7 +275,7 @@ pub fn remove(config: &Path, data: &Path, id: &str) -> io::Result<()> {
     {
         gone(fs::remove_file(f))?;
     }
-    forget(data, id)
+    gone(fs::remove_dir_all(data.join("personas").join(id)))
 }
 
 /// `r`, a missing file being no error.
@@ -247,48 +286,142 @@ fn gone(r: io::Result<()>) -> io::Result<()> {
     }
 }
 
-/// Persona `id`'s notes, oldest first.
+/// A `remember` (#216): drop the notes in `forget`, then add `text`, or put it in place of note `replaces`.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct Edit {
+    /// The note's text.
+    pub text: Option<String>,
+    /// The id of the note it replaces.
+    pub replaces: Option<String>,
+    /// The ids of the notes to drop.
+    pub forget: Vec<String>,
+}
+
+/// Persona `id`'s notes, oldest first; any without an id get one, kept in the file.
 #[must_use]
 pub fn notes(data: &Path, id: &str) -> Vec<Note> {
     let text = fs::read_to_string(memory(data, id)).unwrap_or_default();
-    text.lines()
+    let mut notes: Vec<Note> = text
+        .lines()
         .filter_map(|l| serde_json::from_str(l).ok())
-        .collect()
-}
-
-/// Adds a note `by` (`persona` or `owner`) at `at` to persona `id`'s memory.
-///
-/// # Errors
-/// An empty note, or a file that can't be written.
-pub fn remember(data: &Path, id: &str, by: &str, text: &str, at: u64) -> io::Result<Note> {
-    let (text, by) = (text.trim().to_owned(), by.to_owned());
-    if text.is_empty() {
-        return Err(refused("a note needs text".to_owned()));
+        .collect();
+    if notes.iter().any(|n| n.id.is_empty()) {
+        for i in 0..notes.len() {
+            if notes[i].id.is_empty() {
+                notes[i].id = fresh(&notes, &notes[i]);
+            }
+        }
+        if let Err(e) = write(data, id, &notes) {
+            eprintln!("cooee: persona {id}: notes: {e}");
+        }
     }
-    let file = memory(data, id);
-    fs::create_dir_all(file.parent().unwrap_or(data))?;
-    let note = Note { text, by, at };
-    crate::append_line(&file, &serde_json::to_string(&note)?)?;
-    Ok(note)
+    notes
 }
 
-/// Clears persona `id`'s notes, and only them.
+fn fresh(notes: &[Note], n: &Note) -> String {
+    let mut h = DefaultHasher::new();
+    (n.text.as_str(), n.at).hash(&mut h);
+    let hex = format!("{:016x}", h.finish());
+    let id = (2..hex.len())
+        .map(|k| &hex[..k])
+        .find(|c| notes.iter().all(|o| o.id != *c));
+    id.unwrap_or(&hex).to_owned()
+}
+
+/// The characters `notes` use against [`CAP`].
+#[must_use]
+pub fn used(notes: &[Note]) -> usize {
+    notes.iter().map(|n| n.text.chars().count()).sum()
+}
+
+fn write(data: &Path, id: &str, notes: &[Note]) -> io::Result<()> {
+    let mut lines = String::new();
+    for n in notes {
+        lines.push_str(&serde_json::to_string(n)?);
+        lines.push('\n');
+    }
+    crate::write_private(&memory(data, id), lines.as_bytes())
+}
+
+/// Applies `e` `by` (`persona` or `owner`) at `at` to persona `id`'s notes: the note added or replaced (an exact
+/// duplicate is the note already there), none when it only forgets.
 ///
 /// # Errors
-/// A folder that can't be removed.
+/// An unknown note id, no text where one is needed, notes that would grow past [`CAP`] (the refusal names the use
+/// and the ids), or a file that can't be written.
+pub fn remember(data: &Path, id: &str, by: &str, e: &Edit, at: u64) -> io::Result<Option<Note>> {
+    let mut notes = notes(data, id);
+    let before = used(&notes);
+    let ids: Vec<&str> = notes.iter().map(|n| n.id.as_str()).take(100).collect();
+    let ids = ids.join(", ");
+    let mut named = e.forget.iter().chain(&e.replaces);
+    if let Some(gone) = named.find(|f| notes.iter().all(|n| n.id != **f)) {
+        return Err(refused(format!("no note {gone}; the notes are: {ids}")));
+    }
+    notes.retain(|n| !e.forget.contains(&n.id));
+    let (text, by) = (e.text.as_deref().unwrap_or_default().trim(), by.to_owned());
+    let kept = match (text, &e.replaces) {
+        ("", None) if !e.forget.is_empty() => None,
+        ("", _) => return Err(refused("a note needs text".to_owned())),
+        (text, Some(r)) => {
+            let n = notes.iter_mut().find(|n| n.id == *r);
+            let n = n.ok_or_else(|| refused(format!("note {r} is forgotten too")))?;
+            (n.text, n.by, n.at) = (text.to_owned(), by, at);
+            Some(n.clone())
+        }
+        (text, None) => {
+            let duplicate = notes.iter().find(|n| n.text == text).cloned();
+            duplicate.or_else(|| {
+                let mut n = Note {
+                    id: String::new(),
+                    text: text.to_owned(),
+                    by,
+                    at,
+                };
+                n.id = fresh(&notes, &n);
+                notes.push(n.clone());
+                Some(n)
+            })
+        }
+    };
+    let after = used(&notes);
+    if after > CAP && after > before {
+        return Err(refused(format!(
+            "memory full: {before} of {CAP} characters used, this makes {after}; merge or forget notes first ({ids})"
+        )));
+    }
+    write(data, id, &notes)?;
+    Ok(kept)
+}
+
+/// Clears persona `id`'s notes, and only them: its skills stay.
+///
+/// # Errors
+/// A file that can't be removed.
 pub fn forget(data: &Path, id: &str) -> io::Result<()> {
-    gone(fs::remove_dir_all(data.join("personas").join(id)))
+    gone(fs::remove_file(memory(data, id)))
 }
 
 impl Persona {
-    /// What its agent gets ahead of a new session's first message: its Character, Instructions and notes.
+    /// What its agent gets ahead of a new session's first message: its Character, Instructions, notes and skills'
+    /// descriptions (#218), by name; never a skill's body.
     #[must_use]
     pub fn brief(&self, data: &Path) -> String {
-        let mut notes = String::from("Your notes (keep one with cooee's remember tool):");
+        let mut notes = String::from("Your notes (edit them with your remember tool):");
         for n in self::notes(data, &self.id) {
-            let _ = write!(notes, "\n- {} ({})", n.text, n.by);
+            let _ = write!(notes, "\n- [{}] {}", n.id, n.text);
         }
-        let parts = [self.character.trim(), self.instructions.trim(), &notes];
+        let mut skills = String::from("Your skills (read one with cooee's skill tool):");
+        for s in skills::list(data, &self.id).iter().take(skills::MAX) {
+            let _ = write!(skills, "\n- {}: {}", s.name, s.description);
+        }
+        let parts = [
+            self.character.trim(),
+            self.instructions.trim(),
+            &notes,
+            &skills,
+        ];
         let parts = parts
             .into_iter()
             .filter(|s| !s.is_empty() && !s.ends_with(':'));

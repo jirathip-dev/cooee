@@ -28,8 +28,23 @@ public struct Field: Sendable, Equatable {
     }
 }
 
+public struct Outgoing: Sendable, Equatable {
+    public let id: Int
+    public let text: String
+    public let files: [Attachment]
+    public var failure: String?
+
+    public init(id: Int, text: String, files: [Attachment] = [], failure: String? = nil) {
+        self.id = id
+        self.text = text
+        self.files = files
+        self.failure = failure
+    }
+}
+
 public enum Item: Identifiable, Sendable, Equatable {
     case you(id: Int, text: String, files: [String] = [])
+    case outgoing(Outgoing)
     case agent(id: Int, markdown: [Block])
     case tools(id: Int, rows: [ToolRow])
     case card(id: Int, poster: String?, block: JSONValue)
@@ -42,16 +57,40 @@ public enum Item: Identifiable, Sendable, Equatable {
         case .you(let id, _, _), .agent(let id, _), .tools(let id, _), .card(let id, _, _), .note(let id, _),
             .said(let id, _, _, _), .divider(let id, _):
             id
+        case .outgoing(let message):
+            message.id
+        }
+    }
+
+    /// The message as Copy gives it: plain text, or nil for an item that is no message.
+    public var plainText: String? {
+        switch self {
+        case .you(_, let text, _): text
+        case .outgoing(let message): message.text
+        case .agent(_, let blocks): blocks.map(\.plainText).joined(separator: "\n\n")
+        case .tools, .card, .note: nil
+        }
+    }
+}
+
+extension Block {
+    fileprivate var plainText: String {
+        switch self {
+        case .text(let text): String(Markdown.inline(text).characters)
+        case .code(_, let code): code
+        case .bullets(let bullets):
+            bullets.map { "• " + String(Markdown.inline($0).characters) }.joined(separator: "\n")
         }
     }
 }
 
 public enum ChatItems {
-    public static func build(_ items: [APIItem], live: String) -> [Item] {
+    public static func build(_ items: [APIItem], live: String, outbox: [Outgoing] = []) -> [Item] {
         var out: [Item] = []
         for item in items {
             append(item, to: &out)
         }
+        out += outbox.map(Item.outgoing)
         if !live.isEmpty {
             out.append(.agent(id: Int.max, markdown: Markdown.blocks(live + " ▍")))
         }
@@ -71,6 +110,7 @@ public enum ChatItems {
             out.append(.card(id: item.id, poster: item.plugin, block: block))
         default:
             guard let text = item.text, !text.isEmpty else { return }
+            if case .note(_, text)? = out.last { return }
             out.append(.note(id: item.id, text: text))
         }
     }
@@ -91,6 +131,12 @@ public struct Markdown {
     private var paragraph: [String] = []
     private var bullets: [String] = []
     private var code: (lang: String, lines: [String])?
+
+    /// One block's inline markup (bold, code, links), each line break kept as the source has it.
+    public static func inline(_ markdown: String) -> AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        return (try? AttributedString(markdown: markdown, options: options)) ?? AttributedString(markdown)
+    }
 
     public static func blocks(_ markdown: String) -> [Block] {
         var parser = Markdown()
