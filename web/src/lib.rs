@@ -11,6 +11,7 @@ mod agents;
 mod compose;
 mod look;
 mod mcp;
+mod routines;
 mod sheet;
 mod shown;
 
@@ -26,6 +27,7 @@ pub use compose::{named, who};
 use cooee_core::{Sheet, Thread, Turn};
 pub use look::{Looks, Pair, SPRITES, Scheme, TOKENS, Theme, WORDS, check, gate, plain, read_pack};
 pub use mcp::{McpPage, Tools, mcp_page};
+pub use routines::routines_page;
 use sheet::{sheets, shown};
 pub use shown::Shown;
 use topcoat::{

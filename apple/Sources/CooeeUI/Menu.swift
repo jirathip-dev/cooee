@@ -42,6 +42,7 @@ internal struct MenuPage: View {
                 switch page {
                 case .look: lookPage
                 case .notifications: pushPage
+                case .appIcon: AppIconPicker(store: store)
                 default: Text("This opens in v2.").ui(15, .regular, look).padding(.top, 40)
                 }
             }
@@ -60,6 +61,7 @@ internal struct MenuPage: View {
         case .devices: "Devices"
         case .machines: "Machines"
         case .plugins: "Plugins"
+        case .appIcon: "App icon"
         }
     }
 
@@ -75,6 +77,18 @@ internal struct MenuPage: View {
             ForEach(LookStyle.allCases, id: \.self) { style in
                 pick(style.rawValue.capitalized, selected: store.settings.style == style) { store.send(.style(style)) }
             }
+        }
+        Group2(header: "App icon") {
+            Button {
+                store.send(.path(store.path + [.appIcon]))
+            } label: {
+                SettingRow(
+                    symbol: "app", title: "App icon", icon: store.settings.appIcon,
+                    value: store.settings.icon?.name ?? "Follows the look", divider: false
+                )
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
         }
     }
 
