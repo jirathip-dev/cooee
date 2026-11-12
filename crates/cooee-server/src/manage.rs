@@ -162,7 +162,7 @@ fn note(log: &Path, line: &str) {
 /// Stops a backend and everything it started (its process group).
 fn stop(child: &mut Child) {
     let _ = Command::new("kill")
-        .args(["-TERM", &format!("-{}", child.id())])
+        .args(["-TERM", "--", &format!("-{}", child.id())])
         .stderr(Stdio::null())
         .status();
     let _ = child.kill();
