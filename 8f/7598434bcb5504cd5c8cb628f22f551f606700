@@ -1,0 +1,5 @@
+Decided: round 2 merges origin/staging and re-runs CI; no workflow change
+Because: "On `pull_request`, `apple.yml` runs one job, `apple`, in sequence"
+Rejected: editing web/e2e/chat.spec.mjs for the ui long-task failure — this PR touches no web code, so that is out of scope
+Check: at the new head `apple` and `ui` are green; `apple` went from pending to passed (51m31s) at 5a0ec95
+Owner: if ui's 1,000-message long-task test keeps failing on staging too, it needs its own issue
