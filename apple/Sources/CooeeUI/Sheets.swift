@@ -1,3 +1,4 @@
+import CooeeCore
 import CooeeFeatures
 import SwiftUI
 
@@ -30,6 +31,7 @@ internal struct SettingRow: View {
     internal let symbol: String
     internal let title: String
     internal var tint: Color?
+    internal var icon: AppIcon?
     internal var value = ""
     internal var divider = true
     internal var edit: Binding<String>?
@@ -37,7 +39,9 @@ internal struct SettingRow: View {
     internal var body: some View {
         let palette = look.palette
         HStack(spacing: 12) {
-            if !look.mono {
+            if let icon {
+                IconImage(icon: icon, size: 30)
+            } else if !look.mono {
                 Image(systemName: symbol).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 30, height: 30).background(tint ?? palette.link, in: .rect(cornerRadius: 8))
             }
