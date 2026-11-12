@@ -85,6 +85,7 @@ extension Frame {
             phone("chat-conductor-\(mode)", palette) { ChatView.conductor() },
             phone("persona-\(mode)", palette) { PersonaSheet() },
             phone("avatar-menu-\(mode)", palette) { HomeView(menuOpen: true) },
+            phone("persona-panel-\(mode)", palette) { PersonaPanel() },
         ]
             + PhoneStep.allCases.map { step in
                 phone("pair-\(step.rawValue)-\(mode)", palette) { PhoneOnboarding(step: step) }
@@ -100,6 +101,10 @@ extension Frame {
             phone("style-scene-home-light", .farmLight, style: .scene) { HomeView() },
             phone("style-scene-chat-light", .farmLight, style: .scene) { ChatView.streaming() },
             phone("style-scene-card-light", .farmLight, style: .scene) { ChatView.cards() },
+            phone("persona-panel-end-dark", .farmDark) { PersonaPanel(end: true) },
+            phone("persona-panel-empty-dark", .farmDark) { PersonaPanel(personaID: "chief") },
+            phone("persona-panel-terminal-dark", .farmDark, style: .terminal) { PersonaPanel() },
+            phone("persona-panel-scene-light", .farmLight, style: .scene) { PersonaPanel() },
         ]
     }
 
@@ -109,6 +114,7 @@ extension Frame {
                 mac("mac-connect", 960, 640, .farmLight) { MacConnect() },
                 mac("mac-window-dark", 1280, 820, .farmDark) { WideView() },
                 mac("mac-window-light", 1280, 820, .farmLight) { WideView() },
+                mac("mac-persona-panel-dark", 360, 820, .farmDark) { PersonaPanel(personaID: "coder", column: true) },
             ]
     }
 }
