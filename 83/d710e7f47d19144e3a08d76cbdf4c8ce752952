@@ -1,0 +1,5 @@
+Decided: merge origin/staging (Screen sheet #165, app icons #225, markdown copy #243) into the branch; the menu keeps staging's App icon page and this branch's Terminal row
+Because: apple/Sources/CooeeUI/Menu.swift:62
+Rejected: rebasing onto staging — a history rewrite and force-push, which lanes never do
+Check: line-cap.sh on a clean checkout of the head gives apple 7486 / 7500, and SnapshotTests passes in compare mode with no PNG re-recorded
+Owner: The design branch now sits on top of the latest app changes; the design screens are unchanged.
