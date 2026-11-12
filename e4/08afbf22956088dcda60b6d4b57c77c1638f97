@@ -1,0 +1,8 @@
+Decided: merge origin/staging again (e408afbf) so the PR sits on the current integration branch
+Because: apple/Sources/CooeeCore/Scene.swift:24
+Decided: the full-bleed square strip follows the approved scene-390 frames, as Home's pinned row
+Because: docs/design/queue-scene/README.md:21
+Decided: refresh the PR body's evidence to name the head e408afbf and what changed after 699cde02
+Rejected: waiting out swiftlint analyze — it hung on a host TCA macro-plugin error in other lanes too
+Check: CI apple job green at e408afbf, including swiftlint analyze and Periphery, which I could not finish locally
+Owner: The Queue farm strip work now sits on the latest staging, and the PR's evidence matches its head.
