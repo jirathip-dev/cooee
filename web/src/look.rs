@@ -334,7 +334,70 @@ fn file(dir: &Path, name: &str, fails: &mut Vec<String>) -> Option<Vec<u8>> {
             bytes.len().div_ceil(1024)
         ));
     }
+    if matches!(name, "sprites.svg" | "scene.svg") {
+        for why in active(&String::from_utf8_lossy(&bytes)) {
+            if !fails.contains(&format!("{name}: {why}")) {
+                fails.push(format!("{name}: {why}"));
+            }
+        }
+    }
     Some(bytes)
+}
+
+/// What in `svg` could run as cooee's page when it is opened: `<script>`, `<foreignObject>`, an entity declaration,
+/// an `on*` attribute, or an `href` that is not a local `#id`.
+fn active(svg: &str) -> Vec<String> {
+    let mut found = Vec::new();
+    let mut rest = svg;
+    let mut text = String::new();
+    while let Some((before, after)) = rest.split_once("<!--") {
+        text.push_str(before);
+        rest = after.split_once("-->").map_or("", |(_, a)| a);
+    }
+    text.push_str(rest);
+    for tag in text.split('<').skip(1) {
+        if tag.starts_with("!ENTITY") {
+            found.push("an entity declaration (active content)".to_owned());
+        }
+        let end = tag
+            .find(|c: char| c.is_whitespace() || c == '>' || c == '/')
+            .unwrap_or(tag.len());
+        let (el, mut rest) = tag.split_at(end);
+        match el.rsplit(':').next().unwrap_or(el) {
+            "script" => found.push("<script> (active content)".to_owned()),
+            "foreignObject" => found.push("<foreignObject> (active content)".to_owned()),
+            _ => {}
+        }
+        loop {
+            rest = rest.trim_start_matches(|c: char| c.is_whitespace() || c == '/');
+            if rest.is_empty() || rest.starts_with('>') {
+                break;
+            }
+            let end = rest
+                .find(|c: char| c.is_whitespace() || c == '=' || c == '>' || c == '/')
+                .unwrap_or(rest.len());
+            let attr = rest[..end].to_ascii_lowercase();
+            rest = rest[end..].trim_start();
+            let mut value = "";
+            if let Some(r) = rest.strip_prefix('=') {
+                let r = r.trim_start();
+                (value, rest) = match r.chars().next() {
+                    Some(q @ ('"' | '\'')) => r[1..].split_once(q).unwrap_or((&r[1..], "")),
+                    _ => r.split_at(
+                        r.find(|c: char| c.is_whitespace() || c == '>')
+                            .unwrap_or(r.len()),
+                    ),
+                };
+            }
+            if attr.starts_with("on") {
+                found.push(format!("an on* attribute ({attr})"));
+            } else if (attr == "href" || attr.ends_with(":href")) && !value.trim().starts_with('#')
+            {
+                found.push(format!("a non-local href {value:?} (only #id)"));
+            }
+        }
+    }
+    found
 }
 
 /// The theme gate (`cooee theme check`, CI, and every load): the pack in `dir` as a theme with its own schemes, or
