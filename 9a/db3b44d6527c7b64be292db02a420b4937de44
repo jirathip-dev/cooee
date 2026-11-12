@@ -1,0 +1,12 @@
+Decided: Layout keeps the ADR name; node is one generic LayoutNode<Place>, Placement when decoded, LayoutPlace when resolved
+Because: apple/Sources/CooeeCore/Plugins.swift:3
+Rejected: a separate Resolved tree type — a parallel copy of every field and slot
+Decided: the cycle case is refused as tooDeep on the self-nesting a cycle unrolls to
+Because: "missing/replaced locked screen, cycle, unknown component slot"
+Decided: Layout.bundled lives in CooeeUI beside the bundled file, spelled CooeeCore.Layout there
+Because: "`CooeeUI/Default/layout.json` reproducing today's screens, plus bad-layout fixtures"
+Rejected: noSuchSource and notPermitted cases now — they need installed plugins and manifests from later steps
+Decided: bad fixtures are CooeeCoreTests resources, not docs/architecture/layout-blocks/fixtures
+Because: "docs/architecture/layout-blocks/ is on staging unchanged from issue-300"
+Check: LayoutTests.aLayoutCannotDropReSourceOrRePlaceTheLockedScreens compares against a minimal layout's locked nodes
+Owner: The app can now read and check a layout file and always keeps pairing and reset-layout in it; nothing on screen changes yet.
