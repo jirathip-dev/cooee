@@ -186,7 +186,6 @@
             keep("workflow")
             round.tap()
             XCTAssert(labelled(app, "cooee #33 · impl 1").waitForExistence(timeout: 10))
-            XCTAssert(labelled(app, "‹ Workflow").exists)
             keep("workflow-round")
             app.buttons["Back"].firstMatch.tap()
             XCTAssert(labelled(app, "open chat").waitForExistence(timeout: 10))

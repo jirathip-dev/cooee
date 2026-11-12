@@ -114,9 +114,11 @@ public struct AppFeature: Sendable {
     }
 
     private func pop(_ state: inout State, to path: [String]) {
+        let round = state.home?.lists(now: now).all.first { $0.id == state.path.last }?.workflow
         state.path = path
         state.chat = path.last.flatMap { $0 == Self.others ? nil : chat(state, $0) }
         state.chat?.workflowOpen = true
+        state.chat?.unfolded = round?.issue
     }
 
     private func persona(_ state: State, _ id: String?) -> PersonaFeature.State? {

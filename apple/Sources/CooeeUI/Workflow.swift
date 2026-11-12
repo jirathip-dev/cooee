@@ -37,13 +37,16 @@ internal struct OthersView: View {
             VStack(alignment: .leading, spacing: 0) {
                 BackLink(title: "Home", run: back)
                 Scroller {
-                    Text("Others").ui(34, .bold, look).padding(.horizontal, 16)
-                    Text("Chats with no persona, and workflow whose source no installed plugin claims.")
-                        .ui(14, .regular, look).foregroundStyle(palette.mute).padding(.horizontal, 16)
-                    ForEach(Workflow.others(chats), id: \.name) { section in
-                        Caps(text: section.name)
-                        ChatList(chats: section.chats, title: nil, open: open)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Others").ui(34, .bold, look).padding(.horizontal, 16)
+                        Text("Chats with no persona, and workflow whose source no installed plugin claims.")
+                            .ui(14, .regular, look).foregroundStyle(palette.mute).padding(.horizontal, 16)
+                        ForEach(Workflow.others(chats), id: \.name) { section in
+                            Caps(text: section.name)
+                            ChatList(chats: section.chats, title: nil, open: open)
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }

@@ -79,6 +79,7 @@ internal struct WorkflowNavigationTests {
             $0.path = ["new:cond"]
             sheet(&$0)
             $0.chat?.workflowOpen = true
+            $0.chat?.unfolded = "cooee #33"
         }
     }
 }

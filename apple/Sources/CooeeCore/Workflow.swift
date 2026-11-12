@@ -8,6 +8,7 @@ public struct WorkflowLabel: Codable, Sendable, Equatable {
     public let round: String
 
     public var stage: String { "\(role) \(round)" }
+    public var issue: String { "\(group) \(item)" }
 
     public init(source: String, group: String, item: String, role: String, round: String) {
         self.source = source
@@ -38,7 +39,7 @@ public struct WorkflowIssue: Identifiable, Sendable, Equatable {
 
 public enum Workflow {
     public static func issues(_ sessions: [ListedChat]) -> [WorkflowIssue] {
-        let groups = Dictionary(grouping: sessions) { "\($0.workflow?.group ?? "") \($0.workflow?.item ?? "")" }
+        let groups = Dictionary(grouping: sessions) { $0.workflow?.issue ?? "" }
         let issues = groups.compactMap { id, rounds in
             rounds.first.map { WorkflowIssue(id: id, latest: $0, rounds: rounds.reversed()) }
         }
