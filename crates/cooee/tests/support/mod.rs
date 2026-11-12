@@ -1,4 +1,3 @@
-
 #![allow(dead_code, reason = "each test file uses part of the support")]
 
 use std::{
