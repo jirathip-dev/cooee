@@ -6,6 +6,7 @@
         internal func everyStyle(_ app: XCUIApplication, _ new: XCUIElement) {
             for style in ["Terminal", "Scene"] {
                 labelled(app, style).tap()
+                confirmIcon()
                 XCTAssert(picked(app, style).waitForExistence(timeout: 5))
                 keep("look-\(style.lowercased())")
                 closeMenu(app, picked(app, style))
