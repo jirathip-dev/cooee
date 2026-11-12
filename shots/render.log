@@ -1,0 +1,283 @@
+Fetching https://github.com/pointfreeco/swift-composable-architecture from cache
+Fetched https://github.com/pointfreeco/swift-composable-architecture from cache (0.89s)
+Computing version for https://github.com/pointfreeco/swift-composable-architecture
+Computed https://github.com/pointfreeco/swift-composable-architecture at 1.26.2 (1.63s)
+Fetching https://github.com/pointfreeco/swift-issue-reporting from cache
+Fetching https://github.com/pointfreeco/swift-identified-collections from cache
+Fetching https://github.com/pointfreeco/swift-case-paths from cache
+Fetching https://github.com/pointfreeco/swift-sharing from cache
+Fetching https://github.com/pointfreeco/swift-dependencies from cache
+Fetching https://github.com/pointfreeco/swift-custom-dump from cache
+Fetching https://github.com/pointfreeco/swift-navigation from cache
+Fetching https://github.com/swiftlang/swift-syntax from cache
+Fetching https://github.com/pointfreeco/swift-clocks from cache
+Fetched https://github.com/pointfreeco/swift-identified-collections from cache (0.78s)
+Fetched https://github.com/pointfreeco/swift-custom-dump from cache (0.79s)
+Fetched https://github.com/pointfreeco/swift-issue-reporting from cache (0.79s)
+Fetched https://github.com/pointfreeco/swift-case-paths from cache (0.79s)
+Fetched https://github.com/pointfreeco/swift-dependencies from cache (0.79s)
+Fetched https://github.com/pointfreeco/swift-sharing from cache (0.82s)
+Fetching https://github.com/pointfreeco/combine-schedulers from cache
+Fetching https://github.com/pointfreeco/swift-perception from cache
+Fetching https://github.com/apple/swift-collections from cache
+Fetching https://github.com/pointfreeco/swift-concurrency-extras from cache
+Fetched https://github.com/pointfreeco/swift-navigation from cache (1.22s)
+Fetched https://github.com/pointfreeco/swift-clocks from cache (1.22s)
+Fetched https://github.com/swiftlang/swift-syntax from cache (1.26s)
+Fetched https://github.com/pointfreeco/combine-schedulers from cache (0.72s)
+Fetched https://github.com/pointfreeco/swift-concurrency-extras from cache (0.78s)
+Fetched https://github.com/pointfreeco/swift-perception from cache (0.78s)
+Fetched https://github.com/apple/swift-collections from cache (0.79s)
+Computing version for https://github.com/pointfreeco/swift-identified-collections
+Computed https://github.com/pointfreeco/swift-identified-collections at 1.1.1 (2.33s)
+Computing version for https://github.com/pointfreeco/swift-issue-reporting
+Computed https://github.com/pointfreeco/swift-issue-reporting at 2.1.2 (0.57s)
+Computing version for https://github.com/pointfreeco/swift-clocks
+Computed https://github.com/pointfreeco/swift-clocks at 1.1.1 (0.70s)
+Computing version for https://github.com/pointfreeco/combine-schedulers
+Computed https://github.com/pointfreeco/combine-schedulers at 1.2.2 (0.70s)
+Computing version for https://github.com/pointfreeco/swift-concurrency-extras
+Computed https://github.com/pointfreeco/swift-concurrency-extras at 1.4.3 (0.65s)
+Computing version for https://github.com/pointfreeco/swift-navigation
+Computed https://github.com/pointfreeco/swift-navigation at 2.11.2 (0.66s)
+Computing version for https://github.com/pointfreeco/swift-case-paths
+Computed https://github.com/pointfreeco/swift-case-paths at 1.10.0 (0.80s)
+Computing version for https://github.com/pointfreeco/swift-custom-dump
+Computed https://github.com/pointfreeco/swift-custom-dump at 1.7.3 (0.36s)
+Computing version for https://github.com/swiftlang/swift-syntax
+Computed https://github.com/swiftlang/swift-syntax at 604.0.0 (0.47s)
+Computing version for https://github.com/pointfreeco/swift-perception
+Computed https://github.com/pointfreeco/swift-perception at 2.0.12 (0.52s)
+Computing version for https://github.com/apple/swift-collections
+Computed https://github.com/apple/swift-collections at 1.7.6 (0.37s)
+Computing version for https://github.com/pointfreeco/swift-dependencies
+Computed https://github.com/pointfreeco/swift-dependencies at 1.17.2 (0.53s)
+Computing version for https://github.com/pointfreeco/swift-sharing
+Computed https://github.com/pointfreeco/swift-sharing at 2.10.1 (0.59s)
+Creating working copy for https://github.com/pointfreeco/swift-sharing
+Working copy of https://github.com/pointfreeco/swift-sharing resolved at 2.10.1
+Creating working copy for https://github.com/pointfreeco/swift-perception
+Working copy of https://github.com/pointfreeco/swift-perception resolved at 2.0.12
+Creating working copy for https://github.com/pointfreeco/swift-concurrency-extras
+Working copy of https://github.com/pointfreeco/swift-concurrency-extras resolved at 1.4.3
+Creating working copy for https://github.com/pointfreeco/swift-identified-collections
+Working copy of https://github.com/pointfreeco/swift-identified-collections resolved at 1.1.1
+Creating working copy for https://github.com/pointfreeco/combine-schedulers
+Working copy of https://github.com/pointfreeco/combine-schedulers resolved at 1.2.2
+Creating working copy for https://github.com/pointfreeco/swift-composable-architecture
+Working copy of https://github.com/pointfreeco/swift-composable-architecture resolved at 1.26.2
+Creating working copy for https://github.com/apple/swift-collections
+Working copy of https://github.com/apple/swift-collections resolved at 1.7.6
+Creating working copy for https://github.com/pointfreeco/swift-dependencies
+Working copy of https://github.com/pointfreeco/swift-dependencies resolved at 1.17.2
+Creating working copy for https://github.com/pointfreeco/swift-navigation
+Working copy of https://github.com/pointfreeco/swift-navigation resolved at 2.11.2
+Creating working copy for https://github.com/pointfreeco/swift-custom-dump
+Working copy of https://github.com/pointfreeco/swift-custom-dump resolved at 1.7.3
+Creating working copy for https://github.com/swiftlang/swift-syntax
+Working copy of https://github.com/swiftlang/swift-syntax resolved at 604.0.0
+Creating working copy for https://github.com/pointfreeco/swift-clocks
+Working copy of https://github.com/pointfreeco/swift-clocks resolved at 1.1.1
+Creating working copy for https://github.com/pointfreeco/swift-case-paths
+Working copy of https://github.com/pointfreeco/swift-case-paths resolved at 1.10.0
+Creating working copy for https://github.com/pointfreeco/swift-issue-reporting
+Working copy of https://github.com/pointfreeco/swift-issue-reporting resolved at 2.1.2
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 1070]
+[Planning deferred tasks]
+[Constructing 2013 / 2431]
+[1 / 494]
+[231 / 494] swift-sharing_Sharing
+[237 / 494]
+[251 / 508]
+[254 / 515] InternalCollectionsUtilities
+[256 / 527]
+[263 / 530]
+[276 / 590] Sharing1
+[284 / 591]
+[292 / 693] IssueReporting
+[304 / 705]
+[311 / 705]
+[317 / 705]
+[325 / 705]
+[329 / 705]
+[335 / 705]
+[339 / 705]
+[345 / 705]
+[349 / 705]
+[354 / 705] InternalCollectionsUtilities
+[362 / 705]
+[363 / 706] InternalCollectionsUtilities
+[369 / 719] OrderedCollections
+[371 / 719]
+[376 / 719]
+[383 / 719]
+[385 / 719]
+[394 / 719]
+[403 / 719]
+[408 / 719]
+[412 / 719]
+[417 / 719]
+[423 / 719] PerceptionMacros
+[429 / 719] PerceptionMacros
+[433 / 719] CasePathsMacrosSupport
+[437 / 719]
+[442 / 719] PerceptionMacros
+[450 / 719] CasePathsMacrosSupport-product
+[460 / 720] OrderedCollections
+[463 / 720]
+[464 / 733] DependenciesMacrosPlugin
+[467 / 733] PerceptionMacros
+[469 / 733]
+[479 / 733] CooeeCore
+[483 / 733] DependenciesMacrosPlugin
+[486 / 733] CooeeCore
+[498 / 733] IdentifiedCollections
+[499 / 733] ConcurrencyExtras
+[501 / 733] IssueReporting
+[516 / 733] IssueReporting
+[517 / 733] IssueReporting
+[519 / 733] IssueReporting
+[526 / 733] IssueReporting-product
+[529 / 733] PerceptionCore
+[534 / 733] IdentifiedCollections
+[539 / 733] IdentifiedCollections
+[541 / 733] CustomDump
+[547 / 733] ConcurrencyExtras
+[558 / 733] DependenciesMacrosPlugin
+[577 / 739] IdentifiedCollections
+[580 / 739]
+[584 / 741]
+[585 / 742]
+[585 / 742] ComposableArchitectureMacros
+[591 / 757]
+[598 / 774] SwiftNavigationMacros
+[604 / 819] PerceptionCore
+[616 / 884]
+[623 / 916]
+[637 / 916]
+[646 / 916]
+[658 / 916] DependenciesMacros
+[667 / 916]
+[674 / 916]
+[678 / 916]
+[685 / 916] SwiftNavigationMacros
+[687 / 916] ComposableArchitectureMacros
+[695 / 916]
+[698 / 916]
+[703 / 916]
+[707 / 916] CasePathsCore
+[712 / 916] CasePathsCore
+[722 / 917] CasePathsCore
+[726 / 917] CasePaths
+[733 / 924] CasePaths
+[741 / 924]
+[745 / 924]
+[753 / 924]
+[765 / 924] CombineSchedulers
+[766 / 924] CombineSchedulers
+[770 / 924] CombineSchedulers
+[774 / 924]
+[778 / 924]
+[792 / 924] CustomDump
+[795 / 924] CustomDump
+[796 / 924] CustomDump
+[797 / 924] CustomDump
+[800 / 924] CustomDump
+[804 / 924] CustomDump
+[811 / 924] CustomDump-product
+[813 / 924] Clocks
+[817 / 924]
+[818 / 925] Dependencies
+[824 / 938] Dependencies
+[825 / 938] CustomDump
+[831 / 938] PerceptionCore
+[832 / 938] PerceptionCore
+[834 / 938] Dependencies
+[842 / 938] Dependencies
+[844 / 938] CustomDump
+[849 / 938] PerceptionCore
+[861 / 938] CombineSchedulers
+[865 / 940] PerceptionCore
+[865 / 940] Dependencies
+[865 / 940] Perception
+[868 / 943] Sharing
+[877 / 956] Sharing
+[879 / 956] Sharing
+[883 / 956] Perception
+[891 / 957] Dependencies
+[893 / 957] PerceptionCore
+[900 / 957] Sharing
+[900 / 957] SwiftNavigation
+[911 / 970] SwiftNavigation
+[913 / 970] SwiftNavigation
+[915 / 970] SwiftNavigation
+[923 / 972] UIKitNavigation
+[934 / 985] UIKitNavigation
+[943 / 985] SwiftNavigation
+[946 / 985] UIKitNavigation
+[946 / 985] SwiftUINavigation
+[959 / 998] SwiftUINavigation
+[966 / 999] SwiftUINavigation
+[968 / 999] ComposableArchitecture
+[981 / 1012] ComposableArchitecture
+[988 / 1013] CooeeFeatures
+[1001 / 1026] CooeeFeatures
+[1003 / 1026] CooeeFeatures
+/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-244-r1/apple/Sources/CooeeFeatures/AppFeature.swift:42:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m40 |[0;0m 
+ [0;36m41 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m42 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m43 |[0;0m 
+ [0;36m44 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[1010 / 1027] CooeeFeatures
+[1010 / 1027] CooeeUI
+[1012 / 1042]
+[1024 / 1042] CooeeUI
+[1025 / 1042] CooeeUI
+/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-244-r1/apple/Sources/CooeeFeatures/AppFeature.swift:42:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m40 |[0;0m 
+ [0;36m41 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m42 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m43 |[0;0m 
+ [0;36m44 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[1033 / 1042] CooeeUI
+[1036 / 1043] CooeeUI
+[1036 / 1043] render-product
+[1044 / 1068]
+[1048 / 1068]
+[1053 / 1068]
+[1053 / 1068] CooeeUI
+[1054 / 1068]
+[1056 / 1068]
+[1057 / 1068] CooeeUI
+[1057 / 1068]
+[1061 / 1068] render-product
+[1062 / 1068] render-product
+[1066 / 1068] render-product
+Build complete! (32.66 secs)
+wrote panel-dark
+wrote panel-end-dark
+wrote panel-light
+wrote panel-empty-dark
+wrote panel-terminal-dark
+wrote panel-scene-light
+wrote mac-panel-dark
+wrote mac-panel-light

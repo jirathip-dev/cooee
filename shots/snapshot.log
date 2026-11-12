@@ -1,0 +1,359 @@
+Fetching https://github.com/pointfreeco/swift-custom-dump from cache
+Fetching https://github.com/pointfreeco/swift-composable-architecture from cache
+Fetching https://github.com/pointfreeco/swift-clocks from cache
+Fetching https://github.com/pointfreeco/swift-issue-reporting from cache
+Fetching https://github.com/apple/swift-collections from cache
+Fetching https://github.com/pointfreeco/swift-case-paths from cache
+Fetching https://github.com/pointfreeco/swift-identified-collections from cache
+Fetching https://github.com/pointfreeco/swift-navigation from cache
+Fetching https://github.com/pointfreeco/swift-perception from cache
+warning: 'swift-composable-architecture': skipping cache due to an error: The file “maintenance.lock” doesn’t exist.
+Fetched https://github.com/pointfreeco/swift-issue-reporting from cache (1.34s)
+Fetched https://github.com/pointfreeco/swift-perception from cache (1.34s)
+Fetched https://github.com/pointfreeco/swift-navigation from cache (1.34s)
+Fetched https://github.com/pointfreeco/swift-custom-dump from cache (1.34s)
+Fetched https://github.com/pointfreeco/swift-clocks from cache (1.34s)
+Fetched https://github.com/pointfreeco/swift-case-paths from cache (1.34s)
+Fetched https://github.com/pointfreeco/swift-identified-collections from cache (1.34s)
+Fetched https://github.com/apple/swift-collections from cache (1.36s)
+Fetching https://github.com/swiftlang/swift-syntax from cache
+Fetching https://github.com/pointfreeco/swift-concurrency-extras from cache
+Fetching https://github.com/pointfreeco/swift-dependencies from cache
+Fetching https://github.com/pointfreeco/swift-sharing from cache
+Fetching https://github.com/pointfreeco/combine-schedulers from cache
+Fetched https://github.com/pointfreeco/swift-sharing from cache (0.68s)
+Fetched https://github.com/pointfreeco/combine-schedulers from cache (0.68s)
+Fetched https://github.com/pointfreeco/swift-concurrency-extras from cache (0.70s)
+Fetched https://github.com/pointfreeco/swift-dependencies from cache (0.73s)
+Fetched https://github.com/swiftlang/swift-syntax from cache (1.60s)
+[1/313782] Fetching swift-composable-architecture
+Fetched https://github.com/pointfreeco/swift-composable-architecture (41.21s)
+Computing version for https://github.com/pointfreeco/swift-composable-architecture
+Computed https://github.com/pointfreeco/swift-composable-architecture at 1.26.2 (42.02s)
+Computing version for https://github.com/swiftlang/swift-syntax
+Computed https://github.com/swiftlang/swift-syntax at 604.0.0 (0.57s)
+Computing version for https://github.com/pointfreeco/swift-sharing
+Computed https://github.com/pointfreeco/swift-sharing at 2.10.1 (0.42s)
+Computing version for https://github.com/pointfreeco/swift-perception
+Computed https://github.com/pointfreeco/swift-perception at 2.0.12 (0.29s)
+Computing version for https://github.com/pointfreeco/swift-navigation
+Computed https://github.com/pointfreeco/swift-navigation at 2.11.2 (0.40s)
+Computing version for https://github.com/pointfreeco/swift-issue-reporting
+Computed https://github.com/pointfreeco/swift-issue-reporting at 2.1.2 (0.36s)
+Computing version for https://github.com/pointfreeco/swift-identified-collections
+Computed https://github.com/pointfreeco/swift-identified-collections at 1.1.1 (0.26s)
+Computing version for https://github.com/pointfreeco/swift-dependencies
+Computed https://github.com/pointfreeco/swift-dependencies at 1.17.2 (0.35s)
+Computing version for https://github.com/pointfreeco/swift-custom-dump
+Computed https://github.com/pointfreeco/swift-custom-dump at 1.7.3 (0.49s)
+Computing version for https://github.com/pointfreeco/swift-concurrency-extras
+Computed https://github.com/pointfreeco/swift-concurrency-extras at 1.4.3 (0.41s)
+Computing version for https://github.com/pointfreeco/swift-clocks
+Computed https://github.com/pointfreeco/swift-clocks at 1.1.1 (0.49s)
+Computing version for https://github.com/pointfreeco/swift-case-paths
+Computed https://github.com/pointfreeco/swift-case-paths at 1.10.0 (0.64s)
+Computing version for https://github.com/pointfreeco/combine-schedulers
+Computed https://github.com/pointfreeco/combine-schedulers at 1.2.2 (0.45s)
+Computing version for https://github.com/apple/swift-collections
+Computed https://github.com/apple/swift-collections at 1.7.5 (0.57s)
+Creating working copy for https://github.com/pointfreeco/swift-case-paths
+Working copy of https://github.com/pointfreeco/swift-case-paths resolved at 1.10.0
+Creating working copy for https://github.com/pointfreeco/swift-dependencies
+Working copy of https://github.com/pointfreeco/swift-dependencies resolved at 1.17.2
+Creating working copy for https://github.com/pointfreeco/combine-schedulers
+Working copy of https://github.com/pointfreeco/combine-schedulers resolved at 1.2.2
+Creating working copy for https://github.com/pointfreeco/swift-navigation
+Working copy of https://github.com/pointfreeco/swift-navigation resolved at 2.11.2
+Creating working copy for https://github.com/pointfreeco/swift-clocks
+Working copy of https://github.com/pointfreeco/swift-clocks resolved at 1.1.1
+Creating working copy for https://github.com/apple/swift-collections
+Working copy of https://github.com/apple/swift-collections resolved at 1.7.5
+Creating working copy for https://github.com/pointfreeco/swift-concurrency-extras
+Working copy of https://github.com/pointfreeco/swift-concurrency-extras resolved at 1.4.3
+Creating working copy for https://github.com/pointfreeco/swift-identified-collections
+Working copy of https://github.com/pointfreeco/swift-identified-collections resolved at 1.1.1
+Creating working copy for https://github.com/pointfreeco/swift-sharing
+Working copy of https://github.com/pointfreeco/swift-sharing resolved at 2.10.1
+Creating working copy for https://github.com/pointfreeco/swift-issue-reporting
+Working copy of https://github.com/pointfreeco/swift-issue-reporting resolved at 2.1.2
+Creating working copy for https://github.com/pointfreeco/swift-composable-architecture
+Working copy of https://github.com/pointfreeco/swift-composable-architecture resolved at 1.26.2
+Creating working copy for https://github.com/pointfreeco/swift-perception
+Working copy of https://github.com/pointfreeco/swift-perception resolved at 2.0.12
+Creating working copy for https://github.com/pointfreeco/swift-custom-dump
+Working copy of https://github.com/pointfreeco/swift-custom-dump resolved at 1.7.3
+Creating working copy for https://github.com/swiftlang/swift-syntax
+Working copy of https://github.com/swiftlang/swift-syntax resolved at 604.0.0
+Building for debugging...
+[Computing dependencies]
+[Constructing description]
+[Pre-planning 1 / 1274]
+[Planning deferred tasks]
+[Starting]
+[38 / 618] SwiftUINavigation
+[284 / 618] swift-composable-architecture_ComposableArchitecture
+[292 / 618]
+[306 / 632]
+[310 / 638] UIKitNavigationShim
+[311 / 638] InternalCollectionsUtilities
+[317 / 651] InternalCollectionsUtilities
+[321 / 651] Sharing2
+[333 / 691]
+[334 / 714]
+[341 / 833]
+[349 / 833]
+[357 / 833]
+[366 / 833]
+[375 / 833]
+[388 / 833]
+[405 / 833]
+[414 / 834]
+[425 / 847]
+[428 / 847]
+[431 / 847]
+[435 / 847] OrderedCollections
+[439 / 847]
+[440 / 847]
+[450 / 847]
+[454 / 847] OrderedCollections
+[458 / 847]
+[462 / 847]
+[465 / 847]
+[470 / 847]
+[482 / 847]
+[490 / 847]
+[494 / 847] DependenciesMacrosPlugin
+[495 / 847] DependenciesMacrosPlugin
+[514 / 848]
+[515 / 848] PerceptionMacros
+[521 / 848] DependenciesMacrosPlugin
+[521 / 861] DependenciesMacrosPlugin
+[522 / 861] DependenciesMacrosPlugin
+[527 / 861]
+[528 / 861] DependenciesMacrosPlugin
+[547 / 863] SwiftNavigationMacros
+[548 / 863]
+[557 / 863] CooeeCore
+[561 / 871] SwiftNavigationMacros
+[567 / 871] CooeeCore
+[577 / 871] ConcurrencyExtras
+[581 / 871] ConcurrencyExtras
+[589 / 871] IssueReporting
+[591 / 871] IssueReporting
+[605 / 871] IssueReporting
+[607 / 871] IssueReporting
+[608 / 871] IssueReporting
+[611 / 871] IdentifiedCollections
+[618 / 871] IdentifiedCollections
+[622 / 871] CooeeCoreTests-product
+[629 / 871] ConcurrencyExtras-product
+[639 / 871] ComposableArchitectureMacros
+[650 / 877] CustomDump
+[657 / 877] CasePathsMacros
+[658 / 877]
+[661 / 878] ComposableArchitectureMacros
+[662 / 878]
+[665 / 879] DependenciesMacros
+[669 / 895]
+[672 / 907] CasePathsCore
+[687 / 1024]
+[693 / 1057]
+[704 / 1057]
+[724 / 1057]
+[733 / 1057] CooeeAPI
+[739 / 1057] DependenciesMacros-product
+[746 / 1057]
+[748 / 1057]
+[759 / 1057]
+[763 / 1057]
+[769 / 1057] CooeeCoreTests-product
+[771 / 1057] CooeeAPI
+[776 / 1057] CooeeCoreTests-product
+[778 / 1057] CooeeCoreTests-product
+[782 / 1057] CooeeAPI
+[791 / 1057] CooeeAPI
+[795 / 1057] CasePathsCore
+[797 / 1057] CasePathsCore
+[800 / 1057]
+[803 / 1057]
+[807 / 1057]
+[813 / 1057] DependenciesMacros
+[828 / 1059]
+[832 / 1059]
+[833 / 1059] CombineSchedulers
+[837 / 1059] CombineSchedulers
+[841 / 1079] CasePaths
+[847 / 1079] Clocks
+[858 / 1079] CombineSchedulers
+[861 / 1079] CombineSchedulers
+[863 / 1079] CustomDump
+[866 / 1079] CustomDump
+[868 / 1079] CasePaths
+[878 / 1079] CustomDump
+[880 / 1079] CooeeAPITests-product
+[882 / 1079] CooeeAPITests-product
+[896 / 1079] CustomDump-product
+[900 / 1079] CooeeAPITests-product
+[901 / 1079] CooeeAPITests-product
+[902 / 1079] CooeeAPITests-product
+[902 / 1079]
+[906 / 1079] CombineSchedulers-product
+[910 / 1079] PerceptionCore
+[913 / 1079] PerceptionCore
+[916 / 1079] PerceptionCore
+[917 / 1079] PerceptionCore
+[919 / 1079] PerceptionCore
+[927 / 1079] PerceptionCore-product
+[930 / 1079] Clocks
+[931 / 1079] Clocks-product
+[938 / 1079] CasePaths
+[944 / 1079] CasePaths
+[945 / 1079] Clocks
+[952 / 1081]
+[958 / 1081] CustomDump
+[958 / 1081] CasePaths
+[958 / 1081] Clocks
+[963 / 1084] Perception
+[970 / 1097] Dependencies
+[970 / 1097] Perception
+[975 / 1097] Dependencies
+[986 / 1098]
+[986 / 1098] Dependencies
+[993 / 1099] Dependencies
+[993 / 1099] SwiftNavigation
+[998 / 1112] Dependencies
+[1000 / 1112] Sharing
+[1002 / 1125] Sharing
+[1004 / 1125] SwiftNavigation
+[1005 / 1125] SwiftNavigation
+[1007 / 1125] SwiftNavigation
+[1009 / 1125] Sharing
+[1011 / 1125] Sharing
+[1013 / 1125] Sharing
+[1014 / 1125] SwiftNavigation
+[1023 / 1125] SwiftNavigation
+[1024 / 1125] SwiftNavigation
+[1029 / 1125] Sharing
+[1037 / 1127] UIKitNavigation
+[1042 / 1140] UIKitNavigation
+[1053 / 1140] UIKitNavigation-product
+[1057 / 1140] UIKitNavigation
+[1061 / 1140] UIKitNavigation
+[1061 / 1140] Sharing
+[1061 / 1140] SwiftUINavigation
+[1072 / 1153] SwiftUINavigation
+[1074 / 1153] SwiftUINavigation
+[1075 / 1153] Sharing
+[1082 / 1153]
+[1085 / 1154] SwiftUINavigation
+[1085 / 1154] ComposableArchitecture
+[1098 / 1167] ComposableArchitecture
+[1105 / 1168] ComposableArchitecture
+[1105 / 1168] CooeeFeatures
+[1116 / 1181] CooeeFeatures
+[1117 / 1181] CooeeFeatures
+[1118 / 1181] CooeeFeatures
+/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-244-r1/apple/Sources/CooeeFeatures/AppFeature.swift:42:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m40 |[0;0m 
+ [0;36m41 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m42 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m43 |[0;0m 
+ [0;36m44 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[1127 / 1182] CooeeFeatures
+[1127 / 1182] ComposableArchitecture
+[1129 / 1182] CooeeUI
+[1130 / 1197]
+[1131 / 1197]
+[1143 / 1197] CooeeUI
+[1144 / 1197] CooeeUI
+[1153 / 1198]
+/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-244-r1/apple/Sources/CooeeFeatures/AppFeature.swift:42:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m40 |[0;0m 
+ [0;36m41 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m42 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m43 |[0;0m 
+ [0;36m44 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[1156 / 1199] CooeeFeaturesTests-product
+[1160 / 1199] CooeeApp
+[1165 / 1204] CooeeUI
+[1179 / 1217] CooeeFeaturesTests-product
+[1181 / 1217] CooeeFeaturesTests-product
+[1183 / 1217] CooeeFeaturesTests-product
+[1190 / 1217] CooeeFeaturesTests-product
+[1192 / 1217] CooeeUI
+[1205 / 1218] CooeeUITests-product
+[1207 / 1218] CooeeUITests-product
+[1210 / 1226]
+[1215 / 1226] CooeeUITests-product
+[1220 / 1226] CooeeUITests-product
+[1222 / 1226] CooeeUITests-product
+Build complete! (41.29 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite SnapshotTests started.
+◇ Test frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → home-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-card-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-address-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → home-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-streaming-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-card-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-cards-more-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-conductor-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → avatar-menu-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-welcome-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-scan-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-nearby-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-address-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-waiting-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → pair-paired-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → home-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → chat-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → home-scene-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-end-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-empty-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-terminal-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → persona-panel-scene-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-welcome to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-folders to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-signins to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-tailscale to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-qr to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-setup-approve to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-connect to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-window-dark to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-window-light to frameMatchesTheDesign(_:) started.
+◇ Test case passing 1 argument frame → mac-persona-panel-dark to frameMatchesTheDesign(_:) started.
+✔ Test frameMatchesTheDesign(_:) with 45 test cases passed after 49.024 seconds.
+✔ Suite SnapshotTests passed after 49.024 seconds.
+✔ Test run with 1 test in 1 suite passed after 49.025 seconds.

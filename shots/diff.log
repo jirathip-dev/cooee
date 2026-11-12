@@ -1,0 +1,16 @@
+diff: shots/render/mac-panel-dark-head.png vs apple/design/persona-panel/mac-panel-dark.png: 0.000 % of pixels differ (shots/render/mac-panel-dark-head-diff.png)
+diff mac-panel-dark exit=0
+diff: shots/render/mac-panel-light-head.png vs apple/design/persona-panel/mac-panel-light.png: 0.000 % of pixels differ (shots/render/mac-panel-light-head-diff.png)
+diff mac-panel-light exit=0
+diff: shots/render/panel-dark-head.png vs apple/design/persona-panel/panel-dark.png: 0.000 % of pixels differ (shots/render/panel-dark-head-diff.png)
+diff panel-dark exit=0
+diff: shots/render/panel-empty-dark-head.png vs apple/design/persona-panel/panel-empty-dark.png: 0.000 % of pixels differ (shots/render/panel-empty-dark-head-diff.png)
+diff panel-empty-dark exit=0
+diff: shots/render/panel-end-dark-head.png vs apple/design/persona-panel/panel-end-dark.png: 0.000 % of pixels differ (shots/render/panel-end-dark-head-diff.png)
+diff panel-end-dark exit=0
+diff: shots/render/panel-light-head.png vs apple/design/persona-panel/panel-light.png: 0.000 % of pixels differ (shots/render/panel-light-head-diff.png)
+diff panel-light exit=0
+diff: shots/render/panel-scene-light-head.png vs apple/design/persona-panel/panel-scene-light.png: 0.000 % of pixels differ (shots/render/panel-scene-light-head-diff.png)
+diff panel-scene-light exit=0
+diff: shots/render/panel-terminal-dark-head.png vs apple/design/persona-panel/panel-terminal-dark.png: 0.000 % of pixels differ (shots/render/panel-terminal-dark-head-diff.png)
+diff panel-terminal-dark exit=0
