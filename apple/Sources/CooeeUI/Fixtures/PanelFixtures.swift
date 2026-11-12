@@ -10,9 +10,9 @@ extension PanelContent {
             "#213 merged",
         ],
         issues: [
-            PanelIssue(number: 244, title: "Persona panel design", stage: "design", tone: .working),
-            PanelIssue(number: 229, title: "Workflow sheet", stage: "ready · merge?", tone: .needs),
-            PanelIssue(number: 217, title: "Persona history tool", stage: "merged", tone: .done),
+            PanelIssue(number: 244, title: "Persona panel design", stage: "design", tone: "working"),
+            PanelIssue(number: 229, title: "Workflow sheet", stage: "ready · merge?", tone: "needs"),
+            PanelIssue(number: 217, title: "Persona history tool", stage: "merged", tone: "done"),
         ],
         moreIssues: 4,
         routines: [

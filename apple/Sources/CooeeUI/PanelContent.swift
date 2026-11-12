@@ -1,26 +1,10 @@
 import SwiftUI
 
-internal enum PanelTone: Sendable {
-    case working
-    case needs
-    case done
-    case idle
-
-    internal func color(_ palette: Palette) -> Color {
-        switch self {
-        case .working: palette.cyan
-        case .needs: palette.red
-        case .done: palette.green
-        case .idle: palette.mute
-        }
-    }
-}
-
 internal struct PanelIssue: Sendable {
     internal let number: Int
     internal let title: String
     internal let stage: String
-    internal let tone: PanelTone
+    internal let tone: String
 }
 
 internal struct PanelRoutine: Sendable {
