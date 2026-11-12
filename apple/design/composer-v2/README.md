@@ -1,6 +1,6 @@
 # cooee native composer v2 (#254)
 
-A Telegram-style message bar for the iPhone and Mac apps: `[menu] [paperclip] [field] [mic ↔ Send]`, a commands list,
+A Telegram-style message bar for the iPhone and Mac apps: `[menu] [field] [mic ↔ Send]`, a menu of Attach and the commands,
 an attach sheet, voice notes, cooee's own Terminal keyboard and a key row for the real terminals.
 
 **Preview only.** This folder is its own Swift package. It draws on CooeeUI's design system through
@@ -13,11 +13,18 @@ The keyboards are drawn too: a still cannot show the system keyboard, so Apple's
 
 Names are `<frame>-<style>-<mode>.png`.
 
+## Revision 2 (q1411)
+
+The owner's revise note, applied to every frame: the menu button is ≡ in Modern and Scene and a `/` glyph (`[/]`) in
+Terminal (q1416). There is no separate paperclip: **Attach is the top row of the menu**, so the bar has one round
+button left of a wider field (q1429). Scene keeps Apple's keyboard, dark or light to match the theme (q1418). Terminal
+starts on cooee's keyboard, with the globe to Apple's, remembered per chat (q1419). Nothing else changed.
+
 ## Bar (q1332)
 
 | PNG | shows | decision |
 |---|---|---|
-| `bar-modern-{dark,light}` | An empty field, keyboard up. Left to right: the **menu** (≡), the **paperclip**, `Message Coder`, and the **mic** where Send used to be. There is no separate Send button. | q1332: the right button is the mic while the field is empty |
+| `bar-modern-{dark,light}` | An empty field, keyboard up. Left to right: the **menu** (≡), a wider `Message Coder` field, and the **mic** where Send used to be. There is no separate Send button. | q1332: the right button is the mic while the field is empty |
 | `typing-modern-{dark,light}` | Two lines typed. The mic has become **Send** (↑). Apple's Return key reads **send**: Return sends. The second line comes from Shift-Return. | q1332: Return sends, Shift-Return adds a new line; Send replaces the mic while you type |
 | `typing-scene-{light,dark}` | Scene uses **Modern's bar** with the theme's card and edge colours, and Apple's keyboard. No Scene-drawn bar. | q1338 |
 
@@ -26,13 +33,13 @@ Names are `<frame>-<style>-<mode>.png`.
 | PNG | shows | decision |
 |---|---|---|
 | `slash-{modern-dark,modern-light,scene-light,scene-dark,terminal-dark,terminal-light}` | `/m` at the start of the field opens the list above the bar, **filtered as you type**: `/model <model>` (cooee), `/mention <file>` and `/memory` (the agent's). The typed part is tinted, and the top match is highlighted. A tag says whose command it is (`cooee` or `Coder`). The trailing mark says what a pick does: ↵ runs it now (no argument); the text cursor fills it into the field with its argument hint. | q1333: typing `/` opens the same list, filtered |
-| `menu-{modern-dark,modern-light,terminal-dark,scene-light}` | The **menu** button's sheet: search, then **cooee** (`/new`, `/stop`, `/model <model>`), then **Coder's agent**: the ACP session's `available_commands` (`/review [focus]`, `/compact`, `/mention <file>`, `/memory`, `/diff`, `/status`). | q1333: one list, the agent's commands and cooee's |
+| `menu-{modern,terminal,scene}-{dark,light}` | The **menu** button's sheet (≡, or `[/]` in Terminal): search, then **Attach** as the top row (Photos, Camera, Files, Screen, Link), then **cooee** (`/new`, `/stop`, `/model <model>`), then **Coder's agent**: the ACP session's `available_commands` (`/review [focus]`, `/compact`, `/mention <file>`, `/memory`, `/diff`, `/status`). | q1333: one list, the agent's commands and cooee's; q1416, q1429: Attach lives here, no paperclip |
 
 ## Attach (q1334)
 
 | PNG | shows | decision |
 |---|---|---|
-| `attach-{modern,terminal,scene}-{dark,light}` | The paperclip's sheet. **Recent photos** in a grid, with a live camera tile first. **Multi-select** is numbered in the order you pick (1, 2). Then a **caption** field and Send, with the count on Send. The **tabs run along the bottom**: Camera, Photos, Files, Screen, Link. | q1334 |
+| `attach-{modern,terminal,scene}-{dark,light}` | The sheet the menu's **Attach** row opens; `‹ Menu` goes back. **Recent photos** in a grid, with a live camera tile first. **Multi-select** is numbered in the order you pick (1, 2). Then a **caption** field and Send, with the count on Send. The **tabs run along the bottom**: Camera, Photos, Files, Screen, Link. | q1334 |
 | `screen-modern-light` | The **Screen** tab: a fresh screenshot of the agent's Mac, from the persona's Screen (#165), with `mini · from Coder's Screen · just now` and Retake. | q1334: a Mac screen from the agent's Screen |
 | `link-modern-dark` | The **Link** tab: the URL is pasted from the clipboard, with its preview row. | q1334: paste a link |
 
@@ -50,7 +57,7 @@ Dictation (speech typed into the field) is no longer this bar's mic (scope 5). #
 
 | PNG | shows | decision |
 |---|---|---|
-| `typing-terminal-{dark,light}` | Terminal: the bar reads as a prompt, `[≡] [+] > _ … [send]`. Below it is **cooee's own monospace keyboard** (the field's `inputView`): a number row, no autocorrect, no swipe, `/` on the bottom row, and `send ↵`. The **globe key** (bottom left) is outlined in the lead colour. | q1336: option 2, a full custom monospace keyboard |
+| `typing-terminal-{dark,light}` | Terminal: the bar reads as a prompt, `[/] > _ … [send]`. Below it is **cooee's own monospace keyboard** (the field's `inputView`): a number row, no autocorrect, no swipe, `/` on the bottom row, and `send ↵`. The **globe key** (bottom left) is outlined in the lead colour. | q1336: option 2, a full custom monospace keyboard |
 | `globe-terminal-{dark,light}` | After the globe: **Apple's keyboard** (Thai here, the reason to switch), with a toast: `Apple keyboard · kept for this chat`. Apple's own globe key switches back. | q1337: the globe switches to Apple's and back, remembered per chat |
 | `typing-modern-*`, `typing-scene-*` | Modern and Scene use Apple's keyboard and Modern's bar. | q1338 |
 
@@ -66,11 +73,10 @@ Dictation (speech typed into the field) is no longer this bar's mic (scope 5). #
 
 | PNG | shows | decision |
 |---|---|---|
-| `mac-{modern,terminal,scene}-{dark,light}` | The Mac window: Home as the sidebar, and Coder's chat with a voice bubble and its transcript. The bar is the same `[≡] [📎] [field] [mic ↔ Send]`, with the `/m` list over the field. Return sends; Shift-Return adds a new line (a hardware keyboard on iPad too). No software keyboard or key row: on the Mac, the real keys are the key row. Press and hold the mic to record. | q1332, q1333, q1335 |
+| `mac-{modern,terminal,scene}-{dark,light}` | The Mac window: Home as the sidebar, and Coder's chat with a voice bubble and its transcript. The bar is the same `[≡] [field] [mic ↔ Send]` (`[/]` in Terminal), with the `/m` list over the field. Return sends; Shift-Return adds a new line (a hardware keyboard on iPad too). No software keyboard or key row: on the Mac, the real keys are the key row. Press and hold the mic to record. | q1332, q1333, q1335 |
+| `mac-menu-{modern-dark,terminal-light}` | The menu as a popover over the bar: Attach on top, then the commands. | q1333, q1416, q1429 |
 | `mac-attach-modern-light` | The attach sheet as a panel over the chat: the same grid, caption and tabs. On the Mac, Camera is Continuity Camera. | q1334 |
 
 ## Open questions for the owner
 
-1. **Apple's keyboard cannot be tinted.** iOS lets an app pick only the keyboard's dark or light appearance. In Scene (q1338), "tinted with the theme's colours" can only mean the bar plus Apple's keyboard in the theme's dark or light mode. That is what these frames draw.
-2. **Thai and dictation in Terminal.** cooee's keyboard has neither. The globe is the way to reach them, and it is remembered per chat (q1337). Should the globe also bring up Apple's keyboard by itself when the system language is Thai? The design says no: the per-chat choice wins.
-3. **The menu button's glyph.** The menu is drawn as ≡, and in Terminal as `[≡]`. Telegram's bots use a "Menu" pill instead. A label would cost width on a 402 pt phone.
+None. The revise note settled the last three: q1418 (Scene keeps Apple's keyboard, dark or light), q1419 (Terminal starts on cooee's keyboard) and q1416 (the menu glyph).

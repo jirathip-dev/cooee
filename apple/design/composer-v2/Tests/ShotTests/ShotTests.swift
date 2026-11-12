@@ -39,7 +39,7 @@ internal struct Shot: Sendable, CustomTestStringConvertible {
             }
         ),
         ("slash", .terminal, ["dark", "light"], { AnyView(ChatScreen(bar: .slash, keyboard: .cooee, over: .slash)) }),
-        ("menu", .terminal, ["dark"], { AnyView(ChatScreen(over: .menu)) }),
+        ("menu", .terminal, ["dark", "light"], { AnyView(ChatScreen(over: .menu)) }),
         ("attach", .terminal, ["dark", "light"], { AnyView(ChatScreen(over: .attach(.photos))) }),
         ("voice", .terminal, ["dark"], { AnyView(ChatScreen(bar: .recording)) }),
         ("voice-sent", .terminal, ["dark", "light"], { AnyView(ChatScreen(voice: true)) }),
@@ -47,7 +47,7 @@ internal struct Shot: Sendable, CustomTestStringConvertible {
         ("machine", .terminal, ["dark"], { AnyView(ShellScreen(machine: true)) }),
         ("typing", .scene, ["light", "dark"], { AnyView(ChatScreen(bar: .typing, keyboard: .apple)) }),
         ("slash", .scene, ["light", "dark"], { AnyView(ChatScreen(bar: .slash, keyboard: .apple, over: .slash)) }),
-        ("menu", .scene, ["light"], { AnyView(ChatScreen(over: .menu)) }),
+        ("menu", .scene, ["light", "dark"], { AnyView(ChatScreen(over: .menu)) }),
         ("attach", .scene, ["light", "dark"], { AnyView(ChatScreen(over: .attach(.photos))) }),
         ("voice-sent", .scene, ["light", "dark"], { AnyView(ChatScreen(voice: true)) }),
         ("shell", .scene, ["light"], { AnyView(ShellScreen()) }),
@@ -55,6 +55,8 @@ internal struct Shot: Sendable, CustomTestStringConvertible {
 
     private static let wide: [(String, LookStyle, [String], Frame)] = [
         ("mac", .modern, ["dark", "light"], { AnyView(MacScreen()) }),
+        ("mac-menu", .modern, ["dark"], { AnyView(MacScreen(over: .menu)) }),
+        ("mac-menu", .terminal, ["light"], { AnyView(MacScreen(over: .menu)) }),
         ("mac-attach", .modern, ["light"], { AnyView(MacScreen(over: .attach(.photos))) }),
         ("mac", .terminal, ["dark", "light"], { AnyView(MacScreen()) }),
         ("mac", .scene, ["light", "dark"], { AnyView(MacScreen()) }),

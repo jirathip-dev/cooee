@@ -173,6 +173,7 @@ public struct MacScreen: View {
                         Scroller(end: true) { ThreadView(voice: true).frame(maxWidth: 760) }.frame(maxHeight: .infinity)
                         VStack(alignment: .leading, spacing: 8) {
                             if over == .slash { SlashList(typed: "/m").frame(width: 420) }
+                            if over == .menu { MacMenu() }
                             ComposerBar(state: over == .slash ? .slash : .empty, wide: true)
                         }
                         .frame(maxWidth: 760).padding(.horizontal, 16).padding(.bottom, 20)
@@ -189,5 +190,20 @@ public struct MacScreen: View {
 
     public init(over: Over = .slash) {
         self.over = over
+    }
+}
+
+internal struct MacMenu: View {
+    @Environment(\.look) private var look
+
+    internal var body: some View {
+        MenuList(agent: Array(Command.agent.prefix(3))).padding(14).frame(width: 420)
+            .background(
+                look.mono ? look.palette.background : look.palette.card, in: .rect(cornerRadius: look.mono ? 0 : 18)
+            )
+            .overlay {
+                if look.mono { Rectangle().strokeBorder(look.palette.edge, lineWidth: 1) }
+            }
+            .shadow(color: .black.opacity(0.18), radius: 18, y: 6)
     }
 }

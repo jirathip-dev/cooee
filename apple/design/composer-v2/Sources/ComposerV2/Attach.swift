@@ -59,7 +59,7 @@ internal struct AttachSheet: View {
     private var header: some View {
         let palette = look.palette
         return HStack {
-            Text(look.mono ? "[x]" : "Cancel").ui(15, .regular, look).foregroundStyle(palette.link)
+            Text(look.mono ? "[< menu]" : "‹ Menu").ui(15, .regular, look).foregroundStyle(palette.link)
             Spacer()
             Text(title).ui(16, .semibold, look)
             Spacer()
@@ -154,7 +154,10 @@ internal struct Tile: View {
             Text(look.mono ? "[\(pick)]" : "\(pick)").ui(13, .bold, look).foregroundStyle(
                 look.mono ? palette.link : .white
             )
-            .frame(width: 24, height: 24).background(look.mono ? palette.background : palette.link, in: .circle)
+            .fixedSize().frame(minWidth: 24, minHeight: 24).padding(.horizontal, look.mono ? 2 : 0)
+            .background(
+                look.mono ? palette.background : palette.link,
+                in: look.mono ? AnyShape(Rectangle()) : AnyShape(Circle()))
         } else {
             Circle().strokeBorder(.white, lineWidth: 1.5).frame(width: 24, height: 24).shadow(radius: 1)
         }

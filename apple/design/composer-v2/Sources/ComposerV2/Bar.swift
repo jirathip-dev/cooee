@@ -14,8 +14,7 @@ internal struct ComposerBar: View {
         case .locked: LockedBar()
         default:
             HStack(alignment: .bottom, spacing: 8) {
-                RoundButton(symbol: "line.3.horizontal", ascii: "≡", size: 42)
-                RoundButton(symbol: "paperclip", ascii: "+", size: 42)
+                RoundButton(symbol: "line.3.horizontal", ascii: "/", size: 42)
                 field
                 right
             }
@@ -43,6 +42,7 @@ internal struct ComposerBar: View {
             }
             Spacer(minLength: 4)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, look.mono ? 10 : 16).padding(.vertical, 10)
         .frame(minHeight: 42)
         .surface(look, radius: 21)

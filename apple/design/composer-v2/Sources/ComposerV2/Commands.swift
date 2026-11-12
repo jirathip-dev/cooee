@@ -91,23 +91,28 @@ internal struct SlashList: View {
 }
 
 internal struct CommandsSheet: View {
+    internal var body: some View {
+        Sheet { MenuList().padding(.horizontal, 14).padding(.bottom, 30) }
+    }
+}
+
+internal struct MenuList: View {
     @Environment(\.look) private var look
+    internal var agent = Command.agent
 
     internal var body: some View {
         let palette = look.palette
-        Sheet {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(look.mono ? "# commands" : "Commands").ui(17, .semibold, look).frame(maxWidth: .infinity)
-                HStack(spacing: 8) {
-                    Glyph(symbol: "magnifyingglass", ascii: "/", size: 14).foregroundStyle(palette.mute)
-                    Text(look.mono ? "filter_" : "Search commands").ui(15, .regular, look).foregroundStyle(palette.mute)
-                    Spacer()
-                }
-                .padding(.horizontal, 12).frame(height: 38).surface(look, radius: 12)
-                section("cooee", Command.cooee)
-                section("Coder's agent", Command.agent)
+        VStack(alignment: .leading, spacing: 10) {
+            Text(look.mono ? "# menu" : "Menu").ui(17, .semibold, look).frame(maxWidth: .infinity)
+            HStack(spacing: 8) {
+                Glyph(symbol: "magnifyingglass", ascii: "/", size: 14).foregroundStyle(palette.mute)
+                Text(look.mono ? "filter_" : "Search commands").ui(15, .regular, look).foregroundStyle(palette.mute)
+                Spacer()
             }
-            .padding(.horizontal, 14).padding(.bottom, 30)
+            .padding(.horizontal, 12).frame(height: 38).surface(look, radius: 12)
+            AttachRow().group(look)
+            section("cooee", Command.cooee)
+            section("Coder's agent", agent)
         }
     }
 
@@ -124,10 +129,35 @@ internal struct CommandsSheet: View {
                     }
                 }
             }
-            .background(look.mono ? Color.clear : palette.card.opacity(0.7), in: .rect(cornerRadius: 14))
+            .group(look)
+        }
+    }
+}
+
+internal struct AttachRow: View {
+    @Environment(\.look) private var look
+
+    internal var body: some View {
+        let palette = look.palette
+        HStack(spacing: 12) {
+            Glyph(symbol: "paperclip", ascii: "+", size: 17).foregroundStyle(palette.link).frame(width: 22)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(look.mono ? "attach" : "Attach").ui(16, .semibold, look)
+                Text("Photos, Camera, Files, Screen, Link").ui(13, .regular, look).foregroundStyle(palette.mute)
+            }
+            Spacer()
+            Glyph(symbol: "chevron.right", ascii: ">", size: 13).foregroundStyle(palette.mute)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+    }
+}
+
+extension View {
+    fileprivate func group(_ look: Look) -> some View {
+        let palette = look.palette
+        return background(look.mono ? Color.clear : palette.card.opacity(0.7), in: .rect(cornerRadius: 14))
             .overlay {
                 if look.mono { Rectangle().strokeBorder(palette.edge, style: StrokeStyle(lineWidth: 1, dash: [3, 2])) }
             }
-        }
     }
 }
