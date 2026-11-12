@@ -19,8 +19,10 @@
 
         @MainActor
         private func closeMenu(_ app: XCUIApplication, _ look: XCUIElement) {
+            let bottom = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 1))
             for _ in 0..<3 where look.exists {
-                app.navigationBars.firstMatch.swipeDown(velocity: .fast)
+                let bar = app.navigationBars.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+                bar.press(forDuration: 0.1, thenDragTo: bottom, withVelocity: .fast, thenHoldForDuration: 0)
                 _ = look.waitForNonExistence(timeout: 3)
             }
             XCTAssertFalse(look.exists, "the menu sheet is still open")
