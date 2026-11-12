@@ -25,7 +25,7 @@ internal struct AgentMenu: View {
         } else {
             Menu {
                 if choices.agents.isEmpty { Text("No agents found: run cooee doctor on the Mac") }
-                Picker("Agent", selection: Binding(get: { draft.agent }, set: pick)) {
+                Picker("Agent", selection: Binding(get: { draft.agent }, set: { pick($0) })) {
                     ForEach(choices.agents) { Text($0.id).tag($0.id) }
                 }
                 .pickerStyle(.inline)
