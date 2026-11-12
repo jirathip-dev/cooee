@@ -1,0 +1,13 @@
+Decided: an event routine from create_routine raises a Face ID card (form routine) through a generic hub proposal; approving re-makes and saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs; the runner's tick takes its lock then the thread's, so the reverse order could deadlock
+Because: crates/cooee-server/src/hub.rs:692
+Decided: the hooks listener is its own topcoat router with one route and topcoat's default 2 MiB body limit
+Because: crates/cooee-server/src/routines.rs:509
+Decided: a GitHub routine without [hooks] is refused NO_HOOKS, since neither the webhook nor the catch-up could reach it
+Because: crates/cooee-server/src/routines.rs:136
+Decided: the catch-up skips deliveries older than 24 h and older than the earliest routine naming the repo, compared as UTC text
+Rejected: a .rt line after approval — the hub holds the chat while the card resolves; the card's line says saved routine instead
+Rejected: a time crate to parse delivered_at — lexicographic UTC comparison is enough and adds no dependency
+Check: tests/routines.rs github and catch-up tests; mutating Book::see to always new makes the webhook test fail
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
