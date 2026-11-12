@@ -2,9 +2,13 @@ use std::{
     fmt::Write as _,
     fs,
     io::{self, Read, Write},
-    os::unix::fs::OpenOptionsExt,
+    os::unix::fs::{MetadataExt, OpenOptionsExt},
     path::{Path, PathBuf},
-    sync::atomic::{AtomicU64, Ordering},
+    sync::{
+        Mutex, MutexGuard, PoisonError,
+        atomic::{AtomicU64, Ordering},
+    },
+    time::SystemTime,
 };
 
 use serde::{Deserialize, Serialize};
@@ -43,7 +47,7 @@ pub struct Passkey {
     pub key: String,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 #[serde(default)]
 struct File {
     devices: Vec<Device>,
@@ -151,9 +155,20 @@ impl File {
     }
 }
 
-/// The paired devices of one data folder.
+/// The paired devices of one data folder, parsed again only when the file changes (its mtime, size or inode).
 pub struct Devices {
     path: PathBuf,
+    cache: Mutex<Option<(Stamp, File)>>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Stamp(SystemTime, u64, u64);
+
+impl Stamp {
+    fn of(path: &Path) -> io::Result<Self> {
+        let m = fs::metadata(path)?;
+        Ok(Self(m.modified()?, m.len(), m.ino()))
+    }
 }
 
 /// SHA-256 of `data`, lowercase hex.
@@ -242,19 +257,33 @@ impl Devices {
     pub fn new(data: &Path) -> Self {
         Self {
             path: data.join("devices.json"),
+            cache: Mutex::new(None),
         }
+    }
+
+    fn cached(&self) -> MutexGuard<'_, Option<(Stamp, File)>> {
+        self.cache.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
     fn load(&self) -> io::Result<File> {
-        match fs::read(&self.path) {
-            Ok(b) => serde_json::from_slice(&b).map_err(io::Error::other),
-            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(File::default()),
-            Err(e) => Err(e),
+        let stamp = match Stamp::of(&self.path) {
+            Ok(s) => s,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(File::default()),
+            Err(e) => return Err(e),
+        };
+        if let Some((_, f)) = self.cached().as_ref().filter(|(at, _)| *at == stamp) {
+            return Ok(f.clone());
         }
+        let file: File =
+            serde_json::from_slice(&fs::read(&self.path)?).map_err(io::Error::other)?;
+        *self.cached() = Some((stamp, file.clone()));
+        Ok(file)
     }
 
     fn save(&self, f: &File) -> io::Result<()> {
-        write_private(&self.path, &serde_json::to_vec_pretty(f)?)
+        write_private(&self.path, &serde_json::to_vec_pretty(f)?)?;
+        *self.cached() = Some((Stamp::of(&self.path)?, f.clone()));
+        Ok(())
     }
 
     fn change<T>(&self, f: impl FnOnce(&mut File) -> io::Result<T>) -> io::Result<T> {
@@ -553,6 +582,8 @@ impl Devices {
 
 #[cfg(test)]
 mod tests {
+    use std::os::unix::fs::FileExt;
+
     use super::*;
 
     fn scratch(name: &str) -> Devices {
@@ -667,6 +698,41 @@ mod tests {
             d.ask("x", 0).unwrap();
         }
         assert_eq!(d.collect(&first, 1).unwrap(), Claim::Gone);
+    }
+
+    #[test]
+    fn lookups_parse_an_unchanged_file_once_and_see_the_next_change() {
+        let d = scratch("cache");
+        let token = d.claim(&d.pair(0).unwrap(), "x", 0).unwrap().unwrap();
+        assert!(d.find(&token, 0).unwrap().is_some());
+
+        let disk = fs::OpenOptions::new().write(true).open(&d.path).unwrap();
+        let (stamp, len) = (
+            disk.metadata().unwrap().modified().unwrap(),
+            disk.metadata().unwrap().len(),
+        );
+        disk.write_all_at(&vec![b' '; usize::try_from(len).unwrap()], 0)
+            .unwrap();
+        disk.set_modified(stamp).unwrap();
+        assert!(
+            d.find(&token, 0).unwrap().is_some(),
+            "same stamp: not parsed again"
+        );
+        d.save(&d.load().unwrap()).unwrap();
+
+        let cli = Devices::new(d.path.parent().unwrap());
+        let other = cli.claim(&cli.pair(0).unwrap(), "x", 0).unwrap().unwrap();
+        assert!(
+            d.find(&other, 0).unwrap().is_some(),
+            "an added device pairs at once"
+        );
+        let id = d.find(&token, 0).unwrap().unwrap().id;
+        assert!(cli.remove(&id).unwrap());
+        assert_eq!(
+            d.find(&token, 0).unwrap(),
+            None,
+            "a revoked device is out at once"
+        );
     }
 
     #[test]
