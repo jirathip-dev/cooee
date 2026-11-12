@@ -45,7 +45,7 @@ html[data-one] body{background:var(--bg)}
 .fsh{flex:none;display:flex;justify-content:space-between;align-items:baseline;margin:14px 16px 6px;font-size:12px;color:var(--mute)}
 .fsh b{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
 .fs{flex:none;display:flex;gap:8px;padding:0 12px 2px;overflow:hidden}
-.xfi{flex:none;display:flex;flex-direction:column;gap:3px;width:80px;color:var(--mute);font-size:11px;line-height:1.25;text-decoration:none}
+.xfi{flex:none;display:flex;flex-direction:column;gap:3px;width:80px;color:var(--mute);font-size:11px;font-optical-sizing:none;line-height:1.25;text-decoration:none}
 .xfi .xth{position:relative;height:50px;border-radius:8px;overflow:hidden;box-shadow:0 0 0 1px var(--edge);background:var(--card)}
 .xfi>span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.xfi>span b{color:var(--fg);font-weight:600}
 .xfi.sel .xth{box-shadow:0 0 0 2px var(--link)}.xfi.sel>span b{color:var(--link)}
