@@ -1,0 +1,7 @@
+Decided: merge origin/staging again and push, so the cancelled macOS jobs rerun on a current base.
+Decided: no design change this round; the FAIL was only the iOS Simulator build pending at 169c278.
+Decided: drop the last lane's wip snapshot; it held only build logs and an Xcode-generated Package.resolved.
+Rejected: touching web/e2e/chat.spec.mjs for the red ui job — a web timing check outside this design-only diff.
+Because: "Screenshots and README in `apple/design/native-surfaces/`; the iOS target builds"
+Check: git diff origin/staging...HEAD lists only apple/design/native-surfaces; the iOS Simulator build is green.
+Owner: Nothing in the design changed; the branch was brought up to date so the stalled checks can run again.
