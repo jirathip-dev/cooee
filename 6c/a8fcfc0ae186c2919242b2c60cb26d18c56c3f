@@ -1,0 +1,12 @@
+Decided: the iOS section copies apple.yml's e2e commands, swapping only $RUNNER_TEMP, the port and the simulator name
+Because: "mirroring `apple.yml`'s `e2e` job so the two never drift"
+Decided: without Xcode the lane finds the head's apple run id and downloads simulator-shots
+Because: "fall back to CI: `gh run download <run id> -n simulator-shots`"
+Decided: Mac 1440 screens come from CI's mac-setup-shots, not a host run of MacSetupUITests
+Rejected: running MacSetupUITests on the mini — it installs cooee and shed as login items on the host
+Decided: teardown deletes only the UDID saved in $OUT/sim and checks simctl no longer lists it
+Because: "`xcrun simctl delete` only the simulator this run created (never `delete all`)"
+Decided: native feature map rows name the LiveUITests screenshot taken on each screen
+Because: apple/UITests/LiveUITests.swift:153
+Check: the PR body's run log on the mini: every ios exit line 0 except sim listed 1, 13 dark and 12 light screens
+Owner: The verify check can now run the iPhone app in its own simulator and screenshot it in dark and light.
