@@ -1,8 +1,8 @@
 # Plugins
 
 A plugin adds a tab beside Chat. It is a backend of its own (on this machine or on the tailnet) that serves a UI
-module, an ES module that cooee runs in the tab. herdsman's Queue, Asks and Fleets tabs come this way, through the
-[cooee-drover](https://github.com/jirathip-dev/cooee-drover) plugin ([architecture.md](architecture.md#plugins-m4)).
+module, an ES module that cooee runs in the tab. herdsman's Queue, Asks and Fleets tabs come this way, served by herdsman itself
+as Drover ([architecture.md](architecture.md#plugins-m4)).
 
 ## Configuration
 
@@ -160,8 +160,8 @@ tap opens `#<machine>`) when its set of problems changes, and the tab shows a do
 ## First-party plugin: terminal
 
 `crates/cooee-terminal`, built into cooee: a real shell on the Mac from the phone, for the owner-only commands a chat
-hands over (setup, keychain, `launchctl` …), instead of an SSH app. `cooee setup` adds its entry to each instance
-(`cooee` and `cooee-drover`) on the instance's port + 1000 with a fresh token:
+hands over (setup, keychain, `launchctl` …), instead of an SSH app. `cooee setup` adds its entry to each instance on
+the instance's port + 1000 with a fresh token:
 
 ```toml
 [[plugins]]
