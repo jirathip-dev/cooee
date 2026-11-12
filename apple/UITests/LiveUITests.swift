@@ -25,7 +25,7 @@
             othersHoldsTheLanesNoPluginClaims(app, new)
             personaRoundTrip(app)
             answersEachCard(app, new)
-            app.buttons["Back"].firstMatch.tap()
+            swipeBack(app, new)
             opensDroversScreens(app, new)
             opensTheWorkflowSheet(app, new)
             avatarMenu(app, new)
@@ -190,6 +190,15 @@
             keep("workflow-round")
             app.buttons["Back"].firstMatch.tap()
             XCTAssert(labelled(app, "open chat").waitForExistence(timeout: 10))
+        }
+
+        @MainActor
+        private func swipeBack(_ app: XCUIApplication, _ home: XCUIElement) {
+            let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+            edge.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+            XCTAssert(field(app, "Message Coder").waitForNonExistence(timeout: 10), "the edge swipe left the chat")
+            XCTAssert(home.waitForExistence(timeout: 10), "the edge swipe went back to Home")
+            keep("swipe-back")
         }
 
         @MainActor

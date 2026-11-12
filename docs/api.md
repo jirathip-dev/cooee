@@ -1,6 +1,6 @@
 # cooee's JSON and SSE API
 
-Everything `web/ts` calls (#49), and what a native app would call too. Pages are server HTML; the script never reads
+Everything `web/ts` calls (#49), and what the native app (`apple/`) calls too. Pages are server HTML; the script never reads
 them, only these endpoints. Every call needs a paired device's `cooee` cookie (pairing and `/look` excepted), and a
 request must name one of the server's own hosts (`Host`, and `Origin` when sent).
 
@@ -71,7 +71,7 @@ the ids, so notes are merged or forgotten first; a persona already past it keeps
 shrink them. `plugins` (#129) are the installed plugins (or config
 `[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. `role` (#159) is `""` (a plain persona)
 or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos or fleets it covers, which another may
-cover too): an installed `cooee-drover` is attached to each orchestrator by its role, never its name. The persona read
+cover too): herdsman's Drover plugin is attached to each orchestrator by its role, never its name. The persona read
 from a `conductor` profile (or saved from one before #159) is an orchestrator, its name kept. `machine` (#148) is the one its threads run on: `""` this host (every
 persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
 with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). A skill
