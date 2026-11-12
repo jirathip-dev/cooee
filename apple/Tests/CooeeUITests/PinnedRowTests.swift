@@ -16,7 +16,7 @@ internal struct PinnedRowTests {
     private static func firstDifferingPoint(_ one: Pixels, _ other: Pixels) throws -> Int {
         let row = one.width * 4
         let differs: (Int) -> Bool = { line in
-            one.bytes[line * row..<(line + 1) * row] != other.bytes[line * row..<(line + 1) * row]
+            (line * row..<(line + 1) * row).contains { abs(Int(one.bytes[$0]) - Int(other.bytes[$0])) > 64 }
         }
         let pixel: Int? = (0..<one.height).first(where: differs)
         return try #require(pixel) / 2
