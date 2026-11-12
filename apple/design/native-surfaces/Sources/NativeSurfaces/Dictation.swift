@@ -43,7 +43,6 @@ internal struct DictationComposer: View {
     internal let stage: Dictation
 
     internal var body: some View {
-        let palette = look.palette
         VStack(alignment: .leading, spacing: 8) {
             if stage == .edit { alternatives }
             HStack(alignment: .bottom, spacing: 8) {
@@ -51,11 +50,6 @@ internal struct DictationComposer: View {
                 field
                 send
             }
-            HStack(spacing: 6) {
-                StateMark(state: stage == .listening ? .needs : .done)
-                Text(stage == .listening ? "Listening · on this iPhone" : "Dictated · edit it, then send")
-            }
-            .ui(12, .medium, look).foregroundStyle(palette.mute).padding(.leading, 56)
         }
     }
 

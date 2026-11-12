@@ -29,8 +29,6 @@ public struct CallScreen: View {
                 rings.padding(.vertical, 8)
                 transcript
                 Spacer(minLength: 0)
-                Text("On-device voice, no account needed · every line is kept in the thread")
-                    .ui(12, .regular, look).foregroundStyle(palette.mute).multilineTextAlignment(.center)
                 controls
             }
             .padding(.horizontal, 18).padding(.top, 14).padding(.bottom, 34)
