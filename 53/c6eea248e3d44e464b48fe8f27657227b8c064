@@ -1,0 +1,5 @@
+Decided: round 2 merges origin/staging and re-runs CI; the recipe is unchanged from 729f9ca
+Because: .herdsman/verify.md:1
+Rejected: committing the wip snapshot's Package.resolved — an xcodebuild side effect of the run, outside the brief
+Check: CI at the new head; the diff against staging is still .herdsman/verify.md only
+Owner: The verify check can now run the iPhone app in its own simulator and screenshot it in dark and light.
