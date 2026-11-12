@@ -85,7 +85,7 @@ push (approvals and errors still push).
 
 herdsman's lanes (its impl, review and fix agents) are what fill this list: each runs as a shed ACP session labelled by
 its source (the tool), `group` its repo, `item` its issue, with its `role` and `round`. So a lane is opened as a chat in
-cooee core, never in a cooee-drover tab; those show the queue, asks and fleets ([Plugins](#plugins-m4)).
+cooee core, never in a Drover tab; those show the queue, asks and fleets ([Plugins](#plugins-m4)).
 
 ## Pairing and push (M2)
 
@@ -195,16 +195,15 @@ proxied call counts, and 10 minutes without one locks it (403 `locked`; an open 
 Face ID again. The proxy names the device to the backend (`Cooee-Device`), which refuses any call without it. Every
 unlock and every shell started goes to `<data>/terminal.log` with the time and device; keystrokes never do.
 
-**cooee-drover** ([jirathip-dev/cooee-drover](https://github.com/jirathip-dev/cooee-drover), in the index) is the
-plugin that adds the fleet tabs: Queue, Asks and Fleets. Data flows one way:
+**Drover** is herdsman's plugin: herdsman itself serves the fleet screens, Queue, Asks and Fleets
+([herdsman#814](https://github.com/jirathip-dev/herdsman/issues/814)). Data flows one way:
 
 ```text
-cooee → cooee-drover → herdsman /api/v1
+cooee → herdsman (Drover) /api/v1
 ```
 
-cooee proxies the tab (`/p/cooee-drover/api/…`); cooee-drover passes each call through to herdsman's `/api/v1` and
-reimplements nothing; herdsman is the engine: queue, drive, lanes, reviews, gates and merge. herdsman is to be
-renamed drover ([herdsman#456](https://github.com/jirathip-dev/herdsman/issues/456)). The lanes themselves are not in
+cooee proxies the tab; herdsman is the engine: queue, drive, lanes, reviews, gates and merge. Pointing the plugin at
+the running herdsman is [#226](https://github.com/jirathip-dev/cooee/issues/226). The lanes themselves are not in
 these tabs: they are shed sessions, shown as chats under Workflow (above).
 
 ## Configuration
@@ -214,7 +213,7 @@ One TOML file per instance, `$XDG_CONFIG_HOME/cooee/<instance>/config.toml` (els
 
 **Instances.** `--instance <name>` (default `cooee`) picks one: its own config, port, data folder (threads, devices,
 push key) and pairing, so two instances never share state; both use the one shed server. Plugins are per instance, so
-`cooee-drover` adds its tabs without touching `cooee`. `cooee install --instance <name> --port <p>` writes
+one instance's tabs never touch another's. `cooee install --instance <name> --port <p>` writes
 `~/Library/LaunchAgents/dev.cooee.<name>.plist` (KeepAlive, log in the data folder) and the config's `port` if it has
 no config yet, then prints the `launchctl bootstrap`, `tailscale serve` and (if shed isn't running) shed install lines
 for the owner to run. `cooee doctor` checks the service, port, shed, APNs, push key and tailnet URL.
@@ -286,7 +285,7 @@ exact command or URL and needs Face ID; it is added off), saves a secret to the 
 profiles' servers and tools. A command or URL changes on the Mac only: the server refuses it from the phone.
 
 Every thread's agent gets, through shed's `--mcp` file (0600, removed once shed read it): `cooee` (`cooee mcp serve
---thread <id>`), whose only tool is `propose_server {name, type, command|url, args, why}`; and for each server its
+--thread <id>`), whose tools are `propose_server {name, type, command|url, args, why}`, `remember`, `ask_persona` and `history` ([api.md](api.md)); and for each server its
 profile picks (on, its references resolving), `cooee mcp proxy <server> --thread <id>`. Each carries `COOEE_MCP`
 (cooee's URL and the thread's token, `sha256(<data>/mcp.key:<thread>)`), good while the thread is open. The proxy asks
 `POST /mcp/agent/grant` for its server, its references resolved in memory then and never written, starts it (stdio) or
@@ -294,6 +293,21 @@ posts to it (http, through `curl -K -`, headers on stdin; `sse` isn't proxied ye
 allowed tools and refuses a call to any other (asking again each call, so a closed thread's token stops). A proposal
 raises an approval card in the thread with the exact command or URL; approving it needs the device's passkey (Face
 ID) and adds the server off. Nothing runs before the owner turns it on and a profile picks it.
+
+## Routines (#75)
+
+A routine is a schedule (five-field cron in the Mac's local time, its UTC offset read with `date +%z` hourly, at
+least 15 minutes between due times), a place and a prompt, kept with its run state in `<data>/routines.json` (0600,
+written whole). An agent makes one in chat with cooee's own `create_routine` tool, as itself: the chat gets a `⟳
+Created routine` line; a Workflow session or a routine's own run can't. Settings › routines (`/routines`) renames,
+retimes, pauses, resumes and deletes them; there is no other way to make one. Every 30 seconds the runner runs each
+routine whose newest due time is past both its last recorded one and its making, once (missed ones run once, late),
+then records it. The run's key, `routine-<id>-<due>`, is the hub's `random_id`, so a crash between a run and its
+record runs into the same message or thread again, never a second. `chat` runs queue the prompt in the making chat
+as a message marked with the routine; a closed or deleted chat pauses the routine with one push. `new_thread` runs
+start a thread as the making chat's agent, marked with the routine, whose finished turns don't push. The list shows
+`⟳ <name>` on a thread a routine started or last wrote to. The GitHub event path is #261. The ADR and its shapes are
+in [architecture/routines](architecture/routines/adr.md).
 
 ## The app shell (#21, herdsman#553 rows 1–14)
 
