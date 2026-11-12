@@ -182,6 +182,7 @@ for look in dark light; do
   xcrun simctl ui "$sim" appearance "$look"
   xcrun simctl keychain "$sim" reset
   link=$(sh -c "$(cat "$OUT/pair.again")" | sed -n 's/^link  //p')
+  rm -rf "${OUT:?}/e2e-$look.xcresult" "${OUT:?}/shots/ios/$look"
   (cd apple && TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" "${build[@]}" \
     -resultBundlePath "$OUT/e2e-$look.xcresult" test-without-building) >"$OUT/ios-$look.log" 2>&1
   echo "ios drive $look exit=$?"
@@ -192,7 +193,7 @@ ls "$OUT/shots/ios/dark" "$OUT/shots/ios/light"
 ```
 
 Each look's `manifest.json` maps an exported file to its screen: `suggestedHumanReadableName` starts with the screen
-name below and the look (`home-dark_0_…png`). A rerun needs the old `.xcresult` bundles removed first.
+name below and the look (`home-dark_0_…png`).
 
 ### Teardown
 
@@ -202,6 +203,7 @@ simulators share the host):
 ```bash
 kill -TERM -- "-$(cat "$OUT/serve.pid")"; echo "ios kill exit=$?"
 xcrun simctl shutdown "$(cat "$OUT/sim")"; xcrun simctl delete "$(cat "$OUT/sim")"; echo "ios sim delete exit=$?"
+curl -s -o /dev/null "http://127.0.0.1:$P/"; echo "ios curl exit=$? (7: nothing listens)"
 xcrun simctl list devices | grep -q "$(cat "$OUT/sim")"; echo "ios sim listed exit=$? (1: gone)"
 ```
 
