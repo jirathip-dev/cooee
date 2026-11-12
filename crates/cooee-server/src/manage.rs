@@ -180,6 +180,17 @@ fn free_port() -> io::Result<u16> {
         .port())
 }
 
+fn up(port: u16) -> bool {
+    let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+    TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok()
+}
+
+/// The token in `m`'s `attach_token` file, when it names one that can be read.
+fn attach_token(m: &Manifest) -> Option<String> {
+    let text = fs::read_to_string(m.attach_token_path()?).ok()?;
+    Some(text.trim().to_owned()).filter(|t| !t.is_empty())
+}
+
 fn on_path(tool: &str) -> bool {
     Command::new("sh")
         .args(["-c", "command -v \"$1\"", "sh", tool])
@@ -495,10 +506,15 @@ impl Manager {
         Ok(c)
     }
 
-    /// Runs the build's backend on a spare port until it serves its first tab's module (200), then stops it.
+    /// Runs the build's backend on a spare port until it serves its first tab's module (200), then stops it; an
+    /// `attach` backend that is up is asked instead, and nothing runs.
     fn health(&self, dir: &Path, m: &Manifest, token: &str, log: &Path) -> io::Result<()> {
-        let port = free_port()?;
-        let mut child = self.backend(dir, m, port, token, log)?.spawn()?;
+        let attached = m.attach_port().filter(|&p| up(p));
+        let port = attached.map_or_else(free_port, Ok)?;
+        let mut child = match attached {
+            Some(_) => None,
+            None => Some(self.backend(dir, m, port, token, log)?.spawn()?),
+        };
         let p = Plugin {
             name: m.name.clone(),
             label: String::new(),
@@ -508,7 +524,7 @@ impl Manager {
         };
         let started = Instant::now();
         let answer = loop {
-            if let Ok(Some(s)) = child.try_wait() {
+            if let Some(Ok(Some(s))) = child.as_mut().map(Child::try_wait) {
                 break Err(other(format!("its backend exited ({s}): see its log")));
             }
             let reply = crate::plugin::call(&p, "GET", &p.module, &[], &[], Some(HEALTH));
@@ -524,7 +540,9 @@ impl Manager {
                 _ => thread::sleep(Duration::from_millis(100)),
             }
         };
-        stop(&mut child);
+        if let Some(c) = &mut child {
+            stop(c);
+        }
         answer
     }
 
@@ -557,9 +575,12 @@ impl Manager {
         {
             return Err(other(format!("a tab named {} is there already", t.name)));
         }
-        let token = cooee_core::sha256(&cooee_core::random(32)?);
+        let token = match attach_token(m) {
+            Some(t) => t,
+            None => cooee_core::sha256(&cooee_core::random(32)?),
+        };
         let m = self.build(&m.name, &plan.commit, &token)?;
-        let port = free_port()?;
+        let port = m.attach_port().map_or_else(free_port, Ok)?;
         let mut all = plugins::read_entries(&self.data)?;
         all.extend(entries(&m, port, &token));
         crate::plugin::check(&[self.fixed.as_slice(), &all].concat())?;
@@ -772,9 +793,7 @@ impl Manager {
             } else if let Some(run) = lock(&self.runs).get(&l.name) {
                 run.state.clone()
             } else {
-                let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, l.port));
-                let up = TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok();
-                (if up { "running" } else { "not running" }).to_owned()
+                (if up(l.port) { "running" } else { "not running" }).to_owned()
             };
             let first_party = self.index.iter().any(|x| x.name == l.name && x.first_party);
             let m = plugins::manifest(&self.data, &l).ok();
@@ -824,14 +843,18 @@ impl Manager {
         Ok(())
     }
 
-    /// Starts plugin `l`'s backend from its build.
-    fn spawn(&self, l: &Locked) -> io::Result<Child> {
+    /// Starts plugin `l`'s backend from its build: none when its `attach` backend is up.
+    fn spawn(&self, l: &Locked) -> io::Result<Option<Child>> {
         let dir = self.build_dir(&l.name, &l.commit);
         let m = Manifest::parse(&fs::read_to_string(dir.join("cooee-plugin.toml"))?)?;
+        if m.attach_port().is_some_and(up) {
+            return Ok(None);
+        }
         let log = self.log(&l.name);
         note(&log, &format!("start {} on port {}", l.commit, l.port));
         self.backend(&dir, &m, l.port, &self.token(l)?, &log)?
             .spawn()
+            .map(Some)
     }
 
     /// One pass of supervision at `now` (ms): stops the backends removed, turned off or switched to another build;
@@ -871,10 +894,11 @@ impl Manager {
             };
             if crashed.is_none() && run.child.is_none() && now >= run.next {
                 match self.spawn(l) {
-                    Ok(c) => {
+                    Ok(Some(c)) => {
                         run.child = Some(c);
                         "running".clone_into(&mut run.state);
                     }
+                    Ok(None) => "attached".clone_into(&mut run.state),
                     Err(e) => crashed = Some(e.to_string()),
                 }
             }
