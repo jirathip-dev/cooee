@@ -1,0 +1,11 @@
+Decided: plugin::call takes one total deadline; a Conn wrapper sets the socket timeout to the time left before each read and write
+Because: "A total deadline per plugin call (connect + send + full read)."
+Rejected: keeping per-read timeouts — a backend trickling one byte a second resets them forever
+Decided: at most 8 calls in flight per backend URL, the 9th fails at once with "busy"
+Because: "a call over the limit fails fast with a clear error instead of queueing on the shared pool"
+Rejected: tokio Semaphore — calls run on blocking threads; a counter map with a drop guard is enough and adds no API
+Decided: an event stream drops its deadline and gives its place back once streaming starts
+Because: crates/cooee-server/src/lib.rs:1379 streams run on their own std thread, not the blocking pool
+Decided: the e2e test retries connections the kernel resets (macOS listen queue is 128) but never a read timeout
+Check: with IN_FLIGHT raised to 10000 the e2e test fails; the unit test hangs on the old per-read timeout
+Owner: a hung or slow plugin now fails its own calls quickly and never slows the rest of cooee
