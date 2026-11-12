@@ -1,0 +1,9 @@
+Decided: MenuPage's content stack takes the full width so the background covers the whole sheet.
+Because: "the `ScrollView` and its background only cover the content's width, not the sheet"
+Decided: AvatarMenu takes the pages to list; the sheet passes MenuFeature.Page.drawn (Look, Notifications).
+Because: "A page with no screen yet (until its v2 build lands) shows no placeholder sentence; its row is hidden from the menu."
+Decided: the staging merge keeps the App icon page and drops the v2 placeholder for the unbuilt pages.
+Because: apple/Sources/CooeeUI/Menu.swift:51
+Rejected: dropping the enum cases — the avatar-menu-* design frame still draws all six rows.
+Check: MenuRenderTests fails without the maxWidth frame (edge pixel is the red underlay) and LiveUITests saves avatar-menu-look/notifications shots.
+Owner: The avatar menu's pages fill the sheet, and only Look and Notifications are listed until the others are built.
