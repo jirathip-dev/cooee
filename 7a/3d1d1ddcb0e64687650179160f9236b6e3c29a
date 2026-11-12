@@ -1,0 +1,6 @@
+Decided: ship the approved chat-format design as is; the README records the owner's answers in place of open questions
+Because: q1380
+Because: "The views build, the screenshots and README are in `apple/design/chat-format/`"
+Rejected: building the renderer in this PR — the issue says one build issue implements it after approval
+Check: swift build in apple/design/chat-format exits 0; the diff touches only apple/design/chat-format
+Owner: the approved formatting design lands; the app itself changes in the follow-up build issue
