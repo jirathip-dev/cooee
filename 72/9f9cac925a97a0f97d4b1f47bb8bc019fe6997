@@ -1,0 +1,11 @@
+Decided: pair and walk the screens with the e2e job's own LiveUITests, dark then light, keychain reset and fresh link per look
+Because: apple/UITests/LiveUITests.swift:115
+Decided: simctl io shoots the pair screen and the post-run relaunch; every e2e screen is the test's exported screenshot
+Rejected: simctl io for each e2e screen — the app has no URL scheme to reach them and the test does not pause at them
+Decided: unsigned build-for-testing into $OUT/dd, then simctl install of that Cooee.app
+Because: "build the app for the simulator (`xcodebuild … -destination` of the lane's own simulator, `CODE_SIGNING_ALLOWED=NO`)"
+Decided: teardown deletes only the UDID saved in $OUT/sim and proves it is gone from simctl list
+Because: "Teardown shuts down and deletes **only that UDID**"
+Decided: native takes P and P+1 like the web section, so it runs after the web teardown
+Check: the PR body's run log, every native exit line 0 except curl 7 and sim listed 1
+Owner: The verify check can now run the iPhone app in its own simulator and screenshot it in dark and light.
