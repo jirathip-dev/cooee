@@ -51,8 +51,11 @@ internal struct CommandRow: View {
                 Text(look.mono ? "[\(source.lowercased())]" : source).ui(11, .semibold, look)
                     .foregroundStyle(source == "cooee" ? palette.lead : palette.cyan)
             }
-            Glyph(symbol: command.hint.isEmpty ? "return" : "text.cursor", ascii: command.hint.isEmpty ? "↵" : "…", size: 13)
-                .foregroundStyle(palette.mute).frame(width: 18)
+            Glyph(
+                symbol: command.hint.isEmpty ? "return" : "text.cursor", ascii: command.hint.isEmpty ? "↵" : "…",
+                size: 13
+            )
+            .foregroundStyle(palette.mute).frame(width: 18)
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
     }
@@ -60,7 +63,8 @@ internal struct CommandRow: View {
     private var name: some View {
         let palette = look.palette
         let rest = String(command.name.dropFirst(max(0, typed.count - 1)))
-        return (Text(typed.isEmpty ? "/" : typed).foregroundStyle(palette.link).bold()
+        return
+            (Text(typed.isEmpty ? "/" : typed).foregroundStyle(palette.link).bold()
             + Text(typed.isEmpty ? command.name : rest))
             .font(.system(size: 16, weight: .medium, design: .monospaced))
     }
@@ -121,7 +125,9 @@ internal struct CommandsSheet: View {
                 }
             }
             .background(look.mono ? Color.clear : palette.card.opacity(0.7), in: .rect(cornerRadius: 14))
-            .overlay { if look.mono { Rectangle().strokeBorder(palette.edge, style: StrokeStyle(lineWidth: 1, dash: [3, 2])) } }
+            .overlay {
+                if look.mono { Rectangle().strokeBorder(palette.edge, style: StrokeStyle(lineWidth: 1, dash: [3, 2])) }
+            }
         }
     }
 }

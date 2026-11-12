@@ -106,7 +106,8 @@ internal struct RecordingBar: View {
             Glyph(symbol: "mic.fill", ascii: "[rec]", size: 30)
                 .foregroundStyle(palette.dark ? Color.black : .white)
                 .frame(width: 86, height: 86)
-                .background(look.mono ? palette.red : palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Circle()))
+                .background(
+                    look.mono ? palette.red : palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Circle()))
         }
         .frame(width: 118, height: 118)
     }

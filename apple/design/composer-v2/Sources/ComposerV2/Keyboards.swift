@@ -26,7 +26,11 @@ internal struct KeyboardView: View {
     internal var body: some View {
         VStack(spacing: 0) {
             if keyRow { TerminalKeyRow(ctrl: ctrl, apple: kind != .cooee) }
-            if kind == .cooee { CooeeKeyboard(shell: keyRow) } else { AppleKeyboard(thai: kind == .thai, shell: keyRow) }
+            if kind == .cooee {
+                CooeeKeyboard(shell: keyRow)
+            } else {
+                AppleKeyboard(thai: kind == .thai, shell: keyRow)
+            }
         }
     }
 }
@@ -55,7 +59,8 @@ internal struct AppleKeyboard: View {
 
     private func bottom(_ space: String, _ send: String) -> [Key] {
         [
-            Key(label: "123", width: 1.3, cap: .special), Key(label: "", symbol: "face.smiling", width: 1.3, cap: .special),
+            Key(label: "123", width: 1.3, cap: .special),
+            Key(label: "", symbol: "face.smiling", width: 1.3, cap: .special),
             Key(label: space, width: 5), Key(label: send, width: 2.4, cap: .accent),
         ]
     }
@@ -87,12 +92,14 @@ internal struct CooeeKeyboard: View {
 
     private var rows: [[Key]] {
         [
-        Key.row("1 2 3 4 5 6 7 8 9 0"), Key.row("q w e r t y u i o p"), Key.row("a s d f g h j k l"),
-        [Key(label: "⇧", width: 1.3, cap: .special)] + Key.row("z x c v b n m")
-            + [Key(label: "⌫", width: 1.3, cap: .special)],
-        [
-            Key(label: "", symbol: "globe", width: 1.3, cap: .special), Key(label: "#+=", width: 1.3, cap: .special),
-            Key(label: "space", width: 4.4), Key(label: "/", cap: .special), Key(label: shell ? "ret ↵" : "send ↵", width: 2, cap: .accent),
+            Key.row("1 2 3 4 5 6 7 8 9 0"), Key.row("q w e r t y u i o p"), Key.row("a s d f g h j k l"),
+            [Key(label: "⇧", width: 1.3, cap: .special)] + Key.row("z x c v b n m")
+                + [Key(label: "⌫", width: 1.3, cap: .special)],
+            [
+                Key(label: "", symbol: "globe", width: 1.3, cap: .special),
+                Key(label: "#+=", width: 1.3, cap: .special),
+                Key(label: "space", width: 4.4), Key(label: "/", cap: .special),
+                Key(label: shell ? "ret ↵" : "send ↵", width: 2, cap: .accent),
             ],
         ]
     }
@@ -156,7 +163,9 @@ internal struct Keycap: View {
     }
 
     private func ink(_ palette: Palette) -> Color {
-        if mono { return key.cap == .accent ? palette.link : (key.symbol == "globe" ? palette.lead : palette.foreground) }
+        if mono {
+            return key.cap == .accent ? palette.link : (key.symbol == "globe" ? palette.lead : palette.foreground)
+        }
         if key.cap == .accent { return .white }
         return palette.dark ? .white : .black
     }
@@ -186,7 +195,10 @@ internal struct TerminalKeyRow: View {
                 Text(key).font(.system(size: key.count > 1 ? 13 : 16, weight: .medium, design: .monospaced))
                     .foregroundStyle(lit ? (palette.dark ? Color.black : .white) : palette.foreground)
                     .frame(maxWidth: .infinity).frame(height: 34)
-                    .background(lit ? palette.link : palette.card, in: look.mono ? AnyShape(Rectangle()) : AnyShape(.rect(cornerRadius: 7)))
+                    .background(
+                        lit ? palette.link : palette.card,
+                        in: look.mono ? AnyShape(Rectangle()) : AnyShape(.rect(cornerRadius: 7))
+                    )
                     .overlay { if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) } }
                     .frame(width: key.count > 1 ? 40 : 26)
             }

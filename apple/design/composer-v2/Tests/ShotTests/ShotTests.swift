@@ -32,9 +32,12 @@ internal struct Shot: Sendable, CustomTestStringConvertible {
         ("voice-sent", .modern, ["dark", "light"], { AnyView(ChatScreen(voice: true)) }),
         ("shell", .modern, ["dark", "light"], { AnyView(ShellScreen()) }),
         ("typing", .terminal, ["dark", "light"], { AnyView(ChatScreen(bar: .typing, keyboard: .cooee)) }),
-        ("globe", .terminal, ["dark", "light"], {
-            AnyView(ChatScreen(bar: .typing, keyboard: .thai, note: "Apple keyboard · kept for this chat"))
-        }),
+        (
+            "globe", .terminal, ["dark", "light"],
+            {
+                AnyView(ChatScreen(bar: .typing, keyboard: .thai, note: "Apple keyboard · kept for this chat"))
+            }
+        ),
         ("slash", .terminal, ["dark", "light"], { AnyView(ChatScreen(bar: .slash, keyboard: .cooee, over: .slash)) }),
         ("menu", .terminal, ["dark"], { AnyView(ChatScreen(over: .menu)) }),
         ("attach", .terminal, ["dark", "light"], { AnyView(ChatScreen(over: .attach(.photos))) }),

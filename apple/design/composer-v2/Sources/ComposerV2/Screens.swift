@@ -3,7 +3,8 @@ import CooeeCore
 import SwiftUI
 
 public enum Over: Sendable, Equatable {
-    case none, slash, menu, attach(AttachTab)
+    case none, slash, menu
+    case attach(AttachTab)
 }
 
 public struct ChatScreen: View {
