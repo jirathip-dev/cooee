@@ -1,41 +1,17 @@
 import SwiftUI
 
 internal struct PanelSections: View {
-    @Environment(\.look) private var look
+    @Environment(\.look) internal var look
     internal let content: PanelContent
 
     internal var body: some View {
         VStack(spacing: 18) {
             if !content.screen.isEmpty { screen }
+            if !content.terminal.isEmpty { terminal }
             if !content.issues.isEmpty { workflow }
             routines
             if !content.places.isEmpty { places }
         }
-    }
-
-    private var screen: some View {
-        let palette = look.palette
-        return Group2(header: "Screen") {
-            VStack(alignment: .leading, spacing: 3) {
-                ForEach(content.screen, id: \.self) { line in
-                    Text(line).font(.system(size: 11, design: .monospaced)).lineLimit(1)
-                }
-            }
-            .foregroundStyle(Palette.farmDark.green).padding(12)
-            .frame(maxWidth: .infinity, minHeight: 116, alignment: .topLeading)
-            .background(Color.black.opacity(palette.dark ? 0.55 : 0.85), in: .rect(cornerRadius: look.mono ? 0 : 10))
-            .overlay(alignment: .topTrailing) { live }
-            .padding(8)
-        }
-    }
-
-    private var live: some View {
-        HStack(spacing: 4) {
-            Circle().fill(look.palette.red).frame(width: 6, height: 6)
-            Text(look.mono ? "live" : "LIVE").ui(10, .bold, look)
-        }
-        .foregroundStyle(.white).padding(.horizontal, 7).frame(height: 18)
-        .background(.black.opacity(0.5), in: .capsule).padding(8)
     }
 
     private var workflow: some View {
@@ -53,20 +29,20 @@ internal struct PanelSections: View {
     private var mapToggle: some View {
         let palette = look.palette
         return HStack(spacing: 0) {
-            toggle("list.bullet", "list", on: true)
-            toggle("point.3.connected.trianglepath.dotted", "map", on: false)
+            toggle("list.bullet", "list", isOn: true)
+            toggle("point.3.connected.trianglepath.dotted", "map", isOn: false)
         }
         .padding(2).background(palette.edge.opacity(0.35), in: .capsule)
     }
 
-    private func toggle(_ symbol: String, _ ascii: String, on: Bool) -> some View {
+    private func toggle(_ symbol: String, _ ascii: String, isOn: Bool) -> some View {
         let palette = look.palette
         return Group {
-            if look.mono { Text(on ? "[\(ascii)]" : ascii) } else { Image(systemName: symbol) }
+            if look.mono { Text(isOn ? "[\(ascii)]" : ascii) } else { Image(systemName: symbol) }
         }
-        .ui(11, .semibold, look).foregroundStyle(on ? palette.foreground : palette.mute)
+        .ui(11, .semibold, look).foregroundStyle(isOn ? palette.foreground : palette.mute)
         .frame(width: look.mono ? 44 : 30, height: 22)
-        .background(on && !look.mono ? palette.card : .clear, in: .capsule)
+        .background(isOn && !look.mono ? palette.card : .clear, in: .capsule)
     }
 
     private func issueRow(_ issue: PanelIssue, divider: Bool) -> some View {
@@ -105,15 +81,15 @@ extension PanelSections {
         return HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(routine.name).ui(15, .medium, look)
-                Text("\(routine.when) · \(routine.on ? routine.next : "paused")")
-                    .ui(12, .regular, look).foregroundStyle(routine.on ? palette.mute : palette.amber).lineLimit(1)
+                Text("\(routine.when) · \(routine.isOn ? routine.next : "paused")")
+                    .ui(12, .regular, look).foregroundStyle(routine.isOn ? palette.mute : palette.amber).lineLimit(1)
             }
             Spacer(minLength: 4)
-            Switch(on: routine.on)
+            Switch(isOn: routine.isOn)
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
         .overlay(alignment: .bottom) { rule(divider) }
-        .opacity(routine.on ? 1 : 0.75)
+        .opacity(routine.isOn ? 1 : 0.75)
     }
 
     private var places: some View {
@@ -148,7 +124,7 @@ extension PanelSections {
         .padding(.leading, 16).padding(.trailing, 4)
     }
 
-    private func more(_ title: String) -> some View {
+    internal func more(_ title: String) -> some View {
         HStack {
             Text(title).ui(15, .regular, look).foregroundStyle(look.palette.link)
             Spacer()
@@ -158,22 +134,22 @@ extension PanelSections {
         .padding(.horizontal, 14).frame(height: 44)
     }
 
-    @ViewBuilder private func rule(_ shown: Bool) -> some View {
+    @ViewBuilder internal func rule(_ shown: Bool) -> some View {
         if shown { Rectangle().fill(look.palette.line).frame(height: 0.5).padding(.leading, 14) }
     }
 }
 
 internal struct Switch: View {
     @Environment(\.look) private var look
-    internal let on: Bool
+    internal let isOn: Bool
 
     internal var body: some View {
         let palette = look.palette
         if look.mono {
-            Text(on ? "[on ]" : "[off]").ui(13, .bold, look).foregroundStyle(on ? palette.green : palette.mute)
+            Text(isOn ? "[on ]" : "[off]").ui(13, .bold, look).foregroundStyle(isOn ? palette.green : palette.mute)
         } else {
-            Capsule().fill(on ? palette.green : palette.edge.opacity(0.6)).frame(width: 46, height: 28)
-                .overlay(alignment: on ? .trailing : .leading) {
+            Capsule().fill(isOn ? palette.green : palette.edge.opacity(0.6)).frame(width: 46, height: 28)
+                .overlay(alignment: isOn ? .trailing : .leading) {
                     Circle().fill(.white).frame(width: 24, height: 24).padding(2)
                         .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
                 }
