@@ -1,0 +1,52 @@
+import AppKit
+import CooeeCore
+import CooeeUI
+import SwiftUI
+
+let repo = URL(fileURLWithPath: CommandLine.arguments[1])
+let v1 = repo.appendingPathComponent("v1")
+let out = repo.appendingPathComponent("persona-panel")
+
+@MainActor func backdrop(_ name: String) -> Image {
+    Image(nsImage: NSImage(contentsOf: v1.appendingPathComponent("\(name).png"))!)
+}
+
+@MainActor func write(_ name: String, _ palette: Palette, _ style: LookStyle, _ size: CGSize, _ view: some View) {
+    let content = view.frame(width: size.width, height: size.height)
+        .environment(\.look, Look(palette: palette, style: style, still: true))
+        .environment(\.colorScheme, palette.dark ? .dark : .light)
+    let renderer = ImageRenderer(content: content)
+    renderer.scale = 2
+    let rep = NSBitmapImageRep(cgImage: renderer.cgImage!)
+    try! rep.representation(using: .png, properties: [:])!.write(to: out.appendingPathComponent("\(name).png"))
+    print("wrote \(name)")
+}
+
+@MainActor func phone(_ name: String, _ palette: Palette, _ style: LookStyle = .modern, under: String, id: String = "cond", end: Bool = false) {
+    let view = ZStack(alignment: .top) {
+        backdrop(under).resizable()
+        Color.black.opacity(0.4)
+        PhoneChrome { PersonaPanel(personaID: id, end: end).padding(.top, 8) }
+    }
+    write(name, palette, style, CGSize(width: 402, height: 874), view)
+}
+
+@MainActor func mac(_ name: String, _ palette: Palette, under: String) {
+    let view = HStack(spacing: 0) {
+        backdrop(under).resizable().frame(width: 1280, height: 820)
+        PersonaPanel(personaID: "coder", column: true).frame(width: 360).padding(.top, 12)
+    }
+    .background(palette.background).clipShape(.rect(cornerRadius: 12))
+    write(name, palette, .modern, CGSize(width: 1640, height: 820), view)
+}
+
+MainActor.assumeIsolated {
+    phone("panel-dark", .farmDark, under: "chat-conductor-dark")
+    phone("panel-end-dark", .farmDark, under: "chat-conductor-dark", end: true)
+    phone("panel-light", .farmLight, under: "chat-conductor-light")
+    phone("panel-empty-dark", .farmDark, under: "chat-streaming-dark", id: "chief")
+    phone("panel-terminal-dark", .farmDark, .terminal, under: "chat-terminal-dark")
+    phone("panel-scene-light", .farmLight, .scene, under: "home-scene-light")
+    mac("mac-panel-dark", .farmDark, under: "mac-window-dark")
+    mac("mac-panel-light", .farmLight, under: "mac-window-light")
+}
