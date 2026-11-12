@@ -1,0 +1,5 @@
+Decided: merged origin/staging (597473a8); the hub.rs, lib.rs, push.rs and look.spec.mjs conflicts keep staging's code with every rule-breaking comment line dropped, and 82 such lines staging added elsewhere are stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop staging's new code
+Check: git diff -w origin/staging HEAD on the four conflicted files and the routines, app-icons and screen files is only deleted comment lines, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the new routines, app-icon and screen code follows the comment rule
