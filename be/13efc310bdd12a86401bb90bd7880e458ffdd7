@@ -1,0 +1,7 @@
+Decided: merged staging 7f6b7d19; rendered frames go to staging's COOEE_RENDERED folder only, no second COOEE_SNAPSHOT_OUT path
+Because: apple/Tests/CooeeUITests/SnapshotTests.swift:104
+Rejected: keeping both env vars and both upload steps — two ways to do one thing
+Decided: #157's room frames join the designs list, so they are also checked in Modern, Terminal and Scene
+Because: "Every frame in `apple/design/v1/` renders in all three styles without clipping"
+Check: CI apple-quality at the head; locally swiftlint analyze was killed unfinished, after build, tests and coverage passed
+Owner: merged the latest staging and fixed the conflicts; the local lint step did not finish, so CI decides
