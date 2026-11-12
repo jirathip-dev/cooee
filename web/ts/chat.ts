@@ -1347,7 +1347,7 @@ function chat(main: HTMLElement): void {
         row.append(pre);
       }
       // An MCP server an agent proposes (#56): the exact command or URL.
-      if (it.form === "mcp" && it.detail) row.append(el("pre", "diff", it.detail));
+      if ((it.form === "mcp" || it.form === "routine") && it.detail) row.append(el("pre", "diff", it.detail));
       // A herdsman run card (#83): the exact command and the sha its [approve] carries.
       // Its long lines scroll, so the block takes focus (axe: scrollable-region-focusable).
       const scroll = (s: string): HTMLElement => Object.assign(el("pre", "diff", s), { tabIndex: 0 });
@@ -1443,7 +1443,7 @@ function chat(main: HTMLElement): void {
         chc.append(
           button(
             o.name,
-            () => approve(row, it.id, o.id, undefined, it.form === "mcp"),
+            () => approve(row, it.id, o.id, undefined, it.form === "mcp" || it.form === "routine"),
             o.kind === "recommended" ? "rec" : "",
           ),
         );

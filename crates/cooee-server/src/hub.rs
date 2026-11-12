@@ -1537,8 +1537,8 @@ impl Hub {
         value: Option<&str>,
         by: &str,
     ) -> Result<Option<Item>, HubError> {
-        let live = self.live(id)?;
-        let mut live = lock(&live);
+        let cell = self.live(id)?;
+        let mut live = lock(&cell);
         let Some(tapped) = live.chat.tap(item, option, by, now()) else {
             return Ok(live.chat.items.iter().find(|i| i.id == item).cloned());
         };
@@ -1563,9 +1563,12 @@ impl Hub {
                 })
                 .map_err(|e| HubError::Refused(format!("plugin {name}: {e}"))),
             Body::Approval { card, .. }
-                if matches!(card.form.as_deref(), Some("mcp" | "skill")) =>
+                if matches!(card.form.as_deref(), Some("mcp" | "skill" | "routine")) =>
             {
-                Ok(self.proposal_answer(id, item, option))
+                drop(live);
+                let answer = self.proposal_answer(id, item, option);
+                live = lock(&cell);
+                Ok(answer)
             }
             _ => return self.shed_approve(&mut live, tapped, option),
         };
@@ -2053,6 +2056,8 @@ enum Proposed {
         /// The skill it edits.
         replaces: Option<String>,
     },
+    /// What else approving does (a routine's save, #261): the card's line, or why not.
+    Later(Box<dyn FnOnce() -> Result<String, String> + Send>),
 }
 
 /// An agent's `skill` proposal (#218): the skill, and the one it edits.
@@ -2435,7 +2440,21 @@ impl Hub {
         Ok(item)
     }
 
-    /// Whether item `item` of thread `id` is an MCP proposal's card (approving it needs Face ID).
+    /// A card in thread `id` saying `tool` and `detail`; approving it (with Face ID) runs `then` (#261).
+    ///
+    /// # Errors
+    /// [`HubError::NoThread`] for no such thread.
+    pub fn propose_later(
+        &self,
+        id: &str,
+        (tool, detail): (String, String),
+        then: Box<dyn FnOnce() -> Result<String, String> + Send>,
+    ) -> Result<Item, HubError> {
+        self.raise(id, (tool, "routine", detail), Proposed::Later(then))
+    }
+
+    /// Whether item `item` of thread `id` is an MCP server's or a routine's proposal card (approving it needs Face
+    /// ID).
     #[must_use]
     pub fn is_proposal(&self, id: &str, item: u64) -> bool {
         let Ok(live) = self.live(id) else {
@@ -2443,7 +2462,7 @@ impl Hub {
         };
         let live = lock(&live);
         live.chat.items.iter().any(|i| {
-            i.id == item && matches!(&i.body, Body::Approval { card, .. } if card.form.as_deref() == Some("mcp"))
+            i.id == item && matches!(&i.body, Body::Approval { card, .. } if matches!(card.form.as_deref(), Some("mcp" | "routine")))
         })
     }
 
@@ -2462,6 +2481,7 @@ impl Hub {
             } => skills::save(&self.data, &persona, skill, replaces.as_deref())
                 .map(|s| Some(format!("saved skill {}", s.name)))
                 .map_err(|e| e.to_string()),
+            Proposed::Later(then) => then().map(Some),
         }
     }
 

@@ -306,8 +306,20 @@ then records it. The run's key, `routine-<id>-<due>`, is the hub's `random_id`, 
 record runs into the same message or thread again, never a second. `chat` runs queue the prompt in the making chat
 as a message marked with the routine; a closed or deleted chat pauses the routine with one push. `new_thread` runs
 start a thread as the making chat's agent, marked with the routine, whose finished turns don't push. The list shows
-`⟳ <name>` on a thread a routine started or last wrote to. The GitHub event path is #261. The ADR and its shapes are
-in [architecture/routines](architecture/routines/adr.md).
+`⟳ <name>` on a thread a routine started or last wrote to. The ADR and its shapes are in
+[architecture/routines](architecture/routines/adr.md).
+
+GitHub events (#261): a routine may instead name a repo, events and an optional `match`. An agent's GitHub routine
+is not saved until the owner approves its card with Face ID (q1351); a schedule needs none. `[hooks] bind` is a
+second listener serving only `POST /hooks/github`, so the main listener's Gate gets no public route; Funnel points
+at it on :8443 (`tailscale funnel --bg --https=8443 --set-path /hooks/github http://<bind>/hooks/github`, which
+`cooee doctor` prints). A delivery's HMAC-SHA256 is checked against `secret:GITHUB_WEBHOOK_SECRET` in constant time
+before its body is read; its guid goes into `routines.json`'s `seen` (kept 4 days), so a repeat is a 200 and runs
+nothing; it is answered 202 before its runs start on a worker. Each routine runs at most 6 times an hour, the rest
+`skipped: rate`. Every 15 minutes (and at start) the catch-up reads, with `secret:GITHUB_TOKEN` over curl (the token
+on its stdin), the log of the repo's hook whose URL is `[hooks] url`: each delivery of the last 24 hours, and since a
+routine named the repo, whose guid isn't seen goes through the same `deliver`. A run's key is
+`routine-<id>-<guid>`, the hub's `random_id`, as a schedule's is.
 
 ## The app shell (#21, herdsman#553 rows 1–14)
 

@@ -406,10 +406,15 @@ fn own_tools() -> Value {
     });
     let routine = json!({
         "name": "create_routine",
-        "description": "Make a routine (when the owner asks for something on a schedule): at each due time its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines. {{due}} in the prompt is the due time. A refusal starts with BAD_SCHEDULE, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY or NOT_HERE.",
-        "inputSchema": { "type": "object", "required": ["name", "when", "prompt"], "properties": {
+        "description": "Make a routine (when the owner asks for something on a schedule or on a GitHub event): at each due time (when) or matching event (github) its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines; a github one is saved only once the owner approves its card. In the prompt {{due}} is the due time; {{event}}, {{repo}} and {{a.b}} (a path into the event's payload, like {{pull_request.title}}) fill from the event. A refusal starts with BAD_SCHEDULE, BAD_GITHUB, BAD_TRIGGER, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY, NO_HOOKS or NOT_HERE.",
+        "inputSchema": { "type": "object", "required": ["name", "prompt"], "properties": {
             "name": { "type": "string", "description": "1 to 60 characters" },
             "when": { "type": "string", "description": "5-field cron in the Mac's local time (minute hour day-of-month month day-of-week; numbers, *, a-b, */n, lists), at least 15 minutes apart: 0 9 * * 1 is Mondays 09:00" },
+            "github": { "type": "object", "required": ["repo", "events"], "properties": {
+                "repo": { "type": "string", "description": "owner/name" },
+                "events": { "type": "array", "items": { "type": "string" }, "description": "1 to 8, like pull_request (any action) or pull_request.opened" },
+                "match": { "type": "object", "additionalProperties": { "type": "string" }, "description": "payload path to the text it must equal, like {\"workflow_run.conclusion\": \"failure\"}" }
+            } },
             "prompt": { "type": "string" },
             "place": { "type": "string", "enum": ["chat", "new_thread"] }
         } }
@@ -470,10 +475,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     // Its answer (a string) is the reply.
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
                     Some("history") => Some(("/mcp/agent/history", "")),
-                    Some("create_routine") => Some((
-                        "/mcp/agent/routine",
-                        "Made. The owner sees it in this chat and can change it in Settings › routines.",
-                    )),
+                    Some("create_routine") => Some(("/mcp/agent/routine", "")),
                     Some("skill") => Some(("/mcp/agent/skill", "")),
                     _ => None,
                 };
