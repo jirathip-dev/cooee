@@ -1,0 +1,7 @@
+Decided: merged origin/staging (f5bf384f); the devices.rs conflict keeps staging's code with its rule-breaking comment lines dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop #294's new cache test
+Decided: the /// on the private Stamp struct is stripped; its meaning is in Stamp::of
+Because: crates/cooee-core/src/devices.rs:167
+Check: git diff -w origin/staging HEAD on devices.rs is only deleted comment lines, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the new device-cache code follows the comment rule
