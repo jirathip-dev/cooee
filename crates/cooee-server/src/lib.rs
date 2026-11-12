@@ -28,6 +28,7 @@ use std::{
 use cooee_core::{
     Config, Device, Devices, Plugin, ShedError,
     personas::{self, Persona},
+    skills,
 };
 use cooee_machines::Machines;
 use futures_util::{Stream, StreamExt, stream};
@@ -2139,6 +2140,77 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
         .route(memory_clear)
         .route(mcp_remember)
         .route(mcp_history)
+        .route(skill_list)
+        .route(skill_add)
+        .route(skill_get)
+        .route(skill_put)
+        .route(skill_delete)
+        .route(mcp_skill)
+}
+
+#[route(GET "/personas/{id}/skills")]
+async fn skill_list(cx: &Cx) -> Result<Answer<Vec<skills::Skill>>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| {
+        Ok(skills::list(d, &personas::find(Some(c), d, &id)?.id))
+    })
+    .await
+}
+
+#[route(POST "/personas/{id}/skills")]
+async fn skill_add(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
+    let id = thread_id(cx);
+    on_personas(cx, move |d, c| {
+        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, None)
+    })
+    .await
+}
+
+#[route(GET "/personas/{id}/skills/{name}")]
+async fn skill_get(cx: &Cx) -> Result<Answer<skills::Skill>> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    on_personas(cx, move |d, c| {
+        skills::read(d, &personas::find(Some(c), d, &id)?.id, &name)
+    })
+    .await
+}
+
+#[route(PUT "/personas/{id}/skills/{name}")]
+async fn skill_put(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    on_personas(cx, move |d, c| {
+        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, Some(&name))
+    })
+    .await
+}
+
+#[route(DELETE "/personas/{id}/skills/{name}")]
+async fn skill_delete(cx: &Cx) -> Result<Answer<()>> {
+    let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
+    on_personas(cx, move |d, c| {
+        skills::remove(d, &personas::find(Some(c), d, &id)?.id, &name)
+    })
+    .await
+}
+
+#[route(POST "/mcp/agent/skill")]
+async fn mcp_skill(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let token = bearer(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let me = (a.thread.as_str(), token.as_str());
+            if let Some(name) = a.server["read"].as_str() {
+                return hub.read_skill(me, name);
+            }
+            let p = serde_json::from_value(a.server["propose"].clone())
+                .map_err(|_| HubError::Refused("give read or propose".to_owned()))?;
+            hub.propose_skill(me, p).map(|_| {
+                "Proposed. The owner sees a card; nothing is saved until they approve it."
+                    .to_owned()
+            })
+        })
+        .await,
+    ))
 }
 
 #[route(POST "/mcp/agent/grant")]

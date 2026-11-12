@@ -1,7 +1,7 @@
 //! Personas (#126): a named agent (who it is, its standing rules, its folder and default agent) with notes it keeps,
 //! for the native app. The owner's are `<config>/personas/<id>.toml`; an owner profile with no persona of its name is
 //! read as one that runs as that profile (its account, settings, env, MCP servers and policy), so nothing is lost.
-//! Its notes are `<data>/personas/<id>/memory.jsonl`.
+//! Its notes are `<data>/personas/<id>/memory.jsonl`, its skills (#218) under `<data>/personas/<id>/skills/`.
 
 use std::{
     fmt::Write as _,
@@ -13,7 +13,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{plugins, profiles};
+use crate::{plugins, profiles, skills};
 
 const DROVER: &str = "cooee-drover";
 
@@ -269,7 +269,7 @@ pub fn remove(config: &Path, data: &Path, id: &str) -> io::Result<()> {
     {
         gone(fs::remove_file(f))?;
     }
-    forget(data, id)
+    gone(fs::remove_dir_all(data.join("personas").join(id)))
 }
 
 fn gone(r: io::Result<()>) -> io::Result<()> {
@@ -388,23 +388,33 @@ pub fn remember(data: &Path, id: &str, by: &str, e: &Edit, at: u64) -> io::Resul
     Ok(kept)
 }
 
-/// Clears persona `id`'s notes, and only them.
+/// Clears persona `id`'s notes, and only them: its skills stay.
 ///
 /// # Errors
-/// A folder that can't be removed.
+/// A file that can't be removed.
 pub fn forget(data: &Path, id: &str) -> io::Result<()> {
-    gone(fs::remove_dir_all(data.join("personas").join(id)))
+    gone(fs::remove_file(memory(data, id)))
 }
 
 impl Persona {
-    /// What its agent gets ahead of a new session's first message: its Character, Instructions and notes.
+    /// What its agent gets ahead of a new session's first message: its Character, Instructions, notes and skills'
+    /// descriptions (#218), by name; never a skill's body.
     #[must_use]
     pub fn brief(&self, data: &Path) -> String {
         let mut notes = String::from("Your notes (edit them with your remember tool):");
         for n in self::notes(data, &self.id) {
             let _ = write!(notes, "\n- [{}] {}", n.id, n.text);
         }
-        let parts = [self.character.trim(), self.instructions.trim(), &notes];
+        let mut skills = String::from("Your skills (read one with cooee's skill tool):");
+        for s in skills::list(data, &self.id).iter().take(skills::MAX) {
+            let _ = write!(skills, "\n- {}: {}", s.name, s.description);
+        }
+        let parts = [
+            self.character.trim(),
+            self.instructions.trim(),
+            &notes,
+            &skills,
+        ];
         let parts = parts
             .into_iter()
             .filter(|s| !s.is_empty() && !s.ends_with(':'));
