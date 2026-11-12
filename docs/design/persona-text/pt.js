@@ -1,13 +1,3 @@
-// #271 mockup: persona text. It fills this design's [data-z] parts, then runs native-feel's nf.js (Home, the keyboard)
-// which runs rooms' rm.js (the scheme, the style, the phone chrome, the personas' avatars). Fills:
-//   [data-z=about]   the panel's About block (data-who: cond, ledger; data-hot: the row just updated)
-//   [data-z=panel]   #244's panel sections above it (data-who), then About
-//   [data-z=bar]     the panel's pinned bar: Edit · New chat · Refine by chat
-//   [data-z=md]      Conductor's Instructions rendered (data-toc: the contents list first)
-//   [data-z=src]     the same Instructions as monospace source (data-caret: the line the caret is on)
-//   [data-z=notes]   Memory's notes (data-sw="<id>:<px>" a note swiped to Delete, data-add a note being added)
-//   [data-z=skills]  Skills (data-sw as notes)
-//   [data-z=keys]    the Markdown key row: # - * ` [ ] and the keyboard's dismiss
 const q = new URLSearchParams(location.search);
 const T = q.get('style') === 'terminal';
 
@@ -25,7 +15,6 @@ const I = {
 export const ico = k => `<svg class=ico viewBox="0 0 24 24">${I[k]}</svg>`;
 const chv = '<i class=chv>›</i>';
 
-// The About rows: name, count, first line (q1363: each row its first line; a tap opens the reader).
 const ABOUT = {
   cond: [['Character', '', 'Calm, terse foreman. Says what changed, never how hard it was.'],
     ['Instructions', '', "Run drover's queue for cooee and herdsman."],
@@ -45,7 +34,6 @@ function about(e) {
   return `<p class=lb2>About</p><div class=rfl>` + ABOUT[e.dataset.who || 'cond'].map(([n, c, f]) =>
     `<a class="ab${hot === n ? ' hot' : ''}" href="#"><span class=abn>${n}${c ? `<small>${c}</small>` : ''}</span>${chv}<span class=abf>${f}</span></a>`).join('') + '</div>';
 }
-// #244's sections, as its panel draws them; About follows them (q1363).
 function panel(e) {
   const who = e.dataset.who || 'cond';
   const routines = who === 'coder' ? [['Nightly e2e', 'Daily 02:00 · next tonight 02:00', 1]]
@@ -62,7 +50,6 @@ function panel(e) {
 }
 const bar = () => `<a class=pbt href="#">${ico('edit')}<span>Edit</span></a><a class=pbt href="#">${ico('chat')}<span>New chat</span></a><a class=pbt href="#">${ico('spark')}<span>Refine by chat</span></a>`;
 
-// Conductor's Instructions: the Markdown the reader renders, the editor shows and the Mac splits.
 const SRC = `# Conductor
 
 Run drover's queue for cooee and herdsman.
@@ -117,7 +104,6 @@ function src(e) {
   }).join('\n');
 }
 
-// Memory (#216's notes, with ids) and Skills (#218).
 const NOTES = [
   ['n9', 'Owner wants every design in the three Styles.', 'Conductor · 2h'],
   ['n8', 'Never merge on the implementer\'s say-so.', 'you · 1d'],
