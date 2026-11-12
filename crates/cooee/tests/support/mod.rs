@@ -329,8 +329,18 @@ impl FakeShed {
     }
 
     /// `run`: starts `cmd` in `cwd` for real, its stdout and stderr the screen, its stdin what `send`/`keys` type.
+    /// With a `machine` (#150) it is that machine's `<machine>/<name>`, refused `NoLink` unless its link is up, its
+    /// programs looked up in `dir/on-<machine>` first.
     fn run(&self, params: &Value) -> Result<Value, RpcError> {
-        let name = params["name"].as_str().unwrap().to_owned();
+        let mut name = params["name"].as_str().unwrap().to_owned();
+        let mut path = env::var("PATH").unwrap_or_default();
+        if let Some(m) = params["machine"].as_str() {
+            name = format!("{m}/{name}");
+            if self.no_link(&name) {
+                return Err(RpcError::new(ErrorCode::NoLink, &name));
+            }
+            path = format!("{}:{path}", self.dir.join(format!("on-{m}")).display());
+        }
         // The owner's shells (#28) are listed by `ls`, with their labels.
         if params["labels"]["cooee.owner"] == "1" {
             let labels = serde_json::from_value(params["labels"].clone()).unwrap();
@@ -343,6 +353,7 @@ impl FakeShed {
         let cmd: Vec<String> = serde_json::from_value(params["cmd"].clone()).unwrap();
         let mut child = Command::new(&cmd[0])
             .args(&cmd[1..])
+            .env("PATH", path)
             .current_dir(params["cwd"].as_str().unwrap())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
