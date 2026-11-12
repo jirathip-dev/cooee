@@ -1,0 +1,10 @@
+Decided: PR 1 only: schedules, create_routine in chat with its routine line, Settings › routines, thread and row routine marks, the 30 s runner tick; the GitHub path is #261
+Because: q1340
+Decided: a run's key routine-<id>-<due> is the hub's random_id, so a crash between run and record adopts the first message or thread
+Because: "a schedule fires once per due time (not again after a restart)"
+Decided: fix round 4 changes no code; the red ui was one WebKit long-task measurement (226 ms) in the 1,000-message chat test, so this round merges staging and re-runs ui
+Because: "Every gate is green; the cap holds"
+Rejected: loosening the long-task bound at web/e2e/chat.spec.mjs:177 — it guards the chat's scroll path, which this PR does not touch
+Rejected: committing the supersede snapshot — it held only scratch logs
+Check: CI ui at ffdef77, and the full CI log at 1f6610c, where 178 passed and only chat.spec.mjs:131 [390] failed
+Owner: in Settings › routines, each routine shows its name with pause and delete, and its schedule line underneath, on phone and desktop.
