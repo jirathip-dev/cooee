@@ -185,12 +185,11 @@
             XCTAssert(round.waitForExistence(timeout: 10))
             keep("workflow")
             round.tap()
-            XCTAssert(app.buttons["Back"].waitForExistence(timeout: 10))
+            XCTAssert(labelled(app, "cooee #33 · impl 1").waitForExistence(timeout: 10))
+            XCTAssert(labelled(app, "‹ Workflow").exists)
             keep("workflow-round")
             app.buttons["Back"].firstMatch.tap()
-            XCTAssert(new.waitForExistence(timeout: 10))
-            XCTAssertFalse(labelled(app, "cooee #33").exists)
-            keep("home-no-lanes")
+            XCTAssert(labelled(app, "open chat").waitForExistence(timeout: 10))
         }
 
         @MainActor
@@ -229,6 +228,8 @@
             app.buttons["Done"].firstMatch.tap()
             app.buttons["Back"].firstMatch.tap()
             XCTAssert(new.waitForExistence(timeout: 10))
+            XCTAssertFalse(labelled(app, "cooee #33").exists)
+            keep("home-no-lanes")
             app.buttons["Account"].firstMatch.tap()
             XCTAssert(labelled(app, "Notifications").waitForExistence(timeout: 10))
             keep("avatar-menu")

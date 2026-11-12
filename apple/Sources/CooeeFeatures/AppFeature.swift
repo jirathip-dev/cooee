@@ -72,7 +72,9 @@ public struct AppFeature: Sendable {
                 state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
                 return .send(.home(.refresh))
             case .chat(.delegate(.open(let thread))):
-                return .send(.open(thread))
+                state.path.append(thread)
+                state.chat = chat(state, thread)
+                return .none
             case .home(.loaded):
                 if let id = state.chat?.persona.id, let home = state.home {
                     state.chat?.workflow = home.lists(now: now).workflow[id]
@@ -98,17 +100,23 @@ public struct AppFeature: Sendable {
             state.path = ["new:\(persona)"]
             state.chat = chat(state, "new:\(persona)")
         case .back:
-            state.path = Array(state.path.dropLast())
-            state.chat = nil
+            pop(&state, to: Array(state.path.dropLast()))
+        case .path(let path) where path.count < state.path.count:
+            pop(&state, to: path)
         case .path(let path):
             state.path = path
-            if path.isEmpty { state.chat = nil }
         case .edit(let id):
             state.persona = persona(state, id)
         default:
             break
         }
         return .none
+    }
+
+    private func pop(_ state: inout State, to path: [String]) {
+        state.path = path
+        state.chat = path.last.flatMap { $0 == Self.others ? nil : chat(state, $0) }
+        state.chat?.workflowOpen = true
     }
 
     private func persona(_ state: State, _ id: String?) -> PersonaFeature.State? {

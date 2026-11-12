@@ -120,23 +120,26 @@ internal struct TopBar: View {
 internal struct ChatList: View {
     @Environment(\.look) private var look
     internal let chats: [ListedChat]
-    internal var title = "Chats"
+    internal var title: String? = "Chats"
     internal var selected: String?
     internal var open: (String) -> Void = { _ in }
 
     internal var body: some View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 0) {
-            Text(look.mono ? "# \(title.lowercased())" : title).ui(
-                look.mono ? 12 : 20, look.mono ? .regular : .bold, look
-            )
-            .foregroundStyle(look.mono ? palette.mute : palette.foreground).padding(.horizontal, 16)
-            .padding(.bottom, 6).padding(.top, look.style == .scene ? 12 : 0)
+            if let title {
+                Text(look.mono ? "# \(title.lowercased())" : title).ui(
+                    look.mono ? 12 : 20, look.mono ? .regular : .bold, look
+                )
+                .foregroundStyle(look.mono ? palette.mute : palette.foreground).padding(.horizontal, 16)
+                .padding(.bottom, 6).padding(.top, look.style == .scene ? 12 : 0)
+            }
             ForEach(chats) { chat in
                 Button {
                     open(chat.id)
                 } label: {
-                    ChatRow(row: chat.row, persona: chat.persona, selected: chat.id == selected)
+                    ChatRow(
+                        row: chat.row, persona: chat.persona, selected: chat.id == selected, word: chat.workflow != nil)
                 }
                 .buttonStyle(.plain)
                 if chat.id != chats.last?.id {

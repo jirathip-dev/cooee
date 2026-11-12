@@ -72,6 +72,7 @@ internal struct ChatRow: View {
     internal let row: Row
     internal let persona: Persona
     internal var selected = false
+    internal var word = false
 
     internal var body: some View {
         let palette = look.palette
@@ -107,6 +108,7 @@ internal struct ChatRow: View {
             if row.state == .working && !look.mono {
                 Image(systemName: "ellipsis").font(.system(size: 13, weight: .bold)).foregroundStyle(palette.cyan)
             }
+            if word { Text("\(row.state.word) ·").ui(14, .regular, look).foregroundStyle(palette.state(row.state)) }
             Text(row.last).ui(14, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
             Spacer(minLength: 4)
             if row.unseen > 0 { Badge(count: row.unseen) }

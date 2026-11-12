@@ -45,6 +45,23 @@ public enum Workflow {
         return issues.sorted { (rank($0.latest.row.state), $0.id) < (rank($1.latest.row.state), $1.id) }
     }
 
+    public static func groups(_ issues: [WorkflowIssue]) -> [(name: String, issues: [WorkflowIssue])] {
+        ["needs you", "failed", "working", "ready"].enumerated().compactMap { rank, name in
+            let members = issues.filter { Self.rank($0.latest.row.state) == rank }
+            return members.isEmpty ? nil : (name, members)
+        }
+    }
+
+    public static func others(_ chats: [ListedChat]) -> [(name: String, chats: [ListedChat])] {
+        let sources = Set(chats.compactMap(\.workflow?.source)).sorted()
+        let sections =
+            [("chats · no persona", chats.filter { $0.workflow == nil })]
+            + sources.map { source in
+                ("\(source) · no plugin claims it", chats.filter { $0.workflow?.source == source })
+            }
+        return sections.filter { !$0.1.isEmpty }
+    }
+
     private static func rank(_ state: LaneState) -> Int {
         [LaneState.needs, .fail, .working].firstIndex(of: state) ?? 3
     }

@@ -31,19 +31,46 @@ internal struct OthersView: View {
     internal let back: () -> Void
 
     internal var body: some View {
+        let palette = look.palette
         ZStack(alignment: .topLeading) {
             Backdrop()
             VStack(alignment: .leading, spacing: 0) {
-                Button(action: back) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
-                    .buttonStyle(.plain).accessibilityLabel("Back").padding(.horizontal, 14).padding(.vertical, 8)
+                BackLink(title: "Home", run: back)
                 Scroller {
-                    ChatList(chats: chats, title: "Others", open: open)
-                    Text("Chats with no persona, and workflow sessions no attached plugin claims.")
-                        .ui(13, .regular, look).foregroundStyle(look.palette.mute).padding(16)
+                    Text("Others").ui(34, .bold, look).padding(.horizontal, 16)
+                    Text("Chats with no persona, and workflow whose source no installed plugin claims.")
+                        .ui(14, .regular, look).foregroundStyle(palette.mute).padding(.horizontal, 16)
+                    ForEach(Workflow.others(chats), id: \.name) { section in
+                        Caps(text: section.name)
+                        ChatList(chats: section.chats, title: nil, open: open)
+                    }
                 }
             }
         }
-        .foregroundStyle(look.palette.foreground)
+        .foregroundStyle(palette.foreground)
+    }
+}
+
+internal struct BackLink: View {
+    @Environment(\.look) private var look
+    internal let title: String
+    internal let run: () -> Void
+
+    internal var body: some View {
+        Button(action: run) {
+            Text("‹ \(title)").ui(17, .regular, look).foregroundStyle(look.palette.link).frame(minHeight: 40)
+        }
+        .buttonStyle(.plain).accessibilityLabel("Back").padding(.horizontal, 14).padding(.vertical, 4)
+    }
+}
+
+internal struct Caps: View {
+    @Environment(\.look) private var look
+    internal let text: String
+
+    internal var body: some View {
+        Text(text.uppercased()).ui(13, .semibold, look).foregroundStyle(look.palette.mute).kerning(0.6)
+            .padding(.horizontal, 16).padding(.top, 18).padding(.bottom, 4)
     }
 }
 
@@ -56,74 +83,123 @@ internal struct WorkflowSheet: View {
     internal let done: () -> Void
 
     internal var body: some View {
+        let palette = look.palette
         VStack(spacing: 0) {
             SheetBar(title: "Workflow", done: "Done", run: done)
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(issues) { issue in
-                        Button {
-                            unfold(issue.id)
-                        } label: {
-                            IssueRow(issue: issue)
-                        }.buttonStyle(.plain)
-                        if issue.id == unfolded { rounds(issue) }
-                        Rectangle().fill(look.palette.line).frame(height: 0.5)
-                    }
-                    if issues.isEmpty {
-                        Text("No workflow sessions.").foregroundStyle(look.palette.mute).padding(16)
+                    summary.padding(.horizontal, 16).padding(.top, 4)
+                    ForEach(Workflow.groups(issues), id: \.name) { group in
+                        Caps(text: group.name)
+                        ForEach(group.issues) { issue in
+                            Button {
+                                unfold(issue.id)
+                            } label: {
+                                IssueRow(issue: issue, open: issue.id == unfolded)
+                            }.buttonStyle(.plain)
+                            if issue.id == unfolded { rounds(issue) }
+                            Rectangle().fill(palette.line).frame(height: 0.5).padding(.leading, 64)
+                        }
                     }
                 }
             }
         }
-        .foregroundStyle(look.palette.foreground).background(look.palette.background)
+        .foregroundStyle(palette.foreground).background(palette.background)
+    }
+
+    private var summary: some View {
+        let source = issues.first?.latest.workflow?.source ?? "workflow"
+        let needs = issues.count(where: \.needsYou)
+        return HStack(spacing: 0) {
+            Text("\(source) · \(issues.count) issue\(issues.count == 1 ? "" : "s")")
+            if needs > 0 { Text(" · \(needs) needs you").fontWeight(.semibold).foregroundStyle(look.palette.red) }
+        }
+        .ui(14, .regular, look).foregroundStyle(look.palette.mute)
     }
 
     private func rounds(_ issue: WorkflowIssue) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             ForEach(issue.rounds) { round in
                 Button {
                     open(round.id)
                 } label: {
                     HStack(spacing: 8) {
-                        Text(round.row.state.figure).ui(13, .bold, look)
-                        Text(round.workflow?.stage ?? round.row.title).ui(14, .semibold, look)
-                        Text(round.row.state.word).ui(13, .regular, look).foregroundStyle(look.palette.mute)
+                        Circle().fill(look.palette.state(round.row.state)).frame(width: 10, height: 10)
+                        Text(round.workflow?.stage ?? round.row.title).ui(15, .semibold, look)
+                        Text(round.row.state.word).ui(14, .regular, look)
+                            .foregroundStyle(look.palette.state(round.row.state))
                         Spacer()
-                        Text("open chat ›").ui(13, .medium, look).foregroundStyle(look.palette.link)
+                        Text("open chat ›").ui(14, .medium, look).foregroundStyle(look.palette.link)
                     }
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.leading, 44).padding(.trailing, 16).padding(.bottom, 10)
+        .padding(.leading, 64).padding(.trailing, 16).padding(.bottom, 12)
     }
 }
 
 internal struct IssueRow: View {
     @Environment(\.look) private var look
     internal let issue: WorkflowIssue
+    internal let open: Bool
 
     internal var body: some View {
         let (palette, row) = (look.palette, issue.latest.row)
-        HStack(alignment: .top, spacing: 12) {
-            Text(row.state.figure).ui(13, .bold, look).frame(width: 32, alignment: .leading)
-                .foregroundStyle(issue.needsYou ? palette.red : palette.cyan)
+        let tint = palette.state(row.state)
+        HStack(alignment: .center, spacing: 12) {
+            Avatar(persona: issue.latest.persona, size: 40)
             VStack(alignment: .leading, spacing: 3) {
-                Text("\(issue.id) · \(issue.latest.workflow?.stage ?? "")").ui(15, .semibold, look).lineLimit(1)
-                Text("\(row.state.word) · \(row.last)").ui(13, .regular, look).foregroundStyle(palette.mute)
-                    .lineLimit(1)
+                HStack(spacing: 0) {
+                    Text("\(issue.id) · ")
+                    Text(issue.latest.workflow?.stage ?? "").fontWeight(.regular).foregroundStyle(tint)
+                }
+                .ui(16, .semibold, look).lineLimit(1)
+                HStack(spacing: 0) {
+                    Text(row.state.word).foregroundStyle(tint)
+                    Text(" · \(row.title)").foregroundStyle(palette.mute)
+                }
+                .ui(14, .regular, look).lineLimit(1)
             }
             Spacer(minLength: 4)
-            Text(row.ago).ui(13, .regular, look).foregroundStyle(palette.mute)
+            Text("\(row.ago) \(open ? "⌄" : "›")").ui(14, .regular, look).foregroundStyle(palette.mute)
         }
         .padding(.horizontal, 16).padding(.vertical, 10).contentShape(.rect)
+    }
+}
+
+internal struct NeutralAvatar: View {
+    @Environment(\.look) private var look
+    internal let persona: Persona
+    internal let size: CGFloat
+
+    internal var body: some View {
+        Circle().fill(look.palette.mute.opacity(0.22)).frame(width: size, height: size).overlay {
+            if persona.look.coat.isEmpty {
+                Text(persona.look.initials).ui(size * 0.34, .bold, look)
+            } else {
+                Sprite(name: "horse-\(persona.look.coat)-\(persona.pose)").frame(width: size * 0.62)
+            }
+        }
+    }
+}
+
+extension Palette {
+    internal func state(_ state: LaneState) -> Color {
+        switch state {
+        case .needs, .fail: red
+        case .working: amber
+        case .done, .merged: green
+        case .idle: mute
+        }
     }
 }
 
 internal struct WorkflowChip: View {
     @Environment(\.look) private var look
     internal let count: Int
+    internal let lit: Bool
     internal let open: () -> Void
 
     internal var body: some View {
@@ -133,6 +209,7 @@ internal struct WorkflowChip: View {
                 if count > 0 { Badge(count: count) }
             }
             .padding(.horizontal, 12).frame(height: 30).modifier(RoundSurface(look: look))
+            .overlay(Capsule().strokeBorder(look.palette.link, lineWidth: lit ? 1.5 : 0))
         }
         .buttonStyle(.plain).accessibilityLabel("Workflow")
     }

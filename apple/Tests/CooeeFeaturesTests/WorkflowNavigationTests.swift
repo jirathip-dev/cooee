@@ -26,7 +26,7 @@ internal struct WorkflowNavigationTests {
             $0.path = ["others", "loose"]
             $0.chat = ChatFeature.State(
                 server: mini, target: .thread("loose"),
-                persona: Persona(APIPersona(id: "codex", name: "codex", agent: "codex"), state: .done)
+                persona: Listing.chats(rows: [row("loose", persona: "")], personas: [], now: epoch)[0].persona
             )
         }
         await store.send(.back) {
@@ -53,10 +53,32 @@ internal struct WorkflowNavigationTests {
         }
         await store.send(.chat(.workflow(.show(true)))) { $0.chat?.workflowOpen = true }
         await store.send(.chat(.workflow(.open("l1")))) { $0.chat?.workflowOpen = false }
-        await store.receive(\.chat.delegate.open)
-        await store.receive(\.open) {
-            $0.path = ["l1"]
+        await store.receive(\.chat.delegate.open) {
+            $0.path = ["new:cond", "l1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("l1"), persona: sessions[0].persona)
+        }
+    }
+
+    @Test internal func aRoundOpensAsANamedChatAndBackReturnsToTheOpenWorkflowSheet() async {
+        let store = store(rows: [lane("l1")], personas: [conductor], plugins: [drover])
+        let sessions = Listing.chats(rows: [lane("l1")], personas: [], now: epoch)
+        let sheet = { (state: inout AppFeature.State) in
+            state.chat = ChatFeature.State(server: mini, target: .new(conductor), persona: Persona(conductor))
+            state.chat?.workflow = sessions
+        }
+        await store.send(.start("cond")) {
+            $0.path = ["new:cond"]
+            sheet(&$0)
+        }
+        await store.send(.chat(.delegate(.open("l1")))) {
+            $0.path = ["new:cond", "l1"]
+            $0.chat = ChatFeature.State(server: mini, target: .thread("l1"), persona: sessions[0].persona)
+        }
+        #expect(sessions[0].persona.name == "cooee #33 · impl 1" && sessions[0].persona.api.agent == "drover")
+        await store.send(.path(["new:cond"])) {
+            $0.path = ["new:cond"]
+            sheet(&$0)
+            $0.chat?.workflowOpen = true
         }
     }
 }

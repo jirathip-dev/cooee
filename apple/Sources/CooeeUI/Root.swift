@@ -87,7 +87,9 @@ public struct AppRoot: View {
 
     @ViewBuilder private func chat(back: Bool) -> some View {
         if let chat = store.scope(state: \.chat, action: \.chat) {
-            ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
+            let round = store.path.count > 1 && store.path.first != AppFeature.others
+            ChatScreen(store: chat, back: back, backTo: round ? "Workflow" : nil) { store.send(.back) }
+                .id(store.path.last)
         } else if !back {
             Text("Pick a chat, or start one with +").foregroundStyle(.secondary).frame(maxHeight: .infinity)
         }
@@ -97,6 +99,7 @@ public struct AppRoot: View {
 internal struct ChatScreen: View {
     @Bindable internal var store: StoreOf<ChatFeature>
     internal let back: Bool
+    internal var backTo: String?
     internal let onBack: () -> Void
 
     private var actions: ChatActions {
@@ -121,6 +124,8 @@ internal struct ChatScreen: View {
         actions.attachPlugin = { store.send(.plugins(.attach(attachable[$0]))) }
         actions.workflow = store.workflow.map { Workflow.issues($0).count(where: \.needsYou) }
         actions.showWorkflow = { store.send(.workflow(.show(true))) }
+        actions.workflowOpen = store.workflowOpen
+        actions.backTo = backTo
         return actions
     }
 
@@ -146,6 +151,7 @@ internal struct ChatScreen: View {
                 open: { store.send(.workflow(.open($0))) },
                 done: { store.send(.workflow(.show(false))) }
             )
+            .presentationDetents([.fraction(0.8)])
         }
     }
 }

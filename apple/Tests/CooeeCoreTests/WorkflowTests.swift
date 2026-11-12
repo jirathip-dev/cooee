@@ -73,5 +73,22 @@ internal struct WorkflowTests {
         let fix = try #require(issues.first { $0.id == "cooee #31" })
         #expect(fix.latest.id == "fix31" && fix.rounds.map(\.id) == ["impl31", "fix31"])
         #expect(issues[0].latest.workflow?.stage == "rev 2")
+        #expect(Workflow.groups(issues).map(\.name) == ["needs you", "failed", "working", "ready"])
+        #expect(Workflow.groups(issues).map { $0.issues.map(\.id) }.joined().elementsEqual(issues.map(\.id)))
+    }
+
+    @Test internal func othersSplitsChatsWithNoPersonaFromEachUnclaimedSourceAndNamesNeitherByItsAgent() throws {
+        let others = Listing.home(rows: rows, personas: [coder], plugins: [], now: now).others
+        let sections = Workflow.others(others)
+        #expect(
+            sections.map(\.name) == [
+                "chats · no persona", "drover · no plugin claims it", "nightly · no plugin claims it",
+            ])
+        #expect(sections.map { $0.chats.map(\.id) } == [["loose"], ["impl"], ["nightly"]])
+        let loose = try #require(sections.first?.chats.first)
+        #expect(loose.persona.name == "T loose" && loose.persona.id.isEmpty && loose.row.title == "fake-acp")
+        let lane = try #require(sections[1].chats.first)
+        #expect(lane.persona.name == "cooee #33 · impl 1" && lane.persona.api.agent == "drover")
+        #expect(lane.persona.look.coat == "bay" && loose.persona.look.coat.isEmpty)
     }
 }
