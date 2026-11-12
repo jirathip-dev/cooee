@@ -1,0 +1,8 @@
+Decided: merged origin/staging (#181); the hub.rs and plugins.rs conflicts keep staging's code with every rule-breaking comment line dropped, plus 2 in tests/chat.rs
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #181's terminal lock and hanging-plugin test
+Decided: no code change for the failed iOS Simulator build at d0b1c75; every macOS job was cancelled with zero steps run, never given a runner
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on hub.rs, plugins.rs and chat.rs is only deleted comment lines, and scripts/comments.py exits 0
+Check: the macOS jobs run and pass at the head
+Owner: the branch is up to date with staging again, and the new per-terminal locking code follows the comment rule
