@@ -48,4 +48,14 @@ internal struct SceneTests {
         #expect(placed.first { $0.id == "l-722" }?.name == "#722 review 1")
         #expect(placed.map(\.id) == ["l-730", "l-655", "l-641", "l-722", "l-609", "l-456", "l-702"])
     }
+
+    @Test internal func aLanesHeadIsItsHorseItsLiveRoundsLaneAndItsPR() throws {
+        let head = LaneHead(thread: "herdsman-impl-641", screen: try Self.fixture("queue.json"))
+        #expect(head.lane?.name == "#641 fix 1" && head.lane?.state == .working)
+        #expect(head.line == "Claude Code · opus 5.5 · mini")
+        #expect(head.round.string("since") == "2026-11-09T09:35:00Z")
+        #expect(head.pull?.string("label") == "PR #704")
+        let unknown = LaneHead(thread: "nobody", screen: try Self.fixture("queue.json"))
+        #expect(unknown.lane == nil && unknown.line.isEmpty && unknown.pull == nil)
+    }
 }

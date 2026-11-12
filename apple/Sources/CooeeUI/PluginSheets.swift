@@ -30,11 +30,33 @@ internal struct SheetBar: View {
 internal struct PluginScreenSheet: View {
     @Environment(\.look) private var look
     @Environment(\.dismiss) private var dismiss
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var size
+    #else
+        private let size: UserInterfaceSizeClass? = .regular
+    #endif
     internal let store: StoreOf<PluginScreenFeature>
 
     internal var body: some View {
+        screen.accessibilityHidden(store.lane != nil).overlay { lane }
+    }
+
+    @ViewBuilder private var lane: some View {
+        if let lane = store.scope(state: \.lane, action: \.lane.presented), case .thread(let thread) = lane.target {
+            LaneChatSheet(
+                store: lane, head: LaneHead(thread: thread, screen: store.screen?.root ?? .null),
+                back: "‹ \(store.place.label)"
+            ) {
+                store.send(.lane(.dismiss))
+            } done: {
+                dismiss()
+            }
+        }
+    }
+
+    private var screen: some View {
         let palette = look.palette
-        VStack(spacing: 0) {
+        return VStack(spacing: 0) {
             SheetBar(cancel: back, title: store.offline ? "" : store.place.label, done: "Done") { dismiss() }
             if let who = store.unreachable { offline(who) }
             ScrollView {
@@ -44,8 +66,8 @@ internal struct PluginScreenSheet: View {
                             store.send(.act($0))
                         } open: {
                             store.send(.navigate($0))
-                        } openThread: {
-                            store.send(.open($0))
+                        } openThread: { thread in
+                            if size == .compact { store.send(.push(thread)) } else { store.send(.open(thread)) }
                         }
                         .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
                     } else if store.offline {

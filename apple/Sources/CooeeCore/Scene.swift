@@ -25,3 +25,28 @@ public struct SceneLane: Identifiable, Sendable, Equatable {
         return [LaneState.needs, .fail, .working, .done, .idle].flatMap { state in all.filter { $0.state == state } }
     }
 }
+
+public struct LaneHead: Sendable, Equatable {
+    public let thread: String
+    public let lane: SceneLane?
+    public let round: JSONValue
+
+    public var line: String {
+        let lane = round["lane"]
+        return ["harness", "model", "host"].compactMap { lane?.string($0) }.joined(separator: " · ")
+    }
+
+    public var pull: JSONValue? { round.list("links").first { $0.string("label")?.hasPrefix("PR") == true } }
+
+    public init(thread: String, screen: JSONValue) {
+        let all = screen.tree
+        self.thread = thread
+        lane = all.filter { $0.type == "scene" }.flatMap { $0.list("lanes") }
+            .first { $0["tap"]?.string("thread") == thread }.map(SceneLane.init)
+        round = all.first { $0["lane"]?.string("name") == thread } ?? .null
+    }
+}
+
+extension JSONValue {
+    fileprivate var tree: [Self] { [self] + (items + fields.values).flatMap(\.tree) }
+}

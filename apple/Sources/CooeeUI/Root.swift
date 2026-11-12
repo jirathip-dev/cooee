@@ -84,6 +84,7 @@ public struct AppRoot: View {
 internal struct ChatScreen: View {
     @Bindable internal var store: StoreOf<ChatFeature>
     internal let back: Bool
+    internal var headed = true
     internal let onBack: () -> Void
 
     private var actions: ChatActions {
@@ -117,6 +118,7 @@ internal struct ChatScreen: View {
             since: store.since,
             queued: store.queue.map(\.text),
             back: back,
+            headed: headed,
             actions: actions
         )
         .task { await store.send(.task).finish() }
