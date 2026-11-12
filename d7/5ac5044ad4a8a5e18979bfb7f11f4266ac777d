@@ -1,0 +1,10 @@
+Decided: apply the approval's amendment to the R1 SwiftUI design: drop the prose lines, record the four decisions in the README, re-render the PNGs.
+Because: q1461
+Because: "Strip the prose lines on the call screen and under the composer"
+Decided: the mic's tap and hold are README decisions, with no new frame; tap is the drawn dictation flow, hold is q1335's voice note.
+Because: "mic: hold = voice note (q1335), tap = dictate and edit"
+Rejected: a new hold-to-record frame — the amendment names the gesture, not a new screen, and the issue asks for a small design.
+Decided: Open questions 1 and 2 become owner decisions: Stop without Face ID, Action button runs What needs me.
+Because: "Stop on the island and the Live Activity runs without Face ID"
+Check: only the call and dictate PNGs changed; swift test in apple/design/native-surfaces renders all 23 frames.
+Owner: The prose lines are gone from the call and dictation screens, and the README now records your four answers as decisions.
