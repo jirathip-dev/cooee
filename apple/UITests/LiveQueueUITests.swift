@@ -18,13 +18,15 @@
         @MainActor
         private func opensTheLaneChatInTheSheet(_ app: XCUIApplication) {
             let horse = labelled(app, "#641 fix 1, on the trail")
-            (horse.exists ? horse : app.buttons["lane chat ›"].firstMatch).tap()
+            let chats = app.buttons.matching(identifier: "lane chat ›")
+            (horse.exists ? horse : chats.element(boundBy: chats.count - 1)).tap()
             let back = app.buttons["‹ Queue"].firstMatch
             XCTAssert(back.waitForExistence(timeout: 10))
             XCTAssert(
                 labelled(app, "herdsman-impl-641").exists && labelled(app, "Claude Code · opus 5.5 · mini").exists)
             keep("lane-tapped")
             back.tap()
+            XCTAssert(back.waitForNonExistence(timeout: 10))
             XCTAssert(app.buttons["PR #704 ›"].firstMatch.waitForExistence(timeout: 10))
         }
     }

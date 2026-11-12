@@ -118,15 +118,21 @@ internal struct RoundBody: View {
     }
 
     private var links: some View {
-        let palette = look.palette
-        return HStack(spacing: 8) {
-            ForEach(Array(round.list("links").enumerated()), id: \.offset) { _, link in
-                ActButton(source: link) {
-                    Text("\(link.string("label") ?? "") ›").ui(14, .medium, look).foregroundStyle(palette.link)
-                        .padding(.horizontal, 12).frame(height: 32)
-                        .overlay(RoundedRectangle(cornerRadius: look.mono ? 4 : 16).stroke(palette.edge, lineWidth: 1))
-                }
-            }
+        HStack(spacing: 8) {
+            ForEach(Array(round.list("links").enumerated()), id: \.offset) { _, link in LinkChip(link: link) }
+        }
+    }
+}
+
+internal struct LinkChip: View {
+    @Environment(\.look) private var look
+    internal let link: JSONValue
+
+    internal var body: some View {
+        ActButton(source: link) {
+            Text("\(link.string("label") ?? "") ›").ui(14, .medium, look).foregroundStyle(look.palette.link)
+                .padding(.horizontal, 12).frame(height: 32)
+                .overlay(RoundedRectangle(cornerRadius: look.mono ? 4 : 16).stroke(look.palette.edge, lineWidth: 1))
         }
     }
 }

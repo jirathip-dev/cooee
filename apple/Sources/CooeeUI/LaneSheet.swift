@@ -46,7 +46,7 @@ internal struct LaneHeadView: View {
                 }
             }
             Spacer(minLength: 4)
-            if let pull = head.pull { RowButton(button: pull) }
+            if let pull = head.pull { LinkChip(link: pull) }
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
         .overlay(alignment: .bottom) { Rectangle().fill(palette.line).frame(height: 0.5) }
