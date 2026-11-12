@@ -1,0 +1,12 @@
+Decided: copy what each plugin or shed call needs, unlock the thread, call, relock and apply the result, at every hub call site
+Because: "Never hold a `live` lock across a plugin or shed call: copy what the call needs, unlock, call, relock and apply the result."
+Decided: apply() finds its thread through a terminal-to-thread map and locks only that thread
+Because: "`apply()` keeps a terminal→thread map so it locks only the thread an event belongs to, not every thread."
+Decided: events for a thread with a prompt in flight are held and applied right after the message is stored
+Because: crates/cooee-server/src/hub.rs:663
+Rejected: keep the lock across shed.prompt so replies stay ordered — breaks the issue's no-lock rule
+Rejected: store the message before shed takes it — a failed send would be stored, and R20 expects it not to be
+Decided: a duplicate random_id while its first send is still in shed is refused instead of waiting
+Because: crates/cooee-server/src/hub.rs:1370
+Check: both new tests fail on base hub.rs (list took ~10s) and pass at head; the grep in the PR body finds no shed call that takes a locked thread's field
+Owner: a slow plugin or shed now only slows its own chat; everything else stays fast
