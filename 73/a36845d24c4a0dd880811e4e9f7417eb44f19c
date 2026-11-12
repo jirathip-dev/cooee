@@ -1,0 +1,11 @@
+Decided: one CI check, scripts/pr-body.sh, for the digest's largest class: PR bodies with no For humans section, a WIP placeholder, or evidence at an older sha
+Because: scripts/pr-body.sh:13
+Decided: it runs in shadow in a new lessons workflow on PR body edits too, writing would-fail to the job summary and exiting 0
+Because: .github/workflows/lessons.yml:16
+Decided: placeholder words inside quotes, backticks or a fenced block are ignored, after this PR's own body tripped the check
+Because: scripts/pr-body.sh:14
+Rejected: a new check for topcoat fmt — CI msrv already runs just fmt; the repeat comes from lane hosts lacking topcoat, an owner host change
+Rejected: rules for design findings — each is a different defect, no class repeats mechanically
+Check: ci/pr-body-test.sh exits 0, and the PR body's proof shows PR#196 and PR#259 real bodies failing and their fixed bodies passing
+Check: the lessons workflow's summary shows no would-fail for this PR at its head
+Owner: PRs now get a non-blocking check that their description has a For humans part and evidence for the commit under review.
