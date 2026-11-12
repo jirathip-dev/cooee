@@ -21,9 +21,7 @@ public struct SceneLane: Identifiable, Sendable, Equatable {
     }
 
     public static func placed(_ lanes: [JSONValue]) -> [Self] {
-        lanes.map(Self.init).enumerated()
-            .filter { $0.element.state != .merged }
-            .sorted { ($0.element.state.place, $0.offset) < ($1.element.state.place, $1.offset) }
-            .map(\.element)
+        let all = lanes.map(Self.init)
+        return [LaneState.needs, .fail, .working, .done, .idle].flatMap { state in all.filter { $0.state == state } }
     }
 }

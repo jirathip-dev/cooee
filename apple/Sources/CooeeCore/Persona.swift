@@ -24,17 +24,6 @@ public enum LaneState: String, Sendable, Equatable {
 
     public var pose: String { self == .working ? "edit" : rawValue }
 
-    public var place: Int {
-        switch self {
-        case .needs: 0
-        case .fail: 1
-        case .working: 2
-        case .done: 3
-        case .idle: 4
-        case .merged: 5
-        }
-    }
-
     public init(api state: String) {
         switch state {
         case "working", "connecting": self = .working
