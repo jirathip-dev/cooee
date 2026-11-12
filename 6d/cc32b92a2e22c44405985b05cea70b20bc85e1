@@ -1,0 +1,7 @@
+Decided: round 3 adds the q1531 fork guard to every macOS runs-on; the self-hosted label applies only to pushes and same-repo PRs
+Because: q1531
+Rejected: a workflow-level env for the guard — runs-on cannot read the env context, so the expression is inline
+Decided: the push re-runs apple past the keychain flake from round 2 instead of a no-change round
+Because: "`apple` still uploads `simulator-shots` with the dark and light screens"
+Check: actionlint green; with APPLE_RUNNER unset every macOS job still lands on macos-26 / macos-latest; apple green at the new head
+Owner: once the mini's runner exists, fork PRs still run on GitHub's macOS runners by design
