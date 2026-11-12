@@ -25,6 +25,9 @@ on:
       - "scripts/apple-check.sh"
       - "scripts/apple-coverage.swift"
       - ".github/workflows/apple.yml"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   build:
     runs-on: macos-26
