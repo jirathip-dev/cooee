@@ -14,7 +14,9 @@ pub(crate) fn size(mb: u64) -> String {
     }
 }
 
-pub(crate) fn ago(now: u64, t: u64) -> String {
+/// How long before `now` unix second `t` was: `just now`, `12 min ago`, `3 h ago`, `2 d ago`.
+#[must_use]
+pub fn ago(now: u64, t: u64) -> String {
     match now.saturating_sub(t) {
         0..60 => "just now".to_owned(),
         s @ 60..3600 => format!("{} min ago", s / 60),

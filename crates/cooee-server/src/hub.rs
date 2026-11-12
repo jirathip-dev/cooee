@@ -271,6 +271,14 @@ fn in_home(path: Option<&Path>) -> Result<(PathBuf, PathBuf), HubError> {
     }
 }
 
+fn on_machine(machine: &str, name: &str) -> String {
+    if machine.is_empty() {
+        name.to_owned()
+    } else {
+        format!("{machine}/{name}")
+    }
+}
+
 fn outside(folder: &Path) -> HubError {
     HubError::Refused(format!(
         "{} is not inside a configured root",
@@ -474,6 +482,7 @@ impl Hub {
                     live.chat
                         .ended(now(), 0, "The agent is gone (shed restarted).".to_owned())
                 }
+                Err(e) if e.no_link() => Vec::new(),
                 Err(e) => return Err(e),
             };
             if let Err(e) = live.publish(self, changes) {
@@ -855,6 +864,7 @@ impl Hub {
         recipe: &Recipe,
     ) -> Result<String, HubError> {
         self.shed.hello()?;
+        self.reachable(&recipe.machine)?;
         let (id, fresh) = self.admit(agent, folder, text, random_id, recipe)?;
         self.connect(&id, (fresh, false), text, random_id, recipe)?;
         Ok(id)
@@ -909,6 +919,7 @@ impl Hub {
         let (hub, id, name) = (Arc::clone(self), id.to_owned(), name.to_owned());
         thread::spawn(move || {
             let done = hub.shed.hello().map_err(HubError::from);
+            let done = done.and_then(|()| hub.reachable(&recipe.machine));
             let done =
                 done.and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, &recipe));
             if let Some((file, _)) = &recipe.launch.secrets {
@@ -956,8 +967,8 @@ impl Hub {
             .chars()
             .take(60)
             .collect();
-        self.mint(random_id, |id| Thread {
-            terminal: format!("cooee-{id}"),
+        let (id, fresh) = self.mint(random_id, |id| Thread {
+            terminal: on_machine(&recipe.machine, &format!("cooee-{id}")),
             id,
             title,
             agent: agent.to_owned(),
@@ -971,7 +982,34 @@ impl Hub {
             room: recipe.room.clone(),
             asked_by: recipe.asked_by.clone(),
             ..Thread::default()
-        })
+        })?;
+        if fresh && !recipe.machine.is_empty() {
+            let live = self.live(&id)?;
+            let mut live = lock(&live);
+            let text = format!("runs on {}", recipe.machine);
+            let item = live.chat.push(now(), 0, Body::Note { text });
+            live.publish(self, vec![Change::Item(item)])?;
+        }
+        Ok((id, fresh))
+    }
+
+    fn reachable(&self, machine: &str) -> Result<(), HubError> {
+        if machine.is_empty() {
+            return Ok(());
+        }
+        match self.shed.link(machine) {
+            Ok(Some(l)) if l.state != shed_proto::LinkState::Up => {
+                let why = l.error.map(|e| format!(": {e}")).unwrap_or_default();
+                let seen = cooee_machines::ago(cooee_machines::unix_now(), l.since);
+                Err(HubError::Refused(format!(
+                    "{machine} is offline, last seen {seen}{why}"
+                )))
+            }
+            Ok(None) => Err(HubError::Refused(format!(
+                "no machine {machine}: add it with shed machine add"
+            ))),
+            _ => Ok(()),
+        }
     }
 
     fn mint(
@@ -1097,7 +1135,8 @@ impl Hub {
             }
             (l.meta.agent.clone(), l.meta.terminal.clone())
         };
-        let terminal = format!("cooee-{id}-{:x}", now());
+        let machine = lock(&live).meta.machine.clone();
+        let terminal = on_machine(&machine, &format!("cooee-{id}-{:x}", now()));
         let labels = BTreeMap::from([
             (LABEL.to_owned(), "1".to_owned()),
             (format!("{LABEL}.thread"), id.to_owned()),
@@ -1250,7 +1289,12 @@ impl Hub {
                 prompt.push_str(&path.to_string_lossy());
             }
         }
-        self.shed.prompt(&live.meta.terminal, prompt.trim())?;
+        if let Err(e) = self.shed.prompt(&live.meta.terminal, prompt.trim()) {
+            if e.no_link() {
+                self.reachable(&live.meta.machine)?;
+            }
+            return Err(e.into());
+        }
         if !live.meta.handover.is_empty() {
             live.meta.handover.clear();
             self.store.save(&live.meta)?;

@@ -61,7 +61,9 @@ impl Setup {
             .unwrap()
             .to_owned();
         assert!(line.contains(&format!("cooee-{id}")), "{line}");
-        let sent = self.shed.sent(&format!("cooee-{id}"));
+        let on = line.split("--on ").nth(1).and_then(|r| r.split(' ').next());
+        let terminal = on.map_or(format!("cooee-{id}"), |m| format!("{m}/cooee-{id}"));
+        let sent = self.shed.sent(&terminal);
         let prompt: Value = serde_json::from_str(sent[0].trim_start_matches('\x1e')).unwrap();
         (id, line, prompt["prompt"].as_str().unwrap().to_owned())
     }
@@ -461,6 +463,7 @@ fn a_persona_and_its_threads_name_their_machine() {
         "stats-air.json",
         &json!({ "machine": "air", "online": false, "last_seen": 1_700_000_000u64 }),
     );
+    s.shed.link("air", "up", 1_700_000_000, None);
 
     let old = "name = \"Old\"\ncharacter = \"Kept.\"\ninstructions = \"Still.\"\nfolder = \"scratch\"\n\
                agent = \"fake-acp\"\nmodel = \"\"\neffort = \"\"\nplugins = []\n";
