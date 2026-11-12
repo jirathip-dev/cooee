@@ -24,6 +24,7 @@
             XCTAssert(labelled(app, "Coder").exists)
             keep("home")
             personaRoundTrip(app)
+            copiesAReply(app, new)
             answersEachCard(app, new)
             swipeBack(app, new)
             opensDroversScreens(app, new)
@@ -188,6 +189,26 @@
             keep("persona")
             app.buttons["Save"].firstMatch.tap()
             XCTAssert(app.buttons["Save"].waitForNonExistence(timeout: 10))
+        }
+
+        @MainActor
+        private func copiesAReply(_ app: XCUIApplication, _ new: XCUIElement) {
+            new.tap()
+            app.buttons["Coder"].firstMatch.tap()
+            type(app, "Message Coder", "paragraphs")
+            app.buttons["Send"].firstMatch.tap()
+            let reply = labelled(app, "HTML or SwiftUI?")
+            XCTAssert(reply.waitForExistence(timeout: 30))
+            keep("chat-paragraphs")
+            reply.press(forDuration: 1.2)
+            XCTAssert(app.buttons["Copy"].firstMatch.waitForExistence(timeout: 10))
+            keep("message-menu")
+            app.buttons["Select text"].firstMatch.tap()
+            XCTAssert(app.textViews.firstMatch.waitForExistence(timeout: 10))
+            keep("select-text")
+            app.buttons["Done"].firstMatch.tap()
+            app.buttons["Back"].firstMatch.tap()
+            XCTAssert(new.waitForExistence(timeout: 10))
         }
 
         @MainActor
