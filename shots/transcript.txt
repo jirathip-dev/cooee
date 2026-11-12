@@ -1,0 +1,1 @@
+$ PORT=41114 PAIR_LINK=/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-229-r1/.verify/pair apple/e2e/serve.sh (setpgrp)
