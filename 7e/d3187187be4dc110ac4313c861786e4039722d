@@ -1,0 +1,4 @@
+Decided: merged origin/staging; in tests/plugins.rs kept both the hanging-plugin test and staging's manifest-check test
+Because: crates/cooee/tests/plugins.rs:908
+Rejected: none
+Owner: brought the branch up to date with staging; no behaviour change
