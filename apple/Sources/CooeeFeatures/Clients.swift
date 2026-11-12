@@ -30,6 +30,10 @@ public struct ThreadsClient: Sendable {
             -> Void
     public var start:
         @Sendable (_ server: Server, _ persona: APIPersona, _ text: String, _ setup: Bool) async throws -> String
+    public var room: @Sendable (_ server: Server, _ title: String, _ members: [String]) async throws -> String
+    public var seat:
+        @Sendable (_ server: Server, _ room: String, _ persona: String, _ place: Int?, _ remove: Bool) async throws
+            -> [String]
 }
 
 @DependencyClient

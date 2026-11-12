@@ -75,7 +75,7 @@ the ids, so notes are merged or forgotten first; a persona already past it keeps
 shrink them. `plugins` (#129) are the installed plugins (or config
 `[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. `role` (#159) is `""` (a plain persona)
 or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos or fleets it covers, which another may
-cover too): herdsman's Drover plugin is attached to each orchestrator by its role, never its name. The persona read
+cover too): an installed `drover` is attached to each orchestrator by its role, never its name. The persona read
 from a `conductor` profile (or saved from one before #159) is an orchestrator, its name kept. `machine` (#148) is the one its threads run on: `""` this host (every
 persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
 with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). A skill
