@@ -1,0 +1,4 @@
+Decided: merged origin/staging; in queue_as, kept this branch's unlock-before-send flow and put staging's routine mark on the queued message
+Because: crates/cooee-server/src/hub.rs:1580
+Rejected: none
+Owner: brought the branch up to date with staging; no change in behaviour beyond what both sides already did
