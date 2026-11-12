@@ -1,0 +1,5 @@
+Decided: merge origin/staging (f5bf384f) into the branch and push; no code change, the FAIL was only CI pending at f288a12
+Because: crates/cooee-server/src/lib.rs:1115
+Rejected: changing web/e2e/folders.spec.mjs — its 1440 root-removal step failed once, passed at 390 in the same run; this PR touches no roots or web code
+Check: every check is green at the new head, ui included; macOS runners were queued for hours on staging too
+Owner: Brings the persona sheet branch up to date so its checks can finish; nothing in the app changed this round.
