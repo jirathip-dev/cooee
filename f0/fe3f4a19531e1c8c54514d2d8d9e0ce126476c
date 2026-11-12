@@ -1,0 +1,5 @@
+Decided: remove the unused look property and provider parameter Periphery flagged in the design views
+Because: apple/Sources/CooeeUI/SignInsPreview.swift:69
+Rejected: a Periphery ignore comment — the code was dead, so deleting it is the smaller change
+Check: apple-quality's Periphery step reports no unused code at this head
+Owner: A tidy-up so the app's code-quality check passes; the design screens are unchanged.
