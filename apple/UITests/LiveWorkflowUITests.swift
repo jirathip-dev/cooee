@@ -8,9 +8,17 @@
             XCTAssert(labelled(app, "Coder").exists)
             keep("home")
             let others = labelled(app, "Others")
-            guard others.waitForExistence(timeout: 10) else { return }
+            guard others.waitForExistence(timeout: 10) else {
+                new.tap()
+                app.buttons["Conductor"].firstMatch.tap()
+                XCTAssert(app.buttons["Workflow"].firstMatch.waitForExistence(timeout: 20), "no Others row: drover claims")
+                app.buttons["Back"].firstMatch.tap()
+                XCTAssert(new.waitForExistence(timeout: 10))
+                return
+            }
             others.tap()
-            XCTAssert(labelled(app, "cooee #33").waitForExistence(timeout: 10))
+            XCTAssert(labelled(app, "NO PLUGIN CLAIMS IT").waitForExistence(timeout: 10))
+            XCTAssert(labelled(app, "cooee #33").exists)
             keep("others")
             app.buttons["Back"].firstMatch.tap()
             XCTAssert(new.waitForExistence(timeout: 10))

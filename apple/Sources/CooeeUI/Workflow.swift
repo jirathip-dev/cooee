@@ -3,7 +3,7 @@ import SwiftUI
 
 internal struct OthersRow: View {
     @Environment(\.look) private var look
-    internal let count: Int
+    internal let titles: [String]
     internal let open: () -> Void
 
     internal var body: some View {
@@ -12,10 +12,16 @@ internal struct OthersRow: View {
             HStack(spacing: 12) {
                 Image(systemName: "tray.full").font(.system(size: 20)).foregroundStyle(palette.mute)
                     .frame(width: 48, height: 48).modifier(RoundSurface(look: look))
-                Text("Others").ui(16, .semibold, look)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Others").ui(16, .semibold, look)
+                    Text(titles.joined(separator: ", ")).ui(14, .regular, look).foregroundStyle(palette.mute)
+                        .lineLimit(1)
+                }
                 Spacer(minLength: 4)
-                Text("\(count)").ui(12, .bold, look).foregroundStyle(palette.mute)
+                Text("\(titles.count)").ui(12, .bold, look).foregroundStyle(palette.mute)
                     .padding(.horizontal, 8).frame(minHeight: 22).background(palette.line, in: .capsule)
+                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(palette.mute)
             }
             .padding(.horizontal, 16).padding(.vertical, 10).contentShape(.rect)
         }
@@ -208,6 +214,8 @@ internal struct WorkflowChip: View {
     internal var body: some View {
         Button(action: open) {
             HStack(spacing: 6) {
+                Image(systemName: "arrow.triangle.branch").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(look.palette.green)
                 Text(look.mono ? "[workflow]" : "Workflow").ui(13, .semibold, look).foregroundStyle(look.palette.green)
                 if count > 0 { Badge(count: count) }
             }

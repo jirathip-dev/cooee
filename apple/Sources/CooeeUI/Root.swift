@@ -46,7 +46,7 @@ public struct AppRoot: View {
         self.store = store
     }
 
-    private func actions(others: Int) -> HomeActions {
+    private func actions(others: [String]) -> HomeActions {
         var actions = HomeActions(
             menu: { store.send(.menu(.open(true))) },
             new: { store.send(.start($0)) },
@@ -60,7 +60,7 @@ public struct AppRoot: View {
 
     @ViewBuilder private func content(_ home: StoreOf<HomeFeature>) -> some View {
         let lists = home.state.lists(now: Date())
-        let actions = actions(others: lists.others.count)
+        let actions = actions(others: lists.others.map(\.row.title))
         if size == .compact {
             NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
                 HomeView(personas: home.pinned, all: home.everyone, chats: lists.chats, actions: actions)

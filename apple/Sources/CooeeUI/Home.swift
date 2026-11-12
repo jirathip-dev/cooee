@@ -6,7 +6,7 @@ public struct HomeActions {
     public var new: (String) -> Void
     public var open: (String) -> Void
     public var edit: (String?) -> Void
-    public var others = 0
+    public var others: [String] = []
     public var openOthers: () -> Void = {}
 
     public init(
@@ -41,7 +41,7 @@ public struct HomeView: View {
                     PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new).padding(.top, 6)
                     ChatList(chats: chats, selected: selected, open: actions.open)
                         .padding(.top, look.style == .scene ? 0 : 14)
-                    if actions.others > 0 { OthersRow(count: actions.others, open: actions.openOthers) }
+                    if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
                 }
             }
             .blur(radius: menuOpen ? 10 : 0)
