@@ -11,7 +11,7 @@
             guard others.waitForExistence(timeout: 10) else {
                 new.tap()
                 app.buttons["Conductor"].firstMatch.tap()
-                XCTAssert(app.buttons["Workflow"].firstMatch.waitForExistence(timeout: 20), "no Others row: drover claims")
+                XCTAssert(app.buttons["Workflow"].firstMatch.waitForExistence(timeout: 20), "drover claims")
                 app.buttons["Back"].firstMatch.tap()
                 XCTAssert(new.waitForExistence(timeout: 10))
                 return
