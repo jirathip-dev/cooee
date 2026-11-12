@@ -140,7 +140,7 @@ untouched and not drawn. **Data:** illustrative.
    the chat's header (next turn), and New persona.
 3. **Workflow rows:** one row per issue with folded rounds. It needs herdsman `/api/v1` to give an issue's rounds
    (stage, round, state, summary, lane): one more API field, or drover's lanes grouped by issue.
-4. **Queue and Asks in the shell** (cooee-drover): their frames under the shell's large title, plus the badge and the
+4. **Queue and Asks in the shell** (Drover, served by herdsman): their frames under the shell's large title, plus the badge and the
    dot. Asks lists a fleet's open run cards first, with #83's approve / deny (one sha, sent once).
 5. **Scene acts its states** (a follow-up to cooee#115): the poses drawn here (plough, rear at the gate, stable, graze,
    refuse, jump), and the navy `personas` band and current-ring go from `web/src/app.css` (`.sp .fh`, `.sb[aria-current]`).

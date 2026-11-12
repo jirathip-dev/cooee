@@ -24,8 +24,9 @@
             XCTAssert(labelled(app, "Coder").exists)
             keep("home")
             personaRoundTrip(app)
+            copiesAReply(app, new)
             answersEachCard(app, new)
-            app.buttons["Back"].firstMatch.tap()
+            swipeBack(app, new)
             opensDroversScreens(app, new)
             avatarMenu(app, new)
         }
@@ -160,6 +161,15 @@
 
     extension LiveUITests {
         @MainActor
+        private func swipeBack(_ app: XCUIApplication, _ home: XCUIElement) {
+            let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+            edge.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+            XCTAssert(field(app, "Message Coder").waitForNonExistence(timeout: 10), "the edge swipe left the chat")
+            XCTAssert(home.waitForExistence(timeout: 10), "the edge swipe went back to Home")
+            keep("swipe-back")
+        }
+
+        @MainActor
         private func personaRoundTrip(_ app: XCUIApplication) {
             let name = "Scout \(ProcessInfo.processInfo.environment["COOEE_LOOK"] ?? "look")"
             app.buttons["New chat"].firstMatch.tap()
@@ -179,6 +189,26 @@
             keep("persona")
             app.buttons["Save"].firstMatch.tap()
             XCTAssert(app.buttons["Save"].waitForNonExistence(timeout: 10))
+        }
+
+        @MainActor
+        private func copiesAReply(_ app: XCUIApplication, _ new: XCUIElement) {
+            new.tap()
+            app.buttons["Coder"].firstMatch.tap()
+            type(app, "Message Coder", "paragraphs")
+            app.buttons["Send"].firstMatch.tap()
+            let reply = labelled(app, "HTML or SwiftUI?")
+            XCTAssert(reply.waitForExistence(timeout: 30))
+            keep("chat-paragraphs")
+            reply.press(forDuration: 1.2)
+            XCTAssert(app.buttons["Copy"].firstMatch.waitForExistence(timeout: 10))
+            keep("message-menu")
+            app.buttons["Select text"].firstMatch.tap()
+            XCTAssert(app.textViews.firstMatch.waitForExistence(timeout: 10))
+            keep("select-text")
+            app.buttons["Done"].firstMatch.tap()
+            app.buttons["Back"].firstMatch.tap()
+            XCTAssert(new.waitForExistence(timeout: 10))
         }
 
         @MainActor
