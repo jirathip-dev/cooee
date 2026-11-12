@@ -1,0 +1,7 @@
+Decided: stop a plugin backend's group with `kill -TERM -- -<pid>` (staging build fix)
+Because: crates/cooee-server/src/manage.rs:165
+Decided: same form the login group kill already uses
+Because: crates/cooee-core/src/login.rs:279
+Rejected: retrying CI — procps kill reads -<pid> as an option and signals -<first digit>, so a pid starting with 1 is kill(-1) and the runner gets SIGTERM; it fails again at random
+Check: ubuntu msrv and stable jobs finish at this head instead of "The runner has received a shutdown signal"
+Owner: CI on Linux stops cancelling itself; plugin backends are stopped without signalling anything else
