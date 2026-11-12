@@ -1,0 +1,8 @@
+Decided: apple_cap 13000 in ci/cap.toml; line_cap stays 27500
+Because: "`ci/cap.toml`: `apple_cap = 13000` (`line_cap` unchanged at 27,500)."
+Because: q1275
+Decided: round 4 merges origin/staging and re-runs CI; ui-fail.log was already gone from the worktree
+Because: q1358
+Rejected: any code change for the pending msrv macos check — it was CI still running, not a failure in this diff
+Check: scripts/line-cap.sh prints apple 7212 / 13000 and non-test 25343 / 27500 at 6bc05d7 and exits 0
+Owner: The Apple app's size limit is now 13,000 lines; the overall limit is unchanged.
