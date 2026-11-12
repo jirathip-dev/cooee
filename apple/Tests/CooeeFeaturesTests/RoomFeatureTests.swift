@@ -118,6 +118,7 @@ internal struct RoomFeatureTests {
             $0.date.now = epoch
             $0.threads.threads = { _ in rows }
             $0.threads.personas = { _ in cast }
+            $0.plugins.installed = { _ in [] }
         }
         store.exhaustivity = .off
         await store.send(.room) { $0.newRoom = NewRoomFeature.State(server: mini, personas: self.cast) }

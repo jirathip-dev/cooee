@@ -79,9 +79,8 @@ public struct AppFeature: Sendable {
                 state.chat = chat(state, thread)
                 return .none
             case .home(.loaded):
-                if let id = state.chat?.persona.id, let home = state.home {
-                    state.chat?.workflow = home.lists(now: now).workflow[id]
-                }
+                let workflow = state.home?.lists(now: now).workflow[state.chat?.persona.id ?? ""]
+                state.chat?.workflow = workflow
                 return .none
             case .room:
                 state.newRoom = state.home.map { NewRoomFeature.State(server: $0.server, personas: $0.personas) }
