@@ -1,0 +1,6 @@
+Decided: merged staging 3ffbe659 and pushed e2bd73d to re-run CI; no code change for the red check
+Because: apple/Tests/CooeeUITests/Frames.swift:97
+Decided: dropped the wip snapshot's Xcode-generated Package.resolved under Cooee.xcodeproj
+Rejected: committing it — staging tracks only apple/Package.resolved; the xcodeproj copy is local build output
+Check: CI at e2bd73d; at 8635a32 (same apple tree) the iOS Simulator build passed on re-run and mac-setup was cancelled at its 90-min timeout, not failed
+Owner: the iOS build that failed now passes; the only red was a timed-out Mac setup job, re-running on the new head
