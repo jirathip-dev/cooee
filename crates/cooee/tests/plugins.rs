@@ -930,3 +930,31 @@ fn a_hanging_plugin_answer_never_holds_another_thread() {
         assert_eq!(code, 200, "{body}");
     });
 }
+
+/// #226: `cooee plugin check` checks a `cooee-plugin.toml` by the manifest's rules, `attach` included.
+#[test]
+fn plugin_check_checks_a_manifest() {
+    let s = setup("manifest-check");
+    let file = s.dir.join("cooee-plugin.toml");
+    let check = |text: &str| {
+        std::fs::write(&file, text).unwrap();
+        let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
+            .args(["plugin", "check"])
+            .arg(&file)
+            .output()
+            .unwrap();
+        (
+            out.status.success(),
+            String::from_utf8_lossy(&out.stdout).into_owned(),
+        )
+    };
+    let ok = "name = \"drover\"\nversion = \"1\"\nbuild = \"true\"\nrun = \"true\"\n\
+              attach = \"http://127.0.0.1:7777\"\n[[places]]\ntype = \"menu-row\"\nlabel = \"drover\"\n\
+              screen = \"/screens/fleets\"\n[permissions]\nplaces = [\"menu-row\"]\n";
+    assert!(check(ok).0, "{}", check(ok).1);
+    let (passed, said) = check(&ok.replace("127.0.0.1:7777", "example.com"));
+    assert!(
+        !passed && said.contains("`attach` must be http://127.0.0.1:<port>"),
+        "{said}"
+    );
+}
