@@ -37,6 +37,11 @@ use crate::{
 /// How long a new build's backend has to serve its first tab's module.
 const HEALTH: Duration = Duration::from_secs(30);
 
+/// A backend's launcher (its run command is `$1`): a watcher ends the backend's process group once its stdin, a
+/// pipe only cooee holds open, closes, so a backend never outlives the cooee (or the `Child`) that started it.
+const BACKEND: &str =
+    "exec 3<&0 </dev/null; (cat <&3 >/dev/null; kill -TERM 0) & exec 3<&-; exec sh -c \"$1\"";
+
 /// Where a first-party plugin is improved instead.
 pub const ISSUES: &str = "https://github.com/jirathip-dev/cooee/issues/new";
 
@@ -481,8 +486,10 @@ impl Manager {
         token: &str,
         log: &Path,
     ) -> io::Result<Command> {
-        let mut c = sh(&m.run, dir, log)?;
-        c.env("PORT", port.to_string())
+        let mut c = sh(BACKEND, dir, log)?;
+        c.args(["sh", &m.run])
+            .stdin(Stdio::piped())
+            .env("PORT", port.to_string())
             .env("COOEE_PLUGIN_TOKEN", token)
             .env("COOEE", lock(&self.url).as_str());
         Ok(c)

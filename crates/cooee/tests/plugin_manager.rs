@@ -161,15 +161,6 @@ impl Setup {
     }
 }
 
-impl Drop for Setup {
-    /// `cooee serve` gets SIGTERM, so it stops the backends it runs.
-    fn drop(&mut self) {
-        let pid = self.cooee.child.id().to_string();
-        let _ = Command::new("kill").args(["-TERM", &pid]).status();
-        let _ = self.cooee.child.wait();
-    }
-}
-
 #[test]
 fn add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it() {
     let s = setup("pm-add");
