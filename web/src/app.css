@@ -331,7 +331,8 @@ html[data-style=terminal] .cfl{border:0;border-left:3px solid var(--r);border-ra
 .ptg{flex:none;min-width:7ch;padding:2px 8px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--fg) 8%,transparent);font-size:var(--fs-meta);text-align:center}
 html[data-style=terminal] .ptg{min-width:7ch;padding:0;background:none;color:var(--p);text-align:left}
 .acr.add .sk,.acr.ni .sk{color:var(--mute)}
-@media (max-width:599px){.acr:is(:has(.un,.us),[data-routine]){flex-wrap:wrap}.acr :is(.un,.us),.acr[data-routine] .st{order:1;flex-basis:100%;padding-bottom:6px}}
+.acr[data-routine]{flex-wrap:wrap}.acr[data-routine] .st{order:1;flex-basis:100%;padding-bottom:6px}
+@media (max-width:599px){.acr:has(.un,.us){flex-wrap:wrap}.acr :is(.un,.us){order:1;flex-basis:100%;padding-bottom:6px}}
 .sh .hd.pvh{padding-left:4px}
 /* #38 theme packs: Settings › look › themes (native forms), a theme thread's bar and its live preview. */
 .thm{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:var(--hit);border-bottom:1px solid var(--line);color:var(--fg);text-decoration:none}

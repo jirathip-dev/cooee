@@ -138,6 +138,8 @@ test("Settings › routines: a row shows its name, line, resume and delete on sc
   await expect(row.locator(".sk")).toHaveText("renewals");
   await expect(row.locator(".st")).toContainText("Mondays 09:00 · in its chat · not run yet · paused");
   expect((await row.locator(".sk").boundingBox()).width).toBeGreaterThan(40);
+  const [sk, st] = [await row.locator(".sk").boundingBox(), await row.locator(".st").boundingBox()];
+  expect(st.y).toBeGreaterThanOrEqual(sk.y + sk.height);
   for (const name of ["resume renewals: it will be resumed", "delete renewals"]) {
     await expect(row.getByRole("button", { name })).toBeInViewport({ ratio: 1 });
   }
