@@ -1,0 +1,9 @@
+Decided: one `apple` job (builds, apple-check, e2e) on every event; mac-setup gated by `if: github.event_name != 'pull_request'`
+Because: "On `pull_request`, `apple.yml` runs one job, `apple`, in sequence"
+Decided: ci.yml msrv/stable matrix os chosen by event via fromJSON, so the macOS check names stay `msrv (macos-latest)`
+Because: "the staging push also runs `mac-setup`, `msrv (macos-latest)` and `stable (macos-latest)`"
+Decided: simulators named per run id and attempt, deleted in an `if: always()` step that reads SIM from GITHUB_ENV
+Because: "`xcrun simctl create` names stay unique per run and the job deletes the simulator it created, also on failure"
+Rejected: keeping the build matrix and apple-quality as separate PR jobs — the spec asks for two macOS jobs per PR
+Check: actionlint job green on this PR; with APPLE_RUNNER unset the jobs land on macos-26 / macos-latest
+Owner: drop build, apple-quality, e2e and the macos-latest msrv/stable checks from the staging ruleset; require `apple` instead
