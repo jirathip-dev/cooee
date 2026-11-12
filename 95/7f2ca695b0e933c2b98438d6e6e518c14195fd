@@ -1,0 +1,8 @@
+Decided: merged origin/staging (#150, #208); the lib.rs, login.rs, main.rs, rooms.rs and support/mod.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #150's machine check and #208's room code
+Decided: staging's new comments in machine.rs, tests/login.rs and tests/machine_check.rs are stripped, and the blank first lines they left are dropped
+Because: crates/cooee/src/machine.rs:1
+Check: git diff -w origin/staging HEAD on the conflicted files adds no lines, only deletes comment lines, and scripts/comments.py exits 0
+Check: the macOS and iOS Simulator jobs run and pass at the head
+Owner: the branch is up to date with staging again, and the new machine-check and room code follows the comment rule
