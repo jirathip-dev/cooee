@@ -1,0 +1,11 @@
+Decided: Home's Others row now shows the titles it holds on a second line and a chevron beside its count, per the approved design
+Because: "one row at the bottom of the list, with a count"
+Because: apple/Sources/CooeeUI/Workflow.swift:17
+Decided: HomeActions carries the Others titles instead of a bare count; the count is derived from them, so the two cannot disagree
+Decided: the Workflow chip gets its branch icon (non-blocking finding)
+Decided: the e2e no longer passes silently without an Others row; with none it must find drover's Workflow chip on Conductor
+Because: apple/UITests/LiveWorkflowUITests.swift:11
+Rejected: the bare state figure in the sheet's issue rows — non-blocking, left for a design pass
+Check: in the light e2e run (drover already attached by the dark run) the else path opens Conductor and asserts the Workflow chip
+Check: the line cap measured on a clean git archive; a local run also counts untracked SPM .build sources
+Owner: Home's Others row now previews what is inside it, like the design.
