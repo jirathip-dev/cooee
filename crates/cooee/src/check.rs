@@ -1,5 +1,6 @@
 use std::fs;
 
+use cooee_core::plugins::Manifest;
 use serde_json::Value;
 
 const SCHEMA: &str = include_str!("../../../docs/plugins/screens.schema.json");
@@ -10,9 +11,17 @@ pub fn run(paths: &[&str]) -> Result<(), String> {
     let mut failed = 0;
     for p in paths {
         let read = fs::read_to_string(p).map_err(|e| e.to_string());
-        let answer =
-            read.and_then(|t| serde_json::from_str(&t).map_err(|e| format!("not JSON: {e}")));
-        let fails = answer.map_or_else(|e| vec![e], |a| errors(&schema, &schema, &a, "$"));
+        let fails = if std::path::Path::new(p)
+            .extension()
+            .is_some_and(|e| e == "toml")
+        {
+            let manifest = read.and_then(|t| Manifest::parse(&t).map_err(|e| e.to_string()));
+            manifest.err().into_iter().collect()
+        } else {
+            let answer =
+                read.and_then(|t| serde_json::from_str(&t).map_err(|e| format!("not JSON: {e}")));
+            answer.map_or_else(|e| vec![e], |a| errors(&schema, &schema, &a, "$"))
+        };
         if fails.is_empty() {
             println!("ok   {p}");
         } else {
@@ -21,11 +30,9 @@ pub fn run(paths: &[&str]) -> Result<(), String> {
         }
     }
     match (paths.len(), failed) {
-        (0, _) => Err("usage: cooee plugin check <answer.json>...".to_owned()),
+        (0, _) => Err("usage: cooee plugin check <answer.json|cooee-plugin.toml>...".to_owned()),
         (_, 0) => Ok(()),
-        _ => Err(format!(
-            "{failed} answer(s) break docs/plugins/screens.schema.json"
-        )),
+        _ => Err(format!("{failed} file(s) failed the check")),
     }
 }
 

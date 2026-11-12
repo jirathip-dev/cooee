@@ -22,7 +22,7 @@ mod setup;
 const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | push migrate | secrets \
                      | perf [--minutes <n>] \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
-                     | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json>... \
+                     | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json|cooee-plugin.toml>... \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
                      | theme check <path>... | accounts ls [--json] \
                      | accounts env <provider> <name> [--require-signed-in] \

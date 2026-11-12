@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{plugins, profiles, skills};
 
-const DROVER: &str = "cooee-drover";
+const DROVER: &str = "drover";
 
 /// What a persona is (#159), apart from its name: drover attaches by it.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
