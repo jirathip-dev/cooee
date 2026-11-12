@@ -1,0 +1,86 @@
+{
+ "url": "http://127.0.0.1:41708/docs/design/screen/chat.html",
+ "nodes": 819,
+ "issues": [
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 151
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 156
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 158
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 12
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 13
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 14
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 219
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 224
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 226
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 291
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 296
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 298
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 45
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 56
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 235
+  },
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 428
+  }
+ ]
+}
