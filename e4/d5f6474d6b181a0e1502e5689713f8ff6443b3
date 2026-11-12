@@ -1,0 +1,12 @@
+Decided: the scan runs inside file(), so sprites.svg and scene.svg are checked wherever the gate reads them
+Because: web/src/look.rs:337
+Decided: a stdlib tag and attribute scanner, no XML crate, skipping comments
+Because: "no external or `javascript:`/`data:` references"
+Decided: an <!ENTITY declaration fails too, since an entity can expand into markup the scan never sees
+Because: web/src/look.rs:360
+Rejected: adding an XML parser dependency — a new dependency needs the owner and the scanner is enough with the CSP behind it
+Decided: the CSP and nosniff headers go on every look file response, not only the two SVGs
+Because: web/src/lib.rs:144
+Check: commit aa4ed87b fails cargo test -p cooee --test themes the_gate_fails_active; the head passes it
+Check: theme check still passes farm, kitchen, garden and packs/starter
+Owner: A theme pack can no longer carry scripts or outside links in its pictures, and its pictures are served so they cannot run code.
