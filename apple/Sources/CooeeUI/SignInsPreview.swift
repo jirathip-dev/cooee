@@ -58,7 +58,7 @@ public struct SignInsView: View {
                     if provider.accounts.isEmpty {
                         missing(provider)
                     } else {
-                        ForEach(provider.accounts) { account(provider, $0) }
+                        ForEach(provider.accounts) { account($0) }
                         add
                     }
                 }
@@ -66,7 +66,7 @@ public struct SignInsView: View {
         }
     }
 
-    private func account(_ provider: SignInProvider, _ account: SignInAccount) -> some View {
+    private func account(_ account: SignInAccount) -> some View {
         let palette = look.palette
         return Line {
             HStack(spacing: 8) {

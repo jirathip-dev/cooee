@@ -52,7 +52,6 @@ extension Machine {
 }
 
 public struct MachinesView: View {
-    @Environment(\.look) private var look
     private let machines = Machine.fixtures
     private let phone: Bool
 
