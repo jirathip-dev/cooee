@@ -440,6 +440,11 @@ async fn settings(cx: &Cx) -> Result<impl View> {
                     <span class="sk">"mcp servers"</span>
                     <i class="cv">"▸"</i>
                 </a>
+                <p class="ch" id="s-routines">"routines"</p>
+                <a class="sr" href="/routines">
+                    <span class="sk">"routines"</span>
+                    <i class="cv">"▸"</i>
+                </a>
                 <p class="ch" id="s-report">"report"</p>
                 <button type="button" class="sr" data-report=(true)>
                     <span class="sk">"report a problem"</span>

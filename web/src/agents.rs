@@ -215,6 +215,7 @@ struct Line {
     agent: Option<(usize, Option<Summary>)>,
     src: Option<String>,
     at: Option<u64>,
+    routine: String,
 }
 
 fn side(c: &Summary, open: &str) -> Line {
@@ -230,6 +231,7 @@ fn side(c: &Summary, open: &str) -> Line {
         agent: None,
         src: None,
         at: Some(c.at),
+        routine: c.routine.clone(),
     }
 }
 
@@ -260,6 +262,9 @@ async fn row(cx: &Cx, l: Line) -> Result<impl View> {
                     <i class="ur" aria-hidden="true"></i>
                 }
                 (l.title.clone())
+                if !l.routine.is_empty() {
+                    <b class="rtn">(format!("⟳ {}", l.routine))</b>
+                }
             </span>
             <span class="ta">
                 if l.choose {
@@ -354,6 +359,10 @@ async fn sidebar(
                             unseen: m.chats.iter().map(|c| c.unseen).sum(),
                             choose: m.chats.iter().any(|c| c.state == "blocked"),
                             at: latest.as_ref().map(|c| c.at),
+                            routine: latest
+                                .as_ref()
+                                .map(|c| c.routine.clone())
+                                .unwrap_or_default(),
                             agent: Some((n, latest)),
                             src: m.avatar.clone(),
                         }
@@ -950,6 +959,7 @@ mod tests {
             archived: false,
             workflow: None,
             members: Vec::new(),
+            routine: String::new(),
         }
     }
 

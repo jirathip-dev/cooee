@@ -105,6 +105,7 @@ pub fn note(
             if t.state == "done"
                 && !watched
                 && thread.workflow.is_none()
+                && thread.routine.is_none()
                 && thread.room.is_empty() =>
         {
             let reply = chat.items.iter().rev().find_map(|i| match &i.body {
@@ -1049,6 +1050,7 @@ mod tests {
                 text: "hi".to_owned(),
                 random_id: "r".to_owned(),
                 files: Vec::new(),
+                routine: None,
             },
         );
         chat.push(

@@ -109,12 +109,27 @@ test("Settings: the look rows show the pick and open the look sheet", async ({ p
   await page.goto("/");
   await page.getByRole("button", { name: "settings" }).click();
   const rows = sheet(page).locator(".sr");
-  await expect(rows.locator(".sk")).toHaveText(["providers", "roots", "style", "figures", "theme", "appearance", "colours", "mcp servers", "report a problem"]);
+  await expect(rows.locator(".sk")).toHaveText(["providers", "roots", "style", "figures", "theme", "appearance", "colours", "mcp servers", "routines", "report a problem"]);
   await expect(rows.locator(".sv")).toHaveText(["modern", "sprite", "farm", "system · dark now", "dark farm · light farm"]);
   await shot(page, info, "settings-dark");
   await audit(page);
   await rows.filter({ hasText: "theme" }).click();
   await expect(sheet(page).getByText("dark colours · showing")).toBeVisible();
+});
+
+test("Settings › routines: a row shows its name, line, resume and delete on screen", async ({ page }, info) => {
+  await page.goto("/routines");
+  const row = page.locator(".acr[data-routine]");
+  await expect(row.locator(".sk")).toHaveText("renewals");
+  await expect(row.locator(".st")).toContainText("Mondays 09:00 · in its chat · not run yet · paused");
+  expect((await row.locator(".sk").boundingBox()).width).toBeGreaterThan(40);
+  const [sk, st] = [await row.locator(".sk").boundingBox(), await row.locator(".st").boundingBox()];
+  expect(st.y).toBeGreaterThanOrEqual(sk.y + sk.height);
+  for (const name of ["resume renewals: it will be resumed", "delete renewals"]) {
+    await expect(row.getByRole("button", { name })).toBeInViewport({ ratio: 1 });
+  }
+  await shot(page, info, "routines");
+  await audit(page);
 });
 
 test("each Style × Figures combination renders at 390", async ({ page, context, baseURL }, info) => {

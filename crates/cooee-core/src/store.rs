@@ -89,6 +89,9 @@ pub struct Thread {
     /// A linked exchange (#156): the thread whose persona asked this one's (`ask_persona`).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub asked_by: String,
+    /// The routine whose run started it (#75).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub routine: Option<crate::routines::Mark>,
 }
 
 /// What a [`Thread`] is.
@@ -160,6 +163,9 @@ pub struct Queued {
     /// Its files' stored names.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<String>,
+    /// The routine that sent it (#75).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub routine: Option<crate::routines::Mark>,
 }
 
 /// A session a tool started, as its shed labels say (#33): `source` (the tool), `group` (its repo), `item`
