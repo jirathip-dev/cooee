@@ -640,7 +640,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         };
         // A plugin's profile: its backend is told the thread's id (so it can attach it).
         let ours = list.into_iter().find(|p| p.id() == profile);
-        let ours = ours.and_then(|p| Some((backend(&hub, &data, p.plugin.as_deref()?)?, p.name)));
+        let ours = ours.and_then(|p| Some((hub.backend(p.plugin.as_deref()?)?, p.name)));
         if let Some((b, name)) = ours
             && let Err(e) = plugin::started(&b, &id, &name)
         {
@@ -1227,11 +1227,9 @@ fn profiles(
     hub: &Hub,
     (data, config): (&std::path::Path, Option<&std::path::Path>),
 ) -> Vec<cooee_core::Profile> {
-    let mut list = cooee_core::profiles::list(config, data, |name| {
-        plugin::profiles(&backend(hub, data, name)?)
-    });
+    let mut list = cooee_core::profiles::list(config, data, |name| hub.served(name));
     for p in &mut list {
-        let via = p.plugin.as_deref().and_then(|n| backend(hub, data, n));
+        let via = p.plugin.as_deref().and_then(|n| hub.backend(n));
         if let (Some(via), Some(a)) = (via, &mut p.avatar)
             && a.starts_with('/')
         {
@@ -1239,13 +1237,6 @@ fn profiles(
         }
     }
     list
-}
-
-/// Installed plugin `name`'s backend: its first tab's entry (its URL and token).
-fn backend(hub: &Hub, data: &std::path::Path, name: &str) -> Option<Plugin> {
-    let lock = cooee_core::plugins::read_lock(data).ok()?;
-    let tabs = lock.into_iter().find(|l| l.name == name)?.tabs;
-    hub.plugins().into_iter().find(|p| tabs.contains(&p.name))
 }
 
 path_param!(name);
@@ -1377,7 +1368,7 @@ fn with_screens(cx: &Cx) -> Option<(Plugin, cooee_core::plugins::Manifest)> {
     let data = &app_context::<Data>(cx).0;
     let lock = cooee_core::plugins::read_lock(data).ok()?;
     let m = cooee_core::plugins::manifest(data, lock.iter().find(|l| l.name == name)?).ok()?;
-    let p = backend(app_context::<Arc<Hub>>(cx), data, name)?;
+    let p = app_context::<Arc<Hub>>(cx).backend(name)?;
     (!m.places.is_empty()).then_some((p, m))
 }
 

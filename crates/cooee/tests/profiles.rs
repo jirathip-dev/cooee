@@ -11,6 +11,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
     process::Command,
+    time::{Duration, Instant},
 };
 
 use serde_json::{Value, json};
@@ -109,7 +110,7 @@ impl Setup {
             if agents.contains(what) {
                 return agents;
             }
-            std::thread::sleep(std::time::Duration::from_millis(50));
+            std::thread::sleep(Duration::from_millis(50));
         }
         panic!("never {what}: {}", self.picker());
     }
@@ -282,7 +283,7 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
         if s.cooee.get("/p/plug/api/whoami").0 == 200 {
             break;
         }
-        std::thread::sleep(std::time::Duration::from_millis(50));
+        std::thread::sleep(Duration::from_millis(50));
     }
     assert!(s.picker_with(option).contains("Conductor"));
     let (id, _) = s.thread("plug/conductor", "go");
@@ -305,7 +306,8 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
 }
 
 /// A plugin backend (docs/plugins/hello's checks) that serves the profiles in the JSON file `list` at
-/// `GET /cooee/profiles` (read at each call) and appends each `POST /cooee/thread-started` body to `log`.
+/// `GET /cooee/profiles` (read at each call; each call adds a line to `<list>.asked`, and none is answered while
+/// `<list>.hang` exists) and appends each `POST /cooee/thread-started` body to `log`.
 fn serving(list: &Path, log: &Path) -> String {
     format!(
         r#"import fs from "node:fs";
@@ -314,6 +316,8 @@ const {{ PORT, TOKEN }} = process.env;
 http.createServer(async (req, res) => {{
   if (req.headers.authorization !== `Bearer ${{TOKEN}}`) return res.writeHead(401).end();
   if (req.url === "/tab.js") return res.writeHead(200).end("document.body.append('plug');");
+  if (req.url === "/cooee/profiles") fs.appendFileSync({list:?} + ".asked", "\n");
+  if (req.url === "/cooee/profiles" && fs.existsSync({list:?} + ".hang")) return;
   if (req.url === "/cooee/profiles") return res.writeHead(200).end(`{{"profiles":${{fs.readFileSync({list:?})}}}}`);
   let b = ""; for await (const c of req) b += c;
   if (req.url === "/cooee/thread-started") {{ fs.appendFileSync({log:?}, b + "\n"); return res.writeHead(200).end("{{}}"); }}
@@ -398,7 +402,9 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
     let (old, _) = s.thread("", "older");
     let (new, _) = s.thread("", "newer");
     served(&[&old, &new]);
-    let agents = s.picker_with(&format!(r#"href="/t/{new}""#));
+    let agents = s.picker_with(&format!(
+        r#"data-id="{new}"><img class="av" src="/p/plug/api/a.png""#
+    ));
     let a = agents.find("Fleet A</span>").unwrap();
     let start = agents[..a].rfind("<a").unwrap();
     assert!(
@@ -423,6 +429,71 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
     // A phone's `‹` goes back to the agent that lists it, whose side threads they are.
     let back = r#"href="/?list&amp;profile=plug/fleet-a" aria-label="back to agents""#;
     assert!(chat.contains(back), "{chat}");
+
+    s.cooee.cli(&["plugin", "remove", "plug"]);
+    let pid = s.cooee.child.id().to_string();
+    let _ = Command::new("kill").args(["-TERM", &pid]).status();
+}
+
+/// #289: a backend that never answers its profiles never slows a page (under 200 ms) and the page shows its last
+/// answer, none before the first; a changed list shows within the 5 s refresh once it answers again.
+#[test]
+fn a_hanging_backend_never_slows_a_page_which_shows_its_last_answered_profiles() {
+    let s = setup("profiles-hang");
+    let repo = s.dir.join("plug.git");
+    fs::create_dir_all(&repo).unwrap();
+    git(&repo, &["init", "--quiet", "-b", "main"]);
+    let (list, log) = (s.dir.join("served.json"), s.dir.join("started.log"));
+    let (asked, hang) = (
+        s.dir.join("served.json.asked"),
+        s.dir.join("served.json.hang"),
+    );
+    let serve = |name: &str| {
+        let v = json!([{ "name": name, "label": name, "agent": "fake-acp" }]);
+        fs::write(&list, v.to_string()).unwrap();
+    };
+    fs::write(repo.join("server.mjs"), serving(&list, &log)).unwrap();
+    fs::write(
+        repo.join("cooee-plugin.toml"),
+        "name = \"plug\"\nversion = \"1\"\nbuild = \"true\"\nrun = \"TOKEN=$COOEE_PLUGIN_TOKEN exec node server.mjs\"\n\
+         [[tabs]]\nname = \"plug\"\nlabel = \"Plug\"\nmodule = \"/tab.js\"\n",
+    )
+    .unwrap();
+    git(&repo, &["add", "-A"]);
+    git(&repo, &["commit", "--quiet", "-m", "1"]);
+    // While two asks hang, every page is quick and shows `shown`, never `not`.
+    let hung_twice = |shown: Option<&str>, not: &str| {
+        let count = || fs::read_to_string(&asked).map_or(0, |t| t.len());
+        let (from, until) = (count(), Instant::now() + Duration::from_secs(30));
+        while count() < from + 2 {
+            assert!(Instant::now() < until, "never asked twice");
+            let at = Instant::now();
+            let agents = s.picker();
+            let took = at.elapsed();
+            assert!(took < Duration::from_millis(200), "{took:?}");
+            assert!(
+                shown.is_none_or(|a| agents.contains(a)) && !agents.contains(not),
+                "{agents}"
+            );
+            std::thread::sleep(Duration::from_millis(50));
+        }
+    };
+
+    fs::write(&hang, "").unwrap();
+    serve("fleet-a");
+    s.cooee
+        .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
+    hung_twice(None, "plug/fleet-a");
+    fs::remove_file(&hang).unwrap();
+    s.picker_with(r#"href="/new?profile=plug/fleet-a""#);
+
+    fs::write(&hang, "").unwrap();
+    serve("fleet-z");
+    hung_twice(Some(r#"href="/new?profile=plug/fleet-a""#), "plug/fleet-z");
+    fs::remove_file(&hang).unwrap();
+    let at = Instant::now();
+    s.picker_with(r#"href="/new?profile=plug/fleet-z""#);
+    assert!(at.elapsed() < Duration::from_secs(11), "{:?}", at.elapsed());
 
     s.cooee.cli(&["plugin", "remove", "plug"]);
     let pid = s.cooee.child.id().to_string();
