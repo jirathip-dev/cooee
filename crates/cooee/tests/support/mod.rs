@@ -17,7 +17,7 @@ use std::{
         mpsc::{self, Receiver, Sender},
     },
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use cooee_core::shed_proto::{
@@ -194,8 +194,8 @@ impl FakeShed {
     }
 
     /// Shuts (`true`) or opens gate `name`: `hold-run` and `run-fails` for the CLI's `run`, `hold-ready` (the
-    /// session-ready `wait` waits), `ready-timeout` (it times out), `hang-send` (every `send` waits) and `hangup` (a
-    /// request is recorded, then its connection closed unanswered).
+    /// session-ready `wait` waits), `ready-timeout` (it times out), `hang-send` (every `send` waits; `hang-send-<name>`:
+    /// terminal `<name>`'s) and `hangup` (a request is recorded, then its connection closed unanswered).
     pub fn gate(&self, name: &str, shut: bool) {
         let path = self.dir.join(name);
         if shut {
@@ -487,6 +487,7 @@ impl FakeShed {
 
     fn send(&self, name: &str, text: &str) -> Result<Value, RpcError> {
         self.hold("hang-send");
+        self.hold(&format!("hang-send-{name}"));
         self.terminal(name)?;
         if !self.type_in(name, text) {
             self.input(name, text);
@@ -1167,4 +1168,29 @@ pub fn is_item(e: &Sse, kind: &str) -> bool {
 /// The shed version this build speaks.
 pub fn version() -> &'static str {
     VERSION
+}
+
+/// #288: while a call for another thread hangs, thread `other` goes on: its send, the thread list and the home page
+/// each answer within 200 ms, and its reply streams in.
+pub fn others_go_on(cooee: &Cooee, other: &str) {
+    let cursor = cooee.json(&format!("/threads/{other}/messages"))["cursor"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let mut events = cooee.events(other, &cursor, false);
+    let (path, send) = (
+        format!("/threads/{other}/send"),
+        serde_json::json!({ "text": "Say hi again", "random_id": "go-on" }),
+    );
+    let quick = |what: &str, call: &dyn Fn() -> (u16, String)| {
+        let at = Instant::now();
+        let (status, body) = call();
+        let took = at.elapsed();
+        assert_eq!(status, 200, "{what}: {body}");
+        assert!(took < Duration::from_millis(200), "{what} took {took:?}");
+    };
+    quick("send", &|| cooee.post(&path, &send));
+    quick("list", &|| cooee.get("/threads"));
+    quick("page", &|| cooee.get("/"));
+    events.until(|e| is_item(e, "agent"));
 }

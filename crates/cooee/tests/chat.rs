@@ -11,7 +11,7 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, Events, FakeShed, Sse, is_item, scratch, version};
+use support::{Cooee, Events, FakeShed, Sse, is_item, others_go_on, scratch, version};
 
 struct Setup {
     dir: PathBuf,
@@ -433,4 +433,38 @@ fn a_message_to_a_stopped_agent_is_refused_never_stored_as_sent() {
         !mine.iter().any(|i| i["text"] == "are you there"),
         "{mine:?}"
     );
+}
+
+#[test]
+fn a_hanging_shed_approve_never_holds_another_thread() {
+    let s = setup("approve-hang");
+    let id = s.create("please approve an edit");
+    let ask = s
+        .events(&id)
+        .until(|e| is_item(e, "approval"))
+        .pop()
+        .unwrap();
+    let other = s.create("Say hi");
+    s.events(&other).until(|e| is_item(e, "agent"));
+    let gate = format!("hang-send-{}", terminal(&id));
+    s.shed.gate(&gate, true);
+    let tap = json!({ "item": ask.data["id"], "option": "allow" });
+    let path = format!("/threads/{id}/approve");
+    thread::scope(|scope| {
+        let tapped = scope.spawn(|| s.cooee.post(&path, &tap));
+        let approving = || {
+            s.shed
+                .sent(&terminal(&id))
+                .iter()
+                .any(|t| t.contains("approve"))
+        };
+        while !approving() {
+            thread::sleep(std::time::Duration::from_millis(20));
+        }
+        others_go_on(&s.cooee, &other);
+        assert!(!tapped.is_finished(), "the approve still hangs in shed");
+        s.shed.gate(&gate, false);
+        let (code, body) = tapped.join().unwrap();
+        assert_eq!(code, 200, "{body}");
+    });
 }
