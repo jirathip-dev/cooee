@@ -36,6 +36,7 @@ extension Frame {
     internal static var all: [Frame] {
         [("dark", Palette.farmDark), ("light", Palette.farmLight)].flatMap { phoneFrames($0.0, $0.1) } + styled + mac
             + QueueFrames.all
+            + rooms
     }
 
     private static func phone(
@@ -99,5 +100,24 @@ extension Frame {
                 mac("mac-window-light", 1280, 820, .farmLight) { WideView() },
                 mac("mac-persona-panel-dark", 360, 820, .farmDark) { PersonaPanel(personaID: "coder", column: true) },
             ]
+    }
+
+    private static var rooms: [Frame] {
+        [
+            phone("room-dark", .farmDark) { RoomView.kestrel() },
+            phone("room-light", .farmLight) { RoomView.kestrel() },
+            phone("room-create-dark", .farmDark) { NewRoomSheet.kestrel() },
+            phone("room-create-light", .farmLight) { NewRoomSheet.kestrel() },
+            phone("room-member-dark", .farmDark) { MemberSheet.researcher() },
+            phone("room-home-dark", .farmDark) { HomeView(chats: Fixtures.roomChats) },
+            phone("room-terminal-dark", .farmDark, style: .terminal) { RoomView.kestrel() },
+            phone("room-scene-light", .farmLight, style: .scene) { RoomView.kestrel() },
+            mac("room-wide-dark", 1440, 900, .farmDark) { WideView.kestrel() },
+            Frame(
+                name: "room-terminal-wide", width: 1440, height: 900, palette: .farmDark, style: .terminal,
+                phone: false,
+                view: { AnyView(WideView.kestrel()) }
+            ),
+        ]
     }
 }

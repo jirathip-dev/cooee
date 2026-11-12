@@ -79,7 +79,7 @@ public struct ChatView: View {
                 VStack(spacing: 8) {
                     if working { WorkingPill(since: since, stop: actions.stop) }
                     Composer(
-                        persona: persona,
+                        hint: "Message \(persona.name)",
                         queued: queued,
                         draft: draft,
                         attachments: working && since == nil ? ["look-sheet.png"] : [],

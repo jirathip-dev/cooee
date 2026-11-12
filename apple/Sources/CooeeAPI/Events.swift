@@ -45,6 +45,14 @@ extension Client {
         fileprivate let text: String
     }
 
+    private struct Seat: Decodable {
+        fileprivate let member: String
+    }
+
+    private struct Stop: Decodable {
+        fileprivate let reason: String
+    }
+
     public func events(_ id: String, since: String) -> AsyncThrowingStream<StreamEvent, any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
@@ -112,6 +120,8 @@ extension Client {
         case "text": return .text(try decoder.decode(Chunk.self, from: data).text)
         case "state": return .state(try decoder.decode(Turn.self, from: data))
         case "queue": return .queue(try decoder.decode([Queued].self, from: data))
+        case "room-turn": return .roomTurn(try decoder.decode(Seat.self, from: data).member)
+        case "room-stop": return .roomStop(try decoder.decode(Stop.self, from: data).reason)
         case "reset": return .reset
         default: return nil
         }
