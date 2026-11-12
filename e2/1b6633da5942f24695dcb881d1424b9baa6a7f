@@ -1,0 +1,7 @@
+Decided: merge origin/staging (e21b6633) so CI reruns on the current integration branch
+Because: apple/e2e/serve.sh:36
+Decided: treat the ui job's red at aefad9c4 as a runner flake in a web timing test this branch never touches
+Because: web/e2e/chat.spec.mjs:177
+Rejected: loosening the 50 ms long-task bound — not #181's scope
+Check: CI apple, e2e and ui jobs green at e21b6633
+Owner: The Queue farm strip work now sits on the latest staging again, so its app checks can run.
