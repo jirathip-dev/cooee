@@ -1,0 +1,25 @@
+unpaired / -> /pair
+paired -> /
+390 agents ok
+390 new ok
+390 chat ok
+390 settings ok
+390 plugin-hello ok
+390 plugin-machines ok
+390 settings routines row text: routines ▸
+390 routines ok
+390 routines: name="renewals" line="Mondays 09:00 · in its chat · not run yet · paused" nameW=114 lineBelowName=true
+390 button "resume renewals: it will be resumed" visible=true inViewport=true
+390 button "delete renewals" visible=true inViewport=true
+1440 agents ok
+1440 new ok
+1440 chat ok
+1440 settings ok
+1440 plugin-hello ok
+1440 plugin-machines ok
+1440 settings routines row text: routines ▸
+1440 routines ok
+1440 routines: name="renewals" line="Mondays 09:00 · in its chat · not run yet · paused" nameW=364 lineBelowName=true
+1440 button "resume renewals: it will be resumed" visible=true inViewport=true
+1440 button "delete renewals" visible=true inViewport=true
+console/network findings: 0
