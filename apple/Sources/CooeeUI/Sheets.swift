@@ -65,7 +65,7 @@ internal struct AvatarMenu: View {
     @Environment(\.look) private var look
     internal var name = "Guy"
     internal var place = "this iPhone · paired to mini"
-    internal var values = ["Modern · Farm", "Asks, done", "Claude, Codex", "3", "mini, air · Terminal", "4"]
+    internal var values = ["Modern · Farm", "Asks, done", "Claude, Codex", "3", "mini", "mini, air · Terminal", "4"]
     internal var pick: (MenuFeature.Page) -> Void = { _ in }
 
     internal var body: some View {
@@ -84,7 +84,8 @@ internal struct AvatarMenu: View {
                 row(.look, "paintpalette.fill", "Look", palette.amber)
                 row(.notifications, "bell.badge.fill", "Notifications", palette.red)
                 row(.signIns, "person.badge.key.fill", "Sign-ins", palette.purple)
-                row(.devices, "iphone.gen3", "Devices", palette.link, divider: false)
+                row(.devices, "iphone.gen3", "Devices", palette.link)
+                row(.terminal, "terminal.fill", "Terminal", palette.mute, divider: false)
             }
             Group2 {
                 row(.machines, "desktopcomputer", "Machines", palette.cyan)

@@ -2,7 +2,7 @@ import SwiftUI
 
 internal struct SignInAccount: Identifiable {
     internal enum Status {
-        case signedIn(usage: String)
+        case signedIn(windows: [String], read: String)
         case signedOut
         case signingIn(command: String, output: [String])
     }
@@ -27,7 +27,7 @@ extension SignInProvider {
             accounts: [
                 SignInAccount(
                     id: "main", who: "guy@example.com", folder: "~/.claude", isDefault: true,
-                    status: .signedIn(usage: "5h 12% · 7d 40% · read 5m")),
+                    status: .signedIn(windows: ["session 12%", "week 40%", "week Opus 22%"], read: "5m")),
                 SignInAccount(
                     id: "work", who: "work", folder: "~/.config/cooee/accounts/work",
                     status: .signingIn(
@@ -39,7 +39,7 @@ extension SignInProvider {
             accounts: [
                 SignInAccount(
                     id: "main", who: "main login", folder: "~/.codex", isDefault: true,
-                    status: .signedIn(usage: "5h — · 7d 8% · read 2m")),
+                    status: .signedIn(windows: ["primary 3%", "weekly 8%"], read: "2m")),
                 SignInAccount(id: "ops", who: "ops", folder: "~/.config/cooee/accounts/ops", status: .signedOut),
             ]),
         SignInProvider(id: "Hermes", install: "uv tool install hermes-agent"),
@@ -63,8 +63,6 @@ public struct SignInsView: View {
                     }
                 }
             }
-            Text(look.mono ? "-> where logins live" : "Where logins live").ui(14, .regular, look)
-                .foregroundStyle(look.palette.link).padding(.leading, 16)
         }
     }
 
@@ -73,7 +71,7 @@ public struct SignInsView: View {
         return Line {
             HStack(spacing: 8) {
                 Text(account.who).ui(16, .medium, look).lineLimit(1)
-                if account.isDefault { Pill(title: "Default", tint: palette.mute) }
+                if account.isDefault { ActionPill(title: "Default", tint: palette.mute) }
                 Spacer(minLength: 6)
                 trailing(account.status)
             }
@@ -86,7 +84,7 @@ public struct SignInsView: View {
         let palette = look.palette
         switch status {
         case .signedIn: StateWord(text: "Signed in", tint: palette.green)
-        case .signedOut: Pill(title: "Sign in…", primary: true)
+        case .signedOut: ActionPill(title: "Sign in…", primary: true)
         case .signingIn: StateWord(text: "Signing in", tint: palette.amber)
         }
     }
@@ -94,11 +92,12 @@ public struct SignInsView: View {
     @ViewBuilder private func detail(_ status: SignInAccount.Status) -> some View {
         let palette = look.palette
         switch status {
-        case .signedIn(let usage):
+        case .signedIn(let windows, let read):
             HStack {
-                Text(usage).ui(13, .regular, look).foregroundStyle(palette.mute)
+                Text((windows + ["read \(read)"]).joined(separator: " · ")).ui(13, .regular, look).foregroundStyle(
+                    palette.mute)
                 Spacer()
-                Pill(title: "Sign out", tint: palette.red)
+                ActionPill(title: "Sign out", tint: palette.red)
             }
         case .signedOut: EmptyView()
         case .signingIn(let command, let output): LoginTerminal(command: command, output: output)
@@ -120,7 +119,7 @@ public struct SignInsView: View {
             HStack {
                 Text("Not installed").ui(15, .regular, look).foregroundStyle(look.palette.mute)
                 Spacer()
-                Pill(title: "Copy install")
+                ActionPill(title: "Copy install")
             }
             Text(provider.install).ui(12, .regular, look).monospaced().foregroundStyle(look.palette.mute)
         }
@@ -151,8 +150,8 @@ internal struct LoginTerminal: View {
                     .padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
                     .overlay(
                         RoundedRectangle(cornerRadius: look.mono ? 0 : 8).strokeBorder(palette.edge, lineWidth: 1))
-                Pill(title: "Send", primary: true)
-                Pill(title: "Cancel", tint: palette.mute)
+                ActionPill(title: "Send", primary: true)
+                ActionPill(title: "Cancel", tint: palette.mute)
             }
         }
         .padding(.top, 4)

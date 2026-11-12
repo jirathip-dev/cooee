@@ -97,19 +97,18 @@ extension Frame {
     }
 
     private static var settings: [Frame] {
-        let pages: [(String, MenuFeature.Page, @MainActor @Sendable () -> AnyView)] = [
-            ("sign-ins", .signIns, { AnyView(SignInsView()) }),
-            ("devices", .devices, { AnyView(DevicesView()) }),
-            ("machines", .machines, { AnyView(MachinesView()) }),
-            ("plugins", .plugins, { AnyView(PluginsView()) }),
+        let pages: [(String, MenuFeature.Page)] = [
+            ("sign-ins", .signIns), ("devices", .devices), ("machines", .machines), ("plugins", .plugins),
         ]
-        let phones = pages.flatMap { name, _, view in
-            [("dark", Palette.farmDark), ("light", Palette.farmLight)].map { phone("\(name)-\($0.0)", $0.1, view) }
+        let phones = pages.flatMap { name, page in
+            [("dark", Palette.farmDark), ("light", Palette.farmLight)].map {
+                phone("\(name)-\($0.0)", $0.1) { settingsPage(page) }
+            }
         }
-        let macs = pages.map { name, page, _ in mac("mac-\(name)", 1180, 780, .farmDark) { SettingsWindow(page: page) }
-        }
+        let macs = pages.map { name, page in mac("mac-\(name)", 1180, 780, .farmDark) { SettingsWindow(page: page) } }
         let more = [
             phone("terminal-dark", .farmDark) { MachineTerminal() },
+            phone("you-terminal-dark", .farmDark) { MachineTerminal(own: true) },
             phone("sign-ins-terminal-dark", .farmDark, style: .terminal) { SignInsView() },
             phone("machines-scene-light", .farmLight, style: .scene) { MachinesView() },
             mac("mac-plugins-light", 1180, 780, .farmLight) { SettingsWindow(page: .plugins) },
@@ -118,6 +117,16 @@ extension Frame {
             var frame = frame
             frame.folder = "v2-settings"
             return frame
+        }
+    }
+
+    @MainActor @ViewBuilder
+    private static func settingsPage(_ page: MenuFeature.Page) -> some View {
+        switch page {
+        case .signIns: SignInsView()
+        case .devices: DevicesView()
+        case .machines: MachinesView()
+        default: PluginsView()
         }
     }
 }

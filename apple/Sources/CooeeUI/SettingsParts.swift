@@ -32,7 +32,7 @@ internal struct SettingsPage<Content: View>: View {
     }
 }
 
-internal struct Pill: View {
+internal struct ActionPill: View {
     @Environment(\.look) private var look
     internal let title: String
     internal var primary = false
@@ -84,7 +84,7 @@ internal struct Line<Content: View>: View {
     }
 }
 
-internal struct Sparkline: View {
+internal struct TrendLine: View {
     internal let points: [Double]
     internal let tint: Color
     internal var fill = false
@@ -154,23 +154,24 @@ internal struct MacSettings<Page: View>: View {
             SideRow(page: .notifications, symbol: "bell.badge.fill", title: "Notifications", tint: \.red),
             SideRow(page: .signIns, symbol: "person.badge.key.fill", title: "Sign-ins", tint: \.purple),
             SideRow(page: .devices, symbol: "iphone.gen3", title: "Devices", tint: \.link),
+            SideRow(page: .terminal, symbol: "terminal.fill", title: "Terminal", tint: \.mute),
             SideRow(page: .machines, symbol: "desktopcomputer", title: "Machines", tint: \.cyan),
             SideRow(page: .plugins, symbol: "puzzlepiece.extension.fill", title: "Plugins", tint: \.green),
         ]
     }
 
     private func sideRow(_ page: MenuFeature.Page, _ symbol: String, _ title: String, _ tint: Color) -> some View {
-        let on = page == selected
+        let active = page == selected
         return HStack(spacing: 10) {
             if !look.mono {
                 Image(systemName: symbol).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 22, height: 22).background(tint, in: .rect(cornerRadius: 6))
             }
-            Text(look.mono && on ? "> \(title.lowercased())" : title).ui(14, on ? .semibold : .regular, look)
+            Text(look.mono && active ? "> \(title.lowercased())" : title).ui(14, active ? .semibold : .regular, look)
             Spacer()
         }
         .padding(.horizontal, 10).frame(height: 34)
-        .background(on ? look.palette.link.opacity(0.18) : .clear, in: .rect(cornerRadius: look.mono ? 0 : 8))
+        .background(active ? look.palette.link.opacity(0.18) : .clear, in: .rect(cornerRadius: look.mono ? 0 : 8))
     }
 }
 

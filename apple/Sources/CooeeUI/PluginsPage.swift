@@ -50,7 +50,7 @@ public struct PluginsView: View {
                                 Text(entry.about).ui(12, .regular, look).foregroundStyle(look.palette.mute)
                             }
                             Spacer(minLength: 6)
-                            Pill(title: "Add…")
+                            ActionPill(title: "Add…")
                         }
                     }
                 }
@@ -80,12 +80,12 @@ internal struct PluginLine: View {
                 Text("\(plugin.version) · \(plugin.commit)").ui(12, .regular, look).monospaced()
                     .foregroundStyle(palette.mute)
                 Spacer(minLength: 6)
-                OnOff(on: plugin.enabled)
+                OnOff(active: plugin.enabled)
             }
             HStack(spacing: 8) {
                 StateWord(text: plugin.state, tint: plugin.enabled ? palette.green : palette.mute)
-                if !plugin.listed { Pill(title: "Not reviewed", tint: palette.amber) }
-                if !plugin.update.isEmpty { Pill(title: "Update to \(plugin.update)", primary: true) }
+                if !plugin.listed { ActionPill(title: "Not reviewed", tint: palette.amber) }
+                if !plugin.update.isEmpty { ActionPill(title: "Update to \(plugin.update)", primary: true) }
             }
             personas
             HStack(spacing: 14) {
@@ -99,23 +99,23 @@ internal struct PluginLine: View {
     private var personas: some View {
         HStack(spacing: 6) {
             ForEach(Fixtures.personas) { persona in
-                let on = plugin.personas.contains(persona.id)
+                let active = plugin.personas.contains(persona.id)
                 Avatar(persona: persona, size: 26)
                     .overlay(alignment: .bottomTrailing) {
-                        if on && !look.mono {
+                        if active && !look.mono {
                             Image(systemName: "checkmark.circle.fill").font(.system(size: 11))
                                 .foregroundStyle(look.palette.green).background(look.palette.card, in: Circle())
                         }
                     }
-                    .opacity(on ? 1 : 0.3)
+                    .opacity(active ? 1 : 0.3)
             }
             Text(names).ui(12, .regular, look).foregroundStyle(look.palette.mute).lineLimit(1)
         }
     }
 
     private var names: String {
-        let on = Fixtures.personas.filter { plugin.personas.contains($0.id) }.map(\.api.name)
-        return on.isEmpty ? "no persona" : on.joined(separator: ", ")
+        let active = Fixtures.personas.filter { plugin.personas.contains($0.id) }.map(\.api.name)
+        return active.isEmpty ? "no persona" : active.joined(separator: ", ")
     }
 
     private func action(_ title: String, _ tint: Color) -> some View {
@@ -125,15 +125,16 @@ internal struct PluginLine: View {
 
 internal struct OnOff: View {
     @Environment(\.look) private var look
-    internal let on: Bool
+    internal let active: Bool
 
     internal var body: some View {
         let palette = look.palette
         if look.mono {
-            Text(on ? "[on]" : "[off]").ui(13, .semibold, look).foregroundStyle(on ? palette.green : palette.mute)
+            Text(active ? "[on]" : "[off]").ui(13, .semibold, look).foregroundStyle(
+                active ? palette.green : palette.mute)
         } else {
-            Capsule().fill(on ? palette.green : palette.edge).frame(width: 46, height: 28)
-                .overlay(alignment: on ? .trailing : .leading) {
+            Capsule().fill(active ? palette.green : palette.edge).frame(width: 46, height: 28)
+                .overlay(alignment: active ? .trailing : .leading) {
                     Circle().fill(.white).padding(2.5).shadow(color: .black.opacity(0.2), radius: 2, y: 1)
                 }
         }

@@ -88,7 +88,7 @@ internal struct MachineCard: View {
                     Text(machine.seen).ui(12, .regular, look).foregroundStyle(palette.mute)
                 }
                 Spacer()
-                if machine.online { Pill(title: look.mono ? "terminal" : "Terminal ›", primary: true) }
+                if machine.online { ActionPill(title: look.mono ? "terminal" : "Terminal ›", primary: true) }
             }
             if !machine.alerts.isEmpty {
                 Label(machine.alerts.joined(separator: " · "), systemImage: "exclamationmark.triangle.fill")
@@ -120,10 +120,10 @@ internal struct MetricRow: View {
                 Text(metric.value).ui(15, .semibold, look).foregroundStyle(
                     metric.bad ? palette.red : palette.foreground)
                 Spacer(minLength: 8)
-                Sparkline(points: metric.points, tint: tint).frame(width: 90, height: 18)
+                TrendLine(points: metric.points, tint: tint).frame(width: 90, height: 18)
             }
             if open {
-                Sparkline(points: metric.points, tint: tint, fill: true).frame(height: 84).padding(.top, 4)
+                TrendLine(points: metric.points, tint: tint, fill: true).frame(height: 84).padding(.top, 4)
                 HStack {
                     Text("24 h ago")
                     Spacer()

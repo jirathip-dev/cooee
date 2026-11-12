@@ -6,13 +6,13 @@ internal struct PairedDevice: Identifiable {
     internal let symbol: String
     internal let paired: String
     internal let seen: String
-    internal var me = false
+    internal var isThisDevice = false
 }
 
 extension PairedDevice {
     internal static let fixtures: [PairedDevice] = [
         PairedDevice(
-            id: "d1", name: "Guy's iPhone", symbol: "iphone.gen3", paired: "3 Nov", seen: "now", me: true),
+            id: "d1", name: "Guy's iPhone", symbol: "iphone.gen3", paired: "3 Nov", seen: "now", isThisDevice: true),
         PairedDevice(id: "d2", name: "mini", symbol: "macmini", paired: "1 Nov", seen: "2 min ago"),
         PairedDevice(id: "d3", name: "iPad Air", symbol: "ipad", paired: "4 Nov", seen: "2 d ago"),
         PairedDevice(id: "d4", name: "Safari on air", symbol: "safari", paired: "28 Oct", seen: "9 d ago"),
@@ -52,13 +52,13 @@ public struct DevicesView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(device.name).ui(16, .medium, look)
-                        if device.me { Pill(title: "This device", tint: palette.green) }
+                        if device.isThisDevice { ActionPill(title: "This device", tint: palette.green) }
                     }
                     Text("paired \(device.paired) · seen \(device.seen)").ui(12, .regular, look)
                         .foregroundStyle(palette.mute)
                 }
                 Spacer(minLength: 6)
-                Pill(title: device.me ? "Unpair" : "Remove", tint: palette.red)
+                ActionPill(title: device.isThisDevice ? "Unpair" : "Remove", tint: palette.red)
             }
         }
     }

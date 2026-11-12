@@ -27,7 +27,7 @@ internal struct MenuSheet: View {
     private var values: [String] {
         let settings = store.settings
         let look = "\(settings.style.rawValue.capitalized) · \(settings.scheme.rawValue.capitalized)"
-        return [look, settings.push == nil ? "Off" : "On", "v2", "v2", "v2", "v2"]
+        return [look, settings.push == nil ? "Off" : "On", "v2", "v2", "v2", "v2", "v2"]
     }
 }
 
@@ -58,6 +58,7 @@ internal struct MenuPage: View {
         case .notifications: "Notifications"
         case .signIns: "Sign-ins"
         case .devices: "Devices"
+        case .terminal: "Terminal"
         case .machines: "Machines"
         case .plugins: "Plugins"
         }
