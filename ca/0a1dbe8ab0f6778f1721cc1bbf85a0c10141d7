@@ -1,0 +1,8 @@
+Decided: a health GET of the first tab's module every 10 s (2 s timeout); 3 misses in a row kill the backend and feed the existing crash backoff
+Because: "after N failed checks in a row, kill and restart it with the existing crash backoff"
+Because: crates/cooee-server/src/manage.rs:220
+Decided: the checks run before the runs lock is taken, so Settings › Plugins never waits on a hung backend
+Rejected: probing inside the locked tick loop — a hung backend would stall list() for the timeout
+Rejected: counting any HTTP answer as healthy — the build health check already defines healthy as a 200 on that path
+Check: the hung test stays running after 2 misses, restarts after the 3rd; the healthy test serves 60 checks with 1 start
+Owner: A plugin that freezes without crashing now gets restarted automatically within about 30 seconds.
