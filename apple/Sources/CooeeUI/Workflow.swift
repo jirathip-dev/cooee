@@ -217,7 +217,7 @@ internal struct WorkflowChip: View {
                 Image(systemName: "arrow.triangle.branch").font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(look.palette.green)
                 Text(look.mono ? "[workflow]" : "Workflow").ui(13, .semibold, look).foregroundStyle(look.palette.green)
-                if count > 0 { Badge(count: count) }
+                if count > 0 { Badge(count: count, tint: look.palette.red) }
             }
             .padding(.horizontal, 12).frame(height: 30).modifier(RoundSurface(look: look))
             .overlay(Capsule().strokeBorder(look.palette.link, lineWidth: lit ? 1.5 : 0))
