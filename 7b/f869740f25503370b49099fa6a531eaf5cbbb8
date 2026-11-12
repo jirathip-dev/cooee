@@ -1,0 +1,6 @@
+Decided: Conductor's Workflow chip draws its needs-you count in red, through an optional tint on the shared count badge
+Because: q1341
+Because: apple/Sources/CooeeUI/Workflow.swift:220
+Rejected: a second badge view for red counts — one optional tint keeps one badge
+Check: the chip's count pill is red in workflow-dark.png's strip; Home rows' unread badges stay blue
+Owner: The Workflow button's count is now red, so it reads as "needs you" and not "unread".
