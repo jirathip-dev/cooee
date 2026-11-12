@@ -1,0 +1,7 @@
+Decided: ship the approved composer v2 design package as the PR; list the build issues in the PR body for the orchestrator to file.
+Because: q1438
+Because: "The build issues split from the approved design"
+Rejected: filing the build issues from this lane — a lane's only GitHub write is its PR.
+Rejected: starting build code here — the issue is design first and scope belongs to the split issues.
+Check: README maps every PNG to q1332–q1338, q1411 and q1433; swift test in the package re-renders PNGs with no git diff.
+Owner: The approved composer drawings land on staging; the six build issues are listed in the PR for filing.
