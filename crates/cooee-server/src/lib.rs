@@ -1350,8 +1350,8 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
     }
     let reply = tokio::task::spawn_blocking(move || {
         let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
-        let timeout = Some(Duration::from_secs(30));
-        plugin::call(&p, &method, &target, &headers, body.as_bytes(), timeout)
+        let deadline = Duration::from_secs(30);
+        plugin::call(&p, &method, &target, &headers, body.as_bytes(), deadline)
     })
     .await?;
     let reply = match reply {
@@ -1375,7 +1375,6 @@ async fn pass_on(
         .header("content-type")
         .is_some_and(|t| t.starts_with("text/event-stream"))
     {
-        reply.body.get_ref().set_read_timeout(None)?;
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         std::thread::spawn(move || plugin::events(reply, |e| open() && tx.send(e).is_ok()));
         let stream = stream::unfold(rx, move |mut rx| async move {
@@ -1455,14 +1454,7 @@ async fn screen(cx: &Cx) -> Result<Response> {
         .collect();
     let reply = tokio::task::spawn_blocking(move || {
         let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
-        plugin::call(
-            &p,
-            "GET",
-            &target,
-            &headers,
-            &[],
-            Some(Duration::from_secs(5)),
-        )
+        plugin::call(&p, "GET", &target, &headers, &[], Duration::from_secs(5))
     })
     .await?;
     match reply {
@@ -1502,14 +1494,14 @@ async fn screen_action(cx: &Cx, Json(a): Json<BlockAct>) -> Result<Response> {
     });
     let reply = tokio::task::spawn_blocking(move || {
         let json = [("Content-Type", "application/json")];
-        let timeout = Some(Duration::from_secs(10));
+        let deadline = Duration::from_secs(10);
         plugin::call(
             &p,
             "POST",
             "/action",
             &json,
             body.to_string().as_bytes(),
-            timeout,
+            deadline,
         )
     })
     .await?;

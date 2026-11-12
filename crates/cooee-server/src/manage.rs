@@ -520,7 +520,7 @@ impl Manager {
             if let Some(Ok(Some(s))) = child.as_mut().map(Child::try_wait) {
                 break Err(other(format!("its backend exited ({s}): see its log")));
             }
-            let reply = crate::plugin::call(&p, "GET", &p.module, &[], &[], Some(HEALTH));
+            let reply = crate::plugin::call(&p, "GET", &p.module, &[], &[], HEALTH);
             match reply.map(|r| r.status) {
                 Ok(200) => break Ok(()),
                 got if started.elapsed() > HEALTH => {
