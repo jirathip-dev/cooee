@@ -1,0 +1,8 @@
+Decided: merged origin/staging (#226); the personas.rs, manage.rs and check.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #226's attach-backend code
+Decided: no code change for the 5 tests/setup.rs failures in the first local run
+Because: crates/cooee/src/setup.rs:197
+Check: git diff -w origin/staging HEAD on manage.rs, check.rs, personas.rs and tests/plugin_manager.rs and plugins.rs is only deleted comment lines, and scripts/comments.py exits 0
+Check: setup tests fail only when macOS hands out a bound port above 64535; an origin/staging checkout failed them the same way, and the rerun passed
+Owner: the branch is up to date with staging again, and the new plugin-manager code follows the comment rule
