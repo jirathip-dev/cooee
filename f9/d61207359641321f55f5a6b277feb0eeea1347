@@ -1,0 +1,10 @@
+Decided: a health GET of the first tab's module every 10 s (2 s timeout); 3 misses in a row kill the backend and feed the existing crash backoff
+Because: "after N failed checks in a row, kill and restart it with the existing crash backoff"
+Decided: the checks run before the runs lock is taken, so Settings › Plugins never waits on a hung backend
+Rejected: probing inside the locked tick loop — a hung backend would stall list() for the timeout
+Decided: stop() signals the process group as `kill -s TERM -- -pid`
+Because: crates/cooee-server/src/manage.rs:174
+Rejected: keeping `kill -TERM -pid` — both Ubuntu CI runners were SIGTERMed when a test stopped a live backend
+Decided: an attached backend (from staging's attach mode) has no child, so it gets no health checks
+Check: Ubuntu stable and msrv jobs finish; the hung test restarts after the 3rd miss, the healthy one never
+Owner: A plugin that freezes without crashing now gets restarted automatically within about 30 seconds.
