@@ -15,7 +15,7 @@ fn two_instances_never_see_each_others_threads_or_devices() {
     let dir = scratch("instances");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let a = Cooee::start_instance(&dir, &shed.dir, "cooee");
-    let b = Cooee::start_instance(&dir, &shed.dir, "cooee-drover");
+    let b = Cooee::start_instance(&dir, &shed.dir, "drover");
 
     let folder = dir.join("root/project");
     let new =
@@ -25,7 +25,7 @@ fn two_instances_never_see_each_others_threads_or_devices() {
 
     let share = dir.join("home/.local/share/cooee");
     assert!(share.join("cooee").is_dir());
-    assert!(share.join("cooee-drover").is_dir());
+    assert!(share.join("drover").is_dir());
     let id = serde_json::from_str::<serde_json::Value>(&body).unwrap()["id"]
         .as_str()
         .unwrap()
