@@ -1,0 +1,11 @@
+Decided: round 8 merges origin/staging (#157 rooms); a thread keeps both its room members and its workflow label
+Because: apple/Sources/CooeeCore/Models.swift:44
+Decided: a room counts as a persona chat, so it stays in Home's list and never folds into Others
+Because: "the pinned personas row, then only chats that belong to a persona"
+Because: apple/Sources/CooeeCore/Workflow.swift:82
+Decided: #157's room test stubs the installed-plugins call that Home's refresh now makes
+Because: apple/Tests/CooeeFeaturesTests/RoomFeatureTests.swift:121
+Rejected: moving room handling out of AppFeature to free lines — one line trimmed in .home(.loaded) is enough
+Check: the f63632e red was apple-quality timing out at 2h25m, not a failing step
+Check: CI's macOS jobs (build, apple-quality, e2e, simulator-shots) are green at 898ab42
+Owner: Same feature, caught up with the new group-room screens; rooms stay in your Home list.
