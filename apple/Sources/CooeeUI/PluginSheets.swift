@@ -54,7 +54,7 @@ internal struct PluginScreenSheet: View {
                         ProgressView()
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(BlocksView.inset)
             }
             if let said = store.said { Text(said).ui(13, .regular, look).foregroundStyle(palette.mute).padding(8) }
             if let pending = store.screen?.root["pending"] {

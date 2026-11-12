@@ -2,6 +2,9 @@ import CooeeCore
 import SwiftUI
 
 public struct BlocksView: View {
+    /// The padding a host puts around the blocks; a full-bleed block cancels it.
+    public static let inset: CGFloat = 16
+
     private let block: JSONValue
     private let act: @MainActor (BlockAction) -> Void
     private let open: @MainActor (String) -> Void

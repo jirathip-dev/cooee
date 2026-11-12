@@ -39,12 +39,14 @@ internal enum QueueFrames {
     }()
 
     @MainActor private static func sheet() -> some View {
-        Color.clear.overlay(alignment: .top) { BlocksView(screen).padding(16) }.clipped()
+        Color.clear.overlay(alignment: .top) { BlocksView(screen).padding(BlocksView.inset) }.clipped()
     }
 
     @MainActor private static func panel() -> some View {
-        Color.clear.overlay(alignment: .top) { BlocksView(screen).padding(24).frame(width: 760).padding(.top, 36) }
-            .clipped()
+        Color.clear.overlay(alignment: .top) {
+            BlocksView(screen).padding(BlocksView.inset).frame(width: 760).padding(.top, 36)
+        }
+        .clipped()
     }
 
     internal static var all: [Frame] {

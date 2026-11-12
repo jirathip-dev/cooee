@@ -20,7 +20,7 @@ internal struct SceneBlock: View {
                 }
                 .frame(height: 140).padding(.bottom, 10)
             }
-            .frame(height: 180).clipShape(.rect(cornerRadius: 16))
+            .frame(height: 180).padding(.horizontal, -BlocksView.inset)
             .accessibilityElement(children: .contain).accessibilityLabel(block.string("label") ?? "")
         }
     }
