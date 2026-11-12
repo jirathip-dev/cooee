@@ -1,6 +1,6 @@
 # cooee's JSON and SSE API
 
-Everything `web/ts` calls (#49), and what a native app would call too. Pages are server HTML; the script never reads
+Everything `web/ts` calls (#49), and what the native app (`apple/`) calls too. Pages are server HTML; the script never reads
 them, only these endpoints. Every call needs a paired device's `cooee` cookie (pairing and `/look` excepted), and a
 request must name one of the server's own hosts (`Host`, and `Origin` when sent).
 
@@ -62,15 +62,23 @@ A persona is `{id, name, role, fleets, avatar?, character, instructions, folder,
 and `effort` its defaults. It is `<config>/personas/<id>.toml`; an owner profile with no persona of its name is read
 as one (`profile`: the profile it runs as, its account, settings, env, MCP servers and policy kept; never set over the
 API). Its Character, Instructions and notes go ahead of each new session's first message (`POST /threads` with
-`profile: <id>`). A note is `{text, by: "persona" | "owner", at}`, in `<data>/personas/<id>/memory.jsonl`; the persona
-adds one with the `remember` tool of cooee's own MCP server. `plugins` (#129) are the installed plugins (or config
+`profile: <id>`), each note as `- [id] text`; that brief is built once when a session starts. A note is `{id, text, by:
+"persona" | "owner", at}`, in `<data>/personas/<id>/memory.jsonl`; `id` is short, and a note kept before #216 gets one
+on first read. The persona edits its notes with the `remember` tool of cooee's own MCP server: `{text?, replaces?,
+forget?}` adds `text`, puts it in place of note `replaces`, or drops the ids in `forget`; an exact duplicate adds
+nothing. Notes hold at most 2,000 characters in all (#216): a write that would pass that is a 400 naming the use and
+the ids, so notes are merged or forgotten first; a persona already past it keeps and reads every note, and may only
+shrink them. `plugins` (#129) are the installed plugins (or config
 `[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. `role` (#159) is `""` (a plain persona)
 or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos or fleets it covers, which another may
-cover too): an installed `cooee-drover` is attached to each orchestrator by its role, never its name. The persona read
+cover too): herdsman's Drover plugin is attached to each orchestrator by its role, never its name. The persona read
 from a `conductor` profile (or saved from one before #159) is an orchestrator, its name kept. `machine` (#148) is the one its threads run on: `""` this host (every
 persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
-with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). An unknown
-id or a broken rule is a 400 with the reason.
+with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). A skill
+(#218) is `<data>/personas/<id>/skills/<name>/SKILL.md`, front matter (`name`, `description`) and a body, at most 20;
+each session's brief lists them `name: description` by name, never a body, which the persona reads with the `skill`
+tool. Clearing the notes leaves the skills; deleting the persona removes both. An unknown id or a broken rule is a
+400 with the reason.
 
 | Call | Body | Answer |
 |---|---|---|
@@ -84,7 +92,14 @@ id or a broken rule is a 400 with the reason.
 | `GET /personas/{id}/places` | | its header strip (#125, q984): the `header-strip` places of its attached plugins, `{plugin, id, label, screen}[]`; a tap opens `GET /p/{plugin}{screen}` as a sheet |
 | `GET /personas/{id}/memory` | | its notes, oldest first |
 | `POST /personas/{id}/memory` | `{text}` | the note, by `owner` |
+| `PUT /personas/{id}/memory/{note}` | `{text}` | the note, its text replaced, by `owner` |
+| `DELETE /personas/{id}/memory/{note}` | | `null`: that note goes, the others stay |
 | `DELETE /personas/{id}/memory` | | `null`: the notes go, the persona and its chats stay |
+| `GET /personas/{id}/skills` | | its skills (#218), `{name, description, body}[]`, by name |
+| `POST /personas/{id}/skills` | `{name, description, body}` | the skill; a name taken, a 21st skill, or a description not one line of at most 120 characters is a 400 |
+| `GET /personas/{id}/skills/{name}` | | the skill |
+| `PUT /personas/{id}/skills/{name}` | `{name, description, body}` | the skill, renamed when `name` differs |
+| `DELETE /personas/{id}/skills/{name}` | | `null` |
 
 ## Folders
 
@@ -159,11 +174,19 @@ Native forms, as theme packs; `GET /mcp` is the page.
 A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the thread's token>`, no cookie:
 `POST /mcp/agent/grant` `{thread, server}` → the server resolved and its allowed `tools`; `POST /mcp/agent/propose`
 `{thread, server: {name, type, command, args, url, why}}` → the card; `POST /mcp/agent/remember` `{thread, server:
-{text}}` → the note, by the thread's persona; `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
+{text?, replaces?, forget?}}` → `remember`'s edit by the thread's persona, its answer the note's id and the use; `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
 (#156) → `ask_persona`'s reply (a string), the thread's persona asking one its `can_message` names in a linked exchange
 thread (the owner reads it and may reply to steer), waiting `timeout` seconds (300, at most 600). A refusal is a 400
 starting `NOT_ALLOWED`, `DEPTH` (an asked persona may ask one more, no further), `TIMEOUT` or `OFFLINE` (its session
 can't start).
+`POST /mcp/agent/history` `{thread, server: {query?, thread?, before?, limit?}}` (#217) → `history`'s text: with
+`query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
+at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending
+`older: before=<item>` when more are left. Another persona's thread is a 400.
+`POST /mcp/agent/skill` `{thread, server: {read} | {propose: {name, description, body, replaces?}}}` (#218) → `skill`'s
+text: with `read`, the persona's skill's body (8,000 characters at most; another persona's is a 400); with `propose`,
+a card (`form: "skill"`, `detail` the new file, or for `replaces` its diff) whose `approve` saves it, `decline` or no
+answer nothing.
 
 ## Theme packs (Settings › look › themes, [docs/themes.md](themes.md))
 

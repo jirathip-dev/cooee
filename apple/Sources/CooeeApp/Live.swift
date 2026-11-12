@@ -65,6 +65,19 @@ extension SettingsStore: DependencyKey {
     )
 }
 
+extension AppIconClient: DependencyKey {
+    public static let liveValue = AppIconClient(set: { icon in try await apply(icon) })
+
+    @MainActor private static func apply(_ icon: AppIcon) async throws {
+        #if os(iOS)
+            guard UIApplication.shared.alternateIconName != icon.alternateName else { return }
+            try await UIApplication.shared.setAlternateIconName(icon.alternateName)
+        #else
+            NSApplication.shared.applicationIconImage = NSImage(named: "\(icon.asset)Preview")
+        #endif
+    }
+}
+
 extension PluginsClient: DependencyKey {
     public static let liveValue = PluginsClient(
         places: { server, persona in try await Client(server).places(persona) },
@@ -108,7 +121,9 @@ public struct CooeeRoot: View {
     ) { AppFeature() }
 
     public var body: some View {
-        AppRoot(store: store)
+        AppRoot(store: store).task {
+            if Self.mac { try? await AppIconClient.liveValue.set(SettingsStore.liveValue.load().appIcon) }
+        }
     }
 
     public init() {}

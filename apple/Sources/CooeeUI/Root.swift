@@ -59,6 +59,9 @@ public struct AppRoot: View {
                 HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
                     .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
                     .toolbar(.hidden)
+                    #if os(iOS)
+                        .background(SwipeBack())
+                    #endif
             }
         } else {
             WideView(
@@ -97,6 +100,7 @@ internal struct ChatScreen: View {
             answering: store.answering,
             back: onBack
         )
+        actions.retry = { store.send(.retry($0)) }
         let (places, attachable) = (store.places, store.attachable)
         actions.places = places.map(\.label)
         actions.open = { store.send(.plugins(.open(places[$0]))) }
