@@ -1,0 +1,10 @@
+Decided: each backend runs under a launcher whose watcher kills the backend's process group when its stdin pipe (held only by cooee) closes.
+Because: "Backends exit when their parent cooee dies (e.g. a parent-death pipe/stdin check in the backend launcher)."
+Because: crates/cooee-server/src/manage.rs:42
+Decided: no code change in round 2: the FAIL came from a base build sharing the head's target dir, so the "head" runs were the base binary.
+Because: crates/cooee/tests/plugin_manager.rs:446
+Decided: the test harness stops cooee with SIGTERM, then SIGKILL after 5 s.
+Because: "The test harness stops cooee with SIGTERM (then SIGKILL after a grace period)."
+Rejected: a pgid file reaped at the next startup — a recorded pgid can be reused by an unrelated group after a reboot, and the pipe already ends every backend.
+Check: build head in its own CARGO_TARGET_DIR (or touch sources after building base); the run must compile cooee and report 8 tests, 7 filtered out.
+Owner: Plugin backends now stop on their own when cooee is killed, so they can no longer pile up and eat memory.
