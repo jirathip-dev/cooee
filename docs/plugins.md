@@ -167,8 +167,8 @@ tap opens `#<machine>`) when its set of problems changes, and the tab shows a do
 ## First-party plugin: terminal
 
 `crates/cooee-terminal`, built into cooee: a real shell on the Mac from the phone, for the owner-only commands a chat
-hands over (setup, keychain, `launchctl` …), instead of an SSH app. `cooee setup` adds its entry to each instance
-(`cooee` and `drover`) on the instance's port + 1000 with a fresh token:
+hands over (setup, keychain, `launchctl` …), instead of an SSH app. `cooee setup` adds its entry to each instance on
+the instance's port + 1000 with a fresh token:
 
 ```toml
 [[plugins]]

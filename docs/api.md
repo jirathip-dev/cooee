@@ -1,6 +1,6 @@
 # cooee's JSON and SSE API
 
-Everything `web/ts` calls (#49), and what a native app would call too. Pages are server HTML; the script never reads
+Everything `web/ts` calls (#49), and what the native app (`apple/`) calls too. Pages are server HTML; the script never reads
 them, only these endpoints. Every call needs a paired device's `cooee` cookie (pairing and `/look` excepted), and a
 request must name one of the server's own hosts (`Host`, and `Origin` when sent).
 

@@ -217,7 +217,7 @@ One TOML file per instance, `$XDG_CONFIG_HOME/cooee/<instance>/config.toml` (els
 
 **Instances.** `--instance <name>` (default `cooee`) picks one: its own config, port, data folder (threads, devices,
 push key) and pairing, so two instances never share state; both use the one shed server. Plugins are per instance, so
-a `drover` instance adds its plugins without touching `cooee`. `cooee install --instance <name> --port <p>` writes
+one instance's tabs never touch another's. `cooee install --instance <name> --port <p>` writes
 `~/Library/LaunchAgents/dev.cooee.<name>.plist` (KeepAlive, log in the data folder) and the config's `port` if it has
 no config yet, then prints the `launchctl bootstrap`, `tailscale serve` and (if shed isn't running) shed install lines
 for the owner to run. `cooee doctor` checks the service, port, shed, APNs, push key and tailnet URL.
@@ -289,7 +289,7 @@ exact command or URL and needs Face ID; it is added off), saves a secret to the 
 profiles' servers and tools. A command or URL changes on the Mac only: the server refuses it from the phone.
 
 Every thread's agent gets, through shed's `--mcp` file (0600, removed once shed read it): `cooee` (`cooee mcp serve
---thread <id>`), whose only tool is `propose_server {name, type, command|url, args, why}`; and for each server its
+--thread <id>`), whose tools are `propose_server {name, type, command|url, args, why}`, `remember`, `ask_persona` and `history` ([api.md](api.md)); and for each server its
 profile picks (on, its references resolving), `cooee mcp proxy <server> --thread <id>`. Each carries `COOEE_MCP`
 (cooee's URL and the thread's token, `sha256(<data>/mcp.key:<thread>)`), good while the thread is open. The proxy asks
 `POST /mcp/agent/grant` for its server, its references resolved in memory then and never written, starts it (stdio) or
