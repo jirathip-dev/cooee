@@ -1,0 +1,151 @@
+Building for debugging...
+[Computing dependencies]
+[Provisioning 2 / 61]
+[1 / 4]
+[2 / 5] IssueReporting
+[3 / 6] IssueReporting
+[7 / 11] PerceptionCore
+[8 / 12] PerceptionCore
+[12 / 17] PerceptionMacros
+[17 / 22] PerceptionMacros
+[19 / 22] PerceptionMacros
+[21 / 23] PerceptionMacros
+[23 / 27] Perception
+[24 / 28] Perception
+[31 / 34] Sharing2
+[36 / 39] InternalCollectionsUtilities
+[40 / 43] OrderedCollections
+[41 / 44] OrderedCollections
+[45 / 48] IdentifiedCollections
+[46 / 49] IdentifiedCollections
+[51 / 54] ConcurrencyExtras
+[55 / 58] CustomDump
+[56 / 59] CustomDump
+[60 / 63] Clocks
+[61 / 64] Clocks
+[65 / 68] CombineSchedulers
+[66 / 69] CombineSchedulers
+[70 / 73] Dependencies
+[71 / 74] Dependencies
+[75 / 79] Sharing
+[76 / 80] Sharing
+[82 / 85] CasePathsMacrosSupport
+[92 / 97] SwiftNavigationMacros
+[94 / 97] SwiftNavigationMacros
+[98 / 101] CasePathsCore
+[102 / 107] CasePathsMacros
+[107 / 110] CasePathsMacros
+[111 / 114] CasePaths
+[112 / 115] CasePaths
+[116 / 120] SwiftNavigation
+[117 / 121] SwiftNavigation
+[121 / 125] SwiftUINavigation
+[122 / 126] SwiftUINavigation
+[126 / 130] UIKitNavigation
+[135 / 140] DependenciesMacrosPlugin
+[137 / 140] DependenciesMacrosPlugin
+[141 / 144] DependenciesMacros
+[142 / 145] DependenciesMacros
+[145 / 150] ComposableArchitectureMacros
+[153 / 158] ComposableArchitectureMacros
+[155 / 158] ComposableArchitectureMacros
+[159 / 163] ComposableArchitecture
+[160 / 164] ComposableArchitecture
+[164 / 167] CooeeCore
+[165 / 168] CooeeCore
+[169 / 172] CooeeAPI
+[170 / 173] CooeeAPI
+[174 / 178] CooeeFeatures
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-249/apple/Sources/CooeeFeatures/AppFeature.swift:42:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m40 |[0;0m 
+ [0;36m41 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m42 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m43 |[0;0m 
+ [0;36m44 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[175 / 179] CooeeFeatures
+[192 / 198] PerceptionCore
+[205 / 212] IssueReporting
+[210 / 216] Perception
+[213 / 219] Sharing2
+[230 / 236] InternalCollectionsUtilities
+[244 / 250] OrderedCollections
+[258 / 264] IdentifiedCollections
+[271 / 277] ConcurrencyExtras
+[273 / 278] ConcurrencyExtras
+[285 / 291] CustomDump
+[295 / 301] Clocks
+[309 / 315] CombineSchedulers
+[323 / 329] Dependencies
+[337 / 343] Sharing
+[350 / 356] CasePathsCore
+[358 / 364] CasePaths
+[372 / 378] SwiftNavigation
+[386 / 392] SwiftUINavigation
+[391 / 397] UIKitNavigationShim
+[404 / 410] UIKitNavigation
+[409 / 415] DependenciesMacros
+[423 / 429] ComposableArchitecture
+[434 / 440] CooeeCore
+[445 / 451] CooeeAPI
+[459 / 465] CooeeFeatures
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-249/apple/Sources/CooeeFeatures/AppFeature.swift:42:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m40 |[0;0m 
+ [0;36m41 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m42 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m43 |[0;0m 
+ [0;36m44 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[463 / 465] CooeeFeaturesTests-product
+[476 / 478] CooeeFeaturesTests-product
+[481 / 482] CooeeFeaturesTests-product
+[484 / 488] CooeeUI
+[485 / 489] CooeeUI
+[501 / 508] CooeeUI
+[505 / 507] CooeeUITests-product
+[511 / 513] CooeeUITests-product
+[516 / 517] CooeeUITests-product
+[519 / 523] CooeeApp
+[523 / 527] CooeeApp
+[528 / 529] CooeeApp
+[534 / 542] CooeeCoreTests-product
+[546 / 564] CooeeCoreTests-product
+[548 / 564] CooeeAPITests-product
+[549 / 564] CooeeAPITests-product
+[549 / 564] CooeeCoreTests-product
+[555 / 565] CooeeCoreTests-product
+[556 / 567] CooeeCoreTests-product
+[561 / 568] CooeeAPITests-product
+[562 / 568] CooeeCoreTests-product
+[562 / 568] CooeeAPITests-product
+[562 / 568] CooeeCoreTests-product
+[562 / 568] CooeeAPITests-product
+[564 / 568] CooeeCoreTests-product
+[566 / 569] CooeeAPITests-product
+[568 / 569] CooeeAPITests-product
+Build complete! (41.34 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite PinnedRowTests started.
+◇ Test withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+◇ Test case passing 1 argument style → .modern to withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+◇ Test case passing 1 argument style → .terminal to withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+◇ Test case passing 1 argument style → .scene to withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+✔ Test withNothingPinnedTheChatsSitUnderTheTopBar(_:) with 3 test cases passed after 1.352 seconds.
+✔ Suite PinnedRowTests passed after 1.352 seconds.
+✔ Test run with 1 test in 1 suite passed after 1.352 seconds.
