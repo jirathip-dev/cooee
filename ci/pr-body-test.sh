@@ -11,6 +11,8 @@ expect_fail() {
   if check; then echo "expected a fail: $1"; exit 1; fi
   grep -q "$2" "$t/out" || { echo "expected \"$2\" for $1, got:"; cat "$t/out"; exit 1; }
 }
+printf '## For humans\n\nNo "work in progress" stub, no `PENDING`.\n\n```\nPR:3: placeholder Work in progress\n```\n\nhead 137abba4\n' > "$t/body.md"
+check || { echo "expected quoted or fenced placeholder words to pass:"; cat "$t/out"; exit 1; }
 printf 'Closes #1\n\n## For humans\n\nHome loses its empty band.\n\n## Evidence (head 137abba4)\n\njust test: exit 0\n' > "$t/body.md"
 check
 printf 'Closes #1\n\nWork in progress: evidence follows once CI is green.\n' > "$t/body.md"

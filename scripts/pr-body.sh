@@ -10,9 +10,10 @@ if [ $# -eq 0 ]; then
   set -- "$t" "$(gh pr view --json headRefOid -q .headRefOid)"
 fi
 awk -v head="$(printf %.7s "${2:?head sha}" | tr 'A-F' 'a-f')" '
-  { l = tolower($0) }
+  { l = tolower($0); p = $0; gsub(/"[^"]*"|`[^`]*`/, "", p) }
+  /^[[:space:]]*```/ { fence = !fence }
   l ~ /^##[[:space:]]+for humans[[:space:]]*$/ { humans = 1 }
-  l ~ /work in progress|evidence pending|pending ci|follows? once/ || $0 ~ /PENDING/ {
+  !fence && (tolower(p) ~ /work in progress|evidence pending|pending ci|follows? once/ || p ~ /PENDING/) {
     print "PR:" NR ": placeholder \"" $0 "\": replace it with the run at the head"; bad = 1 }
   index(l, head) { named = 1 }
   !ev && l ~ /^#+[[:space:]]*evidence/ { ev = NR }
