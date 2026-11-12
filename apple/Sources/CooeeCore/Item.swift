@@ -67,8 +67,8 @@ public enum Item: Identifiable, Sendable, Equatable {
         switch self {
         case .you(_, let text, _): text
         case .outgoing(let message): message.text
-        case .agent(_, let blocks): blocks.map(\.plainText).joined(separator: "\n\n")
-        case .tools, .card, .note: nil
+        case .agent(_, let blocks), .said(_, _, _, let blocks): blocks.map(\.plainText).joined(separator: "\n\n")
+        case .tools, .card, .note, .divider: nil
         }
     }
 }
