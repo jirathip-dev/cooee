@@ -234,6 +234,7 @@ impl Hub {
             text: q.text,
             random_id: q.random_id,
             files: q.files,
+            routine: None,
         };
         let item = l.chat.said(now(), 0, OWNER.to_owned(), body);
         let idle = l.meta.round.is_empty();
