@@ -1,0 +1,6 @@
+Decided: merge origin/staging into the branch and push, so CI reruns on a current base.
+Decided: no design change this round; the FAIL was only CI pending at d75ac50.
+Rejected: touching web/e2e/chat.spec.mjs for the red ui job — a web timing check outside this design-only diff.
+Because: "Screenshots and README in `apple/design/native-surfaces/`; the iOS target builds"
+Check: git diff origin/staging...HEAD lists only apple/design/native-surfaces; the iOS Simulator build is green.
+Owner: Nothing in the design changed; the branch was brought up to date so the checks can finish.
