@@ -1,0 +1,9 @@
+Decided: merge origin/staging d3ac14e and make Item.plainText cover the room's .said and .divider cases.
+Because: apple/Sources/CooeeCore/Item.swift:67
+Decided: a member reply copies its text like an agent reply; a round divider is no message and copies nothing.
+Because: apple/Tests/CooeeCoreTests/ItemsTests.swift:63
+Decided: room bubbles render with staging's Markdown.inline plus the @mention tint; the old marked helper is removed.
+Because: apple/Sources/CooeeUI/Items.swift:106
+Rejected: skipping the room path's outbox — plain chats get staging's outbox; rooms keep RoomItems unchanged.
+Check: CI apple-quality (swiftlint analyze, Periphery) at 8deac26; local analyze was stopped after 27 min.
+Owner: The room screens branch is caught up with staging again, and a Copy menu gap for room messages is fixed.
