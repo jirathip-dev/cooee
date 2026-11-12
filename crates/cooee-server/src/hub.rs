@@ -16,6 +16,7 @@ use cooee_core::{
     Store, StoreError, Summary, Thread, Turn, Workflow,
     mcp::{self, COOEE, Pick, Server},
     personas,
+    routines::Mark,
     shed_proto::{self, ApprovalOption, Event, TerminalInfo},
     skills::{self, Skill},
 };
@@ -112,6 +113,16 @@ struct After {
     reply: Option<Body>,
     seat: (String, String),
     asked: String,
+}
+
+/// The name of the routine that started thread `live`, else of the one that sent its last `you` item (#75).
+fn routine_of(live: &Live) -> String {
+    let you = live.chat.items.iter().rev().find_map(|i| match &i.body {
+        Body::You { routine, .. } => Some(routine),
+        _ => None,
+    });
+    let mark = live.meta.routine.as_ref().or_else(|| you?.as_ref());
+    mark.map(|m| m.name.clone()).unwrap_or_default()
 }
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
@@ -215,6 +226,8 @@ pub struct Recipe {
     pub asked_by: String,
     /// The machine it runs on (#148; empty: this host), one of [`cooee_machines::Machines::added`].
     pub machine: String,
+    /// The routine whose run starts it (#75).
+    pub routine: Option<Mark>,
 }
 
 /// The threads and the shed they run on.
@@ -697,6 +710,7 @@ impl Hub {
                     text: prompt.clone(),
                     random_id: String::new(),
                     files: Vec::new(),
+                    routine: None,
                 };
                 changes.push(Change::Item(live.chat.push(now(), event.seq, body)));
             }
@@ -1117,6 +1131,7 @@ impl Hub {
             random_id: random_id.to_owned(),
             room: recipe.room.clone(),
             asked_by: recipe.asked_by.clone(),
+            routine: recipe.routine.clone(),
             ..Thread::default()
         })?;
         if fresh && !recipe.machine.is_empty() {
@@ -1422,6 +1437,7 @@ impl Hub {
             text: text.to_owned(),
             random_id: random_id.to_owned(),
             files: names,
+            routine: None,
         })
     }
 
@@ -1496,6 +1512,7 @@ impl Hub {
             text: q.text,
             random_id: q.random_id,
             files: q.files,
+            routine: q.routine,
         };
         let item = live.chat.push(now(), 0, body);
         if first {
@@ -1540,13 +1557,30 @@ impl Hub {
         random_id: &str,
         files: &[Upload],
     ) -> Result<Vec<Queued>, HubError> {
+        self.queue_as(id, (text, random_id), files, None)
+    }
+
+    /// [`Hub::queue`] by `routine` (#75) when given, not the owner.
+    ///
+    /// # Errors
+    /// As [`Hub::send`].
+    pub fn queue_as(
+        &self,
+        id: &str,
+        (text, random_id): (&str, &str),
+        files: &[Upload],
+        routine: Option<Mark>,
+    ) -> Result<Vec<Queued>, HubError> {
         let live = self.live(id)?;
         let mut l = lock(&live);
         let have = l.meta.queue.iter().any(|q| q.random_id == random_id);
         if have || Self::sent(&l, random_id).is_some() {
             return Ok(l.meta.queue.clone());
         }
-        let q = self.take(&l, text, random_id, files)?;
+        let q = Queued {
+            routine,
+            ..self.take(&l, text, random_id, files)?
+        };
         l.meta.queue.push(q);
         self.queued(&mut l)?;
         let next = self.drain(&mut l)?;
@@ -1800,6 +1834,18 @@ impl Hub {
         Ok(item)
     }
 
+    /// Adds `body` to thread `id` as cooee's own line (#75: a made routine's).
+    ///
+    /// # Errors
+    /// [`HubError::NoThread`]; [`HubError::Store`] when it can't be stored.
+    pub fn say(&self, id: &str, body: Body) -> Result<Item, HubError> {
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        let item = live.chat.push(now(), 0, body);
+        live.publish(self, vec![Change::Item(item.clone())])?;
+        Ok(item)
+    }
+
     /// A line in thread `id` linked to thread `other` (#553 row 35): a handoff's `continued in` (`out`), or a
     /// line `from` it.
     ///
@@ -1942,6 +1988,7 @@ impl Hub {
                     Body::Tool { title, .. } => title,
                     Body::Approval { tool, .. } => tool,
                     Body::Plan { .. } => "plan",
+                    Body::Routine { name, .. } => name,
                 });
                 let read = live.meta.read.unwrap_or(0);
                 let from = live.chat.items.partition_point(|i| i.id <= read);
@@ -1976,6 +2023,7 @@ impl Hub {
                     unseen,
                     archived: live.meta.archived,
                     workflow: live.meta.workflow.clone(),
+                    routine: routine_of(&live),
                     members: live
                         .meta
                         .members
@@ -2323,7 +2371,10 @@ impl Hub {
     }
 
     /// Thread `id`, if `token` is its MCP token and it is open.
-    fn token_of(&self, id: &str, token: &str) -> Result<Thread, HubError> {
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token or a closed thread.
+    pub fn token_of(&self, id: &str, token: &str) -> Result<Thread, HubError> {
         let no = || {
             HubError::Refused(format!(
                 "this MCP token isn't thread {id}'s, or the thread is closed"
