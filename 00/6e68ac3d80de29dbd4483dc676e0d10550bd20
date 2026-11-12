@@ -1,0 +1,8 @@
+Decided: no code change for the review's CI FAIL at 957f2ca; the iOS Simulator build was queued on macOS runners and the ubuntu jobs got a runner shutdown signal mid-test
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Rejected: retrying CI on the old head alone — staging had moved, so the merge reruns every job anyway
+Decided: merged origin/staging (#255); a clean merge of 5 Swift files kept exactly as staging has them
+Because: apple/Sources/CooeeUI/Sheets.swift:1
+Check: git diff origin/staging HEAD on the 5 merged Swift files is empty, and just comments exits 0
+Check: the macOS, iOS Simulator and ubuntu jobs run and pass at the head
+Owner: the branch is up to date with staging again; the earlier red CI was runners going away, not the change
