@@ -1,0 +1,9 @@
+Decided: refreshed evidence at head 8635a32; apple-check exit 0 at 6ea9e06, whose apple/ tree equals the head
+Because: apple/Tests/CooeeUITests/Frames.swift:97
+Decided: Frames.swift conflict kept this PR's style-* frames and staging's persona-panel-* frames
+Because: "Every frame in `apple/design/v1/` renders in all three styles without clipping"
+Decided: left staging's failing app-icon e2e step alone; plain staging d2e0d46e fails the same way locally
+Because: apple/UITests/LiveIconUITests.swift:41
+Rejected: fixing #225's icon-alert timing here — not #141's scope, and staging's CI has not run it yet
+Check: CI e2e at the head; if it fails in LiveIconUITests, staging fails there too
+Owner: evidence now names the head; the local simulator run is blocked by staging's new app-icon step, not by this PR
