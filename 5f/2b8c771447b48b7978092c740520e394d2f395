@@ -1,0 +1,12 @@
+Decided: unload only the chat items; keep meta, turn and a Glance of the list row, and reload in Hub::live, apply and reattach
+Because: "Unload idle threads' chats (reload from disk on next use)"
+Rejected: removing the whole Live from the map — the list, prune, mint and ask scans need every thread's meta
+Decided: replay ring kept by age (REPLAY 5 min), not 4096 events
+Because: "size the replay buffer so it covers a reconnect window, not a fixed 4096 events per thread"
+Decided: broadcast channel made on first subscribe with 256 slots, dropped on unload
+Rejected: keeping channel(4096) — tokio preallocates every slot, ~380 KB per thread, the bulk of the RSS
+Decided: a message on its way to shed (sending/held) counts as busy and never unloads
+Decided: round 3 only merges staging (Swift-only) to rerun CI; the FAIL was a runner shutdown (exit 143), not a test
+Check: no chat access path skips Hub::live/apply/reattach's load; plugin calls time out in 10 s, far under IDLE
+Check: unload skips working/connecting/blocked turns, streaming text, a pending first message, a sent prompt, subscribed pages
+Owner: Idle conversations leave memory and come back from disk when opened; 1,000 threads use about 13 MB instead of 389 MB.
