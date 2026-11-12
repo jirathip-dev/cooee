@@ -1,0 +1,11 @@
+Decided: on iPhone a lane tap pushes its chat inside the Queue sheet, with the place's back button and the lane title
+Because: docs/design/queue-scene/README.md:22
+Decided: the wide layout keeps the earlier path: the tap closes the panel and opens the chat in the detail
+Because: apple/Sources/CooeeUI/PluginSheets.swift:69
+Decided: the chat lies over the screen, which is hidden from accessibility, so row folds and the strip outlive the push
+Because: apple/Sources/CooeeUI/PluginSheets.swift:41
+Decided: the lane head comes from data the screen already has: the scene lane, and the round whose lane has that name
+Because: apple/Sources/CooeeCore/Scene.swift:41
+Rejected: a new schema field for the head — the README says the tap is the existing thread tap, nothing new
+Check: e2e simulator-shots hold lane-tapped with ‹ Queue, herdsman-impl-641, the head line and PR #704 ›
+Owner: Tapping a horse on iPhone now opens that lane's chat inside the Queue sheet, and Queue brings you back to the strip.
