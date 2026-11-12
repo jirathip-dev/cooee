@@ -30,7 +30,9 @@ the 360-pt panel column.
 - **The workflow list shows three issues**, needs-you and live first, then `All N issues ›` opens #229's Workflow sheet.
   The list/map toggle switches the section to #213's map in place.
 - **A trigger routine** (`When CI goes red`) shows when it last ran, since there is no next time to show.
-- **Places** is the heading for "Plugins' places", kept short. Each row has its plugin icon, name and count.
+- **Places** is the heading for "Plugins' places", kept short. Each row is CooeeUI's settings row: plugin icon, name,
+  count and ›.
+- **Issue rows use the app's tone colours** (Blocks' `tone`): working cyan, needs-you amber, done green.
 
 ## How these were rendered
 

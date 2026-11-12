@@ -1,5 +1,3 @@
-import SwiftUI
-
 internal struct PanelIssue: Sendable {
     internal let number: Int
     internal let title: String
