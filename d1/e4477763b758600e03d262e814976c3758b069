@@ -1,0 +1,8 @@
+Decided: the Agent picker's binding setter is a closure literal calling pick, not the stored @MainActor @Sendable function itself
+Because: apple/Sources/CooeeUI/PersonaPickers.swift:28
+Because: "Agent: the agents installed (the server's agent list)"
+Decided: no other change; dmg passed at e8d34c98 and failed at 0aa6d3ca, whose only source change made pick @MainActor @Sendable
+Rejected: reverting pick to a plain (String) -> Void — a Sendable setter literal could then not capture it under Swift 6 strict concurrency
+Rejected: reproducing locally — the host has Xcode 27.2, whose compiler builds the Release app; the crash is Xcode 26.6's IRGen on CI
+Check: the dmg job is green at the head; every other Binding(get:set:) in apple/Sources already passes a closure literal
+Owner: Fixes the Mac app's release build, which the compiler crashed on after the last change to the agent picker.
