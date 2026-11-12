@@ -1,0 +1,99 @@
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 1100]
+[Planning 1014 / 1100]
+[Planning deferred tasks]
+[Starting]
+[3 / 7]
+[4 / 8] CooeeCore
+[5 / 9] CooeeCore
+[11 / 15] CooeeAPI
+[12 / 16] CooeeAPI
+[17 / 21] CooeeFeatures
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-234/apple/Sources/CooeeFeatures/AppFeature.swift:42:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m40 |[0;0m 
+ [0;36m41 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m42 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m43 |[0;0m 
+ [0;36m44 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[18 / 22] CooeeFeatures
+[25 / 29] CooeeUI
+[26 / 30] CooeeUI
+[31 / 35] NativeSurfaces
+[32 / 36] NativeSurfaces
+[51 / 64] CooeeCore
+[53 / 64] CooeeCore
+[54 / 64] CooeeUI
+[54 / 64] CooeeCore
+[55 / 65] CooeeUI
+[57 / 65] CooeeUI
+[65 / 75] CooeeAPI
+[66 / 75] CooeeAPI
+[66 / 75] CooeeUI
+[66 / 75] CooeeAPI
+[67 / 79] OrderedCollections
+[67 / 78] SwiftNavigation
+[80 / 90] CooeeFeatures
+[81 / 90] CooeeFeatures
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-234/apple/Sources/CooeeFeatures/AppFeature.swift:42:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m40 |[0;0m 
+ [0;36m41 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m42 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m43 |[0;0m 
+ [0;36m44 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[92 / 99] NativeSurfaces
+[94 / 100] NativeSurfaces
+[96 / 98] ShotTests-product
+[98 / 100] ShotTests-product
+[102 / 103] ShotTests-product
+Build complete! (19.70 secs)
+Test Suite 'All tests' started at 2569-11-12 18:21:11.862.
+Test Suite 'All tests' passed at 2569-11-12 18:21:11.863.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.002) seconds
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite ShotTests started.
+◇ Test writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → lock-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → island-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → widgets-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → siri-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → shortcuts-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → dictate-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → call-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → call-thread-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → dictate-edit-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → lock-light to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → island-light to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → widgets-light to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → siri-light to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → shortcuts-light to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → dictate-light to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → call-light to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → call-thread-light to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → dictate-edit-light to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → lock-terminal-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → island-terminal-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → widgets-scene-light to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → call-terminal-dark to writesTheFrame(_:) started.
+◇ Test case passing 1 argument shot → call-scene-light to writesTheFrame(_:) started.
+✔ Test writesTheFrame(_:) with 23 test cases passed after 0.745 seconds.
+✔ Suite ShotTests passed after 0.745 seconds.
+✔ Test run with 1 test in 1 suite passed after 0.745 seconds.
