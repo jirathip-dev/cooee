@@ -396,6 +396,8 @@ struct Start {
     account: Option<String>,
     #[serde(default)]
     new: bool,
+    #[serde(default)]
+    machine: Option<String>,
 }
 
 #[route(POST "/logins/{id}")]
@@ -403,7 +405,11 @@ async fn login_start(cx: &Cx, Json(s): Json<Option<Start>>) -> Result<Answer<()>
     let name = thread_id(cx);
     let s = s.unwrap_or_default();
     Ok(Answer(
-        on_logins(cx, move |l| l.start(&name, s.account.as_deref(), s.new)).await,
+        on_logins(cx, move |l| {
+            let machine = s.machine.filter(|m| !m.is_empty());
+            l.start(&name, (s.account.as_deref(), s.new), machine)
+        })
+        .await,
     ))
 }
 
@@ -913,13 +919,15 @@ struct Seat {
     persona: String,
     #[serde(default)]
     remove: bool,
+    #[serde(default)]
+    at: Option<usize>,
 }
 
 #[route(POST "/threads/{id}/members")]
 async fn members(cx: &Cx, Json(m): Json<Seat>) -> Result<Answer<Vec<String>>> {
     let id = thread_id(cx);
     Ok(Answer(
-        blocking(cx, move |hub| hub.member(&id, &m.persona, m.remove)).await,
+        blocking(cx, move |hub| hub.member(&id, &m.persona, m.remove, m.at)).await,
     ))
 }
 

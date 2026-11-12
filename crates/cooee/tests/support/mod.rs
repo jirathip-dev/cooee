@@ -1,3 +1,4 @@
+
 #![allow(dead_code, reason = "each test file uses part of the support")]
 
 use std::{
@@ -316,7 +317,15 @@ impl FakeShed {
     }
 
     fn run(&self, params: &Value) -> Result<Value, RpcError> {
-        let name = params["name"].as_str().unwrap().to_owned();
+        let mut name = params["name"].as_str().unwrap().to_owned();
+        let mut path = env::var("PATH").unwrap_or_default();
+        if let Some(m) = params["machine"].as_str() {
+            name = format!("{m}/{name}");
+            if self.no_link(&name) {
+                return Err(RpcError::new(ErrorCode::NoLink, &name));
+            }
+            path = format!("{}:{path}", self.dir.join(format!("on-{m}")).display());
+        }
         if params["labels"]["cooee.owner"] == "1" {
             let labels = serde_json::from_value(params["labels"].clone()).unwrap();
             self.shared
@@ -328,6 +337,7 @@ impl FakeShed {
         let cmd: Vec<String> = serde_json::from_value(params["cmd"].clone()).unwrap();
         let mut child = Command::new(&cmd[0])
             .args(&cmd[1..])
+            .env("PATH", path)
             .current_dir(params["cwd"].as_str().unwrap())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

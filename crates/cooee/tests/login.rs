@@ -269,3 +269,35 @@ fn a_failed_sign_out_keeps_the_last_known_status() {
     let v = s.cooee.json("/logins/fake");
     assert_eq!(v["status"]["signed_in"], true, "{v}");
 }
+
+#[test]
+fn a_sign_in_started_for_a_remote_machine_runs_there() {
+    let s = setup("login-remote");
+    s.shed.link("box", "up", 1, None);
+    let new = json!({ "new": true, "machine": "box" });
+    assert_eq!(s.cooee.post("/logins/fake", &new).0, 400);
+
+    let (status, body) = s.cooee.post("/logins/fake", &json!({ "machine": "box" }));
+    assert_eq!(status, 200, "{body}");
+    let v = s.until(|v| v["screen"].as_str().unwrap().contains("Paste code"));
+    assert_eq!(v["links"], json!([LINK]));
+    let runs = s.shed.runs();
+    assert!(
+        runs.len() == 1 && runs[0].starts_with("box/cooee-login-fake-"),
+        "{runs:?}"
+    );
+    let terminal = &runs[0];
+    let requests = s.shed.requests.lock().unwrap().clone();
+    let run = requests.iter().find(|(m, _)| m == "run").unwrap();
+    assert_eq!(
+        (&run.1["machine"], &run.1["cwd"]),
+        (&json!("box"), &json!("/"))
+    );
+
+    s.cooee
+        .post("/logins/fake/send", &json!({ "text": "good-code" }));
+    assert_eq!(s.shed.sent(terminal), ["good-code"]);
+    let v = s.until(|v| v["state"] != "running");
+    assert_eq!(v["why"], "the login command finished on box");
+    assert_eq!(s.shed.calls("rm", terminal).len(), 1);
+}

@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
     process::Command,
     sync::{Arc, Mutex, MutexGuard, PoisonError},
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -540,8 +540,51 @@ impl Shed {
     /// # Errors
     /// [`ShedError`] when the call fails.
     pub fn link(&self, machine: &str) -> Result<Option<Link>, ShedError> {
-        let mut links: BTreeMap<String, Link> = self.call(Method::MachineLinks, &json!({}))?;
-        Ok(links.remove(machine))
+        Ok(self.links()?.remove(machine))
+    }
+
+    /// Every machine's held link, by name (`machine.links`).
+    ///
+    /// # Errors
+    /// [`ShedError`] when the call fails.
+    pub fn links(&self) -> Result<BTreeMap<String, Link>, ShedError> {
+        self.call(Method::MachineLinks, &json!({}))
+    }
+
+    /// Runs `cmd` to its end in a plain terminal on `machine` (#150), then removes it: its exit code, `None` when
+    /// it ran past `timeout` seconds or ended without one.
+    ///
+    /// # Errors
+    /// [`ShedError`] when it can't start or be waited for.
+    pub fn run_on(
+        &self,
+        machine: &str,
+        cmd: Vec<String>,
+        timeout: f64,
+    ) -> Result<Option<i32>, ShedError> {
+        let at = SystemTime::now().duration_since(UNIX_EPOCH);
+        let run = RunParams {
+            name: Some(format!("cooee-check-{:x}", at.map_or(0, |d| d.as_nanos()))),
+            labels: BTreeMap::from([("cooee-check".to_owned(), "1".to_owned())]),
+            cwd: PathBuf::from("/"),
+            keep: false,
+            idle_after: None,
+            cmd,
+            acp: None,
+            policy: None,
+            resume: None,
+            mcp_servers: Vec::new(),
+            no_hibernate: false,
+            machine: Some(machine.to_owned()),
+        };
+        let name = self.run(&run)?.name;
+        let waited = self.exited(&name, timeout);
+        self.close(&name)?;
+        let waited = waited?;
+        Ok(waited
+            .terminal
+            .exit
+            .filter(|_| waited.outcome != WaitOutcome::Timeout))
     }
 
     /// The installed ACP agents (`shed agents`).
