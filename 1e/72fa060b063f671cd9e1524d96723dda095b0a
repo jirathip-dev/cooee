@@ -1,0 +1,7 @@
+Decided: the style e2e closes the Look sheet by pressing on its bar and dragging to the screen's bottom
+Because: apple/UITests/StyleUITests.swift:22
+Rejected: the bar swipeDown it used — on CI run 43118690432 it left the menu sheet open three times
+Decided: screenshots live on wip/issue-141-shots, linked from the PR body, not committed to the PR
+Because: "The PR shows simulator screenshots matching the `style-terminal-*` and `style-scene-*` frames"
+Check: the PR body's screenshots show Terminal and Scene Home plus a chat with block cards in each
+Owner: the Terminal and Scene screenshots are in the PR; CI must still go green on the new head
