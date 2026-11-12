@@ -1,0 +1,15 @@
+Decided: Terminal is its own section right after Screen, a live tail with a cursor and an expand button that opens the full terminal
+Because: q1318
+Decided: a Sites · N › row sits inside the Screen card, under the thumbnail
+Because: q1378
+Decided: the Screen thumbnail is drawn as a browser page, so it does not read as a second terminal
+Decided: panel frames are registered as CooeeUITests snapshots in apple/design/v1
+Because: .herdsman/rules.md:15
+Rejected: leaving the panel unreferenced until #236 — Periphery fails on unused code
+Decided: fixture data moved to Sources/CooeeUI/Fixtures/, which line-cap.sh leaves out as design fixtures
+Because: scripts/line-cap.sh:5
+Decided: trimmed to fit apple_cap: Places rows reuse SettingRow, issue tones reuse Palette.tone, LIVE and expand share one badge
+Rejected: native Toggle and segmented Picker — ImageRenderer draws a checkbox and an unsupported placeholder
+Check: apple/design/persona-panel PNGs show Screen, Sites, Terminal, Workflow, Routines, Places in that order
+Check: apple lines stay under apple_cap (7498 / 7500 on a clean checkout merged with staging)
+Owner: the panel now shows the agent's terminal after its screen, and a Sites row under the screen
