@@ -1,0 +1,7 @@
+Decided: PinnedRow returns no view when personas is empty, in every look
+Because: "the pinned row and its `# pinned` heading are not drawn"
+Because: apple/Sources/CooeeUI/HomeRows.swift:13
+Rejected: guarding at the Home.swift call site — two places would own the empty rule
+Decided: this round only merges staging and re-runs CI; the last FAIL was a CI runner backlog, not code
+Check: build (generic/platform=iOS Simulator) and ui go green at f70f880f
+Owner: Home no longer shows an empty pinned band when nothing is pinned.
