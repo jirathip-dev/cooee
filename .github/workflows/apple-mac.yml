@@ -21,6 +21,9 @@ on:
       - "scripts/mac-bins.sh"
       - ".github/workflows/apple-mac.yml"
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: read
 defaults:
@@ -28,7 +31,7 @@ defaults:
     shell: bash
 jobs:
   dmg:
-    runs-on: macos-26
+    runs-on: ${{ vars.APPLE_RUNNER || 'macos-26' }}
     timeout-minutes: 60
     # Pull requests get no environment and no secrets: they build the unsigned .dmg. (`a && '' || b` is always b, as
     # '' is falsy, so the environment name is the truthy branch.)

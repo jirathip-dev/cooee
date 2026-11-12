@@ -38,7 +38,7 @@ TestFlight: CI uploads each `staging` change to `apple/` (`.github/workflows/app
 
 ## Rules
 
-The checks are the rules: `just apple-check` (`scripts/apple-check.sh`, CI job `apple-quality`) runs `swift format`
+The checks are the rules: `just apple-check` (`scripts/apple-check.sh`, in CI job `apple`) runs `swift format`
 (`.swift-format`), anti-slop (`tools/anti-slop-swift`, cooee's rules in `CooeeRules.swift`), SwiftLint
 (`.swiftlint.yml`), the tests, coverage (`scripts/apple-coverage.swift`) and Periphery (`.periphery.yml`).
 `.herdsman/rules.md` lists them in one line each.
