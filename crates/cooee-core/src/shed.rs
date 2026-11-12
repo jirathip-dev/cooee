@@ -16,10 +16,10 @@ use std::{
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 use shed_proto::{
-    AcpSession, ErrorCode, Event, EventsParams, Hello, KeysParams, LsParams, Method, ModelParams,
-    ReadParams, ReadResult, Reported, Request, ResizeParams, Response, RpcError, RunParams,
-    ScreenUpdate, SendParams, StateParams, Target, TerminalInfo, WaitOutcome, WaitParams,
-    WaitResult, WatchParams,
+    AcpSession, ErrorCode, Event, EventsParams, Hello, KeysParams, Link, LsParams, Method,
+    ModelParams, ReadParams, ReadResult, Reported, Request, ResizeParams, Response, RpcError,
+    RunParams, ScreenUpdate, SendParams, StateParams, Target, TerminalInfo, WaitOutcome,
+    WaitParams, WaitResult, WatchParams,
 };
 
 /// Why a call to shed failed.
@@ -62,6 +62,12 @@ impl ShedError {
     #[must_use]
     pub fn no_such_terminal(&self) -> bool {
         matches!(self, Self::Rpc(e) if e.code == ErrorCode::NoSuchTerminal.code())
+    }
+
+    /// Whether shed refused because the terminal's machine has no link up (#149).
+    #[must_use]
+    pub fn no_link(&self) -> bool {
+        matches!(self, Self::Rpc(e) if e.code == ErrorCode::NoLink.code())
     }
 }
 
@@ -480,6 +486,9 @@ impl Shed {
             name: name.into(),
             lines: None,
             history: false,
+            events: false,
+            before: None,
+            n: None,
         };
         Ok(self.call::<ReadResult>(Method::Read, &json!(read))?.text)
     }
@@ -543,6 +552,15 @@ impl Shed {
         }))
     }
 
+    /// Machine `machine`'s held link (`machine.links`); `None` for a machine shed doesn't have.
+    ///
+    /// # Errors
+    /// [`ShedError`] when the call fails.
+    pub fn link(&self, machine: &str) -> Result<Option<Link>, ShedError> {
+        let mut links: BTreeMap<String, Link> = self.call(Method::MachineLinks, &json!({}))?;
+        Ok(links.remove(machine))
+    }
+
     /// The installed ACP agents (`shed agents`).
     ///
     /// # Errors
@@ -554,7 +572,8 @@ impl Shed {
     /// Starts ACP agent `agent` in terminal `name` in `cwd` with `labels` (`shed run --acp`) and `launch`: with
     /// variables or args, its installed adapter `cmd` (as `shed agents` lists it) runs as `env K=V… <adapter>
     /// args…`, and with secrets as `env K=V… sh -c '…' <file> <adapter> args…`, the shell reading the secrets from
-    /// `<file>` (mode 0600, written here) and removing it.
+    /// `<file>` (mode 0600, written here) and removing it. A `<machine>/<name>` starts on that machine (`--on`), as
+    /// the agent installed there.
     ///
     /// # Errors
     /// [`ShedError::Cli`] when the CLI fails (e.g. the agent isn't installed or the name is taken), or the secrets'
@@ -568,7 +587,15 @@ impl Shed {
         launch: &Launch,
     ) -> Result<TerminalInfo, ShedError> {
         let cwd = cwd.to_string_lossy();
-        let mut args = vec!["run", "--acp", agent, "--name", name, "--cwd", &cwd];
+        let mut args = Vec::new();
+        let name = match name.split_once('/') {
+            Some((machine, name)) => {
+                args.extend(["--on", machine]);
+                name
+            }
+            None => name,
+        };
+        args.extend(["run", "--acp", agent, "--name", name, "--cwd", &cwd]);
         let labels: Vec<String> = labels.iter().map(|(k, v)| format!("{k}={v}")).collect();
         for label in &labels {
             args.extend(["--label", label]);
@@ -632,7 +659,12 @@ impl Shed {
         };
         let start = Instant::now();
         let out = cmd.arg("--json").args(args).output();
-        crate::perf::shed(args.first().copied().unwrap_or_default(), "cli", start);
+        let verb = if args.first() == Some(&"--on") {
+            args.get(2)
+        } else {
+            args.first()
+        };
+        crate::perf::shed(verb.copied().unwrap_or_default(), "cli", start);
         let out = out.map_err(|e| fail(format!("{}: {e}", self.bin.display())))?;
         if !out.status.success() {
             return Err(fail(String::from_utf8_lossy(&out.stderr).trim().to_owned()));

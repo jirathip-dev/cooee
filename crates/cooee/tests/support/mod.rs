@@ -91,7 +91,7 @@ const CLI: &str = r#"#!/bin/sh
 # machines.json; `[--on <m>] machine stats` prints stats-<m>.json (stats-local.json), exit 1 when offline; its
 # `history` only the first time, as `--since` the last sample leaves nothing new. A `run` with an adapter command
 # after `--` runs it, as the terminal would: the fake adapter `fake-acp` notes its variables in adapter.env. A `--mcp`
-# file is kept as mcp-<name>.json.
+# file is kept as mcp-<name>.json. `--on <m> run` starts on machine <m> (#149): the terminal is `<m>/<name>`.
 gates=$(dirname "$0")
 printf '%s\n' "$*" >>"$gates/cli.log"
 case "$*" in
@@ -106,6 +106,7 @@ case "$*" in
   echo '[{"id":"fake-acp","version":"1.0.0","distribution":"npx","cmd":["fake-acp"]}]' ;;
 *" run "*)
   while [ $# -gt 0 ]; do
+    [ "$1" = --on ] && on=$2/
     [ "$1" = --name ] && name=$2
     [ "$1" = --cwd ] && cwd=$2
     [ "$1" = --mcp ] && cp "$2" "$gates/mcp-$name.json"
@@ -117,7 +118,7 @@ case "$*" in
   [ -e "$gates/run-fails" ] && { echo 'fake shed: timed out' >&2; exit 1; }
   [ -e "$gates/fails-in-${f:-/}" ] && touch "$gates/ready-timeout-$name"
   [ $# -gt 0 ] && PATH="$gates:$PATH" "$@" >/dev/null 2>&1
-  printf '{"name":"%s","labels":{},"cwd":"/","cmd":[],"keep":false,"state":"running","exit":null,"pid":1,"acp":"fake-acp"}\n' "$name" ;;
+  printf '{"name":"%s%s","labels":{},"cwd":"/","cmd":[],"keep":false,"state":"running","exit":null,"pid":1,"acp":"fake-acp"}\n' "$on" "$name" ;;
 *) echo "fake shed: $*" >&2; exit 2 ;;
 esac
 "#;
@@ -182,6 +183,26 @@ impl FakeShed {
         while self.conns.lock().unwrap().2 > 0 {
             thread::sleep(Duration::from_millis(5));
         }
+    }
+
+    /// Sets machine `machine`'s held link (#149): `up`, or `down` since unix second `since` with `error`; a request
+    /// naming `<machine>/<name>` is refused `NoLink` unless it is up, as shed's own machine view does.
+    pub fn link(&self, machine: &str, state: &str, since: u64, error: Option<&str>) {
+        let mut links = self.links();
+        links[machine] = json!({ "state": state, "since": since, "error": error });
+        fs::write(self.dir.join("links.json"), links.to_string()).unwrap();
+    }
+
+    /// `machine.links`: each machine's link, as [`FakeShed::link`] set it.
+    fn links(&self) -> Value {
+        fs::read_to_string(self.dir.join("links.json"))
+            .map_or_else(|_| json!({}), |t| serde_json::from_str(&t).unwrap())
+    }
+
+    /// Whether `name` is `<machine>/<name>` on a machine whose link is not up.
+    fn no_link(&self, name: &str) -> bool {
+        name.split_once('/')
+            .is_some_and(|(m, _)| self.links()[m]["state"] != "up")
     }
 
     /// Shuts (`true`) or opens gate `name`: `hold-run` and `run-fails` for the CLI's `run`, `hold-ready` (the
@@ -582,6 +603,8 @@ impl FakeShed {
             let id = req.id.clone().unwrap_or_default();
             let name = req.params["name"].as_str().unwrap_or("").to_owned();
             let result = match req.method.as_str() {
+                _ if self.no_link(&name) => Err(RpcError::new(ErrorCode::NoLink, &name)),
+                "machine.links" => Ok(self.links()),
                 "hello" => {
                     let theirs: Hello = serde_json::from_value(req.params.clone()).unwrap();
                     let ours = Hello {
@@ -727,6 +750,9 @@ impl FakeShed {
             let mut events: Vec<EventKind> = MARKDOWN.split_inclusive('\n').map(text).collect();
             events.push(reply(MARKDOWN, "end_turn"));
             (events, "end_turn")
+        } else if prompt.contains("paragraphs") {
+            let said = "Questions for you:\n1. **HTML or SwiftUI?**\n\n**Call voice:** the iOS target building.";
+            (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("commands") {
             let mut events = Vec::new();
             for (id, title) in [
@@ -865,6 +891,7 @@ fn tool(id: &str, title: &str, status: &str) -> EventKind {
         id: id.to_owned(),
         title: title.to_owned(),
         status: status.to_owned(),
+        kind: None,
     }
 }
 
