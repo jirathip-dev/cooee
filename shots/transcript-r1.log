@@ -1,0 +1,14 @@
+$ xcode-select -p
+/Library/Developer/CommandLineTools
+exit=0
+$ xcrun simctl help
+xcrun: error: unable to find utility "simctl", not a developer tool or in PATH
+exit=72
+$ command -v sim-task hermes-sim-task
+exit=1
+$ rg -n "iOS|simulator|sim-task|xcodebuild" .herdsman/verify.md
+exit=1
+$ git diff --name-only origin/staging...HEAD | rg -v "^(apple|docs/design)/" | wc -l
+       0
+$ (headless shell renders 20 design SVGs at 1024, then) node .verify-browser.mjs diff <asset png> <design png> 0.1  x24 -> shots/icon-diff.log
+24 of 24: 0.000 % differ

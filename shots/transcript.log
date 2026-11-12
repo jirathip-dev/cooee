@@ -1,0 +1,18 @@
+$ xcrun simctl list devices available
+xcrun: error: unable to find utility "simctl", not a developer tool or in PATH
+exit=72
+$ xcode-select -p
+/Library/Developer/CommandLineTools
+$ which sim-task hermes-sim-task
+sim-task not found
+hermes-sim-task not found
+exit=1
+$ ls -d /Applications/Xcode*.app
+(eval):1: no matches found: /Applications/Xcode*.app
+exit=1
+$ rg -n "iOS|simulator|sim-task" .herdsman/verify.md
+exit=1
+$ (cd apple && swift test --scratch-path $HERDSMAN_SCRATCH_TARGET/swift --filter "AppIconTests|MenuFeatureTests")  -> exit=1, see .verify-swift-test.log
+warning: 'swift-composable-architecture': skipping cache due to an error: The file “maintenance.lock” doesn’t exist.
+error: SwiftCompile normal arm64 /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift failed with a nonzero exit code. Command line:     cd /Users/jkmacmini/.local/share/herdsman/work/cooee/verify-225-r1
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift:93:16: [1;31merror: [1;39mexternal macro implementation type 'SwiftUIMacros.StateMacro' could not be found for macro 'State()'; plugin for module 'SwiftUIMacros' not found[0;0m

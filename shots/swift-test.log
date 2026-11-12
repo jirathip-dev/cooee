@@ -1,0 +1,319 @@
+Fetching https://github.com/pointfreeco/swift-dependencies from cache
+Fetching https://github.com/pointfreeco/swift-sharing from cache
+Fetching https://github.com/pointfreeco/swift-composable-architecture from cache
+Fetching https://github.com/pointfreeco/swift-concurrency-extras from cache
+Fetching https://github.com/pointfreeco/swift-identified-collections from cache
+Fetching https://github.com/pointfreeco/swift-issue-reporting from cache
+Fetching https://github.com/apple/swift-collections from cache
+Fetching https://github.com/pointfreeco/swift-clocks from cache
+Fetching https://github.com/pointfreeco/combine-schedulers from cache
+warning: 'swift-composable-architecture': skipping cache due to an error: The file “maintenance.lock” doesn’t exist.
+Fetched https://github.com/pointfreeco/swift-identified-collections from cache (0.87s)
+Fetched https://github.com/pointfreeco/swift-clocks from cache (0.87s)
+Fetched https://github.com/pointfreeco/combine-schedulers from cache (0.87s)
+Fetched https://github.com/pointfreeco/swift-sharing from cache (0.87s)
+Fetched https://github.com/pointfreeco/swift-concurrency-extras from cache (0.87s)
+Fetched https://github.com/pointfreeco/swift-issue-reporting from cache (0.87s)
+Fetched https://github.com/pointfreeco/swift-dependencies from cache (0.88s)
+Fetching https://github.com/swiftlang/swift-syntax from cache
+Fetching https://github.com/pointfreeco/swift-navigation from cache
+Fetching https://github.com/pointfreeco/swift-custom-dump from cache
+Fetching https://github.com/pointfreeco/swift-perception from cache
+Fetching https://github.com/pointfreeco/swift-case-paths from cache
+Fetched https://github.com/apple/swift-collections from cache (0.89s)
+Fetched https://github.com/pointfreeco/swift-perception from cache (0.68s)
+Fetched https://github.com/pointfreeco/swift-case-paths from cache (0.70s)
+Fetched https://github.com/pointfreeco/swift-custom-dump from cache (1.01s)
+Fetched https://github.com/pointfreeco/swift-navigation from cache (1.01s)
+Fetched https://github.com/swiftlang/swift-syntax from cache (1.03s)
+[1/313782] Fetching swift-composable-architecture
+Fetched https://github.com/pointfreeco/swift-composable-architecture (16.32s)
+Computing version for https://github.com/pointfreeco/swift-composable-architecture
+Computed https://github.com/pointfreeco/swift-composable-architecture at 1.26.2 (17.05s)
+Computing version for https://github.com/swiftlang/swift-syntax
+Computed https://github.com/swiftlang/swift-syntax at 604.0.0 (0.80s)
+Computing version for https://github.com/pointfreeco/swift-sharing
+Computed https://github.com/pointfreeco/swift-sharing at 2.10.1 (0.65s)
+Computing version for https://github.com/pointfreeco/swift-perception
+Computed https://github.com/pointfreeco/swift-perception at 2.0.12 (0.54s)
+Computing version for https://github.com/pointfreeco/swift-navigation
+Computed https://github.com/pointfreeco/swift-navigation at 2.11.2 (0.62s)
+Computing version for https://github.com/pointfreeco/swift-issue-reporting
+Computed https://github.com/pointfreeco/swift-issue-reporting at 2.1.2 (0.54s)
+Computing version for https://github.com/pointfreeco/swift-identified-collections
+Computed https://github.com/pointfreeco/swift-identified-collections at 1.1.1 (0.47s)
+Computing version for https://github.com/pointfreeco/swift-dependencies
+Computed https://github.com/pointfreeco/swift-dependencies at 1.17.2 (0.48s)
+Computing version for https://github.com/pointfreeco/swift-custom-dump
+Computed https://github.com/pointfreeco/swift-custom-dump at 1.7.3 (0.48s)
+Computing version for https://github.com/pointfreeco/swift-concurrency-extras
+Computed https://github.com/pointfreeco/swift-concurrency-extras at 1.4.3 (0.50s)
+Computing version for https://github.com/pointfreeco/swift-clocks
+Computed https://github.com/pointfreeco/swift-clocks at 1.1.1 (0.47s)
+Computing version for https://github.com/pointfreeco/swift-case-paths
+Computed https://github.com/pointfreeco/swift-case-paths at 1.10.0 (0.58s)
+Computing version for https://github.com/pointfreeco/combine-schedulers
+Computed https://github.com/pointfreeco/combine-schedulers at 1.2.2 (0.51s)
+Computing version for https://github.com/apple/swift-collections
+Computed https://github.com/apple/swift-collections at 1.7.5 (0.56s)
+Creating working copy for https://github.com/apple/swift-collections
+Working copy of https://github.com/apple/swift-collections resolved at 1.7.5
+Creating working copy for https://github.com/pointfreeco/swift-concurrency-extras
+Working copy of https://github.com/pointfreeco/swift-concurrency-extras resolved at 1.4.3
+Creating working copy for https://github.com/pointfreeco/swift-composable-architecture
+Working copy of https://github.com/pointfreeco/swift-composable-architecture resolved at 1.26.2
+Creating working copy for https://github.com/swiftlang/swift-syntax
+Working copy of https://github.com/swiftlang/swift-syntax resolved at 604.0.0
+Creating working copy for https://github.com/pointfreeco/swift-case-paths
+Working copy of https://github.com/pointfreeco/swift-case-paths resolved at 1.10.0
+Creating working copy for https://github.com/pointfreeco/swift-clocks
+Working copy of https://github.com/pointfreeco/swift-clocks resolved at 1.1.1
+Creating working copy for https://github.com/pointfreeco/swift-perception
+Working copy of https://github.com/pointfreeco/swift-perception resolved at 2.0.12
+Creating working copy for https://github.com/pointfreeco/swift-navigation
+Working copy of https://github.com/pointfreeco/swift-navigation resolved at 2.11.2
+Creating working copy for https://github.com/pointfreeco/swift-issue-reporting
+Working copy of https://github.com/pointfreeco/swift-issue-reporting resolved at 2.1.2
+Creating working copy for https://github.com/pointfreeco/swift-identified-collections
+Working copy of https://github.com/pointfreeco/swift-identified-collections resolved at 1.1.1
+Creating working copy for https://github.com/pointfreeco/swift-custom-dump
+Working copy of https://github.com/pointfreeco/swift-custom-dump resolved at 1.7.3
+Creating working copy for https://github.com/pointfreeco/swift-sharing
+Working copy of https://github.com/pointfreeco/swift-sharing resolved at 2.10.1
+Creating working copy for https://github.com/pointfreeco/swift-dependencies
+Working copy of https://github.com/pointfreeco/swift-dependencies resolved at 1.17.2
+Creating working copy for https://github.com/pointfreeco/combine-schedulers
+Working copy of https://github.com/pointfreeco/combine-schedulers resolved at 1.2.2
+Building for debugging...
+[Computing dependencies]
+[Constructing description]
+[Pre-planning 1 / 1274]
+[Planning deferred tasks]
+[Starting]
+[78 / 618] OrderedCollections
+[290 / 618] Cooee_CooeeUI
+[292 / 618]
+[303 / 628] UIKitNavigationShim
+[308 / 632] UIKitNavigationShim
+[311 / 642] InternalCollectionsUtilities
+[312 / 655] CasePathsMacrosSupport
+[326 / 736]
+[331 / 736]
+[335 / 790] IssueReporting
+[350 / 888]
+[359 / 888]
+[369 / 888]
+[373 / 888]
+[387 / 888]
+[394 / 888]
+[400 / 888]
+[408 / 888]
+[419 / 888]
+[422 / 888]
+[425 / 888]
+[428 / 888]
+[435 / 888]
+[448 / 888]
+[450 / 888]
+[457 / 888]
+[459 / 888]
+[460 / 888]
+[470 / 888] Sharing1
+[485 / 888] Sharing1
+[488 / 888]
+[490 / 888]
+[493 / 888]
+[495 / 888]
+[501 / 888]
+[506 / 888] InternalCollectionsUtilities
+[511 / 888] InternalCollectionsUtilities
+[513 / 888]
+[514 / 888] InternalCollectionsUtilities
+[516 / 888]
+[518 / 888] DependenciesMacrosPlugin
+[524 / 888] CasePathsMacrosSupport
+[530 / 888]
+[532 / 888] InternalCollectionsUtilities
+[534 / 888]
+[536 / 888] PerceptionMacros
+[538 / 888] DependenciesMacrosPlugin
+[546 / 889]
+[548 / 889]
+[552 / 889] PerceptionMacros
+[557 / 902] OrderedCollections
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-dependencies/Package.swift: DependenciesMacrosPlugin: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-dependencies/Package.swift: DependenciesMacrosPlugin: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[558 / 902] OrderedCollections
+[559 / 902]
+[563 / 902]
+[566 / 902] OrderedCollections
+[567 / 902]
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Package.swift: PerceptionMacros: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Package.swift: PerceptionMacros: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[571 / 902] OrderedCollections
+[571 / 902] PerceptionMacros
+[575 / 902]
+[593 / 904]
+[593 / 904] CasePathsMacros
+[596 / 907] SwiftNavigationMacros
+[599 / 912] CasePathsMacros
+[604 / 912] CasePathsMacros
+[605 / 912] SwiftNavigationMacros
+[605 / 912] OrderedCollections
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-case-paths/Package.swift: CasePathsMacros: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-case-paths/Package.swift: CasePathsMacros: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[607 / 912] CasePathsMacros
+[609 / 912] SwiftNavigationMacros
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-navigation/Package.swift: SwiftNavigationMacros: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-navigation/Package.swift: SwiftNavigationMacros: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[611 / 912] OrderedCollections
+[620 / 913] IdentifiedCollections
+[620 / 926]
+[631 / 926] IssueReporting
+[636 / 926] IssueReporting
+[638 / 926] IdentifiedCollections
+[646 / 926] IdentifiedCollections
+[656 / 926] IssueReporting
+[657 / 926] IdentifiedCollections
+[662 / 926] ConcurrencyExtras
+[666 / 926] IssueReporting
+[672 / 926] IssueReporting-product
+[674 / 926] CooeeCore
+[681 / 926] CooeeCore
+[682 / 926] CooeeCoreTests-product
+[693 / 926] ConcurrencyExtras-product
+[702 / 926] ComposableArchitectureMacros
+[711 / 927] CooeeCoreTests-product
+[716 / 933] Clocks
+[717 / 933] ComposableArchitectureMacros
+/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-225-r1/apple/Package.swift: CooeeCore: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[722 / 934]
+[722 / 934] DependenciesMacros
+[726 / 938] DependenciesMacros
+[728 / 954]
+[733 / 978]
+[739 / 1136] CasePathsCore
+[753 / 1188]
+[767 / 1188]
+[773 / 1188]
+[782 / 1188]
+[788 / 1188]
+[793 / 1188]
+[799 / 1188]
+[803 / 1188]
+[809 / 1188]
+[811 / 1188]
+[818 / 1188]
+[824 / 1188] CooeeCoreTests-product
+[835 / 1188]
+[839 / 1188]
+[846 / 1188] CooeeAPI
+[852 / 1188] CooeeCoreTests-product
+[855 / 1188]
+[865 / 1188]
+[867 / 1188]
+[874 / 1188] CooeeCoreTests-product
+[882 / 1188]
+[887 / 1188]
+[892 / 1188]
+[897 / 1188]
+[902 / 1188]
+[907 / 1188] ComposableArchitectureMacros
+[916 / 1188] CasePathsCore
+[920 / 1188] CasePathsCore
+/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-225-r1/apple/Package.swift: CooeeAPI: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[928 / 1190] CasePathsCore
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-composable-architecture/Package.swift: ComposableArchitectureMacros: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-composable-architecture/Package.swift: ComposableArchitectureMacros: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[932 / 1190] ComposableArchitectureMacros
+[934 / 1190]
+/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-225-r1/apple/Package.swift: CooeeCoreTests-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-225-r1/apple/Package.swift: CooeeCoreTests-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[943 / 1197]
+[947 / 1210] CasePaths
+[949 / 1210] CooeeAPITests-product
+[957 / 1210] CooeeAPITests-product
+[959 / 1210] CooeeAPITests-product
+[962 / 1210] CasePaths
+[969 / 1210] CooeeAPITests-product
+[973 / 1210] CasePaths
+[975 / 1210] CooeeAPITests-product
+[978 / 1210] CooeeAPITests-product
+[980 / 1210]
+[981 / 1210] CooeeAPITests-product
+/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-225-r1/apple/Package.swift: CooeeAPITests-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/usr/lib' not found
+/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-225-r1/apple/Package.swift: CooeeAPITests-product: ld: warning: search path '/Library/Developer/CommandLineTools/Developer/Library/Frameworks' not found
+[985 / 1210]
+[987 / 1210]
+[988 / 1210]
+[997 / 1210]
+[998 / 1210]
+[1002 / 1210]
+[1005 / 1210]
+[1007 / 1210]
+[1008 / 1210]
+[1010 / 1210]
+[1011 / 1210]
+[1012 / 1210]
+[1023 / 1210] CustomDump
+[1024 / 1210] CustomDump
+[1030 / 1210] CombineSchedulers
+[1040 / 1210] Clocks
+[1044 / 1210] CombineSchedulers
+[1046 / 1210] CombineSchedulers-product
+[1051 / 1210] CustomDump
+[1058 / 1210] CustomDump
+[1059 / 1210] CustomDump-product
+[1060 / 1210] Clocks
+[1063 / 1210] Dependencies
+[1066 / 1211]
+[1066 / 1211] Clocks
+[1066 / 1211] CustomDump
+[1066 / 1211] Dependencies
+[1073 / 1224] Dependencies
+[1076 / 1224] Dependencies
+[1079 / 1224] Dependencies
+[1087 / 1224] Dependencies
+[1087 / 1224] Clocks
+[1089 / 1224] CustomDump
+[1091 / 1224] Dependencies
+[1093 / 1224]
+[1094 / 1224]
+[1107 / 1224] PerceptionCore
+error: SwiftCompile normal arm64 /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift failed with a nonzero exit code. Command line:     cd /Users/jkmacmini/.local/share/herdsman/work/cooee/verify-225-r1
+    builtin-SwiftPerFileCompile WithPerceptionTracking.swift
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift:93:16: [1;31merror: [1;39mexternal macro implementation type 'SwiftUIMacros.StateMacro' could not be found for macro 'State()'; plugin for module 'SwiftUIMacros' not found[0;0m
+ [0;36m91 |[0;0m     }
+ [0;36m92 |[0;0m 
+ [0;36m93 |[0;0m     @State var id = 0
+    [0;36m|[0;0m                `- [1;31merror: [1;39mexternal macro implementation type 'SwiftUIMacros.StateMacro' could not be found for macro 'State()'; plugin for module 'SwiftUIMacros' not found[0;0m
+ [0;36m94 |[0;0m     private let content: _Content
+ [0;36m95 |[0;0m 
+
+SwiftUI.State:1:145: [1;39mnote: [1;39m'State()' declared here[0;0m
+[0;36m1 |[0;0m @attached(accessor, names: named(init), named(get), named(set)) @attached(peer, names: prefixed(`_`), prefixed(__), prefixed(`$`)) public macro State() = #externalMacro(module: "SwiftUIMacros", type: "StateMacro")
+  [0;36m|[0;0m                                                                                                                                                 `- [1;39mnote: [1;39m'State()' declared here[0;0m
+
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift:93:16: [1;31merror: [1;39mexternal macro implementation type 'SwiftUIMacros.StateMacro' could not be found for macro 'State()'; plugin for module 'SwiftUIMacros' not found[0;0m
+ [0;36m91 |[0;0m     }
+ [0;36m92 |[0;0m 
+ [0;36m93 |[0;0m     @State var id = 0
+    [0;36m|[0;0m                `- [1;31merror: [1;39mexternal macro implementation type 'SwiftUIMacros.StateMacro' could not be found for macro 'State()'; plugin for module 'SwiftUIMacros' not found[0;0m
+ [0;36m94 |[0;0m     private let content: _Content
+ [0;36m95 |[0;0m 
+
+SwiftUI.State:1:145: [1;39mnote: [1;39m'State()' declared here[0;0m
+[0;36m1 |[0;0m @attached(accessor, names: named(init), named(get), named(set)) @attached(peer, names: prefixed(`_`), prefixed(__), prefixed(`$`)) public macro State() = #externalMacro(module: "SwiftUIMacros", type: "StateMacro")
+  [0;36m|[0;0m                                                                                                                                                 `- [1;39mnote: [1;39m'State()' declared here[0;0m
+
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift:108:63: [1;31merror: [1;39mleft side of mutating operator isn't mutable: 'self' is immutable[0;0m
+[0;36m106 |[0;0m       case .tracked(let content):
+[0;36m107 |[0;0m         let _ = id
+[0;36m108 |[0;0m         return withPerceptionTracking(content, onChange: { [4;39mid[0;0m &+= 1 })
+    [0;36m|[0;0m                                                               `- [1;31merror: [1;39mleft side of mutating operator isn't mutable: 'self' is immutable[0;0m
+[0;36m109 |[0;0m       }
+[0;36m110 |[0;0m     }
+Failed frontend command:
+/Library/Developer/CommandLineTools/usr/bin/swift-frontend -frontend -c /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/Internal/Deprecations.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/Internal/Exports.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/Internal/Locals.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/Internal/ObservationBeta.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/Locking.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/Perceptible.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/Perception/PerceptionChecking.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/Perception/PerceptionRegistrar.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/PerceptionTracking.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/Perceptions.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/Bindable.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/Environment.swift -primary-file /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/SwiftUI/WithPerceptionTracking.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/ThreadLocal.swift /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/checkouts/swift-perception/Sources/PerceptionCore/_PerceptionRegistrar.swift -emit-dependencies-path /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.d -emit-const-values-path /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.swiftconstvalues -emit-reference-dependencies-path /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.swiftdeps -serialize-diagnostics-path /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.dia -target arm64-apple-macos12.0 -module-can-import-version Charts 8.1.9 0 -module-can-import-version Combine 3023 0 -module-can-import-version Darwin 428.40.1 0 -module-can-import-version Observation 6.4.2.1 0 -module-can-import-version SwiftUI 8.1.13.1 8.1.13 -disable-cross-import-overlay-search -swift-module-cross-import Darwin /Library/Developer/CommandLineTools/SDKs/MacOSX27.2.sdk/usr/include/Darwin.swiftcrossimport/xlocale.swiftoverlay -load-resolved-plugin /Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/libObservationMacros.dylib\#\#ObservationMacros -load-resolved-plugin /Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/libSwiftMacros.dylib\#\#SwiftMacros -disable-implicit-swift-modules -Xcc -fno-implicit-modules -Xcc -fno-implicit-module-maps -explicit-swift-module-map-file /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/PerceptionCore-dependencies-1.json -Xllvm -aarch64-use-tbi -enable-objc-interop -stack-check -sdk /Library/Developer/CommandLineTools/SDKs/MacOSX27.2.sdk -I /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Products/Debug -Isystem /Library/Developer/CommandLineTools/Developer/usr/lib -F /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Products/Debug/PackageFrameworks -F /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Products/Debug -F /Library/Developer/CommandLineTools/Library/Developer/Frameworks -F /Library/Developer/CommandLineTools/Developer/Library/Frameworks -module-cache-path /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/SwiftExplicitPrecompiledModules -color-diagnostics -Xcc -fcolor-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=4 -suppress-warnings -swift-version 5 -Onone -D SWIFT_PACKAGE -D DEBUG -D SWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE -D Xcode -serialize-debugging-options -enable-upcoming-feature ExistentialAny -enable-upcoming-feature ImmutableWeakCaptures -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature InternalImportsByDefault -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -empty-abi-descriptor -user-module-version 2.0.12 -validate-clang-modules-once -clang-build-session-file /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/jkmacmini/.local/share/herdsman/work/cooee/verify-225-r1 -enable-anonymous-context-mangled-names -file-compilation-dir /Users/jkmacmini/.local/share/herdsman/work/cooee/verify-225-r1 -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -Xcc -ivfsstatcache -Xcc /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/SDKStatCaches.noindex/macosx27.2-26B118-1aa54e4a50e311dbd51de5aafe7eca3d5818d34bafcb1249783cb8b2c4efe0a2.sdkstatcache -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -Xcc -I/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Products/Debug/include -Xcc -I/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/DerivedSources-normal/arm64 -Xcc -I/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/DerivedSources/arm64 -Xcc -I/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/DerivedSources -Xcc -DSWIFT_PACKAGE -Xcc -DDEBUG\=1 -no-auto-bridging-header-chaining -module-name PerceptionCore -package-name swift_perception -const-gather-protocols-file /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/PerceptionCore_const_extract_protocols.json -disable-clang-spi -clang-target arm64-apple-macos27.2 -target-sdk-version 27.2 -target-sdk-name macosx27.2 -in-process-plugin-server-path /Library/Developer/CommandLineTools/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -parse-as-library -o /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.o -debug-module-path /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out/Intermediates.noindex/swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/PerceptionCore.swiftmodule -index-unit-output-path /swift-perception.build/Debug/PerceptionCore-t.build/Objects-normal/arm64/WithPerceptionTracking.o -index-store-path /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-225-r1/swift/out -index-system-modules
+error: Build failed
+error: fatalError
