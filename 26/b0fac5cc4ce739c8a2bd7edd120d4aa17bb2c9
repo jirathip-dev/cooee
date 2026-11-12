@@ -1,0 +1,7 @@
+Decided: merged origin/staging (#271); the new persona-text mockup scripts' 21 comment lines are stripped, nothing else changes
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: excluding docs/design from the check — the rule covers "every tracked source file", and earlier mockup scripts were stripped the same way
+Decided: no code change for the review's pending iOS Simulator build; it was queued on macOS runners, not failing
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w 968f0a2's merge of staging to HEAD on pt.js and shoot.mjs is only deleted comment lines, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the new persona-text mockup scripts follow the comment rule
