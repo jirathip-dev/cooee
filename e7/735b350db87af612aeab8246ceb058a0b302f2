@@ -1,0 +1,4 @@
+Decided: merged origin/staging; the docs conflicts keep this branch's drover and attach wording and take staging's shorter README and generic instance lines
+Because: plugins/index.toml:9
+Rejected: none
+Owner: the branch is brought up to date with staging; nothing about the drover plugin changed
