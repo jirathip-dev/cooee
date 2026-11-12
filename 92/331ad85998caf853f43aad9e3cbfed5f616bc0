@@ -1,0 +1,13 @@
+Decided: sign-in rows render each provider's own usage windows as a list from its module; the "Where logins live" line is gone
+Because: q1377
+Decided: the avatar menu and the Mac settings sidebar get a Terminal row under Settings, opening your own shell on the paired Mac
+Because: q1319
+Decided: you-terminal-dark draws that shell reattached, with a scrollback marker and "kept running" on its tab
+Because: q1320
+Decided: the settings Pill and Sparkline are renamed ActionPill and TrendLine, because staging added different views with the same names (staging build fix)
+Because: apple/Sources/CooeeUI/BlockCards.swift:128
+Decided: Sign-ins and Devices stay as settings pages drawn from the v1 sign-in and pairing designs, no new design
+Because: q1317
+Rejected: re-recording every snapshot — record mode rewrites unchanged frames with render noise, so only the frames this change moves are committed
+Check: avatar-menu-*, mac-*, sign-ins-* and you-terminal-dark are the only PNGs changed, and SnapshotTests passes in compare mode
+Owner: The settings designs now show each provider's own usage limits, a Terminal row in your menu that opens your own shell, and that shell picking up where you left it.
