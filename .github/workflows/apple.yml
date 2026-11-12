@@ -51,14 +51,13 @@ jobs:
       - name: just apple-check
         env:
           GH_TOKEN: ${{ github.token }}
-          COOEE_SNAPSHOT_OUT: ${{ github.workspace }}/snapshots
-        run: just apple-check
-      # #141: every design frame as rendered, in each of the three styles (`name@style.png`).
+          COOEE_RENDERED: ${{ runner.temp }}/rendered
+        run: mkdir -p "$COOEE_RENDERED" && just apple-check
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: snapshots
-          path: snapshots
+          name: rendered-frames
+          path: ${{ runner.temp }}/rendered
 
   e2e:
     runs-on: macos-26

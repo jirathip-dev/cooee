@@ -101,7 +101,7 @@ internal struct SnapshotTests {
     }
 
     private static func keep(_ image: CGImage, _ name: String) throws {
-        guard let folder = ProcessInfo.processInfo.environment["COOEE_SNAPSHOT_OUT"] else { return }
+        guard let folder = ProcessInfo.processInfo.environment["COOEE_RENDERED"] else { return }
         let url = URL(fileURLWithPath: folder)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         try write(image, to: url.appendingPathComponent("\(name).png"))
