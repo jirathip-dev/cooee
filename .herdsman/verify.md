@@ -124,6 +124,98 @@ Selectors this UI answers to (from `web/e2e/*.spec.mjs`):
   `the code from the fake-390 sign-in page`, `good-code` signs in
 - plugin tab: `iframe.pf`; drive inside it with a frame locator
 
+## Native (iOS simulator)
+
+The native app (`apple/`) in the lane's own iOS simulator against `apple/e2e/serve.sh`, the server the `apple.yml` `e2e`
+job uses (the fake agent, personas Coder and Conductor, the `cards` plugin on P+1, the `drover` fixture). It takes P and
+P+1, so run it after the web teardown, in the same shell (`OUT`, `P`). Needs Xcode and the iOS simulator runtime (the
+Mini has both); a cold build takes minutes.
+
+The app pairs only by typing an address, so the e2e job's own UI test (`LiveUITests`) pairs it and walks the screens,
+once per look. `simctl io` shoots what a plain launch shows: the pair screen, before the run and again on the relaunch
+after it (this unsigned build keeps no pairing across launches). The test's own screenshot of every e2e screen is
+exported next to them; `attach` only in the first look, since the drover stays attached.
+
+Server, in its own process group; ready once the pairing link is written:
+
+```sh
+mkdir -p "$OUT/shots"
+PORT="$P" PAIR_LINK="$OUT/pair" nohup perl -e 'setpgrp(0, 0); exec @ARGV' apple/e2e/serve.sh >"$OUT/native-server.log" 2>&1 &
+echo $! >"$OUT/native-server.pid"
+for i in $(seq 900); do test -s "$OUT/pair" && break; sleep 1; done
+test -s "$OUT/pair"; echo "native serve ready after ${i}s exit=$?"
+```
+
+The lane's own simulator (the CI job's device), its UDID in `$OUT/sim`; a rerun reuses it:
+
+```sh
+test -s "$OUT/sim" || xcrun simctl create "cooee-verify-$(printf %s "${HERDSMAN_LANE:-$P}" | tr -c 'A-Za-z0-9' -)" "iPhone 17" >"$OUT/sim"
+SIM=$(cat "$OUT/sim")
+xcrun simctl bootstatus "$SIM" -b >"$OUT/sim-boot.log" 2>&1; echo "native sim $SIM exit=$?"
+```
+
+Build the app and its UI tests for that simulator, unsigned, then install the app:
+
+```sh
+XB=(xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$SIM"
+  -derivedDataPath "$OUT/dd" CODE_SIGNING_ALLOWED=NO)
+(cd apple && "${XB[@]}" build-for-testing) >"$OUT/native-build.log" 2>&1; echo "native build exit=$?"
+APP="$OUT/dd/Build/Products/Debug-iphonesimulator/Cooee.app"
+BUNDLE=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APP/Info.plist")
+xcrun simctl install "$SIM" "$APP"; echo "native install $BUNDLE exit=$?"
+```
+
+Pair, launch and shoot, dark then light like the CI job. Each look empties the keychain and pairs with a fresh link
+(a code pairs once and lives 10 min):
+
+```sh
+for look in dark light; do
+  xcrun simctl ui "$SIM" appearance "$look"
+  xcrun simctl keychain "$SIM" reset
+  xcrun simctl launch --terminate-running-process "$SIM" "$BUNDLE" >/dev/null && sleep 3 &&
+    xcrun simctl io "$SIM" screenshot "$OUT/shots/sim-pair-$look.png" >/dev/null 2>&1
+  echo "native shot pair $look exit=$?"
+  xcrun simctl terminate "$SIM" "$BUNDLE"
+  link=$(sh -c "$(cat "$OUT/pair.again")" | sed -n 's/^link  //p')
+  rm -rf "${OUT:?}/e2e-$look.xcresult" "${OUT:?}/shots/$look"
+  (cd apple && TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" "${XB[@]}" \
+    -only-testing:CooeeAppUITests/LiveUITests/testPairsStreamsAndShowsHome \
+    -resultBundlePath "$OUT/e2e-$look.xcresult" test-without-building) >"$OUT/native-drive-$look.log" 2>&1
+  echo "native drive $look exit=$?"
+  xcrun simctl launch --terminate-running-process "$SIM" "$BUNDLE" >/dev/null && sleep 3 &&
+    xcrun simctl io "$SIM" screenshot "$OUT/shots/sim-relaunch-$look.png" >/dev/null 2>&1
+  echo "native shot relaunch $look exit=$?"
+  xcrun xcresulttool export attachments --path "$OUT/e2e-$look.xcresult" --output-path "$OUT/shots/$look" >/dev/null &&
+    python3 -c 'import json, os, sys
+d = sys.argv[1]
+for t in json.load(open(f"{d}/manifest.json")):
+    for a in t["attachments"]:
+        name = a["suggestedHumanReadableName"].rsplit("_", 3)[0]
+        os.rename(os.path.join(d, a["exportedFileName"]), os.path.join(d, "e2e-" + name + ".png"))' "$OUT/shots/$look"
+  echo "native export $look exit=$?"
+done
+ls "$OUT/shots" "$OUT/shots/dark" "$OUT/shots/light"
+```
+
+Native doctor, read-only: the app is installed in this simulator and its process runs (the last launch above):
+
+```sh
+xcrun simctl get_app_container "$SIM" "$BUNDLE" >/dev/null &&
+  xcrun simctl spawn "$SIM" launchctl list | grep -q "UIKitApplication:$BUNDLE"
+echo "native doctor exit=$?"
+```
+
+Teardown: the server's process group, then only this lane's simulator, and proof nothing is left:
+
+```sh
+kill -TERM -- "-$(cat "$OUT/native-server.pid")"; echo "native kill exit=$?"
+xcrun simctl shutdown "$SIM"; xcrun simctl delete "$SIM"; echo "native sim delete exit=$?"
+curl -s -o /dev/null "http://127.0.0.1:$P/"; echo "native curl exit=$? (7: nothing listens)"
+xcrun simctl list devices | grep -q "$SIM"; echo "native sim listed exit=$? (1: gone)"
+```
+
+Never `simctl delete all` or `erase all`: other lanes' simulators share this host.
+
 ## Evidence
 
 - Screenshots: `$OUT/390-<screen>.png` and `$OUT/1440-<screen>.png` (full page, viewports 390×844 and 1440×900),
@@ -131,6 +223,9 @@ Selectors this UI answers to (from `web/e2e/*.spec.mjs`):
 - Transcript: `$OUT/server.log` (build + server), `$OUT/drive.log` (one `<width> <screen> ok` line per shot).
 - Exit codes to record: `npm ci`, the ready loop (`ready after Ns`), `doctor`, `drive`, the teardown `kill` and the
   closing `curl` (7).
+- Native: `$OUT/shots/sim-{pair,relaunch}-{dark,light}.png` (`simctl io`) and `$OUT/shots/{dark,light}/e2e-<screen>.png`
+  (the UI test's own, one per e2e screen); list them in `verdict.md`. Logs: `$OUT/native-server.log`,
+  `$OUT/native-build.log`, `$OUT/native-drive-<look>.log`. Record every `native … exit=` line.
 
 ## Feature map
 
