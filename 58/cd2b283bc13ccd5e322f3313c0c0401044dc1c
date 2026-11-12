@@ -1,0 +1,7 @@
+Decided: merge origin/staging; a thread carries both setup (#270) and routine (#75), and the agent tool list has update_persona beside create_routine
+Because: crates/cooee-server/src/mcp.rs:441
+Decided: a routine's new_thread run starts with setup false
+Because: crates/cooee-server/src/lib.rs:956
+Rejected: copy the origin chat's setup flag into a routine run — a scheduled run is not an interview with the owner
+Check: crates/cooee/tests/mcp.rs expects update_persona, create_routine and skill in that order
+Owner: Same feature; this round catches up with staging, which added routines next to it.
