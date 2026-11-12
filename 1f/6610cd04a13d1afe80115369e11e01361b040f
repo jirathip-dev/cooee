@@ -1,0 +1,10 @@
+Decided: PR 1 only: schedules, create_routine in chat with its routine line, Settings › routines, thread and row routine marks, the 30 s runner tick; the GitHub path is #261
+Because: q1340
+Decided: a run's key routine-<id>-<due> is the hub's random_id, so a crash between run and record adopts the first message or thread
+Because: "a schedule fires once per due time (not again after a restart)"
+Decided: fix round 3 puts a routine row's status line under its name at every width; the providers rows keep their phone-only wrap
+Because: web/src/app.css:334
+Rejected: loosening the test's 40 px name bound — the reviewer named that as the wrong fix
+Check: look.spec.mjs routines test now also asserts the line sits below the name; it fails at 1440 with the CSS reverted, even with local fonts
+Check: WebKit crashes on this host, so local e2e paired in Chromium via an uncommitted config; CI's ui job runs WebKit
+Owner: in Settings › routines, each routine shows its name with pause and delete, and its schedule line underneath, on phone and desktop.
