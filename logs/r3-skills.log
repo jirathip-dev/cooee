@@ -1,0 +1,10 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-242/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.71s
+     Running tests/skills.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-242/debug/deps/skills-2945d0749cf7af71)
+
+running 2 tests
+test the_app_keeps_skills_and_the_twenty_first_is_refused ... ok
+test an_approved_skill_is_saved_and_briefed_by_description_and_a_refused_one_is_not ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.07s
+
