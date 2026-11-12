@@ -1,0 +1,47 @@
+ M apple/Tests/CooeeUITests/PinnedRowTests.swift
+Building for debugging...
+[Computing dependencies]
+[Provisioning 1 / 61]
+[Using on-disk description]
+[1 / 3]
+[1 / 4] Sharing2
+[1 / 4] CasePathsCore
+[1 / 4] InternalCollectionsUtilities
+[1 / 3] IdentifiedCollections
+[1 / 5] CooeeUI
+[2 / 6] CooeeUI
+[3 / 7] CooeeUI
+[8 / 11] CooeeUI
+[10 / 13] CooeeUI
+[13 / 16] CooeeUITests-product
+[15 / 18] CooeeUITests-product
+[20 / 22] CooeeUITests-product
+[22 / 22] CooeeUITests-product
+[23 / 26] CooeeApp
+[26 / 26] CooeeApp-product
+Build complete! (16.23 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite PinnedRowTests started.
+◇ Test withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+◇ Test case passing 1 argument style → .modern to withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+◇ Test case passing 1 argument style → .terminal to withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+◇ Test case passing 1 argument style → .scene to withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+✘ Test withNothingPinnedTheChatsSitUnderTheTopBar(_:) recorded an issue with 1 argument style → .modern at PinnedRowTests.swift:32:9: Expectation failed: chatsTop - pinnedTop < 48
+↳ .modern: the chats start 110 pt under the pinned row
+↳ chatsTop - pinnedTop < 48 → false
+↳   chatsTop - pinnedTop → 110
+✘ Test withNothingPinnedTheChatsSitUnderTheTopBar(_:) recorded an issue with 1 argument style → .terminal at PinnedRowTests.swift:32:9: Expectation failed: chatsTop - pinnedTop < 48
+↳ .terminal: the chats start 133 pt under the pinned row
+↳ chatsTop - pinnedTop < 48 → false
+↳   chatsTop - pinnedTop → 133
+✘ Test withNothingPinnedTheChatsSitUnderTheTopBar(_:) recorded an issue with 1 argument style → .scene at PinnedRowTests.swift:32:9: Expectation failed: chatsTop - pinnedTop < 48
+↳ .scene: the chats start 135 pt under the pinned row
+↳ chatsTop - pinnedTop < 48 → false
+↳   chatsTop - pinnedTop → 135
+✘ Test withNothingPinnedTheChatsSitUnderTheTopBar(_:) with 3 test cases failed after 4.366 seconds with 3 issues.
+✘ Suite PinnedRowTests failed after 4.366 seconds with 3 issues.
+✘ Test run with 1 test in 1 suite failed after 4.366 seconds with 3 issues.
+Note: Some test targets reported failures:
+  - CooeeUITests (Swift Testing)

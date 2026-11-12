@@ -1,0 +1,27 @@
+Building for debugging...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 5]
+[1 / 3] CustomDump
+[1 / 5] PerceptionCore
+[1 / 6] OrderedCollections
+[1 / 5] ConcurrencyExtras
+[1 / 6] CooeeCore
+[5 / 7] CooeeUITests-product
+[9 / 11] CooeeUITests-product
+[11 / 13] CooeeUITests-product
+[16 / 17] CooeeUITests-product
+[18 / 18] CooeeUITests-product
+[19 / 21] CooeeAPITests-product
+Build complete! (7.03 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite PinnedRowTests started.
+◇ Test withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+◇ Test case passing 1 argument style → .terminal to withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+◇ Test case passing 1 argument style → .scene to withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+◇ Test case passing 1 argument style → .modern to withNothingPinnedTheChatsSitUnderTheTopBar(_:) started.
+✔ Test withNothingPinnedTheChatsSitUnderTheTopBar(_:) with 3 test cases passed after 6.825 seconds.
+✔ Suite PinnedRowTests passed after 6.825 seconds.
+✔ Test run with 1 test in 1 suite passed after 6.825 seconds.
