@@ -1,0 +1,130 @@
+
+Running 11 tests using 6 workers
+
+  ✓   1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (810ms)
+  ✓   7 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (7.4s)
+  ✓   3 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (7.5s)
+  ✓   4 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (7.7s)
+  ✓   2 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (7.8s)
+  ✓   5 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (7.7s)
+  ✓   6 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (7.8s)
+  ✘   8 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (5.1s)
+  ✘   9 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (5.1s)
+  ✘  11 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (5.1s)
+  ✘  10 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (5.1s)
+
+
+  1) [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.unread + li')
+    Expected substring: "#991"
+    Received string:    "Fake-390#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('.unread + li') with timeout 5000ms
+      - waiting for locator('.unread + li')
+        14 × locator resolved to <li data-id="1000" class="blk ai" data-at="1700060000000">…</li>
+           - unexpected value "Fake-390#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two"
+
+
+      137 |   // Opened at the first unread message, with the bar there.
+      138 |   await expect(page.locator("#msgs .unread")).toBeVisible();
+    > 139 |   await expect(page.locator(".unread + li")).toContainText("#991");
+          |                                              ^
+      140 |   await shot(page, info, "chat-long");
+      141 |
+      142 |   const list = page.locator("#msgs");
+        at /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-75/web/e2e/chat.spec.mjs:139:46
+
+    Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-1440-repeat1/error-context.md
+
+  2) [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.unread + li')
+    Expected substring: "#991"
+    Received string:    "Fake-390#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('.unread + li') with timeout 5000ms
+      - waiting for locator('.unread + li')
+        14 × locator resolved to <li data-id="1000" class="blk ai" data-at="1700060000000">…</li>
+           - unexpected value "Fake-390#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two"
+
+
+      137 |   // Opened at the first unread message, with the bar there.
+      138 |   await expect(page.locator("#msgs .unread")).toBeVisible();
+    > 139 |   await expect(page.locator(".unread + li")).toContainText("#991");
+          |                                              ^
+      140 |   await shot(page, info, "chat-long");
+      141 |
+      142 |   const list = page.locator("#msgs");
+        at /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-75/web/e2e/chat.spec.mjs:139:46
+
+    Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-1440-repeat2/error-context.md
+
+  3) [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.unread + li')
+    Expected substring: "#991"
+    Received string:    "Fake-390#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('.unread + li') with timeout 5000ms
+      - waiting for locator('.unread + li')
+        14 × locator resolved to <li data-id="1000" class="blk ai" data-at="1700060000000">…</li>
+           - unexpected value "Fake-390#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two"
+
+
+      137 |   // Opened at the first unread message, with the bar there.
+      138 |   await expect(page.locator("#msgs .unread")).toBeVisible();
+    > 139 |   await expect(page.locator(".unread + li")).toContainText("#991");
+          |                                              ^
+      140 |   await shot(page, info, "chat-long");
+      141 |
+      142 |   const list = page.locator("#msgs");
+        at /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-75/web/e2e/chat.spec.mjs:139:46
+
+    Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-1440-repeat3/error-context.md
+
+  4) [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.unread + li')
+    Expected substring: "#991"
+    Received string:    "Fake-390#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('.unread + li') with timeout 5000ms
+      - waiting for locator('.unread + li')
+        14 × locator resolved to <li data-id="1000" class="blk ai" data-at="1700060000000">…</li>
+           - unexpected value "Fake-390#1000 staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two staging merge ที่นี่ build found on issues สวัสดีครับ the review passed two"
+
+
+      137 |   // Opened at the first unread message, with the bar there.
+      138 |   await expect(page.locator("#msgs .unread")).toBeVisible();
+    > 139 |   await expect(page.locator(".unread + li")).toContainText("#991");
+          |                                              ^
+      140 |   await shot(page, info, "chat-long");
+      141 |
+      142 |   const list = page.locator("#msgs");
+        at /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-75/web/e2e/chat.spec.mjs:139:46
+
+    Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-1440-repeat4/error-context.md
+
+  4 failed
+    [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+    [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+    [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+    [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+  7 passed (46.1s)

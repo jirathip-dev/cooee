@@ -1,0 +1,27 @@
+
+Running 21 tests using 2 workers
+
+  ✓   1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (503ms)
+  ✓   2 [1440] › look.spec.mjs:38:1 › a device's pick shows from the first frame, and stays on this device only (351ms)
+  ✓   3 [390] › look.spec.mjs:38:1 › a device's pick shows from the first frame, and stays on this device only (353ms)
+  ✓   5 [390] › look.spec.mjs:69:1 › the look sheet: style, figures, theme, appearance and colours apply at once and stay (910ms)
+  ✓   4 [1440] › look.spec.mjs:69:1 › the look sheet: style, figures, theme, appearance and colours apply at once and stay (988ms)
+  ✓   6 [390] › look.spec.mjs:108:1 › System follows the phone's mode live (106ms)
+  ✓   7 [1440] › look.spec.mjs:108:1 › System follows the phone's mode live (110ms)
+  ✓   8 [390] › look.spec.mjs:123:1 › Settings: the look rows show the pick and open the look sheet (422ms)
+  ✓   9 [1440] › look.spec.mjs:123:1 › Settings: the look rows show the pick and open the look sheet (452ms)
+  ✓  10 [390] › look.spec.mjs:135:1 › Settings › routines: a row shows its name, line, resume and delete on screen (307ms)
+  ✓  11 [1440] › look.spec.mjs:135:1 › Settings › routines: a row shows its name, line, resume and delete on screen (329ms)
+  -  13 [1440] › look.spec.mjs:151:1 › each Style × Figures combination renders at 390
+  ✓  14 [1440] › look.spec.mjs:192:1 › the ascii figures' two frames alternate (74ms)
+  ✓  15 [1440] › look.spec.mjs:212:1 › the look sheet lists Scene only with sprites, and plain only ASCII or None (950ms)
+  ✓  16 [1440] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (281ms)
+  ✓  17 [1440] › look.spec.mjs:292:1 › a plugin tab gets the theme's variables, data URLs, style and figures, and every change (554ms)
+  ✓  12 [390] › look.spec.mjs:151:1 › each Style × Figures combination renders at 390 (4.9s)
+  ✓  18 [390] › look.spec.mjs:192:1 › the ascii figures' two frames alternate (79ms)
+  ✓  19 [390] › look.spec.mjs:212:1 › the look sheet lists Scene only with sprites, and plain only ASCII or None (886ms)
+  ✓  20 [390] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (261ms)
+  ✓  21 [390] › look.spec.mjs:292:1 › a plugin tab gets the theme's variables, data URLs, style and figures, and every change (549ms)
+
+  1 skipped
+  20 passed (16.7s)

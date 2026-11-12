@@ -1,0 +1,28 @@
+
+Running 2 tests using 1 worker
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (651ms)
+  ✘  2 [390] › look.spec.mjs:135:1 › Settings › routines: a row shows its name, line, resume and delete on screen (113ms)
+
+
+  1) [390] › look.spec.mjs:135:1 › Settings › routines: a row shows its name, line, resume and delete on screen 
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 40
+    Received:   0
+
+      138 |   await expect(row.locator(".sk")).toHaveText("renewals");
+      139 |   await expect(row.locator(".st")).toContainText("Mondays 09:00 · in its chat · not run yet · paused");
+    > 140 |   expect((await row.locator(".sk").boundingBox()).width).toBeGreaterThan(40);
+          |                                                          ^
+      141 |   for (const name of ["resume renewals: it will be resumed", "delete renewals"]) {
+      142 |     await expect(row.getByRole("button", { name })).toBeInViewport({ ratio: 1 });
+      143 |   }
+        at /Users/jkmacmini/.local/share/herdsman/work/cooee/issue-75/web/e2e/look.spec.mjs:140:58
+
+    Error Context: test-results/look-Settings-›-routines-a-dc718-resume-and-delete-on-screen-390/error-context.md
+
+  1 failed
+    [390] › look.spec.mjs:135:1 › Settings › routines: a row shows its name, line, resume and delete on screen 
+  1 passed (13.6s)

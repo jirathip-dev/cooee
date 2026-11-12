@@ -1,0 +1,10 @@
+
+Running 5 tests using 2 workers
+
+  ✓  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (703ms)
+  ✓  2 [390] › look.spec.mjs:123:1 › Settings: the look rows show the pick and open the look sheet (747ms)
+  ✓  3 [1440] › look.spec.mjs:123:1 › Settings: the look rows show the pick and open the look sheet (779ms)
+  ✓  4 [390] › look.spec.mjs:135:1 › Settings › routines: a row shows its name, line, resume and delete on screen (538ms)
+  ✓  5 [1440] › look.spec.mjs:135:1 › Settings › routines: a row shows its name, line, resume and delete on screen (494ms)
+
+  5 passed (10.1s)
