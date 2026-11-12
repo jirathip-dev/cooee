@@ -1,0 +1,11 @@
+Decided: every check runs on the machine as a plain shed terminal (Shed::run_on), never over SSH from cooee
+Because: crates/cooee-core/src/shed.rs:575
+Decided: "rules and hooks" are the persona's profile settings file, compared and copied byte for byte at the same path
+Because: crates/cooee-core/src/profiles.rs:43
+Decided: --yes applies the offers (clone the folder from its git origin here, copy the settings); without it they are printed as fixes
+Because: "Missing folder: offer to clone a git repo (P3) into the same path"
+Decided: a remote sign-in ends "on <machine>" and never reads or notes the local account; a new account signs in on this host only
+Because: "Tokens stay on that machine."
+Rejected: a separate projects-root setting — no such config exists; the folder keeps its absolute path there
+Check: tests/machine_check.rs gives box its own disk (on-box sh/test/git remap here/ to box-fs/) so pass and fail are real
+Owner: cooee machine check <m> says what a machine lacks for its personas, and --yes fixes the folder and rules.
