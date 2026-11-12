@@ -26,7 +26,7 @@ public struct ChatScreen: View {
                     if over == .slash { SlashList(typed: "/m") }
                     ComposerBar(state: bar)
                 }
-                .padding(.horizontal, 12).padding(.bottom, keyboard == .none ? 30 : 8)
+                .padding(.horizontal, look.mono ? 8 : 12).padding(.bottom, keyboard == .none ? 30 : 8)
                 if keyboard != .none { KeyboardView(kind: keyboard) }
             }
             if over == .menu || isAttach {

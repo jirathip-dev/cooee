@@ -20,6 +20,13 @@ Terminal (q1416). There is no separate paperclip: **Attach is the top row of the
 button left of a wider field (q1429). Scene keeps Apple's keyboard, dark or light to match the theme (q1418). Terminal
 starts on cooee's keyboard, with the globe to Apple's, remembered per chat (q1419). Nothing else changed.
 
+## Revision 3 (q1433)
+
+The owner's revise note: in Terminal, the field fills from `[/]` to `[send]`, as in Modern. `[/]` is now its own
+width rather than a 42 pt button, the bar's side margins and gaps are tighter, and the typed text wraps across the whole
+field. It now breaks only where Shift-Return put the new line, as Modern's does. Every Terminal frame with the bar was
+redrawn: `typing`, `slash`, `globe`, `voice`, `voice-sent`, `mac-terminal` and `mac-menu-terminal`. Nothing else changed.
+
 ## Bar (q1332)
 
 | PNG | shows | decision |
@@ -57,7 +64,7 @@ Dictation (speech typed into the field) is no longer this bar's mic (scope 5). #
 
 | PNG | shows | decision |
 |---|---|---|
-| `typing-terminal-{dark,light}` | Terminal: the bar reads as a prompt, `[/] > _ … [send]`. Below it is **cooee's own monospace keyboard** (the field's `inputView`): a number row, no autocorrect, no swipe, `/` on the bottom row, and `send ↵`. The **globe key** (bottom left) is outlined in the lead colour. | q1336: option 2, a full custom monospace keyboard |
+| `typing-terminal-{dark,light}` | Terminal: the bar reads as a prompt, `[/] > _ … [send]`, with the field filling the space between them (q1433). Below it is **cooee's own monospace keyboard** (the field's `inputView`): a number row, no autocorrect, no swipe, `/` on the bottom row, and `send ↵`. The **globe key** (bottom left) is outlined in the lead colour. | q1336: option 2, a full custom monospace keyboard |
 | `globe-terminal-{dark,light}` | After the globe: **Apple's keyboard** (Thai here, the reason to switch), with a toast: `Apple keyboard · kept for this chat`. Apple's own globe key switches back. | q1337: the globe switches to Apple's and back, remembered per chat |
 | `typing-modern-*`, `typing-scene-*` | Modern and Scene use Apple's keyboard and Modern's bar. | q1338 |
 

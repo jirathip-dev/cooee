@@ -13,8 +13,12 @@ internal struct ComposerBar: View {
         case .recording: RecordingBar()
         case .locked: LockedBar()
         default:
-            HStack(alignment: .bottom, spacing: 8) {
-                RoundButton(symbol: "line.3.horizontal", ascii: "/", size: 42)
+            HStack(alignment: .bottom, spacing: look.mono ? 4 : 8) {
+                if look.mono {
+                    Text("[/]").ui(15, .bold, look).foregroundStyle(look.palette.foreground).frame(height: 42)
+                } else {
+                    RoundButton(symbol: "line.3.horizontal", ascii: "/", size: 42)
+                }
                 field
                 right
             }
@@ -39,11 +43,11 @@ internal struct ComposerBar: View {
             } else {
                 (Text(text) + Text(look.mono ? "_" : "▍").foregroundStyle(palette.link)).ui(16, .regular, look)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            Spacer(minLength: 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, look.mono ? 10 : 16).padding(.vertical, 10)
+        .padding(.horizontal, look.mono ? 8 : 16).padding(.vertical, 10)
         .frame(minHeight: 42)
         .surface(look, radius: 21)
     }
