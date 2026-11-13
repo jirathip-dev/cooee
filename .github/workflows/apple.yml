@@ -4,6 +4,8 @@
 # screens kept as the `simulator-shots` artifact. #142: `mac-setup`: the Mac app's first run on the runner starts cooee
 # and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac approves it;
 # the screens kept as the `mac-setup-shots` artifact.
+# #328: a pull request push runs only the iOS build; the rest runs on a staging push and when herdsman labels the PR
+# `merge-ready` (fleet `merge_label`: on exactly while a review PASS stands at the head), and merge waits on that run.
 name: apple
 on:
   push:
@@ -17,6 +19,7 @@ on:
       - "scripts/apple-coverage.swift"
       - ".github/workflows/apple.yml"
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - "scripts/mac-bins.sh"
       - "crates/cooee/src/main.rs"
@@ -27,20 +30,19 @@ on:
       - ".github/workflows/apple.yml"
 jobs:
   build:
+    if: github.event.action != 'labeled'
     runs-on: macos-26
-    strategy:
-      fail-fast: false
-      matrix:
-        destination: ["generic/platform=iOS Simulator", "generic/platform=macOS"]
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: xcodebuild
         working-directory: apple
         run: >-
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination '${{ matrix.destination }}'
-          CODE_SIGNING_ALLOWED=NO build
+          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee
+          -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 
   apple-quality:
+    if: github.event_name == 'push' || (github.event.action == 'labeled' && github.event.label.name == 'merge-ready')
     runs-on: macos-26
     timeout-minutes: 60
     steps:
@@ -60,6 +62,7 @@ jobs:
           path: ${{ runner.temp }}/rendered
 
   e2e:
+    if: github.event_name == 'push' || (github.event.action == 'labeled' && github.event.label.name == 'merge-ready')
     runs-on: macos-26
     timeout-minutes: 60
     steps:
@@ -117,6 +120,7 @@ jobs:
           path: simulator-shots
 
   mac-setup:
+    if: github.event_name == 'push' || (github.event.action == 'labeled' && github.event.label.name == 'merge-ready')
     runs-on: macos-26
     timeout-minutes: 90
     env:
