@@ -1,0 +1,8 @@
+Decided: gate apple-quality, e2e and mac-setup on a staging push or the `labeled` event for `merge-ready`; build (iOS Simulator only) runs on every PR push
+Because: "Use a mechanism herdsman already supports, such as the `merge_label` pattern synergy uses."
+Because: "A cheap apple build/lint check may still run on every push, if it stays under about 10 macOS minutes."
+Rejected: contains(labels, merge-ready) on synchronize — a stale label on a moved head would start a full run before herdsman removes it
+Rejected: keeping the macOS build leg — two legs are about 12.6 min, and mac-setup already builds the macOS app in every full run
+Check: run 43341599140 at the PR head shows build queued and the three full jobs skipped
+Check: owner adds merge_label = "merge-ready" to [fleet.cooee] and creates the label before merge, else merges see only build
+Owner: set merge_label = "merge-ready" for cooee and create that label in the repo before this merges
