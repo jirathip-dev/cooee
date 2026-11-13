@@ -125,15 +125,6 @@
 
     extension LiveUITestCase {
         @MainActor
-        internal func pin(_ app: XCUIApplication) {
-            let toggle = app.switches["Pin to Home"].firstMatch
-            XCTAssert(toggle.waitForExistence(timeout: 10))
-            let knob = toggle.switches.firstMatch
-            (knob.exists ? knob : toggle).tap()
-            XCTAssertEqual(toggle.value as? String, "1")
-        }
-
-        @MainActor
         internal func picked(_ app: XCUIApplication, _ label: String) -> XCUIElement {
             app.buttons.matching(NSPredicate(format: "label == %@ AND selected == true", label)).firstMatch
         }
