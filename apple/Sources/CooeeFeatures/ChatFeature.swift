@@ -33,8 +33,9 @@ public struct ChatFeature: Sendable {
         public var working: Bool { turn.working }
         public var drawn: [Item] {
             room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
-                ?? ChatItems.build(items, live: live, outbox: outbox)
+                ?? ChatItems.build(items, live: live, outbox: outbox, style: persona.api.style, working: working)
         }
+        public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
 
         public init(server: Server, target: Target, persona: Persona, room: Room? = nil) {
             self.server = server

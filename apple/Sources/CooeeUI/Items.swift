@@ -23,6 +23,8 @@ internal struct ItemView: View {
             .modifier(Copyable(text: item.plainText ?? ""))
         case .tools(_, let rows):
             ToolFold(rows: rows)
+        case .trace(_, let steps, let seconds):
+            TraceRow(steps: steps, seconds: seconds)
         case .note(_, let text):
             Text(text).ui(13, .regular, look).foregroundStyle(look.palette.mute).frame(maxWidth: .infinity)
         case .card(_, let poster, let block):

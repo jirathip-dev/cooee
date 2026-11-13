@@ -10,11 +10,7 @@
             pair(app, link)
             let new = app.buttons["New chat"].firstMatch
             XCTAssert(new.waitForExistence(timeout: 20))
-            new.tap()
-            app.buttons["Coder"].firstMatch.tap()
-            let box = field(app, "Message Coder")
-            XCTAssert(box.waitForExistence(timeout: 10))
-            box.tap()
+            let box = open(app, new, "Coder")
             box.typeText("slow 60")
             app.buttons["Send"].firstMatch.tap()
             queueWhileStreaming(app, box)
@@ -25,6 +21,7 @@
             keep("home")
             personaRoundTrip(app)
             copiesAReply(app, new)
+            chatStyles(app, new)
             answersEachCard(app, new)
             swipeBack(app, new)
             opensDroversScreens(app, new)
@@ -62,11 +59,7 @@
 
         @MainActor
         private func answersEachCard(_ app: XCUIApplication, _ new: XCUIElement) {
-            new.tap()
-            app.buttons["Coder"].firstMatch.tap()
-            let box = field(app, "Message Coder")
-            XCTAssert(box.waitForExistence(timeout: 10))
-            box.tap()
+            let box = open(app, new, "Coder")
             box.typeText("Show me the cards")
             app.buttons["Send"].firstMatch.tap()
             XCTAssert(app.buttons["Approve"].waitForExistence(timeout: 30))
@@ -136,7 +129,7 @@
         }
 
         @MainActor
-        private func field(_ app: XCUIApplication, _ hint: String) -> XCUIElement {
+        internal func field(_ app: XCUIApplication, _ hint: String) -> XCUIElement {
             let types = [XCUIElement.ElementType.textField.rawValue, XCUIElement.ElementType.textView.rawValue]
             let predicate = NSPredicate(
                 format: "(elementType == %d OR elementType == %d) AND (label == %@ OR placeholderValue == %@)",
@@ -186,6 +179,8 @@
             XCTAssert(app.descendants(matching: .any).matching(character).firstMatch.waitForExistence(timeout: 10))
             XCTAssertEqual(app.switches["Pin to Home"].firstMatch.value as? String, "1")
             type(app, "Instructions", "Cite every source.")
+            app.buttons["Detailed"].firstMatch.tap()
+            XCTAssert(app.buttons["Detailed"].firstMatch.isSelected)
             keep("persona")
             app.buttons["Save"].firstMatch.tap()
             XCTAssert(app.buttons["Save"].waitForNonExistence(timeout: 10))

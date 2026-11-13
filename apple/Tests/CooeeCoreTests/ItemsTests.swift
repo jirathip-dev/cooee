@@ -35,6 +35,57 @@ internal struct ItemsTests {
         #expect(ToolRow("Run b", "running").running && !ToolRow("Read a", "done").running)
     }
 
+    private static let card = JSONValue.object(["type": .string("card")])
+    private static let steps = (2...6).map { ToolRow("Step \($0)", "done") }
+    private static let turn: [APIItem] = {
+        let tools = (2...6).map {
+            APIItem(id: $0, time: Int64($0) * 1000, kind: "tool", title: "Step \($0)", status: "completed")
+        }
+        return [APIItem(id: 1, time: 1000, kind: "you", text: "Fix it")] + tools[0..<3]
+            + [APIItem(id: 7, time: 7000, kind: "approval", block: card)] + tools[3...]
+            + [
+                APIItem(id: 8, time: 8000, kind: "ended", text: "The agent exited (1)."),
+                APIItem(id: 9, time: 92000, kind: "agent", text: "Fixed."),
+            ]
+    }()
+
+    @Test internal func aChatStyleTurnIsItsReplyAndOneFoldedRowWithApprovalsAndErrorsInline() {
+        #expect(
+            ChatItems.build(Self.turn, live: "", style: .chat) == [
+                .you(id: 1, text: "Fix it", files: []),
+                .card(id: 7, poster: nil, block: Self.card),
+                .note(id: 8, text: "The agent exited (1)."),
+                .agent(id: 9, markdown: [.text("Fixed.")]),
+                .trace(id: 2, steps: Self.steps, seconds: 90),
+            ]
+        )
+        #expect(
+            ChatItems.build(Self.turn, live: "") == [
+                .you(id: 1, text: "Fix it", files: []),
+                .tools(id: 2, rows: Array(Self.steps[0..<3])),
+                .card(id: 7, poster: nil, block: Self.card),
+                .tools(id: 5, rows: Array(Self.steps[3...])),
+                .note(id: 8, text: "The agent exited (1)."),
+                .agent(id: 9, markdown: [.text("Fixed.")]),
+            ]
+        )
+    }
+
+    @Test internal func aWorkingChatStyleTurnHidesItsStepsAndNamesTheCurrentOne() {
+        let working = Array(Self.turn.dropLast(2))
+        #expect(
+            ChatItems.build(working, live: "", style: .chat, working: true) == [
+                .you(id: 1, text: "Fix it", files: []), .card(id: 7, poster: nil, block: Self.card),
+            ])
+        let again = APIItem(id: 10, time: 9000, kind: "you", text: "Again")
+        #expect(
+            ChatItems.build(working + [again], live: "", style: .chat).suffix(2) == [
+                .trace(id: 2, steps: Self.steps, seconds: 4), .you(id: 10, text: "Again", files: []),
+            ])
+        #expect(ChatItems.step(working) == "Step 6")
+        #expect(ChatItems.step(Self.turn) == nil)
+    }
+
     @Test internal func theReplySoFarIsDrawnLastWithItsCaret() {
         let drawn = ChatItems.build([], live: "Done:\n\n```ts\nawait x();\n```\n- one\n* two\nafter\n\nlast")
         #expect(

@@ -27,7 +27,7 @@ fn setup(name: &str) -> Setup {
         let file = dir.join(format!("personas/{}.toml", n.to_lowercase()));
         fs::write(
             file,
-            format!("name = \"{n}\"\nagent = \"fake-acp\"\ncharacter = \"I am {n}.\"\n"),
+            format!("name = \"{n}\"\nagent = \"fake-acp\"\ncharacter = \"I am {n}.\"\nstyle = \"detailed\"\n"),
         )
         .unwrap();
     }

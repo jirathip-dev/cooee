@@ -13,6 +13,7 @@ use std::{
     process::Command,
 };
 
+use cooee_core::personas::PLAIN;
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
 
@@ -201,7 +202,10 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let terminal = format!("cooee-{id}");
     assert_eq!(
         s.shed.sent(&terminal),
-        ["\x1e{\"prompt\":\"Follow the house rules.\\n\\nhi\"}\n"]
+        [format!(
+            "\x1e{}\n",
+            json!({ "prompt": format!("Follow the house rules.\n\n{PLAIN}\n\nhi") })
+        )]
     );
     let items = s.cooee.json(&format!("/threads/{id}/messages"));
     assert_eq!(items["items"][0]["text"], "hi", "{items}");
