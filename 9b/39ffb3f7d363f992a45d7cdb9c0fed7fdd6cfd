@@ -1,0 +1,7 @@
+Decided: merged origin/staging; web/e2e/chat.spec.mjs stays deleted with the rest of web/
+Because: "Delete the PWA: `web/src`, `web/ts`, the manifest, the service worker"
+Decided: .herdsman/verify.md drops its web launch, doctor, drive, evidence and feature-map rows and keeps the iOS and Mac sections
+Because: "Docs: remove PWA instructions; say the native app is the client."
+Rejected: keeping the web verify sections — they run web/e2e/serve.sh and npm in web/e2e, which no longer exist
+Check: scripts/line-cap.sh prints 18831 / 19400; cargo test --workspace passes; .herdsman/verify.md names no web/ path
+Owner: Merged the latest work in; the verify steps now check only the native app.
