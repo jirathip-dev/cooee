@@ -23,7 +23,7 @@ let package = Package(
         .target(
             name: "CooeeUI",
             dependencies: ["CooeeCore", "CooeeFeatures", tca],
-            resources: [.copy("Sprites")],
+            resources: [.copy("Sprites"), .copy("Default")],
             swiftSettings: strict
         ),
         .target(
@@ -31,10 +31,12 @@ let package = Package(
             dependencies: ["CooeeCore", "CooeeAPI", "CooeeFeatures", "CooeeUI", tca],
             swiftSettings: strict
         ),
-        .testTarget(name: "CooeeCoreTests", dependencies: ["CooeeCore"], swiftSettings: strict),
+        .testTarget(
+            name: "CooeeCoreTests", dependencies: ["CooeeCore"], resources: [.copy("Fixtures")], swiftSettings: strict),
         .testTarget(
             name: "CooeeAPITests", dependencies: ["CooeeAPI"], resources: [.copy("Fixtures")], swiftSettings: strict),
         .testTarget(name: "CooeeFeaturesTests", dependencies: ["CooeeFeatures", tca], swiftSettings: strict),
-        .testTarget(name: "CooeeUITests", dependencies: ["CooeeCore", "CooeeUI"], swiftSettings: strict),
+        .testTarget(
+            name: "CooeeUITests", dependencies: ["CooeeCore", "CooeeFeatures", "CooeeUI", tca], swiftSettings: strict),
     ]
 )
