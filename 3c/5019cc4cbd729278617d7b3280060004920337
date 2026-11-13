@@ -1,0 +1,7 @@
+Decided: apple-check touches every first-party Swift file before the logged build, so the cached .build still recompiles every first-party module and swiftlint analyze sees their compile commands.
+Because: "No check is removed or weakened." With apple/.build cached, a warm `swift build -v` logs no compile commands and analyze passed a planted unused import.
+Because: scripts/apple-check.sh:56
+Rejected: keeping apple/.build out of the apple-quality cache — the third-party builds (TCA and its deps) would be rebuilt cold every run, which is most of the build time.
+Rejected: a separate clean build only for analyze — a second full build, the cost this issue cuts.
+Check: with a planted unused `import CooeeAPI` in a Features file and a warm .build, the old script prints "no unused imports" and the new one fails at analyze with unused_import.
+Owner: The unused-import check now still covers all our Swift code when the build cache is warm, so caching does not weaken it.
