@@ -1,0 +1,7 @@
+Decided: merge origin/staging (#391 landed) and push, so the queued iOS Simulator job and the flaky ubuntu test rerun on a current base.
+Decided: no design change; the FAIL at 1b0365e was the iOS Simulator job still queued for a macOS runner.
+Rejected: editing crates/cooee/tests/plugins.rs for the 209ms timing flake — a server test outside this design-only diff.
+Rejected: committing Xcode's generated Package.resolved — xcodebuild writes it locally and the diff stays design-only.
+Because: "Screenshots and README in `apple/design/native-surfaces/`; the iOS target builds"
+Check: swift test in apple/design/native-surfaces renders 23 frames with no PNG change; the iOS Simulator xcodebuild exits 0 at 6a89569.
+Owner: The branch now includes the latest staging; nothing in the design changed.
