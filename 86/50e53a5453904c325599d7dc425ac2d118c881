@@ -1,0 +1,7 @@
+Decided: keep staging's `kill -s TERM -- -<pid>` line in the manage.rs conflict
+Because: crates/cooee-server/src/manage.rs:175
+Decided: staging's health checks pass HEALTH and CHECK_WAIT as plugin::call's total deadline
+Because: crates/cooee-server/src/manage.rs:533
+Rejected: none
+Check: manage.rs:533 and :882 compile and cargo test -p cooee-server manage passes
+Owner: the branch is up to date with staging; plugin health checks use the new time limit
