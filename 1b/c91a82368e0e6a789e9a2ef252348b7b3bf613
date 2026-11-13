@@ -1,0 +1,9 @@
+Decided: round 9 changes no feature code; it merges origin/staging (#355) and refreshes the PR evidence to the new head
+Because: "Every gate is green; `apple_cap` holds."
+Rejected: refreshing the body at 3b1a288 only — staging had moved again, so the head would have gone stale at the next update
+Decided: the line cap is measured on a git archive of the head; a worktree run counts untracked SPM .build sources
+Because: scripts/line-cap.sh:1
+Check: git diff 3b1a288 HEAD -- apple/Sources is empty; the merge only brings staging's CI scripts, design files and the web e2e test
+Check: the macOS jobs (build, apple-quality, e2e, simulator-shots) run at this head and give the AC3 screenshots
+Check: local swiftlint analyze segfaults reading the TCA module (exit 139, twice); CI apple-quality at this head decides that step
+Owner: No change to the feature; this round catches up with staging and refreshes its test evidence.
