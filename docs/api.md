@@ -105,7 +105,7 @@ tool. Clearing the notes leaves the skills; deleting the persona removes both. A
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /folders?path=P&hidden=1` | | `{path, home, dirs: string[], roots: string[]}` |
+| `GET /folders?path=P&hidden=1` | | `{path, home, dirs: string[], roots: string[]}`: `P` (default home) inside home or a root; a root or a folder in one is spelled from the root as listed |
 | `POST /roots` | `{path, remove?}` | the roots, `string[]` |
 | `POST /folders/new` | `{parent, name}` | the new folder's path, `string` |
 

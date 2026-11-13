@@ -121,6 +121,7 @@ extension PersonaSheet {
                         symbol: "folder.fill", title: "Folder", tint: look.palette.amber, value: draft.folder,
                         divider: false
                     )
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).accessibilityLabel("Folder")
             }

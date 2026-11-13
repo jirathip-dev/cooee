@@ -895,12 +895,29 @@ impl Hub {
         lock(&self.roots).iter().any(inside).then_some(folder)
     }
 
-    /// Settings › Folders: the folders inside `path` (default the home folder; hidden ones if `hidden`), and the roots.
+    /// `folder`, if it is a folder that is a root or inside one, spelled from that root as listed.
+    fn in_root(&self, folder: &Path) -> Option<PathBuf> {
+        let real = folder.canonicalize().ok().filter(|p| p.is_dir())?;
+        lock(&self.roots).iter().find_map(|root| {
+            let rest = real.strip_prefix(root.canonicalize().ok()?).ok()?;
+            Some(if rest.as_os_str().is_empty() {
+                root.clone()
+            } else {
+                root.join(rest)
+            })
+        })
+    }
+
+    /// Settings › Folders and the persona's folder browser: the folders inside `path` (default the home folder; hidden
+    /// ones if `hidden`), and the roots. A root or a folder inside one is spelled from the root as listed.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a path outside the home folder or not a folder.
+    /// [`HubError::Refused`] for a path outside both the home folder and the roots, or not a folder.
     pub fn browse(&self, path: Option<&Path>, hidden: bool) -> Result<Listing, HubError> {
-        let (path, home) = in_home(path)?;
+        let (path, home) = match path.and_then(|p| self.in_root(p)) {
+            Some(p) => (p, in_home(None)?.1),
+            None => in_home(path)?,
+        };
         let dirs = dirs(&path, hidden).into_iter().filter_map(|d| {
             let name = d.file_name()?.to_string_lossy();
             Some(name.into_owned())
