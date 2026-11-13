@@ -1,0 +1,5 @@
+Decided: merge origin/staging (ecdeb73d) into the branch and push; no code change, the FAIL was ui's [390] chat 1,000-message long-task check, which staging's #355 fixes
+Because: web/e2e/chat.spec.mjs:131
+Rejected: editing web/e2e/chat.spec.mjs here — this PR touches no chat or web code, and #355 already landed the fix on staging
+Check: every check is green at the new head, ui included
+Owner: Brings the persona sheet branch up to date with staging, which fixes a flaky web test; nothing in the app changed this round.
