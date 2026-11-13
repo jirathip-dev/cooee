@@ -1,8 +1,8 @@
 # cooee native v2 settings: Sign-ins, Devices, Machines + Terminal, Plugins (#239)
 
 The four avatar-menu rows that #124 left as "v2" (q955), drawn natively. Each copies the content of the working web
-screen (q1301). Like `design/v1`, these are real SwiftUI views in `Sources/CooeeUI/` (`SignIns.swift`, `Devices.swift`,
-`Machines.swift`, `MachineTerminal.swift`, `PluginsPage.swift`, shared parts in `SettingsParts.swift`). They are fed by
+screen (q1301). Like `design/v1`, these are real SwiftUI views in `Sources/CooeeUI/` (`SignInsPreview.swift`, `DevicesPreview.swift`,
+`MachinesPreview.swift`, `MachineTerminalPreview.swift`, `PluginsPagePreview.swift`, shared parts in `SettingsPartsPreview.swift`). They are fed by
 fixtures, with no reducer and no networking yet. Each build issue adds the screen's reducer and client and swaps
 `MenuPage`'s "This opens in v2." for its view. The PNGs are stills (`Look.still`), 2×: the phone at iPhone 17
 (402 × 874 pt) and the Mac window at 1180 × 780. `CooeeUITests`' `SnapshotTests` now checks `design/v2-settings/`
