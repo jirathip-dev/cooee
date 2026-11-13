@@ -9,7 +9,8 @@ public enum Fixtures {
                 character:
                     "Calm chief of staff. Short answers in plain words; one question at a time, never a list of them.",
                 instructions:
-                    "Keep renewals.md current. Ask Account Manager for dates; never email a customer yourself."
+                    "Keep renewals.md current. Ask Account Manager for dates; never email a customer yourself.",
+                machine: "mini"
             ),
             look: PersonaLook(initials: "CH", symbol: "star.fill", tint: .lead, coat: "ch"),
             state: .done
@@ -18,7 +19,7 @@ public enum Fixtures {
             api: APIPersona(
                 id: "coder", name: "Coder", agent: "Codex", model: "gpt-5.5", effort: "medium", folder: "~/src/cooee",
                 character: "Terse engineer. Shows the diff, not the essay.",
-                instructions: "Run the tests before you say done. Small commits."
+                instructions: "Run the tests before you say done. Small commits.", machine: "studio"
             ),
             look: PersonaLook(
                 initials: "CO", symbol: "chevron.left.forwardslash.chevron.right", tint: .cyan, coat: "gry"),
@@ -28,7 +29,7 @@ public enum Fixtures {
             api: APIPersona(
                 id: "res", name: "Researcher", agent: "Claude Code", model: "sonnet 5.5", effort: "medium",
                 folder: "~/research", character: "Careful; cites every source.",
-                instructions: "Put findings in notes/, one file a company."
+                instructions: "Put findings in notes/, one file a company.", machine: "air", canMessage: ["am"]
             ),
             look: PersonaLook(initials: "RE", symbol: "magnifyingglass", tint: .purple, coat: "blk"),
             state: .needs
@@ -36,7 +37,8 @@ public enum Fixtures {
         Persona(
             api: APIPersona(
                 id: "am", name: "Account Manager", agent: "Claude Code", model: "haiku 5.5", effort: "low",
-                folder: "~/crm", character: "Warm, exact about dates.", instructions: "The CRM export is crm.csv."
+                folder: "~/crm", character: "Warm, exact about dates.", instructions: "The CRM export is crm.csv.",
+                machine: "mini"
             ),
             look: PersonaLook(initials: "AM", symbol: "briefcase.fill", tint: .link, coat: "bay"),
             state: .idle
@@ -45,7 +47,8 @@ public enum Fixtures {
             api: APIPersona(
                 id: "cond", name: "Conductor", agent: "Claude Code", model: "opus 5.5", effort: "high",
                 folder: "~/src/herdsman", character: "Runs the fleet; asks the owner only what herdsman says to.",
-                instructions: "herdsman's conductor for cooee and herdsman.", plugins: ["Queue", "Events"]
+                instructions: "herdsman's conductor for cooee and herdsman.", plugins: ["Queue", "Events"],
+                machine: "mini"
             ),
             look: PersonaLook(
                 initials: "CD", symbol: "point.3.connected.trianglepath.dotted", tint: .green, coat: "wht"),
