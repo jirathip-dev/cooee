@@ -1,0 +1,309 @@
+Refreshing run status every 60 seconds. Press Ctrl+C to quit.
+
+* issue-328 ci jirathip-dev/cooee#335 · 43341598910
+Triggered via pull_request less than a minute ago
+
+JOBS
+* msrv (ubuntu-latest) (ID 131896463117)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  * Run Swatinem/rust-cache@v2
+  * Run taiki-e/install-action@v2
+  * fmt (cargo fmt, topcoat fmt)
+  * clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (crates/*/src, web/src and web/ts ≤ line_cap; apple/ Swift ≤ apple_cap)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * neutral core (no provider named outside crates/cooee-core/src/providers and tests)
+  * theme gate (packs/themes and the starter)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ stable (macos-latest) in 2m50s (ID 131896464879)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ui in 3m47s (ID 131896465755)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  ✓ playwright (390, 1440, axe)
+  ✓ Run actions/upload-artifact@v4
+  ✓ Run actions/upload-artifact@v4
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 131896515516)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 4m12s (ID 131896521448)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (crates/*/src, web/src and web/ts ≤ line_cap; apple/ Swift ≤ apple_cap)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ neutral core (no provider named outside crates/cooee-core/src/providers and tests)
+  ✓ theme gate (packs/themes and the starter)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ actionlint in 9s (ID 131896528595)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ actionlint (.github/workflows/**)
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m44s (ID 131896530798)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ no-node in 46s (ID 131896538668)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+Refreshing run status every 60 seconds. Press Ctrl+C to quit.
+
+* issue-328 ci jirathip-dev/cooee#335 · 43341598910
+Triggered via pull_request about 1 minute ago
+
+JOBS
+* msrv (ubuntu-latest) (ID 131896463117)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  * test (incl. upgrade compatibility and crash injection)
+  * doc
+  * deny (licences, advisories, duplicate versions)
+  * line cap (crates/*/src, web/src and web/ts ≤ line_cap; apple/ Swift ≤ apple_cap)
+  * dependency direction (cooee-core has no workspace deps)
+  * public hygiene (ci/denylist.txt)
+  * neutral core (no provider named outside crates/cooee-core/src/providers and tests)
+  * theme gate (packs/themes and the starter)
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ stable (macos-latest) in 2m50s (ID 131896464879)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ui in 3m47s (ID 131896465755)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  ✓ playwright (390, 1440, axe)
+  ✓ Run actions/upload-artifact@v4
+  ✓ Run actions/upload-artifact@v4
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 131896515516)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 4m12s (ID 131896521448)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (crates/*/src, web/src and web/ts ≤ line_cap; apple/ Swift ≤ apple_cap)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ neutral core (no provider named outside crates/cooee-core/src/providers and tests)
+  ✓ theme gate (packs/themes and the starter)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ actionlint in 9s (ID 131896528595)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ actionlint (.github/workflows/**)
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m44s (ID 131896530798)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ no-node in 46s (ID 131896538668)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+X issue-328 ci jirathip-dev/cooee#335 · 43341598910
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+X msrv (ubuntu-latest) in 1m34s (ID 131896463117)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  X test (incl. upgrade compatibility and crash injection)
+  - doc
+  - deny (licences, advisories, duplicate versions)
+  - line cap (crates/*/src, web/src and web/ts ≤ line_cap; apple/ Swift ≤ apple_cap)
+  - dependency direction (cooee-core has no workspace deps)
+  - public hygiene (ci/denylist.txt)
+  - neutral core (no provider named outside crates/cooee-core/src/providers and tests)
+  - theme gate (packs/themes and the starter)
+  - Post Run Swatinem/rust-cache@v2
+  - Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (macos-latest) in 2m50s (ID 131896464879)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ui in 3m47s (ID 131896465755)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run actions/setup-node@v4
+  ✓ install
+  ✓ build
+  ✓ playwright (390, 1440, axe)
+  ✓ Run actions/upload-artifact@v4
+  ✓ Run actions/upload-artifact@v4
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ ts in 11s (ID 131896515516)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ install (pinned in web/package.json and its lockfile)
+  ✓ tsc --noEmit (TypeScript 7, strict)
+  ✓ biome check (lint and format)
+  ✓ tsc-rs (trial, non-blocking)
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ msrv (macos-latest) in 4m12s (ID 131896521448)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ Run taiki-e/install-action@v2
+  ✓ fmt (cargo fmt, topcoat fmt)
+  ✓ clippy (pedantic, at most 10 allows)
+  ✓ test (incl. upgrade compatibility and crash injection)
+  ✓ doc
+  ✓ deny (licences, advisories, duplicate versions)
+  ✓ line cap (crates/*/src, web/src and web/ts ≤ line_cap; apple/ Swift ≤ apple_cap)
+  ✓ dependency direction (cooee-core has no workspace deps)
+  ✓ public hygiene (ci/denylist.txt)
+  ✓ neutral core (no provider named outside crates/cooee-core/src/providers and tests)
+  ✓ theme gate (packs/themes and the starter)
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ actionlint in 9s (ID 131896528595)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ actionlint (.github/workflows/**)
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ stable (ubuntu-latest) in 1m44s (ID 131896530798)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@stable
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ test
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ no-node in 46s (ID 131896538668)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ remove Node
+  ✓ build
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+exit=1
