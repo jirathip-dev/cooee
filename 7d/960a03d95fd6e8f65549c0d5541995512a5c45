@@ -1,0 +1,10 @@
+Decided: Home's Others row lists the titles of the chats inside it, not each chat's agent
+Because: docs/design/home-workflow/README.md:40
+Because: apple/Sources/CooeeCore/Workflow.swift:28
+Decided: the titles come from one Core property, so a test covers them; the Others screen keeps its name-plus-agent rows
+Because: apple/Sources/CooeeUI/Root.swift:70
+Rejected: changing Listing's row title for no-persona chats — the Others screen shows the agent beside the name, which the reviewer called right
+Rejected: the sheet height and round age findings — non-blocking, left for a design pass
+Check: WorkflowTests expects the titles T impl, T loose, T nightly, where the old mapping gave fake-acp for the loose chat
+Check: simulator Home light shot shows Bonjour probe in the Others row
+Owner: Home's Others row now previews the chat titles inside it, like the design.
