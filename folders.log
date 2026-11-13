@@ -1,0 +1,15 @@
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-230/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-230/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.61s
+     Running tests/folders.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-impl-230/target/debug/deps/folders-287f06d12e651321)
+
+running 6 tests
+test browse_lists_a_root_outside_home_spelled_as_listed ... ok
+test picker_lists_sub_folders_two_levels_deep_never_symlinks ... ok
+test browse_lists_only_folders_inside_home ... ok
+test add_and_remove_root_persists_in_the_config ... ok
+test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.04s
+
