@@ -227,6 +227,10 @@
             XCTAssert(new.waitForExistence(timeout: 10))
             app.buttons["Account"].firstMatch.tap()
             XCTAssert(labelled(app, "Notifications").waitForExistence(timeout: 10))
+            for missing in ["Sign-ins", "Devices", "Machines", "Plugins"] {
+                XCTAssertFalse(
+                    app.buttons.matching(NSPredicate(format: "label CONTAINS %@", missing)).firstMatch.exists)
+            }
             keep("avatar-menu")
             labelled(app, "Look").tap()
             labelled(app, "Terminal").tap()
@@ -237,6 +241,11 @@
             labelled(app, "Modern").tap()
             confirmIcon()
             XCTAssert(picked(app, "Modern").waitForExistence(timeout: 5))
+            keep("avatar-menu-look")
+            app.navigationBars.buttons.firstMatch.tap()
+            labelled(app, "Notifications").tap()
+            XCTAssert(app.switches["Push notifications"].waitForExistence(timeout: 5))
+            keep("avatar-menu-notifications")
         }
 
         @MainActor
