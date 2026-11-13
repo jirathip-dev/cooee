@@ -1,0 +1,5 @@
+Decided: merged staging e6317df7 and pushed 991b32a to re-run CI; no code change
+Because: apple/Tests/CooeeUITests/MenuRenderTests.swift:1
+Rejected: re-running be13efc's jobs — staging had moved and #237 edits files this PR touches
+Check: CI at 991b32a; be13efc's red was macOS jobs queued ~12h and a cancelled ubuntu test step
+Owner: the red was CI that never ran, not a failure; the branch is updated and CI is running again
