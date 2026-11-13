@@ -1,0 +1,5 @@
+Decided: merge origin/staging (e6317df7) into the branch and push; no code change, the FAIL was CI at 3b06539 cancelled or killed, not a test failure
+Because: apple/UITests/LiveUITests.swift:97
+Rejected: changing apple/UITests/LiveUITests.swift — mac-setup failed on a simulator launch timeout, the app never started, and that is host infra
+Check: every check is green at the new head; the Ubuntu jobs at 3b06539 passed all tests before SIGTERM (exit 143)
+Owner: Brings the persona sheet branch up to date with staging so its checks can run again; nothing in the app changed this round.
