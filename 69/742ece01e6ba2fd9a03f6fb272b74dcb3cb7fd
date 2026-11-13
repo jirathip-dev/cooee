@@ -1,0 +1,8 @@
+Decided: merge origin/staging twice (#141, #368, then #230); #141's style walk is its own fresh-launch test, LiveStyleUITests.testEveryStyle
+Because: apple/UITests/StyleUITests.swift:6
+Decided: #230's persona file hosts the LivePersonaUITests class on LiveUITestCase, keeping picksAgentAndFolder and its two shots
+Because: apple/UITests/LivePersonaUITests.swift:4
+Rejected: chaining everyStyle after appIcon as staging does — that is the cascade this issue removes
+Rejected: committing Xcode's generated Package.resolved from the wip snapshot — xcodebuild writes it locally
+Check: CI e2e runs ten Live tests per look in random order, green, and simulator-shots holds look-*, persona-menu, persona-folders plus the old names
+Owner: The branch now includes the latest look and persona tests, each split into its own fresh-start test.
