@@ -9,7 +9,8 @@ Two self-hosted runners, `mini-cooee` and `air-cooee` (labels `self-hosted, macO
 - `apple-mac.yml`: `dmg`
 - `apple-testflight.yml`: `testflight`
 
-Every other job runs on GitHub's ubuntu runners. `apple.yml`'s `mac-setup` stays on GitHub's `macos-26`. It installs
+Every other job runs on GitHub's ubuntu runners. `apple.yml`'s `mac-setup` stays on GitHub's `macos-26`, and runs only
+on a push to staging, never on a pull request. It installs
 cooee as a login item in the runner user's home folder and binds port 4747. Both of our runners run as the owner's own
 account, and the mini runs the real cooee from that same folder and port. The job moves once a runner-only macOS user
 exists (q1629).
