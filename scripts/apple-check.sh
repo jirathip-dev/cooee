@@ -53,7 +53,7 @@ else
   mkdir -p apple/.build
   log="$root/apple/.build/apple-check-build.log"
   step "build (Swift 6, complete concurrency, warnings as errors)"
-  (cd apple && swift build --build-tests --enable-code-coverage -v >"$log" 2>&1) || { tail -50 "$log"; exit 1; }
+  (cd apple && find Sources Tests -name '*.swift' -exec touch {} + && swift build --build-tests --enable-code-coverage -v >"$log" 2>&1) || { tail -50 "$log"; exit 1; }
 
   step "tests with coverage"
   (cd apple && swift test --enable-code-coverage --skip-build)
