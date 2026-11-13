@@ -4,7 +4,7 @@ apple.yml's `mac-setup` job sets the Mac app up like a new user's first run: it 
 `com.jirathip.cooee.serve` / `shed` login items, writes `~/.config/cooee/cooee` and
 `~/.local/share/cooee/cooee`, binds :4747 and drives the iPhone simulator. On the owner's
 account that would stop and overwrite the live cooee. `runner-user.sh` gives it a macOS user of
-its own, `cooeeci`, so all of that lands in `/Users/cooeeci` instead.
+its own, `cooeeci`, so all of that lands in `~cooeeci` instead.
 
 ## Set it up (once, on the mini, as the owner)
 
@@ -23,16 +23,16 @@ What it creates:
   keychain as `cooee-ci-runner`. The user is added to `_developer` so Xcode UI tests can run
   without a prompt.
 - Fast user switching turned on, so `cooeeci` can stay logged in behind the owner's session.
-- rustup and cargo in `/Users/cooeeci/.cargo`, with no toolchain installed: the job's
+- rustup and cargo in `~cooeeci/.cargo`, with no toolchain installed: the job's
   `dtolnay/rust-toolchain` step installs the one it pins. Xcode is shared and `xcode-select` is
   left alone.
 - actions-runner (the latest release, checked against its sha256) in
-  `/Users/cooeeci/actions-runner`, registered on jirathip-dev/cooee as `mini-cooee-setup` with
+  `~cooeeci/actions-runner`, registered on jirathip-dev/cooee as `mini-cooee-setup` with
   the labels `self-hosted`, `macOS`, `ARM64` and `cooee-mac-setup` (not `cooee-mac`). `gh` fetches
   the registration token and pipes it to the runner, so it is never printed.
-- The LaunchAgent `com.jirathip.cooee.ci-runner` in `/Users/cooeeci/Library/LaunchAgents`, with
+- The LaunchAgent `com.jirathip.cooee.ci-runner` in `~cooeeci/Library/LaunchAgents`, with
   no `SessionCreate`. It runs the runner in `cooeeci`'s own GUI session and restarts it if it
-  exits. Its log is `/Users/cooeeci/Library/Logs/cooee-ci-runner.log`.
+  exits. Its log is `~cooeeci/Library/Logs/cooee-ci-runner.log`.
 
 It never reads or writes the owner's `~/.config/cooee`, `~/.local/share/cooee` or login items,
 and it leaves the owner's automatic login alone, so the owner stays the console user.
