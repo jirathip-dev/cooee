@@ -46,7 +46,7 @@ jobs:
         working-directory: apple
         run: >-
           xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination '${{ matrix.destination }}'
-          CODE_SIGNING_ALLOWED=NO build
+          -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO build
 
   apple-quality:
     if: *ours
@@ -99,7 +99,8 @@ jobs:
           sim=$(xcrun simctl create "cooee-e2e-$GITHUB_RUN_ID" "iPhone 17")
           echo "SIM=$sim" >> "$GITHUB_ENV"
           xcrun simctl bootstatus "$sim" -b
-          build=(xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim")
+          build=(xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim"
+            -derivedDataPath "$RUNNER_TEMP/derived")
           "${build[@]}" build-for-testing
           for look in dark light; do
             xcrun simctl ui "$sim" appearance "$look"

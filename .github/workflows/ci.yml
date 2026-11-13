@@ -127,7 +127,7 @@ jobs:
       (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: &ours [self-hosted, macOS, ARM64, cooee-mac]
     concurrency:
-      group: ci-${{ github.job }}-${{ needs.scope.outputs.mac == 'true' && format('{0}-{1}', github.event_name, github.ref) || github.run_id }}
+      group: ci-msrv-mac-${{ needs.scope.outputs.mac == 'true' && format('{0}-{1}', github.event_name, github.ref) || github.run_id }}
       cancel-in-progress: true
     steps: *msrv
 
@@ -155,7 +155,7 @@ jobs:
     if: *mac
     runs-on: *ours
     concurrency:
-      group: ci-${{ github.job }}-${{ needs.scope.outputs.mac == 'true' && format('{0}-{1}', github.event_name, github.ref) || github.run_id }}
+      group: ci-stable-mac-${{ needs.scope.outputs.mac == 'true' && format('{0}-{1}', github.event_name, github.ref) || github.run_id }}
       cancel-in-progress: true
     env:
       RUSTUP_TOOLCHAIN: stable
