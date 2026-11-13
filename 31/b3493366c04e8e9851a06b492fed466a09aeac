@@ -1,0 +1,10 @@
+Decided: a provider trait method no_personal_setup() returns the session _meta; Claude's sets settingSources project/local and strictMcpConfig
+Because: "a provider says what its "no personal setup" options are, or that it has none"
+Decided: Logins::profile sets Launch.meta, so profile threads and personas naming a profile carry it; plain threads (Logins::home) do not
+Because: "A plain thread is unchanged: the owner's own setup."
+Decided: Claude's options also exclude any home's .claude/CLAUDE.md and rules via settings.claudeMdExcludes
+Because: crates/cooee-core/src/providers/claude.rs:82
+Rejected: settingSources alone — live check: a folder under $HOME still loaded ~/.claude/CLAUDE.md as project memory
+Rejected: reading $HOME for the exclude — wrong on a thread on another machine
+Check: the persona-vs-plain live answers in the PR body, and that the profiles test fails without the login.rs assignment
+Owner: profile and persona chats now keep your personal Claude setup out on the normal sign-in; this needs shed with the new --meta flag
