@@ -1,6 +1,6 @@
-# #124: build the native app (apple/) for iOS and macOS; no signing. #365: every job runs on our own runners
-# (mini-cooee, air-cooee), never for a fork's pull request (its jobs show skipped), and a newer run of the same ref
-# cancels the older one. #147: `apple-quality` runs `just apple-check`, every Swift gate (format, anti-slop, SwiftLint, tests,
+# #124: build the native app (apple/) for iOS and macOS; no signing. #365: every job but `mac-setup` runs on our own
+# runners (mini-cooee, air-cooee); no job runs for a fork's pull request (its jobs show skipped), and a newer run of the
+# same ref cancels the older one. `mac-setup` stays on GitHub's macos-26 (docs/ci-runners.md says why). #147: `apple-quality` runs `just apple-check`, every Swift gate (format, anti-slop, SwiftLint, tests,
 # coverage, Periphery). #143: `e2e`: the app in the iOS simulator against a real `cooee serve` (apple/e2e/serve.sh), its
 # screens kept as the `simulator-shots` artifact. #142: `mac-setup`: the Mac app's first run on the runner starts cooee
 # and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac approves it;
@@ -137,13 +137,12 @@ jobs:
 
   mac-setup:
     if: *ours
-    runs-on: *mac
+    runs-on: macos-26
     timeout-minutes: 90
     env:
       SHOTS: ${{ github.workspace }}/mac-setup-shots
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/mac-runner
       - uses: dtolnay/rust-toolchain@1.99.1
       - uses: Swatinem/rust-cache@v2
       - name: cooee and shed for the app

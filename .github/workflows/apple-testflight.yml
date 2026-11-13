@@ -2,12 +2,19 @@
 # Apple manages the distribution certificate and profiles (cloud signing through the App Store Connect API key).
 # Uploads run only on a merge to `main` (#180). The ASC_* secrets live in the `testflight` environment, which only
 # `main` may deploy from: pull_request and fork runs can't read them. docs/testflight.md has the owner's one-time steps.
+# #365: runs on our own runners (mini-cooee, air-cooee). Any signing identity Xcode makes goes into a keychain of the
+# job's own, deleted when the job ends. A `workflow_dispatch` without `upload` archives and signs but uploads nothing.
 name: apple-testflight
 on:
   push:
     branches: [main]
     paths: ["apple/**", ".github/workflows/apple-testflight.yml", "scripts/asc-token.swift"]
   workflow_dispatch:
+    inputs:
+      upload:
+        description: Upload to TestFlight (main only); off archives and signs without uploading
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -18,19 +25,33 @@ defaults:
     shell: bash
 jobs:
   testflight:
-    if: github.ref == 'refs/heads/main'
-    runs-on: macos-26
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    runs-on: [self-hosted, macOS, ARM64, cooee-mac]
     environment: testflight
     timeout-minutes: 60
     env:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      UPLOAD: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.upload) }}
     steps:
       # `runner` isn't available in a job-level env, so the temp paths go through $GITHUB_ENV.
       - name: temp paths
         run: |
           { echo "ASC_KEY_PATH=$RUNNER_TEMP/AuthKey.p8"; echo "LOG=$RUNNER_TEMP/xcodebuild.log"; } >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/mac-runner
+      - name: the job's own keychain, the default while it runs
+        run: |
+          keychain="$RUNNER_TEMP/sign.keychain-db"
+          pass=$(uuidgen)
+          security default-keychain -d user | tr -d '" ' > "$RUNNER_TEMP/default-keychain"
+          security list-keychains -d user | tr -d '" ' > "$RUNNER_TEMP/keychains"
+          security create-keychain -p "$pass" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$pass" "$keychain"
+          read -r -a keychains <<<"$(tr '\n' ' ' < "$RUNNER_TEMP/keychains")"
+          security list-keychains -d user -s "$keychain" "${keychains[@]}"
+          security default-keychain -d user -s "$keychain"
       - name: App Store Connect (bundle id, team, app, next build number)
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
@@ -67,6 +88,7 @@ jobs:
           DEVELOPMENT_TEAM="$TEAM" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD"
           INFOPLIST_KEY_ITSAppUsesNonExemptEncryption=NO 2>&1 | tee -a "$LOG"
       - name: upload to TestFlight
+        if: env.UPLOAD == 'true'
         run: |
           cat > "$RUNNER_TEMP/export.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
@@ -82,7 +104,11 @@ jobs:
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Cooee.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
             -exportPath "$RUNNER_TEMP/export" -allowProvisioningUpdates -authenticationKeyPath "$ASC_KEY_PATH" \
             -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | tee -a "$LOG"
+      - name: summary (dry run)
+        if: env.UPLOAD != 'true'
+        run: echo "### cooee $VERSION ($BUILD) archived and signed on $RUNNER_NAME; not uploaded (dry run)" >> "$GITHUB_STEP_SUMMARY"
       - name: summary
+        if: env.UPLOAD == 'true'
         run: |
           { echo "### cooee $VERSION ($BUILD) uploaded to TestFlight"
             echo "Apple processes it for a few minutes, then it shows in TestFlight on the phone."
@@ -106,6 +132,13 @@ jobs:
           path: ${{ runner.temp }}/xcodebuild.log
           retention-days: 7
           if-no-files-found: ignore
-      - name: remove the key
+      - name: remove the key and the job's keychain
         if: always()
-        run: rm -f "$ASC_KEY_PATH"
+        run: |
+          rm -f "$ASC_KEY_PATH"
+          [ ! -f "$RUNNER_TEMP/sign.keychain-db" ] || security delete-keychain "$RUNNER_TEMP/sign.keychain-db"
+          [ ! -s "$RUNNER_TEMP/default-keychain" ] || security default-keychain -d user -s "$(cat "$RUNNER_TEMP/default-keychain")"
+          if [ -s "$RUNNER_TEMP/keychains" ]; then
+            read -r -a keychains <<<"$(tr '\n' ' ' < "$RUNNER_TEMP/keychains")"
+            security list-keychains -d user -s "${keychains[@]}"
+          fi
