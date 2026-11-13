@@ -1,0 +1,12 @@
+
+== swift format
+
+== anti-slop
+no violations
+
+== TODO(#N) names an open issue
+every TODO names an open issue
+
+== SwiftLint 0.65.1
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-242/apple/UITests/LiveUITests.swift:291:1: error: File Length Violation: File should contain 250 lines or less excluding comments and whitespaces: currently contains 273 (file_length)
+/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-242/apple/UITests/LiveUITests.swift:6:18: error: Function Body Length Violation: Function body should span 25 lines or less excluding comments and whitespace: currently spans 26 lines (function_body_length)

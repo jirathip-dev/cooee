@@ -1,0 +1,13 @@
+    Checking cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-242/crates/cooee-core)
+   Compiling cooee-web v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-242/web)
+ Documenting cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-242/crates/cooee-core)
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-242/crates/cooee-machines)
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-242/crates/cooee-terminal)
+ Documenting cooee-web v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-242/web)
+ Documenting cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-242/crates/cooee-terminal)
+ Documenting cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-242/crates/cooee-machines)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-242/crates/cooee-server)
+ Documenting cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-242/crates/cooee-server)
+ Documenting cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-242/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 11.08s
+   Generated /Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-242/doc/cooee/index.html and 5 other files

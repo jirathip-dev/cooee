@@ -1,0 +1,18 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running tests/personas.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-242/debug/deps/personas-80e69b3dae083693)
+
+running 11 tests
+test the_plugin_attaches_by_role ... ok
+test a_detailed_persona_gets_no_plain_line ... ok
+test a_plugin_is_attached_to_a_persona_and_detached ... ok
+test renaming_the_orchestrator_changes_no_attachment ... ok
+test migration_keeps_the_name_and_sets_the_orchestrator_role ... ok
+test old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief ... ok
+test two_orchestrator_personas_each_with_their_own_fleets ... ok
+test remember_adds_replaces_and_forgets_one_note_under_the_cap ... ok
+test a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it ... ok
+test a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session ... ok
+test a_persona_and_its_threads_name_their_machine ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.17s
+
