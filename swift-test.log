@@ -1,0 +1,27 @@
+Building for debugging...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 5]
+[2 / 7] CooeeAPITests-product
+[4 / 9] CooeeAPITests-product
+[7 / 11] CooeeAPITests-product
+[9 / 11] CooeeAPITests-product
+[11 / 14] IssueReporting
+[11 / 15] swift-composable-architecture_ComposableArchitecture
+Build complete! (5.17 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite PersonaFeatureTests started.
+◇ Test theFolderBrowserNeverLeavesTheRoots() started.
+◇ Test aRefusalShowsTheServersReason() started.
+◇ Test theAgentChipsListsComeFromTheServerAndAnotherAgentReloadsThem() started.
+◇ Test anEditReadsItsMemoryAndPutsTheChangedPersonaBack() started.
+◇ Test aNewPersonaIsPostedAndReadsNoMemory() started.
+✔ Test aRefusalShowsTheServersReason() passed after 0.161 seconds.
+✔ Test aNewPersonaIsPostedAndReadsNoMemory() passed after 0.164 seconds.
+✔ Test anEditReadsItsMemoryAndPutsTheChangedPersonaBack() passed after 0.165 seconds.
+✔ Test theAgentChipsListsComeFromTheServerAndAnotherAgentReloadsThem() passed after 0.174 seconds.
+✔ Test theFolderBrowserNeverLeavesTheRoots() passed after 0.191 seconds.
+✔ Suite PersonaFeatureTests passed after 0.191 seconds.
+✔ Test run with 5 tests in 1 suite passed after 0.191 seconds.
