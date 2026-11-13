@@ -5,7 +5,7 @@ import Foundation
 @Reducer
 public struct MenuFeature: Sendable {
     public enum Page: CaseIterable, Hashable, Sendable {
-        case look, notifications, signIns, devices, machines, plugins, appIcon
+        case look, notifications, signIns, devices, terminal, machines, plugins, appIcon
     }
 
     @ObservableState

@@ -78,6 +78,7 @@ internal struct AvatarMenu: View {
     internal var place = "this iPhone · paired to mini"
     internal var values: [MenuFeature.Page: String] = [
         .look: "Modern · Farm", .notifications: "Asks, done", .signIns: "Claude, Codex", .devices: "3",
+        .terminal: "mini",
         .machines: "mini, air · Terminal", .plugins: "4",
     ]
     internal var pages = MenuFeature.Page.allCases
@@ -102,6 +103,7 @@ internal struct AvatarMenu: View {
                     Row(page: .notifications, symbol: "bell.badge.fill", title: "Notifications", tint: palette.red),
                     Row(page: .signIns, symbol: "person.badge.key.fill", title: "Sign-ins", tint: palette.purple),
                     Row(page: .devices, symbol: "iphone.gen3", title: "Devices", tint: palette.link),
+                    Row(page: .terminal, symbol: "terminal.fill", title: "Terminal", tint: palette.mute),
                 ])
             group(
                 "",

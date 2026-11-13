@@ -11,6 +11,7 @@ internal struct Frame: Sendable, CustomTestStringConvertible {
     internal let palette: Palette
     internal let style: LookStyle
     internal let phone: Bool
+    internal var folder = "v1"
     internal let view: @MainActor @Sendable () -> AnyView
 
     internal var testDescription: String { name }
@@ -35,6 +36,7 @@ extension Frame {
 
     internal static var all: [Frame] {
         [("dark", Palette.farmDark), ("light", Palette.farmLight)].flatMap { phoneFrames($0.0, $0.1) } + styled + mac
+            + settings
             + rooms
     }
 
@@ -99,6 +101,40 @@ extension Frame {
                 mac("mac-window-light", 1280, 820, .farmLight) { WideView() },
                 mac("mac-persona-panel-dark", 360, 820, .farmDark) { PersonaPanel(personaID: "coder", column: true) },
             ]
+    }
+
+    private static var settings: [Frame] {
+        let pages: [(String, MenuFeature.Page)] = [
+            ("sign-ins", .signIns), ("devices", .devices), ("machines", .machines), ("plugins", .plugins),
+        ]
+        let phones = pages.flatMap { name, page in
+            [("dark", Palette.farmDark), ("light", Palette.farmLight)].map {
+                phone("\(name)-\($0.0)", $0.1) { settingsPage(page) }
+            }
+        }
+        let macs = pages.map { name, page in mac("mac-\(name)", 1180, 780, .farmDark) { SettingsWindow(page: page) } }
+        let more = [
+            phone("terminal-dark", .farmDark) { MachineTerminal() },
+            phone("you-terminal-dark", .farmDark) { MachineTerminal(own: true) },
+            phone("sign-ins-terminal-dark", .farmDark, style: .terminal) { SignInsView() },
+            phone("machines-scene-light", .farmLight, style: .scene) { MachinesView() },
+            mac("mac-plugins-light", 1180, 780, .farmLight) { SettingsWindow(page: .plugins) },
+        ]
+        return (phones + macs + more).map { frame in
+            var frame = frame
+            frame.folder = "v2-settings"
+            return frame
+        }
+    }
+
+    @MainActor @ViewBuilder
+    private static func settingsPage(_ page: MenuFeature.Page) -> some View {
+        switch page {
+        case .signIns: SignInsView()
+        case .devices: DevicesView()
+        case .machines: MachinesView()
+        default: PluginsView()
+        }
     }
 
     private static var rooms: [Frame] {
