@@ -1,5 +1,5 @@
 # A whole cooee plugin with a live screen: no frontend code, only JSON (screens-as-data, cooee#125). Python 3, no deps.
-import json, os, threading
+import json, os, socketserver, threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 waves, changed = 0, threading.Condition()
@@ -29,4 +29,5 @@ class H(BaseHTTPRequestHandler):
             with changed: waves += 1; changed.notify_all()
         self.reply({"ops": ops()})
 
-ThreadingHTTPServer(("127.0.0.1", int(os.environ.get("PORT", 4800))), H).serve_forever()
+class Server(ThreadingHTTPServer): server_bind = socketserver.TCPServer.server_bind
+Server(("127.0.0.1", int(os.environ.get("PORT", 4800))), H).serve_forever()
