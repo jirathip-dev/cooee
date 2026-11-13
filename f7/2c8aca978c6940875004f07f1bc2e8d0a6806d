@@ -1,0 +1,9 @@
+Decided: seed the lane chat herdsman-impl-641 in the e2e server so a horse tap opens a chat with messages, not a 404
+Because: apple/e2e/serve.sh:69
+Decided: the live Queue test asserts a seeded chat line shows after the horse tap
+Because: apple/UITests/LiveQueueUITests.swift:27
+Decided: name the fixture's deliberate 503 after Pause as known noise in the verify recipe
+Because: .herdsman/verify.md:223
+Rejected: removing the 503 — it is the offline case the queue-offline frames show
+Check: CI e2e job green at f72c8aca, and a verify run logs no 404 on GET /threads/{id}/messages
+Owner: Tapping a horse in the test app now opens a lane chat with its messages, and the planned offline error is listed as expected.
