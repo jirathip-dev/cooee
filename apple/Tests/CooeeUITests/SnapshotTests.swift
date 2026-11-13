@@ -49,9 +49,11 @@ internal struct SnapshotTests {
     internal func frameMatchesTheDesign(_ frame: Frame) throws {
         let rendered = try #require(frame.render())
         let file = Self.designs.appendingPathComponent(frame.folder).appendingPathComponent("\(frame.name).png")
-        if ProcessInfo.processInfo.environment["COOEE_RECORD"] == "1" {
-            let png = try #require(NSBitmapImageRep(cgImage: rendered).representation(using: .png, properties: [:]))
-            try png.write(to: file)
+        let png = try #require(NSBitmapImageRep(cgImage: rendered).representation(using: .png, properties: [:]))
+        let env = ProcessInfo.processInfo.environment
+        if env["COOEE_RECORD"] == "1" { try png.write(to: file) }
+        if let rendered = env["COOEE_RENDERED"] {
+            try png.write(to: URL(fileURLWithPath: rendered).appendingPathComponent(file.lastPathComponent))
         }
         let design = try #require(NSImage(contentsOf: file)?.cgImage(forProposedRect: nil, context: nil, hints: nil))
         let got = try #require(Pixels(rendered))

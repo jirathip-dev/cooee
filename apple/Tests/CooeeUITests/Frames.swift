@@ -37,6 +37,7 @@ extension Frame {
     internal static var all: [Frame] {
         [("dark", Palette.farmDark), ("light", Palette.farmLight)].flatMap { phoneFrames($0.0, $0.1) } + styled + mac
             + settings
+            + rooms
     }
 
     private static func phone(
@@ -73,6 +74,7 @@ extension Frame {
             phone("chat-conductor-\(mode)", palette) { ChatView.conductor() },
             phone("persona-\(mode)", palette) { PersonaSheet() },
             phone("avatar-menu-\(mode)", palette) { HomeView(menuOpen: true) },
+            phone("persona-panel-\(mode)", palette) { PersonaPanel() },
         ]
             + PhoneStep.allCases.map { step in
                 phone("pair-\(step.rawValue)-\(mode)", palette) { PhoneOnboarding(step: step) }
@@ -84,6 +86,10 @@ extension Frame {
             phone("home-terminal-dark", .farmDark, style: .terminal) { HomeView() },
             phone("chat-terminal-dark", .farmDark, style: .terminal) { ChatView.streaming() },
             phone("home-scene-light", .farmLight, style: .scene) { HomeView() },
+            phone("persona-panel-end-dark", .farmDark) { PersonaPanel(end: true) },
+            phone("persona-panel-empty-dark", .farmDark) { PersonaPanel(personaID: "chief") },
+            phone("persona-panel-terminal-dark", .farmDark, style: .terminal) { PersonaPanel() },
+            phone("persona-panel-scene-light", .farmLight, style: .scene) { PersonaPanel() },
         ]
     }
 
@@ -93,6 +99,7 @@ extension Frame {
                 mac("mac-connect", 960, 640, .farmLight) { MacConnect() },
                 mac("mac-window-dark", 1280, 820, .farmDark) { WideView() },
                 mac("mac-window-light", 1280, 820, .farmLight) { WideView() },
+                mac("mac-persona-panel-dark", 360, 820, .farmDark) { PersonaPanel(personaID: "coder", column: true) },
             ]
     }
 
@@ -128,5 +135,24 @@ extension Frame {
         case .machines: MachinesView()
         default: PluginsView()
         }
+    }
+
+    private static var rooms: [Frame] {
+        [
+            phone("room-dark", .farmDark) { RoomView.kestrel() },
+            phone("room-light", .farmLight) { RoomView.kestrel() },
+            phone("room-create-dark", .farmDark) { NewRoomSheet.kestrel() },
+            phone("room-create-light", .farmLight) { NewRoomSheet.kestrel() },
+            phone("room-member-dark", .farmDark) { MemberSheet.researcher() },
+            phone("room-home-dark", .farmDark) { HomeView(chats: Fixtures.roomChats) },
+            phone("room-terminal-dark", .farmDark, style: .terminal) { RoomView.kestrel() },
+            phone("room-scene-light", .farmLight, style: .scene) { RoomView.kestrel() },
+            mac("room-wide-dark", 1440, 900, .farmDark) { WideView.kestrel() },
+            Frame(
+                name: "room-terminal-wide", width: 1440, height: 900, palette: .farmDark, style: .terminal,
+                phone: false,
+                view: { AnyView(WideView.kestrel()) }
+            ),
+        ]
     }
 }
