@@ -1,0 +1,18 @@
+    Checking cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-229/crates/cooee-core)
+   Compiling oxc_ast v0.157.0
+    Checking topcoat v0.11.0
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-229/crates/cooee-machines)
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-229/crates/cooee-terminal)
+   Compiling oxc_ecmascript v0.157.0
+   Compiling oxc_ast_visit v0.157.0
+   Compiling oxc_parser v0.157.0
+   Compiling oxc_semantic v0.157.0
+   Compiling oxc_traverse v0.157.0
+   Compiling oxc_codegen v0.157.0
+   Compiling oxc_transformer v0.157.0
+   Compiling oxc_transformer_plugins v0.157.0
+   Compiling oxc v0.157.0
+   Compiling cooee-web v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-229/web)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-229/crates/cooee-server)
+    Checking cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-229/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 21.04s

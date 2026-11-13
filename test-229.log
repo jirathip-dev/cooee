@@ -1,0 +1,173 @@
+Building for debugging...
+[Computing dependencies]
+[Constructing description]
+[Pre-planning 1 / 1304]
+[Planning deferred tasks]
+[1 / 5]
+[2 / 6] CooeeCore
+[3 / 7] CooeeCore
+[9 / 13] CooeeAPI
+[25 / 29] CooeeCore
+[36 / 40] CooeeAPI
+[40 / 43] CooeeAPITests-product
+[41 / 58]
+[55 / 58] CooeeAPITests-product
+[57 / 58] CooeeAPITests-product
+[65 / 70] CooeeCoreTests-product
+[78 / 83] CooeeCoreTests-product
+[82 / 86] CooeeCoreTests-product
+[84 / 86] CooeeCoreTests-product
+[88 / 92] InternalCollectionsUtilities
+[93 / 97] OrderedCollections
+[98 / 102] IdentifiedCollections
+[103 / 107] IssueReporting
+[108 / 112] ConcurrencyExtras
+[118 / 123] DependenciesMacrosPlugin
+[120 / 123] DependenciesMacrosPlugin
+[125 / 129] DependenciesMacros
+[128 / 132] CombineSchedulers
+[129 / 133] CombineSchedulers
+[133 / 137] CustomDump
+[134 / 138] CustomDump
+[138 / 142] Clocks
+[143 / 148] ComposableArchitectureMacros
+[151 / 156] ComposableArchitectureMacros
+[153 / 156] ComposableArchitectureMacros
+[157 / 161] Dependencies
+[158 / 162] Dependencies
+[163 / 167] CasePathsCore
+[168 / 171] CasePathsMacrosSupport
+[176 / 181] CasePathsMacros
+[178 / 181] CasePathsMacros
+[183 / 187] CasePaths
+[192 / 197] PerceptionMacros
+[194 / 197] PerceptionMacros
+[198 / 202] PerceptionCore
+[199 / 203] PerceptionCore
+[203 / 207] Perception
+[204 / 208] Perception
+[211 / 215] Sharing1
+[215 / 219] Sharing
+[216 / 220] Sharing
+[220 / 225] SwiftNavigationMacros
+[225 / 230] SwiftNavigationMacros
+[227 / 230] SwiftNavigationMacros
+[231 / 235] SwiftNavigation
+[232 / 236] SwiftNavigation
+[236 / 240] UIKitNavigation
+[240 / 244] SwiftUINavigation
+[241 / 245] SwiftUINavigation
+[244 / 248] ComposableArchitecture
+[245 / 249] ComposableArchitecture
+[249 / 253] CooeeFeatures
+[250 / 254] CooeeFeatures/Users/jkmacmini/.local/share/drover/work/cooee/issue-229/apple/Sources/CooeeFeatures/AppFeature.swift:47:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m45 |[0;0m 
+ [0;36m46 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m47 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m48 |[0;0m 
+ [0;36m49 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+
+[267 / 273] ComposableArchitecture
+[280 / 287] OrderedCollections
+[293 / 301] InternalCollectionsUtilities
+[308 / 315] IssueReporting
+[310 / 318] IdentifiedCollections
+[322 / 329] IdentifiedCollections
+[335 / 342] ConcurrencyExtras
+[340 / 347] DependenciesMacros
+[354 / 361] CombineSchedulers
+[364 / 371] Clocks
+[378 / 385] CustomDump
+[380 / 387] Dependencies
+[392 / 399] Dependencies
+[394 / 402] CasePaths
+[400 / 407] CasePaths
+[412 / 420] CasePathsCore
+[415 / 421] CasePaths
+[417 / 424] Perception
+[430 / 438] PerceptionCore
+[433 / 439] Perception
+[445 / 452] Sharing
+[446 / 455] Sharing2
+[449 / 456] Sharing2
+[450 / 458] Sharing1
+[453 / 459] Sharing
+[465 / 472] UIKitNavigation
+[466 / 472] UIKitNavigation
+[468 / 475] UIKitNavigationShim
+[469 / 477] UIKitNavigationShim
+[482 / 490] SwiftNavigation
+[485 / 493] SwiftUINavigation
+[497 / 504] SwiftUINavigation
+[499 / 505] SwiftUINavigation
+[512 / 518] CooeeFeatures
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-229/apple/Sources/CooeeFeatures/AppFeature.swift:47:41: [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m45 |[0;0m 
+ [0;36m46 |[0;0m     @Dependency(\.serverStore) private var serverStore
+ [0;36m47 |[0;0m     @Dependency(\.date.now) private var now
+    [0;36m|[0;0m                                         `- [1;33mwarning: [1;39mcannot use struct 'Date' in a property declaration member of a type not marked '@_implementationOnly'; 'Foundation' was not imported by this file[0;0m
+ [0;36m48 |[0;0m 
+ [0;36m49 |[0;0m     public init() {}
+
+Foundation.Date:2:15: [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m1 |[0;0m @available(macOS 10.10, iOS 8.0, watchOS 2.0, tvOS 9.0, *)
+ [0;36m2 |[0;0m public struct Date : Comparable, Hashable, Equatable, Sendable {
+   [0;36m|[0;0m               `- [1;39mnote: [1;39mstruct declared here[0;0m
+ [0;36m3 |[0;0m     public static let timeIntervalBetween1970AndReferenceDate: Double
+ [0;36m4 |[0;0m     public static var timeIntervalSinceReferenceDate: TimeInterval { get }
+[514 / 519] CooeeFeatures
+[516 / 519] CooeeFeaturesTests-product
+[529 / 532] CooeeFeaturesTests-product
+[531 / 532] CooeeFeaturesTests-product
+[535 / 536] CooeeFeaturesTests-product
+[537 / 541] CooeeUI
+[538 / 542] CooeeUI
+[555 / 562] CooeeUI
+[558 / 559] CooeeUITests-product
+[559 / 562] CooeeUITests-product
+[561 / 572]
+[562 / 572]
+[569 / 572] CooeeUITests-product
+[571 / 572] CooeeUITests-product
+[576 / 576] CooeeUITests-product
+[577 / 581] CooeeApp
+[581 / 585] CooeeApp
+[584 / 585] CooeeApp
+[588 / 588] CooeeUI-product
+Build complete! (88.25 secs)
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite HomeFeatureTests started.
+◇ Test aRefreshLoadsOnceAndClearsTheError() started.
+◇ Test homeListsPersonasChatsOnlyAndALaneFallsIntoOthersUntilAPluginClaimsIt() started.
+◇ Test homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() started.
+✔ Test homeListsPersonasChatsOnlyAndALaneFallsIntoOthersUntilAPluginClaimsIt() passed after 0.064 seconds.
+✔ Test aRefreshLoadsOnceAndClearsTheError() passed after 0.068 seconds.
+✔ Test homeReadsItsChatsEveryFewSecondsUntilTheServerForgetsThisDevice() passed after 0.076 seconds.
+✔ Suite HomeFeatureTests passed after 0.077 seconds.
+✔ Test run with 3 tests in 1 suite passed after 0.077 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite WorkflowTests started.
+◇ Test theSheetHasOneRowPerIssueNeedsYouFirstWithItsRoundsOldestFirst() started.
+◇ Test thePersonaWithAClaimingPluginHasAnEmptySheetBeforeAnyLane() started.
+◇ Test othersSplitsChatsWithNoPersonaFromEachUnclaimedSourceAndNamesNeitherByItsAgent() started.
+◇ Test aLaneNoPluginClaimsFallsIntoOthers() started.
+◇ Test homeListsOnlyPersonasChatsAndALaneGoesToThePersonaItsClaimingPluginIsAttachedTo() started.
+✔ Test thePersonaWithAClaimingPluginHasAnEmptySheetBeforeAnyLane() passed after 0.001 seconds.
+✔ Test aLaneNoPluginClaimsFallsIntoOthers() passed after 0.001 seconds.
+✔ Test othersSplitsChatsWithNoPersonaFromEachUnclaimedSourceAndNamesNeitherByItsAgent() passed after 0.001 seconds.
+✔ Test homeListsOnlyPersonasChatsAndALaneGoesToThePersonaItsClaimingPluginIsAttachedTo() passed after 0.001 seconds.
+✔ Test theSheetHasOneRowPerIssueNeedsYouFirstWithItsRoundsOldestFirst() passed after 0.001 seconds.
+✔ Suite WorkflowTests passed after 0.001 seconds.
+✔ Test run with 5 tests in 1 suite passed after 0.001 seconds.
