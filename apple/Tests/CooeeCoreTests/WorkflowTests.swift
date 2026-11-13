@@ -78,7 +78,9 @@ internal struct WorkflowTests {
     }
 
     @Test internal func othersSplitsChatsWithNoPersonaFromEachUnclaimedSourceAndNamesNeitherByItsAgent() throws {
-        let others = Listing.home(rows: rows, personas: [coder], plugins: [], now: now).others
+        let lists = Listing.home(rows: rows, personas: [coder], plugins: [], now: now)
+        let others = lists.others
+        #expect(lists.othersTitles == ["T impl", "T loose", "T nightly"])
         let sections = Workflow.others(others)
         #expect(
             sections.map(\.name) == [

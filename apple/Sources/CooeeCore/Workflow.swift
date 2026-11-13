@@ -25,6 +25,7 @@ public struct HomeLists: Sendable, Equatable {
     public var workflow: [String: [ListedChat]] = [:]
 
     public var all: [ListedChat] { chats + others + workflow.values.flatMap(\.self) }
+    public var othersTitles: [String] { others.map { $0.workflow == nil ? $0.persona.name : $0.row.title } }
 
     public init() {}
 }

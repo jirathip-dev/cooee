@@ -67,7 +67,7 @@ public struct AppRoot: View {
 
     @ViewBuilder private func content(_ home: StoreOf<HomeFeature>) -> some View {
         let lists = home.state.lists(now: Date())
-        let actions = actions(others: lists.others.map(\.row.title))
+        let actions = actions(others: lists.othersTitles)
         if size == .compact {
             NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
                 HomeView(personas: home.pinned, all: home.everyone, chats: lists.chats, actions: actions)
