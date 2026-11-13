@@ -28,6 +28,9 @@ use crate::{
 };
 
 const HEALTH: Duration = Duration::from_secs(30);
+const CHECK_EVERY: u64 = 10_000;
+const CHECK_WAIT: Duration = Duration::from_secs(2);
+const MISSES: u32 = 3;
 
 /// Where a first-party plugin is improved instead.
 pub const ISSUES: &str = "https://github.com/jirathip-dev/cooee/issues/new";
@@ -75,6 +78,9 @@ pub struct Row {
 struct Run {
     child: Option<Child>,
     commit: String,
+    module: String,
+    check: u64,
+    misses: u32,
     backoff: Backoff,
     next: u64,
     state: String,
@@ -147,7 +153,7 @@ fn note(log: &Path, line: &str) {
 
 fn stop(child: &mut Child) {
     let _ = Command::new("kill")
-        .args(["-TERM", &format!("-{}", child.id())])
+        .args(["-s", "TERM", "--", &format!("-{}", child.id())])
         .stderr(Stdio::null())
         .status();
     let _ = child.kill();
@@ -807,7 +813,7 @@ impl Manager {
         Ok(())
     }
 
-    fn spawn(&self, l: &Locked) -> io::Result<Option<Child>> {
+    fn spawn(&self, l: &Locked) -> io::Result<Option<(Child, String)>> {
         let dir = self.build_dir(&l.name, &l.commit);
         let m = Manifest::parse(&fs::read_to_string(dir.join("cooee-plugin.toml"))?)?;
         if m.attach_port().is_some_and(up) {
@@ -815,19 +821,43 @@ impl Manager {
         }
         let log = self.log(&l.name);
         note(&log, &format!("start {} on port {}", l.commit, l.port));
-        self.backend(&dir, &m, l.port, &self.token(l)?, &log)?
-            .spawn()
-            .map(Some)
+        let child = self
+            .backend(&dir, &m, l.port, &self.token(l)?, &log)?
+            .spawn()?;
+        Ok(Some((child, first_path(&m))))
+    }
+
+    fn checks(&self, installed: &[Locked], now: u64) -> Vec<(String, bool)> {
+        let due: Vec<_> = lock(&self.runs)
+            .iter()
+            .filter(|(_, r)| r.child.is_some() && now >= r.check)
+            .map(|(n, r)| (n.clone(), r.module.clone()))
+            .collect();
+        let check = |(name, module): (String, String)| {
+            let l = installed.iter().find(|l| l.name == name)?;
+            let p = Plugin {
+                name,
+                label: String::new(),
+                url: format!("http://127.0.0.1:{}", l.port),
+                module,
+                token: self.token(l).ok()?,
+            };
+            let reply = crate::plugin::call(&p, "GET", &p.module, &[], &[], Some(CHECK_WAIT));
+            Some((p.name, reply.is_ok_and(|r| r.status == 200)))
+        };
+        due.into_iter().filter_map(check).collect()
     }
 
     /// One pass of supervision at `now` (ms): stops the backends removed, turned off or switched to another build;
-    /// starts the enabled ones not running once their backoff is over; notes the ones that exited. Returns the
+    /// starts the enabled ones not running once their backoff is over; notes the ones that exited or are hung (failed
+    /// 3 health checks in a row, one every 10 s) and kills the hung ones. Returns the
     /// alerts: a plugin turned off after its 5th crash in 10 minutes.
     pub fn tick(&self, now: u64) -> Vec<String> {
         if self.stopping.load(Ordering::SeqCst) {
             return Vec::new();
         }
         let installed = self.installed().unwrap_or_default();
+        let checks = self.checks(&installed, now);
         let mut runs = lock(&self.runs);
         runs.retain(|name, run| {
             let keep = installed
@@ -843,6 +873,9 @@ impl Manager {
             let run = runs.entry(l.name.clone()).or_insert_with(|| Run {
                 child: None,
                 commit: l.commit.clone(),
+                module: String::new(),
+                check: 0,
+                misses: 0,
                 backoff: Backoff::default(),
                 next: 0,
                 state: "starting".to_owned(),
@@ -855,10 +888,23 @@ impl Manager {
                         .map_or("it exited".to_owned(), |s| s.to_string()),
                 ),
             };
+            if let Some(c) = run.child.as_mut().filter(|_| crashed.is_none())
+                && let Some(&(_, ok)) = checks.iter().find(|(n, _)| n == &l.name)
+            {
+                run.check = now + CHECK_EVERY;
+                run.misses = if ok { 0 } else { run.misses + 1 };
+                if run.misses >= MISSES {
+                    stop(c);
+                    crashed = Some(format!("hung, {MISSES} health checks in a row failed"));
+                }
+            }
             if crashed.is_none() && run.child.is_none() && now >= run.next {
                 match self.spawn(l) {
-                    Ok(Some(c)) => {
+                    Ok(Some((c, module))) => {
                         run.child = Some(c);
+                        run.module = module;
+                        run.check = now + CHECK_EVERY;
+                        run.misses = 0;
                         "running".clone_into(&mut run.state);
                     }
                     Ok(None) => "attached".clone_into(&mut run.state),
@@ -941,19 +987,20 @@ mod tests {
         assert!((0..20).all(|i| b.crash(i * 11 * MIN) == Some(1000)));
     }
 
-    #[test]
-    fn the_supervisor_restarts_a_crashing_backend_then_turns_it_off_with_an_alert() {
-        let data = std::env::temp_dir().join(format!("cooee-supervise-{}", std::process::id()));
+    fn installed(test: &str, run: &str, port: u16) -> (PathBuf, PathBuf, Arc<Manager>) {
+        let data = std::env::temp_dir().join(format!("cooee-{test}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&data);
         let build = data.join("plugins/x/builds/c0");
         fs::create_dir_all(&build).unwrap();
-        let manifest = "name = \"x\"\nversion = \"1\"\nbuild = \"true\"\nrun = \"echo ran >> runs; exit 3\"\n\
-                        [[tabs]]\nname = \"x\"\nlabel = \"X\"\nmodule = \"/tab.js\"\n";
+        let manifest = format!(
+            "name = \"x\"\nversion = \"1\"\nbuild = \"true\"\nrun = \"{run}\"\n\
+             [[tabs]]\nname = \"x\"\nlabel = \"X\"\nmodule = \"/tab.js\"\n"
+        );
         fs::write(build.join("cooee-plugin.toml"), manifest).unwrap();
         let tab = Plugin {
             name: "x".into(),
             label: "X".into(),
-            url: "http://127.0.0.1:1".into(),
+            url: format!("http://127.0.0.1:{port}"),
             module: "/tab.js".into(),
             token: "0123456789abcdef".into(),
         };
@@ -962,7 +1009,7 @@ mod tests {
             name: "x".into(),
             commit: "c0".into(),
             tabs: vec!["x".into()],
-            port: 1,
+            port,
             enabled: true,
             ..Locked::default()
         };
@@ -971,13 +1018,75 @@ mod tests {
             data: Some(data.clone()),
             ..Config::default()
         };
-        let m = Manager::new(&config).unwrap();
-        let runs = || {
-            fs::read_to_string(build.join("runs"))
-                .unwrap_or_default()
-                .lines()
-                .count()
-        };
+        (data, build, Manager::new(&config).unwrap())
+    }
+
+    fn runs(build: &Path) -> usize {
+        fs::read_to_string(build.join("runs"))
+            .unwrap_or_default()
+            .lines()
+            .count()
+    }
+
+    #[test]
+    fn the_supervisor_restarts_a_hung_backend_after_three_failed_checks() {
+        let silent = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
+        let port = silent.local_addr().unwrap().port();
+        let (data, build, m) = installed("hung", "echo ran >> runs; exec sleep 600", port);
+        m.tick(0);
+        thread::sleep(Duration::from_millis(200));
+        for at in [1, 2] {
+            m.tick(at * CHECK_EVERY);
+            assert_eq!(lock(&m.runs)["x"].state, "running");
+        }
+        m.tick(3 * CHECK_EVERY);
+        assert!(lock(&m.runs)["x"].state.contains("hung"));
+        m.tick(3 * CHECK_EVERY + 1000);
+        thread::sleep(Duration::from_millis(200));
+        assert_eq!(runs(&build), 2);
+        assert_eq!(lock(&m.runs)["x"].state, "running");
+        let log = fs::read_to_string(data.join("plugins/x/plugin.log")).unwrap();
+        assert!(
+            log.contains("the backend stopped: hung, 3 health checks in a row failed"),
+            "{log}"
+        );
+        assert_eq!(log.matches("== cooee: start c0").count(), 2, "{log}");
+        m.stop_all();
+        fs::remove_dir_all(&data).unwrap();
+    }
+
+    #[test]
+    fn the_supervisor_never_restarts_a_healthy_backend() {
+        let ok = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
+        let port = ok.local_addr().unwrap().port();
+        let served = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let count = Arc::clone(&served);
+        thread::spawn(move || {
+            for mut s in ok.incoming().flatten() {
+                let mut buf = [0; 1024];
+                let _ = std::io::Read::read(&mut s, &mut buf);
+                let _ = s.write_all(b"HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
+                count.fetch_add(1, Ordering::SeqCst);
+            }
+        });
+        let (data, build, m) = installed("healthy", "echo ran >> runs; exec sleep 600", port);
+        for at in 0..=60 {
+            m.tick(at * CHECK_EVERY);
+        }
+        thread::sleep(Duration::from_millis(200));
+        assert_eq!(served.load(Ordering::SeqCst), 60);
+        assert_eq!(runs(&build), 1);
+        assert_eq!(lock(&m.runs)["x"].state, "running");
+        let log = fs::read_to_string(data.join("plugins/x/plugin.log")).unwrap();
+        assert!(!log.contains("stopped"), "{log}");
+        m.stop_all();
+        fs::remove_dir_all(&data).unwrap();
+    }
+
+    #[test]
+    fn the_supervisor_restarts_a_crashing_backend_then_turns_it_off_with_an_alert() {
+        let (data, build, m) = installed("supervise", "echo ran >> runs; exit 3", 1);
+        let runs = || runs(&build);
         let mut at = 0;
         let mut alerts = Vec::new();
         for _ in 0..200 {
