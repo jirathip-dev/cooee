@@ -1,0 +1,10 @@
+Decided: round 5 changes no code; the FAIL was the ui chat 1,000-message long-task check, which staging fixed in #355, so this head merges origin/staging to take that fix
+Because: web/e2e/chat.spec.mjs:131
+Decided: the scan runs inside file(), so sprites.svg and scene.svg are checked wherever the gate reads them
+Because: web/src/look.rs:337
+Decided: a stdlib tag and attribute scanner, no XML crate, skipping comments
+Because: "no external or `javascript:`/`data:` references"
+Rejected: adding an XML parser dependency — a new dependency needs the owner and the scanner is enough with the CSP behind it
+Check: cargo test -p cooee --test themes passes at the head; theme check passes farm, kitchen, garden and packs/starter
+Check: four local themes failures right after the merge came from a stale cooee binary in the lane's target dir; 55 runs after a full rebuild all passed
+Owner: A theme pack can no longer carry scripts or outside links in its pictures, and its pictures are served so they cannot run code.
