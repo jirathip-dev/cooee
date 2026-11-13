@@ -24,6 +24,7 @@
             XCTAssert(back.waitForExistence(timeout: 10))
             XCTAssert(
                 labelled(app, "herdsman-impl-641").exists && labelled(app, "Claude Code · opus 5.5 · mini").exists)
+            XCTAssert(labelled(app, "An ambiguous label now refuses").waitForExistence(timeout: 10))
             keep("lane-tapped")
             back.tap()
             XCTAssert(back.waitForNonExistence(timeout: 10))
