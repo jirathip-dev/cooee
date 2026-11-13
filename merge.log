@@ -1,0 +1,629 @@
+Merge made by the 'ort' strategy.
+ .github/workflows/apple.yml                        |   8 +-
+ .herdsman/verify.md                                |  95 +++++
+ Cargo.lock                                         |   2 +-
+ Cargo.toml                                         |   2 +-
+ README.md                                          | 116 ++---
+ apple/Cooee.xcodeproj/project.pbxproj              |   2 +
+ .../AppIcon.appiconset/Contents.json               |   3 +-
+ .../AppIcon.appiconset/icon-1024.png               | Bin 40712 -> 0 bytes
+ .../AppIcon.appiconset/modern-laughing.png         | Bin 0 -> 64938 bytes
+ .../BushEmu.appiconset/Contents.json               |   2 +
+ .../BushEmu.appiconset/bush-emu.png                | Bin 0 -> 41467 bytes
+ .../BushEmuPreview.imageset/Contents.json          |   2 +
+ .../BushEmuPreview.imageset/bush-emu.png           | Bin 0 -> 41467 bytes
+ .../BushKoala.appiconset/Contents.json             |   2 +
+ .../BushKoala.appiconset/bush-koala.png            | Bin 0 -> 47840 bytes
+ .../BushKoalaPreview.imageset/Contents.json        |   2 +
+ .../BushKoalaPreview.imageset/bush-koala.png       | Bin 0 -> 47840 bytes
+ .../BushRoo.appiconset/Contents.json               |   2 +
+ .../BushRoo.appiconset/bush-roo.png                | Bin 0 -> 44451 bytes
+ .../BushRooPreview.imageset/Contents.json          |   2 +
+ .../BushRooPreview.imageset/bush-roo.png           | Bin 0 -> 44451 bytes
+ .../BushWombat.appiconset/Contents.json            |   2 +
+ .../BushWombat.appiconset/bush-wombat.png          | Bin 0 -> 37311 bytes
+ .../BushWombatPreview.imageset/Contents.json       |   2 +
+ .../BushWombatPreview.imageset/bush-wombat.png     | Bin 0 -> 37311 bytes
+ .../FarmBay.appiconset/Contents.json               |   2 +
+ .../FarmBay.appiconset/farm-bay.png                | Bin 0 -> 43517 bytes
+ .../FarmBayPreview.imageset/Contents.json          |   2 +
+ .../FarmBayPreview.imageset/farm-bay.png           | Bin 0 -> 43517 bytes
+ .../FarmBlack.appiconset/Contents.json             |   2 +
+ .../FarmBlack.appiconset/farm-black.png            | Bin 0 -> 37476 bytes
+ .../FarmBlackPreview.imageset/Contents.json        |   2 +
+ .../FarmBlackPreview.imageset/farm-black.png       | Bin 0 -> 37476 bytes
+ .../FarmGrey.appiconset/Contents.json              |   2 +
+ .../FarmGrey.appiconset/farm-grey.png              | Bin 0 -> 52013 bytes
+ .../FarmGreyPreview.imageset/Contents.json         |   2 +
+ .../FarmGreyPreview.imageset/farm-grey.png         | Bin 0 -> 52013 bytes
+ .../FarmPalomino.appiconset/Contents.json          |   2 +
+ .../FarmPalomino.appiconset/farm-palomino.png      | Bin 0 -> 57004 bytes
+ .../FarmPalominoPreview.imageset/Contents.json     |   2 +
+ .../FarmPalominoPreview.imageset/farm-palomino.png | Bin 0 -> 57004 bytes
+ .../GardenCactus.appiconset/Contents.json          |   2 +
+ .../GardenCactus.appiconset/garden-cactus.png      | Bin 0 -> 18639 bytes
+ .../GardenCactusPreview.imageset/Contents.json     |   2 +
+ .../GardenCactusPreview.imageset/garden-cactus.png | Bin 0 -> 18639 bytes
+ .../GardenMonstera.appiconset/Contents.json        |   2 +
+ .../GardenMonstera.appiconset/garden-monstera.png  | Bin 0 -> 58723 bytes
+ .../GardenMonsteraPreview.imageset/Contents.json   |   2 +
+ .../garden-monstera.png                            | Bin 0 -> 58723 bytes
+ .../GardenSunflower.appiconset/Contents.json       |   2 +
+ .../garden-sunflower.png                           | Bin 0 -> 62328 bytes
+ .../GardenSunflowerPreview.imageset/Contents.json  |   2 +
+ .../garden-sunflower.png                           | Bin 0 -> 62328 bytes
+ .../GardenTulips.appiconset/Contents.json          |   2 +
+ .../GardenTulips.appiconset/garden-tulips.png      | Bin 0 -> 39128 bytes
+ .../GardenTulipsPreview.imageset/Contents.json     |   2 +
+ .../GardenTulipsPreview.imageset/garden-tulips.png | Bin 0 -> 39128 bytes
+ .../KitchenHeadChef.appiconset/Contents.json       |   2 +
+ .../kitchen-head-chef.png                          | Bin 0 -> 41355 bytes
+ .../KitchenHeadChefPreview.imageset/Contents.json  |   2 +
+ .../kitchen-head-chef.png                          | Bin 0 -> 41355 bytes
+ .../KitchenLineCook.appiconset/Contents.json       |   2 +
+ .../kitchen-line-cook.png                          | Bin 0 -> 37823 bytes
+ .../KitchenLineCookPreview.imageset/Contents.json  |   2 +
+ .../kitchen-line-cook.png                          | Bin 0 -> 37823 bytes
+ .../KitchenPastryChef.appiconset/Contents.json     |   2 +
+ .../kitchen-pastry.png                             | Bin 0 -> 55155 bytes
+ .../Contents.json                                  |   2 +
+ .../kitchen-pastry.png                             | Bin 0 -> 55155 bytes
+ .../KitchenSousChef.appiconset/Contents.json       |   2 +
+ .../KitchenSousChef.appiconset/kitchen-sous.png    | Bin 0 -> 43504 bytes
+ .../KitchenSousChefPreview.imageset/Contents.json  |   2 +
+ .../kitchen-sous.png                               | Bin 0 -> 43504 bytes
+ .../ModernLaughingPreview.imageset/Contents.json   |   2 +
+ .../modern-laughing.png                            | Bin 0 -> 64938 bytes
+ .../ModernPerched.appiconset/Contents.json         |   2 +
+ .../ModernPerched.appiconset/modern-perched.png    | Bin 0 -> 58429 bytes
+ .../ModernPerchedPreview.imageset/Contents.json    |   2 +
+ .../modern-perched.png                             | Bin 0 -> 58429 bytes
+ .../ModernSideGlance.appiconset/Contents.json      |   2 +
+ .../ModernSideGlance.appiconset/modern-glance.png  | Bin 0 -> 55572 bytes
+ .../ModernSideGlancePreview.imageset/Contents.json |   2 +
+ .../modern-glance.png                              | Bin 0 -> 55572 bytes
+ .../ModernWingsOut.appiconset/Contents.json        |   2 +
+ .../ModernWingsOut.appiconset/modern-wings.png     | Bin 0 -> 58256 bytes
+ .../ModernWingsOutPreview.imageset/Contents.json   |   2 +
+ .../modern-wings.png                               | Bin 0 -> 58256 bytes
+ .../TerminalChevron.appiconset/Contents.json       |   2 +
+ .../terminal-chevron.png                           | Bin 0 -> 20625 bytes
+ .../TerminalChevronPreview.imageset/Contents.json  |   2 +
+ .../terminal-chevron.png                           | Bin 0 -> 20625 bytes
+ .../TerminalDollar.appiconset/Contents.json        |   2 +
+ .../TerminalDollar.appiconset/terminal-dollar.png  | Bin 0 -> 31526 bytes
+ .../TerminalDollarPreview.imageset/Contents.json   |   2 +
+ .../terminal-dollar.png                            | Bin 0 -> 31526 bytes
+ .../TerminalLambda.appiconset/Contents.json        |   2 +
+ .../TerminalLambda.appiconset/terminal-lambda.png  | Bin 0 -> 30342 bytes
+ .../TerminalLambdaPreview.imageset/Contents.json   |   2 +
+ .../terminal-lambda.png                            | Bin 0 -> 30342 bytes
+ .../TerminalPrompt.appiconset/Contents.json        |   2 +
+ .../TerminalPrompt.appiconset/terminal-prompt.png  | Bin 0 -> 19867 bytes
+ .../TerminalPromptPreview.imageset/Contents.json   |   2 +
+ .../terminal-prompt.png                            | Bin 0 -> 19867 bytes
+ apple/Package.swift                                |   3 +-
+ apple/Sources/CooeeAPI/Endpoints.swift             |  36 ++
+ apple/Sources/CooeeAPI/Events.swift                |  10 +
+ apple/Sources/CooeeApp/Live.swift                  |  23 +-
+ apple/Sources/CooeeCore/AppIcon.swift              |  35 ++
+ apple/Sources/CooeeCore/Item.swift                 |  34 +-
+ apple/Sources/CooeeCore/Listing.swift              |   7 +-
+ apple/Sources/CooeeCore/Models.swift               |  41 +-
+ apple/Sources/CooeeCore/Persona.swift              |   4 +-
+ apple/Sources/CooeeCore/PersonaNote.swift          |  17 +
+ apple/Sources/CooeeCore/Room.swift                 | 122 ++++++
+ apple/Sources/CooeeCore/Settings.swift             |   3 +
+ apple/Sources/CooeeFeatures/AppFeature.swift       |  24 +-
+ apple/Sources/CooeeFeatures/ChatFeature.swift      |  19 +-
+ apple/Sources/CooeeFeatures/ChatRoom.swift         |  68 +++
+ apple/Sources/CooeeFeatures/Clients.swift          |  18 +
+ apple/Sources/CooeeFeatures/MenuFeature.swift      |  23 +-
+ apple/Sources/CooeeFeatures/NewRoomFeature.swift   |  76 ++++
+ apple/Sources/CooeeUI/AppIconPicker.swift          |  81 ++++
+ apple/Sources/CooeeUI/BlockLeaves.swift            |   2 +-
+ apple/Sources/CooeeUI/Chat.swift                   |   2 +-
+ apple/Sources/CooeeUI/Composer.swift               |  11 +-
+ apple/Sources/CooeeUI/Copyable.swift               |  59 +++
+ apple/Sources/CooeeUI/FixtureRooms.swift           | 115 +++++
+ apple/Sources/CooeeUI/Fixtures.swift               |  13 +-
+ apple/Sources/CooeeUI/Fixtures/PanelFixtures.swift |  52 +++
+ apple/Sources/CooeeUI/Home.swift                   |   6 +-
+ apple/Sources/CooeeUI/HomeRows.swift               |  13 +-
+ apple/Sources/CooeeUI/Items.swift                  |  78 +++-
+ apple/Sources/CooeeUI/Menu.swift                   |  31 +-
+ apple/Sources/CooeeUI/NewRoom.swift                | 133 ++++++
+ apple/Sources/CooeeUI/PairingParts.swift           |   2 +-
+ apple/Sources/CooeeUI/PanelContent.swift           |  30 ++
+ apple/Sources/CooeeUI/PanelScreen.swift            |  57 +++
+ apple/Sources/CooeeUI/PanelSections.swift          | 130 ++++++
+ apple/Sources/CooeeUI/PersonaPanel.swift           |  94 ++++
+ apple/Sources/CooeeUI/RoomMembers.swift            | 177 ++++++++
+ apple/Sources/CooeeUI/RoomParts.swift              | 165 +++++++
+ apple/Sources/CooeeUI/RoomScreens.swift            |  80 ++++
+ apple/Sources/CooeeUI/RoomStrip.swift              |  72 ++++
+ apple/Sources/CooeeUI/RoomView.swift               | 140 ++++++
+ apple/Sources/CooeeUI/Root.swift                   |  19 +-
+ apple/Sources/CooeeUI/Sheets.swift                 |  74 ++--
+ apple/Sources/CooeeUI/SwipeBack.swift              |  42 ++
+ apple/Tests/CooeeAPITests/RoomClientTests.swift    |  59 +++
+ apple/Tests/CooeeCoreTests/AppIconTests.swift      |  55 +++
+ apple/Tests/CooeeCoreTests/ItemsTests.swift        |   9 +
+ apple/Tests/CooeeCoreTests/RoomTests.swift         |  81 ++++
+ .../CooeeFeaturesTests/MenuFeatureTests.swift      |  26 +-
+ .../CooeeFeaturesTests/RoomFeatureTests.swift      | 144 +++++++
+ apple/Tests/CooeeUITests/BlockRenderTests.swift    |  10 +
+ apple/Tests/CooeeUITests/Frames.swift              |  26 ++
+ apple/Tests/CooeeUITests/MenuRenderTests.swift     |  33 ++
+ apple/Tests/CooeeUITests/SnapshotTests.swift       |   8 +-
+ apple/UITests/LiveIconUITests.swift                |  47 ++
+ apple/UITests/LiveUITests.swift                    |  52 ++-
+ apple/design/persona-panel/README.md               |  52 +++
+ apple/design/persona-panel/mac-panel-dark.png      | Bin 0 -> 866834 bytes
+ apple/design/persona-panel/mac-panel-light.png     | Bin 0 -> 1050989 bytes
+ apple/design/persona-panel/panel-dark.png          | Bin 0 -> 166337 bytes
+ apple/design/persona-panel/panel-empty-dark.png    | Bin 0 -> 79311 bytes
+ apple/design/persona-panel/panel-end-dark.png      | Bin 0 -> 182888 bytes
+ apple/design/persona-panel/panel-light.png         | Bin 0 -> 177965 bytes
+ apple/design/persona-panel/panel-scene-light.png   | Bin 0 -> 163382 bytes
+ apple/design/persona-panel/panel-terminal-dark.png | Bin 0 -> 150040 bytes
+ apple/design/persona-panel/render.swift.txt        |  52 +++
+ apple/design/v1/README.md                          |  11 +
+ apple/design/v1/mac-persona-panel-dark.png         | Bin 0 -> 118551 bytes
+ apple/design/v1/persona-panel-dark.png             | Bin 0 -> 166913 bytes
+ apple/design/v1/persona-panel-empty-dark.png       | Bin 0 -> 76727 bytes
+ apple/design/v1/persona-panel-end-dark.png         | Bin 0 -> 182766 bytes
+ apple/design/v1/persona-panel-light.png            | Bin 0 -> 174967 bytes
+ apple/design/v1/persona-panel-scene-light.png      | Bin 0 -> 165517 bytes
+ apple/design/v1/persona-panel-terminal-dark.png    | Bin 0 -> 149491 bytes
+ apple/design/v1/room-create-dark.png               | Bin 0 -> 161611 bytes
+ apple/design/v1/room-create-light.png              | Bin 0 -> 161128 bytes
+ apple/design/v1/room-dark.png                      | Bin 0 -> 471844 bytes
+ apple/design/v1/room-home-dark.png                 | Bin 0 -> 438738 bytes
+ apple/design/v1/room-light.png                     | Bin 0 -> 614399 bytes
+ apple/design/v1/room-member-dark.png               | Bin 0 -> 221768 bytes
+ apple/design/v1/room-scene-light.png               | Bin 0 -> 353347 bytes
+ apple/design/v1/room-terminal-dark.png             | Bin 0 -> 215181 bytes
+ apple/design/v1/room-terminal-wide.png             | Bin 0 -> 434138 bytes
+ apple/design/v1/room-wide-dark.png                 | Bin 0 -> 796938 bytes
+ ci/cap.toml                                        |   2 +-
+ crates/cooee-core/src/chat.rs                      |  21 +-
+ crates/cooee-core/src/devices.rs                   |  88 +++-
+ crates/cooee-core/src/history.rs                   |   1 +
+ crates/cooee-core/src/lib.rs                       |   1 +
+ crates/cooee-core/src/personas.rs                  |   2 +-
+ crates/cooee-core/src/plugins.rs                   |  53 ++-
+ crates/cooee-core/src/routines.rs                  | 473 +++++++++++++++++++++
+ crates/cooee-core/src/routines/cron.rs             | 240 +++++++++++
+ crates/cooee-core/src/shed.rs                      |  91 +++-
+ crates/cooee-core/src/store.rs                     |   6 +
+ crates/cooee-machines/src/html.rs                  |   3 +-
+ crates/cooee-machines/src/lib.rs                   |   2 +-
+ crates/cooee-server/src/hub.rs                     | 441 ++++++++++++++-----
+ crates/cooee-server/src/hub/rooms.rs               |  35 +-
+ crates/cooee-server/src/lib.rs                     |  96 +++--
+ crates/cooee-server/src/login.rs                   |  67 ++-
+ crates/cooee-server/src/manage.rs                  |  50 ++-
+ crates/cooee-server/src/mcp.rs                     |  16 +-
+ crates/cooee-server/src/push.rs                    |   4 +-
+ crates/cooee-server/src/routines.rs                | 331 ++++++++++++++
+ crates/cooee-terminal/src/lib.rs                   |   3 +
+ crates/cooee/src/check.rs                          |  25 +-
+ crates/cooee/src/machine.rs                        | 235 ++++++++++
+ crates/cooee/src/main.rs                           |  17 +-
+ crates/cooee/tests/chat.rs                         |  38 +-
+ crates/cooee/tests/instances.rs                    |   4 +-
+ crates/cooee/tests/login.rs                        |  34 ++
+ crates/cooee/tests/machine_check.rs                | 262 ++++++++++++
+ crates/cooee/tests/mcp.rs                          |   1 +
+ crates/cooee/tests/personas.rs                     |  30 +-
+ crates/cooee/tests/plugin_manager.rs               |  69 +++
+ crates/cooee/tests/plugins.rs                      |  81 +++-
+ crates/cooee/tests/remote.rs                       | 210 +++++++++
+ crates/cooee/tests/rooms.rs                        |  18 +
+ crates/cooee/tests/routines.rs                     | 272 ++++++++++++
+ crates/cooee/tests/setup.rs                        |   4 +-
+ crates/cooee/tests/support/mod.rs                  |  76 +++-
+ docs/api.md                                        |  21 +-
+ docs/architecture.md                               |  36 +-
+ docs/architecture/routines/adr.md                  | 112 +++++
+ docs/architecture/routines/boundaries.md           |  90 ++++
+ docs/architecture/routines/callers.md              | 135 ++++++
+ docs/architecture/routines/shapes.md               | 179 ++++++++
+ docs/cap-history/2026-11-11-223.md                 |  12 +
+ docs/design/app-icons/README.md                    |  74 ++++
+ docs/design/app-icons/ai.css                       |  70 +++
+ docs/design/app-icons/ai.js                        |  59 +++
+ docs/design/app-icons/art.mjs                      | 207 +++++++++
+ docs/design/app-icons/farm.py                      |  34 ++
+ docs/design/app-icons/icons-1440.png               | Bin 0 -> 422371 bytes
+ docs/design/app-icons/icons-390.png                | Bin 0 -> 907951 bytes
+ docs/design/app-icons/icons.html                   |  11 +
+ docs/design/app-icons/icons/bush-emu.svg           |  15 +
+ docs/design/app-icons/icons/bush-koala.svg         |  13 +
+ docs/design/app-icons/icons/bush-roo.svg           |  12 +
+ docs/design/app-icons/icons/bush-wombat.svg        |  10 +
+ docs/design/app-icons/icons/farm-bay.png           | Bin 0 -> 43517 bytes
+ docs/design/app-icons/icons/farm-black.png         | Bin 0 -> 37476 bytes
+ docs/design/app-icons/icons/farm-grey.png          | Bin 0 -> 52013 bytes
+ docs/design/app-icons/icons/farm-palomino.png      | Bin 0 -> 57004 bytes
+ docs/design/app-icons/icons/garden-cactus.svg      |   8 +
+ docs/design/app-icons/icons/garden-monstera.svg    |   7 +
+ docs/design/app-icons/icons/garden-sunflower.svg   |   6 +
+ docs/design/app-icons/icons/garden-tulips.svg      |   5 +
+ docs/design/app-icons/icons/kitchen-head-chef.svg  |  13 +
+ docs/design/app-icons/icons/kitchen-line-cook.svg  |  13 +
+ docs/design/app-icons/icons/kitchen-pastry.svg     |  13 +
+ docs/design/app-icons/icons/kitchen-sous.svg       |  14 +
+ docs/design/app-icons/icons/modern-glance.svg      |  18 +
+ docs/design/app-icons/icons/modern-laughing.svg    |  19 +
+ docs/design/app-icons/icons/modern-perched.svg     |  20 +
+ docs/design/app-icons/icons/modern-wings.svg       |  23 +
+ docs/design/app-icons/icons/terminal-chevron.svg   |   4 +
+ docs/design/app-icons/icons/terminal-dollar.svg    |   4 +
+ docs/design/app-icons/icons/terminal-lambda.svg    |   4 +
+ docs/design/app-icons/icons/terminal-prompt.svg    |   4 +
+ docs/design/app-icons/look-390-dark.png            | Bin 0 -> 319473 bytes
+ docs/design/app-icons/look-390-light.png           | Bin 0 -> 373332 bytes
+ docs/design/app-icons/picked-390-dark.png          | Bin 0 -> 438472 bytes
+ docs/design/app-icons/picked-390-light.png         | Bin 0 -> 482086 bytes
+ docs/design/app-icons/picker-1440.png              | Bin 0 -> 463631 bytes
+ docs/design/app-icons/picker-390-dark.png          | Bin 0 -> 436938 bytes
+ docs/design/app-icons/picker-390-light.png         | Bin 0 -> 480089 bytes
+ docs/design/app-icons/picker.html                  |  11 +
+ docs/design/app-icons/shoot.mjs                    |  81 ++++
+ docs/design/native-shell/README.md                 |   2 +-
+ docs/design/persona-text/README.md                 |  84 ++++
+ docs/design/persona-text/about-1440.png            | Bin 0 -> 162421 bytes
+ docs/design/persona-text/about-390-dark.png        | Bin 0 -> 153961 bytes
+ docs/design/persona-text/about-390-light.png       | Bin 0 -> 155885 bytes
+ docs/design/persona-text/about-scene-390-light.png | Bin 0 -> 155066 bytes
+ .../persona-text/about-terminal-390-dark.png       | Bin 0 -> 120571 bytes
+ docs/design/persona-text/approval-390-dark.png     | Bin 0 -> 110552 bytes
+ docs/design/persona-text/approval-390-light.png    | Bin 0 -> 111026 bytes
+ .../persona-text/approval-terminal-390-dark.png    | Bin 0 -> 88535 bytes
+ docs/design/persona-text/edit-1440.png             | Bin 0 -> 135875 bytes
+ docs/design/persona-text/edit-390-dark.png         | Bin 0 -> 125108 bytes
+ docs/design/persona-text/edit-390-light.png        | Bin 0 -> 127131 bytes
+ .../design/persona-text/edit-terminal-390-dark.png | Bin 0 -> 120916 bytes
+ docs/design/persona-text/form-390-dark.png         | Bin 0 -> 78497 bytes
+ docs/design/persona-text/form-390-light.png        | Bin 0 -> 78521 bytes
+ docs/design/persona-text/memory-390-dark.png       | Bin 0 -> 123845 bytes
+ docs/design/persona-text/memory-390-light.png      | Bin 0 -> 124264 bytes
+ docs/design/persona-text/panel.html                |  70 +++
+ docs/design/persona-text/pt.css                    | 174 ++++++++
+ docs/design/persona-text/pt.js                     | 154 +++++++
+ docs/design/persona-text/read-390-dark.png         | Bin 0 -> 131303 bytes
+ docs/design/persona-text/read-390-light.png        | Bin 0 -> 131887 bytes
+ docs/design/persona-text/read-scene-390-light.png  | Bin 0 -> 131887 bytes
+ .../design/persona-text/read-terminal-390-dark.png | Bin 0 -> 126489 bytes
+ docs/design/persona-text/reader.html               |  76 ++++
+ docs/design/persona-text/refine-390-dark.png       | Bin 0 -> 96671 bytes
+ docs/design/persona-text/refine-390-light.png      | Bin 0 -> 97697 bytes
+ docs/design/persona-text/setup-1440.png            | Bin 0 -> 174518 bytes
+ docs/design/persona-text/setup-390-dark.png        | Bin 0 -> 110320 bytes
+ docs/design/persona-text/setup-390-light.png       | Bin 0 -> 111138 bytes
+ docs/design/persona-text/setup-scene-390-light.png | Bin 0 -> 111138 bytes
+ .../persona-text/setup-terminal-390-dark.png       | Bin 0 -> 89746 bytes
+ docs/design/persona-text/setup.html                |  96 +++++
+ docs/design/persona-text/shoot.mjs                 |  92 ++++
+ docs/design/persona-text/skills-390-dark.png       | Bin 0 -> 67842 bytes
+ docs/design/persona-text/skills-390-light.png      | Bin 0 -> 67865 bytes
+ docs/design/screen/README.md                       | 123 ++++++
+ docs/design/screen/activity-390-dark.png           | Bin 0 -> 83122 bytes
+ docs/design/screen/activity-scene-390-light.png    | Bin 0 -> 83388 bytes
+ docs/design/screen/block-390-dark.png              | Bin 0 -> 192248 bytes
+ docs/design/screen/block-390-light.png             | Bin 0 -> 189204 bytes
+ docs/design/screen/block-scene-390-light.png       | Bin 0 -> 188467 bytes
+ docs/design/screen/block-terminal-390-dark.png     | Bin 0 -> 159218 bytes
+ docs/design/screen/chat-1440.png                   | Bin 0 -> 162613 bytes
+ docs/design/screen/chat.html                       | 118 +++++
+ docs/design/screen/control-390-dark.png            | Bin 0 -> 135476 bytes
+ docs/design/screen/control-390-light.png           | Bin 0 -> 135325 bytes
+ docs/design/screen/control-terminal-390-dark.png   | Bin 0 -> 111504 bytes
+ docs/design/screen/island-390-light.png            | Bin 0 -> 65820 bytes
+ docs/design/screen/live-390-dark.png               | Bin 0 -> 161821 bytes
+ docs/design/screen/live-390-light.png              | Bin 0 -> 162489 bytes
+ docs/design/screen/live-scene-390-light.png        | Bin 0 -> 163772 bytes
+ docs/design/screen/live-terminal-390-dark.png      | Bin 0 -> 144644 bytes
+ docs/design/screen/replay-390-dark.png             | Bin 0 -> 145478 bytes
+ docs/design/screen/sc.css                          | 195 +++++++++
+ docs/design/screen/sc.js                           |  71 ++++
+ docs/design/screen/screen-1440.png                 | Bin 0 -> 204927 bytes
+ docs/design/screen/screen-terminal-1440.png        | Bin 0 -> 178403 bytes
+ docs/design/screen/screen.html                     | 114 +++++
+ docs/design/screen/secret-390-dark.png             | Bin 0 -> 110303 bytes
+ docs/design/screen/secret-390-light.png            | Bin 0 -> 111466 bytes
+ docs/design/screen/shoot.mjs                       |  91 ++++
+ docs/design/screen/site-390-dark.png               | Bin 0 -> 92184 bytes
+ docs/design/screen/sites-1440.png                  | Bin 0 -> 86517 bytes
+ docs/design/screen/sites-390-dark.png              | Bin 0 -> 119796 bytes
+ docs/design/screen/sites-390-light.png             | Bin 0 -> 120447 bytes
+ docs/design/screen/sites-terminal-390-dark.png     | Bin 0 -> 94441 bytes
+ docs/design/screen/sites.html                      |  90 ++++
+ docs/design/screen/styles.html                     |  26 ++
+ docs/design/screens-as-data/README.md              |   8 +-
+ docs/live-v1.md                                    |   4 +-
+ docs/plugins.md                                    |  21 +-
+ plugins/index.toml                                 |   8 +-
+ web/e2e/look.spec.mjs                              |  17 +-
+ web/e2e/serve.sh                                   |   6 +-
+ web/src/agents.rs                                  |  11 +
+ web/src/app.css                                    |   2 +
+ web/src/lib.rs                                     |   2 +
+ web/src/routines.rs                                | 120 ++++++
+ web/src/sheet.rs                                   |   5 +
+ web/ts/chat.ts                                     |  12 +-
+ 355 files changed, 9337 insertions(+), 442 deletions(-)
+ delete mode 100644 apple/Cooee/Assets.xcassets/AppIcon.appiconset/icon-1024.png
+ create mode 100644 apple/Cooee/Assets.xcassets/AppIcon.appiconset/modern-laughing.png
+ create mode 100644 apple/Cooee/Assets.xcassets/BushEmu.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/BushEmu.appiconset/bush-emu.png
+ create mode 100644 apple/Cooee/Assets.xcassets/BushEmuPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/BushEmuPreview.imageset/bush-emu.png
+ create mode 100644 apple/Cooee/Assets.xcassets/BushKoala.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/BushKoala.appiconset/bush-koala.png
+ create mode 100644 apple/Cooee/Assets.xcassets/BushKoalaPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/BushKoalaPreview.imageset/bush-koala.png
+ create mode 100644 apple/Cooee/Assets.xcassets/BushRoo.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/BushRoo.appiconset/bush-roo.png
+ create mode 100644 apple/Cooee/Assets.xcassets/BushRooPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/BushRooPreview.imageset/bush-roo.png
+ create mode 100644 apple/Cooee/Assets.xcassets/BushWombat.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/BushWombat.appiconset/bush-wombat.png
+ create mode 100644 apple/Cooee/Assets.xcassets/BushWombatPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/BushWombatPreview.imageset/bush-wombat.png
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmBay.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmBay.appiconset/farm-bay.png
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmBayPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmBayPreview.imageset/farm-bay.png
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmBlack.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmBlack.appiconset/farm-black.png
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmBlackPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmBlackPreview.imageset/farm-black.png
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmGrey.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmGrey.appiconset/farm-grey.png
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmGreyPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmGreyPreview.imageset/farm-grey.png
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmPalomino.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmPalomino.appiconset/farm-palomino.png
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmPalominoPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/FarmPalominoPreview.imageset/farm-palomino.png
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenCactus.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenCactus.appiconset/garden-cactus.png
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenCactusPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenCactusPreview.imageset/garden-cactus.png
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenMonstera.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenMonstera.appiconset/garden-monstera.png
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenMonsteraPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenMonsteraPreview.imageset/garden-monstera.png
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenSunflower.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenSunflower.appiconset/garden-sunflower.png
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenSunflowerPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenSunflowerPreview.imageset/garden-sunflower.png
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenTulips.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenTulips.appiconset/garden-tulips.png
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenTulipsPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/GardenTulipsPreview.imageset/garden-tulips.png
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenHeadChef.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenHeadChef.appiconset/kitchen-head-chef.png
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenHeadChefPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenHeadChefPreview.imageset/kitchen-head-chef.png
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenLineCook.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenLineCook.appiconset/kitchen-line-cook.png
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenLineCookPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenLineCookPreview.imageset/kitchen-line-cook.png
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenPastryChef.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenPastryChef.appiconset/kitchen-pastry.png
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenPastryChefPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenPastryChefPreview.imageset/kitchen-pastry.png
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenSousChef.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenSousChef.appiconset/kitchen-sous.png
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenSousChefPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/KitchenSousChefPreview.imageset/kitchen-sous.png
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernLaughingPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernLaughingPreview.imageset/modern-laughing.png
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernPerched.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernPerched.appiconset/modern-perched.png
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernPerchedPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernPerchedPreview.imageset/modern-perched.png
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernSideGlance.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernSideGlance.appiconset/modern-glance.png
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernSideGlancePreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernSideGlancePreview.imageset/modern-glance.png
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernWingsOut.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernWingsOut.appiconset/modern-wings.png
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernWingsOutPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/ModernWingsOutPreview.imageset/modern-wings.png
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalChevron.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalChevron.appiconset/terminal-chevron.png
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalChevronPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalChevronPreview.imageset/terminal-chevron.png
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalDollar.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalDollar.appiconset/terminal-dollar.png
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalDollarPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalDollarPreview.imageset/terminal-dollar.png
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalLambda.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalLambda.appiconset/terminal-lambda.png
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalLambdaPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalLambdaPreview.imageset/terminal-lambda.png
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalPrompt.appiconset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalPrompt.appiconset/terminal-prompt.png
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalPromptPreview.imageset/Contents.json
+ create mode 100644 apple/Cooee/Assets.xcassets/TerminalPromptPreview.imageset/terminal-prompt.png
+ create mode 100644 apple/Sources/CooeeCore/AppIcon.swift
+ create mode 100644 apple/Sources/CooeeCore/PersonaNote.swift
+ create mode 100644 apple/Sources/CooeeCore/Room.swift
+ create mode 100644 apple/Sources/CooeeFeatures/ChatRoom.swift
+ create mode 100644 apple/Sources/CooeeFeatures/NewRoomFeature.swift
+ create mode 100644 apple/Sources/CooeeUI/AppIconPicker.swift
+ create mode 100644 apple/Sources/CooeeUI/Copyable.swift
+ create mode 100644 apple/Sources/CooeeUI/FixtureRooms.swift
+ create mode 100644 apple/Sources/CooeeUI/Fixtures/PanelFixtures.swift
+ create mode 100644 apple/Sources/CooeeUI/NewRoom.swift
+ create mode 100644 apple/Sources/CooeeUI/PanelContent.swift
+ create mode 100644 apple/Sources/CooeeUI/PanelScreen.swift
+ create mode 100644 apple/Sources/CooeeUI/PanelSections.swift
+ create mode 100644 apple/Sources/CooeeUI/PersonaPanel.swift
+ create mode 100644 apple/Sources/CooeeUI/RoomMembers.swift
+ create mode 100644 apple/Sources/CooeeUI/RoomParts.swift
+ create mode 100644 apple/Sources/CooeeUI/RoomScreens.swift
+ create mode 100644 apple/Sources/CooeeUI/RoomStrip.swift
+ create mode 100644 apple/Sources/CooeeUI/RoomView.swift
+ create mode 100644 apple/Sources/CooeeUI/SwipeBack.swift
+ create mode 100644 apple/Tests/CooeeAPITests/RoomClientTests.swift
+ create mode 100644 apple/Tests/CooeeCoreTests/AppIconTests.swift
+ create mode 100644 apple/Tests/CooeeCoreTests/RoomTests.swift
+ create mode 100644 apple/Tests/CooeeFeaturesTests/RoomFeatureTests.swift
+ create mode 100644 apple/Tests/CooeeUITests/MenuRenderTests.swift
+ create mode 100644 apple/UITests/LiveIconUITests.swift
+ create mode 100644 apple/design/persona-panel/README.md
+ create mode 100644 apple/design/persona-panel/mac-panel-dark.png
+ create mode 100644 apple/design/persona-panel/mac-panel-light.png
+ create mode 100644 apple/design/persona-panel/panel-dark.png
+ create mode 100644 apple/design/persona-panel/panel-empty-dark.png
+ create mode 100644 apple/design/persona-panel/panel-end-dark.png
+ create mode 100644 apple/design/persona-panel/panel-light.png
+ create mode 100644 apple/design/persona-panel/panel-scene-light.png
+ create mode 100644 apple/design/persona-panel/panel-terminal-dark.png
+ create mode 100644 apple/design/persona-panel/render.swift.txt
+ create mode 100644 apple/design/v1/mac-persona-panel-dark.png
+ create mode 100644 apple/design/v1/persona-panel-dark.png
+ create mode 100644 apple/design/v1/persona-panel-empty-dark.png
+ create mode 100644 apple/design/v1/persona-panel-end-dark.png
+ create mode 100644 apple/design/v1/persona-panel-light.png
+ create mode 100644 apple/design/v1/persona-panel-scene-light.png
+ create mode 100644 apple/design/v1/persona-panel-terminal-dark.png
+ create mode 100644 apple/design/v1/room-create-dark.png
+ create mode 100644 apple/design/v1/room-create-light.png
+ create mode 100644 apple/design/v1/room-dark.png
+ create mode 100644 apple/design/v1/room-home-dark.png
+ create mode 100644 apple/design/v1/room-light.png
+ create mode 100644 apple/design/v1/room-member-dark.png
+ create mode 100644 apple/design/v1/room-scene-light.png
+ create mode 100644 apple/design/v1/room-terminal-dark.png
+ create mode 100644 apple/design/v1/room-terminal-wide.png
+ create mode 100644 apple/design/v1/room-wide-dark.png
+ create mode 100644 crates/cooee-core/src/routines.rs
+ create mode 100644 crates/cooee-core/src/routines/cron.rs
+ create mode 100644 crates/cooee-server/src/routines.rs
+ create mode 100644 crates/cooee/src/machine.rs
+ create mode 100644 crates/cooee/tests/machine_check.rs
+ create mode 100644 crates/cooee/tests/remote.rs
+ create mode 100644 crates/cooee/tests/routines.rs
+ create mode 100644 docs/architecture/routines/adr.md
+ create mode 100644 docs/architecture/routines/boundaries.md
+ create mode 100644 docs/architecture/routines/callers.md
+ create mode 100644 docs/architecture/routines/shapes.md
+ create mode 100644 docs/cap-history/2026-11-11-223.md
+ create mode 100644 docs/design/app-icons/README.md
+ create mode 100644 docs/design/app-icons/ai.css
+ create mode 100644 docs/design/app-icons/ai.js
+ create mode 100644 docs/design/app-icons/art.mjs
+ create mode 100644 docs/design/app-icons/farm.py
+ create mode 100644 docs/design/app-icons/icons-1440.png
+ create mode 100644 docs/design/app-icons/icons-390.png
+ create mode 100644 docs/design/app-icons/icons.html
+ create mode 100644 docs/design/app-icons/icons/bush-emu.svg
+ create mode 100644 docs/design/app-icons/icons/bush-koala.svg
+ create mode 100644 docs/design/app-icons/icons/bush-roo.svg
+ create mode 100644 docs/design/app-icons/icons/bush-wombat.svg
+ create mode 100644 docs/design/app-icons/icons/farm-bay.png
+ create mode 100644 docs/design/app-icons/icons/farm-black.png
+ create mode 100644 docs/design/app-icons/icons/farm-grey.png
+ create mode 100644 docs/design/app-icons/icons/farm-palomino.png
+ create mode 100644 docs/design/app-icons/icons/garden-cactus.svg
+ create mode 100644 docs/design/app-icons/icons/garden-monstera.svg
+ create mode 100644 docs/design/app-icons/icons/garden-sunflower.svg
+ create mode 100644 docs/design/app-icons/icons/garden-tulips.svg
+ create mode 100644 docs/design/app-icons/icons/kitchen-head-chef.svg
+ create mode 100644 docs/design/app-icons/icons/kitchen-line-cook.svg
+ create mode 100644 docs/design/app-icons/icons/kitchen-pastry.svg
+ create mode 100644 docs/design/app-icons/icons/kitchen-sous.svg
+ create mode 100644 docs/design/app-icons/icons/modern-glance.svg
+ create mode 100644 docs/design/app-icons/icons/modern-laughing.svg
+ create mode 100644 docs/design/app-icons/icons/modern-perched.svg
+ create mode 100644 docs/design/app-icons/icons/modern-wings.svg
+ create mode 100644 docs/design/app-icons/icons/terminal-chevron.svg
+ create mode 100644 docs/design/app-icons/icons/terminal-dollar.svg
+ create mode 100644 docs/design/app-icons/icons/terminal-lambda.svg
+ create mode 100644 docs/design/app-icons/icons/terminal-prompt.svg
+ create mode 100644 docs/design/app-icons/look-390-dark.png
+ create mode 100644 docs/design/app-icons/look-390-light.png
+ create mode 100644 docs/design/app-icons/picked-390-dark.png
+ create mode 100644 docs/design/app-icons/picked-390-light.png
+ create mode 100644 docs/design/app-icons/picker-1440.png
+ create mode 100644 docs/design/app-icons/picker-390-dark.png
+ create mode 100644 docs/design/app-icons/picker-390-light.png
+ create mode 100644 docs/design/app-icons/picker.html
+ create mode 100644 docs/design/app-icons/shoot.mjs
+ create mode 100644 docs/design/persona-text/README.md
+ create mode 100644 docs/design/persona-text/about-1440.png
+ create mode 100644 docs/design/persona-text/about-390-dark.png
+ create mode 100644 docs/design/persona-text/about-390-light.png
+ create mode 100644 docs/design/persona-text/about-scene-390-light.png
+ create mode 100644 docs/design/persona-text/about-terminal-390-dark.png
+ create mode 100644 docs/design/persona-text/approval-390-dark.png
+ create mode 100644 docs/design/persona-text/approval-390-light.png
+ create mode 100644 docs/design/persona-text/approval-terminal-390-dark.png
+ create mode 100644 docs/design/persona-text/edit-1440.png
+ create mode 100644 docs/design/persona-text/edit-390-dark.png
+ create mode 100644 docs/design/persona-text/edit-390-light.png
+ create mode 100644 docs/design/persona-text/edit-terminal-390-dark.png
+ create mode 100644 docs/design/persona-text/form-390-dark.png
+ create mode 100644 docs/design/persona-text/form-390-light.png
+ create mode 100644 docs/design/persona-text/memory-390-dark.png
+ create mode 100644 docs/design/persona-text/memory-390-light.png
+ create mode 100644 docs/design/persona-text/panel.html
+ create mode 100644 docs/design/persona-text/pt.css
+ create mode 100644 docs/design/persona-text/pt.js
+ create mode 100644 docs/design/persona-text/read-390-dark.png
+ create mode 100644 docs/design/persona-text/read-390-light.png
+ create mode 100644 docs/design/persona-text/read-scene-390-light.png
+ create mode 100644 docs/design/persona-text/read-terminal-390-dark.png
+ create mode 100644 docs/design/persona-text/reader.html
+ create mode 100644 docs/design/persona-text/refine-390-dark.png
+ create mode 100644 docs/design/persona-text/refine-390-light.png
+ create mode 100644 docs/design/persona-text/setup-1440.png
+ create mode 100644 docs/design/persona-text/setup-390-dark.png
+ create mode 100644 docs/design/persona-text/setup-390-light.png
+ create mode 100644 docs/design/persona-text/setup-scene-390-light.png
+ create mode 100644 docs/design/persona-text/setup-terminal-390-dark.png
+ create mode 100644 docs/design/persona-text/setup.html
+ create mode 100644 docs/design/persona-text/shoot.mjs
+ create mode 100644 docs/design/persona-text/skills-390-dark.png
+ create mode 100644 docs/design/persona-text/skills-390-light.png
+ create mode 100644 docs/design/screen/README.md
+ create mode 100644 docs/design/screen/activity-390-dark.png
+ create mode 100644 docs/design/screen/activity-scene-390-light.png
+ create mode 100644 docs/design/screen/block-390-dark.png
+ create mode 100644 docs/design/screen/block-390-light.png
+ create mode 100644 docs/design/screen/block-scene-390-light.png
+ create mode 100644 docs/design/screen/block-terminal-390-dark.png
+ create mode 100644 docs/design/screen/chat-1440.png
+ create mode 100644 docs/design/screen/chat.html
+ create mode 100644 docs/design/screen/control-390-dark.png
+ create mode 100644 docs/design/screen/control-390-light.png
+ create mode 100644 docs/design/screen/control-terminal-390-dark.png
+ create mode 100644 docs/design/screen/island-390-light.png
+ create mode 100644 docs/design/screen/live-390-dark.png
+ create mode 100644 docs/design/screen/live-390-light.png
+ create mode 100644 docs/design/screen/live-scene-390-light.png
+ create mode 100644 docs/design/screen/live-terminal-390-dark.png
+ create mode 100644 docs/design/screen/replay-390-dark.png
+ create mode 100644 docs/design/screen/sc.css
+ create mode 100644 docs/design/screen/sc.js
+ create mode 100644 docs/design/screen/screen-1440.png
+ create mode 100644 docs/design/screen/screen-terminal-1440.png
+ create mode 100644 docs/design/screen/screen.html
+ create mode 100644 docs/design/screen/secret-390-dark.png
+ create mode 100644 docs/design/screen/secret-390-light.png
+ create mode 100644 docs/design/screen/shoot.mjs
+ create mode 100644 docs/design/screen/site-390-dark.png
+ create mode 100644 docs/design/screen/sites-1440.png
+ create mode 100644 docs/design/screen/sites-390-dark.png
+ create mode 100644 docs/design/screen/sites-390-light.png
+ create mode 100644 docs/design/screen/sites-terminal-390-dark.png
+ create mode 100644 docs/design/screen/sites.html
+ create mode 100644 docs/design/screen/styles.html
+ create mode 100644 web/src/routines.rs
