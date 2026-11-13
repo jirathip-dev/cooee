@@ -1,0 +1,6 @@
+Decided: merged origin/staging; ci.yml and justfile keep staging's scope, reuse, nightly and ci-scripts gate, and drop the ts, no-node and ui jobs and recipes
+Because: "Delete the PWA: `web/src`, `web/ts`, the manifest, the service worker"
+Decided: scripts/ci-scope.sh no longer prints a web leg, and its test drops the web case
+Rejected: keeping the web leg — nothing in the repo is under web/ and no job reads it
+Check: ci/ci-scripts-test.sh exits 0; scripts/line-cap.sh prints 18831 / 19400; cargo test --workspace passes
+Owner: Merged the latest work in; the CI checks for the removed web app stay removed.
