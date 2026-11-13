@@ -1,0 +1,15 @@
+131774963749 stable (ubuntu-latest) success 2026-11-13T08:19:31Z
+131775815967 msrv (ubuntu-latest) success 2026-11-13T08:21:32Z
+131775818564 stable (ubuntu-latest) success 2026-11-13T08:19:31Z
+131776875269 stable (ubuntu-latest) success 2026-11-13T08:24:04Z
+131776877158 msrv (ubuntu-latest) success 2026-11-13T08:21:32Z
+131777966473 msrv (ubuntu-latest) success 2026-11-13T08:26:37Z
+131778025300 stable (ubuntu-latest) success 2026-11-13T08:24:04Z
+131779016958 stable (ubuntu-latest) success 2026-11-13T08:29:07Z
+131779057213 msrv (ubuntu-latest) success 2026-11-13T08:26:37Z
+131779863410 msrv (ubuntu-latest) success 2026-11-13T08:31:16Z
+131779865145 stable (ubuntu-latest) success 2026-11-13T08:29:07Z
+131781150805 stable (ubuntu-latest) success 2026-11-13T08:34:10Z
+131781188235 msrv (ubuntu-latest) success 2026-11-13T08:31:16Z
+131782241224 msrv (ubuntu-latest) success 2026-11-13T08:36:42Z
+131782243544 stable (ubuntu-latest) success 2026-11-13T08:34:10Z

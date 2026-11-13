@@ -1,0 +1,9 @@
+round 1 stable rerun of 131769270808: attempt=3 131774963749 success
+round 1 msrv rerun of 131775011918: attempt=4 131775815967 success
+round 2 stable rerun of 131775818564: attempt=5 131776875269 success
+round 2 msrv rerun of 131776877158: attempt=6 131777966473 success
+round 3 stable rerun of 131778025300: attempt=7 131779016958 success
+round 3 msrv rerun of 131779057213: attempt=8 131779863410 success
+round 4 stable rerun of 131779865145: attempt=9 131781150805 success
+round 4 msrv rerun of 131781188235: attempt=10 131782241224 success
+EXIT 0
