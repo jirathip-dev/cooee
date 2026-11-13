@@ -145,8 +145,12 @@ impl Terminal {
             policy: None,
             resume: None,
             mcp_servers: Vec::new(),
+            meta: None,
             no_hibernate: false,
             machine: None,
+            parent: None,
+            rows: None,
+            cols: None,
         };
         self.shed.run(&run).map_err(|e| shed_error(&e))?;
         let line = json!({ "at": millis(), "device": device, "event": "shell", "terminal": name });
