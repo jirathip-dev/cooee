@@ -1,0 +1,14 @@
+Decided: unload only the chat items; keep meta, turn and a Glance of the list row, and reload in Hub::live, apply and reattach
+Because: "Unload idle threads' chats (reload from disk on next use)"
+Rejected: removing the whole Live from the map — the list, prune, mint and ask scans need every thread's meta
+Decided: replay ring kept by age (REPLAY 5 min), not 4096 events
+Because: "size the replay buffer so it covers a reconnect window, not a fixed 4096 events per thread"
+Decided: broadcast channel made on first subscribe with 256 slots, dropped on unload
+Because: crates/cooee-server/src/hub.rs:2222
+Decided: round 4 drops the boot unload; threads start loaded and the 30 s ticker unloads them once idle
+Because: crates/cooee-server/src/hub.rs:2807
+Rejected: unloading at boot — it read every log twice and put the fold in the first request (r6 at 418–562 ms against 300)
+Decided: merged staging 1df202d (#336, the ubuntu CI kill fix); the earlier red was that runner kill, not this PR
+Check: no chat access path skips Hub::live/apply/reattach's load; unload skips busy turns, pending and sent messages, subscribed pages
+Check: RSS 261 → 64 MB at open (release, 1,000 threads); RSS stays after the unload because macOS malloc keeps freed pages
+Owner: Idle conversations leave memory and come back from disk when opened; 1,000 threads use about 64 MB instead of 261 MB.
