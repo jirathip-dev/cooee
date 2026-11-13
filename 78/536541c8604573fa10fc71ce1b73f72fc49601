@@ -1,0 +1,7 @@
+Decided: merge origin/staging (ecdeb73d) and push so CI reruns, with no code change
+Because: web/e2e/chat.spec.mjs:177
+Rejected: a code fix for the red ui job — its one failure is the 1,000-message long-task test, which this branch never touches
+Decided: take staging's fix for that test (#357, f345feb0) through the merge rather than editing it here
+Because: web/e2e/chat.spec.mjs:131
+Check: CI ui job green at 78536541, with the apple, e2e and Rust jobs still green
+Owner: The Queue farm strip branch now carries staging's fix for the flaky chat test, so its checks can go green.
