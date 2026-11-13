@@ -1,33 +1,87 @@
+# #329: synergy's model. `scope` (scripts/ci-scope.sh) picks the legs: a pull request push runs the Linux legs; the
+# macOS legs run on the merge-ready run (herdsman's merge_label, on while a review PASS stands at the head), and only
+# when the change reaches the Apple surface. A skipped leg still reports its check, under the same name. A staging push
+# that a green merge-ready run already tested (same tree) runs nothing again (scripts/ci-reuse.sh); the nightly runs
+# every leg on staging and a red one opens or updates one `nightly red:` issue (scripts/ci-nightly.sh).
 name: ci
 on:
   push:
     branches: [main, staging]
   pull_request:
     branches: [main, staging]
+    types: [opened, synchronize, reopened, labeled]
+  schedule:
+    - cron: "17 19 * * *"
 
 env:
   CARGO_TERM_COLOR: always
+  # The nightly runs from the default branch (main) but tests staging.
+  REF: ${{ github.event_name == 'schedule' && 'staging' || '' }}
 
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    outputs:
+      run: ${{ steps.scope.outputs.run }}
+      mac: ${{ steps.scope.outputs.mac }}
+      web: ${{ steps.scope.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
+          fetch-depth: 2
+      - name: reuse (a green merge-ready run that tested this tree)
+        id: reuse
+        if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=$(scripts/ci-reuse.sh)
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          if [ -n "$run" ]; then
+            echo "reused: run $run (tree $(git rev-parse 'HEAD^{tree}'))" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: scope
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          LABEL: ${{ github.event.label.name }}
+          CARRIES: ${{ contains(github.event.pull_request.labels.*.name, 'merge-ready') }}
+          REUSED: ${{ steps.reuse.outputs.run }}
+        run: |
+          set -o pipefail
+          scripts/ci-scope.sh | tee -a "$GITHUB_OUTPUT"
+
   # #180: a workflow file GitHub can't parse fails here, on the PR, not silently after the merge.
   actionlint:
+    needs: scope
+    if: needs.scope.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
       - name: actionlint (.github/workflows/**)
         run: |
           bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
           ./actionlint -color
 
-  # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64 and macOS arm64.
+  # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64 and macOS arm64 (msrv-mac, same steps).
   msrv:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
+    name: msrv (ubuntu-latest)
+    needs: scope
+    if: needs.scope.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    steps: &msrv
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
       - uses: dtolnay/rust-toolchain@1.99.1
         with:
           components: clippy, rustfmt
@@ -40,7 +94,8 @@ jobs:
       - name: clippy (pedantic, at most 10 allows)
         run: just clippy
       - name: test (incl. upgrade compatibility and crash injection)
-        run: just test
+        # #336: on Linux, a session of its own, so a test's group signal can never reach the runner.
+        run: ${{ runner.os == 'Linux' && 'setsid --wait' || '' }} just test
       - name: doc
         run: just doc
       - name: deny (licences, advisories, duplicate versions)
@@ -55,27 +110,50 @@ jobs:
         run: just neutral
       - name: theme gate (swag's pinned packs and the starter)
         run: just themes
+      - name: CI scripts (scope, reuse, nightly)
+        run: just ci-scripts
+
+  msrv-mac:
+    name: msrv (macos-latest)
+    needs: scope
+    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true'
+    runs-on: macos-latest
+    steps: *msrv
 
   stable:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    name: stable (ubuntu-latest)
+    needs: scope
+    if: needs.scope.outputs.run == 'true'
+    runs-on: ubuntu-latest
     env:
       RUSTUP_TOOLCHAIN: stable
-    steps:
+    steps: &stable
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: test
-        run: cargo test --workspace --locked
+        run: ${{ runner.os == 'Linux' && 'setsid --wait' || '' }} cargo test --workspace --locked
+
+  stable-mac:
+    name: stable (macos-latest)
+    needs: scope
+    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true'
+    runs-on: macos-latest
+    env:
+      RUSTUP_TOOLCHAIN: stable
+    steps: *stable
 
   # web/ts (#49): tsc strict and Biome block; tsc-rs runs the same check as a trial, its result in the log only.
   ts:
+    needs: scope
+    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -95,9 +173,13 @@ jobs:
 
   # cargo build strips web/ts itself (web/build.rs, oxc): it must work with no Node on the machine.
   no-node:
+    needs: scope
+    if: needs.scope.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
       - uses: dtolnay/rust-toolchain@1.99.1
       - uses: Swatinem/rust-cache@v2
       - name: remove Node
@@ -109,9 +191,13 @@ jobs:
 
   # Playwright at 390 and 1440 px with axe accessibility checks; the screenshots are artifacts.
   ui:
+    needs: scope
+    if: needs.scope.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
       - uses: dtolnay/rust-toolchain@1.99.1
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v4
@@ -137,3 +223,24 @@ jobs:
         with:
           name: ui-1440
           path: ui-1440/*.png
+
+  # #329: a red nightly opens or updates one `nightly red: <check> since <PR>` issue.
+  nightly-red:
+    needs: [scope, actionlint, msrv, msrv-mac, stable, stable-mac, ts, no-node, ui]
+    if: always() && github.event_name == 'schedule' && contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    concurrency: nightly-red
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
+          fetch-depth: 0
+      - name: open or update the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+        run: scripts/ci-nightly.sh
