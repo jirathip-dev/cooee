@@ -1,0 +1,8 @@
+Decided: round 5 merges origin/staging (#305, #286, #357); no code of this PR changes
+Decided: the macOS red at f827e29 was tests/screens.rs waiting on the plugin screen; it passes locally at the head
+Because: crates/cooee/tests/screens.rs:90
+Because: crates/cooee-server/src/manage.rs:48
+Rejected: changing the plugin test or manager here — the issue is chat style, and staging's #305 owns backend lifecycle
+Check: CI stable (macos-latest) runs tests/screens.rs green at the head
+Check: workflow.rs failed once under full-suite load, then passed 3/3 alone and in a full rerun
+Owner: Same feature; this round only catches up with staging, which carries the plugin fix behind the red check.
