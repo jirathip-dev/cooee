@@ -1,0 +1,5 @@
+Decided: merge origin/staging again; the justfile check line keeps both this PR's lessons gate and staging's ci-scripts gate
+Because: ./justfile:3
+Rejected: none
+Check: just lessons and just ci-scripts both exit 0 at the head, and CI is green
+Owner: This branch is caught up with staging again; nothing about the lessons check changed.
