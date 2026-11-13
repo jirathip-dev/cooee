@@ -1,0 +1,8 @@
+
+Running 3 tests using 1 worker
+
+  ✓  1 [390] › pair.spec.mjs:143:1 › a passkey saved from the offer approves a request that came after one seen without it (#388) (3.6s)
+  ✓  2 [390] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388) (6.4s)
+  ✓  3 [390] › pair.spec.mjs:237:1 › the approve card: no passkey on this device, approved elsewhere, and a request that ran out (9.7s)
+
+  3 passed (25.0s)
