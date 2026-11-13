@@ -1,0 +1,6 @@
+Decided: merge origin/staging (#308) and push so CI reruns, with no code change
+Because: apple/Sources/CooeeCore/Layout.swift:1
+Rejected: a code fix for the red apple jobs — at a335b37e none got a runner (runnerName null) and were cancelled after 2 h
+Rejected: a code fix for the red ubuntu jobs — they ended with the runner shutdown signal, as staging's own ci runs do
+Check: CI apple (iOS Simulator and macOS builds), e2e and Rust jobs green at a3190f49 once a runner picks them up
+Owner: The Queue farm strip branch sits on the latest staging again so its stuck app checks can run.
