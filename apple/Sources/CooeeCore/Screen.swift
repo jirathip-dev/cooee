@@ -54,7 +54,7 @@ extension JSONValue {
 
     fileprivate func inserting(_ change: Self) -> Self {
         guard let block = change["block"] else { return self }
-        let key = self["rows"] == nil ? "blocks" : "rows"
+        let key = ["rows", "lanes", "rounds"].first { self[$0] != nil } ?? "blocks"
         var children = self[key]?.items ?? []
         let before = change["before"]?.string.flatMap { id in children.firstIndex { $0.id == id } }
         let after = change["after"]?.string.flatMap { id in children.firstIndex { $0.id == id } }

@@ -1,4 +1,4 @@
-# #140: a fixture `drover` for the app's end-to-end run (serve.sh): #125's Queue and Events as screens, the queue's
+# #140: a fixture `drover` for the app's end-to-end run (serve.sh): #181's Queue and #125's Events as screens, the queue's
 # stream playing queue-stream.json's ops a few seconds in, and `pause` taking it down for 20 s (the offline case).
 import json, os, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer

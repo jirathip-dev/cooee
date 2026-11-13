@@ -4,8 +4,9 @@
 # `cooee pair` written to $PAIR_LINK (the command for another in $PAIR_LINK.again). `slow N` streams N words and holds
 # the turn open until stopped. #138: the `cards` plugin (cards.mjs, on $PORT+1) is attached to Coder and posts its four
 # cards into a chat that starts "Show me the cards"; it reads the thread list as a device paired first. #140: a fixture
-# `drover` (screens.py with #125's queue and events JSON) is installed with header-strip places for Conductor, a persona
-# it isn't attached to yet: the app attaches it.
+# `drover` (screens.py with #181's queue, a scene block and rows with rounds, and #125's events JSON) is installed with
+# header-strip places for Conductor, a persona it isn't attached to yet: the app attaches it. #181: the lane chat a
+# strip horse opens, `herdsman-impl-641`, is seeded with lane-390-*.png's messages.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -33,8 +34,8 @@ token = "e2e-cards-plugin-token"
 EOF
 drover="$tmp/drover"
 mkdir -p "$drover"
-cp apple/e2e/screens.py docs/design/screens-as-data/fixtures/queue.json docs/design/screens-as-data/fixtures/events.json \
-  docs/design/screens-as-data/fixtures/queue-stream.json "$drover/"
+cp apple/e2e/screens.py docs/design/screens-as-data/fixtures/events.json docs/design/queue-scene/fixtures/queue.json \
+  docs/design/queue-scene/fixtures/queue-stream.json "$drover/"
 cat >"$drover/cooee-plugin.toml" <<'TOML'
 name = "drover"
 version = "0.0.1"
@@ -65,6 +66,16 @@ TOML
 git -C "$drover" init --quiet -b main
 git -C "$drover" add -A
 git -C "$drover" -c user.name=e2e -c user.email=e2e@example.com commit --quiet -m drover
+lane="$tmp/data/threads/herdsman-impl-641"
+mkdir -p "$tmp/data/threads"
+echo '{"format":1,"thread":{"id":"herdsman-impl-641","title":"herdsman-impl-641","messages":[]}}' >"$lane.json"
+cat >"$lane.jsonl" <<'JSONL'
+{"id":1,"at":1794560100000,"kind":"agent","text":"Review 1 found two things: a label that matches two machines opens the setup pane on the Mini, and no test covers it. Fixing both.","stop_reason":"end_turn"}
+{"id":2,"at":1794560110000,"kind":"tool","call":"c1","title":"read crates/core/src/hosts/bootstrap.rs","status":"completed"}
+{"id":3,"at":1794560120000,"kind":"tool","call":"c2","title":"edit hosts/bootstrap.rs: one profile per label","status":"completed"}
+{"id":4,"at":1794560130000,"kind":"agent","text":"An ambiguous label now refuses with both machine names instead of picking the first. Running the hosts tests.","stop_reason":"end_turn"}
+{"id":5,"at":1794560140000,"kind":"tool","call":"c3","title":"$ cargo test -p herdsman-core hosts::label","status":"in_progress"}
+JSONL
 printf 'name = "Conductor"\nagent = "fake-acp"\nfolder = "%s"\n' "$tmp/root/project" >"$tmp/personas/conductor.toml"
 printf 'name = "Coder"\nagent = "fake-acp"\nfolder = "%s"\nplugins = ["cards"]\n' "$tmp/root/project" >"$tmp/personas/coder.toml"
 target=$(cargo metadata --format-version 1 --no-deps | sed -n 's/.*"target_directory":"\([^"]*\)".*/\1/p')

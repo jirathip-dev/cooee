@@ -139,4 +139,19 @@ internal struct AppFeatureTests {
         await store.send(.pairing(.delegate(.paired(mini)))) { $0 = AppFeature.State(server: mini, settings: dark) }
         #expect(store.state.menu.server == mini)
     }
+
+    @Test internal func aChatAskingToOpenAThreadOpensIt() async {
+        let store = store(paired())
+        await store.send(.open("t1")) {
+            $0.path = ["t1"]
+            $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
+        }
+        await store.send(.chat(.delegate(.open("gone"))))
+        await store.receive(\.open, "gone") {
+            $0.path = ["gone"]
+            $0.chat = ChatFeature.State(
+                server: mini, target: .thread("gone"), persona: Persona(APIPersona(id: "", name: "Chat", agent: ""))
+            )
+        }
+    }
 }

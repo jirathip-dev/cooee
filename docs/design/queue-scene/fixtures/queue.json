@@ -1,0 +1,136 @@
+{
+ "type": "screen",
+ "id": "queue",
+ "title": "Queue",
+ "stream": "/screens/queue/stream",
+ "actions": [{ "icon": "more", "label": "More", "menu": [{ "label": "Fleets…", "tap": { "sheet": "/screens/fleets" } }, { "label": "Drive all now", "action": "drive-all" }] }],
+ "blocks": [
+  {
+   "type": "scene",
+   "id": "lanes",
+   "label": "herdsman's lanes",
+   "lanes": [
+    { "id": "l-730", "title": "#730", "stage": "design", "state": "needs", "since": "2026-11-09T09:37:00Z", "tap": { "thread": "herdsman-design-730" } },
+    { "id": "l-655", "title": "#655", "stage": "review 2", "state": "fail", "since": "2026-11-09T09:29:00Z", "tap": { "thread": "herdsman-rev-655" } },
+    { "id": "l-641", "title": "#641", "stage": "fix 1", "state": "working", "tool": "edit", "since": "2026-11-09T09:35:00Z", "tap": { "thread": "herdsman-impl-641" } },
+    { "id": "l-722", "title": "#722", "stage": "impl", "state": "working", "tool": "run", "since": "2026-11-09T09:32:00Z", "tap": { "thread": "herdsman-impl-722" } },
+    { "id": "l-609", "title": "#609", "stage": "fix 4", "state": "working", "tool": "read", "since": "2026-11-09T08:50:00Z", "tap": { "thread": "herdsman-impl-609" } },
+    { "id": "l-708", "title": "#708", "stage": "ready", "state": "done", "since": "2026-11-09T08:41:00Z", "tap": { "thread": "herdsman-rev-708" } },
+    { "id": "l-702", "title": "#702", "stage": "review 1", "state": "idle", "since": "2026-11-09T09:20:00Z", "tap": { "thread": "herdsman-rev-702" } }
+   ]
+  },
+  {
+   "type": "chips", "id": "repo", "name": "repo", "selected": ["herdsman"], "action": "filter",
+   "options": [{ "value": "all", "label": "all" }, { "value": "cooee", "label": "cooee" }, { "value": "herdsman", "label": "herdsman" }, { "value": "cooee-drover", "label": "cooee-drover" }]
+  },
+  {
+   "type": "stat", "id": "stats",
+   "items": [
+    { "label": "merged · 7d", "value": "14", "spark": [1, 3, 2, 0, 4, 1, 3] },
+    { "label": "lanes", "value": "7", "unit": "/ 8", "tone": "warn" },
+    { "label": "rounds / issue", "value": "1.6", "spark": [2.1, 1.9, 1.8, 2.0, 1.7, 1.6, 1.6] }
+   ]
+  },
+  {
+   "type": "card", "id": "fleet-herdsman", "tone": "accent", "title": "herdsman", "subtitle": "read 2m ago · 7 lanes on mini",
+   "badge": { "text": "driving", "tone": "ok" },
+   "buttons": [{ "type": "button", "id": "drive", "label": "Drive now", "style": "primary", "action": "drive" }, { "type": "button", "id": "pause", "label": "Pause", "action": "pause" }],
+   "blocks": [
+    {
+     "type": "section", "id": "needs", "header": "needs you (2)",
+     "blocks": [{ "type": "list", "rows": [
+      {
+       "type": "row", "id": "q-730", "figure": { "state": "needs" }, "title": "#730 architect role: an ADR before design and impl",
+       "badge": { "text": "design", "tone": "needs" }, "value": { "since": "2026-11-09T09:37:00Z" },
+       "subtitle": "design ▸ herdsman-design-730 · needs you",
+       "rounds": [
+        { "id": "r-730-design", "name": "design", "state": "needs", "summary": "approve the mockups", "since": "2026-11-09T09:37:00Z",
+          "lane": { "name": "herdsman-design-730", "harness": "Claude Code", "model": "opus 5.5", "host": "mini" },
+          "blocks": [
+           { "type": "images", "id": "i-730", "size": "small", "items": [
+             { "src": "/files/730/workflow-390-dark.png", "alt": "stages" },
+             { "src": "/files/730/asks-390-dark.png", "alt": "ask" },
+             { "src": "/files/730/row-open-390-light.png", "alt": "row" } ] },
+           { "type": "choice", "id": "a1092", "action": "answer", "recommended": "approve",
+             "options": [{ "value": "approve", "label": "approve" }, { "value": "revise", "label": "revise" }, { "value": "reject", "label": "reject", "confirm": { "destructive": true, "title": "Reject #730's design?", "ok": "Reject" } }],
+             "other": { "placeholder": "a revise note…" } }
+          ],
+          "links": [{ "label": "lane chat", "tap": { "thread": "herdsman-design-730" } }] }
+       ]
+      },
+      {
+       "type": "row", "id": "q-655", "figure": { "state": "fail" }, "title": "#655 drive: a stale pane after a host reboot",
+       "badge": { "text": "review 2", "tone": "fail" }, "value": { "since": "2026-11-09T09:29:00Z" },
+       "subtitle": "impl ✓ · review 1 ✗ · fix 1 ✓ · review 2 ✗ · round limit",
+       "rounds": [
+        { "id": "r-655-impl", "name": "impl", "state": "done", "summary": "✓ 2 commits", "since": "2026-11-09T06:10:00Z" },
+        { "id": "r-655-rev1", "name": "review 1", "state": "fail", "summary": "FAIL · 1 finding", "since": "2026-11-09T07:02:00Z" },
+        { "id": "r-655-fix1", "name": "fix 1", "state": "done", "summary": "✓ 1 commit", "since": "2026-11-09T08:15:00Z" },
+        { "id": "r-655-rev2", "name": "review 2", "state": "fail", "summary": "FAIL · round limit", "since": "2026-11-09T09:29:00Z",
+          "blocks": [
+           { "type": "text", "markdown": "**blocking** [correctness] `crates/drive/src/pane.rs:88` a pane id is reused after reboot" },
+           { "type": "choice", "id": "a1094", "action": "answer", "recommended": "round",
+             "options": [{ "value": "round", "label": "one more round" }, { "value": "park", "label": "park" }] }
+          ],
+          "links": [{ "label": "verdict", "tap": { "open": "/screens/verdict?n=655&round=2" } }, { "label": "PR #690", "tap": { "url": "https://github.com/jirathip-dev/herdsman/pull/690" } }] }
+       ]
+      }
+     ] }]
+    },
+    {
+     "type": "section", "id": "inprogress", "header": "in progress (5)",
+     "blocks": [{ "type": "list", "rows": [
+      {
+       "type": "row", "id": "q-641", "figure": { "state": "working", "tool": "edit" }, "title": "#641 hosts bootstrap: an ambiguous machine label",
+       "badge": { "text": "fix 1", "tone": "working" }, "value": { "since": "2026-11-09T09:35:00Z" },
+       "subtitle": "impl ✓ · review 1 ✗ · fix 1 ▸ herdsman-impl-641 · mini",
+       "rounds": [
+        { "id": "r-641-impl", "name": "impl", "state": "done", "summary": "✓ 3 commits", "since": "2026-11-09T07:40:00Z", "tap": { "url": "https://github.com/jirathip-dev/herdsman/pull/704/commits" } },
+        { "id": "r-641-rev1", "name": "review 1", "state": "fail", "summary": "FAIL · 2 findings", "since": "2026-11-09T08:50:00Z", "tap": { "open": "/screens/verdict?n=641&round=1" } },
+        { "id": "r-641-fix1", "name": "fix 1", "state": "working", "summary": "editing hosts/bootstrap.rs", "since": "2026-11-09T09:35:00Z",
+          "lane": { "name": "herdsman-impl-641", "harness": "Claude Code", "model": "opus 5.5", "host": "mini",
+            "lines": ["read crates/core/src/hosts/bootstrap.rs", "edit hosts/bootstrap.rs: one profile per label", "$ cargo test -p herdsman-core hosts::label"] },
+          "links": [{ "label": "lane chat", "tap": { "thread": "herdsman-impl-641" } }, { "label": "PR #704", "tap": { "url": "https://github.com/jirathip-dev/herdsman/pull/704" } }] }
+       ]
+      },
+      {
+       "type": "row", "id": "q-722", "figure": { "state": "working", "tool": "run" }, "title": "#722 spawn (shed): fix rounds fail git worktree add",
+       "badge": { "text": "impl", "tone": "working" }, "value": { "since": "2026-11-09T09:32:00Z" },
+       "subtitle": "impl ▸ herdsman-impl-722 · mini",
+       "rounds": [
+        { "id": "r-722-impl", "name": "impl", "state": "working", "summary": "$ cargo test -p herdsman-core spawn", "since": "2026-11-09T09:32:00Z",
+          "lane": { "name": "herdsman-impl-722", "harness": "Codex", "model": "gpt-5.6-luna", "host": "mini", "lines": ["edit crates/core/src/spawn.rs", "$ cargo test -p herdsman-core spawn"] },
+          "links": [{ "label": "lane chat", "tap": { "thread": "herdsman-impl-722" } }, { "label": "PR #726", "tap": { "url": "https://github.com/jirathip-dev/herdsman/pull/726" } }] }
+       ]
+      },
+      {
+       "type": "row", "id": "q-609", "figure": { "state": "working", "tool": "read" }, "title": "#609 api/v1 + CLI: every lane says where it runs",
+       "badge": { "text": "fix 4", "tone": "working" }, "value": { "since": "2026-11-09T08:50:00Z" },
+       "subtitle": "impl ✓ · review 1–3 ✗ · fix 4 ▸ herdsman-impl-609 · air",
+       "rounds": []
+      },
+      {
+       "type": "row", "id": "q-708", "figure": { "state": "done" }, "title": "#708 doctor: bound every Keychain/codesign call",
+       "badge": { "text": "ready", "tone": "done" }, "value": { "since": "2026-11-09T08:41:00Z" },
+       "subtitle": "impl ✓ · review 1 ✗ · fix 1 ✓ · review 2 ✓ · CI ✓",
+       "rounds": []
+      },
+      {
+       "type": "row", "id": "q-702", "figure": { "state": "idle" }, "title": "#702 board: the queue's age column sorts as text",
+       "badge": { "text": "review 1", "tone": "idle" }, "value": { "since": "2026-11-09T09:20:00Z" },
+       "subtitle": "impl ✓ · review 1 ▸ waits for CI",
+       "rounds": []
+      }
+     ] }]
+    },
+    {
+     "type": "section", "id": "queued", "header": "queued (12)",
+     "blocks": [{ "type": "list", "rows": [
+      { "type": "row", "id": "q-456", "figure": { "state": "idle" }, "title": "#456 Rename herdsman to drover", "badge": { "text": "#1", "tone": "mute" } },
+      { "type": "row", "id": "q-553", "figure": { "state": "idle" }, "title": "#553 Parity list: every board and chat feature", "badge": { "text": "#2", "tone": "mute" } }
+     ] }]
+    }
+   ]
+  }
+ ]
+}

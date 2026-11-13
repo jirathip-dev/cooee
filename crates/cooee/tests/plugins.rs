@@ -864,11 +864,11 @@ fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
     );
 }
 
-/// #138: `cooee plugin check` passes every #125 and #184 fixture and fails a broken answer, naming the field.
+/// #138: `cooee plugin check` passes every #125, #181 and #184 fixture and fails a broken answer, naming the field.
 #[test]
 fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let design = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/design");
-    let mut files: Vec<_> = ["screens-as-data", "fleets-config"]
+    let mut files: Vec<_> = ["screens-as-data", "fleets-config", "queue-scene"]
         .iter()
         .flat_map(|d| std::fs::read_dir(design.join(d).join("fixtures")).unwrap())
         .map(|f| f.unwrap().path())
@@ -882,7 +882,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let said = String::from_utf8_lossy(&out.stdout);
     assert!(
         out.status.success()
-            && said.lines().count() == 19
+            && said.lines().count() == 21
             && said.lines().all(|l| l.starts_with("ok")),
         "{said}"
     );
@@ -892,7 +892,9 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
         { "type": "list", "rows": [{ "type": "row", "title": "#722", "badge": { "text": "impl", "tone": "red" } }] },
         { "type": "secret", "name": "GH_TOKEN", "action": "set", "value": "leaked" },
         { "type": "editor", "name": "toml", "text": "" },
-        { "type": "a-newer-block" } ] });
+        { "type": "a-newer-block" },
+        { "type": "scene", "lanes": [{ "id": "l-1", "title": "#1", "state": "lost" }] },
+        { "type": "row", "title": "#2", "rounds": [{ "id": "r-1", "state": "done" }] } ] });
     let (ok, said) = checked(&s, &broken);
     assert!(!ok);
     assert_eq!(
@@ -901,6 +903,8 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
             "$.blocks[0].rows[0].badge.tone: \"red\" is not one of \"ok\", \"warn\", \"bad\", \"info\", \"mute\", \"accent\", \"working\", \"needs\", \"done\", \"fail\", \"idle\"",
             "$.blocks[1].value: must not be sent",
             "$.blocks[2].action: is required",
+            "$.blocks[4].lanes[0].state: \"lost\" is not one of \"working\", \"needs\", \"done\", \"idle\", \"fail\", \"merged\"",
+            "$.blocks[5].rounds[0].name: is required",
         ]
     );
 }

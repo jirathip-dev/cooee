@@ -35,6 +35,7 @@ extension Frame {
 
     internal static var all: [Frame] {
         [("dark", Palette.farmDark), ("light", Palette.farmLight)].flatMap { phoneFrames($0.0, $0.1) } + styled + mac
+            + QueueFrames.all
             + rooms
     }
 

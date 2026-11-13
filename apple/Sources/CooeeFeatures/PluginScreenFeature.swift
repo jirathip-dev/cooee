@@ -15,6 +15,7 @@ public struct PluginScreenFeature: Sendable {
         public var acting = false
         public var said: String?
         public var path: [String] = []
+        @Presents public var lane: ChatFeature.State?
 
         public var offline: Bool { unreachable != nil }
         public var title: String { screen?.root.string("title") ?? place.label }
@@ -36,6 +37,15 @@ public struct PluginScreenFeature: Sendable {
         case act(BlockAction)
         case acted(JSONValue?, String?)
         case navigate(String?)
+        case open(String)
+        case push(String)
+        case lane(PresentationAction<ChatFeature.Action>)
+        case delegate(Delegate)
+
+        @CasePathable
+        public enum Delegate: Sendable, Equatable {
+            case open(String)
+        }
     }
 
     private enum CancelID { case follow }
@@ -66,9 +76,12 @@ public struct PluginScreenFeature: Sendable {
                 return acted(&state, answer, error)
             case .navigate(let path):
                 return navigate(&state, to: path)
+            case .open, .push, .lane, .delegate:
+                return opened(&state, action)
             }
             return .none
         }
+        .ifLet(\.$lane, action: \.lane) { ChatFeature() }
     }
 }
 
@@ -94,6 +107,19 @@ extension PluginScreenFeature {
             }
         }
         .cancellable(id: CancelID.follow, cancelInFlight: true)
+    }
+
+    private func opened(_ state: inout State, _ action: Action) -> Effect<Action> {
+        switch action {
+        case .open(let thread):
+            return .send(.delegate(.open(thread)))
+        case .push(let thread):
+            let persona = Persona(APIPersona(id: "", name: thread, agent: ""))
+            state.lane = ChatFeature.State(server: state.server, target: .thread(thread), persona: persona)
+        default:
+            break
+        }
+        return .none
     }
 
     private func keep(_ state: inout State) {

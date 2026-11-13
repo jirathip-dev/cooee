@@ -54,6 +54,19 @@ Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the f
 | `mac-connect.png` | The Mac app as a **client only**: Connect to a server: Nearby, an address, or scan its QR with the Mac's camera. |
 | `mac-window-dark.png`, `mac-window-light.png` | The Mac window: Home as the sidebar (pinned row, chat list with Coder selected) beside the open chat. iPad uses the same split. |
 
+## Queue in Scene (#181)
+
+drover's Queue (`docs/design/queue-scene/fixtures/queue.json`, its times moved to the frame's now, the revise note's text
+field left out because `ImageRenderer` cannot draw it) as the sheet's blocks.
+
+| PNG | shows |
+|---|---|
+| `queue-scene-dark.png`, `queue-scene-light.png` | **Scene**: the `scene` block, a horse per lane in its place: #730 at the gate (red-ringed card), #655 refused at the fence (its own pose, q1244), the trail, the stable, grazing. The rows below carry the same horse. #730's needs-you round is folded open with the ask. |
+| `queue-modern-dark.png`, `queue-modern-light.png` | **Modern**: no strip; the rows' figures are the farm pack's row sprites (`row-<state>.png`); #730 folded open (the rounds line, the lane, the ask's buttons, `lane chat ›`), #655 and the in-progress rows folded with their subtitle. |
+| `queue-terminal-dark.png`, `queue-terminal-light.png` | **Terminal**: the ASCII figures, the dashed round line with a glyph per state, bracketed buttons; no strip. |
+| `queue-mac-scene-dark.png`, `queue-mac-modern-dark.png`, `queue-mac-terminal-dark.png` | The Queue panel at 1440: the strip shows all seven lanes. |
+| `queue-figures-modern-dark.png` | Modern's row figure for every lane state (working: edit, read, run; needs, fail, done, idle), cropped tight so a figure change shows. |
+
 ## Not drawn
 
 - The CLI-only path (`scripts/install.sh`, `cooee setup` on Mac or Linux) prints the same pairing QR in the terminal (q962).

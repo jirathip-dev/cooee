@@ -74,6 +74,7 @@ public struct ChatFeature: Sendable {
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case started(String)
+            case open(String)
         }
 
         @CasePathable

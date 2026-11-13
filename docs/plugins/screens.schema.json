@@ -95,7 +95,8 @@
         { "if": { "properties": { "type": { "const": "images" } } }, "then": { "$ref": "#/$defs/images" } },
         { "if": { "properties": { "type": { "const": "web" } } }, "then": { "$ref": "#/$defs/web" } },
         { "if": { "properties": { "type": { "const": "diff" } } }, "then": { "$ref": "#/$defs/diff" } },
-        { "if": { "properties": { "type": { "const": "editor" } } }, "then": { "$ref": "#/$defs/editor" } }
+        { "if": { "properties": { "type": { "const": "editor" } } }, "then": { "$ref": "#/$defs/editor" } },
+        { "if": { "properties": { "type": { "const": "scene" } } }, "then": { "$ref": "#/$defs/scene" } }
       ]
     },
     "screen": {
@@ -151,7 +152,42 @@
         "swipe": { "type": "array", "items": { "$ref": "#/$defs/act" } }, "tap": { "$ref": "#/$defs/tap" },
         "indent": { "type": "integer", "minimum": 0, "maximum": 2 }, "style": { "enum": ["link", "destructive"] },
         "button": { "$ref": "#/$defs/act" }, "handle": { "type": "boolean" }, "lifted": { "type": "boolean" },
-        "changed": { "type": "boolean" }
+        "changed": { "type": "boolean" },
+        "rounds": { "type": "array", "items": { "$ref": "#/$defs/round" } }
+      }
+    },
+    "lane-state": { "enum": ["working", "needs", "done", "idle", "fail", "merged"] },
+    "lane": {
+      "type": "object",
+      "required": ["id", "title", "state"],
+      "properties": {
+        "id": { "type": "string" }, "title": { "type": "string" }, "stage": { "type": "string" },
+        "state": { "$ref": "#/$defs/lane-state" }, "tool": { "type": "string" }, "since": { "type": "string" },
+        "tap": { "$ref": "#/$defs/tap" }
+      }
+    },
+    "scene": {
+      "required": ["lanes"],
+      "properties": { "label": { "type": "string" }, "lanes": { "type": "array", "items": { "$ref": "#/$defs/lane" } } }
+    },
+    "round": {
+      "type": "object",
+      "required": ["id", "name", "state"],
+      "properties": {
+        "id": { "type": "string" }, "name": { "type": "string" }, "state": { "$ref": "#/$defs/lane-state" },
+        "summary": { "type": "string" }, "since": { "type": "string" }, "tap": { "$ref": "#/$defs/tap" },
+        "lane": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" }, "harness": { "type": "string" }, "model": { "type": "string" },
+            "host": { "type": "string" }, "lines": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "blocks": { "$ref": "#/$defs/blocks" },
+        "links": {
+          "type": "array",
+          "items": { "type": "object", "required": ["label", "tap"], "properties": { "label": { "type": "string" }, "tap": { "$ref": "#/$defs/tap" } } }
+        }
       }
     },
     "card": {
@@ -290,7 +326,7 @@
         { "if": { "properties": { "op": { "const": "replace" } } }, "then": { "required": ["id", "block"], "properties": { "block": { "$ref": "#/$defs/block" } } } },
         { "if": { "properties": { "op": { "const": "merge" } } }, "then": { "required": ["id", "fields"], "properties": { "fields": { "type": "object" } } } },
         { "if": { "properties": { "op": { "const": "remove" } } }, "then": { "required": ["id"] } },
-        { "if": { "properties": { "op": { "const": "insert" } } }, "then": { "required": ["into", "block"], "properties": { "block": { "$ref": "#/$defs/block" } } } },
+        { "if": { "properties": { "op": { "const": "insert" } } }, "then": { "required": ["into", "block"], "properties": { "block": { "anyOf": [{ "$ref": "#/$defs/block" }, { "$ref": "#/$defs/lane" }, { "$ref": "#/$defs/round" }] } } } },
         { "if": { "properties": { "op": { "const": "screen" } } }, "then": { "required": ["screen"], "properties": { "screen": { "$ref": "#/$defs/block" } } } },
         { "if": { "properties": { "op": { "const": "badge" } } }, "then": { "required": ["count"], "properties": { "count": { "type": "integer" } } } },
         { "if": { "properties": { "op": { "const": "dot" } } }, "then": { "required": ["on"], "properties": { "on": { "type": "boolean" } } } }
