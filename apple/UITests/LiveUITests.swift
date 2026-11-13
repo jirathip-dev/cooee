@@ -136,7 +136,7 @@
         }
 
         @MainActor
-        private func field(_ app: XCUIApplication, _ hint: String) -> XCUIElement {
+        internal func field(_ app: XCUIApplication, _ hint: String) -> XCUIElement {
             let types = [XCUIElement.ElementType.textField.rawValue, XCUIElement.ElementType.textView.rawValue]
             let predicate = NSPredicate(
                 format: "(elementType == %d OR elementType == %d) AND (label == %@ OR placeholderValue == %@)",
@@ -237,6 +237,7 @@
             confirmIcon()
             XCTAssert(picked(app, "Terminal").waitForExistence(timeout: 5))
             appIcon(app)
+            everyStyle(app, new)
             labelled(app, "Modern").tap()
             confirmIcon()
             XCTAssert(picked(app, "Modern").waitForExistence(timeout: 5))
