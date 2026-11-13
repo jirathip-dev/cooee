@@ -1,0 +1,6 @@
+Decided: merge origin/staging and push, so CI reruns; the FAIL at 9156896 was runs cancelled by the repo owner, not a build error.
+Decided: pass Composer's new hint argument from the call frame, keeping the same "Message <persona>" text.
+Because: "Screenshots and README in `apple/design/native-surfaces/`; the iOS target builds"
+Rejected: changing CooeeUI's Composer back — staging's API is the source of truth; the design package follows it.
+Check: swift test in apple/design/native-surfaces renders all 23 frames with no PNG change; the iOS Simulator xcodebuild exits 0.
+Owner: Nothing in the design changed; the branch was brought up to date and one screen follows a renamed input.
