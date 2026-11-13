@@ -1,0 +1,6 @@
+Decided: merge origin/staging (6d75396f) into the branch and push; no code change, the FAIL was msrv (ubuntu-latest) at 0e62dda killed by a runner shutdown, not a test failure
+Because: crates/cooee-server/src/hub.rs:899
+Because: "opens a browser of the server's roots"
+Rejected: changing crates/cooee/tests/screens.rs — both Ubuntu jobs logged "The runner has received a shutdown signal" while it ran; msrv and stable pass on macOS at the same head
+Check: every check is green at the new head; cargo test --workspace and swift build exit 0 locally at fcf31c1
+Owner: Brings the persona sheet branch up to date with staging so its checks can run again; nothing in the app changed this round.
