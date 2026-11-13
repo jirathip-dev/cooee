@@ -173,6 +173,16 @@ test("1,000 messages: a window around the anchor, no long tasks, the anchor kept
   await page.setViewportSize({ width: size.width, height: size.height - 300 });
   await page.waitForTimeout(100);
   expect(await anchor()).toEqual(before);
+  // A busy runner (#355): the OS pauses the browser 100 ms in the middle of a 40 ms task of the page's.
+  const cdp = await page.context().browser().newBrowserCDPSession();
+  const { processInfo } = await cdp.send("SystemInfo.getProcessInfo");
+  const renderers = processInfo.filter((p) => p.type === "renderer").map((p) => p.id);
+  await page.evaluate(() => setTimeout(() => { const end = performance.now() + 40; while (performance.now() < end); }));
+  await new Promise((r) => setTimeout(r, 15));
+  for (const pid of renderers) process.kill(pid, "SIGSTOP");
+  await new Promise((r) => setTimeout(r, 100));
+  for (const pid of renderers) process.kill(pid, "SIGCONT");
+  await page.waitForTimeout(100);
   // Neither the scrolling nor the keyboard made a task over 50 ms.
   expect(await page.evaluate(() => window.longTasks.filter((d) => d > 50))).toEqual([]);
 });
