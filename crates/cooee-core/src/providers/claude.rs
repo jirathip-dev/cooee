@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use serde_json::json;
+
 use crate::{Entry, Provider, Ran, Spec, Status, Usage, Window, login::one_line};
 
 /// Claude Code: `claude auth status`'s JSON, `/usage`'s `N% used · resets …` lines (read in UTC, nonessential traffic
@@ -74,6 +76,16 @@ impl Provider for Claude {
             read_at: now,
         };
         (u.five_hour.is_some() || u.seven_day.is_some()).then_some(u)
+    }
+
+    fn no_personal_setup(&self) -> Option<serde_json::Value> {
+        let excludes = ["{/Users/*,/home/*,/root}/.claude/{CLAUDE.md,rules/**}"];
+        let options = json!({
+            "settingSources": ["project", "local"],
+            "strictMcpConfig": true,
+            "settings": { "claudeMdExcludes": excludes },
+        });
+        Some(json!({ "claudeCode": { "options": options } }))
     }
 }
 
