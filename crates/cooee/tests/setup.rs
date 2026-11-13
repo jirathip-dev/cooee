@@ -87,7 +87,9 @@ impl Mac {
             fs::set_permissions(&file, fs::Permissions::from_mode(0o755)).unwrap();
         }
         let shed = (!dry).then(|| FakeShed::start(&home.join("Library/Caches/shed"), version()));
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let listener = std::iter::repeat_with(|| TcpListener::bind("127.0.0.1:0").unwrap())
+            .find(|l| l.local_addr().unwrap().port() <= u16::MAX - 1000)
+            .unwrap();
         let port = listener.local_addr().unwrap().port();
         Self {
             home,
