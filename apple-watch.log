@@ -1,0 +1,174 @@
+Refreshing run status every 120 seconds. Press Ctrl+C to quit.
+
+* issue-277 apple jirathip-dev/cooee#280 · 43390914480
+Triggered via pull_request less than a minute ago
+
+JOBS
+* apple (ID 131770304717)
+  ✓ Set up job
+  * Run actions/checkout@v4
+  * Run taiki-e/install-action@v2
+  * Run dtolnay/rust-toolchain@1.99.1
+  * Run Swatinem/rust-cache@v2
+  * xcodebuild (iOS Simulator, macOS)
+  * just apple-check
+  * Run actions/upload-artifact@v4
+  * cooee serve (fake agent)
+  * the client against it (swift test)
+  * the app in the simulator
+  * the simulator's personas on the server (swift test)
+  * screenshots
+  * Run actions/upload-artifact@v4
+  * delete the simulator
+  * Post Run actions/checkout@v4
+- mac-setup (ID 131770306786)
+Refreshing run status every 120 seconds. Press Ctrl+C to quit.
+
+* issue-277 apple jirathip-dev/cooee#280 · 43390914480
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+* apple (ID 131770304717)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run taiki-e/install-action@v2
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  * xcodebuild (iOS Simulator, macOS)
+  * just apple-check
+  * Run actions/upload-artifact@v4
+  * cooee serve (fake agent)
+  * the client against it (swift test)
+  * the app in the simulator
+  * the simulator's personas on the server (swift test)
+  * screenshots
+  * Run actions/upload-artifact@v4
+  * delete the simulator
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+- mac-setup (ID 131770306786)
+Refreshing run status every 120 seconds. Press Ctrl+C to quit.
+
+* issue-277 apple jirathip-dev/cooee#280 · 43390914480
+Triggered via pull_request about 4 minutes ago
+
+JOBS
+* apple (ID 131770304717)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run taiki-e/install-action@v2
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ xcodebuild (iOS Simulator, macOS)
+  * just apple-check
+  * Run actions/upload-artifact@v4
+  * cooee serve (fake agent)
+  * the client against it (swift test)
+  * the app in the simulator
+  * the simulator's personas on the server (swift test)
+  * screenshots
+  * Run actions/upload-artifact@v4
+  * delete the simulator
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+- mac-setup (ID 131770306786)
+Refreshing run status every 120 seconds. Press Ctrl+C to quit.
+
+* issue-277 apple jirathip-dev/cooee#280 · 43390914480
+Triggered via pull_request about 6 minutes ago
+
+JOBS
+* apple (ID 131770304717)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run taiki-e/install-action@v2
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ xcodebuild (iOS Simulator, macOS)
+  * just apple-check
+  * Run actions/upload-artifact@v4
+  * cooee serve (fake agent)
+  * the client against it (swift test)
+  * the app in the simulator
+  * the simulator's personas on the server (swift test)
+  * screenshots
+  * Run actions/upload-artifact@v4
+  * delete the simulator
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+- mac-setup (ID 131770306786)
+Refreshing run status every 120 seconds. Press Ctrl+C to quit.
+
+* issue-277 apple jirathip-dev/cooee#280 · 43390914480
+Triggered via pull_request about 8 minutes ago
+
+JOBS
+* apple (ID 131770304717)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run taiki-e/install-action@v2
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ xcodebuild (iOS Simulator, macOS)
+  * just apple-check
+  * Run actions/upload-artifact@v4
+  * cooee serve (fake agent)
+  * the client against it (swift test)
+  * the app in the simulator
+  * the simulator's personas on the server (swift test)
+  * screenshots
+  * Run actions/upload-artifact@v4
+  * delete the simulator
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+- mac-setup (ID 131770306786)
+Refreshing run status every 120 seconds. Press Ctrl+C to quit.
+
+* issue-277 apple jirathip-dev/cooee#280 · 43390914480
+Triggered via pull_request about 10 minutes ago
+
+JOBS
+* apple (ID 131770304717)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run taiki-e/install-action@v2
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ xcodebuild (iOS Simulator, macOS)
+  * just apple-check
+  * Run actions/upload-artifact@v4
+  * cooee serve (fake agent)
+  * the client against it (swift test)
+  * the app in the simulator
+  * the simulator's personas on the server (swift test)
+  * screenshots
+  * Run actions/upload-artifact@v4
+  * delete the simulator
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+- mac-setup (ID 131770306786)
+Refreshing run status every 120 seconds. Press Ctrl+C to quit.
+
+* issue-277 apple jirathip-dev/cooee#280 · 43390914480
+Triggered via pull_request about 12 minutes ago
+
+JOBS
+* apple (ID 131770304717)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run taiki-e/install-action@v2
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ xcodebuild (iOS Simulator, macOS)
+  * just apple-check
+  * Run actions/upload-artifact@v4
+  * cooee serve (fake agent)
+  * the client against it (swift test)
+  * the app in the simulator
+  * the simulator's personas on the server (swift test)
+  * screenshots
+  * Run actions/upload-artifact@v4
+  * delete the simulator
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+- mac-setup (ID 131770306786)
