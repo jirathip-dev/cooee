@@ -43,6 +43,11 @@ const CHECK_WAIT: Duration = Duration::from_secs(2);
 /// The failed health checks in a row that make a running backend hung: it is killed and restarted like a crash.
 const MISSES: u32 = 3;
 
+/// A backend's launcher (its run command is `$1`): a watcher ends the backend's process group once its stdin, a
+/// pipe only cooee holds open, closes, so a backend never outlives the cooee (or the `Child`) that started it.
+const BACKEND: &str =
+    "exec 3<&0 </dev/null; (cat <&3 >/dev/null; kill -TERM 0) & exec 3<&-; exec sh -c \"$1\"";
+
 /// Where a first-party plugin is improved instead.
 pub const ISSUES: &str = "https://github.com/jirathip-dev/cooee/issues/new";
 
@@ -171,10 +176,7 @@ fn note(log: &Path, line: &str) {
 
 /// Stops a backend and everything it started (its process group).
 fn stop(child: &mut Child) {
-    let _ = Command::new("kill")
-        .args(["-s", "TERM", "--", &format!("-{}", child.id())])
-        .stderr(Stdio::null())
-        .status();
+    cooee_core::group::signal(child, "-TERM");
     let _ = child.kill();
     let _ = child.wait();
 }
@@ -502,8 +504,10 @@ impl Manager {
         token: &str,
         log: &Path,
     ) -> io::Result<Command> {
-        let mut c = sh(&m.run, dir, log)?;
-        c.env("PORT", port.to_string())
+        let mut c = sh(BACKEND, dir, log)?;
+        c.args(["sh", &m.run])
+            .stdin(Stdio::piped())
+            .env("PORT", port.to_string())
             .env("COOEE_PLUGIN_TOKEN", token)
             .env("COOEE", lock(&self.url).as_str());
         Ok(c)
