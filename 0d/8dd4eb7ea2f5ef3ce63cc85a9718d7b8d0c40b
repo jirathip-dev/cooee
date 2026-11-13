@@ -1,0 +1,10 @@
+Decided: filed every uncovered gap in cooee (#369–#386), including the drover plugin's screen work that lands in herdsman
+Because: "file one issue per coherent gap (group rows that are one piece of work)"
+Decided: audited the drover rows against herdsman at the commit plugins/index.toml pins, not the cooee-drover repo
+Because: plugins/index.toml:8
+Decided: listed the reliability rows R1–R27 too, shed-only ones as n/a-shed
+Because: "one line per #553 row: all the numbered rows plus the run-card rows"
+Decided: the #553 drop? rows 86–90 are listed as dropped
+Rejected: pointing row 81 at cooee-drover#30 — that repo's plugin is not the one cooee installs; folded into #380
+Check: nothing in cooee reads a chat-cards place and herdsman never posts /plugin/card (the blocker filed as #377)
+Owner: Every row of the old board's parity list now has a native-app status, and each missing piece has its own cooee issue.
