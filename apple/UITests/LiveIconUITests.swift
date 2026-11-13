@@ -6,6 +6,7 @@
         internal func appIcon(_ app: XCUIApplication) {
             homeScreen(app, "home-icon-terminal")
             app.buttons.matching(NSPredicate(format: "label CONTAINS 'App icon'")).firstMatch.tap()
+            XCTAssert(app.buttons["Koala"].firstMatch.waitForExistence(timeout: 5), "the icon picker opens")
             XCTAssert(picked(app, "Follow the look").waitForExistence(timeout: 5))
             keep("app-icon-following")
             app.buttons["Koala"].firstMatch.tap()
@@ -17,6 +18,7 @@
             XCTAssert(picked(app, "Scene").waitForExistence(timeout: 5))
             homeScreen(app, "home-icon-koala-after-scene")
             app.buttons.matching(NSPredicate(format: "label CONTAINS 'App icon'")).firstMatch.tap()
+            XCTAssert(app.buttons["Koala"].firstMatch.waitForExistence(timeout: 5), "the icon picker opens")
             app.buttons["Follow the look"].firstMatch.tap()
             confirmIcon()
             XCTAssert(picked(app, "Follow the look").waitForExistence(timeout: 5))
