@@ -234,7 +234,8 @@
             XCTAssert(picked(app, theme).waitForExistence(timeout: 5))
             app.buttons[style].firstMatch.tap()
             XCTAssert(picked(app, style).waitForExistence(timeout: 5))
-            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap()
+            let bar = app.navigationBars["Look"].firstMatch
+            bar.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 1.0)))
             XCTAssert(app.buttons[theme].firstMatch.waitForNonExistence(timeout: 10))
             sleep(2)
         }
