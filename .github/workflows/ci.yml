@@ -72,13 +72,13 @@ jobs:
           bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
           ./actionlint -color
 
-  # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64 and macOS arm64 (msrv-mac, same steps).
+  # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64; macOS runs stable-mac's tests (#388).
   msrv:
     name: msrv (ubuntu-latest)
     needs: scope
     if: needs.scope.outputs.run == 'true'
     runs-on: ubuntu-latest
-    steps: &msrv
+    steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.REF }}
@@ -95,7 +95,7 @@ jobs:
         run: just clippy
       - name: test (incl. upgrade compatibility and crash injection)
         # #336: on Linux, a session of its own, so a test's group signal can never reach the runner.
-        run: ${{ runner.os == 'Linux' && 'setsid --wait' || '' }} just test
+        run: setsid --wait just test
       - name: doc
         run: just doc
       - name: deny (licences, advisories, duplicate versions)
@@ -112,13 +112,6 @@ jobs:
         run: just themes
       - name: CI scripts (scope, reuse, nightly)
         run: just ci-scripts
-
-  msrv-mac:
-    name: msrv (macos-latest)
-    needs: scope
-    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true'
-    runs-on: macos-latest
-    steps: *msrv
 
   stable:
     name: stable (ubuntu-latest)
@@ -226,7 +219,7 @@ jobs:
 
   # #329: a red nightly opens or updates one `nightly red: <check> since <PR>` issue.
   nightly-red:
-    needs: [scope, actionlint, msrv, msrv-mac, stable, stable-mac, ts, no-node, ui]
+    needs: [scope, actionlint, msrv, stable, stable-mac, ts, no-node, ui]
     if: always() && github.event_name == 'schedule' && contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
     concurrency: nightly-red
