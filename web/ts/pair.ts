@@ -319,6 +319,7 @@ if (list) {
           async () => {
             try {
               await savePasskey();
+              keys = true;
               card.replaceChildren(make("p", "et", "✓ passkey saved"), make("p", "m", "settings › devices › passkeys"));
             } catch (x) {
               card.append(make("p", "err", x instanceof Error ? x.message : String(x)));
