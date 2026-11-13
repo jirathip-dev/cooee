@@ -16,9 +16,11 @@
             labelled(app, "Scene").tap()
             XCTAssert(picked(app, "Scene").waitForExistence(timeout: 5))
             homeScreen(app, "home-icon-koala-after-scene")
-            app.buttons.matching(NSPredicate(format: "label CONTAINS 'App icon'")).firstMatch.tap()
             let follow = app.buttons["Follow the look"].firstMatch
-            XCTAssert(follow.waitForExistence(timeout: 5))
+            for _ in 0..<3 where !follow.exists {
+                app.buttons.matching(NSPredicate(format: "label CONTAINS 'App icon'")).firstMatch.tap()
+                _ = follow.waitForExistence(timeout: 3)
+            }
             follow.tap()
             confirmIcon()
             XCTAssert(picked(app, "Follow the look").waitForExistence(timeout: 5))

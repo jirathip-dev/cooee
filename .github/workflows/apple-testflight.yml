@@ -1,7 +1,8 @@
 # #144: archive the iOS app (apple/) and upload it to TestFlight from CI; no local Xcode, no Ruby/fastlane, no .p12.
 # Apple manages the distribution certificate and profiles (cloud signing through the App Store Connect API key).
 # Uploads run only on a merge to `main` (#180). The ASC_* secrets live in the `testflight` environment, which only
-# `main` may deploy from: pull_request and fork runs can't read them. docs/testflight.md has the owner's one-time steps.
+# `main` and `staging` may deploy from: pull_request and fork runs can't read them.
+# docs/testflight.md has the owner's one-time steps.
 # #365: runs on our own runners (mini-cooee, air-cooee). Any signing identity Xcode makes goes into a keychain of the
 # job's own, deleted when the job ends. A `workflow_dispatch` without `upload` archives and signs but uploads nothing.
 name: apple-testflight
