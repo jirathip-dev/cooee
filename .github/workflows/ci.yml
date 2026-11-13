@@ -40,7 +40,8 @@ jobs:
       - name: clippy (pedantic, at most 10 allows)
         run: just clippy
       - name: test (incl. upgrade compatibility and crash injection)
-        run: just test
+        # #336: on Linux, a session of its own, so a test's group signal can never reach the runner.
+        run: ${{ runner.os == 'Linux' && 'setsid --wait' || '' }} just test
       - name: doc
         run: just doc
       - name: deny (licences, advisories, duplicate versions)
@@ -69,7 +70,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: test
-        run: cargo test --workspace --locked
+        run: ${{ runner.os == 'Linux' && 'setsid --wait' || '' }} cargo test --workspace --locked
 
   # web/ts (#49): tsc strict and Biome block; tsc-rs runs the same check as a trial, its result in the log only.
   ts:
