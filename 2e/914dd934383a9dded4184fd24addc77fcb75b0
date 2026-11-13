@@ -1,0 +1,14 @@
+Decided: scripts/ci-scope.sh picks legs; PR push runs Linux legs, macOS legs only on the merge-ready run and only for the Apple surface
+Because: q1571
+Because: "A docs-only PR and a Rust-only PR outside those paths start no macOS job"
+Decided: msrv/stable matrix split into ubuntu and macos jobs sharing YAML-anchored steps, named as before
+Because: "Required check names stay stable, so the merge gate always sees each check"
+Rejected: a scope-chosen matrix — a dropped leg reports no check, so the name vanishes
+Decided: macOS-only Rust found by git grep for target_os = "macos" on both sides of the diff, not a file list
+Because: scripts/ci-scope.sh:27
+Decided: staging reuse needs the scope log's full=true and the same tree; a skipped-by-scope leg does not block reuse
+Rejected: synergy's every-job-success rule — the scope skips the macOS legs on most merge-ready runs, so reuse would never apply; the nightly is the backstop
+Decided: apple-mac staging/main pushes still build the signed .dmg (it is the release artifact), only the PR dmg is scoped
+Check: run 43360043292 at 2e914dd shows msrv/stable (macos-latest) skipped under their names; actionlint green with the anchors
+Check: the nightly only fires once ci.yml reaches main (schedule runs from the default branch)
+Owner: macOS checks now run once a review passes and only for Apple-related changes; a red nightly opens one issue
