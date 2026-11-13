@@ -1,0 +1,7 @@
+Decided: merge origin/staging (#355 landed) and push, so the queued macOS jobs run on a current base.
+Decided: no design change; the FAIL at 370d9fc was only the iOS Simulator build still queued for a runner.
+Decided: drop the last lane's wip snapshot; it held only an Xcode-generated Package.resolved.
+Rejected: committing that Package.resolved — xcodebuild writes it locally, and the design-only diff should not carry it.
+Because: "Screenshots and README in `apple/design/native-surfaces/`; the iOS target builds"
+Check: git diff origin/staging...HEAD lists only apple/design/native-surfaces; the iOS Simulator xcodebuild exits 0 at b707fc7.
+Owner: The branch now includes the latest staging; nothing in the design changed.
