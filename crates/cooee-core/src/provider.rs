@@ -32,6 +32,11 @@ pub trait Provider: Send + Sync + fmt::Debug {
     fn read_usage(&self, _stdout: &str, _now: u64) -> Option<Usage> {
         None
     }
+
+    /// The session options (ACP `_meta`) that keep the owner's personal setup out of a profile's thread (#320).
+    fn no_personal_setup(&self) -> Option<serde_json::Value> {
+        None
+    }
 }
 
 /// A spec with no registered behaviour.

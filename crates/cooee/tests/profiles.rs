@@ -1,8 +1,8 @@
 //! Agent profiles end to end with the fake shed (tests/support), whose CLI runs the adapter command a start gives
 //! it: Plain starts the agent with nothing added; a file profile's account, settings, env (its secret through the
-//! adapter's shell), policy and instructions are applied at spawn; a plugin's profile is listed while the plugin is
-//! installed and gone once it is removed; a guard its agent can't run refuses the start; no secret reaches cooee's
-//! config, files or log, or what it tells shed.
+//! adapter's shell), policy, its provider's "no personal setup" options and instructions are applied at spawn; a
+//! plugin's profile is listed while the plugin is installed and gone once it is removed; a guard its agent can't run
+//! refuses the start; no secret reaches cooee's config, files or log, or what it tells shed.
 
 mod support;
 
@@ -24,9 +24,9 @@ struct Setup {
     token: String,
 }
 
-/// cooee with provider `fake` for `fake-acp` (accounts in `FAKE_HOME`, settings in `FAKE_SETTINGS`), its account
-/// `work`, the secret `API_KEY`, and in `<config>/profiles/`: `coder` (all of it), `guard` (settings for an agent
-/// with no settings variable) and `leak` (a secret inline).
+/// cooee with provider `fake` (Claude's behaviour) for `fake-acp` (accounts in `FAKE_HOME`, settings in
+/// `FAKE_SETTINGS`), its account `work`, the secret `API_KEY`, and in `<config>/profiles/`: `coder` (all of it),
+/// `guard` (settings for an agent with no settings variable) and `leak` (a secret inline).
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     let token = format!("sk-{}", "p4".repeat(16));
@@ -60,7 +60,7 @@ fn setup(name: &str) -> Setup {
         ),
     );
     let shed = FakeShed::start(&dir.join("shed"), version());
-    let extra = "[[providers]]\nname = \"fake\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\n\
+    let extra = "[[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\n\
                  settings = \"FAKE_SETTINGS\"\nlogin = [\"true\"]\nstatus = [\"true\"]\n";
     let cooee = Cooee::start_with(&dir, &shed.dir, extra);
     Setup {
@@ -143,7 +143,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     // Plain: the agent as it is.
     let (id, line) = s.thread("", "hi");
     assert!(
-        !line.contains(" -- ") && !line.contains("--policy"),
+        !line.contains(" -- ") && !line.contains("--policy") && !line.contains("--meta"),
         "{line}"
     );
     assert_eq!(s.shed.adapter_env(), "", "no adapter command to run");
@@ -162,6 +162,18 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let work = data.join("accounts/fake/work");
     let settings = s.dir.join("profiles/settings.json");
     assert!(line.contains(" --policy allow "), "{line}");
+    let meta = line
+        .split(" --meta ")
+        .nth(1)
+        .and_then(|m| m.split(' ').next());
+    let meta: Value = serde_json::from_str(meta.expect("#320: no personal setup")).unwrap();
+    let options = json!({ "settingSources": ["project", "local"], "strictMcpConfig": true,
+        "settings": { "claudeMdExcludes": ["{/Users/*,/home/*,/root}/.claude/{CLAUDE.md,rules/**}"] } });
+    assert_eq!(
+        meta,
+        json!({ "claudeCode": { "options": options } }),
+        "{line}"
+    );
     let head = format!(
         " -- env FAKE_HOME={} FAKE_SETTINGS={} MODE=review sh -c ",
         work.display(),
