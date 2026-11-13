@@ -59,6 +59,16 @@ again. On the base it fails at `approve with…` (element not found).
 
 **Fix:** saving from the offer sets the same flag that saving from a card does.
 
+**Second cause (real, same flag), found by `ui-stress` at 23b31948 with the host loaded:** the list polls every 3 s,
+and nothing stops two polls from overlapping. A poll that read `/passkeys` before the save could land after it and set
+the flag back to "no passkey". Run 1 failed `pair.spec.mjs:143` and `[390] parity.spec.mjs:151` this way.
+
+**Failing first:** `pair.spec.mjs` "a poll that read the passkeys before one was saved does not undo it". It holds the
+first poll's `/passkeys` answer until a second poll has read it, and holds that second answer until after the save. On
+the base (4fc64bf5) it fails at `approve with…`; the snapshot shows "✓ passkey saved" above "Approving needs a passkey".
+
+**Fix (01fa211b):** a poll only fills the flag when it is still unknown, so a stale read never overwrites a save.
+
 ## `stable (macos-latest)`
 
 | run | branch @ head | test | error | mark |
