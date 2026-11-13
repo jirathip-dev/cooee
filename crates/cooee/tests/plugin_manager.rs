@@ -155,14 +155,6 @@ impl Setup {
     }
 }
 
-impl Drop for Setup {
-    fn drop(&mut self) {
-        let pid = self.cooee.child.id().to_string();
-        let _ = Command::new("kill").args(["-TERM", &pid]).status();
-        let _ = self.cooee.child.wait();
-    }
-}
-
 #[test]
 fn add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it() {
     let s = setup("pm-add");
@@ -433,6 +425,26 @@ fn only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issu
     );
     let rows = s.cooee.json("/plugins");
     assert_eq!(rows["installed"][1]["first_party"], true);
+}
+
+#[test]
+fn a_backend_ends_when_cooee_is_killed_and_a_restart_starts_it_again() {
+    let mut s = setup("pm-orphan");
+    s.cooee.cli(&["plugin", "add", "greet", "--yes"]);
+    s.tab_says("greet", "greet v1");
+    let port = u16::try_from(s.lock()[0]["port"].as_u64().unwrap()).unwrap();
+    s.cooee.child.kill().unwrap();
+    s.cooee.child.wait().unwrap();
+    until("the orphaned backend ends", || {
+        std::net::TcpStream::connect(("127.0.0.1", port)).is_err()
+    });
+
+    let extra = format!(
+        "plugin_index = {:?}\n",
+        s.dir.join("index.toml").to_string_lossy()
+    );
+    s.cooee = Cooee::start_with(&s.dir, &s.shed.dir, &extra);
+    s.tab_says("greet", "greet v1");
 }
 
 #[test]

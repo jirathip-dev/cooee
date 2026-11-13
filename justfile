@@ -1,5 +1,5 @@
 # Every CI gate, locally (the ui gate needs `npm ci` in web/e2e once).
-check: fmt clippy test doc deny cap deps hygiene neutral comments themes ts ui
+check: fmt clippy test doc deny cap deps hygiene neutral comments themes ci-scripts ts ui
 
 fmt:
     cargo fmt --all --check
@@ -43,6 +43,10 @@ comments:
 # The theme gate (docs/themes.md) on the first-party packs and the starter.
 themes:
     cargo run --quiet --locked -p cooee -- theme check packs/themes/* packs/starter
+
+# The CI's own scripts (#329): which legs a run needs, the staging reuse, the nightly's issue.
+ci-scripts:
+    ci/ci-scripts-test.sh
 
 # web/ts: tsc strict and Biome (blocking), then tsc-rs as a trial (needs `npm ci` in web once).
 ts:

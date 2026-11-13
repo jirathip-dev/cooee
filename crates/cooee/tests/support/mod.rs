@@ -1117,6 +1117,18 @@ shed_dir = {}
 
 impl Drop for Cooee {
     fn drop(&mut self) {
+        if !matches!(self.child.try_wait(), Ok(None)) {
+            return;
+        }
+        let _ = Command::new("kill")
+            .args(["-TERM", &self.child.id().to_string()])
+            .status();
+        for _ in 0..100 {
+            if !matches!(self.child.try_wait(), Ok(None)) {
+                return;
+            }
+            thread::sleep(Duration::from_millis(50));
+        }
         let _ = self.child.kill();
         let _ = self.child.wait();
     }

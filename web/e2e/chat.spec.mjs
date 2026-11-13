@@ -122,10 +122,6 @@ test("the draft survives a reload", async ({ page }) => {
 });
 
 test("1,000 messages: a window around the anchor, no long tasks, the anchor kept", async ({ page }, info) => {
-  await page.addInitScript(() => {
-    window.longTasks = [];
-    new PerformanceObserver((l) => window.longTasks.push(...l.getEntries().map((e) => e.duration))).observe({ type: "longtask" });
-  });
   await page.goto(`/t/long-${info.project.name}`);
   await expect(page.locator("#msgs .unread")).toBeVisible();
   await expect(page.locator(".unread + li")).toContainText("#991");
@@ -137,7 +133,10 @@ test("1,000 messages: a window around the anchor, no long tasks, the anchor kept
     return { id: r.dataset.id, top: Math.round(r.getBoundingClientRect().top) };
   });
   const minId = () => list.evaluate((l) => Math.min(...[...l.children].filter((r) => r.dataset.id).map((r) => +r.dataset.id)));
-  await page.evaluate(() => { window.longTasks = []; });
+  const trace = await page.context().newCDPSession(page);
+  const events = [];
+  trace.on("Tracing.dataCollected", ({ value }) => events.push(...value));
+  await trace.send("Tracing.start", { categories: "disabled-by-default-devtools.timeline", transferMode: "ReportEvents" });
   const held = [];
   await page.route(/\/messages\?around=/, (route) => held.push(route));
   for (let i = 0; i < 100 && (await minId()) > 1; i++) {
@@ -159,5 +158,20 @@ test("1,000 messages: a window around the anchor, no long tasks, the anchor kept
   await page.setViewportSize({ width: size.width, height: size.height - 300 });
   await page.waitForTimeout(100);
   expect(await anchor()).toEqual(before);
-  expect(await page.evaluate(() => window.longTasks.filter((d) => d > 50))).toEqual([]);
+  const cdp = await page.context().browser().newBrowserCDPSession();
+  const { processInfo } = await cdp.send("SystemInfo.getProcessInfo");
+  const renderers = processInfo.filter((p) => p.type === "renderer").map((p) => p.id);
+  await page.evaluate(() => setTimeout(() => { const end = performance.now() + 40; while (performance.now() < end); }));
+  await new Promise((r) => setTimeout(r, 15));
+  for (const pid of renderers) process.kill(pid, "SIGSTOP");
+  await new Promise((r) => setTimeout(r, 100));
+  for (const pid of renderers) process.kill(pid, "SIGCONT");
+  await page.waitForTimeout(100);
+  const traced = new Promise((r) => trace.once("Tracing.tracingComplete", r));
+  await trace.send("Tracing.end");
+  await traced;
+  const main = new Set(events.filter((e) => e.name === "thread_name" && e.args.name === "CrRendererMain").map((e) => `${e.pid}.${e.tid}`));
+  const tasks = events.filter((e) => e.name === "RunTask" && main.has(`${e.pid}.${e.tid}`));
+  expect(tasks.length).toBeGreaterThan(100);
+  expect(tasks.map((e) => Math.round(e.tdur / 1000)).filter((ms) => ms > 50)).toEqual([]);
 });

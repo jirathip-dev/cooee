@@ -32,6 +32,9 @@ const CHECK_EVERY: u64 = 10_000;
 const CHECK_WAIT: Duration = Duration::from_secs(2);
 const MISSES: u32 = 3;
 
+const BACKEND: &str =
+    "exec 3<&0 </dev/null; (cat <&3 >/dev/null; kill -TERM 0) & exec 3<&-; exec sh -c \"$1\"";
+
 /// Where a first-party plugin is improved instead.
 pub const ISSUES: &str = "https://github.com/jirathip-dev/cooee/issues/new";
 
@@ -152,10 +155,7 @@ fn note(log: &Path, line: &str) {
 }
 
 fn stop(child: &mut Child) {
-    let _ = Command::new("kill")
-        .args(["-s", "TERM", "--", &format!("-{}", child.id())])
-        .stderr(Stdio::null())
-        .status();
+    cooee_core::group::signal(child, "-TERM");
     let _ = child.kill();
     let _ = child.wait();
 }
@@ -473,8 +473,10 @@ impl Manager {
         token: &str,
         log: &Path,
     ) -> io::Result<Command> {
-        let mut c = sh(&m.run, dir, log)?;
-        c.env("PORT", port.to_string())
+        let mut c = sh(BACKEND, dir, log)?;
+        c.args(["sh", &m.run])
+            .stdin(Stdio::piped())
+            .env("PORT", port.to_string())
             .env("COOEE_PLUGIN_TOKEN", token)
             .env("COOEE", lock(&self.url).as_str());
         Ok(c)
