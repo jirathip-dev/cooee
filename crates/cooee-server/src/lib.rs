@@ -14,6 +14,7 @@ mod pairing;
 mod passkey;
 mod plugin;
 mod push;
+mod routines;
 mod themes;
 
 use std::{
@@ -416,13 +417,16 @@ async fn new_agent(cx: &Cx, Form(a): Form<NewAgent>) -> Result<Response> {
     }
 }
 
-/// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account.
+/// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account; on
+/// `machine` (#150; none or empty: this host).
 #[derive(Deserialize, Default)]
 struct Start {
     #[serde(default)]
     account: Option<String>,
     #[serde(default)]
     new: bool,
+    #[serde(default)]
+    machine: Option<String>,
 }
 
 #[route(POST "/logins/{id}")]
@@ -430,7 +434,11 @@ async fn login_start(cx: &Cx, Json(s): Json<Option<Start>>) -> Result<Answer<()>
     let name = thread_id(cx);
     let s = s.unwrap_or_default();
     Ok(Answer(
-        on_logins(cx, move |l| l.start(&name, s.account.as_deref(), s.new)).await,
+        on_logins(cx, move |l| {
+            let machine = s.machine.filter(|m| !m.is_empty());
+            l.start(&name, (s.account.as_deref(), s.new), machine)
+        })
+        .await,
     ))
 }
 
@@ -924,6 +932,33 @@ fn starter(
     })
 }
 
+/// The routines' runner (#75): a `new_thread` run starts as the chat that made it did.
+fn runner(
+    hub: &Arc<Hub>,
+    logins: Arc<Logins>,
+    data: &std::path::Path,
+    config: Option<&std::path::Path>,
+) -> Arc<routines::Runner> {
+    let (dir, config) = (data.to_owned(), config.map(ToOwned::to_owned));
+    let data = dir.clone();
+    let start: routines::Start = Box::new(move |hub, who| {
+        let list = profiles(hub, (&data, config.as_deref()));
+        let (agent, folder, mut recipe) = recipe(
+            &logins,
+            (&data, config.as_deref(), &list),
+            (&who.agent, Some(&who.account), &who.profile),
+            who.folder.clone(),
+            (who.model.clone(), who.effort.clone()),
+        )?;
+        if recipe.machine.is_empty() {
+            recipe.machine.clone_from(&who.machine);
+        }
+        let name = cooee_web::named(&agent, &logins.statuses());
+        Ok((agent, name, folder, recipe))
+    });
+    Arc::new(routines::Runner::new(Arc::clone(hub), &dir, start))
+}
+
 /// `POST /rooms` (#154): a room of member personas, in room order.
 #[derive(Deserialize)]
 struct NewRoom {
@@ -941,19 +976,22 @@ async fn room_new(cx: &Cx, Json(r): Json<NewRoom>) -> Result<Answer<Created>> {
     Ok(Answer(id.await.map(|id| Created { id })))
 }
 
-/// `POST /threads/{id}/members`: a persona to add to the room, or to take out (its session closed).
+/// `POST /threads/{id}/members`: a persona to add to the room or move (`at`: its place in room order, from 0;
+/// none: the end), or to take out (its session closed).
 #[derive(Deserialize)]
 struct Seat {
     persona: String,
     #[serde(default)]
     remove: bool,
+    #[serde(default)]
+    at: Option<usize>,
 }
 
 #[route(POST "/threads/{id}/members")]
 async fn members(cx: &Cx, Json(m): Json<Seat>) -> Result<Answer<Vec<String>>> {
     let id = thread_id(cx);
     Ok(Answer(
-        blocking(cx, move |hub| hub.member(&id, &m.persona, m.remove)).await,
+        blocking(cx, move |hub| hub.member(&id, &m.persona, m.remove, m.at)).await,
     ))
 }
 
@@ -2598,17 +2636,8 @@ async fn profile_mcp(cx: &Cx, Form(f): Form<BTreeMap<String, String>>) -> Result
     )
 }
 
-/// The web UI (with `looks`, its themes and schemes), the threads' API over `hub`, the providers' `logins`, the plugin `manager` and pairing, behind the gate: requests must name `bind`, localhost
-/// or one of `allowed_hosts`; devices are paired in `data`.
-#[must_use]
-pub fn router(
-    hub: Arc<Hub>,
-    (logins, manager, themes, machines): (Arc<Logins>, Arc<Manager>, Arc<Themes>, Arc<Machines>),
-    (data, config): (&std::path::Path, Option<&std::path::Path>),
-    bind: IpAddr,
-    allowed_hosts: &[String],
-    looks: Arc<cooee_web::LookAssets>,
-) -> Router {
+/// The names a request may give as its Host: localhost, `bind` unless it is unspecified, and `allowed_hosts`.
+fn names(bind: IpAddr, allowed_hosts: &[String]) -> Vec<String> {
     let mut names: Vec<String> = ["localhost", "127.0.0.1", "[::1]"]
         .map(str::to_owned)
         .into();
@@ -2619,19 +2648,36 @@ pub fn router(
         });
     }
     names.extend(allowed_hosts.iter().cloned());
+    names
+}
+
+/// The web UI (with `looks`, its themes and schemes), the threads' API over `hub`, the providers' `logins`, the plugin `manager` and pairing, behind the gate: requests must name `bind`, localhost
+/// or one of `allowed_hosts`; devices are paired in `data`.
+#[must_use]
+pub fn router(
+    (hub, runner): (Arc<Hub>, Arc<routines::Runner>),
+    (logins, manager, themes, machines): (Arc<Logins>, Arc<Manager>, Arc<Themes>, Arc<Machines>),
+    (data, config): (&std::path::Path, Option<&std::path::Path>),
+    bind: IpAddr,
+    allowed_hosts: &[String],
+    looks: Arc<cooee_web::LookAssets>,
+) -> Router {
     hub.set_starter(starter(Arc::clone(&logins), data, config));
     let gate = Gate {
-        names,
+        names: names(bind, allowed_hosts),
         devices: Devices::new(data),
         hub: Arc::clone(&hub),
     };
-    room_routes(persona_routes(pairing::routes(
-        cooee_web::assets(Router::builder(), looks)
-            .layer(Timing)
-            .layer(gate)
-            // A message's photos come as base64.
-            .layer(BodyLimit::max(64 << 20).at("/threads")),
-    )))
+    routines::routes(
+        runner,
+        room_routes(persona_routes(pairing::routes(
+            cooee_web::assets(Router::builder(), looks)
+                .layer(Timing)
+                .layer(gate)
+                // A message's photos come as base64.
+                .layer(BodyLimit::max(64 << 20).at("/threads")),
+        ))),
+    )
     .route(push_key)
     .route(push_subscribe)
     .route(push_unsubscribe)
@@ -2787,8 +2833,9 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             std::thread::sleep(Duration::from_hours(1));
         }
     });
+    let runner = runner(&hub, Arc::clone(&logins), &data, config.dir.as_deref());
     let router = router(
-        Arc::clone(&hub),
+        (Arc::clone(&hub), Arc::clone(&runner)),
         (
             logins,
             Arc::clone(&manager),
@@ -2812,6 +2859,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             let addr = listener.local_addr()?;
             hub.listening(format!("http://127.0.0.1:{}", addr.port()));
             manager.supervise(hub, format!("http://127.0.0.1:{}", addr.port()));
+            routines::Runner::every(runner, Duration::from_secs(30));
             ready(addr);
             topcoat::serve(listener, router).await
         });

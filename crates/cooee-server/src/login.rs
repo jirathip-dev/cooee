@@ -256,21 +256,27 @@ impl Logins {
     }
 
     /// Starts provider `name`'s login command in a new shed terminal (a running one is kept): for account
-    /// `account` (none: the system default), or with `new` in a new account's folder.
+    /// `account` (none: the system default), or with `new` in a new account's folder; on `machine` (#150; none:
+    /// this host), where its tokens stay.
     ///
     /// # Errors
     /// [`HubError::Refused`] for an unknown provider or account, or `new` for a provider without a config
-    /// variable; [`HubError::Shed`] when the terminal can't start.
+    /// variable or on another machine; [`HubError::Shed`] when the terminal can't start.
     pub fn start(
         self: &Arc<Self>,
         name: &str,
-        account: Option<&str>,
-        new: bool,
+        (account, new): (Option<&str>, bool),
+        machine: Option<String>,
     ) -> Result<(), HubError> {
         let provider = self.provider(name)?;
         let mut live = lock(&self.live);
         if matches!(live.get(name), Some(Login::Running(_))) {
             return Ok(());
+        }
+        if new && machine.is_some() {
+            return Err(HubError::Refused(
+                "a new account signs in on this host".to_owned(),
+            ));
         }
         let (account, home) = if new {
             if provider.spec().home.is_empty() {
@@ -287,37 +293,46 @@ impl Logins {
             let a = self.account(name, account.unwrap_or_default())?;
             (a.name, a.dir)
         };
-        let terminal = format!("{LABEL}-{name}-{:x}", now());
         let run = RunParams {
-            name: Some(terminal.clone()),
+            name: Some(format!("{LABEL}-{name}-{:x}", now())),
             labels: BTreeMap::from([(LABEL.to_owned(), "1".to_owned())]),
-            cwd: env::var_os("HOME").map_or_else(|| PathBuf::from("/"), PathBuf::from),
+            cwd: env::var_os("HOME")
+                .filter(|_| machine.is_none())
+                .map_or_else(|| PathBuf::from("/"), PathBuf::from),
             keep: false,
             idle_after: None,
             cmd: provider.with_home(&provider.spec().login, home.as_deref()),
             acp: None,
+            policy: None,
             resume: None,
             mcp_servers: Vec::new(),
+            no_hibernate: false,
+            machine: machine.clone(),
         };
-        if let Err(e) = self.shed.run(&run) {
-            if new {
-                self.accounts.drop_pending(name, &account);
+        let terminal = match self.shed.run(&run) {
+            Ok(t) => t.name,
+            Err(e) => {
+                if new {
+                    self.accounts.drop_pending(name, &account);
+                }
+                return Err(e.into());
             }
-            return Err(e.into());
-        }
+        };
         // Wide, so a long sign-in link stays on one line.
         let _ = self.shed.resize(&terminal, 40, 500);
         live.insert(name.to_owned(), Login::Running(terminal.clone()));
         let logins = Arc::clone(self);
         let name = name.to_owned();
-        thread::spawn(move || logins.reap(&name, &terminal, &account, new, home.as_deref()));
+        thread::spawn(move || match machine {
+            Some(m) => logins.reap_on(&m, &name, &terminal, &account),
+            None => logins.reap(&name, &terminal, &account, new, home.as_deref()),
+        });
         Ok(())
     }
 
-    /// Waits for login terminal `terminal` to exit (or for the timeout), then kills and removes it. A login that
-    /// exited 0 and left the account signed in is noted; a new account's folder is then listed, else removed.
-    fn reap(&self, name: &str, terminal: &str, account: &str, new: bool, home: Option<&Path>) {
-        let (ok, mut why) = match self.shed.exited(terminal, LOGIN_TIMEOUT) {
+    /// Waits for login terminal `terminal` to exit (or for the timeout), then kills and removes it; how it ended.
+    fn ended(&self, terminal: &str) -> (bool, String) {
+        let ended = match self.shed.exited(terminal, LOGIN_TIMEOUT) {
             Ok(r) if r.outcome == WaitOutcome::Timeout => {
                 (false, "timed out after 10 minutes".to_owned())
             }
@@ -331,6 +346,24 @@ impl Logins {
         if let Err(e) = self.shed.close(terminal) {
             eprintln!("cooee: {terminal}: {e}");
         }
+        ended
+    }
+
+    /// As [`Logins::reap`] for a login on `machine`: its account's status there is `cooee machine check`'s, never
+    /// read here.
+    fn reap_on(&self, machine: &str, name: &str, terminal: &str, account: &str) {
+        let (_, why) = self.ended(terminal);
+        let mut live = lock(&self.live);
+        if matches!(live.get(name), Some(Login::Running(t)) if t == terminal) {
+            let why = format!("{why} on {machine}");
+            live.insert(name.to_owned(), Login::Ended(why, account.to_owned()));
+        }
+    }
+
+    /// Waits for login terminal `terminal` to end ([`Logins::ended`]). A login that exited 0 and left the account
+    /// signed in is noted; a new account's folder is then listed, else removed.
+    fn reap(&self, name: &str, terminal: &str, account: &str, new: bool, home: Option<&Path>) {
+        let (ok, mut why) = self.ended(terminal);
         let status = self.provider(name).ok().map(|p| p.check(home));
         let signed_in = ok && status.as_ref().is_some_and(|s| s.signed_in);
         let noted = match (signed_in, new) {

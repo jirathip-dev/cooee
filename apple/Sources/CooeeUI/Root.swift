@@ -30,6 +30,12 @@ public struct AppRoot: View {
             MenuSheet(store: store.scope(state: \.menu, action: \.menu)).presentationDetents([.medium, .large])
         }
         .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in PersonaScreen(store: persona) }
+        .sheet(
+            isPresented: Binding(
+                get: { store.newRoom != nil }, set: { if !$0 { store.send(.newRoom(.delegate(.cancel))) } })
+        ) {
+            if let room = store.scope(state: \.newRoom, action: \.newRoom) { NewRoomScreen(store: room) }
+        }
         .environment(\.look, Look(palette: .farm(dark ? .dark : .light), style: store.menu.settings.style))
         .preferredColorScheme(store.menu.settings.scheme == .system ? nil : dark ? .dark : .light)
     }
@@ -51,6 +57,7 @@ public struct AppRoot: View {
             menu: { store.send(.menu(.open(true))) },
             new: { store.send(.start($0)) },
             open: { store.send(.open($0)) },
+            room: { store.send(.room) },
             edit: { store.send(.edit($0)) }
         )
         let chats = home.state.chats(now: Date())
@@ -59,6 +66,9 @@ public struct AppRoot: View {
                 HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
                     .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
                     .toolbar(.hidden)
+                    #if os(iOS)
+                        .background(SwipeBack())
+                    #endif
             }
         } else {
             WideView(
@@ -71,7 +81,14 @@ public struct AppRoot: View {
 
     @ViewBuilder private func chat(back: Bool) -> some View {
         if let chat = store.scope(state: \.chat, action: \.chat) {
-            ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
+            if chat.room != nil {
+                RoomScreen(
+                    store: chat, back: back, persona: { store.send(.start($0)) }, onBack: { store.send(.back) }
+                )
+                .id(store.path.last)
+            } else {
+                ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
+            }
         } else if !back {
             Text("Pick a chat, or start one with +").foregroundStyle(.secondary).frame(maxHeight: .infinity)
         }

@@ -80,4 +80,14 @@ internal struct BlockRenderTests {
         ])
         #expect(Self.height(both) > Self.height(one) && Self.height(one) > 0)
     }
+
+    @Test(arguments: [
+        "Questions for you:\n**HTML or SwiftUI?**", "Questions for you:\n1. **HTML or SwiftUI?**",
+        "the iOS target building.\n## Answering an ask", "fill with them.\n> **Call voice:**",
+    ])
+    internal func aReplyKeepsEachLineOnItsOwnLine(_ markdown: String) {
+        let first = String(markdown.prefix { $0 != "\n" })
+        let text = { (source: String) in JSONValue.object(["type": .string("text"), "markdown": .string(source)]) }
+        #expect(Self.height(text(markdown)) > Self.height(text(first)))
+    }
 }
