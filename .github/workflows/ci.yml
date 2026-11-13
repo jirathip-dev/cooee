@@ -28,7 +28,6 @@ jobs:
     outputs:
       run: ${{ steps.scope.outputs.run }}
       mac: ${{ steps.scope.outputs.mac }}
-      web: ${{ steps.scope.outputs.web }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -100,7 +99,7 @@ jobs:
         run: just doc
       - name: deny (licences, advisories, duplicate versions)
         run: just deny
-      - name: line cap (crates/*/src, web/src and web/ts ≤ line_cap; apple/ Swift ≤ apple_cap)
+      - name: line cap (crates/*/src ≤ line_cap; apple/ Swift ≤ apple_cap)
         run: just cap
       - name: dependency direction (cooee-core has no workspace deps)
         run: just deps
@@ -145,88 +144,9 @@ jobs:
       RUSTUP_TOOLCHAIN: stable
     steps: *stable
 
-  # web/ts (#49): tsc strict and Biome block; tsc-rs runs the same check as a trial, its result in the log only.
-  ts:
-    needs: scope
-    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.web == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.REF }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - name: install (pinned in web/package.json and its lockfile)
-        working-directory: web
-        run: npm ci
-      - name: tsc --noEmit (TypeScript 7, strict)
-        working-directory: web
-        run: npx tsc -p ts && npx tsc -p ts/tsconfig.sw.json
-      - name: biome check (lint and format)
-        working-directory: web
-        run: npx biome check ts
-      - name: tsc-rs (trial, non-blocking)
-        working-directory: web
-        continue-on-error: true
-        run: npx tsc-rs -p ts && npx tsc-rs -p ts/tsconfig.sw.json
-
-  # cargo build strips web/ts itself (web/build.rs, oxc): it must work with no Node on the machine.
-  no-node:
-    needs: scope
-    if: needs.scope.outputs.run == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.REF }}
-      - uses: dtolnay/rust-toolchain@1.99.1
-      - uses: Swatinem/rust-cache@v2
-      - name: remove Node
-        run: |
-          while command -v node; do sudo rm -f "$(command -v node)"; done
-          ! command -v node
-      - name: build
-        run: cargo build --locked -p cooee
-
-  # Playwright at 390 and 1440 px with axe accessibility checks; the screenshots are artifacts.
-  ui:
-    needs: scope
-    if: needs.scope.outputs.run == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.REF }}
-      - uses: dtolnay/rust-toolchain@1.99.1
-      - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - name: install
-        working-directory: web/e2e
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium webkit
-      - name: build
-        run: cargo build --locked -p cooee
-      - name: playwright (390, 1440, axe)
-        working-directory: web/e2e
-        run: npx playwright test
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ui-390
-          path: ui-390/*.png
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ui-1440
-          path: ui-1440/*.png
-
   # #329: a red nightly opens or updates one `nightly red: <check> since <PR>` issue.
   nightly-red:
-    needs: [scope, actionlint, msrv, msrv-mac, stable, stable-mac, ts, no-node, ui]
+    needs: [scope, actionlint, msrv, msrv-mac, stable, stable-mac]
     if: always() && github.event_name == 'schedule' && contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
     concurrency: nightly-red

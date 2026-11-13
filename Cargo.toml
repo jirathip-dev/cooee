@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "web"]
+members = ["crates/*"]
 
 [workspace.package]
 version = "0.1.0"
@@ -15,7 +15,6 @@ cooee-core = { path = "crates/cooee-core" }
 cooee-machines = { path = "crates/cooee-machines" }
 cooee-terminal = { path = "crates/cooee-terminal" }
 cooee-server = { path = "crates/cooee-server" }
-cooee-web = { path = "web" }
 # Web push (herdsman's webpush.rs): RFC 8291 encryption and the ES256 VAPID JWT; paired-device token hashes.
 aes-gcm = { version = "=0.10.3", default-features = false, features = ["aes", "alloc"] }
 base64 = "=0.22.1"
@@ -30,8 +29,6 @@ serde_json = "=1.0.154"
 shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "4585d504a3e6fc666e3415609abdc5f9e72c36a2" }
 futures-util = { version = "=0.3.34", default-features = false }
 thiserror = "=2.0.21"
-# web/build.rs strips the types from web/ts (#49): oxc's parser, TypeScript transform and codegen.
-oxc = { version = "=0.157.0", default-features = false, features = ["codegen", "semantic", "transformer"] }
 # Pinned exactly (ADR 0001): Topcoat is pre-1.0 and its minors break.
 topcoat = { version = "=0.11.0", default-features = false, features = ["serve", "sse"] }
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "net", "sync"] }

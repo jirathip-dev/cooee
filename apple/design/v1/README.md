@@ -12,7 +12,7 @@ The phone frames are 402 × 874 pt (iPhone 17) at 2×, with the status bar, isla
 frames are the window's content at 2× with its traffic lights drawn. Simulator screenshots come from the CI job
 (`.github/workflows/apple.yml`) or a Mac with Xcode 26.
 
-Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the farm pack's own horses
+Look: farm scheme (`design-system/schemes/farm.json`, `farm-light.json`). Scene uses the farm pack's own horses
 (`packs/themes/farm/sprites.svg`, `s-scene-*`), rasterised in each persona's coat by `apple/design/sprites.mjs`.
 
 ## iPhone 17, dark and light (`-dark.png`, `-light.png`)
@@ -37,7 +37,7 @@ Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the f
 
 | PNG | shows |
 |---|---|
-| `home-terminal-dark.png` | Terminal: SF Mono throughout, the ASCII figures (`web/src/look.rs`) in ruled boxes as avatars, the farm's state words, `# pinned`, `# chats`, `[g]` and `[+]`. |
+| `home-terminal-dark.png` | Terminal: SF Mono throughout, the ASCII figures (`crates/cooee-server/src/look.rs`) in ruled boxes as avatars, the farm's state words, `# pinned`, `# chats`, `[g]` and `[+]`. |
 | `chat-terminal-dark.png` | A Terminal chat: `> you`, `[ok]` and `o>_` tool rows, `~o= working`, bracketed buttons. |
 | `home-scene-light.png` | Scene: the pinned personas are the farm's horses in their coats, acting their state, standing in the farm strip (`scene.svg`) with their names and words (`at the gate` in red); the chat list's avatars are their horses too. |
 

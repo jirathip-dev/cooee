@@ -1,6 +1,5 @@
 //! The first-party machines plugin in `cooee serve`: a `[[plugins]]` entry named `machines` runs it, its tab gets
-//! the cards through cooee's proxy (the fake shed's `machine ls` and `machine stats`), and a machine offline puts a
-//! dot on the tab.
+//! the cards through cooee's proxy (the fake shed's `machine ls` and `machine stats`), a machine offline marked so.
 
 mod support;
 
@@ -10,7 +9,7 @@ use serde_json::json;
 use support::{Cooee, FakeShed, scratch, version};
 
 #[test]
-fn the_machines_tab_shows_each_machine_and_a_dot_while_one_is_offline() {
+fn the_machines_plugin_serves_each_machine_card_and_marks_one_offline() {
     let dir = scratch("machines");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let write = |name: &str, v: serde_json::Value| {
@@ -64,15 +63,4 @@ fn the_machines_tab_shows_each_machine_and_a_dot_while_one_is_offline() {
         log.contains("--json --on air machine stats --since"),
         "{log}"
     );
-
-    // The alert's dot, once the plugin has told cooee.
-    let mut home = String::new();
-    for _ in 0..100 {
-        home = cooee.get("/").1;
-        if home.contains("class=\"dot\"") {
-            break;
-        }
-        thread::sleep(Duration::from_millis(100));
-    }
-    assert!(home.contains("Machines<i class=\"dot\" aria-hidden=\"true\">●</i><span class=\"vh\"> (needs you)</span>"), "{home}");
 }

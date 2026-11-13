@@ -1,5 +1,5 @@
-/* #251 Home v2 on web/src/app.css, #116's ns.css and #125's sd.css: only what this design adds. The palette is the
-   scheme's (web/schemes/farm*.json = apple/Sources/CooeeUI/Theme.swift's Palette). New class names:
+/* #251 Home v2 on design-system/app.css, #116's ns.css and #125's sd.css: only what this design adds. The palette is the
+   scheme's (design-system/schemes/farm*.json = apple/Sources/CooeeUI/Theme.swift's Palette). New class names:
    h2s Home's scroll (no nav bar: the buttons float), h2t the glassy top, h2b a floating button (.l the avatar, .r +),
    h2q the search field, h2p the personas row (.pn a persona, .sep after the pinned), h2r a chat row, h2o Others,
    h2k working dots, h2n waits-on-you mark; tm* Terminal (tmp prompt, tmc cursor, tmf figure box, tms status line);
@@ -57,7 +57,7 @@ html[data-style=terminal] .h2t{height:calc(var(--sat) + 52px);background:var(--b
 .tmf b{grid-area:1/1;font-weight:700}.tmf b+b{opacity:0}
 .tmf .bd{position:absolute;top:-1px;right:-1px;min-width:16px;min-height:16px;padding:0 4px;font-size:11px;line-height:16px;border-radius:0;background:var(--link);color:var(--bg)}
 .tmf.sm{width:44px;height:36px;font-size:12px}
-/* Two-frame ASCII figures (web/src/look.rs FIGURES): frame 2 swaps in on the state's beat; Reduce Motion shows frame 1. */
+/* Two-frame ASCII figures (crates/cooee-server/src/look.rs FIGURES): frame 2 swaps in on the state's beat; Reduce Motion shows frame 1. */
 @keyframes tf1{50%{opacity:0}}@keyframes tf2{50%{opacity:1}}
 [data-k=working] .tmf b:first-child,.tmf[data-k=working] b:first-child{animation:tf1 .6s steps(1) infinite}
 [data-k=working] .tmf b+b,.tmf[data-k=working] b+b{animation:tf2 .6s steps(1) infinite}

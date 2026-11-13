@@ -1236,6 +1236,8 @@ pub fn others_go_on(cooee: &Cooee, other: &str) {
     };
     quick("send", &|| cooee.post(&path, &send));
     quick("list", &|| cooee.get("/threads"));
-    quick("page", &|| cooee.get("/"));
+    quick("messages", &|| {
+        cooee.get(&format!("/threads/{other}/messages"))
+    });
     events.until(|e| is_item(e, "agent"));
 }

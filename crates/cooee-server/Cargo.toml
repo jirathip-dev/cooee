@@ -1,6 +1,6 @@
 [package]
 name = "cooee-server"
-description = "cooee's HTTP server: pages, live events, pairing, push."
+description = "cooee's HTTP server: the API, live events, pairing, push."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -21,7 +21,6 @@ serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
-cooee-web.workspace = true
 topcoat.workspace = true
 tokio.workspace = true
 

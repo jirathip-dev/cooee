@@ -137,10 +137,10 @@ impl Setup {
         (out.status.success(), text)
     }
 
-    /// The tab's frame page, once it serves `text`.
+    /// Waits for the running build's `tab.js`, through the plugin's proxy, to say `text`.
     fn tab_says(&self, name: &str, text: &str) {
-        until(&format!("/p/{name} says {text}"), || {
-            let (status, body) = self.cooee.get(&format!("/p/{name}/frame"));
+        until(&format!("/p/{name}/api/tab.js says {text}"), || {
+            let (status, body) = self.cooee.get(&format!("/p/{name}/api/tab.js"));
             status == 200 && body.contains(text)
         });
     }
@@ -323,7 +323,9 @@ fn remove_stops_it_and_keeps_the_checkout_unless_purged() {
             .unwrap()
             .contains("greet")
     );
-    until("the tab goes", || s.cooee.get("/p/greet/frame").0 == 404);
+    until("the plugin goes", || {
+        s.cooee.get("/p/greet/api/tab.js").0 == 404
+    });
     until("the backend stops", || {
         std::net::TcpStream::connect(("127.0.0.1", port)).is_err()
     });
@@ -334,7 +336,9 @@ fn remove_stops_it_and_keeps_the_checkout_unless_purged() {
     s.tab_says("greet", "greet v1");
     s.cooee.cli(&["plugin", "remove", "greet", "--purge"]);
     assert!(!s.data().join("plugins/greet").exists());
-    until("the tab goes", || s.cooee.get("/p/greet/frame").0 == 404);
+    until("the plugin goes", || {
+        s.cooee.get("/p/greet/api/tab.js").0 == 404
+    });
 }
 
 #[test]

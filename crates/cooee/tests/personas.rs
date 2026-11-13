@@ -251,8 +251,6 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
         assert_eq!(s.row_persona(&id), "coder");
     };
     check("Follow the house rules.\n\nhi");
-    // The phone's page still offers it as before.
-    assert!(s.cooee.get("/").1.contains("Coder"));
 
     // Edited: saved as a persona that still runs as the profile, which is untouched.
     let mut edit = list[0].clone();

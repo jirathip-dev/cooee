@@ -60,7 +60,7 @@ stateDiagram-v2
 
 `scripts/neutral-core.sh`, run by `just neutral` (in `just check`) and a `ci.yml` step after `hygiene`:
 
-- Files: `git ls-files 'crates/*/src/**' 'web/src/**' 'web/ts/**'` minus `crates/cooee-core/src/providers/**`.
+- Files: `git ls-files 'crates/*/src/**'` minus `crates/cooee-core/src/providers/**`.
 - In a `.rs` file, lines from its first `#[cfg(test)]` on are skipped.
 - Fails, printing `file:line`, on `grep -inE 'claude|anthropic|codex|openai|gemini|hermes'`; else prints
   `core names no provider`.

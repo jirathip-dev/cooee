@@ -229,8 +229,8 @@ An action not in `actions` gets a 403 and never reaches the backend. A plugin wi
 
 ## Example
 
-`docs/plugins/hello/` is a plugin in about 30 lines, used by the tests (`web/e2e/plugins.spec.mjs`; its manifest by
-`web/e2e/plugin-manager.spec.mjs`). Run it with
+`docs/plugins/hello/` is a plugin in about 30 lines, used by the tests (`crates/cooee/tests/plugins.rs`; its manifest by
+`crates/cooee/tests/plugin_manager.rs`). Run it with
 `PORT=4800 COOEE=http://127.0.0.1:4747 TOKEN=a-long-random-secret node docs/plugins/hello/server.mjs` and the entry
 above.
 

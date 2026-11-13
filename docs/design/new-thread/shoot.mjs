@@ -1,6 +1,6 @@
 // #48: shoot the mockup's pages and check the shared size scale. No deps: Chrome's --remote-debugging-pipe, as
-// docs/design/v1/shoot.mjs. It serves the repo root (so the pages load web/src/app.css, web/src/look.js and the
-// themes as they are), with /look/<theme>/<file> mapped to web/themes/<theme>/<file> as cooee serves it.
+// docs/design/v1/shoot.mjs. It serves the repo root (so the pages load design-system/app.css and the
+// themes as they are), with /look/<theme>/<file> mapped to design-system/themes/<theme>/<file> as cooee serves it.
 // Usage (repo root):  node docs/design/new-thread/shoot.mjs <chrome-headless-shell> [name regexp]
 //                     node docs/design/new-thread/shoot.mjs --serve   (prints the URL; open the pages yourself)
 // Every screen is checked, at 390 and 1440, in each look below: no sideways scroll; every chip, button and one-line
@@ -21,9 +21,10 @@ const REV = 'r2'; // in every PNG name: a revised shot gets a new URL, so no vie
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png' };
 const srv = createServer((q, r) => {
   try {
-    const path = decodeURIComponent(new URL(q.url, 'http://x').pathname).replace(/^\/look\//, '/web/themes/');
+    const path = decodeURIComponent(new URL(q.url, 'http://x').pathname).replace(/^\/look\//, '/design-system/themes/');
     const p = join(root, path);
-    r.writeHead(200, { 'content-type': TYPES[extname(p)] || 'application/octet-stream' }).end(readFileSync(p));
+    const b = readFileSync(p);
+    r.writeHead(200, { 'content-type': TYPES[extname(p)] || 'application/octet-stream' }).end(b);
   } catch { r.writeHead(404).end(); }
 }).listen(0, '127.0.0.1');
 await new Promise(ok => srv.on('listening', ok));

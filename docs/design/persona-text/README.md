@@ -4,8 +4,8 @@ This design covers how a persona's long text is written and read: **Character, I
 It is native (iPhone and Mac) and drawn in all three Styles. The server side is #270. The owner's decisions are from
 conductor thread t70 (q1359, q1361–q1364).
 
-There are three pages, built on the live design system as `native-feel/` was. They link `web/src/app.css`, which
-supplies the tokens, `.chc` and the `.md` Markdown classes the reader renders with. They also link `web/schemes/`, the
+There are three pages, built on the live design system as `native-feel/` was. They link `design-system/app.css`, which
+supplies the tokens, `.chc` and the `.md` Markdown classes the reader renders with. They also link `design-system/schemes/`, the
 farm pack, native-shell's phone chrome (`ns.css`), rooms' native classes and avatar script (`rm.css`, `rm.js`), and
 native-feel's Home, swipe layer and keyboard (`nf.css`, `nf.js`), without copying any of them. #244's panel is SwiftUI
 on its own branch, so `pt.css` redraws its sheet shape (head, sections, pinned bar) with this design's own classes,

@@ -1,8 +1,8 @@
 # New thread is a composer; providers is a flat list; the chat opens on send (#48)
 
 Three static pages on the app's own look. **Revised for the #48 amendments:** no dev text, the agent chip carries
-profiles (#40), and from 1024 px a sidebar that's always there (§ 7). The pages load `web/src/app.css`, `web/src/look.js`, `web/themes/` and
-`web/schemes/` as they are today; nothing is copied. `new.css` holds this design's additions (tokens only, no raw
+profiles (#40), and from 1024 px a sidebar that's always there (§ 7). The pages load `design-system/app.css`, `packs/themes/` and
+`design-system/schemes/` as they are today (the PWA's `look.js` went with #189); nothing is copied. `new.css` holds this design's additions (tokens only, no raw
 colour). `mock.js` builds `LOOK` the way the server does, and draws the one state look.js doesn't have yet (loading).
 `side.html` is the sidebar, one copy that `mock.js` puts in each page's `<aside class="side">`.
 

@@ -8,9 +8,7 @@ use std::{
     time::Duration,
 };
 
-use base64::{Engine, engine::general_purpose::STANDARD};
 use cooee_core::{Plugin, Profile};
-use sha2::{Digest, Sha256};
 
 /// The largest answer cooee passes on.
 const MAX_BODY: u64 = 16 << 20;
@@ -275,42 +273,4 @@ pub fn started(p: &Plugin, thread: &str, profile: &str) -> io::Result<()> {
         200..=299 => Ok(()),
         code => Err(io::Error::other(format!("the backend answered {code}"))),
     }
-}
-
-/// The frame page for `p`: its UI module (fetched from the backend) after `api`, in one inline module script, and
-/// the page's Content-Security-Policy: a sandbox (an opaque origin, even opened on its own), only that script, no
-/// connections; the module reaches cooee through the parent page only.
-///
-/// # Errors
-/// When the module can't be fetched or would end its script element.
-pub fn frame(p: &Plugin, api: &str) -> io::Result<(String, String)> {
-    let reply = call(p, "GET", &p.module, &[], &[], Some(Duration::from_secs(10)))?;
-    if reply.status != 200 {
-        return Err(io::Error::other(format!(
-            "the module answered {}",
-            reply.status
-        )));
-    }
-    let module = String::from_utf8(reply.bytes()?).map_err(io::Error::other)?;
-    if module.to_ascii_lowercase().contains("</script") {
-        return Err(io::Error::other("the module contains </script"));
-    }
-    let script = format!("{api}\n{module}");
-    let hash = STANDARD.encode(Sha256::digest(script.as_bytes()));
-    let title = p
-        .label
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;");
-    let page = format!(
-        "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>{title}</title>\
-         <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>:root{{color-scheme:light dark}}\
-         body{{margin:0;padding:12px;background:var(--bg);color:var(--fg);font:var(--fs,15px)/1.4 var(--font,system-ui)}}</style>\
-         </head><body><script type=\"module\">{script}</script></body></html>"
-    );
-    let csp = format!(
-        "sandbox allow-scripts; default-src 'none'; script-src 'sha256-{hash}'; style-src 'unsafe-inline'; \
-         img-src data: blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
-    );
-    Ok((page, csp))
 }

@@ -1,6 +1,6 @@
 # Parity audit: herdsman#553 rows 1–35 against cooee core (#21)
 
-Audited at `51f92e8` (staging). **done**: cooee does it today; **partial**: some of it; **missing**: none of it.
+Audited at `51f92e8` (staging), on the PWA web client that #189 removed; the native app is the client now. **done**: cooee does it today; **partial**: some of it; **missing**: none of it.
 Row numbers are #553's.
 
 | # | feature | cooee today | where | gap to build |

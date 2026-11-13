@@ -9,7 +9,7 @@ claims), and the lanes live in Conductor's Workflow sheet, not on Home. **There 
 lists are live), so the pull frames and the pull haptic are gone. A dropped connection shows a reconnecting line
 instead, and a tap on it retries. The Mac's View › Refresh ⌘R is gone too. The rest is unchanged from R0.
 
-There are three pages, built on the live design system as `rooms/` was. They link `web/src/app.css`, `web/schemes/`,
+There are three pages, built on the live design system as `rooms/` was. They link `design-system/app.css`, `design-system/schemes/`,
 the farm pack's `theme.json`, native-shell's phone chrome (`ns.css`), rooms' native classes and avatar script
 (`rm.css`, `rm.js`) and #124's Scene sprites, without copying any of them. #229's and #251's files are on their own
 branches, not here, so `nf.css` redraws their Home, Others and Workflow-sheet shapes with this design's own classes,

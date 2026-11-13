@@ -1,17 +1,16 @@
 # Architecture
 
-cooee is one binary on the owner's machine (Mac or Linux). It serves a web app (an installable PWA) on 127.0.0.1,
-and Tailscale carries it to the owner's phone. Agents run under [shed](https://github.com/jirathip-dev/shed), which
+cooee is one binary on the owner's machine (Mac or Linux). It serves the native app's JSON API (`apple/`, iOS and macOS;
+the client since #189) on 127.0.0.1, and Tailscale carries it to the owner's phone. Agents run under [shed](https://github.com/jirathip-dev/shed), which
 keeps them going while the phone is away; cooee talks to shed and pings the phone when an agent needs the owner.
 
 ```
-  phone (PWA, Safari/Chrome)                 owner's machine
+  phone (native app)                         owner's machine
  ┌──────────────────────────┐   Tailscale   ┌──────────────────────────────────────────────────────────┐
  │ thread list, chat, login │◄─────────────►│ cooee (one binary)                                       │
- │ web push ◄───────────────┼───────────────┤  ├─ cooee         args + wiring                          │
+ │ APNs push ◄──────────────┼───────────────┤  ├─ cooee         args + wiring                          │
  └──────────────────────────┘    (M2)       │  ├─ cooee-server  HTTP on 127.0.0.1, live events,        │
                                             │  │                pairing, push (Tokio, via Topcoat)     │
-                                            │  ├─ cooee-web     the UI: Topcoat pages (server-rendered)│
                                             │  └─ cooee-core    config, threads, store (no sockets)    │
                                             │         │ ACP over shed's API (M1)                       │
                                             │         ▼                                                │
@@ -24,10 +23,9 @@ keeps them going while the phone is away; cooee talks to shed and pings the phon
 | Crate | Path | Holds | May depend on |
 |---|---|---|---|
 | `cooee-core` | `crates/cooee-core` | config, threads, the store, the chat (shed events → items), paired devices, providers (status, redaction), the shed client; no HTTP | no workspace crate |
-| `cooee-web` | `web/` | the web UI, HTML-first (ADR 0001, #49): server-rendered pages and sheets, strict TypeScript in `web/ts` stripped by `build.rs` (oxc; no Node to build) only where script is needed, `app.css`, the PWA manifest, the themes and schemes (`look.rs`, `shown.rs`, `themes/`, `schemes/`); its script calls only `docs/api.md` | not the server or binary |
 | `cooee-machines` | `crates/cooee-machines` | the first-party plugin `machines` ([plugins.md](plugins.md)): machines' health from shed, its backend and tab module | core |
 | `cooee-terminal` | `crates/cooee-terminal` | the first-party plugin `terminal` ([plugins.md](plugins.md)): the owner's shells through shed, its backend and tab module | core |
-| `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3), `GET /machines` (the machines plugin's data, #148) | core, web, machines |
+| `cooee-server` | `crates/cooee-server` | HTTP, the threads' JSON API and SSE (M1), the Host/pairing gate, push (M2), logins (M3), `GET /machines` (the machines plugin's data, #148) | core, machines |
 | `cooee` | `crates/cooee` | the binary: arguments and wiring only | all |
 
 `scripts/dep-direction.sh` enforces the last column in CI.
@@ -89,14 +87,11 @@ cooee core, never in a drover screen; those show the queue, events, asks and fle
 
 ## Pairing and push (M2)
 
-Everything but `/pair` (and `/pair/request`, `/pair/claim`, `/pair/cancel`, `/passkey/challenge`, `/passkey/signin`)
-and the static files (manifest, icons, style, scripts, `sw.js`, `POST /look`, the themes' files) needs a paired device:
-an unpaired page load goes to `/pair`, any other read or write gets 401. `/pair` is all an unpaired browser sees (#47,
-q528; docs/design/pair): the theme's figure, three steps, six code boxes and the other ways, no thread titles or
-messages. `cooee pair` (or Settings › devices › pair a device) shows a six-digit code and its `/pair?code=` link as a
-QR code, good for 10 minutes and once; a new one drops the open one. The QR link fills the boxes and pairs at once.
-Five wrong codes a minute from one address (the forwarded one behind `tailscale serve`) close the boxes for the rest
-of the minute, and five misses drop the code. The browser that enters it gets a random token as an `HttpOnly`,
+Everything but `POST /pair` (and `/pair/request`, `/pair/claim`, `/pair/cancel`, `/passkey/challenge`,
+`/passkey/signin`) needs a paired device: any other read or write gets 401. `cooee pair` (or Settings › devices › pair a device) shows a six-digit code and its `/pair?code=` link as a
+QR code, good for 10 minutes and once; a new one drops the open one.
+Five wrong codes a minute from one address (the forwarded one behind `tailscale serve`) refuse codes for the rest
+of the minute, and five misses drop the code. The device that enters it gets a random token as an `HttpOnly`,
 `SameSite=Strict` cookie. A `devices.json` that can't be read gets 503, never taken for "not paired".
 `<data>/devices.json` (0600) keeps only SHA-256 hashes of codes and tokens, and the passkeys' public keys. The other
 way round, a new device asks to pair (`/pair/request`), shows a two-word check word and polls `/pair/claim`; every
@@ -105,8 +100,7 @@ new device who said no. Requests last 5 minutes, at most 4 at once. Passkeys are
 authenticator, offered after pairing: the server checks the challenge (once, 5 minutes), the origin, the relying
 party's hash, user verification and the signature. A device that lost its cookie signs back in with its passkey
 (`/passkey/signin`) as a new device. `cooee devices` lists the devices and `cooee devices rm <id>` unpairs one (its
-pushes stop too); Settings → devices does both from the phone and lists and removes passkeys. On iPhone, add cooee to
-the Home Screen first and pair there: the app has its own cookies (the page says so in Safari).
+pushes stop too); Settings → devices does both from the phone and lists and removes passkeys.
 
 Before that, every request's `Host` (and its `Origin`, when sent) must be localhost, the `bind` address or one of
 `allowed_hosts`, or it gets 403, paired cookie or not. That blocks DNS rebinding. To reach cooee from the phone,
@@ -121,9 +115,8 @@ times out (a locked keychain) makes a new key, and every subscribed device is as
 alerts on again (`GET /push/reset`). The thread list's 🔔 subscribes;
 subscriptions sit in `<data>/push.json` (0600), each tied to its device. A push goes out when an agent asks for an
 approval, a turn finishes while no page has the thread open, or an agent errors. Each one is a line about the thread:
-`{title, body, tag: <thread>, url: /t/<thread>, item}`. The service worker (push, and a network-first copy of the pages and static files for offline) shows it under the
-thread's tag, so a newer push replaces the older one. It shows nothing while that thread is open in view. A tap opens
-the thread, and reading the thread past `item` closes it.
+`{title, body, tag: <thread>, url: /t/<thread>, item}`. A tap opens the thread, and reading the thread past `item`
+clears it.
 
 APNs (#130): the native app registers its device token with `POST /push/apns`; it sits in `push.json` beside the web
 subscriptions, tied to its device, so unpairing the device drops it. Every push above also goes to each token over
@@ -303,8 +296,8 @@ ID) and adds the server off. Nothing runs before the owner turns it on and a pro
 A routine is a schedule (five-field cron in the Mac's local time, its UTC offset read with `date +%z` hourly, at
 least 15 minutes between due times), a place and a prompt, kept with its run state in `<data>/routines.json` (0600,
 written whole). An agent makes one in chat with cooee's own `create_routine` tool, as itself: the chat gets a `⟳
-Created routine` line; a Workflow session or a routine's own run can't. Settings › routines (`/routines`) renames,
-retimes, pauses, resumes and deletes them; there is no other way to make one. Every 30 seconds the runner runs each
+Created routine` line; a Workflow session or a routine's own run can't. `POST /routines/<id>` renames,
+retimes, pauses and resumes them, `POST /routines/<id>/delete` deletes them; there is no other way to make one. Every 30 seconds the runner runs each
 routine whose newest due time is past both its last recorded one and its making, once (missed ones run once, late),
 then records it. The run's key, `routine-<id>-<due>`, is the hub's `random_id`, so a crash between a run and its
 record runs into the same message or thread again, never a second. `chat` runs queue the prompt in the making chat
@@ -312,15 +305,4 @@ as a message marked with the routine; a closed or deleted chat pauses the routin
 start a thread as the making chat's agent, marked with the routine, whose finished turns don't push. The list shows
 `⟳ <name>` on a thread a routine started or last wrote to. The GitHub event path is #261. The ADR and its shapes are
 in [architecture/routines](architecture/routines/adr.md).
-
-## The app shell (#21, herdsman#553 rows 1–14)
-
-Offline, the Home Screen app opens on the service worker's last copy of a page and the chat page on its newest slice
-(kept in `localStorage`), with "as of Xm ago" in the loading strip. A thread's sync dot is green while its event
-stream is open and amber while it reconnects. Every action answers with a short toast. ↻, a pull down from the top, the
-app coming back after 30 s or the network returning reload the page's data. Settings has an index and deep links
-(`#settings/<section>`): sign-ins, look, alerts (truthful: on only when the server keeps this browser's subscription for
-this device; `POST /push/test` alerts this device only, `POST /push/unsubscribe` turns it off), devices, and report
-mode (`POST /report` to `<data>/reports.jsonl`, listed by `cooee reports`). Figures are `sprite`, `ascii` or `none` (#35); a theme
-with moments plays them on the thread bar.
 

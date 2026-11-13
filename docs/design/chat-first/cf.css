@@ -1,4 +1,4 @@
-/* #86 chat-first, on web/src/app.css (the shared tokens and blocks): tokens only, no raw colour (Scene's block at the
+/* #86 chat-first, on design-system/app.css (the shared tokens and blocks): tokens only, no raw colour (Scene's block at the
    end is #34's, copied until it merges). New class names: cfm the two panes, ags the agents, agr an agent's row, av an
    avatar, sth/str its side threads, xm a folded agent exchange, blk.in a message from another agent, rt the routine
    line, fo the folder chip, ufs the Use a folder… sheet, hi a new chat's hello. */

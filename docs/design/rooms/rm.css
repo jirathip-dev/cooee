@@ -1,4 +1,4 @@
-/* #153 rooms and linked exchanges (native), on web/src/app.css (tokens, .blk.me, .chc/.rec, .chip, .sd, Terminal's
+/* #153 rooms and linked exchanges (native), on design-system/app.css (tokens, .blk.me, .chc/.rec, .chip, .sd, Terminal's
    [data-style=terminal] block) and native-shell's phone and gallery chrome (ns.css: .gal .fr .ph .stb .isl .hind .wd).
    It draws #124's native v1 language (apple/Sources/CooeeUI): round glass buttons, the persona header and agent chip,
    the working pill with Stop, choice cards. Tokens only; no raw colour but the island (ns.css) and Scene's sprites.

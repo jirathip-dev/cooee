@@ -77,13 +77,15 @@ fn a_lane_is_listed_with_its_labels_but_never_among_the_agents() {
             &json!("2")
         )
     );
-    let (_, page) = cooee.get("/");
+    // The owner's own chat is the one agent row: no Workflow labels.
+    let list = cooee.json("/threads");
+    let mine = list.as_array().unwrap().iter().find(|r| r["id"] == own);
+    let mine = mine.expect("the own chat is listed");
     assert!(
-        !page.contains("cooee #33")
-            && !page.contains(&format!("/t/{}", id_of(&rows[0])))
-            && page.contains(&format!(r#"href="/t/{own}""#)),
-        "{page}"
+        mine["title"] == "My own chat" && !mine["workflow"].is_object(),
+        "{mine}"
     );
+    assert_ne!(id_of(&rows[0]), own);
 }
 
 #[test]
@@ -95,16 +97,15 @@ fn a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops() {
     shed.lane(lane, &labels("#33", "impl", "2"));
     let id = id_of(&workflow(&cooee, 1)[0]);
 
-    let (status, page) = cooee.get(&format!("/t/{id}"));
-    assert_eq!(status, 200);
-    assert!(page.contains("impl · round 2"), "{page}");
-    assert!(
-        page.contains(r#"href="https://github.com/o/cooee/pull/60""#),
-        "{page}"
-    );
-    assert!(
-        page.contains(r#"id="composer""#) && page.contains(r#"class="stop""#),
-        "{page}"
+    // Its row carries what the chat's header shows: role, round and the link.
+    let w = &workflow(&cooee, 1)[0]["workflow"];
+    assert_eq!(
+        (&w["role"], &w["round"], &w["url"]),
+        (
+            &json!("impl"),
+            &json!("2"),
+            &json!("https://github.com/o/cooee/pull/60")
+        )
     );
 
     let cursor = cooee.json(&format!("/threads/{id}/messages"))["cursor"]

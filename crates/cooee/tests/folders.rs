@@ -1,5 +1,5 @@
 //! Folders from the phone: Settings › Folders browses the home folder (folder names only) and adds or removes roots,
-//! saved in the config file; the new-thread picker lists the roots 2 levels deep and makes a new folder inside one;
+//! saved in the config file; a new folder is made inside a root;
 //! nothing outside the home folder (browsing, roots) or the roots (the picker, new folders, threads) is accepted.
 
 mod support;
@@ -79,12 +79,11 @@ fn add_and_remove_root_persists_in_the_config() {
         text.contains(r#""~/Projects"]"#) && text.contains("shed_dir = "),
         "{text}"
     );
-    let (_, page) = cooee.get("/new");
-    let sub = format!(
-        r#"name="folder" value="{}""#,
-        projects.join("app").display()
+    let roots = cooee.json("/folders")["roots"].clone();
+    assert!(
+        roots.as_array().unwrap().contains(&json!(projects)),
+        "{roots}"
     );
-    assert!(page.contains(&sub), "{page}");
 
     for path in [home.join("out"), home.join(".."), "/etc".into()] {
         let (status, body) = cooee.post("/roots", &json!({ "path": path }));
@@ -104,37 +103,8 @@ fn add_and_remove_root_persists_in_the_config() {
             .unwrap()
             .contains("Projects")
     );
-    let (_, page) = cooee.get("/new");
-    assert!(!page.contains("Projects"), "{page}");
-}
-
-#[test]
-fn picker_lists_sub_folders_two_levels_deep_never_symlinks() {
-    let (home, _shed, cooee) = start("folders-picker");
-    let projects = home.join("Projects");
-    cooee.post("/roots", &json!({ "path": projects }));
-    let (_, page) = cooee.get("/");
-    let row = |p: &Path, d: u8, short: &str| {
-        let hidden = if d > 1 { r#" hidden="""# } else { "" };
-        format!(
-            r#"<label data-d="{d}"{hidden} title="{short}"><input type="radio" name="folder" value="{}""#,
-            p.display()
-        )
-    };
-    for (p, d, short) in [
-        (projects.clone(), 0, "~/Projects"),
-        (projects.join("app"), 1, "~/Projects/app"),
-        (projects.join("app/src"), 2, "~/Projects/app/src"),
-    ] {
-        assert!(page.contains(&row(&p, d, short)), "{}: {page}", p.display());
-    }
-    // A root heads its group; a folder in it shows by name.
-    assert!(
-        page.contains(">~/Projects<span") && page.contains(">src<span"),
-        "{page}"
-    );
-    assert!(page.contains(r#"id="fq" type="search""#), "{page}");
-    assert!(!page.contains("Projects/out"), "{page}");
+    let roots = cooee.json("/folders")["roots"].clone();
+    assert!(!roots.to_string().contains("Projects"), "{roots}");
 }
 
 #[test]

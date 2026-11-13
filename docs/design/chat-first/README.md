@@ -4,8 +4,8 @@ cooee becomes chat-first, like Grok Bot. You type to an agent with nothing to pi
 agents. An agent can message another agent, and a routine is made by asking for it in chat. Repos, worktrees and
 queues stay in drover's Workflow tab. Owner decisions: q761–q764 (conductor thread t22).
 
-Three pages on the live design system: `web/src/app.css` and web's own schemes, theme words and sprites, all linked
-from `web/`, not copied. `cf.css` holds this design's additions as tokens only. Its last block is Scene's CSS from
+Three pages on the live design system: `design-system/app.css` and web's own schemes, theme words and sprites, all linked
+from `design-system/`, not copied. `cf.css` holds this design's additions as tokens only. Its last block is Scene's CSS from
 the `issue-34` branch (#34), copied until that branch merges, and `scene/` holds that branch's farm and kitchen
 `scene.svg`. `cf.js` applies a style, a theme and a mode the way `shown.rs` does, and draws the agents.
 
@@ -27,7 +27,7 @@ phone screen in turn on one page, with a caption between them. The themes and mo
 `node docs/design/chat-first/shoot.mjs <chrome-headless-shell>`, run from the repo root, regenerates them. It checks
 each shot for sideways scroll, anything past the right edge, and cut text without an ellipsis. **All 18 pass.** Query
 parameters for any page: `?style=modern|terminal|scene&theme=farm|kitchen|garden|plain&mode=dark|light`. Serve the
-repo root over http, because the pages fetch from `web/`.
+repo root over http, because the pages fetch from `design-system/`.
 
 **Data:** illustrative. The agents, chats and folders are made up.
 
