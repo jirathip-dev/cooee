@@ -1,0 +1,248 @@
+ui	playwright (390, 1440, axe)	﻿2026-11-13T00:51:10.7324576Z ##[group]Run npx playwright test
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:10.7324908Z ^[[36;1mnpx playwright test^[[0m
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:10.7338304Z shell: /usr/bin/bash -e {0}
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:10.7338563Z env:
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:10.7338767Z   CARGO_TERM_COLOR: always
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:10.7339011Z   CARGO_HOME: /home/runner/.cargo
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:10.7339270Z   CARGO_INCREMENTAL: 0
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:10.7339486Z   CACHE_ON_FAILURE: false
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:10.7339708Z ##[endgroup]
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:15.1278078Z 
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:15.1279194Z Running 200 tests using 2 workers
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:15.1279716Z 
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:21.1845663Z   ✓    1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (5.1s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:23.5737411Z   ✓    3 [390] › cards.spec.mjs:39:1 › row 30: choice rows, the recommended first, an other box, and the ✓ line says who and when (1.5s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:24.8121374Z   ✓    4 [390] › cards.spec.mjs:60:1 › row 31: a conductor's answer keeps [change]; the owner's pick replaces it (1.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:25.0191398Z   ✓    2 [390] › chat.spec.mjs:21:1 › each event kind renders: reply, tool call, plan, approval, state, stop (2.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:26.1899925Z   ✓    5 [390] › cards.spec.mjs:81:1 › row 32: a config card shows its diff, the bar says it waits, [apply] settles it (1.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:27.2753503Z   ✓    7 [390] › cards.spec.mjs:105:1 › row 33: a secret card's field is masked; saved, the line names only the secret (1.1s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:28.3333700Z   ✓    8 [390] › cards.spec.mjs:120:1 › row 34: the composer's model and effort chips; a pick is kept and said in the thread (1.0s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:29.5542396Z   ✓    9 [390] › cards.spec.mjs:131:1 › row 35: handoff chips open the other thread; a line flows back; a pick-a-thread row (1.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:29.7025792Z   ✓    6 [390] › chat.spec.mjs:71:1 › a reconnect mid-stream loses and doubles no text (4.7s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:30.1804331Z   ✓   11 [390] › chat.spec.mjs:109:1 › a failed send shows retry, and the retry sends it (466ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:31.7521824Z   ✓   10 [390] › cards.spec.mjs:150:1 › #84: the header shows the id; a whole-word ref opens that thread and back returns; code, partial and unknown stay plain (2.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:32.6245385Z   ✓   12 [390] › chat.spec.mjs:123:1 › the draft survives a reload (2.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:32.8846227Z [WebServer] cooee: slow: POST /threads 200 895 ms
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:35.1393781Z   ✓   13 [390] › cards.spec.mjs:173:1 › #83: a herdsman run card shows its command and sha; [approve] shows the exit and tail, [deny] runs nothing (3.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:38.0219763Z   ✓   15 [390] › first-run.spec.mjs:9:1 › first run: no agents shows its fix line with a copy button, never an empty composer (2.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:39.7720218Z   ✓   16 [390] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it (1.7s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:41.0418726Z   ✓   17 [390] › folders.spec.mjs:55:1 › Use a folder…: search finds a sub-folder, [+ new folder] makes one in a root and picks it (1.3s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:41.8954413Z [WebServer] cooee: slow: POST /threads 200 369 ms
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:41.9004275Z   ✘   14 [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (8.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:43.4554165Z   ✓   18 [390] › folders.spec.mjs:86:1 › Use a folder… in a chat: its later turns run in the folder, the chat says so (2.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:44.2464086Z   ✓   20 [390] › look.spec.mjs:38:1 › a device's pick shows from the first frame, and stays on this device only (769ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:45.2765023Z   ✓   19 [390] › login.spec.mjs:7:1 › sign-ins: the provider's own login, its link tappable, a code typed in, then signed in (2.7s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:46.4304177Z   ✓   21 [390] › look.spec.mjs:69:1 › the look sheet: style, figures, theme, appearance and colours apply at once and stay (2.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:46.7340686Z   ✓   23 [390] › look.spec.mjs:108:1 › System follows the phone's mode live (292ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:47.1135664Z   ✓   22 [390] › machines.spec.mjs:7:1 › the machines tab: a card per machine, a chart on tap, the Air offline and the tab's dot (1.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:48.1093939Z   ✓   24 [390] › look.spec.mjs:123:1 › Settings: the look rows show the pick and open the look sheet (1.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:49.0157032Z   ✓   25 [390] › mcp.spec.mjs:19:1 › mcp servers: one row per server, + server's card shows the exact command, an agent's tools (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:49.1714123Z   ✓   27 [390] › md.spec.mjs:5:1 › md.ts renders each element as DOM, escaping all text (140ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:49.4148415Z   ✓   28 [390] › md.spec.mjs:53:1 › a fenced block gets [▸ terminal] beside [copy] only where the owner terminal's tab is on (#29) (232ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:49.8438528Z send → chat with your message: 173 ms (390)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:50.8487929Z   ✓   29 [390] › new-thread.spec.mjs:44:1 › send opens the chat at once with the loading line, which the reply replaces (1.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:51.2523498Z   ✓   30 [390] › new-thread.spec.mjs:72:1 › the model and effort picked are the start's (#553 row 34), said in the thread's bar (391ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:52.6927178Z   ✓   31 [390] › new-thread.spec.mjs:83:1 › a connect that fails shows inline with retry; the message stays; retry sends it (1.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:54.0391831Z   ✓   32 [390] › new-thread.spec.mjs:111:1 › Settings › providers is one flat list: a row per account, [+ account] per provider (1.3s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:54.8368786Z   ✓   33 [390] › nojs.spec.mjs:9:1 › with no script the look sheet, Settings and Use a folder… open (783ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:51:58.1290648Z   ✓   34 [390] › pair.spec.mjs:42:1 › the welcome: the figure, three steps and six boxes, nothing else; dark and light (3.3s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:00.4030974Z   ✓   35 [390] › pair.spec.mjs:53:1 › typing moves on, ⌫ goes back, a paste fills all six; a wrong code says so and clears the boxes (2.3s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:03.1448306Z   ✓   26 [390] › look.spec.mjs:136:1 › each Style × Figures combination renders at 390 (15.0s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:03.3682511Z   ✓   37 [390] › look.spec.mjs:177:1 › the ascii figures' two frames alternate (212ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:04.0513029Z   ✓   36 [390] › pair.spec.mjs:79:1 › a QR link pairs at once and the list offers a passkey; the used code then says it has run out (3.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:05.7229547Z   ✓   38 [390] › look.spec.mjs:197:1 › the look sheet lists Scene only with sprites, and plain only ASCII or None (2.3s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:06.2907678Z   ✓   40 [390] › look.spec.mjs:245:1 › switching style or figures keeps the scroll position (560ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:06.8613853Z   ✓   41 [390] › look.spec.mjs:277:1 › a plugin tab gets the theme's variables, data URLs, style and figures, and every change (559ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:07.8868673Z   ✓   39 [390] › pair.spec.mjs:104:1 › settings › devices › pair a device shows the QR and its code (3.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:08.9373037Z   ✓   42 [390] › parity-threads.spec.mjs:48:1 › row 15: a new reply shows on the open list (dot and badge, no reload); opening the thread clears it (2.1s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:10.6334062Z   ✓   44 [390] › parity-threads.spec.mjs:80:1 › row 16: a side thread started by typing is titled by its first line; the title renames it (1.7s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:11.4467941Z   ✓   45 [390] › parity-threads.spec.mjs:99:1 › a phone's ‹ back to agents keeps the chat's agent current: its side threads and + new chat (802ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:13.3846422Z   ✓   46 [390] › parity-threads.spec.mjs:111:1 › row 17: a row swiped left is archived, undo brings it back, and the archived list restores it (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:14.8450403Z   ✓   47 [390] › parity-threads.spec.mjs:148:1 › row 18: a reply's markdown renders (table, code, link, raw HTML as text); a run of commands folds and stays open (1.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:15.4769422Z   ✓   48 [390] › parity-threads.spec.mjs:186:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain (622ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:15.9053559Z   ✓   49 [390] › parity-threads.spec.mjs:197:1 › row 19: a code block's [copy] puts its code on the clipboard (419ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:16.4100691Z   ✓   50 [390] › parity-threads.spec.mjs:208:1 › row 20: two photos sent in one message show as thumbnails; one opens full size and back closes it (492ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:16.9110874Z   ✓   51 [390] › parity-threads.spec.mjs:236:1 › row 21: a send says sending…, then ✓; offline it turns red with [retry], which resends it (491ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:17.3264594Z   ✓   52 [390] › parity-threads.spec.mjs:250:1 › row 22: the box grows with its text to 6 lines, then scrolls; send stays at its foot (406ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:17.7190506Z   ✓   53 [390] › parity-threads.spec.mjs:269:1 › row 23: when the keyboard covers the page (iOS: only the visual viewport shrinks), the composer sits on it (379ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:17.7228155Z   ✓   43 [390] › pair.spec.mjs:143:1 › the approve card: no passkey on this device, approved elsewhere, and a request that ran out (9.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:18.4224142Z   ✓   54 [390] › parity-threads.spec.mjs:291:1 › row 25: [stop] says stopping… until the turn stops; the bar says offline, then nothing once back (689ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:20.1350487Z   ✓   56 [390] › parity-threads.spec.mjs:315:1 › row 26: a send during a turn is queued; [send now] steers it in; the next goes when the turn ends; [edit] takes one back (1.7s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:20.6171412Z   ✓   57 [390] › parity-threads.spec.mjs:343:1 › row 27: the draft keeps its text and picked files across a reload (473ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:22.4703276Z   ✓   58 [390] › parity-threads.spec.mjs:376:3 › touch › row 28: a long press on a reply opens copy, copy as markdown and quote; quote puts > lines in the box (1.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:22.8157192Z   ✓   59 [390] › parity-threads.spec.mjs:411:1 › row 29: the thread bar stays put while scrolling to the top loads older messages (332ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:22.9595763Z   ✓   55 [390] › plugin-manager.spec.mjs:15:1 › Settings › Plugins: add from the index after a confirm, it runs with its tab and log, then remove (5.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:24.4507345Z   ✓   61 [390] › profiles.spec.mjs:17:1 › a profile is an agent: listed, a new chat with it runs as it, its bar says its label (1.5s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:24.6888899Z   ✓   60 [390] › plugins.spec.mjs:9:1 › the example plugin's tab: proxied calls with its token, its stream, a push and a choice card (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:24.9182725Z   ✓   63 [390] › plugins.spec.mjs:46:1 › a plugin reaches only its own backend: not another plugin's, not cooee's storage or page (219ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:25.0882706Z   ✓   62 [390] › reliability.spec.mjs:19:3 › on every browser › R5: a slow load shows the thin strip only after 300 ms, and the page stays tappable (600ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:25.5125933Z   ✓   64 [390] › scene.spec.mjs:36:1 › Scene draws a sprite per agent on one page; a tap opens its chat, ringed, with its chats as chips (581ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:26.1940791Z   ✓   66 [390] › scene.spec.mjs:74:1 › refreshed 5 times, Scene keeps one sprite per agent (672ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:26.2559024Z   ✓   65 [390] › reliability.spec.mjs:44:3 › on every browser › R16: refreshed 5 times, each row is drawn once and the list keeps one card per thread (1.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:26.7034003Z   ✓   68 [390] › reliability.spec.mjs:67:3 › on every browser › R17: paths and image words in a message stay text: no image, no file fetched (431ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:26.7174681Z   -   69 [390] › reliability.spec.mjs:81:3 › on WebKit, as on the iPhone › R4: with the keyboard up (a shrunk viewport) the composer sits flush on it and the page never jumps
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:26.7189068Z   -   70 [390] › reliability.spec.mjs:101:3 › on WebKit, as on the iPhone › R25: closing a sheet goes from sheet to page in one step: no frame flashes, the page never reloads
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:27.1924139Z   ✓   67 [390] › scene.spec.mjs:89:1 › Scene is offered only with Figures Sprite; ASCII, None or the plain theme hide it (984ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:28.6532219Z   ✓   72 [390] › scene.spec.mjs:118:5 › Scene's audit: farm, dark (1.5s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:30.1490195Z   ✓   73 [390] › scene.spec.mjs:118:5 › Scene's audit: farm, light (1.5s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:30.2103818Z   ✓   71 [390] › terminal.spec.mjs:9:1 › the terminal: Face ID opens it, a shell takes typing, the key bar sits at the foot (3.5s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:31.7213533Z   ✓   74 [390] › scene.spec.mjs:118:5 › Scene's audit: kitchen, dark (1.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:33.2154129Z   ✓   76 [390] › scene.spec.mjs:118:5 › Scene's audit: kitchen, light (1.5s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:33.6585271Z   ✓   75 [390] › themes.spec.mjs:20:1 › remix farm with an agent, watch the preview reload on a save, keep it and pick it (3.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:34.8057531Z   ✓   77 [390] › scene.spec.mjs:118:5 › Scene's audit: garden, dark (1.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:34.8457346Z   ✓   78 [390] › threads.spec.mjs:4:1 › agents: the list renders, fits the width, no axe violations; + opens a new chat with nothing to pick (1.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:35.0655947Z   ✓   80 [390] › threads.spec.mjs:29:1 › installable: the manifest, its icons and the service worker load (205ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:35.5215360Z   ✓   81 [390] › threads.spec.mjs:45:1 › a failed start reads as one plain sentence, never the server's JSON error (442ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:35.5773030Z   -   82 [390] › threads.spec.mjs:60:1 › the current agent's row reads at AA while its chat works, on the light themes
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:36.4656991Z   ✓   79 [390] › scene.spec.mjs:118:5 › Scene's audit: garden, light (1.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:36.5309805Z   -   84 [390] › scene.spec.mjs:133:1 › Scene beside a chat at 1440: the sidebar is the scene, the chat keeps its style
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:36.8100716Z   ✓   85 [390] › scene.spec.mjs:147:1 › farm's Scene at night: the strip's night from 19:00 on this device's clock (269ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:36.9874183Z   ✓   83 [390] › threads.spec.mjs:80:1 › an agent's unread side threads show under it, newest 3 and +2; newest opens the newest reply; one row for both (1.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:38.2530395Z   ✓   86 [390] › workflow.spec.mjs:12:1 › Workflow: lanes are never among the agents, and a running impl lane opens as a chat (1.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:39.7480959Z   ✓   87 [390] › parity.spec.mjs:34:1 › row 1: installable, no double-tap zoom, and offline it opens on its last copy with its time (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:40.6555567Z   ✓   89 [390] › parity.spec.mjs:61:1 › row 2: the sync dot is green while the stream is open, amber when it drops, green again with no rows missing (887ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:41.1790990Z   ✓   88 [390] › push.spec.mjs:24:1 › two pushes for a thread show one notification; none while it is open; reading it clears it (2.0s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:42.8512112Z   ✓   90 [390] › parity.spec.mjs:77:1 › rows 3 and 5: ↻ spins while the thin strip shows and the page stays tappable; a pull and coming back reload too (2.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:44.0156315Z   ✓   91 [1440] › cards.spec.mjs:39:1 › row 30: choice rows, the recommended first, an other box, and the ✓ line says who and when (2.1s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:44.1379001Z   ✓   92 [390] › parity.spec.mjs:108:1 › row 5: the app coming back after 30 s away reloads; under 30 s it doesn't (1.3s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:45.0560793Z   ✓   94 [390] › parity.spec.mjs:125:1 › row 4: an action's toast is one short line on screen, then it clears (901ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:46.3967091Z   ✓   93 [1440] › cards.spec.mjs:60:1 › row 31: a conductor's answer keeps [change]; the owner's pick replaces it (2.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:48.1827353Z   ✓   96 [1440] › cards.spec.mjs:81:1 › row 32: a config card shows its diff, the bar says it waits, [apply] settles it (1.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:49.7632814Z   ✓   97 [1440] › cards.spec.mjs:105:1 › row 33: a secret card's field is masked; saved, the line names only the secret (1.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:51.3423950Z   ✓   98 [1440] › cards.spec.mjs:120:1 › row 34: the composer's model and effort chips; a pick is kept and said in the thread (1.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:53.2653520Z   ✓   99 [1440] › cards.spec.mjs:131:1 › row 35: handoff chips open the other thread; a line flows back; a pick-a-thread row (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:55.0894095Z   ✓  100 [1440] › cards.spec.mjs:150:1 › #84: the header shows the id; a whole-word ref opens that thread and back returns; code, partial and unknown stay plain (1.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:56.3232750Z   ✓   95 [390] › parity.spec.mjs:151:1 › row 6 (#47): a new device asks, a paired one approves with its passkey (a virtual authenticator) or declines (11.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:57.1983900Z   ✓  101 [1440] › cards.spec.mjs:173:1 › #83: a herdsman run card shows its command and sha; [approve] shows the exit and tail, [deny] runs nothing (2.1s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:57.9534534Z   ✓  102 [390] › parity.spec.mjs:234:1 › row 7: an unpaired browser gets the shell only: pairing, no thread data (1.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:52:59.8857870Z   ✓  104 [390] › parity.spec.mjs:250:1 › rows 8 and 13: Settings opens at a section from its link, has an index, and says truly that alerts are off (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:00.4153146Z   ✓  103 [1440] › chat.spec.mjs:21:1 › each event kind renders: reply, tool call, plan, approval, state, stop (3.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:01.1185778Z   ✓  105 [390] › parity.spec.mjs:271:1 › row 10: a theme with moments plays one when a turn ends live; terminal plays none (1.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:02.7100819Z   ✓  107 [390] › parity.spec.mjs:294:1 › row 12: ascii figures replace the sprites and stay (1.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:03.3286535Z   ✓  108 [390] › parity.spec.mjs:308:1 › row 14: report mode: tap an element, add a note, send; cooee reports lists it (593ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:04.0374310Z   -  109 [1440] › first-run.spec.mjs:9:1 › first run: no agents shows its fix line with a copy button, never an empty composer
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:05.2257933Z   ✓  106 [1440] › chat.spec.mjs:71:1 › a reconnect mid-stream loses and doubles no text (4.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:05.8255996Z   ✓  111 [1440] › chat.spec.mjs:109:1 › a failed send shows retry, and the retry sends it (588ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:06.4504945Z   ✓  110 [1440] › folders.spec.mjs:17:1 › Settings › Folders: browse from home, add a root and remove it (2.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:07.7428238Z   ✓  112 [1440] › chat.spec.mjs:123:1 › the draft survives a reload (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:08.1410005Z   ✓  113 [1440] › folders.spec.mjs:55:1 › Use a folder…: search finds a sub-folder, [+ new folder] makes one in a root and picks it (1.7s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:09.9695269Z   ✓  115 [1440] › folders.spec.mjs:86:1 › Use a folder… in a chat: its later turns run in the folder, the chat says so (1.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:12.5542295Z   ✓  116 [1440] › login.spec.mjs:7:1 › sign-ins: the provider's own login, its link tappable, a code typed in, then signed in (2.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:13.3619310Z   ✓  117 [1440] › look.spec.mjs:38:1 › a device's pick shows from the first frame, and stays on this device only (778ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:16.1057387Z   ✓  118 [1440] › look.spec.mjs:69:1 › the look sheet: style, figures, theme, appearance and colours apply at once and stay (2.7s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:16.2207025Z   ✓  114 [1440] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept (8.5s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:16.4422930Z   ✓  119 [1440] › look.spec.mjs:108:1 › System follows the phone's mode live (323ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:18.1023611Z   ✓  120 [1440] › machines.spec.mjs:7:1 › the machines tab: a card per machine, a chart on tap, the Air offline and the tab's dot (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:18.5013948Z   ✓  121 [1440] › look.spec.mjs:123:1 › Settings: the look rows show the pick and open the look sheet (2.0s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:18.5702363Z   -  123 [1440] › look.spec.mjs:136:1 › each Style × Figures combination renders at 390
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:18.8037233Z   ✓  124 [1440] › look.spec.mjs:177:1 › the ascii figures' two frames alternate (224ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:20.2044145Z   ✓  122 [1440] › mcp.spec.mjs:19:1 › mcp servers: one row per server, + server's card shows the exact command, an agent's tools (2.1s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:20.3440466Z   ✓  126 [1440] › md.spec.mjs:5:1 › md.ts renders each element as DOM, escaping all text (125ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:20.5991913Z   ✓  127 [1440] › md.spec.mjs:53:1 › a fenced block gets [▸ terminal] beside [copy] only where the owner terminal's tab is on (#29) (246ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:21.0699361Z send → chat with your message: 185 ms (1440)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:21.9350179Z   ✓  125 [1440] › look.spec.mjs:197:1 › the look sheet lists Scene only with sprites, and plain only ASCII or None (3.1s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:22.4784105Z   ✓  128 [1440] › new-thread.spec.mjs:44:1 › send opens the chat at once with the loading line, which the reply replaces (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:22.5892396Z   ✓  129 [1440] › look.spec.mjs:245:1 › switching style or figures keeps the scroll position (646ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:22.9604520Z   ✓  130 [1440] › new-thread.spec.mjs:72:1 › the model and effort picked are the start's (#553 row 34), said in the thread's bar (466ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:23.3075967Z   ✓  131 [1440] › look.spec.mjs:277:1 › a plugin tab gets the theme's variables, data URLs, style and figures, and every change (705ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:24.2974321Z   ✓  133 [1440] › nojs.spec.mjs:9:1 › with no script the look sheet, Settings and Use a folder… open (974ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:24.3173107Z   -  134 [1440] › pair.spec.mjs:42:1 › the welcome: the figure, three steps and six boxes, nothing else; dark and light
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:24.3273416Z   -  135 [1440] › pair.spec.mjs:53:1 › typing moves on, ⌫ goes back, a paste fills all six; a wrong code says so and clears the boxes
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:24.3362372Z   -  136 [1440] › pair.spec.mjs:79:1 › a QR link pairs at once and the list offers a passkey; the used code then says it has run out
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:24.3449222Z   -  137 [1440] › pair.spec.mjs:104:1 › settings › devices › pair a device shows the QR and its code
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:24.3518978Z   -  138 [1440] › pair.spec.mjs:143:1 › the approve card: no passkey on this device, approved elsewhere, and a request that ran out
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:24.8918407Z   ✓  132 [1440] › new-thread.spec.mjs:83:1 › a connect that fails shows inline with retry; the message stays; retry sends it (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:26.5331477Z   ✓  140 [1440] › new-thread.spec.mjs:111:1 › Settings › providers is one flat list: a row per account, [+ account] per provider (1.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:26.6013442Z   -  141 [1440] › plugin-manager.spec.mjs:15:1 › Settings › Plugins: add from the index after a confirm, it runs with its tab and log, then remove
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:26.9512030Z   ✓  139 [1440] › parity-threads.spec.mjs:48:1 › row 15: a new reply shows on the open list (dot and badge, no reload); opening the thread clears it (2.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:28.5966960Z   ✓  142 [1440] › plugins.spec.mjs:9:1 › the example plugin's tab: proxied calls with its token, its stream, a push and a choice card (2.0s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:28.7962263Z   ✓  144 [1440] › plugins.spec.mjs:46:1 › a plugin reaches only its own backend: not another plugin's, not cooee's storage or page (187ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:29.3020780Z   ✓  143 [1440] › parity-threads.spec.mjs:80:1 › row 16: a side thread started by typing is titled by its first line; the title renames it (2.3s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:29.3676718Z   -  146 [1440] › parity-threads.spec.mjs:99:1 › a phone's ‹ back to agents keeps the chat's agent current: its side threads and + new chat
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:30.7634019Z   ✓  145 [1440] › profiles.spec.mjs:17:1 › a profile is an agent: listed, a new chat with it runs as it, its bar says its label (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:31.3824161Z   ✓  148 [1440] › reliability.spec.mjs:19:3 › on every browser › R5: a slow load shows the thin strip only after 300 ms, and the page stays tappable (591ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:31.8993948Z   ✓  147 [1440] › parity-threads.spec.mjs:111:1 › row 17: a row swiped left is archived, undo brings it back, and the archived list restores it (2.5s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:32.6274169Z   ✓  149 [1440] › reliability.spec.mjs:44:3 › on every browser › R16: refreshed 5 times, each row is drawn once and the list keeps one card per thread (1.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:33.0745635Z   ✓  151 [1440] › reliability.spec.mjs:67:3 › on every browser › R17: paths and image words in a message stay text: no image, no file fetched (438ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:33.0858804Z   -  152 [1440] › reliability.spec.mjs:81:3 › on WebKit, as on the iPhone › R4: with the keyboard up (a shrunk viewport) the composer sits flush on it and the page never jumps
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:33.0863802Z   -  153 [1440] › reliability.spec.mjs:101:3 › on WebKit, as on the iPhone › R25: closing a sheet goes from sheet to page in one step: no frame flashes, the page never reloads
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:33.7243066Z   ✓  154 [1440] › scene.spec.mjs:36:1 › Scene draws a sprite per agent on one page; a tap opens its chat, ringed, with its chats as chips (618ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:34.2944086Z   ✓  150 [1440] › parity-threads.spec.mjs:148:1 › row 18: a reply's markdown renders (table, code, link, raw HTML as text); a run of commands folds and stays open (2.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:34.4980006Z   ✓  155 [1440] › scene.spec.mjs:74:1 › refreshed 5 times, Scene keeps one sprite per agent (756ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:35.1624914Z   ✓  156 [1440] › parity-threads.spec.mjs:186:1 › row 18: a thread ref in a reply's markdown opens that thread; in code it stays plain (857ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:35.6181763Z   ✓  157 [1440] › scene.spec.mjs:89:1 › Scene is offered only with Figures Sprite; ASCII, None or the plain theme hide it (1.1s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:35.7607256Z   ✓  158 [1440] › parity-threads.spec.mjs:197:1 › row 19: a code block's [copy] puts its code on the clipboard (584ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:36.4646355Z   ✓  160 [1440] › parity-threads.spec.mjs:208:1 › row 20: two photos sent in one message show as thumbnails; one opens full size and back closes it (694ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:37.0692330Z   ✓  161 [1440] › parity-threads.spec.mjs:236:1 › row 21: a send says sending…, then ✓; offline it turns red with [retry], which resends it (593ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:37.4428947Z   ✓  159 [1440] › scene.spec.mjs:118:5 › Scene's audit: farm, dark (1.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:37.6845722Z   ✓  162 [1440] › parity-threads.spec.mjs:250:1 › row 22: the box grows with its text to 6 lines, then scrolls; send stays at its foot (603ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:38.1971995Z   ✓  164 [1440] › parity-threads.spec.mjs:269:1 › row 23: when the keyboard covers the page (iOS: only the visual viewport shrinks), the composer sits on it (503ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:38.8989402Z   ✓  165 [1440] › parity-threads.spec.mjs:291:1 › row 25: [stop] says stopping… until the turn stops; the bar says offline, then nothing once back (692ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:39.2813615Z   ✓  163 [1440] › scene.spec.mjs:118:5 › Scene's audit: farm, light (1.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:39.3492575Z   -  167 [1440] › scene.spec.mjs:118:5 › Scene's audit: kitchen, dark
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:39.4208210Z   -  168 [1440] › scene.spec.mjs:118:5 › Scene's audit: kitchen, light
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:39.4764701Z   -  169 [1440] › scene.spec.mjs:118:5 › Scene's audit: garden, dark
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:39.5318995Z   -  170 [1440] › scene.spec.mjs:118:5 › Scene's audit: garden, light
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:41.2960012Z   ✓  166 [1440] › parity-threads.spec.mjs:315:1 › row 26: a send during a turn is queued; [send now] steers it in; the next goes when the turn ends; [edit] takes one back (2.4s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:41.6774179Z   ✓  171 [1440] › scene.spec.mjs:133:1 › Scene beside a chat at 1440: the sidebar is the scene, the chat keeps its style (2.1s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:42.0280280Z   ✓  172 [1440] › parity-threads.spec.mjs:343:1 › row 27: the draft keeps its text and picked files across a reload (722ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:42.0456911Z   ✓  173 [1440] › scene.spec.mjs:147:1 › farm's Scene at night: the strip's night from 19:00 on this device's clock (354ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:42.1248981Z   -  175 [1440] › terminal.spec.mjs:9:1 › the terminal: Face ID opens it, a shell takes typing, the key bar sits at the foot
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:44.6422080Z   ✓  174 [1440] › parity-threads.spec.mjs:376:3 › touch › row 28: a long press on a reply opens copy, copy as markdown and quote; quote puts > lines in the box (2.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:44.9977195Z   ✓  177 [1440] › parity-threads.spec.mjs:411:1 › row 29: the thread bar stays put while scrolling to the top loads older messages (345ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:45.7420098Z   ✓  176 [1440] › themes.spec.mjs:20:1 › remix farm with an agent, watch the preview reload on a save, keep it and pick it (3.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:46.8821479Z   ✓  178 [1440] › threads.spec.mjs:4:1 › agents: the list renders, fits the width, no axe violations; + opens a new chat with nothing to pick (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:47.1199963Z   ✓  180 [1440] › threads.spec.mjs:29:1 › installable: the manifest, its icons and the service worker load (226ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:47.4867877Z   ✓  179 [1440] › workflow.spec.mjs:12:1 › Workflow: lanes are never among the agents, and a running impl lane opens as a chat (1.7s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:47.6303565Z   ✓  181 [1440] › threads.spec.mjs:45:1 › a failed start reads as one plain sentence, never the server's JSON error (500ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:50.0604243Z   ✓  183 [1440] › parity.spec.mjs:34:1 › row 1: installable, no double-tap zoom, and offline it opens on its last copy with its time (1.7s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:50.9804212Z   ✓  184 [1440] › parity.spec.mjs:61:1 › row 2: the sync dot is green while the stream is open, amber when it drops, green again with no rows missing (897ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:51.5184578Z   ✓  182 [1440] › threads.spec.mjs:60:1 › the current agent's row reads at AA while its chat works, on the light themes (3.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:53.2774510Z   ✓  186 [1440] › threads.spec.mjs:80:1 › an agent's unread side threads show under it, newest 3 and +2; newest opens the newest reply; one row for both (1.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:53.8150779Z   ✓  185 [1440] › parity.spec.mjs:77:1 › rows 3 and 5: ↻ spins while the thin strip shows and the page stays tappable; a pull and coming back reload too (2.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:55.4261136Z   ✓  188 [1440] › parity.spec.mjs:108:1 › row 5: the app coming back after 30 s away reloads; under 30 s it doesn't (1.6s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:56.2010977Z   ✓  187 [1440] › push.spec.mjs:24:1 › two pushes for a thread show one notification; none while it is open; reading it clears it (2.1s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:56.2714706Z   ✓  189 [1440] › parity.spec.mjs:125:1 › row 4: an action's toast is one short line on screen, then it clears (824ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:57.1831835Z   -  191 [webkit] › reliability.spec.mjs:19:3 › on every browser › R5: a slow load shows the thin strip only after 300 ms, and the page stays tappable
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:57.1856288Z   -  192 [webkit] › reliability.spec.mjs:44:3 › on every browser › R16: refreshed 5 times, each row is drawn once and the list keeps one card per thread
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:57.1895653Z   -  193 [webkit] › reliability.spec.mjs:67:3 › on every browser › R17: paths and image words in a message stay text: no image, no file fetched
+ui	playwright (390, 1440, axe)	2026-11-13T00:53:58.6350863Z   ✓  194 [webkit] › reliability.spec.mjs:81:3 › on WebKit, as on the iPhone › R4: with the keyboard up (a shrunk viewport) the composer sits flush on it and the page never jumps (1.3s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:04.4807351Z   ✓  190 [1440] › parity.spec.mjs:151:1 › row 6 (#47): a new device asks, a paired one approves with its passkey (a virtual authenticator) or declines (8.2s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:04.5023117Z   ✓  195 [webkit] › reliability.spec.mjs:101:3 › on WebKit, as on the iPhone › R25: closing a sheet goes from sheet to page in one step: no frame flashes, the page never reloads (5.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:05.8245909Z   ✓  196 [1440] › parity.spec.mjs:234:1 › row 7: an unpaired browser gets the shell only: pairing, no thread data (1.3s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:07.7147441Z   ✓  197 [1440] › parity.spec.mjs:250:1 › rows 8 and 13: Settings opens at a section from its link, has an index, and says truly that alerts are off (1.9s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:08.7203614Z   ✓  198 [1440] › parity.spec.mjs:271:1 › row 10: a theme with moments plays one when a turn ends live; terminal plays none (984ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:10.5475416Z   ✓  199 [1440] › parity.spec.mjs:294:1 › row 12: ascii figures replace the sprites and stay (1.8s)
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.1854320Z   ✓  200 [1440] › parity.spec.mjs:308:1 › row 14: report mode: tap an element, add a note, send; cooee reports lists it (624ms)
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3318385Z 
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3325581Z 
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3335911Z   1) [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3336672Z 
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3337061Z     Error: expect(received).toEqual(expected) // deep equality
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3337475Z 
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3337631Z     - Expected  - 1
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3338025Z     + Received  + 6
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3338217Z 
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3338365Z     - Array []
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3338699Z     + Array [
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3339057Z     +   73,
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3339359Z     +   117,
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3339650Z     +   97,
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3339926Z     +   98,
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3340220Z     + ]
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3340381Z 
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3340621Z       175 |   expect(await anchor()).toEqual(before);
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3341246Z       176 |   // Neither the scrolling nor the keyboard made a task over 50 ms.
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3342424Z     > 177 |   expect(await page.evaluate(() => window.longTasks.filter((d) => d > 50))).toEqual([]);
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3343648Z           |                                                                             ^
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3344086Z       178 | });
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3344344Z       179 |
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3344779Z         at /home/runner/work/cooee/cooee/web/e2e/chat.spec.mjs:177:77
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3345135Z 
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3345668Z     Error Context: test-results/chat-1-000-messages-a-wind-ddd51--long-tasks-the-anchor-kept-390/error-context.md
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3346248Z 
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3346438Z   1 failed
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3347380Z     [390] › chat.spec.mjs:131:1 › 1,000 messages: a window around the anchor, no long tasks, the anchor kept 
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3348000Z   23 skipped
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3348299Z   176 passed (3.0m)
+ui	playwright (390, 1440, axe)	2026-11-13T00:54:11.3647828Z ##[error]Process completed with exit code 1.
