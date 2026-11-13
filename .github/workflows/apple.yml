@@ -1,5 +1,6 @@
-# #124: build the native app (apple/) for iOS and macOS on a GitHub-hosted macOS runner (free on this public repo); no
-# signing. #147: `apple-quality` runs `just apple-check`, every Swift gate (format, anti-slop, SwiftLint, tests,
+# #124: build the native app (apple/) for iOS and macOS; no signing. #365: every job runs on our own runners
+# (mini-cooee, air-cooee), never for a fork's pull request (its jobs show skipped), and a newer run of the same ref
+# cancels the older one. #147: `apple-quality` runs `just apple-check`, every Swift gate (format, anti-slop, SwiftLint, tests,
 # coverage, Periphery). #143: `e2e`: the app in the iOS simulator against a real `cooee serve` (apple/e2e/serve.sh), its
 # screens kept as the `simulator-shots` artifact. #142: `mac-setup`: the Mac app's first run on the runner starts cooee
 # and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac approves it;
@@ -16,6 +17,7 @@ on:
       - "scripts/apple-check.sh"
       - "scripts/apple-coverage.swift"
       - ".github/workflows/apple.yml"
+      - ".github/actions/mac-runner/**"
   pull_request:
     paths:
       - "scripts/mac-bins.sh"
@@ -25,15 +27,21 @@ on:
       - "scripts/apple-check.sh"
       - "scripts/apple-coverage.swift"
       - ".github/workflows/apple.yml"
+      - ".github/actions/mac-runner/**"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
-    runs-on: macos-26
+    if: &ours github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: &mac [self-hosted, macOS, ARM64, cooee-mac]
     strategy:
       fail-fast: false
       matrix:
         destination: ["generic/platform=iOS Simulator", "generic/platform=macOS"]
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/mac-runner
       - name: xcodebuild
         working-directory: apple
         run: >-
@@ -41,10 +49,12 @@ jobs:
           CODE_SIGNING_ALLOWED=NO build
 
   apple-quality:
-    runs-on: macos-26
+    if: *ours
+    runs-on: *mac
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/mac-runner
       - uses: taiki-e/install-action@v2
         with:
           tool: just
@@ -60,16 +70,19 @@ jobs:
           path: ${{ runner.temp }}/rendered
 
   e2e:
-    runs-on: macos-26
+    if: *ours
+    runs-on: *mac
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/mac-runner
       - uses: dtolnay/rust-toolchain@1.99.1
       - uses: Swatinem/rust-cache@v2
       - name: cooee serve (fake agent)
         run: |
           PORT=4100 PAIR_LINK="$RUNNER_TEMP/pair" apple/e2e/serve.sh >"$RUNNER_TEMP/serve.log" 2>&1 &
           serve=$!
+          echo "SERVE=$serve" >> "$GITHUB_ENV"
           until [ -s "$RUNNER_TEMP/pair" ]; do
             kill -0 "$serve" 2>/dev/null || { cat "$RUNNER_TEMP/serve.log"; exit 1; }
             sleep 2
@@ -83,7 +96,8 @@ jobs:
       - name: the app in the simulator
         working-directory: apple
         run: |
-          sim=$(xcrun simctl create cooee-e2e "iPhone 17")
+          sim=$(xcrun simctl create "cooee-e2e-$GITHUB_RUN_ID" "iPhone 17")
+          echo "SIM=$sim" >> "$GITHUB_ENV"
           xcrun simctl bootstatus "$sim" -b
           build=(xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim")
           "${build[@]}" build-for-testing
@@ -115,14 +129,21 @@ jobs:
         with:
           name: simulator-shots
           path: simulator-shots
+      - name: stop the server, delete the simulator
+        if: always()
+        run: |
+          [ -z "${SERVE:-}" ] || kill "$SERVE" 2>/dev/null || true
+          [ -z "${SIM:-}" ] || xcrun simctl delete "$SIM"
 
   mac-setup:
-    runs-on: macos-26
+    if: *ours
+    runs-on: *mac
     timeout-minutes: 90
     env:
       SHOTS: ${{ github.workspace }}/mac-setup-shots
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/mac-runner
       - uses: dtolnay/rust-toolchain@1.99.1
       - uses: Swatinem/rust-cache@v2
       - name: cooee and shed for the app

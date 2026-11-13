@@ -12,6 +12,7 @@ on:
     types: [opened, synchronize, reopened, labeled]
   schedule:
     - cron: "17 19 * * *"
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -82,6 +83,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.REF }}
+      - uses: ./.github/actions/mac-runner
+        if: runner.environment == 'self-hosted'
       - uses: dtolnay/rust-toolchain@1.99.1
         with:
           components: clippy, rustfmt
@@ -113,11 +116,19 @@ jobs:
       - name: CI scripts (scope, reuse, nightly)
         run: just ci-scripts
 
+  # #365: the macOS legs run on our own runners (mini-cooee, air-cooee), never for a fork's pull request: that skips
+  # them. The check names stay as the staging ruleset requires them. A newer run of the same ref cancels these legs; a
+  # run that skips them (another label) gets a group of its own, so it cancels nothing.
   msrv-mac:
     name: msrv (macos-latest)
     needs: scope
-    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true'
-    runs-on: macos-latest
+    if: &mac >-
+      needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: &ours [self-hosted, macOS, ARM64, cooee-mac]
+    concurrency:
+      group: ci-${{ github.job }}-${{ needs.scope.outputs.mac == 'true' && format('{0}-{1}', github.event_name, github.ref) || github.run_id }}
+      cancel-in-progress: true
     steps: *msrv
 
   stable:
@@ -131,6 +142,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.REF }}
+      - uses: ./.github/actions/mac-runner
+        if: runner.environment == 'self-hosted'
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: test
@@ -139,8 +152,11 @@ jobs:
   stable-mac:
     name: stable (macos-latest)
     needs: scope
-    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true'
-    runs-on: macos-latest
+    if: *mac
+    runs-on: *ours
+    concurrency:
+      group: ci-${{ github.job }}-${{ needs.scope.outputs.mac == 'true' && format('{0}-{1}', github.event_name, github.ref) || github.run_id }}
+      cancel-in-progress: true
     env:
       RUSTUP_TOOLCHAIN: stable
     steps: *stable
