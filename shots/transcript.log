@@ -1,0 +1,139 @@
+$ sh ci/ci-scripts-test.sh
+ci scripts test ok
+exit=0
+$ actionlint
+(eval):3: command not found: actionlint
+exit=127
+$ shellcheck scripts/ci-*.sh ci/ci-scripts-test.sh
+(eval):4: command not found: shellcheck
+exit=127
+== docs-only d0bff277  [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=true web=true 
+== docs-only d0bff277  [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=true mac=true web=true 
+== docs-only d0bff277  [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=true web=true 
+== rust-core-only f5bf384f  [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=true web=true 
+== rust-core-only f5bf384f  [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=true mac=true web=true 
+== rust-core-only f5bf384f  [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=true web=true 
+== rust-core-only2 1e2b3243  [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=true web=true 
+== rust-core-only2 1e2b3243  [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=true mac=true web=true 
+== rust-core-only2 1e2b3243  [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=true web=true 
+== web-only 1f6610cd  [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=true web=true 
+== web-only 1f6610cd  [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=true mac=true web=true 
+== web-only 1f6610cd  [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=true web=true 
+== apple 8deac266  [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=true web=true 
+== apple 8deac266  [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=true mac=true web=true 
+== apple 8deac266  [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=true web=true 
+== apple-uitests 9a58dc28  [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=true web=true 
+== apple-uitests 9a58dc28  [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=true mac=true web=true 
+== apple-uitests 9a58dc28  [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=true web=true 
+== server 3ecee64f  [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=true web=true 
+== server 3ecee64f  [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=true mac=true web=true 
+== server 3ecee64f  [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=true web=true 
+(previous loop discarded: zsh did not word-split; rerun under sh)
+add exit=0
+== docs-only d0bff277: README.md docs/api.md docs/architecture.md docs/design/native-shell/README.md docs/design/screens-as-data/README.md docs
+   [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=false mac=false web=false 
+   [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=false web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=false web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=bug] exit=0 -> run=false 
+   [EVENT=push] exit=0 -> run=true full=true mac=true web=true 
+== docs-design 942a85a3: docs/design/screen/README.md docs/design/screen/activity-390-dark.png docs/design/screen/activity-scene-390-light.png do
+   [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=false mac=false web=false 
+   [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=false web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=false web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=bug] exit=0 -> run=false 
+   [EVENT=push] exit=0 -> run=true full=true mac=true web=true 
+== rust-core-only f5bf384f: crates/cooee-core/src/devices.rs 
+   [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=false mac=false web=false 
+   [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=false web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=false web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=bug] exit=0 -> run=false 
+   [EVENT=push] exit=0 -> run=true full=true mac=true web=true 
+== rust-core-only2 1e2b3243: crates/cooee-core/src/devices.rs 
+   [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=false mac=false web=false 
+   [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=false web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=false web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=bug] exit=0 -> run=false 
+   [EVENT=push] exit=0 -> run=true full=true mac=true web=true 
+== web-only 1f6610cd: web/e2e/look.spec.mjs web/src/app.css 
+   [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=false mac=false web=true 
+   [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=false web=true 
+   [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=false web=true 
+   [EVENT=pull_request ACTION=labeled LABEL=bug] exit=0 -> run=false 
+   [EVENT=push] exit=0 -> run=true full=true mac=true web=true 
+== plugins-index e09d9dec: plugins/index.toml 
+   [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=false mac=false web=false 
+   [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=false web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=false web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=bug] exit=0 -> run=false 
+   [EVENT=push] exit=0 -> run=true full=true mac=true web=true 
+== apple 8deac266: apple/Sources/CooeeCore/Item.swift apple/Tests/CooeeCoreTests/ItemsTests.swift 
+   [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=false mac=false web=false 
+   [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=true web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=true web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=bug] exit=0 -> run=false 
+   [EVENT=push] exit=0 -> run=true full=true mac=true web=true 
+== apple-uitests 9a58dc28: apple/UITests/LiveIconUITests.swift apple/UITests/LiveUITests.swift 
+   [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=false mac=false web=false 
+   [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=true web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=true web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=bug] exit=0 -> run=false 
+   [EVENT=push] exit=0 -> run=true full=true mac=true web=true 
+== server 3ecee64f: crates/cooee-server/src/manage.rs 
+   [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=false mac=false web=false 
+   [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=true web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=true web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=bug] exit=0 -> run=false 
+   [EVENT=push] exit=0 -> run=true full=true mac=true web=true 
+== core-shed+server 88a979df: crates/cooee-core/src/shed.rs crates/cooee-server/src/lib.rs crates/cooee-server/src/login.rs crates/cooee/src/machine.r
+   [EVENT=pull_request ACTION=synchronize CARRIES=false] exit=0 -> run=true full=false mac=false web=false 
+   [EVENT=pull_request ACTION=synchronize CARRIES=true] exit=0 -> run=true full=true mac=true web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=merge-ready] exit=0 -> run=true full=true mac=true web=false 
+   [EVENT=pull_request ACTION=labeled LABEL=bug] exit=0 -> run=false 
+   [EVENT=push] exit=0 -> run=true full=true mac=true web=true 
+$ drover pr cooee 329
+PR #354 OPEN → staging head 2e914dd mergeable MERGEABLE ci failed (24 checks)
+exit=0
+$ gh pr checks 354 -R jirathip-dev/cooee
+ui	fail	4m55s	https://github.com/jirathip-dev/cooee/actions/runs/43361592939/job/131676702780	
+nightly-red	skipping	0	https://github.com/jirathip-dev/cooee/actions/runs/43361592939/job/131704789336	
+actionlint	pass	11s	https://github.com/jirathip-dev/cooee/actions/runs/43361592939/job/131676702744	
+dmg	pass	19m26s	https://github.com/jirathip-dev/cooee/actions/runs/43361592883/job/131676637774	
+msrv (macos-latest)	pass	5m58s	https://github.com/jirathip-dev/cooee/actions/runs/43361592939/job/131676702731	
+msrv (ubuntu-latest)	pass	2m4s	https://github.com/jirathip-dev/cooee/actions/runs/43361592939/job/131676702714	
+no-node	pass	50s	https://github.com/jirathip-dev/cooee/actions/runs/43361592939/job/131676702701	
+scope	pass	8s	https://github.com/jirathip-dev/cooee/actions/runs/43361592883/job/131676129595	
+scope	pass	9s	https://github.com/jirathip-dev/cooee/actions/runs/43361592939/job/131676129641	
+stable (macos-latest)	pass	5m1s	https://github.com/jirathip-dev/cooee/actions/runs/43361592939/job/131676702693	
+stable (ubuntu-latest)	pass	1m43s	https://github.com/jirathip-dev/cooee/actions/runs/43361592939/job/131676702716	
+ts	pass	13s	https://github.com/jirathip-dev/cooee/actions/runs/43361592939/job/131676702719	
+exit=1
+$ gh pr view 354 --json labels
+{"headRefOid":"2e914dd934383a9dded4184fd24addc77fcb75b0","labels":[{"id":"LA_kwDOVjVli88AAAADCobIqQ","name":"merge-ready","description":"herdsman: PASS at the head; runs the full CI","color":"0E8A16"}]}
+$ gh run list -c 2e914dd...
+[{"conclusion":"success","databaseId":43361592883,"displayTitle":"ci: scope macOS legs to the merge-ready run, staging reuse, nightly red issue (#329)","event":"pull_request","status":"completed","workflowName":"apple-mac"},{"conclusion":"failure","databaseId":43361592939,"displayTitle":"ci: scope macOS legs to the merge-ready run, staging reuse, nightly red issue (#329)","event":"pull_request","status":"completed","workflowName":"ci"},{"conclusion":"success","databaseId":43360043281,"displayTitle":"ci: scope macOS legs to the merge-ready run, staging reuse, nightly red issue (#329)","event":"pull_request","status":"completed","workflowName":"apple-mac"},{"conclusion":"success","databaseId":43360043292,"displayTitle":"ci: scope macOS legs to the merge-ready run, staging reuse, nightly red issue (#329)","event":"pull_request","status":"completed","workflowName":"ci"}]
+== 43342551452
+msrv (macos-latest)
+== 43321042363
+msrv (ubuntu-latest)
+stable (ubuntu-latest)
+43384184632 issue-230 long-task-hits=4
+43363893760 issue-201 long-task-hits=4
+43361592939 issue-329 long-task-hits=4
+43361272497 issue-330 long-task-hits=4
+43355842309 issue-330 long-task-hits=4
+43355674465 issue-330 long-task-hits=4
+43348583159 issue-181 long-task-hits=4
+43342551452 staging long-task-hits=0
+43342264675 issue-230 long-task-hits=0
+43341598910 issue-328 long-task-hits=0
+43339568205 issue-239 long-task-hits=0
+43329159901 issue-318 long-task-hits=0
+43324219286 issue-181 long-task-hits=0
+43323679051 issue-278 long-task-hits=4
+43321796322 issue-295 long-task-hits=0
+== apple-mac 43360043281
+scope	success
+dmg	skipped
+== apple-mac 43361592883
+scope	success
+dmg	success
