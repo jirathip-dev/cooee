@@ -1,0 +1,6 @@
+Decided: merge current staging and push to rerun CI; no code change
+Because: "The views build, the screenshots and README are in `apple/design/chat-format/`"
+Because: q1380
+Rejected: editing the design views — the failed checks at a546266 were cancelled runs, not build errors
+Check: CI at e8312b9 runs to completion; the diff vs staging touches only apple/design/chat-format
+Owner: the approved formatting design is unchanged; this push only reruns the checks that were cancelled
