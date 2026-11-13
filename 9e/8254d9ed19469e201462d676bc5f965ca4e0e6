@@ -1,0 +1,5 @@
+Decided: merged staging ecdeb73d and pushed 9e8254d to re-run CI; no code change
+Because: web/e2e/chat.spec.mjs:177
+Rejected: changing the web long-task check — this PR has no diff in web/ or crates/ against staging
+Check: CI at 9e8254d; at c073842 every check passed but ui's 65/68 ms long-task flake
+Owner: the iOS build the review flagged as pending passed; the one red was an unrelated web timing check, CI re-runs on the new head
