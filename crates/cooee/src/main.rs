@@ -17,12 +17,13 @@ use qrcode::{QrCode, render::unicode::Dense1x2};
 mod accounts;
 mod check;
 mod keychain;
+mod machine;
 mod setup;
 
-const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | push migrate | secrets \
+const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | machine check <m> [--yes] | push migrate | secrets \
                      | perf [--minutes <n>] \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
-                     | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json>... \
+                     | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json|cooee-plugin.toml>... \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
                      | theme check <path>... | accounts ls [--json] \
                      | accounts env <provider> <name> [--require-signed-in] \
@@ -127,6 +128,9 @@ fn main() -> ExitCode {
             return with_config(path.as_deref(), &instance, |config| remove(config, id));
         }
         ["doctor"] => doctor,
+        ["machine", "check", m] => {
+            return with_config(path.as_deref(), &instance, |c| machine::run(c, m, yes));
+        }
         ["push", "migrate"] => keychain::command,
         ["secrets"] => keychain::check,
         ["accounts", rest @ ..] => {
@@ -170,9 +174,7 @@ fn main() -> ExitCode {
             };
             return finish(path.map_err(str::to_owned).and_then(|p| setup.run(&p)));
         }
-        _ => {
-            return usage();
-        }
+        _ => return usage(),
     };
     with_config(path.as_deref(), &instance, run)
 }
@@ -755,7 +757,7 @@ fn write_plist(config: &Config, file: &Path, plist: &str) -> Result<(), String> 
     fs::write(file, plist).map_err(|e| e.to_string())
 }
 
-/// Checks the instance: its service, port, shed, push keys and tailnet URL; fails if any check fails.
+/// Checks the instance: its service, port, shed, each machine (#150), push keys and tailnet URL; fails if any fails.
 fn doctor(config: &Config) -> Result<(), String> {
     let mut failed = Vec::new();
     let mut check = |ok: bool, what: String| {
@@ -792,6 +794,9 @@ fn doctor(config: &Config) -> Result<(), String> {
             false,
             format!("shed: {e}\n     install: {}", shed_install()),
         ),
+    }
+    for (ok, what) in machine::rows(config) {
+        check(ok, what);
     }
     if config.roots.is_empty() {
         println!("warn no roots configured\n     fix: add {ROOTS_FIX} to config.toml");

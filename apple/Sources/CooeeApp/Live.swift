@@ -30,7 +30,11 @@ extension ThreadsClient: DependencyKey {
         answer: { server, thread, item, option, value in
             try await Client(server).answer(thread, item: item, option: option, value: value)
         },
-        start: { server, persona, text in try await Client(server).newThread(persona: persona, text: text) }
+        start: { server, persona, text in try await Client(server).newThread(persona: persona, text: text) },
+        room: { server, title, members in try await Client(server).newRoom(title: title, members: members) },
+        seat: { server, room, persona, place, remove in
+            try await Client(server).seat(room, persona: persona, place: place, remove: remove)
+        }
     )
 }
 
@@ -60,6 +64,19 @@ extension SettingsStore: DependencyKey {
         },
         save: { settings in UserDefaults.standard.set(try? JSONEncoder().encode(settings), forKey: key) }
     )
+}
+
+extension AppIconClient: DependencyKey {
+    public static let liveValue = AppIconClient(set: { icon in try await apply(icon) })
+
+    @MainActor private static func apply(_ icon: AppIcon) async throws {
+        #if os(iOS)
+            guard UIApplication.shared.alternateIconName != icon.alternateName else { return }
+            try await UIApplication.shared.setAlternateIconName(icon.alternateName)
+        #else
+            NSApplication.shared.applicationIconImage = NSImage(named: "\(icon.asset)Preview")
+        #endif
+    }
 }
 
 extension PluginsClient: DependencyKey {
@@ -105,7 +122,9 @@ public struct CooeeRoot: View {
     ) { AppFeature() }
 
     public var body: some View {
-        AppRoot(store: store)
+        AppRoot(store: store).task {
+            if Self.mac { try? await AppIconClient.liveValue.set(SettingsStore.liveValue.load().appIcon) }
+        }
     }
 
     public init() {}

@@ -3,7 +3,7 @@
 //! memory, the allowed tools) with the thread's token, starts or connects to the real server, answers `tools/list`
 //! with the allowed tools only and refuses a call to any other. `cooee mcp serve --thread <id>`, on every thread, is
 //! cooee's own server: `propose_server`, which raises a card in the thread (nothing runs until the owner approves it
-//! with Face ID), and `remember`, a note in the thread's persona's memory. The token is in `COOEE_MCP` (`<cooee's URL> <token>`) and is good while the thread is
+//! with Face ID), `remember`, a note in the thread's persona's memory, and `skill` (#218), its persona's skills. The token is in `COOEE_MCP` (`<cooee's URL> <token>`) and is good while the thread is
 //! open.
 
 use std::{
@@ -358,13 +358,7 @@ pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
         .collect())
 }
 
-/// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126) and
-/// `ask_persona` (#156) for a persona's.
-///
-/// # Errors
-/// Never past a broken stdin; each refused proposal is the tool's error.
-pub fn serve(thread: &str) -> Result<(), String> {
-    let out = Mutex::new(io::stdout());
+fn own_tools() -> Value {
     let schema = json!({
         "type": "object",
         "required": ["name", "type", "why"],
@@ -384,8 +378,12 @@ pub fn serve(thread: &str) -> Result<(), String> {
     });
     let remember = json!({
         "name": "remember",
-        "description": "Keep a note in your persona's memory: it reaches you with your instructions in every new session. The owner can read and clear it.",
-        "inputSchema": { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" } } }
+        "description": "Add a note to your persona's memory (2,000 characters in all), replace one with text, or forget some by id. Your notes reach you as `- [id] text` in every new session.",
+        "inputSchema": { "type": "object", "properties": {
+            "text": { "type": "string" },
+            "replaces": { "type": "string", "description": "the id of the note text replaces" },
+            "forget": { "type": "array", "items": { "type": "string" }, "description": "ids of notes to drop" }
+        } }
     });
     let ask_persona = json!({
         "name": "ask_persona",
@@ -396,6 +394,50 @@ pub fn serve(thread: &str) -> Result<(), String> {
             "timeout": { "type": "integer", "description": "seconds to wait, at most 600 (default 300)" }
         } }
     });
+    let history = json!({
+        "name": "history",
+        "description": "Search your persona's past threads (query: words; at most 5 hits, each a thread ref, date and snippet), or read one (thread: its ref; paged with before).",
+        "inputSchema": { "type": "object", "properties": {
+            "query": { "type": "string" },
+            "thread": { "type": "string" },
+            "before": { "type": "integer", "description": "the older: before= a read ended with" },
+            "limit": { "type": "integer", "description": "fewer hits, at most 5" }
+        } }
+    });
+    let routine = json!({
+        "name": "create_routine",
+        "description": "Make a routine (when the owner asks for something on a schedule): at each due time its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines. {{due}} in the prompt is the due time. A refusal starts with BAD_SCHEDULE, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY or NOT_HERE.",
+        "inputSchema": { "type": "object", "required": ["name", "when", "prompt"], "properties": {
+            "name": { "type": "string", "description": "1 to 60 characters" },
+            "when": { "type": "string", "description": "5-field cron in the Mac's local time (minute hour day-of-month month day-of-week; numbers, *, a-b, */n, lists), at least 15 minutes apart: 0 9 * * 1 is Mondays 09:00" },
+            "prompt": { "type": "string" },
+            "place": { "type": "string", "enum": ["chat", "new_thread"] }
+        } }
+    });
+    let skill = json!({
+        "name": "skill",
+        "description": "Read one of your skills (read: its name), or propose a new one or an edit (propose); the owner approves a proposal before it is saved.",
+        "inputSchema": { "type": "object", "properties": {
+            "read": { "type": "string" },
+            "propose": { "type": "object", "required": ["name", "description", "body"], "properties": {
+                "name": { "type": "string", "description": "lowercase letters, digits and -" },
+                "description": { "type": "string", "description": "one line, at most 120 characters" },
+                "body": { "type": "string" },
+                "replaces": { "type": "string", "description": "the skill it edits" }
+            } }
+        } }
+    });
+    json!([tool, remember, ask_persona, history, routine, skill])
+}
+
+/// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
+/// `ask_persona` (#156), `history` (#217) and `skill` (#218) for a persona's.
+///
+/// # Errors
+/// Never past a broken stdin; each refused proposal is the tool's error.
+pub fn serve(thread: &str) -> Result<(), String> {
+    let out = Mutex::new(io::stdout());
+    let tools = own_tools();
     for line in io::stdin().lock().lines().map_while(Result::ok) {
         let Ok(msg) = serde_json::from_str::<Value>(&line) else {
             continue;
@@ -413,7 +455,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                 }),
             ),
             "ping" => reply(id, &json!({})),
-            "tools/list" => reply(id, &json!({ "tools": [tool, remember, ask_persona] })),
+            "tools/list" => reply(id, &json!({ "tools": tools })),
             "tools/call" => {
                 let args = msg
                     .pointer("/params/arguments")
@@ -424,12 +466,15 @@ pub fn serve(thread: &str) -> Result<(), String> {
                         "/mcp/agent/propose",
                         "Proposed. The owner sees a card with the exact command or URL; once approved with Face ID it is added switched off. Nothing has run.",
                     )),
-                    Some("remember") => Some((
-                        "/mcp/agent/remember",
-                        "Noted: it reaches you in your next sessions.",
-                    )),
+                    Some("remember") => Some(("/mcp/agent/remember", "")),
                     // Its answer (a string) is the reply.
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
+                    Some("history") => Some(("/mcp/agent/history", "")),
+                    Some("create_routine") => Some((
+                        "/mcp/agent/routine",
+                        "Made. The owner sees it in this chat and can change it in Settings › routines.",
+                    )),
+                    Some("skill") => Some(("/mcp/agent/skill", "")),
                     _ => None,
                 };
                 match call.map(|(path, said)| {

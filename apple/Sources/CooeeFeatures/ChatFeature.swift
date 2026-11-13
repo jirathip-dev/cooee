@@ -22,19 +22,25 @@ public struct ChatFeature: Sendable {
         public var error: String?
         public var draft = ""
         public var files: [Attachment] = []
+        public var outbox: [Outgoing] = []
         public var answering: Set<Int> = []
+        public var room: Room?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
         @Presents public var screen: PluginScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
-        public var drawn: [Item] { ChatItems.build(items, live: live) }
+        public var drawn: [Item] {
+            room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
+                ?? ChatItems.build(items, live: live, outbox: outbox)
+        }
 
-        public init(server: Server, target: Target, persona: Persona) {
+        public init(server: Server, target: Target, persona: Persona, room: Room? = nil) {
             self.server = server
             self.target = target
             self.persona = persona
+            self.room = room
         }
     }
 
@@ -47,11 +53,19 @@ public struct ChatFeature: Sendable {
         case attach([Attachment])
         case detach(Int)
         case send
+        case delivered(Int)
+        case undelivered(Int, String)
+        case retry(Int)
         case stop
         case steer(Int)
         case unqueue(Int)
         case answer(Int, BlockAction)
         case answered(Int, String?)
+        case inspect(String?)
+        case move(String, Int)
+        case seat(String)
+        case unseat(String)
+        case seated([String])
         case delegate(Delegate)
         case plugins(PluginAction)
         case screen(PresentationAction<PluginScreenFeature.Action>)
@@ -71,7 +85,7 @@ public struct ChatFeature: Sendable {
         }
     }
 
-    @Dependency(\.threads) private var threads
+    @Dependency(\.threads) internal var threads
     @Dependency(\.plugins) internal var pluginAPI
     @Dependency(\.continuousClock) private var clock
     @Dependency(\.date.now) private var now
@@ -87,6 +101,7 @@ public struct ChatFeature: Sendable {
                 load(&state, slice)
                 return .none
             case .event(let event):
+                state.room?.hear(event)
                 apply(&state, event)
                 return .none
             case .failed(let error):
@@ -98,6 +113,8 @@ public struct ChatFeature: Sendable {
                 state.answering.remove(item)
                 state.error = error ?? state.error
                 return .none
+            case .delivered, .undelivered, .retry:
+                return outbox(&state, action)
             default:
                 return compose(&state, action)
             }
@@ -124,7 +141,7 @@ extension ChatFeature {
         case .steer(let index), .unqueue(let index):
             return queued(state, action, index)
         default:
-            break
+            return seat(&state, action)
         }
         return .none
     }
@@ -167,7 +184,7 @@ extension ChatFeature {
             if !state.working { state.live = "" }
         case .queue(let queue):
             state.queue = queue
-        case .reset:
+        case .reset, .roomTurn, .roomStop:
             break
         }
     }
@@ -179,29 +196,6 @@ extension ChatFeature {
             state.items.append(item)
         }
         if item.kind == "agent" { state.live = "" }
-    }
-
-    private func send(_ state: inout State) -> Effect<Action> {
-        let text = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        let files = state.files
-        guard !text.isEmpty || !files.isEmpty else { return .none }
-        state.draft = ""
-        state.files = []
-        let (threads, server, queue) = (threads, state.server, state.working)
-        switch state.target {
-        case .thread(let thread):
-            return .run { _ in
-                try await threads.send(server, thread, text, files, queue)
-            } catch: { error, send in
-                await send(.failed(error.localizedDescription))
-            }
-        case .new(let persona):
-            return .run { send in
-                await send(.delegate(.started(try await threads.start(server, persona, text))))
-            } catch: { error, send in
-                await send(.failed(error.localizedDescription))
-            }
-        }
     }
 
     private func answer(_ state: inout State, _ item: Int, _ action: BlockAction) -> Effect<Action> {

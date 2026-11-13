@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>cooee · the Screen sheet in the three styles (#165)</title>
+<link rel="stylesheet" href="../../../design-system/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<style>iframe{width:390px;height:844px;border:0;border-radius:48px;box-shadow:0 0 0 1px var(--edge)}.fr.w iframe{width:1440px;height:900px;border-radius:0;zoom:.5}</style>
+</head>
+<body style="background:#0f1a13;color:#ece4cc">
+<!-- #165: the same frames as screen.html, chat.html and sites.html, in each of #124's styles (q947): Modern, Terminal,
+     Scene. Each frame is the page itself with `?style=`, so the styles never drift from the Modern frames. -->
+<div class="gal">
+<div class="fr"><p class="cap">Modern · live</p><iframe src="screen.html?f=live&amp;style=modern&amp;mode=dark"></iframe></div>
+<div class="fr"><p class="cap">Terminal · live</p><iframe src="screen.html?f=live&amp;style=terminal&amp;mode=dark"></iframe></div>
+<div class="fr"><p class="cap">Scene · live</p><iframe src="screen.html?f=live&amp;style=scene&amp;mode=light"></iframe></div>
+<div class="fr"><p class="cap">Terminal · control</p><iframe src="screen.html?f=control&amp;style=terminal&amp;mode=dark"></iframe></div>
+<div class="fr"><p class="cap">Terminal · a screen block and a handoff</p><iframe src="chat.html?f=block&amp;style=terminal&amp;mode=dark"></iframe></div>
+<div class="fr"><p class="cap">Scene · a screen block and a handoff</p><iframe src="chat.html?f=block&amp;style=scene&amp;mode=light"></iframe></div>
+<div class="fr"><p class="cap">Scene · the Live Activity</p><iframe src="chat.html?f=activity&amp;style=scene&amp;mode=light"></iframe></div>
+<div class="fr"><p class="cap">Terminal · sites</p><iframe src="sites.html?f=sites&amp;style=terminal&amp;mode=dark"></iframe></div>
+<div class="fr w"><p class="cap">Terminal · 1440</p><iframe src="screen.html?f=wide-screen&amp;style=terminal&amp;mode=dark"></iframe></div>
+</div>
+</body>
+</html>

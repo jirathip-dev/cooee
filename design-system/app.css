@@ -25,6 +25,7 @@ h1,.tb h2{font-size:inherit;margin:0}
 .fh{display:flex;align-items:center;gap:8px;min-height:44px}.fh b{margin-right:auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.fh .ds{flex:none}
 .tt{font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .tp{grid-column:2/4;font-size:var(--fs-meta);color:var(--mute);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.tp b{font-weight:400;margin-right:1ch}
+.rtn{margin-left:1ch;font-weight:400;color:var(--mute);font-size:var(--fs-meta)}
 details>summary{min-height:44px;display:flex;align-items:center;color:var(--mute);cursor:pointer}
 .nf{display:flex;flex-direction:column;gap:6px;padding-bottom:12px}.nf[hidden]{display:none}
 p.lb{margin:0}.hn{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;color:var(--mute)}.hn code{font-family:var(--mono);color:var(--fg);overflow-wrap:anywhere}
@@ -330,6 +331,7 @@ html[data-style=terminal] .cfl{border:0;border-left:3px solid var(--r);border-ra
 .ptg{flex:none;min-width:7ch;padding:2px 8px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--fg) 8%,transparent);font-size:var(--fs-meta);text-align:center}
 html[data-style=terminal] .ptg{min-width:7ch;padding:0;background:none;color:var(--p);text-align:left}
 .acr.add .sk,.acr.ni .sk{color:var(--mute)}
+.acr[data-routine]{flex-wrap:wrap}.acr[data-routine] .st{order:1;flex-basis:100%;padding-bottom:6px}
 @media (max-width:599px){.acr:has(.un,.us){flex-wrap:wrap}.acr :is(.un,.us){order:1;flex-basis:100%;padding-bottom:6px}}
 .sh .hd.pvh{padding-left:4px}
 /* #38 theme packs: Settings › look › themes (native forms), a theme thread's bar and its live preview. */

@@ -8,20 +8,24 @@ use std::{
     io::{BufRead, BufReader, Read, Write},
     net::{TcpListener, TcpStream},
     process::Command,
-    sync::{Arc, Mutex},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, Ordering},
+    },
     thread,
     time::Duration,
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, is_item, scratch, version};
+use support::{Cooee, FakeShed, is_item, others_go_on, scratch, version};
 
 /// A plugin backend on a free port: every request's head (request line and lowercased headers) and body. Its
-/// next answer to `/cooee/choice` is `choice`'s, when set.
+/// next answer to `/cooee/choice` is `choice`'s, when set; while `hang` is set it answers no choice.
 struct Backend {
     port: u16,
     seen: Arc<Mutex<Vec<(String, String)>>>,
     choice: Arc<Mutex<Option<(u16, Value)>>>,
+    hang: Arc<AtomicBool>,
 }
 
 impl Backend {
@@ -30,13 +34,20 @@ impl Backend {
         let port = listener.local_addr().unwrap().port();
         let seen = Arc::new(Mutex::new(Vec::new()));
         let choice = Arc::new(Mutex::new(None));
-        let (log, next) = (Arc::clone(&seen), Arc::clone(&choice));
+        let hang = Arc::new(AtomicBool::new(false));
+        let (log, next, held) = (Arc::clone(&seen), Arc::clone(&choice), Arc::clone(&hang));
         thread::spawn(move || {
             for stream in listener.incoming().flatten() {
-                answer(stream, &log, &next);
+                let (log, next, held) = (Arc::clone(&log), Arc::clone(&next), Arc::clone(&held));
+                thread::spawn(move || answer(stream, &log, &next, &held));
             }
         });
-        Self { port, seen, choice }
+        Self {
+            port,
+            seen,
+            choice,
+            hang,
+        }
     }
 
     /// The `/cooee/choice` bodies it was sent.
@@ -57,6 +68,7 @@ fn answer(
     stream: TcpStream,
     log: &Mutex<Vec<(String, String)>>,
     choice: &Mutex<Option<(u16, Value)>>,
+    hang: &AtomicBool,
 ) {
     let mut r = BufReader::new(stream);
     let (mut head, mut line) = (String::new(), String::new());
@@ -74,6 +86,9 @@ fn answer(
     log.lock()
         .unwrap()
         .push((head, String::from_utf8(body).unwrap()));
+    while path == "/cooee/choice" && hang.load(Ordering::SeqCst) {
+        thread::sleep(Duration::from_millis(20));
+    }
     if path == "/cooee/choice"
         && let Some((code, v)) = choice.lock().unwrap().take()
     {
@@ -824,5 +839,59 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
             "$.blocks[1].value: must not be sent",
             "$.blocks[2].action: is required",
         ]
+    );
+}
+
+/// #288: a plugin whose answer hangs holds only its own card: meanwhile another thread's send, the thread list and
+/// the home page each answer within 200 ms, and that thread's reply streams in.
+#[test]
+fn a_hanging_plugin_answer_never_holds_another_thread() {
+    let s = setup("plugin-hang");
+    let id = new_thread(&s, "Say hello");
+    let other = new_thread(&s, "Say hi");
+    let (code, card) =
+        s.card(&json!({ "thread": id, "text": "Merge it?", "options": ["yes", "no"] }));
+    assert_eq!(code, 200, "{card}");
+    s.a.hang.store(true, Ordering::SeqCst);
+    let tap = json!({ "item": card["id"], "option": "yes" });
+    let path = format!("/threads/{id}/approve");
+    thread::scope(|scope| {
+        let tapped = scope.spawn(|| s.cooee.post(&path, &tap));
+        while s.a.choices().is_empty() {
+            thread::sleep(Duration::from_millis(20));
+        }
+        others_go_on(&s.cooee, &other);
+        assert!(!tapped.is_finished(), "the plugin's answer still hangs");
+        s.a.hang.store(false, Ordering::SeqCst);
+        let (code, body) = tapped.join().unwrap();
+        assert_eq!(code, 200, "{body}");
+    });
+}
+
+/// #226: `cooee plugin check` checks a `cooee-plugin.toml` by the manifest's rules, `attach` included.
+#[test]
+fn plugin_check_checks_a_manifest() {
+    let s = setup("manifest-check");
+    let file = s.dir.join("cooee-plugin.toml");
+    let check = |text: &str| {
+        std::fs::write(&file, text).unwrap();
+        let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
+            .args(["plugin", "check"])
+            .arg(&file)
+            .output()
+            .unwrap();
+        (
+            out.status.success(),
+            String::from_utf8_lossy(&out.stdout).into_owned(),
+        )
+    };
+    let ok = "name = \"drover\"\nversion = \"1\"\nbuild = \"true\"\nrun = \"true\"\n\
+              attach = \"http://127.0.0.1:7777\"\n[[places]]\ntype = \"menu-row\"\nlabel = \"drover\"\n\
+              screen = \"/screens/fleets\"\n[permissions]\nplaces = [\"menu-row\"]\n";
+    assert!(check(ok).0, "{}", check(ok).1);
+    let (passed, said) = check(&ok.replace("127.0.0.1:7777", "example.com"));
+    assert!(
+        !passed && said.contains("`attach` must be http://127.0.0.1:<port>"),
+        "{said}"
     );
 }

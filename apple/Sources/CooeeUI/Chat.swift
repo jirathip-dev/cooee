@@ -13,6 +13,7 @@ public struct ChatActions {
     public var answer: (Int, BlockAction) -> Void
     public var answering: Set<Int>
     public var back: () -> Void
+    public var retry: (Int) -> Void = { _ in }
     public var places: [String] = []
     public var open: (Int) -> Void = { _ in }
     public var attachable: [String] = []
@@ -65,8 +66,10 @@ public struct ChatView: View {
                 Scroller(end: true) {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(items) { item in
-                            ItemView(item: item).environment(\.act) { actions.answer(item.id, $0) }
-                                .disabled(actions.answering.contains(item.id))
+                            ItemView(item: item) { actions.retry(item.id) }.environment(\.act) {
+                                actions.answer(item.id, $0)
+                            }
+                            .disabled(actions.answering.contains(item.id))
                         }
                     }
                     .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 16)
@@ -75,7 +78,7 @@ public struct ChatView: View {
                 VStack(spacing: 8) {
                     if working { WorkingPill(since: since, stop: actions.stop) }
                     Composer(
-                        persona: persona,
+                        hint: "Message \(persona.name)",
                         queued: queued,
                         draft: draft,
                         attachments: working && since == nil ? ["look-sheet.png"] : [],

@@ -96,6 +96,9 @@ pub struct Thread {
     /// A linked exchange (#156): the thread whose persona asked this one's (`ask_persona`).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub asked_by: String,
+    /// The routine whose run started it (#75).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub routine: Option<crate::routines::Mark>,
 }
 
 /// What a [`Thread`] is.
@@ -167,6 +170,9 @@ pub struct Queued {
     /// Its files' stored names.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub files: Vec<String>,
+    /// The routine that sent it (#75).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub routine: Option<crate::routines::Mark>,
 }
 
 /// A session a tool started, as its shed labels say (#33): `source` (the tool), `group` (its repo), `item`
@@ -435,8 +441,22 @@ impl Store {
     ///
     /// Returns [`StoreError`] if the id is invalid or the file can't be read.
     pub fn items<T: DeserializeOwned>(&self, id: &str) -> Result<Vec<T>, StoreError> {
+        self.items_if(id, |_| true)
+    }
+
+    /// [`Store::items`], or none when `keep` says no to the whole file's bytes, read once and never parsed then.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if the id is invalid or the file can't be read.
+    pub fn items_if<T: DeserializeOwned>(
+        &self,
+        id: &str,
+        keep: impl FnOnce(&[u8]) -> bool,
+    ) -> Result<Vec<T>, StoreError> {
         let path = self.path(id)?.with_extension("jsonl");
         match fs::read(&path) {
+            Ok(bytes) if !keep(&bytes) => Ok(Vec::new()),
             Ok(bytes) => Ok(bytes
                 .split(|b| *b == b'\n')
                 .filter_map(|line| serde_json::from_slice(line).ok())
