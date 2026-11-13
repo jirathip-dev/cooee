@@ -1,0 +1,12 @@
+Decided: accept the server's hello by product and protocol (Hello::compatible), not equality, and name both sides' version, build and protocol in SHED_VERSION
+Because: "Check the server's hello by product and `protocol` only, not the exact version or build"
+Decided: move setup's install rev (SHED_CARGO) to 4ac443d with the shed-proto pin, so setup never installs a shed this cooee refuses
+Because: crates/cooee/src/setup.rs:126
+Decided: this cooee does not work with shed 56de739; it must land with the host's shed upgrade
+Because: "if not, say so in the PR"
+Decided: allow the Zlib license in deny.toml for foldhash, which the new shed-proto brings in through schemars
+Rejected: keeping the old pin — the AC needs shed main's protocol-1 hello
+Rejected: letting type_line use send's new Enter and bracketed paste — login codes keep their old bytes
+Check: shed_pool's same-protocol test fails with the old theirs == ours check and passes at head
+Check: the APNs JWT test now parses its claims, because shed-proto turns on serde_json preserve_order for the whole workspace
+Owner: Upgrade shed on the Mini to 4ac443d and restart shed serve together with this merge; the old shed is refused.
