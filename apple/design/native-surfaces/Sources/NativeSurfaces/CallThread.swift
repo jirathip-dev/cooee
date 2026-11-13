@@ -28,7 +28,7 @@ public struct CallThread: View {
                 }
                 .padding(.horizontal, 16).padding(.top, 8)
                 Spacer()
-                Composer(persona: researcher).padding(.horizontal, 12).padding(.bottom, 26)
+                Composer(hint: "Message \(researcher.name)").padding(.horizontal, 12).padding(.bottom, 26)
             }
         }
         .foregroundStyle(look.palette.foreground)
