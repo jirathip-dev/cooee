@@ -1,0 +1,9 @@
+Decided: chat-first's cf.js loads the plain theme from design-system/themes/ and every other theme from packs/themes/
+Because: "The design pages render (the shot scripts pass) from the moved design-system folder."
+Decided: chat-first's shoot.mjs counts every 404 its file server answers as a failure, so a missing theme fails the shot
+Because: docs/design/chat-first/shoot.mjs:26
+Rejected: adding a packs/themes/plain copy — plain is a design-system theme, and a second copy would drift
+Decided: cooee pair tells the user to type the link into the cooee app, since the web pair page is gone
+Because: "Docs: remove PWA instructions; say the native app is the client."
+Check: node docs/design/chat-first/shoot.mjs <chrome> exits 0 with 18 ok; the terminal views render styled; cargo test --workspace passes
+Owner: The Terminal look in the chat-first mockups renders again, and cooee pair now points you at the app.
