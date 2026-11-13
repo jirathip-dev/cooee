@@ -1,0 +1,6 @@
+Decided: merge origin/staging (#336 landed) instead of rebasing, since lanes never rewrite history or force-push.
+Rejected: git rebase onto staging — it needs a force-push, which lanes may not do.
+Decided: no design change; the diff is still only apple/design/native-surfaces.
+Because: "Screenshots and README in `apple/design/native-surfaces/`; the iOS target builds"
+Check: swift test in apple/design/native-surfaces renders 23 frames with no PNG change; the iOS Simulator xcodebuild exits 0 at 370d9fc.
+Owner: The branch now includes the latest staging; nothing in the design changed.
