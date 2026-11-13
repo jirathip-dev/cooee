@@ -1,0 +1,11 @@
+Decided: round 2 changes no code; the FAIL was CI's ubuntu jobs cancelled by a runner shutdown signal, so this head merges origin/staging to re-run CI
+Decided: the scan runs inside file(), so sprites.svg and scene.svg are checked wherever the gate reads them
+Because: web/src/look.rs:337
+Decided: a stdlib tag and attribute scanner, no XML crate, skipping comments
+Because: "no external or `javascript:`/`data:` references"
+Rejected: adding an XML parser dependency — a new dependency needs the owner and the scanner is enough with the CSP behind it
+Decided: the CSP and nosniff headers go on every look file response, not only the two SVGs
+Because: web/src/lib.rs:147
+Check: cargo test -p cooee --test themes passes at the head; theme check passes farm, kitchen, garden and packs/starter
+Check: local setup.rs test failures are a host port above 64535 overflowing port + 1000 in crates/cooee/src/setup.rs:210, a file this PR does not touch
+Owner: A theme pack can no longer carry scripts or outside links in its pictures, and its pictures are served so they cannot run code.
