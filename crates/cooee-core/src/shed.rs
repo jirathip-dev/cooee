@@ -108,6 +108,8 @@ pub struct Launch {
     /// `--mcp`: the file the session's MCP servers pass through (written here, removed once shed has read it), and
     /// the servers, in ACP's shape (#56).
     pub mcp: Option<(PathBuf, Vec<Value>)>,
+    /// `--meta`: the session's options, sent as ACP `_meta` (a profile's provider's "no personal setup", #320).
+    pub meta: Option<Value>,
 }
 
 impl Launch {
@@ -654,6 +656,10 @@ impl Shed {
                 detail: format!("{}: {e}", file.display()),
             })?;
             args.extend(["--mcp", path]);
+        }
+        let meta = launch.meta.as_ref().map(Value::to_string);
+        if let Some(meta) = &meta {
+            args.extend(["--meta", meta]);
         }
         let mut tail: Vec<String> = Vec::new();
         if !launch.env.is_empty() || launch.secrets.is_some() || !launch.args.is_empty() {
