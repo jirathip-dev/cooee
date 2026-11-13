@@ -1,0 +1,6 @@
+Decided: merge origin/staging again (clean) and re-run CI; no code change this round
+Because: crates/cooee-server/src/hub.rs:270
+Rejected: a code fix for the FAIL — the red checks at 28067ba were runner shutdowns (cancelled), not test failures
+Rejected: committing the previous lane's wip snapshot — it held only local log files, which never go in git
+Check: CI at the new head is green, including build (generic/platform=iOS Simulator)
+Owner: Same feature; this round only catches up with staging and re-runs the cancelled checks.
