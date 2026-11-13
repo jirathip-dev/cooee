@@ -17,7 +17,9 @@
             XCTAssert(picked(app, "Scene").waitForExistence(timeout: 5))
             homeScreen(app, "home-icon-koala-after-scene")
             app.buttons.matching(NSPredicate(format: "label CONTAINS 'App icon'")).firstMatch.tap()
-            app.buttons["Follow the look"].firstMatch.tap()
+            let follow = app.buttons["Follow the look"].firstMatch
+            XCTAssert(follow.waitForExistence(timeout: 5))
+            follow.tap()
             confirmIcon()
             XCTAssert(picked(app, "Follow the look").waitForExistence(timeout: 5))
             app.navigationBars.buttons.element(boundBy: 0).tap()
