@@ -1,0 +1,5 @@
+Decided: merge origin/staging (10ff3b2d) into the branch and push; no code change, the e2e FAIL at 03af3df is intermittent and not from this PR
+Because: apple/UITests/LiveUITests.swift:50
+Rejected: changing the drover screens or apple/e2e/serve.sh here — staging's run at 4bd2592b failed the same four asserts (50, 54, 56, 58) and this branch passed e2e at fcf31c1 with the same app code
+Check: every check is green at the new head, e2e and dmg included
+Owner: Brings the persona sheet branch up to date with staging so its checks run again; nothing in the app changed this round.
