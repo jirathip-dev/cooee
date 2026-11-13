@@ -1,0 +1,48 @@
+$ swift build
+[110 / 117] shots-product
+[111 / 117] ChatFormat
+[112 / 117] ChatFormat
+[115 / 117] shots-product
+Build complete! (16.39 secs)
+swift build exit=0
+$ swift run shots
+Building for debugging...
+[Planning deferred tasks]
+Build complete! (0.38 secs)
+modern-iphone-dark 804 4046
+modern-iphone-light 804 4046
+modern-mac 2200 3726
+terminal-iphone-dark 804 4022
+terminal-iphone-light 804 4022
+terminal-mac 2200 3632
+scene-iphone-dark 804 4094
+scene-iphone-light 804 4094
+scene-mac 2200 3774
+swift run shots exit=0
+$ node .verify-browser.mjs diff shots/modern-iphone-dark-head.png apple/design/chat-format/modern-iphone-dark.png
+diff: shots/modern-iphone-dark-head.png vs apple/design/chat-format/modern-iphone-dark.png: 0.000 % of pixels differ (shots/modern-iphone-dark-head-diff.png)
+exit=0
+$ node .verify-browser.mjs diff shots/modern-iphone-light-head.png apple/design/chat-format/modern-iphone-light.png
+diff: shots/modern-iphone-light-head.png vs apple/design/chat-format/modern-iphone-light.png: 0.000 % of pixels differ (shots/modern-iphone-light-head-diff.png)
+exit=0
+$ node .verify-browser.mjs diff shots/modern-mac-head.png apple/design/chat-format/modern-mac.png
+diff: shots/modern-mac-head.png vs apple/design/chat-format/modern-mac.png: 0.000 % of pixels differ (shots/modern-mac-head-diff.png)
+exit=0
+$ node .verify-browser.mjs diff shots/scene-iphone-dark-head.png apple/design/chat-format/scene-iphone-dark.png
+diff: shots/scene-iphone-dark-head.png vs apple/design/chat-format/scene-iphone-dark.png: 0.000 % of pixels differ (shots/scene-iphone-dark-head-diff.png)
+exit=0
+$ node .verify-browser.mjs diff shots/scene-iphone-light-head.png apple/design/chat-format/scene-iphone-light.png
+diff: shots/scene-iphone-light-head.png vs apple/design/chat-format/scene-iphone-light.png: 0.000 % of pixels differ (shots/scene-iphone-light-head-diff.png)
+exit=0
+$ node .verify-browser.mjs diff shots/scene-mac-head.png apple/design/chat-format/scene-mac.png
+diff: shots/scene-mac-head.png vs apple/design/chat-format/scene-mac.png: 0.000 % of pixels differ (shots/scene-mac-head-diff.png)
+exit=0
+$ node .verify-browser.mjs diff shots/terminal-iphone-dark-head.png apple/design/chat-format/terminal-iphone-dark.png
+diff: shots/terminal-iphone-dark-head.png vs apple/design/chat-format/terminal-iphone-dark.png: 0.000 % of pixels differ (shots/terminal-iphone-dark-head-diff.png)
+exit=0
+$ node .verify-browser.mjs diff shots/terminal-iphone-light-head.png apple/design/chat-format/terminal-iphone-light.png
+diff: shots/terminal-iphone-light-head.png vs apple/design/chat-format/terminal-iphone-light.png: 0.000 % of pixels differ (shots/terminal-iphone-light-head-diff.png)
+exit=0
+$ node .verify-browser.mjs diff shots/terminal-mac-head.png apple/design/chat-format/terminal-mac.png
+diff: shots/terminal-mac-head.png vs apple/design/chat-format/terminal-mac.png: 0.000 % of pixels differ (shots/terminal-mac-head-diff.png)
+exit=0
