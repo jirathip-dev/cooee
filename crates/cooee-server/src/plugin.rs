@@ -1,11 +1,14 @@
 //! Plugins (docs/plugins.md): a tab whose UI module, served by the plugin's own backend, runs in a sandboxed frame.
 //! Its calls reach that backend through cooee with the plugin's token, never the device's cookie: one HTTP/1.0
-//! request per call (so the answer is never chunked), an event stream read line by line.
+//! request per call (so the answer is never chunked), an event stream read line by line. A call ends at its deadline
+//! (connect, send and the whole answer) and a backend has at most [`IN_FLIGHT`] calls at once: one more fails at once.
 
 use std::{
+    collections::HashMap,
     io::{self, BufRead, BufReader, Read, Write},
     net::{TcpStream, ToSocketAddrs},
-    time::Duration,
+    sync::{LazyLock, Mutex, PoisonError},
+    time::{Duration, Instant},
 };
 
 use base64::{Engine, engine::general_purpose::STANDARD};
@@ -14,6 +17,76 @@ use sha2::{Digest, Sha256};
 
 /// The largest answer cooee passes on.
 const MAX_BODY: u64 = 16 << 20;
+
+/// The most calls one backend has in flight; one more fails at once instead of taking a blocking thread.
+pub const IN_FLIGHT: usize = 8;
+
+/// The calls in flight, by backend URL.
+static BUSY: LazyLock<Mutex<HashMap<String, usize>>> = LazyLock::new(Mutex::default);
+
+/// One of a backend's [`IN_FLIGHT`] places, given back when dropped.
+struct Permit(String);
+
+impl Permit {
+    fn take(url: &str) -> io::Result<Self> {
+        let mut busy = BUSY.lock().unwrap_or_else(PoisonError::into_inner);
+        let n = busy.entry(url.to_owned()).or_default();
+        if *n >= IN_FLIGHT {
+            return Err(io::Error::other(format!(
+                "busy: {IN_FLIGHT} calls already in flight"
+            )));
+        }
+        *n += 1;
+        Ok(Self(url.to_owned()))
+    }
+}
+
+impl Drop for Permit {
+    fn drop(&mut self) {
+        let mut busy = BUSY.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some(n) = busy.get_mut(&self.0) {
+            *n -= 1;
+        }
+    }
+}
+
+/// A backend's connection, read until its deadline (none: an event stream).
+pub struct Conn {
+    s: TcpStream,
+    until: Option<Instant>,
+}
+
+impl Conn {
+    /// The time left before the deadline.
+    fn left(&self) -> io::Result<Option<Duration>> {
+        let Some(until) = self.until else {
+            return Ok(None);
+        };
+        let left = until.saturating_duration_since(Instant::now());
+        if left.is_zero() {
+            return Err(io::Error::new(io::ErrorKind::TimedOut, "past the deadline"));
+        }
+        Ok(Some(left))
+    }
+}
+
+impl Read for Conn {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.s.set_read_timeout(self.left()?)?;
+        self.s.read(buf)
+    }
+}
+
+impl Write for Conn {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.s.set_write_timeout(self.left()?)?;
+        self.s.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.s.flush()
+    }
+}
 
 /// Checks the plugins: unique names of lowercase letters, digits and `-`, an `http://` backend, a module path (or
 /// none: screens only) and a token of at least 16 characters.
@@ -47,7 +120,8 @@ pub fn check(plugins: &[Plugin]) -> io::Result<()> {
 pub struct Reply {
     pub status: u16,
     pub headers: Vec<(String, String)>,
-    pub body: BufReader<TcpStream>,
+    pub body: BufReader<Conn>,
+    permit: Permit,
 }
 
 impl Reply {
@@ -67,19 +141,21 @@ impl Reply {
     }
 }
 
-/// One request to `p`'s backend, with its token: `target` is the path and query, `headers` go as given. A read
-/// waits at most `timeout` (none: forever, for an event stream).
+/// One request to `p`'s backend, with its token: `target` is the path and query, `headers` go as given. The call,
+/// its answer's body read included, ends `deadline` from now.
 ///
 /// # Errors
-/// When the backend can't be reached or its answer isn't HTTP.
+/// When the backend is busy, can't be reached in time or its answer isn't HTTP.
 pub fn call(
     p: &Plugin,
     method: &str,
     target: &str,
     headers: &[(&str, &str)],
     body: &[u8],
-    timeout: Option<Duration>,
+    deadline: Duration,
 ) -> io::Result<Reply> {
+    let permit = Permit::take(&p.url)?;
+    let until = Instant::now() + deadline;
     let rest = p.url.strip_prefix("http://").unwrap_or(&p.url);
     let (authority, base) = rest.split_once('/').unwrap_or((rest, ""));
     let base = base.trim_end_matches('/');
@@ -95,9 +171,10 @@ pub fn call(
         .to_socket_addrs()?
         .next()
         .ok_or_else(|| io::Error::other(format!("{authority}: no address")))?;
-    let mut s = TcpStream::connect_timeout(&addr, Duration::from_secs(5))?;
-    s.set_read_timeout(timeout)?;
-    s.set_write_timeout(Some(Duration::from_secs(10)))?;
+    let mut s = Conn {
+        s: TcpStream::connect_timeout(&addr, deadline.min(Duration::from_secs(5)))?,
+        until: Some(until),
+    };
     let slash = if base.is_empty() { "" } else { "/" };
     let mut head = format!(
         "{method} {slash}{base}{target} HTTP/1.0\r\nHost: {authority}\r\nAuthorization: Bearer {}\r\nContent-Length: {}\r\n",
@@ -132,6 +209,7 @@ pub fn call(
         status,
         headers,
         body: r,
+        permit,
     };
     if reply.header("transfer-encoding").is_some() {
         return Err(io::Error::other(
@@ -148,14 +226,20 @@ pub struct Sse {
     pub data: String,
 }
 
-/// Reads `reply`'s event stream, giving each event to `f` until it returns false or the stream ends.
+/// Reads `reply`'s event stream, giving each event to `f` until it returns false or the stream ends; a stream has
+/// no deadline and holds no place among its backend's calls.
 pub fn events(reply: Reply, mut f: impl FnMut(Sse) -> bool) {
+    let Reply {
+        mut body, permit, ..
+    } = reply;
+    drop(permit);
+    body.get_mut().until = None;
     let mut e = Sse {
         id: None,
         event: String::new(),
         data: String::new(),
     };
-    let mut lines = reply.body.lines();
+    let mut lines = body.lines();
     while let Some(Ok(line)) = lines.next() {
         let (k, v) = line.split_once(':').unwrap_or((&line, ""));
         let v = v.strip_prefix(' ').unwrap_or(v).to_owned();
@@ -212,7 +296,7 @@ pub fn answer(
         "/cooee/choice",
         &json,
         body.to_string().as_bytes(),
-        Some(Duration::from_secs(10)),
+        Duration::from_secs(10),
     )?;
     let status = reply.status;
     let line = serde_json::from_slice::<serde_json::Value>(&reply.bytes().unwrap_or_default())
@@ -234,7 +318,7 @@ pub fn profiles(p: &Plugin) -> Option<Vec<Profile>> {
         "/cooee/profiles",
         &[],
         &[],
-        Some(Duration::from_secs(5)),
+        Duration::from_secs(5),
     );
     let list = got.and_then(|r| match r.status {
         404 => Ok(None),
@@ -269,7 +353,7 @@ pub fn started(p: &Plugin, thread: &str, profile: &str) -> io::Result<()> {
         "/cooee/thread-started",
         &json,
         body.as_bytes(),
-        Some(Duration::from_secs(10)),
+        Duration::from_secs(10),
     )?;
     match reply.status {
         200..=299 => Ok(()),
@@ -284,7 +368,7 @@ pub fn started(p: &Plugin, thread: &str, profile: &str) -> io::Result<()> {
 /// # Errors
 /// When the module can't be fetched or would end its script element.
 pub fn frame(p: &Plugin, api: &str) -> io::Result<(String, String)> {
-    let reply = call(p, "GET", &p.module, &[], &[], Some(Duration::from_secs(10)))?;
+    let reply = call(p, "GET", &p.module, &[], &[], Duration::from_secs(10))?;
     if reply.status != 200 {
         return Err(io::Error::other(format!(
             "the module answered {}",
@@ -313,4 +397,57 @@ pub fn frame(p: &Plugin, api: &str) -> io::Result<(String, String)> {
          img-src data: blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
     );
     Ok((page, csp))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{net::TcpListener, thread};
+
+    use super::*;
+
+    /// A backend that answers one byte a second: its head at once when `head`, else that too a byte a second.
+    fn trickle(head: bool) -> Plugin {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        thread::spawn(move || {
+            for mut s in listener.incoming().flatten() {
+                thread::spawn(move || {
+                    let mut first = [0; 512];
+                    let _ = s.read(&mut first);
+                    if head {
+                        let _ = s.write_all(b"HTTP/1.0 200 OK\r\n\r\n");
+                    }
+                    for b in b"HTTP/1.0 200 OK\r\n\r\n".iter().cycle() {
+                        if s.write_all(&[*b]).is_err() {
+                            return;
+                        }
+                        thread::sleep(Duration::from_secs(1));
+                    }
+                });
+            }
+        });
+        Plugin {
+            name: "slow".to_owned(),
+            label: String::new(),
+            url,
+            module: "/tab.js".to_owned(),
+            token: "token-0123456789abcdef".to_owned(),
+        }
+    }
+
+    #[test]
+    fn a_trickling_backend_fails_at_the_deadline() {
+        let deadline = Duration::from_millis(2500);
+        for head in [false, true] {
+            let p = trickle(head);
+            let at = Instant::now();
+            let got = call(&p, "GET", "/x", &[], &[], deadline).and_then(Reply::bytes);
+            let took = at.elapsed();
+            assert!(got.is_err(), "head {head}: it answered");
+            assert!(
+                took >= deadline && took < deadline + Duration::from_millis(500),
+                "head {head}: failed after {took:?}"
+            );
+        }
+    }
 }

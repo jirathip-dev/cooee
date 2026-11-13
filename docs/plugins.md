@@ -112,7 +112,10 @@ improving are owner-only: the CLI on the Mac, or a paired device (a plugin's tok
     is unlocked with its passkey (the `terminal` tab's gate; a stream that ends for good, such as a locked tab's, sends
     `closed`).
 - cooee calls the backend over HTTP/1.0, one connection per call, and passes on only the content type, `Accept` and
-  `Last-Event-ID`. An event stream should send a comment now and then so a closed tab is noticed.
+  `Last-Event-ID`. An event stream should send a comment now and then so a closed tab is noticed. A call has a
+  total deadline, connect to last byte (30 s through the tab's proxy, 5 s for a screen, 10 s for an action or a card's
+  answer; a stream's deadline ends once its head is in), and a backend has at most 8 calls in flight: one more fails
+  at once with a 502 `busy`.
 
 ## From the backend to cooee
 
