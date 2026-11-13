@@ -1,0 +1,7 @@
+Decided: merge origin/staging (99be3558) into the branch again; #141's style walk runs as its own fresh-launch test, LiveStyleUITests.testEveryStyle
+Because: apple/UITests/StyleUITests.swift:6
+Decided: the avatar-menu test keeps Look → Terminal → Modern with pickStyle; the Terminal/Scene walk and its Look-sheet close live only in testEveryStyle
+Rejected: chaining everyStyle after appIcon as staging does — that is the cascade this issue removes
+Rejected: committing Xcode's generated Package.resolved from the wip snapshot — xcodebuild writes it locally
+Check: CI e2e runs all ten Live tests per look in random order, green, and simulator-shots holds look-*, home-*, chat-cards-* plus the old names
+Owner: The branch now includes #141's look tests, split into their own fresh-start test like the rest.
