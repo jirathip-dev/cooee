@@ -38,6 +38,7 @@
 
         @MainActor
         internal func homeScreen(_ app: XCUIApplication, _ name: String) {
+            confirmIcon()
             XCUIDevice.shared.press(.home)
             let icon = springboard.icons["cooee"]
             _ = icon.waitForExistence(timeout: 10)
