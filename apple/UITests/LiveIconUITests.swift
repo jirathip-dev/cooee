@@ -29,11 +29,15 @@
         @MainActor
         internal func confirmIcon() {
             let done = springboard.alerts.buttons["OK"].firstMatch
-            if done.waitForExistence(timeout: 5) { done.tap() }
+            while done.waitForExistence(timeout: 5) {
+                done.tap()
+                _ = done.waitForNonExistence(timeout: 5)
+            }
         }
 
         @MainActor
         internal func homeScreen(_ app: XCUIApplication, _ name: String) {
+            confirmIcon()
             XCUIDevice.shared.press(.home)
             let icon = springboard.icons["cooee"]
             _ = icon.waitForExistence(timeout: 10)
