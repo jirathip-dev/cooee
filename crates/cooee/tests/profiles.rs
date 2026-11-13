@@ -304,8 +304,6 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
     s.cooee.cli(&["plugin", "remove", "plug"]);
     assert!(!s.picker().contains("Conductor"), "{}", s.picker());
     assert_eq!(s.start("plug/conductor", "go").0, 400);
-    let pid = s.cooee.child.id().to_string();
-    let _ = Command::new("kill").args(["-TERM", &pid]).status();
 }
 
 /// A plugin backend (docs/plugins/hello's checks) that serves the profiles in the JSON file `list` at
@@ -429,8 +427,6 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
     assert!(chat.contains(back), "{chat}");
 
     s.cooee.cli(&["plugin", "remove", "plug"]);
-    let pid = s.cooee.child.id().to_string();
-    let _ = Command::new("kill").args(["-TERM", &pid]).status();
 }
 
 #[test]
@@ -499,6 +495,4 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     );
     let out = fs::read_to_string(shed.dir.join("hook.out")).unwrap();
     assert_eq!(out, "REFUSED MAIN_TARGET\nexit 2\n");
-    let pid = cooee.child.id().to_string();
-    let _ = Command::new("kill").args(["-TERM", &pid]).status();
 }
