@@ -1,0 +1,6 @@
+Decided: merge origin/staging twice (#336, then #279 and #354); both merges were clean and change no code of this PR
+Decided: the line cap is measured on a clean checkout, since the untracked apple/.build holds Swift package sources
+Because: scripts/line-cap.sh:18
+Rejected: rebasing on staging — the branch is pushed and history is never rewritten
+Check: apple-check, cargo test and the clean-checkout line cap all pass at the head
+Owner: Same feature; this round only catches up with staging.
