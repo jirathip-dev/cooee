@@ -1,0 +1,10 @@
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.53s
+     Running tests/routines.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-270/debug/deps/routines-245a001aba236d16)
+
+running 2 tests
+test a_new_thread_routine_starts_a_thread_marked_with_it_in_the_list ... ok
+test a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.43s
+

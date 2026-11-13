@@ -1,0 +1,8 @@
+Merge made by the 'ort' strategy.
+ apple/Package.swift                            |  3 +-
+ apple/Sources/CooeeUI/Menu.swift               | 17 +++++--
+ apple/Sources/CooeeUI/Sheets.swift             | 68 +++++++++++++++++---------
+ apple/Tests/CooeeUITests/MenuRenderTests.swift | 33 +++++++++++++
+ apple/UITests/LiveUITests.swift                |  9 ++++
+ 5 files changed, 100 insertions(+), 30 deletions(-)
+ create mode 100644 apple/Tests/CooeeUITests/MenuRenderTests.swift
