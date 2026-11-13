@@ -1,12 +1,33 @@
 #if os(iOS)
     import XCTest
 
-    extension LiveUITests {
+    internal final class LiveIconUITests: LiveUITestCase {
+        @MainActor
+        internal func testAppIcon() throws {
+            let app = try launchHome()
+            app.buttons["Account"].firstMatch.tap()
+            labelled(app, "Look").tap()
+            pickStyle(app, "Terminal")
+            appIcon(app)
+            pickStyle(app, "Modern")
+        }
+
+        @MainActor
+        internal func testAvatarMenu() throws { avatarMenu(try launchHome()) }
+    }
+
+    extension LiveUITestCase {
+        @MainActor
+        internal func pickStyle(_ app: XCUIApplication, _ style: String) {
+            labelled(app, style).tap()
+            confirmIcon()
+            XCTAssert(picked(app, style).waitForExistence(timeout: 5))
+        }
+
         @MainActor
         internal func appIcon(_ app: XCUIApplication) {
             homeScreen(app, "home-icon-terminal")
-            app.buttons.matching(NSPredicate(format: "label CONTAINS 'App icon'")).firstMatch.tap()
-            XCTAssert(app.buttons["Koala"].firstMatch.waitForExistence(timeout: 5), "the icon picker opens")
+            openIconPicker(app)
             XCTAssert(picked(app, "Follow the look").waitForExistence(timeout: 5))
             keep("app-icon-following")
             app.buttons["Koala"].firstMatch.tap()
@@ -17,12 +38,18 @@
             labelled(app, "Scene").tap()
             XCTAssert(picked(app, "Scene").waitForExistence(timeout: 5))
             homeScreen(app, "home-icon-koala-after-scene")
-            app.buttons.matching(NSPredicate(format: "label CONTAINS 'App icon'")).firstMatch.tap()
-            XCTAssert(app.buttons["Koala"].firstMatch.waitForExistence(timeout: 5), "the icon picker opens")
+            openIconPicker(app)
             app.buttons["Follow the look"].firstMatch.tap()
             confirmIcon()
             XCTAssert(picked(app, "Follow the look").waitForExistence(timeout: 5))
             app.navigationBars.buttons.element(boundBy: 0).tap()
+        }
+
+        @MainActor
+        private func openIconPicker(_ app: XCUIApplication) {
+            labelled(app, "Modern").swipeUp()
+            app.buttons.matching(NSPredicate(format: "label CONTAINS 'App icon'")).firstMatch.tap()
+            XCTAssert(app.buttons["Koala"].firstMatch.waitForExistence(timeout: 5), "the icon picker opens")
         }
 
         @MainActor
@@ -31,7 +58,12 @@
         @MainActor
         internal func confirmIcon() {
             let done = springboard.alerts.buttons["OK"].firstMatch
-            if done.waitForExistence(timeout: 5) { done.tap() }
+            guard done.waitForExistence(timeout: 5) else { return }
+            for _ in 0..<3 where done.exists {
+                done.tap()
+                _ = done.waitForNonExistence(timeout: 2)
+            }
+            XCTAssertFalse(done.exists, "SpringBoard's icon alert closed")
         }
 
         @MainActor
