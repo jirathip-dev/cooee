@@ -40,7 +40,24 @@ main-thread CPU time from a trace (`RunTask`'s `tdur`), so a paused browser no l
 - Two heads passed `ui` in another run at the same sha: 14117a5f (run 43404700841) and 621093d6 (run 43404363328).
 - Of the 51 ci runs since 08:50 UTC on Nov 13 whose head contains ea784bbf, `ui` passed in 46. The other 5 skipped
   it, and none failed.
-- `just ui-stress` (20 runs in a row) on #388's head is green (see the PR body).
+- `just ui-stress` (20 runs in a row) on #388's head is green (see the PR body), after the fix below.
+
+### Found by `ui-stress`: `parity.spec.mjs` row 6, the approve card
+
+Run 2 of the first `ui-stress` at c3b5b953 failed `[390] parity.spec.mjs:151` "row 6 (#47): a new device asks, a
+paired one approves…". It timed out waiting for `approve with…`. The page snapshot showed "✓ passkey saved", but the
+card said "Approving needs a passkey".
+
+**Cause (real, in `web/ts/pair.ts`):** the thread list remembers whether this device has a passkey from its first
+look at the open requests. Saving one from the offer after pairing didn't update that, so every later card still
+asked for a passkey. The test hit this only when the other viewport's copy of row 6 had a request open on the shared
+server while this one paired: ordering between parallel workers.
+
+**Failing first:** `pair.spec.mjs` "a passkey saved from the offer approves a request that came after one seen
+without it". It opens a request, pairs, waits for the card asking for a passkey, saves one from the offer, then asks
+again. On the base it fails at `approve with…` (element not found).
+
+**Fix:** saving from the offer sets the same flag that saving from a card does.
 
 ## `stable (macos-latest)`
 
