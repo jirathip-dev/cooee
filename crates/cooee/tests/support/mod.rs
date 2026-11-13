@@ -21,7 +21,7 @@ use std::{
         mpsc::{self, Receiver, Sender},
     },
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use p256::{
@@ -213,8 +213,8 @@ impl FakeShed {
     }
 
     /// Shuts (`true`) or opens gate `name`: `hold-run` and `run-fails` for the CLI's `run`, `hold-ready` (the
-    /// session-ready `wait` waits), `ready-timeout` (it times out), `hang-send` (every `send` waits) and `hangup` (a
-    /// request is recorded, then its connection closed unanswered).
+    /// session-ready `wait` waits), `ready-timeout` (it times out), `hang-send` (every `send` waits; `hang-send-<name>`:
+    /// terminal `<name>`'s) and `hangup` (a request is recorded, then its connection closed unanswered).
     pub fn gate(&self, name: &str, shut: bool) {
         let path = self.dir.join(name);
         if shut {
@@ -336,8 +336,18 @@ impl FakeShed {
     }
 
     /// `run`: starts `cmd` in `cwd` for real, its stdout and stderr the screen, its stdin what `send`/`keys` type.
+    /// With a `machine` (#150) it is that machine's `<machine>/<name>`, refused `NoLink` unless its link is up, its
+    /// programs looked up in `dir/on-<machine>` first.
     fn run(&self, params: &Value) -> Result<Value, RpcError> {
-        let name = params["name"].as_str().unwrap().to_owned();
+        let mut name = params["name"].as_str().unwrap().to_owned();
+        let mut path = env::var("PATH").unwrap_or_default();
+        if let Some(m) = params["machine"].as_str() {
+            name = format!("{m}/{name}");
+            if self.no_link(&name) {
+                return Err(RpcError::new(ErrorCode::NoLink, &name));
+            }
+            path = format!("{}:{path}", self.dir.join(format!("on-{m}")).display());
+        }
         // The owner's shells (#28) are listed by `ls`, with their labels.
         if params["labels"]["cooee.owner"] == "1" {
             let labels = serde_json::from_value(params["labels"].clone()).unwrap();
@@ -350,6 +360,7 @@ impl FakeShed {
         let cmd: Vec<String> = serde_json::from_value(params["cmd"].clone()).unwrap();
         let mut child = Command::new(&cmd[0])
             .args(&cmd[1..])
+            .env("PATH", path)
             .current_dir(params["cwd"].as_str().unwrap())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -517,6 +528,7 @@ impl FakeShed {
     /// `send`: held while `hang-send` is shut; refused for a terminal that is gone.
     fn send(&self, name: &str, text: &str) -> Result<Value, RpcError> {
         self.hold("hang-send");
+        self.hold(&format!("hang-send-{name}"));
         self.terminal(name)?;
         if !self.type_in(name, text) {
             self.input(name, text);
@@ -1147,7 +1159,20 @@ shed_dir = {}
 }
 
 impl Drop for Cooee {
+    /// SIGTERM, so `cooee serve` stops what it runs; SIGKILL if it hasn't ended within 5 s.
     fn drop(&mut self) {
+        if !matches!(self.child.try_wait(), Ok(None)) {
+            return;
+        }
+        let _ = Command::new("kill")
+            .args(["-TERM", &self.child.id().to_string()])
+            .status();
+        for _ in 0..100 {
+            if !matches!(self.child.try_wait(), Ok(None)) {
+                return;
+            }
+            thread::sleep(Duration::from_millis(50));
+        }
         let _ = self.child.kill();
         let _ = self.child.wait();
     }
@@ -1263,4 +1288,29 @@ impl Authenticator {
         let (auth, client, sig) = self.signed("webauthn.get", c);
         json!({ "id": self.id, "client": B64.encode(client), "auth": B64.encode(auth), "sig": sig })
     }
+}
+
+/// #288: while a call for another thread hangs, thread `other` goes on: its send, the thread list and the home page
+/// each answer within 200 ms, and its reply streams in.
+pub fn others_go_on(cooee: &Cooee, other: &str) {
+    let cursor = cooee.json(&format!("/threads/{other}/messages"))["cursor"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let mut events = cooee.events(other, &cursor, false);
+    let (path, send) = (
+        format!("/threads/{other}/send"),
+        serde_json::json!({ "text": "Say hi again", "random_id": "go-on" }),
+    );
+    let quick = |what: &str, call: &dyn Fn() -> (u16, String)| {
+        let at = Instant::now();
+        let (status, body) = call();
+        let took = at.elapsed();
+        assert_eq!(status, 200, "{what}: {body}");
+        assert!(took < Duration::from_millis(200), "{what} took {took:?}");
+    };
+    quick("send", &|| cooee.post(&path, &send));
+    quick("list", &|| cooee.get("/threads"));
+    quick("page", &|| cooee.get("/"));
+    events.until(|e| is_item(e, "agent"));
 }
