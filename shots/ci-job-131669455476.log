@@ -1,0 +1,1224 @@
+﻿2026-11-13T03:31:27.0115538Z Current runner version: '2.338.2'
+2026-11-13T03:31:27.0137331Z ##[group]Runner Image Provisioner
+2026-11-13T03:31:27.0138010Z Hosted Compute Agent
+2026-11-13T03:31:27.0138399Z Version: 20261103.629
+2026-11-13T03:31:27.0138914Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-13T03:31:27.0139448Z Build Date: 2026-11-03T17:26:59Z
+2026-11-13T03:31:27.0139957Z Worker ID: {dcc7b3e4-7bbf-494d-bfd0-807759b41a51}
+2026-11-13T03:31:27.0140790Z Region: southcentralus
+2026-11-13T03:31:27.0141181Z Cloud: Azure
+2026-11-13T03:31:27.0141619Z ##[endgroup]
+2026-11-13T03:31:27.0142587Z ##[group]Operating System
+2026-11-13T03:31:27.0143047Z Ubuntu
+2026-11-13T03:31:27.0143472Z 24.04.5
+2026-11-13T03:31:27.0143842Z LTS
+2026-11-13T03:31:27.0144247Z ##[endgroup]
+2026-11-13T03:31:27.0144635Z ##[group]Runner Image
+2026-11-13T03:31:27.0145101Z Image: ubuntu-24.04
+2026-11-13T03:31:27.0145550Z Version: 20261111.370.1
+2026-11-13T03:31:27.0146478Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261111.370/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-13T03:31:27.0147533Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261111.370
+2026-11-13T03:31:27.0148209Z ##[endgroup]
+2026-11-13T03:31:27.0149080Z ##[group]GITHUB_TOKEN Permissions
+2026-11-13T03:31:27.0151054Z Contents: read
+2026-11-13T03:31:27.0151482Z Metadata: read
+2026-11-13T03:31:27.0151873Z Packages: read
+2026-11-13T03:31:27.0152295Z ##[endgroup]
+2026-11-13T03:31:27.0153988Z Secret source: Actions
+2026-11-13T03:31:27.0154680Z Cache mode: write
+2026-11-13T03:31:27.0155406Z Prepare workflow directory
+2026-11-13T03:31:27.0473699Z Prepare all required actions
+2026-11-13T03:31:27.0509789Z Getting action download info
+2026-11-13T03:31:27.2970698Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-11-13T03:31:27.4303505Z Download action repository 'dtolnay/rust-toolchain@1.99.1' (SHA:d124f86f28ff42855784ff3319f48ac182c248f8)
+2026-11-13T03:31:27.6410640Z Download action repository 'Swatinem/rust-cache@v2' (SHA:d1527c8f67ef9af357290475d4af4b0fab8f12e0)
+2026-11-13T03:31:28.1063634Z Download action repository 'taiki-e/install-action@v2' (SHA:cfdb7ed4ccc7c7dce37759eae89dc5674b469b39)
+2026-11-13T03:31:28.6626360Z Complete job name: msrv (ubuntu-latest)
+2026-11-13T03:31:28.7327866Z ##[group]Run actions/checkout@v4
+2026-11-13T03:31:28.7328376Z with:
+2026-11-13T03:31:28.7328654Z   repository: jirathip-dev/cooee
+2026-11-13T03:31:28.7331056Z   token: ***
+2026-11-13T03:31:28.7331316Z   ssh-strict: true
+2026-11-13T03:31:28.7331579Z   ssh-user: git
+2026-11-13T03:31:28.7331846Z   persist-credentials: true
+2026-11-13T03:31:28.7332137Z   clean: true
+2026-11-13T03:31:28.7332402Z   sparse-checkout-cone-mode: true
+2026-11-13T03:31:28.7332719Z   fetch-depth: 1
+2026-11-13T03:31:28.7332978Z   fetch-tags: false
+2026-11-13T03:31:28.7333249Z   show-progress: true
+2026-11-13T03:31:28.7333536Z   lfs: false
+2026-11-13T03:31:28.7333797Z   submodules: false
+2026-11-13T03:31:28.7334066Z   set-safe-directory: true
+2026-11-13T03:31:28.7334395Z   allow-unsafe-pr-checkout: false
+2026-11-13T03:31:28.7334800Z env:
+2026-11-13T03:31:28.7335053Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:28.7335339Z ##[endgroup]
+2026-11-13T03:31:28.9658313Z Syncing repository: jirathip-dev/cooee
+2026-11-13T03:31:28.9660480Z ##[group]Getting Git version info
+2026-11-13T03:31:28.9661137Z Working directory is '/home/runner/work/cooee/cooee'
+2026-11-13T03:31:28.9662171Z [command]/usr/bin/git version
+2026-11-13T03:31:28.9711414Z git version 2.56.1
+2026-11-13T03:31:28.9728561Z ##[endgroup]
+2026-11-13T03:31:28.9742024Z Temporarily overriding HOME='/home/runner/work/_temp/8ec4f8c7-8e49-490a-8167-b91b9e57bd5e' before making global git config changes
+2026-11-13T03:31:28.9743422Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-13T03:31:28.9746454Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+2026-11-13T03:31:28.9882212Z Deleting the contents of '/home/runner/work/cooee/cooee'
+2026-11-13T03:31:28.9901733Z ##[group]Initializing the repository
+2026-11-13T03:31:28.9905188Z [command]/usr/bin/git init /home/runner/work/cooee/cooee
+2026-11-13T03:31:29.0381125Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-13T03:31:29.0381923Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-13T03:31:29.0382455Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-13T03:31:29.0382907Z hint: call:
+2026-11-13T03:31:29.0383144Z hint:
+2026-11-13T03:31:29.0383462Z hint: 	git config --global init.defaultBranch <name>
+2026-11-13T03:31:29.0383815Z hint:
+2026-11-13T03:31:29.0384143Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-13T03:31:29.0384669Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-13T03:31:29.0385085Z hint:
+2026-11-13T03:31:29.0385330Z hint: 	git branch -m <name>
+2026-11-13T03:31:29.0385614Z hint:
+2026-11-13T03:31:29.0385984Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-13T03:31:29.0390979Z Initialized empty Git repository in /home/runner/work/cooee/cooee/.git/
+2026-11-13T03:31:29.0402578Z [command]/usr/bin/git remote add origin https://github.com/jirathip-dev/cooee
+2026-11-13T03:31:29.0462355Z ##[endgroup]
+2026-11-13T03:31:29.0463207Z ##[group]Disabling automatic garbage collection
+2026-11-13T03:31:29.0467028Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-13T03:31:29.0541964Z ##[endgroup]
+2026-11-13T03:31:29.0552050Z ##[group]Setting up auth
+2026-11-13T03:31:29.0552890Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-13T03:31:29.0566082Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-13T03:31:29.0909006Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-13T03:31:29.0951262Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-13T03:31:29.1168206Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-13T03:31:29.1212512Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-13T03:31:29.1425765Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-13T03:31:29.1475353Z ##[endgroup]
+2026-11-13T03:31:29.1476237Z ##[group]Fetching the repository
+2026-11-13T03:31:29.1486286Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +e31322d2ea6ff9f834e82fef60609b18c2e84d9b:refs/remotes/pull/353/merge
+2026-11-13T03:31:32.4446994Z From https://github.com/jirathip-dev/cooee
+2026-11-13T03:31:32.4449069Z  * [new ref]         e31322d2ea6ff9f834e82fef60609b18c2e84d9b -> pull/353/merge
+2026-11-13T03:31:32.4451557Z ##[endgroup]
+2026-11-13T03:31:32.4452178Z ##[group]Determining the checkout info
+2026-11-13T03:31:32.4453432Z ##[endgroup]
+2026-11-13T03:31:32.4458457Z [command]/usr/bin/git sparse-checkout disable
+2026-11-13T03:31:32.4522675Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-13T03:31:32.4565663Z ##[group]Checking out the ref
+2026-11-13T03:31:32.4566241Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/353/merge
+2026-11-13T03:31:32.8195226Z Note: switching to 'refs/remotes/pull/353/merge'.
+2026-11-13T03:31:32.8196189Z 
+2026-11-13T03:31:32.8197534Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-13T03:31:32.8221216Z changes and commit them, and you can discard any commits you make in this
+2026-11-13T03:31:32.8248495Z state without impacting any branches by switching back to a branch.
+2026-11-13T03:31:32.8249413Z 
+2026-11-13T03:31:32.8249776Z If you want to create a new branch to retain commits you create, you may
+2026-11-13T03:31:32.8250368Z do so (now or later) by using -c with the switch command. Example:
+2026-11-13T03:31:32.8250637Z 
+2026-11-13T03:31:32.8250754Z   git switch -c <new-branch-name>
+2026-11-13T03:31:32.8250924Z 
+2026-11-13T03:31:32.8251030Z Or undo this operation with:
+2026-11-13T03:31:32.8251185Z 
+2026-11-13T03:31:32.8251266Z   git switch -
+2026-11-13T03:31:32.8251444Z 
+2026-11-13T03:31:32.8251656Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-13T03:31:32.8252010Z 
+2026-11-13T03:31:32.8252345Z HEAD is now at e31322d Merge 849a5b349266f31658524f27c939de00d6a7d131 into 6d75396f5da1f2df03aaff5f1009921cb01e7084
+2026-11-13T03:31:32.8253693Z ##[endgroup]
+2026-11-13T03:31:32.8303068Z [command]/usr/bin/git log -1 --format=%H
+2026-11-13T03:31:32.8339664Z e31322d2ea6ff9f834e82fef60609b18c2e84d9b
+2026-11-13T03:31:32.8638363Z ##[group]Run dtolnay/rust-toolchain@1.99.1
+2026-11-13T03:31:32.8638586Z with:
+2026-11-13T03:31:32.8638724Z   components: clippy, rustfmt
+2026-11-13T03:31:32.8638881Z env:
+2026-11-13T03:31:32.8639002Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:32.8639146Z ##[endgroup]
+2026-11-13T03:31:32.8689076Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+2026-11-13T03:31:32.8743773Z ##[group]Run if [[ -z $toolchain ]]; then
+2026-11-13T03:31:32.8744083Z if [[ -z $toolchain ]]; then
+2026-11-13T03:31:32.8744442Z   # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070
+2026-11-13T03:31:32.8744798Z   echo "'toolchain' is a required input" >&2
+2026-11-13T03:31:32.8744991Z   exit 1
+2026-11-13T03:31:32.8745211Z elif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then
+2026-11-13T03:31:32.8745462Z   if [[ Linux == macOS ]]; then
+2026-11-13T03:31:32.8745850Z     echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+2026-11-13T03:31:32.8746150Z   else
+2026-11-13T03:31:32.8746392Z     echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT
+2026-11-13T03:31:32.8746693Z   fi
+2026-11-13T03:31:32.8746896Z elif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then
+2026-11-13T03:31:32.8748058Z   echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT
+2026-11-13T03:31:32.8748373Z elif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then
+2026-11-13T03:31:32.8748710Z   echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT
+2026-11-13T03:31:32.8749006Z else
+2026-11-13T03:31:32.8749135Z   delimiter=EOF
+2026-11-13T03:31:32.8749336Z   while [[ $toolchain == *$delimiter* ]]; do delimiter+=_; done
+2026-11-13T03:31:32.8749638Z   printf 'toolchain<<%s\n%s\n%s\n' "$delimiter" "$toolchain" "$delimiter" >> $GITHUB_OUTPUT
+2026-11-13T03:31:32.8749883Z fi
+2026-11-13T03:31:32.8773158Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T03:31:32.8773393Z env:
+2026-11-13T03:31:32.8773528Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:32.8773675Z   toolchain: 1.99.1
+2026-11-13T03:31:32.8773804Z ##[endgroup]
+2026-11-13T03:31:32.8864172Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=17]
+2026-11-13T03:31:32.8867797Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+2026-11-13T03:31:32.8901714Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+2026-11-13T03:31:32.8902050Z echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+2026-11-13T03:31:32.8920799Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T03:31:32.8921160Z env:
+2026-11-13T03:31:32.8921302Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:32.8921452Z ##[endgroup]
+2026-11-13T03:31:32.8969933Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=10]
+2026-11-13T03:31:32.8972195Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+2026-11-13T03:31:32.9036680Z ##[group]Run if ! command -v rustup &>/dev/null; then
+2026-11-13T03:31:32.9036966Z if ! command -v rustup &>/dev/null; then
+2026-11-13T03:31:32.9037433Z   curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+2026-11-13T03:31:32.9037860Z   echo "$CARGO_HOME/bin" >> $GITHUB_PATH
+2026-11-13T03:31:32.9038047Z fi
+2026-11-13T03:31:32.9057384Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T03:31:32.9057806Z env:
+2026-11-13T03:31:32.9057951Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:32.9058101Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:32.9058252Z ##[endgroup]
+2026-11-13T03:31:32.9104461Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=13]
+2026-11-13T03:31:32.9106462Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+2026-11-13T03:31:32.9113640Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-11-13T03:31:32.9125554Z ##[start-action display=rustup toolchain install 1.99.1;id=__dtolnay_rust-toolchain.__run_4]
+2026-11-13T03:31:32.9146233Z ##[group]Run set -f  # split targets and components on commas and whitespace, without glob expansion
+2026-11-13T03:31:32.9146647Z set -f  # split targets and components on commas and whitespace, without glob expansion
+2026-11-13T03:31:32.9146900Z flags=()
+2026-11-13T03:31:32.9147086Z for t in ${targets//,/ }; do flags+=(--target "$t"); done
+2026-11-13T03:31:32.9147348Z for c in ${components//,/ }; do flags+=(--component "$c"); done
+2026-11-13T03:31:32.9147646Z if [[ $toolchain == nightly && -n $components ]]; then flags+=(--allow-downgrade); fi
+2026-11-13T03:31:32.9147898Z log=$(mktemp)
+2026-11-13T03:31:32.9148043Z trap 'rm -f "$log"' EXIT
+2026-11-13T03:31:32.9148202Z for attempt in 1 2 3 4 5; do
+2026-11-13T03:31:32.9148534Z   if rustup toolchain install "$toolchain" "${flags[@]}" --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then
+2026-11-13T03:31:32.9148857Z     break
+2026-11-13T03:31:32.9148980Z   else
+2026-11-13T03:31:32.9149099Z     status=$?
+2026-11-13T03:31:32.9149228Z   fi
+2026-11-13T03:31:32.9149402Z   if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \
+2026-11-13T03:31:32.9149736Z       || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then
+2026-11-13T03:31:32.9150011Z     exit "$status"
+2026-11-13T03:31:32.9150146Z   fi
+2026-11-13T03:31:32.9150610Z   echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2
+2026-11-13T03:31:32.9150853Z   sleep 30
+2026-11-13T03:31:32.9150974Z done
+2026-11-13T03:31:32.9168401Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T03:31:32.9168598Z env:
+2026-11-13T03:31:32.9168719Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:32.9168864Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:32.9169018Z   toolchain: 1.99.1
+2026-11-13T03:31:32.9169139Z   targets: 
+2026-11-13T03:31:32.9169288Z   components: clippy, rustfmt
+2026-11-13T03:31:32.9169442Z   RUSTUP_PERMIT_COPY_RENAME: 1
+2026-11-13T03:31:32.9169585Z ##[endgroup]
+2026-11-13T03:31:32.9582457Z info: syncing channel updates for 1.99.1-x86_64-unknown-linux-gnu
+2026-11-13T03:31:33.1781370Z info: latest update on 2026-10-15 for version 1.99.1 (58cf8f9c3 2026-10-13)
+2026-11-13T03:31:40.9607457Z info: downloading 5 components
+2026-11-13T03:31:40.9607663Z 
+2026-11-13T03:31:40.9669219Z   1.99.1-x86_64-unknown-linux-gnu installed - rustc 1.99.1 (58cf8f9c3 2026-10-13)
+2026-11-13T03:31:40.9669492Z 
+2026-11-13T03:31:40.9866764Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=8074]
+2026-11-13T03:31:40.9872807Z ##[start-action display=rustup default 1.99.1;id=__dtolnay_rust-toolchain.__run_5]
+2026-11-13T03:31:40.9888037Z ##[group]Run rustup default "$toolchain" --force-non-host
+2026-11-13T03:31:40.9888297Z rustup default "$toolchain" --force-non-host
+2026-11-13T03:31:40.9905532Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T03:31:40.9905726Z env:
+2026-11-13T03:31:40.9905848Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:40.9905992Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:40.9906143Z   toolchain: 1.99.1
+2026-11-13T03:31:40.9906428Z ##[endgroup]
+2026-11-13T03:31:40.9985746Z info: using existing install for 1.99.1-x86_64-unknown-linux-gnu
+2026-11-13T03:31:40.9992003Z info: default toolchain set to 1.99.1-x86_64-unknown-linux-gnu
+2026-11-13T03:31:40.9992280Z 
+2026-11-13T03:31:41.0053151Z   1.99.1-x86_64-unknown-linux-gnu unchanged - rustc 1.99.1 (58cf8f9c3 2026-10-13)
+2026-11-13T03:31:41.0053475Z 
+2026-11-13T03:31:41.0053768Z info: note that the toolchain '1.99.1-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/cooee/cooee/rust-toolchain.toml')
+2026-11-13T03:31:41.0071158Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=19]
+2026-11-13T03:31:41.0074530Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+2026-11-13T03:31:41.0090744Z ##[group]Run DATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+2026-11-13T03:31:41.0091288Z DATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+2026-11-13T03:31:41.0091689Z HASH=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-hash: //p')
+2026-11-13T03:31:41.0091988Z echo "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT
+2026-11-13T03:31:41.0109055Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T03:31:41.0109251Z env:
+2026-11-13T03:31:41.0109374Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:41.0109520Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:41.0109670Z   toolchain: 1.99.1
+2026-11-13T03:31:41.0109796Z ##[endgroup]
+2026-11-13T03:31:41.0391611Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=31]
+2026-11-13T03:31:41.0393780Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+2026-11-13T03:31:41.0409711Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+2026-11-13T03:31:41.0409972Z if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+2026-11-13T03:31:41.0410168Z   echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV
+2026-11-13T03:31:41.0410667Z fi
+2026-11-13T03:31:41.0427554Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T03:31:41.0427753Z env:
+2026-11-13T03:31:41.0427878Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:41.0428026Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:41.0428176Z ##[endgroup]
+2026-11-13T03:31:41.0470610Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=7]
+2026-11-13T03:31:41.0472412Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+2026-11-13T03:31:41.0487224Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+2026-11-13T03:31:41.0487475Z if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+2026-11-13T03:31:41.0487671Z   echo CARGO_TERM_COLOR=always >> $GITHUB_ENV
+2026-11-13T03:31:41.0487860Z fi
+2026-11-13T03:31:41.0504170Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T03:31:41.0504365Z env:
+2026-11-13T03:31:41.0504486Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:41.0504630Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:41.0504777Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:31:41.0504909Z ##[endgroup]
+2026-11-13T03:31:41.0545587Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=7]
+2026-11-13T03:31:41.0548564Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+2026-11-13T03:31:41.0564107Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+2026-11-13T03:31:41.0564419Z # implemented in 1.66, stabilized in 1.68, made default in 1.70
+2026-11-13T03:31:41.0564825Z if [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then
+2026-11-13T03:31:41.0565425Z   if rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[89]\.'; then
+2026-11-13T03:31:41.0565776Z     touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true
+2026-11-13T03:31:41.0566079Z     echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV
+2026-11-13T03:31:41.0566373Z   elif rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[67]\.'; then
+2026-11-13T03:31:41.0566701Z     touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true
+2026-11-13T03:31:41.0566992Z     echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV
+2026-11-13T03:31:41.0567194Z   fi
+2026-11-13T03:31:41.0567310Z fi
+2026-11-13T03:31:41.0582991Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T03:31:41.0583179Z env:
+2026-11-13T03:31:41.0583297Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:41.0583442Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:41.0583606Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:31:41.0583734Z   toolchain: 1.99.1
+2026-11-13T03:31:41.0583857Z ##[endgroup]
+2026-11-13T03:31:41.0834607Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=28]
+2026-11-13T03:31:41.0838013Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+2026-11-13T03:31:41.0853249Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+2026-11-13T03:31:41.0853699Z # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+2026-11-13T03:31:41.0854056Z if rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.7[01]\.'; then
+2026-11-13T03:31:41.0854324Z   echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV
+2026-11-13T03:31:41.0854502Z fi
+2026-11-13T03:31:41.0871228Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T03:31:41.0871459Z env:
+2026-11-13T03:31:41.0871580Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:41.0871719Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:41.0871868Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:31:41.0871995Z   toolchain: 1.99.1
+2026-11-13T03:31:41.0872117Z ##[endgroup]
+2026-11-13T03:31:41.1020932Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=18]
+2026-11-13T03:31:41.1025077Z ##[start-action display=rustc +1.99.1 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+2026-11-13T03:31:41.1039973Z ##[group]Run rustc +"$toolchain" --version --verbose
+2026-11-13T03:31:41.1040424Z rustc +"$toolchain" --version --verbose
+2026-11-13T03:31:41.1057202Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T03:31:41.1057392Z env:
+2026-11-13T03:31:41.1057521Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:41.1057673Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:41.1057824Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:31:41.1057964Z   toolchain: 1.99.1
+2026-11-13T03:31:41.1058235Z ##[endgroup]
+2026-11-13T03:31:41.1188716Z rustc 1.99.1 (58cf8f9c3 2026-10-13)
+2026-11-13T03:31:41.1189078Z binary: rustc
+2026-11-13T03:31:41.1189325Z commit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67
+2026-11-13T03:31:41.1189627Z commit-date: 2026-10-13
+2026-11-13T03:31:41.1189847Z host: x86_64-unknown-linux-gnu
+2026-11-13T03:31:41.1190069Z release: 1.99.1
+2026-11-13T03:31:41.1190459Z LLVM version: 23.1.1
+2026-11-13T03:31:41.1204548Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=17]
+2026-11-13T03:31:41.1305602Z ##[group]Run Swatinem/rust-cache@v2
+2026-11-13T03:31:41.1305776Z with:
+2026-11-13T03:31:41.1305895Z   prefix-key: v0-rust
+2026-11-13T03:31:41.1306026Z   add-job-id-key: true
+2026-11-13T03:31:41.1306177Z   add-rust-environment-hash-key: true
+2026-11-13T03:31:41.1306337Z   cache-targets: true
+2026-11-13T03:31:41.1306468Z   cache-all-crates: false
+2026-11-13T03:31:41.1306611Z   cache-workspace-crates: false
+2026-11-13T03:31:41.1306770Z   save-if: true
+2026-11-13T03:31:41.1306889Z   cache-provider: github
+2026-11-13T03:31:41.1307018Z   cache-bin: true
+2026-11-13T03:31:41.1307135Z   lookup-only: false
+2026-11-13T03:31:41.1307256Z   cmd-format: {0}
+2026-11-13T03:31:41.1307376Z env:
+2026-11-13T03:31:41.1307491Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:41.1307635Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:41.1307781Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:31:41.1307909Z ##[endgroup]
+2026-11-13T03:31:41.6003739Z ##[group]Cache Configuration
+2026-11-13T03:31:41.6004197Z Cache Provider:
+2026-11-13T03:31:41.6004387Z     github
+2026-11-13T03:31:41.6004550Z Workspaces:
+2026-11-13T03:31:41.6004740Z     /home/runner/work/cooee/cooee
+2026-11-13T03:31:41.6004962Z Cache Paths:
+2026-11-13T03:31:41.6005150Z     /home/runner/.cargo/bin
+2026-11-13T03:31:41.6005363Z     /home/runner/.cargo/.crates.toml
+2026-11-13T03:31:41.6005806Z     /home/runner/.cargo/.crates2.json
+2026-11-13T03:31:41.6006392Z     /home/runner/.cargo/registry
+2026-11-13T03:31:41.6006873Z     /home/runner/.cargo/git
+2026-11-13T03:31:41.6007365Z     /home/runner/work/cooee/cooee/target
+2026-11-13T03:31:41.6007761Z Restore Key:
+2026-11-13T03:31:41.6007962Z     v0-rust-msrv-Linux-x64-01b81e85
+2026-11-13T03:31:41.6008185Z Cache Key:
+2026-11-13T03:31:41.6008396Z     v0-rust-msrv-Linux-x64-01b81e85-2ce5b885
+2026-11-13T03:31:41.6008648Z .. Prefix:
+2026-11-13T03:31:41.6008845Z   - v0-rust-msrv-Linux-x64
+2026-11-13T03:31:41.6009070Z .. Environment considered:
+2026-11-13T03:31:41.6009283Z   - Rust Versions:
+2026-11-13T03:31:41.6009593Z     - 1.99.1 x86_64-unknown-linux-gnu 58cf8f9c35b355199727627d07ae34a4e2846d67
+2026-11-13T03:31:41.6009958Z   - CARGO_HOME
+2026-11-13T03:31:41.6010149Z   - CARGO_INCREMENTAL
+2026-11-13T03:31:41.6010490Z   - CARGO_TERM_COLOR
+2026-11-13T03:31:41.6010703Z .. Lockfiles considered:
+2026-11-13T03:31:41.6010945Z   - /home/runner/work/cooee/cooee/Cargo.lock
+2026-11-13T03:31:41.6011300Z   - /home/runner/work/cooee/cooee/crates/cooee-core/Cargo.toml
+2026-11-13T03:31:41.6011722Z   - /home/runner/work/cooee/cooee/crates/cooee-machines/Cargo.toml
+2026-11-13T03:31:41.6012137Z   - /home/runner/work/cooee/cooee/crates/cooee-server/Cargo.toml
+2026-11-13T03:31:41.6012543Z   - /home/runner/work/cooee/cooee/crates/cooee-terminal/Cargo.toml
+2026-11-13T03:31:41.6012927Z   - /home/runner/work/cooee/cooee/crates/cooee/Cargo.toml
+2026-11-13T03:31:41.6013241Z   - /home/runner/work/cooee/cooee/rust-toolchain.toml
+2026-11-13T03:31:41.6013456Z   - /home/runner/work/cooee/cooee/web/Cargo.toml
+2026-11-13T03:31:41.6014014Z ##[endgroup]
+2026-11-13T03:31:41.6014094Z 
+2026-11-13T03:31:41.6014153Z ... Restoring cache ...
+2026-11-13T03:31:41.7676499Z Cache hit for: v0-rust-msrv-Linux-x64-01b81e85-2ce5b885
+2026-11-13T03:31:42.9246397Z Received 134217728 of 480750103 (27.9%), 126.9 MBs/sec
+2026-11-13T03:31:43.9247795Z Received 352321536 of 480750103 (73.3%), 167.2 MBs/sec
+2026-11-13T03:31:44.4831368Z Received 480750103 of 480750103 (100.0%), 178.6 MBs/sec
+2026-11-13T03:31:44.4831831Z Cache Size: ~458 MB (480750103 B)
+2026-11-13T03:31:44.4853970Z [command]/usr/bin/tar -xf /home/runner/work/_temp/ad402669-aa0f-4ef5-b34c-f946120de1cc/cache.tzst -P -C /home/runner/work/cooee/cooee --use-compress-program unzstd
+2026-11-13T03:31:48.2059092Z Cache restored successfully
+2026-11-13T03:31:48.2738941Z Restored from cache key "v0-rust-msrv-Linux-x64-01b81e85-2ce5b885" full match: true.
+2026-11-13T03:31:48.3944881Z ##[group]Run taiki-e/install-action@v2
+2026-11-13T03:31:48.3945057Z with:
+2026-11-13T03:31:48.3945197Z   tool: just,cargo-deny,topcoat-cli@0.11.0
+2026-11-13T03:31:48.3945373Z   checksum: true
+2026-11-13T03:31:48.3945502Z   fallback: cargo-binstall
+2026-11-13T03:31:48.3945641Z env:
+2026-11-13T03:31:48.3945759Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:48.3945916Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:48.3946076Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:31:48.3946217Z   CACHE_ON_FAILURE: false
+2026-11-13T03:31:48.3946355Z ##[endgroup]
+2026-11-13T03:31:48.3951935Z ##[start-action display=Run bail() {;id=__taiki-e_install-action.__run]
+2026-11-13T03:31:48.4234640Z ##[group]Run bail() {
+2026-11-13T03:31:48.4234922Z bail() {
+2026-11-13T03:31:48.4235163Z   printf '::error::install-action: %s\n' "$*"
+2026-11-13T03:31:48.4235446Z   exit 1
+2026-11-13T03:31:48.4235626Z }
+2026-11-13T03:31:48.4236003Z # If /bin/sh is dash, environment variable containing % is not imported, but is fine
+2026-11-13T03:31:48.4236489Z # because it also means that it will not be exposed to subprocess.
+2026-11-13T03:31:48.4236885Z if /usr/bin/env | grep -Eq '^BASH_FUNC_'; then
+2026-11-13T03:31:48.4237377Z   bail 'bash function injection via BASH_FUNC_ environment variable is not allowed for security reasons'
+2026-11-13T03:31:48.4237808Z fi
+2026-11-13T03:31:48.4238009Z if ! command -v bash >/dev/null; then
+2026-11-13T03:31:48.4238315Z   if grep -Eq '^ID=alpine' /etc/os-release; then
+2026-11-13T03:31:48.4238727Z     printf '::group::Install packages required for install-action (bash)\n'
+2026-11-13T03:31:48.4239110Z     # NB: sync with apk_install in main.sh
+2026-11-13T03:31:48.4239394Z     if command -v sudo >/dev/null; then
+2026-11-13T03:31:48.4239675Z       sudo apk --no-cache add bash
+2026-11-13T03:31:48.4239970Z     elif command -v doas >/dev/null; then
+2026-11-13T03:31:48.4240357Z       doas apk --no-cache add bash
+2026-11-13T03:31:48.4240605Z     else
+2026-11-13T03:31:48.4240804Z       apk --no-cache add bash
+2026-11-13T03:31:48.4241043Z     fi
+2026-11-13T03:31:48.4241237Z     printf '::endgroup::\n'
+2026-11-13T03:31:48.4241465Z   else
+2026-11-13T03:31:48.4241669Z     bail 'this action requires bash'
+2026-11-13T03:31:48.4241914Z   fi
+2026-11-13T03:31:48.4242084Z fi
+2026-11-13T03:31:48.4242334Z bash --noprofile --norc "${GITHUB_ACTION_PATH:?}/main.sh"
+2026-11-13T03:31:48.4243667Z shell: /usr/bin/env -u ENV -u BASH_ENV -u CDPATH -u SHELLOPTS -u BASHOPTS /bin/sh -eu {0}
+2026-11-13T03:31:48.4244029Z env:
+2026-11-13T03:31:48.4244204Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:48.4244423Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:48.4244651Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:31:48.4244846Z   CACHE_ON_FAILURE: false
+2026-11-13T03:31:48.4245090Z   INPUT_TOOL: just,cargo-deny,topcoat-cli@0.11.0
+2026-11-13T03:31:48.4245357Z   INPUT_CHECKSUM: true
+2026-11-13T03:31:48.4245563Z   INPUT_FALLBACK: cargo-binstall
+2026-11-13T03:31:48.4248362Z   DEFAULT_GITHUB_TOKEN: ***
+2026-11-13T03:31:48.4248607Z   ACTION_USER_AGENT: taiki-e/install-action (v2)
+2026-11-13T03:31:48.4248870Z   RUNNER_OS: Linux
+2026-11-13T03:31:48.4249054Z   RUNNER_ARCH: X64
+2026-11-13T03:31:48.4249239Z ##[endgroup]
+2026-11-13T03:31:48.4544878Z info: host platform: x86_64_linux
+2026-11-13T03:31:48.4703323Z info: installing just@latest
+2026-11-13T03:31:48.4874253Z info: downloading https://github.com/casey/just/releases/download/1.59.0/just-1.59.0-x86_64-unknown-linux-musl.tar.gz
+2026-11-13T03:31:48.7597552Z info: verifying sha256 checksum for just-1.59.0-x86_64-unknown-linux-musl.tar.gz
+2026-11-13T03:31:48.8109738Z info: just installed at /home/runner/.cargo/bin/just
+2026-11-13T03:31:48.8113078Z + just --version
+2026-11-13T03:31:48.8124666Z just 1.59.0
+2026-11-13T03:31:48.8126865Z 
+2026-11-13T03:31:48.8276058Z info: installing cargo-deny@latest
+2026-11-13T03:31:48.8441958Z info: downloading https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz
+2026-11-13T03:31:49.1977008Z info: verifying sha256 checksum for cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz
+2026-11-13T03:31:49.2939466Z info: cargo-deny installed at /home/runner/.cargo/bin/cargo-deny
+2026-11-13T03:31:49.2942520Z + cargo-deny deny --version
+2026-11-13T03:31:49.2950619Z cargo-deny 0.20.2
+2026-11-13T03:31:49.2952657Z 
+2026-11-13T03:31:49.2956723Z info: install-action does not support topcoat-cli@0.11.0 (updating install-action might resolve this); fallback to cargo-binstall
+2026-11-13T03:31:49.3004992Z info: cargo-binstall already installed at /home/runner/.cargo/bin/cargo-binstall
+2026-11-13T03:31:49.3060679Z cargo-binstall:  INFO resolve: Resolving package: 'topcoat-cli@=0.11.0'
+2026-11-13T03:31:51.9102343Z cargo-binstall:  INFO resolve: Verified signature for package 'topcoat-cli-0.11.0-x86_64-unknown-linux-musl': timestamp:1792865058	file:topcoat-cli-0.11.0-x86_64-unknown-linux-musl.tar.gz	hashed
+2026-11-13T03:31:51.9103427Z cargo-binstall:  WARN The package topcoat-cli v0.11.0 (x86_64-unknown-linux-musl) has been downloaded from third-party source QuickInstall
+2026-11-13T03:31:51.9104053Z cargo-binstall:  INFO This will install the following binaries:
+2026-11-13T03:31:51.9104506Z cargo-binstall:  INFO   - cargo-topcoat => /home/runner/.cargo/bin/cargo-topcoat
+2026-11-13T03:31:51.9104940Z cargo-binstall:  INFO   - topcoat => /home/runner/.cargo/bin/topcoat
+2026-11-13T03:31:51.9105303Z cargo-binstall:  INFO Installing binaries...
+2026-11-13T03:31:51.9177386Z cargo-binstall:  INFO Done in 2.616064203s
+2026-11-13T03:31:51.9197656Z ##[end-action id=__taiki-e_install-action.__run;outcome=success;conclusion=success;duration_ms=3524]
+2026-11-13T03:31:51.9202549Z ##[start-action display=Run Set-StrictMode -Version Latest;id=__taiki-e_install-action.__run_2]
+2026-11-13T03:31:51.9205094Z ##[end-action id=__taiki-e_install-action.__run_2;outcome=skipped;conclusion=skipped;duration_ms=0]
+2026-11-13T03:31:51.9226832Z ##[group]Run just fmt
+2026-11-13T03:31:51.9227001Z just fmt
+2026-11-13T03:31:51.9245939Z shell: /usr/bin/bash -e {0}
+2026-11-13T03:31:51.9246092Z env:
+2026-11-13T03:31:51.9246213Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:51.9246363Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:51.9246518Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:31:51.9246650Z   CACHE_ON_FAILURE: false
+2026-11-13T03:31:51.9246789Z ##[endgroup]
+2026-11-13T03:31:51.9308137Z cargo fmt --all --check
+2026-11-13T03:31:52.5382069Z topcoat fmt --check $(git ls-files 'crates/*.rs' 'web/*.rs')
+2026-11-13T03:31:52.7184461Z checked 97 inputs (0 need formatting), 0 failed in 175ms
+2026-11-13T03:31:52.7231788Z ##[group]Run just clippy
+2026-11-13T03:31:52.7232009Z just clippy
+2026-11-13T03:31:52.7249081Z shell: /usr/bin/bash -e {0}
+2026-11-13T03:31:52.7249234Z env:
+2026-11-13T03:31:52.7249356Z   CARGO_TERM_COLOR: always
+2026-11-13T03:31:52.7249500Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:31:52.7249661Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:31:52.7249797Z   CACHE_ON_FAILURE: false
+2026-11-13T03:31:52.7249930Z ##[endgroup]
+2026-11-13T03:31:52.7309015Z cargo clippy --workspace --all-targets --locked -- -D warnings
+2026-11-13T03:31:52.7960436Z     Updating crates.io index
+2026-11-13T03:31:53.7396208Z     Checking cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+2026-11-13T03:31:53.7445334Z    Compiling cooee-web v0.1.0 (/home/runner/work/cooee/cooee/web)
+2026-11-13T03:31:55.3274511Z     Checking cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+2026-11-13T03:31:55.3275489Z     Checking cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+2026-11-13T03:31:57.5064423Z     Checking cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+2026-11-13T03:32:00.5444487Z     Checking cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+2026-11-13T03:32:03.0244447Z     Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.25s
+2026-11-13T03:32:03.0553697Z # At most 10 allows in the workspace, each with a reason (clippy checks the reason).
+2026-11-13T03:32:03.0562724Z test "$(grep -rE 'allow\(' crates web/src | wc -l)" -le 10
+2026-11-13T03:32:03.0645781Z ##[group]Run setsid --wait just test
+2026-11-13T03:32:03.0646092Z setsid --wait just test
+2026-11-13T03:32:03.0669179Z shell: /usr/bin/bash -e {0}
+2026-11-13T03:32:03.0669368Z env:
+2026-11-13T03:32:03.0669497Z   CARGO_TERM_COLOR: always
+2026-11-13T03:32:03.0669645Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:32:03.0669800Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:32:03.0669935Z   CACHE_ON_FAILURE: false
+2026-11-13T03:32:03.0670076Z ##[endgroup]
+2026-11-13T03:32:03.0744211Z cargo test --workspace --locked
+2026-11-13T03:32:03.2304078Z    Compiling cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+2026-11-13T03:32:03.2356039Z    Compiling cooee-web v0.1.0 (/home/runner/work/cooee/cooee/web)
+2026-11-13T03:32:05.3082777Z    Compiling cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+2026-11-13T03:32:05.9932513Z    Compiling cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+2026-11-13T03:32:08.6052893Z    Compiling cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+2026-11-13T03:32:21.1427660Z    Compiling cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+2026-11-13T03:32:35.6834640Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 32.58s
+2026-11-13T03:32:35.7971183Z      Running unittests src/main.rs (target/debug/deps/cooee-01fd7e4b81af2cf4)
+2026-11-13T03:32:35.7981443Z 
+2026-11-13T03:32:35.7981593Z running 0 tests
+2026-11-13T03:32:35.7981813Z 
+2026-11-13T03:32:35.7983438Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-13T03:32:35.7983747Z 
+2026-11-13T03:32:35.7985037Z      Running tests/accounts.rs (target/debug/deps/accounts-d3d28fd0d7ed77d6)
+2026-11-13T03:32:35.7993028Z 
+2026-11-13T03:32:35.7993120Z running 2 tests
+2026-11-13T03:32:36.9387510Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+2026-11-13T03:32:36.9655678Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+2026-11-13T03:32:36.9656061Z 
+2026-11-13T03:32:36.9656220Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.17s
+2026-11-13T03:32:36.9656411Z 
+2026-11-13T03:32:36.9659318Z      Running tests/accounts_env.rs (target/debug/deps/accounts_env-09159eaa7eef2460)
+2026-11-13T03:32:36.9669892Z 
+2026-11-13T03:32:36.9670096Z running 7 tests
+2026-11-13T03:32:36.9742251Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+2026-11-13T03:32:36.9917872Z test an_inherited_token_never_signs_a_folder_in ... ok
+2026-11-13T03:32:37.0834575Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+2026-11-13T03:32:37.0916878Z test unknown_provider_or_account_refuses_on_one_line ... ok
+2026-11-13T03:32:37.0969297Z test ls_json_lists_every_account_without_its_token ... ok
+2026-11-13T03:32:37.1578485Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+2026-11-13T03:32:37.1659705Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+2026-11-13T03:32:37.1660654Z 
+2026-11-13T03:32:37.1660875Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+2026-11-13T03:32:37.1661305Z 
+2026-11-13T03:32:37.1663556Z      Running tests/ask.rs (target/debug/deps/ask-4fdea6e6ab30eae9)
+2026-11-13T03:32:37.1674098Z 
+2026-11-13T03:32:37.1674233Z running 4 tests
+2026-11-13T03:32:37.2334546Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+2026-11-13T03:32:37.2398091Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+2026-11-13T03:32:37.2434748Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+2026-11-13T03:32:38.2612227Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+2026-11-13T03:32:38.2613168Z 
+2026-11-13T03:32:38.2613732Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.09s
+2026-11-13T03:32:38.2614004Z 
+2026-11-13T03:32:38.2620771Z      Running tests/chat.rs (target/debug/deps/chat-7573e7a3502b19cb)
+2026-11-13T03:32:38.2629551Z 
+2026-11-13T03:32:38.2629712Z running 12 tests
+2026-11-13T03:32:38.3064533Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+2026-11-13T03:32:38.3159354Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+2026-11-13T03:32:38.3353454Z test a_shed_of_another_version_is_refused_naming_both_versions ... ok
+2026-11-13T03:32:38.3404746Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+2026-11-13T03:32:38.3542637Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+2026-11-13T03:32:38.3643271Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+2026-11-13T03:32:38.3656041Z test fake_shed_server ... ignored, a server for web/e2e, not a test
+2026-11-13T03:32:38.3831651Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+2026-11-13T03:32:38.3924819Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+2026-11-13T03:32:38.4133803Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+2026-11-13T03:32:38.4215838Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+2026-11-13T03:32:38.4471693Z test scene_draws_the_agents_as_sprites_and_the_current_ones_chats_as_chips ... ok
+2026-11-13T03:32:38.4472123Z 
+2026-11-13T03:32:38.4472329Z test result: ok. 11 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.18s
+2026-11-13T03:32:38.4472654Z 
+2026-11-13T03:32:38.4481929Z      Running tests/chat_first.rs (target/debug/deps/chat_first-a5a3a34d9e0326f8)
+2026-11-13T03:32:38.4492420Z 
+2026-11-13T03:32:38.4492530Z running 3 tests
+2026-11-13T03:32:38.4893337Z test a_new_agent_is_saved_as_a_profile_and_listed ... ok
+2026-11-13T03:32:38.5114362Z test an_agent_has_one_ongoing_chat_and_side_threads_and_a_new_chat_needs_nothing_picked ... ok
+2026-11-13T03:32:38.5212814Z test a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns ... ok
+2026-11-13T03:32:38.5213475Z 
+2026-11-13T03:32:38.5213779Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+2026-11-13T03:32:38.5214117Z 
+2026-11-13T03:32:38.5217834Z      Running tests/cli.rs (target/debug/deps/cli-27e8bc6bdf1acae3)
+2026-11-13T03:32:38.5227231Z 
+2026-11-13T03:32:38.5227509Z running 4 tests
+2026-11-13T03:32:38.5270581Z test version ... ok
+2026-11-13T03:32:38.5271114Z test listening_beyond_localhost_needs_allowed_hosts ... ok
+2026-11-13T03:32:38.5274621Z test unknown_args_and_config_keys_fail ... ok
+2026-11-13T03:32:38.5285167Z cooee: shed at /run/user/1001/shed.sock: No such file or directory (os error 2)
+2026-11-13T03:32:38.5357023Z test serve_listens_on_localhost_at_the_configured_port ... ok
+2026-11-13T03:32:38.5357371Z 
+2026-11-13T03:32:38.5357694Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+2026-11-13T03:32:38.5358343Z 
+2026-11-13T03:32:38.5359662Z      Running tests/first_run.rs (target/debug/deps/first_run-e119d7a0b8108fdb)
+2026-11-13T03:32:38.5368415Z 
+2026-11-13T03:32:38.5368541Z running 3 tests
+2026-11-13T03:32:38.5681008Z test no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns ... ok
+2026-11-13T03:32:38.5738843Z test with_no_roots_a_chat_still_starts_in_scratch_and_use_a_folder_says_how_to_add_one ... ok
+2026-11-13T03:32:38.5745197Z test with_one_root_and_nothing_in_it_a_thread_starts_in_the_root ... ok
+2026-11-13T03:32:38.5745600Z 
+2026-11-13T03:32:38.5745792Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+2026-11-13T03:32:38.5746041Z 
+2026-11-13T03:32:38.5750943Z      Running tests/folders.rs (target/debug/deps/folders-6c2de8c48c2d601f)
+2026-11-13T03:32:38.5760359Z 
+2026-11-13T03:32:38.5760689Z running 5 tests
+2026-11-13T03:32:38.6091697Z test browse_lists_only_folders_inside_home ... ok
+2026-11-13T03:32:38.6189807Z test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+2026-11-13T03:32:38.6262944Z test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+2026-11-13T03:32:38.6263619Z test add_and_remove_root_persists_in_the_config ... ok
+2026-11-13T03:32:38.6381063Z test picker_lists_sub_folders_two_levels_deep_never_symlinks ... ok
+2026-11-13T03:32:38.6381862Z 
+2026-11-13T03:32:38.6382401Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+2026-11-13T03:32:38.6382644Z 
+2026-11-13T03:32:38.6386605Z      Running tests/history.rs (target/debug/deps/history-34bff84cec3c9cb3)
+2026-11-13T03:32:38.6396565Z 
+2026-11-13T03:32:38.6396690Z running 1 test
+2026-11-13T03:32:38.7432682Z test a_persona_finds_and_reads_its_own_threads_and_not_another_personas ... ok
+2026-11-13T03:32:38.7434496Z 
+2026-11-13T03:32:38.7435041Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+2026-11-13T03:32:38.7435463Z 
+2026-11-13T03:32:38.7436298Z      Running tests/instances.rs (target/debug/deps/instances-fd7ad43cce5792fe)
+2026-11-13T03:32:38.7444652Z 
+2026-11-13T03:32:38.7444819Z running 3 tests
+2026-11-13T03:32:38.7497531Z test install_writes_a_plist_and_prints_the_commands ... ok
+2026-11-13T03:32:38.7531093Z test doctor_reports_a_missing_shed ... ok
+2026-11-13T03:32:38.7981754Z test two_instances_never_see_each_others_threads_or_devices ... ok
+2026-11-13T03:32:38.7982215Z 
+2026-11-13T03:32:38.7982593Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+2026-11-13T03:32:38.7982991Z 
+2026-11-13T03:32:38.7985498Z      Running tests/login.rs (target/debug/deps/login-9beef758b4ac6566)
+2026-11-13T03:32:38.7994521Z 
+2026-11-13T03:32:38.7994845Z running 5 tests
+2026-11-13T03:32:38.8517376Z test a_failed_sign_out_keeps_the_last_known_status ... ok
+2026-11-13T03:32:38.8561258Z test a_sign_in_started_for_a_remote_machine_runs_there ... ok
+2026-11-13T03:32:38.8787535Z test a_login_left_for_10_minutes_is_killed_and_removed ... ok
+2026-11-13T03:32:38.9451818Z test login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen ... ok
+2026-11-13T03:32:50.5407969Z test a_hanging_status_check_never_holds_a_request_and_runs_once ... ok
+2026-11-13T03:32:50.5408515Z 
+2026-11-13T03:32:50.5408821Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.74s
+2026-11-13T03:32:50.5409149Z 
+2026-11-13T03:32:50.5414788Z      Running tests/machine_check.rs (target/debug/deps/machine_check-d057fc8397980e32)
+2026-11-13T03:32:50.5425470Z 
+2026-11-13T03:32:50.5425840Z running 5 tests
+2026-11-13T03:32:50.5871964Z test a_machine_shed_cant_reach_or_doesnt_have_fails_its_first_check_and_runs_nothing_there ... ok
+2026-11-13T03:32:50.6063030Z test a_ready_machine_passes_every_check_each_run_there ... ok
+2026-11-13T03:32:50.6303199Z test each_check_fails_with_its_part_missing_there_and_says_the_fix ... ok
+2026-11-13T03:32:50.6345448Z test doctor_has_a_row_per_machine ... ok
+2026-11-13T03:32:50.6620883Z test yes_clones_the_folder_and_copies_the_settings_there_once ... ok
+2026-11-13T03:32:50.6621405Z 
+2026-11-13T03:32:50.6622013Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+2026-11-13T03:32:50.6622510Z 
+2026-11-13T03:32:50.6626648Z      Running tests/machines.rs (target/debug/deps/machines-901231e5a2689d24)
+2026-11-13T03:32:50.6635076Z 
+2026-11-13T03:32:50.6635282Z running 1 test
+2026-11-13T03:32:50.9973913Z test the_machines_tab_shows_each_machine_and_a_dot_while_one_is_offline ... ok
+2026-11-13T03:32:50.9974212Z 
+2026-11-13T03:32:50.9974393Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+2026-11-13T03:32:50.9974646Z 
+2026-11-13T03:32:50.9976776Z      Running tests/mcp.rs (target/debug/deps/mcp-69f7bb0559855cf5)
+2026-11-13T03:32:50.9986963Z 
+2026-11-13T03:32:50.9987122Z running 5 tests
+2026-11-13T03:32:51.0157045Z test a_literal_token_in_the_registry_is_refused_at_load_naming_the_key_only ... ok
+2026-11-13T03:32:51.0356405Z test the_mac_adds_toggles_and_removes_servers_with_references_only ... ok
+2026-11-13T03:32:51.0898685Z test propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_it_off ... ok
+2026-11-13T03:32:51.1240026Z test the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no_value_is_written ... ok
+2026-11-13T03:32:51.1263163Z test the_phone_toggles_and_picks_tools_but_a_command_or_url_change_is_refused_server_side ... ok
+2026-11-13T03:32:51.1263569Z 
+2026-11-13T03:32:51.1263853Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+2026-11-13T03:32:51.1264197Z 
+2026-11-13T03:32:51.1269559Z      Running tests/model.rs (target/debug/deps/model-daaa77040a70a473)
+2026-11-13T03:32:51.1278904Z 
+2026-11-13T03:32:51.1279069Z running 3 tests
+2026-11-13T03:32:51.1537606Z test a_day_old_list_is_asked_again ... ok
+2026-11-13T03:32:51.1879966Z test row_34_a_thread_starts_on_its_pick_and_a_new_model_shows ... ok
+2026-11-13T03:32:51.1994196Z test a_gone_pin_falls_back_with_one_line_and_a_short_name_moves_on ... ok
+2026-11-13T03:32:51.1994575Z 
+2026-11-13T03:32:51.1995007Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+2026-11-13T03:32:51.1995348Z 
+2026-11-13T03:32:51.2001338Z      Running tests/pairing.rs (target/debug/deps/pairing-821a814cd29d58ce)
+2026-11-13T03:32:51.2011499Z 
+2026-11-13T03:32:51.2011684Z running 17 tests
+2026-11-13T03:32:51.2511558Z test a_foreign_host_or_origin_is_refused_even_paired ... ok
+2026-11-13T03:32:51.2526041Z test a_declined_request_tells_the_new_device_who_said_no ... ok
+2026-11-13T03:32:51.2826430Z test a_report_is_kept_and_listed ... ok
+2026-11-13T03:32:51.2922133Z test a_passkey_signs_a_device_back_in_and_can_be_removed ... ok
+2026-11-13T03:32:51.2984372Z test a_qr_code_is_prefilled_and_pairs_at_once ... ok
+2026-11-13T03:32:51.3341616Z test a_wrong_expired_or_reused_code_says_so ... ok
+2026-11-13T03:32:51.3406368Z test devices_are_listed_and_removed_from_the_phone ... ok
+2026-11-13T03:32:51.3410871Z test alerts_status_test_and_off_are_this_devices ... ok
+2026-11-13T03:32:51.3724302Z test push_subscriptions_are_checked_and_tied_to_the_device ... ok
+2026-11-13T03:32:51.3747727Z test a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey ... ok
+2026-11-13T03:32:51.3980573Z test five_wrong_codes_a_minute_close_the_boxes_for_that_address ... ok
+2026-11-13T03:32:51.3982226Z test pair_use_remove_and_only_the_hash_on_disk ... ok
+2026-11-13T03:32:51.4114891Z test the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it ... ok
+2026-11-13T03:32:51.4153492Z test the_mac_declines_a_request_from_the_cli ... ok
+2026-11-13T03:32:51.4310124Z test the_new_calls_need_a_paired_device_but_pairing_requests_do_not ... ok
+2026-11-13T03:32:51.4408742Z test the_mac_lists_and_approves_a_request_from_the_cli ... ok
+2026-11-13T03:32:51.4467829Z test unpaired_reads_and_writes_are_refused ... ok
+2026-11-13T03:32:51.4468429Z 
+2026-11-13T03:32:51.4468613Z test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+2026-11-13T03:32:51.4468855Z 
+2026-11-13T03:32:51.4477992Z      Running tests/perf.rs (target/debug/deps/perf-e8627537d5aa700b)
+2026-11-13T03:32:51.4488323Z 
+2026-11-13T03:32:51.4488461Z running 4 tests
+2026-11-13T03:32:51.4571587Z test cooee_perf_turns_a_log_into_the_table ... ok
+2026-11-13T03:32:51.4759612Z test a_fast_request_under_the_default_threshold_is_debug_only ... ok
+2026-11-13T03:32:51.4881045Z test requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn ... ok
+2026-11-13T03:32:51.4881784Z test first_token_is_logged_once_per_prompt_and_nothing_private_is ... ok
+2026-11-13T03:32:51.4882114Z 
+2026-11-13T03:32:51.4882710Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+2026-11-13T03:32:51.4883036Z 
+2026-11-13T03:32:51.4886422Z      Running tests/personas.rs (target/debug/deps/personas-e541d893beee121f)
+2026-11-13T03:32:51.4896113Z 
+2026-11-13T03:32:51.4896215Z running 10 tests
+2026-11-13T03:32:51.5314920Z test a_plugin_is_attached_to_a_persona_and_detached ... ok
+2026-11-13T03:32:51.5547358Z test a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it ... ok
+2026-11-13T03:32:51.5601952Z test migration_keeps_the_name_and_sets_the_orchestrator_role ... ok
+2026-11-13T03:32:51.6384382Z test a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session ... ok
+2026-11-13T03:32:51.6460666Z test old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief ... ok
+2026-11-13T03:32:51.6873592Z test a_persona_and_its_threads_name_their_machine ... ok
+2026-11-13T03:32:51.7006385Z test the_plugin_attaches_by_role ... ok
+2026-11-13T03:32:51.7096401Z test renaming_the_orchestrator_changes_no_attachment ... ok
+2026-11-13T03:32:51.7151258Z test remember_adds_replaces_and_forgets_one_note_under_the_cap ... ok
+2026-11-13T03:32:51.7369427Z test two_orchestrator_personas_each_with_their_own_fleets ... ok
+2026-11-13T03:32:51.7369960Z 
+2026-11-13T03:32:51.7370585Z test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+2026-11-13T03:32:51.7370916Z 
+2026-11-13T03:32:51.7378987Z      Running tests/plugin_manager.rs (target/debug/deps/plugin_manager-e94fa7ec11cc3f91)
+2026-11-13T03:32:51.7388455Z 
+2026-11-13T03:32:51.7388539Z running 7 tests
+2026-11-13T03:32:52.3761602Z test an_index_plugin_has_no_warning_and_a_url_plugin_is_not_reviewed ... ok
+2026-11-13T03:32:52.4143373Z test add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it ... ok
+2026-11-13T03:32:52.8348349Z test only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issue ... ok
+2026-11-13T03:32:52.8773825Z test an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone ... ok
+2026-11-13T03:32:52.9069126Z test a_failed_update_keeps_the_old_build_and_a_good_one_swaps_in ... ok
+2026-11-13T03:32:54.0555337Z test improve_makes_a_branch_an_approval_builds_and_swaps_it_in_and_it_rolls_back ... ok
+2026-11-13T03:32:54.9149434Z test remove_stops_it_and_keeps_the_checkout_unless_purged ... ok
+2026-11-13T03:32:54.9149768Z 
+2026-11-13T03:32:54.9150032Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.18s
+2026-11-13T03:32:54.9150487Z 
+2026-11-13T03:32:54.9151019Z      Running tests/plugins.rs (target/debug/deps/plugins-1c216a7f5a9a7f39)
+2026-11-13T03:32:54.9159924Z 
+2026-11-13T03:32:54.9160005Z running 19 tests
+2026-11-13T03:32:54.9521550Z test a_backends_event_stream_comes_through_the_proxy ... ok
+2026-11-13T03:32:54.9744024Z test a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin ... ok
+2026-11-13T03:32:54.9785307Z test a_plugin_with_no_token_configured_does_not_start ... ok
+2026-11-13T03:32:54.9877514Z test a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab ... ok
+2026-11-13T03:32:55.0181942Z test a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused ... ok
+2026-11-13T03:32:55.0218293Z test a_plugin_without_its_token_is_refused ... ok
+2026-11-13T03:32:55.0476086Z test a_hanging_plugin_answer_never_holds_another_thread ... ok
+2026-11-13T03:32:55.0609765Z test plugin_check_checks_a_manifest ... ok
+2026-11-13T03:32:55.0620886Z test a_run_card_approves_once_with_its_sha_and_shows_the_tail ... ok
+2026-11-13T03:32:55.0817095Z test cooees_own_cards_go_out_as_blocks_and_settle_to_their_line ... ok
+2026-11-13T03:32:55.1231786Z test row_30_choice_rows_recommended_first_other_text_and_who_and_when ... ok
+2026-11-13T03:32:55.1246316Z test row_31_a_conductors_answer_takes_one_change_from_the_owner ... ok
+2026-11-13T03:32:55.1263331Z test plugin_check_passes_the_fixtures_and_names_a_broken_field ... ok
+2026-11-13T03:32:55.1282681Z test the_docs_show_the_example_plugin_the_ui_tests_run ... ok
+2026-11-13T03:32:55.1616075Z test the_proxy_sends_the_plugins_own_token_and_never_the_cookie ... ok
+2026-11-13T03:32:55.1732500Z test row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale ... ok
+2026-11-13T03:32:55.1836196Z test row_33_a_secrets_value_reaches_its_plugin_only ... ok
+2026-11-13T03:32:55.1965417Z test the_tab_frames_the_module_in_a_sandbox ... ok
+2026-11-13T03:32:55.2005841Z test row_35_handoff_chips_flow_back_lines_and_pick_a_thread ... ok
+2026-11-13T03:32:55.2011138Z 
+2026-11-13T03:32:55.2011583Z test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+2026-11-13T03:32:55.2011861Z 
+2026-11-13T03:32:55.2026079Z      Running tests/profiles.rs (target/debug/deps/profiles-08cf9845c63529c6)
+2026-11-13T03:32:55.2037019Z 
+2026-11-13T03:32:55.2037110Z running 4 tests
+2026-11-13T03:32:55.2579163Z test a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a_command ... ok
+2026-11-13T03:32:55.2970399Z test plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused ... ok
+2026-11-13T03:32:55.8100896Z test a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_it ... ok
+2026-11-13T03:32:55.8542828Z test a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_the_threads_id ... ok
+2026-11-13T03:32:55.8543321Z 
+2026-11-13T03:32:55.8549583Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s
+2026-11-13T03:32:55.8550083Z 
+2026-11-13T03:32:55.8551446Z      Running tests/reliability.rs (target/debug/deps/reliability-66046674a2b40215)
+2026-11-13T03:32:55.8563984Z 
+2026-11-13T03:32:55.8564179Z running 14 tests
+2026-11-13T03:32:55.9349003Z test a_background_start_answers_before_the_agent_runs_and_sends_once ... ok
+2026-11-13T03:32:55.9360648Z test a_start_with_no_folder_runs_in_its_own_scratch_folder ... ok
+2026-11-13T03:32:55.9882629Z test r11_a_slow_start_is_adopted_once ... ok
+2026-11-13T03:32:55.9933396Z test agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list ... ok
+2026-11-13T03:32:55.9999876Z test r10_an_ask_made_during_the_start_is_listed_and_answerable ... ok
+2026-11-13T03:32:56.0140903Z test r13_malformed_input_or_config_is_denied_with_a_reason ... ok
+2026-11-13T03:32:56.0289665Z test r16_a_repeated_id_is_one_row_however_often_it_is_refreshed ... ok
+2026-11-13T03:32:56.0484229Z test r17_paths_in_text_are_never_files_served ... ok
+2026-11-13T03:32:56.0631488Z test r14_a_crash_between_start_and_send_is_recovered_once ... ok
+2026-11-13T03:32:56.0823973Z test r21_an_answer_to_a_gone_session_says_not_delivered ... ok
+2026-11-13T03:32:56.0964263Z test r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch ... ok
+2026-11-13T03:32:56.1403257Z test r7_page_loads_run_no_subprocess ... ok
+2026-11-13T03:32:56.1579081Z test a_failed_background_start_says_why_and_a_retry_sends_once ... ok
+2026-11-13T03:33:06.1789242Z test r20_a_stuck_delivery_never_holds_the_next_one ... ok
+2026-11-13T03:33:06.1789875Z 
+2026-11-13T03:33:06.1791198Z test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.32s
+2026-11-13T03:33:06.1791949Z 
+2026-11-13T03:33:06.1803746Z      Running tests/remote.rs (target/debug/deps/remote-3ec9f49d0a3d2ecd)
+2026-11-13T03:33:06.1814546Z 
+2026-11-13T03:33:06.1814631Z running 2 tests
+2026-11-13T03:33:06.2559852Z test a_thread_on_a_machine_starts_replies_approves_and_cancels_there_and_is_found_after_a_restart ... ok
+2026-11-13T03:33:06.2643568Z test an_offline_or_unknown_machine_refuses_the_start_and_the_send_with_when_it_was_last_seen ... ok
+2026-11-13T03:33:06.2643815Z 
+2026-11-13T03:33:06.2643968Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+2026-11-13T03:33:06.2644159Z 
+2026-11-13T03:33:06.2649633Z      Running tests/rooms.rs (target/debug/deps/rooms-e131f71769c4b8db)
+2026-11-13T03:33:06.2657886Z 
+2026-11-13T03:33:06.2658000Z running 10 tests
+2026-11-13T03:33:06.3517381Z test members_are_given_final_replies_only ... ok
+2026-11-13T03:33:06.3702878Z test a_chain_stops_at_six_turns_on_one_message_the_last_told_to_wind_down ... ok
+2026-11-13T03:33:06.4116956Z test each_member_takes_a_turn_in_its_own_session_and_hears_the_others_attributed ... ok
+2026-11-13T03:33:06.4580543Z test mentioned_members_take_turns_in_mention_order_and_no_one_else ... ok
+2026-11-13T03:33:06.5116767Z test a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails ... ok
+2026-11-13T03:33:06.5588404Z test stop_cancels_the_member_taking_its_turn_and_drops_the_rest ... ok
+2026-11-13T03:33:06.5595378Z test members_join_and_leave_up_to_five_the_conductor_but_never_a_lane ... ok
+2026-11-13T03:33:06.5861535Z test stop_while_a_members_session_starts_cancels_it_once_started ... ok
+2026-11-13T03:33:06.6621881Z test with_no_mention_every_member_takes_a_turn_and_a_pass_is_hidden ... ok
+2026-11-13T03:33:06.6816597Z test two_members_naming_each_other_stop_at_the_cap_each_message ... ok
+2026-11-13T03:33:06.6817729Z 
+2026-11-13T03:33:06.6829276Z test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+2026-11-13T03:33:06.6830140Z      Running tests/routines.rs (target/debug/deps/routines-5bfedbc5ce84846b)
+2026-11-13T03:33:06.6830654Z 
+2026-11-13T03:33:06.6841020Z 
+2026-11-13T03:33:06.6841119Z running 2 tests
+2026-11-13T03:33:06.7651390Z test a_new_thread_routine_starts_a_thread_marked_with_it_in_the_list ... ok
+2026-11-13T03:33:06.8049030Z test a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts ... ok
+2026-11-13T03:33:06.8049271Z 
+2026-11-13T03:33:06.8049433Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+2026-11-13T03:33:06.8049646Z 
+2026-11-13T03:33:06.8055748Z      Running tests/screens.rs (target/debug/deps/screens-bca638b2de7ecc59)
+2026-11-13T03:33:06.8064641Z 
+2026-11-13T03:33:06.8064737Z running 1 test
+2026-11-13T03:33:07.3813524Z test a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refused ... ok
+2026-11-13T03:33:07.3814058Z 
+2026-11-13T03:33:07.3814406Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+2026-11-13T03:33:07.3814729Z 
+2026-11-13T03:33:07.3816434Z      Running tests/secrets.rs (target/debug/deps/secrets-624f4f8aa6aec924)
+2026-11-13T03:33:07.3824900Z 
+2026-11-13T03:33:07.3824987Z running 0 tests
+2026-11-13T03:33:07.3825199Z 
+2026-11-13T03:33:07.3825540Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-13T03:33:07.3825868Z 
+2026-11-13T03:33:07.3827346Z      Running tests/setup.rs (target/debug/deps/setup-18ba7140670ebdc9)
+2026-11-13T03:33:07.3835154Z 
+2026-11-13T03:33:07.3835312Z running 6 tests
+2026-11-13T03:33:07.3988496Z test dry_run_writes_nothing_and_prints_every_command ... ok
+2026-11-13T03:33:07.4034147Z test install_sh_checks_its_tools_then_installs_cooee_and_runs_setup ... ok
+2026-11-13T03:33:08.3409374Z test a_doctor_failure_stops_with_its_fix ... ok
+2026-11-13T03:33:08.6859147Z test setup_installs_the_first_party_themes_chosen_from_the_index ... ok
+2026-11-13T03:33:08.6901447Z test an_existing_config_keeps_its_keys ... ok
+2026-11-13T03:33:09.2152092Z test a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them ... ok
+2026-11-13T03:33:09.2152346Z 
+2026-11-13T03:33:09.2152500Z test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.83s
+2026-11-13T03:33:09.2152697Z 
+2026-11-13T03:33:09.2154491Z      Running tests/shed_pool.rs (target/debug/deps/shed_pool-22cba6ff16ccad66)
+2026-11-13T03:33:09.2165253Z 
+2026-11-13T03:33:09.2165365Z running 4 tests
+2026-11-13T03:33:09.2180416Z test a_request_that_was_sent_is_never_resent ... ok
+2026-11-13T03:33:09.2190105Z test sequential_calls_share_one_connection_and_one_hello ... ok
+2026-11-13T03:33:09.2233826Z test a_call_after_a_restart_reconnects_and_succeeds ... ok
+2026-11-13T03:33:09.2234750Z test another_version_after_a_restart_is_a_version_error ... ok
+2026-11-13T03:33:09.2235004Z 
+2026-11-13T03:33:09.2235227Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+2026-11-13T03:33:09.2235546Z 
+2026-11-13T03:33:09.2239868Z      Running tests/skills.rs (target/debug/deps/skills-5af5253e55d6d513)
+2026-11-13T03:33:09.2249427Z 
+2026-11-13T03:33:09.2249513Z running 2 tests
+2026-11-13T03:33:09.2837256Z test the_app_keeps_skills_and_the_twenty_first_is_refused ... ok
+2026-11-13T03:33:09.3104260Z test an_approved_skill_is_saved_and_briefed_by_description_and_a_refused_one_is_not ... ok
+2026-11-13T03:33:09.3104924Z 
+2026-11-13T03:33:09.3105280Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+2026-11-13T03:33:09.3105504Z 
+2026-11-13T03:33:09.3108975Z      Running tests/terminal.rs (target/debug/deps/terminal-6a80a5ff427497ac)
+2026-11-13T03:33:09.3118178Z 
+2026-11-13T03:33:09.3118287Z running 4 tests
+2026-11-13T03:33:09.4685379Z test no_passkey_is_403_a_passkey_unlocks_and_the_token_alone_is_not_enough ... ok
+2026-11-13T03:33:09.5539815Z test insert_text_types_into_the_shell_and_never_presses_enter ... ok
+2026-11-13T03:33:09.7700388Z test an_agents_terminal_can_be_watched_but_refuses_input ... ok
+2026-11-13T03:33:10.0825754Z test a_shell_starts_its_screen_diffs_stream_and_typed_text_and_keys_arrive ... ok
+2026-11-13T03:33:10.0826150Z 
+2026-11-13T03:33:10.0826375Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.77s
+2026-11-13T03:33:10.0826665Z 
+2026-11-13T03:33:10.0830407Z      Running tests/themes.rs (target/debug/deps/themes-28ffb9b690786435)
+2026-11-13T03:33:10.0839233Z 
+2026-11-13T03:33:10.0839306Z running 4 tests
+2026-11-13T03:33:10.1517357Z test check_passes_the_first_party_packs_and_fails_a_broken_one ... ok
+2026-11-13T03:33:10.1838725Z test a_pack_with_a_symlink_is_never_installed_or_served ... ok
+2026-11-13T03:33:11.7151102Z test remix_preview_keep_and_publish_from_the_phone ... ok
+2026-11-13T03:33:12.1357794Z test add_remove_and_list_with_the_lock ... ok
+2026-11-13T03:33:12.1357990Z 
+2026-11-13T03:33:12.1358155Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.05s
+2026-11-13T03:33:12.1358399Z 
+2026-11-13T03:33:12.1364462Z      Running tests/threads.rs (target/debug/deps/threads-326d61ce31c00a2d)
+2026-11-13T03:33:12.1374121Z 
+2026-11-13T03:33:12.1374198Z running 4 tests
+2026-11-13T03:33:12.1853717Z test files_are_stored_served_as_images_only_and_named_to_the_agent ... ok
+2026-11-13T03:33:12.1964267Z test the_list_counts_unseen_replies_and_archives_apart ... ok
+2026-11-13T03:33:12.2056305Z test a_thread_is_renamed_and_keeps_its_name_over_a_restart ... ok
+2026-11-13T03:33:12.2611202Z test a_message_queued_during_a_turn_goes_as_it_ends_and_one_steered_goes_at_once ... ok
+2026-11-13T03:33:12.2611465Z 
+2026-11-13T03:33:12.2611665Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+2026-11-13T03:33:12.2611881Z 
+2026-11-13T03:33:12.2618885Z      Running tests/workflow.rs (target/debug/deps/workflow-ac317ef2e4c20626)
+2026-11-13T03:33:12.2630111Z 
+2026-11-13T03:33:12.2630363Z running 3 tests
+2026-11-13T03:33:12.3209848Z test a_lane_is_listed_with_its_labels_but_never_among_the_agents ... ok
+2026-11-13T03:33:12.3259792Z test a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops ... ok
+2026-11-13T03:33:12.3324602Z test a_lane_goes_once_its_tool_removes_it ... ok
+2026-11-13T03:33:12.3324999Z 
+2026-11-13T03:33:12.3325364Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+2026-11-13T03:33:12.3325682Z 
+2026-11-13T03:33:12.3330693Z      Running unittests src/lib.rs (target/debug/deps/cooee_core-6d245884c10f9c21)
+2026-11-13T03:33:12.3341941Z 
+2026-11-13T03:33:12.3342031Z running 52 tests
+2026-11-13T03:33:12.3353264Z test chat::tests::a_conductors_answer_may_be_changed_for_its_window_only ... ok
+2026-11-13T03:33:12.3354140Z test chat::tests::a_repeated_id_is_one_row ... ok
+2026-11-13T03:33:12.3354681Z test blocks::tests::a_settled_card_asks_only_while_it_may_change_and_reads_back_without_its_block ... ok
+2026-11-13T03:33:12.3355204Z test chat::tests::shed_answers_its_own_approval_never_a_plugins_card ... ok
+2026-11-13T03:33:12.3355593Z test config::tests::missing_file_gives_defaults ... ok
+2026-11-13T03:33:12.3355957Z test config::tests::port_from_toml_unknown_key_rejected ... ok
+2026-11-13T03:33:12.3359247Z test config::tests::roots_under_home_are_expanded ... ok
+2026-11-13T03:33:12.3365258Z test accounts::tests::a_dead_logins_leftover_folder_never_blocks_a_new_account ... ok
+2026-11-13T03:33:12.3373603Z test accounts::tests::system_first_a_new_account_listed_once_adopted_and_removal ... ok
+2026-11-13T03:33:12.3385010Z test config::tests::saving_roots_keeps_the_other_lines ... ok
+2026-11-13T03:33:12.3397292Z test devices::tests::an_unreadable_store_is_an_error_not_unpaired ... ok
+2026-11-13T03:33:12.3401741Z test devices::tests::another_process_waits_while_a_change_is_in_progress ... ok
+2026-11-13T03:33:12.3453106Z test devices::tests::lookups_parse_an_unchanged_file_once_and_see_the_next_change ... ok
+2026-11-13T03:33:12.3473346Z test devices::tests::expired_and_guessed_codes_are_refused ... ok
+2026-11-13T03:33:12.3494825Z test devices::tests::pair_use_remove_and_only_hashes_on_disk ... ok
+2026-11-13T03:33:12.3546042Z test chat::tests::r6_folding_a_long_log_is_within_budget ... ok
+2026-11-13T03:33:12.3634818Z test devices::tests::a_request_waits_for_an_answer_then_pairs_once_or_is_declined ... ok
+2026-11-13T03:33:12.3804630Z test history::tests::a_search_finds_a_past_message_newest_first_within_the_caps ... ok
+2026-11-13T03:33:12.4188169Z test history::tests::a_read_leaves_out_tool_rows_and_pages_with_before ... ok
+2026-11-13T03:33:12.4188732Z test login::tests::finds_links_without_trailing_punctuation ... ok
+2026-11-13T03:33:12.4189191Z test login::tests::redacts_tokens_keeps_words_paths_codes_and_links ... ok
+2026-11-13T03:33:12.4216374Z test devices::tests::parallel_writes_never_share_a_temp_file ... ok
+2026-11-13T03:33:12.4220112Z test mcp::tests::only_references_pass_and_an_error_never_shows_the_value ... ok
+2026-11-13T03:33:12.4222242Z test mcp::tests::saving_keeps_every_other_line_and_reads_back ... ok
+2026-11-13T03:33:12.4225405Z test models::tests::a_short_name_is_its_familys_newest_and_an_id_is_itself ... ok
+2026-11-13T03:33:12.4230440Z test plugins::tests::a_manifest_needs_a_name_a_tab_or_a_permitted_place ... ok
+2026-11-13T03:33:12.4240678Z test plugins::tests::entries_round_trip ... ok
+2026-11-13T03:33:12.4244612Z test plugins::tests::the_built_in_index_parses ... ok
+2026-11-13T03:33:12.4247806Z test profiles::tests::a_secret_inline_or_a_bad_policy_is_refused_naming_the_key_only ... ok
+2026-11-13T03:33:12.4251856Z test profiles::tests::secrets_are_read_from_their_files_and_plain_values_kept ... ok
+2026-11-13T03:33:12.4253369Z test providers::claude::tests::status_from_the_json_status ... ok
+2026-11-13T03:33:12.4254075Z test providers::claude::tests::usage_windows_from_the_usage_lines ... ok
+2026-11-13T03:33:12.4255142Z test providers::codex::tests::picks_fill_the_providers_words ... ok
+2026-11-13T03:33:12.4255926Z test providers::fake::tests::a_base_no_provider_has_is_refused ... ok
+2026-11-13T03:33:12.4977117Z test history::tests::a_search_over_1000_threads_stays_under_200_ms ... ok
+2026-11-13T03:33:12.4977701Z test routines::cron::tests::day_of_month_and_day_of_week_both_set_match_either ... ok
+2026-11-13T03:33:12.4978079Z test routines::cron::tests::latest_is_the_newest_due_time_in_local_time ... ok
+2026-11-13T03:33:12.4980476Z test routines::cron::tests::steps_ranges_and_the_fifteen_minute_floor ... ok
+2026-11-13T03:33:12.4981832Z test routines::tests::a_routine_is_due_once_per_due_time_after_it_was_made ... ok
+2026-11-13T03:33:12.4983281Z test routines::tests::make_and_edit_refuse_what_is_wrong_and_change_nothing ... ok
+2026-11-13T03:33:12.4999569Z test routines::tests::the_file_round_trips_and_refuses_a_newer_format ... ok
+2026-11-13T03:33:12.5010535Z test login::tests::status_from_the_exit_code_and_output ... ok
+2026-11-13T03:33:12.5017882Z test secrets::tests::linux_keeps_secrets_in_their_0600_file ... ok
+2026-11-13T03:33:12.5020113Z test store::tests::bad_ids_and_newer_formats_are_refused ... ok
+2026-11-13T03:33:12.5202561Z test secrets::tests::a_keychain_call_that_hangs_is_a_time_out_error ... ok
+2026-11-13T03:33:12.5279404Z test providers::fake::tests::a_new_file_and_one_registry_line_is_a_provider ... ok
+2026-11-13T03:33:12.5280367Z test store::tests::crash_child ... ignored, the child process of crash_between_temp_write_and_rename_keeps_old_file
+2026-11-13T03:33:12.5290352Z test store::tests::item_lines_append_and_a_torn_last_line_is_skipped ... ok
+2026-11-13T03:33:12.5311397Z test store::tests::save_then_load_round_trips_and_leaves_no_temp ... ok
+2026-11-13T03:33:12.6045166Z test store::tests::crash_between_temp_write_and_rename_keeps_old_file ... ok
+2026-11-13T03:33:12.6657751Z test store::tests::concurrent_saves_of_one_thread_never_tear ... ok
+2026-11-13T03:33:14.6016896Z test login::tests::a_timeout_kills_the_command_and_what_it_started ... ok
+2026-11-13T03:33:14.6017211Z 
+2026-11-13T03:33:14.6017367Z test result: ok. 51 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.27s
+2026-11-13T03:33:14.6017569Z 
+2026-11-13T03:33:14.6024255Z      Running tests/group.rs (target/debug/deps/group-a67adbe3c2f247fc)
+2026-11-13T03:33:14.6032951Z 
+2026-11-13T03:33:14.6033034Z running 3 tests
+2026-11-13T03:33:14.6069633Z test a_reaped_child_is_refused ... ok
+2026-11-13T03:33:14.6117049Z test a_child_in_the_callers_group_is_refused ... ok
+2026-11-13T03:33:14.6132427Z test a_group_the_child_leads_is_signalled_whole ... ok
+2026-11-13T03:33:14.6132641Z 
+2026-11-13T03:33:14.6132874Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+2026-11-13T03:33:14.6133183Z 
+2026-11-13T03:33:14.6135107Z      Running tests/upgrade_compat.rs (target/debug/deps/upgrade_compat-0465c1425b31e0b4)
+2026-11-13T03:33:14.6143811Z 
+2026-11-13T03:33:14.6143897Z running 2 tests
+2026-11-13T03:33:14.6149423Z test every_earlier_release_config_loads ... ok
+2026-11-13T03:33:14.6161803Z test every_earlier_release_loads_without_losing_data ... ok
+2026-11-13T03:33:14.6162061Z 
+2026-11-13T03:33:14.6162291Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-13T03:33:14.6162624Z 
+2026-11-13T03:33:14.6163887Z      Running unittests src/lib.rs (target/debug/deps/cooee_machines-6db0c9951128dd14)
+2026-11-13T03:33:14.6171803Z 
+2026-11-13T03:33:14.6171891Z running 0 tests
+2026-11-13T03:33:14.6173452Z 
+2026-11-13T03:33:14.6173829Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-13T03:33:14.6174407Z      Running tests/machines.rs (target/debug/deps/machines-c80b74bd68bb8a3b)
+2026-11-13T03:33:14.6174682Z 
+2026-11-13T03:33:14.6181968Z 
+2026-11-13T03:33:14.6182072Z running 5 tests
+2026-11-13T03:33:14.6349305Z test a_card_shows_load_memory_swap_disk_and_terminals ... ok
+2026-11-13T03:33:14.6466057Z test online_and_offline_with_last_seen ... ok
+2026-11-13T03:33:14.7136877Z test an_alert_is_pushed_once_per_state_and_the_tab_dot_follows ... ok
+2026-11-13T03:33:14.7346831Z test the_24_h_history_is_asked_for_once_then_only_what_is_new ... ok
+2026-11-13T03:33:15.1684512Z test the_backend_answers_only_with_the_plugin_token ... ok
+2026-11-13T03:33:15.1685012Z 
+2026-11-13T03:33:15.1685533Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+2026-11-13T03:33:15.1685868Z 
+2026-11-13T03:33:15.1688584Z      Running unittests src/lib.rs (target/debug/deps/cooee_server-dcc91dc1a752302a)
+2026-11-13T03:33:15.1702888Z 
+2026-11-13T03:33:15.1702986Z running 30 tests
+2026-11-13T03:33:15.1736522Z test hub::tests::r15_a_turn_idle_30_minutes_is_surfaced_as_needs_you ... ok
+2026-11-13T03:33:15.1745227Z test hub::tests::a_rooms_turns_stop_at_the_deadline ... ok
+2026-11-13T03:33:15.1765404Z test hub::tests::prune_drops_only_the_workflow_sessions_shed_no_longer_lists ... ok
+2026-11-13T03:33:15.1766721Z test login::tests::a_hanging_check_starts_once_per_growing_interval ... ok
+2026-11-13T03:33:15.1767229Z test login::tests::a_timeout_keeps_a_signed_in_account_signed_in_as_unknown ... ok
+2026-11-13T03:33:15.1776565Z test manage::tests::backoff_doubles_and_the_fifth_crash_in_ten_minutes_turns_it_off ... ok
+2026-11-13T03:33:15.1791324Z test hub::tests::the_agent_list_is_refreshed_at_most_once_a_minute ... ok
+2026-11-13T03:33:15.1797249Z test hub::tests::only_a_stop_cancels_a_members_session_as_it_starts ... ok
+2026-11-13T03:33:15.3712247Z test manage::tests::the_supervisor_restarts_a_crashing_backend_then_turns_it_off_with_an_alert ... ok
+2026-11-13T03:33:15.3792616Z test pairing::tests::a_der_signature_over_the_data_checks_out_and_a_changed_one_does_not ... ok
+2026-11-13T03:33:15.4022030Z test manage::tests::the_supervisor_never_restarts_a_healthy_backend ... ok
+2026-11-13T03:33:15.4023104Z test passkey::tests::der_signatures_pad_and_trim_their_integers ... ok
+2026-11-13T03:33:15.4031239Z test passkey::tests::an_unlock_needs_this_passkeys_signature_and_a_fresh_challenge ... ok
+2026-11-13T03:33:15.4153666Z test passkey::tests::registration_keeps_the_point_and_wants_face_id_and_this_origin ... ok
+2026-11-13T03:33:15.4241231Z test push::tests::a_0644_key_file_is_tightened ... ok
+2026-11-13T03:33:15.4267199Z test push::tests::a_push_for_each_trigger_and_none_otherwise ... ok
+2026-11-13T03:33:15.4267941Z test passkey::tests::ten_idle_minutes_lock_and_face_id_unlocks_again ... ok
+2026-11-13T03:33:15.4736711Z test push::tests::a_push_to_one_device_reaches_only_its_endpoint ... ok
+2026-11-13T03:33:15.4791351Z test push::tests::a_renewed_key_asks_each_device_to_subscribe_again ... ok
+2026-11-13T03:33:15.4823960Z test hub::tests::r6_requests_over_a_long_log_are_within_budget ... ok
+2026-11-13T03:33:15.4825301Z test push::tests::a_renewed_vapid_key_keeps_apns_tokens ... ok
+2026-11-13T03:33:15.4835658Z test push::tests::a_push_goes_to_each_apns_token_and_a_410_drops_it ... ok
+2026-11-13T03:33:15.4868116Z test push::tests::encrypt_matches_rfc_8291_vector ... ok
+2026-11-13T03:33:15.4968918Z test push::tests::an_old_key_is_adopted_once ... ok
+2026-11-13T03:33:15.5021323Z test push::tests::jwt_is_signed_by_the_key_for_the_endpoint_origin ... ok
+2026-11-13T03:33:15.5046447Z test push::tests::the_key_is_made_in_a_0600_file ... ok
+2026-11-13T03:33:15.5047136Z test routines::tests::an_offset_reads_as_minutes ... ok
+2026-11-13T03:33:15.5061741Z test push::tests::without_the_key_or_apns_table_nothing_goes_to_apns ... ok
+2026-11-13T03:33:15.5064673Z test push::tests::the_apns_jwt_has_the_key_id_and_team_and_lasts_under_an_hour ... ok
+2026-11-13T03:33:21.7532811Z test manage::tests::the_supervisor_restarts_a_hung_backend_after_three_failed_checks ... ok
+2026-11-13T03:33:21.7533313Z 
+2026-11-13T03:33:21.7541045Z test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.58s
+2026-11-13T03:33:21.7541356Z 
+2026-11-13T03:33:21.7548748Z      Running unittests src/lib.rs (target/debug/deps/cooee_terminal-a26d08ff3a71f1fc)
+2026-11-13T03:33:21.7557293Z 
+2026-11-13T03:33:21.7557446Z running 1 test
+2026-11-13T03:33:21.7559184Z test tests::inserted_text_never_ends_a_line ... ok
+2026-11-13T03:33:21.7559384Z 
+2026-11-13T03:33:21.7559568Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-13T03:33:21.7559770Z 
+2026-11-13T03:33:21.7561493Z      Running unittests src/lib.rs (target/debug/deps/cooee_web-be3b701da3811770)
+2026-11-13T03:33:21.7569619Z 
+2026-11-13T03:33:21.7569707Z running 15 tests
+2026-11-13T03:33:21.7573497Z test agents::tests::with_nothing_unread_newest_is_the_most_recent_side_thread_and_one_chat_has_none ... ok
+2026-11-13T03:33:21.7574025Z test agents::tests::unread_side_threads_come_newest_reply_first_and_newest_jumps_to_the_first ... ok
+2026-11-13T03:33:21.7590837Z test look::tests::gate_numbers_match_herdsmans ... ok
+2026-11-13T03:33:21.7621104Z test look::tests::a_theme_being_built_shows_as_dev_with_its_own_schemes_or_its_failures ... ok
+2026-11-13T03:33:21.7634723Z test look::tests::a_theme_with_sprites_needs_its_sheet ... ok
+2026-11-13T03:33:21.7635415Z test look::tests::own_themes_and_schemes_load_and_a_failing_scheme_is_refused ... ok
+2026-11-13T03:33:21.7636103Z test look::tests::only_plain_is_built_in_and_the_first_party_packs_load_installed ... ok
+2026-11-13T03:33:21.7670941Z test look::tests::push_body_says_the_theme_word_and_the_plain_word ... ok
+2026-11-13T03:33:21.7671690Z test shown::tests::a_bad_pick_falls_back_and_cant_break_out ... ok
+2026-11-13T03:33:21.7675407Z test look::tests::the_theme_gate_passes_the_first_party_packs_and_the_starter ... ok
+2026-11-13T03:33:21.7702118Z test shown::tests::a_tap_gives_the_next_cookie ... ok
+2026-11-13T03:33:21.7703724Z test shown::tests::terminal_is_plain_and_scene_needs_sprites ... ok
+2026-11-13T03:33:21.7706036Z test look::tests::the_theme_gate_fails_a_missing_state_low_contrast_an_oversize_scene_and_more ... ok
+2026-11-13T03:33:21.7708227Z test shown::tests::the_cookie_picks_the_theme_scheme_style_and_figures ... ok
+2026-11-13T03:33:21.7721066Z test shown::tests::each_figures_value_draws_a_state_and_the_big_figure ... ok
+2026-11-13T03:33:21.7721357Z 
+2026-11-13T03:33:21.7721516Z test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+2026-11-13T03:33:21.7721708Z 
+2026-11-13T03:33:21.7726004Z    Doc-tests cooee_core
+2026-11-13T03:33:22.0229758Z 
+2026-11-13T03:33:22.0230528Z running 0 tests
+2026-11-13T03:33:22.0230716Z 
+2026-11-13T03:33:22.0230972Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-13T03:33:22.0231275Z 
+2026-11-13T03:33:22.0246750Z    Doc-tests cooee_machines
+2026-11-13T03:33:22.0455182Z 
+2026-11-13T03:33:22.0455696Z running 0 tests
+2026-11-13T03:33:22.0455915Z 
+2026-11-13T03:33:22.0456149Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-13T03:33:22.0456355Z 
+2026-11-13T03:33:22.0467917Z    Doc-tests cooee_server
+2026-11-13T03:33:22.5071952Z 
+2026-11-13T03:33:22.5072516Z running 0 tests
+2026-11-13T03:33:22.5072679Z 
+2026-11-13T03:33:22.5072869Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-13T03:33:22.5073078Z 
+2026-11-13T03:33:22.5094677Z    Doc-tests cooee_terminal
+2026-11-13T03:33:22.5295147Z 
+2026-11-13T03:33:22.5295666Z running 0 tests
+2026-11-13T03:33:22.5295851Z 
+2026-11-13T03:33:22.5296120Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-13T03:33:22.5296334Z 
+2026-11-13T03:33:22.5308609Z    Doc-tests cooee_web
+2026-11-13T03:33:22.7920752Z 
+2026-11-13T03:33:22.7921220Z running 0 tests
+2026-11-13T03:33:22.8026032Z 
+2026-11-13T03:33:22.8026380Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+2026-11-13T03:33:22.8026614Z 
+2026-11-13T03:33:22.8065956Z ##[group]Run just doc
+2026-11-13T03:33:22.8066209Z just doc
+2026-11-13T03:33:22.8088828Z shell: /usr/bin/bash -e {0}
+2026-11-13T03:33:22.8089054Z env:
+2026-11-13T03:33:22.8089232Z   CARGO_TERM_COLOR: always
+2026-11-13T03:33:22.8089460Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:33:22.8089693Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:33:22.8089891Z   CACHE_ON_FAILURE: false
+2026-11-13T03:33:22.8090093Z ##[endgroup]
+2026-11-13T03:33:22.8153180Z RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+2026-11-13T03:33:22.9354491Z     Checking cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+2026-11-13T03:33:22.9383174Z    Compiling cooee-web v0.1.0 (/home/runner/work/cooee/cooee/web)
+2026-11-13T03:33:22.9420733Z  Documenting cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+2026-11-13T03:33:24.2775382Z     Checking cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+2026-11-13T03:33:24.2776065Z     Checking cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+2026-11-13T03:33:24.2776685Z  Documenting cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+2026-11-13T03:33:24.3641962Z  Documenting cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+2026-11-13T03:33:24.3762308Z  Documenting cooee-web v0.1.0 (/home/runner/work/cooee/cooee/web)
+2026-11-13T03:33:26.1698514Z     Checking cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+2026-11-13T03:33:26.1699208Z  Documenting cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+2026-11-13T03:33:28.5522633Z  Documenting cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+2026-11-13T03:33:28.7765640Z     Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.93s
+2026-11-13T03:33:28.7909393Z    Generated /home/runner/work/cooee/cooee/target/doc/cooee/index.html and 5 other files
+2026-11-13T03:33:28.7993836Z ##[group]Run just deny
+2026-11-13T03:33:28.7993999Z just deny
+2026-11-13T03:33:28.8010657Z shell: /usr/bin/bash -e {0}
+2026-11-13T03:33:28.8010803Z env:
+2026-11-13T03:33:28.8010919Z   CARGO_TERM_COLOR: always
+2026-11-13T03:33:28.8011060Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:33:28.8011205Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:33:28.8011334Z   CACHE_ON_FAILURE: false
+2026-11-13T03:33:28.8011465Z ##[endgroup]
+2026-11-13T03:33:28.8066791Z cargo deny --locked check
+2026-11-13T03:33:29.4317513Z warning[license-not-encountered]: license was not encountered
+2026-11-13T03:33:29.4318817Z    ┌─ /home/runner/work/cooee/cooee/deny.toml:12:86
+2026-11-13T03:33:29.4319492Z    │
+2026-11-13T03:33:29.4320417Z 12 │ allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "Unicode-DFS-2016"]
+2026-11-13T03:33:29.4321580Z    │                                                                                      ━━━━━━━━━━━━━━━━ unmatched license allowance
+2026-11-13T03:33:29.4322115Z 
+2026-11-13T03:33:29.5177986Z advisories ok, bans ok, licenses ok, sources ok
+2026-11-13T03:33:29.5215947Z ##[group]Run just cap
+2026-11-13T03:33:29.5216111Z just cap
+2026-11-13T03:33:29.5233213Z shell: /usr/bin/bash -e {0}
+2026-11-13T03:33:29.5233368Z env:
+2026-11-13T03:33:29.5233488Z   CARGO_TERM_COLOR: always
+2026-11-13T03:33:29.5233634Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:33:29.5233784Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:33:29.5233919Z   CACHE_ON_FAILURE: false
+2026-11-13T03:33:29.5234054Z ##[endgroup]
+2026-11-13T03:33:29.5291729Z scripts/line-cap.sh
+2026-11-13T03:33:29.7823853Z non-test lines: 27078 / 27500
+2026-11-13T03:33:29.7824191Z apple lines: 9235 / 13000
+2026-11-13T03:33:29.7825162Z ci/line-cap-test.sh
+2026-11-13T03:33:29.8000749Z non-test lines: 1 / 100
+2026-11-13T03:33:29.8001299Z apple lines: 5 / 5
+2026-11-13T03:33:29.8110057Z non-test lines: 1 / 100
+2026-11-13T03:33:29.8110453Z apple lines: 6 / 5
+2026-11-13T03:33:29.8206812Z line-cap test ok
+2026-11-13T03:33:29.8247066Z ##[group]Run just deps
+2026-11-13T03:33:29.8247229Z just deps
+2026-11-13T03:33:29.8263980Z shell: /usr/bin/bash -e {0}
+2026-11-13T03:33:29.8264138Z env:
+2026-11-13T03:33:29.8264259Z   CARGO_TERM_COLOR: always
+2026-11-13T03:33:29.8264404Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:33:29.8264552Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:33:29.8264684Z   CACHE_ON_FAILURE: false
+2026-11-13T03:33:29.8264815Z ##[endgroup]
+2026-11-13T03:33:29.8321604Z scripts/dep-direction.sh
+2026-11-13T03:33:29.8650597Z dependency direction ok
+2026-11-13T03:33:29.8689942Z ##[group]Run just hygiene
+2026-11-13T03:33:29.8690520Z just hygiene
+2026-11-13T03:33:29.8707441Z shell: /usr/bin/bash -e {0}
+2026-11-13T03:33:29.8707665Z env:
+2026-11-13T03:33:29.8707839Z   CARGO_TERM_COLOR: always
+2026-11-13T03:33:29.8708081Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:33:29.8708308Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:33:29.8708509Z   CACHE_ON_FAILURE: false
+2026-11-13T03:33:29.8708713Z ##[endgroup]
+2026-11-13T03:33:29.8775499Z scripts/hygiene.sh
+2026-11-13T03:33:29.9074948Z no setup-specific names or secrets
+2026-11-13T03:33:29.9106330Z ##[group]Run just neutral
+2026-11-13T03:33:29.9106503Z just neutral
+2026-11-13T03:33:29.9122930Z shell: /usr/bin/bash -e {0}
+2026-11-13T03:33:29.9123082Z env:
+2026-11-13T03:33:29.9123201Z   CARGO_TERM_COLOR: always
+2026-11-13T03:33:29.9123347Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:33:29.9123499Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:33:29.9123631Z   CACHE_ON_FAILURE: false
+2026-11-13T03:33:29.9123764Z ##[endgroup]
+2026-11-13T03:33:29.9182149Z scripts/neutral-core.sh
+2026-11-13T03:33:30.0413563Z core names no provider
+2026-11-13T03:33:30.0415598Z ci/neutral-core-test.sh
+2026-11-13T03:33:30.0573770Z core names no provider
+2026-11-13T03:33:30.0652233Z web/src/app.css:2: /* connecting OpenAI */
+2026-11-13T03:33:30.0652759Z a provider is named outside crates/cooee-core/src/providers/: move it into its module
+2026-11-13T03:33:30.0754362Z crates/x/src/lib.rs:1: /// Asks Hermes.
+2026-11-13T03:33:30.0754915Z a provider is named outside crates/cooee-core/src/providers/: move it into its module
+2026-11-13T03:33:30.0755308Z neutral-core test ok
+2026-11-13T03:33:30.0807742Z ##[group]Run just themes
+2026-11-13T03:33:30.0807901Z just themes
+2026-11-13T03:33:30.0824334Z shell: /usr/bin/bash -e {0}
+2026-11-13T03:33:30.0824486Z env:
+2026-11-13T03:33:30.0824605Z   CARGO_TERM_COLOR: always
+2026-11-13T03:33:30.0824749Z   CARGO_HOME: /home/runner/.cargo
+2026-11-13T03:33:30.0824895Z   CARGO_INCREMENTAL: 0
+2026-11-13T03:33:30.0825027Z   CACHE_ON_FAILURE: false
+2026-11-13T03:33:30.0825160Z ##[endgroup]
+2026-11-13T03:33:30.0879374Z cargo run --quiet --locked -p cooee -- theme check packs/themes/* packs/starter
+2026-11-13T03:33:30.2203385Z ok   packs/themes/farm
+2026-11-13T03:33:30.2212819Z ok   packs/themes/garden
+2026-11-13T03:33:30.2219943Z ok   packs/themes/kitchen
+2026-11-13T03:33:30.2223527Z ok   packs/starter
+2026-11-13T03:33:30.2309764Z Post job cleanup.
+2026-11-13T03:33:30.3218604Z Cache up-to-date.
+2026-11-13T03:33:30.3356929Z Post job cleanup.
+2026-11-13T03:33:30.4028344Z [command]/usr/bin/git version
+2026-11-13T03:33:30.4066119Z git version 2.56.1
+2026-11-13T03:33:30.4093555Z Temporarily overriding HOME='/home/runner/work/_temp/99aecd19-a4cd-4f81-b75c-2a8559e5e379' before making global git config changes
+2026-11-13T03:33:30.4094294Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-13T03:33:30.4098053Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+2026-11-13T03:33:30.4141495Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-13T03:33:30.4201798Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-13T03:33:30.4433594Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-13T03:33:30.4468858Z http.https://github.com/.extraheader
+2026-11-13T03:33:30.4475774Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-11-13T03:33:30.4522887Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-13T03:33:30.4753259Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-13T03:33:30.4813230Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-13T03:33:30.5167099Z Cleaning up orphan processes
+2026-11-13T03:33:30.5395622Z Terminate orphan process: pid (8801) (node)
+2026-11-13T03:33:30.5416112Z Terminate orphan process: pid (8802) (node)
+2026-11-13T03:33:30.5483702Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -1,0 +1,12 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/.build/.scratch/cooee-verify-336-r1/base/crates/cooee-core)
+error[E0432]: unresolved import `cooee_core::group`
+  --> crates/cooee-core/tests/group.rs:13:5
+   |
+13 | use cooee_core::group;
+   |     ^^^^^^^^^^^^-----
+   |                 |
+   |                 no `group` in the root
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `cooee-core` (test "group") due to 1 previous error
+EXIT 101

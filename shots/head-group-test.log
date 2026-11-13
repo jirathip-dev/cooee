@@ -1,0 +1,46 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.27
+   Compiling serde_core v1.0.229
+   Compiling libc v0.2.191
+   Compiling typenum v1.20.1
+   Compiling zmij v1.0.23
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.154
+   Compiling core-foundation-sys v0.8.7
+   Compiling winnow v1.0.5
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling thiserror v2.0.21
+   Compiling const-oid v0.10.2
+   Compiling toml_parser v1.1.5+spec-1.1.0
+   Compiling bitflags v2.13.2
+   Compiling cfg-if v1.0.5
+   Compiling hybrid-array v0.4.15
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling digest v0.11.3
+   Compiling security-framework-sys v2.17.0
+   Compiling core-foundation v0.10.1
+   Compiling cpufeatures v0.3.1
+   Compiling syn v3.0.9
+   Compiling sha2 v0.11.1
+   Compiling security-framework v3.7.0
+   Compiling toml_datetime v1.1.2+spec-1.1.0
+   Compiling serde_spanned v1.1.2
+   Compiling toml v1.2.0+spec-1.1.0
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.21
+   Compiling shed-proto v0.0.0 (https://github.com/jirathip-dev/shed?rev=4585d504a3e6fc666e3415609abdc5f9e72c36a2#4585d504)
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/verify-336-r1/crates/cooee-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.35s
+     Running tests/group.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-336-r1/target/debug/deps/group-cc8c0694720ccf87)
+
+running 3 tests
+test a_child_in_the_callers_group_is_refused ... ok
+test a_reaped_child_is_refused ... ok
+test a_group_the_child_leads_is_signalled_whole ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+EXIT 0
