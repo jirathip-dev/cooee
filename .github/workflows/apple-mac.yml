@@ -2,7 +2,8 @@
 # five secrets below (an Apple Developer ID: a paid Apple Developer membership) it is signed with the Developer ID,
 # notarized, stapled and checked with `spctl -a -vv`; without them the .dmg is unsigned and the job says which secrets
 # are missing. The secrets go in the `mac-release` environment (staging and main only, set up by the owner);
-# apple/README.md lists them.
+# apple/README.md lists them. #329: on a pull request the .dmg is built only on the merge-ready run of a change that
+# reaches the Apple surface (scripts/ci-scope.sh); otherwise `dmg` reports skipped, under the same name.
 name: apple-mac
 on:
   push:
@@ -14,15 +15,10 @@ on:
       - "scripts/mac-bins.sh"
       - ".github/workflows/apple-mac.yml"
   pull_request:
-    paths:
-      - "apple/**"
-      - "crates/**"
-      - "scripts/mac-app.sh"
-      - "scripts/mac-bins.sh"
-      - ".github/workflows/apple-mac.yml"
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'merge-ready' && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: read
@@ -30,7 +26,29 @@ defaults:
   run:
     shell: bash
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.scope.outputs.run }}
+      mac: ${{ steps.scope.outputs.mac }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: scope
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          LABEL: ${{ github.event.label.name }}
+          CARRIES: ${{ contains(github.event.pull_request.labels.*.name, 'merge-ready') }}
+        run: |
+          set -o pipefail
+          scripts/ci-scope.sh | tee -a "$GITHUB_OUTPUT"
+
   dmg:
+    needs: scope
+    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true'
     runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.APPLE_RUNNER || 'macos-26' }}
     timeout-minutes: 60
     # Pull requests get no environment and no secrets: they build the unsigned .dmg. (`a && '' || b` is always b, as
