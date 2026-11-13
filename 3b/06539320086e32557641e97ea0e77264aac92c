@@ -1,0 +1,9 @@
+Decided: the Folder row gets a full-rectangle tap shape; a plain-style button only took taps on its drawn parts, so its empty centre did nothing
+Because: apple/Sources/CooeeUI/PersonaSheet.swift:124
+Decided: GET /folders lists a configured root or a folder inside one, spelled from the root as listed, besides the home folder
+Because: crates/cooee-server/src/hub.rs:899
+Because: "opens a browser of the server's roots"
+Rejected: moving the e2e fixture's root under HOME — a configured root outside home would still not open for a real user
+Rejected: returning the canonical path — on macOS /var is /private/var, so the client's inside-the-roots check would fail
+Check: e2e is green and keeps persona-menu-* and persona-folders-* screenshots; crates/cooee/tests/folders.rs:72 fails without the hub change
+Owner: Tapping Folder in the persona sheet now opens the folder browser, and folders in roots outside your home folder can be opened.
