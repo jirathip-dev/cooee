@@ -1,0 +1,11 @@
+Decided: merged origin/staging; the web/ files staging touched stay deleted, and staging's new design pages link design-system/ instead of web/
+Because: "Move what the design pages still link (`web/src/app.css`, `web/schemes/`, the farm pack references) to a shared design-system folder"
+Decided: routines (#75) drop their Settings page; /routines.json, POST /routines/<id> and its delete stay and answer 204 instead of a redirect to the gone page
+Because: "Keep everything the native app and plugins use (`/api`, `/screens`, streams, auth, pairing)."
+Decided: the #288 test checks another thread's messages stay quick instead of the deleted home page
+Because: crates/cooee/tests/support/mod.rs:1237
+Decided: line_cap 19400 = 18819 counted after the merge plus about 500; apple_cap takes staging's 13000
+Because: "lower `line_cap` to the new count plus about 500 of margin"
+Rejected: keeping the routines HTML page — it is a cooee-web page, and the whole web client is removed
+Check: scripts/line-cap.sh prints 18819 / 19400; cargo test --workspace passes; every docs/design/*/shoot.mjs exits 0
+Owner: Merged the latest work in; routines can still be changed through the API, and the line limit is now 19,400.
