@@ -1,0 +1,9 @@
+Decided: round 3 merges origin/staging; Item.id and Item.plainText cover .trace beside staging's .said and .divider
+Because: apple/Sources/CooeeCore/Item.swift:58
+Decided: ChatFeature.drawn uses RoomItems.build in a room, else ChatItems.build with this PR's style and working
+Because: apple/Sources/CooeeFeatures/ChatFeature.swift:35
+Decided: the chat-style UI test and a shared open() helper move to LiveUITests+Styles.swift
+Because: apple/UITests/LiveUITests+Styles.swift:6
+Rejected: raising SwiftLint limits — the repo rule caps Swift files at 250 lines
+Check: apple-check passes at the head; tests/setup.rs fails only on hosts whose ephemeral ports exceed 64535
+Owner: Same feature; this round catches up with staging again and keeps the app's tests within the lint limits.
