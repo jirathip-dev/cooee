@@ -271,7 +271,7 @@ fn pair(config: &Config) -> Result<(), String> {
         Some(host) => format!("https://{host}:{}/pair?code={code}", config.port),
         None => format!("http://127.0.0.1:{}/pair?code={code}", config.port),
     };
-    println!("Scan it with the new device's Camera, or open the link and type the code.");
+    println!("Type the link into the cooee app on the new device.");
     if let Ok(qr) = QrCode::new(&url) {
         println!("{}", qr.render::<Dense1x2>().quiet_zone(true).build());
     }

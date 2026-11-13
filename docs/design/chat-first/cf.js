@@ -5,9 +5,10 @@
 //   [data-st=working|needs|done|fail|idle]  the figure (sprite, else ascii), the theme word (data-plain: `· plain`)
 //   [data-s=<id>]                           a 132 × 100 figure: edit read run idle done needs merged fail
 //   #agents[data-cur][data-sub]             the agents: the list (Modern, Terminal) or the scene
-const W = '../../../design-system/', P = '../../../packs/themes/';
+const W = '../../../design-system/';
 const q = new URLSearchParams(location.search);
 export const STYLE = q.get('style') || 'modern', T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark';
+const P = T === 'plain' ? `${W}themes/` : '../../../packs/themes/';
 const theme = await fetch(`${P}${T}/theme.json`).then(r => r.json());
 const scheme = await fetch(`${W}schemes/${theme.scheme[MODE]}.json`).then(r => r.json());
 const r = document.documentElement;

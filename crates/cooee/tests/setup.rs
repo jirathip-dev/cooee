@@ -262,7 +262,7 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
         );
     }
     assert!(
-        stdout.contains("pair your phone:\nScan it") && stdout.contains("\ncode  "),
+        stdout.contains("pair your phone:\nType the link") && stdout.contains("\ncode  "),
         "{stdout}"
     );
 }

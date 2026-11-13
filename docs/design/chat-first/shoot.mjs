@@ -17,12 +17,13 @@ const VIEWS = [];
 for (const page of ['agents', 'new', 'received']) for (const [style, looks] of Object.entries(LOOKS))
   for (const [i, w] of [390, 1440].entries()) VIEWS.push([page, style, w, ...looks[i]]);
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const missing = [];
 const srv = createServer((q, r) => {
   try {
     const p = join(root, decodeURIComponent(new URL(q.url, 'http://x').pathname));
     const b = readFileSync(p);
     r.writeHead(200, { 'content-type': TYPES[extname(p)] || 'application/octet-stream' }).end(b);
-  } catch { r.writeHead(404).end(); }
+  } catch { if (!q.url.endsWith('/favicon.ico')) missing.push(q.url); r.writeHead(404).end(); }
 }).listen(0, '127.0.0.1');
 await new Promise(ok => srv.on('listening', ok));
 const base = `http://127.0.0.1:${srv.address().port}/docs/design/chat-first/`;
@@ -80,6 +81,7 @@ for (const [page, style, w, theme, mode] of VIEWS) {
   await sleep(300);
   const { data } = await cmd('Page.captureScreenshot', { format: 'png' });
   writeFileSync(join(here, out), Buffer.from(data, 'base64'));
+  bad.push(...missing.splice(0).map(u => `404 ${u}`));
   console.log(`${bad.length ? 'FAIL' : 'ok  '} ${out} ${theme} ${mode} ${w}×${h}${bad.length ? '\n  ' + bad.join('\n  ') : ''}`);
   fail += bad.length;
 }
