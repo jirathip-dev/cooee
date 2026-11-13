@@ -1,0 +1,7 @@
+    Checking cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-319/crates/cooee-core)
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-319/crates/cooee-machines)
+    Checking cooee-web v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-319/web)
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-319/crates/cooee-terminal)
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-319/crates/cooee-server)
+    Checking cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-319/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 13.15s
