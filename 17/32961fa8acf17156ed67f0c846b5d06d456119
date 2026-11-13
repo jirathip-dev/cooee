@@ -1,0 +1,9 @@
+Decided: rerun apple-check, both Xcode builds and line-cap at the head and re-anchor the PR body's evidence to it
+Because: q1377
+Decided: run line-cap on a clean git archive export, since in the worktree its find counts SwiftPM's apple/.build checkouts
+Because: scripts/line-cap.sh:16
+Decided: the v2-settings README names the design views by their *Preview.swift files
+Because: apple/design/v2-settings/README.md:4
+Rejected: committing the previous lane's wip snapshot — it held only build logs and an untracked Package.resolved, no source
+Check: the Evidence heading names 1732961 and README.md:4 matches the files in apple/Sources/CooeeUI
+Owner: The design's evidence is now checked against the latest version, and the design notes name the right files.
