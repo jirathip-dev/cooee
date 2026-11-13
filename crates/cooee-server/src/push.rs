@@ -108,11 +108,12 @@ pub fn note(
             _ => return None,
         },
         Change::State(t) if t.state == was => return None,
-        // A Workflow session runs unattended: its turns end without a push (#33).
+        // A Workflow session (#33) or a routine's run (#75) runs unattended: its turns end without a push.
         Change::State(t)
             if t.state == "done"
                 && !watched
                 && thread.workflow.is_none()
+                && thread.routine.is_none()
                 && thread.room.is_empty() =>
         {
             let reply = chat.items.iter().rev().find_map(|i| match &i.body {
@@ -1091,6 +1092,7 @@ mod tests {
                 text: "hi".to_owned(),
                 random_id: "r".to_owned(),
                 files: Vec::new(),
+                routine: None,
             },
         );
         chat.push(

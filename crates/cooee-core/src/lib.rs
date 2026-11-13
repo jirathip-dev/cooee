@@ -7,6 +7,7 @@ mod blocks;
 mod chat;
 mod config;
 mod devices;
+pub mod group;
 pub mod history;
 mod login;
 pub mod mcp;
@@ -17,8 +18,10 @@ pub mod plugins;
 pub mod profiles;
 pub mod provider;
 mod providers;
+pub mod routines;
 pub mod secrets;
 mod shed;
+pub mod skills;
 mod store;
 
 pub use accounts::{Account, Accounts, Sheet, Usage, Window};

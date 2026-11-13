@@ -460,7 +460,7 @@ fn install_sh_checks_its_tools_then_installs_cooee_and_runs_setup() {
     let run = || {
         Command::new("/bin/sh")
             .arg(&script)
-            .args(["--instance", "cooee-drover"])
+            .args(["--instance", "drover"])
             .env("HOME", &home)
             .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
             .stdin(Stdio::null())
@@ -506,6 +506,6 @@ fn install_sh_checks_its_tools_then_installs_cooee_and_runs_setup() {
     assert!(out.status.success(), "{out:?}");
     assert_eq!(
         fs::read_to_string(home.join("calls.log")).unwrap(),
-        format!("{install}{sign}cooee setup --instance cooee-drover\n")
+        format!("{install}{sign}cooee setup --instance drover\n")
     );
 }

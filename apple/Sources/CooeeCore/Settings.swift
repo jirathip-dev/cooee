@@ -13,6 +13,7 @@ public struct Settings: Codable, Sendable, Equatable {
     public var style: LookStyle
     public var theme: String
     public var push: String?
+    public var icon: AppIcon?
 
     public init(scheme: LookScheme = .system, style: LookStyle = .modern, theme: String = farm, push: String? = nil) {
         self.scheme = scheme
@@ -29,5 +30,8 @@ public struct Settings: Codable, Sendable, Equatable {
             theme: try values.decodeIfPresent(String.self, forKey: .theme) ?? Self.farm,
             push: try values.decodeIfPresent(String.self, forKey: .push)
         )
+        icon = try values.decodeIfPresent(AppIcon.self, forKey: .icon)
     }
+
+    public var appIcon: AppIcon { icon ?? .following(style) }
 }

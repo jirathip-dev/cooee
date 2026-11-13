@@ -30,6 +30,10 @@ public struct ThreadsClient: Sendable {
         @Sendable (_ server: Server, _ thread: String, _ item: Int, _ option: String, _ value: String?) async throws
             -> Void
     public var start: @Sendable (_ server: Server, _ persona: APIPersona, _ text: String) async throws -> String
+    public var room: @Sendable (_ server: Server, _ title: String, _ members: [String]) async throws -> String
+    public var seat:
+        @Sendable (_ server: Server, _ room: String, _ persona: String, _ place: Int?, _ remove: Bool) async throws
+            -> [String]
 }
 
 @DependencyClient
@@ -50,6 +54,11 @@ public struct PushClient: Sendable {
 public struct SettingsStore: Sendable {
     public var load: @Sendable () -> Settings = { Settings() }
     public var save: @Sendable (_ settings: Settings) -> Void
+}
+
+@DependencyClient
+public struct AppIconClient: Sendable {
+    public var set: @Sendable (_ icon: AppIcon) async throws -> Void
 }
 
 @DependencyClient
@@ -98,6 +107,10 @@ extension SettingsStore: TestDependencyKey {
     public static let testValue = SettingsStore()
 }
 
+extension AppIconClient: TestDependencyKey {
+    public static let testValue = AppIconClient()
+}
+
 extension ServerStore: TestDependencyKey {
     public static let testValue = ServerStore()
 }
@@ -134,6 +147,11 @@ extension DependencyValues {
     public var settingsStore: SettingsStore {
         get { self[SettingsStore.self] }
         set { self[SettingsStore.self] = newValue }
+    }
+
+    public var appIcon: AppIconClient {
+        get { self[AppIconClient.self] }
+        set { self[AppIconClient.self] = newValue }
     }
 
     public var serverStore: ServerStore {
