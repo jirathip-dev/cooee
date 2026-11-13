@@ -1,0 +1,11 @@
+Decided: one guard, cooee_core::group::signal, signals -pid only for a live child with pid > 1 that leads its own group
+Because: "Every group kill must target a group the code created itself"
+Decided: manage.rs stop() and login.rs kill_group both call it; no second way to group-kill
+Because: crates/cooee-server/src/manage.rs:174
+Decided: ubuntu ci test steps run under setsid --wait, so no test's group signal reaches the runner
+Because: .github/workflows/ci.yml:44
+Rejected: waiting for the strace diagnostic #348 first — the orchestrator asked to unblock CI now; a root cause goes in a follow-up
+Rejected: libc getpgid for the own-group check — a new dependency; ps -o pgid= is on every unix host
+Check: cargo test -p cooee-core --locked --test group fails at 8585cfde and passes at the head
+Check: after SIGTERM a dead leader is reaped by the guard, so kill_group's SIGKILL is skipped; leftover members that ignore TERM are not killed
+Owner: CI's Linux tests can no longer shut down their own runner, and cooee only signals process groups it started.
