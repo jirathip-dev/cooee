@@ -1,0 +1,6 @@
+Decided: merge origin/staging (#141 build 5/6 landed) and push, so the iOS Simulator job reruns on a current base.
+Decided: no design change; the FAIL at b707fc7 was the iOS Simulator job cancelled after about 7 hours with no step run.
+Rejected: committing Xcode's generated Package.resolved — xcodebuild writes it locally and the diff stays design-only.
+Because: "Screenshots and README in `apple/design/native-surfaces/`; the iOS target builds"
+Check: swift test in apple/design/native-surfaces renders 23 frames with no PNG change; the iOS Simulator xcodebuild exits 0 at 1b0365e.
+Owner: The branch now includes the latest staging; nothing in the design changed.
