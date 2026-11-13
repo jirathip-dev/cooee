@@ -85,7 +85,7 @@ push (approvals and errors still push).
 
 herdsman's lanes (its impl, review and fix agents) are what fill this list: each runs as a shed ACP session labelled by
 its source (the tool), `group` its repo, `item` its issue, with its `role` and `round`. So a lane is opened as a chat in
-cooee core, never in a Drover tab; those show the queue, asks and fleets ([Plugins](#plugins-m4)).
+cooee core, never in a drover screen; those show the queue, events, asks and fleets ([Plugins](#plugins-m4)).
 
 ## Pairing and push (M2)
 
@@ -195,15 +195,19 @@ proxied call counts, and 10 minutes without one locks it (403 `locked`; an open 
 Face ID again. The proxy names the device to the backend (`Cooee-Device`), which refuses any call without it. Every
 unlock and every shell started goes to `<data>/terminal.log` with the time and device; keystrokes never do.
 
-**Drover** is herdsman's plugin: herdsman itself serves the fleet screens, Queue, Asks and Fleets
-([herdsman#814](https://github.com/jirathip-dev/herdsman/issues/814)). Data flows one way:
+**drover** (in the index) is herdsman's own plugin: `cooee-plugin.toml` at the root of
+[jirathip-dev/herdsman](https://github.com/jirathip-dev/herdsman) ([herdsman#814](https://github.com/jirathip-dev/herdsman/issues/814)),
+whose `herdsman serve` answers the screens itself: Queue and Events chips on the Conductor persona's header strip, its
+asks as chat cards and a Fleets row in the menu. Data flows one way:
 
 ```text
-cooee → herdsman (Drover) /api/v1
+cooee → herdsman serve (/screens/…, /action)
 ```
 
-cooee proxies the tab; herdsman is the engine: queue, drive, lanes, reviews, gates and merge. Pointing the plugin at
-the running herdsman is [#226](https://github.com/jirathip-dev/cooee/issues/226). The lanes themselves are not in
+Its manifest's `attach` (#226) points at the `herdsman serve` already running on the Mac (`127.0.0.1:7777`), so cooee
+uses it instead of starting a second one, and runs `run` only when nothing answers there. Its `attach_token`
+(`~/.config/herdsman/cooee-token`) is the file that serve keeps its cooee token in; cooee reads it at `add`. herdsman is the engine:
+queue, drive, lanes, reviews, gates and merge; the archived bridge plugin it replaces is gone from the index. The lanes themselves are not in
 these tabs: they are shed sessions, shown as chats under Workflow (above).
 
 ## Configuration
@@ -293,6 +297,21 @@ posts to it (http, through `curl -K -`, headers on stdin; `sse` isn't proxied ye
 allowed tools and refuses a call to any other (asking again each call, so a closed thread's token stops). A proposal
 raises an approval card in the thread with the exact command or URL; approving it needs the device's passkey (Face
 ID) and adds the server off. Nothing runs before the owner turns it on and a profile picks it.
+
+## Routines (#75)
+
+A routine is a schedule (five-field cron in the Mac's local time, its UTC offset read with `date +%z` hourly, at
+least 15 minutes between due times), a place and a prompt, kept with its run state in `<data>/routines.json` (0600,
+written whole). An agent makes one in chat with cooee's own `create_routine` tool, as itself: the chat gets a `⟳
+Created routine` line; a Workflow session or a routine's own run can't. Settings › routines (`/routines`) renames,
+retimes, pauses, resumes and deletes them; there is no other way to make one. Every 30 seconds the runner runs each
+routine whose newest due time is past both its last recorded one and its making, once (missed ones run once, late),
+then records it. The run's key, `routine-<id>-<due>`, is the hub's `random_id`, so a crash between a run and its
+record runs into the same message or thread again, never a second. `chat` runs queue the prompt in the making chat
+as a message marked with the routine; a closed or deleted chat pauses the routine with one push. `new_thread` runs
+start a thread as the making chat's agent, marked with the routine, whose finished turns don't push. The list shows
+`⟳ <name>` on a thread a routine started or last wrote to. The GitHub event path is #261. The ADR and its shapes are
+in [architecture/routines](architecture/routines/adr.md).
 
 ## The app shell (#21, herdsman#553 rows 1–14)
 

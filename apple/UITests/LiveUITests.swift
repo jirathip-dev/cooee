@@ -10,11 +10,7 @@
             pair(app, link)
             let new = app.buttons["New chat"].firstMatch
             XCTAssert(new.waitForExistence(timeout: 20))
-            new.tap()
-            app.buttons["Coder"].firstMatch.tap()
-            let box = field(app, "Message Coder")
-            XCTAssert(box.waitForExistence(timeout: 10))
-            box.tap()
+            let box = open(app, new, "Coder")
             box.typeText("slow 60")
             app.buttons["Send"].firstMatch.tap()
             queueWhileStreaming(app, box)
@@ -63,11 +59,7 @@
 
         @MainActor
         private func answersEachCard(_ app: XCUIApplication, _ new: XCUIElement) {
-            new.tap()
-            app.buttons["Coder"].firstMatch.tap()
-            let box = field(app, "Message Coder")
-            XCTAssert(box.waitForExistence(timeout: 10))
-            box.tap()
+            let box = open(app, new, "Coder")
             box.typeText("Show me the cards")
             app.buttons["Send"].firstMatch.tap()
             XCTAssert(app.buttons["Approve"].waitForExistence(timeout: 30))
@@ -137,7 +129,7 @@
         }
 
         @MainActor
-        private func field(_ app: XCUIApplication, _ hint: String) -> XCUIElement {
+        internal func field(_ app: XCUIApplication, _ hint: String) -> XCUIElement {
             let types = [XCUIElement.ElementType.textField.rawValue, XCUIElement.ElementType.textView.rawValue]
             let predicate = NSPredicate(
                 format: "(elementType == %d OR elementType == %d) AND (label == %@ OR placeholderValue == %@)",
@@ -195,40 +187,6 @@
         }
 
         @MainActor
-        private func chatStyles(_ app: XCUIApplication, _ new: XCUIElement) {
-            commands(app, new, "Coder")
-            let fold = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Worked'")).firstMatch
-            XCTAssert(fold.waitForExistence(timeout: 10))
-            XCTAssertFalse(labelled(app, "$ cargo fmt").exists)
-            keep("chat-style-chat")
-            fold.tap()
-            for step in ["$ cargo fmt", "$ cargo clippy", "$ cargo test"] {
-                XCTAssert(labelled(app, step).waitForExistence(timeout: 10))
-            }
-            keep("trace")
-            app.buttons["Close"].firstMatch.tap()
-            app.buttons["Back"].firstMatch.tap()
-            commands(app, new, "Scout \(ProcessInfo.processInfo.environment["COOEE_LOOK"] ?? "look")")
-            XCTAssert(labelled(app, "$ cargo test").exists)
-            XCTAssertFalse(fold.exists)
-            keep("chat-style-detailed")
-            app.buttons["Back"].firstMatch.tap()
-        }
-
-        @MainActor
-        private func commands(_ app: XCUIApplication, _ new: XCUIElement, _ persona: String) {
-            XCTAssert(new.waitForExistence(timeout: 10))
-            new.tap()
-            app.buttons[persona].firstMatch.tap()
-            let box = field(app, "Message \(persona)")
-            XCTAssert(box.waitForExistence(timeout: 10))
-            box.tap()
-            box.typeText("commands")
-            app.buttons["Send"].firstMatch.tap()
-            XCTAssert(labelled(app, "Ran 3 commands.").waitForExistence(timeout: 30))
-        }
-
-        @MainActor
         private func copiesAReply(_ app: XCUIApplication, _ new: XCUIElement) {
             new.tap()
             app.buttons["Coder"].firstMatch.tap()
@@ -264,6 +222,10 @@
             XCTAssert(new.waitForExistence(timeout: 10))
             app.buttons["Account"].firstMatch.tap()
             XCTAssert(labelled(app, "Notifications").waitForExistence(timeout: 10))
+            for missing in ["Sign-ins", "Devices", "Machines", "Plugins"] {
+                XCTAssertFalse(
+                    app.buttons.matching(NSPredicate(format: "label CONTAINS %@", missing)).firstMatch.exists)
+            }
             keep("avatar-menu")
             labelled(app, "Look").tap()
             labelled(app, "Terminal").tap()
@@ -273,6 +235,11 @@
             labelled(app, "Modern").tap()
             confirmIcon()
             XCTAssert(picked(app, "Modern").waitForExistence(timeout: 5))
+            keep("avatar-menu-look")
+            app.navigationBars.buttons.firstMatch.tap()
+            labelled(app, "Notifications").tap()
+            XCTAssert(app.switches["Push notifications"].waitForExistence(timeout: 5))
+            keep("avatar-menu-notifications")
         }
 
         @MainActor

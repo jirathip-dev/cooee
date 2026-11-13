@@ -296,7 +296,7 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
 
 /// drover installed (off, so nothing runs it) in `<data>/plugins.lock`.
 fn install_drover(s: &Setup) {
-    let lock = json!([{ "name": "cooee-drover", "url": "https://example.com/cooee-drover", "commit": "c0",
+    let lock = json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0",
                         "version": "0.1.0", "tabs": ["queue"], "port": 1, "enabled": false }]);
     fs::write(s.dir.join("data/plugins.lock"), lock.to_string()).unwrap();
 }
@@ -311,18 +311,18 @@ fn a_plugin_is_attached_to_a_persona_and_detached() {
     let (status, mut chief) = s.call("POST", "/personas", Some(&new));
     assert_eq!((status, &chief["plugins"]), (200, &json!([])), "{chief}");
 
-    chief["plugins"] = json!(["cooee-drover"]);
+    chief["plugins"] = json!(["drover"]);
     let (status, saved) = s.call("PUT", "/personas/chief", Some(&chief));
     assert_eq!(status, 200, "{saved}");
     assert_eq!(
         s.cooee.json("/personas/chief")["plugins"],
-        json!(["cooee-drover"])
+        json!(["drover"])
     );
     assert_eq!(s.cooee.json("/personas/coder")["plugins"], json!([]));
     assert_eq!(s.cooee.json("/personas/chief/places"), json!([]));
     assert_eq!(s.call("GET", "/personas/nobody/places", None).0, 400);
 
-    chief["plugins"] = json!(["cooee-drover", "nope"]);
+    chief["plugins"] = json!(["drover", "nope"]);
     let (status, why) = s.call("PUT", "/personas/chief", Some(&chief));
     assert_eq!(status, 400, "{why}");
     assert!(
@@ -331,7 +331,7 @@ fn a_plugin_is_attached_to_a_persona_and_detached() {
     );
     assert_eq!(
         s.cooee.json("/personas/chief")["plugins"],
-        json!(["cooee-drover"])
+        json!(["drover"])
     );
 
     chief["plugins"] = json!([]);
@@ -363,7 +363,7 @@ fn migration_keeps_the_name_and_sets_the_orchestrator_role() {
     assert_eq!(read("conductor")["style"], "detailed");
     assert_eq!(read("coder")["style"], "chat");
     install_drover(&s);
-    assert_eq!(seen("conductor").2, json!(["cooee-drover"]));
+    assert_eq!(seen("conductor").2, json!(["drover"]));
     assert_eq!(seen("coder").2, json!([]));
 
     fs::create_dir_all(s.dir.join("personas")).unwrap();
@@ -374,11 +374,7 @@ fn migration_keeps_the_name_and_sets_the_orchestrator_role() {
     .unwrap();
     assert_eq!(
         seen("conductor"),
-        (
-            json!("Navi"),
-            json!("orchestrator"),
-            json!(["cooee-drover"])
-        )
+        (json!("Navi"), json!("orchestrator"), json!(["drover"]))
     );
     assert_eq!(read("conductor")["style"], "detailed");
     fs::write(
@@ -411,7 +407,7 @@ fn renaming_the_orchestrator_changes_no_attachment() {
         (
             &json!("Navi"),
             &json!("orchestrator"),
-            &json!(["cooee-drover"]),
+            &json!(["drover"]),
             &json!(["cooee"])
         )
     );
@@ -450,7 +446,7 @@ fn two_orchestrator_personas_each_with_their_own_fleets() {
             )
         })
         .collect();
-    let drover = json!(["cooee-drover"]);
+    let drover = json!(["drover"]);
     assert_eq!(
         seen,
         [
@@ -494,7 +490,7 @@ fn the_plugin_attaches_by_role() {
     p["role"] = json!("orchestrator");
     assert_eq!(s.call("PUT", "/personas/conductor", Some(&p)).0, 200);
     let read = s.cooee.json("/personas/conductor");
-    assert_eq!(read["plugins"], json!(["cooee-drover"]));
+    assert_eq!(read["plugins"], json!(["drover"]));
     let mut read = read;
     read["role"] = json!("");
     read["plugins"] = json!([]);

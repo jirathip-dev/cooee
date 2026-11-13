@@ -30,7 +30,7 @@ type File = { name: string; data: string }; // data: the bytes in base64
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, persona_name, persona_role, folder, machine, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}}` (`unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted, `persona_name` and `persona_role` its name and role; `machine`: the one it runs on, `""` this host) |
+| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, persona_name, persona_role, folder, machine, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}, routine}` (`unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted, `persona_name` and `persona_role` its name and role; `machine`: the one it runs on, `""` this host) |
 | `POST /threads` | `{agent, account?, profile?, model?, effort?, folder?, machine?, text, random_id, background?}` (`profile`: a persona's or profile's id; a persona's agent, folder, model, effort and machine are its defaults; `machine` overrides its persona's, `""` this host, one not in `GET /machines` a 400) | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
 | `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
 | `POST /threads/{id}/folder` | `{folder}` (a root or inside one): "Use a folder…"; its agent starts again there and the next message carries a hand-over | the `note` it adds |
@@ -71,7 +71,7 @@ the ids, so notes are merged or forgotten first; a persona already past it keeps
 shrink them. `plugins` (#129) are the installed plugins (or config
 `[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. `role` (#159) is `""` (a plain persona)
 or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos or fleets it covers, which another may
-cover too): herdsman's Drover plugin is attached to each orchestrator by its role, never its name. The persona read
+cover too): an installed `drover` is attached to each orchestrator by its role, never its name. The persona read
 from a `conductor` profile (or saved from one before #159) is an orchestrator, its name kept. `machine` (#148) is the one its threads run on: `""` this host (every
 persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
 with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). `style`
@@ -185,10 +185,25 @@ can't start).
 `query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
 at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending
 `older: before=<item>` when more are left. Another persona's thread is a 400.
+`POST /mcp/agent/routine` `{thread, server: {name, when, prompt, place?}}` (#75) → `create_routine`'s item, the
+`routine` line it adds to the thread. A refusal is a 400 starting `BAD_SCHEDULE`, `BAD_NAME`, `BAD_PROMPT`,
+`BAD_PLACE`, `TOO_MANY` or `NOT_HERE` (a Workflow session or a routine's own run).
 `POST /mcp/agent/skill` `{thread, server: {read} | {propose: {name, description, body, replaces?}}}` (#218) → `skill`'s
 text: with `read`, the persona's skill's body (8,000 characters at most; another persona's is a 400); with `propose`,
 a card (`form: "skill"`, `detail` the new file, or for `replaces` its diff) whose `approve` saves it, `decline` or no
 answer nothing.
+
+## Routines (Settings › routines, #75)
+
+| Route | Form | Answer |
+|---|---|---|
+| `GET /routines` | | the page: each routine, its schedule in words, where it posts, its last run, `[pause]` `[delete]`, its edit |
+| `GET /routines.json` | | `Routine[]`: `{id, name, trigger: {schedule}, place: {in: chat, thread} \| {in: new_thread, who}, prompt, paused?: {why: owner \| chat_gone}, made_in, made_at, last_due, last_run?: {at, key, outcome: ran \| failed, thread \| why}}` |
+| `POST /routines/<id>` | `name`, `when`, `prompt`, `paused` (`true`/`false`), each optional | 303 to `/routines`; 400 with the refusal |
+| `POST /routines/<id>/delete` | | 303 to `/routines`; the threads it ran in stay |
+
+A row's `routine` is the name of the routine whose run started the thread, else of the one that sent its last `you`
+item (that item's `routine: {id, name}`); `""` for none. The `routine` item is `{routine, name, when, place}`.
 
 ## Theme packs (Settings › look › themes, [docs/themes.md](themes.md))
 

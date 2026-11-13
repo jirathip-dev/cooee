@@ -155,6 +155,7 @@ mod tests {
             text: text.to_owned(),
             random_id: String::new(),
             files: Vec::new(),
+            routine: None,
         }
     }
 

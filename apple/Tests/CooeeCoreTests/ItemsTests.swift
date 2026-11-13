@@ -111,6 +111,8 @@ internal struct ItemsTests {
         #expect(Item.agent(id: 1, markdown: reply).plainText == "Questions for you:\n1. HTML or SwiftUI?\n\n• a\n\nls")
         #expect(Item.you(id: 2, text: "hi **there**").plainText == "hi **there**")
         #expect(Item.note(id: 3, text: "Model set").plainText == nil)
+        #expect(Item.said(id: 4, speaker: "Ada", time: "9:41", markdown: [.text("**ok**")]).plainText == "ok")
+        #expect(Item.divider(id: 5, text: "Round 1").plainText == nil)
     }
 
     @Test internal func theSameNoteTwiceInARowIsOneRow() {

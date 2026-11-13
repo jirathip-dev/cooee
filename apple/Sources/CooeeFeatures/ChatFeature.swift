@@ -24,6 +24,7 @@ public struct ChatFeature: Sendable {
         public var files: [Attachment] = []
         public var outbox: [Outgoing] = []
         public var answering: Set<Int> = []
+        public var room: Room?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
         @Presents public var screen: PluginScreenFeature.State?
@@ -31,14 +32,16 @@ public struct ChatFeature: Sendable {
 
         public var working: Bool { turn.working }
         public var drawn: [Item] {
-            ChatItems.build(items, live: live, outbox: outbox, style: persona.api.style, working: working)
+            room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
+                ?? ChatItems.build(items, live: live, outbox: outbox, style: persona.api.style, working: working)
         }
         public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
 
-        public init(server: Server, target: Target, persona: Persona) {
+        public init(server: Server, target: Target, persona: Persona, room: Room? = nil) {
             self.server = server
             self.target = target
             self.persona = persona
+            self.room = room
         }
     }
 
@@ -59,6 +62,11 @@ public struct ChatFeature: Sendable {
         case unqueue(Int)
         case answer(Int, BlockAction)
         case answered(Int, String?)
+        case inspect(String?)
+        case move(String, Int)
+        case seat(String)
+        case unseat(String)
+        case seated([String])
         case delegate(Delegate)
         case plugins(PluginAction)
         case screen(PresentationAction<PluginScreenFeature.Action>)
@@ -94,6 +102,7 @@ public struct ChatFeature: Sendable {
                 load(&state, slice)
                 return .none
             case .event(let event):
+                state.room?.hear(event)
                 apply(&state, event)
                 return .none
             case .failed(let error):
@@ -133,7 +142,7 @@ extension ChatFeature {
         case .steer(let index), .unqueue(let index):
             return queued(state, action, index)
         default:
-            break
+            return seat(&state, action)
         }
         return .none
     }
@@ -176,7 +185,7 @@ extension ChatFeature {
             if !state.working { state.live = "" }
         case .queue(let queue):
             state.queue = queue
-        case .reset:
+        case .reset, .roomTurn, .roomStop:
             break
         }
     }
