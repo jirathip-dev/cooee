@@ -1,0 +1,23 @@
+{
+  "format": 1,
+  "root": {
+    "type": "nav",
+    "slots": {
+      "side": [{ "type": "sidebar", "place": { "wide": "column", "compact": "menu" } }],
+      "main": [
+        {
+          "type": "screen",
+          "source": "core",
+          "path": "/screens/home",
+          "id": "home",
+          "place": { "compact": "push", "wide": "panel" }
+        },
+        { "type": "chat", "place": "push", "config": { "composer": true, "stop": true } }
+      ],
+      "menu": [
+        { "type": "screen", "source": "core", "path": "/screens/menu", "id": "menu", "place": "sheet" },
+        { "type": "settings", "place": "sheet", "config": { "pages": ["look", "notifications", "appIcon"] } }
+      ]
+    }
+  }
+}
