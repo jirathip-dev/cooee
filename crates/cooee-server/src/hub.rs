@@ -559,9 +559,10 @@ impl Hub {
                 meta.account.clear();
             }
             let terminal = meta.terminal.clone();
-            let mut live = Live::new(meta, Chat::from_versions(store.items(&id)?));
-            live.unload(live.used + IDLE);
-            let live = Arc::new(Mutex::new(live));
+            let live = Arc::new(Mutex::new(Live::new(
+                meta,
+                Chat::from_versions(store.items(&id)?),
+            )));
             terminals.insert(terminal, Arc::clone(&live));
             threads.insert(id, live);
         }
@@ -2997,7 +2998,6 @@ mod tests {
         seed(&dir, "a", &(item(1, "one") + &item(2, "two")));
         let hub = hub(&dir);
         let unloaded = |hub: &Hub| lock(&lock(&hub.threads)["a"]).unloaded.is_some();
-        assert!(unloaded(&hub), "a thread no one opened stays unloaded");
         let before = hub.slice("a", None, 10, 0).unwrap();
         assert!(!unloaded(&hub));
         let done = Reported {
