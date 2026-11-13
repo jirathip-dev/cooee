@@ -32,7 +32,10 @@ use crate::{
 mod ask;
 mod models;
 mod rooms;
+mod setup;
+
 pub use rooms::Starter;
+pub use setup::Update;
 
 /// How many page events a thread keeps for a reconnecting page.
 const RING: usize = 4096;
@@ -226,6 +229,8 @@ pub struct Recipe {
     pub asked_by: String,
     /// The machine it runs on (#148; empty: this host), one of [`cooee_machines::Machines::added`].
     pub machine: String,
+    /// A setup chat (#270).
+    pub setup: bool,
     /// The routine whose run starts it (#75).
     pub routine: Option<Mark>,
 }
@@ -261,6 +266,8 @@ pub struct Hub {
     mcp_key: String,
     /// The servers and skills agents proposed, by thread and card, until answered (a restart drops them).
     proposals: Mutex<HashMap<(String, u64), Proposed>>,
+    /// The `update_persona` cards waiting, by thread and card: the persona and its update (#270; a restart drops them).
+    updates: Mutex<HashMap<(String, u64), (String, Update)>>,
     /// Each server's tools as last listed, for the profile sheet; held while the registry is written.
     tools: Mutex<HashMap<String, cooee_web::Tools>>,
     /// The rooms with a member's turn to start, for the turn worker.
@@ -481,6 +488,7 @@ impl Hub {
             url: OnceLock::new(),
             mcp_key,
             proposals: Mutex::default(),
+            updates: Mutex::default(),
             tools: Mutex::default(),
             turns,
             starter: OnceLock::new(),
@@ -1131,6 +1139,7 @@ impl Hub {
             random_id: random_id.to_owned(),
             room: recipe.room.clone(),
             asked_by: recipe.asked_by.clone(),
+            setup: recipe.setup,
             routine: recipe.routine.clone(),
             ..Thread::default()
         })?;
@@ -1701,6 +1710,9 @@ impl Hub {
             {
                 Ok(self.proposal_answer(id, item, option))
             }
+            Body::Approval { card, .. } if card.form.as_deref() == Some("persona") => {
+                Ok(self.persona_answer(id, item, option))
+            }
             _ => return self.shed_approve(&live, &terminal, tapped, option),
         };
         let mut live = lock(&live);
@@ -2022,6 +2034,7 @@ impl Hub {
                     unread: unseen > 0,
                     unseen,
                     archived: live.meta.archived,
+                    setup: live.meta.setup,
                     workflow: live.meta.workflow.clone(),
                     routine: routine_of(&live),
                     members: live

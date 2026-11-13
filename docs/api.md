@@ -30,8 +30,8 @@ type File = { name: string; data: string }; // data: the bytes in base64
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, persona_name, persona_role, folder, machine, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}, routine}` (`unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted, `persona_name` and `persona_role` its name and role; `machine`: the one it runs on, `""` this host) |
-| `POST /threads` | `{agent, account?, profile?, model?, effort?, folder?, machine?, text, random_id, background?}` (`profile`: a persona's or profile's id; a persona's agent, folder, model, effort and machine are its defaults; `machine` overrides its persona's, `""` this host, one not in `GET /machines` a 400) | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
+| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, persona_name, persona_role, folder, machine, state, last, at, unread, unseen, archived, setup, workflow?: {source, group, item, role, round, url}, routine}` (`unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted, `persona_name` and `persona_role` its name and role; `machine`: the one it runs on, `""` this host; `setup`: a setup chat, #270) |
+| `POST /threads` | `{agent, account?, profile?, model?, effort?, folder?, machine?, text, random_id, background?, setup?}` (`profile`: a persona's or profile's id; a persona's agent, folder, model, effort and machine are its defaults; `machine` overrides its persona's, `""` this host, one not in `GET /machines` a 400; `setup: true` (#270): a setup chat, its persona's brief asking it to interview the owner one question at a time about its purpose, tone, boundaries and way of working, then write its Character and Instructions; without a persona a 400) | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
 | `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
 | `POST /threads/{id}/folder` | `{folder}` (a root or inside one): "Use a folder…"; its agent starts again there and the next message carries a hand-over | the `note` it adds |
 | `POST /agents` | a form: `name`, `profile` (`""`: Plain on the first installed agent) | 303 to its new chat; the agent is saved as `<config>/profiles/<name>.toml` |
@@ -66,7 +66,11 @@ API). Its Character, Instructions and notes go ahead of each new session's first
 "persona" | "owner", at}`, in `<data>/personas/<id>/memory.jsonl`; `id` is short, and a note kept before #216 gets one
 on first read. The persona edits its notes with the `remember` tool of cooee's own MCP server: `{text?, replaces?,
 forget?}` adds `text`, puts it in place of note `replaces`, or drops the ids in `forget`; an exact duplicate adds
-nothing. Notes hold at most 2,000 characters in all (#216): a write that would pass that is a 400 naming the use and
+nothing. With the `update_persona` tool (#270) `{character?, instructions?}` it rewrites its own Character or
+Instructions (never another persona's): in a setup chat it is saved at once, with an `Updated Character` /
+`Updated Instructions` note in the chat; in any other it raises an approval card (`form: "persona"`, `detail` the
+diff: each changed field's name, its old lines `-`, its new `+`) with `approve` and `deny`, and nothing is saved until
+it is approved (a restart drops a card not answered). Either way the change reaches the next session's brief. Notes hold at most 2,000 characters in all (#216): a write that would pass that is a 400 naming the use and
 the ids, so notes are merged or forgotten first; a persona already past it keeps and reads every note, and may only
 shrink them. `plugins` (#129) are the installed plugins (or config
 `[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. `role` (#159) is `""` (a plain persona)
@@ -173,7 +177,7 @@ Native forms, as theme packs; `GET /mcp` is the page.
 A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the thread's token>`, no cookie:
 `POST /mcp/agent/grant` `{thread, server}` → the server resolved and its allowed `tools`; `POST /mcp/agent/propose`
 `{thread, server: {name, type, command, args, url, why}}` → the card; `POST /mcp/agent/remember` `{thread, server:
-{text?, replaces?, forget?}}` → `remember`'s edit by the thread's persona, its answer the note's id and the use; `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
+{text?, replaces?, forget?}}` → `remember`'s edit by the thread's persona, its answer the note's id and the use; `POST /mcp/agent/persona` `{thread, server: {character?, instructions?}}` (#270) → `update_persona`'s answer (an unknown field, or no change, a 400); `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
 (#156) → `ask_persona`'s reply (a string), the thread's persona asking one its `can_message` names in a linked exchange
 thread (the owner reads it and may reply to steer), waiting `timeout` seconds (300, at most 600). A refusal is a 400
 starting `NOT_ALLOWED`, `DEPTH` (an asked persona may ask one more, no further), `TIMEOUT` or `OFFLINE` (its session

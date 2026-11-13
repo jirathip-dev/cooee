@@ -404,6 +404,14 @@ fn own_tools() -> Value {
             "limit": { "type": "integer", "description": "fewer hits, at most 5" }
         } }
     });
+    let update = json!({
+        "name": "update_persona",
+        "description": "Rewrite your persona's Character or Instructions (the whole text of each given). In a setup chat it is saved at once; elsewhere the owner approves a card with the diff first. It reaches your next session.",
+        "inputSchema": { "type": "object", "properties": {
+            "character": { "type": "string", "description": "who you are, your tone" },
+            "instructions": { "type": "string", "description": "your standing rules" }
+        } }
+    });
     let routine = json!({
         "name": "create_routine",
         "description": "Make a routine (when the owner asks for something on a schedule): at each due time its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines. {{due}} in the prompt is the due time. A refusal starts with BAD_SCHEDULE, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY or NOT_HERE.",
@@ -427,11 +435,11 @@ fn own_tools() -> Value {
             } }
         } }
     });
-    json!([tool, remember, ask_persona, history, routine, skill])
+    json!([tool, remember, ask_persona, history, update, routine, skill])
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `history` (#217) and `skill` (#218) for a persona's.
+/// `ask_persona` (#156), `history` (#217), `update_persona` (#270) and `skill` (#218) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -470,6 +478,7 @@ pub fn serve(thread: &str) -> Result<(), String> {
                     // Its answer (a string) is the reply.
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
                     Some("history") => Some(("/mcp/agent/history", "")),
+                    Some("update_persona") => Some(("/mcp/agent/persona", "")),
                     Some("create_routine") => Some((
                         "/mcp/agent/routine",
                         "Made. The owner sees it in this chat and can change it in Settings › routines.",

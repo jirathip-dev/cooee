@@ -68,6 +68,16 @@ public struct AppFeature: Sendable {
             case .persona(.presented(.delegate(.saved))):
                 state.persona = nil
                 return .send(.home(.refresh))
+            case .persona(.presented(.delegate(.chat(let persona)))):
+                state.persona = nil
+                state.path = ["setup:\(persona.id)"]
+                state.chat = state.home.map {
+                    ChatFeature.State(server: $0.server, target: .setup(persona), persona: Persona(persona))
+                }
+                return .send(.home(.refresh))
+            case .chat(.delegate(.viewPersona)):
+                if let id = state.chat?.persona.id, !id.isEmpty { state.persona = persona(state, id) }
+                return .none
             case .chat(.delegate(.started(let thread))):
                 state.path = state.path.dropLast() + [thread]
                 state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }

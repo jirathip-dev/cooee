@@ -96,6 +96,10 @@ pub struct Thread {
     /// A linked exchange (#156): the thread whose persona asked this one's (`ask_persona`).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub asked_by: String,
+    /// A setup chat (#270): its persona's brief asks it to interview the owner and write its Character and
+    /// Instructions, and its `update_persona` saves at once.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub setup: bool,
     /// The routine whose run started it (#75).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub routine: Option<crate::routines::Mark>,

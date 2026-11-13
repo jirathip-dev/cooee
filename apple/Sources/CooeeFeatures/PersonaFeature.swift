@@ -26,6 +26,7 @@ public struct PersonaFeature: Sendable {
         case task
         case noted([PersonaNote])
         case save
+        case chat
         case clearMemory
         case close
         case failed(String)
@@ -34,6 +35,7 @@ public struct PersonaFeature: Sendable {
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case saved(APIPersona)
+            case chat(APIPersona)
         }
     }
 
@@ -54,9 +56,9 @@ public struct PersonaFeature: Sendable {
                 state.notes = notes
                 return .none
             case .save:
-                state.busy = true
-                state.error = nil
-                return save(state)
+                return save(&state, chat: false)
+            case .chat:
+                return save(&state, chat: true)
             case .clearMemory:
                 return forget(state)
             case .close:
@@ -79,11 +81,13 @@ public struct PersonaFeature: Sendable {
         }
     }
 
-    private func save(_ state: State) -> Effect<Action> {
+    private func save(_ state: inout State, chat: Bool) -> Effect<Action> {
+        state.busy = true
+        state.error = nil
         let (personas, server, draft, isNew) = (personas, state.server, state.draft, state.isNew)
         return .run { send in
             let saved = isNew ? try await personas.create(server, draft) : try await personas.save(server, draft)
-            await send(.delegate(.saved(saved)))
+            await send(.delegate(chat ? .chat(saved) : .saved(saved)))
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }

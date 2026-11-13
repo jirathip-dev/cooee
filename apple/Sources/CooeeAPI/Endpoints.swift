@@ -15,7 +15,7 @@ extension Client {
 
     private struct NewThread: Encodable {
         private enum CodingKeys: String, CodingKey {
-            case agent, profile, text, background
+            case agent, profile, text, background, setup
             case randomID = "random_id"
         }
 
@@ -23,6 +23,7 @@ extension Client {
         fileprivate let profile: String
         fileprivate let text: String
         fileprivate let randomID: String
+        fileprivate let setup: Bool
         fileprivate let background = true
     }
 
@@ -139,10 +140,10 @@ extension Client {
         try await post("/threads/\(id)/read", ["item": item])
     }
 
-    public func newThread(persona: APIPersona, text: String, randomID: String = UUID().uuidString) async throws
-        -> String
-    {
-        let body = NewThread(agent: persona.agent, profile: persona.id, text: text, randomID: randomID)
+    public func newThread(
+        persona: APIPersona, text: String, setup: Bool = false, randomID: String = UUID().uuidString
+    ) async throws -> String {
+        let body = NewThread(agent: persona.agent, profile: persona.id, text: text, randomID: randomID, setup: setup)
         let created: Created = try await call("POST", "/threads", body)
         return created.id
     }

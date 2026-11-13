@@ -1340,7 +1340,8 @@ function chat(main: HTMLElement): void {
       row.className = `blk ap ${it.form ?? ""}`;
       row.append(el("b", "k", it.plugin ?? agent), withRefs("div", "md pl", it.tool));
       if (it.form === "secret") row.append(el("p", "m", `secret ${it.detail}`));
-      if (it.form === "config" && it.detail) {
+      // A config diff, or a persona's own update to its Character and Instructions (#270).
+      if ((it.form === "config" || it.form === "persona") && it.detail) {
         const pre = el("pre", "diff");
         for (const l of it.detail.split("\n"))
           pre.append(el("span", l.startsWith("+") ? "g" : l.startsWith("-") ? "r" : "", `${l}\n`));
