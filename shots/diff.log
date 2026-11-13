@@ -1,0 +1,18 @@
+diff: shots/modern-iphone-dark.png vs /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-245-r3/ref/modern-iphone-dark.png: 0.000 % of pixels differ (shots/modern-iphone-dark-diff.png)
+exit 0 modern-iphone-dark
+diff: shots/modern-iphone-light.png vs /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-245-r3/ref/modern-iphone-light.png: 0.000 % of pixels differ (shots/modern-iphone-light-diff.png)
+exit 0 modern-iphone-light
+diff: shots/modern-mac.png vs /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-245-r3/ref/modern-mac.png: 0.000 % of pixels differ (shots/modern-mac-diff.png)
+exit 0 modern-mac
+diff: shots/scene-iphone-dark.png vs /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-245-r3/ref/scene-iphone-dark.png: 0.000 % of pixels differ (shots/scene-iphone-dark-diff.png)
+exit 0 scene-iphone-dark
+diff: shots/scene-iphone-light.png vs /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-245-r3/ref/scene-iphone-light.png: 0.000 % of pixels differ (shots/scene-iphone-light-diff.png)
+exit 0 scene-iphone-light
+diff: shots/scene-mac.png vs /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-245-r3/ref/scene-mac.png: 0.000 % of pixels differ (shots/scene-mac-diff.png)
+exit 0 scene-mac
+diff: shots/terminal-iphone-dark.png vs /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-245-r3/ref/terminal-iphone-dark.png: 0.000 % of pixels differ (shots/terminal-iphone-dark-diff.png)
+exit 0 terminal-iphone-dark
+diff: shots/terminal-iphone-light.png vs /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-245-r3/ref/terminal-iphone-light.png: 0.000 % of pixels differ (shots/terminal-iphone-light-diff.png)
+exit 0 terminal-iphone-light
+diff: shots/terminal-mac.png vs /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-245-r3/ref/terminal-mac.png: 0.000 % of pixels differ (shots/terminal-mac-diff.png)
+exit 0 terminal-mac
