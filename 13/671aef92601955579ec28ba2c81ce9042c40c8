@@ -1,0 +1,6 @@
+Decided: fix round 1 merges origin/staging; the apple.yml diff is unchanged
+Because: "The merge gate still requires `apple` green at the exact merged head."
+Rejected: re-running msrv at 29176e3 — two re-runs were SIGTERM-cancelled at tests/screens.rs on the old base
+Check: ci run 43452809074 at 13671ae is success, msrv (ubuntu-latest) included
+Check: apple run 43452809275 at 13671ae runs only build; apple-quality, e2e and mac-setup skipped
+Owner: set merge_label = "merge-ready" for cooee and create that label in the repo before this merges
