@@ -93,7 +93,7 @@ jobs:
           xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=iOS Simulator' \
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/e2e" build-for-testing
           tar -C "$RUNNER_TEMP/e2e/Build/Products" -cf "$RUNNER_TEMP/ios-tests.tar" Debug-iphonesimulator/Cooee.app \
-            Debug-iphonesimulator/CooeeAppUITests-Runner.app "$(cd "$RUNNER_TEMP/e2e/Build/Products" && ls *.xctestrun)"
+            Debug-iphonesimulator/CooeeAppUITests-Runner.app "$(cd "$RUNNER_TEMP/e2e/Build/Products" && ls -- *.xctestrun)"
       - uses: actions/upload-artifact@v4
         with:
           name: ios-tests
@@ -104,8 +104,8 @@ jobs:
       - name: the app in the simulator
         run: |
           for _ in $(seq 300); do [ -s "$RUNNER_TEMP/sim" ] && break; sleep 2; done
-          sim=$(cat "$RUNNER_TEMP/sim") && xcrun simctl bootstatus "$sim" -b >>"$RUNNER_TEMP/boot.log" 2>&1 ||
-            { cat "$RUNNER_TEMP/boot.log"; exit 1; }
+          sim=$(cat "$RUNNER_TEMP/sim")
+          xcrun simctl bootstatus "$sim" -b >>"$RUNNER_TEMP/boot.log" 2>&1 || { cat "$RUNNER_TEMP/boot.log"; exit 1; }
           for look in dark light; do
             xcrun simctl ui "$sim" appearance "$look"
             xcrun simctl keychain "$sim" reset
@@ -198,8 +198,8 @@ jobs:
           done
           curl -sS -o /dev/null -w 'cooee answers %{http_code}\n' http://127.0.0.1:4747/pair
           for _ in $(seq 300); do [ -s "$RUNNER_TEMP/sim" ] && break; sleep 2; done
-          sim=$(cat "$RUNNER_TEMP/sim") && xcrun simctl bootstatus "$sim" -b >>"$RUNNER_TEMP/boot.log" 2>&1 ||
-            { cat "$RUNNER_TEMP/boot.log"; exit 1; }
+          sim=$(cat "$RUNNER_TEMP/sim")
+          xcrun simctl bootstatus "$sim" -b >>"$RUNNER_TEMP/boot.log" 2>&1 || { cat "$RUNNER_TEMP/boot.log"; exit 1; }
           TEST_RUNNER_COOEE_ASK_ADDRESS=http://127.0.0.1:4747 xcodebuild -destination "id=$sim" \
             -xctestrun "$(ls "$RUNNER_TEMP"/ios/*.xctestrun)" -only-testing:CooeeAppUITests/LiveUITests/testAsksAndTheMacApprovesIt \
             -resultBundlePath "$RUNNER_TEMP/phone-ask.xcresult" test-without-building
