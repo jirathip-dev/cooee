@@ -1,0 +1,5 @@
+Decided: write the runner user's home as ~cooeeci in runner-user.md, not its literal /Users path
+Because: ci/denylist.txt:4
+Rejected: a placeholder like /home/user — the doc is for this exact user on the mini, ~cooeeci names it exactly
+Check: just hygiene and shellcheck infra/ci-runners/runner-user.sh both exit 0
+Owner: nothing new; same one sudo run of the script on the mini
