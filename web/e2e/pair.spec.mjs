@@ -140,6 +140,43 @@ async function paired(browser) {
   return { context, page };
 }
 
+test("a passkey saved from the offer approves a request that came after one seen without it (#388)", async ({ browser, baseURL }) => {
+  // On http://localhost (WebAuthn takes no IP address), with a virtual platform authenticator.
+  const local = `http://localhost:${new URL(baseURL).port}`;
+  const context = await browser.newContext({ ...unpaired, baseURL: local });
+  const page = await context.newPage();
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("WebAuthn.enable");
+  await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true },
+  });
+  const asker = await browser.newContext(unpaired);
+  const ask = async () => (await asker.request.post("/pair/request", { headers: IPAD, data: {} })).json();
+  const first = await ask();
+  try {
+    // Paired now, with a request open: its card asks for a passkey first.
+    await page.goto(`/pair?code=${newCode()}`);
+    await page.waitForURL(/\/$/);
+    const early = page.getByRole("group", { name: `iPad asks to pair: ${first.word}` }).last();
+    await expect(early).toContainText("Approving needs a passkey.");
+    await page.locator("#pairing").getByRole("group", { name: "save a passkey" }).getByRole("button", { name: "save a passkey" }).click();
+    await expect(page.locator("#pairing")).toContainText("✓ passkey saved");
+    // The next request's card approves with it.
+    const next = await ask();
+    const card = page.getByRole("group", { name: `iPad asks to pair: ${next.word}` }).last();
+    await expect(card).toContainText("Pair a new device?");
+    await expect(card.getByRole("button", { name: /^approve with/ })).toBeVisible();
+    for (const { claim } of [first, next]) await asker.request.post("/pair/cancel", { data: { claim } });
+  } finally {
+    const key = (await (await context.request.get("/passkeys")).json()).find((k) => k.mine);
+    if (key) await context.request.post("/passkeys/remove", { data: { id: key.id } });
+    const me = (await (await context.request.get("/devices")).json()).find((d) => d.me);
+    if (me) await context.request.post("/devices/remove", { data: { id: me.id } });
+    await asker.close();
+    await context.close();
+  }
+});
+
 test("the approve card: no passkey on this device, approved elsewhere, and a request that ran out", async ({ browser, baseURL }) => {
   // This device (A) has no passkey; another paired device (B) holds the only new one.
   const { context: a, page } = await paired(browser);
