@@ -1,0 +1,9 @@
+Decided: leave the owner's automatic login alone; cooeeci gets its GUI session by one fast-user-switch login per boot (runner-user.md)
+Because: "leaves the owner's session as the console user"
+Rejected: auto-login as cooeeci — it would take the console from the owner and their live cooee would not start after a reboot
+Decided: the runner token is piped into config.sh's ACTIONS_RUNNER_INPUT_TOKEN, never echoed or passed in argv
+Because: "The registration token is fetched by `gh` inside the script and never printed"
+Decided: --remove in the same script is the one undo command
+Because: "the exact command that undoes everything"
+Check: run infra/ci-runners/runner-user.sh --dry-run and --dry-run --remove; shellcheck infra/ci-runners/runner-user.sh
+Owner: run sudo infra/ci-runners/runner-user.sh once on the mini, then log cooeeci in via fast user switching after each boot
