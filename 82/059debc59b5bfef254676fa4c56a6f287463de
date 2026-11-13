@@ -1,0 +1,9 @@
+Decided: round 3 changes no code; the FAIL was CI cancelled by a runner shutdown signal again, so this head merges origin/staging to re-run CI
+Decided: the scan runs inside file(), so sprites.svg and scene.svg are checked wherever the gate reads them
+Because: web/src/look.rs:337
+Decided: a stdlib tag and attribute scanner, no XML crate, skipping comments
+Because: "no external or `javascript:`/`data:` references"
+Rejected: adding an XML parser dependency — a new dependency needs the owner and the scanner is enough with the CSP behind it
+Check: cargo test -p cooee --test themes passes at the head; theme check passes farm, kitchen, garden and packs/starter
+Check: one themes run right after the merge failed the script case and did not recur in two reruns; watch CI for it
+Owner: A theme pack can no longer carry scripts or outside links in its pictures, and its pictures are served so they cannot run code.
