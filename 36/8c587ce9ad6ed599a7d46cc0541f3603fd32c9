@@ -1,0 +1,10 @@
+Decided: cooee update runs the embedded scripts/install.sh with COOEE_REV=<sha>, so the install and codesign steps exist once
+Because: "It installs with the same steps as `install.sh`"
+Decided: the old binary is kept as ~/.cargo/bin/cooee.old and renamed back when the restarted service doesn't answer
+Because: "If that check fails, it puts back the previous binary and restarts it."
+Decided: a sha that failed is written to update.failed and not retried, so a broken green head doesn't restart the service every 15 minutes
+Decided: the timer is a LaunchAgent with a fixed label built by the same plist() as the service, so a second setup skips it
+Because: crates/cooee/src/setup.rs:112
+Rejected: a systemd user timer — setup installs and restarts the service only through launchctl, so Linux has no cooee service to restart
+Check: tests/setup.rs a_new_build_that_does_not_answer_is_rolled_back_and_the_old_one_serves_again and update_check_says_what_it_would_install_and_changes_nothing
+Owner: the CLI install now updates itself to main's newest green build every 15 minutes and rolls back a build that doesn't come up.
