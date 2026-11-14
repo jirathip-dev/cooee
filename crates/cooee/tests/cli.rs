@@ -1,5 +1,5 @@
-//! The binary end to end: `--version`, and `cooee serve` on the configured port: an unpaired browser gets the
-//! pairing page and the PWA's files.
+//! The binary end to end: `--version`, and `cooee serve` on the configured port: an unpaired client is told to
+//! pair first.
 
 use std::{
     env, fs,
@@ -84,11 +84,7 @@ fn serve_listens_on_localhost_at_the_configured_port() {
         .unwrap()
         .to_owned();
 
-    let page = get(&addr, "/");
-    let pair = get(&addr, "/pair");
-    let manifest = get(&addr, "/manifest.webmanifest");
-    let worker = get(&addr, "/sw.js");
-    let icon = get(&addr, "/icon-512.png");
+    let threads = get(&addr, "/threads");
     child.kill().unwrap();
     child.wait().unwrap();
     assert!(
@@ -96,26 +92,8 @@ fn serve_listens_on_localhost_at_the_configured_port() {
         "{addr}"
     );
     assert!(
-        page.starts_with("HTTP/1.1 303") && page.to_ascii_lowercase().contains("location: /pair"),
-        "{page}"
-    );
-    assert!(pair.starts_with("HTTP/1.1 200"), "{pair}");
-    assert!(
-        pair.contains("pair this device") && pair.contains(r#"rel="manifest""#),
-        "{pair}"
-    );
-    assert!(worker.contains(r#"addEventListener("push""#), "{worker}");
-    assert!(icon.contains("image/png"), "{icon}");
-    assert!(
-        manifest
-            .to_ascii_lowercase()
-            .contains("content-type: application/manifest+json"),
-        "{manifest}"
-    );
-    assert!(
-        manifest.contains(r#""display": "standalone""#)
-            && manifest.contains(r#""sizes": "512x512""#),
-        "{manifest}"
+        threads.starts_with("HTTP/1.1 401") && threads.contains("pair this device first"),
+        "{threads}"
     );
 }
 
