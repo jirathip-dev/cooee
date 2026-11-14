@@ -10,6 +10,7 @@ use std::{
     thread,
 };
 
+use cooee_core::shed_proto::Hello;
 use serde_json::{Value, json};
 use support::{Cooee, Events, FakeShed, Sse, is_item, others_go_on, scratch, version};
 
@@ -384,23 +385,37 @@ fn scene_draws_the_agents_as_sprites_and_the_current_ones_chats_as_chips() {
     );
 }
 
+/// A protocol-0 shed (before shed#100) takes cooee's hello and answers its own; a protocol-2 one refuses cooee's.
 #[test]
-fn a_shed_of_another_version_is_refused_naming_both_versions() {
-    let dir = scratch("version");
-    let shed = FakeShed::start(&dir.join("shed"), "9.9.9");
-    let cooee = Cooee::start(&dir, &shed.dir);
-    let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "hi", "random_id": "x" });
-    let (status, body) = cooee.post("/threads", &new);
-    assert_eq!(status, 502, "{body}");
-    assert!(
-        body.contains("version mismatch") && body.contains(version()) && body.contains("9.9.9"),
-        "{body}"
-    );
-    assert!(
-        !shed.cli_log().contains(" run "),
-        "nothing started: {}",
-        shed.cli_log()
-    );
+fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
+    for protocol in [0, 2] {
+        let dir = scratch(&format!("version-{protocol}"));
+        let theirs = Hello {
+            build: "fffffff".to_owned(),
+            protocol,
+            ..version()
+        };
+        let shed = FakeShed::start(&dir.join("shed"), theirs);
+        let cooee = Cooee::start(&dir, &shed.dir);
+        let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "hi", "random_id": "x" });
+        let (status, body) = cooee.post("/threads", &new);
+        assert_eq!(status, 502, "{body}");
+        let (v, b) = (&version().version, &version().build);
+        let theirs = if protocol == 0 {
+            format!("the server runs {v} (fffffff) protocol 0")
+        } else {
+            format!(
+                "the server refused it: client {b} / server fffffff: protocol 1 vs 2; restart shed serve"
+            )
+        };
+        let said = format!("SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; {theirs}");
+        assert!(body.contains(&said), "{body}\nwanted: {said}");
+        assert!(
+            !shed.cli_log().contains(" run "),
+            "nothing started: {}",
+            shed.cli_log()
+        );
+    }
 }
 
 /// The fake shed for the UI tests (web/e2e/serve.sh): serves in `$FAKE_SHED_DIR` until killed.

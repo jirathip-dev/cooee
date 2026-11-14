@@ -1,11 +1,11 @@
 //! Shed connection reuse (#54): the client keeps helloed connections, reconnects once after a restart, never resends
-//! a request that went out, and still checks the version on every new connection. Against the fake shed.
+//! a request that went out, and still checks the protocol on every new connection. Against the fake shed.
 
 mod support;
 
 use std::path::Path;
 
-use cooee_core::{Shed, ShedError};
+use cooee_core::{Shed, ShedError, shed_proto::Hello};
 use support::{FakeShed, scratch, version};
 
 fn client(dir: &Path) -> Shed {
@@ -59,14 +59,34 @@ fn a_request_that_was_sent_is_never_resent() {
 }
 
 #[test]
-fn another_version_after_a_restart_is_a_version_error() {
+fn another_protocol_after_a_restart_is_a_version_error() {
     let dir = scratch("pool-version").join("shed");
     let old = FakeShed::start(&dir, version());
     let shed = client(&dir);
     shed.get("t1").unwrap();
     old.stop();
-    let new = FakeShed::start(&dir, "0.0.0-other");
+    let new = FakeShed::start(
+        &dir,
+        Hello {
+            protocol: 2,
+            ..version()
+        },
+    );
     let err = shed.get("t1").unwrap_err();
     assert!(matches!(err, ShedError::Version { .. }), "{err}");
     assert_eq!(count(&new, "get"), 0);
+}
+
+#[test]
+fn a_shed_of_the_same_protocol_and_another_build_is_accepted() {
+    let dir = scratch("pool-build").join("shed");
+    let other = Hello {
+        build: "fffffff".to_owned(),
+        ..version()
+    };
+    assert_ne!(other.build, version().build);
+    let _fake = FakeShed::start(&dir, other);
+    let shed = client(&dir);
+    shed.hello().unwrap();
+    assert_eq!(shed.get("t1").unwrap().name, "t1");
 }
