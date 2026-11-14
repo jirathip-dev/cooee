@@ -48,8 +48,12 @@
         @MainActor
         private func openIconPicker(_ app: XCUIApplication) {
             labelled(app, "Modern").swipeUp()
-            app.buttons.matching(NSPredicate(format: "label CONTAINS 'App icon'")).firstMatch.tap()
-            XCTAssert(app.buttons["Koala"].firstMatch.waitForExistence(timeout: 5), "the icon picker opens")
+            let koala = app.buttons["Koala"].firstMatch
+            for _ in 0..<3 where !koala.exists {
+                app.buttons.matching(NSPredicate(format: "label CONTAINS 'App icon'")).firstMatch.tap()
+                _ = koala.waitForExistence(timeout: 3)
+            }
+            XCTAssert(koala.exists, "the icon picker opens")
         }
 
         @MainActor
@@ -68,6 +72,7 @@
 
         @MainActor
         internal func homeScreen(_ app: XCUIApplication, _ name: String) {
+            confirmIcon()
             XCUIDevice.shared.press(.home)
             let icon = springboard.icons["cooee"]
             _ = icon.waitForExistence(timeout: 10)
