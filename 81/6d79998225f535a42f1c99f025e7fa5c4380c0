@@ -1,0 +1,5 @@
+Decided: declare the queue UI steps on LiveUITestCase, where opensDroversScreens calls them
+Because: apple/UITests/LiveScreensUITests.swift:50
+Rejected: calling them from LiveDroverUITests.testOpensDroversScreens — splits one flow across two places
+Check: the CooeeAppUITests target builds and LiveDroverUITests.testOpensDroversScreens passes on the simulator
+Owner: The app's live Queue test builds again and passes on the simulator.
