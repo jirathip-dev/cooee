@@ -418,6 +418,53 @@ fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
     }
 }
 
+/// #397: after shed restarts onto protocol 0, each send fails with a line in its chat naming the shed cooee needs,
+/// the one running and the fix; the log says so once, not per send; once shed matches again, a send goes through
+/// and the log says that once too.
+#[test]
+fn a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed() {
+    let s = setup("version-send");
+    let id = s.create("hi");
+    let old = Hello {
+        build: "fffffff".to_owned(),
+        protocol: 0,
+        ..version()
+    };
+    let shed = s.shed.restart(old);
+    for n in 0..2 {
+        let (status, body) = s.send(&id, "again", &format!("v-{n}"));
+        assert_eq!(status, 502, "{body}");
+    }
+    let (v, b) = (&version().version, &version().build);
+    let rev = "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb";
+    let needs = format!(
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0; \
+         fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev {rev} shed && "
+    );
+    let notes: Vec<String> = s
+        .items(&id)
+        .iter()
+        .filter(|i| i["kind"] == "note")
+        .map(|i| i["text"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(notes.len(), 2, "{notes:?}");
+    assert!(notes.iter().all(|n| n.starts_with(&needs)), "{notes:?}");
+    let _fixed = shed.restart(version());
+    let (status, body) = s.send(&id, "now", "v-2");
+    assert_eq!(status, 200, "{body}");
+    let log = || fs::read_to_string(s.dir.join("cooee.err")).unwrap();
+    let cleared = "cooee: shed speaks this build's protocol again";
+    for _ in 0..500 {
+        if log().contains(cleared) {
+            break;
+        }
+        thread::sleep(std::time::Duration::from_millis(20));
+    }
+    let log = log();
+    let lines = |what: &str| log.lines().filter(|l| l.contains(what)).count();
+    assert_eq!((lines("SHED_VERSION"), lines(cleared)), (1, 1), "{log}");
+}
+
 /// The fake shed for the UI tests (web/e2e/serve.sh): serves in `$FAKE_SHED_DIR` until killed.
 #[test]
 #[ignore = "a server for web/e2e, not a test"]
