@@ -16,7 +16,9 @@ use cooee_core::{
     Store, StoreError, Summary, Thread, Turn, Workflow,
     mcp::{self, COOEE, Pick, Server},
     personas,
+    routines::Mark,
     shed_proto::{self, ApprovalOption, Event, TerminalInfo},
+    skills::{self, Skill},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -32,8 +34,14 @@ mod models;
 mod rooms;
 pub use rooms::Starter;
 
-/// How many page events a thread keeps for a reconnecting page.
-const RING: usize = 4096;
+/// How long a thread keeps its page events for a reconnecting page, in milliseconds (#295).
+const REPLAY: u64 = 5 * 60 * 1000;
+
+/// How many page events a watching page may fall behind before it is cut off to resume from the replay.
+const LAG: usize = 256;
+
+/// How long a thread goes unused before its chat is unloaded, in milliseconds (#295).
+const IDLE: u64 = 10 * 60 * 1000;
 
 /// The label every cooee terminal carries.
 const LABEL: &str = "cooee";
@@ -84,8 +92,10 @@ struct Live {
     /// The newest shed event applied.
     applied: u64,
     seq: u64,
-    ring: VecDeque<Out>,
-    tx: broadcast::Sender<Out>,
+    /// The page events of the last [`REPLAY`], each with when it was sent.
+    ring: VecDeque<(u64, Out)>,
+    /// Made when a page first subscribes, dropped when the chat is unloaded.
+    tx: Option<broadcast::Sender<Out>>,
     /// The state the last published change left (a push goes on a change of state only).
     was: String,
     /// When its last shed event came (or it was loaded), in Unix milliseconds.
@@ -98,6 +108,91 @@ struct Live {
     sent: Option<Instant>,
     /// A room's round was stopped while its working member's session was starting: cancel it once started (#155).
     stopped_starting: bool,
+    /// When it was last used, in Unix milliseconds.
+    used: u64,
+    /// Its row's view of the chat while the chat is unloaded (only its turn stays); `None` while loaded.
+    unloaded: Option<Glance>,
+    /// The messages handed to shed, by `random_id`, until it answers.
+    sending: Vec<String>,
+    /// The shed events that came while a message was on its way, applied after it.
+    held: Vec<Event>,
+}
+
+/// What the thread list shows of a thread's chat.
+#[derive(Clone)]
+struct Glance {
+    /// A member session's approval that waits, for its room's row: the room, the persona and the tool.
+    ask: Option<(String, String, String)>,
+    /// The approval that waits, else the newest item's last line.
+    last: String,
+    /// When the newest item came.
+    at: u64,
+    /// How many items, not the owner's own, came after the read mark.
+    unseen: usize,
+    routine: String,
+}
+
+fn glance(live: &Live) -> Glance {
+    let items = &live.chat.items;
+    let ask = items.iter().find_map(|i| match &i.body {
+        Body::Approval {
+            tool,
+            tapped: None,
+            chosen: None,
+            card,
+            ..
+        } if card.line.is_none() => Some((live.meta.room.clone(), i.speaker.clone(), tool.clone())),
+        _ => None,
+    });
+    let last = items.last();
+    let text = last.map_or("", |i| match &i.body {
+        Body::Link { text, title, .. } if text.is_empty() => title,
+        Body::You { text, .. }
+        | Body::Agent { text, .. }
+        | Body::Note { text }
+        | Body::Link { text, .. }
+        | Body::Ended { text } => text,
+        Body::Tool { title, .. } => title,
+        Body::Approval { tool, .. } => tool,
+        Body::Plan { .. } => "plan",
+        Body::Routine { name, .. } => name,
+    });
+    let read = live.meta.read.unwrap_or(0);
+    let from = items.partition_point(|i| i.id <= read);
+    let waiting = items.iter().find_map(|i| match &i.body {
+        Body::Approval { tool, .. } if waits(&i.body) => Some(format!("{tool} waiting")),
+        _ => None,
+    });
+    Glance {
+        ask,
+        last: waiting
+            .unwrap_or_else(|| text.lines().last().unwrap_or("").chars().take(80).collect()),
+        at: last.map_or(0, |i| i.at),
+        unseen: items[from..]
+            .iter()
+            .filter(|i| !matches!(i.body, Body::You { .. }))
+            .count(),
+        routine: routine_of(live),
+    }
+}
+
+/// What applying a shed event leaves to do once its thread is unlocked: its next queued message, its final reply,
+/// its room and persona, and its asker's key.
+struct After {
+    next: Result<Option<Queued>, HubError>,
+    reply: Option<Body>,
+    seat: (String, String),
+    asked: String,
+}
+
+/// The name of the routine that started thread `live`, else of the one that sent its last `you` item (#75).
+fn routine_of(live: &Live) -> String {
+    let you = live.chat.items.iter().rev().find_map(|i| match &i.body {
+        Body::You { routine, .. } => Some(routine),
+        _ => None,
+    });
+    let mark = live.meta.routine.as_ref().or_else(|| you?.as_ref());
+    mark.map(|m| m.name.clone()).unwrap_or_default()
 }
 
 /// A slice of a thread's items, with the turn in progress and the page event it is current to.
@@ -201,6 +296,8 @@ pub struct Recipe {
     pub asked_by: String,
     /// The machine it runs on (#148; empty: this host), one of [`cooee_machines::Machines::added`].
     pub machine: String,
+    /// The routine whose run starts it (#75).
+    pub routine: Option<Mark>,
 }
 
 /// The threads and the shed they run on.
@@ -213,7 +310,7 @@ pub struct Hub {
     files: PathBuf,
     push: Push,
     /// The server's default theme, whose words a push says.
-    theme: cooee_web::Theme,
+    theme: crate::look::Theme,
     roots: Mutex<Vec<PathBuf>>,
     /// The config file the roots are saved in.
     config: Option<PathBuf>,
@@ -222,6 +319,8 @@ pub struct Hub {
     agents: Mutex<(Result<Vec<Agent>, String>, u64)>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
+    /// The same threads by terminal: a shed event locks only its own thread.
+    terminals: Mutex<HashMap<String, Arc<Mutex<Live>>>>,
     /// The stamp of the newest thread id handed out.
     last: Mutex<u64>,
     /// The data folder (the secrets' file fallback).
@@ -230,10 +329,10 @@ pub struct Hub {
     url: OnceLock<String>,
     /// The key each thread's MCP token is made with (`<data>/mcp.key`).
     mcp_key: String,
-    /// The servers agents proposed, by thread and card, until answered (a restart drops them).
-    proposals: Mutex<HashMap<(String, u64), Server>>,
-    /// Each server's tools as last listed, for the profile sheet; held while the registry is written.
-    tools: Mutex<HashMap<String, cooee_web::Tools>>,
+    /// The servers and skills agents proposed, by thread and card, until answered (a restart drops them).
+    proposals: Mutex<HashMap<(String, u64), Proposed>>,
+    /// Held while the MCP registry is written.
+    registry: Mutex<()>,
     /// The rooms with a member's turn to start, for the turn worker.
     turns: mpsc::Sender<String>,
     /// How a room's member session starts, given its persona.
@@ -306,6 +405,15 @@ fn in_home(path: Option<&Path>) -> Result<(PathBuf, PathBuf), HubError> {
     }
 }
 
+/// Terminal `name` on `machine` (empty: this host): shed names another machine's `<machine>/<name>` (#149).
+fn on_machine(machine: &str, name: &str) -> String {
+    if machine.is_empty() {
+        name.to_owned()
+    } else {
+        format!("{machine}/{name}")
+    }
+}
+
 fn outside(folder: &Path) -> HubError {
     HubError::Refused(format!(
         "{} is not inside a configured root",
@@ -326,13 +434,47 @@ impl Live {
             chat,
             seq: 0,
             ring: VecDeque::new(),
-            tx: broadcast::channel(RING).0,
+            tx: None,
             moved: now(),
             stuck: false,
             pending: None,
             sent: None,
             stopped_starting: false,
+            used: now(),
+            unloaded: None,
+            sending: Vec::new(),
+            held: Vec::new(),
         }
+    }
+
+    /// Drops the page events older than [`REPLAY`] before `now`.
+    fn trim(&mut self, now: u64) {
+        while self.ring.front().is_some_and(|(at, _)| at + REPLAY < now) {
+            self.ring.pop_front();
+        }
+    }
+
+    /// Unloads the chat (keeping its turn and its row's glance) if unused for [`IDLE`] before `now`, with no page
+    /// watching and no turn under way.
+    fn unload(&mut self, now: u64) {
+        let turn = &self.chat.turn;
+        let busy = matches!(turn.state.as_str(), "working" | "connecting" | "blocked")
+            || !turn.text.is_empty()
+            || self.pending.is_some()
+            || self.sent.is_some()
+            || self.stopped_starting
+            || !self.sending.is_empty()
+            || !self.held.is_empty()
+            || self.tx.as_ref().is_some_and(|t| t.receiver_count() > 0);
+        if self.unloaded.is_some() || busy || now < self.used + IDLE {
+            return;
+        }
+        self.unloaded = Some(glance(self));
+        let turn = std::mem::take(&mut self.chat.turn);
+        self.chat = Chat::default();
+        self.chat.turn = turn;
+        self.ring.shrink_to_fit();
+        self.tx = None;
     }
 
     fn emit(&mut self, event: &'static str, data: String) {
@@ -342,11 +484,12 @@ impl Live {
             event,
             data,
         };
-        if self.ring.len() == RING {
-            self.ring.pop_front();
+        let at = now();
+        self.trim(at);
+        self.ring.push_back((at, out.clone()));
+        if let Some(tx) = &self.tx {
+            let _ = tx.send(out);
         }
-        self.ring.push_back(out.clone());
-        let _ = self.tx.send(out);
     }
 
     /// Stores and then publishes `changes`, pushing the ones the owner should hear of.
@@ -362,7 +505,7 @@ impl Live {
                     c.speaker.clone_from(&i.speaker);
                 }
             }
-            let watched = self.tx.receiver_count() > 0;
+            let watched = self.tx.as_ref().is_some_and(|t| t.receiver_count() > 0);
             if let Some(n) = note(
                 &self.meta, &self.chat, &change, &self.was, watched, &hub.theme,
             ) {
@@ -395,7 +538,7 @@ impl Hub {
         shed: Shed,
         data: &Path,
         (roots, config): (Vec<PathBuf>, Option<PathBuf>),
-        theme: cooee_web::Theme,
+        theme: crate::look::Theme,
         plugins: Vec<Plugin>,
         apns: Option<cooee_core::Apns>,
     ) -> Result<Arc<Self>, HubError> {
@@ -408,15 +551,20 @@ impl Hub {
             let k = k.and_then(|k| cooee_core::write_private(&key, k.as_bytes()).map(|()| k));
             k.map_err(|e| refused(&key, &e))?
         };
-        let mut threads = BTreeMap::new();
+        let (mut threads, mut terminals) = (BTreeMap::new(), HashMap::new());
         for id in store.ids()? {
             let mut meta = store.load(&id)?;
             // Before #48 the system default login was stored by its label.
             if meta.account == "System default" {
                 meta.account.clear();
             }
-            let chat = Chat::from_versions(store.items(&id)?);
-            threads.insert(id, Arc::new(Mutex::new(Live::new(meta, chat))));
+            let terminal = meta.terminal.clone();
+            let live = Arc::new(Mutex::new(Live::new(
+                meta,
+                Chat::from_versions(store.items(&id)?),
+            )));
+            terminals.insert(terminal, Arc::clone(&live));
+            threads.insert(id, live);
         }
         let (turns, next) = mpsc::channel();
         let hub = Arc::new(Self {
@@ -432,12 +580,13 @@ impl Hub {
             plugins: Mutex::new(plugins),
             boot: format!("{:x}", now()),
             threads: Mutex::new(threads),
+            terminals: Mutex::new(terminals),
             last: Mutex::new(0),
             data: data.to_owned(),
             url: OnceLock::new(),
             mcp_key,
             proposals: Mutex::default(),
-            tools: Mutex::default(),
+            registry: Mutex::default(),
             turns,
             starter: OnceLock::new(),
             asks: Mutex::default(),
@@ -459,6 +608,7 @@ impl Hub {
                 thread::sleep(TICK);
                 ticker.refresh(now(), false);
                 ticker.watch(now());
+                ticker.unload(now());
                 let at = now();
                 if let Ok(terminals) = ticker.shed.ls(BTreeMap::new()) {
                     ticker.prune(&terminals, at);
@@ -468,15 +618,50 @@ impl Hub {
         Ok(hub)
     }
 
+    /// Thread `id`, its chat loaded.
     fn live(&self, id: &str) -> Result<Arc<Mutex<Live>>, HubError> {
-        lock(&self.threads)
+        let live = lock(&self.threads)
             .get(id)
             .cloned()
-            .ok_or_else(|| HubError::NoThread(id.to_owned()))
+            .ok_or_else(|| HubError::NoThread(id.to_owned()))?;
+        self.load(&mut lock(&live))?;
+        Ok(live)
+    }
+
+    /// Marks `live` used, reading its chat back from the store if it was unloaded.
+    fn load(&self, live: &mut Live) -> Result<(), StoreError> {
+        live.used = now();
+        if live.unloaded.is_some() {
+            let mut chat = Chat::from_versions(self.store.items(&live.meta.id)?);
+            chat.turn = std::mem::take(&mut live.chat.turn);
+            live.chat = chat;
+            live.unloaded = None;
+        }
+        Ok(())
+    }
+
+    /// Trims every thread's page events to [`REPLAY`] before `now` and unloads the idle threads' chats (#295).
+    fn unload(&self, now: u64) {
+        for live in self.all() {
+            let mut live = lock(&live);
+            live.trim(now);
+            live.unload(now);
+        }
     }
 
     fn all(&self) -> Vec<Arc<Mutex<Live>>> {
         lock(&self.threads).values().cloned().collect()
+    }
+
+    fn insert(&self, id: String, terminal: String, live: &Arc<Mutex<Live>>) {
+        lock(&self.terminals).insert(terminal, Arc::clone(live));
+        lock(&self.threads).insert(id, Arc::clone(live));
+    }
+
+    fn remove(&self, id: &str) {
+        if let Some(live) = lock(&self.threads).remove(id) {
+            lock(&self.terminals).retain(|_, l| !Arc::ptr_eq(l, &live));
+        }
     }
 
     /// Checks each open thread's terminal: one that runs is attached (its state shown), one that is gone ends the
@@ -486,24 +671,31 @@ impl Hub {
         let (at, terminals) = (now(), self.shed.ls(BTreeMap::new())?);
         self.prune(&terminals, at);
         for t in &terminals {
-            if !self.all().iter().any(|l| lock(l).meta.terminal == t.name) {
+            if !lock(&self.terminals).contains_key(&t.name) {
                 self.adopt(t);
             }
         }
         let mut since: Option<u64> = None;
         for live in self.all() {
+            let terminal = {
+                let l = lock(&live);
+                let done =
+                    l.meta.closed || l.meta.kind == Kind::Room || l.chat.turn.state == "ended";
+                if done {
+                    continue;
+                }
+                l.meta.terminal.clone()
+            };
+            let got = self.shed.get(&terminal);
             let mut live = lock(&live);
-            if live.meta.closed || live.meta.kind == Kind::Room || live.chat.turn.state == "ended" {
+            if let Err(e) = self.load(&mut live) {
+                eprintln!("cooee: {e}");
                 continue;
             }
-            let changes = match self.shed.get(&live.meta.terminal) {
+            let changes = match got {
                 Ok(t) if t.state == shed_proto::State::Running => {
                     since = Some(since.map_or(live.applied, |s| s.min(live.applied)));
-                    let r = t.reported.unwrap_or(shed_proto::Reported {
-                        state: String::new(),
-                        note: None,
-                        state_source: None,
-                    });
+                    let r = t.reported.unwrap_or_default();
                     live.chat.turn.state = r.state;
                     live.chat.turn.note = r.note;
                     Vec::new()
@@ -513,6 +705,7 @@ impl Hub {
                     live.chat
                         .ended(now(), 0, "The agent is gone (shed restarted).".to_owned())
                 }
+                Err(e) if e.no_link() => Vec::new(),
                 Err(e) => return Err(e),
             };
             if let Err(e) = live.publish(self, changes) {
@@ -549,7 +742,7 @@ impl Hub {
             return None;
         }
         let live = Arc::new(Mutex::new(Live::new(meta, Chat::default())));
-        lock(&self.threads).insert(id, Arc::clone(&live));
+        self.insert(id, t.name.clone(), &live);
         Some(live)
     }
 
@@ -565,7 +758,7 @@ impl Hub {
                 }
                 live.meta.id.clone()
             };
-            lock(&self.threads).remove(&id);
+            self.remove(&id);
             if let Err(e) = self.store.remove(&id) {
                 eprintln!("cooee: {e}");
             }
@@ -601,18 +794,31 @@ impl Hub {
 
     /// Applies one shed event to the thread whose terminal it names; a new Workflow session's first is listed.
     pub fn apply(&self, event: Event) {
-        let found = self
-            .all()
-            .into_iter()
-            .find(|l| lock(l).meta.terminal == event.name)
-            .or_else(|| {
-                Workflow::from_labels(&event.labels)?;
-                self.adopt(&self.shed.get(&event.name).ok()?)
-            });
-        let Some(live) = found else { return };
-        let mut live = lock(&live);
-        if event.seq <= live.applied {
+        let found = lock(&self.terminals).get(&event.name).cloned();
+        let found = found.or_else(|| {
+            Workflow::from_labels(&event.labels)?;
+            self.adopt(&self.shed.get(&event.name).ok()?)
+        });
+        let Some(found) = found else { return };
+        let mut live = lock(&found);
+        if !live.sending.is_empty() {
+            // Its prompt is on its way: applied once that is stored, after it.
+            live.held.push(event);
             return;
+        }
+        if let Err(e) = self.load(&mut live) {
+            eprintln!("cooee: {e}");
+            return;
+        }
+        let after = self.applied(&mut live, event);
+        drop(live);
+        self.after(&found, after);
+    }
+
+    /// Applies `event` to the thread `live`; what is left to do once it is unlocked.
+    fn applied(&self, live: &mut Live, event: Event) -> Option<After> {
+        if event.seq <= live.applied {
+            return None;
         }
         live.applied = event.seq;
         live.moved = now();
@@ -638,6 +844,7 @@ impl Hub {
                     text: prompt.clone(),
                     random_id: String::new(),
                     files: Vec::new(),
+                    routine: None,
                 };
                 changes.push(Change::Item(live.chat.push(now(), event.seq, body)));
             }
@@ -660,11 +867,30 @@ impl Hub {
         });
         let seat = (live.meta.room.clone(), live.meta.profile.clone());
         let asked = format!("{}>{}", live.meta.asked_by, seat.1);
-        let done = live
+        let next = live
             .publish(self, changes)
             .map_err(HubError::from)
-            .and_then(|()| self.drain(&mut live));
-        drop(live);
+            .and_then(|()| self.drain(live));
+        Some(After {
+            next,
+            reply,
+            seat,
+            asked,
+        })
+    }
+
+    /// Does what applying an event to thread `live` left: sends its next queued message, passes its reply on.
+    fn after(&self, live: &Mutex<Live>, after: Option<After>) {
+        let Some(After {
+            next,
+            reply,
+            seat,
+            asked,
+        }) = after
+        else {
+            return;
+        };
+        let done = next.and_then(|q| self.send_next(live, q));
         let done = match reply {
             Some(body) if !seat.0.is_empty() => done.and(self.replied(&seat.0, &seat.1, body)),
             // An asked persona's reply goes to its asker's pending `ask_persona` (#156).
@@ -679,18 +905,24 @@ impl Hub {
         }
     }
 
-    /// Between turns, sends the first queued message (the next one goes as that turn ends).
-    fn drain(&self, live: &mut Live) -> Result<(), HubError> {
+    /// Between turns (no message on its way), takes the first queued message to send (the next one goes as that
+    /// turn ends).
+    fn drain(&self, live: &mut Live) -> Result<Option<Queued>, HubError> {
         let between = !matches!(
             live.chat.turn.state.as_str(),
             "working" | "blocked" | "ended"
         );
-        if !between || live.meta.queue.is_empty() || live.meta.closed {
-            return Ok(());
+        if !between || live.meta.queue.is_empty() || live.meta.closed || !live.sending.is_empty() {
+            return Ok(None);
         }
         let next = live.meta.queue.remove(0);
         self.queued(live)?;
-        self.deliver(live, next, "").map(drop)
+        Ok(Some(next))
+    }
+
+    /// Delivers what [`Hub::drain`] took, if anything.
+    fn send_next(&self, live: &Mutex<Live>, next: Option<Queued>) -> Result<(), HubError> {
+        next.map_or(Ok(()), |q| self.deliver(live, q, "").map(drop))
     }
 
     /// Saves the queue and tells the pages.
@@ -797,12 +1029,29 @@ impl Hub {
         lock(&self.roots).iter().any(inside).then_some(folder)
     }
 
-    /// Settings › Folders: the folders inside `path` (default the home folder; hidden ones if `hidden`), and the roots.
+    /// `folder`, if it is a folder that is a root or inside one, spelled from that root as listed.
+    fn in_root(&self, folder: &Path) -> Option<PathBuf> {
+        let real = folder.canonicalize().ok().filter(|p| p.is_dir())?;
+        lock(&self.roots).iter().find_map(|root| {
+            let rest = real.strip_prefix(root.canonicalize().ok()?).ok()?;
+            Some(if rest.as_os_str().is_empty() {
+                root.clone()
+            } else {
+                root.join(rest)
+            })
+        })
+    }
+
+    /// Settings › Folders and the persona's folder browser: the folders inside `path` (default the home folder; hidden
+    /// ones if `hidden`), and the roots. A root or a folder inside one is spelled from the root as listed.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a path outside the home folder or not a folder.
+    /// [`HubError::Refused`] for a path outside both the home folder and the roots, or not a folder.
     pub fn browse(&self, path: Option<&Path>, hidden: bool) -> Result<Listing, HubError> {
-        let (path, home) = in_home(path)?;
+        let (path, home) = match path.and_then(|p| self.in_root(p)) {
+            Some(p) => (p, in_home(None)?.1),
+            None => in_home(path)?,
+        };
         let dirs = dirs(&path, hidden).into_iter().filter_map(|d| {
             let name = d.file_name()?.to_string_lossy();
             Some(name.into_owned())
@@ -910,6 +1159,7 @@ impl Hub {
         recipe: &Recipe,
     ) -> Result<String, HubError> {
         self.shed.hello()?;
+        self.reachable(&recipe.machine)?;
         let (id, fresh) = self.admit(agent, folder, text, random_id, recipe)?;
         self.connect(&id, (fresh, false), text, random_id, recipe)?;
         Ok(id)
@@ -965,6 +1215,7 @@ impl Hub {
         let (hub, id, name) = (Arc::clone(self), id.to_owned(), name.to_owned());
         thread::spawn(move || {
             let done = hub.shed.hello().map_err(HubError::from);
+            let done = done.and_then(|()| hub.reachable(&recipe.machine));
             let done =
                 done.and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, &recipe));
             // As in [`Hub::start`].
@@ -1017,8 +1268,8 @@ impl Hub {
             .chars()
             .take(60)
             .collect();
-        self.mint(random_id, |id| Thread {
-            terminal: format!("cooee-{id}"),
+        let (id, fresh) = self.mint(random_id, |id| Thread {
+            terminal: on_machine(&recipe.machine, &format!("cooee-{id}")),
             id,
             title,
             agent: agent.to_owned(),
@@ -1031,8 +1282,38 @@ impl Hub {
             random_id: random_id.to_owned(),
             room: recipe.room.clone(),
             asked_by: recipe.asked_by.clone(),
+            routine: recipe.routine.clone(),
             ..Thread::default()
-        })
+        })?;
+        if fresh && !recipe.machine.is_empty() {
+            let live = self.live(&id)?;
+            let mut live = lock(&live);
+            let text = format!("runs on {}", recipe.machine);
+            let item = live.chat.push(now(), 0, Body::Note { text });
+            live.publish(self, vec![Change::Item(item)])?;
+        }
+        Ok((id, fresh))
+    }
+
+    /// Refuses when `machine` (empty: this host) has no link up (#149): offline, and since when, or unknown. A
+    /// link shed can't report doesn't refuse; the call itself fails then.
+    fn reachable(&self, machine: &str) -> Result<(), HubError> {
+        if machine.is_empty() {
+            return Ok(());
+        }
+        match self.shed.link(machine) {
+            Ok(Some(l)) if l.state != shed_proto::LinkState::Up => {
+                let why = l.error.map(|e| format!(": {e}")).unwrap_or_default();
+                let seen = cooee_machines::ago(cooee_machines::unix_now(), l.since);
+                Err(HubError::Refused(format!(
+                    "{machine} is offline, last seen {seen}{why}"
+                )))
+            }
+            Ok(None) => Err(HubError::Refused(format!(
+                "no machine {machine}: add it with shed machine add"
+            ))),
+            _ => Ok(()),
+        }
     }
 
     /// The thread start `random_id` opened, or a new one `make` makes of a new id, stored and listed; and whether
@@ -1059,8 +1340,9 @@ impl Hub {
         let id = format!("t{:x}", *last);
         let meta = make(id.clone());
         self.store.save(&meta)?;
-        let live = Live::new(meta, Chat::default());
-        lock(&self.threads).insert(id.clone(), Arc::new(Mutex::new(live)));
+        let terminal = meta.terminal.clone();
+        let live = Arc::new(Mutex::new(Live::new(meta, Chat::default())));
+        self.insert(id.clone(), terminal, &live);
         Ok((id, true))
     }
 
@@ -1113,7 +1395,7 @@ impl Hub {
             ) && self.shed.get(&terminal).is_err()
             {
                 if !keep {
-                    lock(&self.threads).remove(id);
+                    self.remove(id);
                     self.store.remove(id)?;
                 }
                 return Err(e.into());
@@ -1132,7 +1414,8 @@ impl Hub {
     /// again). The message is stored only once shed took it; the agent gets the files' paths under its text.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a closed thread or an empty message; [`HubError::Shed`] when shed fails.
+    /// [`HubError::Refused`] for a closed thread, an empty message or a stopped agent; [`HubError::Shed`] when shed
+    /// fails.
     pub fn send(
         &self,
         id: &str,
@@ -1166,7 +1449,8 @@ impl Hub {
             }
             (l.meta.agent.clone(), l.meta.terminal.clone())
         };
-        let terminal = format!("cooee-{id}-{:x}", now());
+        let machine = lock(&live).meta.machine.clone();
+        let terminal = on_machine(&machine, &format!("cooee-{id}-{:x}", now()));
         let labels = BTreeMap::from([
             (LABEL.to_owned(), "1".to_owned()),
             (format!("{LABEL}.thread"), id.to_owned()),
@@ -1210,12 +1494,14 @@ impl Hub {
         );
         handover.trim_start().clone_into(&mut live.meta.handover);
         live.meta.terminal.clone_from(&terminal);
+        {
+            let mut terminals = lock(&self.terminals);
+            let me = terminals.remove(&old);
+            terminals.extend(me.map(|l| (terminal.clone(), l)));
+        }
         live.meta.folder = Some(folder.clone());
         self.store.save(&live.meta)?;
-        let text = format!(
-            "now in {} · later turns run here",
-            cooee_web::short(&folder)
-        );
+        let text = format!("now in {} · later turns run here", short(&folder));
         let item = live.chat.push(now(), 0, Body::Note { text });
         live.publish(self, vec![Change::Item(item.clone())])?;
         drop(live);
@@ -1240,12 +1526,18 @@ impl Hub {
         before: &str,
     ) -> Result<Item, HubError> {
         let live = self.live(id)?;
-        let mut live = lock(&live);
-        if let Some(item) = Self::sent(&live, random_id) {
+        let l = lock(&live);
+        if let Some(item) = Self::sent(&l, random_id) {
             return Ok(item);
         }
-        let q = self.take(&live, text, random_id, files)?;
-        self.deliver(&mut live, q, before)
+        if l.sending.iter().any(|r| r == random_id) {
+            return Err(HubError::Refused(
+                "that message is still on its way".to_owned(),
+            ));
+        }
+        let q = self.take(&l, text, random_id, files)?;
+        drop(l);
+        self.deliver(&live, q, before)
     }
 
     /// The stored message `random_id`, if it was sent.
@@ -1293,33 +1585,72 @@ impl Hub {
             text: text.to_owned(),
             random_id: random_id.to_owned(),
             files: names,
+            routine: None,
         })
     }
 
-    /// Sends `q` to the agent, `before` ahead of it, then stores and publishes it.
-    fn deliver(&self, live: &mut Live, q: Queued, before: &str) -> Result<Item, HubError> {
+    /// Sends `q` to the agent, `before` ahead of it, then stores and publishes it; refused when the agent stopped,
+    /// whose session would drop it (#253). The thread is unlocked while shed takes it.
+    fn deliver(&self, live: &Mutex<Live>, q: Queued, before: &str) -> Result<Item, HubError> {
         let start = Instant::now();
-        // After Use a folder…, the hand-over goes once ahead of the next message.
-        let before = if before.trim().is_empty() {
-            live.meta.handover.clone()
-        } else {
-            before.to_owned()
-        };
-        let mut prompt = if before.trim().is_empty() {
-            q.text.clone()
-        } else {
-            format!("{}\n\n{}", before.trim_end(), q.text)
-        };
-        if !q.files.is_empty() {
-            prompt.push_str("\n\nAttached files:");
-            for name in &q.files {
-                let path = self.files.join(&live.meta.id).join(name);
-                prompt.push_str("\n- ");
-                prompt.push_str(&path.to_string_lossy());
+        let (terminal, machine, ended, handover, prompt) = {
+            let mut l = lock(live);
+            l.sending.push(q.random_id.clone());
+            let handover = l.meta.handover.clone();
+            // After Use a folder…, the hand-over goes once ahead of the next message.
+            let before = if before.trim().is_empty() {
+                handover.as_str()
+            } else {
+                before
+            };
+            let mut prompt = if before.trim().is_empty() {
+                q.text.clone()
+            } else {
+                format!("{}\n\n{}", before.trim_end(), q.text)
+            };
+            if !q.files.is_empty() {
+                prompt.push_str("\n\nAttached files:");
+                for name in &q.files {
+                    let path = self.files.join(&l.meta.id).join(name);
+                    prompt.push_str("\n- ");
+                    prompt.push_str(&path.to_string_lossy());
+                }
             }
+            let ended = l.chat.turn.state == "ended";
+            (
+                l.meta.terminal.clone(),
+                l.meta.machine.clone(),
+                ended,
+                handover,
+                prompt,
+            )
+        };
+        let sent = self.prompt(&terminal, &machine, ended, prompt.trim());
+        let mut l = lock(live);
+        l.sending.retain(|r| *r != q.random_id);
+        let stored = sent.and_then(|()| self.store_sent(&mut l, q, start, &handover));
+        let held = if l.sending.is_empty() {
+            std::mem::take(&mut l.held)
+        } else {
+            Vec::new()
+        };
+        let after: Vec<_> = held.into_iter().map(|e| self.applied(&mut l, e)).collect();
+        drop(l);
+        for a in after {
+            self.after(live, a);
         }
-        self.shed.prompt(&live.meta.terminal, prompt.trim())?;
-        if !live.meta.handover.is_empty() {
+        stored
+    }
+
+    /// Stores and publishes message `q`, which shed took (its prompt timed from `start`, with `handover` ahead).
+    fn store_sent(
+        &self,
+        live: &mut Live,
+        q: Queued,
+        start: Instant,
+        handover: &str,
+    ) -> Result<Item, HubError> {
+        if !handover.is_empty() && live.meta.handover == handover {
             live.meta.handover.clear();
             self.store.save(&live.meta)?;
         }
@@ -1329,6 +1660,7 @@ impl Hub {
             text: q.text,
             random_id: q.random_id,
             files: q.files,
+            routine: q.routine,
         };
         let item = live.chat.push(now(), 0, body);
         if first {
@@ -1336,6 +1668,29 @@ impl Hub {
         }
         live.publish(self, vec![Change::Item(item.clone())])?;
         Ok(item)
+    }
+
+    /// Hands `prompt` to `terminal`'s agent on `machine`; refused when the turn `ended` and the agent stopped.
+    fn prompt(
+        &self,
+        terminal: &str,
+        machine: &str,
+        ended: bool,
+        prompt: &str,
+    ) -> Result<(), HubError> {
+        let runs = |t: TerminalInfo| t.state == shed_proto::State::Running;
+        if ended && !self.shed.get(terminal).is_ok_and(runs) {
+            return Err(HubError::Refused(
+                "the agent stopped, so it can't take the message".to_owned(),
+            ));
+        }
+        if let Err(e) = self.shed.prompt(terminal, prompt) {
+            if e.no_link() {
+                self.reachable(machine)?;
+            }
+            return Err(e.into());
+        }
+        Ok(())
     }
 
     /// Queues the owner's message for when the turn ends (between turns it goes at once); once per `random_id`.
@@ -1350,16 +1705,36 @@ impl Hub {
         random_id: &str,
         files: &[Upload],
     ) -> Result<Vec<Queued>, HubError> {
+        self.queue_as(id, (text, random_id), files, None)
+    }
+
+    /// [`Hub::queue`] by `routine` (#75) when given, not the owner.
+    ///
+    /// # Errors
+    /// As [`Hub::send`].
+    pub fn queue_as(
+        &self,
+        id: &str,
+        (text, random_id): (&str, &str),
+        files: &[Upload],
+        routine: Option<Mark>,
+    ) -> Result<Vec<Queued>, HubError> {
         let live = self.live(id)?;
-        let mut live = lock(&live);
-        let have = live.meta.queue.iter().any(|q| q.random_id == random_id);
-        if !have && Self::sent(&live, random_id).is_none() {
-            let q = self.take(&live, text, random_id, files)?;
-            live.meta.queue.push(q);
-            self.queued(&mut live)?;
-            self.drain(&mut live)?;
+        let mut l = lock(&live);
+        let have = l.meta.queue.iter().any(|q| q.random_id == random_id);
+        if have || Self::sent(&l, random_id).is_some() {
+            return Ok(l.meta.queue.clone());
         }
-        Ok(live.meta.queue.clone())
+        let q = Queued {
+            routine,
+            ..self.take(&l, text, random_id, files)?
+        };
+        l.meta.queue.push(q);
+        self.queued(&mut l)?;
+        let next = self.drain(&mut l)?;
+        drop(l);
+        self.send_next(&live, next)?;
+        Ok(lock(&live).meta.queue.clone())
     }
 
     /// Takes queued message `random_id` out of the queue; with `now`, sends it into the turn in progress (steers).
@@ -1369,23 +1744,17 @@ impl Hub {
     /// As [`Hub::send`]; [`HubError::Refused`] when it isn't queued.
     pub fn unqueue(&self, id: &str, random_id: &str, now: bool) -> Result<Vec<Queued>, HubError> {
         let live = self.live(id)?;
-        let mut live = lock(&live);
-        let Some(at) = live
-            .meta
-            .queue
-            .iter()
-            .position(|q| q.random_id == random_id)
-        else {
+        let mut l = lock(&live);
+        let Some(at) = l.meta.queue.iter().position(|q| q.random_id == random_id) else {
             return Err(HubError::Refused(
                 "that message isn't queued any more".to_owned(),
             ));
         };
-        let q = live.meta.queue.remove(at);
-        self.queued(&mut live)?;
-        if now {
-            self.deliver(&mut live, q, "")?;
-        }
-        Ok(live.meta.queue.clone())
+        let q = l.meta.queue.remove(at);
+        self.queued(&mut l)?;
+        drop(l);
+        self.send_next(&live, now.then_some(q))?;
+        Ok(lock(&live).meta.queue.clone())
     }
 
     /// Renames the thread.
@@ -1448,11 +1817,14 @@ impl Hub {
         by: &str,
     ) -> Result<Option<Item>, HubError> {
         let live = self.live(id)?;
-        let mut live = lock(&live);
-        let Some(tapped) = live.chat.tap(item, option, by, now()) else {
-            return Ok(live.chat.items.iter().find(|i| i.id == item).cloned());
+        let (terminal, tapped) = {
+            let mut l = lock(&live);
+            let Some(tapped) = l.chat.tap(item, option, by, now()) else {
+                return Ok(l.chat.items.iter().find(|i| i.id == item).cloned());
+            };
+            l.publish(self, vec![Change::Item(tapped.clone())])?;
+            (l.meta.terminal.clone(), tapped)
         };
-        live.publish(self, vec![Change::Item(tapped.clone())])?;
         let sent = match &tapped.body {
             Body::Approval {
                 plugin: Some(name),
@@ -1472,11 +1844,14 @@ impl Hub {
                     crate::plugin::answer(&p, id, item, option, by, value)
                 })
                 .map_err(|e| HubError::Refused(format!("plugin {name}: {e}"))),
-            Body::Approval { card, .. } if card.form.as_deref() == Some("mcp") => {
-                Ok(self.mcp_answer(id, item, option))
+            Body::Approval { card, .. }
+                if matches!(card.form.as_deref(), Some("mcp" | "skill")) =>
+            {
+                Ok(self.proposal_answer(id, item, option))
             }
-            _ => return self.shed_approve(&mut live, tapped, option),
+            _ => return self.shed_approve(&live, &terminal, tapped, option),
         };
+        let mut live = lock(&live);
         let done = live.chat.update(item, 0, |b| {
             if let Body::Approval {
                 tapped,
@@ -1501,12 +1876,14 @@ impl Hub {
 
     fn shed_approve(
         &self,
-        live: &mut Live,
+        live: &Mutex<Live>,
+        terminal: &str,
         tapped: Item,
         option: &str,
     ) -> Result<Option<Item>, HubError> {
-        if let Err(e) = self.shed.approve(&live.meta.terminal, option) {
+        if let Err(e) = self.shed.approve(terminal, option) {
             // Not delivered: the row can be tapped again.
+            let mut live = lock(live);
             let untapped = live.chat.update(tapped.id, 0, |b| {
                 if let Body::Approval { tapped, .. } = b {
                     *tapped = None;
@@ -1605,6 +1982,18 @@ impl Hub {
         Ok(item)
     }
 
+    /// Adds `body` to thread `id` as cooee's own line (#75: a made routine's).
+    ///
+    /// # Errors
+    /// [`HubError::NoThread`]; [`HubError::Store`] when it can't be stored.
+    pub fn say(&self, id: &str, body: Body) -> Result<Item, HubError> {
+        let live = self.live(id)?;
+        let mut live = lock(&live);
+        let item = live.chat.push(now(), 0, body);
+        live.publish(self, vec![Change::Item(item.clone())])?;
+        Ok(item)
+    }
+
     /// A line in thread `id` linked to thread `other` (#553 row 35): a handoff's `continued in` (`out`), or a
     /// line `from` it.
     ///
@@ -1673,13 +2062,17 @@ impl Hub {
     /// [`HubError::Shed`] when shed fails.
     pub fn close(&self, id: &str) -> Result<(), HubError> {
         let live = self.live(id)?;
+        let terminal = {
+            let l = lock(&live);
+            if l.meta.workflow.is_some() {
+                return Err(HubError::Refused(
+                    "the tool that started this session closes it".to_owned(),
+                ));
+            }
+            l.meta.terminal.clone()
+        };
+        self.shed.close(&terminal)?;
         let mut live = lock(&live);
-        if live.meta.workflow.is_some() {
-            return Err(HubError::Refused(
-                "the tool that started this session closes it".to_owned(),
-            ));
-        }
-        self.shed.close(&live.meta.terminal)?;
         live.meta.closed = true;
         self.store.save(&live.meta)?;
         if live.chat.turn.state != "ended" {
@@ -1715,47 +2108,12 @@ impl Hub {
             .iter()
             .filter_map(|live| {
                 let live = lock(live);
+                let g = live.unloaded.clone().unwrap_or_else(|| glance(&live));
                 // A room's member sessions are the room's (#154).
                 if !live.meta.room.is_empty() {
-                    let ask = live.chat.items.iter().find_map(|i| match &i.body {
-                        Body::Approval {
-                            tool,
-                            tapped: None,
-                            chosen: None,
-                            card,
-                            ..
-                        } if card.line.is_none() => {
-                            Some((live.meta.room.clone(), i.speaker.clone(), tool.clone()))
-                        }
-                        _ => None,
-                    });
-                    asks.extend(ask);
+                    asks.extend(g.ask);
                     return None;
                 }
-                let last = live.chat.items.last();
-                let text = last.map_or("", |i| match &i.body {
-                    Body::Link { text, title, .. } if text.is_empty() => title,
-                    Body::You { text, .. }
-                    | Body::Agent { text, .. }
-                    | Body::Note { text }
-                    | Body::Link { text, .. }
-                    | Body::Ended { text } => text,
-                    Body::Tool { title, .. } => title,
-                    Body::Approval { tool, .. } => tool,
-                    Body::Plan { .. } => "plan",
-                });
-                let read = live.meta.read.unwrap_or(0);
-                let from = live.chat.items.partition_point(|i| i.id <= read);
-                let unseen = live.chat.items[from..]
-                    .iter()
-                    .filter(|i| !matches!(i.body, Body::You { .. }))
-                    .count();
-                let waiting = live.chat.items.iter().find_map(|i| match &i.body {
-                    Body::Approval { tool, .. } if waits(&i.body) => {
-                        Some(format!("{tool} waiting"))
-                    }
-                    _ => None,
-                });
                 let persona = personas.iter().find(|p| p.id == live.meta.profile);
                 Some(Summary {
                     id: live.meta.id.clone(),
@@ -1769,14 +2127,13 @@ impl Hub {
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     machine: live.meta.machine.clone(),
                     state: live.chat.turn.state.clone(),
-                    last: waiting.unwrap_or_else(|| {
-                        text.lines().last().unwrap_or("").chars().take(80).collect()
-                    }),
-                    at: last.map_or(0, |i| i.at),
-                    unread: unseen > 0,
-                    unseen,
+                    last: g.last,
+                    at: g.at,
+                    unread: g.unseen > 0,
+                    unseen: g.unseen,
                     archived: live.meta.archived,
                     workflow: live.meta.workflow.clone(),
+                    routine: g.routine,
                     members: live
                         .meta
                         .members
@@ -1855,20 +2212,25 @@ impl Hub {
         cursor: &str,
     ) -> Result<(Resume, broadcast::Receiver<Out>), HubError> {
         let live = self.live(id)?;
-        let live = lock(&live);
+        let mut live = lock(&live);
         let seq = cursor
             .strip_prefix(&self.boot)
             .and_then(|s| s.strip_prefix('.'))
             .and_then(|s| s.parse::<u64>().ok())
             .filter(|s| *s <= live.seq);
-        let first = live.ring.front().map_or(live.seq + 1, |o| o.seq);
+        let first = live.ring.front().map_or(live.seq + 1, |(_, o)| o.seq);
         let resume = match seq {
-            Some(s) if s + 1 >= first => {
-                Resume::Replay(live.ring.iter().filter(|o| o.seq > s).cloned().collect())
-            }
+            Some(s) if s + 1 >= first => Resume::Replay(
+                live.ring
+                    .iter()
+                    .filter(|(_, o)| o.seq > s)
+                    .map(|(_, o)| o.clone())
+                    .collect(),
+            ),
             _ => Resume::Reset,
         };
-        Ok((resume, live.tx.subscribe()))
+        let tx = live.tx.get_or_insert_with(|| broadcast::channel(LAG).0);
+        Ok((resume, tx.subscribe()))
     }
 
     /// The plugins: the config's own and the installed ones' tabs.
@@ -1934,6 +2296,32 @@ pub struct Proposal {
     pub why: String,
 }
 
+/// What an agent proposed, until the owner answers its card.
+enum Proposed {
+    /// A server for the registry (#56).
+    Server(Server),
+    /// A skill for the thread's persona (#218), new or the edit of `replaces`.
+    Skill {
+        /// The persona.
+        persona: String,
+        /// The skill.
+        skill: Skill,
+        /// The skill it edits.
+        replaces: Option<String>,
+    },
+}
+
+/// An agent's `skill` proposal (#218): the skill, and the one it edits.
+#[derive(Debug, Deserialize)]
+pub struct SkillProposal {
+    /// The skill.
+    #[serde(flatten)]
+    pub skill: Skill,
+    /// The name of the skill it edits; none: a new one.
+    #[serde(default)]
+    pub replaces: Option<String>,
+}
+
 impl Proposal {
     /// The server it would add: switched off, with no variables or headers (the Mac adds those).
     #[must_use]
@@ -1979,7 +2367,7 @@ impl Hub {
         &self,
         f: impl FnOnce(&mut Vec<Server>) -> Result<String, String>,
     ) -> Result<String, HubError> {
-        let mut tools = lock(&self.tools);
+        let _held = lock(&self.registry);
         let Some(c) = &self.config else {
             return Err(HubError::Refused(
                 "there is no config file to save MCP servers in".to_owned(),
@@ -1989,7 +2377,6 @@ impl Hub {
         let said = f(&mut list).map_err(HubError::Refused)?;
         mcp::check(&list).map_err(HubError::Refused)?;
         mcp::save(c, &list).map_err(|e| refused(c, &e))?;
-        tools.clear();
         Ok(said)
     }
 
@@ -2002,50 +2389,6 @@ impl Hub {
     fn picks(&self, id: &str) -> Vec<Pick> {
         cooee_core::profiles::find(self.config_dir(), &self.data, id)
             .map_or_else(|_| Vec::new(), |p| p.mcp)
-    }
-
-    /// Saves profile `id`'s picks (an owner's profile only), each naming a server in the registry.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a plugin's profile, an unknown server or a file that can't be written.
-    pub fn set_picks(&self, id: &str, picks: &[Pick]) -> Result<(), HubError> {
-        let servers = self.mcp()?;
-        if let Some(p) = picks
-            .iter()
-            .find(|p| !servers.iter().any(|s| s.name == p.server))
-        {
-            return Err(HubError::Refused(format!(
-                "there is no MCP server {}",
-                p.server
-            )));
-        }
-        let file = self
-            .config_dir()
-            .and_then(|c| cooee_core::profiles::file(c, id));
-        let file =
-            file.ok_or_else(|| HubError::Refused(format!("{id} isn't one of your own profiles")))?;
-        mcp::save_picks(&file, picks).map_err(|e| refused(&file, &e))
-    }
-
-    /// Server `name`'s tools (name, description), listed once and kept until the registry changes.
-    ///
-    /// # Errors
-    /// Why they couldn't be listed (no such server, a reference that doesn't resolve, no answer).
-    pub fn mcp_tools(&self, name: &str) -> cooee_web::Tools {
-        if let Some(t) = lock(&self.tools).get(name) {
-            return t.clone();
-        }
-        let s = self
-            .mcp()
-            .map_err(|e| e.to_string())?
-            .into_iter()
-            .find(|s| s.name == name);
-        let listed = s
-            .ok_or_else(|| format!("no MCP server {name}"))
-            .and_then(|s| self.grant_of(s, None))
-            .and_then(|g| crate::mcp::tools(&g));
-        lock(&self.tools).insert(name.to_owned(), listed.clone());
-        listed
     }
 
     /// `s` resolved, with `tools` allowed.
@@ -2098,7 +2441,10 @@ impl Hub {
     }
 
     /// Thread `id`, if `token` is its MCP token and it is open.
-    fn token_of(&self, id: &str, token: &str) -> Result<Thread, HubError> {
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token or a closed thread.
+    pub fn token_of(&self, id: &str, token: &str) -> Result<Thread, HubError> {
         let no = || {
             HubError::Refused(format!(
                 "this MCP token isn't thread {id}'s, or the thread is closed"
@@ -2140,18 +2486,25 @@ impl Hub {
         self.grant_of(s, pick.tools).map_err(HubError::Refused)
     }
 
-    /// An agent's `remember` in thread `id` (#126): a note by the thread's persona, for its next sessions.
+    /// An agent's `remember` in thread `id` (#126, #216): an edit of its persona's notes, for its next sessions; the
+    /// answer names the note's id and the characters used.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an empty note.
-    pub fn remember(&self, id: &str, token: &str, text: &str) -> Result<personas::Note, HubError> {
+    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an edit refused.
+    pub fn remember(&self, id: &str, token: &str, e: &personas::Edit) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
         let found = personas::list(self.config_dir(), &self.data)
             .into_iter()
             .find(|p| p.id == meta.profile);
         let p = found.ok_or_else(|| HubError::Refused(format!("thread {id} has no persona")))?;
-        personas::remember(&self.data, &p.id, "persona", text, now())
-            .map_err(|e| HubError::Refused(e.to_string()))
+        let kept = personas::remember(&self.data, &p.id, "persona", e, now())
+            .map_err(|e| HubError::Refused(e.to_string()))?;
+        let used = personas::used(&personas::notes(&self.data, &p.id));
+        let what = kept.map_or_else(|| "Forgotten".to_owned(), |n| format!("Kept as [{}]", n.id));
+        Ok(format!(
+            "{what}; {used} of {} characters used.",
+            personas::CAP
+        ))
     }
 
     /// An agent's `history` in thread `id` (#217): a search of its persona's threads (`query`, at most `limit`
@@ -2210,20 +2563,78 @@ impl Hub {
                 s.name
             )));
         }
+        let tool = format!("add MCP server {} ({}): {why}", s.name, s.kind);
+        self.raise(id, (tool, "mcp", s.shown()), Proposed::Server(s))
+    }
+
+    /// An agent's `skill` proposal in thread `id` (#218): a card with the skill's file, or an edit's diff; nothing
+    /// is saved until the owner approves it.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or a skill [`skills::check`]
+    /// refuses.
+    pub fn propose_skill(
+        &self,
+        (id, token): (&str, &str),
+        p: SkillProposal,
+    ) -> Result<Item, HubError> {
+        let persona = self.persona_of(id, token)?;
+        let old = skills::check(&self.data, &persona, &p.skill, p.replaces.as_deref())
+            .map_err(|e| HubError::Refused(e.to_string()))?;
+        let verb = if p.replaces.is_some() { "edit" } else { "add" };
+        let tool = format!(
+            "{verb} {persona}'s skill {}: {}",
+            p.skill.name, p.skill.description
+        );
+        let detail = skills::diff(&old, &p.skill.file());
+        let pending = Proposed::Skill {
+            persona,
+            skill: p.skill,
+            replaces: p.replaces,
+        };
+        self.raise(id, (tool, "skill", detail), pending)
+    }
+
+    /// An agent's `skill` read in thread `id` (#218): its persona's skill `name`'s body, at most 8,000 characters.
+    ///
+    /// # Errors
+    /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or no such skill of its.
+    pub fn read_skill(&self, (id, token): (&str, &str), name: &str) -> Result<String, HubError> {
+        let persona = self.persona_of(id, token)?;
+        let s = skills::read(&self.data, &persona, name)
+            .map_err(|e| HubError::Refused(format!("{e} for {persona}")))?;
+        Ok(s.body.chars().take(8000).collect())
+    }
+
+    /// The id of thread `id`'s persona, for its token.
+    fn persona_of(&self, id: &str, token: &str) -> Result<String, HubError> {
+        let meta = self.token_of(id, token)?;
+        personas::find(self.config_dir(), &self.data, &meta.profile)
+            .map(|p| p.id)
+            .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))
+    }
+
+    /// A proposal's card in thread `id`: what it does, its form and its detail; `p` waits for the owner's answer.
+    fn raise(
+        &self,
+        id: &str,
+        (tool, form, detail): (String, &str, String),
+        p: Proposed,
+    ) -> Result<Item, HubError> {
         let option = |o: &str| ApprovalOption {
             id: o.to_owned(),
             name: o.to_owned(),
             kind: String::new(),
         };
         let body = Body::Approval {
-            tool: format!("add MCP server {} ({}): {why}", s.name, s.kind),
+            tool,
             options: vec![option("approve"), option("decline")],
             tapped: None,
             chosen: None,
             plugin: None,
             card: Card {
-                form: Some("mcp".to_owned()),
-                detail: Some(s.shown()),
+                form: Some(form.to_owned()),
+                detail: Some(detail),
                 ..Card::default()
             },
         };
@@ -2231,7 +2642,7 @@ impl Hub {
         let mut live = lock(&live);
         let item = live.chat.push(now(), 0, body);
         live.publish(self, vec![Change::Item(item.clone())])?;
-        lock(&self.proposals).insert((id.to_owned(), item.id), s);
+        lock(&self.proposals).insert((id.to_owned(), item.id), p);
         Ok(item)
     }
 
@@ -2247,14 +2658,22 @@ impl Hub {
         })
     }
 
-    /// The owner's answer to a proposal: `approve` adds it, off.
-    fn mcp_answer(&self, id: &str, item: u64, option: &str) -> Result<Option<String>, String> {
-        let s = lock(&self.proposals).remove(&(id.to_owned(), item));
+    /// The owner's answer to a proposal: `approve` adds a server, off, or saves a skill.
+    fn proposal_answer(&self, id: &str, item: u64, option: &str) -> Result<Option<String>, String> {
+        let p = lock(&self.proposals).remove(&(id.to_owned(), item));
         if option != "approve" {
             return Ok(Some("declined".to_owned()));
         }
-        let s = s.ok_or("this proposal ran out (cooee restarted): ask the agent again")?;
-        self.add_mcp(s).map(Some).map_err(|e| e.to_string())
+        match p.ok_or("this proposal ran out (cooee restarted): ask the agent again")? {
+            Proposed::Server(s) => self.add_mcp(s).map(Some).map_err(|e| e.to_string()),
+            Proposed::Skill {
+                persona,
+                skill,
+                replaces,
+            } => skills::save(&self.data, &persona, skill, replaces.as_deref())
+                .map(|s| Some(format!("saved skill {}", s.name)))
+                .map_err(|e| e.to_string()),
+        }
     }
 
     /// Adds `s` to the registry, off (an agent's proposal, or the phone's `+ server`, both after Face ID).
@@ -2293,6 +2712,27 @@ fn waits(body: &Body) -> bool {
     matches!(body, Body::Approval { chosen: None, card, .. } if card.form.as_deref() == Some("config") && card.line.is_none())
 }
 
+/// `~/x` for a folder under `$HOME` (as given, or resolved: a folder a chat works in is stored resolved); none
+/// (empty): `scratch`, a chat's own folder.
+fn short(folder: &Path) -> String {
+    if folder.as_os_str().is_empty() {
+        return "scratch".to_owned();
+    }
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    let homes = home
+        .iter()
+        .flat_map(|h| [h.clone(), h.canonicalize().unwrap_or_default()]);
+    let homes = homes.filter(|h| h.has_root());
+    let rest = homes
+        .into_iter()
+        .find_map(|h| folder.strip_prefix(h).ok().map(Path::to_path_buf));
+    match rest {
+        Some(rest) if rest.as_os_str().is_empty() => "~".to_owned(),
+        Some(rest) => format!("~/{}", rest.display()),
+        None => folder.display().to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
@@ -2309,7 +2749,7 @@ mod tests {
     /// [`hub`] with `bin` as the shed CLI.
     fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
         let shed = Shed::new(bin, Some(dir.join("no-shed-dir")));
-        let (looks, _) = cooee_web::Looks::load(None, None);
+        let (looks, _) = crate::look::Looks::load(None, None);
         let theme = looks.themes[&looks.default].clone();
         Hub::open(
             shed,
@@ -2344,6 +2784,7 @@ mod tests {
             labels: BTreeMap::new(),
             kind,
             replay: false,
+            parent: None,
         }
     }
 
@@ -2389,10 +2830,9 @@ mod tests {
         let hub = hub(&dir);
         let working = Reported {
             state: "working".to_owned(),
-            note: None,
-            state_source: None,
+            ..Reported::default()
         };
-        hub.apply(event("idle", 1, EventKind::State(working)));
+        hub.apply(event("idle", 1, EventKind::State(Box::new(working))));
         let state = |hub: &Hub| hub.thread("idle").unwrap().1;
         let t0 = now();
         hub.watch(t0 + STUCK - 60_000);
@@ -2529,5 +2969,48 @@ mod tests {
         assert_eq!(ids.len(), 2, "{ids:?}");
         assert!(ids.contains(&"mine".to_owned()) && ids.contains(&"new".to_owned()));
         assert!(!threads.join("gone.json").exists());
+    }
+
+    /// #295: a thread unused past the idle threshold (a fake clock) is unloaded, its row unchanged, and reloads intact
+    /// on next use; a page reconnecting within the replay window gets its events, one later is reset.
+    #[test]
+    fn an_idle_threads_chat_unloads_and_reloads_intact() {
+        let dir = scratch("unload");
+        let item = |id: u64, text: &str| {
+            json!({ "id": id, "at": id, "seq": id, "kind": "agent", "text": text, "stop_reason": "end_turn" })
+                .to_string()
+                + "\n"
+        };
+        seed(&dir, "a", &(item(1, "one") + &item(2, "two")));
+        let hub = hub(&dir);
+        let unloaded = |hub: &Hub| lock(&lock(&hub.threads)["a"]).unloaded.is_some();
+        let before = hub.slice("a", None, 10, 0).unwrap();
+        assert!(!unloaded(&hub));
+        let done = Box::new(Reported {
+            state: "done".to_owned(),
+            ..Reported::default()
+        });
+        let t0 = now();
+        hub.apply(event("a", 3, EventKind::State(done.clone())));
+        hub.apply(event("a", 4, EventKind::State(done)));
+        let replayed = |hub: &Hub, cursor: &str| match hub.subscribe("a", cursor).unwrap().0 {
+            Resume::Replay(outs) => Some(outs.iter().map(|o| o.seq).collect::<Vec<_>>()),
+            Resume::Reset => None,
+        };
+
+        hub.unload(t0 + REPLAY - 1_000);
+        assert!(!unloaded(&hub));
+        assert_eq!(replayed(&hub, &before.cursor), Some(vec![1, 2]));
+
+        let row = json!(hub.list());
+        hub.unload(t0 + IDLE + REPLAY);
+        assert!(unloaded(&hub));
+        assert_eq!(json!(hub.list()), row);
+        let after = hub.slice("a", None, 10, 0).unwrap();
+        assert!(!unloaded(&hub));
+        assert_eq!(json!(after.items), json!(before.items));
+        assert_eq!(after.turn.state, "done");
+        assert_eq!(replayed(&hub, &before.cursor), None);
+        assert_eq!(replayed(&hub, &after.cursor), Some(vec![]));
     }
 }

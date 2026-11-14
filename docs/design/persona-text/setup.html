@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · persona text (#271): set up by chat, and the approval card</title>
+<link rel="stylesheet" href="../../../design-system/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../rooms/rm.css">
+<link rel="stylesheet" href="../native-feel/nf.css">
+<link rel="stylesheet" href="pt.css">
+<script type="module" src="pt.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- q1359: the full form stays; Set up by chat instead leads it. -->
+<div class="fr"><p class="cap">New persona · the form, Set up by chat instead first</p>
+<section class="ph col" data-f="form">
+  <div class="home" data-y="home"></div>
+  <div class="rdim"></div>
+  <div class="rsh" style="--top:calc(var(--sat) + 10px)">
+    <i class="gr2"></i>
+    <div class="shb"><a href="#">Cancel</a><b>New persona</b><a class="dis" href="#">Create</a></div>
+    <div class="rshi">
+      <div class="heroic"><span class="hav" data-ic="spark"></span><a class="lnk2" href="#">Choose avatar</a></div>
+      <a class="cta" href="#" data-ic="chat">Set up by chat instead</a>
+      <p class="lb2">Name</p>
+      <div class="rfl"><div class="pfd"><span class="flv">Name</span></div></div>
+      <p class="lb2">Agent</p>
+      <div class="rfl"><div class="fr2"><span class="tx"><b>Claude Code</b></span><span class="rsv">opus 5.5 · high ▾</span></div></div>
+      <p class="lb2">Character</p>
+      <div class="rfl"><div class="pfd"><span class="flv tall">Who it is, how it talks</span></div></div>
+      <p class="lb2">Instructions</p>
+      <div class="rfl"><div class="pfd"><span class="flv tall">What it does, and how</span></div></div>
+    </div>
+  </div>
+</section></div>
+
+<!-- q1361/q1362: the setup chat is a normal chat in setup mode; edits land at once as Updated lines with View. -->
+<div class="fr"><p class="cap">The setup chat · its first frames</p>
+<section class="ph col" data-f="setup">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><span class="oav">L</span><span class="hdt"><b>Ledger</b><span class="sub2"><span class="stp">setup</span><span class="agc2"><b>Claude Code</b>· opus 5.5</span></span></span><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+  <ol class="msgs">
+    <li class="rnd">Today 10:02</li>
+    <li class="at"><p>Hi. What should I do for you, and what should I be called?</p></li>
+    <li class="blk me">Bookkeeping for the studio: receipts in, a monthly P&amp;L out. Call yourself Ledger.</li>
+    <li class="upd"><span data-ic="check"></span><span><b>Updated Name</b> · Ledger</span><a class="vwb" href="#">View</a></li>
+    <li class="upd"><span data-ic="check"></span><span><b>Updated Instructions</b> · Receipts in, a monthly P&amp;L out.</span><a class="vwb" href="#">View</a></li>
+    <li class="at"><p>Which folder holds the receipts, and on which day do you want the P&amp;L?</p></li>
+  </ol>
+  <div class="dock"><div class="comp"><div class="cfld"><span>Message Ledger</span></div><span class="snd">↑</span></div></div>
+</section></div>
+
+<!-- q1361: outside setup, update_persona is an approval card: the field, the diff, Approve / Deny. -->
+<div class="fr"><p class="cap">Outside setup · update_persona asks first</p>
+<section class="ph col" data-f="approval">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><i class="pa" data-p="coder" data-s="38" data-k="asks"></i><span class="hdt"><b>Coder</b><small>Export for Kestrel · studio</small></span><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+  <ol class="msgs">
+    <li class="blk me">From now on, run the e2e suite before you say done.</li>
+    <li class="at"><p>I'll put that in my Instructions so it sticks.</p></li>
+    <li class="ask upa"><span class="awho"><i class="pa" data-p="coder"></i>Change<span>Coder's Instructions</span></span>
+      <div class="dif"><span class="dh"><span>## Before you reply</span><span>+2 −1</span></span><span class="dl ctx">- Run `cargo fmt`.</span><span class="dl del">- Run the unit tests.</span><span class="dl add">- Run the unit tests and the e2e suite.</span><span class="dl add">- Say done only when both pass.</span></div>
+      <div class="chc"><button type="button">Approve</button><button type="button" class="no">Deny</button></div></li>
+  </ol>
+  <div class="dock"><div class="comp"><div class="cfld"><span>Message Coder</span></div><span class="snd">↑</span></div></div>
+</section></div>
+
+<!-- 1440: the Mac: the setup chat beside Ledger's panel; the About row it just changed shows it. -->
+<div class="fr w"><p class="cap">1440 · the Mac: setup chat, the panel's About updates as it goes</p>
+<section class="wd mac pc" data-f="wide-setup">
+  <aside class="side"><div class="home" data-y="home" data-wide></div></aside>
+  <div class="col2">
+    <header class="rhd"><span class="oav">L</span><span class="hdt"><b>Ledger</b><span class="sub2"><span class="stp">setup</span><span class="agc2"><b>Claude Code</b>· opus 5.5</span></span></span><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+    <ol class="msgs">
+      <li class="rnd">Today 10:02</li>
+      <li class="at"><p>Hi. What should I do for you, and what should I be called?</p></li>
+      <li class="blk me">Bookkeeping for the studio: receipts in, a monthly P&amp;L out. Call yourself Ledger.</li>
+      <li class="upd"><span data-ic="check"></span><span><b>Updated Name</b> · Ledger</span><a class="vwb" href="#">View</a></li>
+      <li class="upd"><span data-ic="check"></span><span><b>Updated Instructions</b> · Receipts in, a monthly P&amp;L out.</span><a class="vwb" href="#">View</a></li>
+      <li class="at"><p>How should I sound? Short and exact, or chatty?</p></li>
+      <li class="blk me">Short. Ask before you guess a category.</li>
+      <li class="upd"><span data-ic="check"></span><span><b>Updated Character</b> · Precise and brief. Asks before it guesses a category.</span><a class="vwb" href="#">View</a></li>
+    </ol>
+    <div class="dock"><div class="comp"><div class="cfld"><span>Message Ledger</span></div><span class="snd">↑</span></div></div>
+  </div>
+  <aside class="pcol">
+    <div class="pnh"><span class="oav">L</span><span class="hdt"><b>Ledger</b><span class="agc2"><b>Claude Code</b>· opus 5.5</span></span><a class="gb" href="#" data-tx="[x]">×</a></div>
+    <div class="pns" data-z="panel" data-who="ledger" data-hot="Character"></div>
+    <div class="pnb" data-z="bar"></div>
+  </aside>
+</section></div>
+
+</div>
+</body>
+</html>

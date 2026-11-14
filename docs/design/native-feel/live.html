@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · feel pass (#232): the lists are live; a dropped connection shows one line</title>
+<link rel="stylesheet" href="../../../design-system/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../rooms/rm.css">
+<link rel="stylesheet" href="nf.css">
+<script type="module" src="nf.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- Home with the connection dropped: one line under the buttons; the rows stay as they were; a tap retries. -->
+<div class="fr"><p class="cap">Home · reconnecting</p>
+<section class="ph col" data-f="live">
+  <div class="home" data-y="home" data-rcn></div>
+  <span class="ann" style="bottom:84px;left:12px">no haptic: the line is enough</span>
+</section></div>
+
+<!-- The same line in Others. -->
+<div class="fr"><p class="cap">Others · reconnecting, retry tapped and failed</p>
+<section class="ph col" data-f="others-live">
+  <div class="home" data-y="others" data-rcn></div>
+  <span class="ann" style="bottom:84px;left:12px">tap → retry now; .error if it fails</span>
+</section></div>
+
+<!-- Conductor's Workflow sheet (#229): the same line under its title; no pull, the rows are live. -->
+<div class="fr"><p class="cap">Workflow sheet · reconnecting</p>
+<section class="ph" data-f="wf">
+  <div class="cdh">
+    <header class="rhd"><i class="pa" data-p="cond" data-s="36"></i><span class="hdt"><b>Conductor</b><small>cooee queue · mini</small></span></header>
+    <div class="hsx"><span>Queue <i>7</i></span><span>Events</span><span class="on">Workflow <i>1</i></span></div>
+  </div>
+  <div class="rdim"></div>
+  <div class="rsh" style="--top:150px">
+    <i class="gr2"></i>
+    <div class="wfh"><b>Workflow</b><a href="#">Done</a></div>
+    <a class="rcn" href="#"><span class="ind"></span><span><b>Reconnecting to mini…</b><small>Showing 9:12 · tap to retry</small></span></a>
+    <div data-y="wf"></div>
+  </div>
+</section></div>
+
+<!-- 1440: the Mac: the same line at the sidebar's top; no View › Refresh. -->
+<div class="fr w"><p class="cap">1440 · the Mac: the same line, no ⌘R</p>
+<section class="wd mac two" data-f="wide-live">
+  <aside class="side"><div class="home" data-y="home" data-wide data-sel="coder" data-rcn></div></aside>
+  <div class="col2">
+    <header class="rhd"><i class="pa" data-p="coder" data-s="40"></i><span class="hdt"><b>Coder</b><small>Export for Kestrel · studio</small></span><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+    <ol class="msgs">
+      <li class="rnd">Today 09:40</li>
+      <li class="blk me">Export the Kestrel numbers for the board deck.</li>
+      <li class="at"><p>Done: export/summary.md has Q1 to Q3. Q3 was $4.1M, from the press release.</p></li>
+      <li class="te2">✓ replied · 9 tools · 4:02</li>
+    </ol>
+    <div class="dock"><div class="comp"><div class="cfld"><span>Message Coder</span></div><span class="snd">↑</span></div></div>
+  </div>
+  <span class="ann" style="left:420px;top:140px">no View › Refresh, no ⌘R: the lists are live; the line retries</span>
+</section></div>
+
+</div>
+</body>
+</html>

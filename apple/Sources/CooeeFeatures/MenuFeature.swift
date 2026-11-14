@@ -5,7 +5,7 @@ import Foundation
 @Reducer
 public struct MenuFeature: Sendable {
     public enum Page: CaseIterable, Hashable, Sendable {
-        case look, notifications, signIns, devices, machines, plugins
+        case look, notifications, signIns, devices, machines, plugins, appIcon
     }
 
     @ObservableState
@@ -28,6 +28,7 @@ public struct MenuFeature: Sendable {
         case path([Page])
         case scheme(LookScheme)
         case style(LookStyle)
+        case icon(AppIcon?)
         case push(Bool)
         case pushed(String?)
         case failed(String)
@@ -35,6 +36,7 @@ public struct MenuFeature: Sendable {
 
     @Dependency(\.settingsStore) private var settingsStore
     @Dependency(\.push) private var push
+    @Dependency(\.appIcon) private var appIcon
 
     public init() {}
 
@@ -50,8 +52,9 @@ public struct MenuFeature: Sendable {
                 state.settings.scheme = scheme
                 settingsStore.save(state.settings)
             case .style(let style):
-                state.settings.style = style
-                settingsStore.save(state.settings)
+                return look(&state) { $0.style = style }
+            case .icon(let icon):
+                return look(&state) { $0.icon = icon }
             case .push(let enabled):
                 return toggle(&state, enabled)
             default:
@@ -72,6 +75,20 @@ public struct MenuFeature: Sendable {
             state.error = error
         default:
             break
+        }
+    }
+
+    private func look(_ state: inout State, _ change: (inout Settings) -> Void) -> Effect<Action> {
+        let shown = state.settings.appIcon
+        change(&state.settings)
+        settingsStore.save(state.settings)
+        let icon = state.settings.appIcon
+        guard icon != shown else { return .none }
+        state.error = nil
+        return .run { _ in
+            try await appIcon.set(icon)
+        } catch: { _, send in
+            await send(.failed("Couldn't change the Home Screen icon. Tap \(icon.name) to try again."))
         }
     }
 

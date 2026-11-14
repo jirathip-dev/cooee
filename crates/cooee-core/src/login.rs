@@ -268,22 +268,13 @@ impl Status {
 /// How long a provider command may run (shorter in tests, so the timeout test is quick).
 const LIMIT: Duration = Duration::from_secs(if cfg!(test) { 2 } else { 10 });
 
-/// Ends `child` and, on unix, its whole process group (it leads it): SIGTERM, then SIGKILL 200 ms later. It is not
-/// yet waited, so its pid (the group's id) can't be reused meanwhile.
+/// Ends `child` and, on unix, its whole process group (it leads it): SIGTERM, then SIGKILL 200 ms later.
 fn kill_group(child: &mut Child) {
     #[cfg(unix)]
     {
-        let group = format!("-{}", child.id());
-        let kill = |sig| {
-            Command::new("kill")
-                .args([sig, "--", &group])
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .status()
-        };
-        let _ = kill("-TERM");
+        crate::group::signal(child, "-TERM");
         thread::sleep(Duration::from_millis(200));
-        let _ = kill("-KILL");
+        crate::group::signal(child, "-KILL");
     }
     let _ = child.kill();
 }

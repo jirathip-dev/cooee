@@ -1,6 +1,6 @@
 //! Plugins end to end: `cooee serve` with two plugins, each on a fake backend that records what it is sent. The
-//! proxy carries the plugin's own token and never the device's cookie, an event stream comes through, the frame is
-//! sandboxed, a backend posts with its token or is refused, and a choice card's answer goes to its own plugin.
+//! proxy carries the plugin's own token and never the device's cookie, an event stream comes through, a backend
+//! posts with its token or is refused, and a choice card's answer goes to its own plugin.
 
 mod support;
 
@@ -8,20 +8,24 @@ use std::{
     io::{BufRead, BufReader, Read, Write},
     net::{TcpListener, TcpStream},
     process::Command,
-    sync::{Arc, Mutex},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, Ordering},
+    },
     thread,
     time::Duration,
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, is_item, scratch, version};
+use support::{Cooee, FakeShed, is_item, others_go_on, scratch, version};
 
 /// A plugin backend on a free port: every request's head (request line and lowercased headers) and body. Its
-/// next answer to `/cooee/choice` is `choice`'s, when set.
+/// next answer to `/cooee/choice` is `choice`'s, when set; while `hang` is set it answers no choice.
 struct Backend {
     port: u16,
     seen: Arc<Mutex<Vec<(String, String)>>>,
     choice: Arc<Mutex<Option<(u16, Value)>>>,
+    hang: Arc<AtomicBool>,
 }
 
 impl Backend {
@@ -30,13 +34,20 @@ impl Backend {
         let port = listener.local_addr().unwrap().port();
         let seen = Arc::new(Mutex::new(Vec::new()));
         let choice = Arc::new(Mutex::new(None));
-        let (log, next) = (Arc::clone(&seen), Arc::clone(&choice));
+        let hang = Arc::new(AtomicBool::new(false));
+        let (log, next, held) = (Arc::clone(&seen), Arc::clone(&choice), Arc::clone(&hang));
         thread::spawn(move || {
             for stream in listener.incoming().flatten() {
-                answer(stream, &log, &next);
+                let (log, next, held) = (Arc::clone(&log), Arc::clone(&next), Arc::clone(&held));
+                thread::spawn(move || answer(stream, &log, &next, &held));
             }
         });
-        Self { port, seen, choice }
+        Self {
+            port,
+            seen,
+            choice,
+            hang,
+        }
     }
 
     /// The `/cooee/choice` bodies it was sent.
@@ -57,6 +68,7 @@ fn answer(
     stream: TcpStream,
     log: &Mutex<Vec<(String, String)>>,
     choice: &Mutex<Option<(u16, Value)>>,
+    hang: &AtomicBool,
 ) {
     let mut r = BufReader::new(stream);
     let (mut head, mut line) = (String::new(), String::new());
@@ -74,6 +86,9 @@ fn answer(
     log.lock()
         .unwrap()
         .push((head, String::from_utf8(body).unwrap()));
+    while path == "/cooee/choice" && hang.load(Ordering::SeqCst) {
+        thread::sleep(Duration::from_millis(20));
+    }
     if path == "/cooee/choice"
         && let Some((code, v)) = choice.lock().unwrap().take()
     {
@@ -85,10 +100,6 @@ fn answer(
         return;
     }
     let (kind, text) = match path.as_str() {
-        "/tab.js" => (
-            "text/javascript",
-            "document.body.append('module ran');".to_owned(),
-        ),
         "/events" => (
             "text/event-stream",
             ": open\n\nid: 7\nevent: tick\ndata: one\ndata: two\n\n".to_owned(),
@@ -216,52 +227,6 @@ fn a_backends_event_stream_comes_through_the_proxy() {
 }
 
 #[test]
-fn the_tab_frames_the_module_in_a_sandbox() {
-    let s = setup("plugin-frame");
-    let (code, page) = s.cooee.get("/");
-    assert_eq!(code, 200);
-    assert!(
-        page.contains(r#"<a href="/p/a""#) && page.contains("Alpha") && page.contains("Beta"),
-        "{page}"
-    );
-    let (code, page) = s.cooee.get("/p/a");
-    assert_eq!(code, 200);
-    assert!(
-        page.contains(r#"sandbox="allow-scripts""#) && page.contains(r#"data-src="/p/a/frame""#),
-        "{page}"
-    );
-
-    let (head, page) = s
-        .cooee
-        .raw("GET", "/p/a/frame", &[("Cookie", &s.cooee.cookie)], "");
-    assert_eq!(status(&head), 200, "{head}");
-    let csp = head
-        .lines()
-        .find_map(|l| l.strip_prefix("content-security-policy: "))
-        .unwrap();
-    for rule in [
-        "sandbox allow-scripts;",
-        "default-src 'none';",
-        "script-src 'sha256-",
-    ] {
-        assert!(csp.contains(rule), "{csp}");
-    }
-    assert!(
-        !csp.contains("allow-same-origin") && !csp.contains("connect-src"),
-        "{csp}"
-    );
-    assert!(
-        page.contains("globalThis.cooee") && page.contains("document.body.append('module ran');"),
-        "{page}"
-    );
-    let (head, _) = s.a.seen().pop().unwrap();
-    assert!(
-        head.starts_with("get /tab.js ") && head.contains(TOKEN_A),
-        "{head}"
-    );
-}
-
-#[test]
 fn a_plugin_without_its_token_is_refused() {
     let s = setup("plugin-token");
     let push = json!({ "text": "build green", "path": "lane/3" });
@@ -372,7 +337,7 @@ fn the_docs_show_the_example_plugin_the_ui_tests_run() {
 }
 
 #[test]
-fn a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab() {
+fn a_plugin_names_its_push_tag_and_sets_its_dot_only_with_its_token() {
     let s = setup("plugin-dot");
     let a = format!("Bearer {TOKEN_A}");
     let push = json!({ "text": "air offline", "path": "air", "tag": "machine" });
@@ -384,27 +349,14 @@ fn a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab() {
         (&json!("machine"), &json!("/p/a#air"))
     );
 
-    let dot = "Alpha<i class=\"dot\" aria-hidden=\"true\">●</i>";
-    assert!(!s.cooee.get("/").1.contains("class=\"dot\""));
     assert_eq!(
         s.as_backend("/plugin/dot", "", &json!({ "on": true })).0,
         401
     );
-    assert_eq!(
-        s.as_backend("/plugin/dot", &a, &json!({ "on": true })).0,
-        200
-    );
-    let home = s.cooee.get("/").1;
-    assert!(
-        home.contains(dot) && home.matches("class=\"dot\"").count() == 1,
-        "{home}"
-    );
-    assert!(s.cooee.get("/p/b").1.contains(dot));
-    assert_eq!(
-        s.as_backend("/plugin/dot", &a, &json!({ "on": false })).0,
-        200
-    );
-    assert!(!s.cooee.get("/").1.contains("class=\"dot\""));
+    for on in [true, false] {
+        let (code, body) = s.as_backend("/plugin/dot", &a, &json!({ "on": on }));
+        assert_eq!((code, body), (200, on.to_string()));
+    }
 }
 
 /// This device's label, as an answer's `by` names it.
@@ -887,5 +839,59 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
             "$.blocks[1].value: must not be sent",
             "$.blocks[2].action: is required",
         ]
+    );
+}
+
+/// #288: a plugin whose answer hangs holds only its own card: meanwhile another thread's send, the thread list and
+/// the home page each answer within 200 ms, and that thread's reply streams in.
+#[test]
+fn a_hanging_plugin_answer_never_holds_another_thread() {
+    let s = setup("plugin-hang");
+    let id = new_thread(&s, "Say hello");
+    let other = new_thread(&s, "Say hi");
+    let (code, card) =
+        s.card(&json!({ "thread": id, "text": "Merge it?", "options": ["yes", "no"] }));
+    assert_eq!(code, 200, "{card}");
+    s.a.hang.store(true, Ordering::SeqCst);
+    let tap = json!({ "item": card["id"], "option": "yes" });
+    let path = format!("/threads/{id}/approve");
+    thread::scope(|scope| {
+        let tapped = scope.spawn(|| s.cooee.post(&path, &tap));
+        while s.a.choices().is_empty() {
+            thread::sleep(Duration::from_millis(20));
+        }
+        others_go_on(&s.cooee, &other);
+        assert!(!tapped.is_finished(), "the plugin's answer still hangs");
+        s.a.hang.store(false, Ordering::SeqCst);
+        let (code, body) = tapped.join().unwrap();
+        assert_eq!(code, 200, "{body}");
+    });
+}
+
+/// #226: `cooee plugin check` checks a `cooee-plugin.toml` by the manifest's rules, `attach` included.
+#[test]
+fn plugin_check_checks_a_manifest() {
+    let s = setup("manifest-check");
+    let file = s.dir.join("cooee-plugin.toml");
+    let check = |text: &str| {
+        std::fs::write(&file, text).unwrap();
+        let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
+            .args(["plugin", "check"])
+            .arg(&file)
+            .output()
+            .unwrap();
+        (
+            out.status.success(),
+            String::from_utf8_lossy(&out.stdout).into_owned(),
+        )
+    };
+    let ok = "name = \"drover\"\nversion = \"1\"\nbuild = \"true\"\nrun = \"true\"\n\
+              attach = \"http://127.0.0.1:7777\"\n[[places]]\ntype = \"menu-row\"\nlabel = \"drover\"\n\
+              screen = \"/screens/fleets\"\n[permissions]\nplaces = [\"menu-row\"]\n";
+    assert!(check(ok).0, "{}", check(ok).1);
+    let (passed, said) = check(&ok.replace("127.0.0.1:7777", "example.com"));
+    assert!(
+        !passed && said.contains("`attach` must be http://127.0.0.1:<port>"),
+        "{said}"
     );
 }

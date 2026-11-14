@@ -1,4 +1,4 @@
-// #34: writes each theme's Scene backdrop, `web/themes/<name>/scene.svg` (390 × 320 shown at the strip's width), from
+// #34: writes each theme's Scene backdrop, `design-system/themes/<name>/scene.svg` (390 × 320 shown at the strip's width), from
 // herdsman's Herd scene: kitchen's and garden's `assets/themes/<name>/scene.svg` as they are, and farm's ranch, which
 // herdsman's `assets/herd.js` draws with script (`scene()`, `night()`, `clouds()` and herd.css's light pairs, ported
 // here). The ranch is still: no wind, and night is the `#night` fragment (`scene.svg#night`, by `:target`), since an
@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const herdsman = process.argv[2];
 if (!herdsman) throw new Error("usage: node docs/design/scene/build.mjs <herdsman checkout>");
-const out = (t) => new URL(`../../../web/themes/${t}/scene.svg`, import.meta.url);
+const out = (t) => new URL(`../../../design-system/themes/${t}/scene.svg`, import.meta.url);
 
 for (const t of ["kitchen", "garden"]) {
   const svg = readFileSync(`${herdsman}/assets/themes/${t}/scene.svg`, "utf8");

@@ -1,8 +1,8 @@
 # v1 live: the plain `cooee` instance on the Mini
 
 The owner runs the install commands (they change the host); the conductor confirms with `cooee doctor` and records
-each checklist result in the v1-live PR. `cooee-drover` (the herdsman plugins, jirathip-dev/cooee-drover) is set up
-later the same way with its own port and `[[plugins]]` entries.
+each checklist result in the v1-live PR. herdsman's `drover` plugin is added
+later with `cooee plugin add drover --yes`; it attaches to the `herdsman serve` already running on :7777.
 
 ## Install
 
@@ -19,7 +19,7 @@ later the same way with its own port and `[[plugins]]` entries.
 
 | # | Check | Result |
 |---|---|---|
-| 1 | Open the tailnet URL in Safari; Share → Add to Home Screen; open it from the Home Screen. | |
+| 1 | Install the native app (TestFlight) and point it at the tailnet URL. | |
 | 2 | Pair: `cooee pair` on the Mini, scan the QR code or enter the code; the thread list shows. | |
 | 3 | Start a thread with Claude Code (through shed) and get a streamed reply. | |
 | 4 | See a tool row, and approve one tool. | |

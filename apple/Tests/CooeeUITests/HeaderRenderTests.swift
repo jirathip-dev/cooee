@@ -12,7 +12,8 @@ internal struct HeaderRenderTests {
             persona: persona, items: [], working: false, since: .distantPast, queued: [], back: true, actions: actions
         )
         let view = chat.frame(width: 402, height: 200).environment(\.look, Look(palette: .farmLight, still: true))
-        return try #require(Pixels(try #require(ImageRenderer(content: view).cgImage)))
+        let image = try #require(ImageRenderer(content: view).cgImage)
+        return try #require(Pixels(image))
     }
 
     private static func strip(_ counts: [Int?]) -> ChatActions {
