@@ -7,6 +7,8 @@ public struct HomeActions {
     public var open: (String) -> Void
     public var room: () -> Void
     public var edit: (String?) -> Void
+    public var others: [String] = []
+    public var openOthers: () -> Void = {}
 
     public init(
         menu: @escaping () -> Void = {},
@@ -42,6 +44,7 @@ public struct HomeView: View {
                     PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new).padding(.top, 6)
                     ChatList(chats: chats, selected: selected, open: actions.open)
                         .padding(.top, look.style == .scene ? 0 : 14)
+                    if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
                 }
             }
             .blur(radius: menuOpen ? 10 : 0)
@@ -121,20 +124,27 @@ internal struct TopBar: View {
 internal struct ChatList: View {
     @Environment(\.look) private var look
     internal let chats: [ListedChat]
+    internal var title: String? = "Chats"
     internal var selected: String?
     internal var open: (String) -> Void = { _ in }
 
     internal var body: some View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 0) {
-            Text(look.mono ? "# chats" : "Chats").ui(look.mono ? 12 : 20, look.mono ? .regular : .bold, look)
+            if let title {
+                Text(look.mono ? "# \(title.lowercased())" : title).ui(
+                    look.mono ? 12 : 20, look.mono ? .regular : .bold, look
+                )
                 .foregroundStyle(look.mono ? palette.mute : palette.foreground).padding(.horizontal, 16)
                 .padding(.bottom, 6).padding(.top, look.style == .scene ? 12 : 0)
+            }
             ForEach(chats) { chat in
                 Button {
                     open(chat.id)
                 } label: {
-                    ChatRow(row: chat.row, persona: chat.persona, members: chat.members, selected: chat.id == selected)
+                    ChatRow(
+                        row: chat.row, persona: chat.persona, members: chat.members, selected: chat.id == selected,
+                        word: chat.workflow != nil)
                 }
                 .buttonStyle(.plain)
                 if chat.id != chats.last?.id {

@@ -16,6 +16,7 @@ internal struct AppFeatureTests {
             $0.serverStore.clear = { calls.record("clear") }
             $0.threads.threads = { _ in [row("n1")] }
             $0.threads.personas = { _ in [coder] }
+            $0.plugins.installed = { _ in [] }
         }
     }
 

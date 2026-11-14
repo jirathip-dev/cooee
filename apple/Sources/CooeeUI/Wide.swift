@@ -79,6 +79,7 @@ public struct WideView<Detail: View>: View {
                     PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new)
                         .scaleEffect(0.9, anchor: .leading).padding(.top, 4)
                     ChatList(chats: chats, selected: selected, open: actions.open).padding(.top, 8)
+                    if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
                 }
             }
             .frame(width: 360).background(palette.card.opacity(look.style == .modern ? 0.45 : 0.8))

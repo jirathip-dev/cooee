@@ -39,6 +39,7 @@ fn hello_repo(repo: &Path) {
     let strip = "[[places]]\ntype = \"header-strip\"\nid = \"waves\"\npersona = \"pal\"\nlabel = \"Waves\"\n\
                  screen = \"/screens/hello\"\n\n[permissions]\nplaces = [\"menu-row\", \"header-strip\"]\n";
     let manifest = manifest.replace("[permissions]\nplaces = [\"menu-row\"]\n", strip);
+    let manifest = format!("claims = [\"lab\"]\n{manifest}");
     fs::write(repo.join("cooee-plugin.toml"), manifest).unwrap();
     git(repo, &["init", "--quiet", "-b", "main"]);
     git(repo, &["add", "-A"]);
@@ -185,7 +186,11 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
     );
     let row = &cooee.json("/plugins")["installed"][0];
     assert_eq!(
-        (&row["permissions"]["actions"], &row["places"][0]["type"]),
-        (&json!(["wave"]), &json!("menu-row"))
+        (
+            &row["permissions"]["actions"],
+            &row["places"][0]["type"],
+            &row["claims"]
+        ),
+        (&json!(["wave"]), &json!("menu-row"), &json!(["lab"]))
     );
 }

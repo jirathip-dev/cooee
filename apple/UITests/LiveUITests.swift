@@ -20,14 +20,13 @@
             queueWhileStreaming(app, box)
             keep("chat-streaming")
             app.buttons["Back"].firstMatch.tap()
-            XCTAssert(new.waitForExistence(timeout: 10))
-            XCTAssert(labelled(app, "Coder").exists)
-            keep("home")
+            othersHoldsTheLanesNoPluginClaims(app, new)
             personaRoundTrip(app)
             copiesAReply(app, new)
             answersEachCard(app, new)
             swipeBack(app, new)
             opensDroversScreens(app, new)
+            opensTheWorkflowSheet(app, new)
             avatarMenu(app, new)
         }
 
@@ -194,6 +193,8 @@
             app.buttons["Done"].firstMatch.tap()
             app.buttons["Back"].firstMatch.tap()
             XCTAssert(new.waitForExistence(timeout: 10))
+            XCTAssertFalse(labelled(app, "cooee #33").exists)
+            keep("home-no-lanes")
             app.buttons["Account"].firstMatch.tap()
             XCTAssert(labelled(app, "Notifications").waitForExistence(timeout: 10))
             for missing in ["Sign-ins", "Devices", "Machines", "Plugins"] {

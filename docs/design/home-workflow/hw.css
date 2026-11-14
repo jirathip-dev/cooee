@@ -1,0 +1,31 @@
+/* #229 on web/src/app.css, #116's ns.css and #125's sd.css: only what this design adds, as tokens. New class names:
+   hwr a Home row (name, then the chat's title, muted), hwk / hnd its working dots / waits-on-you mark, sel the row open
+   at 1440; lt2 Home's `Chats` heading; hwo the Others row, oav a neutral avatar (no persona: an initial, a tray, or a
+   state figure, fgv), hwn its count; hws a one-line summary under a title; hwg a group of issue rows; hsc.on the
+   strip chip whose sheet is open; hwb drover's prompt in a round's chat. */
+.ph .scr{padding-bottom:var(--sab)}
+.lt2{margin:12px 16px 2px;font:700 24px/30px var(--font)}
+.hwr .an b{font-weight:600}.hwr .an small{margin-left:.5ch;font-size:var(--fs);color:var(--mute)}
+.hwr .tp{color:var(--mute)}.hwr .tp>span{white-space:nowrap}
+.hwk{flex:none;font:700 11px/1 var(--font);letter-spacing:1px;color:var(--link);font-style:normal}
+.hnd{flex:none;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--r);color:var(--bg);font:800 12px/1 var(--font);font-style:normal}
+.hwr .bd{background:var(--link)}
+.hwr.sel{background:color-mix(in srgb,var(--l) 12%,transparent)}
+.oav{--av:var(--mute);display:grid;place-items:center;background:color-mix(in srgb,var(--mute) 22%,var(--card));color:var(--fg)}
+.oav .hic{width:26px;height:26px}.fgv .rsp{width:28px;height:28px}
+.ch2 .fgv{width:36px;height:36px}.ch2 .fgv .rsp{width:22px;height:22px}
+.hwo{margin-top:12px;border-top:.5px solid var(--sep)}.hwo::after{display:none}
+.hwn{min-width:24px;height:22px;padding:0 7px;border-radius:11px;background:color-mix(in srgb,var(--mute) 22%,transparent);color:var(--fg);font:600 13px/22px var(--font);font-style:normal;text-align:center}
+.hws{margin:-4px 16px 4px;font-size:var(--fs-meta);color:var(--mute)}.hws b{color:var(--r);font-weight:600}
+.ps .hws{margin:8px 16px 0}
+.hwg{margin:0 0 4px}.ps .ch{margin:16px 16px 2px;text-transform:uppercase;letter-spacing:.04em}
+.w[data-k],.tp .w{color:var(--k)}
+.hsc .hic{width:16px;height:16px}
+.hsc.on{background:color-mix(in srgb,var(--l) 18%,var(--card));box-shadow:inset 0 0 0 1.5px var(--l)}
+.blk.me.hwb{align-self:stretch;max-width:none;background:var(--card)}.hwb code{font:13px var(--mono)}
+.side .lt{font-size:28px;line-height:34px}
+.hwr.ud .an small{font-weight:400}
+.rn .rh{color:var(--fg);text-decoration:none}.rn .rh b{color:var(--fg)}.rn .rh .rs{color:var(--k)}.rn .rh .ta{color:var(--mute)}
+.chps .chip{text-decoration:none}
+/* The Workflow sheet sits below Conductor's header strip, so the chip that opened it shows, dimmed, above it. */
+.ph .ps.hwsh{top:calc(var(--sat) + var(--nb) + 52px)}

@@ -5,7 +5,8 @@
 # the turn open until stopped. #138: the `cards` plugin (cards.mjs, on $PORT+1) is attached to Coder and posts its four
 # cards into a chat that starts "Show me the cards"; it reads the thread list as a device paired first. #140: a fixture
 # `drover` (screens.py with #125's queue and events JSON) is installed with header-strip places for Conductor, a persona
-# it isn't attached to yet: the app attaches it.
+# it isn't attached to yet: the app attaches it. #229: it claims `source=drover`, and the fake shed runs three drover
+# lanes (FAKE_SHED_LANES): in Others until drover is attached, then in Conductor's Workflow sheet.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -13,7 +14,7 @@ mkdir -p "$tmp/shed" "$tmp/root/project" "$tmp/personas"
 cargo build --quiet --locked -p cooee
 # cargo's JSON messages, not its human output: CI sets CARGO_TERM_COLOR=always, which wraps that in colour codes.
 chat=$(cargo test --locked -p cooee --test chat --no-run --message-format=json | sed -n '/"kind":\["test"\]/s/.*"executable":"\([^"]*\)".*/\1/p')
-FAKE_SHED_DIR="$tmp/shed" FAKE_SHED_DELAY_MS=400 "${chat:?}" --ignored --exact fake_shed_server --quiet >/dev/null &
+FAKE_SHED_DIR="$tmp/shed" FAKE_SHED_LANES=1 FAKE_SHED_DELAY_MS=400 "${chat:?}" --ignored --exact fake_shed_server --quiet >/dev/null &
 fake=$!
 trap 'kill "$fake" ${srv:-} ${cards:-} 2>/dev/null' EXIT INT TERM
 while [ ! -S "$tmp/shed/shed.sock" ]; do kill -0 "$fake" || { echo "fake shed exited" >&2; exit 1; }; sleep 0.1; done
@@ -41,6 +42,7 @@ version = "0.0.1"
 build = "python3 -m py_compile screens.py"
 run = "TOKEN=$COOEE_PLUGIN_TOKEN exec python3 screens.py"
 needs = ["python3"]
+claims = ["drover"]
 
 [[places]]
 type = "header-strip"

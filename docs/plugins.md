@@ -207,6 +207,8 @@ frontend code (the spec: [design/screens-as-data](design/screens-as-data/README.
 and what it may do:
 
 ```toml
+claims = ["drover"]               # the workflow sources it owns (#229): those sessions show in its place, not as chats
+
 [[places]]
 type = "header-strip"             # a chip under a persona's chat header; or "menu-row" (the avatar menu), "chat-cards"
 id = "queue"

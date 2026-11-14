@@ -52,19 +52,26 @@ public struct AppRoot: View {
         self.store = store
     }
 
-    @ViewBuilder private func content(_ home: StoreOf<HomeFeature>) -> some View {
-        let actions = HomeActions(
+    private func actions(others: [String]) -> HomeActions {
+        var actions = HomeActions(
             menu: { store.send(.menu(.open(true))) },
             new: { store.send(.start($0)) },
             open: { store.send(.open($0)) },
             room: { store.send(.room) },
             edit: { store.send(.edit($0)) }
         )
-        let chats = home.state.chats(now: Date())
+        actions.others = others
+        actions.openOthers = { store.send(.open(AppFeature.others)) }
+        return actions
+    }
+
+    @ViewBuilder private func content(_ home: StoreOf<HomeFeature>) -> some View {
+        let lists = home.state.lists(now: Date())
+        let actions = actions(others: lists.othersTitles)
         if size == .compact {
             NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
-                HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
-                    .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
+                HomeView(personas: home.pinned, all: home.everyone, chats: lists.chats, actions: actions)
+                    .navigationDestination(for: String.self) { destination($0, lists.others, back: true) }
                     .toolbar(.hidden)
                     #if os(iOS)
                         .background(SwipeBack())
@@ -72,10 +79,19 @@ public struct AppRoot: View {
             }
         } else {
             WideView(
-                personas: home.pinned, all: home.everyone, chats: chats, selected: store.path.last, actions: actions
+                personas: home.pinned, all: home.everyone, chats: lists.chats, selected: store.path.last,
+                actions: actions
             ) {
-                chat(back: false)
+                destination(store.path.last, lists.others, back: false)
             }
+        }
+    }
+
+    @ViewBuilder private func destination(_ id: String?, _ others: [ListedChat], back: Bool) -> some View {
+        if id == AppFeature.others {
+            OthersView(chats: others, open: { store.send(.open($0)) }, back: { store.send(.back) }).toolbar(.hidden)
+        } else {
+            chat(back: back).toolbar(back ? .hidden : .automatic)
         }
     }
 
@@ -87,7 +103,9 @@ public struct AppRoot: View {
                 )
                 .id(store.path.last)
             } else {
-                ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
+                let round = store.path.count > 1 && store.path.first != AppFeature.others
+                ChatScreen(store: chat, back: back, backTo: round ? "Workflow" : nil) { store.send(.back) }
+                    .id(store.path.last)
             }
         } else if !back {
             Text("Pick a chat, or start one with +").foregroundStyle(.secondary).frame(maxHeight: .infinity)
@@ -98,6 +116,7 @@ public struct AppRoot: View {
 internal struct ChatScreen: View {
     @Bindable internal var store: StoreOf<ChatFeature>
     internal let back: Bool
+    internal var backTo: String?
     internal let onBack: () -> Void
 
     private var actions: ChatActions {
@@ -120,6 +139,10 @@ internal struct ChatScreen: View {
         actions.open = { store.send(.plugins(.open(places[$0]))) }
         actions.attachable = attachable.map(\.name)
         actions.attachPlugin = { store.send(.plugins(.attach(attachable[$0]))) }
+        actions.workflow = store.workflow.map { Workflow.issues($0).count(where: \.needsYou) }
+        actions.showWorkflow = { store.send(.workflow(.show(true))) }
+        actions.workflowOpen = store.workflowOpen
+        actions.backTo = backTo
         return actions
     }
 
@@ -137,6 +160,16 @@ internal struct ChatScreen: View {
         .task { await store.send(.plugins(.load)).finish() }
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachSheet(store: $0) }
+        .sheet(isPresented: Binding(get: { store.workflowOpen }, set: { store.send(.workflow(.show($0))) })) {
+            WorkflowSheet(
+                issues: Workflow.issues(store.workflow ?? []),
+                unfolded: store.unfolded,
+                unfold: { store.send(.workflow(.unfold($0))) },
+                open: { store.send(.workflow(.open($0))) },
+                done: { store.send(.workflow(.show(false))) }
+            )
+            .presentationDetents([.fraction(0.8)])
+        }
     }
 }
 
