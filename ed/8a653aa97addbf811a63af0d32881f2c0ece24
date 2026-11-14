@@ -1,0 +1,13 @@
+Decided: persona and owner profile merge into one agents::Agent read from <config>/agents/<id>/; a plugin's profile is lent read-only
+Because: docs/architecture/agent-folders/adr.md:63
+Decided: the move is a plan staged in agents.migrating/, committed by one rename, then old paths renamed *.bak-<date>
+Because: q1617
+Rejected: agents::copy and agents::set_mcp from shapes.md — no route calls them (GET /agents lists ACP agents; there is no profile MCP route), so they would be dead code
+Rejected: toml_edit to keep comments — a new dependency; files are written whole by the existing idiom (ADR Writing B)
+Decided: a profile's settings folder inside profiles/ is copied whole, and a copied file naming a profiles/ path gets a warn line
+Because: crates/cooee-core/src/migrate.rs:128
+Decided: a routine typed by hand into routines.toml gets made_at = now at the runner's next tick
+Decided: main() carries an expect(clippy::too_many_lines) for the two `config migrate` arms
+Check: crates/cooee-core/tests/upgrade_compat.rs migrates 0.1.0 and 0.1.0-personas against expected/ byte for byte, backups intact, second run a no-op
+Check: crates/cooee/tests/agents.rs covers a hand-written folder, a malformed one (log names the file, never the text) and the dry run's hashes
+Owner: your agents now live one folder each in the config folder; the first start converts the old files and keeps them as dated backups
