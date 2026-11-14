@@ -1,8 +1,8 @@
 # New thread is a composer; providers is a flat list; the chat opens on send (#48)
 
 Three static pages on the app's own look. **Revised for the #48 amendments:** no dev text, the agent chip carries
-profiles (#40), and from 1024 px a sidebar that's always there (§ 7). The pages load `web/src/app.css`, `web/src/look.js`, `web/themes/` and
-`web/schemes/` as they are today; nothing is copied. `new.css` holds this design's additions (tokens only, no raw
+profiles (#40), and from 1024 px a sidebar that's always there (§ 7). The pages load `design-system/app.css`, `design-system/look.js`, `packs/farm/`, `tests/swag/packs/` and
+`design-system/schemes/` as they are today; nothing is copied. `new.css` holds this design's additions (tokens only, no raw
 colour). `mock.js` builds `LOOK` the way the server does, and draws the one state look.js doesn't have yet (loading).
 `side.html` is the sidebar, one copy that `mock.js` puts in each page's `<aside class="side">`.
 
@@ -18,14 +18,14 @@ first row, and the agent chip then starts at the pick last used overall.
 | `providers.html` | 6 Settings › providers | `providers-390-r2`, `providers-1440-r2` |
 
 The main shots are farm, Modern, dark. Each page is also shot at 390 in `-kitchen-light`, `-garden-dark` and
-`-terminal-light` (the terminal theme in the Terminal style), and the chat once more at 1440 in `-terminal-light`
+`-terminal-light` (the plain theme in the Terminal style), and the chat once more at 1440 in `-terminal-light`
 for the Terminal sidebar: 16 PNGs in all. Every name ends in the round (`-r2`, `REV` in `shoot.mjs`), so a revised
 shot never shows up as an older, cached copy. The 390 shots are DPR 2 and the 1440
 shots DPR 1, all under reduced motion. Each screen is one phone screen (844 px) or one desktop screen (900 px), stacked
 on the page under a caption.
 
 **View or regenerate** (from the repo root, no deps):
-- `node docs/design/new-thread/shoot.mjs --serve` prints the URL. Pages take `?theme=farm|kitchen|garden|terminal`,
+- `node docs/design/new-thread/shoot.mjs --serve` prints the URL. Pages take `?theme=farm|kitchen|garden|plain`,
   `&mode=system|light|dark`, `&style=modern|terminal`, `&sprites=on|ascii|off` and `&s=<screen>` (one screen alone).
 - `node docs/design/new-thread/shoot.mjs <chrome-headless-shell> [name regexp]` shoots the 16 PNGs and checks every
   screen against the size scale below: no sideways scroll; every chip, button and one-line input is `--ctl` tall, has
