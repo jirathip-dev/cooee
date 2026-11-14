@@ -1,0 +1,8 @@
+Decided: the new-thread mockups load design-system/look.js, the classic look applier their approved PNGs were shot with
+Because: "The design pages render (the shot scripts pass) from the moved design-system folder."
+Decided: new-thread's shoot.mjs maps /look/plain/ to design-system/themes/plain and other themes to packs/themes, and fails on any 404
+Because: docs/design/new-thread/shoot.mjs:23
+Decided: the Terminal look row asks for theme=plain, the theme that replaced terminal
+Rejected: committing re-rendered PNGs — the approved ones are the spec; the rest of the drift is staging's post-approval app.css and mock text
+Check: node docs/design/new-thread/shoot.mjs <chrome> exits 0 with 16 ok; renders match the approved sizes and differ 0.2–8.6 % (was 98–100 %)
+Owner: The new-thread design mockups are themed again (farm dark, sprites, sidebar titles), loading the look from the design-system folder.
