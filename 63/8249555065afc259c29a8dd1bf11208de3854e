@@ -1,0 +1,12 @@
+Decided: each ask_persona call is an `ask` item in the asker's chat, updated as it ends, instead of the one `link` line R3 wrote on the first ask
+Because: "each `ask_persona` call is a card: `Asker → Target`, the message, the outcome"
+Decided: the owner's message in a linked thread reaches the asked persona marked as the owner's note, and its text returns to the asker appended to the reply
+Because: "the note goes to the answering persona marked as the owner's and is shown right-aligned as `Your note · to <Target>`; the asker gets it with the reply"
+Decided: the native note composer always sends at once (never queues while the answerer works), so a note lands mid-exchange
+Because: "a persona asks another, the owner sends a note mid-exchange, the reply reflects it"
+Rejected: a separate note endpoint — the existing send path plus the thread's asked_by already tells a note from the asker's question (question items carry the asker as speaker)
+Decided: Home nests a linked thread under its asker row via the row's new asked_by, depth 2 under depth 1
+Because: "Exchanges hang under their asker's chat in Home (depth 2 under depth 1), on the phone and at 1440"
+Check: crates/cooee/tests/ask.rs the_owners_note_mid_exchange_… drives the real MCP tool through the fake shed; ExchangeTests and LinkedFeatureTests cover the native side
+Check: room-home-dark and room-wide-dark were re-recorded on purpose: their sidebars now show the exchanges; 5 new frames match asked-*, linked-* and linked-terminal-390-dark
+Owner: Not verified on a real phone: the live check (a persona asks, you send a note mid-exchange) still needs your device or the verify stage.
