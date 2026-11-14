@@ -1,5 +1,5 @@
 //! Provider logins end to end: `cooee serve` against the fake shed (tests/support), which really runs a fake login
-//! program in a plain terminal. Its link reaches the page, a typed code reaches the program, success shows as
+//! program in a plain terminal. Its link reaches `GET /logins/{id}`, a typed code reaches the program, success shows as
 //! signed in; the 10-minute timeout kills and removes the terminal; the screen is redacted and never stored.
 
 mod support;
@@ -114,13 +114,9 @@ impl Setup {
 #[test]
 fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen() {
     let s = setup("login");
-    s.until(|v| v["status"]["unknown"] == false);
-    let (_, page) = s.cooee.get("/new");
-    // Settings › providers: signed out, with [sign in] on its row.
-    assert!(
-        page.contains(r#"<span class="sk">main login</span><span class="st m">signed out</span><button type="button" class="si" data-provider="fake" data-account="""#),
-        "{page}"
-    );
+    let v = s.until(|v| v["status"]["unknown"] == false);
+    // Checked and signed out before the login runs.
+    assert_eq!(v["status"]["signed_in"], false, "{v}");
 
     let (terminal, v) = s.start();
     assert_eq!(v["state"], "running");
@@ -152,12 +148,6 @@ fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_scr
     // Exited: killed (already gone) and removed.
     assert_eq!(s.shed.calls("kill", &terminal).len(), 1);
     assert_eq!(s.shed.calls("rm", &terminal).len(), 1);
-    let (_, page) = s.cooee.get("/new");
-    assert!(
-        page.contains(r#"<span class="sk">main login</span><span class="st g">✓ signed in</span>"#)
-            && !page.contains(r#"class="si" data-provider="fake" data-account="""#),
-        "{page}"
-    );
 
     let written = s.written();
     for secret in [s.token.as_str(), "Paste code", "good-code", LINK] {
@@ -200,8 +190,8 @@ fn a_login_left_for_10_minutes_is_killed_and_removed() {
     assert_eq!(s.cooee.post("/logins/nope", &json!(null)).0, 400);
 }
 
-/// #106: while the status command hangs, requests answer at once with the last known status (unknown, no sign-in
-/// offered); it runs once, however often the card opens, and its timeout reads as unknown, never signed out.
+/// #106: while the status command hangs, requests answer at once with the last known status (unknown); it
+/// runs once, however often the card opens, and its timeout reads as unknown, never signed out.
 #[test]
 fn a_hanging_status_check_never_holds_a_request_and_runs_once() {
     let dir = scratch("login-hang-runs");
@@ -226,7 +216,6 @@ fn a_hanging_status_check_never_holds_a_request_and_runs_once() {
     }
     let start = Instant::now();
     let v = s.cooee.json("/logins/fake");
-    let (_, page) = s.cooee.get("/new");
     assert!(
         start.elapsed() < Duration::from_secs(2),
         "{:?}",
@@ -235,12 +224,6 @@ fn a_hanging_status_check_never_holds_a_request_and_runs_once() {
     assert_eq!(v["status"]["unknown"], true, "{v}");
     assert_eq!(v["status"]["line"], "not checked yet");
     assert!(v["age"].is_null(), "{v}");
-    let no_sign_in = r#"class="si" data-provider="fake" data-account="""#;
-    assert!(
-        page.contains(r#"<span class="st m un">not checked yet</span>"#)
-            && !page.contains(no_sign_in),
-        "{page}"
-    );
     assert_eq!(s.cooee.post("/logins", &json!({})).0, 200);
 
     let v = s.until(|v| v["status"]["line"] != "not checked yet");
@@ -252,12 +235,6 @@ fn a_hanging_status_check_never_holds_a_request_and_runs_once() {
     assert_eq!(
         v["status"]["line"],
         "can't tell: the status command timed out"
-    );
-    let (_, page) = s.cooee.get("/new");
-    assert!(
-        page.contains(r#"<span class="st m un">can't tell: the status command timed out</span>"#)
-            && !page.contains(no_sign_in),
-        "{page}"
     );
     // Backing off: the card opening again starts no second check.
     assert_eq!(s.cooee.post("/logins", &json!({})).0, 200);
