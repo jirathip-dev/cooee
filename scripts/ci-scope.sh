@@ -3,6 +3,7 @@
 # A pull request push runs the Linux legs; the macOS legs run only on the merge-ready run (the `labeled` event for
 # merge-ready, or a later push while the PR carries it), and only when the change reaches the Apple surface below.
 # Any other event (a push, the nightly) runs every leg, unless REUSED names a run that already tested this tree.
+# A workflow_dispatch runs no leg: it is ui-stress's (#388), whose ui job runs by itself.
 # In: EVENT, ACTION, LABEL (the labeled event's), CARRIES (true when the PR has merge-ready), REUSED (a run id);
 # on a pull request HEAD is GitHub's merge commit, so HEAD^1..HEAD is the change.
 set -eu
@@ -30,6 +31,7 @@ if [ "${EVENT:?}" = pull_request ]; then
 fi
 run=true
 [ -z "${REUSED:-}" ] || run=false
+[ "$EVENT" != workflow_dispatch ] || run=false
 echo "run=$run"
 echo "full=$full"
 echo "mac=$mac"

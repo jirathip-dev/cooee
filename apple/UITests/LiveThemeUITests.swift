@@ -1,10 +1,17 @@
 #if os(iOS)
     import XCTest
 
-    extension LiveUITests {
+    internal final class LiveThemeUITests: LiveUITestCase {
+        @MainActor
+        internal func testEveryTheme() throws {
+            let app = try launchHome()
+            themes(app, newChat(app))
+        }
+    }
+
+    extension LiveUITestCase {
         @MainActor
         internal func themes(_ app: XCUIApplication, _ new: XCUIElement) {
-            closeSheet(app, "Notifications")
             for theme in ["Kitchen", "Garden", "Farm"] {
                 look(app, theme, "Modern")
                 keep("theme-\(theme.lowercased())-modern")

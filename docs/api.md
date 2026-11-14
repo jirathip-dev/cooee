@@ -83,6 +83,7 @@ tool. Clearing the notes leaves the skills; deleting the persona removes both. A
 | Call | Body | Answer |
 |---|---|---|
 | `GET /machines` | | the machines a persona or thread may name, this host first: `{name, host, online, last_seen?, health?, error?}[]` (`name` `""` for this host, `host` its host name; `online` and `last_seen` shed's link to it, `health` its last sample from the machines plugin's `shed machine stats`) |
+| `GET /agents` | | the installed agents a persona or thread may name (#230), as `shed agents` last listed them: `{id, efforts: string[]}[]` (`efforts`: the ones its provider offers, `[]` for none); shed failing is a 400 with why |
 | `GET /personas` | | every persona, by id |
 | `POST /personas` | a persona without `id` (its id is made from `name`, not taken) | the persona |
 | `GET /personas/{id}` | | the persona |
@@ -104,7 +105,7 @@ tool. Clearing the notes leaves the skills; deleting the persona removes both. A
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /folders?path=P&hidden=1` | | `{path, home, dirs: string[], roots: string[]}` |
+| `GET /folders?path=P&hidden=1` | | `{path, home, dirs: string[], roots: string[]}`: `P` (default home) inside home or a root; a root or a folder in one is spelled from the root as listed |
 | `POST /roots` | `{path, remove?}` | the roots, `string[]` |
 | `POST /folders/new` | `{parent, name}` | the new folder's path, `string` |
 

@@ -51,6 +51,10 @@ ts:
 ui:
     cd web/e2e && npx playwright test
 
+# The ui suite `n` times in a row, each run its own server (#388): stops at the first red run.
+ui-stress n="20":
+    scripts/ui-stress.sh {{n}}
+
 # The Swift quality gate on apple/ (#147): format, anti-slop, SwiftLint, build, tests, coverage, Periphery.
 apple-check:
     scripts/apple-check.sh
