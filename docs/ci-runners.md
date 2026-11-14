@@ -4,7 +4,7 @@
 
 Two self-hosted runners, `mini-cooee` and `air-cooee` (labels `self-hosted, macOS, ARM64, cooee-mac`), run:
 
-- `ci.yml`: `msrv (macos-latest)` and `stable (macos-latest)` (the check names stay as the staging ruleset requires)
+- `ci.yml`: `stable (macos-latest)` (the check name stays as the staging ruleset requires; #388 dropped `msrv (macos-latest)`)
 - `apple.yml`: `build`, `apple-quality`, `e2e`
 - `apple-mac.yml`: `dmg`
 - `apple-testflight.yml`: `testflight`

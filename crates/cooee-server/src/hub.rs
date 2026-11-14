@@ -34,8 +34,14 @@ mod models;
 mod rooms;
 pub use rooms::Starter;
 
-/// How many page events a thread keeps for a reconnecting page.
-const RING: usize = 4096;
+/// How long a thread keeps its page events for a reconnecting page, in milliseconds (#295).
+const REPLAY: u64 = 5 * 60 * 1000;
+
+/// How many page events a watching page may fall behind before it is cut off to resume from the replay.
+const LAG: usize = 256;
+
+/// How long a thread goes unused before its chat is unloaded, in milliseconds (#295).
+const IDLE: u64 = 10 * 60 * 1000;
 
 /// The label every cooee terminal carries.
 const LABEL: &str = "cooee";
@@ -86,8 +92,10 @@ struct Live {
     /// The newest shed event applied.
     applied: u64,
     seq: u64,
-    ring: VecDeque<Out>,
-    tx: broadcast::Sender<Out>,
+    /// The page events of the last [`REPLAY`], each with when it was sent.
+    ring: VecDeque<(u64, Out)>,
+    /// Made when a page first subscribes, dropped when the chat is unloaded.
+    tx: Option<broadcast::Sender<Out>>,
     /// The state the last published change left (a push goes on a change of state only).
     was: String,
     /// When its last shed event came (or it was loaded), in Unix milliseconds.
@@ -100,10 +108,72 @@ struct Live {
     sent: Option<Instant>,
     /// A room's round was stopped while its working member's session was starting: cancel it once started (#155).
     stopped_starting: bool,
+    /// When it was last used, in Unix milliseconds.
+    used: u64,
+    /// Its row's view of the chat while the chat is unloaded (only its turn stays); `None` while loaded.
+    unloaded: Option<Glance>,
     /// The messages handed to shed, by `random_id`, until it answers.
     sending: Vec<String>,
     /// The shed events that came while a message was on its way, applied after it.
     held: Vec<Event>,
+}
+
+/// What the thread list shows of a thread's chat.
+#[derive(Clone)]
+struct Glance {
+    /// A member session's approval that waits, for its room's row: the room, the persona and the tool.
+    ask: Option<(String, String, String)>,
+    /// The approval that waits, else the newest item's last line.
+    last: String,
+    /// When the newest item came.
+    at: u64,
+    /// How many items, not the owner's own, came after the read mark.
+    unseen: usize,
+    routine: String,
+}
+
+fn glance(live: &Live) -> Glance {
+    let items = &live.chat.items;
+    let ask = items.iter().find_map(|i| match &i.body {
+        Body::Approval {
+            tool,
+            tapped: None,
+            chosen: None,
+            card,
+            ..
+        } if card.line.is_none() => Some((live.meta.room.clone(), i.speaker.clone(), tool.clone())),
+        _ => None,
+    });
+    let last = items.last();
+    let text = last.map_or("", |i| match &i.body {
+        Body::Link { text, title, .. } if text.is_empty() => title,
+        Body::You { text, .. }
+        | Body::Agent { text, .. }
+        | Body::Note { text }
+        | Body::Link { text, .. }
+        | Body::Ended { text } => text,
+        Body::Tool { title, .. } => title,
+        Body::Approval { tool, .. } => tool,
+        Body::Plan { .. } => "plan",
+        Body::Routine { name, .. } => name,
+    });
+    let read = live.meta.read.unwrap_or(0);
+    let from = items.partition_point(|i| i.id <= read);
+    let waiting = items.iter().find_map(|i| match &i.body {
+        Body::Approval { tool, .. } if waits(&i.body) => Some(format!("{tool} waiting")),
+        _ => None,
+    });
+    Glance {
+        ask,
+        last: waiting
+            .unwrap_or_else(|| text.lines().last().unwrap_or("").chars().take(80).collect()),
+        at: last.map_or(0, |i| i.at),
+        unseen: items[from..]
+            .iter()
+            .filter(|i| !matches!(i.body, Body::You { .. }))
+            .count(),
+        routine: routine_of(live),
+    }
 }
 
 /// What applying a shed event leaves to do once its thread is unlocked: its next queued message, its final reply,
@@ -364,15 +434,47 @@ impl Live {
             chat,
             seq: 0,
             ring: VecDeque::new(),
-            tx: broadcast::channel(RING).0,
+            tx: None,
             moved: now(),
             stuck: false,
             pending: None,
             sent: None,
             stopped_starting: false,
+            used: now(),
+            unloaded: None,
             sending: Vec::new(),
             held: Vec::new(),
         }
+    }
+
+    /// Drops the page events older than [`REPLAY`] before `now`.
+    fn trim(&mut self, now: u64) {
+        while self.ring.front().is_some_and(|(at, _)| at + REPLAY < now) {
+            self.ring.pop_front();
+        }
+    }
+
+    /// Unloads the chat (keeping its turn and its row's glance) if unused for [`IDLE`] before `now`, with no page
+    /// watching and no turn under way.
+    fn unload(&mut self, now: u64) {
+        let turn = &self.chat.turn;
+        let busy = matches!(turn.state.as_str(), "working" | "connecting" | "blocked")
+            || !turn.text.is_empty()
+            || self.pending.is_some()
+            || self.sent.is_some()
+            || self.stopped_starting
+            || !self.sending.is_empty()
+            || !self.held.is_empty()
+            || self.tx.as_ref().is_some_and(|t| t.receiver_count() > 0);
+        if self.unloaded.is_some() || busy || now < self.used + IDLE {
+            return;
+        }
+        self.unloaded = Some(glance(self));
+        let turn = std::mem::take(&mut self.chat.turn);
+        self.chat = Chat::default();
+        self.chat.turn = turn;
+        self.ring.shrink_to_fit();
+        self.tx = None;
     }
 
     fn emit(&mut self, event: &'static str, data: String) {
@@ -382,11 +484,12 @@ impl Live {
             event,
             data,
         };
-        if self.ring.len() == RING {
-            self.ring.pop_front();
+        let at = now();
+        self.trim(at);
+        self.ring.push_back((at, out.clone()));
+        if let Some(tx) = &self.tx {
+            let _ = tx.send(out);
         }
-        self.ring.push_back(out.clone());
-        let _ = self.tx.send(out);
     }
 
     /// Stores and then publishes `changes`, pushing the ones the owner should hear of.
@@ -402,7 +505,7 @@ impl Live {
                     c.speaker.clone_from(&i.speaker);
                 }
             }
-            let watched = self.tx.receiver_count() > 0;
+            let watched = self.tx.as_ref().is_some_and(|t| t.receiver_count() > 0);
             if let Some(n) = note(
                 &self.meta, &self.chat, &change, &self.was, watched, &hub.theme,
             ) {
@@ -455,9 +558,11 @@ impl Hub {
             if meta.account == "System default" {
                 meta.account.clear();
             }
-            let chat = Chat::from_versions(store.items(&id)?);
             let terminal = meta.terminal.clone();
-            let live = Arc::new(Mutex::new(Live::new(meta, chat)));
+            let live = Arc::new(Mutex::new(Live::new(
+                meta,
+                Chat::from_versions(store.items(&id)?),
+            )));
             terminals.insert(terminal, Arc::clone(&live));
             threads.insert(id, live);
         }
@@ -503,6 +608,7 @@ impl Hub {
                 thread::sleep(TICK);
                 ticker.refresh(now(), false);
                 ticker.watch(now());
+                ticker.unload(now());
                 let at = now();
                 if let Ok(terminals) = ticker.shed.ls(BTreeMap::new()) {
                     ticker.prune(&terminals, at);
@@ -512,11 +618,35 @@ impl Hub {
         Ok(hub)
     }
 
+    /// Thread `id`, its chat loaded.
     fn live(&self, id: &str) -> Result<Arc<Mutex<Live>>, HubError> {
-        lock(&self.threads)
+        let live = lock(&self.threads)
             .get(id)
             .cloned()
-            .ok_or_else(|| HubError::NoThread(id.to_owned()))
+            .ok_or_else(|| HubError::NoThread(id.to_owned()))?;
+        self.load(&mut lock(&live))?;
+        Ok(live)
+    }
+
+    /// Marks `live` used, reading its chat back from the store if it was unloaded.
+    fn load(&self, live: &mut Live) -> Result<(), StoreError> {
+        live.used = now();
+        if live.unloaded.is_some() {
+            let mut chat = Chat::from_versions(self.store.items(&live.meta.id)?);
+            chat.turn = std::mem::take(&mut live.chat.turn);
+            live.chat = chat;
+            live.unloaded = None;
+        }
+        Ok(())
+    }
+
+    /// Trims every thread's page events to [`REPLAY`] before `now` and unloads the idle threads' chats (#295).
+    fn unload(&self, now: u64) {
+        for live in self.all() {
+            let mut live = lock(&live);
+            live.trim(now);
+            live.unload(now);
+        }
     }
 
     fn all(&self) -> Vec<Arc<Mutex<Live>>> {
@@ -558,6 +688,10 @@ impl Hub {
             };
             let got = self.shed.get(&terminal);
             let mut live = lock(&live);
+            if let Err(e) = self.load(&mut live) {
+                eprintln!("cooee: {e}");
+                continue;
+            }
             let changes = match got {
                 Ok(t) if t.state == shed_proto::State::Running => {
                     since = Some(since.map_or(live.applied, |s| s.min(live.applied)));
@@ -674,6 +808,10 @@ impl Hub {
         if !live.sending.is_empty() {
             // Its prompt is on its way: applied once that is stored, after it.
             live.held.push(event);
+            return;
+        }
+        if let Err(e) = self.load(&mut live) {
+            eprintln!("cooee: {e}");
             return;
         }
         let after = self.applied(&mut live, event);
@@ -895,12 +1033,29 @@ impl Hub {
         lock(&self.roots).iter().any(inside).then_some(folder)
     }
 
-    /// Settings › Folders: the folders inside `path` (default the home folder; hidden ones if `hidden`), and the roots.
+    /// `folder`, if it is a folder that is a root or inside one, spelled from that root as listed.
+    fn in_root(&self, folder: &Path) -> Option<PathBuf> {
+        let real = folder.canonicalize().ok().filter(|p| p.is_dir())?;
+        lock(&self.roots).iter().find_map(|root| {
+            let rest = real.strip_prefix(root.canonicalize().ok()?).ok()?;
+            Some(if rest.as_os_str().is_empty() {
+                root.clone()
+            } else {
+                root.join(rest)
+            })
+        })
+    }
+
+    /// Settings › Folders and the persona's folder browser: the folders inside `path` (default the home folder; hidden
+    /// ones if `hidden`), and the roots. A root or a folder inside one is spelled from the root as listed.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a path outside the home folder or not a folder.
+    /// [`HubError::Refused`] for a path outside both the home folder and the roots, or not a folder.
     pub fn browse(&self, path: Option<&Path>, hidden: bool) -> Result<Listing, HubError> {
-        let (path, home) = in_home(path)?;
+        let (path, home) = match path.and_then(|p| self.in_root(p)) {
+            Some(p) => (p, in_home(None)?.1),
+            None => in_home(path)?,
+        };
         let dirs = dirs(&path, hidden).into_iter().filter_map(|d| {
             let name = d.file_name()?.to_string_lossy();
             Some(name.into_owned())
@@ -1960,48 +2115,12 @@ impl Hub {
             .iter()
             .filter_map(|live| {
                 let live = lock(live);
+                let g = live.unloaded.clone().unwrap_or_else(|| glance(&live));
                 // A room's member sessions are the room's (#154).
                 if !live.meta.room.is_empty() {
-                    let ask = live.chat.items.iter().find_map(|i| match &i.body {
-                        Body::Approval {
-                            tool,
-                            tapped: None,
-                            chosen: None,
-                            card,
-                            ..
-                        } if card.line.is_none() => {
-                            Some((live.meta.room.clone(), i.speaker.clone(), tool.clone()))
-                        }
-                        _ => None,
-                    });
-                    asks.extend(ask);
+                    asks.extend(g.ask);
                     return None;
                 }
-                let last = live.chat.items.last();
-                let text = last.map_or("", |i| match &i.body {
-                    Body::Link { text, title, .. } if text.is_empty() => title,
-                    Body::You { text, .. }
-                    | Body::Agent { text, .. }
-                    | Body::Note { text }
-                    | Body::Link { text, .. }
-                    | Body::Ended { text } => text,
-                    Body::Tool { title, .. } => title,
-                    Body::Approval { tool, .. } => tool,
-                    Body::Plan { .. } => "plan",
-                    Body::Routine { name, .. } => name,
-                });
-                let read = live.meta.read.unwrap_or(0);
-                let from = live.chat.items.partition_point(|i| i.id <= read);
-                let unseen = live.chat.items[from..]
-                    .iter()
-                    .filter(|i| !matches!(i.body, Body::You { .. }))
-                    .count();
-                let waiting = live.chat.items.iter().find_map(|i| match &i.body {
-                    Body::Approval { tool, .. } if waits(&i.body) => {
-                        Some(format!("{tool} waiting"))
-                    }
-                    _ => None,
-                });
                 let persona = personas.iter().find(|p| p.id == live.meta.profile);
                 Some(Summary {
                     id: live.meta.id.clone(),
@@ -2015,15 +2134,13 @@ impl Hub {
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     machine: live.meta.machine.clone(),
                     state: live.chat.turn.state.clone(),
-                    last: waiting.unwrap_or_else(|| {
-                        text.lines().last().unwrap_or("").chars().take(80).collect()
-                    }),
-                    at: last.map_or(0, |i| i.at),
-                    unread: unseen > 0,
-                    unseen,
+                    last: g.last,
+                    at: g.at,
+                    unread: g.unseen > 0,
+                    unseen: g.unseen,
                     archived: live.meta.archived,
                     workflow: live.meta.workflow.clone(),
-                    routine: routine_of(&live),
+                    routine: g.routine,
                     members: live
                         .meta
                         .members
@@ -2102,20 +2219,25 @@ impl Hub {
         cursor: &str,
     ) -> Result<(Resume, broadcast::Receiver<Out>), HubError> {
         let live = self.live(id)?;
-        let live = lock(&live);
+        let mut live = lock(&live);
         let seq = cursor
             .strip_prefix(&self.boot)
             .and_then(|s| s.strip_prefix('.'))
             .and_then(|s| s.parse::<u64>().ok())
             .filter(|s| *s <= live.seq);
-        let first = live.ring.front().map_or(live.seq + 1, |o| o.seq);
+        let first = live.ring.front().map_or(live.seq + 1, |(_, o)| o.seq);
         let resume = match seq {
-            Some(s) if s + 1 >= first => {
-                Resume::Replay(live.ring.iter().filter(|o| o.seq > s).cloned().collect())
-            }
+            Some(s) if s + 1 >= first => Resume::Replay(
+                live.ring
+                    .iter()
+                    .filter(|(_, o)| o.seq > s)
+                    .map(|(_, o)| o.clone())
+                    .collect(),
+            ),
             _ => Resume::Reset,
         };
-        Ok((resume, live.tx.subscribe()))
+        let tx = live.tx.get_or_insert_with(|| broadcast::channel(LAG).0);
+        Ok((resume, tx.subscribe()))
     }
 
     /// The plugins: the config's own and the installed ones' tabs.
@@ -2878,5 +3000,49 @@ mod tests {
         assert_eq!(ids.len(), 2, "{ids:?}");
         assert!(ids.contains(&"mine".to_owned()) && ids.contains(&"new".to_owned()));
         assert!(!threads.join("gone.json").exists());
+    }
+
+    /// #295: a thread unused past the idle threshold (a fake clock) is unloaded, its row unchanged, and reloads intact
+    /// on next use; a page reconnecting within the replay window gets its events, one later is reset.
+    #[test]
+    fn an_idle_threads_chat_unloads_and_reloads_intact() {
+        let dir = scratch("unload");
+        let item = |id: u64, text: &str| {
+            json!({ "id": id, "at": id, "seq": id, "kind": "agent", "text": text, "stop_reason": "end_turn" })
+                .to_string()
+                + "\n"
+        };
+        seed(&dir, "a", &(item(1, "one") + &item(2, "two")));
+        let hub = hub(&dir);
+        let unloaded = |hub: &Hub| lock(&lock(&hub.threads)["a"]).unloaded.is_some();
+        let before = hub.slice("a", None, 10, 0).unwrap();
+        assert!(!unloaded(&hub));
+        let done = Reported {
+            state: "done".to_owned(),
+            note: None,
+            state_source: None,
+        };
+        let t0 = now();
+        hub.apply(event("a", 3, EventKind::State(done.clone())));
+        hub.apply(event("a", 4, EventKind::State(done)));
+        let replayed = |hub: &Hub, cursor: &str| match hub.subscribe("a", cursor).unwrap().0 {
+            Resume::Replay(outs) => Some(outs.iter().map(|o| o.seq).collect::<Vec<_>>()),
+            Resume::Reset => None,
+        };
+
+        hub.unload(t0 + REPLAY - 1_000);
+        assert!(!unloaded(&hub));
+        assert_eq!(replayed(&hub, &before.cursor), Some(vec![1, 2]));
+
+        let row = json!(hub.list());
+        hub.unload(t0 + IDLE + REPLAY);
+        assert!(unloaded(&hub));
+        assert_eq!(json!(hub.list()), row);
+        let after = hub.slice("a", None, 10, 0).unwrap();
+        assert!(!unloaded(&hub));
+        assert_eq!(json!(after.items), json!(before.items));
+        assert_eq!(after.turn.state, "done");
+        assert_eq!(replayed(&hub, &before.cursor), None);
+        assert_eq!(replayed(&hub, &after.cursor), Some(vec![]));
     }
 }
