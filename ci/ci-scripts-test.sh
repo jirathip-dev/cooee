@@ -64,6 +64,7 @@ scope "run=false" apple/App.swift EVENT=pull_request ACTION=labeled LABEL=bug
 scope "run=true mac=true web=true" docs/a.md EVENT=push
 scope "run=true mac=true web=true" docs/a.md EVENT=schedule
 scope "run=false" docs/a.md EVENT=push REUSED=8
+scope "run=false" web/ts/app.ts EVENT=workflow_dispatch
 git checkout -q --detach "$base"
 git rm -q crates/cooee-core/src/shed.rs
 git commit -qm "drop shed"
