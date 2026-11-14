@@ -1,0 +1,11 @@
+Decided: the proxied event stream is an async stream read only when the page pulls it; no thread, no channel.
+Because: "An async reader, a bounded channel, an idle timeout, and abort the upstream read when the client disconnects"
+Because: crates/cooee-server/src/plugin.rs:165
+Rejected: a reader task plus a bounded channel — pulling the socket directly is backpressure with zero buffer and drop closes it.
+Decided: backend heartbeats (comment lines) go to the page as SSE comments, so a write to a closed page fails and drops the stream.
+Because: "Forward or at least observe heartbeats so a dead client is noticed."
+Decided: a backend silent for 60 s (4x cooee's own 15 s keep-alive) is closed.
+Because: crates/cooee-server/src/plugin.rs:158
+Decided: merge of staging keeps #189's removal of frame() from plugin.rs; only this PR's imports and tests module stay.
+Check: the e2e test fails at f8e7ce13 and passes at head; the unit test runs on tokio's paused clock.
+Owner: Closing a plugin tab now frees its backend connection at once, and a frozen plugin stream is cut after a minute.
