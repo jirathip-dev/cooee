@@ -5,7 +5,7 @@
 Two self-hosted runners, `mini-cooee` and `air-cooee` (labels `self-hosted, macOS, ARM64, cooee-mac`), run:
 
 - `ci.yml`: `stable (macos-latest)` (the check name stays as the staging ruleset requires; #388 dropped `msrv (macos-latest)`)
-- `apple.yml`: `apple` (#277: the builds, `just apple-check` and the simulator e2e in one job)
+- `apple.yml`: `apple` (#277: the builds, `just apple-check` and the simulator e2e in one job; #328: a PR push runs only the builds, the `merge-ready` run all of it)
 - `apple-mac.yml`: `dmg`
 - `apple-testflight.yml`: `testflight`
 

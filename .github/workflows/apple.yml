@@ -5,7 +5,9 @@
 # (mini-cooee, air-cooee), never for a fork's pull request (it shows skipped). #142: `mac-setup` (staging pushes and
 # workflow_dispatch only, on GitHub's macos-26, docs/ci-runners.md says why): the Mac app's first run on the runner
 # starts cooee and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac
-# approves it; the screens kept as the `mac-setup-shots` artifact.
+# approves it; the screens kept as the `mac-setup-shots` artifact. #328: on a pull request push `apple` runs only the
+# builds; `just apple-check` and the e2e steps run on a staging push and when herdsman labels the PR `merge-ready`
+# (fleet `merge_label`: on exactly while a review PASS stands at the head), and merge waits on that run.
 name: apple
 on:
   push:
@@ -20,6 +22,7 @@ on:
       - ".github/workflows/apple.yml"
       - ".github/actions/mac-runner/**"
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - "scripts/mac-bins.sh"
       - "crates/cooee/src/main.rs"
@@ -31,13 +34,17 @@ on:
       - ".github/actions/mac-runner/**"
   workflow_dispatch:
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'merge-ready' && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   apple:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository
+      && (github.event.action != 'labeled' || github.event.label.name == 'merge-ready'))
     runs-on: [self-hosted, macOS, ARM64, cooee-mac]
     timeout-minutes: 120
+    env:
+      FULL: ${{ github.event_name != 'pull_request' || github.event.action == 'labeled' }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/mac-runner
@@ -54,16 +61,18 @@ jobs:
               -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO build
           done
       - name: just apple-check
+        if: env.FULL == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           COOEE_RENDERED: ${{ runner.temp }}/rendered
         run: mkdir -p "$COOEE_RENDERED" && just apple-check
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && env.FULL == 'true'
         with:
           name: rendered-frames
           path: ${{ runner.temp }}/rendered
       - name: cooee serve (fake agent)
+        if: env.FULL == 'true'
         run: |
           PORT=4100 PAIR_LINK="$RUNNER_TEMP/pair" apple/e2e/serve.sh >"$RUNNER_TEMP/serve.log" 2>&1 &
           serve=$!
@@ -74,11 +83,13 @@ jobs:
           done
           cat "$RUNNER_TEMP/serve.log"
       - name: the client against it (swift test)
+        if: env.FULL == 'true'
         working-directory: apple
         run: COOEE_PAIR_LINK="$(cat "$RUNNER_TEMP/pair")" swift test --filter LiveTests
       # Once per appearance, set with simctl (the test's own XCUIDevice.appearance left this simulator light); each
       # run pairs afresh, so the keychain is emptied first. The app builds before any code is minted: a code lives 10 min.
       - name: the app in the simulator
+        if: env.FULL == 'true'
         working-directory: apple
         run: |
           sim=$(xcrun simctl create "cooee-e2e-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" "iPhone 17")
@@ -96,12 +107,13 @@ jobs:
           done
       # #139: the personas the simulator made and edited, read back from the server, and a client round trip.
       - name: the simulator's personas on the server (swift test)
+        if: env.FULL == 'true'
         working-directory: apple
         run: |
           link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
           COOEE_PERSONA_LINK="$link" COOEE_SIM_LOOKS="dark light" swift test --filter LivePersonaTests
       - name: screenshots
-        if: always()
+        if: always() && env.FULL == 'true'
         run: |
           mkdir -p simulator-shots
           for look in dark light; do
@@ -111,7 +123,7 @@ jobs:
           cp "$RUNNER_TEMP/serve.log" simulator-shots/ || true
           ls simulator-shots
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && env.FULL == 'true'
         with:
           name: simulator-shots
           path: simulator-shots
