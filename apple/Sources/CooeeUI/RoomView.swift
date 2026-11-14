@@ -91,8 +91,8 @@ public struct RoomView: View {
             .frame(maxHeight: .infinity, alignment: .top)
             if scene.round.running {
                 RoundPill(
-                    turn: scene.round.turn, since: look.still ? nil : scene.round.since, elapsed: scene.elapsed,
-                    stop: actions.chat.stop
+                    turn: scene.round.turn, asking: scene.members.first { $0.id == scene.round.asking }?.name,
+                    since: look.still ? nil : scene.round.since, elapsed: scene.elapsed, stop: actions.chat.stop
                 )
             }
             Composer(hint: "Message the room", actions: actions.chat)

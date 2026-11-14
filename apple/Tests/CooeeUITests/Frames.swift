@@ -128,6 +128,9 @@ extension Frame {
             phone("room-home-dark", .farmDark) { HomeView(chats: Fixtures.roomChats) },
             phone("room-terminal-dark", .farmDark, style: .terminal) { RoomView.kestrel() },
             phone("room-scene-light", .farmLight, style: .scene) { RoomView.kestrel() },
+            phone("room-ask-dark", .farmDark) { RoomView.asking() },
+            phone("room-ask-terminal-dark", .farmDark, style: .terminal) { RoomView.asking() },
+            phone("room-ask-scene-light", .farmLight, style: .scene) { RoomView.asking() },
             mac("room-wide-dark", 1440, 900, .farmDark) { WideView.kestrel() },
             Frame(
                 name: "room-terminal-wide", width: 1440, height: 900, palette: .farmDark, style: .terminal,

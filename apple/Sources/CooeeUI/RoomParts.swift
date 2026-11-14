@@ -18,6 +18,7 @@ extension MemberState {
         case .replied: palette.green
         case .replying: palette.amber
         case .upNext: palette.link
+        case .asking: palette.red
         case .waiting, .passed: palette.mute
         }
     }
@@ -26,6 +27,7 @@ extension MemberState {
         switch self {
         case .replied: .done
         case .replying: .working
+        case .asking: .needs
         case .waiting, .upNext, .passed: .idle
         }
     }
@@ -125,6 +127,7 @@ internal struct CostNote: View {
 internal struct RoundPill: View {
     @Environment(\.look) private var look
     internal let turn: Int
+    internal var asking: String?
     internal var since: Date?
     internal var elapsed = 0
     internal var stop: () -> Void = {}
@@ -132,8 +135,12 @@ internal struct RoundPill: View {
     internal var body: some View {
         let palette = look.palette
         HStack(spacing: 8) {
-            Circle().fill(palette.amber).frame(width: 8, height: 8)
-            if let since {
+            Circle().fill(asking == nil ? palette.amber : palette.red).frame(width: 8, height: 8)
+            if let asking {
+                let lead = Text("\(asking) asks you").fontWeight(.semibold)
+                Text("\(lead) · turn \(max(turn, 1)) of \(RoomRound.turns)").ui(14, .regular, look).lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            } else if let since {
                 TimelineView(.periodic(from: since, by: 1)) { context in
                     label(Int(context.date.timeIntervalSince(since)))
                 }

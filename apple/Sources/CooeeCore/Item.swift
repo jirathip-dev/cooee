@@ -107,7 +107,7 @@ public enum ChatItems {
             fold(item, into: &out)
         case "approval":
             guard let block = item.block else { return }
-            out.append(.card(id: item.id, poster: item.plugin, block: block))
+            out.append(.card(id: item.id, poster: item.plugin ?? item.speaker, block: block))
         default:
             guard let text = item.text, !text.isEmpty else { return }
             if case .note(_, text)? = out.last { return }
