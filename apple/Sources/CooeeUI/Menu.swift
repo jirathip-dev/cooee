@@ -10,8 +10,10 @@ internal struct MenuSheet: View {
     internal var body: some View {
         NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
             ScrollView {
-                AvatarMenu(name: "You", place: place, values: values) { store.send(.path(store.path + [$0])) }
-                    .padding(12)
+                AvatarMenu(name: "You", place: place, values: values, pages: MenuFeature.Page.drawn) {
+                    store.send(.path(store.path + [$0]))
+                }
+                .padding(12)
             }
             .background(look.palette.background)
             .navigationDestination(for: MenuFeature.Page.self) { page in
@@ -24,11 +26,15 @@ internal struct MenuSheet: View {
         "this device · paired to \(store.server?.url.host() ?? "no server")"
     }
 
-    private var values: [String] {
+    private var values: [MenuFeature.Page: String] {
         let settings = store.settings
         let look = "\(settings.style.rawValue.capitalized) · \(settings.scheme.rawValue.capitalized)"
-        return [look, settings.push == nil ? "Off" : "On", "v2", "v2", "v2", "v2"]
+        return [.look: look, .notifications: settings.push == nil ? "Off" : "On"]
     }
+}
+
+extension MenuFeature.Page {
+    internal static let drawn: [Self] = [.look, .notifications]
 }
 
 internal struct MenuPage: View {
@@ -43,10 +49,11 @@ internal struct MenuPage: View {
                 case .look: lookPage
                 case .notifications: pushPage
                 case .appIcon: AppIconPicker(store: store)
-                default: Text("This opens in v2.").ui(15, .regular, look).padding(.top, 40)
+                case .signIns, .devices, .machines, .plugins: EmptyView()
                 }
             }
             .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(look.palette.background)
         .foregroundStyle(look.palette.foreground)

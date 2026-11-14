@@ -137,10 +137,10 @@ impl Setup {
         (out.status.success(), text)
     }
 
-    /// The tab's frame page, once it serves `text`.
+    /// Waits for the running build's `tab.js`, through the plugin's proxy, to say `text`.
     fn tab_says(&self, name: &str, text: &str) {
-        until(&format!("/p/{name} says {text}"), || {
-            let (status, body) = self.cooee.get(&format!("/p/{name}/frame"));
+        until(&format!("/p/{name}/api/tab.js says {text}"), || {
+            let (status, body) = self.cooee.get(&format!("/p/{name}/api/tab.js"));
             status == 200 && body.contains(text)
         });
     }
@@ -158,15 +158,6 @@ impl Setup {
         self.cooee.json("/plugins")["jobs"][name]
             .as_str()
             .map(str::to_owned)
-    }
-}
-
-impl Drop for Setup {
-    /// `cooee serve` gets SIGTERM, so it stops the backends it runs.
-    fn drop(&mut self) {
-        let pid = self.cooee.child.id().to_string();
-        let _ = Command::new("kill").args(["-TERM", &pid]).status();
-        let _ = self.cooee.child.wait();
     }
 }
 
@@ -323,7 +314,9 @@ fn remove_stops_it_and_keeps_the_checkout_unless_purged() {
             .unwrap()
             .contains("greet")
     );
-    until("the tab goes", || s.cooee.get("/p/greet/frame").0 == 404);
+    until("the plugin goes", || {
+        s.cooee.get("/p/greet/api/tab.js").0 == 404
+    });
     until("the backend stops", || {
         std::net::TcpStream::connect(("127.0.0.1", port)).is_err()
     });
@@ -334,7 +327,9 @@ fn remove_stops_it_and_keeps_the_checkout_unless_purged() {
     s.tab_says("greet", "greet v1");
     s.cooee.cli(&["plugin", "remove", "greet", "--purge"]);
     assert!(!s.data().join("plugins/greet").exists());
-    until("the tab goes", || s.cooee.get("/p/greet/frame").0 == 404);
+    until("the plugin goes", || {
+        s.cooee.get("/p/greet/api/tab.js").0 == 404
+    });
 }
 
 #[test]
@@ -449,6 +444,26 @@ fn only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issu
     );
     let rows = s.cooee.json("/plugins");
     assert_eq!(rows["installed"][1]["first_party"], true);
+}
+
+#[test]
+fn a_backend_ends_when_cooee_is_killed_and_a_restart_starts_it_again() {
+    let mut s = setup("pm-orphan");
+    s.cooee.cli(&["plugin", "add", "greet", "--yes"]);
+    s.tab_says("greet", "greet v1");
+    let port = u16::try_from(s.lock()[0]["port"].as_u64().unwrap()).unwrap();
+    s.cooee.child.kill().unwrap();
+    s.cooee.child.wait().unwrap();
+    until("the orphaned backend ends", || {
+        std::net::TcpStream::connect(("127.0.0.1", port)).is_err()
+    });
+
+    let extra = format!(
+        "plugin_index = {:?}\n",
+        s.dir.join("index.toml").to_string_lossy()
+    );
+    s.cooee = Cooee::start_with(&s.dir, &s.shed.dir, &extra);
+    s.tab_says("greet", "greet v1");
 }
 
 /// #226: a plugin whose manifest names an `attach` backend uses it while it answers: `add` and `cooee serve` run

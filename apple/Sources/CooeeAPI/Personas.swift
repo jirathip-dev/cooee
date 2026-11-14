@@ -1,4 +1,5 @@
 import CooeeCore
+import Foundation
 
 extension Client {
     public func create(_ persona: APIPersona) async throws -> APIPersona {
@@ -19,5 +20,16 @@ extension Client {
 
     public func push(_ token: String, enabled: Bool) async throws {
         _ = try await send(request(enabled ? "POST" : "DELETE", "/push/apns", json: ["token": token]))
+    }
+}
+
+extension Client {
+    public func agents() async throws -> [AgentOption] { try await call("GET", "/agents") }
+
+    public func models() async throws -> [ModelList] { try await call("GET", "/models") }
+
+    public func folders(_ path: String?) async throws -> FolderListing {
+        let query = path.map { "?path=" + ($0.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "") }
+        return try await call("GET", "/folders" + (query ?? ""))
     }
 }
