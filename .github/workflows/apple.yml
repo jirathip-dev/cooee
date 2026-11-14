@@ -1,9 +1,13 @@
-# #124: build the native app (apple/) for iOS and macOS on a GitHub-hosted macOS runner (free on this public repo); no
-# signing. #147: `apple-quality` runs `just apple-check`, every Swift gate (format, anti-slop, SwiftLint, tests,
-# coverage, Periphery). #143: `e2e`: the app in the iOS simulator against a real `cooee serve` (apple/e2e/serve.sh), its
-# screens kept as the `simulator-shots` artifact. #142: `mac-setup`: the Mac app's first run on the runner starts cooee
-# and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac approves it;
-# the screens kept as the `mac-setup-shots` artifact.
+# #124: build the native app (apple/) for iOS and macOS; no signing. #147: `just apple-check`, every Swift gate (format,
+# anti-slop, SwiftLint, tests, coverage, Periphery). #143: the app in the iOS simulator against a real `cooee serve`
+# (apple/e2e/serve.sh), its screens kept as the `simulator-shots` artifact. #277: all three in one `apple` job, so a PR
+# takes one macOS runner here; a newer push to a PR cancels its older run. #365: `apple` runs on our own runners
+# (mini-cooee, air-cooee), never for a fork's pull request (it shows skipped). #142: `mac-setup` (staging pushes and
+# workflow_dispatch only, on GitHub's macos-26, docs/ci-runners.md says why): the Mac app's first run on the runner
+# starts cooee and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac
+# approves it; the screens kept as the `mac-setup-shots` artifact. #328: on a pull request push `apple` runs only the
+# builds; `just apple-check` and the e2e steps run on a staging push and when herdsman labels the PR `merge-ready`
+# (fleet `merge_label`: on exactly while a review PASS stands at the head), and merge waits on that run.
 name: apple
 on:
   push:
@@ -16,7 +20,9 @@ on:
       - "scripts/apple-check.sh"
       - "scripts/apple-coverage.swift"
       - ".github/workflows/apple.yml"
+      - ".github/actions/mac-runner/**"
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - "scripts/mac-bins.sh"
       - "crates/cooee/src/main.rs"
@@ -25,67 +31,72 @@ on:
       - "scripts/apple-check.sh"
       - "scripts/apple-coverage.swift"
       - ".github/workflows/apple.yml"
+      - ".github/actions/mac-runner/**"
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'merge-ready' && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  build:
-    runs-on: macos-26
-    strategy:
-      fail-fast: false
-      matrix:
-        destination: ["generic/platform=iOS Simulator", "generic/platform=macOS"]
+  apple:
+    if: >-
+      github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository
+      && (github.event.action != 'labeled' || github.event.label.name == 'merge-ready'))
+    runs-on: [self-hosted, macOS, ARM64, cooee-mac]
+    timeout-minutes: 120
+    env:
+      FULL: ${{ github.event_name != 'pull_request' || github.event.action == 'labeled' }}
     steps:
       - uses: actions/checkout@v4
-      - name: xcodebuild
-        working-directory: apple
-        run: >-
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination '${{ matrix.destination }}'
-          CODE_SIGNING_ALLOWED=NO build
-
-  apple-quality:
-    runs-on: macos-26
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
+      - uses: ./.github/actions/mac-runner
       - uses: taiki-e/install-action@v2
         with:
           tool: just
+      - uses: dtolnay/rust-toolchain@1.99.1
+      - uses: Swatinem/rust-cache@v2
+      - name: xcodebuild (iOS Simulator, macOS)
+        working-directory: apple
+        run: |
+          for destination in "generic/platform=iOS Simulator" "generic/platform=macOS"; do
+            xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "$destination" \
+              -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO build
+          done
       - name: just apple-check
+        if: env.FULL == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           COOEE_RENDERED: ${{ runner.temp }}/rendered
         run: mkdir -p "$COOEE_RENDERED" && just apple-check
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && env.FULL == 'true'
         with:
           name: rendered-frames
           path: ${{ runner.temp }}/rendered
-
-  e2e:
-    runs-on: macos-26
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.99.1
-      - uses: Swatinem/rust-cache@v2
       - name: cooee serve (fake agent)
+        if: env.FULL == 'true'
         run: |
           PORT=4100 PAIR_LINK="$RUNNER_TEMP/pair" apple/e2e/serve.sh >"$RUNNER_TEMP/serve.log" 2>&1 &
           serve=$!
+          echo "SERVE=$serve" >> "$GITHUB_ENV"
           until [ -s "$RUNNER_TEMP/pair" ]; do
             kill -0 "$serve" 2>/dev/null || { cat "$RUNNER_TEMP/serve.log"; exit 1; }
             sleep 2
           done
           cat "$RUNNER_TEMP/serve.log"
       - name: the client against it (swift test)
+        if: env.FULL == 'true'
         working-directory: apple
         run: COOEE_PAIR_LINK="$(cat "$RUNNER_TEMP/pair")" swift test --filter LiveTests
       # Once per appearance, set with simctl (the test's own XCUIDevice.appearance left this simulator light); each
       # run pairs afresh, so the keychain is emptied first. The app builds before any code is minted: a code lives 10 min.
       - name: the app in the simulator
+        if: env.FULL == 'true'
         working-directory: apple
         run: |
-          sim=$(xcrun simctl create cooee-e2e "iPhone 17")
+          sim=$(xcrun simctl create "cooee-e2e-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" "iPhone 17")
+          echo "SIM=$sim" >> "$GITHUB_ENV"
           xcrun simctl bootstatus "$sim" -b
-          build=(xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim")
+          build=(xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim" \
+            -derivedDataPath "$RUNNER_TEMP/derived")
           "${build[@]}" build-for-testing
           for look in dark light; do
             xcrun simctl ui "$sim" appearance "$look"
@@ -96,12 +107,13 @@ jobs:
           done
       # #139: the personas the simulator made and edited, read back from the server, and a client round trip.
       - name: the simulator's personas on the server (swift test)
+        if: env.FULL == 'true'
         working-directory: apple
         run: |
           link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
           COOEE_PERSONA_LINK="$link" COOEE_SIM_LOOKS="dark light" swift test --filter LivePersonaTests
       - name: screenshots
-        if: always()
+        if: always() && env.FULL == 'true'
         run: |
           mkdir -p simulator-shots
           for look in dark light; do
@@ -111,12 +123,18 @@ jobs:
           cp "$RUNNER_TEMP/serve.log" simulator-shots/ || true
           ls simulator-shots
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && env.FULL == 'true'
         with:
           name: simulator-shots
           path: simulator-shots
+      - name: stop the server, delete the simulator
+        if: always()
+        run: |
+          [ -z "${SERVE:-}" ] || kill "$SERVE" 2>/dev/null || true
+          [ -z "${SIM:-}" ] || xcrun simctl delete "$SIM"
 
   mac-setup:
+    if: github.event_name != 'pull_request'
     runs-on: macos-26
     timeout-minutes: 90
     env:
@@ -133,7 +151,7 @@ jobs:
           xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'platform=macOS' \
             -derivedDataPath "$RUNNER_TEMP/mac" COOEE_BIN_DIR="$RUNNER_TEMP/bin" CODE_SIGN_IDENTITY=- \
             CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= build-for-testing
-          sim=$(xcrun simctl create cooee-ask "iPhone 17")
+          sim=$(xcrun simctl create "cooee-ask-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" "iPhone 17")
           echo "SIM=$sim" >> "$GITHUB_ENV"
           xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim" \
             -derivedDataPath "$RUNNER_TEMP/ios" build-for-testing
@@ -193,3 +211,6 @@ jobs:
         with:
           name: mac-setup-shots
           path: mac-setup-shots
+      - name: delete the simulator
+        if: always() && env.SIM != ''
+        run: xcrun simctl shutdown "$SIM" || true; xcrun simctl delete "$SIM"
