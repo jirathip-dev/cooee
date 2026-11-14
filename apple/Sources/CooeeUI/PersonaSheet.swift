@@ -5,6 +5,8 @@ public struct PersonaActions {
     public var close: () -> Void
     public var save: () -> Void
     public var clear: () -> Void
+    public var agent: @MainActor @Sendable (String) -> Void = { _ in }
+    public var browse: () -> Void = {}
 
     public init(close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {}) {
         self.close = close
@@ -28,7 +30,7 @@ public struct PersonaMemory {
 public struct PersonaSheet: View {
     @Environment(\.look) private var look
     @Binding private var draft: APIPersona
-    @Binding private var agentOpen: Bool
+    private let choices: PersonaChoices
     private let persona: Persona
     private let memory: PersonaMemory
     private let error: String?
@@ -68,7 +70,7 @@ public struct PersonaSheet: View {
     public init(personaID: String = "chief") {
         persona = Fixtures.persona(personaID)
         _draft = .constant(persona.api)
-        _agentOpen = .constant(false)
+        choices = PersonaChoices()
         memory = PersonaMemory(notes: Fixtures.chiefMemory, count: 12, more: "Show all 12")
         error = nil
         actions = PersonaActions()
@@ -76,13 +78,13 @@ public struct PersonaSheet: View {
 
     public init(
         draft: Binding<APIPersona>,
-        agentOpen: Binding<Bool>,
+        choices: PersonaChoices,
         memory: PersonaMemory,
         error: String?,
         actions: PersonaActions
     ) {
         _draft = draft
-        _agentOpen = agentOpen
+        self.choices = choices
         persona = Persona(draft.wrappedValue)
         self.memory = memory
         self.error = error
@@ -102,13 +104,7 @@ extension PersonaSheet {
                 HStack {
                     Text("Agent").ui(16, .regular, look)
                     Spacer()
-                    Button {
-                        agentOpen = true
-                    } label: {
-                        AgentChip(persona: Persona(draft), effort: true)
-                    }
-                    .buttonStyle(.plain).accessibilityLabel("Agent")
-                    .popover(isPresented: $agentOpen) { agent.presentationCompactAdaptation(.popover) }
+                    AgentMenu(draft: $draft, choices: choices, pick: actions.agent)
                 }
                 .padding(.horizontal, 14).frame(height: 48)
                 if !look.still {
@@ -120,22 +116,17 @@ extension PersonaSheet {
             Group2(header: "Instructions") { paragraph("Instructions", $draft.instructions) }
             if memory.count > 0 { Group2(header: "Memory · \(memory.count) notes") { notes } }
             Group2 {
-                SettingRow(
-                    symbol: "folder.fill", title: "Folder", tint: look.palette.amber, value: draft.folder,
-                    divider: false, edit: $draft.folder
-                )
+                Button(action: actions.browse) {
+                    SettingRow(
+                        symbol: "folder.fill", title: "Folder", tint: look.palette.amber, value: draft.folder,
+                        divider: false
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).accessibilityLabel("Folder")
             }
             if let error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
         }
-    }
-
-    private var agent: some View {
-        Group2 {
-            field("Agent", $draft.agent)
-            field("Model", $draft.model)
-            field("Effort", $draft.effort)
-        }
-        .frame(minWidth: 300).padding(12)
     }
 
     @ViewBuilder private var notes: some View {
