@@ -79,7 +79,7 @@ internal struct ChatRow: View {
         let room = !members.isEmpty
         HStack(spacing: 12) {
             if room {
-                RoomStack(members: members, size: 22).frame(width: 48, height: 48)
+                RoomStack(members: members, size: 22, state: .done).frame(width: 48, height: 48)
             } else {
                 Avatar(persona: persona.with(state: row.state), size: 48)
             }
