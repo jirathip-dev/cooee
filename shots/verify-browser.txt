@@ -1,0 +1,6 @@
+verify-browser: http://127.0.0.1:59527/docs/design/new-thread/composer.html?theme=farm&mode=dark: 0 console lines, 0 failed requests, 0 a11y issues; shots/new-thread-composer-1440.png shots/new-thread-composer-390.png
+composer exit=0
+verify-browser: http://127.0.0.1:59527/docs/design/new-thread/chat.html?theme=farm&mode=dark: 0 console lines, 0 failed requests, 0 a11y issues; shots/new-thread-chat-1440.png shots/new-thread-chat-390.png
+chat exit=0
+verify-browser: http://127.0.0.1:59527/docs/design/new-thread/providers.html?theme=farm&mode=dark: 0 console lines, 0 failed requests, 0 a11y issues; shots/new-thread-providers-1440.png shots/new-thread-providers-390.png
+providers exit=0

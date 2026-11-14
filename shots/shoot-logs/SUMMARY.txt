@@ -1,0 +1,14 @@
+app-icons exit=0
+chat-first exit=0
+fleets-config exit=0
+home-v2 exit=0
+look exit=0
+native-feel exit=0
+native-shell exit=0
+new-thread exit=0
+pair exit=0
+persona-text exit=0
+rooms exit=0
+screen exit=0
+screens-as-data exit=0
+v1 exit=0

@@ -1,0 +1,11 @@
+/                        401
+/app.css                 401
+/sw.js                   401
+/manifest.webmanifest    401
+/static/app.js           401
+/pair                    405
+/api/threads             401
+/api/me                  401
+/screens                 401
+/api/health              401
+/healthz                 401

@@ -1,0 +1,23 @@
+/                        404 text/plain; charset=utf-8
+/app.css                 404 text/plain; charset=utf-8
+/sw.js                   404 text/plain; charset=utf-8
+/manifest.webmanifest    404 text/plain; charset=utf-8
+/app.js                  404 text/plain; charset=utf-8
+/pair.js                 404 text/plain; charset=utf-8
+/api/threads             404 text/plain; charset=utf-8
+/api/personas            404 text/plain; charset=utf-8
+/api/me                  404 text/plain; charset=utf-8
+/screens                 404 text/plain; charset=utf-8
+/api/plugins             404 text/plain; charset=utf-8
+/api/themes              404 text/plain; charset=utf-8
+/api/looks               404 text/plain; charset=utf-8
+/look/farm/theme.toml    404 text/plain; charset=utf-8
+/threads           200 application/json
+/personas          200 application/json
+/machines          200 application/json
+/models            200 application/json
+/folders           200 application/json
+/push/key          200 application/json
+/push/endpoints    200 application/json
+/themes            404 text/plain; charset=utf-8
+/devices           200 application/json

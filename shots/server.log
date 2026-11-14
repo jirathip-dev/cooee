@@ -1,0 +1,2 @@
+cooee: listening on http://127.0.0.1:41904
+cooee: dropped a shed event (missing field `seq` at line 1 column 57): {"jsonrpc":"2.0","method":"reset","params":{"seq":35457}}
