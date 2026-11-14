@@ -1,0 +1,27 @@
+# #365: the first step of every macOS job on our own runners (mini-cooee, air-cooee), after a clean checkout. Temp
+# files go to the job's RUNNER_TEMP (emptied by the runner after each job), through a short link that keeps socket
+# paths under macOS's limit; cargo, rustup and the tools the job installs
+# live under the runner's own tool folder, never the account's ~/.cargo or ~/.rustup; git (and cargo, through the git
+# CLI) reads none of the account's git config; Xcode is the one at an explicit path, its version in the log and the summary.
+name: mac-runner
+description: A self-hosted macOS job's own temp folder, toolchain homes and Xcode
+runs:
+  using: composite
+  steps:
+    - name: temp, toolchain homes and Xcode
+      shell: bash
+      run: |
+        tools="$RUNNER_TOOL_CACHE/cooee"
+        xcode=/Applications/Xcode.app/Contents/Developer
+        mkdir -p "$tools/cargo/bin" "$tools/rustup"
+        ln -shf "$RUNNER_TEMP" "/tmp/$RUNNER_NAME"
+        : > "$RUNNER_TEMP/gitconfig"
+        { echo "TMPDIR=/tmp/$RUNNER_NAME/"
+          echo "CARGO_HOME=$tools/cargo"
+          echo "RUSTUP_HOME=$tools/rustup"
+          echo "GIT_CONFIG_GLOBAL=$RUNNER_TEMP/gitconfig"
+          echo "GIT_CONFIG_NOSYSTEM=1"
+          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true"
+          echo "DEVELOPER_DIR=$xcode"; } >> "$GITHUB_ENV"
+        echo "$tools/cargo/bin" >> "$GITHUB_PATH"
+        echo "### $RUNNER_NAME: $(DEVELOPER_DIR=$xcode xcodebuild -version | tr '\n' ' ')" | tee -a "$GITHUB_STEP_SUMMARY"

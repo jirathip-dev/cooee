@@ -56,7 +56,7 @@ impl Note {
         thread: &Thread,
         (key, who, line): (&str, &str, &str),
         item: u64,
-        theme: &cooee_web::Theme,
+        theme: &crate::look::Theme,
     ) -> Self {
         Self {
             title: thread.title.clone(),
@@ -94,7 +94,7 @@ pub fn note(
     change: &Change,
     was: &str,
     watched: bool,
-    theme: &cooee_web::Theme,
+    theme: &crate::look::Theme,
 ) -> Option<Note> {
     let last = chat.items.last().map_or(0, |i| i.id);
     let (key, line, item) = match change {
@@ -820,11 +820,9 @@ mod tests {
         assert_eq!(push.bearer(&a, &k, 1000 + 49 * 60), first);
         let later = push.bearer(&a, &k, 1000 + 50 * 60);
         assert_ne!(later, first);
-        assert!(
-            B64.decode(later.split('.').nth(1).unwrap())
-                .unwrap()
-                .starts_with(b"{\"iat\":4000,")
-        );
+        let claims: serde_json::Value =
+            serde_json::from_slice(&B64.decode(later.split('.').nth(1).unwrap()).unwrap()).unwrap();
+        assert_eq!(claims["iat"], 4000);
     }
 
     /// Each paired device's token gets one POST with the APNs headers and the note; a 410 or `BadDeviceToken` drops
@@ -1128,7 +1126,7 @@ mod tests {
         };
         let t = thread();
         let packs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs");
-        let (looks, _) = cooee_web::Looks::load(Some(&packs), None);
+        let (looks, _) = crate::look::Looks::load(Some(&packs), None);
         let (farm, plain) = (&looks.themes["farm"], &looks.themes["plain"]);
         assert_eq!(
             note(&t, &chat, &approval(None), "working", true, farm),

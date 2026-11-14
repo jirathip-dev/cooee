@@ -52,17 +52,16 @@ scope() {
 }
 ready="EVENT=pull_request ACTION=labeled LABEL=merge-ready"
 push="EVENT=pull_request ACTION=synchronize"
-scope "run=true full=true mac=false web=false" docs/a.md $ready
+scope "run=true full=true mac=false" docs/a.md $ready
 scope "mac=false" crates/cooee-core/src/chat.rs $ready
 scope "mac=true" apple/App.swift $ready
 scope "mac=true" crates/cooee-server/src/lib.rs $ready
 scope "mac=true" crates/cooee-core/src/shed.rs $ready
 scope "full=false mac=false" apple/App.swift $push CARRIES=false
 scope "full=true mac=true" apple/App.swift $push CARRIES=true
-scope "web=true mac=false" web/ts/app.ts $push CARRIES=false
 scope "run=false" apple/App.swift EVENT=pull_request ACTION=labeled LABEL=bug
-scope "run=true mac=true web=true" docs/a.md EVENT=push
-scope "run=true mac=true web=true" docs/a.md EVENT=schedule
+scope "run=true mac=true" docs/a.md EVENT=push
+scope "run=true mac=true" docs/a.md EVENT=schedule
 scope "run=false" docs/a.md EVENT=push REUSED=8
 git checkout -q --detach "$base"
 git rm -q crates/cooee-core/src/shed.rs

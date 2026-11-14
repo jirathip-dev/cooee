@@ -93,8 +93,6 @@ fn the_list_counts_unseen_replies_and_archives_apart() {
     let archive = format!("/threads/{id}/archive");
     assert_eq!(cooee.post(&archive, &json!({ "on": true })).0, 200);
     assert!(row(&cooee, &id).1);
-    let (_, page) = cooee.get("/");
-    assert!(page.contains(&format!("data-restore=\"{id}\"")), "{page}");
     assert_eq!(cooee.post(&archive, &json!({ "on": false })).0, 200);
     assert!(!row(&cooee, &id).1);
 }
