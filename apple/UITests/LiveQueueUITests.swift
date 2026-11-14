@@ -1,7 +1,7 @@
 #if os(iOS)
     import XCTest
 
-    extension LiveDroverUITests {
+    extension LiveUITestCase {
         @MainActor
         internal func followsTheQueueAndFoldsARowOpen(_ app: XCUIApplication) {
             XCTAssert(labelled(app, "review 1 ▸ herdsman-rev-722").waitForExistence(timeout: 30))
