@@ -1,4 +1,4 @@
-/* #165 the Screen sheet (native), on web/src/app.css, native-shell's phone chrome (ns.css) and #153's native v1
+/* #165 the Screen sheet (native), on design-system/app.css, native-shell's phone chrome (ns.css) and #153's native v1
    language (../rooms/rm.css: .gb .rhd .hdt .pa .mg .ask .rsh .shb .rfl .fr2 .lb2 .ft .dock .comp .side .hr .lock .push).
    Tokens only. One exception, as pair.css's QR tile: `.site` is the remote page, someone else's pixels, so it keeps
    its own light colours in every scheme and style (it is what the browser on the Mini shows, not cooee). And `.di`,

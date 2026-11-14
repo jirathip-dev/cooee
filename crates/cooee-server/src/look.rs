@@ -1,7 +1,7 @@
 //! Themes and colour schemes on herdsman's data-only theme contract (docs/themes.md): a theme is a pack, a folder of
 //! data (`theme.json`, optional `sprites.svg`, `scene.svg`, `icon.png` and `schemes/`), a scheme one JSON file of
 //! tokens. Only the plain theme and the schemes ship in the binary; packs come from `<config dir>/themes/<name>/`
-//! (installed or kept), the ones being built from `<config dir>/themes-dev/<name>/`, and own schemes from
+//! (installed or kept), and own schemes from
 //! `<config dir>/schemes/<name>.json`. Every pack passes the theme gate ([`read_pack`]), or it is refused.
 
 use std::{collections::BTreeMap, fs, path::Path};
@@ -15,7 +15,7 @@ pub struct Scheme {
     pub label: String,
     /// `dark` or `light`: the Appearance mode it serves.
     #[serde(rename = "color-scheme")]
-    pub color_scheme: String,
+    pub mode: String,
     /// `--bg`, `--fg`, … as `#rrggbb` (the gate's [`TOKENS`], and any others the scheme adds).
     pub tokens: BTreeMap<String, String>,
 }
@@ -113,10 +113,6 @@ pub struct Looks {
     pub themes: BTreeMap<String, Theme>,
     /// By file name.
     pub schemes: BTreeMap<String, Scheme>,
-    /// The themes being built in `themes-dev/`, each with the ways it fails the theme gate (none: it passes, and it
-    /// shows as theme `dev.<name>`).
-    #[serde(skip)]
-    pub dev: BTreeMap<String, Vec<String>>,
     /// The ASCII figures, for `look.ts`.
     pub ascii: &'static [(&'static str, [&'static str; 2])],
 }
@@ -125,9 +121,18 @@ macro_rules! builtin_theme {
     ($name:literal, $sprites:expr, $scene:expr) => {
         (
             $name,
-            include_str!(concat!("../themes/", $name, "/theme.json")),
+            include_str!(concat!(
+                "../../../design-system/themes/",
+                $name,
+                "/theme.json"
+            )),
             $sprites,
-            include_bytes!(concat!("../themes/", $name, "/icon.png")).as_slice(),
+            include_bytes!(concat!(
+                "../../../design-system/themes/",
+                $name,
+                "/icon.png"
+            ))
+            .as_slice(),
             $scene,
         )
     };
@@ -135,7 +140,7 @@ macro_rules! builtin_theme {
 
 macro_rules! builtin_scheme {
     ($($name:literal),*) => {
-        [$(($name, include_str!(concat!("../schemes/", $name, ".json")))),*]
+        [$(($name, include_str!(concat!("../../../design-system/schemes/", $name, ".json")))),*]
     };
 }
 
@@ -202,7 +207,7 @@ impl Looks {
     }
 
     /// The built-in theme and schemes, then the owner's own from `config_dir`: schemes, the packs in `themes/` (an own
-    /// one of the same name replaces a built-in; a pack's own schemes join the rest) and the ones in `themes-dev/`.
+    /// one of the same name replaces a built-in; a pack's own schemes join the rest).
     /// `default` is the server's default theme (else farm, when it is installed, else plain). Returns why each own
     /// file was refused (unreadable, invalid, failing the gate).
     ///
@@ -223,7 +228,6 @@ impl Looks {
                 ((*n).to_owned(), t)
             })
             .collect();
-        let mut dev = BTreeMap::new();
         if let Some(dir) = config_dir {
             for (name, path) in entries(&dir.join("schemes"), &mut refused) {
                 let Some(name) = name.strip_suffix(".json") else {
@@ -247,24 +251,6 @@ impl Looks {
                     Err(e) => refused.push(format!("{}: {}", path.display(), e.join("; "))),
                 }
             }
-            for (name, path) in entries(&dir.join("themes-dev"), &mut refused) {
-                let pack = read_pack(&path, &schemes).map(|(mut t, own)| {
-                    // Its own schemes as `dev.<name>.<scheme>`, out of the way of the installed ones.
-                    for (n, s) in own {
-                        let key = format!("dev.{name}.{n}");
-                        for p in [&mut t.scheme.dark, &mut t.scheme.light] {
-                            if *p == n {
-                                p.clone_from(&key);
-                            }
-                        }
-                        schemes.insert(key, s);
-                    }
-                    themes.insert(format!("dev.{name}"), t);
-                });
-                if valid_name(&name) {
-                    dev.insert(name, pack.err().unwrap_or_default());
-                }
-            }
         }
         let fallback = if themes.contains_key("farm") {
             "farm"
@@ -284,7 +270,6 @@ impl Looks {
                 default,
                 themes,
                 schemes,
-                dev,
                 ascii: &ASCII,
             },
             refused,
@@ -371,7 +356,7 @@ pub fn read_pack(
     }
     for (mode, name) in [("dark", &t.scheme.dark), ("light", &t.scheme.light)] {
         match own.get(name).or_else(|| schemes.get(name)) {
-            Some(s) if s.color_scheme != mode => {
+            Some(s) if s.mode != mode => {
                 fails.push(format!("scheme.{mode} {name:?} is not a {mode} scheme"));
             }
             Some(s) => {
@@ -487,11 +472,8 @@ fn entries(dir: &Path, refused: &mut Vec<String>) -> Vec<(String, std::path::Pat
 fn read_scheme(path: &Path) -> Result<Scheme, String> {
     let text = fs::read_to_string(path).map_err(|e| e.to_string())?;
     let s: Scheme = serde_json::from_str(&text).map_err(|e| e.to_string())?;
-    if s.color_scheme != "dark" && s.color_scheme != "light" {
-        return Err(format!(
-            "color-scheme {:?}: not dark or light",
-            s.color_scheme
-        ));
+    if s.mode != "dark" && s.mode != "light" {
+        return Err(format!("color-scheme {:?}: not dark or light", s.mode));
     }
     Ok(s)
 }
@@ -670,7 +652,7 @@ mod tests {
     }
 
     fn packs() -> std::path::PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../packs")
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs")
     }
 
     #[test]
@@ -808,32 +790,6 @@ mod tests {
                 WORDS.join(" ")
             )
         );
-    }
-
-    #[test]
-    fn a_theme_being_built_shows_as_dev_with_its_own_schemes_or_its_failures() {
-        let dir = tmp("dev");
-        let sea = dir.join("themes-dev/sea");
-        fs::create_dir_all(sea.join("schemes")).unwrap();
-        fs::write(
-            sea.join("theme.json"),
-            r#"{"label":"sea","scheme":{"dark":"deep","light":"paper"}}"#,
-        )
-        .unwrap();
-        fs::write(sea.join("schemes/deep.json"), SCHEMES[3].1).unwrap();
-        fs::create_dir_all(dir.join("themes-dev/bad")).unwrap();
-        fs::write(dir.join("themes-dev/bad/theme.json"), "{").unwrap();
-        let (looks, refused) = Looks::load(Some(&dir), None);
-        assert_eq!(refused, Vec::<String>::new());
-        assert_eq!(looks.themes["dev.sea"].scheme.dark, "dev.sea.deep");
-        assert!(looks.schemes.contains_key("dev.sea.deep") && !looks.schemes.contains_key("deep"));
-        assert_eq!(looks.dev["sea"], Vec::<String>::new());
-        assert!(
-            looks.dev["bad"][0].starts_with("theme.json: "),
-            "{:?}",
-            looks.dev
-        );
-        assert!(!looks.themes.contains_key("dev.bad"));
     }
 
     #[test]

@@ -271,7 +271,7 @@ fn pair(config: &Config) -> Result<(), String> {
         Some(host) => format!("https://{host}:{}/pair?code={code}", config.port),
         None => format!("http://127.0.0.1:{}/pair?code={code}", config.port),
     };
-    println!("Scan it with the new device's Camera, or open the link and type the code.");
+    println!("Type the link into the cooee app on the new device.");
     if let Ok(qr) = QrCode::new(&url) {
         println!("{}", qr.render::<Dense1x2>().quiet_zone(true).build());
     }
@@ -593,7 +593,7 @@ fn theme(config: &Config, args: &[&str], rev: Option<&str>, yes: bool) -> Result
     if let ["check", paths @ ..] = args {
         let mut failed = 0;
         for p in paths {
-            match cooee_web::check(Path::new(p)) {
+            match cooee_server::check(Path::new(p)) {
                 Ok(()) => println!("ok   {p}"),
                 Err(fails) => {
                     failed += 1;
