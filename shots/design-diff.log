@@ -1,0 +1,46 @@
+diff: shots/call-dark.png vs apple/design/native-surfaces/call-dark.png: 0.000 % of pixels differ (shots/call-dark-diff.png)
+call-dark exit=0
+diff: shots/call-light.png vs apple/design/native-surfaces/call-light.png: 0.000 % of pixels differ (shots/call-light-diff.png)
+call-light exit=0
+diff: shots/call-scene-light.png vs apple/design/native-surfaces/call-scene-light.png: 0.000 % of pixels differ (shots/call-scene-light-diff.png)
+call-scene-light exit=0
+diff: shots/call-terminal-dark.png vs apple/design/native-surfaces/call-terminal-dark.png: 0.000 % of pixels differ (shots/call-terminal-dark-diff.png)
+call-terminal-dark exit=0
+diff: shots/call-thread-dark.png vs apple/design/native-surfaces/call-thread-dark.png: 0.000 % of pixels differ (shots/call-thread-dark-diff.png)
+call-thread-dark exit=0
+diff: shots/call-thread-light.png vs apple/design/native-surfaces/call-thread-light.png: 0.000 % of pixels differ (shots/call-thread-light-diff.png)
+call-thread-light exit=0
+diff: shots/dictate-dark.png vs apple/design/native-surfaces/dictate-dark.png: 0.000 % of pixels differ (shots/dictate-dark-diff.png)
+dictate-dark exit=0
+diff: shots/dictate-edit-dark.png vs apple/design/native-surfaces/dictate-edit-dark.png: 0.000 % of pixels differ (shots/dictate-edit-dark-diff.png)
+dictate-edit-dark exit=0
+diff: shots/dictate-edit-light.png vs apple/design/native-surfaces/dictate-edit-light.png: 0.000 % of pixels differ (shots/dictate-edit-light-diff.png)
+dictate-edit-light exit=0
+diff: shots/dictate-light.png vs apple/design/native-surfaces/dictate-light.png: 0.000 % of pixels differ (shots/dictate-light-diff.png)
+dictate-light exit=0
+diff: shots/island-dark.png vs apple/design/native-surfaces/island-dark.png: 0.000 % of pixels differ (shots/island-dark-diff.png)
+island-dark exit=0
+diff: shots/island-light.png vs apple/design/native-surfaces/island-light.png: 0.000 % of pixels differ (shots/island-light-diff.png)
+island-light exit=0
+diff: shots/island-terminal-dark.png vs apple/design/native-surfaces/island-terminal-dark.png: 0.000 % of pixels differ (shots/island-terminal-dark-diff.png)
+island-terminal-dark exit=0
+diff: shots/lock-dark.png vs apple/design/native-surfaces/lock-dark.png: 0.000 % of pixels differ (shots/lock-dark-diff.png)
+lock-dark exit=0
+diff: shots/lock-light.png vs apple/design/native-surfaces/lock-light.png: 0.000 % of pixels differ (shots/lock-light-diff.png)
+lock-light exit=0
+diff: shots/lock-terminal-dark.png vs apple/design/native-surfaces/lock-terminal-dark.png: 0.000 % of pixels differ (shots/lock-terminal-dark-diff.png)
+lock-terminal-dark exit=0
+diff: shots/shortcuts-dark.png vs apple/design/native-surfaces/shortcuts-dark.png: 0.000 % of pixels differ (shots/shortcuts-dark-diff.png)
+shortcuts-dark exit=0
+diff: shots/shortcuts-light.png vs apple/design/native-surfaces/shortcuts-light.png: 0.000 % of pixels differ (shots/shortcuts-light-diff.png)
+shortcuts-light exit=0
+diff: shots/siri-dark.png vs apple/design/native-surfaces/siri-dark.png: 0.000 % of pixels differ (shots/siri-dark-diff.png)
+siri-dark exit=0
+diff: shots/siri-light.png vs apple/design/native-surfaces/siri-light.png: 0.000 % of pixels differ (shots/siri-light-diff.png)
+siri-light exit=0
+diff: shots/widgets-dark.png vs apple/design/native-surfaces/widgets-dark.png: 0.000 % of pixels differ (shots/widgets-dark-diff.png)
+widgets-dark exit=0
+diff: shots/widgets-light.png vs apple/design/native-surfaces/widgets-light.png: 0.000 % of pixels differ (shots/widgets-light-diff.png)
+widgets-light exit=0
+diff: shots/widgets-scene-light.png vs apple/design/native-surfaces/widgets-scene-light.png: 0.000 % of pixels differ (shots/widgets-scene-light-diff.png)
+widgets-scene-light exit=0

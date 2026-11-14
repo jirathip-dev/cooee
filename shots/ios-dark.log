@@ -1,0 +1,755 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination id=79D8FE34-4090-4DD3-BE8B-F004F1509F48 -resultBundlePath /Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r8/.verify/e2e-dark.xcresult test-without-building
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  swift-concurrency-extras: https://github.com/pointfreeco/swift-concurrency-extras @ 1.4.3
+  swift-perception: https://github.com/pointfreeco/swift-perception @ 2.0.12
+  swift-issue-reporting: https://github.com/pointfreeco/swift-issue-reporting @ 2.1.2
+  swift-clocks: https://github.com/pointfreeco/swift-clocks @ 1.1.1
+  swift-collections: https://github.com/apple/swift-collections @ 1.7.6
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 604.0.0
+  swift-dependencies: https://github.com/pointfreeco/swift-dependencies @ 1.17.2
+  swift-sharing: https://github.com/pointfreeco/swift-sharing @ 2.10.1
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.7.3
+  swift-identified-collections: https://github.com/pointfreeco/swift-identified-collections @ 1.1.1
+  swift-navigation: https://github.com/pointfreeco/swift-navigation @ 2.11.2
+  swift-case-paths: https://github.com/pointfreeco/swift-case-paths @ 1.10.0
+  swift-composable-architecture: https://github.com/pointfreeco/swift-composable-architecture @ 1.26.2
+  combine-schedulers: https://github.com/pointfreeco/combine-schedulers @ 1.2.2
+  Cooee: /Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r8/apple @ local
+
+Writing result bundle at path:
+	/Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r8/.verify/e2e-dark.xcresult
+
+2026-11-14 06:46:06.357311+0700 CooeeAppUITests-Runner[61977:143354301] [Default] Running tests...
+objc[61977]: Class UIAccessibilityLoaderWebShared is implemented in both /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.Jnfk9X/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10a828310) and /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.Jnfk9X/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x10a3c4398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'All tests' started at 2569-11-14 06:46:13.186.
+Test Suite 'CooeeAppUITests.xctest' started at 2569-11-14 06:46:13.189.
+Test Suite 'LiveUITests' started at 2569-11-14 06:46:13.189.
+Test Case '-[CooeeAppUITests.LiveUITests testAsksAndTheMacApprovesIt]' started.
+    t =     0.00s Start Test at 2569-11-14 06:46:13.194
+    t =     0.33s Set Up
+/Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r8/apple/UITests/LiveUITests.swift:94: -[CooeeAppUITests.LiveUITests testAsksAndTheMacApprovesIt] : Test skipped - CI's mac-setup job sets COOEE_ASK_ADDRESS, once the Mac shows its QR
+    t =     0.36s Tear Down
+Test Case '-[CooeeAppUITests.LiveUITests testAsksAndTheMacApprovesIt]' skipped (0.461 seconds).
+Test Case '-[CooeeAppUITests.LiveUITests testPairsStreamsAndShowsHome]' started.
+    t =     0.00s Start Test at 2569-11-14 06:46:13.655
+    t =     0.01s Set Up
+    t =     0.02s Open com.jirathip.cooee
+    t =     0.02s     Launch com.jirathip.cooee
+2026-11-14 06:46:14.203 xcodebuild[52495:143317316] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-14 06:46:14.203 xcodebuild[52495:143317316] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     2.40s         Setting up automation session
+    t =     4.72s         Wait for com.jirathip.cooee to idle
+    t =     6.73s Tap "Enter address" Button
+    t =     6.73s     Wait for com.jirathip.cooee to idle
+    t =     6.74s     Find the "Enter address" Button
+    t =     6.93s     Check for interrupting elements affecting "Enter address" Button
+    t =     7.00s     Synthesize event
+    t =     7.48s     Wait for com.jirathip.cooee to idle
+    t =     8.06s Waiting 10.0s for Any (First Match) to exist
+    t =     9.15s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =     9.15s         Checking existence of `Any (First Match)`
+    t =     9.17s Tap Any (First Match)
+    t =     9.17s     Wait for com.jirathip.cooee to idle
+    t =     9.17s     Find the Any (First Match)
+    t =     9.18s     Check for interrupting elements affecting "server.example.com" TextField
+    t =     9.20s     Synthesize event
+    t =     9.50s     Wait for com.jirathip.cooee to idle
+    t =    11.32s Type 'http://127.0.0.1:4...' into "server.example.com" TextField
+    t =    11.32s     Wait for com.jirathip.cooee to idle
+    t =    11.68s     Find the "server.example.com" TextField
+    t =    11.71s     Check for interrupting elements affecting "server.example.com" TextField
+    t =    11.74s     Synthesize event
+    t =    12.60s     Wait for com.jirathip.cooee to idle
+    t =    12.61s Tap "Connect" Button
+    t =    12.61s     Wait for com.jirathip.cooee to idle
+    t =    12.61s     Find the "Connect" Button
+    t =    12.65s     Check for interrupting elements affecting "Connect" Button
+    t =    12.69s     Synthesize event
+    t =    12.99s     Wait for com.jirathip.cooee to idle
+    t =    13.01s Waiting 60.0s for "Paired with 127.0.0.1" StaticText to exist
+    t =    14.10s     Checking `Expect predicate `existsNoRetry == 1` for object "Paired with 127.0.0.1" StaticText`
+    t =    14.10s         Checking existence of `"Paired with 127.0.0.1" StaticText`
+    t =    14.25s Added attachment named 'pair-paired-dark'
+    t =    14.25s Tap "Go to Home" Button
+    t =    14.25s     Wait for com.jirathip.cooee to idle
+    t =    14.25s     Find the "Go to Home" Button
+    t =    14.26s     Check for interrupting elements affecting "Go to Home" Button
+    t =    14.27s     Synthesize event
+    t =    14.56s     Wait for com.jirathip.cooee to idle
+    t =    14.58s Waiting 20.0s for "New chat" Button to exist
+    t =    15.67s     Checking `Expect predicate `existsNoRetry == 1` for object "New chat" Button`
+    t =    15.67s         Checking existence of `"New chat" Button`
+    t =    15.68s Tap "New chat" Button
+    t =    15.68s     Wait for com.jirathip.cooee to idle
+    t =    15.69s     Find the "New chat" Button
+    t =    15.70s     Check for interrupting elements affecting "New chat" Button
+    t =    15.72s     Synthesize event
+    t =    16.02s     Wait for com.jirathip.cooee to idle
+    t =    17.08s Tap "Coder" Button
+    t =    17.08s     Wait for com.jirathip.cooee to idle
+    t =    17.09s     Find the "Coder" Button
+    t =    17.22s     Check for interrupting elements affecting "Coder" Button
+    t =    17.24s     Synthesize event
+    t =    17.55s     Wait for com.jirathip.cooee to idle
+    t =    18.64s Waiting 10.0s for Any (First Match) to exist
+    t =    19.73s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    19.73s         Checking existence of `Any (First Match)`
+    t =    19.75s Tap Any (First Match)
+    t =    19.75s     Wait for com.jirathip.cooee to idle
+    t =    19.76s     Find the Any (First Match)
+    t =    19.77s     Check for interrupting elements affecting "Message Coder" TextField
+    t =    19.79s     Synthesize event
+    t =    20.09s     Wait for com.jirathip.cooee to idle
+    t =    20.45s Type 'slow 60' into "Message Coder" TextField
+    t =    20.45s     Wait for com.jirathip.cooee to idle
+    t =    20.46s     Find the "Message Coder" TextField
+    t =    20.51s     Check for interrupting elements affecting "Message Coder" TextField
+    t =    20.54s     Synthesize event
+    t =    20.86s     Wait for com.jirathip.cooee to idle
+    t =    20.86s Tap "Send" Button
+    t =    20.86s     Wait for com.jirathip.cooee to idle
+    t =    20.86s     Find the "Send" Button
+    t =    20.91s     Check for interrupting elements affecting "arrow.up" Button
+    t =    20.93s     Synthesize event
+    t =    21.23s     Wait for com.jirathip.cooee to idle
+    t =    21.47s Waiting 30.0s for Any (First Match) to exist
+    t =    22.55s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    22.55s         Checking existence of `Any (First Match)`
+    t =    22.59s         Capturing element debug description
+    t =    23.56s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    23.56s         Checking existence of `Any (First Match)`
+    t =    23.58s Checking existence of `"Stop" Button`
+    t =    23.59s Tap "Message Coder" TextField
+    t =    23.59s     Wait for com.jirathip.cooee to idle
+    t =    23.60s     Find the "Message Coder" TextField
+    t =    23.61s     Check for interrupting elements affecting "Message Coder" TextField
+    t =    23.63s     Synthesize event
+    t =    23.93s     Wait for com.jirathip.cooee to idle
+    t =    24.25s Type 'Then open the PR' into "Message Coder" TextField
+    t =    24.25s     Wait for com.jirathip.cooee to idle
+    t =    24.25s     Find the "Message Coder" TextField
+    t =    24.30s     Check for interrupting elements affecting "Message Coder" TextField
+    t =    24.32s     Synthesize event
+    t =    24.80s     Wait for com.jirathip.cooee to idle
+    t =    24.81s Tap "Send" Button
+    t =    24.81s     Wait for com.jirathip.cooee to idle
+    t =    24.81s     Find the "Send" Button
+    t =    24.85s     Check for interrupting elements affecting "arrow.up" Button
+    t =    24.89s     Synthesize event
+    t =    25.19s     Wait for com.jirathip.cooee to idle
+    t =    25.42s Waiting 10.0s for Any (First Match) to exist
+    t =    26.50s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    26.50s         Checking existence of `Any (First Match)`
+    t =    26.52s Waiting 10.0s for Any (First Match) to exist
+    t =    27.60s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    27.61s         Checking existence of `Any (First Match)`
+    t =    27.64s Waiting 5.0s for Keyboard (First Match) to not exist
+    t =    28.73s     Checking `Expect predicate `existsNoRetry == 0` for object Keyboard (First Match)`
+    t =    28.73s         Checking existence of `Keyboard (First Match)`
+    t =    28.76s Find the Any (First Match)
+    t =    28.87s Added attachment named 'chat-streaming-dark'
+    t =    28.88s Tap "Back" Button
+    t =    28.88s     Wait for com.jirathip.cooee to idle
+    t =    28.88s     Find the "Back" Button
+    t =    28.89s     Check for interrupting elements affecting "chevron.left" Button
+    t =    28.91s     Synthesize event
+    t =    29.21s     Wait for com.jirathip.cooee to idle
+    t =    29.50s Waiting 10.0s for "New chat" Button to exist
+    t =    30.58s     Checking `Expect predicate `existsNoRetry == 1` for object "New chat" Button`
+    t =    30.58s         Checking existence of `"New chat" Button`
+    t =    30.60s Checking existence of `Any (First Match)`
+    t =    30.70s Added attachment named 'home-dark'
+    t =    30.70s Tap "New chat" Button
+    t =    30.70s     Wait for com.jirathip.cooee to idle
+    t =    30.71s     Find the "New chat" Button
+    t =    30.72s     Check for interrupting elements affecting "New chat" Button
+    t =    30.73s     Synthesize event
+    t =    31.03s     Wait for com.jirathip.cooee to idle
+    t =    31.87s Tap "New persona…" Button
+    t =    31.87s     Wait for com.jirathip.cooee to idle
+    t =    31.87s     Find the "New persona…" Button
+    t =    31.91s     Check for interrupting elements affecting "person.badge.plus" Button
+    t =    31.93s     Synthesize event
+    t =    32.23s     Wait for com.jirathip.cooee to idle
+    t =    33.43s Waiting 10.0s for Any (First Match) to exist
+    t =    34.52s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    34.52s         Checking existence of `Any (First Match)`
+    t =    34.57s Tap Any (First Match)
+    t =    34.57s     Wait for com.jirathip.cooee to idle
+    t =    34.58s     Find the Any (First Match)
+    t =    34.59s     Check for interrupting elements affecting "Name" TextField
+    t =    34.62s     Synthesize event
+    t =    34.92s     Wait for com.jirathip.cooee to idle
+    t =    35.23s Type 'Scout dark' into "Name" TextField
+    t =    35.23s     Wait for com.jirathip.cooee to idle
+    t =    35.23s     Find the "Name" TextField
+    t =    35.31s     Check for interrupting elements affecting "Name" TextField
+    t =    35.34s     Synthesize event
+    t =    35.72s     Wait for com.jirathip.cooee to idle
+    t =    35.72s Waiting 10.0s for "Pin to Home" Switch to exist
+    t =    36.81s     Checking `Expect predicate `existsNoRetry == 1` for object "Pin to Home" Switch`
+    t =    36.81s         Checking existence of `"Pin to Home" Switch`
+    t =    36.84s Checking existence of `Switch (First Match)`
+    t =    36.90s Tap Switch (First Match)
+    t =    36.90s     Wait for com.jirathip.cooee to idle
+    t =    36.90s     Find the Switch (First Match)
+    t =    36.96s     Check for interrupting elements affecting "0" Switch
+    t =    37.00s     Synthesize event
+    t =    37.30s     Wait for com.jirathip.cooee to idle
+    t =    38.58s Find the "Pin to Home" Switch
+    t =    38.62s Waiting 10.0s for Any (First Match) to exist
+    t =    39.69s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    39.69s         Checking existence of `Any (First Match)`
+    t =    39.73s Tap Any (First Match)
+    t =    39.73s     Wait for com.jirathip.cooee to idle
+    t =    39.73s     Find the Any (First Match)
+    t =    39.80s     Check for interrupting elements affecting "Character" TextField
+    t =    39.83s     Synthesize event
+    t =    40.12s     Wait for com.jirathip.cooee to idle
+    t =    40.13s Type 'Finds the facts fi...' into "Character" TextField
+    t =    40.13s     Wait for com.jirathip.cooee to idle
+    t =    40.13s     Find the "Character" TextField
+    t =    40.18s     Check for interrupting elements affecting "Character" TextField
+    t =    40.21s     Synthesize event
+    t =    40.79s     Wait for com.jirathip.cooee to idle
+    t =    40.80s Tap "Save" Button
+    t =    40.80s     Wait for com.jirathip.cooee to idle
+    t =    40.80s     Find the "Save" Button
+    t =    40.81s     Check for interrupting elements affecting "checkmark" Button
+    t =    40.84s     Synthesize event
+    t =    41.13s     Wait for com.jirathip.cooee to idle
+    t =    41.56s Waiting 10.0s for Any (First Match) to exist
+    t =    42.63s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    42.63s         Checking existence of `Any (First Match)`
+    t =    42.65s Tap "New chat" Button
+    t =    42.66s     Wait for com.jirathip.cooee to idle
+    t =    42.66s     Find the "New chat" Button
+    t =    42.67s     Check for interrupting elements affecting "New chat" Button
+    t =    42.68s     Synthesize event
+    t =    42.98s     Wait for com.jirathip.cooee to idle
+    t =    43.80s Tap "Edit a persona" Button
+    t =    43.80s     Wait for com.jirathip.cooee to idle
+    t =    43.80s     Find the "Edit a persona" Button
+    t =    43.82s     Check for interrupting elements affecting "pencil" Button
+    t =    43.85s     Synthesize event
+    t =    44.15s     Wait for com.jirathip.cooee to idle
+    t =    45.28s Tap "Edit Scout dark" Button
+    t =    45.28s     Wait for com.jirathip.cooee to idle
+    t =    45.28s     Find the "Edit Scout dark" Button
+    t =    45.32s     Check for interrupting elements affecting "Edit Scout dark" Button
+    t =    45.34s     Synthesize event
+    t =    45.64s     Wait for com.jirathip.cooee to idle
+    t =    46.72s Waiting 10.0s for Any (First Match) to exist
+    t =    47.79s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    47.79s         Checking existence of `Any (First Match)`
+    t =    47.86s Find the "Pin to Home" Switch
+    t =    47.90s Waiting 10.0s for Any (First Match) to exist
+    t =    48.98s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    48.98s         Checking existence of `Any (First Match)`
+    t =    49.04s Tap Any (First Match)
+    t =    49.04s     Wait for com.jirathip.cooee to idle
+    t =    49.04s     Find the Any (First Match)
+    t =    49.12s     Check for interrupting elements affecting "Instructions" TextField
+    t =    49.15s     Synthesize event
+    t =    49.44s     Wait for com.jirathip.cooee to idle
+    t =    49.79s Type 'Cite every source.' into "Instructions" TextField
+    t =    49.79s     Wait for com.jirathip.cooee to idle
+    t =    49.80s     Find the "Instructions" TextField
+    t =    49.85s     Check for interrupting elements affecting "Instructions" TextField
+    t =    49.88s     Synthesize event
+    t =    50.39s     Wait for com.jirathip.cooee to idle
+    t =    50.48s Added attachment named 'persona-dark'
+    t =    50.48s Tap "Save" Button
+    t =    50.48s     Wait for com.jirathip.cooee to idle
+    t =    50.49s     Find the "Save" Button
+    t =    50.51s     Check for interrupting elements affecting "checkmark" Button
+    t =    50.54s     Synthesize event
+    t =    50.84s     Wait for com.jirathip.cooee to idle
+    t =    51.24s Waiting 10.0s for "Save" Button to not exist
+    t =    52.30s     Checking `Expect predicate `existsNoRetry == 0` for object "Save" Button`
+    t =    52.30s         Checking existence of `"Save" Button`
+    t =    52.32s Tap "New chat" Button
+    t =    52.33s     Wait for com.jirathip.cooee to idle
+    t =    52.33s     Find the "New chat" Button
+    t =    52.34s     Check for interrupting elements affecting "New chat" Button
+    t =    52.35s     Synthesize event
+    t =    52.66s     Wait for com.jirathip.cooee to idle
+    t =    53.50s Tap "Coder" Button
+    t =    53.50s     Wait for com.jirathip.cooee to idle
+    t =    53.50s     Find the "Coder" Button
+    t =    53.52s     Check for interrupting elements affecting "Coder" Button
+    t =    53.55s     Synthesize event
+    t =    53.85s     Wait for com.jirathip.cooee to idle
+    t =    54.89s Waiting 10.0s for Any (First Match) to exist
+    t =    55.96s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    55.96s         Checking existence of `Any (First Match)`
+    t =    55.99s Tap Any (First Match)
+    t =    55.99s     Wait for com.jirathip.cooee to idle
+    t =    56.00s     Find the Any (First Match)
+    t =    56.02s     Check for interrupting elements affecting "Message Coder" TextField
+    t =    56.04s     Synthesize event
+    t =    56.33s     Wait for com.jirathip.cooee to idle
+    t =    56.64s Type 'paragraphs' into "Message Coder" TextField
+    t =    56.64s     Wait for com.jirathip.cooee to idle
+    t =    56.65s     Find the "Message Coder" TextField
+    t =    56.90s     Check for interrupting elements affecting "Message Coder" TextField
+    t =    56.92s     Synthesize event
+    t =    57.29s     Wait for com.jirathip.cooee to idle
+    t =    57.29s Tap "Send" Button
+    t =    57.29s     Wait for com.jirathip.cooee to idle
+    t =    57.30s     Find the "Send" Button
+    t =    57.39s     Check for interrupting elements affecting "arrow.up" Button
+    t =    57.41s     Synthesize event
+    t =    57.71s     Wait for com.jirathip.cooee to idle
+    t =    57.93s Waiting 30.0s for Any (First Match) to exist
+    t =    59.00s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    59.00s         Checking existence of `Any (First Match)`
+    t =    59.13s Added attachment named 'chat-paragraphs-dark'
+    t =    59.13s Press Any (First Match) for 1.2 seconds
+    t =    59.13s     Wait for com.jirathip.cooee to idle
+    t =    59.13s     Find the Any (First Match)
+    t =    59.16s     Check for interrupting elements affecting "Questions for you:
+1. HTML or SwiftUI?" StaticText
+    t =    59.19s     Synthesize event
+    t =    60.62s     Wait for com.jirathip.cooee to idle
+    t =    61.45s Waiting 10.0s for "Copy" Button to exist
+    t =    62.48s     Checking `Expect predicate `existsNoRetry == 1` for object "Copy" Button`
+    t =    62.48s         Checking existence of `"Copy" Button`
+    t =    62.61s Added attachment named 'message-menu-dark'
+    t =    62.61s Tap "Select text" Button
+    t =    62.61s     Wait for com.jirathip.cooee to idle
+    t =    62.62s     Find the "Select text" Button
+    t =    62.64s     Check for interrupting elements affecting "selection.pin.in.out" Button
+    t =    62.66s     Synthesize event
+    t =    62.95s     Wait for com.jirathip.cooee to idle
+    t =    63.75s Waiting 10.0s for TextView (First Match) to exist
+    t =    64.84s     Checking `Expect predicate `existsNoRetry == 1` for object TextView (First Match)`
+    t =    64.84s         Checking existence of `TextView (First Match)`
+    t =    64.95s Added attachment named 'select-text-dark'
+    t =    64.95s Tap "Done" Button
+    t =    64.95s     Wait for com.jirathip.cooee to idle
+    t =    64.95s     Find the "Done" Button
+    t =    64.97s     Check for interrupting elements affecting "Done" Button
+    t =    65.00s     Synthesize event
+    t =    65.29s     Wait for com.jirathip.cooee to idle
+    t =    65.64s Tap "Back" Button
+    t =    65.64s     Wait for com.jirathip.cooee to idle
+    t =    65.64s     Find the "Back" Button
+    t =    65.65s     Check for interrupting elements affecting "chevron.left" Button
+    t =    65.66s     Synthesize event
+    t =    65.95s     Wait for com.jirathip.cooee to idle
+    t =    66.26s Waiting 10.0s for "New chat" Button to exist
+    t =    67.31s     Checking `Expect predicate `existsNoRetry == 1` for object "New chat" Button`
+    t =    67.32s         Checking existence of `"New chat" Button`
+    t =    68.04s Tap "New chat" Button
+    t =    68.04s     Wait for com.jirathip.cooee to idle
+    t =    68.04s     Find the "New chat" Button
+    t =    68.23s     Check for interrupting elements affecting "New chat" Button
+    t =    68.25s     Synthesize event
+    t =    68.55s     Wait for com.jirathip.cooee to idle
+    t =    69.40s Tap "Coder" Button
+    t =    69.40s     Wait for com.jirathip.cooee to idle
+    t =    69.40s     Find the "Coder" Button
+    t =    69.43s     Check for interrupting elements affecting "Coder" Button
+    t =    69.46s     Synthesize event
+    t =    69.75s     Wait for com.jirathip.cooee to idle
+    t =    70.81s Waiting 10.0s for Any (First Match) to exist
+    t =    71.85s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    71.85s         Checking existence of `Any (First Match)`
+    t =    71.88s Tap Any (First Match)
+    t =    71.88s     Wait for com.jirathip.cooee to idle
+    t =    71.88s     Find the Any (First Match)
+    t =    71.90s     Check for interrupting elements affecting "Message Coder" TextField
+    t =    71.91s     Synthesize event
+    t =    72.21s     Wait for com.jirathip.cooee to idle
+    t =    72.52s Type 'Show me the cards' into "Message Coder" TextField
+    t =    72.52s     Wait for com.jirathip.cooee to idle
+    t =    72.52s     Find the "Message Coder" TextField
+    t =    72.58s     Check for interrupting elements affecting "Message Coder" TextField
+    t =    72.60s     Synthesize event
+    t =    73.09s     Wait for com.jirathip.cooee to idle
+    t =    73.09s Tap "Send" Button
+    t =    73.09s     Wait for com.jirathip.cooee to idle
+    t =    73.09s     Find the "Send" Button
+    t =    73.13s     Check for interrupting elements affecting "arrow.up" Button
+    t =    73.14s     Synthesize event
+    t =    73.43s     Wait for com.jirathip.cooee to idle
+    t =    73.67s Waiting 30.0s for "Approve" Button to exist
+    t =    74.71s     Checking `Expect predicate `existsNoRetry == 1` for object "Approve" Button`
+    t =    74.71s         Checking existence of `"Approve" Button`
+    t =    74.82s Added attachment named 'chat-cards-dark'
+    t =    74.82s Tap "Allow once · recommended" Button
+    t =    74.82s     Wait for com.jirathip.cooee to idle
+    t =    74.82s     Find the "Allow once · recommended" Button
+    t =    74.84s     Check for interrupting elements affecting "Allow once · recommended" Button
+    t =    74.86s     Synthesize event
+    t =    74.86s         Scroll element to visible
+    t =    74.87s         Find the "Allow once · recommended" Button
+    t =    74.90s         Computed hit point {201, 180.66666666666663} after scrolling to visible
+    t =    75.18s     Wait for com.jirathip.cooee to idle
+    t =    75.18s Waiting 10.0s for Any (First Match) to exist
+    t =    76.22s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    76.22s         Checking existence of `Any (First Match)`
+    t =    76.26s Tap "apply" Button
+    t =    76.26s     Wait for com.jirathip.cooee to idle
+    t =    76.26s     Find the "apply" Button
+    t =    76.28s     Check for interrupting elements affecting "apply" Button
+    t =    76.30s     Synthesize event
+    t =    76.59s     Wait for com.jirathip.cooee to idle
+    t =    76.59s Waiting 10.0s for Any (First Match) to exist
+    t =    77.65s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    77.65s         Checking existence of `Any (First Match)`
+    t =    77.67s Tap "EDGAR_API_KEY" Button
+    t =    77.67s     Wait for com.jirathip.cooee to idle
+    t =    77.68s     Find the "EDGAR_API_KEY" Button
+    t =    77.70s     Check for interrupting elements affecting "EDGAR_API_KEY" Button
+    t =    77.72s     Synthesize event
+    t =    78.01s     Wait for com.jirathip.cooee to idle
+    t =    78.50s Waiting 10.0s for SecureTextField (First Match) to exist
+    t =    79.56s     Checking `Expect predicate `existsNoRetry == 1` for object SecureTextField (First Match)`
+    t =    79.56s         Checking existence of `SecureTextField (First Match)`
+    t =    79.67s Type '<redacted>' into SecureTextField (First Match)
+    t =    79.67s     Wait for com.jirathip.cooee to idle
+    t =    79.68s     Find the SecureTextField (First Match)
+    t =    79.76s     Check for interrupting elements affecting "EDGAR_API_KEY" SecureTextField
+    t =    79.81s     Synthesize event
+    t =    80.07s     Wait for com.jirathip.cooee to idle
+    t =    80.08s Tap "OK" Button
+    t =    80.08s     Wait for com.jirathip.cooee to idle
+    t =    80.08s     Find the "OK" Button
+    t =    80.13s     Check for interrupting elements affecting "OK" Button
+    t =    80.17s     Synthesize event
+    t =    80.46s     Wait for com.jirathip.cooee to idle
+    t =    80.74s Tap "Send to plugin" Button
+    t =    80.74s     Wait for com.jirathip.cooee to idle
+    t =    80.74s     Find the "Send to plugin" Button
+    t =    80.76s     Check for interrupting elements affecting "Send to plugin" Button
+    t =    80.78s     Synthesize event
+    t =    81.07s     Wait for com.jirathip.cooee to idle
+    t =    81.08s Waiting 10.0s for Any (First Match) to exist
+    t =    82.15s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    82.15s         Checking existence of `Any (First Match)`
+    t =    82.20s Tap "Approve" Button
+    t =    82.20s     Wait for com.jirathip.cooee to idle
+    t =    82.20s     Find the "Approve" Button
+    t =    82.23s     Check for interrupting elements affecting "Approve" Button
+    t =    82.24s     Synthesize event
+    t =    82.54s     Wait for com.jirathip.cooee to idle
+    t =    83.03s Tap "Run" Button
+    t =    83.03s     Wait for com.jirathip.cooee to idle
+    t =    83.54s     Find the "Run" Button
+    t =    83.62s     Check for interrupting elements affecting "Run" Button
+    t =    83.64s     Synthesize event
+    t =    83.93s     Wait for com.jirathip.cooee to idle
+    t =    84.27s Waiting 10.0s for Any (First Match) to exist
+    t =    85.34s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    85.38s         Checking existence of `Any (First Match)`
+    t =    85.83s Added attachment named 'chat-cards-answered-dark'
+    t =    85.83s Press Target Application 'com.jirathip.cooee'[0.01, 0.50] for 0.1 seconds, then drag to Target Application 'com.jirathip.cooee'[0.90, 0.50] with velocity of 500.00 pixels per second, and then hold for 0.0 seconds 
+    t =    85.83s     Wait for com.jirathip.cooee to idle
+    t =    85.83s     Find the Target Application 'com.jirathip.cooee'
+    t =    85.86s     Check for interrupting elements affecting "cooee" Application
+    t =    85.92s     Synthesize event
+    t =    85.95s         Find the Target Application 'com.jirathip.cooee'
+    t =    86.00s         Find the Target Application 'com.jirathip.cooee'
+    t =    86.02s         Find the Target Application 'com.jirathip.cooee'
+    t =    86.03s         Find the Target Application 'com.jirathip.cooee'
+    t =    86.05s         Find the Target Application 'com.jirathip.cooee'
+    t =    87.13s     Wait for com.jirathip.cooee to idle
+    t =    87.34s Waiting 10.0s for Any (First Match) to not exist
+    t =    88.40s     Checking `Expect predicate `existsNoRetry == 0` for object Any (First Match)`
+    t =    88.40s         Checking existence of `Any (First Match)`
+    t =    88.56s Waiting 10.0s for "New chat" Button to exist
+    t =    89.58s     Checking `Expect predicate `existsNoRetry == 1` for object "New chat" Button`
+    t =    89.58s         Checking existence of `"New chat" Button`
+    t =    89.70s Added attachment named 'swipe-back-dark'
+    t =    89.70s Waiting 10.0s for "New chat" Button to exist
+    t =    90.76s     Checking `Expect predicate `existsNoRetry == 1` for object "New chat" Button`
+    t =    90.76s         Checking existence of `"New chat" Button`
+    t =    90.78s Tap "New chat" Button
+    t =    90.78s     Wait for com.jirathip.cooee to idle
+    t =    90.78s     Find the "New chat" Button
+    t =    90.79s     Check for interrupting elements affecting "New chat" Button
+    t =    90.81s     Synthesize event
+    t =    91.09s     Wait for com.jirathip.cooee to idle
+    t =    91.95s Tap "Conductor" Button
+    t =    91.95s     Wait for com.jirathip.cooee to idle
+    t =    91.95s     Find the "Conductor" Button
+    t =    91.98s     Check for interrupting elements affecting "Conductor" Button
+    t =    92.00s     Synthesize event
+    t =    92.28s     Wait for com.jirathip.cooee to idle
+    t =    93.35s Waiting 10.0s for "Queue" Button to exist
+    t =    94.42s     Checking `Expect predicate `existsNoRetry == 1` for object "Queue" Button`
+    t =    94.42s         Checking existence of `"Queue" Button`
+    t =    94.45s Waiting 20.0s for "Queue" Button to exist
+    t =    95.49s     Checking `Expect predicate `existsNoRetry == 1` for object "Queue" Button`
+    t =    95.49s         Checking existence of `"Queue" Button`
+    t =    95.57s Added attachment named 'conductor-dark'
+    t =    95.57s Tap "Events" Button
+    t =    95.57s     Wait for com.jirathip.cooee to idle
+    t =    95.57s     Find the "Events" Button
+    t =    95.58s     Check for interrupting elements affecting "Events" Button
+    t =    95.59s     Synthesize event
+    t =    95.88s     Wait for com.jirathip.cooee to idle
+    t =    96.31s Waiting 20.0s for Any (First Match) to exist
+    t =    97.38s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    97.38s         Checking existence of `Any (First Match)`
+    t =    97.49s Added attachment named 'events-dark'
+    t =    97.49s Tap "Done" Button
+    t =    97.49s     Wait for com.jirathip.cooee to idle
+    t =    97.49s     Find the "Done" Button
+    t =    97.49s     Check for interrupting elements affecting "Done" Button
+    t =    97.51s     Synthesize event
+    t =    97.79s     Wait for com.jirathip.cooee to idle
+    t =    98.13s Tap "Queue" Button
+    t =    98.13s     Wait for com.jirathip.cooee to idle
+    t =    98.13s     Find the "Queue" Button
+    t =    98.14s     Check for interrupting elements affecting "Queue" Button
+    t =    98.15s     Synthesize event
+    t =    98.45s     Wait for com.jirathip.cooee to idle
+    t =    98.86s Waiting 30.0s for Any (First Match) to exist
+    t =    99.93s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    99.93s         Checking existence of `Any (First Match)`
+    t =   100.02s Added attachment named 'queue-dark'
+    t =   100.02s Waiting 30.0s for Any (First Match) to exist
+    t =   101.08s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   101.08s         Checking existence of `Any (First Match)`
+    t =   101.15s         Capturing element debug description
+    t =   102.02s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   102.02s         Checking existence of `Any (First Match)`
+    t =   102.08s         Capturing element debug description
+    t =   103.11s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   103.11s         Checking existence of `Any (First Match)`
+    t =   103.22s Added attachment named 'queue-live-dark'
+    t =   103.22s Tap "Pause" Button
+    t =   103.22s     Wait for com.jirathip.cooee to idle
+    t =   103.23s     Find the "Pause" Button
+    t =   103.25s     Check for interrupting elements affecting "Pause" Button
+    t =   103.27s     Synthesize event
+    t =   103.57s     Wait for com.jirathip.cooee to idle
+    t =   103.57s Waiting 30.0s for Any (First Match) to exist
+    t =   104.61s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   104.61s         Checking existence of `Any (First Match)`
+    t =   104.67s         Capturing element debug description
+    t =   105.60s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   105.60s         Checking existence of `Any (First Match)`
+    t =   105.64s         Capturing element debug description
+    t =   106.59s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   106.59s         Checking existence of `Any (First Match)`
+    t =   106.67s         Capturing element debug description
+    t =   107.64s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   107.64s         Checking existence of `Any (First Match)`
+    t =   107.70s         Capturing element debug description
+    t =   108.64s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   108.64s         Checking existence of `Any (First Match)`
+    t =   108.82s         Capturing element debug description
+    t =   109.66s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   109.66s         Checking existence of `Any (First Match)`
+    t =   109.72s         Capturing element debug description
+    t =   110.64s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   110.64s         Checking existence of `Any (First Match)`
+    t =   110.70s         Capturing element debug description
+    t =   111.65s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   111.65s         Checking existence of `Any (First Match)`
+    t =   111.71s         Capturing element debug description
+    t =   112.57s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   112.57s         Checking existence of `Any (First Match)`
+    t =   112.72s         Capturing element debug description
+    t =   113.57s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   113.58s         Checking existence of `Any (First Match)`
+    t =   113.67s         Capturing element debug description
+    t =   114.58s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   114.58s         Checking existence of `Any (First Match)`
+    t =   114.68s         Capturing element debug description
+    t =   115.63s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   115.63s         Checking existence of `Any (First Match)`
+    t =   115.75s Added attachment named 'queue-offline-dark'
+    t =   115.75s Tap "Done" Button
+    t =   115.75s     Wait for com.jirathip.cooee to idle
+    t =   115.75s     Find the "Done" Button
+    t =   115.77s     Check for interrupting elements affecting "Done" Button
+    t =   115.80s     Synthesize event
+    t =   116.10s     Wait for com.jirathip.cooee to idle
+    t =   116.45s Tap "Back" Button
+    t =   116.45s     Wait for com.jirathip.cooee to idle
+    t =   116.45s     Find the "Back" Button
+    t =   116.46s     Check for interrupting elements affecting "chevron.left" Button
+    t =   116.48s     Synthesize event
+    t =   116.77s     Wait for com.jirathip.cooee to idle
+    t =   117.07s Waiting 10.0s for "New chat" Button to exist
+    t =   118.11s     Checking `Expect predicate `existsNoRetry == 1` for object "New chat" Button`
+    t =   118.11s         Checking existence of `"New chat" Button`
+    t =   118.13s Tap "Account" Button
+    t =   118.13s     Wait for com.jirathip.cooee to idle
+    t =   118.13s     Find the "Account" Button
+    t =   118.16s     Check for interrupting elements affecting "Account" Button
+    t =   118.19s     Synthesize event
+    t =   118.49s     Wait for com.jirathip.cooee to idle
+    t =   118.92s Waiting 10.0s for Any (First Match) to exist
+    t =   119.99s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =   119.99s         Checking existence of `Any (First Match)`
+    t =   120.04s Checking existence of `Button (First Match)`
+    t =   120.08s Checking existence of `Button (First Match)`
+    t =   120.11s Checking existence of `Button (First Match)`
+    t =   120.16s Checking existence of `Button (First Match)`
+    t =   120.29s Added attachment named 'avatar-menu-dark'
+    t =   120.29s Tap Any (First Match)
+    t =   120.29s     Wait for com.jirathip.cooee to idle
+    t =   120.29s     Find the Any (First Match)
+    t =   120.33s     Check for interrupting elements affecting "Look, Modern · System" Button
+    t =   120.37s     Synthesize event
+    t =   120.66s     Wait for com.jirathip.cooee to idle
+    t =   121.04s Tap Any (First Match)
+    t =   121.04s     Wait for com.jirathip.cooee to idle
+    t =   121.04s     Find the Any (First Match)
+    t =   121.09s     Check for interrupting elements affecting "Terminal" Button
+    t =   121.13s     Synthesize event
+    t =   121.43s     Wait for com.jirathip.cooee to idle
+    t =   121.72s Waiting 5.0s for "OK" Button to exist
+    t =   122.76s     Checking `Expect predicate `existsNoRetry == 1` for object "OK" Button`
+    t =   122.76s         Checking existence of `"OK" Button`
+    t =   123.06s         Capturing element debug description
+    t =   123.80s     Checking `Expect predicate `existsNoRetry == 1` for object "OK" Button`
+    t =   123.81s         Checking existence of `"OK" Button`
+    t =   123.88s         Capturing element debug description
+    t =   124.75s     Checking `Expect predicate `existsNoRetry == 1` for object "OK" Button`
+    t =   124.75s         Checking existence of `"OK" Button`
+    t =   124.81s Tap "OK" Button
+    t =   124.81s     Wait for com.apple.springboard to idle
+    t =   124.81s     Find the "OK" Button
+    t =   124.84s     Check for interrupting elements affecting "OK" Button
+    t =   124.87s     Synthesize event
+    t =   125.17s     Wait for com.apple.springboard to idle
+    t =   125.17s Waiting 5.0s for Button (First Match) to exist
+    t =   126.20s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =   126.20s         Checking existence of `Button (First Match)`
+    t =   126.24s Pressing Home button
+    t =   126.72s Waiting 10.0s for "cooee" Icon to exist
+    t =   127.79s     Checking `Expect predicate `existsNoRetry == 1` for object "cooee" Icon`
+    t =   127.79s         Checking existence of `"cooee" Icon`
+    t =   127.90s Checking existence of `"cooee" Icon`
+    t =   127.92s Find the "cooee" Icon
+    t =   127.96s Checking existence of `"cooee" Icon`
+    t =   127.98s Find the "cooee" Icon
+    t =   128.01s Find the "cooee" Icon
+    t =   128.18s Added attachment named 'home-icon-terminal-dark'
+    t =   128.18s Checking existence of `"cooee" Icon`
+    t =   128.21s Find the "cooee" Icon
+    t =   128.25s Added attachment named 'home-icon-terminal-icon-dark'
+    t =   128.25s Open com.jirathip.cooee
+    t =   128.25s     Activate com.jirathip.cooee
+    t =   128.47s         Wait for com.jirathip.cooee to idle
+    t =   128.47s Tap Button (First Match)
+    t =   128.47s     Wait for com.jirathip.cooee to idle
+    t =   128.47s     Find the Button (First Match)
+    t =   128.52s     Check for interrupting elements affecting "App icon, Follows the look" Button
+    t =   128.56s     Synthesize event
+    t =   128.58s         Scroll element to visible
+    t =   128.64s         Find the "App icon, Follows the look" Button
+    t =   128.70s         Computed hit point {200.82538560266332, 557.02584117998811} after scrolling to visible
+    t =   128.98s     Wait for com.jirathip.cooee to idle
+    t =   129.31s Waiting 5.0s for Button (First Match) to exist
+    t =   130.37s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =   130.37s         Checking existence of `Button (First Match)`
+    t =   130.50s Added attachment named 'app-icon-following-dark'
+    t =   130.50s Tap "Koala" Button
+    t =   130.50s     Wait for com.jirathip.cooee to idle
+    t =   130.51s     Find the "Koala" Button
+    t =   130.57s     Check for interrupting elements affecting "Koala" Button
+    t =   130.61s     Synthesize event
+    t =   130.62s         Scroll element to visible
+    t =   130.62s         Find the "Koala" Button
+    t =   130.70s         Computed hit point {245.83333333333334, 768.83333333333337} after scrolling to visible
+    t =   130.98s     Wait for com.jirathip.cooee to idle
+    t =   130.98s Waiting 5.0s for "OK" Button to exist
+    t =   132.06s     Checking `Expect predicate `existsNoRetry == 1` for object "OK" Button`
+    t =   132.06s         Checking existence of `"OK" Button`
+    t =   132.09s Tap "OK" Button
+    t =   132.09s     Wait for com.apple.springboard to idle
+    t =   132.09s     Find the "OK" Button
+    t =   132.12s     Check for interrupting elements affecting "OK" Button
+    t =   132.15s     Synthesize event
+    t =   132.44s     Wait for com.apple.springboard to idle
+    t =   132.45s Waiting 5.0s for Button (First Match) to exist
+    t =   133.53s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =   133.53s         Checking existence of `Button (First Match)`
+    t =   133.68s Added attachment named 'app-icon-picked-dark'
+    t =   133.68s Tap Button (Element at index 0)
+    t =   133.68s     Wait for com.jirathip.cooee to idle
+    t =   133.68s     Find the Button (Element at index 0)
+    t =   133.71s     Check for interrupting elements affecting "BackButton" Button
+    t =   133.75s     Synthesize event
+    t =   134.04s     Wait for com.jirathip.cooee to idle
+    t =   134.33s Tap Any (First Match)
+    t =   134.33s     Wait for com.jirathip.cooee to idle
+    t =   134.33s     Find the Any (First Match)
+    t =   134.37s     Check for interrupting elements affecting "Scene" Button
+    t =   134.40s     Synthesize event
+    t =   134.70s     Wait for com.jirathip.cooee to idle
+    t =   134.70s Waiting 5.0s for Button (First Match) to exist
+    t =   135.76s     Checking `Expect predicate `existsNoRetry == 1` for object Button (First Match)`
+    t =   135.76s         Checking existence of `Button (First Match)`
+    t =   135.81s Pressing Home button
+    t =   136.29s Waiting 10.0s for "cooee" Icon to exist
+    t =   137.34s     Checking `Expect predicate `existsNoRetry == 1` for object "cooee" Icon`
+    t =   137.34s         Checking existence of `"cooee" Icon`
+    t =   137.37s Checking existence of `"cooee" Icon`
+    t =   137.39s Find the "cooee" Icon
+    t =   137.42s Checking existence of `"cooee" Icon`
+    t =   137.44s Find the "cooee" Icon
+    t =   137.47s Find the "cooee" Icon
+    t =   137.63s Added attachment named 'home-icon-koala-after-scene-dark'
+    t =   137.63s Checking existence of `"cooee" Icon`
+    t =   137.66s Find the "cooee" Icon
+    t =   137.69s Added attachment named 'home-icon-koala-after-scene-icon-dark'
+    t =   137.69s Open com.jirathip.cooee
+    t =   137.69s     Activate com.jirathip.cooee
+    t =   137.71s         Wait for com.jirathip.cooee to idle
+    t =   137.73s Tap Button (First Match)
+    t =   137.73s     Wait for com.jirathip.cooee to idle
+    t =   137.73s     Find the Button (First Match)
+    t =   137.80s     Check for interrupting elements affecting "App icon, Koala" Button
+    t =   137.83s     Synthesize event
+    t =   138.17s     Wait for com.jirathip.cooee to idle
+    t =   138.18s Tap "Follow the look" Button
+    t =   138.18s     Wait for com.jirathip.cooee to idle
+    t =   138.18s     Find the "Follow the look" Button
+    t =   139.23s         Find the "Follow the look" Button (retry 1)
+    t =   140.30s         Find the "Follow the look" Button (retry 2)
+    t =   140.38s Requesting snapshot of accessibility hierarchy for app with pid 69694
+/Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r8/apple/UITests/LiveIconUITests.swift:20: error: -[CooeeAppUITests.LiveUITests testPairsStreamsAndShowsHome] : Failed to tap "Follow the look" Button: No matches found for first query match sequence: `Descendants matching type Button` -> `Elements matching predicate '"Follow the look" IN identifiers'`, given input App element pid: 69694
+Possibly caused by runtime issues:
+Automation type mismatch: computed Button from legacy attributes vs PopUpButton from modern attribute. Input attributes and values: {
+    "XC_kAXXCAttributeAutomationType" = 14;
+    "XC_kAXXCAttributeElementBaseType" = NSObject;
+    "XC_kAXXCAttributeElementType" = "SwiftUI.AccessibilityNode";
+    "XC_kAXXCAttributeTraits" = 1108101562369;
+}
+See test report attachments for more detail.
+    t =   140.83s Tear Down
+Test Case '-[CooeeAppUITests.LiveUITests testPairsStreamsAndShowsHome]' failed (141.197 seconds).
+Test Suite 'LiveUITests' failed at 2569-11-14 06:48:34.853.
+	 Executed 2 tests, with 1 test skipped and 1 failure (0 unexpected) in 141.658 (141.664) seconds
+Test Suite 'CooeeAppUITests.xctest' failed at 2569-11-14 06:48:34.859.
+	 Executed 2 tests, with 1 test skipped and 1 failure (0 unexpected) in 141.658 (141.670) seconds
+Test Suite 'All tests' failed at 2569-11-14 06:48:34.859.
+	 Executed 2 tests, with 1 test skipped and 1 failure (0 unexpected) in 141.658 (141.673) seconds
+2026-11-14 06:51:33.167 xcodebuild[52495:143317316] [MT] IDETestOperationsObserverDebug: 347.963 elapsed -- Testing started completed.
+2026-11-14 06:51:33.167 xcodebuild[52495:143317316] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-14 06:51:33.167 xcodebuild[52495:143317316] [MT] IDETestOperationsObserverDebug: 347.963 sec, +347.963 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r8/.verify/e2e-dark.xcresult
+
+Failing tests:
+	LiveUITests.testPairsStreamsAndShowsHome()
+
+** TEST EXECUTE FAILED **
+
+Testing started
