@@ -18,6 +18,9 @@ on:
       repeats:
         description: how many times the ui suite runs in a row
         default: "20"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'merge-ready' && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CARGO_TERM_COLOR: always
@@ -147,9 +150,6 @@ jobs:
       needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true' &&
       (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: [self-hosted, macOS, ARM64, cooee-mac]
-    concurrency:
-      group: ci-stable-mac-${{ needs.scope.outputs.mac == 'true' && format('{0}-{1}', github.event_name, github.ref) || github.run_id }}
-      cancel-in-progress: true
     env:
       RUSTUP_TOOLCHAIN: stable
     steps: *stable

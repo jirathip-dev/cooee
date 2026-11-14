@@ -5,12 +5,12 @@
 Two self-hosted runners, `mini-cooee` and `air-cooee` (labels `self-hosted, macOS, ARM64, cooee-mac`), run:
 
 - `ci.yml`: `stable (macos-latest)` (the check name stays as the staging ruleset requires; #388 dropped `msrv (macos-latest)`)
-- `apple.yml`: `build`, `apple-quality`, `e2e`
+- `apple.yml`: `apple` (#277: the builds, `just apple-check` and the simulator e2e in one job; #328: a PR push runs only the builds, the `merge-ready` run all of it)
 - `apple-mac.yml`: `dmg`
 - `apple-testflight.yml`: `testflight`
 
 Every other job runs on GitHub's ubuntu runners. `apple.yml`'s `mac-setup` stays on GitHub's `macos-26`, and runs only
-on a push to staging, never on a pull request. It installs
+on a push to staging (or `workflow_dispatch`), never on a pull request. It installs
 cooee as a login item in the runner user's home folder and binds port 4747. Both of our runners run as the owner's own
 account, and the mini runs the real cooee from that same folder and port. The job moves once a runner-only macOS user
 exists (q1629).
@@ -35,6 +35,6 @@ A fork's pull request shows these jobs as skipped, not passed. No workflow uses 
   version in the job summary. Today the mini has Xcode 27.2 and the air has Xcode 26.6; the owner aligns them.
 - Signing (`dmg`, `testflight`) uses a keychain the job creates in `RUNNER_TEMP`. It is deleted at the job's end, even
   on failure, and the user's keychain list and default keychain are restored. No signing identity stays on the runner.
-- `e2e` stops its `cooee serve` and deletes its simulator at the end, even on failure.
-- A newer run of the same ref cancels an older run's macOS jobs. TestFlight never cancels a run, so an upload is
-  never cut off.
+- `apple` stops its `cooee serve` and deletes its simulator at the end, even on failure.
+- A newer push to a pull request cancels its older run (#277). A staging push runs to the end; TestFlight never
+  cancels a run, so an upload is never cut off.
