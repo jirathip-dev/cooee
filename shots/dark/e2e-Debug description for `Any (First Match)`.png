@@ -1,0 +1,5 @@
+Query chain:
+ →Find: Target Application 'com.jirathip.cooee'
+  ↪︎Find: Descendants matching type Any
+    ↪︎Find: Elements matching predicate 'label CONTAINS "w3 "'
+      ↪︎Find: First Match

@@ -1,0 +1,72 @@
+Application, 0x10a079400, pid: 24817, label: 'cooee' <App element pid: 24817>
+  Window (Main), 0x10a078f00, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 24817, elementOrHash.elementID: 4368646144.4>
+    Other, 0x10a079180, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 24817, elementOrHash.elementID: 4442764416.5>
+      Other, 0x10a07a300, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 24817, elementOrHash.elementID: 4442763776.6>
+        Other, 0x10a07a440, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 24817, elementOrHash.elementID: 4368681472.7>
+          Other, 0x10a07a6c0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 24817, elementOrHash.elementID: 4445119712.8>
+            StaticText, 0x10a07a580, {{132.7, 66.0}, {136.7, 20.3}}, label: 'Enter address' <AX element pid: 24817, elementOrHash.elementID: 4445124352.28>
+            Button, 0x10a07a800, {{30.0, 77.0}, {28.0, 18.0}}, label: 'Back' <AX element pid: 24817, elementOrHash.elementID: 4445124032.29>
+            StaticText, 0x10a07a940, {{76.3, 90.3}, {249.3, 15.7}}, label: 'The address cooee setup printed' <AX element pid: 24817, elementOrHash.elementID: 4445124512.30>
+            TextField, 0x10a07abc0, {{40.0, 144.0}, {314.0, 22.0}}, placeholderValue: 'server.example.com', value: http://127.0.0.1:4..., Keyboard Focused <AX element pid: 24817, elementOrHash.elementID: 4368682752.31>
+            StaticText, 0x10a07aa80, {{24.0, 196.0}, {329.7, 31.3}}, label: 'A name or IP, with :port if not 443. The server shows it under its QR code.' <AX element pid: 24817, elementOrHash.elementID: 4445124832.32>
+            Button, 0x10a07ad00, {{24.0, 241.3}, {354.0, 36.0}}, label: '[ Connect ]' <AX element pid: 24817, elementOrHash.elementID: 4445124992.33>
+  Window, 0x10a07ae40, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 24817, elementOrHash.elementID: 4368686592.34>
+    Other, 0x10a07b0c0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 24817, elementOrHash.elementID: 4369824768.36>
+      Other, 0x10a07af80, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 24817, elementOrHash.elementID: 4442702336.38>
+      Other, 0x10a07b200, {{0.0, 573.0}, {402.0, 301.0}} <AX element pid: 24817, elementOrHash.elementID: 4442701824.39>
+        Other, 0x10a07b340, {{0.0, 573.0}, {402.0, 301.0}}, identifier: 'inputView' <AX element pid: 24817, elementOrHash.elementID: 4442640896.41>
+  Window, 0x10a07b5c0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 24817, elementOrHash.elementID: 4368568832.35>
+    Other, 0x10a07b480, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 24817, elementOrHash.elementID: 4442640384.37>
+      Other, 0x10a07b700, {{0.0, 573.0}, {402.0, 301.0}} <AX element pid: 24817, elementOrHash.elementID: 4612464064.40>
+        Other, 0x10a07b840, {{0.0, 573.0}, {402.0, 302.0}} <AX element pid: 24817, elementOrHash.elementID: 4612466752.42>
+          Other, 0x10a07bac0, {{0.0, 573.0}, {402.0, 302.0}} <AX element pid: 24817, elementOrHash.elementID: 4612279296.45>
+            Other, 0x10a07b980, {{0.0, 573.0}, {402.0, 302.0}} <AX element pid: 24817, elementOrHash.elementID: 4613000960.49>
+        Other, 0x10a07bc00, {{0.0, 590.0}, {402.0, 226.0}} <AX element pid: 24817, elementOrHash.elementID: 4442705920.43>
+          Keyboard, 0x10a07bd40, {{0.0, 590.0}, {402.0, 226.0}} <AX element pid: 24817, elementOrHash.elementID: 4442568192.46>
+            Other, 0x10a07be80, {{0.0, 590.0}, {402.0, 226.0}} <AX element pid: 24817, elementOrHash.elementID: 4368652288.50>
+              Other, 0x10a078640, {{0.0, 590.0}, {402.0, 226.0}}, identifier: 'UIKeyboardLayoutStar Preview' <AX element pid: 24817, elementOrHash.elementID: 4368695296.53>
+                Key, 0x10a078780, {{0.0, 590.0}, {0.0, 0.0}}, label: 'Padding-Left' <AX element pid: 24817, elementOrHash.elementID: 4450552960.54>
+                Key, 0x107287980, {{4.7, 597.0}, {39.3, 54.0}}, label: 'q' <AX element pid: 24817, elementOrHash.elementID: 4451147504.55>
+                Key, 0x1072852c0, {{44.0, 597.0}, {39.7, 54.0}}, label: 'w' <AX element pid: 24817, elementOrHash.elementID: 4451144384.56>
+                Key, 0x107285180, {{83.7, 597.0}, {39.3, 54.0}}, label: 'e' <AX element pid: 24817, elementOrHash.elementID: 4451143904.57>
+                Key, 0x107286f80, {{123.0, 597.0}, {39.7, 54.0}}, label: 'r' <AX element pid: 24817, elementOrHash.elementID: 4451143424.58>
+                Key, 0x107287340, {{162.7, 597.0}, {39.3, 54.0}}, label: 't' <AX element pid: 24817, elementOrHash.elementID: 4451145024.59>
+                Key, 0x1072875c0, {{202.0, 597.0}, {39.7, 54.0}}, label: 'y' <AX element pid: 24817, elementOrHash.elementID: 4451144784.60>
+                Key, 0x107287700, {{241.7, 597.0}, {39.3, 54.0}}, label: 'u' <AX element pid: 24817, elementOrHash.elementID: 4451145344.61>
+                Key, 0x107287840, {{281.0, 597.0}, {39.7, 54.0}}, label: 'i' <AX element pid: 24817, elementOrHash.elementID: 4451145184.62>
+                Key, 0x107287ac0, {{320.7, 597.0}, {39.3, 54.0}}, label: 'o' <AX element pid: 24817, elementOrHash.elementID: 4451145264.63>
+                Key, 0x107287c00, {{360.0, 597.0}, {39.7, 54.0}}, label: 'p' <AX element pid: 24817, elementOrHash.elementID: 4451143504.64>
+                Key, 0x10b2ac000, {{0.0, 590.0}, {0.0, 0.0}}, label: 'Padding-Right' <AX element pid: 24817, elementOrHash.elementID: 4451144944.65>
+                Key, 0x10b2ac140, {{0.0, 590.0}, {0.0, 0.0}}, label: 'Padding-Left' <AX element pid: 24817, elementOrHash.elementID: 4451144864.66>
+                Key, 0x10b2ac280, {{24.3, 651.0}, {39.3, 54.0}}, label: 'a' <AX element pid: 24817, elementOrHash.elementID: 4451145584.67>
+                Key, 0x10b2ac3c0, {{63.7, 651.0}, {39.7, 54.0}}, label: 's' <AX element pid: 24817, elementOrHash.elementID: 4610000768.68>
+                Key, 0x10b2ac500, {{103.3, 651.0}, {39.3, 54.0}}, label: 'd' <AX element pid: 24817, elementOrHash.elementID: 4610000048.69>
+                Key, 0x10b2ac640, {{142.7, 651.0}, {39.7, 54.0}}, label: 'f' <AX element pid: 24817, elementOrHash.elementID: 4610000128.70>
+                Key, 0x10b2ac780, {{182.3, 651.0}, {39.3, 54.0}}, label: 'g' <AX element pid: 24817, elementOrHash.elementID: 4610000208.71>
+                Key, 0x10b2ac8c0, {{221.7, 651.0}, {39.7, 54.0}}, label: 'h' <AX element pid: 24817, elementOrHash.elementID: 4610000288.72>
+                Key, 0x10b2aca00, {{261.3, 651.0}, {39.3, 54.0}}, label: 'j' <AX element pid: 24817, elementOrHash.elementID: 4610000368.73>
+                Key, 0x10b2acb40, {{300.7, 651.0}, {39.7, 54.0}}, label: 'k' <AX element pid: 24817, elementOrHash.elementID: 4610000448.74>
+                Key, 0x10b2acc80, {{340.3, 651.0}, {39.3, 54.0}}, label: 'l' <AX element pid: 24817, elementOrHash.elementID: 4610000528.75>
+                Key, 0x10b2acdc0, {{0.0, 590.0}, {0.0, 0.0}}, label: 'Padding-Right' <AX element pid: 24817, elementOrHash.elementID: 4610000848.76>
+                Button, 0x10b2acf00, {{4.7, 705.0}, {51.3, 54.0}}, identifier: 'shift', label: 'shift' <AX element pid: 24817, elementOrHash.elementID: 4610003728.77>
+                Key, 0x10b2ad040, {{0.0, 590.0}, {0.0, 0.0}}, label: 'Padding-Left' <AX element pid: 24817, elementOrHash.elementID: 4610003888.78>
+                Key, 0x10b2ad180, {{63.7, 705.0}, {39.7, 54.0}}, label: 'z' <AX element pid: 24817, elementOrHash.elementID: 4610003968.79>
+                Key, 0x10b2ad2c0, {{103.3, 705.0}, {39.3, 54.0}}, label: 'x' <AX element pid: 24817, elementOrHash.elementID: 4610004048.80>
+                Key, 0x10b2ad400, {{142.7, 705.0}, {39.7, 54.0}}, label: 'c' <AX element pid: 24817, elementOrHash.elementID: 4610004128.81>
+                Key, 0x10b2ad540, {{182.3, 705.0}, {39.3, 54.0}}, label: 'v' <AX element pid: 24817, elementOrHash.elementID: 4610004208.82>
+                Key, 0x10b2ad680, {{221.7, 705.0}, {39.7, 54.0}}, label: 'b' <AX element pid: 24817, elementOrHash.elementID: 4610004288.83>
+                Key, 0x10b2ad7c0, {{261.3, 705.0}, {39.3, 54.0}}, label: 'n' <AX element pid: 24817, elementOrHash.elementID: 4610004368.84>
+                Key, 0x10b2ad900, {{300.7, 705.0}, {39.7, 54.0}}, label: 'm' <AX element pid: 24817, elementOrHash.elementID: 4610004448.85>
+                Key, 0x10b2ada40, {{0.0, 590.0}, {0.0, 0.0}}, label: 'Padding-Right' <AX element pid: 24817, elementOrHash.elementID: 4610004528.86>
+                Key, 0x10b2adb80, {{348.0, 705.0}, {51.7, 54.0}}, identifier: 'delete', label: 'delete' <AX element pid: 24817, elementOrHash.elementID: 4610004608.87>
+                Key, 0x10b2adcc0, {{4.7, 759.0}, {49.3, 54.0}}, identifier: 'more', label: 'numbers' <AX element pid: 24817, elementOrHash.elementID: 4610004688.88>
+                Button, 0x10b2ade00, {{54.0, 759.0}, {49.3, 54.0}}, identifier: 'emoji', label: 'Emoji' <AX element pid: 24817, elementOrHash.elementID: 4610004848.89>
+                Key, 0x10b2adf40, {{103.3, 759.0}, {65.7, 54.0}}, label: '.' <AX element pid: 24817, elementOrHash.elementID: 4610005008.90>
+                Key, 0x10b2ae080, {{169.0, 759.0}, {66.0, 54.0}}, label: '/' <AX element pid: 24817, elementOrHash.elementID: 4610005088.91>
+                Key, 0x10b2ae1c0, {{235.0, 759.0}, {65.7, 54.0}}, label: '.com' <AX element pid: 24817, elementOrHash.elementID: 4610005168.92>
+                Button, 0x10b2ae300, {{300.7, 759.0}, {99.0, 54.0}}, identifier: 'Return', label: 'return' <AX element pid: 24817, elementOrHash.elementID: 4610005248.93>
+        Other, 0x10b2ae440, {{0.0, 590.0}, {402.0, 284.0}} <AX element pid: 24817, elementOrHash.elementID: 4442650624.44>
+          Button, 0x10b2ae580, {{8.5, 805.7}, {68.1, 68.7}}, label: 'Next keyboard', value: ภาษาไทย <AX element pid: 24817, elementOrHash.elementID: 4611972992.47>
+            StaticText, 0x10b2ae6c0, {{8.5, 805.7}, {0.0, 0.0}} <AX element pid: 24817, elementOrHash.elementID: 4442651136.51>
+          Button, 0x10b2ae800, {{325.4, 805.4}, {68.1, 68.7}}, identifier: 'dictation', label: 'Dictate', Disabled <AX element pid: 24817, elementOrHash.elementID: 4611973888.48>
+            StaticText, 0x10b2ae940, {{325.4, 805.4}, {0.0, 0.0}} <AX element pid: 24817, elementOrHash.elementID: 4442651648.52>

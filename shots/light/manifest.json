@@ -1,0 +1,70 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "A225DDD3-5CBC-4D66-9BA7-D2520D8331E3",
+        "deviceName" : "cooee-verify-cooee-234-verify",
+        "exportedFileName" : "1DBE2604-81CE-45DF-905B-92ED08CDE6A5",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2569-11-13 at 07.32.39 AM",
+        "timestamp" : 1794529959.337
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "A225DDD3-5CBC-4D66-9BA7-D2520D8331E3",
+        "deviceName" : "cooee-verify-cooee-234-verify",
+        "exportedFileName" : "0F0392A1-7B70-4F84-AAE4-FCACBC87886E",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2569-11-13 at 07.32.37 AM",
+        "timestamp" : 1794529957.502
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "A225DDD3-5CBC-4D66-9BA7-D2520D8331E3",
+        "deviceName" : "cooee-verify-cooee-234-verify",
+        "exportedFileName" : "06F95784-7114-4B4D-8B01-4A7A134B35A0",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2569-11-13 at 07.32.36 AM",
+        "timestamp" : 1794529956.056
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "A225DDD3-5CBC-4D66-9BA7-D2520D8331E3",
+        "deviceName" : "cooee-verify-cooee-234-verify",
+        "exportedFileName" : "3F323729-FBAE-4969-80E6-CB2D258CB154.mp4",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Screen Recording 2569-11-13 at 07.32.31 AM.mp4",
+        "timestamp" : 1794529951.008
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "A225DDD3-5CBC-4D66-9BA7-D2520D8331E3",
+        "deviceName" : "cooee-verify-cooee-234-verify",
+        "exportedFileName" : "78F48A6C-5990-4A33-A77A-F98C275BC5B7.txt",
+        "isAssociatedWithFailure" : true,
+        "suggestedHumanReadableName" : "Complete Issue Description.txt"
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "A225DDD3-5CBC-4D66-9BA7-D2520D8331E3",
+        "deviceName" : "cooee-verify-cooee-234-verify",
+        "exportedFileName" : "8AED88B6-4EA6-433C-BA8F-7F884B147E4E.txt",
+        "isAssociatedWithFailure" : true,
+        "suggestedHumanReadableName" : "App UI hierarchy for com.jirathip_0_F14E97A5-65E0-4E06-887A-0B1CCEF80AF0.cooee",
+        "timestamp" : 1794529961.568
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "A225DDD3-5CBC-4D66-9BA7-D2520D8331E3",
+        "deviceName" : "cooee-verify-cooee-234-verify",
+        "exportedFileName" : "95900D21-C85A-45E7-A553-499EE66DCE9D",
+        "isAssociatedWithFailure" : true,
+        "suggestedHumanReadableName" : "UI Snapshot 2569-11-13 at 07.32.41 AM",
+        "timestamp" : 1794529961.568
+      }
+    ],
+    "testIdentifier" : "LiveUITests/testPairsStreamsAndShowsHome()",
+    "testIdentifierURL" : "test://com.apple.xcode/Cooee/CooeeAppUITests/LiveUITests/testPairsStreamsAndShowsHome"
+  }
+]

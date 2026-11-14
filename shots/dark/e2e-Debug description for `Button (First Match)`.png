@@ -1,0 +1,5 @@
+Query chain:
+ →Find: Target Application 'com.jirathip.cooee'
+  ↪︎Find: Descendants matching type Button
+    ↪︎Find: Elements matching predicate 'label == "Follow the look" AND selected == 1'
+      ↪︎Find: First Match

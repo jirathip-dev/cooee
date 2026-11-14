@@ -1,0 +1,6 @@
+Query chain:
+ →Find: Application 'com.apple.springboard'
+  ↪︎Find: Descendants matching type Alert
+    ↪︎Find: Descendants matching type Button
+      ↪︎Find: Elements matching predicate '"OK" IN identifiers'
+        ↪︎Find: First Match
