@@ -9,7 +9,7 @@ use std::{
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     sync::{
-        Arc, Mutex,
+        Arc, Mutex, OnceLock,
         atomic::{AtomicU16, Ordering},
     },
     thread,
@@ -34,13 +34,21 @@ esac
 
 const NOW: u64 = 1_800_000_000;
 
+fn shed() -> &'static Path {
+    static SHED_FILE: OnceLock<PathBuf> = OnceLock::new();
+    SHED_FILE.get_or_init(|| {
+        let shed = env::temp_dir().join(format!("cooee-machines-shed-{}", std::process::id()));
+        fs::write(&shed, SHED).unwrap();
+        fs::set_permissions(&shed, fs::Permissions::from_mode(0o755)).unwrap();
+        shed
+    })
+}
+
 fn scratch(name: &str) -> PathBuf {
     let dir = env::temp_dir().join(format!("cooee-machines-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).unwrap();
-    let shed = dir.join("shed");
-    fs::write(&shed, SHED).unwrap();
-    fs::set_permissions(&shed, fs::Permissions::from_mode(0o755)).unwrap();
+    std::os::unix::fs::symlink(shed(), dir.join("shed")).unwrap();
     fs::write(
         dir.join("ls.json"),
         r#"[{"name":"air","target":"air.local"}]"#,
@@ -67,6 +75,13 @@ fn answer(dir: &Path, machine: &str, v: &Value) {
 fn offline(dir: &Path, machine: &str, last_seen: u64) {
     let v = json!({ "machine": machine, "online": false, "last_seen": last_seen });
     answer(dir, machine, &v);
+}
+
+#[test]
+fn every_test_runs_the_one_fake_shed_written_before_any_test_forks() {
+    let (a, b) = (scratch("one-a"), scratch("one-b"));
+    let real = |dir: PathBuf| fs::canonicalize(dir.join("shed")).unwrap();
+    assert_eq!(real(a), real(b));
 }
 
 #[test]
