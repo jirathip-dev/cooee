@@ -106,6 +106,11 @@ run=$(gh run list --workflow apple.yml --commit "$(git rev-parse HEAD)" --json d
 gh run download "${run:?no apple run at this head}" -n mac-setup-shots -D "$OUT/shots/mac"; echo "mac shots run $run exit=$?"
 ```
 
+## Known noise
+
+- iOS: one `GET /p/{name}/screens/{*rest}` 503 per run, after the test taps `Pause`: the fixture drover
+  (`apple/e2e/screens.py`) answers 503 for 20 s on purpose, the offline case `queue-offline-*` shows.
+
 ## Evidence
 
 - iOS: `$OUT/shots/ios/{dark,light}/` (the simulator, 390-class iPhone 17), one file per screen of the feature map's
