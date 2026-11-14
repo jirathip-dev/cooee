@@ -13,7 +13,7 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, scratch, version};
+use support::{Cooee, FakeShed, agent, scratch, version};
 
 struct Setup {
     shed: FakeShed,
@@ -22,10 +22,9 @@ struct Setup {
 
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
-    fs::create_dir_all(dir.join("personas")).unwrap();
     for n in ["Ada", "Bo"] {
-        let file = dir.join(format!("personas/{}.toml", n.to_lowercase()));
-        fs::write(file, format!("name = \"{n}\"\nagent = \"fake-acp\"\n")).unwrap();
+        let toml = format!("name = \"{n}\"\nagent = \"fake-acp\"\n");
+        agent(&dir, &n.to_lowercase(), &toml, "");
     }
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);

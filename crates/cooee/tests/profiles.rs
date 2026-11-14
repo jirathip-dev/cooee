@@ -14,7 +14,7 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, scratch, version};
+use support::{Cooee, FakeShed, agent, scratch, version};
 
 struct Setup {
     dir: PathBuf,
@@ -25,7 +25,7 @@ struct Setup {
 }
 
 /// cooee with provider `fake` (Claude's behaviour) for `fake-acp` (accounts in `FAKE_HOME`, settings in
-/// `FAKE_SETTINGS`), its account `work`, the secret `API_KEY`, and in `<config>/profiles/`: `coder` (all of it),
+/// `FAKE_SETTINGS`), its account `work`, the secret `API_KEY`, and in `<config>/agents/`: `coder` (all of it),
 /// `guard` (settings for an agent with no settings variable) and `leak` (a secret inline).
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
@@ -34,31 +34,24 @@ fn setup(name: &str) -> Setup {
     fs::create_dir_all(data.join("accounts/fake/work")).unwrap();
     fs::create_dir_all(data.join("secrets")).unwrap();
     fs::write(data.join("secrets/API_KEY"), format!("{token}\n")).unwrap();
-    let profiles = dir.join("profiles");
-    fs::create_dir_all(&profiles).unwrap();
-    fs::write(profiles.join("coder.md"), "Follow the house rules.\n").unwrap();
-    fs::write(
-        profiles.join("settings.json"),
-        r#"{"hooks":{"PreToolUse":[]}}"#,
-    )
-    .unwrap();
-    let profile = |file: &str, text: &str| fs::write(profiles.join(file), text).unwrap();
-    profile(
-        "coder.toml",
-        "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\naccount = \"work\"\n\
-         instructions = \"coder.md\"\nsettings = \"settings.json\"\npolicy = \"allow\"\n\
-         env = { MODE = \"review\", API_KEY = \"secret:API_KEY\" }\n",
+    let settings = r#"{"hooks":{"PreToolUse":[]}}"#;
+    let coder = agent(
+        &dir,
+        "coder",
+        "name = \"Coder\"\nagent = \"fake-acp\"\naccount = \"work\"\nsettings = \"settings.json\"\n\
+         policy = \"allow\"\nenv = { MODE = \"review\", API_KEY = \"secret:API_KEY\" }\n",
+        "Follow the house rules.\n",
     );
-    profile(
-        "guard.toml",
-        "name = \"guard\"\nlabel = \"Guarded\"\nagent = \"other-acp\"\nsettings = \"settings.json\"\n",
+    fs::write(coder.join("settings.json"), settings).unwrap();
+    let guard = agent(
+        &dir,
+        "guard",
+        "name = \"Guarded\"\nagent = \"other-acp\"\nsettings = \"settings.json\"\n",
+        "",
     );
-    profile(
-        "leak.toml",
-        &format!(
-            "name = \"leak\"\nlabel = \"Leak\"\nagent = \"fake-acp\"\nenv = {{ T = \"{token}\" }}\n"
-        ),
-    );
+    fs::write(guard.join("settings.json"), settings).unwrap();
+    let leak = format!("name = \"Leak\"\nagent = \"fake-acp\"\nenv = {{ T = \"{token}\" }}\n");
+    agent(&dir, "leak", &leak, "");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let extra = "[[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\n\
                  settings = \"FAKE_SETTINGS\"\nlogin = [\"true\"]\nstatus = [\"true\"]\n";
@@ -149,7 +142,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let (id, line) = s.thread("coder", "hi");
     let data = s.dir.join("data");
     let work = data.join("accounts/fake/work");
-    let settings = s.dir.join("profiles/settings.json");
+    let settings = s.dir.join("agents/coder/settings.json");
     assert!(line.contains(" --policy allow "), "{line}");
     let meta = line
         .split(" --meta ")
@@ -223,7 +216,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     // No secret in cooee's config, files or log, nor in what it told shed.
     let mut written = fs::read_to_string(s.dir.join("cooee.err")).unwrap();
     assert!(
-        written.contains("leak.toml"),
+        written.contains("agents/leak/agent.toml"),
         "the left-out profile is logged: {written}"
     );
     written.push_str(&s.shed.cli_log());
@@ -365,7 +358,7 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     let data = dir.join("data");
     fs::create_dir_all(data.join("accounts/claude/work")).unwrap();
     // The guard: a fake of herdsman's hook, refusing a push to main.
-    let claude = dir.join("profiles/claude");
+    let claude = dir.join("agents/guarded/claude");
     fs::create_dir_all(&claude).unwrap();
     let guard = claude.join("guard.sh");
     fs::write(
@@ -377,8 +370,8 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
         { "matcher": "Bash", "hooks": [{ "type": "command", "command": guard }] } ] } });
     fs::write(claude.join("settings.json"), hooks.to_string()).unwrap();
     fs::write(
-        dir.join("profiles/guarded.toml"),
-        "name = \"guarded\"\nlabel = \"Guarded\"\nagent = \"fake-acp\"\naccount = \"work\"\nsettings = \"claude\"\n",
+        dir.join("agents/guarded/agent.toml"),
+        "name = \"Guarded\"\nagent = \"fake-acp\"\naccount = \"work\"\nsettings = \"claude\"\n",
     )
     .unwrap();
     let shed = FakeShed::start(&dir.join("shed"), version());

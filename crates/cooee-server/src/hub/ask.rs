@@ -4,7 +4,7 @@
 
 use std::{sync::mpsc, time::Duration};
 
-use cooee_core::personas;
+use cooee_core::agents;
 
 use super::{Hub, HubError, lock, now};
 
@@ -31,7 +31,7 @@ impl Hub {
         wait: Duration,
     ) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
-        let asker = personas::find(self.config_dir(), &self.data, &meta.profile).ok();
+        let asker = agents::find(self.config_dir(), &self.data, &meta.profile).ok();
         let Some(asker) = asker.filter(|p| p.can_message.iter().any(|t| t == target)) else {
             return no("NOT_ALLOWED", &format!("can_message doesn't name {target}"));
         };

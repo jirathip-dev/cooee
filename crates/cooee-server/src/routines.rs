@@ -51,12 +51,17 @@ pub struct Runner {
 const HOUR: u64 = 3_600_000;
 
 impl Runner {
-    /// The routines in `data`, run on `hub`; `new_thread` runs start with `start`.
+    /// The routines of config folder `config` (none: the data folder), their run state in `data`, run on `hub`;
+    /// `new_thread` runs start with `start`.
     #[must_use]
-    pub fn new(hub: Arc<Hub>, data: &std::path::Path, start: Start) -> Self {
+    pub fn new(
+        hub: Arc<Hub>,
+        (config, data): (Option<&std::path::Path>, &std::path::Path),
+        start: Start,
+    ) -> Self {
         Self {
             hub,
-            file: Routines::new(data),
+            file: Routines::new(config.unwrap_or(data), data),
             lock: Mutex::new(()),
             start,
             offset: Mutex::new((0, 0)),
@@ -156,6 +161,17 @@ impl Runner {
             Ok(list) => list,
             Err(e) => return eprintln!("cooee: routines: {e}"),
         };
+        // One typed by hand into routines.toml has no run state yet: it first runs at its next due time.
+        let made: Vec<()> = list
+            .iter_mut()
+            .filter(|r| r.made_at == 0)
+            .map(|r| r.made_at = now)
+            .collect();
+        if !made.is_empty()
+            && let Err(e) = self.file.save(&list)
+        {
+            eprintln!("cooee: routines: {e}");
+        }
         for at in 0..list.len() {
             let Some(due) = list[at].due(now, offset) else {
                 continue;

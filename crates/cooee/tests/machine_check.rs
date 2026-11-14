@@ -1,6 +1,6 @@
 //! #150: `cooee machine check <m> [--yes]` and `cooee doctor`'s row per machine, against the fake shed. Machine `box`
 //! has its own filesystem: its `sh`, `test` and `git` (tests/support's `on-box` programs) read a path under `here/`
-//! as one under `box-fs/here/`. Persona `cook` runs on `box` as profile `coder`: each check passes, then fails with
+//! as one under `box-fs/here/`. Agent `cook` runs on `box` with its settings: each check passes, then fails with
 //! its part missing there, and `--yes` clones the folder and copies the settings.
 
 mod support;
@@ -13,7 +13,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use support::{FakeShed, scratch, version};
+use support::{FakeShed, agent, scratch, version};
 
 const SETTINGS: &str = r#"{"hooks":{"PreToolUse":[]}}"#;
 
@@ -37,7 +37,7 @@ fn git(args: &[&str]) {
     assert!(ok.status.success(), "{ok:?}");
 }
 
-/// Persona `cook` on `box` with its folder `here/project` (a clone of `origin`), profile `coder`'s settings
+/// Persona `cook` on `box` with its folder `here/project` (a clone of `origin`), its settings
 /// `here/rules/settings.json` and provider `fake`'s CLI `bin/fake-cli`; `box` up and signed in, nothing on its disk.
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
@@ -72,24 +72,12 @@ fn setup(name: &str) -> Setup {
         &format!("test -f {:?}\n", flag.to_string_lossy()),
     );
     let q = |p: PathBuf| format!("{:?}", p.to_string_lossy());
-    fs::create_dir_all(dir.join("profiles")).unwrap();
-    fs::write(
-        dir.join("profiles/coder.toml"),
-        format!(
-            "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\nsettings = {}\n",
-            q(here.join("rules/settings.json"))
-        ),
-    )
-    .unwrap();
-    fs::create_dir_all(dir.join("personas")).unwrap();
-    fs::write(
-        dir.join("personas/cook.toml"),
-        format!(
-            "name = \"Cook\"\nagent = \"fake-acp\"\nfolder = {}\nmachine = \"box\"\nprofile = \"coder\"\n",
-            q(here.join("project"))
-        ),
-    )
-    .unwrap();
+    let toml = format!(
+        "name = \"Cook\"\nagent = \"fake-acp\"\nfolder = {}\nmachine = \"box\"\nsettings = {}\n",
+        q(here.join("project")),
+        q(here.join("rules/settings.json"))
+    );
+    agent(&dir, "cook", &toml, "");
     fs::write(
         dir.join("config.toml"),
         format!(

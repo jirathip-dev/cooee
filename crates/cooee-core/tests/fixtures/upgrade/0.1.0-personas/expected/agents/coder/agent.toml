@@ -1,0 +1,4 @@
+name = "Coder"
+avatar = "idle"
+agent = "fake-acp"
+policy = "allow"

@@ -1,0 +1,3 @@
+name = "Navi"
+role = "orchestrator"
+agent = "fake-acp"

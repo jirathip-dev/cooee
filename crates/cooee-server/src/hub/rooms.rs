@@ -15,7 +15,7 @@ use std::{
 
 use cooee_core::{
     Body, Change, Item, Kind, Member, Reason, RoomTurn, Thread,
-    personas::{self, Persona},
+    agents::{self, Agent},
 };
 use serde_json::json;
 
@@ -64,7 +64,7 @@ fn key(s: &str) -> String {
 }
 
 /// The members `text` names with `@` and their id or name (spaces dropped, any case), in the order named, once each.
-fn named(text: &str, members: &[Member], names: &[Persona]) -> Vec<String> {
+fn named(text: &str, members: &[Member], names: &[Agent]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for word in mentions(text) {
         let hit = members.iter().find(|m| {
@@ -86,7 +86,7 @@ fn addresses_owner(text: &str) -> bool {
 }
 
 /// How the room shows `id`: the owner, a persona's name, else the id.
-fn display(names: &[Persona], id: &str) -> String {
+fn display(names: &[Agent], id: &str) -> String {
     match names.iter().find(|p| p.id == id) {
         _ if id == OWNER => "Owner".to_owned(),
         Some(p) => p.name.clone(),
@@ -106,14 +106,14 @@ impl Hub {
             return note;
         };
         let room = lock(&room);
-        let names = personas::list(self.config_dir(), &self.data);
+        let names = agents::list(self.config_dir(), &self.data);
         let last = room.chat.items.last().map_or(0, |i| i.id);
         note.in_room(&room.meta, &display(&names, &meta.profile), last)
     }
 
     /// Pushes room `room`'s `key` (`needs`, `fail`) about member `persona`, `line`, at item `item` (#158).
     fn room_push(&self, room: &Thread, persona: &str, (key, line): (&str, &str), item: u64) {
-        let names = personas::list(self.config_dir(), &self.data);
+        let names = agents::list(self.config_dir(), &self.data);
         let name = display(&names, persona);
         let note = Note::new(room, (key, &name, line), item, &self.theme);
         self.push.send(&note.in_room(room, &name, item));
@@ -226,7 +226,7 @@ impl Hub {
                 "{persona} is a lane thread: it stays a Workflow chat, never a room member"
             )));
         }
-        personas::find(self.config_dir(), &self.data, persona)
+        agents::find(self.config_dir(), &self.data, persona)
             .map(drop)
             .map_err(|e| refused(e.to_string()))
     }
@@ -253,7 +253,7 @@ impl Hub {
         };
         let item = l.chat.said(now(), 0, OWNER.to_owned(), body);
         let idle = l.meta.round.is_empty();
-        let names = personas::list(self.config_dir(), &self.data);
+        let names = agents::list(self.config_dir(), &self.data);
         let mut turns = named(text, &l.meta.members, &names);
         let reason = if turns.is_empty() {
             turns = l.meta.members.iter().map(|m| m.persona.clone()).collect();
@@ -296,7 +296,7 @@ impl Hub {
             let last_turn = usize::from(l.meta.taken) >= TURNS;
             let event = json!({ "member": persona, "reason": reason });
             l.emit("room-turn", event.to_string());
-            let names = personas::list(self.config_dir(), &self.data);
+            let names = agents::list(self.config_dir(), &self.data);
             let name = |s: &str| display(&names, s);
             let last = l.chat.items.last().map_or(0, |i| i.id);
             let Live { meta, chat, .. } = &mut *l;
@@ -423,7 +423,7 @@ impl Hub {
             _ => true,
         });
         if let Some(Body::Agent { text, .. }) = &reply {
-            let names = personas::list(self.config_dir(), &self.data);
+            let names = agents::list(self.config_dir(), &self.data);
             for member in named(text, &l.meta.members, &names) {
                 if member == persona || l.meta.round.iter().any(|t| t.member == member) {
                     continue;

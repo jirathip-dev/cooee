@@ -14,8 +14,9 @@ use std::{
 use cooee_core::{
     Agent, Body, Card, Change, Chat, Config, Item, Kind, Launch, Plugin, Queued, Shed, ShedError,
     Store, StoreError, Summary, Thread, Turn, Workflow,
+    agents::{self, Home},
     mcp::{self, COOEE, Pick, Server},
-    personas,
+    memory,
     routines::Mark,
     shed_proto::{self, ApprovalOption, Event, TerminalInfo},
     skills::{self, Skill},
@@ -1905,7 +1906,7 @@ impl Hub {
     /// config's diff, a secret's name or a run's command and sha.
     pub fn card(&self, plugin: &Plugin, c: CardSpec) -> Result<Item, HubError> {
         let (thread, owner) = (self.thread(&c.thread)?.0, self.plugin_of(&plugin.name));
-        let personas = personas::list(self.config_dir(), &self.data);
+        let personas = agents::list(self.config_dir(), &self.data);
         let persona = personas.iter().find(|p| p.id == thread.profile);
         if !persona.is_some_and(|p| p.plugins.contains(&owner)) {
             return Err(HubError::Refused(format!(
@@ -2101,7 +2102,7 @@ impl Hub {
     /// The thread list, newest first.
     #[must_use]
     pub fn list(&self) -> Vec<Summary> {
-        let personas = personas::list(self.config_dir(), &self.data);
+        let personas = agents::list(self.config_dir(), &self.data);
         let mut asks = Vec::new();
         let mut rows: Vec<Summary> = self
             .all()
@@ -2380,15 +2381,17 @@ impl Hub {
         Ok(said)
     }
 
-    /// The config's folder (its `profiles/`).
+    /// The config's folder (its `agents/`).
     fn config_dir(&self) -> Option<&Path> {
         self.config.as_deref().and_then(Path::parent)
     }
 
     /// Profile `id`'s picks (none for Plain or a profile gone).
     fn picks(&self, id: &str) -> Vec<Pick> {
-        cooee_core::profiles::find(self.config_dir(), &self.data, id)
-            .map_or_else(|_| Vec::new(), |p| p.mcp)
+        let list = agents::all(self.config_dir(), &self.data, |_| None);
+        list.into_iter()
+            .find(|a| a.id == id)
+            .map_or_else(Vec::new, |a| a.mcp)
     }
 
     /// `s` resolved, with `tools` allowed.
@@ -2491,19 +2494,15 @@ impl Hub {
     ///
     /// # Errors
     /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an edit refused.
-    pub fn remember(&self, id: &str, token: &str, e: &personas::Edit) -> Result<String, HubError> {
-        let meta = self.token_of(id, token)?;
-        let found = personas::list(self.config_dir(), &self.data)
-            .into_iter()
-            .find(|p| p.id == meta.profile);
-        let p = found.ok_or_else(|| HubError::Refused(format!("thread {id} has no persona")))?;
-        let kept = personas::remember(&self.data, &p.id, "persona", e, now())
+    pub fn remember(&self, id: &str, token: &str, e: &memory::Edit) -> Result<String, HubError> {
+        let home = self.home_of(id, token)?;
+        let kept = memory::remember(&home, "persona", e, now())
             .map_err(|e| HubError::Refused(e.to_string()))?;
-        let used = personas::used(&personas::notes(&self.data, &p.id));
+        let used = memory::used(&memory::notes(&home));
         let what = kept.map_or_else(|| "Forgotten".to_owned(), |n| format!("Kept as [{}]", n.id));
         Ok(format!(
             "{what}; {used} of {} characters used.",
-            personas::CAP
+            memory::CAP
         ))
     }
 
@@ -2520,7 +2519,7 @@ impl Hub {
         before: Option<u64>,
     ) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
-        let persona = personas::find(self.config_dir(), &self.data, &meta.profile)
+        let persona = agents::find(self.config_dir(), &self.data, &meta.profile)
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
         let refused = |e: cooee_core::StoreError| HubError::Refused(e.to_string());
         if thread.is_empty() && query.trim().is_empty() {
@@ -2578,8 +2577,9 @@ impl Hub {
         (id, token): (&str, &str),
         p: SkillProposal,
     ) -> Result<Item, HubError> {
-        let persona = self.persona_of(id, token)?;
-        let old = skills::check(&self.data, &persona, &p.skill, p.replaces.as_deref())
+        let home = self.home_of(id, token)?;
+        let persona = self.token_of(id, token)?.profile;
+        let old = skills::check(&home, &p.skill, p.replaces.as_deref())
             .map_err(|e| HubError::Refused(e.to_string()))?;
         let verb = if p.replaces.is_some() { "edit" } else { "add" };
         let tool = format!(
@@ -2600,17 +2600,25 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or no such skill of its.
     pub fn read_skill(&self, (id, token): (&str, &str), name: &str) -> Result<String, HubError> {
-        let persona = self.persona_of(id, token)?;
-        let s = skills::read(&self.data, &persona, name)
-            .map_err(|e| HubError::Refused(format!("{e} for {persona}")))?;
+        let home = self.home_of(id, token)?;
+        let s = skills::read(&home, name).map_err(|e| {
+            let persona = home
+                .path()
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
+            HubError::Refused(format!("{e} for {persona}"))
+        })?;
         Ok(s.body.chars().take(8000).collect())
     }
 
-    /// The id of thread `id`'s persona, for its token.
-    fn persona_of(&self, id: &str, token: &str) -> Result<String, HubError> {
+    /// Thread `id`'s agent's folder, for its token (a plugin's agent has none).
+    fn home_of(&self, id: &str, token: &str) -> Result<Home, HubError> {
         let meta = self.token_of(id, token)?;
-        personas::find(self.config_dir(), &self.data, &meta.profile)
-            .map(|p| p.id)
+        let config = self
+            .config_dir()
+            .ok_or_else(|| HubError::Refused("no config folder".to_owned()))?;
+        agents::home(config, &meta.profile)
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))
     }
 
@@ -2670,7 +2678,11 @@ impl Hub {
                 persona,
                 skill,
                 replaces,
-            } => skills::save(&self.data, &persona, skill, replaces.as_deref())
+            } => self
+                .config_dir()
+                .ok_or_else(|| io::Error::other("no config folder"))
+                .and_then(|c| agents::home(c, &persona))
+                .and_then(|h| skills::save(&h, skill, replaces.as_deref()))
                 .map(|s| Some(format!("saved skill {}", s.name)))
                 .map_err(|e| e.to_string()),
         }

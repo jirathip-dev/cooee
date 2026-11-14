@@ -9,22 +9,17 @@ mod support;
 use std::{fs, path::Path, thread, time::Duration};
 
 use serde_json::{Value, json};
-use support::{Cooee, Events, FakeShed, scratch, version};
+use support::{Cooee, Events, FakeShed, agent, scratch, version};
 
-/// cooee with personas Ada, Bo, Cy, Di and Ed, and the conductor profile (read as a persona).
+/// cooee with personas Ada, Bo, Cy, Di and Ed, and the conductor.
 fn setup(name: &str) -> (std::path::PathBuf, FakeShed, Cooee) {
     let dir = scratch(name);
-    fs::create_dir_all(dir.join("personas")).unwrap();
     for n in ["Ada", "Bo", "Cy", "Di", "Ed"] {
-        let file = dir.join(format!("personas/{}.toml", n.to_lowercase()));
-        fs::write(file, format!("name = \"{n}\"\nagent = \"fake-acp\"\n")).unwrap();
+        let toml = format!("name = \"{n}\"\nagent = \"fake-acp\"\n");
+        agent(&dir, &n.to_lowercase(), &toml, "");
     }
-    fs::create_dir_all(dir.join("profiles")).unwrap();
-    fs::write(
-        dir.join("profiles/conductor.toml"),
-        "name = \"conductor\"\nlabel = \"Conductor\"\nagent = \"fake-acp\"\n",
-    )
-    .unwrap();
+    let conductor = "name = \"Conductor\"\nagent = \"fake-acp\"\nrole = \"orchestrator\"\n";
+    agent(&dir, "conductor", conductor, "");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
     (dir, shed, cooee)

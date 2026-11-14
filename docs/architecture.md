@@ -235,32 +235,46 @@ for the owner to run. `cooee doctor` checks the service, port, shed, APNs, push 
 prompt's first reply chunk (thread, agent) into `<data>/perf.log`, one JSON line each, never a prompt or a token;
 `cooee perf [--minutes 60]` prints p50/p95/max of each as a table.
 
-## Agent profiles (#40)
+## Agents (#40, #359)
 
-An agent profile is a named recipe for a thread's agent, picked in the new-thread form and fixed for the thread's
-life (a new thread changes it). **Plain**, the default, is the agent with the owner's own setup and nothing added. The
-owner's profiles are `<config>/profiles/*.toml`, one per file; a plugin brings its own as `[[profiles]]` in its
-`cooee-plugin.toml` ([plugins.md](plugins.md)), shown with the plugin's name, listed while it is installed and on.
+An agent is a named recipe for a thread's agent, picked when the thread starts and fixed for its life. **Plain**, the
+default, is the agent with the owner's own setup and nothing added; an agent starts without the owner's personal
+setup. The owner's agents are folders `<config>/agents/<id>/` (the folder's name is the id), so the whole config
+folder is one hand-editable, git-able tree, read on each call:
+
+```text
+agents/kai/agent.toml           every structured key (below); an unknown key, or `id`, `character`, `instructions`, is malformed
+agents/kai/INSTRUCTIONS.md      plain Markdown, read as-is (missing: empty)
+agents/kai/CHARACTER.md         plain Markdown, read as-is
+agents/kai/memory.md            - [3f] one note per line <!-- by:persona at:1731283200000 -->
+agents/kai/skills/release/SKILL.md
+```
 
 ```toml
-name = "coder"                  # its id: lowercase letters, digits and - (a plugin's: <plugin>/<name>)
-label = "Coder"                 # the picker and the thread's header
+name = "Kai"                    # shown; never the id
 agent = "claude-acp"            # the ACP agent
-account = "work"                # optional: its provider's account (else the default)
-folder = "~/Projects/app"       # optional: the folder (a root or inside one), instead of the one picked
-instructions = "coder.md"       # optional: sent ahead of the first message (the chat shows only the message)
-settings = "settings.json"      # optional: an agent settings file, its hooks the profile's guard
-env = { MODE = "review", API_KEY = "secret:API_KEY" }   # optional: plain values ({thread}: the thread's id), secrets as secret:<NAME>
+role = "orchestrator"           # optional, with fleets, avatar, folder, model, effort, machine, plugins, can_message, pinned
+account = "work"                # optional: its provider's account (else the one the chat names)
+settings = "settings.json"      # optional: an agent settings file, its hooks the agent's guard
 policy = "ask"                  # optional: shed's approval policy, ask, allow or deny
-avatar = "https://x/me.png"     # optional: the sidebar's avatar, an image URL or a theme sprite id (none: initials)
+
+[env]                           # optional: plain values ({thread}: the thread's id), secrets as secret:<NAME>
+API_KEY = "secret:API_KEY"
 
 [[mcp]]                         # optional, repeatable: an MCP server from the registry (#56)
 server = "github"
 tools = ["get_issue"]           # optional: the tools it may use (none: all)
 ```
 
-Paths are relative to the profile's file (a plugin's: its checkout); `~/` is the home folder. A secret is never in a
-profile: an env value that looks like a token is refused, and `secret:<NAME>` reads `<data>/secrets/<NAME>` at start.
+A malformed `agent.toml` hides that agent only; the log names its file and the line or key, never its text. The API
+never sets the launch keys (`account`, `settings`, `env`, `mcp`, `policy`): they are edited by hand. A plugin brings
+its own as `[[profiles]]` in its `cooee-plugin.toml` ([plugins.md](plugins.md)), lent as read-only agents
+`<plugin>/<name>` while it is installed and on. The first `cooee serve` of this build (or `cooee config migrate`;
+`--dry-run` prints the plan and writes nothing) moves the old `personas/`, `profiles/`, `<data>/personas/` and
+`<data>/routines.json` into agent folders and `routines.toml` once, keeping each as `<name>.bak-<date>`.
+
+Paths are relative to the agent's folder (a plugin's: its checkout); `~/` is the home folder. A secret is never in an
+agent: an env value that looks like a token is refused, and `secret:<NAME>` reads `<data>/secrets/<NAME>` at start.
 Its MCP servers are below.
 At spawn the agent's adapter runs as `env <account folder> <settings variable>=<file> K=V… <adapter>`; secrets go
 through a 0600 file that the adapter's shell reads and removes (`sh -c '. file; rm file; exec adapter'`), so no
@@ -294,8 +308,9 @@ ID) and adds the server off. Nothing runs before the owner turns it on and a pro
 ## Routines (#75)
 
 A routine is a schedule (five-field cron in the Mac's local time, its UTC offset read with `date +%z` hourly, at
-least 15 minutes between due times), a place and a prompt, kept with its run state in `<data>/routines.json` (0600,
-written whole). An agent makes one in chat with cooee's own `create_routine` tool, as itself: the chat gets a `⟳
+least 15 minutes between due times), a place and a prompt: `<config>/routines.toml` (`[[routine]]`: `id`, `name`,
+`when`, `prompt`, `paused`, `[routine.place]`), its run state in `<data>/routine-runs.json`, each written whole (0600)
+when its part changed. One typed by hand first runs at its next due time. An agent makes one in chat with cooee's own `create_routine` tool, as itself: the chat gets a `⟳
 Created routine` line; a Workflow session or a routine's own run can't. `POST /routines/<id>` renames,
 retimes, pauses and resumes them, `POST /routines/<id>/delete` deletes them; there is no other way to make one. Every 30 seconds the runner runs each
 routine whose newest due time is past both its last recorded one and its making, once (missed ones run once, late),

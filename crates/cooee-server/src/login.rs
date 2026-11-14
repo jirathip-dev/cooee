@@ -14,7 +14,9 @@ use std::{
 };
 
 use cooee_core::{
-    Account, Accounts, Launch, Profile, Provider, Providers, Shed, Sheet, Status, links, redact,
+    Account, Accounts, Launch, Provider, Providers, Shed, Sheet, Status,
+    agents::Agent,
+    links, redact,
     shed_proto::{RunParams, WaitOutcome},
 };
 use serde::Serialize;
@@ -513,27 +515,32 @@ impl Logins {
         Ok((a.name, launch))
     }
 
-    /// What a thread of agent profile `p` runs with: its account's label and [`Launch`] (the account's folder, the
-    /// settings file in the provider's `settings` variable (in place of the account's folder when it is the same
-    /// variable), the env, its secrets read from `data` through a file there, the policy, its provider's "no personal
-    /// setup" session options), and its instructions. A profile its agent can't run as written is refused: settings
+    /// What a thread of agent `a` runs with: its account's label (`a`'s, else `account`) and [`Launch`] (the account's
+    /// folder, the settings file in the provider's `settings` variable (in place of the account's folder when it is
+    /// the same variable), the env, its secrets read from `data` through a file there, the policy, and its provider's
+    /// "no personal setup" session options). An agent whose ACP agent can't run it as written is refused: settings
     /// with no `settings` variable (its guard can't run).
     ///
     /// # Errors
-    /// [`HubError::Refused`] as above, for an unknown account, a missing secret or an unreadable file.
-    pub fn profile(&self, p: &Profile, data: &Path) -> Result<(String, Launch, String), HubError> {
+    /// [`HubError::Refused`] as above, for an unknown account or a missing secret.
+    pub fn agent(
+        &self,
+        a: &Agent,
+        account: Option<&str>,
+        data: &Path,
+    ) -> Result<(String, Launch), HubError> {
         let refused = |why: String| HubError::Refused(why);
-        let (account, mut launch) = self.home(&p.agent, p.account.as_deref())?;
-        let provider = self.providers.for_agent(&p.agent);
+        let (account, mut launch) = self.home(&a.agent, a.account.as_deref().or(account))?;
+        let provider = self.providers.for_agent(&a.agent);
         launch.meta = provider.and_then(|v| v.no_personal_setup());
-        if let Some(settings) = &p.settings {
+        if let Some(settings) = &a.settings {
             let var = provider
                 .map(|v| v.spec().settings.as_str())
                 .filter(|v| !v.is_empty());
             let Some(var) = var else {
                 return Err(refused(format!(
                     "this profile's guard can't run with {}: its ACP adapter has no settings variable",
-                    p.agent
+                    a.agent
                 )));
             };
             launch.env.retain(|(k, _)| k != var);
@@ -541,20 +548,15 @@ impl Logins {
                 .env
                 .push((var.to_owned(), settings.display().to_string()));
         }
-        let (plain, secret) = p.env(data).map_err(refused)?;
+        let (plain, secret) = a.env(data).map_err(refused)?;
         launch.env.extend(plain);
         if !secret.is_empty() {
             let name = cooee_core::random(16).map_err(|e| refused(e.to_string()))?;
             let name = cooee_core::sha256(&name);
             launch.secrets = Some((data.join("secrets").join(format!(".run-{name}")), secret));
         }
-        launch.policy.clone_from(&p.policy);
-        let instructions = match &p.instructions {
-            Some(f) => std::fs::read_to_string(f)
-                .map_err(|e| refused(format!("profile {}: {}: {e}", p.name, f.display())))?,
-            None => String::new(),
-        };
-        Ok((account, launch, instructions))
+        launch.policy.clone_from(&a.policy);
+        Ok((account, launch))
     }
 
     /// The efforts `agent`'s provider offers (#553 row 34).

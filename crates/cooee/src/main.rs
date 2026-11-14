@@ -20,7 +20,7 @@ mod keychain;
 mod machine;
 mod setup;
 
-const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | machine check <m> [--yes] | push migrate | secrets \
+const USAGE: &str = "usage: cooee <serve | config migrate [--dry-run] | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | machine check <m> [--yes] | push migrate | secrets \
                      | perf [--minutes <n>] \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json|cooee-plugin.toml>... \
@@ -76,6 +76,7 @@ fn named(instance: &str) -> bool {
             .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
 
+#[expect(clippy::too_many_lines, reason = "one match arm per subcommand")]
 fn main() -> ExitCode {
     let mut args: Vec<String> = env::args().skip(1).collect();
     let mut switch = |name: &str| {
@@ -113,6 +114,8 @@ fn main() -> ExitCode {
             return ExitCode::SUCCESS;
         }
         ["serve"] => serve,
+        ["config", "migrate"] if dry_run => |c: &Config| migrate(c, true),
+        ["config", "migrate"] => |c: &Config| migrate(c, false),
         ["pair", rest @ ..] => {
             return with_config(path.as_deref(), &instance, |c| pairing(c, rest));
         }
@@ -210,6 +213,9 @@ fn finish(result: Result<(), String>) -> ExitCode {
 
 /// Serves the instance; `[[plugins]]` entries named `machines` and `terminal` are the first-party plugins, run here.
 fn serve(config: &Config) -> Result<(), String> {
+    if let Err(e) = migrate(config, false) {
+        eprintln!("cooee: {e}");
+    }
     let machines = config.plugins.iter().find(|p| p.name == "machines");
     let terminal = config
         .plugins
@@ -250,6 +256,24 @@ fn serve(config: &Config) -> Result<(), String> {
         }
     })
     .map_err(|e| e.to_string())
+}
+
+/// `cooee config migrate [--dry-run]`, and `serve`'s first step (#359): the old personas, profiles, notes, skills and
+/// routines moved into agent folders, once; a failure is logged and never stops the start.
+fn migrate(config: &Config, dry_run: bool) -> Result<(), String> {
+    let (Some(dir), Some(data)) = (config.dir.as_deref(), config.data_dir()) else {
+        return Ok(());
+    };
+    let today = cooee_core::routines::local(now(), 0);
+    let plan = cooee_core::migrate::plan(dir, &data, &today[..10]);
+    if dry_run {
+        plan.lines().iter().for_each(|l| println!("{l}"));
+        return Ok(());
+    }
+    plan.apply(|line| eprintln!("cooee: migrate: {line}"))
+        .map_err(|e| {
+            format!("migrate: {e}; the old files are untouched; `cooee config migrate` tries again")
+        })
 }
 
 fn devices_of(config: &Config) -> Result<Devices, String> {

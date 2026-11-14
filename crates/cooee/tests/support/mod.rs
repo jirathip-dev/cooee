@@ -913,6 +913,15 @@ fn reply(t: &str, stop: &str) -> EventKind {
     }
 }
 
+/// Agent `id`'s folder under config folder `dir` (#359): `agent.toml` holding `toml`, and `INSTRUCTIONS.md`.
+pub fn agent(dir: &Path, id: &str, toml: &str, instructions: &str) -> PathBuf {
+    let home = dir.join("agents").join(id);
+    fs::create_dir_all(&home).unwrap();
+    fs::write(home.join("agent.toml"), toml).unwrap();
+    fs::write(home.join("INSTRUCTIONS.md"), instructions).unwrap();
+    home
+}
+
 /// A scratch folder, empty.
 pub fn scratch(name: &str) -> PathBuf {
     let dir = env::temp_dir().join(format!("cooee-{name}-{}", std::process::id()));

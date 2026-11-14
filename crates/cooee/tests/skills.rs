@@ -12,7 +12,7 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, scratch, version};
+use support::{Cooee, FakeShed, agent, scratch, version};
 
 struct Setup {
     dir: PathBuf,
@@ -22,14 +22,10 @@ struct Setup {
 
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
-    fs::create_dir_all(dir.join("personas")).unwrap();
     for n in ["Ada", "Bo"] {
-        let file = dir.join(format!("personas/{}.toml", n.to_lowercase()));
-        fs::write(
-            file,
-            format!("name = \"{n}\"\nagent = \"fake-acp\"\ncharacter = \"I am {n}.\"\n"),
-        )
-        .unwrap();
+        let toml = format!("name = \"{n}\"\nagent = \"fake-acp\"\n");
+        let home = agent(&dir, &n.to_lowercase(), &toml, "");
+        fs::write(home.join("CHARACTER.md"), format!("I am {n}.")).unwrap();
     }
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
@@ -105,7 +101,7 @@ impl Setup {
 
     fn file(&self, persona: &str, name: &str) -> PathBuf {
         self.dir
-            .join(format!("data/personas/{persona}/skills/{name}/SKILL.md"))
+            .join(format!("agents/{persona}/skills/{name}/SKILL.md"))
     }
 }
 

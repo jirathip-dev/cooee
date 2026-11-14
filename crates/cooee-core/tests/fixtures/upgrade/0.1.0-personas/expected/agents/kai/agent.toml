@@ -1,0 +1,26 @@
+name = "Kai"
+role = "orchestrator"
+fleets = ["cooee","drover"]
+avatar = "https://example.com/kai.png"
+folder = "/srv/site"
+agent = "claude-acp"
+model = "sonnet"
+effort = "high"
+machine = "air"
+plugins = ["drover"]
+can_message = ["conductor"]
+pinned = true
+account = "work"
+settings = "guard.json"
+policy = "ask"
+
+[env]
+GH_TOKEN = "secret:GH_TOKEN"
+REGION = "ap-southeast-1"
+
+[[mcp]]
+server = "github"
+tools = ["list_issues"]
+
+[[mcp]]
+server = "fs"
