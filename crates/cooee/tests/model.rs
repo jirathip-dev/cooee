@@ -220,3 +220,13 @@ fn a_day_old_list_is_asked_again() {
         .unwrap();
     assert_eq!(shed.calls("rm", name).len(), 1, "the probe is closed");
 }
+
+/// #230: `GET /agents` lists each installed agent with the efforts its provider offers, for the persona sheet's menu.
+#[test]
+fn the_agent_list_carries_each_agents_efforts() {
+    let (_shed, cooee, _dir) = setup("model-agents");
+    assert_eq!(
+        cooee.json("/agents"),
+        json!([{ "id": "fake-acp", "efforts": ["low", "high"] }])
+    );
+}

@@ -12,7 +12,12 @@ on:
     types: [opened, synchronize, reopened, labeled]
   schedule:
     - cron: "17 19 * * *"
+  # #388: ui-stress, the ui suite `repeats` times in a row at a ref; only the ui job runs.
   workflow_dispatch:
+    inputs:
+      repeats:
+        description: how many times the ui suite runs in a row
+        default: "20"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'merge-ready' && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -76,13 +81,13 @@ jobs:
           bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
           ./actionlint -color
 
-  # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64 and macOS arm64 (msrv-mac, same steps).
+  # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64; macOS runs stable-mac's tests (#388).
   msrv:
     name: msrv (ubuntu-latest)
     needs: scope
     if: needs.scope.outputs.run == 'true'
     runs-on: ubuntu-latest
-    steps: &msrv
+    steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.REF }}
@@ -99,7 +104,7 @@ jobs:
         run: just clippy
       - name: test (incl. upgrade compatibility and crash injection)
         # #336: on Linux, a session of its own, so a test's group signal can never reach the runner.
-        run: ${{ runner.os == 'Linux' && 'setsid --wait' || '' }} just test
+        run: setsid --wait just test
       - name: doc
         run: just doc
       - name: deny (licences, advisories, duplicate versions)
@@ -116,13 +121,6 @@ jobs:
         run: just themes
       - name: CI scripts (scope, reuse, nightly)
         run: just ci-scripts
-
-  msrv-mac:
-    name: msrv (macos-latest)
-    needs: scope
-    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true'
-    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.APPLE_RUNNER || 'macos-latest' }}
-    steps: *msrv
 
   stable:
     name: stable (ubuntu-latest)
@@ -196,7 +194,7 @@ jobs:
   # Playwright at 390 and 1440 px with axe accessibility checks; the screenshots are artifacts.
   ui:
     needs: scope
-    if: needs.scope.outputs.run == 'true'
+    if: needs.scope.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -215,8 +213,9 @@ jobs:
       - name: build
         run: cargo build --locked -p cooee
       - name: playwright (390, 1440, axe)
-        working-directory: web/e2e
-        run: npx playwright test
+        env:
+          REPEATS: ${{ inputs.repeats || '1' }}
+        run: scripts/ui-stress.sh "$REPEATS"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -230,7 +229,7 @@ jobs:
 
   # #329: a red nightly opens or updates one `nightly red: <check> since <PR>` issue.
   nightly-red:
-    needs: [scope, actionlint, msrv, msrv-mac, stable, stable-mac, ts, no-node, ui]
+    needs: [scope, actionlint, msrv, stable, stable-mac, ts, no-node, ui]
     if: always() && github.event_name == 'schedule' && contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
     concurrency: nightly-red

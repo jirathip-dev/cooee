@@ -73,4 +73,30 @@ internal struct PersonasTests {
             try await server.client().create(APIPersona(id: "", name: "", agent: ""))
         }
     }
+
+    @Test internal func theAgentChipsListsAndTheFoldersDecodeFromTheServer() async throws {
+        let agents = #"[{"id":"fake-acp","efforts":["low","high"]},{"id":"codex","efforts":[]}]"#
+        let models =
+            #"[{"agent":"fake-acp","account":"","seen":5,"models":[["fake-opus-3","Opus"]],"short":{"opus":"fake-opus-3"}}]"#
+        let folders = #"{"path":"/w/my app","home":"/home/user","dirs":["src"],"roots":["/w"]}"#
+        let server = CannedServer([
+            "/agents": [Answer(headers: json, chunks: [agents])],
+            "/models": [Answer(headers: json, chunks: [models])],
+            "/folders": [Answer(headers: json, chunks: [folders])],
+        ])
+        let client = server.client()
+        #expect(
+            try await client.agents() == [
+                AgentOption(id: "fake-acp", efforts: ["low", "high"]), AgentOption(id: "codex"),
+            ])
+        let lists = try await client.models()
+        #expect(
+            lists == [ModelList(agent: "fake-acp", models: [["fake-opus-3", "Opus"]], short: ["opus": "fake-opus-3"])])
+        #expect(ModelList.picks(lists, agent: "fake-acp") == ["opus", "fake-opus-3"])
+        let listing = try await client.folders("/w/my app")
+        #expect(listing == FolderListing(path: "/w/my app", dirs: ["src"], roots: ["/w"]))
+        _ = try await client.folders(nil)
+        let asked = server.requests("/folders").map { $0.url?.query() }
+        #expect(asked == ["path=%2Fw%2Fmy%20app", nil])
+    }
 }
