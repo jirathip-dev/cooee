@@ -1,0 +1,41 @@
+$ (cd web/e2e && npm ci)
+npm ci exit=0
+launched pid 59251
+ready after 1s
+doctor exit=0
+drive exit=0
+verify-browser pair exit=2
+verify-browser pair exit=0
+kill exit=0
+curl exit=7 (7: nothing listens)
+native serve ready after 4s exit=0
+native sim DC869BE0-FE79-4852-8C3B-C9CF25F72CBC exit=0
+native build exit=0
+native install com.jirathip.cooee exit=0
+native shot pair dark exit=0
+(eval):13: permission denied: 
+native drive dark exit=65
+native shot relaunch dark exit=0
+native export dark exit=0
+native shot pair light exit=0
+(eval):13: permission denied: 
+native drive light exit=65
+native shot relaunch light exit=0
+native export light exit=0
+native doctor exit=0
+--- native rerun (r2: link fix)
+native shot pair dark exit=0
+link set: yes
+native drive dark exit=65
+native shot relaunch dark exit=0
+native export dark exit=0
+native shot pair light exit=0
+link set: yes
+native drive light exit=65
+native shot relaunch light exit=0
+native export light exit=0
+native doctor exit=0
+native kill exit=0
+native sim delete exit=0
+native curl exit=7 (7: nothing listens)
+native sim listed exit=1 (1: gone)

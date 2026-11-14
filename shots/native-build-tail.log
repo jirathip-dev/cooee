@@ -1,0 +1,5 @@
+dsman/work/cooee/verify-234-r2/.verify/dd/SDKExplicitPrecompiledModules
+
+note: Run script build phase 'Login items' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'Cooee' from project 'Cooee' at path '/Users/jkmacmini/.local/share/herdsman/work/cooee/verify-234-r2/apple/Cooee.xcodeproj')
+** TEST BUILD SUCCEEDED **
+
