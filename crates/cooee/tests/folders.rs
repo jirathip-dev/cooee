@@ -1,6 +1,7 @@
 //! Folders from the phone: Settings › Folders browses the home folder (folder names only) and adds or removes roots,
 //! saved in the config file; the new-thread picker lists the roots 2 levels deep and makes a new folder inside one;
-//! nothing outside the home folder (browsing, roots) or the roots (the picker, new folders, threads) is accepted.
+//! nothing outside the home folder (roots), the home folder and the roots (browsing) or the roots (the picker, new
+//! folders, threads) is accepted.
 
 mod support;
 
@@ -65,6 +66,18 @@ fn browse_lists_only_folders_inside_home() {
     }
     let (head, _) = cooee.raw("GET", "/folders", &[], "");
     assert!(head.starts_with("HTTP/1.0 401"), "{head}");
+}
+
+#[test]
+fn browse_lists_a_root_outside_home_spelled_as_listed() {
+    let (home, _shed, cooee) = start("folders-root-outside");
+    let root = home.parent().unwrap().join("root");
+    let v = cooee.json(&format!("/folders?path={}", q(&root)));
+    assert_eq!((&v["path"], names(&v)), (&json!(root), vec!["project"]));
+    let v = cooee.json(&format!("/folders?path={}", q(&root.join("project"))));
+    assert_eq!(v["path"], json!(root.join("project")));
+    let (status, body) = cooee.get(&format!("/folders?path={}", q(&root.join(".."))));
+    assert_eq!(status, 400, "{body}");
 }
 
 #[test]
