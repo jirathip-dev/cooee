@@ -226,17 +226,20 @@ pub fn answer(
 }
 
 /// The agent profiles `p`'s backend serves: `GET /cooee/profiles` answers `{"profiles": [...]}`. `None` when it
-/// answers 404 (it serves none: its manifest's are offered); any other answer offers none.
-pub fn profiles(p: &Plugin) -> Option<Vec<Profile>> {
-    let got = call(
+/// answers 404 (it serves none: its manifest's are offered).
+///
+/// # Errors
+/// When the backend can't be reached in 5 s, or answers anything else.
+pub fn profiles(p: &Plugin) -> io::Result<Option<Vec<Profile>>> {
+    let r = call(
         p,
         "GET",
         "/cooee/profiles",
         &[],
         &[],
         Some(Duration::from_secs(5)),
-    );
-    let list = got.and_then(|r| match r.status {
+    )?;
+    match r.status {
         404 => Ok(None),
         200 => {
             #[derive(serde::Deserialize)]
@@ -248,11 +251,7 @@ pub fn profiles(p: &Plugin) -> Option<Vec<Profile>> {
             ))
         }
         code => Err(io::Error::other(format!("the backend answered {code}"))),
-    });
-    list.unwrap_or_else(|e| {
-        eprintln!("cooee: plugin {}: its profiles: {e}", p.name);
-        Some(Vec::new())
-    })
+    }
 }
 
 /// Tells `p`'s backend thread `thread` started as its profile `profile`: `POST /cooee/thread-started`
