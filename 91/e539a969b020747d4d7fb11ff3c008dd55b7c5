@@ -1,0 +1,6 @@
+Decided: ci/cap.toml keeps staging's line_cap 27500, with no diff against staging
+Because: q1682
+Decided: docs/cap-history/2026-11-11-189.md is removed, since this PR no longer changes the cap
+Rejected: line_cap 19400 — drover cap-check, the premerge counter, counts 23314 here and never counted web/
+Check: drover cap-check --config ci/cap.toml prints 23314 / 27500 and exits 0; scripts/line-cap.sh prints 19022 / 27500; git diff origin/staging -- ci/cap.toml is empty
+Owner: The line limit stays at 27,500 for now; a follow-up makes the two line counters agree and then lowers it.
