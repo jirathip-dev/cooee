@@ -330,14 +330,21 @@ fn file(dir: &Path, name: &str, fails: &mut Vec<String>) -> Option<Vec<u8>> {
 }
 
 /// What in `svg` could run as cooee's page when it is opened: `<script>`, `<foreignObject>`, an entity declaration,
-/// an `on*` attribute, or an `href` that is not a local `#id`.
+/// an `on*` attribute, or an `href` that is not a local `#id`; comments, CDATA and processing instructions are inert.
 fn active(svg: &str) -> Vec<String> {
     let mut found = Vec::new();
     let mut rest = svg;
     let mut text = String::new();
-    while let Some((before, after)) = rest.split_once("<!--") {
-        text.push_str(before);
-        rest = after.split_once("-->").map_or("", |(_, a)| a);
+    let inert = [("<!--", "-->"), ("<![CDATA[", "]]>"), ("<?", "?>")];
+    while let Some((at, open, close)) = inert
+        .iter()
+        .filter_map(|&(o, c)| rest.find(o).map(|i| (i, o, c)))
+        .min()
+    {
+        text.push_str(&rest[..at]);
+        rest = rest[at + open.len()..]
+            .split_once(close)
+            .map_or("", |(_, a)| a);
     }
     text.push_str(rest);
     for tag in text.split('<').skip(1) {
