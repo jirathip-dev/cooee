@@ -402,7 +402,7 @@ fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
         assert_eq!(status, 502, "{body}");
         let (v, b) = (&version().version, &version().build);
         let theirs = if protocol == 0 {
-            format!("the server runs {v} (fffffff) protocol 0")
+            format!("the server runs {v} (fffffff) protocol 0, an older shed; restart shed serve")
         } else {
             format!(
                 "the server refused it: client {b} / server fffffff: protocol 1 vs 2; restart shed serve"
