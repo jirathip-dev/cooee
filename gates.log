@@ -1,0 +1,11 @@
+scripts/hygiene.sh
+no setup-specific names or secrets
+scripts/line-cap.sh
+non-test lines: 27203 / 27500
+apple lines: 9236 / 13000
+ci/line-cap-test.sh
+non-test lines: 1 / 100
+apple lines: 5 / 5
+non-test lines: 1 / 100
+apple lines: 6 / 5
+line-cap test ok

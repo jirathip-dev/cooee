@@ -1,0 +1,17 @@
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-388/web/biome.json:5:13 deserialize  DEPRECATED  ━━━━━━━━━━
+
+  i The use of the recommended field has been deprecated, and will removed in the next major version of Biome. Use preset instead.
+  
+    3 │   "files": { "includes": ["ts/**/*.ts", "ts/**/*.json"] },
+    4 │   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
+  > 5 │   "linter": { "rules": { "recommended": true, "suspicious": { "noExplicitAny": "error" } } }
+      │             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    6 │ }
+    7 │ 
+  
+  i Migrate the configuration with the proper command
+  
+  $ biome migrate
+  
+
+Checked 8 files in 30ms. No fixes applied.

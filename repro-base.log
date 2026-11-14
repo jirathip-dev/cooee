@@ -1,0 +1,33 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [390] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388) (11.5s)
+
+
+  1) [390] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('group', { name: 'iPad asks to pair: olive lynx' }).last().getByRole('button', { name: /^approve with/ })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('group', { name: 'iPad asks to pair: olive lynx' }).last().getByRole('button', { name: /^approve with/ }) with timeout 5000ms
+      - waiting for getByRole('group', { name: 'iPad asks to pair: olive lynx' }).last().getByRole('button', { name: /^approve with/ })
+
+
+      221 |     const card = page.getByRole("group", { name: `iPad asks to pair: ${next.word}` }).last();
+      222 |     await expect(card).toContainText("Pair a new device?");
+    > 223 |     await expect(card.getByRole("button", { name: /^approve with/ })).toBeVisible();
+          |                                                                       ^
+      224 |     for (const { claim } of [first, next]) await asker.request.post("/pair/cancel", { data: { claim } });
+      225 |   } finally {
+      226 |     saved();
+        at /Users/jkmacmini/.local/share/drover/work/cooee/issue-388/web/e2e/pair.spec.mjs:223:71
+
+    Error Context: test-results/pair-a-poll-that-read-the--bd973-saved-does-not-undo-it-388--390/error-context.md
+
+  1 failed
+    [390] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388) 
