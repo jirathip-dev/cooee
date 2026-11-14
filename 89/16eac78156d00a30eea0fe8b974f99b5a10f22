@@ -1,0 +1,8 @@
+Decided: merged origin/staging (df4395f6); the chat.rs, shed.rs, hub.rs, main.rs, tests/profiles.rs and tests/screens.rs conflicts keep staging's code with every rule-breaking comment line dropped, 545 lines in all
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: committing the superseded lane's wip snapshot — it carried gate logs and pr-body.md into git
+Decided: no code change for the one-off rooms.rs cap-count failure in the first test run
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on the 12 touched files only deletes lines (bar one assert! rustfmt joined in tests/model.rs), and scripts/comments.py exits 0
+Check: tests/rooms.rs differs from staging only by deleted comments; it passed 3/3 alone and in the full rerun
+Owner: the branch is up to date with staging again, and the newly merged shed, profiles and screens code follows the comment rule
