@@ -1,0 +1,9 @@
+Decided: merged origin/staging; #388's web/ts/pair.ts and web/e2e/pair.spec.mjs stay deleted with the rest of web/
+Because: "Delete the PWA: `web/src`, `web/ts`, the manifest, the service worker"
+Decided: #388's ui-stress (script, just recipe, ci.yml workflow_dispatch, ci-scope dispatch case) is dropped too
+Rejected: keeping ui-stress — it only runs web/e2e's Playwright suite, which no longer exists
+Decided: line_cap stays 19400; the merge counts 19022, recorded in the cap-history note
+Because: docs/cap-history/2026-11-11-189.md:7
+Rejected: raising to 19500 for a full ~500 margin — the lane hook refuses ci/cap.toml edits (CAP_FILE)
+Check: scripts/line-cap.sh prints 19022 / 19400; cargo test --workspace and ci/ci-scripts-test.sh exit 0; no web/ or ui-stress path remains
+Owner: Merged the latest work in; the new web-only stress test goes too, and the line count sits at 19,022 under the 19,400 limit.
