@@ -2,9 +2,61 @@
 //! in them is lost when this build reads and writes them back. A release that changes the format adds its own
 //! fixture folder; old ones are never edited. Each release's `config.toml` loads too.
 
-use std::{env, fs, path::Path};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
-use cooee_core::Store;
+use cooee_core::{Chat, Item, Store};
+
+/// A copy of `release`'s folder to open, so the fixture itself is never imported or changed.
+fn copy(release: &Path) -> PathBuf {
+    let name = release.file_name().unwrap().to_string_lossy();
+    let to = env::temp_dir().join(format!("cooee-upgrade-copy-{name}-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&to);
+    fs::create_dir_all(to.join("threads")).unwrap();
+    for file in fs::read_dir(release.join("threads")).unwrap() {
+        let file = file.unwrap().path();
+        fs::copy(&file, to.join("threads").join(file.file_name().unwrap())).unwrap();
+    }
+    to
+}
+
+/// #221: every release's items files (`<id>.jsonl`) import into the database with every item, in the same order the
+/// files gave, a torn last line skipped as before.
+#[test]
+fn every_earlier_release_items_import_with_nothing_lost() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/upgrade");
+    let mut checked = 0;
+    for release in fs::read_dir(&root).unwrap() {
+        let release = release.unwrap().path();
+        let store = Store::open(&copy(&release)).unwrap();
+        for file in fs::read_dir(release.join("threads")).unwrap() {
+            let file = file.unwrap().path();
+            if file.extension().is_none_or(|e| e != "jsonl") {
+                continue;
+            }
+            let text = fs::read_to_string(&file).unwrap();
+            let lines: Vec<Item> = text
+                .lines()
+                .filter_map(|l| serde_json::from_str(l).ok())
+                .collect();
+            assert!(
+                lines.len() + 1 >= text.lines().count(),
+                "at most a torn last line"
+            );
+            let id = file.file_stem().unwrap().to_str().unwrap();
+            let want = Chat::from_versions(lines).items;
+            assert_eq!(store.items(id).unwrap(), want, "{}", file.display());
+            checked += want.len();
+        }
+    }
+    assert!(
+        checked >= 5,
+        "items fixtures missing under {}",
+        root.display()
+    );
+}
 
 #[test]
 fn every_earlier_release_loads_without_losing_data() {
@@ -12,7 +64,7 @@ fn every_earlier_release_loads_without_losing_data() {
     let mut checked = 0;
     for release in fs::read_dir(&root).unwrap() {
         let release = release.unwrap().path();
-        let store = Store::open(&release).unwrap();
+        let store = Store::open(&copy(&release)).unwrap();
         let scratch = env::temp_dir().join(format!(
             "cooee-upgrade-{}-{}",
             release.file_name().unwrap().to_string_lossy(),

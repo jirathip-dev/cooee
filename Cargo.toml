@@ -34,6 +34,8 @@ topcoat = { version = "=0.11.0", default-features = false, features = ["serve", 
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "net", "sync"] }
 # cooee-core's secrets (#167): in-process keychain calls, so an item's access list names the signed cooee.
 security-framework = { version = "=3.7.0", default-features = false, features = ["OSX_10_14"] }
+# The thread items and their search index (#221): SQLite built in, so no system library is needed.
+rusqlite = { version = "=0.41.1", features = ["bundled"] }
 toml = { version = "=1.2.0", default-features = false, features = ["parse", "serde"] }
 
 [workspace.lints.rust]

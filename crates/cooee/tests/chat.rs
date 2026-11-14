@@ -112,6 +112,20 @@ fn new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply() {
 
     let kinds: Vec<Value> = s.items(&id).iter().map(|i| i["kind"].clone()).collect();
     assert_eq!(kinds, ["you", "agent"]);
+    // #221: `cooee export` writes the same items out as JSON lines, while the server runs.
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_cooee"))
+        .arg("--config")
+        .arg(&s.cooee.config)
+        .args(["export", &id])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "{out:?}");
+    let lines: Vec<Value> = String::from_utf8(out.stdout)
+        .unwrap()
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
+    assert_eq!(lines, s.items(&id));
     // Listed, with the last line.
     let list = s.cooee.json("/threads");
     let row = list

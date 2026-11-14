@@ -14,7 +14,7 @@ use std::{
 
 use serde_json::{Value, json};
 
-use crate::{Item, Page, Store, history};
+use crate::{Page, Store, history};
 
 /// The log's name in the data folder.
 pub const FILE: &str = "perf.log";
@@ -181,12 +181,7 @@ pub fn store(dir: &Path) -> Result<Vec<(&'static str, Vec<u64>)>, String> {
         us.sort_unstable();
         Ok(us)
     };
-    let open = |id: &str| {
-        store
-            .items::<Item>(id)
-            .map(|i| i.len())
-            .map_err(|e| e.to_string())
-    };
+    let open = |id: &str| store.items(id).map(|i| i.len()).map_err(|e| e.to_string());
     let last = |id: &str| {
         store
             .page(id, Page::Last, 50)
@@ -217,4 +212,23 @@ pub fn store_table(rows: &[(&str, Vec<u64>)]) -> String {
         let _ = writeln!(out, "| store | {name} | {n} | {p50} | {p95} | {max} |");
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// #221: reading a thread's last page costs the same at 10,000 items as at 1,000.
+    #[test]
+    fn the_last_page_does_not_grow_with_the_thread() {
+        let dir = std::env::temp_dir().join(format!("cooee-perf-store-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        let rows = store(&dir).unwrap();
+        let p50 = |name: &str| rows.iter().find(|r| r.0 == name).unwrap().1[RUNS / 2];
+        let (short, long) = (
+            p50("last page of 1,000 items"),
+            p50("last page of 10,000 items"),
+        );
+        assert!(long < 2 * short + 500, "{}", store_table(&rows));
+    }
 }

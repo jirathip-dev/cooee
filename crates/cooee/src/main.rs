@@ -21,7 +21,7 @@ mod machine;
 mod setup;
 
 const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | machine check <m> [--yes] | push migrate | secrets \
-                     | perf [--minutes <n>] | perf --store \
+                     | perf [--minutes <n>] | perf --store | export <thread> \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json|cooee-plugin.toml>... \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
@@ -124,9 +124,8 @@ fn main() -> ExitCode {
             };
             return with_config(path.as_deref(), &instance, |c| perf(c, minutes, rest));
         }
-        ["devices", "rm", id] => {
-            return with_config(path.as_deref(), &instance, |config| remove(config, id));
-        }
+        ["devices", "rm", id] => return with_config(path.as_deref(), &instance, |c| remove(c, id)),
+        ["export", id] => return with_config(path.as_deref(), &instance, |c| export(c, id)),
         ["doctor"] => doctor,
         ["machine", "check", m] => {
             return with_config(path.as_deref(), &instance, |c| machine::run(c, m, yes));
@@ -406,6 +405,26 @@ fn perf_store() -> Result<(), String> {
     let rows = cooee_core::perf::store(&dir);
     let _ = fs::remove_dir_all(&dir);
     print!("{}", cooee_core::perf::store_table(&rows?));
+    Ok(())
+}
+
+/// `cooee export <thread>` (#221): thread `id`'s items as JSON lines on stdout, oldest first.
+fn export(config: &Config, id: &str) -> Result<(), String> {
+    let data = config
+        .data_dir()
+        .ok_or("no data folder: set `data` or HOME")?;
+    let items = cooee_core::Store::open(&data)
+        .and_then(|s| s.items(id))
+        .map_err(|e| e.to_string())?;
+    let mut out = std::io::stdout().lock();
+    for item in items {
+        writeln!(
+            out,
+            "{}",
+            serde_json::to_string(&item).map_err(|e| e.to_string())?
+        )
+        .map_err(|e| e.to_string())?;
+    }
     Ok(())
 }
 
