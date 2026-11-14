@@ -3,22 +3,17 @@
 
     extension LiveUITests {
         @MainActor
-        internal func othersHoldsTheLanesNoPluginClaims(_ app: XCUIApplication, _ new: XCUIElement) {
+        internal func othersHoldsTheChatsWithNoPersona(_ app: XCUIApplication, _ new: XCUIElement) {
             XCTAssert(new.waitForExistence(timeout: 10))
             XCTAssert(labelled(app, "Coder").exists)
             keep("home")
             let others = labelled(app, "Others")
-            guard others.waitForExistence(timeout: 10) else {
-                new.tap()
-                app.buttons["Conductor"].firstMatch.tap()
-                XCTAssert(app.buttons["Workflow"].firstMatch.waitForExistence(timeout: 20), "drover claims")
-                app.buttons["Back"].firstMatch.tap()
-                XCTAssert(new.waitForExistence(timeout: 10))
-                return
-            }
+            XCTAssert(others.waitForExistence(timeout: 10))
+            XCTAssert(labelled(app, "Bonjour probe").exists)
             others.tap()
-            XCTAssert(labelled(app, "NO PLUGIN CLAIMS IT").waitForExistence(timeout: 10))
-            XCTAssert(labelled(app, "cooee #33").exists)
+            XCTAssert(labelled(app, "CHATS · NO PERSONA").waitForExistence(timeout: 10))
+            XCTAssert(labelled(app, "Bonjour probe").exists)
+            XCTAssertFalse(labelled(app, "cooee #33").exists)
             keep("others")
             app.buttons["Back"].firstMatch.tap()
             XCTAssert(new.waitForExistence(timeout: 10))

@@ -20,7 +20,7 @@
             queueWhileStreaming(app, box)
             keep("chat-streaming")
             app.buttons["Back"].firstMatch.tap()
-            othersHoldsTheLanesNoPluginClaims(app, new)
+            othersHoldsTheChatsWithNoPersona(app, new)
             personaRoundTrip(app)
             copiesAReply(app, new)
             answersEachCard(app, new)

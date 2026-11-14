@@ -6,7 +6,7 @@
 # cards into a chat that starts "Show me the cards"; it reads the thread list as a device paired first. #140: a fixture
 # `drover` (screens.py with #125's queue and events JSON) is installed with header-strip places for Conductor, a persona
 # it isn't attached to yet: the app attaches it. #229: it claims `source=drover`, and the fake shed runs three drover
-# lanes (FAKE_SHED_LANES): in Others until drover is attached, then in Conductor's Workflow sheet.
+# lanes (FAKE_SHED_LANES) for Conductor's Workflow sheet, and a chat with no persona, "Bonjour probe", is in Others.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -78,6 +78,8 @@ code=$("$target/debug/cooee" pair --config "$tmp/config.toml" | sed -n 's/^code 
 cookie=$(curl -s -D - -o /dev/null --data "code=$code" "http://127.0.0.1:$PORT/pair" | sed -n 's/^[Ss]et-[Cc]ookie: cooee=\([^;]*\).*/\1/p')
 env PORT=$((PORT + 1)) COOEE="http://127.0.0.1:$PORT" TOKEN=e2e-cards-plugin-token COOKIE="${cookie:?}" node apple/e2e/cards.mjs &
 cards=$!
+curl -sf -o /dev/null -b "cooee=$cookie" -H 'content-type: application/json' \
+  --data '{"agent":"fake-acp","text":"Bonjour probe","random_id":"e2e-others"}' "http://127.0.0.1:$PORT/threads"
 "$target/debug/cooee" pair --config "$tmp/config.toml" | sed -n 's/^link  //p' >"$tmp/link"
 mv "$tmp/link" "${PAIR_LINK:?}"
 echo "$target/debug/cooee pair --config $tmp/config.toml" >"$PAIR_LINK.again"
