@@ -1,0 +1,5 @@
+test add_remove_and_list_with_the_lock ... ok
+test a_pack_with_a_symlink_is_never_installed ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.67s
+

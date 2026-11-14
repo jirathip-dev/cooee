@@ -1,0 +1,8 @@
+{
+  "label": "farm",
+  "scheme": { "dark": "farm", "light": "farm-light" },
+  "sprites": true,
+  "moments": true,
+  "words": { "working": "on the trail", "needs": "at the gate", "done": "in the stable", "fail": "refused", "idle": "grazing",
+    "merged": "over the fence", "loading": "saddling up", "empty-threads": "no horses out" }
+}
