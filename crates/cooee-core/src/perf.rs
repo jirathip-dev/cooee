@@ -14,6 +14,8 @@ use std::{
 
 use serde_json::{Value, json};
 
+use crate::{Item, Page, Store, history};
+
 /// The log's name in the data folder.
 pub const FILE: &str = "perf.log";
 
@@ -125,6 +127,94 @@ pub fn table(log: &str, since: u64) -> String {
         ms.sort_unstable();
         let (n, p50, p95, max) = (ms.len(), rank(&ms, 50), rank(&ms, 95), ms[ms.len() - 1]);
         let _ = writeln!(out, "| {kind} | {name} | {n} | {p50} | {p95} | {max} |");
+    }
+    out
+}
+
+/// How often [`store`] times each row.
+const RUNS: usize = 20;
+
+/// Thread `id`'s items file in `dir` with `n` items: an owner's message, a tool call and a reply in turn.
+fn seed(dir: &Path, id: &str, n: u64) -> io::Result<()> {
+    let mut lines = String::new();
+    for k in 1..=n {
+        let text = format!("question {k} of thread {id} {}", "ข้อความ words ".repeat(12));
+        let line = match k % 3 {
+            1 => json!({ "id": k, "at": k, "kind": "you", "text": text, "random_id": "r" }),
+            2 => {
+                json!({ "id": k, "at": k, "kind": "tool", "call": "c", "title": "ls", "status": "completed" })
+            }
+            _ => {
+                json!({ "id": k, "at": k, "kind": "agent", "text": text, "stop_reason": "end_turn" })
+            }
+        };
+        let _ = writeln!(lines, "{line}");
+    }
+    fs::write(dir.join(format!("threads/{id}.jsonl")), lines)
+}
+
+/// The store's timings (#221) on a new store in `dir`: opening a 1,000- and a 10,000-item thread, reading the last
+/// 50 items of each, and a search over 1,000 threads of 10 items. Each row's runs in microseconds, sorted.
+///
+/// # Errors
+/// When the store can't be written or read.
+pub fn store(dir: &Path) -> Result<Vec<(&'static str, Vec<u64>)>, String> {
+    fs::create_dir_all(dir.join("threads")).map_err(|e| e.to_string())?;
+    let ids: Vec<String> = (0..1000).map(|n| format!("s{n}")).collect();
+    for (id, n) in ids
+        .iter()
+        .map(|i| (i.as_str(), 10))
+        .chain([("t1k", 1000), ("t10k", 10_000)])
+    {
+        seed(dir, id, n).map_err(|e| e.to_string())?;
+    }
+    let store = Store::open(dir).map_err(|e| e.to_string())?;
+    let time = |run: &dyn Fn() -> Result<usize, String>| -> Result<Vec<u64>, String> {
+        let mut us = Vec::new();
+        for _ in 0..RUNS {
+            let start = Instant::now();
+            if run()? == 0 {
+                return Err("read nothing".to_owned());
+            }
+            us.push(u64::try_from(start.elapsed().as_micros()).unwrap_or(u64::MAX));
+        }
+        us.sort_unstable();
+        Ok(us)
+    };
+    let open = |id: &str| {
+        store
+            .items::<Item>(id)
+            .map(|i| i.len())
+            .map_err(|e| e.to_string())
+    };
+    let last = |id: &str| {
+        store
+            .page(id, Page::Last, 50)
+            .map(|i| i.len())
+            .map_err(|e| e.to_string())
+    };
+    let search = || {
+        let got = history::search(&store, &ids, "question 7 thread s999", 5)
+            .map_err(|e| e.to_string())?;
+        Ok(usize::from(got.starts_with("s999 ")))
+    };
+    Ok(vec![
+        ("open a 1,000-item thread", time(&|| open("t1k"))?),
+        ("open a 10,000-item thread", time(&|| open("t10k"))?),
+        ("last page of 1,000 items", time(&|| last("t1k"))?),
+        ("last page of 10,000 items", time(&|| last("t10k"))?),
+        ("search 1,000 threads", time(&search)?),
+    ])
+}
+
+/// [`store`]'s rows as a Markdown table, as [`table`]'s but in microseconds.
+#[must_use]
+pub fn store_table(rows: &[(&str, Vec<u64>)]) -> String {
+    let mut out =
+        "| kind | name | n | p50 µs | p95 µs | max µs |\n|---|---|--:|--:|--:|--:|\n".to_owned();
+    for (name, us) in rows {
+        let (n, p50, p95, max) = (us.len(), rank(us, 50), rank(us, 95), us[us.len() - 1]);
+        let _ = writeln!(out, "| store | {name} | {n} | {p50} | {p95} | {max} |");
     }
     out
 }

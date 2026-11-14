@@ -21,7 +21,7 @@ mod machine;
 mod setup;
 
 const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | machine check <m> [--yes] | push migrate | secrets \
-                     | perf [--minutes <n>] \
+                     | perf [--minutes <n>] | perf --store \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json|cooee-plugin.toml>... \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
@@ -118,11 +118,11 @@ fn main() -> ExitCode {
         }
         ["devices"] => devices,
         ["reports"] => reports,
-        ["perf"] => {
+        ["perf", rest @ ..] => {
             let Ok(minutes) = minutes.map_or(Ok(60), |m| m.parse::<u64>()) else {
                 return usage();
             };
-            return with_config(path.as_deref(), &instance, |config| perf(config, minutes));
+            return with_config(path.as_deref(), &instance, |c| perf(c, minutes, rest));
         }
         ["devices", "rm", id] => {
             return with_config(path.as_deref(), &instance, |config| remove(config, id));
@@ -378,7 +378,12 @@ fn reports(config: &Config) -> Result<(), String> {
 }
 
 /// Prints p50/p95/max per route, shed method and first token over the last `minutes` of `perf.log` (#53).
-fn perf(config: &Config, minutes: u64) -> Result<(), String> {
+fn perf(config: &Config, minutes: u64, rest: &[&str]) -> Result<(), String> {
+    match rest {
+        [] => {}
+        ["--store"] => return perf_store(),
+        _ => return Err(USAGE.to_owned()),
+    }
     let data = config
         .data_dir()
         .ok_or("no data folder: set `data` or HOME")?;
@@ -392,6 +397,15 @@ fn perf(config: &Config, minutes: u64) -> Result<(), String> {
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX));
     let since = now.saturating_sub(minutes.saturating_mul(60_000));
     print!("{}", cooee_core::perf::table(&text, since));
+    Ok(())
+}
+
+/// `cooee perf --store` (#221): the thread store's timings on a scratch store, removed after.
+fn perf_store() -> Result<(), String> {
+    let dir = env::temp_dir().join(format!("cooee-perf-store-{}", std::process::id()));
+    let rows = cooee_core::perf::store(&dir);
+    let _ = fs::remove_dir_all(&dir);
+    print!("{}", cooee_core::perf::store_table(&rows?));
     Ok(())
 }
 

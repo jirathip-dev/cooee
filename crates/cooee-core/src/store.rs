@@ -16,6 +16,8 @@ use std::{
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
+use crate::{Chat, Item};
+
 /// The on-disk format version this build writes. A file with a newer one is refused, not guessed at.
 pub const FORMAT: u32 = 1;
 
@@ -237,6 +239,17 @@ pub enum Role {
     User,
     /// The coding agent.
     Agent,
+}
+
+/// Where a [`Store::page`] read starts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Page {
+    /// The newest items.
+    Last,
+    /// The newest items before this id.
+    Before(u64),
+    /// The oldest items after this id.
+    After(u64),
 }
 
 /// A thread file as stored: the format version, then the thread.
@@ -464,6 +477,27 @@ impl Store {
             Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(Vec::new()),
             Err(source) => Err(StoreError::Io { path, source }),
         }
+    }
+
+    /// At most `n` of thread `id`'s items at `from`, oldest first.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if the id is invalid or the file can't be read.
+    pub fn page(&self, id: &str, from: Page, n: usize) -> Result<Vec<Item>, StoreError> {
+        let items = Chat::from_versions(self.items(id)?).items;
+        let (lo, hi) = match from {
+            Page::Last => (items.len().saturating_sub(n), items.len()),
+            Page::Before(b) => {
+                let at = items.partition_point(|i| i.id < b);
+                (at.saturating_sub(n), at)
+            }
+            Page::After(a) => {
+                let at = items.partition_point(|i| i.id <= a);
+                (at, (at + n).min(items.len()))
+            }
+        };
+        Ok(items[lo..hi].to_vec())
     }
 
     fn lock(&self, id: &str) -> Arc<Mutex<()>> {
