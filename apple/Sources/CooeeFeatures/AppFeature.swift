@@ -66,15 +66,11 @@ public struct AppFeature: Sendable {
                 state.pairing = nil
                 state.setup = MacSetupFeature.State()
                 return .none
-            case .persona(.presented(.delegate(.saved))):
+            case .persona(.presented(.delegate(.saved))), .persona(.presented(.delegate(.deleted))):
                 state.persona = nil
                 return .send(.home(.refresh))
-            case .chat(.delegate(.new(let persona))):
-                return .send(.start(persona))
-            case .chat(.delegate(.started(let thread))):
-                state.path = state.path.dropLast() + [thread]
-                state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
-                return .send(.home(.refresh))
+            case .chat(.delegate(let delegate)):
+                return relay(&state, delegate)
             case .room:
                 state.newRoom = state.home.map { NewRoomFeature.State(server: $0.server, personas: $0.personas) }
                 return .none
@@ -121,6 +117,23 @@ public struct AppFeature: Sendable {
             break
         }
         return .none
+    }
+
+    private func relay(_ state: inout State, _ delegate: ChatFeature.Action.Delegate) -> Effect<Action> {
+        switch delegate {
+        case .new(let persona):
+            return .send(.start(persona))
+        case .edit(let persona):
+            return .send(.edit(persona))
+        case .started(let thread):
+            state.path = state.path.dropLast() + [thread]
+            state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
+            return .send(.home(.refresh))
+        case .restart(let persona):
+            state.path = state.path.dropLast() + ["new:\(persona.id)"]
+            state.chat = state.chat.map { .init(server: $0.server, target: .new(persona), persona: Persona(persona)) }
+            return .none
+        }
     }
 
     private func persona(_ state: State, _ id: String?) -> PersonaFeature.State? {

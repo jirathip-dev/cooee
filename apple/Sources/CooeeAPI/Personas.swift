@@ -18,6 +18,14 @@ extension Client {
         _ = try await send(request("DELETE", "/personas/\(persona)/memory"))
     }
 
+    public func remove(_ persona: String) async throws {
+        _ = try await send(request("DELETE", "/personas/\(persona)"))
+    }
+
+    public func model(_ thread: String, model: String, effort: String) async throws {
+        try await post("/threads/\(thread)/model", ["model": model, "effort": effort])
+    }
+
     public func push(_ token: String, enabled: Bool) async throws {
         _ = try await send(request(enabled ? "POST" : "DELETE", "/push/apns", json: ["token": token]))
     }

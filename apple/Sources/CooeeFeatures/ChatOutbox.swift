@@ -39,14 +39,14 @@ extension ChatFeature {
     }
 
     private func deliver(_ state: State, _ message: Outgoing) -> Effect<Action> {
-        let (threads, server, queue) = (threads, state.server, state.working)
+        let (threads, server, queue, persona) = (threads, state.server, state.working, state.persona.api)
         let target = state.target
         return .run { send in
             switch target {
             case .thread(let thread):
                 try await threads.send(server, thread, message.text, message.files, queue)
                 await send(.delivered(message.id))
-            case .new(let persona):
+            case .new:
                 let thread = try await threads.start(server, persona, message.text)
                 await send(.delivered(message.id))
                 await send(.delegate(.started(thread)))

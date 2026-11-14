@@ -56,6 +56,19 @@ internal struct PersonasTests {
         #expect(server.requests("/personas/coder/memory").map(\.httpMethod) == ["GET", "DELETE"])
     }
 
+    @Test internal func aDeleteRemovesThePersonaAndAModelPickGoesToItsThread() async throws {
+        let server = CannedServer([
+            "/personas/coder": [Answer(headers: json, chunks: ["null"])],
+            "/threads/t1/model": [Answer(headers: json, chunks: [#""switched""#])],
+        ])
+        let client = server.client()
+        try await client.remove("coder")
+        try await client.model("t1", model: "opus", effort: "high")
+        #expect(server.requests("/personas/coder").map(\.httpMethod) == ["DELETE"])
+        #expect(
+            try server.decoded("/threads/t1/model", as: [String: String].self) == ["model": "opus", "effort": "high"])
+    }
+
     @Test internal func pushOnPostsTheDeviceTokenAndOffDeletesIt() async throws {
         let server = CannedServer(["/push/apns": [Answer(chunks: ["ok"])]])
         try await server.client().push("ab12", enabled: true)

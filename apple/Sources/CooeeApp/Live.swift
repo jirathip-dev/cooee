@@ -31,6 +31,9 @@ extension ThreadsClient: DependencyKey {
         unqueue: { server, thread, randomID in try await Client(server).unqueue(thread, randomID) },
         stop: { server, thread in try await Client(server).cancel(thread) },
         read: { server, thread, item in try await Client(server).read(thread, upTo: item) },
+        model: { server, thread, model, effort in
+            try await Client(server).model(thread, model: model, effort: effort)
+        },
         answer: { server, thread, item, option, value in
             try await Client(server).answer(thread, item: item, option: option, value: value)
         },
@@ -48,6 +51,7 @@ extension PersonasClient: DependencyKey {
         save: { server, persona in try await Client(server).save(persona) },
         memory: { server, persona in try await Client(server).memory(persona) },
         forget: { server, persona in try await Client(server).forget(persona) },
+        remove: { server, persona in try await Client(server).remove(persona) },
         agents: { server in try await Client(server).agents() },
         models: { server in try await Client(server).models() },
         folders: { server, path in try await Client(server).folders(path) }

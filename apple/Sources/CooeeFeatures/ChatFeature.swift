@@ -27,10 +27,14 @@ public struct ChatFeature: Sendable {
         public var room: Room?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
+        public var agents: [AgentOption] = []
+        public var lists: [ModelList] = []
         @Presents public var screen: PluginScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
+        public var models: [String] { ModelList.picks(lists, agent: persona.api.agent) }
+        public var efforts: [String] { agents.first { $0.id == persona.api.agent }?.efforts ?? [] }
         public var drawn: [Item] {
             room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
                 ?? ChatItems.build(items, live: live, outbox: outbox)
@@ -62,6 +66,8 @@ public struct ChatFeature: Sendable {
         case answer(Int, BlockAction)
         case answered(Int, String?)
         case new
+        case profile
+        case pick(Pick)
         case inspect(String?)
         case move(String, Int)
         case seat(String)
@@ -76,6 +82,16 @@ public struct ChatFeature: Sendable {
         public enum Delegate: Sendable, Equatable {
             case started(String)
             case new(String)
+            case edit(String)
+            case restart(APIPersona)
+        }
+
+        @CasePathable
+        public enum Pick: Sendable, Equatable {
+            case load
+            case loaded([AgentOption], [ModelList])
+            case agent(String)
+            case model(String, String)
         }
 
         @CasePathable
@@ -89,6 +105,7 @@ public struct ChatFeature: Sendable {
 
     @Dependency(\.threads) internal var threads
     @Dependency(\.plugins) internal var pluginAPI
+    @Dependency(\.personas) internal var personas
     @Dependency(\.ownerCheck) private var ownerCheck
     @Dependency(\.continuousClock) private var clock
     @Dependency(\.date.now) private var now
@@ -125,6 +142,7 @@ public struct ChatFeature: Sendable {
             }
         }
         Reduce { state, action in plugins(&state, action) }
+        Reduce { state, action in agent(&state, action) }
             .ifLet(\.$screen, action: \.screen) { PluginScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
     }
@@ -228,7 +246,7 @@ extension ChatFeature {
         return act(state) { threads, server, thread in try await threads.steer(server, thread, randomID) }
     }
 
-    private func act(
+    internal func act(
         _ state: State,
         _ call: @escaping @Sendable (ThreadsClient, Server, String) async throws -> Void
     ) -> Effect<Action> {

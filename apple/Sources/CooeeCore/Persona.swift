@@ -37,8 +37,10 @@ public enum LaneState: String, Sendable, Equatable {
     }
 }
 
-public enum Tint: Sendable, Equatable, CaseIterable {
+public enum Tint: String, Sendable, Equatable, CaseIterable {
     case lead, link, cyan, purple, green, amber
+
+    public var avatar: String { "initials-\(rawValue)" }
 }
 
 public struct PersonaLook: Sendable, Equatable {
@@ -78,10 +80,11 @@ public struct Persona: Identifiable, Sendable, Equatable {
             words.count > 1 ? words.prefix(2).compactMap(\.first).map(String.init).joined() : String(api.name.prefix(2))
         let seed = api.id.unicodeScalars.reduce(0) { $0 + Int($1.value) }
         let coats = ["ch", "gry", "blk", "bay", "wht"]
+        let picked = api.avatar.flatMap { avatar in Tint.allCases.first { $0.avatar == avatar } }
         let look = PersonaLook(
             initials: initials.uppercased(),
-            symbol: "person.fill",
-            tint: Tint.allCases[seed % Tint.allCases.count],
+            symbol: picked == nil ? "person.fill" : "",
+            tint: picked ?? Tint.allCases[seed % Tint.allCases.count],
             coat: coats[seed % coats.count]
         )
         self.init(api: api, look: look, state: state)

@@ -80,6 +80,15 @@ internal struct ClientTests {
         #expect(try await server.client().newThread(persona: persona, text: "hi", randomID: "r9") == "n1")
         let body = try server.decoded("/threads", as: Started.self)
         #expect(body == Started(agent: "fake-acp", profile: "coder", text: "hi", randomID: "r9", background: true))
+        #expect(server.body("/threads")?.contains("model") == false)
+    }
+
+    @Test internal func aNewThreadCarriesThePickedModelAndEffort() async throws {
+        let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n1"}"#])]])
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp", model: "opus", effort: "high")
+        _ = try await server.client().newThread(persona: persona, text: "hi", randomID: "r9")
+        let sent = try server.decoded("/threads", as: [String: JSONValue].self)
+        #expect(sent["model"] == .string("opus") && sent["effort"] == .string("high"))
     }
 
     @Test internal func cooeesOwnSentenceIsTheError() async throws {
