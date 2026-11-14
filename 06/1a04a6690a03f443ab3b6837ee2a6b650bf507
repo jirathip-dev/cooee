@@ -1,0 +1,8 @@
+Decided: round 4 merges origin/staging, keeps #365's own-runner layout and adds only the merge-ready gate on apple-quality and e2e
+Because: "Use a mechanism herdsman already supports, such as the `merge_label` pattern synergy uses."
+Because: "A cheap apple build/lint check may still run on every push, if it stays under about 10 macOS minutes."
+Rejected: dropping build's macOS leg as in round 1 — mac-setup no longer runs on PRs (q1629), so nothing else builds the Mac app there
+Rejected: staging's concurrency group as is — any later label's run on the ref would cancel the merge-ready full run
+Check: .github/workflows/apple.yml:58 apple-quality and e2e run only on push or the merge-ready labeled event, never for a fork
+Check: mac-setup stays push-only as staging has it; build skips the labeled run
+Owner: set merge_label = "merge-ready" for cooee and create that label in the repo before this merges
