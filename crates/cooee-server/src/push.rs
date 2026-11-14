@@ -1080,6 +1080,17 @@ mod tests {
         })
     }
 
+    /// A config folder with farm (the build's `packs/farm`) installed.
+    fn farm_installed() -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("cooee-push-farm-{}", std::process::id()));
+        let farm = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/farm");
+        std::fs::create_dir_all(dir.join("themes/farm")).unwrap();
+        for f in std::fs::read_dir(farm).unwrap().map(Result::unwrap) {
+            std::fs::copy(f.path(), dir.join("themes/farm").join(f.file_name())).unwrap();
+        }
+        dir
+    }
+
     #[test]
     fn a_push_for_each_trigger_and_none_otherwise() {
         let mut chat = Chat::default();
@@ -1125,8 +1136,7 @@ mod tests {
             item,
         };
         let t = thread();
-        let packs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs");
-        let (looks, _) = cooee_web::Looks::load(Some(&packs), None);
+        let (looks, _) = cooee_web::Looks::load(Some(&farm_installed()), None);
         let (farm, plain) = (&looks.themes["farm"], &looks.themes["plain"]);
         assert_eq!(
             note(&t, &chat, &approval(None), "working", true, farm),

@@ -24,13 +24,16 @@ fn setup(name: &str) -> Setup {
     setup_with(name, &[])
 }
 
-/// [`setup`] with first-party theme packs installed beside the config (#38: only plain is built in).
+/// [`setup`] with first-party theme packs installed beside the config (#38: only plain is built in): farm from the
+/// build's, the others from the swag fixture.
 fn setup_with(name: &str, themes: &[&str]) -> Setup {
     let dir = scratch(name);
     for t in themes {
-        let pack = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../packs/themes")
-            .join(t);
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let pack = match *t {
+            "farm" => root.join("packs/farm"),
+            _ => root.join("tests/swag/packs").join(t),
+        };
         fs::create_dir_all(dir.join("themes").join(t)).unwrap();
         for f in fs::read_dir(pack).unwrap() {
             let f = f.unwrap();

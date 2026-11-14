@@ -202,9 +202,10 @@ done
 EOF
 chmod +x "$tmp/fake-mcp"
 mkdir -p "$(dirname "${PAIR_CODE:?}")" "$tmp/profiles"
-# The first-party theme packs, added from their folders (#38: only the plain theme is built in).
-for t in farm kitchen garden; do
-  cargo run --quiet --locked -p cooee -- theme add "packs/themes/$t" --yes --config "$tmp/config.toml" >/dev/null
+# The first-party theme packs, added from their folders (#38: only the plain theme is built in): farm from the
+# build's, the others from the swag fixture (#363).
+for t in packs/farm tests/swag/packs/kitchen tests/swag/packs/garden; do
+  cargo run --quiet --locked -p cooee -- theme add "$t" --yes --config "$tmp/config.toml" >/dev/null
 done
 
 # An agent profile (#40) for the main instance: its instructions go ahead of the first message.

@@ -13,7 +13,7 @@ frames are the window's content at 2× with its traffic lights drawn. Simulator 
 (`.github/workflows/apple.yml`) or a Mac with Xcode 26.
 
 Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the farm pack's own horses
-(`packs/themes/farm/sprites.svg`, `s-scene-*`), rasterised in each persona's coat by `apple/design/sprites.mjs`.
+(`packs/farm/sprites.svg`, `s-scene-*`), rasterised in each persona's coat by `apple/design/sprites.mjs`.
 
 ## iPhone 17, dark and light (`-dark.png`, `-light.png`)
 

@@ -6,7 +6,7 @@
 //   [data-x=tabs|rail][data-on]           the tab bar (390) or the left rail (1440), the current tab
 //   [data-x=personas|threads|scene|workflow|queue|asks|more|persona|chat]   a screen's content
 //   [data-st] [data-av] [data-s]          a state's figure and word, an avatar, a 132 × 100 vector horse
-const W = '../../../web/', P = '../../../packs/themes/';
+const W = '../../../web/', P = '../../../packs/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark', F = q.get('f');
 const theme = await fetch(`${P}${T}/theme.json`).then(r => r.json());

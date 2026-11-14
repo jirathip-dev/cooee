@@ -359,8 +359,9 @@ mod tests {
 
     /// The built-in looks and the first-party packs, as installed.
     fn looks() -> Arc<Looks> {
-        let packs = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../packs");
-        Arc::new(Looks::load(Some(&packs), None).0)
+        static DIR: std::sync::OnceLock<std::path::PathBuf> = std::sync::OnceLock::new();
+        let dir = DIR.get_or_init(|| crate::look::tests::first_party("shown"));
+        Arc::new(Looks::load(Some(dir), None).0)
     }
 
     #[test]

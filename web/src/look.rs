@@ -659,7 +659,7 @@ pub fn gate(s: &Scheme) -> Result<(), String> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     fn tmp(name: &str) -> std::path::PathBuf {
@@ -673,6 +673,24 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../packs")
     }
 
+    /// The first-party packs (farm from `packs/`, the others from the swag fixture) installed in a fresh config
+    /// folder `name`.
+    pub(crate) fn first_party(name: &str) -> std::path::PathBuf {
+        let dir = tmp(name);
+        let swag = Path::new(env!("CARGO_MANIFEST_DIR")).join("../tests/swag/packs");
+        for (t, from) in [
+            ("farm", packs().join("farm")),
+            ("kitchen", swag.join("kitchen")),
+            ("garden", swag.join("garden")),
+        ] {
+            fs::create_dir_all(dir.join("themes").join(t)).unwrap();
+            for f in fs::read_dir(from).unwrap().map(Result::unwrap) {
+                fs::copy(f.path(), dir.join("themes").join(t).join(f.file_name())).unwrap();
+            }
+        }
+        dir
+    }
+
     #[test]
     fn only_plain_is_built_in_and_the_first_party_packs_load_installed() {
         let (looks, refused) = Looks::load(None, None);
@@ -683,8 +701,8 @@ mod tests {
         for (name, s) in &looks.schemes {
             assert_eq!(gate(s), Ok(()), "{name}");
         }
-        // packs/ as a config folder: its themes/ are the first-party packs, installed.
-        let (looks, refused) = Looks::load(Some(&packs()), None);
+        // The first-party packs, installed.
+        let (looks, refused) = Looks::load(Some(&first_party("installed")), None);
         assert_eq!(refused, Vec::<String>::new());
         assert_eq!(looks.default, "farm");
         assert_eq!(
@@ -708,7 +726,7 @@ mod tests {
 
     #[test]
     fn the_theme_gate_passes_the_first_party_packs_and_the_starter() {
-        let mut dirs: Vec<_> = fs::read_dir(packs().join("themes"))
+        let mut dirs: Vec<_> = fs::read_dir(first_party("gate").join("themes"))
             .unwrap()
             .map(|e| e.unwrap().path())
             .collect();
@@ -723,7 +741,7 @@ mod tests {
     fn farm_with(name: &str, edit: impl FnOnce(&Path)) -> std::path::PathBuf {
         let dir = tmp(name);
         for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
-            fs::copy(packs().join("themes/farm").join(f), dir.join(f)).unwrap();
+            fs::copy(packs().join("farm").join(f), dir.join(f)).unwrap();
         }
         edit(&dir);
         dir
@@ -913,7 +931,7 @@ mod tests {
 
     #[test]
     fn push_body_says_the_theme_word_and_the_plain_word() {
-        let (looks, _) = Looks::load(Some(&packs()), None);
+        let (looks, _) = Looks::load(Some(&first_party("push")), None);
         assert_eq!(
             looks.themes["farm"].push_body("needs", "codex: Edit src/pair.rs?"),
             "at the gate · needs you · codex: Edit src/pair.rs?"

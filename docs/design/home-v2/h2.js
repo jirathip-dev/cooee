@@ -3,7 +3,7 @@
 // top. Pages: modern.html, terminal.html, scene.html. As #229's hw.js: `?mode=dark|light`, `?f=<frame>` one frame alone.
 import { ranch } from './herd.js';
 
-const W = '../../../web/', P = '../../../packs/themes/';
+const W = '../../../web/', P = '../../../packs/';
 const q = new URLSearchParams(location.search);
 const gal = document.querySelector('.gal'), PAGE = gal.dataset.page;
 const STYLE = PAGE === 'modern' ? 'modern' : PAGE, MODE = q.get('mode') || (PAGE === 'scene' ? 'light' : 'dark'), F = q.get('f');

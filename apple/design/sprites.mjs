@@ -1,4 +1,4 @@
-// #124: rasterise the farm pack's scene horses (packs/themes/farm/sprites.svg, s-scene-*) in each persona's coat, and
+// #124: rasterise the farm pack's scene horses (packs/farm/sprites.svg, s-scene-*) in each persona's coat, and
 // the scene strip, to PNGs the SwiftUI views load. The art is the pack's; only the coats are set here (as #116's ns.css).
 // Usage (repo root): node apple/design/sprites.mjs <chrome-headless-shell>
 import { execFileSync } from 'node:child_process';
@@ -8,7 +8,7 @@ import { join } from 'node:path';
 
 const [chrome] = process.argv.slice(2);
 const out = 'apple/Sources/CooeeUI/Sprites', tmp = mkdtempSync(join(tmpdir(), 'spr'));
-const sprites = readFileSync('packs/themes/farm/sprites.svg', 'utf8');
+const sprites = readFileSync('packs/farm/sprites.svg', 'utf8');
 const COATS = {
   ch: '--c:#c89a56;--d:#a37a3c;--m:#e8dcc0;--b:#efe7dc', bay: '--c:#8a5a35;--d:#6b4426;--m:#2e231c;--b:#efe7dc',
   gry: '--c:#b9b3a8;--d:#958e83;--m:#ece8e0;--b:#f4f1ea', blk: '--c:#4a4038;--d:#3a322b;--m:#241e19;--b:#efe7dc',
@@ -33,6 +33,6 @@ for (const [coat, vars] of Object.entries(COATS)) for (const pose of POSES) {
   shoot(`<style>html,body{margin:0;background:transparent}svg{display:block}*{animation:none!important}</style>
   <svg width=132 height=100 viewBox="0 0 132 100">${body}</svg>`, 132, 100, `horse-${coat}-${pose}.png`);
 }
-shoot(`<style>html,body{margin:0}svg{display:block;width:402px;height:300px}</style>${readFileSync('packs/themes/farm/scene.svg', 'utf8')}`,
+shoot(`<style>html,body{margin:0}svg{display:block;width:402px;height:300px}</style>${readFileSync('packs/farm/scene.svg', 'utf8')}`,
   402, 300, 'scene-strip.png');
 console.log('ok');

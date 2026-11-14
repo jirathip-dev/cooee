@@ -740,7 +740,7 @@ fn the_look_is_drawn_from_its_cookie_and_a_form_post_sets_it() {
     // #49: the look sheet with no script posts the key tapped; the cookie it sets draws the next page from its first byte.
     // kitchen, installed beside the config (#38: only plain is built in).
     let dir = scratch("look");
-    let kitchen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/themes/kitchen");
+    let kitchen = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/swag/packs/kitchen");
     fs::create_dir_all(dir.join("themes/kitchen")).unwrap();
     for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
         fs::copy(kitchen.join(f), dir.join("themes/kitchen").join(f)).unwrap();

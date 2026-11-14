@@ -6,7 +6,9 @@ cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.
 ## A theme pack: `themes/<name>/`
 
 A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` is built in;
-`farm`, `kitchen` and `garden` are first-party packs in `packs/themes/`, listed in the curated index.
+`farm`, `kitchen` and `garden` are first-party packs in [jirathip-dev/swag](https://github.com/jirathip-dev/swag)'s
+`packs/`, listed in the curated index. farm, the default, also ships inside the build (`packs/farm/`), so it installs
+offline (#363).
 
 | File | Required | What it is |
 |---|---|---|
@@ -24,18 +26,21 @@ working pill, the live line, a turn's end, push text), the plain word follows th
 **The theme gate** checks a pack: `theme.json` parses; its word keys are state keys; every scheme it holds or names is
 of the right mode and passes the contrast gate (WCAG AA, below); `sprites.svg` holds every required state; `scene.svg`
 is at most 400 × 320 with every layer; and no file is too big (`sprites.svg` 512 KiB, `scene.svg` and `icon.png` 256 KiB, the
-rest 16 KiB). `cooee theme check <path>...` runs it (CI runs it on `packs/`), and so does every load: `cooee serve`
+rest 16 KiB). `cooee theme check <path>...` runs it (CI runs it on `packs/farm` and the starter), and so does every load: `cooee serve`
 refuses a pack that fails it, and prints why.
 
 ## Installing, removing and building themes
 
 - `cooee theme add <name | git-url | path> [--rev R] [--yes]` copies a pack into `<config dir>/themes/<name>/` once it
   passes the gate, and pins it in `<data>/themes.lock` (name, source, commit). A name is the index's pack, at its
-  pinned commit; a git URL or a folder that isn't in the index shows "not reviewed" and asks first. `cooee theme
+  pinned commit, fetched into `<data>/themes/<name>/`: a shallow clone (`--depth 1`) with only its folder checked out
+  (farm at the index's commit is copied from the build instead). On start, an old full clone `<data>/themes/<name>.git`
+  is replaced by that, once it is in place, and the space freed is logged; a git URL or a folder that isn't in the index shows "not reviewed" and asks first. `cooee theme
   remove <name>` and `cooee theme list` do the rest. `cooee serve` shows a change within a second, no restart.
 - **The index** is `plugins/index.toml`'s `[[theme]]` entries: `name`, `url`, `path` (the pack's folder in the repo),
   the pinned `commit`, `description`, `first_party`. Adding one is a normal reviewed PR.
-- `cooee setup` asks which first-party themes to install; the default is all of them.
+- `cooee setup` installs farm from the build, then offers the other first-party themes as a pick list; the default
+  is all of them.
 - **Settings › look › themes** on the phone lists the installed packs, each with [remove] and [remix] (and [publish]
   for one not from the index), the ones being built, [+ theme] (the index or a git URL) and [new theme].
 - **[new theme]** or **[remix]** makes `<config dir>/themes-dev/<name>/` (from `packs/starter/`, the plain words and

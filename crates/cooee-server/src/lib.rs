@@ -2779,6 +2779,31 @@ pub fn router(
     .build()
 }
 
+/// In the background: the logs rotate now and every 10 minutes (#363), and old full theme clones are replaced.
+fn housekeep(config: &Config, data: &std::path::Path) -> io::Result<()> {
+    let logs = (config.logs.clone(), data.to_owned());
+    std::thread::spawn(move || {
+        loop {
+            for name in cooee_core::logs::FILES {
+                if let Err(e) = logs.0.rotate(&logs.1.join(name)) {
+                    eprintln!("cooee: rotating {name}: {e}");
+                }
+            }
+            std::thread::sleep(Duration::from_secs(600));
+        }
+    });
+    let old = Themes::new(config)?;
+    std::thread::spawn(move || match old.migrate() {
+        Ok(0) => {}
+        Ok(freed) => eprintln!(
+            "cooee: themes: freed {freed} bytes ({} MB) of old clones",
+            freed >> 20
+        ),
+        Err(e) => eprintln!("cooee: themes: old clones: {e}"),
+    });
+    Ok(())
+}
+
 /// Opens the threads (`config`'s data folder and shed) and the looks (the built-in and own themes and schemes), and
 /// serves the web UI on `bind:port` until Ctrl+C or
 /// `SIGTERM`. `ready` gets the bound address first (port 0 picks a free one).
@@ -2799,6 +2824,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     let data = config
         .data_dir()
         .ok_or_else(|| io::Error::other("no data folder: set `data` or HOME"))?;
+    housekeep(config, &data)?;
     cooee_core::perf::init(&data, config.perf.slow_ms)?;
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
     let themes = Themes::new(config)?;

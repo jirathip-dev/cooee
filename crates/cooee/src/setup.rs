@@ -243,12 +243,13 @@ impl Setup {
         Ok((config, changed))
     }
 
-    /// The first-party theme packs asked for (default: all of them) from the index, the installed ones skipped.
+    /// farm from the build (offline), then the other first-party packs asked for (default: all of them) from the
+    /// index, each a shallow clone of its folder; the installed ones skipped.
     fn themes(&self, config: &Config) -> Result<(), String> {
         let e = |e: io::Error| e.to_string();
         let t = match cooee_server::Themes::new(config) {
             Err(_) if self.dry_run => {
-                println!("themes:\n  would ask which first-party themes to install");
+                println!("themes:\n  would install farm and ask which other themes to install");
                 return Ok(());
             }
             t => t.map_err(e)?,
@@ -263,15 +264,21 @@ impl Setup {
         if step("themes", first.is_empty()) {
             return Ok(());
         }
-        let all = first.join(" ");
-        let want = self.ask(&format!("themes to install, or none [{all}]:"), &all);
-        for name in want
+        let (farm, rest): (Vec<&str>, Vec<&str>) = first.into_iter().partition(|n| *n == "farm");
+        let all = rest.join(" ");
+        let want = if rest.is_empty() {
+            String::new()
+        } else {
+            self.ask(&format!("themes to install, or none [{all}]:"), &all)
+        };
+        let want: Vec<&str> = want
             .split([' ', ','])
             .filter(|n| !n.is_empty() && *n != "none")
-        {
-            if !first.contains(&name) {
-                return Err(format!("theme {name}: not one of {all}"));
-            }
+            .collect();
+        if let Some(name) = want.iter().find(|n| !rest.contains(n)) {
+            return Err(format!("theme {name}: not one of {all}"));
+        }
+        for name in farm.into_iter().chain(want) {
             if self.dry_run {
                 println!("  would install theme {name}");
                 continue;

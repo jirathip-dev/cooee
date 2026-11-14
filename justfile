@@ -34,9 +34,9 @@ neutral:
     scripts/neutral-core.sh
     ci/neutral-core-test.sh
 
-# The theme gate (docs/themes.md) on the first-party packs and the starter.
+# The theme gate (docs/themes.md) on the packs in the build: farm and the starter.
 themes:
-    cargo run --quiet --locked -p cooee -- theme check packs/themes/* packs/starter
+    cargo run --quiet --locked -p cooee -- theme check packs/farm packs/starter
 
 # The CI's own scripts (#329): which legs a run needs, the staging reuse, the nightly's issue.
 ci-scripts:

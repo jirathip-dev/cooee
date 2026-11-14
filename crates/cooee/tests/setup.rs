@@ -364,11 +364,15 @@ fn setup_installs_the_first_party_themes_chosen_from_the_index() {
     // An index whose first-party packs (and one that isn't) are folders of a local repo.
     let repo = mac.home.join("packs.git");
     fs::create_dir_all(&repo).unwrap();
-    let packs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/themes");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     for t in ["farm", "kitchen", "garden"] {
+        let pack = match t {
+            "farm" => root.join("packs/farm"),
+            _ => root.join("tests/swag/packs").join(t),
+        };
         fs::create_dir_all(repo.join(t)).unwrap();
         for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
-            fs::copy(packs.join(t).join(f), repo.join(t).join(f)).unwrap();
+            fs::copy(pack.join(f), repo.join(t).join(f)).unwrap();
         }
     }
     let git = |args: &[&str]| {
@@ -406,14 +410,14 @@ fn setup_installs_the_first_party_themes_chosen_from_the_index() {
         ),
     )
     .unwrap();
-    // Asked which (farm and kitchen are first-party), kitchen is typed; no Codex, no Gemini.
+    // farm without asking; asked which others (kitchen is first-party), kitchen is typed; no Codex, no Gemini.
     let args = ["setup", "--port", &mac.port.to_string()];
     let out = mac.cooee_typing(&args, Some("kitchen\n\n\n"));
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(out.status.success(), "{out:?}");
     assert!(
         stdout.contains(
-            "themes:\n  themes to install, or none [farm kitchen]:\n  installed theme kitchen\n"
+            "themes:\n  themes to install, or none [kitchen]:\n  installed theme farm\n  installed theme kitchen\n"
         ),
         "{stdout}"
     );
@@ -421,6 +425,10 @@ fn setup_installs_the_first_party_themes_chosen_from_the_index() {
     assert_eq!(
         files(&themes),
         [
+            "farm/icon.png",
+            "farm/scene.svg",
+            "farm/sprites.svg",
+            "farm/theme.json",
             "kitchen/icon.png",
             "kitchen/scene.svg",
             "kitchen/sprites.svg",
@@ -433,15 +441,50 @@ fn setup_installs_the_first_party_themes_chosen_from_the_index() {
     .unwrap();
     assert_eq!(
         lock,
-        serde_json::json!([{ "name": "kitchen", "source": "index", "commit": commit, "listed": true }])
+        serde_json::json!([
+            { "name": "farm", "source": "index", "commit": commit, "listed": true },
+            { "name": "kitchen", "source": "index", "commit": commit, "listed": true }
+        ])
     );
-    // The default is all of them: farm, the one left.
-    let out = mac.setup(&["--yes"]);
-    assert!(out.status.success(), "{out:?}");
-    assert!(String::from_utf8_lossy(&out.stdout).contains("installed theme farm\n"));
-    assert!(themes.join("farm/theme.json").exists() && !themes.join("garden").exists());
+    assert!(!themes.join("garden").exists());
     let out = mac.setup(&["--yes"]);
     assert!(String::from_utf8_lossy(&out.stdout).contains("themes: done, skipped\n"));
+}
+
+#[test]
+fn setup_offline_installs_farm_from_the_build() {
+    let mac = Mac::new("su-offline", false);
+    // The built-in index: GitHub is out of reach, so kitchen and garden wait for later.
+    let out = mac.cooee_typing(&["setup", "--port", &mac.port.to_string()], Some("\n\n\n"));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{out:?}");
+    assert!(
+        stdout.contains("themes:\n  themes to install, or none [kitchen garden]:\n  installed theme farm\n  theme kitchen: "),
+        "{stdout}"
+    );
+    assert!(
+        stdout.contains("later: cooee theme add garden\n"),
+        "{stdout}"
+    );
+    let themes = mac.config().parent().unwrap().join("themes");
+    assert_eq!(
+        files(&themes),
+        [
+            "farm/icon.png",
+            "farm/scene.svg",
+            "farm/sprites.svg",
+            "farm/theme.json"
+        ]
+    );
+    let index = cooee_core::plugins::themes(None).unwrap();
+    let lock: serde_json::Value = serde_json::from_slice(
+        &fs::read(mac.home.join(".local/share/cooee/cooee/themes.lock")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        lock,
+        serde_json::json!([{ "name": "farm", "source": "index", "commit": index[0].commit, "listed": true }])
+    );
 }
 
 #[test]

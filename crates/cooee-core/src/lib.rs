@@ -10,6 +10,7 @@ mod devices;
 pub mod group;
 pub mod history;
 mod login;
+pub mod logs;
 pub mod mcp;
 pub mod models;
 pub mod perf;

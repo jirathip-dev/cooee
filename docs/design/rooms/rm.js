@@ -7,7 +7,7 @@
 //   [data-x=strip]          the room's member strip (data-sel: the member whose sheet is open)
 //   [data-x=side]           Home with rooms and linked exchanges: the 1440 sidebar, or the phone's list with data-ph
 //                           (data-sel: the open row)
-const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
+const W = '../../../web/', P = '../../../packs/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', F = q.get('f');
 const STYLE = q.get('style') || document.body.dataset.style || 'modern';

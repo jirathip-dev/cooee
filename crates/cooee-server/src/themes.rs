@@ -1,6 +1,7 @@
 //! Theme packs (docs/themes.md): `cooee theme add|remove|list` and Settings › look › themes. A pack is a folder or
-//! a folder of a git repo; an installed one is copied into `<config dir>/themes/<name>/` once it passes the theme
-//! gate, and pinned in `<data>/themes.lock` (its source and commit). `[new theme]` and `[remix]` make one in
+//! a folder of a git repo (a shallow clone of that folder alone, in `<data>/themes/<name>/`); an installed one is
+//! copied into `<config dir>/themes/<name>/` once it passes the theme gate, and pinned in `<data>/themes.lock` (its
+//! source and commit). farm ships inside the build. `[new theme]` and `[remix]` make one in
 //! `<config dir>/themes-dev/<name>/` for an agent to build; `[keep]` moves it into `themes/` only once it passes the
 //! gate, and `[publish]` makes it a git repo of its own.
 
@@ -30,6 +31,20 @@ const STARTER: [(&str, &str); 3] = [
         "scene.svg",
         include_str!("../../../packs/starter/scene.svg"),
     ),
+];
+
+/// farm, the default theme, inside the build (#363): the index's farm at its commit installs from here, offline.
+const FARM: [(&str, &[u8]); 4] = [
+    (
+        "theme.json",
+        include_bytes!("../../../packs/farm/theme.json"),
+    ),
+    (
+        "sprites.svg",
+        include_bytes!("../../../packs/farm/sprites.svg"),
+    ),
+    ("scene.svg", include_bytes!("../../../packs/farm/scene.svg")),
+    ("icon.png", include_bytes!("../../../packs/farm/icon.png")),
 ];
 
 fn other(why: impl Into<String>) -> io::Error {
@@ -259,8 +274,19 @@ impl Themes {
         Ok(Pack { text, ..pack })
     }
 
-    /// Installs `pack`: copies it (at its commit, for a git repo) into a staging folder, runs the theme gate on it,
-    /// then moves it into `themes/` and pins it.
+    /// `pack` is the built-in index's farm at its commit, which the build carries.
+    fn bundled(pack: &Pack) -> bool {
+        let farm = cooee_core::plugins::themes(None).unwrap_or_default();
+        farm.iter().any(|l| {
+            l.name == "farm"
+                && pack.listed
+                && pack.name == l.name
+                && (&pack.source, &pack.path, &pack.rev) == (&l.url, &l.path, &l.commit)
+        })
+    }
+
+    /// Installs `pack`: copies it (farm from the build, a git repo's folder at its commit) into a staging folder,
+    /// runs the theme gate on it, then moves it into `themes/` and pins it.
     ///
     /// # Errors
     /// When it is installed already, can't be fetched, or fails the gate.
@@ -276,7 +302,13 @@ impl Themes {
         let stage = self.dir.join(".themes-stage").join(&pack.name);
         let _ = fs::remove_dir_all(&stage);
         let folder = Path::new(&pack.source);
-        let commit = if folder.is_dir() {
+        let commit = if Self::bundled(pack) {
+            fs::create_dir_all(&stage)?;
+            for (file, bytes) in FARM {
+                fs::write(stage.join(file), bytes)?;
+            }
+            pack.rev.clone()
+        } else if !pack.listed && folder.is_dir() {
             copy(&folder.join(&pack.path), &stage)?;
             git(folder, &["rev-parse", "HEAD"]).unwrap_or_default()
         } else {
@@ -305,51 +337,88 @@ impl Themes {
         )
     }
 
-    /// Fetches `pack`'s repo into its clone in `<data>/themes/<name>.git` and writes its folder at the commit into
-    /// `stage`; returns the commit.
+    /// Fetches `pack`'s folder at its revision into its clone, `<data>/themes/<name>/`: shallow (`--depth 1`), only
+    /// that folder checked out; copies it into `stage` and returns the commit.
     fn fetch(&self, pack: &Pack, stage: &Path) -> io::Result<String> {
-        let repo = self.data.join("themes").join(format!("{}.git", pack.name));
-        if repo.exists() {
-            git(&repo, &["remote", "set-url", "origin", &pack.source])?;
-            git(&repo, &["fetch", "--quiet", "origin"])?;
-        } else {
-            fs::create_dir_all(repo.parent().unwrap_or(&repo))?;
-            let at = repo.to_string_lossy();
-            git(
-                &self.data,
-                &["clone", "--quiet", "--mirror", "--", &pack.source, &at],
-            )?;
-        }
-        let commit = git(
+        let repo = self.data.join("themes").join(&pack.name);
+        fs::create_dir_all(&repo)?;
+        let only = format!("/{}/", pack.path.trim_matches('/')).replace("//", "/*");
+        git(&repo, &["init", "--quiet"])?;
+        git(&repo, &["config", "remote.origin.url", &pack.source])?;
+        git(&repo, &["sparse-checkout", "set", "--no-cone", &only])?;
+        git(
             &repo,
-            &["rev-parse", "--verify", &format!("{}^{{commit}}", pack.rev)],
+            &[
+                "fetch",
+                "--quiet",
+                "--depth",
+                "1",
+                "--filter=blob:none",
+                "origin",
+                &pack.rev,
+            ],
         )
-        .map_err(|_| other(format!("{} has no commit {}", pack.source, pack.rev)))?;
-        fs::create_dir_all(stage)?;
-        let mut archive = Command::new("git")
-            .arg("-C")
-            .arg(&repo)
-            .args([
-                "archive",
-                "--format=tar",
-                &format!("{commit}:{}", pack.path),
-            ])
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn()?;
-        let untar = Command::new("tar")
-            .arg("-x")
-            .arg("-C")
-            .arg(stage)
-            .stdin(archive.stdout.take().ok_or_else(|| other("git archive"))?)
-            .status()?;
-        if !archive.wait()?.success() || !untar.success() {
+        .map_err(|e| other(format!("{} has no commit {}: {e}", pack.source, pack.rev)))?;
+        git(
+            &repo,
+            &["checkout", "--quiet", "--force", "--detach", "FETCH_HEAD"],
+        )?;
+        let commit = git(&repo, &["rev-parse", "HEAD"])?;
+        let folder = repo.join(&pack.path);
+        if !folder.is_dir() {
             return Err(other(format!(
                 "{} has no folder {:?} at {commit}",
                 pack.source, pack.path
             )));
         }
+        copy(&folder, stage)?;
         Ok(commit)
+    }
+
+    /// Replaces each old full clone, `<data>/themes/<name>.git`, with the new form, once that is in place: farm's is
+    /// the build, any other pinned pack's its shallow clone; returns the bytes freed.
+    ///
+    /// # Errors
+    /// When the lock can't be read; a pack that can't be fetched now (offline) keeps its old clone till next time.
+    pub fn migrate(&self) -> io::Result<u64> {
+        let pinned = self.pinned()?;
+        let mut freed = 0;
+        let Ok(dirs) = fs::read_dir(self.data.join("themes")) else {
+            return Ok(0);
+        };
+        for old in dirs.flatten().map(|e| e.path()) {
+            let Some(name) = old
+                .file_name()
+                .and_then(|n| n.to_str()?.strip_suffix(".git"))
+            else {
+                continue;
+            };
+            let Some(pin) = pinned.iter().find(|p| p.name == name) else {
+                continue;
+            };
+            let pack = if pin.listed {
+                self.plan(name, None)
+            } else {
+                self.plan(&pin.source, Some(&pin.commit))
+            };
+            let placed = pack.and_then(|p| {
+                if Self::bundled(&p) {
+                    return Ok(());
+                }
+                let stage = self.dir.join(".themes-stage").join(name);
+                let fetched = self.fetch(&p, &stage);
+                let _ = fs::remove_dir_all(&stage);
+                fetched.map(drop)
+            });
+            match placed {
+                Ok(()) => {
+                    freed += size(&old);
+                    fs::remove_dir_all(&old)?;
+                }
+                Err(e) => eprintln!("cooee: theme {name} keeps its old clone for now: {e}"),
+            }
+        }
+        Ok(freed)
     }
 
     /// Removes installed theme `name`: its folder and its pin.
@@ -474,6 +543,20 @@ impl Themes {
         self.pin(name, Some(p.clone()))?;
         Ok((dir, commit))
     }
+}
+
+/// The bytes of the files under `dir`.
+fn size(dir: &Path) -> u64 {
+    fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| match e.metadata() {
+            Ok(m) if m.is_dir() => size(&e.path()),
+            Ok(m) => m.len(),
+            Err(_) => 0,
+        })
+        .sum()
 }
 
 /// A fingerprint of the files in `dir` (names, sizes and change times): the preview reloads when it changes.
