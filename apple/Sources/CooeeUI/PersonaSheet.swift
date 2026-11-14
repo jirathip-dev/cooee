@@ -113,7 +113,7 @@ extension PersonaSheet {
                 }
             }
             Group2(header: "Character") { paragraph("Character", $draft.character) }
-            Group2(header: "Instructions") { paragraph("Instructions", $draft.instructions) }
+            Group2(header: "Instructions") { instructions }
             if memory.count > 0 { Group2(header: "Memory · \(memory.count) notes") { notes } }
             Group2 {
                 Button(action: actions.browse) {
@@ -126,6 +126,15 @@ extension PersonaSheet {
                 .buttonStyle(.plain).accessibilityLabel("Folder")
             }
             if let error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
+        }
+    }
+
+    @ViewBuilder private var instructions: some View {
+        if let profile = draft.profile, draft.instructions.isEmpty {
+            Text("from profile \(profile)").ui(15, .regular, look).foregroundStyle(look.palette.mute).padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            paragraph("Instructions", $draft.instructions)
         }
     }
 

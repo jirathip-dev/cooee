@@ -272,6 +272,40 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
     assert_eq!(s.cooee.json("/personas"), json!([]));
 }
 
+/// #417: a persona that names a profile and has no instructions of its own takes the profile's, ahead of its notes; one
+/// with its own keeps them.
+#[test]
+fn a_persona_without_instructions_takes_its_profiles() {
+    let s = setup("personas-pinstr");
+    let personas = s.dir.join("personas");
+    fs::create_dir_all(&personas).unwrap();
+    let persona = |id: &str, more: &str| {
+        let text = format!(
+            "name = \"{id}\"\nagent = \"fake-acp\"\nprofile = \"coder\"\ncharacter = \"Calm.\"\n{more}"
+        );
+        fs::write(personas.join(format!("{id}.toml")), text).unwrap();
+    };
+    persona("lead", "");
+    persona("own", "instructions = \"My own rules.\"\n");
+    let note = json!({ "text": "Tea, no sugar." });
+    let (status, added) = s.call("POST", "/personas/lead/memory", Some(&note));
+    assert_eq!(status, 200, "{added}");
+    let id = added["id"].as_str().unwrap();
+
+    let (_, line, brief) = s.start("lead");
+    assert!(
+        line.contains(" MODE=review "),
+        "runs as the profile: {line}"
+    );
+    assert_eq!(
+        brief,
+        format!(
+            "Calm.\n\nFollow the house rules.\n\nYour notes (edit them with your remember tool):\n- [{id}] Tea, no sugar.\n\nhi"
+        )
+    );
+    assert_eq!(s.start("own").2, "Calm.\n\nMy own rules.\n\nhi");
+}
+
 /// drover installed (off, so nothing runs it) in `<data>/plugins.lock`.
 fn install_drover(s: &Setup) {
     let lock = json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0",
