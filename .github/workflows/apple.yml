@@ -2,13 +2,15 @@
 # runners (mini-cooee, air-cooee); no job runs for a fork's pull request (its jobs show skipped), and a newer run of the
 # same ref cancels the older one. `mac-setup` stays on GitHub's macos-26 and runs only on staging pushes
 # (docs/ci-runners.md says why).
-# #330: `e2e` builds the iOS Simulator app once and tests that build; `build` (macOS only) runs on pull requests, where
-# `mac-setup` (which builds the Mac app for every arch) does not. SwiftPM packages and builds are cached per Xcode.
+# #330: `e2e` builds the iOS Simulator app once and tests that build; `build` runs on pull request pushes only, since a
+# staging push builds both apps in `e2e` and `mac-setup` (every arch). SwiftPM packages and builds are cached per Xcode.
 # #147: `apple-quality` runs `just apple-check`, every Swift gate (format, anti-slop, SwiftLint, tests, coverage, Periphery).
 # #143: `e2e`: the app in the iOS simulator against a real `cooee serve` (apple/e2e/serve.sh), its
 # screens kept as the `simulator-shots` artifact. #142: `mac-setup`: the Mac app's first run on the runner starts cooee
 # and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac approves it;
 # the screens kept as the `mac-setup-shots` artifact.
+# #328: a pull request push runs only `build`; `apple-quality` and `e2e` run on a staging push and when herdsman labels
+# the PR `merge-ready` (fleet `merge_label`: on exactly while a review PASS stands at the head), and merge waits on them.
 name: apple
 on:
   push:
@@ -23,6 +25,7 @@ on:
       - ".github/workflows/apple.yml"
       - ".github/actions/mac-runner/**"
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - "scripts/mac-bins.sh"
       - "crates/cooee/src/main.rs"
@@ -33,23 +36,31 @@ on:
       - ".github/workflows/apple.yml"
       - ".github/actions/mac-runner/**"
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.label.name }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   build:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.event_name == 'pull_request' && github.event.action != 'labeled'
+      && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: &mac [self-hosted, macOS, ARM64, cooee-mac]
+    strategy:
+      fail-fast: false
+      matrix:
+        destination: ["generic/platform=iOS Simulator", "generic/platform=macOS"]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/mac-runner
       - name: xcodebuild
         working-directory: apple
         run: >-
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=macOS'
+          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination '${{ matrix.destination }}'
           -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO build
 
   apple-quality:
-    if: &ours github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    if: &full >-
+      github.event_name == 'push' || (github.event.action == 'labeled' && github.event.label.name == 'merge-ready'
+      && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: *mac
     timeout-minutes: 60
     steps:
@@ -79,7 +90,7 @@ jobs:
           path: ${{ runner.temp }}/rendered
 
   e2e:
-    if: *ours
+    if: *full
     runs-on: *mac
     timeout-minutes: 60
     steps:
