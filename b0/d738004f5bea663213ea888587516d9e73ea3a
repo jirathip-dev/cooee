@@ -1,0 +1,7 @@
+Decided: round 7 merges origin/staging; LiveIconUITests.swift takes #389's version and ci.yml takes #388's msrv-mac removal and ui-stress inputs
+Because: q1641
+Decided: the apple job's xcodebuild builds and simulator e2e use a per-run -derivedDataPath under RUNNER_TEMP
+Because: "Steps must not assume a fresh machine"
+Rejected: fixing the DerivedData folder's permissions on the runner host — q1639 says nothing changes on the host, and a per-run path works on any runner
+Check: apple gets past "xcodebuild (iOS Simulator, macOS)" on the self-hosted runner; actionlint green at the head
+Owner: msrv (macos-latest) is gone on staging (#388), so drop it from the ruleset's required checks too
