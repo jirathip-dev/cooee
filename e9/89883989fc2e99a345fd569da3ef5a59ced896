@@ -1,0 +1,7 @@
+Decided: merge origin/staging (b7585b96) taking its LiveUITests split, with the queue steps in LiveDroverUITests
+Because: apple/UITests/LiveScreensUITests.swift:50
+Decided: keep QueueFrames.all in Frame.all but out of everyStyle, since each queue frame names its own style
+Because: apple/Tests/CooeeUITests/Frames.swift:44
+Rejected: queue frames in everyStyle — they are already drawn in all three styles and include a 64x360 strip frame
+Check: CI apple and e2e jobs green at e9898839, SnapshotTests still hold the ten queue-* frames
+Owner: The Queue farm strip branch sits on the latest staging again, its live queue test moved into staging's new test layout.
