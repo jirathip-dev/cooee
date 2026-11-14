@@ -1,10 +1,11 @@
 # #124: build the native app (apple/) for iOS and macOS; no signing. #147: `just apple-check`, every Swift gate (format,
 # anti-slop, SwiftLint, tests, coverage, Periphery). #143: the app in the iOS simulator against a real `cooee serve`
 # (apple/e2e/serve.sh), its screens kept as the `simulator-shots` artifact. #277: all three in one `apple` job, so a PR
-# takes one macOS runner here. #142: `mac-setup` (staging and workflow_dispatch only): the Mac app's first run on the
-# runner starts cooee and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac
-# approves it; the screens kept as the `mac-setup-shots` artifact. `vars.APPLE_RUNNER` routes both jobs to a
-# self-hosted runner's label for pushes and same-repo PRs; fork PRs and an unset variable run on GitHub's `macos-26`.
+# takes one macOS runner here; a newer push to a PR cancels its older run. #365: `apple` runs on our own runners
+# (mini-cooee, air-cooee), never for a fork's pull request (it shows skipped). #142: `mac-setup` (staging pushes and
+# workflow_dispatch only, on GitHub's macos-26, docs/ci-runners.md says why): the Mac app's first run on the runner
+# starts cooee and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac
+# approves it; the screens kept as the `mac-setup-shots` artifact.
 name: apple
 on:
   push:
@@ -17,6 +18,7 @@ on:
       - "scripts/apple-check.sh"
       - "scripts/apple-coverage.swift"
       - ".github/workflows/apple.yml"
+      - ".github/actions/mac-runner/**"
   pull_request:
     paths:
       - "scripts/mac-bins.sh"
@@ -26,16 +28,19 @@ on:
       - "scripts/apple-check.sh"
       - "scripts/apple-coverage.swift"
       - ".github/workflows/apple.yml"
+      - ".github/actions/mac-runner/**"
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   apple:
-    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.APPLE_RUNNER || 'macos-26' }}
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, macOS, ARM64, cooee-mac]
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/mac-runner
       - uses: taiki-e/install-action@v2
         with:
           tool: just
@@ -62,6 +67,7 @@ jobs:
         run: |
           PORT=4100 PAIR_LINK="$RUNNER_TEMP/pair" apple/e2e/serve.sh >"$RUNNER_TEMP/serve.log" 2>&1 &
           serve=$!
+          echo "SERVE=$serve" >> "$GITHUB_ENV"
           until [ -s "$RUNNER_TEMP/pair" ]; do
             kill -0 "$serve" 2>/dev/null || { cat "$RUNNER_TEMP/serve.log"; exit 1; }
             sleep 2
@@ -109,13 +115,15 @@ jobs:
         with:
           name: simulator-shots
           path: simulator-shots
-      - name: delete the simulator
-        if: always() && env.SIM != ''
-        run: xcrun simctl shutdown "$SIM" || true; xcrun simctl delete "$SIM"
+      - name: stop the server, delete the simulator
+        if: always()
+        run: |
+          [ -z "${SERVE:-}" ] || kill "$SERVE" 2>/dev/null || true
+          [ -z "${SIM:-}" ] || xcrun simctl delete "$SIM"
 
   mac-setup:
     if: github.event_name != 'pull_request'
-    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.APPLE_RUNNER || 'macos-26' }}
+    runs-on: macos-26
     timeout-minutes: 90
     env:
       SHOTS: ${{ github.workspace }}/mac-setup-shots

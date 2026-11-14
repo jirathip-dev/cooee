@@ -3,7 +3,8 @@
 # notarized, stapled and checked with `spctl -a -vv`; without them the .dmg is unsigned and the job says which secrets
 # are missing. The secrets go in the `mac-release` environment (staging and main only, set up by the owner);
 # apple/README.md lists them. #329: on a pull request the .dmg is built only on the merge-ready run of a change that
-# reaches the Apple surface (scripts/ci-scope.sh); otherwise `dmg` reports skipped, under the same name.
+# reaches the Apple surface (scripts/ci-scope.sh); otherwise `dmg` reports skipped, under the same name. #365: `dmg` runs on
+# our own runners (mini-cooee, air-cooee), never for a fork's pull request; its keychain lives and dies with the job.
 name: apple-mac
 on:
   push:
@@ -14,6 +15,7 @@ on:
       - "scripts/mac-app.sh"
       - "scripts/mac-bins.sh"
       - ".github/workflows/apple-mac.yml"
+      - ".github/actions/mac-runner/**"
   pull_request:
     types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
@@ -48,8 +50,10 @@ jobs:
 
   dmg:
     needs: scope
-    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true'
-    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.APPLE_RUNNER || 'macos-26' }}
+    if: >-
+      needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: [self-hosted, macOS, ARM64, cooee-mac]
     timeout-minutes: 60
     # Pull requests get no environment and no secrets: they build the unsigned .dmg. (`a && '' || b` is always b, as
     # '' is falsy, so the environment name is the truthy branch.)
@@ -62,6 +66,7 @@ jobs:
       NOTARY_ISSUER_ID: ${{ github.event_name != 'pull_request' && secrets.NOTARY_ISSUER_ID || '' }}
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/mac-runner
       - uses: dtolnay/rust-toolchain@1.99.1
       - uses: Swatinem/rust-cache@v2
       - name: the Developer ID, if its secrets are set
@@ -85,7 +90,8 @@ jobs:
           security import "$RUNNER_TEMP/cert.p12" -k "$keychain" -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
           rm -f "$RUNNER_TEMP/cert.p12"
           security set-key-partition-list -S apple-tool:,apple: -s -k "$pass" "$keychain" >/dev/null
-          read -r -a keychains <<<"$(security list-keychains -d user | tr -d '"')"
+          security list-keychains -d user | tr -d '" ' > "$RUNNER_TEMP/keychains"
+          read -r -a keychains <<<"$(tr '\n' ' ' < "$RUNNER_TEMP/keychains")"
           security list-keychains -d user -s "$keychain" "${keychains[@]}"
           identity=$(security find-identity -v -p codesigning "$keychain" | sed -n 's/.*"\(Developer ID Application: .*\)"/\1/p' | head -1)
           [ -n "$identity" ] || { echo "::error::MAC_CERT_P12 holds no \"Developer ID Application\" certificate."; exit 1; }
@@ -127,3 +133,7 @@ jobs:
         run: |
           rm -f "$RUNNER_TEMP/notary.p8" "$RUNNER_TEMP/cert.p12"
           [ ! -f "$RUNNER_TEMP/sign.keychain-db" ] || security delete-keychain "$RUNNER_TEMP/sign.keychain-db"
+          if [ -s "$RUNNER_TEMP/keychains" ]; then
+            read -r -a keychains <<<"$(tr '\n' ' ' < "$RUNNER_TEMP/keychains")"
+            security list-keychains -d user -s "${keychains[@]}"
+          fi
