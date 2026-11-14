@@ -1,0 +1,7 @@
+Decided: merge origin/staging; PersonaFeature's act() sends both save and chat through save(&state, chat:)
+Because: apple/Sources/CooeeFeatures/PersonaFeature.swift:103
+Decided: PersonaActions keeps chat beside staging's agent and browse; Root's actions builder wires all three
+Because: apple/Sources/CooeeUI/Root.swift:172
+Rejected: a code fix for the machines test FAIL — cooee-machines is untouched by this PR and the test passes 5 of 5 locally at this head
+Check: the Set up by chat / Refine by chat link still sends .chat, and the persona pickers from staging still work
+Owner: Same feature; this round catches up with staging, which added persona agent, model and folder pickers.
