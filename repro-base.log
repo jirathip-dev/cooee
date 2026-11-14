@@ -1,0 +1,20 @@
+
+running 1 test
+the_gate_fails_active_content_in_a_packs_svg_and_served_svg_runs_no_script --- FAILED
+
+failures:
+
+---- the_gate_fails_active_content_in_a_packs_svg_and_served_svg_runs_no_script stdout ----
+
+thread 'the_gate_fails_active_content_in_a_packs_svg_and_served_svg_runs_no_script' (38502225) panicked at crates/cooee/tests/themes.rs:438:9:
+<![CDATA[ <!-- ]]><script>alert(1)</script><![CDATA[ --> ]]>: ok   /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-th-active-43432/active5
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    the_gate_fails_active_content_in_a_packs_svg_and_served_svg_runs_no_script
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 4 filtered out; finished in 1.40s
+
+error: test failed, to rerun pass `-p cooee --test themes`
