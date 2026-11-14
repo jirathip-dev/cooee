@@ -5,7 +5,7 @@
 # the turn open until stopped. #138: the `cards` plugin (cards.mjs, on $PORT+1) is attached to Coder and posts its four
 # cards into a chat that starts "Show me the cards"; it reads the thread list as a device paired first. #140: a fixture
 # `drover` (screens.py with #125's queue and events JSON) is installed with header-strip places for Conductor, a persona
-# it isn't attached to yet: the app attaches it.
+# it isn't attached to yet: the app attaches it. #252: the first-party theme packs are installed, for the look sheet.
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -67,6 +67,8 @@ git -C "$drover" add -A
 git -C "$drover" -c user.name=e2e -c user.email=e2e@example.com commit --quiet -m drover
 printf 'name = "Conductor"\nagent = "fake-acp"\nfolder = "%s"\n' "$tmp/root/project" >"$tmp/personas/conductor.toml"
 printf 'name = "Coder"\nagent = "fake-acp"\nfolder = "%s"\nplugins = ["cards"]\n' "$tmp/root/project" >"$tmp/personas/coder.toml"
+mkdir -p "$tmp/themes"
+cp -R packs/themes/farm packs/themes/kitchen packs/themes/garden "$tmp/themes/"
 target=$(cargo metadata --format-version 1 --no-deps | sed -n 's/.*"target_directory":"\([^"]*\)".*/\1/p')
 "$target/debug/cooee" plugin add --config "$tmp/config.toml" "$drover" --yes
 "$target/debug/cooee" serve --config "$tmp/config.toml" &

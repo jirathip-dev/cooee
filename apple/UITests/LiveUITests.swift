@@ -215,6 +215,7 @@
             labelled(app, "Notifications").tap()
             XCTAssert(app.switches["Push notifications"].waitForExistence(timeout: 5))
             keep("avatar-menu-notifications")
+            themes(app, new)
         }
 
         @MainActor

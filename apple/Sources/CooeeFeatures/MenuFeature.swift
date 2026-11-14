@@ -12,6 +12,7 @@ public struct MenuFeature: Sendable {
     public struct State: Equatable {
         public var server: Server?
         public var settings: Settings
+        public var looks = Looks()
         public var open = false
         public var path: [Page] = []
         public var busy = false
@@ -26,8 +27,11 @@ public struct MenuFeature: Sendable {
     public enum Action: Sendable {
         case open(Bool)
         case path([Page])
+        case load
+        case looks(Looks)
         case scheme(LookScheme)
         case style(LookStyle)
+        case theme(String)
         case icon(AppIcon?)
         case push(Bool)
         case pushed(String?)
@@ -36,6 +40,7 @@ public struct MenuFeature: Sendable {
 
     @Dependency(\.settingsStore) private var settingsStore
     @Dependency(\.push) private var push
+    @Dependency(\.threads) private var threads
     @Dependency(\.appIcon) private var appIcon
 
     public init() {}
@@ -46,11 +51,11 @@ public struct MenuFeature: Sendable {
             case .open(let open):
                 state.open = open
                 state.path = []
+                return open ? load(state) : .none
             case .path(let path):
                 state.path = path
-            case .scheme(let scheme):
-                state.settings.scheme = scheme
-                settingsStore.save(state.settings)
+            case .load:
+                return load(state)
             case .style(let style):
                 return look(&state) { $0.style = style }
             case .icon(let icon):
@@ -58,10 +63,32 @@ public struct MenuFeature: Sendable {
             case .push(let enabled):
                 return toggle(&state, enabled)
             default:
-                pushed(&state, action)
+                pick(&state, action)
             }
             return .none
         }
+    }
+
+    private func load(_ state: State) -> Effect<Action> {
+        guard let server = state.server else { return .none }
+        return .run { [threads] send in
+            if let looks = try? await threads.looks(server) { await send(.looks(looks)) }
+        }
+    }
+
+    private func pick(_ state: inout State, _ action: Action) {
+        switch action {
+        case .looks(let looks):
+            state.looks = looks
+            return
+        case .scheme(let scheme):
+            state.settings.scheme = scheme
+        case .theme(let theme):
+            state.settings.theme = theme
+        default:
+            return pushed(&state, action)
+        }
+        settingsStore.save(state.settings)
     }
 
     private func pushed(_ state: inout State, _ action: Action) {

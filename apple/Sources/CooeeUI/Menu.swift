@@ -73,6 +73,13 @@ internal struct MenuPage: View {
     }
 
     @ViewBuilder private var lookPage: some View {
+        if !store.looks.themes.isEmpty {
+            Group2(header: "Theme") {
+                ForEach(store.looks.themes.sorted { $0.key < $1.key }, id: \.key) { name, pack in
+                    pick(pack.label.capitalized, selected: store.settings.theme == name) { store.send(.theme(name)) }
+                }
+            }
+        }
         Group2(header: "Scheme") {
             ForEach(LookScheme.allCases, id: \.self) { scheme in
                 pick(scheme.rawValue.capitalized, selected: store.settings.scheme == scheme) {

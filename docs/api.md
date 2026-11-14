@@ -251,4 +251,6 @@ reaches them through cooee, with the plugin's token, never the cookie:
 The pick is the `cooee-look` cookie (`theme:kitchen/mode:dark/style:terminal/scene:on/figures:none/dark:nord/light:paper`, any
 keys unset), which `look.ts` writes. With no script, the look sheet's form posts `POST /look` (a form: `to`, the page
 to go back to, and the one key tapped), which sets the cookie and answers 303 to `to`. The themes' data is at
-`GET /look/{theme}/theme.json`, `sprites.svg` and `icon.png`.
+`GET /look/{theme}/theme.json`, `sprites.svg` and `icon.png`. `GET /api/v1/looks` (#252, the native look sheet) answers all of them as JSON:
+`{default, themes: {name: theme.json}, schemes: {name: {label, color-scheme, tokens}}, ascii}`, the installed packs as
+they are now.

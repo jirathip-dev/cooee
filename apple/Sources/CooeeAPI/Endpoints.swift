@@ -104,6 +104,8 @@ extension Client {
 
     public func personas() async throws -> [APIPersona] { try await call("GET", "/personas") }
 
+    public func looks() async throws -> Looks { try await call("GET", "/api/v1/looks") }
+
     public func messages(_ id: String, before: Int = 50) async throws -> Slice {
         try await call("GET", "/threads/\(id)/messages?before=\(before)")
     }
