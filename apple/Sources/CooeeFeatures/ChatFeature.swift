@@ -82,6 +82,7 @@ public struct ChatFeature: Sendable {
         public enum Delegate: Sendable, Equatable {
             case started(String)
             case new(String)
+            case open(String)
             case edit(String)
             case restart(APIPersona)
         }

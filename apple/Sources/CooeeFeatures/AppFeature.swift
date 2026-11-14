@@ -125,6 +125,8 @@ public struct AppFeature: Sendable {
             return .send(.start(persona))
         case .edit(let persona):
             return .send(.edit(persona))
+        case .open(let thread):
+            return .send(.open(thread))
         case .started(let thread):
             state.path = state.path.dropLast() + [thread]
             state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }

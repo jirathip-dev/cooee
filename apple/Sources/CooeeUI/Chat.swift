@@ -57,6 +57,7 @@ public struct ChatView: View {
     private var queued: [String] = []
     private var draft = ""
     private var back = true
+    private var headed = true
     private var chips: [String]
     private var actions = ChatActions()
 
@@ -64,7 +65,7 @@ public struct ChatView: View {
         ZStack {
             Backdrop()
             VStack(spacing: 0) {
-                ChatHeader(persona: persona, chips: chips, back: back, actions: actions)
+                if headed { ChatHeader(persona: persona, chips: chips, back: back, actions: actions) }
                 Scroller(end: true) {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(items) { item in
@@ -117,6 +118,7 @@ public struct ChatView: View {
         since: Date,
         queued: [String],
         back: Bool,
+        headed: Bool = true,
         actions: ChatActions
     ) {
         self.persona = persona
@@ -125,6 +127,7 @@ public struct ChatView: View {
         self.since = since
         self.queued = queued
         self.back = back
+        self.headed = headed
         self.actions = actions
         chips = actions.places
     }
