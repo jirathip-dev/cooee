@@ -24,8 +24,9 @@ The 28 shots above are the **Terminal** style (the first pass). Amendment A adds
 
 Query parameters for any page: `?theme=farm|kitchen|garden|terminal`, `&mode=system|light|dark`,
 `&style=modern|terminal` (default modern), `&sprites=on|off` (default on), and
-`&dark=<scheme>` / `&light=<scheme>` for the COLOURS picks. Serve the folder over http, because the pages fetch
-JSON and SVG: `python3 -m http.server -d docs/design/look`.
+`&dark=<scheme>` / `&light=<scheme>` for the COLOURS picks. Serve them over http, because the pages fetch
+JSON and SVG, from the repo root (the sprites are the first-party packs' own `sprites.svg`, which the build vendors
+into `packs/themes/` at swag's pin, `packs/swag.toml`): `python3 -m http.server`, then open `/docs/design/look/`.
 
 **Regenerate:**
 - `node docs/design/look/shoot.mjs <chrome-headless-shell> [name regexp]` shoots the 44 PNGs. The 390 shots are DPR 2, the 1440
@@ -34,8 +35,8 @@ JSON and SVG: `python3 -m http.server -d docs/design/look`.
   36 px controls. **All 44 pass.**
 - `node docs/design/look/check.mjs` runs herdsman's scheme gate (`gate.mjs`, copied from herdsman#423, which ported it
   line for line from serve.js). **All 12 schemes pass.**
-- `node build.mjs <herdsman> <herdsman design-423>` (run from this folder) rebuilds `sprites/` and `icons/` from
-  herdsman's theme files and garden's `art.mjs`.
+- The sprites are not built here: they arrive built in the first-party packs from jirathip-dev/swag
+  (docs/themes.md). A `cargo build` vendors them; bumping the pin changes them.
 
 **Data:** illustrative. Threads, devices and plugins are made up.
 

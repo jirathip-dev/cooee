@@ -9,7 +9,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
 
-const here = new URL('.', import.meta.url).pathname;
+const here = new URL('.', import.meta.url).pathname, root = join(here, '../../..');
 const [chrome] = process.argv.slice(2); // and an optional regexp: shoot only the names it matches
 // [page, query, name, width, height: full (the page) | sheet (the sheet's list) | screen (844 / 900), DPR, the system's mode]
 const VIEWS = [];
@@ -43,12 +43,12 @@ const only = process.argv[3] ? new RegExp(process.argv[3]) : null;
 const TYPES = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
 const srv = createServer((q, r) => {
   try {
-    const p = join(here, decodeURIComponent(new URL(q.url, 'http://x').pathname));
+    const p = join(root, decodeURIComponent(new URL(q.url, 'http://x').pathname));
     r.writeHead(200, { 'content-type': TYPES[extname(p)] || 'application/octet-stream' }).end(readFileSync(p));
   } catch { r.writeHead(404).end(); }
 }).listen(0, '127.0.0.1');
 await new Promise(ok => srv.on('listening', ok));
-const base = `http://127.0.0.1:${srv.address().port}/`;
+const base = `http://127.0.0.1:${srv.address().port}/docs/design/look/`;
 
 const c = spawn(chrome, ['--headless', '--no-sandbox', '--hide-scrollbars', '--remote-debugging-pipe', '--no-first-run',
   `--user-data-dir=${mkdtempSync(join(tmpdir(), 'cooee-prof-'))}`], { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });

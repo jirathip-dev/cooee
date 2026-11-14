@@ -12,8 +12,8 @@ schemes and sprites next to itself (a three-line change; the look's own shots ar
 | both | `pair-terminal-390-light` (garden), `approve-terminal-390-dark` (kitchen), `pair-themeterminal-390-dark` | the Terminal style, and the terminal theme (no sprites: its icon is the figure) |
 
 Each page is the screen first, then a "design sheet" below a rule: one card per state, three across from 1000 px.
-Query parameters are the look's: `?theme=…&mode=…&style=…&sprites=…`. Serve `docs/design/` (the pages use
-`../look/`): `python3 -m http.server -d docs/design`, then open `/pair/pair.html`.
+Query parameters are the look's: `?theme=…&mode=…&style=…&sprites=…`. Serve the repo root (the pages use
+`../look/`, which reads the vendored `packs/themes/`): `python3 -m http.server`, then open `/docs/design/pair/pair.html`.
 
 **Regenerate:** `node docs/design/pair/shoot.mjs <chrome-headless-shell> [name regexp]` (repo root) shoots the 11
 PNGs (390 at DPR 2, 1440 at DPR 1, full height, reduced motion) and runs the look's gate-2 audit on each. One

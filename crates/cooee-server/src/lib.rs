@@ -1672,7 +1672,7 @@ fn looks(cx: &Cx) -> Arc<cooee_web::LookAssets> {
 }
 
 /// `POST /themes/<action>`, Settings › look › themes' forms and a theme thread's `[keep]` (no script): `add`
-/// (`source`), `remove` and `publish` (`name`), `new` and `remix` (`name`, `from`, `text`), `keep` (`name`, `thread`).
+/// (`source`), `remove` (`name`), `new` and `remix` (`name`, `from`, `text`), `keep` (`name`, `thread`).
 #[derive(Deserialize, Default)]
 #[serde(default)]
 struct ThemeAct {
@@ -1710,17 +1710,12 @@ async fn theme_act(cx: &Cx, Form(a): Form<ThemeAct>) -> Result<Response> {
         let e = |e: io::Error| e.to_string();
         let back = "/#settings/look".to_owned();
         let done = match act.as_str() {
-            "add" => t.plan(&a.source, None).and_then(|p| t.add(&p)).map_err(e).map(|()| back),
+            "add" => t
+                .plan(&a.source, None)
+                .and_then(|p| t.add(&p))
+                .map_err(e)
+                .map(|()| back),
             "remove" => t.remove(&a.name).map_err(e).map(|()| back),
-            "publish" => t.publish(&a.name).map_err(e).map(|(dir, commit)| {
-                format!(
-                    "{} is a git repo now, at {}: {}. Push it (gh repo create --source {2} --push), then \
-                     propose it for cooee's plugins/index.toml by PR.",
-                    a.name,
-                    &commit[..7],
-                    dir.display()
-                )
-            }),
             "new" | "remix" => {
                 let from = (act == "remix").then_some(a.from.as_str());
                 let dir = t.start(&a.name, from).map_err(e)?;
@@ -1730,14 +1725,18 @@ async fn theme_act(cx: &Cx, Form(a): Form<ThemeAct>) -> Result<Response> {
                 if thread.is_err() {
                     let _ = std::fs::remove_dir_all(&dir);
                 }
-                thread.map(|id| format!("/t/{id}")).map_err(|e| e.to_string())
+                thread
+                    .map(|id| format!("/t/{id}"))
+                    .map_err(|e| e.to_string())
             }
             "keep" => match t.keep(&a.name) {
                 Ok(()) => Ok(back),
                 Err(why) if !a.thread.is_empty() => {
                     let text = format!("[keep] {why}\n\nFix these; I'll tap keep again.");
                     let rid = format!("keep-{}", now());
-                    let sent = hub.send(&a.thread, &text, &rid, &[]).map_err(|e| e.to_string());
+                    let sent = hub
+                        .send(&a.thread, &text, &rid, &[])
+                        .map_err(|e| e.to_string());
                     sent.map(|_| format!("/t/{}", a.thread))
                 }
                 Err(why) => Err(why.to_string()),
@@ -1748,12 +1747,10 @@ async fn theme_act(cx: &Cx, Form(a): Form<ThemeAct>) -> Result<Response> {
         done
     });
     match done.await? {
-        Ok(to) if to.starts_with('/') => Ok(Response::builder()
+        Ok(to) => Ok(Response::builder()
             .status(303)
             .header("Location", to)
             .body(Body::from(()))?),
-        // `publish` says where its repo is.
-        Ok(said) => plain(200, &said),
         Err(why) => plain(409, &why),
     }
 }
@@ -2805,7 +2802,11 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     let (looks, refused) = cooee_web::LookAssets::load(
         config.dir.as_deref(),
         config.theme.as_deref(),
-        themes.index().to_vec(),
+        themes
+            .first_party()
+            .into_iter()
+            .map(str::to_owned)
+            .collect(),
     );
     for why in refused {
         eprintln!("cooee: refused {why}");

@@ -23,6 +23,7 @@ pub mod secrets;
 mod shed;
 pub mod skills;
 mod store;
+pub mod swag;
 
 pub use accounts::{Account, Accounts, Sheet, Usage, Window};
 pub use chat::{Body, Card, Change, Chat, Item, Summary, Turn};

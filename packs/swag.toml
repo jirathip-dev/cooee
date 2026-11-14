@@ -1,0 +1,20 @@
+# The first-party theme packs (docs/themes.md): jirathip-dev/swag's packs/<name>/ at one commit, each file with its
+# sha256. The build vendors them into packs/themes/ (git-ignored) and into the binary, so an install with no network
+# has them; a file that doesn't match its sha256 is never installed and fails the test. To take a change from swag,
+# bump `commit` and the sums together; a new pack (bush) is four more lines.
+url = "https://github.com/jirathip-dev/swag"
+commit = "8964e64b8869cf9dc892819e172305cb6c601adc"
+
+[sha256]
+"farm/theme.json" = "7354e21805950c028542ff10a2db204500628d50194e943a3425634bfa983289"
+"farm/sprites.svg" = "e7f68ac1df8e078fb5dc78b7a7842223296cf28b2980e00ae50b420783414070"
+"farm/scene.svg" = "bb87bd49991def69aafe6a41bfcf56f9c80f7c948f4116629fc2280133184944"
+"farm/icon.png" = "8e2fe144213d25a23922c4318d3e84e2996b509773ac33891149d6c5856a9f62"
+"garden/theme.json" = "7fcfe481ee40d4ad35f949e3f968696c6800c1de5378a35411e79f21828b3fce"
+"garden/sprites.svg" = "e02dcbde69e9080ca240b90fe94f5724e7d7635e194b12ad1fd75ffc5b0402e2"
+"garden/scene.svg" = "40b97960c7453647494dc9e38df3b2527227a19af96c6fc3926d2bdcf597f142"
+"garden/icon.png" = "58187695f633d2041515968c766b260f2464610c4dcadcd67f589102ee145da1"
+"kitchen/theme.json" = "3b69288ca1e5cf1d756f27955021afd058e07b08fa9dd2c8b0686d2766e34a74"
+"kitchen/sprites.svg" = "a23ba15238787c03dd164308ad6c7dfbabc1750b240a581d591cd306600f1546"
+"kitchen/scene.svg" = "5379e122761e2c34d101bd97bf8bbe6757307ddd5916e2e7a3a551c7f9d5bd91"
+"kitchen/icon.png" = "10b8e8ca426bf144939d38dc04442772562c8648717b10b67dc0e9d3d7d5d9bb"

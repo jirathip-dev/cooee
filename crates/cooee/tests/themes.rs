@@ -1,9 +1,9 @@
 //! Theme packs end to end (docs/themes.md): `cooee theme check` passes the first-party packs and fails a broken one;
-//! `cooee theme add` from a fake index (a git repo holding packs in folders, pinned), a git URL ("not reviewed") and a
-//! folder, each pinned in the lock; a pack failing the gate is never installed; list and remove, which `cooee serve`
+//! `cooee theme add` of a first-party pack (the build's copy at swag's pin, no fetch), a git URL ("not reviewed") and
+//! a folder, each pinned in the lock; a pack failing the gate is never installed; list and remove, which `cooee serve`
 //! shows without a restart. From the phone: [remix] copies a theme into themes-dev with an agent thread; its preview's
 //! events say `saved` on each save; [keep] is blocked while it fails the gate (the failures go to its chat) and moves
-//! it into themes/ once it passes; [publish] makes it a git repo.
+//! it into themes/ once it passes.
 
 mod support;
 
@@ -17,6 +17,7 @@ use std::{
     time::Duration,
 };
 
+use cooee_core::swag::Swag;
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
 
@@ -63,49 +64,25 @@ fn until(what: &str, f: impl Fn() -> bool) {
     panic!("never: {what}");
 }
 
-/// `cooee serve` with an index listing `farm` and `broken`, folders of one repo at its commit; and `sea.git`, a repo
-/// that is a pack at its root.
+/// `cooee serve`, beside `sea.git`, a repo that is a pack at its root, and `broken.git`, one failing the gate.
 struct Setup {
     dir: PathBuf,
     shed: FakeShed,
     cooee: Cooee,
-    commit: String,
 }
 
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), version());
-    let repo = dir.join("packs.git");
-    farm_at(&repo.join("themes/farm"), false);
-    farm_at(&repo.join("themes/broken"), true);
-    git(&repo, &["init", "--quiet", "-b", "main"]);
-    git(&repo, &["add", "-A"]);
-    git(&repo, &["commit", "--quiet", "-m", "packs"]);
-    let commit = git(&repo, &["rev-parse", "HEAD"]);
-    let sea = dir.join("sea.git");
-    farm_at(&sea, false);
-    git(&sea, &["init", "--quiet", "-b", "main"]);
-    git(&sea, &["add", "-A"]);
-    git(&sea, &["commit", "--quiet", "-m", "sea"]);
-    let entry = |n: &str| {
-        format!(
-            "[[theme]]\nname = \"{n}\"\nurl = {:?}\npath = \"themes/{n}\"\ncommit = \"{commit}\"\n\
-             description = \"{n} pack\"\nfirst_party = true\n\n",
-            repo.to_string_lossy()
-        )
-    };
-    fs::write(dir.join("index.toml"), entry("farm") + &entry("broken")).unwrap();
-    let extra = format!(
-        "plugin_index = {:?}\n",
-        dir.join("index.toml").to_string_lossy()
-    );
-    let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
-    Setup {
-        dir,
-        shed,
-        cooee,
-        commit,
+    for (repo, broken) in [("sea.git", false), ("broken.git", true)] {
+        let repo = dir.join(repo);
+        farm_at(&repo, broken);
+        git(&repo, &["init", "--quiet", "-b", "main"]);
+        git(&repo, &["add", "-A"]);
+        git(&repo, &["commit", "--quiet", "-m", "pack"]);
     }
+    let cooee = Cooee::start(&dir, &shed.dir);
+    Setup { dir, shed, cooee }
 }
 
 impl Setup {
@@ -168,23 +145,37 @@ fn add_remove_and_list_with_the_lock() {
     let s = setup("th-add");
     let (_, list) = s.run(&["theme", "list"]);
     assert!(list.starts_with("no themes installed"), "{list}");
+    // A first-party pack: swag's at its pin, from the build's checked copy, never fetched.
+    let swag = Swag::pinned();
     let (ok, out) = s.run(&["theme", "add", "farm"]);
     assert!(ok, "{out}");
-    assert!(!out.contains("not reviewed"), "{out}");
-    let themes = s.dir.join("themes");
-    assert_eq!(
-        fs::read(themes.join("farm/sprites.svg")).unwrap(),
-        fs::read(packs().join("themes/farm/sprites.svg")).unwrap()
+    assert!(
+        out.starts_with(&format!(
+            "theme farm from {} (packs/farm) at {}\n",
+            swag.url, swag.commit
+        )),
+        "{out}"
     );
+    assert!(!s.dir.join("data/themes/farm.git").exists());
+    let themes = s.dir.join("themes");
+    for (f, bytes) in swag.files("farm").unwrap() {
+        assert_eq!(fs::read(themes.join("farm").join(f)).unwrap(), bytes, "{f}");
+    }
     assert_eq!(
         s.lock(),
-        json!([{ "name": "farm", "source": "index", "commit": s.commit, "listed": true }])
+        json!([{ "name": "farm", "source": swag.url, "commit": swag.commit, "listed": true }])
+    );
+    let (ok, out) = s.run(&["theme", "add", "sea"]);
+    assert!(
+        !ok && out.contains("sea isn't a first-party theme (farm garden kitchen)"),
+        "{out}"
     );
     // The server shows it without a restart.
     until("farm is served", || s.serves("farm"));
 
     // A pack failing the gate is never installed.
-    let (ok, out) = s.run(&["theme", "add", "broken"]);
+    let broken = s.dir.join("broken.git").display().to_string();
+    let (ok, out) = s.run(&["theme", "add", &broken, "--yes"]);
     assert!(!ok);
     assert!(
         out.contains("it fails the theme gate:\n  sprites.svg: no s-needs"),
@@ -196,7 +187,7 @@ fn add_remove_and_list_with_the_lock() {
     let sea = s.dir.join("sea.git").display().to_string();
     let (ok, out) = s.run(&["theme", "add", &sea]);
     assert!(
-        !ok && out.contains("not reviewed: this theme isn't in cooee's index"),
+        !ok && out.contains("not reviewed: this isn't a first-party theme at cooee's pin"),
         "{out}"
     );
     assert!(!themes.join("sea").exists());
@@ -219,9 +210,9 @@ fn add_remove_and_list_with_the_lock() {
     );
 
     let (_, list) = s.run(&["theme", "list"]);
-    let short = &s.commit[..7];
+    let short = &swag.commit[..7];
     assert!(
-        list.starts_with(&format!("farm  index  {short}\nkitchen  ")),
+        list.starts_with(&format!("farm  {}  {short}\nkitchen  ", swag.url)),
         "{list}"
     );
     assert!(list.contains("\nsea  /"), "{list}");
@@ -288,15 +279,16 @@ fn wait_for_event(s: &Setup, path: &str, name: &str, then: impl FnOnce()) {
 }
 
 #[test]
-fn remix_preview_keep_and_publish_from_the_phone() {
+fn remix_preview_and_keep_from_the_phone() {
     let s = setup("th-remix");
     assert!(s.run(&["theme", "add", "farm"]).0);
     until("farm is served", || s.serves("farm"));
-    // Settings › look › themes lists it with [remix], and the index's others to add.
+    // Settings › look › themes lists it with [remix], and the other first-party packs to add.
     let (_, page) = s.cooee.get("/");
     assert!(
         page.contains(r#"<input type="hidden" name="from" value="farm">"#)
-            && page.contains(r#"<input type="hidden" name="source" value="broken">"#),
+            && page.contains(r#"<input type="hidden" name="source" value="kitchen">"#)
+            && !page.contains(r#"name="source" value="farm""#),
         "{page}"
     );
 
@@ -370,15 +362,7 @@ fn remix_preview_keep_and_publish_from_the_phone() {
     );
     assert!(s.serves("sea-farm"));
 
-    let (status, said) = s.act("publish", "name=sea-farm");
-    assert_eq!(status, 200, "{said}");
-    let repo = s.dir.join("themes/sea-farm");
-    let commit = git(&repo, &["rev-parse", "HEAD"]);
-    assert!(
-        said.contains(&format!("is a git repo now, at {}", &commit[..7])),
-        "{said}"
-    );
-    assert_eq!(s.lock()[1]["commit"], json!(commit));
+    assert_eq!(s.act("publish", "name=sea-farm").0, 409);
 
     // [new theme] from the starter keeps as it is, with the Scene art its sprites need.
     let (status, to) = s.act("new", "name=fresh");
