@@ -7,6 +7,7 @@
 #![forbid(unsafe_code)]
 
 mod hub;
+mod layout;
 mod login;
 mod manage;
 pub mod mcp;
@@ -56,6 +57,7 @@ use topcoat::{
 };
 
 pub use hub::{CardSpec, Hub, HubError, Listing, Out, Recipe, Resume, Slice, Upload};
+pub use layout::{Broken, Layouts, check as layout_check};
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
 pub use push::{Note, Push, Sub, encrypt, jwt, note};
@@ -2682,6 +2684,7 @@ pub fn router(
     bind: IpAddr,
     allowed_hosts: &[String],
     looks: Arc<cooee_web::LookAssets>,
+    layouts: Arc<Layouts>,
 ) -> Router {
     hub.set_starter(starter(Arc::clone(&logins), data, config));
     let gate = Gate {
@@ -2767,6 +2770,10 @@ pub fn router(
     .route(mcp_remove)
     .route(mcp_secret)
     .route(profile_mcp)
+    .route(layout::get)
+    .route(layout::events)
+    .route(layout::reset)
+    .app_context(layouts)
     .app_context(hub)
     .app_context(Arc::new(Dots::default()))
     .app_context(Arc::new(Unlocks::default()))
@@ -2871,6 +2878,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         config.bind,
         &config.allowed_hosts,
         looks,
+        Layouts::watch(config.dir.clone()),
     );
     let served = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
