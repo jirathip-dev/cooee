@@ -26,8 +26,8 @@ sha2 = "=0.11.1"
 qrcode = { version = "=0.14.1", default-features = false }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
-# shed's API types, pinned to a shed merge commit; the hello needs the exact shed version.
-shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "4585d504a3e6fc666e3415609abdc5f9e72c36a2" }
+# shed's API types, pinned to a shed merge commit; the hello needs the same shed protocol.
+shed-proto = { git = "https://github.com/jirathip-dev/shed", rev = "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb" }
 futures-util = { version = "=0.3.34", default-features = false }
 thiserror = "=2.0.21"
 # web/build.rs strips the types from web/ts (#49): oxc's parser, TypeScript transform and codegen.
