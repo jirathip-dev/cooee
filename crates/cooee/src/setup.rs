@@ -12,7 +12,7 @@ use std::{
 
 use cooee_core::{Config, Shed, provider};
 
-use super::{SHED_CARGO, doctor, label, load, pair, plist, tailnet_name, write_plist};
+use super::{SHED_CARGO, doctor, label, load, pair, plist, refuse_app, tailnet_name, write_plist};
 
 const SHED_LABEL: &str = "dev.shed.serve";
 
@@ -101,6 +101,7 @@ impl Setup {
 
     /// Every step, in order, then the pairing code.
     pub fn run(&self, path: &Path) -> Result<(), String> {
+        refuse_app()?;
         let uid = output(&["id", "-u"]).ok_or("`id -u` failed")?;
         let gui = format!("gui/{}", uid.trim());
         let updated = self.shed()?;

@@ -21,6 +21,11 @@
             default: return .off
             }
         }
+
+        internal func unregister() async throws {
+            let service = SMAppService.agent(plistName: "\(rawValue).plist")
+            if service.status != .notRegistered { try await service.unregister() }
+        }
     }
 
     internal struct MacLive: Sendable {
@@ -64,6 +69,23 @@
             return network
         }
 
+        internal func existing() async -> ExistingInstall {
+            let launchctl = URL(filePath: "/bin/launchctl")
+            let listed = (try? await Shell.run(launchctl, ["list"])) ?? ""
+            let port = config.port
+            let listener = try? await Shell.run(
+                URL(filePath: "/usr/sbin/lsof"), ["-nP", "-iTCP:\(port)", "-sTCP:LISTEN", "-Fc"])
+            return ExistingInstall(launchctl: listed, listener: listener ?? "", port: port)
+        }
+
+        internal func takeOver(_ labels: [String]) async throws {
+            for label in labels {
+                let target = "gui/\(getuid())/\(label)"
+                _ = try await Shell.run(URL(filePath: "/bin/launchctl"), ["disable", target])
+                _ = try await Shell.run(URL(filePath: "/bin/launchctl"), ["bootout", target])
+            }
+        }
+
         private func restart() async {
             let label = "gui/\(getuid())/\(LoginItem.cooee.rawValue)"
             _ = try? await Shell.run(URL(filePath: "/bin/launchctl"), ["kickstart", "-k", label])
@@ -80,6 +102,12 @@
 
         internal func client() -> MacServerClient {
             MacServerClient(
+                existing: { await existing() },
+                useExisting: {
+                    try await LoginItem.cooee.unregister()
+                    try await LoginItem.shed.unregister()
+                },
+                takeOver: { try await takeOver($0) },
                 start: { try start() },
                 folders: { config.strings("roots") },
                 addFolder: { try await addFolder($0) },

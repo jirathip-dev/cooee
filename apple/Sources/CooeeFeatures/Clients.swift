@@ -77,6 +77,9 @@ public struct NearbyClient: Sendable {
 
 @DependencyClient
 public struct MacServerClient: Sendable {
+    public var existing: @Sendable () async -> ExistingInstall = { .none }
+    public var useExisting: @Sendable () async throws -> Void
+    public var takeOver: @Sendable (_ labels: [String]) async throws -> Void
     public var start: @Sendable () async throws -> LoginItems
     public var folders: @Sendable () async -> [String] = { [] }
     public var addFolder: @Sendable (_ path: String) async throws -> Void

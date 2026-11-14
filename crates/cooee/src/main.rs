@@ -656,6 +656,32 @@ fn label(instance: &str) -> String {
     format!("dev.cooee.{instance}")
 }
 
+/// The Mac app's login items (#142, `apple/LaunchAgents/`) that `launchctl` has loaded.
+fn app_items() -> Vec<&'static str> {
+    ["com.jirathip.cooee.serve", "com.jirathip.cooee.shed"]
+        .into_iter()
+        .filter(|l| {
+            Command::new("launchctl")
+                .args(["list", l])
+                .output()
+                .is_ok_and(|o| o.status.success())
+        })
+        .collect()
+}
+
+/// Refuses while the Mac app runs this Mac's server (#331): one cooee server per Mac.
+fn refuse_app() -> Result<(), String> {
+    let items = app_items();
+    if items.is_empty() {
+        return Ok(());
+    }
+    Err(format!(
+        "the cooee Mac app already runs this Mac's server (login items {}): use the app, or remove its login \
+         items in System Settings > General > Login Items first",
+        items.join(", ")
+    ))
+}
+
 /// XML text: `&`, `<` and `>` escaped.
 fn xml(s: &str) -> String {
     s.replace('&', "&amp;")
@@ -666,6 +692,7 @@ fn xml(s: &str) -> String {
 /// Writes the instance's launchd plist (and its config with `port`, if it has none), then prints the commands that
 /// start it, serve it on the tailnet and, if shed isn't running, install shed.
 fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> Result<(), String> {
+    refuse_app()?;
     let path = path.ok_or("no config path: set HOME")?;
     if !path.exists() {
         let hosts = tailnet_name().map(|n| format!("allowed_hosts = [{n:?}]\n"));
@@ -775,6 +802,14 @@ fn doctor(config: &Config) -> Result<(), String> {
         loaded,
         format!("service {label} loaded (else: cooee install)"),
     );
+    let app = app_items();
+    if loaded && !app.is_empty() {
+        println!(
+            "warn both {label} and the Mac app's login items ({}) are installed: two servers on one Mac\n     \
+             fix: in the app, take over the CLI install, or remove the app's login items",
+            app.join(", ")
+        );
+    }
     let port = config.port;
     let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
     let up = TcpStream::connect_timeout(&addr, Duration::from_secs(2)).is_ok();

@@ -147,3 +147,45 @@ public struct PairRequest: Sendable, Equatable, Decodable {
         self.label = label
     }
 }
+
+/// What already serves cooee on this Mac, so the app never starts a second server on the port.
+public enum ExistingInstall: Sendable, Equatable {
+    case none
+    case app
+    case cli(labels: [String])
+    case both(labels: [String])
+    case portTaken(port: Int, program: String)
+
+    /// Whether a CLI install serves cooee here, so setup offers to use it or take it over.
+    public var cli: Bool {
+        switch self {
+        case .cli, .both: true
+        default: false
+        }
+    }
+
+    /// The CLI's LaunchAgents the app would boot out to take it over.
+    public var labels: [String] {
+        switch self {
+        case .cli(let labels), .both(let labels): labels
+        default: []
+        }
+    }
+
+    /// From `launchctl list`'s `PID<TAB>Status<TAB>Label` table and `lsof -Fc`'s lines for the port's listener.
+    public init(launchctl: String, listener: String, port: Int) {
+        let loaded = launchctl.split(separator: "\n").compactMap { $0.split(separator: "\t").last.map(String.init) }
+        let cooee = loaded.filter { $0.hasPrefix("dev.cooee.") }
+        let cli = cooee.isEmpty ? [] : cooee + loaded.filter { $0 == "dev.shed.serve" }
+        let app = loaded.contains("com.jirathip.cooee.serve")
+        let name = listener.split(separator: "\n").first { $0.hasPrefix("c") }.map { String($0.dropFirst()) }
+        switch (cli.isEmpty, app, name) {
+        case (false, true, _): self = .both(labels: cli)
+        case (false, false, _): self = .cli(labels: cli)
+        case (true, true, _): self = .app
+        case (true, false, "cooee"?): self = .cli(labels: [])
+        case (true, false, let name?): self = .portTaken(port: port, program: name)
+        case (true, false, nil): self = .none
+        }
+    }
+}

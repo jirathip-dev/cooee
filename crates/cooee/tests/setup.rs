@@ -511,3 +511,52 @@ fn install_sh_checks_its_tools_then_installs_cooee_and_runs_setup() {
         format!("{install}{sign}cooee setup --instance drover\n")
     );
 }
+
+#[test]
+fn with_the_mac_apps_login_items_setup_and_install_refuse_and_start_nothing() {
+    let mac = Mac::new("su-app", false);
+    for item in ["com.jirathip.cooee.serve", "com.jirathip.cooee.shed"] {
+        fs::write(mac.home.join(format!("loaded-{item}")), "").unwrap();
+    }
+    let port = mac.port.to_string();
+    for args in [
+        vec!["setup", "--port", &port, "--yes"],
+        vec!["setup", "--port", &port, "--dry-run", "--yes"],
+        vec!["install", "--port", &port],
+    ] {
+        let out = mac.cooee(&args);
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert_eq!(out.status.code(), Some(1), "{args:?}: {out:?}");
+        assert!(
+            stderr.contains(
+                "the cooee Mac app already runs this Mac's server (login items com.jirathip.cooee.serve, \
+                 com.jirathip.cooee.shed)"
+            ),
+            "{stderr}"
+        );
+        assert_eq!(mac.changes(), Vec::<String>::new(), "{args:?}");
+        assert!(!mac.config().exists() && !mac.home.join("Library/LaunchAgents").exists());
+    }
+}
+
+#[test]
+fn doctor_warns_when_both_the_cli_and_the_mac_app_are_installed() {
+    let mac = Mac::new("su-both", false);
+    let doctor = |mac: &Mac| {
+        let out = mac.cooee(&["doctor", "--config", &mac.config().display().to_string()]);
+        String::from_utf8_lossy(&out.stdout).into_owned()
+    };
+    fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
+    fs::write(mac.config(), format!("port = {}\n", mac.port)).unwrap();
+    fs::write(mac.home.join("loaded-dev.cooee.cooee"), "").unwrap();
+    assert!(!doctor(&mac).contains("warn both"));
+    fs::write(mac.home.join("loaded-com.jirathip.cooee.serve"), "").unwrap();
+    let stdout = doctor(&mac);
+    assert!(
+        stdout.contains(
+            "ok   service dev.cooee.cooee loaded (else: cooee install)\nwarn both dev.cooee.cooee and the Mac \
+             app's login items (com.jirathip.cooee.serve) are installed: two servers on one Mac\n"
+        ),
+        "{stdout}"
+    );
+}
