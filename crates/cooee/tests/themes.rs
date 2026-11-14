@@ -36,7 +36,6 @@ fn packs() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs")
 }
 
-/// farm's pack copied to `to`, its `s-needs` gone when `broken`.
 fn farm_at(to: &Path, broken: bool) {
     fs::create_dir_all(to).unwrap();
     for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
@@ -52,7 +51,6 @@ fn farm_at(to: &Path, broken: bool) {
     }
 }
 
-/// Waits (up to 20 s) for `f`.
 fn until(what: &str, f: impl Fn() -> bool) {
     for _ in 0..400 {
         if f() {
@@ -63,8 +61,6 @@ fn until(what: &str, f: impl Fn() -> bool) {
     panic!("never: {what}");
 }
 
-/// `cooee serve` with an index listing `farm` and `broken`, folders of one repo at its commit; and `sea.git`, a repo
-/// that is a pack at its root.
 struct Setup {
     dir: PathBuf,
     shed: FakeShed,
@@ -109,7 +105,6 @@ fn setup(name: &str) -> Setup {
 }
 
 impl Setup {
-    /// `cooee <args>`: whether it succeeded, and its stdout and stderr.
     fn run(&self, args: &[&str]) -> (bool, String) {
         let out = self.cooee.command().args(args).output().unwrap();
         let text = String::from_utf8_lossy(&out.stdout).into_owned()
@@ -121,7 +116,6 @@ impl Setup {
         serde_json::from_slice(&fs::read(self.dir.join("data/themes.lock")).unwrap()).unwrap()
     }
 
-    /// A form `body` posted to `/themes/<act>` as the paired phone: the status and where it goes.
     fn act(&self, act: &str, body: &str) -> (u16, String) {
         let headers = [
             ("Content-Type", "application/x-www-form-urlencoded"),
@@ -180,10 +174,8 @@ fn add_remove_and_list_with_the_lock() {
         s.lock(),
         json!([{ "name": "farm", "source": "index", "commit": s.commit, "listed": true }])
     );
-    // The server shows it without a restart.
     until("farm is served", || s.serves("farm"));
 
-    // A pack failing the gate is never installed.
     let (ok, out) = s.run(&["theme", "add", "broken"]);
     assert!(!ok);
     assert!(
@@ -192,7 +184,6 @@ fn add_remove_and_list_with_the_lock() {
     );
     assert!(!themes.join("broken").exists());
 
-    // A git URL outside the index is "not reviewed" and needs a yes.
     let sea = s.dir.join("sea.git").display().to_string();
     let (ok, out) = s.run(&["theme", "add", &sea]);
     assert!(
@@ -202,7 +193,6 @@ fn add_remove_and_list_with_the_lock() {
     assert!(!themes.join("sea").exists());
     let (ok, out) = s.run(&["theme", "add", &sea, "--yes"]);
     assert!(ok, "{out}");
-    // A folder, pinned at its repo's commit when it is in one.
     let kitchen = packs().join("themes/kitchen").display().to_string();
     let (ok, out) = s.run(&["theme", "add", &kitchen, "--yes"]);
     assert!(ok, "{out}");
@@ -246,10 +236,8 @@ fn a_pack_with_a_symlink_is_never_installed_or_served() {
     std::os::unix::fs::symlink(&secret, evil.join("icon.png")).unwrap();
     let (ok, out) = s.run(&["theme", "check", &evil.display().to_string()]);
     assert!(!ok && out.contains("icon.png: a symlink"), "{out}");
-    // From a folder: refused, not followed.
     let (ok, out) = s.run(&["theme", "add", &evil.display().to_string(), "--yes"]);
     assert!(!ok && out.contains("icon.png: a symlink"), "{out}");
-    // From a git URL: the archive keeps the link, so the gate refuses it.
     git(&evil, &["init", "--quiet", "-b", "main"]);
     git(&evil, &["add", "-A"]);
     git(&evil, &["commit", "--quiet", "-m", "evil"]);
@@ -261,7 +249,6 @@ fn a_pack_with_a_symlink_is_never_installed_or_served() {
     assert!(code != 200 && !body.contains("TOP-SECRET"), "{code} {body}");
 }
 
-/// Reads `path`'s SSE stream until an event named `name`.
 fn wait_for_event(s: &Setup, path: &str, name: &str, then: impl FnOnce()) {
     let mut stream = TcpStream::connect(&s.cooee.addr).unwrap();
     stream
@@ -292,7 +279,6 @@ fn remix_preview_keep_and_publish_from_the_phone() {
     let s = setup("th-remix");
     assert!(s.run(&["theme", "add", "farm"]).0);
     until("farm is served", || s.serves("farm"));
-    // Settings › look › themes lists it with [remix], and the index's others to add.
     let (_, page) = s.cooee.get("/");
     assert!(
         page.contains(r#"<input type="hidden" name="from" value="farm">"#)
@@ -316,7 +302,6 @@ fn remix_preview_keep_and_publish_from_the_phone() {
             .contains("Theme sea-farm: make it blue\\n\\nYou're building the cooee theme sea-farm"),
         "{sent:?}"
     );
-    // Its chat has the preview and [keep]; the preview shows it in the list and the chat.
     let (_, chat) = s.cooee.get(&to);
     assert!(
         chat.contains(&format!(r#"href="/themes/dev/sea-farm?thread={thread}""#)),
@@ -334,7 +319,6 @@ fn remix_preview_keep_and_publish_from_the_phone() {
     let (_, list) = s.cooee.get("/?preview=sea-farm");
     assert!(list.contains(r#"data-theme="dev.sea-farm""#), "{list}");
 
-    // The agent saves a change that breaks a state: the preview's stream says `saved`.
     wait_for_event(&s, "/themes/dev/sea-farm/events", "saved", || {
         let svg = fs::read_to_string(dev.join("sprites.svg")).unwrap();
         fs::write(
@@ -343,7 +327,6 @@ fn remix_preview_keep_and_publish_from_the_phone() {
         )
         .unwrap();
     });
-    // [keep] is blocked: the failures go to the chat, for the agent.
     let body = format!("name=sea-farm&thread={thread}");
     assert_eq!(s.act("keep", &body), (303, to.clone()));
     assert!(dev.exists() && !s.dir.join("themes/sea-farm").exists());
@@ -360,7 +343,6 @@ fn remix_preview_keep_and_publish_from_the_phone() {
         "{preview}"
     );
 
-    // Fixed, [keep] moves it into themes/: installed, pinned, served.
     farm_at(&dev, false);
     assert_eq!(s.act("keep", &body), (303, "/#settings/look".to_owned()));
     assert!(!dev.exists() && s.dir.join("themes/sea-farm/theme.json").exists());
@@ -380,7 +362,6 @@ fn remix_preview_keep_and_publish_from_the_phone() {
     );
     assert_eq!(s.lock()[1]["commit"], json!(commit));
 
-    // [new theme] from the starter keeps as it is, with the Scene art its sprites need.
     let (status, to) = s.act("new", "name=fresh");
     assert_eq!(status, 303, "{to}");
     let thread = to.strip_prefix("/t/").unwrap();
@@ -392,7 +373,6 @@ fn remix_preview_keep_and_publish_from_the_phone() {
         "{status} {art}"
     );
 
-    // A name taken or not a theme's is refused.
     assert_eq!(s.act("new", "name=sea-farm").0, 409);
     assert_eq!(s.act("new", "name=..").0, 409);
 }

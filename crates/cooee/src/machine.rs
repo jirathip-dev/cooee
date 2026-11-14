@@ -1,9 +1,3 @@
-//! `cooee machine check <m> [--yes]` and `cooee doctor`'s row per machine (#150): whether machine `m` is ready for
-//! the personas that run on it. shed reaches it with the same version; then for each persona its agent's CLI is
-//! installed there, its folder is there, its account is signed in there and its profile's settings (its rules and
-//! hooks) are there as here. Every check runs on `m` as a plain shed terminal; cooee never reaches it but through
-//! shed. With `--yes` a missing folder is cloned there from its git origin here, and the settings are copied there.
-
 use std::{collections::BTreeSet, fs, path::Path, process::Command};
 
 use cooee_core::{
@@ -11,15 +5,12 @@ use cooee_core::{
     shed_proto::LinkState,
 };
 
-/// How long one check may run there, in seconds.
 const PROBE: f64 = 30.0;
-/// How long a clone may run there, in seconds.
 const CLONE: f64 = 600.0;
 
 /// One check's line: whether it passed, and what it says (with its fix when it failed).
 pub type Line = (bool, String);
 
-/// What the checks read: the config, its shed, providers, accounts and personas.
 struct Ctx {
     shed: Shed,
     providers: Providers,
@@ -42,14 +33,12 @@ impl Ctx {
         }
     }
 
-    /// `cmd` on `machine`: whether it exited 0.
     fn ran(&self, machine: &str, cmd: &[&str], timeout: f64) -> Result<bool, String> {
         let cmd = cmd.iter().map(|w| (*w).to_owned()).collect();
         let exit = self.shed.run_on(machine, cmd, timeout);
         exit.map(|e| e == Some(0)).map_err(|e| e.to_string())
     }
 
-    /// Every check of `machine`, applying the fixes with `yes`.
     fn check(&self, machine: &str, yes: bool) -> Vec<Line> {
         let link = match self.shed.link(machine) {
             Ok(Some(l)) if l.state == LinkState::Up => Ok(()),
@@ -71,7 +60,6 @@ impl Ctx {
         vec![(false, format!("shed on {machine}: {why}"))]
     }
 
-    /// Persona `p`'s checks on `machine`.
     fn persona(&self, machine: &str, p: &Persona, yes: bool) -> Vec<Line> {
         let profile = p
             .profile

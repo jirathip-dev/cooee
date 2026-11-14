@@ -21,7 +21,6 @@ struct Setup {
     dir: PathBuf,
     shed: FakeShed,
     cooee: Cooee,
-    /// A secret-shaped value the fake login prints, built at runtime.
     token: String,
 }
 
@@ -30,13 +29,10 @@ fn script(path: &Path, body: &str) {
     fs::set_permissions(path, fs::Permissions::from_mode(0o755)).unwrap();
 }
 
-/// cooee with one provider, `fake`, for agent `fake-acp`: its login prints a link and a token, then reads a code
-/// (`good-code` signs it in); its status succeeds once signed in.
 fn setup(name: &str) -> Setup {
     setup_with(name, None)
 }
 
-/// As [`setup`], its status command's script `status` instead when given.
 fn setup_with(name: &str, check: Option<&str>) -> Setup {
     let dir = scratch(name);
     let token = format!("sk-{}", "q7".repeat(16));
@@ -72,7 +68,6 @@ fn setup_with(name: &str, check: Option<&str>) -> Setup {
 }
 
 impl Setup {
-    /// `GET /logins/fake` until `f` holds (15 s at most: the fake program's output, a status check's 10 s timeout).
     fn until(&self, f: impl Fn(&Value) -> bool) -> Value {
         let start = Instant::now();
         loop {
@@ -85,7 +80,6 @@ impl Setup {
         }
     }
 
-    /// Starts the login and waits for its prompt; returns its terminal and view.
     fn start(&self) -> (String, Value) {
         assert_eq!(self.cooee.post("/logins/fake", &json!(null)).0, 200);
         let v = self.until(|v| v["screen"].as_str().unwrap().contains("Paste code"));
@@ -94,7 +88,6 @@ impl Setup {
         (runs[0].clone(), v)
     }
 
-    /// Every file under the data folder, and cooee's stderr.
     fn written(&self) -> String {
         let mut out = fs::read_to_string(self.dir.join("cooee.err")).unwrap();
         let mut dirs = vec![self.dir.join("data")];
@@ -116,7 +109,6 @@ fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_scr
     let s = setup("login");
     s.until(|v| v["status"]["unknown"] == false);
     let (_, page) = s.cooee.get("/new");
-    // Settings › providers: signed out, with [sign in] on its row.
     assert!(
         page.contains(r#"<span class="sk">main login</span><span class="st m">signed out</span><button type="button" class="si" data-provider="fake" data-account="""#),
         "{page}"
@@ -131,7 +123,6 @@ fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_scr
         "{screen}"
     );
     assert!(!screen.contains(&s.token), "{screen}");
-    // Terminal mode, not ACP, run in a plain shed terminal.
     let run = &s.shed.calls("run", &terminal)[0];
     assert!(run["acp"].is_null() && run["cmd"][0].as_str().unwrap().ends_with("login.sh"));
 
@@ -149,7 +140,6 @@ fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_scr
         v["status"],
         json!({ "signed_in": true, "unknown": false, "line": "Signed in as owner@example.com", "install": null, "who": null, "usage": null })
     );
-    // Exited: killed (already gone) and removed.
     assert_eq!(s.shed.calls("kill", &terminal).len(), 1);
     assert_eq!(s.shed.calls("rm", &terminal).len(), 1);
     let (_, page) = s.cooee.get("/new");
@@ -163,7 +153,6 @@ fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_scr
     for secret in [s.token.as_str(), "Paste code", "good-code", LINK] {
         assert!(!written.contains(secret), "{secret} was written");
     }
-    // No login runs now: a code has nowhere to go.
     assert_eq!(
         s.cooee.post("/logins/fake/send", &json!({ "text": "x" })).0,
         400
@@ -174,7 +163,6 @@ fn login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_scr
 fn a_login_left_for_10_minutes_is_killed_and_removed() {
     let s = setup("login-timeout");
     let (terminal, _) = s.start();
-    // The reaper's `wait` runs on its own thread: poll until shed has it.
     let start = Instant::now();
     let wait = loop {
         if let Some(w) = s.shed.calls("wait", &terminal).into_iter().next() {
@@ -200,8 +188,6 @@ fn a_login_left_for_10_minutes_is_killed_and_removed() {
     assert_eq!(s.cooee.post("/logins/nope", &json!(null)).0, 400);
 }
 
-/// #106: while the status command hangs, requests answer at once with the last known status (unknown, no sign-in
-/// offered); it runs once, however often the card opens, and its timeout reads as unknown, never signed out.
 #[test]
 fn a_hanging_status_check_never_holds_a_request_and_runs_once() {
     let dir = scratch("login-hang-runs");
@@ -259,14 +245,11 @@ fn a_hanging_status_check_never_holds_a_request_and_runs_once() {
             && !page.contains(no_sign_in),
         "{page}"
     );
-    // Backing off: the card opening again starts no second check.
     assert_eq!(s.cooee.post("/logins", &json!({})).0, 200);
     thread::sleep(Duration::from_millis(1500));
     assert_eq!(ran(), 1);
 }
 
-/// #106: a sign-out that fails (here: no sign-out command) signs nothing out, so the recorded signed-in status stays
-/// while its recheck hangs.
 #[test]
 fn a_failed_sign_out_keeps_the_last_known_status() {
     let dir = scratch("login-signout-fails-flag");
@@ -287,8 +270,6 @@ fn a_failed_sign_out_keeps_the_last_known_status() {
     assert_eq!(v["status"]["signed_in"], true, "{v}");
 }
 
-/// #150: a sign-in for machine `box` starts its login command there (shed's `run` with `machine`), its screen, code
-/// and close go to `box/<name>`, and it ends "on box"; a new account signs in on this host only.
 #[test]
 fn a_sign_in_started_for_a_remote_machine_runs_there() {
     let s = setup("login-remote");

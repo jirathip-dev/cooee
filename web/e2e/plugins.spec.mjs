@@ -1,13 +1,9 @@
-// Plugin tabs (docs/plugins.md) with the example plugin (docs/plugins/hello), run by serve.sh as `hello` and `other`:
-// the tab's module runs in a sandboxed frame, reaches its backend with the plugin's token (never the cookie), gets its
-// event stream and the theme, posts a push and a choice card whose answer comes back; it reaches nothing else.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const frameOf = (page, name) => page.frames().find((f) => f.url().includes(`/p/${name}/frame`));
 
 test("the example plugin's tab: proxied calls with its token, its stream, a push and a choice card", async ({ page, context }, info) => {
-  // A chat of persona `cards`, which `hello` is attached to (serve.sh, #129): a card goes only to such a chat.
   const r = await page.request.post("/threads", { data: { agent: "fake-acp", profile: "cards", text: "Say hello", random_id: `hello-${info.project.name}` } });
   expect(r.status(), await r.text()).toBe(200);
   const { id: thread } = await r.json();
@@ -15,7 +11,6 @@ test("the example plugin's tab: proxied calls with its token, its stream, a push
   await page.goto("/");
   await page.getByRole("navigation", { name: "tabs" }).getByRole("link", { name: "Hello" }).click();
   await expect(page).toHaveURL(/\/p\/hello$/);
-  // The thread's id as the tab's hash: a deep link, as a push's tap opens.
   await page.goto("/");
   await page.goto(`/p/hello#${thread}`);
   const tab = page.frameLocator("iframe.pf");
@@ -27,13 +22,11 @@ test("the example plugin's tab: proxied calls with its token, its stream, a push
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 
-  // The backend posts a push and a choice card with its token; cooee answers each 200.
   await tab.getByRole("button", { name: "notify" }).click();
   await expect(tab.getByRole("listitem").filter({ hasText: /^notify/ })).toHaveText("notify 200: 200");
   await tab.getByRole("button", { name: "ask" }).click();
   await expect(tab.getByRole("listitem").filter({ hasText: /^ask/ })).toHaveText("ask 200: 200");
 
-  // The card is in the thread; the owner's tap goes back to the plugin, whose stream tells the open tab.
   const chat = await context.newPage();
   await chat.goto(`/t/${thread}`);
   const card = chat.locator(".blk.ap", { hasText: "Ship it?" });
@@ -59,7 +52,6 @@ test("a plugin reaches only its own backend: not another plugin's, not cooee's s
     };
   });
   expect(tried).toEqual({ escape: 403, encoded: 403, direct: "TypeError", storage: "SecurityError", cookie: "SecurityError", parent: "SecurityError", origin: "null" });
-  // A backend without the plugin's token is refused, even from a paired browser.
   expect((await request.post("/plugin/push", { data: { text: "x" } })).status()).toBe(401);
   expect((await request.post("/plugin/push", { data: { text: "x" }, headers: { authorization: "Bearer not-the-token-0123" } })).status()).toBe(401);
 });

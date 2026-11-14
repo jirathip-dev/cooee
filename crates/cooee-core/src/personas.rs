@@ -15,7 +15,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{plugins, profiles, skills};
 
-/// drover's installed name (`plugins/index.toml`).
 const DROVER: &str = "drover";
 
 /// What a persona is (#159), apart from its name: drover attaches by it.
@@ -105,7 +104,6 @@ fn refused(why: String) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, why)
 }
 
-/// Its notes' file.
 fn memory(data: &Path, id: &str) -> PathBuf {
     data.join("personas").join(id).join("memory.jsonl")
 }
@@ -158,7 +156,6 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
     out
 }
 
-/// Persona `id` from its file's `text`.
 fn from_file(id: &str, text: &str) -> Result<Persona, toml::de::Error> {
     let table: toml::Table = toml::from_str(text)?;
     let set = table.contains_key("role");
@@ -170,8 +167,6 @@ fn from_file(id: &str, text: &str) -> Result<Persona, toml::de::Error> {
     })
 }
 
-/// The role of the persona `id` (or read from profile `id`): the one it has, else (saved before #159) the conductor's
-/// is an orchestrator.
 fn role(id: &str, set: Option<Role>) -> Role {
     set.unwrap_or(if id == "conductor" {
         Role::Orchestrator
@@ -247,7 +242,6 @@ pub fn save(config: &Path, data: &Path, mut p: Persona) -> io::Result<Persona> {
             "a persona needs a name, an agent, and an image or none as its avatar".to_owned(),
         ));
     }
-    // TOML's basic strings and arrays read JSON's; every field is a string or a list of them.
     let fields = serde_json::to_value(Persona {
         id: String::new(),
         ..p.clone()
@@ -278,7 +272,6 @@ pub fn remove(config: &Path, data: &Path, id: &str) -> io::Result<()> {
     gone(fs::remove_dir_all(data.join("personas").join(id)))
 }
 
-/// `r`, a missing file being no error.
 fn gone(r: io::Result<()>) -> io::Result<()> {
     match r {
         Err(e) if e.kind() != io::ErrorKind::NotFound => Err(e),

@@ -11,14 +11,12 @@ use std::{fs, path::Path};
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
 
-/// The fake agent's session reports `ids` as its models, on `fake-opus-1`.
 fn reports(shed: &FakeShed, ids: &[&str]) {
     let models: Vec<[&str; 2]> = ids.iter().map(|i| [*i, *i]).collect();
     let session = json!({ "id": "s1", "model": "fake-opus-1", "models": models });
     fs::write(shed.dir.join("session.json"), session.to_string()).unwrap();
 }
 
-/// The model `acp.model` set thread `id`'s session on, if any.
 fn set_on(shed: &FakeShed, id: &str) -> Option<String> {
     let calls = shed.calls("acp.model", &format!("cooee-{id}"));
     calls
@@ -26,7 +24,6 @@ fn set_on(shed: &FakeShed, id: &str) -> Option<String> {
         .map(|c| c["model"].as_str().unwrap().to_owned())
 }
 
-/// A cooee whose fake provider offers efforts, on a fake shed; and the folder its threads start in.
 fn setup(name: &str) -> (FakeShed, Cooee, std::path::PathBuf) {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), version());
@@ -37,7 +34,6 @@ fn setup(name: &str) -> (FakeShed, Cooee, std::path::PathBuf) {
     (shed, cooee, dir)
 }
 
-/// Starts a thread on `model` (effort `high`): the status and its id (else the body).
 fn start(cooee: &Cooee, dir: &Path, model: &str, random: &str) -> (u16, String) {
     let new = json!({ "agent": "fake-acp", "folder": dir.join("root"), "text": "hi", "random_id": random, "model": model, "effort": "high" });
     let (code, body) = cooee.post("/threads", &new);
@@ -46,7 +42,6 @@ fn start(cooee: &Cooee, dir: &Path, model: &str, random: &str) -> (u16, String) 
     (code, id.unwrap_or(body))
 }
 
-/// Thread `id`'s notes.
 fn notes(cooee: &Cooee, id: &str) -> Vec<String> {
     let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
     let notes = items
@@ -59,7 +54,6 @@ fn notes(cooee: &Cooee, id: &str) -> Vec<String> {
         .collect()
 }
 
-/// Thread `id`'s stored model and effort.
 fn stored(dir: &Path, id: &str) -> (Value, Value) {
     let file = fs::read_to_string(dir.join(format!("data/threads/{id}.json"))).unwrap();
     let t = serde_json::from_str::<Value>(&file).unwrap()["thread"].clone();
@@ -71,22 +65,16 @@ fn row_34_a_thread_starts_on_its_pick_and_a_new_model_shows() {
     let (shed, cooee, dir) = setup("model-34");
     let start = |model: &str, random: &str| start(&cooee, &dir, model, random);
 
-    // No session reported models yet: any pick starts, on its newest once they come.
     reports(&shed, &["fake-opus-1", "fake-opus-2", "fake-sonnet-1"]);
     let (code, id) = start("opus", "r1");
     assert_eq!(code, 200, "{id}");
     assert_eq!(set_on(&shed, &id).as_deref(), Some("fake-opus-2"));
     let log = shed.cli_log();
     let line = log.lines().rfind(|l| l.contains(" run ")).unwrap();
-    // The adapter's command line comes from the hub's list, not another `shed agents` (#55).
     assert_eq!(log.matches(" agents\n").count(), 1, "{log}");
     assert!(line.ends_with(" -- env fake-acp --effort high"), "{line}");
     let page = cooee.get(&format!("/t/{id}")).1;
-    assert!(
-        // The provider's name and the main login (#48: never the agent's id), then the model.
-        page.contains("fake · main login · opus · "),
-        "{page}"
-    );
+    assert!(page.contains("fake · main login · opus · "), "{page}");
     assert!(
         page.contains(r#"<option value="fake-opus">model: fake-opus</option>"#)
             && page.contains(r#"<option value="fake-sonnet-1">model: fake-sonnet-1</option>"#),
@@ -94,7 +82,6 @@ fn row_34_a_thread_starts_on_its_pick_and_a_new_model_shows() {
     );
     assert_eq!(start("gpt", "r0").0, 400, "a model it doesn't offer");
 
-    // The agent ships a model: the picker and the API have it, and `opus` runs on it.
     reports(
         &shed,
         &["fake-opus-1", "fake-opus-2", "fake-opus-3", "fake-sonnet-1"],
@@ -130,12 +117,10 @@ fn a_gone_pin_falls_back_with_one_line_and_a_short_name_moves_on() {
         &shed,
         &["fake-opus-1", "fake-opus-2", "fake-opus-3", "fake-sonnet-1"],
     );
-    // A pinned id runs as is.
     let (code, id) = start("fake-opus-3", "r2");
     assert_eq!(code, 200, "{id}");
     assert_eq!(set_on(&shed, &id).as_deref(), Some("fake-opus-3"));
 
-    // A persona pinned to `fake-opus-3`; the agent drops it: its sessions fall back to `fake-opus`, said once.
     let persona =
         json!({ "name": "Pin", "agent": "fake-acp", "folder": "scratch", "model": "fake-opus-3" });
     let (code, body) = cooee.post("/personas", &persona);
@@ -160,7 +145,6 @@ fn a_gone_pin_falls_back_with_one_line_and_a_short_name_moves_on() {
         .filter(|n| n["text"] == gone);
     assert_eq!(said.count(), 1, "{memory}");
 
-    // A short name's newest is dropped: it runs on the next newest, with no line.
     let (code, id) = start("fake-opus", "r4");
     assert_eq!(code, 200, "{id}");
     assert_eq!(set_on(&shed, &id).as_deref(), Some("fake-opus-2"));
@@ -187,7 +171,6 @@ fn a_gone_pin_falls_back_with_one_line_and_a_short_name_moves_on() {
     assert_eq!(stored(&dir, &id), (json!("sonnet"), json!("low")));
 }
 
-/// #193: a list last seen a day ago or more is refreshed by a probe session of its own, closed after.
 #[test]
 fn a_day_old_list_is_asked_again() {
     let dir = scratch("model-day");
@@ -221,7 +204,6 @@ fn a_day_old_list_is_asked_again() {
     assert_eq!(shed.calls("rm", name).len(), 1, "the probe is closed");
 }
 
-/// #230: `GET /agents` lists each installed agent with the efforts its provider offers, for the persona sheet's menu.
 #[test]
 fn the_agent_list_carries_each_agents_efforts() {
     let (_shed, cooee, _dir) = setup("model-agents");

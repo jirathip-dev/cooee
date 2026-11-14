@@ -1,6 +1,6 @@
 # cooee rules (impl and rev briefs carry these; each names its enforcer)
 
-- Don't comment Swift code except `///` on public API, `// SAFETY:` above a `!` or `try!`, and `// TODO(#N)` on an open issue — anti-slop no-comments, apple-check TODO step
+- Don't comment Rust, Swift or TypeScript code (tests included) except `///` (TS `/** */`, Rust crate-root or `pub mod` `//!`) on public API, `// SAFETY:` above a forced or unsafe operation, `// TODO(#N)` on an open issue and `// biome-ignore <rule>: <why>` — scripts/comments.py (just comments), anti-slop no-comments, apple-check TODO step
 - Don't leave Swift imports unsorted or unused — anti-slop sorted-imports, swiftlint analyze unused_import
 - Don't import across Swift layers (Core → API → Features → UI → App) beyond apple/Package.swift's table — anti-slop layer-imports
 - Don't use `Any` or `AnyObject` as a Swift type — anti-slop no-any

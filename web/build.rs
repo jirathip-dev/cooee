@@ -47,7 +47,6 @@ fn main() {
     }
 }
 
-/// `source` as JavaScript: its types removed, no comments, nothing else changed.
 fn strip(path: &Path, source: &str) -> Result<String, Vec<OxcDiagnostic>> {
     let alloc = Allocator::default();
     let parsed = Parser::new(&alloc, source, SourceType::ts()).parse();

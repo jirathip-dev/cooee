@@ -1,14 +1,9 @@
-// #251 Scene: herdsman's Herd strip (jirathip-dev/herdsman assets/herd.js + herd.css, #37/#71: Corral's ranch, MIT ©
-// jirathip-dev), copied as the owner asked (q1323): the same seeded hills, barn, trees, fence, grass, clouds, night sky
-// and its day/night colour pairs. Only the horses' places are cooee's: working on the trail, waiting at the gate, done in
-// the stable, idle grazing. Weather = the paired Mac's load: calm, busy (gusty, hazy), held (storm, rain).
 const M64 = (1n << 64n) - 1n;
 const noise = (i, s = 0) => { const n = (BigInt(i) * 1664525n + BigInt(s) * 1013904223n) & M64; return Number(((n ^ (n >> 13n)) * 1274126177n) % 65536n) / 65535; };
 const f1 = n => +n.toFixed(1);
 const ell = (x, y, rx, ry, fill, op = 1) => `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(rx)}" ry="${f1(ry)}" fill="${fill}"${op < 1 ? ` opacity="${op}"` : ''}/>`;
 const rect = (x, y, w, h, fill, op = 1) => `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="${fill}"${op < 1 ? ` opacity="${op}"` : ''}/>`;
 
-// herd.css's #herd and #herd.night custom properties (Corral's RanchPainter color(day, dark) pairs).
 const DAY = '--sky1:#388fc4;--sky2:#8ebbc6;--h0:#a9c9bf;--h1:#9fb9a5;--h2:#8aab88;--h3:#79966d;--lw:#d2c48c;--sh:#334c2e;--st:#e8e3b3;--bn:#a86e52;--rf:#536456;--dr:#344635;--wn:#e5dfb8;--tk:#776745;--l1:#859b5c;--l2:#66874f;--lh:#b0b67b;--fp:#9c916a;--fh:#e2d7ac;--fr:#8b825d;--fl:#d6c99f;--cl:#e3f1e9;--gs:#aeb57a;--gd1:#bcc17b;--gd2:#8e9c58;--gd3:#485e3b';
 const NIGHT = '--sky1:#121a32;--sky2:#3c4961;--h0:#617484;--h1:#586c78;--h2:#4c666a;--h3:#425b5a;--lw:#789085;--sh:#172e32;--st:#b9c3b1;--bn:#705b58;--rf:#344b50;--dr:#182d35;--wn:#ceb581;--tk:#3c4c4a;--l1:#557068;--l2:#405e59;--lh:#96aea0;--fp:#73847f;--fh:#d0dbd4;--fr:#6b7d75;--fl:#c4d6e0;--cl:#a6b6c6;--gs:#90a397;--gd1:#63746a;--gd2:#415d55;--gd3:#273f3e';
 const STORM = '--sky1:#1d2530;--sky2:#4f5a63;--cl:#8e979e';
@@ -51,7 +46,6 @@ function scene(night) {
       s += ell(x + dx, ty + dy, 9 * sc, 11 * sc, i % 3 === 0 ? 'var(--l1)' : 'var(--l2)', 0.9) + ell(x + dx - 2 * sc, ty + dy - 3 * sc, 5 * sc, 4 * sc, 'var(--lh)', 0.1);
     }
   }
-  // The fence, with a gap at the right (x 318–372) where the gate hangs.
   for (let i = -2; i <= 9; i++) if (i * 52 < 318 || i * 52 > 372) s += rect(i * 52, 249, 6, 44, 'var(--fp)') + rect(i * 52 + 1, 249, 1.4, 44, 'var(--fh)', 0.5);
   for (const dy of [4, 22]) s += rect(-60, 256 + dy, 372, 5, 'var(--fr)') + rect(-60, 256 + dy, 372, 1.3, 'var(--fl)', 0.8);
   s += rect(312, 245, 7, 50, 'var(--fp)') + rect(372, 245, 7, 50, 'var(--fp)');
@@ -67,13 +61,9 @@ function scene(night) {
 }
 
 const SPR = '../../../apple/Sources/CooeeUI/Sprites/';
-// A horse: {coat, pose, x, y (px from the strip's bottom), w, name, word, k (wk|nd|dn|id), left, badge, run}.
 export const horse = h => `<a class="hh2 ${h.k || ''}${h.left ? ' l' : ''}${h.ghost ? ' gh' : ''}" href="#" style="left:${h.x}px;bottom:${h.y}px;--w:${h.w || 66}px${h.run ? `;--run:${h.run}px` : ''}">
   <img src="${SPR}horse-${h.coat}-${h.pose}.png" alt="">${h.name ? `<span class=hnt>${h.name}${h.word ? `<i${h.k === 'nd' ? ' class=r' : ''}>${h.word}</i>` : ''}</span>` : ''}${h.badge ? `<i class=bd>${h.badge}</i>` : ''}</a>`;
 
-// The strip: {night, weather: calm|busy|held, horses, h (px tall), inner (the search field, a label), meadow}. Pulled down
-// past the top (q1349), the strip stretches: `meadow` px of pasture grow in front of the ranch (the trail runs there) and
-// the sky grows above it, the ranch itself unscaled, so the horses keep their marks.
 export function ranch({ night = false, weather = 'calm', horses = [], h = 330, inner = '', meadow = 0 } = {}) {
   const vars = [DAY, night ? NIGHT : '', weather === 'held' ? STORM : weather === 'busy' && !night ? BUSY : ''].join(';');
   const cls = ['hd2', night ? 'night' : '', weather, meadow ? 'pasture' : ''].join(' ');

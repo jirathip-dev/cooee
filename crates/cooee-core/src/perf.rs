@@ -17,7 +17,6 @@ use serde_json::{Value, json};
 /// The log's name in the data folder.
 pub const FILE: &str = "perf.log";
 
-/// A log bigger than this when the server starts is moved to `perf.log.old`.
 const ROTATE: u64 = 16 << 20;
 
 struct Log {
@@ -89,7 +88,6 @@ pub fn first_token(thread: &str, agent: &str, start: Instant) {
     write(log, line, start);
 }
 
-/// The value at `p` percent of `sorted` (nearest rank).
 fn rank(sorted: &[u64], p: usize) -> u64 {
     sorted[(sorted.len() * p).div_ceil(100).max(1) - 1]
 }

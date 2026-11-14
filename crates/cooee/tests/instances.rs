@@ -41,7 +41,6 @@ fn two_instances_never_see_each_others_threads_or_devices() {
         (1, 1)
     );
     assert_ne!(devices_a, devices_b);
-    // a's cookie is not a device of b's.
     let (head, _) = b.raw("GET", "/", &[("Cookie", &a.cookie)], "");
     assert!(
         head.contains(" 303 ") && head.contains("location: /pair"),
@@ -49,7 +48,6 @@ fn two_instances_never_see_each_others_threads_or_devices() {
     );
 }
 
-/// `cooee <args>` with `HOME` at `home`, no XDG folders and only the system `PATH` (no shed, no Tailscale).
 fn cooee(home: &Path, args: &[&str]) -> std::process::Output {
     Command::new(BIN)
         .args(args)
@@ -102,7 +100,6 @@ fn install_writes_a_plist_and_prints_the_commands() {
         assert!(stdout.contains(&want), "{want} not in {stdout}");
     }
 
-    // The config is the one place the port lives: another port is refused, not silently diverged.
     let out = cooee(&home, &["install", "--port", "4800"]);
     assert!(!out.status.success());
     assert!(
@@ -138,7 +135,6 @@ fn doctor_reports_a_missing_shed() {
         "{stdout}"
     );
 
-    // With `[apns]` but no key, doctor names the file; with a key it says ready and never prints it.
     let apns =
         "[apns]\nkey_id = \"K\"\nteam_id = \"T\"\ntopic = \"dev.cooee.app\"\nenv = \"sandbox\"\n";
     fs::write(&config, format!("port = 1\n{apns}")).unwrap();
@@ -149,7 +145,6 @@ fn doctor_reports_a_missing_shed() {
         p8.display()
     );
     assert!(stdout.contains(&missing), "{stdout}");
-    // A throwaway key made for this test (`openssl ecparam -genkey -name prime256v1 | openssl pkcs8 -topk8 -nocrypt`).
     let key = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg/FMQqoOmZU6bop6k\n\
                jwzlkZBiOA5CCW7ngc03CgGpgsKhRANCAASkJsDwiTE2wL6OIdpH5tfnsdyw5UK8\n\
                NOnlJZkFHy9kIEFLJ8uttasmC9v/MsS+Cbb3MJBa25UlVnmKe8xoXskq";

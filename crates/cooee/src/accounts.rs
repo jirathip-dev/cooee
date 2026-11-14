@@ -1,9 +1,3 @@
-//! `cooee accounts ls [--json]`, `cooee accounts env <provider> <name> [--require-signed-in]`: the credential
-//! helper herdsman calls for a lane's login environment (docs/accounts.md), and `cooee accounts add <provider> <name>
-//! --folder <path>` / `rm <provider> <name>`, which adopt an existing config folder and drop one (#183). A folder account's environment is its
-//! provider's variable and folder; its token stays the CLI's. A provider with a token variable may instead have
-//! hand-placed token files, `<data>/accounts/<provider>/<name>.token` (0600 or tighter), whose value goes in it.
-
 use std::{
     fs,
     os::unix::fs::PermissionsExt,
@@ -15,7 +9,6 @@ use std::{
 use cooee_core::{Accounts, Config, Provider, Providers};
 use serde_json::{Map, Value, json};
 
-/// How an account logs in: a config folder (none: the system default) or a token file.
 enum Login {
     Folder(Option<PathBuf>),
     Token(PathBuf, &'static str),
@@ -28,7 +21,6 @@ struct Entry<'a> {
 }
 
 impl Entry<'_> {
-    /// Whether it is signed in (a folder: its provider's status command; a token file: a fit one), and why not.
     fn state(&self) -> (bool, Option<String>) {
         match &self.login {
             Login::Folder(dir) => (self.provider.check(dir.as_deref()).signed_in, None),
@@ -40,7 +32,6 @@ impl Entry<'_> {
     }
 }
 
-/// A token file's age in days, once it is a file no looser than 0600.
 fn token_age(path: &Path) -> Result<u64, String> {
     let meta = fs::metadata(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let mode = meta.permissions().mode() & 0o777;
@@ -57,8 +48,6 @@ fn token_age(path: &Path) -> Result<u64, String> {
     Ok(age.map_or(0, |a| a.as_secs() / 86_400))
 }
 
-/// Every provider's accounts: its folder accounts, the system default first, then its token files (a token file
-/// replaces a folder of the same name).
 fn entries<'a>(providers: &'a Providers, data: &Path) -> Vec<Entry<'a>> {
     let accounts = Accounts::new(data);
     let mut all = Vec::new();
@@ -204,8 +193,6 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
     }
 }
 
-/// An account as `accounts ls --json` lists it (never its token), with a signed-in folder account's usage and the
-/// reading's age in seconds.
 fn row(e: &Entry, accounts: &Accounts) -> Value {
     let (signed_in, error) = e.state();
     let now = SystemTime::now()

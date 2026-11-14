@@ -1,10 +1,5 @@
-// Reliability (#24, herdsman#553's "Reliability" rows) on the page: R5 the loading strip only after 300 ms with the
-// page tappable, R16 one row per id however often it refreshes, R17 paths in text never images; and on WebKit (as
-// on the iPhone) R4 the composer flush on a shrunk viewport with no page jump, R25 no flash when a sheet closes.
 import { expect, test } from "@playwright/test";
 
-
-// A new thread whose turn is done, open.
 async function thread(page, text = "Say hello") {
   await page.goto("/new");
   await page.getByLabel("message", { exact: true }).fill(text);
@@ -28,7 +23,6 @@ test.describe("on every browser", () => {
     await expect(page.locator("#ld")).not.toHaveClass(/run/);
     await page.clock.runFor(20);
     await expect(page.locator("#ld.run")).toBeVisible();
-    // Nothing covers the page: the composer is what a tap on it hits, and it takes text.
     const hit = await page.locator("#box").evaluate((box) => {
       const r = box.getBoundingClientRect();
       return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) === box;
@@ -53,7 +47,6 @@ test.describe("on every browser", () => {
     expect(await ids()).toEqual(before);
     const mine = new URL(page.url()).pathname;
     await page.goto("/");
-    // Other tests add threads meanwhile, so the order may change: never a row twice, this thread's once.
     const rows = async () => (await (await page.request.get("/threads")).json()).map((r) => `/t/${r.id}`);
     for (let i = 0; i < 5; i++) {
       await page.getByRole("button", { name: "refresh" }).click();
@@ -104,7 +97,6 @@ test.describe("on WebKit, as on the iPhone", () => {
     for (const name of ["settings", "look"]) {
       await page.locator(`[data-open=${name}]`).first().click();
       await expect(page.locator("#sheet .sh:popover-open")).toBeVisible();
-      // Every frame from the tap: whether the sheet shows, and the page's background under it.
       await page.evaluate(() => {
         window.frames_ = [];
         const look = () => {
@@ -117,7 +109,6 @@ test.describe("on WebKit, as on the iPhone", () => {
       await expect.poll(() => page.evaluate(() => window.frames_.length)).toBe(60);
       const frames = await page.evaluate(() => window.frames_);
       const shown = frames.map((f) => f.sheet);
-      // Shown, then gone for good: never back, never a frame between.
       expect(shown.indexOf(false)).toBeGreaterThan(-1);
       expect(shown.slice(shown.indexOf(false)).every((s) => !s)).toBe(true);
       expect(new Set(frames.map((f) => f.bg)).size).toBe(1);

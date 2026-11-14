@@ -1,7 +1,3 @@
-//! Settings › routines (#75), HTML-first in the mcp servers page's pattern: one row per routine, `name · when ·
-//! where · last run · [pause|resume] [delete]`, and its edit (name, schedule, prompt). Routines are made in chat;
-//! there is no "new" form. Every form posts and comes back here.
-
 use cooee_core::routines::{Outcome, Paused, Place, Routine, Trigger};
 use topcoat::{Result, context::Cx, view::View, view::component, view::view};
 
@@ -13,7 +9,6 @@ pub fn routines_page(cx: &Cx, list: Vec<Routine>) -> impl View {
     view! { cx => routines(list: list) }
 }
 
-/// Where its runs post, and whether it is paused.
 fn line(r: &Routine) -> String {
     let place = match &r.place {
         Place::Chat { .. } => "in its chat",
@@ -34,7 +29,6 @@ fn line(r: &Routine) -> String {
     format!("{} · {place} · {last}{paused}", r.when())
 }
 
-/// One routine's row and its edit.
 #[component]
 async fn row(r: Routine) -> Result<impl View> {
     let to = format!("/routines/{}", r.id);

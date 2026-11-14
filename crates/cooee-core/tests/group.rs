@@ -29,7 +29,6 @@ fn gone(pid: &str) -> bool {
     !alive(pid)
 }
 
-/// `sh -c script` leading its own group; the first line it prints.
 fn own_group(script: &str) -> (Child, String) {
     let mut c = Command::new("sh")
         .args(["-c", script])

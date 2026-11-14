@@ -37,8 +37,6 @@ fn git(args: &[&str]) {
     assert!(ok.status.success(), "{ok:?}");
 }
 
-/// Persona `cook` on `box` with its folder `here/project` (a clone of `origin`), profile `coder`'s settings
-/// `here/rules/settings.json` and provider `fake`'s CLI `bin/fake-cli`; `box` up and signed in, nothing on its disk.
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), version());
@@ -123,7 +121,6 @@ impl Setup {
             .unwrap()
     }
 
-    /// `cooee machine check box [extra]`: whether it exited 0, and its stdout with this setup's folder as `<dir>`.
     fn check(&self, extra: &[&str]) -> (bool, String) {
         let out = self.cooee(&[&["machine", "check", "box"], extra].concat());
         let text = String::from_utf8(out.stdout).unwrap();
@@ -133,7 +130,6 @@ impl Setup {
         )
     }
 
-    /// Puts the folder and the settings on box's disk.
     fn ready(&self) {
         let boxed = self.boxed("");
         fs::create_dir_all(boxed.join("project")).unwrap();
@@ -141,7 +137,6 @@ impl Setup {
         fs::write(boxed.join("rules/settings.json"), SETTINGS).unwrap();
     }
 
-    /// `here/<rest>` on box's disk.
     fn boxed(&self, rest: &str) -> PathBuf {
         let here = self.dir.join("here").join(rest);
         self.dir
@@ -149,7 +144,6 @@ impl Setup {
             .join(here.strip_prefix("/").unwrap())
     }
 
-    /// Every check ran on box: each `run` named machine `box`.
     fn all_on_box(&self) {
         let requests = self.shed.requests.lock().unwrap().clone();
         let runs: Vec<_> = requests.iter().filter(|(m, _)| m == "run").collect();
@@ -195,7 +189,6 @@ FAIL cook: rules and hooks <dir>/here/rules/settings.json not synced
     );
     s.all_on_box();
 
-    // Settings there that differ are not synced either.
     s.ready();
     fs::write(s.boxed("rules/settings.json"), "{}").unwrap();
     let (_, out) = s.check(&[]);
@@ -239,7 +232,6 @@ fn yes_clones_the_folder_and_copies_the_settings_there_once() {
         fs::read_to_string(s.boxed("rules/settings.json")).unwrap(),
         SETTINGS
     );
-    // Again: nothing left to do.
     assert_eq!(s.check(&["--yes"]), (true, READY.to_owned()));
 }
 

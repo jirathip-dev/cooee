@@ -27,7 +27,6 @@ fn create(cooee: &Cooee, dir: &std::path::Path, text: &str) -> String {
         .to_owned()
 }
 
-/// Standard base64, as a browser's `readAsDataURL` gives it.
 fn b64(bytes: &[u8]) -> String {
     const A: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::new();
@@ -46,7 +45,6 @@ fn b64(bytes: &[u8]) -> String {
     out
 }
 
-/// Polls `f` for up to 10 s.
 fn eventually(mut f: impl FnMut() -> bool) {
     for _ in 0..200 {
         if f() {
@@ -116,7 +114,6 @@ fn a_thread_is_renamed_and_keeps_its_name_over_a_restart() {
 fn files_are_stored_served_as_images_only_and_named_to_the_agent() {
     let (dir, shed, cooee) = setup("t-files");
     let id = create(&cooee, &dir, "Say hello");
-    // Its bytes as text: the test client reads bodies as UTF-8.
     let png = b"not really a png".to_vec();
     let files = json!([
         { "name": "../../photo one.png", "data": b64(&png) },
@@ -183,7 +180,6 @@ fn a_message_queued_during_a_turn_goes_as_it_ends_and_one_steered_goes_at_once()
     let id = create(&cooee, &dir, "Say hello");
     let terminal = format!("cooee-{id}");
     eventually(|| row(&cooee, &id).0["state"] == "done");
-    // Between turns a queued message goes at once.
     let q = |text: &str, rid: &str| {
         let (status, body) = cooee.post(
             &format!("/threads/{id}/queue"),
@@ -202,7 +198,6 @@ fn a_message_queued_during_a_turn_goes_as_it_ends_and_one_steered_goes_at_once()
 
     assert_eq!(q("then this", "q1")[0]["text"], "then this");
     assert_eq!(q("steer", "q2").as_array().unwrap().len(), 2);
-    // Again with the same id: kept once.
     assert_eq!(q("steer", "q2").as_array().unwrap().len(), 2);
     let queued = events.until(|e| e.event == "queue");
     assert_eq!(queued.last().unwrap().data[0]["random_id"], "q1");
@@ -236,7 +231,6 @@ fn a_message_queued_during_a_turn_goes_as_it_ends_and_one_steered_goes_at_once()
         "then this"
     );
 
-    // The turn ends: the queued message goes, as the owner's next row.
     assert_eq!(
         cooee.post(&format!("/threads/{id}/cancel"), &json!({})).0,
         200
@@ -249,7 +243,6 @@ fn a_message_queued_during_a_turn_goes_as_it_ends_and_one_steered_goes_at_once()
         json!([])
     );
 
-    // Taken back: never sent.
     eventually(|| row(&cooee, &id).0["state"] == "done");
     q("hang on", "q3");
     eventually(|| row(&cooee, &id).0["state"] == "working");

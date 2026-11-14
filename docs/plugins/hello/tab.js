@@ -1,4 +1,3 @@
-// The example plugin's tab: runs in cooee's sandboxed frame with the `cooee` API (docs/plugins.md).
 const log = document.body.appendChild(document.createElement("ul"));
 const line = (text) => { log.appendChild(document.createElement("li")).textContent = text; };
 const me = await cooee.fetch("/whoami");

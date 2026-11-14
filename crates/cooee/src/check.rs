@@ -1,6 +1,3 @@
-//! `cooee plugin check <answer.json|cooee-plugin.toml>...` (#138, #125 Q4): validates a plugin's answers against
-//! docs/plugins/screens.schema.json, naming each field that breaks it, and its manifest by cooee's own rules. It reads the schema keywords that file uses.
-
 use std::fs;
 
 use cooee_core::plugins::Manifest;

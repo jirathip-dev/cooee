@@ -293,7 +293,6 @@ impl Routine {
     }
 }
 
-/// `<data>/routines.json`.
 #[derive(Debug, Serialize, Deserialize)]
 struct File {
     format: u32,
@@ -353,7 +352,6 @@ mod tests {
     use super::*;
 
     const MIN: u64 = 60_000;
-    /// 2024-11-11 00:00 UTC, a Monday.
     const MON: u64 = 1_731_283_200_000;
 
     fn ask(when: &str, place: &str) -> Ask {
@@ -394,7 +392,6 @@ mod tests {
         assert_eq!(r.text(nine, 0), "Renewals due 2024-11-11 09:00?");
         r.last_due = nine;
         assert_eq!(r.due(nine + 5 * MIN, 0), None);
-        // Asleep a fortnight: the two missed Mondays run once, as the newest.
         assert_eq!(
             r.due(nine + 14 * 1440 * MIN, 0),
             Some(nine + 14 * 1440 * MIN)

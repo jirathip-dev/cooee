@@ -57,7 +57,6 @@ fn get(addr: &str, path: &str) -> String {
 
 #[test]
 fn serve_listens_on_localhost_at_the_configured_port() {
-    // Port 0 in the config: the server binds a free port on 127.0.0.1 and prints it.
     let config = env::temp_dir().join(format!("cooee-config-{}.toml", std::process::id()));
     fs::write(
         &config,

@@ -1,6 +1,3 @@
-// Settings › mcp servers (#56) in #48's flat-list pattern (serve.sh: `files`, stdio and on, three tools; `docs`, http
-// and off): a row per server, `+ server`'s card with the exact command before Face ID, and an agent's servers with a
-// checkbox per tool.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -29,7 +26,6 @@ test("mcp servers: one row per server, + server's card shows the exact command, 
   const docs = page.locator('.acr[data-server="docs"]');
   await expect(docs.locator(".ptg")).toHaveText("http");
   await expect(docs.getByRole("button", { name: "docs is off: turn it on" })).toHaveText("off");
-  // Other specs add agents beside Reviewer.
   const reviewer = page.locator("details", { has: page.locator("summary", { hasText: /^Reviewer$/ }) });
   await reviewer.locator("summary").click();
   for (const t of ["read_file", "write_file", "search"]) await expect(reviewer.getByLabel(t, { exact: true })).toBeChecked();

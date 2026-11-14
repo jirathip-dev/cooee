@@ -33,7 +33,6 @@ const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decli
                      | mcp proxy <server> --thread <id> | mcp serve --thread <id>> [--instance <name>] [--config <file>] \
                      | cooee --version";
 
-/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the same protocol.
 const SHED_CARGO: [&str; 8] = [
     "cargo",
     "install",
@@ -49,7 +48,6 @@ fn shed_install() -> String {
     format!("{} && shed serve", SHED_CARGO.join(" "))
 }
 
-/// Removes `--flag <value>` from `args`: `Err` when the value is missing.
 fn flag(args: &mut Vec<String>, name: &str) -> Result<Option<String>, ()> {
     let Some(i) = args.iter().position(|a| a == name) else {
         return Ok(None);
@@ -62,13 +60,11 @@ fn flag(args: &mut Vec<String>, name: &str) -> Result<Option<String>, ()> {
     Ok(Some(value))
 }
 
-/// The usage line on stderr; exit 2.
 fn usage() -> ExitCode {
     eprintln!("{USAGE}");
     ExitCode::from(2)
 }
 
-/// Whether `instance` is a valid instance name: lowercase letters, digits and `-`.
 fn named(instance: &str) -> bool {
     !instance.is_empty()
         && instance
@@ -179,7 +175,6 @@ fn main() -> ExitCode {
     with_config(path.as_deref(), &instance, run)
 }
 
-/// Loads instance `instance`'s config (the defaults when there is no file).
 fn load(path: Option<&Path>, instance: &str) -> Result<Config, String> {
     let config = path.map_or_else(|| Ok(Config::default()), Config::load);
     let config = config.map_err(|e| e.to_string())?;
@@ -189,7 +184,6 @@ fn load(path: Option<&Path>, instance: &str) -> Result<Config, String> {
     })
 }
 
-/// Loads the config, then runs `f`.
 fn with_config(
     path: Option<&Path>,
     instance: &str,
@@ -208,14 +202,12 @@ fn finish(result: Result<(), String>) -> ExitCode {
     }
 }
 
-/// Serves the instance; `[[plugins]]` entries named `machines` and `terminal` are the first-party plugins, run here.
 fn serve(config: &Config) -> Result<(), String> {
     let machines = config.plugins.iter().find(|p| p.name == "machines");
     let terminal = config
         .plugins
         .iter()
         .find(|p| p.name == cooee_terminal::NAME);
-    // In the background, so a keychain that never answers holds up nothing.
     if let Some(data) = config.data_dir() {
         std::thread::spawn(move || {
             match keychain::migrate(&data) {
@@ -259,14 +251,10 @@ fn devices_of(config: &Config) -> Result<Devices, String> {
     Ok(Devices::new(&data))
 }
 
-/// Prints a new pairing code, the link to enter it at and that link as a QR code; in a terminal, then waits for it
-/// to be used (Ctrl-C leaves the code open until it runs out).
 fn pair(config: &Config) -> Result<(), String> {
     let devices = devices_of(config)?;
     let had = devices.list().map_err(|e| e.to_string())?.len();
     let code = devices.pair(now()).map_err(|e| e.to_string())?;
-    // Behind `tailscale serve --https=<port>` the phone uses https, the first allowed name and the port; else this
-    // machine itself.
     let url = match config.allowed_hosts.first() {
         Some(host) => format!("https://{host}:{}/pair?code={code}", config.port),
         None => format!("http://127.0.0.1:{}/pair?code={code}", config.port),
@@ -296,7 +284,6 @@ fn pair(config: &Config) -> Result<(), String> {
     Ok(())
 }
 
-/// `cooee pair`, `cooee pair asks` and `cooee pair approve|decline <id>`.
 fn pairing(config: &Config, args: &[&str]) -> Result<(), String> {
     match args {
         [] => pair(config),
@@ -306,14 +293,12 @@ fn pairing(config: &Config, args: &[&str]) -> Result<(), String> {
     }
 }
 
-/// Unix milliseconds.
 fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
 
-/// The requests to pair still waiting, as `GET /pair/asks` lists them (JSON): the Mac app's Approve prompt reads it.
 fn asks(config: &Config) -> Result<(), String> {
     let asking = devices_of(config)?
         .asking(now())
@@ -325,8 +310,6 @@ fn asks(config: &Config) -> Result<(), String> {
     Ok(())
 }
 
-/// Approves (`yes`) or declines the waiting request `id` as "this Mac": the owner at its keyboard, so no passkey,
-/// as `cooee pair` makes a code without one.
 fn answer(config: &Config, id: &str, yes: bool) -> Result<(), String> {
     let devices = devices_of(config)?;
     if devices
@@ -346,8 +329,6 @@ fn devices(config: &Config) -> Result<(), String> {
     Ok(())
 }
 
-/// Lists the problems reported from the page (report mode), oldest first: when, the device, the page, the element
-/// and the note.
 fn reports(config: &Config) -> Result<(), String> {
     let data = config
         .data_dir()
@@ -377,7 +358,6 @@ fn reports(config: &Config) -> Result<(), String> {
     Ok(())
 }
 
-/// Prints p50/p95/max per route, shed method and first token over the last `minutes` of `perf.log` (#53).
 fn perf(config: &Config, minutes: u64) -> Result<(), String> {
     let data = config
         .data_dir()
@@ -404,7 +384,6 @@ fn remove(config: &Config, id: &str) -> Result<(), String> {
     }
 }
 
-/// Shows a confirm's `text`; goes on with `--yes` or a `y` typed.
 fn confirm(text: &str, yes: bool) -> Result<(), String> {
     println!("{text}");
     if yes {
@@ -420,7 +399,6 @@ fn confirm(text: &str, yes: bool) -> Result<(), String> {
     }
 }
 
-/// `cooee plugin add|update|remove|list` (docs/plugins.md).
 fn plugin(
     config: &Config,
     args: &[&str],
@@ -490,8 +468,6 @@ fn plugin(
     Ok(())
 }
 
-/// `cooee theme add|remove|list|check` (docs/themes.md).
-/// `cooee mcp proxy <server> --thread <id>` and `cooee mcp serve --thread <id>`: what a thread's agent runs (#56).
 fn mcp_agent(agent: &str, args: &[&str]) -> Result<(), String> {
     match (agent, args) {
         ("proxy", [server, "--thread", thread]) => cooee_server::mcp::proxy(server, thread),
@@ -500,7 +476,6 @@ fn mcp_agent(agent: &str, args: &[&str]) -> Result<(), String> {
     }
 }
 
-/// `cooee mcp ls | add | rm | enable | disable` (#56): the registry in the config file, changed on the Mac.
 fn mcp(config: &Config, args: &[&str]) -> Result<(), String> {
     use cooee_core::mcp::{Server, save};
     let path = config
@@ -641,7 +616,6 @@ fn theme(config: &Config, args: &[&str], rev: Option<&str>, yes: bool) -> Result
     Ok(())
 }
 
-/// This machine's tailnet name (`tailscale status`), if Tailscale is up.
 fn tailnet_name() -> Option<String> {
     let out = Command::new("tailscale")
         .args(["status", "--json"])
@@ -656,15 +630,12 @@ fn label(instance: &str) -> String {
     format!("dev.cooee.{instance}")
 }
 
-/// XML text: `&`, `<` and `>` escaped.
 fn xml(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
 }
 
-/// Writes the instance's launchd plist (and its config with `port`, if it has none), then prints the commands that
-/// start it, serve it on the tailnet and, if shed isn't running, install shed.
 fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> Result<(), String> {
     let path = path.ok_or("no config path: set HOME")?;
     if !path.exists() {
@@ -696,8 +667,6 @@ fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> 
     Ok(())
 }
 
-/// The instance's launchd plist, `~/Library/LaunchAgents/dev.cooee.<instance>.plist`, and its text: `cooee serve`
-/// (with `--config <path>` if `explicit`), kept alive, logging to the data folder.
 fn plist(config: &Config, path: &Path, explicit: bool) -> Result<(PathBuf, String), String> {
     let home = env::var_os("HOME").ok_or("no HOME")?;
     let data = config.data_dir().ok_or("no data folder")?;
@@ -749,7 +718,6 @@ fn plist(config: &Config, path: &Path, explicit: bool) -> Result<(PathBuf, Strin
     Ok((file, plist))
 }
 
-/// Writes the plist `file`, and the data folder its log goes to.
 fn write_plist(config: &Config, file: &Path, plist: &str) -> Result<(), String> {
     let data = config.data_dir().ok_or("no data folder")?;
     fs::create_dir_all(&data).map_err(|e| e.to_string())?;
@@ -757,7 +725,6 @@ fn write_plist(config: &Config, file: &Path, plist: &str) -> Result<(), String> 
     fs::write(file, plist).map_err(|e| e.to_string())
 }
 
-/// Checks the instance: its service, port, shed, each machine (#150), push keys and tailnet URL; fails if any fails.
 fn doctor(config: &Config) -> Result<(), String> {
     let mut failed = Vec::new();
     let mut check = |ok: bool, what: String| {

@@ -1,7 +1,3 @@
-// A new chat's start (#48, on #86's new chat): send opens the chat at once with the theme's loading line, which the
-// reply replaces; a failed connect shows inline with [retry]; the model and effort picked are the start's; nothing on
-// screen names an agent id or says `System default`; Settings › providers is one flat list (serve.sh: a start in
-// root/slow-<viewport> waits while the spec holds it, one in root/bad-<viewport> fails). Shots: ui-<viewport>/new-*.png.
 import fs from "node:fs";
 import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
@@ -15,7 +11,6 @@ const gate = (name, shut) => {
 };
 const shot = (page, info, name) => page.screenshot({ path: `../../ui-${info.project.name}/new-${name}.png` });
 
-// No sideways scroll, and no dev text (an agent id, `System default`).
 function audit() {
   const bad = [];
   if (document.documentElement.scrollWidth > innerWidth) bad.push(`sideways scroll ${document.documentElement.scrollWidth}`);
@@ -32,7 +27,6 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
 });
 
-// A new chat with the first agent, in `where` (Use a folder…), its message typed.
 async function start(page, where, text = "Say hello") {
   await page.goto("/new");
   await page.getByRole("button", { name: "folder: scratch ▾" }).click();
@@ -121,7 +115,6 @@ test("Settings › providers is one flat list: a row per account, [+ account] pe
     await expect(r.locator(".ptg")).toHaveText("fake-390");
     await expect(r.getByRole("button", { name: /^(sign in|sign out)$/ })).toHaveCount(1);
   }
-  // #183: a signed-in account's usage line beside it, its name still shown (a 390 row wraps the usage under it).
   await expect(rows.locator(".us")).toHaveCount(2);
   for (const r of await rows.filter({ has: page.locator(".us") }).all()) {
     await expect(r.locator(".us")).toHaveText(/^5h \d+% · 7d 40% · read /);
@@ -131,7 +124,6 @@ test("Settings › providers is one flat list: a row per account, [+ account] pe
   await expect(sheet).not.toContainText("default");
   await shot(page, info, "providers");
   await axe(page);
-  // ‹ goes back to Settings.
   await sheet.getByRole("button", { name: "back to settings" }).click();
   await expect(page.locator("#sh-settings")).toBeVisible();
 });

@@ -1,5 +1,3 @@
-// web/ts/md.ts, the renderer of the agent's replies (#43): its HTML for each element, escaping by construction
-// (raw HTML and script stay text), links of http and https only, and how much of a streaming reply is settled.
 import { expect, test } from "@playwright/test";
 
 test("md.ts renders each element as DOM, escaping all text", async ({ page }) => {
@@ -46,7 +44,6 @@ test("md.ts renders each element as DOM, escaping all text", async ({ page }) =>
     '<ul><li>a</li><li>b<ul><li>c</li></ul></li></ul><ol start="3"><li>three</li><li>four</li></ol><p>then</p><ol><li><p>loose</p></li><li><p>list</p></li></ol>',
   );
   expect(out.quote).toBe("<blockquote><p>quoted <strong>x</strong><br>more</p></blockquote><hr>");
-  // Up to the last blank line; nothing inside an open fence; a half-typed table waits.
   expect(out.settled).toEqual([3, 0, 0, 11]);
 });
 
@@ -58,10 +55,8 @@ test("a fenced block gets [▸ terminal] beside [copy] only where the owner term
       d.append(render("```sh\ncd ~\nls -la\n```"));
       return [...d.querySelectorAll("button")].map((b) => [b.textContent, b.dataset.copy ?? b.dataset.term]);
     });
-  // Pairing has no tabs: [copy] only (as in the test above).
   await page.goto("/pair");
   expect(await fence()).toEqual([["copy", "cd ~\nls -la"]]);
-  // The chats, with the Terminal tab: [▸ terminal] carries the block's exact text.
   await page.goto("/");
   await expect(page.locator('nav.tabs a[href="/p/terminal"]')).toHaveText("Terminal");
   expect(await fence()).toEqual([

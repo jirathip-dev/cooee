@@ -1,9 +1,3 @@
-// #116: shoot each frame alone (`?f=`): a phone screen at 390 × 844 (DPR 2, farm dark and light, Scene and the side
-// note light only) and a window at 1440 × 900 (DPR 1), under reduced motion so every loop shows frame 1. Each shot is
-// checked: no sideways scroll, nothing past the right edge, a cut line ellipsised. No deps: Chrome's
-// --remote-debugging-pipe, as docs/design/chat-first/shoot.mjs. Shots that show other shots (the design ask's
-// thumbnails) read the previous run's PNGs, so a fresh checkout runs it twice.
-// Usage (repo root): node docs/design/native-shell/shoot.mjs <chrome-headless-shell> [regexp]
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -12,7 +6,6 @@ import { extname, join } from 'node:path';
 
 const here = new URL('.', import.meta.url).pathname, root = join(here, '../../..');
 const [chrome, re] = process.argv.slice(2);
-// [page, frame, width, modes]: the PNG is `<frame>-390-<mode>.png`, or `<frame without wide->-1440.png`.
 const BOTH = ['dark', 'light'];
 const VIEWS = [
   ['shell', 'chats', 390, BOTH], ['shell', 'chats-scrolled', 390, BOTH], ['shell', 'workflow', 390, BOTH],
@@ -55,7 +48,6 @@ function audit() {
   const bad = [], W = innerWidth, name = e => e.tagName.toLowerCase() + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/).join('.') : '') + ` "${(e.textContent || '').trim().slice(0, 30)}"`;
   if (document.documentElement.scrollWidth > W) bad.push(`sideways scroll ${document.documentElement.scrollWidth} > ${W}`);
   for (const e of document.querySelectorAll('.one *')) {
-    // The chip rows scroll sideways by design, and a swipe moves the chat past the edge; the hidden layers and svg are not text.
     if (!e.getClientRects().length || e.closest('.dch,.mc,svg,.stb,.lyr.swf')) continue;
     const r = e.getBoundingClientRect(), s = getComputedStyle(e);
     if (s.visibility === 'hidden' || r.bottom < 0 || r.top > innerHeight) continue;

@@ -1,7 +1,3 @@
-//! The threads, live: each thread's chat, its numbered page events (kept in a ring for replay) and their
-//! subscribers, fed by one shed `events` stream for every terminal: cooee's own, and the Workflow sessions other
-//! tools start, known by their labels (#33).
-
 use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
@@ -34,27 +30,19 @@ mod models;
 mod rooms;
 pub use rooms::Starter;
 
-/// How long a thread keeps its page events for a reconnecting page, in milliseconds (#295).
 const REPLAY: u64 = 5 * 60 * 1000;
 
-/// How many page events a watching page may fall behind before it is cut off to resume from the replay.
 const LAG: usize = 256;
 
-/// How long a thread goes unused before its chat is unloaded, in milliseconds (#295).
 const IDLE: u64 = 10 * 60 * 1000;
 
-/// The label every cooee terminal carries.
 const LABEL: &str = "cooee";
 
-/// A working turn with no shed event for this long is surfaced as needs-you (herdsman#444), in milliseconds.
 const STUCK: u64 = 30 * 60 * 1000;
 
-/// How long a conductor's answer may be changed (#553 row 31), in milliseconds.
 const CHANGE: u64 = 30 * 60 * 1000;
 
-/// How often the installed agents are checked again and stuck turns looked for.
 const TICK: Duration = Duration::from_secs(30);
-/// How long the agent list is kept before the background refreshes it (#55), in milliseconds.
 const AGENTS_FOR: u64 = 60_000;
 
 /// Why a thread action failed.
@@ -85,49 +73,30 @@ pub struct Out {
     pub data: String,
 }
 
-/// A thread in memory.
 struct Live {
     meta: Thread,
     chat: Chat,
-    /// The newest shed event applied.
     applied: u64,
     seq: u64,
-    /// The page events of the last [`REPLAY`], each with when it was sent.
     ring: VecDeque<(u64, Out)>,
-    /// Made when a page first subscribes, dropped when the chat is unloaded.
     tx: Option<broadcast::Sender<Out>>,
-    /// The state the last published change left (a push goes on a change of state only).
     was: String,
-    /// When its last shed event came (or it was loaded), in Unix milliseconds.
     moved: u64,
-    /// Its working turn was surfaced as stuck; the next shed event clears it.
     stuck: bool,
-    /// The first message of a start that answered at once ([`Hub::create_later`]), until shed takes it.
     pending: Option<String>,
-    /// When its last prompt was sent, until the reply's first chunk came (#53).
     sent: Option<Instant>,
-    /// A room's round was stopped while its working member's session was starting: cancel it once started (#155).
     stopped_starting: bool,
-    /// When it was last used, in Unix milliseconds.
     used: u64,
-    /// Its row's view of the chat while the chat is unloaded (only its turn stays); `None` while loaded.
     unloaded: Option<Glance>,
-    /// The messages handed to shed, by `random_id`, until it answers.
     sending: Vec<String>,
-    /// The shed events that came while a message was on its way, applied after it.
     held: Vec<Event>,
 }
 
-/// What the thread list shows of a thread's chat.
 #[derive(Clone)]
 struct Glance {
-    /// A member session's approval that waits, for its room's row: the room, the persona and the tool.
     ask: Option<(String, String, String)>,
-    /// The approval that waits, else the newest item's last line.
     last: String,
-    /// When the newest item came.
     at: u64,
-    /// How many items, not the owner's own, came after the read mark.
     unseen: usize,
     routine: String,
 }
@@ -176,8 +145,6 @@ fn glance(live: &Live) -> Glance {
     }
 }
 
-/// What applying a shed event leaves to do once its thread is unlocked: its next queued message, its final reply,
-/// its room and persona, and its asker's key.
 struct After {
     next: Result<Option<Queued>, HubError>,
     reply: Option<Body>,
@@ -185,7 +152,6 @@ struct After {
     asked: String,
 }
 
-/// The name of the routine that started thread `live`, else of the one that sent its last `you` item (#75).
 fn routine_of(live: &Live) -> String {
     let you = live.chat.items.iter().rev().find_map(|i| match &i.body {
         Body::You { routine, .. } => Some(routine),
@@ -304,42 +270,26 @@ pub struct Recipe {
 pub struct Hub {
     shed: Shed,
     store: Store,
-    /// `<data>/scratch`: a thread started with no folder runs in its own folder here, named by its id (#48).
     scratch: PathBuf,
-    /// `<data>/files/<thread>/`: the files sent with messages.
     files: PathBuf,
     push: Push,
-    /// The server's default theme, whose words a push says.
     theme: cooee_web::Theme,
     roots: Mutex<Vec<PathBuf>>,
-    /// The config file the roots are saved in.
     config: Option<PathBuf>,
     plugins: Mutex<Vec<Plugin>>,
-    /// `shed agents`, as last checked, and when: a page load never runs the CLI itself (herdsman#337).
     agents: Mutex<(Result<Vec<Agent>, String>, u64)>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
-    /// The same threads by terminal: a shed event locks only its own thread.
     terminals: Mutex<HashMap<String, Arc<Mutex<Live>>>>,
-    /// The stamp of the newest thread id handed out.
     last: Mutex<u64>,
-    /// The data folder (the secrets' file fallback).
     data: PathBuf,
-    /// Where a thread's MCP proxies reach cooee, once it listens.
     url: OnceLock<String>,
-    /// The key each thread's MCP token is made with (`<data>/mcp.key`).
     mcp_key: String,
-    /// The servers and skills agents proposed, by thread and card, until answered (a restart drops them).
     proposals: Mutex<HashMap<(String, u64), Proposed>>,
-    /// Each server's tools as last listed, for the profile sheet; held while the registry is written.
     tools: Mutex<HashMap<String, cooee_web::Tools>>,
-    /// The rooms with a member's turn to start, for the turn worker.
     turns: mpsc::Sender<String>,
-    /// How a room's member session starts, given its persona.
     starter: OnceLock<Starter>,
-    /// Each pending `ask_persona` (#156) by `<asking thread>><persona>`: where its reply goes.
     asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
-    /// Each agent and account's models, as last seen (#193; `<data>/models.json`).
     models: Mutex<Vec<cooee_core::models::Offered>>,
 }
 
@@ -366,7 +316,6 @@ pub struct Listing {
     pub roots: Vec<PathBuf>,
 }
 
-/// The folders right inside `dir` (hidden ones if `hidden`; never symlinks), sorted.
 fn dirs(dir: &Path, hidden: bool) -> Vec<PathBuf> {
     let mut out: Vec<PathBuf> = fs::read_dir(dir)
         .into_iter()
@@ -380,8 +329,6 @@ fn dirs(dir: &Path, hidden: bool) -> Vec<PathBuf> {
     out
 }
 
-/// `path` (default the home folder), if it is a folder inside the home folder, resolved but spelled from `$HOME`
-/// (as `~` shortens it); and `$HOME`.
 fn in_home(path: Option<&Path>) -> Result<(PathBuf, PathBuf), HubError> {
     let home = std::env::var_os("HOME")
         .map(PathBuf::from)
@@ -405,7 +352,6 @@ fn in_home(path: Option<&Path>) -> Result<(PathBuf, PathBuf), HubError> {
     }
 }
 
-/// Terminal `name` on `machine` (empty: this host): shed names another machine's `<machine>/<name>` (#149).
 fn on_machine(machine: &str, name: &str) -> String {
     if machine.is_empty() {
         name.to_owned()
@@ -447,15 +393,12 @@ impl Live {
         }
     }
 
-    /// Drops the page events older than [`REPLAY`] before `now`.
     fn trim(&mut self, now: u64) {
         while self.ring.front().is_some_and(|(at, _)| at + REPLAY < now) {
             self.ring.pop_front();
         }
     }
 
-    /// Unloads the chat (keeping its turn and its row's glance) if unused for [`IDLE`] before `now`, with no page
-    /// watching and no turn under way.
     fn unload(&mut self, now: u64) {
         let turn = &self.chat.turn;
         let busy = matches!(turn.state.as_str(), "working" | "connecting" | "blocked")
@@ -492,7 +435,6 @@ impl Live {
         }
     }
 
-    /// Stores and then publishes `changes`, pushing the ones the owner should hear of.
     fn publish(&mut self, hub: &Hub, changes: Vec<Change>) -> Result<(), StoreError> {
         let store = &hub.store;
         for mut change in changes {
@@ -554,7 +496,6 @@ impl Hub {
         let (mut threads, mut terminals) = (BTreeMap::new(), HashMap::new());
         for id in store.ids()? {
             let mut meta = store.load(&id)?;
-            // Before #48 the system default login was stored by its label.
             if meta.account == "System default" {
                 meta.account.clear();
             }
@@ -618,7 +559,6 @@ impl Hub {
         Ok(hub)
     }
 
-    /// Thread `id`, its chat loaded.
     fn live(&self, id: &str) -> Result<Arc<Mutex<Live>>, HubError> {
         let live = lock(&self.threads)
             .get(id)
@@ -628,7 +568,6 @@ impl Hub {
         Ok(live)
     }
 
-    /// Marks `live` used, reading its chat back from the store if it was unloaded.
     fn load(&self, live: &mut Live) -> Result<(), StoreError> {
         live.used = now();
         if live.unloaded.is_some() {
@@ -640,7 +579,6 @@ impl Hub {
         Ok(())
     }
 
-    /// Trims every thread's page events to [`REPLAY`] before `now` and unloads the idle threads' chats (#295).
     fn unload(&self, now: u64) {
         for live in self.all() {
             let mut live = lock(&live);
@@ -664,8 +602,6 @@ impl Hub {
         }
     }
 
-    /// Checks each open thread's terminal: one that runs is attached (its state shown), one that is gone ends the
-    /// thread. Returns the oldest applied shed event among the attached, to replay from.
     fn reattach(&self) -> Result<Option<u64>, ShedError> {
         self.shed.hello()?;
         let (at, terminals) = (now(), self.shed.ls(BTreeMap::new())?);
@@ -715,7 +651,6 @@ impl Hub {
         Ok(since)
     }
 
-    /// Lists Workflow session `t` (#33) as a thread, stored so its rows outlive a restart; `None` if it isn't one.
     fn adopt(&self, t: &TerminalInfo) -> Option<Arc<Mutex<Live>>> {
         let workflow = Workflow::from_labels(&t.labels).filter(|_| t.acp.is_some())?;
         let safe = |c: char| c.is_ascii_alphanumeric() || c == '-' || c == '_';
@@ -765,8 +700,6 @@ impl Hub {
         }
     }
 
-    /// Follows shed's events for every terminal, for ever: re-attaches, subscribes, applies; on a break, waits a
-    /// second and does it again from the last event seen.
     fn follow(&self) {
         let mut last: Option<u64> = None;
         let mut said = String::new();
@@ -802,7 +735,6 @@ impl Hub {
         let Some(found) = found else { return };
         let mut live = lock(&found);
         if !live.sending.is_empty() {
-            // Its prompt is on its way: applied once that is stored, after it.
             live.held.push(event);
             return;
         }
@@ -815,7 +747,6 @@ impl Hub {
         self.after(&found, after);
     }
 
-    /// Applies `event` to the thread `live`; what is left to do once it is unlocked.
     fn applied(&self, live: &mut Live, event: Event) -> Option<After> {
         if event.seq <= live.applied {
             return None;
@@ -824,13 +755,11 @@ impl Hub {
         live.moved = now();
         let mut changes = Vec::new();
         if live.stuck {
-            // It moves again: back to working (a state event below says more).
             live.stuck = false;
             "working".clone_into(&mut live.chat.turn.state);
             live.chat.turn.note = None;
             changes.push(Change::State(live.chat.turn.clone()));
         }
-        // A Workflow session's prompts come from its tool: shown as the owner's own are (#33).
         if let (Some(_), shed_proto::EventKind::Turn { prompt }) =
             (&live.meta.workflow, &event.kind)
         {
@@ -858,7 +787,6 @@ impl Hub {
         if let Some(sent) = live.sent.take_if(|_| chunk) {
             cooee_core::perf::first_token(&live.meta.id, &live.meta.agent, sent);
         }
-        // A member's final reply goes to its room (#154); a cancelled one is a stopped round's, never the next's.
         let reply = changes.iter().find_map(|c| match c {
             Change::Item(i) if matches!(&i.body, Body::Agent { stop_reason, .. } if stop_reason != "cancelled") => {
                 Some(i.body.clone())
@@ -879,7 +807,6 @@ impl Hub {
         })
     }
 
-    /// Does what applying an event to thread `live` left: sends its next queued message, passes its reply on.
     fn after(&self, live: &Mutex<Live>, after: Option<After>) {
         let Some(After {
             next,
@@ -893,7 +820,6 @@ impl Hub {
         let done = next.and_then(|q| self.send_next(live, q));
         let done = match reply {
             Some(body) if !seat.0.is_empty() => done.and(self.replied(&seat.0, &seat.1, body)),
-            // An asked persona's reply goes to its asker's pending `ask_persona` (#156).
             Some(Body::Agent { text, .. }) => {
                 lock(&self.asks).remove(&asked).map(|tx| tx.send(text));
                 done
@@ -905,8 +831,6 @@ impl Hub {
         }
     }
 
-    /// Between turns (no message on its way), takes the first queued message to send (the next one goes as that
-    /// turn ends).
     fn drain(&self, live: &mut Live) -> Result<Option<Queued>, HubError> {
         let between = !matches!(
             live.chat.turn.state.as_str(),
@@ -920,12 +844,10 @@ impl Hub {
         Ok(Some(next))
     }
 
-    /// Delivers what [`Hub::drain`] took, if anything.
     fn send_next(&self, live: &Mutex<Live>, next: Option<Queued>) -> Result<(), HubError> {
         next.map_or(Ok(()), |q| self.deliver(live, q, "").map(drop))
     }
 
-    /// Saves the queue and tells the pages.
     fn queued(&self, live: &mut Live) -> Result<(), HubError> {
         self.store.save(&live.meta)?;
         let data = json!(live.meta.queue).to_string();
@@ -968,8 +890,6 @@ impl Hub {
         lock(&self.agents).0.clone()
     }
 
-    /// Runs `shed agents` again when the list is a minute old at `at`, or `now`; the list is never locked while the
-    /// CLI runs. A failure keeps the list already had (logged), else it is the list's error.
     fn refresh(&self, at: u64, now: bool) {
         if !now && at.saturating_sub(lock(&self.agents).1) < AGENTS_FOR {
             return;
@@ -983,8 +903,6 @@ impl Hub {
         }
     }
 
-    /// Agent `id`'s adapter command, from the list as last checked; an id it lacks refreshes it once (#55). Empty
-    /// when shed doesn't list it.
     fn adapter(&self, id: &str) -> Vec<String> {
         let find = || {
             let agents = self.agents().ok()?;
@@ -1014,7 +932,6 @@ impl Hub {
         out
     }
 
-    /// `folder`, resolved, if it is a root or inside one; none (empty) stays empty: the thread's scratch folder.
     fn place(&self, folder: &Path) -> Result<PathBuf, HubError> {
         if folder.as_os_str().is_empty() {
             return Ok(PathBuf::new());
@@ -1022,14 +939,12 @@ impl Hub {
         self.allowed(folder).ok_or_else(|| outside(folder))
     }
 
-    /// `folder`, resolved, if it is a root or inside one.
     fn allowed(&self, folder: &Path) -> Option<PathBuf> {
         let folder = folder.canonicalize().ok()?;
         let inside = |root: &PathBuf| root.canonicalize().is_ok_and(|r| folder.starts_with(r));
         lock(&self.roots).iter().any(inside).then_some(folder)
     }
 
-    /// `folder`, if it is a folder that is a root or inside one, spelled from that root as listed.
     fn in_root(&self, folder: &Path) -> Option<PathBuf> {
         let real = folder.canonicalize().ok().filter(|p| p.is_dir())?;
         lock(&self.roots).iter().find_map(|root| {
@@ -1144,7 +1059,6 @@ impl Hub {
         recipe: &Recipe,
     ) -> Result<String, HubError> {
         let started = self.start_in(agent, folder, (text, random_id), recipe);
-        // The adapter's shell removes it as it starts; a start that never got that far leaves nothing either.
         if let Some((file, _)) = &recipe.launch.secrets {
             let _ = fs::remove_file(file);
         }
@@ -1204,7 +1118,6 @@ impl Hub {
             else {
                 return Ok(());
             };
-            // Never tried: its terminal starts; else it starts again only if it isn't running.
             let fresh = l.chat.turn.state.is_empty();
             "connecting".clone_into(&mut l.chat.turn.state);
             l.chat.turn.note = None;
@@ -1218,13 +1131,11 @@ impl Hub {
             let done = done.and_then(|()| hub.reachable(&recipe.machine));
             let done =
                 done.and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, &recipe));
-            // As in [`Hub::start`].
             if let Some((file, _)) = &recipe.launch.secrets {
                 let _ = fs::remove_file(file);
             }
             let mut l = lock(&live);
             match done {
-                // shed's events say more.
                 Ok(()) if l.chat.turn.state == "connecting" => {
                     "working".clone_into(&mut l.chat.turn.state);
                 }
@@ -1245,9 +1156,6 @@ impl Hub {
         Ok(())
     }
 
-    /// The thread start `random_id` opened (stored and listed before shed starts it: an event, an ask, that comes
-    /// before the start returns is applied, and a crash after the start is adopted on restart, herdsman#446, #509),
-    /// or a new one; and whether it is new.
     fn admit(
         &self,
         agent: &str,
@@ -1295,8 +1203,6 @@ impl Hub {
         Ok((id, fresh))
     }
 
-    /// Refuses when `machine` (empty: this host) has no link up (#149): offline, and since when, or unknown. A
-    /// link shed can't report doesn't refuse; the call itself fails then.
     fn reachable(&self, machine: &str) -> Result<(), HubError> {
         if machine.is_empty() {
             return Ok(());
@@ -1316,14 +1222,11 @@ impl Hub {
         }
     }
 
-    /// The thread start `random_id` opened, or a new one `make` makes of a new id, stored and listed; and whether
-    /// it is new.
     fn mint(
         &self,
         random_id: &str,
         make: impl FnOnce(String) -> Thread,
     ) -> Result<(String, bool), HubError> {
-        // Taken under the lock and counted up, so two threads started in one millisecond differ.
         let mut last = lock(&self.last);
         let started = self.all().into_iter().find_map(|l| {
             let l = lock(&l);
@@ -1346,9 +1249,6 @@ impl Hub {
         Ok((id, true))
     }
 
-    /// Starts thread `id`'s terminal when `fresh` (or, `keep`, when it doesn't run), waits for its session and
-    /// sends `text`. A start that failed but came up anyway (a slow CLI) is kept, never started twice
-    /// (herdsman#477); one that didn't come up is removed unless `keep`.
     fn connect(
         &self,
         id: &str,
@@ -1363,7 +1263,6 @@ impl Hub {
             let folder = l.meta.folder.clone();
             (l.meta.terminal.clone(), l.meta.agent.clone(), folder)
         };
-        // No folder: its own scratch folder, made on its first start.
         let folder = if let Some(f) = folder {
             f
         } else {
@@ -1372,7 +1271,6 @@ impl Hub {
             dir
         };
         if fresh || (keep && self.shed.get(&terminal).is_err()) {
-            // A member's session is labelled with its room and persona (#154).
             let room = Some(&recipe.room).filter(|r| !r.is_empty());
             let mut labels = BTreeMap::from([
                 (LABEL.to_owned(), "1".to_owned()),
@@ -1381,7 +1279,6 @@ impl Hub {
             if room.is_some() {
                 labels.insert(format!("{LABEL}.member"), recipe.profile.clone());
             }
-            // A profile's `{thread}` is this thread's id.
             let mut launch = self.mcp_launch(id, recipe)?;
             for (_, v) in &mut launch.env {
                 *v = v.replace("{thread}", id);
@@ -1519,7 +1416,6 @@ impl Hub {
         Ok(item)
     }
 
-    /// [`Hub::send`] with `before` (a profile's instructions) ahead of the text for the agent; only the text is stored.
     fn send_after(
         &self,
         id: &str,
@@ -1543,13 +1439,11 @@ impl Hub {
         self.deliver(&live, q, before)
     }
 
-    /// The stored message `random_id`, if it was sent.
     fn sent(live: &Live, random_id: &str) -> Option<Item> {
         let mine = |i: &&Item| matches!(&i.body, Body::You { random_id: r, .. } if r == random_id);
         live.chat.items.iter().rev().find(mine).cloned()
     }
 
-    /// A message to send or queue, its files stored.
     fn take(
         &self,
         live: &Live,
@@ -1592,15 +1486,12 @@ impl Hub {
         })
     }
 
-    /// Sends `q` to the agent, `before` ahead of it, then stores and publishes it; refused when the agent stopped,
-    /// whose session would drop it (#253). The thread is unlocked while shed takes it.
     fn deliver(&self, live: &Mutex<Live>, q: Queued, before: &str) -> Result<Item, HubError> {
         let start = Instant::now();
         let (terminal, machine, ended, handover, prompt) = {
             let mut l = lock(live);
             l.sending.push(q.random_id.clone());
             let handover = l.meta.handover.clone();
-            // After Use a folder…, the hand-over goes once ahead of the next message.
             let before = if before.trim().is_empty() {
                 handover.as_str()
             } else {
@@ -1645,7 +1536,6 @@ impl Hub {
         stored
     }
 
-    /// Stores and publishes message `q`, which shed took (its prompt timed from `start`, with `handover` ahead).
     fn store_sent(
         &self,
         live: &mut Live,
@@ -1673,7 +1563,6 @@ impl Hub {
         Ok(item)
     }
 
-    /// Hands `prompt` to `terminal`'s agent on `machine`; refused when the turn `ended` and the agent stopped.
     fn prompt(
         &self,
         terminal: &str,
@@ -1839,7 +1728,6 @@ impl Hub {
                 .find(|p| &p.name == name)
                 .ok_or_else(|| io::Error::other("no longer configured"))
                 .and_then(|p| {
-                    // A run card's `approve` carries the sha it showed, never the page's value.
                     let value = match card.form.as_deref() {
                         Some("run-card") => card.sha.as_deref().filter(|_| option == "approve"),
                         _ => value,
@@ -1885,7 +1773,6 @@ impl Hub {
         option: &str,
     ) -> Result<Option<Item>, HubError> {
         if let Err(e) = self.shed.approve(terminal, option) {
-            // Not delivered: the row can be tapped again.
             let mut live = lock(live);
             let untapped = live.chat.update(tapped.id, 0, |b| {
                 if let Body::Approval { tapped, .. } = b {
@@ -2112,7 +1999,6 @@ impl Hub {
             .filter_map(|live| {
                 let live = lock(live);
                 let g = live.unloaded.clone().unwrap_or_else(|| glance(&live));
-                // A room's member sessions are the room's (#154).
                 if !live.meta.room.is_empty() {
                     asks.extend(g.ask);
                     return None;
@@ -2299,17 +2185,11 @@ pub struct Proposal {
     pub why: String,
 }
 
-/// What an agent proposed, until the owner answers its card.
 enum Proposed {
-    /// A server for the registry (#56).
     Server(Server),
-    /// A skill for the thread's persona (#218), new or the edit of `replaces`.
     Skill {
-        /// The persona.
         persona: String,
-        /// The skill.
         skill: Skill,
-        /// The skill it edits.
         replaces: Option<String>,
     },
 }
@@ -2342,7 +2222,6 @@ impl Proposal {
     }
 }
 
-/// MCP servers (#56): the registry in the config file, a thread's proxies and their grants, and proposals.
 impl Hub {
     /// Agents' MCP proxies reach cooee at `url` (`cooee serve`, once it listens).
     pub fn listening(&self, url: String) {
@@ -2384,12 +2263,10 @@ impl Hub {
         Ok(said)
     }
 
-    /// The config's folder (its `profiles/`).
     fn config_dir(&self) -> Option<&Path> {
         self.config.as_deref().and_then(Path::parent)
     }
 
-    /// Profile `id`'s picks (none for Plain or a profile gone).
     fn picks(&self, id: &str) -> Vec<Pick> {
         cooee_core::profiles::find(self.config_dir(), &self.data, id)
             .map_or_else(|_| Vec::new(), |p| p.mcp)
@@ -2439,7 +2316,6 @@ impl Hub {
         listed
     }
 
-    /// `s` resolved, with `tools` allowed.
     fn grant_of(&self, s: Server, tools: Option<Vec<String>>) -> Result<Grant, String> {
         let (env, headers) = s.resolved(&self.data)?;
         Ok(Grant {
@@ -2453,8 +2329,6 @@ impl Hub {
         })
     }
 
-    /// `recipe`'s launch for thread `id`, with its MCP servers: cooee's own, then each its profile picks (on, and
-    /// resolving now), each a `cooee mcp proxy` holding the thread's token. Before cooee listens: none.
     fn mcp_launch(&self, id: &str, recipe: &Recipe) -> Result<Launch, HubError> {
         let mut launch = recipe.launch.clone();
         let (Some(url), Ok(exe)) = (self.url.get(), std::env::current_exe()) else {
@@ -2654,7 +2528,6 @@ impl Hub {
         Ok(s.body.chars().take(8000).collect())
     }
 
-    /// The id of thread `id`'s persona, for its token.
     fn persona_of(&self, id: &str, token: &str) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
         personas::find(self.config_dir(), &self.data, &meta.profile)
@@ -2662,7 +2535,6 @@ impl Hub {
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))
     }
 
-    /// A proposal's card in thread `id`: what it does, its form and its detail; `p` waits for the owner's answer.
     fn raise(
         &self,
         id: &str,
@@ -2706,7 +2578,6 @@ impl Hub {
         })
     }
 
-    /// The owner's answer to a proposal: `approve` adds a server, off, or saves a skill.
     fn proposal_answer(&self, id: &str, item: u64, option: &str) -> Result<Option<String>, String> {
         let p = lock(&self.proposals).remove(&(id.to_owned(), item));
         if option != "approve" {
@@ -2755,7 +2626,6 @@ impl From<HubError> for io::Error {
     }
 }
 
-/// Whether `body` is a config card that waits for the owner (#553 row 32).
 fn waits(body: &Body) -> bool {
     matches!(body, Body::Approval { chosen: None, card, .. } if card.form.as_deref() == Some("config") && card.line.is_none())
 }
@@ -2768,12 +2638,10 @@ mod tests {
 
     use super::*;
 
-    /// A hub over `dir`'s data with no shed (its follower retries in the background, harmlessly).
     fn hub(dir: &Path) -> Arc<Hub> {
         hub_on(dir, dir.join("no-shed"))
     }
 
-    /// [`hub`] with `bin` as the shed CLI.
     fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
         let shed = Shed::new(bin, Some(dir.join("no-shed-dir")));
         let (looks, _) = cooee_web::Looks::load(None, None);
@@ -2796,7 +2664,6 @@ mod tests {
         dir
     }
 
-    /// Thread `id` on terminal `cooee-<id>`, with `lines` as its items file.
     fn seed(dir: &Path, id: &str, lines: &str) {
         let threads = dir.join("data/threads");
         let meta = json!({ "format": 1, "thread": { "id": id, "title": id, "messages": [], "terminal": format!("cooee-{id}") } });
@@ -2815,8 +2682,6 @@ mod tests {
         }
     }
 
-    /// R6 (herdsman#447): a thread of 1,000 messages written as 30,000 versions serves its requests (a slice, the
-    /// list, the page's thread) in under 300 ms: none is quadratic in the log. (The fold at load: cooee-core `chat`.)
     #[test]
     fn r6_requests_over_a_long_log_are_within_budget() {
         let dir = scratch("budget");
@@ -2848,8 +2713,6 @@ mod tests {
         assert!(took < Duration::from_millis(300), "{took:?}");
     }
 
-    /// R15 (herdsman#444, #445, #493, #534): a working turn with no shed event for 30 minutes (a fake clock) is
-    /// surfaced as needs-you, once; its next event puts it back to working.
     #[test]
     fn r15_a_turn_idle_30_minutes_is_surfaced_as_needs_you() {
         let dir = scratch("stuck");
@@ -2871,17 +2734,13 @@ mod tests {
             (turn.state.as_str(), turn.note.as_deref()),
             ("blocked", Some("no progress for 30 minutes"))
         );
-        // Once: a second look sends nothing more.
         hub.watch(t0 + 2 * STUCK);
         assert_eq!(rx.len(), 1);
-        // On the list too.
         assert_eq!(hub.list()[0].state, "blocked");
         hub.apply(event("idle", 2, EventKind::Text { text: "w".into() }));
         assert_eq!(state(&hub).state, "working");
     }
 
-    /// #155 (G2): a room's turns on an owner message stop 10 minutes after it (a fake clock): its queued turns are
-    /// dropped, the room told and its pages sent `room-stop`, once.
     #[test]
     fn a_rooms_turns_stop_at_the_deadline() {
         let dir = scratch("deadline");
@@ -2909,8 +2768,6 @@ mod tests {
         assert!(rx.try_recv().is_err());
     }
 
-    /// #155: a member's session that started after its reply was already in is kept, never cancelled; one that
-    /// started after [stop] is cancelled (the cancel reaches shed, here none: a shed error), once.
     #[test]
     fn only_a_stop_cancels_a_members_session_as_it_starts() {
         let dir = scratch("seated");
@@ -2925,7 +2782,6 @@ mod tests {
         fs::write(dir.join("data/threads/room.jsonl"), "").unwrap();
         let seated = |hub: &Hub| hub.thread("room").unwrap().0.members[0].session.clone();
 
-        // Ada replied before its start returned: its turn is gone, Bo's is next.
         fs::write(
             dir.join("data/threads/room.json"),
             room(json!([turn("bo")])).to_string(),
@@ -2935,7 +2791,6 @@ mod tests {
         hub.started("room", "ada", Ok("s1".to_owned())).unwrap();
         assert_eq!(seated(&hub), "s1");
 
-        // [stop] while Ada's session starts: nothing to cancel then, so it is cancelled once started.
         fs::write(
             dir.join("data/threads/room.json"),
             room(json!([turn("ada"), turn("bo")])).to_string(),
@@ -2948,8 +2803,6 @@ mod tests {
         hub.started("room", "ada", Ok("s1".to_owned())).unwrap();
     }
 
-    /// #55: however often the agent list is read, `shed agents` runs once a minute (a fake clock); a failed run
-    /// keeps the list.
     #[test]
     fn the_agent_list_is_refreshed_at_most_once_a_minute() {
         use std::os::unix::fs::PermissionsExt;
@@ -2976,8 +2829,6 @@ mod tests {
         assert_eq!((count(), hub.agents().unwrap()[0].id.as_str()), (3, "a"));
     }
 
-    /// #33: a Workflow session whose terminal shed no longer lists is dropped (its files too); one that moved since
-    /// the listing and the owner's own chats stay.
     #[test]
     fn prune_drops_only_the_workflow_sessions_shed_no_longer_lists() {
         let dir = scratch("prune");
@@ -2998,8 +2849,6 @@ mod tests {
         assert!(!threads.join("gone.json").exists());
     }
 
-    /// #295: a thread unused past the idle threshold (a fake clock) is unloaded, its row unchanged, and reloads intact
-    /// on next use; a page reconnecting within the replay window gets its events, one later is reset.
     #[test]
     fn an_idle_threads_chat_unloads_and_reloads_intact() {
         let dir = scratch("unload");

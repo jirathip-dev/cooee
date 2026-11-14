@@ -1,7 +1,3 @@
-//! What a device shows (#49): its pick from the `cooee-look` cookie (`theme:kitchen/style:terminal/…`; unset keys
-//! are the defaults) resolved against the looks (#35: Style, Theme, Figures and Colours), so the server draws the theme and scheme on the first byte. The
-//! marks (`[data-st]`, `[data-w]`, `[data-s]`) are drawn here as `look.ts` draws the ones a page adds later.
-
 use std::{collections::BTreeMap, fmt::Write as _, sync::Arc};
 
 use crate::look::{ASCII, Looks, Scheme, Theme, plain};
@@ -9,12 +5,10 @@ use crate::look::{ASCII, Looks, Scheme, Theme, plain};
 /// The cookie that keeps a device's pick.
 pub const COOKIE: &str = "cooee-look";
 
-/// The keys a pick has (`scene:on` is Style Scene over the `style` it falls back to).
 const KEYS: [&str; 7] = [
     "theme", "mode", "style", "scene", "figures", "dark", "light",
 ];
 
-/// The state keys with a word (a key without one shows nothing).
 const STATES: [&str; 9] = [
     "working",
     "needs",
@@ -47,7 +41,6 @@ pub fn esc(s: &str) -> String {
     out
 }
 
-/// A state's ASCII figure, its two frames in `<b>`s (`cls`: `rsa` in a row, `lsa` the big one).
 fn ascii(id: &str, cls: &str) -> String {
     let frames = ASCII
         .iter()
@@ -60,7 +53,6 @@ fn ascii(id: &str, cls: &str) -> String {
     )
 }
 
-/// A token as a CSS declaration, when it can't break out of the rule.
 fn declaration(k: &str, v: &str) -> Option<String> {
     let name = k.strip_prefix("--")?;
     let safe = |s: &str, more: &str| {
@@ -83,7 +75,6 @@ impl Shown {
             .split('/')
             .filter_map(|kv| kv.split_once(':'))
             .map(|(k, v)| match (k, v) {
-                // The Sprites switch before #35.
                 ("sprites", "on") => ("figures", "sprite"),
                 ("sprites", "off") => ("figures", "none"),
                 ("sprites", v) => ("figures", v),
@@ -331,7 +322,6 @@ impl Shown {
                 pick.insert("mode".to_owned(), k.to_owned());
             }
         } else if k == "style" {
-            // Scene keeps the Modern or Terminal pick to fall back to.
             if v == "scene" {
                 pick.insert("scene".to_owned(), "on".to_owned());
             } else {
@@ -357,7 +347,6 @@ impl Shown {
 mod tests {
     use super::*;
 
-    /// The built-in looks and the first-party packs, as installed.
     fn looks() -> Arc<Looks> {
         let packs = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../packs");
         Arc::new(Looks::load(Some(&packs), None).0)
@@ -375,13 +364,11 @@ mod tests {
         assert!(s.css().starts_with(":root{"), "{}", s.css());
         assert!(s.css().contains("--bg:#1a1816;"), "{}", s.css());
         assert!(!s.css().contains("@media"));
-        // Figures none: a dot and the plain word, never the theme's.
         assert_eq!(
             s.st("needs", true),
             "<i class=\"sd\"></i><span class=\"thw\">needs you</span>"
         );
         assert_eq!(s.s("empty"), "");
-        // No pick: the default theme, System with both schemes.
         let d = Shown::new(looks.clone(), None);
         assert_eq!(
             (d.name(), d.style(), d.figures(), d.mode()),
@@ -399,8 +386,6 @@ mod tests {
                 .ends_with("<small class=\"pw\"> · needs you</small>")
         );
         assert_eq!(d.st("", false), "");
-        // A thread connecting (#48): the loading figure at line height and the theme's loading word, else
-        // `connecting`.
         assert!(
             d.st("loading", false).starts_with(
                 "<svg class=\"rsp ld\" viewBox=\"0 0 132 100\" aria-hidden=\"true\"><use href=\"/look/farm/sprites.svg#s-loading\">"
@@ -423,7 +408,6 @@ mod tests {
             Some("cooee-look=theme:nope/dark:paper/sprites:x"),
         );
         assert_eq!(s.name(), "farm");
-        // A light scheme isn't a dark pick.
         assert_eq!(s.scheme("dark"), "farm");
         assert_eq!(s.figures(), "sprite");
         assert_eq!(declaration("--x", "red;}</style>"), None);
@@ -455,7 +439,6 @@ mod tests {
             big,
             "<i class=\"lsa\" aria-hidden=\"true\"><b>( o.o )\n  ...</b><b>( o.O )\n  .. </b></i>"
         );
-        // Scene's poses (#115): farm and kitchen draw their vector figures, a sheet without them its `s-<k>`.
         let fig = |theme: &str, k: &str| {
             Shown::new(looks.clone(), Some(&format!("cooee-look=theme:{theme}"))).s(k)
         };
@@ -467,7 +450,6 @@ mod tests {
             assert!(fig("garden", k).contains(&format!("/look/garden/sprites.svg#s-{k}\"")));
         }
         assert!(fig("farm", "empty").contains("#s-empty\""));
-        // Every figure has two frames that differ, one per state a page names.
         for (id, [a, b]) in ASCII {
             assert!(!a.is_empty() && a != b, "{id}");
         }
@@ -477,7 +459,6 @@ mod tests {
     fn terminal_is_plain_and_scene_needs_sprites() {
         let looks = looks();
         let s = |pick: &str| Shown::new(looks.clone(), Some(&format!("cooee-look={pick}")));
-        // A saved `terminal` theme (and the Sprites switch) before #35.
         let old = s("theme:terminal/sprites:off");
         assert_eq!((old.name(), old.figures()), ("plain", "none"));
         assert_eq!(
@@ -485,13 +466,11 @@ mod tests {
             "figures:none/mode:dark/theme:plain"
         );
         assert_eq!(s("sprites:on").figures(), "sprite");
-        // plain has no sprites: ASCII by default, Figures offers ASCII or None, and no Scene.
         let plain = s("theme:plain/figures:sprite/scene:on");
         assert_eq!((plain.figures(), plain.style()), ("ascii", "modern"));
         assert_eq!(plain.figure_list(), ["ascii", "none"]);
         assert_eq!(plain.styles(), ["modern", "terminal"]);
         assert_eq!(s("").figure_list(), ["sprite", "ascii", "none"]);
-        // Scene with sprites; ASCII or None hides it and falls back to the Modern or Terminal pick.
         let scene = s("style:terminal");
         assert_eq!(scene.styles(), ["modern", "terminal", "scene"]);
         let tapped = scene.with("style", "scene");
@@ -518,7 +497,6 @@ mod tests {
             s.with("style", "terminal"),
             "mode:light/style:terminal/theme:kitchen"
         );
-        // The other mode's list switches the forced mode; the theme's default forgets the pick.
         assert_eq!(s.with("dark", "nord"), "dark:nord/mode:dark/theme:kitchen");
         assert_eq!(s.with("light", "kitchen-light"), "mode:light/theme:kitchen");
         assert_eq!(s.with("mode", "system"), "theme:kitchen");

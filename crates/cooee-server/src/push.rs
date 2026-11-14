@@ -1,10 +1,3 @@
-//! Web push (herdsman's `webpush.rs`): an RFC 8291 aes128gcm body and an ES256 VAPID JWT (RFC 8292), sent by
-//! `curl` with the body on stdin. The VAPID key is made once and kept only in `<data>/vapid.key` (0600); the subscriptions are in `<data>/push.json` (0600), each tied to a paired device, so
-//! unpairing it stops its pushes.
-//!
-//! APNs (#130): a native device's token sits in `push.json` too, and each push also goes to it over HTTP/2, signed
-//! with a provider JWT (ES256) from the owner's key `<data>/apns.p8` (0600) and the config's `[apns]`.
-
 use std::{
     io::{self, Write},
     os::unix::fs::PermissionsExt,
@@ -108,7 +101,6 @@ pub fn note(
             _ => return None,
         },
         Change::State(t) if t.state == was => return None,
-        // A Workflow session (#33) or a routine's run (#75) runs unattended: its turns end without a push.
         Change::State(t)
             if t.state == "done"
                 && !watched
@@ -160,7 +152,6 @@ pub struct Push {
     data: PathBuf,
     key: Arc<Mutex<Option<SecretKey>>>,
     apns: Option<Apns>,
-    /// The APNs provider token and when it was made: Apple wants it under an hour old.
     bearer: Arc<Mutex<Option<(u64, String)>>>,
 }
 
@@ -171,7 +162,6 @@ fn b64(s: &str) -> io::Result<Vec<u8>> {
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
 }
 
-/// A fresh P-256 key.
 fn new_key() -> io::Result<SecretKey> {
     loop {
         if let Ok(k) = SecretKey::from_slice(&random(32)?) {
@@ -180,7 +170,6 @@ fn new_key() -> io::Result<SecretKey> {
     }
 }
 
-/// The uncompressed public point (65 bytes).
 fn public(k: &SecretKey) -> Vec<u8> {
     k.public_key().to_sec1_point(false).as_bytes().to_vec()
 }
@@ -216,7 +205,6 @@ pub fn encrypt(
     Ok([salt.as_slice(), &4096u32.to_be_bytes(), &[65], &as_pub, &ct].concat())
 }
 
-/// An ES256 JWT of `header` and `claims`.
 fn es256(k: &SecretKey, header: &serde_json::Value, claims: &serde_json::Value) -> String {
     let msg = format!(
         "{}.{}",
@@ -251,7 +239,6 @@ pub fn apns_jwt(k: &SecretKey, key_id: &str, team_id: &str, now: u64) -> String 
     es256(k, &header, &serde_json::json!({"iss": team_id, "iat": now}))
 }
 
-/// The P-256 key in an APNs `.p8` (PKCS#8 PEM): the SEC1 private key's 32 bytes inside it.
 fn p8_key(pem: &str) -> Option<SecretKey> {
     let b64: String = pem.lines().filter(|l| !l.starts_with("-----")).collect();
     let der = STANDARD.decode(b64.trim()).ok()?;
@@ -259,17 +246,14 @@ fn p8_key(pem: &str) -> Option<SecretKey> {
     SecretKey::from_slice(der.get(at..at + 32)?).ok()
 }
 
-/// The key file of data folder `data`.
 fn key_file(data: &Path) -> PathBuf {
     data.join("vapid.key")
 }
 
-/// The VAPID key in `data`'s key file, if any.
 fn find_key(data: &Path) -> io::Result<Option<String>> {
     read_private(&key_file(data))
 }
 
-/// The file at `path`, if any; a file others can read is tightened to 0600 first.
 fn read_private(path: &Path) -> io::Result<Option<String>> {
     let mode = match std::fs::metadata(path) {
         Ok(m) => m.permissions().mode(),
@@ -282,12 +266,10 @@ fn read_private(path: &Path) -> io::Result<Option<String>> {
     Ok(Some(std::fs::read_to_string(path)?.trim().to_owned()))
 }
 
-/// Writes `key` as `data`'s key file (0600) unless one is there already; the key stored after.
 fn keep_key(data: &Path, key: &str) -> io::Result<String> {
     let path = key_file(data);
     let tmp = path.with_extension(format!("new-{}", B64.encode(random(6)?)));
     write_private(&tmp, key.as_bytes())?;
-    // A link never replaces a file, so of two writers the first key stays.
     let linked = std::fs::hard_link(&tmp, &path);
     std::fs::remove_file(&tmp)?;
     match linked {
@@ -296,7 +278,6 @@ fn keep_key(data: &Path, key: &str) -> io::Result<String> {
     }
 }
 
-/// The stored VAPID key (base64url), made on first use.
 fn stored_key(data: &Path) -> io::Result<String> {
     match find_key(data)? {
         Some(k) => Ok(k),
@@ -323,7 +304,6 @@ impl Push {
         self
     }
 
-    /// The `[apns]` settings and the key, or why APNs can't send (never the key itself).
     fn apns_key(&self) -> Result<(&Apns, SecretKey), String> {
         let a = self.apns.as_ref().ok_or("no [apns] in config.toml")?;
         let path = self.data.join("apns.p8");
@@ -347,7 +327,6 @@ impl Push {
         self.apns_key().map(|_| ())
     }
 
-    /// The APNs provider token at `now`, made again once it is 50 minutes old.
     fn bearer(&self, a: &Apns, k: &SecretKey, now: u64) -> String {
         let mut b = self.bearer.lock().unwrap_or_else(PoisonError::into_inner);
         match &*b {
@@ -515,7 +494,6 @@ impl Push {
         self.send_to(None, note);
     }
 
-    /// Sends `note` (see [`Push::send_to`]); the lines to log.
     fn deliver(&self, to: Option<&str>, note: &Note) -> io::Result<Vec<String>> {
         let payload = serde_json::to_vec(note)?;
         let paired: Vec<String> = Devices::new(&self.data)
@@ -561,7 +539,6 @@ impl Push {
         Ok(log)
     }
 
-    /// POSTs `note` to APNs token `s` on `env`'s server.
     fn apns_post(
         &self,
         a: &Apns,
@@ -599,7 +576,6 @@ fn now() -> u64 {
         .map_or(0, |d| d.as_secs())
 }
 
-/// POSTs one web push.
 fn post(s: &Sub, k: &SecretKey, body: &[u8]) -> io::Result<(u16, String)> {
     let auth = format!(
         "Authorization: vapid t={}, k={}",
@@ -616,7 +592,6 @@ fn post(s: &Sub, k: &SecretKey, body: &[u8]) -> io::Result<(u16, String)> {
     )
 }
 
-/// POSTs `body` with curl and `args`; the HTTP status (0: no response) and the answer's body.
 fn curl<'a>(args: impl IntoIterator<Item = &'a str>, body: &[u8]) -> io::Result<(u16, String)> {
     let mut c = Command::new("curl")
         .args([
@@ -648,7 +623,6 @@ mod tests {
 
     use super::*;
 
-    /// A test push (`send_to` one device) reaches only that device's endpoint; unsubscribing drops only its own.
     #[test]
     fn a_push_to_one_device_reaches_only_its_endpoint() {
         use std::{net::TcpListener, sync::mpsc};
@@ -686,7 +660,6 @@ mod tests {
             .unwrap();
         }
         push.deliver(Some(&ids[1]), &test_note()).unwrap();
-        // Delivery is in order and done: device 0's endpoint, first in the file, would have been reached first.
         let first = got.recv_timeout(std::time::Duration::from_secs(5)).unwrap();
         assert_eq!(first, ids[1]);
         assert!(got.try_iter().all(|d| d == ids[1]));
@@ -711,13 +684,11 @@ mod tests {
         }
     }
 
-    /// `body` between PEM lines, built here so no key header sits in the repo (ci/denylist.txt).
     fn pem(body: &str) -> String {
         let p = "PRIVATE KEY-----";
         format!("-----BEGIN {p}\n{body}\n-----END {p}\n")
     }
 
-    /// `k` as Apple's `.p8` holds it: PKCS#8 PEM around the SEC1 key.
     fn p8(k: &SecretKey) -> String {
         let head = "308187020100301306072a8648ce3d020106082a8648ce3d030107046d306b0201010420";
         let hex = |h: &str| {
@@ -745,8 +716,6 @@ mod tests {
         }
     }
 
-    /// A fake APNs server: each request's head (path and headers, lowercased) and body, answered by `answer` with a
-    /// status and a body.
     fn fake_apns(
         answer: fn(&str) -> (u16, &'static str),
     ) -> (String, std::sync::mpsc::Receiver<(String, String)>) {
@@ -791,7 +760,6 @@ mod tests {
             .collect()
     }
 
-    /// The provider JWT is ES256 by the key, `kid` its id and `iss` the team, and is made again only past 50 minutes.
     #[test]
     fn the_apns_jwt_has_the_key_id_and_team_and_lasts_under_an_hour() {
         use p256::ecdsa::{VerifyingKey, signature::Verifier};
@@ -825,8 +793,6 @@ mod tests {
         assert_eq!(claims["iat"], 4000);
     }
 
-    /// Each paired device's token gets one POST with the APNs headers and the note; a 410 or `BadDeviceToken` drops
-    /// the token, a 500 is logged without the key, and an unpaired device's token is dropped unsent.
     #[test]
     fn a_push_goes_to_each_apns_token_and_a_410_drops_it() {
         let dir = dir("apns");
@@ -892,8 +858,6 @@ mod tests {
         assert!(!log[0].contains(pem.lines().nth(1).unwrap()) && !log[0].contains(&key_b64));
     }
 
-    /// No `[apns]`, no key file, or a key that isn't one: nothing goes to APNs, doctor's reason says why, and the log
-    /// names the file, never what is in it. A key file others can read is tightened to 0600.
     #[test]
     fn without_the_key_or_apns_table_nothing_goes_to_apns() {
         let dir = dir("apns-none");
@@ -930,7 +894,6 @@ mod tests {
         assert_eq!(push.endpoints(&ids[0]), ["a".repeat(64)]);
     }
 
-    /// Renewing the VAPID key leaves APNs tokens alone.
     #[test]
     fn a_renewed_vapid_key_keeps_apns_tokens() {
         let dir = dir("apns-renew");
@@ -952,7 +915,6 @@ mod tests {
         std::fs::metadata(path).unwrap().permissions().mode() & 0o777
     }
 
-    /// The key is made in `<data>/vapid.key`, 0600, and read back from there by a later start.
     #[test]
     fn the_key_is_made_in_a_0600_file() {
         let dir = dir("made");
@@ -963,7 +925,6 @@ mod tests {
         assert_eq!(Push::new(&dir).public_key().unwrap(), public);
     }
 
-    /// A key file others can read is tightened to 0600 before it is used.
     #[test]
     fn a_0644_key_file_is_tightened() {
         let dir = dir("loose");
@@ -979,7 +940,6 @@ mod tests {
         );
     }
 
-    /// A key from before is copied in once: a second one never replaces it.
     #[test]
     fn an_old_key_is_adopted_once() {
         let dir = dir("adopt");
@@ -992,7 +952,6 @@ mod tests {
         assert_eq!(push.public_key().unwrap(), B64.encode(public(&old)));
     }
 
-    /// A lost key: every subscription is set aside with the reason until its device subscribes again.
     #[test]
     fn a_renewed_key_asks_each_device_to_subscribe_again() {
         let dir = dir("renew");
@@ -1024,7 +983,6 @@ mod tests {
         assert_eq!(push.reset("b").as_deref(), Some("the key changed"));
     }
 
-    /// RFC 8291 appendix A.
     #[test]
     fn encrypt_matches_rfc_8291_vector() {
         let d = |s: &str| B64.decode(s).unwrap();
@@ -1140,7 +1098,6 @@ mod tests {
             note(&t, &chat, &turn("done", None), "working", false, farm),
             Some(n("in the stable · done · codex: All tests pass.", 2))
         );
-        // A page has the thread open: no push for a finished turn; nor for a state that didn't change.
         assert_eq!(
             note(&t, &chat, &turn("done", None), "working", true, farm),
             None

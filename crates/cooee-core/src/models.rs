@@ -29,7 +29,6 @@ pub struct Resolved {
     pub fallback: Option<String>,
 }
 
-/// `s`'s words: its lowercase runs of letters and digits.
 fn words(s: &str) -> Vec<String> {
     s.split(|c: char| !c.is_ascii_alphanumeric())
         .filter(|w| !w.is_empty())
@@ -45,7 +44,6 @@ pub fn family(id: &str) -> String {
     alpha.collect::<Vec<_>>().join("-")
 }
 
-/// How new model `id` is: its version numbers, then its dates (six digits or more).
 fn newness(id: &str) -> (Vec<u64>, Vec<u64>) {
     let nums = words(id)
         .into_iter()
@@ -56,7 +54,6 @@ fn newness(id: &str) -> (Vec<u64>, Vec<u64>) {
 }
 
 impl Offered {
-    /// The newest model of short name `short`'s family; the agent's order breaks a tie.
     fn newest(&self, short: &str) -> Option<&str> {
         let want = words(short);
         let member = |id: &str| {

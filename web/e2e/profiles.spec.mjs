@@ -1,6 +1,3 @@
-// Agent profiles (#40) as agents (#86): the sidebar lists Plain on the agent and each profile (serve.sh: `reviewer`
-// beside the config); a new chat with Reviewer runs as its profile and its bar says so. Each viewport's chats go in
-// its own ~/root/project/prof-<viewport> (serve.sh).
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -21,7 +18,6 @@ test("a profile is an agent: listed, a new chat with it runs as it, its bar says
   await page.goto("/new?profile=reviewer");
   await expect(page.locator(".hi")).toContainText("New chat with Reviewer");
   await expect(page.locator(".th .ds")).toContainText("Reviewer · reviewer · scratch");
-  // The new chat is its own current row under Reviewer; the agent's row is not marked.
   await expect(page.locator(".agr:has(+ .sth) .tt")).toHaveText("Reviewer");
   await expect(page.locator(".sth .str[aria-current=page]")).toHaveText(/New chat\s*now/);
   await expect(page.locator(".agr.on")).toHaveCount(0);

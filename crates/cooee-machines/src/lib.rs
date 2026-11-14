@@ -35,7 +35,6 @@ pub const MEMORY_CRITICAL_PCT: u64 = 90;
 /// The history kept and drawn: 24 h, in seconds.
 pub const DAY: u64 = 86_400;
 
-/// The tab's UI module.
 const TAB: &str = include_str!("tab.js");
 
 /// One machine's card: what shed last said about it.
@@ -86,7 +85,6 @@ impl Card {
         }
     }
 
-    /// The push for its problems: `air: offline, last seen 12 min ago`.
     fn alert(&self, now: u64) -> String {
         let s = self.now.clone().unwrap_or_default();
         let what: Vec<String> = self
@@ -177,8 +175,6 @@ impl Machines {
         }
     }
 
-    /// `shed [--dir] --json <args>`: its stdout as JSON (shed prints JSON for an offline machine too, exit 1), or
-    /// its stderr.
     fn shed(&self, args: &[&str]) -> Result<Value, String> {
         let mut cmd = Command::new(&self.shed);
         if let Some(dir) = &self.dir {
@@ -241,7 +237,6 @@ impl Machines {
                 card.online = stats.is_some();
                 card.error = answer.as_ref().err().filter(|e| !e.is_empty()).cloned();
                 if let Some(s) = stats {
-                    // Only what is new, should a shed answer more than was asked for.
                     let new = s.history.into_iter().filter(|s| s.at > after);
                     card.history.extend(new);
                     card.last_seen = Some(s.now.at);
@@ -336,7 +331,6 @@ fn answer(stream: TcpStream, token: &str, machines: &Machines) -> io::Result<()>
         body.len()
     )?;
     s.flush()?;
-    // Drain what is left so closing never resets the connection under the answer.
     let _ = s.set_read_timeout(Some(Duration::from_millis(100)));
     let _ = s.read(&mut [0; 1024]);
     Ok(())

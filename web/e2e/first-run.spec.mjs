@@ -1,5 +1,3 @@
-// A fresh instance (serve.sh, $PORT + 3: no agents in shed, no roots): a new chat says what to run instead of
-// showing a composer, a provider whose CLI is missing shows its install line, and each line copies.
 import fs from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
@@ -16,14 +14,12 @@ test("first run: no agents shows its fix line with a copy button, never an empty
   await page.keyboard.type(code);
   await page.waitForURL(/\/(\?paired)?$/);
   await page.goto(`${url}/new`);
-  // No terminal plugin on this instance: a reply's code block has [copy] only, no [▸ terminal] (#29).
   const buttons = await page.evaluate(async () => {
     const { render } = await import("/md.js");
     return [...render("```\nls\n```").querySelectorAll("button")].map((b) => b.textContent);
   });
   expect(buttons).toEqual(["copy"]);
 
-  // No agent to type to: what to run instead, no composer.
   await expect(page.locator("#new")).toHaveCount(0);
   const agents = page.locator(".hip .hn");
   await expect(agents).toContainText("no agents installed · on the Mac:");
@@ -35,7 +31,6 @@ test("first run: no agents shows its fix line with a copy button, never an empty
   await expect(agents.getByRole("button")).toHaveText("copied");
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("shed agents add claude-acp");
 
-  // A provider whose CLI isn't installed: one line, `[codex] not installed [copy install]`, no sign-in.
   await page.getByRole("button", { name: "settings" }).click();
   await page.locator("#sheet").getByRole("button", { name: "providers" }).click();
   const sheet = page.locator("#sh-providers");
@@ -48,6 +43,5 @@ test("first run: no agents shows its fix line with a copy button, never an empty
   await row.getByRole("button", { name: "copy install" }).click();
   await expect(row.getByRole("button")).toHaveText("copied");
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("npm install -g @openai/codex");
-  // `copied` is for a moment; the button reads [copy install] again.
   await expect(row.getByRole("button")).toHaveText("copy install");
 });

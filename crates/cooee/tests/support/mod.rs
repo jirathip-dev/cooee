@@ -1,7 +1,3 @@
-//! Test support: a fake shed server on a Unix socket (shed's JSON-RPC and events, with a scripted ACP agent per
-//! terminal, and plain `run` terminals whose program really runs: its output is the screen), a fake `shed` CLI
-//! beside it, and a tiny HTTP client for `cooee serve`.
-
 #![allow(dead_code, reason = "each test file uses part of the support")]
 
 use std::{
@@ -30,7 +26,6 @@ use cooee_core::shed_proto::{
 };
 use serde_json::{Value, json};
 
-/// What the scripted agent of a terminal is told.
 #[derive(Debug, Clone, PartialEq)]
 enum Input {
     Prompt(String),
@@ -47,13 +42,10 @@ struct Shared {
     stopped: BTreeSet<String>,
     gone: BTreeSet<String>,
     agents: BTreeMap<String, Sender<Input>>,
-    /// The terminals a tool started (`lane`), with their labels; every other one is cooee's.
     lanes: BTreeMap<String, BTreeMap<String, String>>,
-    /// A room member's next replies, by persona (`cue`).
     cues: BTreeMap<String, VecDeque<String>>,
 }
 
-/// A plain terminal's program (`run`): its stdin, its output so far, its exit and whether its wait timed out.
 #[derive(Default)]
 struct Proc {
     pid: u32,
@@ -63,7 +55,6 @@ struct Proc {
     expired: bool,
 }
 
-/// The plain terminals, by name, with a signal for every change.
 #[derive(Default)]
 struct Procs {
     by_name: Mutex<BTreeMap<String, Proc>>,
@@ -79,7 +70,6 @@ pub struct FakeShed {
     procs: Arc<Procs>,
     /// Every request (method, params) in order.
     pub requests: Arc<Mutex<Vec<(String, Value)>>>,
-    /// The open connections (shut by [`FakeShed::stop`]), how many were accepted and how many are served.
     conns: Arc<Mutex<(Vec<UnixStream>, usize, usize)>>,
 }
 
@@ -193,13 +183,11 @@ impl FakeShed {
         fs::write(self.dir.join("links.json"), links.to_string()).unwrap();
     }
 
-    /// `machine.links`: each machine's link, as [`FakeShed::link`] set it.
     fn links(&self) -> Value {
         fs::read_to_string(self.dir.join("links.json"))
             .map_or_else(|_| json!({}), |t| serde_json::from_str(&t).unwrap())
     }
 
-    /// Whether `name` is `<machine>/<name>` on a machine whose link is not up.
     fn no_link(&self, name: &str) -> bool {
         name.split_once('/')
             .is_some_and(|(m, _)| self.links()[m]["state"] != "up")
@@ -258,7 +246,6 @@ impl FakeShed {
             .insert(persona.to_owned(), replies);
     }
 
-    /// Terminal `name`'s cued reply, when it is a room member's session (its `run` line labels it) with a cue.
     fn cued(&self, name: &str) -> Option<String> {
         let log = self.cli_log();
         let line = log
@@ -328,9 +315,6 @@ impl FakeShed {
         self.procs.changed.notify_all();
     }
 
-    /// `run`: starts `cmd` in `cwd` for real, its stdout and stderr the screen, its stdin what `send`/`keys` type.
-    /// With a `machine` (#150) it is that machine's `<machine>/<name>`, refused `NoLink` unless its link is up, its
-    /// programs looked up in `dir/on-<machine>` first.
     fn run(&self, params: &Value) -> Result<Value, RpcError> {
         let mut name = params["name"].as_str().unwrap().to_owned();
         let mut path = env::var("PATH").unwrap_or_default();
@@ -341,7 +325,6 @@ impl FakeShed {
             }
             path = format!("{}:{path}", self.dir.join(format!("on-{m}")).display());
         }
-        // The owner's shells (#28) are listed by `ls`, with their labels.
         if params["labels"]["cooee.owner"] == "1" {
             let labels = serde_json::from_value(params["labels"].clone()).unwrap();
             self.shared
@@ -390,7 +373,6 @@ impl FakeShed {
         self.terminal(&name)
     }
 
-    /// Types into plain terminal `name`, if it is one.
     fn type_in(&self, name: &str, text: &str) -> bool {
         let mut procs = self.procs.by_name.lock().unwrap();
         let Some(proc) = procs.get_mut(name) else {
@@ -402,7 +384,6 @@ impl FakeShed {
         true
     }
 
-    /// `wait` on plain terminal `name` with no pattern: until its program exits or the fake clock expires it.
     fn wait_exit(&self, name: &str) -> Value {
         let mut procs = self.procs.by_name.lock().unwrap();
         loop {
@@ -477,7 +458,6 @@ impl FakeShed {
         })
     }
 
-    /// A terminal by name: any name runs until it is killed or exits; a removed one is gone.
     fn terminal(&self, name: &str) -> Result<Value, RpcError> {
         let s = self.shared.lock().unwrap();
         if s.gone.contains(name) {
@@ -491,7 +471,6 @@ impl FakeShed {
         Ok(t)
     }
 
-    /// `ls`: the lanes carrying every one of `want` (cooee's own terminals are never listed).
     fn ls(&self, want: &Value) -> Value {
         let want = want.as_object().cloned().unwrap_or_default();
         let all = self.shared.lock().unwrap().lanes.clone();
@@ -503,9 +482,6 @@ impl FakeShed {
         json!(listed.collect::<Vec<_>>())
     }
 
-    /// The session-ready `wait`: held while `hold-ready` is shut, timed out while `ready-timeout` (or, for this
-    /// terminal only, `ready-timeout-<name>`) is. The session is `session.json`'s, when there is one (#193: the
-    /// models the fake agent reports).
     fn ready_wait(&self, name: &str) -> Result<Value, RpcError> {
         self.hold("hold-ready");
         let timeout = ["ready-timeout".to_owned(), format!("ready-timeout-{name}")];
@@ -521,7 +497,6 @@ impl FakeShed {
         Ok(json!({ "outcome": outcome, "terminal": t }))
     }
 
-    /// `send`: held while `hang-send` is shut; refused for a terminal that is gone.
     fn send(&self, name: &str, text: &str) -> Result<Value, RpcError> {
         self.hold("hang-send");
         self.hold(&format!("hang-send-{name}"));
@@ -532,8 +507,6 @@ impl FakeShed {
         Ok(json!({}))
     }
 
-    /// Terminal `name`'s screen as rows: a plain terminal's last 24 output lines, else a line naming it. A line
-    /// starting `ok` is one bold green run (shed's colours), any other one default run.
     fn rows(&self, name: &str) -> Vec<Value> {
         let procs = self.procs.by_name.lock().unwrap();
         let text = procs
@@ -549,8 +522,6 @@ impl FakeShed {
         shown.map(|t| json!([run(t)])).collect()
     }
 
-    /// `screen.watch` (request `id`): its answer, the whole screen, then the rows that changed, until the terminal's
-    /// program exits or it is killed.
     fn watch(&self, id: Value, params: &Value, writer: &mut UnixStream) {
         let name = params["terminal"].as_str().unwrap();
         writeln!(writer, "{}", json!(Response::ok(id, json!({})))).unwrap();
@@ -585,7 +556,6 @@ impl FakeShed {
         }
     }
 
-    /// `terminal.input` (its text) or `terminal.keys` (`enter` and `ctrl+c`; other keys type nothing).
     fn type_keys(&self, params: &Value) -> Value {
         let t = params["terminal"].as_str().unwrap();
         if let Some(text) = params["text"].as_str() {
@@ -621,7 +591,6 @@ impl FakeShed {
                 _ if self.no_link(&name) => Err(RpcError::new(ErrorCode::NoLink, &name)),
                 "machine.links" => Ok(self.links()),
                 "hello" => {
-                    // A protocol-0 shed checks only the product and version; a later one, the protocol too.
                     let theirs: Hello = serde_json::from_value(req.params.clone()).unwrap();
                     let ours = &self.hello;
                     let protocol = ours.protocol == 0 || theirs.protocol == ours.protocol;
@@ -722,7 +691,6 @@ impl FakeShed {
         tx.send(input).unwrap();
     }
 
-    /// The scripted agent: a prompt's words pick the script.
     fn agent(&self, name: &str, rx: &Receiver<Input>) {
         while let Ok(input) = rx.recv() {
             let Input::Prompt(prompt) = input else {
@@ -742,7 +710,6 @@ impl FakeShed {
         }
     }
 
-    /// One turn's script: the events that end it and its stop reason (`None` when the agent exits).
     fn script(
         &self,
         name: &str,
@@ -761,7 +728,6 @@ impl FakeShed {
         } else if prompt.contains("approve") {
             self.approval(name, rx)
         } else if prompt.contains("markdown") {
-            // Streamed a line at a time, then the whole reply.
             let mut events: Vec<EventKind> = MARKDOWN.split_inclusive('\n').map(text).collect();
             events.push(reply(MARKDOWN, "end_turn"));
             (events, "end_turn")
@@ -813,7 +779,6 @@ impl FakeShed {
                 }
                 self.emit(name, text(&format!("w{i} ")));
             }
-            // The reply waits for a stop, so a page can be read with the whole stream, however late it reconnects.
             if stop == "end_turn" {
                 while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
             }
@@ -830,7 +795,6 @@ impl FakeShed {
         })
     }
 
-    /// Asks before an edit and waits for `approve` (or a cancel).
     fn approval(&self, name: &str, rx: &Receiver<Input>) -> (Vec<EventKind>, &'static str) {
         let call = "Edit src/lib.rs";
         self.emit(name, tool("c2", call, "pending"));
@@ -1070,7 +1034,6 @@ shed_dir = {}
         body: &str,
     ) -> (String, String) {
         let mut stream = TcpStream::connect(&self.addr).unwrap();
-        // One write: a refusal sent before a late body arrives would reset the connection under the read.
         let mut request = Vec::new();
         write!(request, "{method} {path} HTTP/1.0\r\n").unwrap();
         if !headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("host")) {
@@ -1155,7 +1118,6 @@ shed_dir = {}
 }
 
 impl Drop for Cooee {
-    /// SIGTERM, so `cooee serve` stops what it runs; SIGKILL if it hasn't ended within 5 s.
     fn drop(&mut self) {
         if !matches!(self.child.try_wait(), Ok(None)) {
             return;

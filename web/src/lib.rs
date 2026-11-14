@@ -43,7 +43,6 @@ use topcoat::{
     view::{Child, Unescaped, View, component, view},
 };
 
-/// A `web/ts` entry as `build.rs` stripped it.
 macro_rules! built {
     ($name:literal) => {
         include_str!(concat!(env!("OUT_DIR"), "/", $name))
@@ -75,7 +74,6 @@ pub fn assets(builder: RouterBuilder, looks: Arc<LookAssets>) -> RouterBuilder {
 /// theme is added, removed or kept, or one in `themes-dev/` is saved.
 pub struct LookAssets {
     dir: Option<PathBuf>,
-    /// The index's theme packs, for Settings › look › + theme.
     index: Vec<cooee_core::plugins::Listed>,
     default: Option<String>,
     now: RwLock<(Arc<Looks>, Arc<str>)>,
@@ -107,7 +105,6 @@ impl LookAssets {
     /// Never: [`Looks`] always serialises.
     pub fn reload(&self) -> Vec<String> {
         let (looks, refused) = Looks::load(self.dir.as_deref(), self.default.as_deref());
-        // In a <script> element: no `</` may end it.
         let json = serde_json::to_string(&looks)
             .expect("looks serialise")
             .replace("</", "<\\/");
@@ -132,7 +129,6 @@ impl LookAssets {
     }
 }
 
-/// A file made at start, served with its content type.
 struct Owned(&'static str, Vec<u8>);
 
 impl IntoResponse for Owned {
@@ -147,7 +143,6 @@ impl IntoResponse for Owned {
 path_param!(look);
 path_param!(file);
 
-/// `svg` with a `<style>` rule first, since a `<use>` or `<img>` of another file takes that file's styles only.
 fn with_rule(svg: &[u8], rule: &[u8]) -> Vec<u8> {
     let at = svg
         .windows(4)
@@ -157,11 +152,8 @@ fn with_rule(svg: &[u8], rule: &[u8]) -> Vec<u8> {
     [&svg[..at], rule, &svg[at..]].concat()
 }
 
-/// A sprite sheet's two-frame loop: frame 1 (`.kf1`, `.f1`) shows by default, and `--o1`/`--o2`, which the page
-/// animates, inherit into each sprite.
 const FRAMES: &[u8] = b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
 
-/// A scene's calm layers only (#34): herdsman's scenes draw each host-load level as a layer, and cooee has no load.
 const CALM: &[u8] = b"<style>.h-busy,.h-held,.l-overcast,.l-rain{display:none}</style>";
 
 #[route(GET "/look/{look}/{file}")]
@@ -195,7 +187,6 @@ async fn look_file(cx: &Cx) -> Result<Owned> {
 /// The plugin API inside a plugin's frame (`frame.ts`): the server puts it before the plugin's module.
 pub const FRAME_JS: &str = built!("frame.js");
 
-/// A fixed file served with its content type.
 struct Static(&'static str, &'static [u8]);
 
 impl IntoResponse for Static {
@@ -274,8 +265,6 @@ async fn look_js() -> Result<Static> {
     ))
 }
 
-/// A page in the device's look, drawn from the first byte: the scheme's tokens, `data-*` on `<html>` and the
-/// theme's icon; the sheets after the content (`providers`: Settings › providers).
 #[component]
 async fn document(
     cx: &Cx,
@@ -337,11 +326,6 @@ async fn document(
     })
 }
 
-/// The chat header: the agent's name, the title (an agent's ongoing chat is titled by its name; a side thread by
-/// its own, its agent first in the line), and the line before its state: a Workflow session's role and round, else
-/// its agent profile's label, or Plain and who it runs as (`runs`: provider · account, never the agent's id), and the
-/// model (the folder follows it, drawn apart so Use a folder… can change it). `provider`: the provider's name. Last,
-/// the agent its `‹` shows: the one that holds it (a plugin's agent that lists it included), else its own.
 fn bar(
     thread: &Thread,
     mate: Option<&(usize, String, bool, Option<String>, String)>,
@@ -399,14 +383,12 @@ pub fn short(folder: &Path) -> String {
     }
 }
 
-/// Now, in Unix ms.
 fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
 
-/// `now`, `5m`, `3h`, `2d` since `at` (Unix ms).
 fn age(at: u64) -> String {
     match (now() / 1000).saturating_sub(at / 1000) {
         s if s < 60 => "now".to_owned(),
@@ -416,7 +398,6 @@ fn age(at: u64) -> String {
     }
 }
 
-/// A turn state's key in the theme (`shown.rs` and `look.ts` draw its sprite and words).
 fn state(state: &str) -> &'static str {
     match state {
         "blocked" => "needs",
@@ -429,8 +410,6 @@ fn state(state: &str) -> &'static str {
     }
 }
 
-/// The header: the app's name (the heading on the agents list, with the 🔔 that turns alerts on; else a link to
-/// it), the plugin tabs (`current` open), `+` (`new`: a new chat with the agent on show), the look sheet and Settings.
 #[component]
 async fn header(
     home: bool,
@@ -481,7 +460,6 @@ async fn header(
     })
 }
 
-/// Chat and the plugin tabs (`(name, label, dot)`), when there are any; `current` is the open one (`""`: Chat).
 #[component]
 async fn nav(tabs: Vec<(String, String, bool)>, current: String) -> Result<impl View> {
     Ok(view! {
@@ -575,7 +553,6 @@ pub fn pair_page(cx: &Cx, state: PairState) -> impl View {
     view! { cx => pair(state: state) }
 }
 
-/// The share icon (iOS), drawn in the text colour.
 const SHARE: &str = r#"<svg class="shi" viewBox="0 0 20 24" aria-hidden="true"><path d="M10 2v13M5.5 6.5 10 2l4.5 4.5M6.5 9.5H4a1 1 0 0 0-1 1V21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10.5a1 1 0 0 0-1-1h-2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>"#;
 
 #[component]
@@ -640,7 +617,6 @@ async fn pair(cx: &Cx, state: PairState) -> Result<impl View> {
     })
 }
 
-/// The welcome: the theme's figure (its icon when there is none), why, the iOS hint and the three steps.
 #[component]
 async fn welcome(cx: &Cx, ios: Option<bool>) -> Result<impl View> {
     let look = shown(cx);
@@ -697,7 +673,6 @@ async fn welcome(cx: &Cx, ios: Option<bool>) -> Result<impl View> {
     })
 }
 
-/// The code card: six boxes (filled from a QR link, or the used code muted), why the last code was refused, [pair] and the other ways.
 #[component]
 async fn code_card(state: PairState) -> Result<impl View> {
     let bad = state.bad.clone().unwrap_or_default();
@@ -761,7 +736,6 @@ async fn code_card(state: PairState) -> Result<impl View> {
     })
 }
 
-/// Why the last code was refused: `wrong` (with the tries `left`), `expired`, or `limit` (for `wait` seconds).
 #[component]
 async fn refusal(bad: String, left: u32, wait: u64) -> Result<impl View> {
     let tries = format!(
@@ -817,8 +791,6 @@ async fn refusal(bad: String, left: u32, wait: u64) -> Result<impl View> {
     })
 }
 
-/// `[keep]`: theme `name` from `themes-dev/` into the installed ones, once it passes the theme gate (else the failures
-/// go to `thread`, its chat).
 #[component]
 async fn keep(name: String, thread: String) -> Result<impl View> {
     Ok(view! {
@@ -887,7 +859,6 @@ async fn preview(cx: &Cx, name: String, fails: Vec<String>, thread: String) -> R
     })
 }
 
-/// A model or effort select (#553 row 34): `name`'s choices, `default` first, `now` selected.
 #[component]
 async fn pick(id: String, name: &str, list: Vec<String>, now: String) -> Result<impl View> {
     Ok(view! {
@@ -904,7 +875,6 @@ async fn pick(id: String, name: &str, list: Vec<String>, now: String) -> Result<
     })
 }
 
-/// The theme a thread in `folder` builds in `themes-dev/`, for its preview and [keep].
 fn dev_theme(cx: &Cx, folder: Option<&Path>) -> Option<String> {
     app_context::<Arc<LookAssets>>(cx)
         .dir()
@@ -914,7 +884,6 @@ fn dev_theme(cx: &Cx, folder: Option<&Path>) -> Option<String> {
         .and_then(|(_, f)| f.file_name()?.to_str().map(str::to_owned))
 }
 
-/// A theme thread's preview link and [keep], for a thread in `themes-dev/`.
 #[component]
 async fn dev_bar(cx: &Cx, thread: String, folder: Option<PathBuf>) -> Result<impl View> {
     Ok(view! {
@@ -929,12 +898,10 @@ async fn dev_bar(cx: &Cx, thread: String, folder: Option<PathBuf>) -> Result<imp
     })
 }
 
-/// `url`, when it is a web link.
 fn web_url(url: &str) -> Option<String> {
     (url.starts_with("https://") || url.starts_with("http://")).then(|| url.to_owned())
 }
 
-/// The rename box the thread bar's title opens (`chat.ts`).
 #[component]
 async fn rename(title: String) -> Result<impl View> {
     Ok(view! {
@@ -951,7 +918,6 @@ async fn rename(title: String) -> Result<impl View> {
     })
 }
 
-/// The archived threads, folded, each with [restore] (`chat.ts`).
 #[component]
 pub(crate) async fn shelf(rows: Vec<cooee_core::Summary>) -> Result<impl View> {
     Ok(view! {
@@ -976,8 +942,6 @@ pub(crate) async fn shelf(rows: Vec<cooee_core::Summary>) -> Result<impl View> {
     })
 }
 
-/// A thread's foot: the folder, model and effort chips (none once it ended), the working pill, the queued messages,
-/// the picked files, the composer; the long-press menu and the image viewer (`chat.ts`).
 #[component]
 async fn foot(
     who: String,
@@ -1037,8 +1001,6 @@ async fn foot(
     })
 }
 
-/// One thread (the pane of `/t/{id}`): its bar (its agent's avatar and name, the title of a side thread), the
-/// items (drawn by `chat.ts`), the working pill, and the composer with the folder, model and effort chips.
 #[component]
 async fn chat(
     cx: &Cx,
@@ -1064,7 +1026,6 @@ async fn chat(
     let (name, title, said, back) = bar(&thread, mate.as_ref(), (&profile, &provider, &runs));
     let ended = thread.closed || turn.state == "ended";
     let renamable = !matches!(mate, Some((_, _, true, ..)));
-    // A Workflow session (#33): its role and round, and a link to what it works on; its tool closes it.
     let workflow = thread.workflow.clone();
     let link = workflow.as_ref().and_then(|w| web_url(&w.url));
     Ok(view! {
@@ -1084,7 +1045,6 @@ async fn chat(
                 }
                 <div class="tb">
                     <div class="tn">
-                        // A side thread's title renames it (#43); an agent's ongoing chat goes by its name.
                         if renamable {
                             <h1>
                                 <button

@@ -1,8 +1,3 @@
-// #116: Scene's vector horses for the mockup (cooee#115 brings them to the farm pack; until then, copied here):
-// herdsman's `assets/themes/farm/sprites.svg` poses as symbols `h-<pose>`, coats left to CSS (--c --d --m --b, --fk
-// the tack). Revision 1 (q902): each state acts its theme word: on the trail ploughs, at the gate rears at the gate,
-// in the stable stands in it, grazing grazes, refused refuses the fence, over the fence jumps it.
-// Usage (repo root): node docs/design/native-shell/horses.mjs <herdsman checkout>
 import { readFileSync, writeFileSync } from "node:fs";
 
 const src = readFileSync(`${process.argv[2]}/assets/themes/farm/sprites.svg`, "utf8").split("\n");

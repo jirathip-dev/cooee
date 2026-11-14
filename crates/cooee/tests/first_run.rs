@@ -13,7 +13,6 @@ use support::{Cooee, FakeShed, scratch, version};
 fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
     let dir = scratch("first-run");
     let shed = FakeShed::start(&dir.join("shed"), version());
-    // A shed with nothing installed: `shed agents` lists none.
     fs::write(shed.dir.join("shed"), "#!/bin/sh\necho '[]'\n").unwrap();
     let codex = "[[providers]]\nname = \"codex\"\nagent = \"codex-acp\"\nlogin = [\"no-such-codex\"]\n\
                  status = [\"true\"]\ninstall = \"npm install -g @openai/codex\"\n";
@@ -26,12 +25,10 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
             && page.contains(r#"data-copy="shed agents add claude-acp""#),
         "{page}"
     );
-    // Nothing to send with: no composer.
     assert!(
         !page.contains("<select") && !page.contains(r#"<form id="new">"#),
         "{page}"
     );
-    // codex's CLI is missing: one row, `not installed` and [copy install]; no sign-in, no accounts.
     assert!(
         page.contains(r#"<div class="acr ni"><span class="ptg">codex</span><span class="sk">not installed</span><button type="button" class="sec" data-copy="npm install -g @openai/codex" title="npm install -g @openai/codex">copy install</button></div>"#),
         "{page}"
@@ -69,7 +66,6 @@ fn with_one_root_and_nothing_in_it_a_thread_starts_in_the_root() {
         &format!("roots = [{:?}]\n", root.to_string_lossy()),
     );
 
-    // A new chat's folder chip: scratch (picked), then the root.
     let (_, page) = cooee.get("/");
     let option = format!(r#"name="folder" value="{}">"#, root.display());
     assert!(

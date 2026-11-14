@@ -1,8 +1,3 @@
-//! Settings › mcp servers (#56), HTML-first (#49) in #48's flat-list pattern: one row per server, `[stdio|http]
-//! name · on/off · [edit on Mac] [remove]`; `+ server` (its card shows the exact command or URL, and approving needs
-//! Face ID: `pair.ts`); a secret saved straight to the keychain; and each of the owner's profiles with a checkbox per
-//! server and per tool. Every form posts and comes back here.
-
 use std::collections::BTreeMap;
 
 use cooee_core::{Profile, mcp::Server};
@@ -30,7 +25,6 @@ pub fn mcp_page(cx: &Cx, page: McpPage) -> impl View {
     view! { cx => mcp(page: page) }
 }
 
-/// One server's row: `[stdio|http] name · on/off · [edit on Mac] [remove]`.
 #[component]
 async fn server_row(s: Server) -> Result<impl View> {
     let to = format!("/mcp/servers/{}", s.name);
@@ -68,8 +62,6 @@ async fn server_row(s: Server) -> Result<impl View> {
     })
 }
 
-/// A profile's servers section: a checkbox per server that is on, and under it one per tool (none listed: the server's
-/// whole set stays as it is).
 #[component]
 async fn picks(
     p: Profile,

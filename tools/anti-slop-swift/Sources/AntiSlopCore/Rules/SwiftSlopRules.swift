@@ -38,8 +38,6 @@ public final class NoImplicitlyUnwrappedOptionalsRule: SlopRule {
         "Rejects implicitly unwrapped optionals (`Int!`), which are deferred force unwraps; @IBOutlet declarations are exempt."
     }
 
-    /// Attributes whose members are populated by external machinery before
-    /// use, where IUO is the accepted spelling.
     private static let exemptAttributes: Set<String> = ["IBOutlet", "IBInspectable"]
 
     public required init(
@@ -194,8 +192,6 @@ public final class NoHardcodedSecretsRule: SlopRule {
         "Rejects credentials assigned string literals; read them from the environment or a secrets store."
     }
 
-    /// Matched against the lowercased declaration name. Deliberately excludes
-    /// the bare word "token", which appears in too many innocent names.
     private static let secretTerms: Set<String> = [
         "apikey", "api_key",
         "secret",
@@ -224,8 +220,6 @@ public final class NoHardcodedSecretsRule: SlopRule {
                 !looksLikeEnvironmentVariableName(literal),
                 !(looksLikeIdentifier(literal) && hasKeyLikeName(pattern.identifier.text))
             else { continue }
-            // Same escape hatch as the force operations: a deliberate local
-            // credential can be kept, but its presence must be stated.
             if hasPrecedingSafetyComment(for: initializer) { continue }
             report(
                 initializer,
@@ -240,20 +234,12 @@ public final class NoHardcodedSecretsRule: SlopRule {
         return Self.secretTerms.contains { lowered.contains($0) }
     }
 
-    /// `"MERERUN_API_KEY"`-style literals are environment variable names, not
-    /// committed secrets. SCREAMING_CASE values are exempt.
     private func looksLikeEnvironmentVariableName(_ value: String) -> Bool {
         !value.isEmpty
             && value == value.uppercased()
             && value.allSatisfy { $0.isLetter || $0.isNumber || $0 == "_" }
     }
 
-    /// Kebab-case slugs (`"mere-run-local-eval"`) and dotted key paths
-    /// (`"mererun.app.runtimeAPIKey"`) are exempt only when the declaration
-    /// name itself signals a key or label (`evalKeyName`, `defaultsKey`).
-    /// Shape alone would hide real secrets like "correct-horse-battery-staple"
-    /// assigned to `password`. Letter-only segments keep mixed-alphanumeric
-    /// API-key fragments flagged.
     private func looksLikeIdentifier(_ value: String) -> Bool {
         if value.range(of: "^[a-z]+(-[a-z]+)+$", options: .regularExpression) != nil {
             return true
@@ -261,18 +247,12 @@ public final class NoHardcodedSecretsRule: SlopRule {
         return value.range(of: "^[A-Za-z][A-Za-z0-9]*(\\.[A-Za-z][A-Za-z0-9]*)+$", options: .regularExpression) != nil
     }
 
-    /// Names that declare "this holds the *name/address* of something" —
-    /// per upstream review: KeyName, DefaultsKey, Identifier. Bare `apiKey`
-    /// deliberately does not qualify: it names the secret's storage slot, and
-    /// its value may be the credential itself.
     private func hasKeyLikeName(_ name: String) -> Bool {
         let lowered = name.lowercased()
         return ["keyname", "defaultskey", "identifier"]
             .contains { lowered.hasSuffix($0) }
     }
 
-    /// Returns the literal's text when `expr` is a plain, non-empty,
-    /// non-interpolated string literal.
     private func plaintextStringLiteral(_ expr: ExprSyntax) -> String? {
         guard let literal = expr.as(StringLiteralExprSyntax.self),
             literal.openingPounds == nil && literal.closingPounds == nil
@@ -281,7 +261,7 @@ public final class NoHardcodedSecretsRule: SlopRule {
         var contents = ""
         for segment in literal.segments {
             guard case .stringSegment(let stringSegment) = segment else {
-                return nil // interpolation or raw segment: not a static secret
+                return nil
             }
             contents += stringSegment.content.text
         }

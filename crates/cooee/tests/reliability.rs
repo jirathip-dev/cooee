@@ -17,7 +17,6 @@ use std::{
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
 
-/// A request's path, headers and the status it must get.
 type Case<'a> = (&'a str, Vec<(&'a str, &'a str)>, &'a str);
 
 struct Setup {
@@ -33,7 +32,6 @@ fn setup(name: &str) -> Setup {
     Setup { dir, shed, cooee }
 }
 
-/// Polls `f` until it holds (10 s at most).
 fn until(what: &str, f: impl Fn() -> bool) {
     let deadline = Instant::now() + Duration::from_secs(10);
     while !f() {
@@ -42,7 +40,6 @@ fn until(what: &str, f: impl Fn() -> bool) {
     }
 }
 
-/// A new-thread request with `random_id`, as the page sends it.
 fn start(s: &Setup, text: &str, random_id: &str) -> Value {
     json!({ "agent": "fake-acp", "folder": s.dir.join("root/project"), "text": text, "random_id": random_id })
 }
@@ -54,7 +51,6 @@ fn id_of(body: &str) -> String {
         .to_owned()
 }
 
-/// The `shed run` lines of the fake CLI.
 fn runs(shed: &FakeShed) -> usize {
     shed.cli_log()
         .lines()
@@ -62,7 +58,6 @@ fn runs(shed: &FakeShed) -> usize {
         .count()
 }
 
-/// The prompts shed got for thread `id`.
 fn prompts(shed: &FakeShed, id: &str) -> Vec<String> {
     let sent = shed.sent(&format!("cooee-{id}"));
     sent.into_iter()
@@ -70,14 +65,12 @@ fn prompts(shed: &FakeShed, id: &str) -> Vec<String> {
         .collect()
 }
 
-/// The thread ids `GET /threads` lists.
 fn listed(cooee: &Cooee) -> Vec<String> {
     let rows = cooee.json("/threads");
     let ids = rows.as_array().unwrap().iter();
     ids.map(|r| r["id"].as_str().unwrap().to_owned()).collect()
 }
 
-/// A POST that may never get its answer (the server is killed under it).
 fn post_raw(addr: &str, cookie: &str, path: &str, body: &Value) -> Option<String> {
     let mut stream = TcpStream::connect(addr).ok()?;
     let body = body.to_string();
@@ -91,7 +84,6 @@ fn post_raw(addr: &str, cookie: &str, path: &str, body: &Value) -> Option<String
     Some(answer)
 }
 
-/// A fake `security` in `dir/bin` running `script`: the PATH that puts it first.
 #[cfg(target_os = "macos")]
 fn fake_security(dir: &std::path::Path, script: &str) -> String {
     use std::os::unix::fs::PermissionsExt;
@@ -102,9 +94,6 @@ fn fake_security(dir: &std::path::Path, script: &str) -> String {
     format!("{}:{}", bin.display(), std::env::var("PATH").unwrap())
 }
 
-/// R1 (herdsman#548, #556, #99): a keychain that never answers (locked, behind an unseen prompt) holds up nothing:
-/// cooee answers at once, gives up on the old key after 5 s, makes a new one in its 0600 file and asks each
-/// subscribed device, with the reason, to turn alerts on again.
 #[cfg(target_os = "macos")]
 #[test]
 fn r1_a_hung_keychain_falls_through_to_a_new_key_and_blocks_nothing() {
@@ -136,14 +125,11 @@ fn r1_a_hung_keychain_falls_through_to_a_new_key_and_blocks_nothing() {
         0o600
     );
     assert_eq!(cooee.get("/push/key").0, 200);
-    // Subscribing again clears the reason.
     let again = json!({ "endpoint": "https://push.example.com/y", "p256dh": sub["p256dh"], "auth": sub["auth"] });
     assert_eq!(cooee.post("/push/subscribe", &again).0, 200);
     assert_eq!(cooee.json("/push/reset"), Value::Null);
 }
 
-/// #99: the key cooee kept in the keychain before is copied to `<data>/vapid.key` on the first start, once; a later
-/// start reads the file, never the keychain, and `cooee push migrate` prints the command that deletes the old item.
 #[cfg(target_os = "macos")]
 #[test]
 fn an_old_keychain_key_is_copied_to_the_file_once() {
@@ -185,8 +171,6 @@ fn an_old_keychain_key_is_copied_to_the_file_once() {
     assert_eq!(fs::read_to_string(&key).unwrap(), old);
 }
 
-/// #99: a phone that asks for the key while the old one is still being read gets a new key; the late old key is
-/// dropped and the subscriptions made before are asked to turn alerts on again.
 #[cfg(target_os = "macos")]
 #[test]
 fn a_key_made_during_the_keychain_read_wins_and_old_subscriptions_reset() {
@@ -214,8 +198,6 @@ fn a_key_made_during_the_keychain_read_wins_and_old_subscriptions_reset() {
     assert_eq!(fs::read_to_string(&key).unwrap(), made);
 }
 
-/// R3 (herdsman#501): a 401 then a 200 leaves no pairing page, and a devices store that can't be read is a 503,
-/// never "pair this device first".
 #[test]
 fn r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch() {
     let s = setup("r3-unpaired");
@@ -232,14 +214,11 @@ fn r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch() {
     let (status, body) = s.cooee.get("/threads/x/messages");
     assert_eq!(status, 503, "{body}");
     assert!(body.contains("can't read its paired devices"), "{body}");
-    // A page load too: no redirect to pairing.
     assert_eq!(s.cooee.get("/").0, 503);
     fs::write(&devices, kept).unwrap();
     assert_eq!(s.cooee.get("/").0, 200);
 }
 
-/// R7 (herdsman#337): a page load runs no subprocess: the agents and the sign-ins' status are read as last checked
-/// (at start, then in the background), never per request.
 #[test]
 fn r7_page_loads_run_no_subprocess() {
     use std::os::unix::fs::PermissionsExt;
@@ -264,7 +243,6 @@ fn r7_page_loads_run_no_subprocess() {
     assert_eq!(code, 200, "{body}");
     let id = id_of(&body);
 
-    // The first check runs in the background (#106): wait for its result.
     let start = std::time::Instant::now();
     while cooee.json("/logins/fake")["status"]["unknown"] != false {
         assert!(start.elapsed() < std::time::Duration::from_secs(10));
@@ -286,9 +264,6 @@ fn r7_page_loads_run_no_subprocess() {
     assert_eq!(calls(), before);
 }
 
-/// #55: the agent list is the hub's: page loads and a start on a listed agent read it; an agent it lacks runs
-/// `shed agents` once, then the list serves; a failed refresh keeps the list (logged), and with none the page says
-/// why. (Once a minute in the background, on a fake clock: cooee-server `hub`.)
 #[test]
 fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
     let dir = scratch("agents-cache");
@@ -314,7 +289,6 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
     }
     assert_eq!(lists(), 1, "{}", s.shed.cli_log());
 
-    // An agent the list lacks: one refresh, then the list serves pages and starts.
     let (code, body) = s.cooee.post("/threads", &start(&s, "hi", "c1"));
     assert_eq!(code, 200, "{body}");
     assert_eq!(lists(), 2);
@@ -328,7 +302,6 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
     assert_eq!(s.cooee.post("/threads", &start(&s, "again", "c2")).0, 200);
     assert_eq!(lists(), 2, "{}", s.shed.cli_log());
 
-    // A failed refresh keeps the list, and says so in the log.
     s.shed.gate("agents-fails", true);
     let ghost = json!({ "agent": "ghost-acp", "folder": s.dir.join("root/project"), "text": "hi", "random_id": "c3" });
     s.cooee.post("/threads", &ghost);
@@ -345,7 +318,6 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
     );
 }
 
-/// R10 (herdsman#446): an ask the agent makes while its start is still running is listed and answerable.
 #[test]
 fn r10_an_ask_made_during_the_start_is_listed_and_answerable() {
     let s = setup("r10-early-ask");
@@ -385,8 +357,6 @@ fn r10_an_ask_made_during_the_start_is_listed_and_answerable() {
     });
 }
 
-/// R11 (herdsman#477, #359): a start that times out is adopted once: a retry gets the same thread, shed starts one
-/// terminal, the first message goes once; and a start whose CLI failed but whose terminal came up is kept.
 #[test]
 fn r11_a_slow_start_is_adopted_once() {
     let s = setup("r11-slow-start");
@@ -403,7 +373,6 @@ fn r11_a_slow_start_is_adopted_once() {
     assert_eq!(prompts(&s.shed, &first[0]).len(), 1);
     assert_eq!(listed(&s.cooee), first);
 
-    // The CLI gave up, but the terminal runs: kept, never started again.
     let (status, body) = s.cooee.post("/threads", &start(&s, "hello", "r11b"));
     assert_eq!(status, 200, "{body}");
     s.shed.gate("run-fails", false);
@@ -413,8 +382,6 @@ fn r11_a_slow_start_is_adopted_once() {
     assert_eq!(listed(&s.cooee).len(), 2);
 }
 
-/// R13 (herdsman#508): the gate fails closed: a malformed Host, Origin, cookie or plugin token is denied with a
-/// reason, and a malformed config stops `cooee serve` with one, never serving with a default.
 #[test]
 fn r13_malformed_input_or_config_is_denied_with_a_reason() {
     let s = setup("r13-closed");
@@ -453,8 +420,6 @@ fn r13_malformed_input_or_config_is_denied_with_a_reason() {
     assert!(!out.status.success() && err.contains("port"), "{err}");
 }
 
-/// R14 (herdsman#509): cooee is killed after shed started the agent and before the first message went: on restart
-/// the retried start adopts that thread: one terminal, one first message, one thread.
 #[test]
 fn r14_a_crash_between_start_and_send_is_recovered_once() {
     let dir = scratch("r14-crash");
@@ -484,8 +449,6 @@ fn r14_a_crash_between_start_and_send_is_recovered_once() {
     assert_eq!(listed(&cooee), ids);
 }
 
-/// R16 (herdsman#516): a stored thread whose rows repeat one id shows that row once, refreshed 5 times; and the
-/// thread list shows each thread once.
 #[test]
 fn r16_a_repeated_id_is_one_row_however_often_it_is_refreshed() {
     let dir = scratch("r16-dup");
@@ -511,8 +474,6 @@ fn r16_a_repeated_id_is_one_row_however_often_it_is_refreshed() {
     }
 }
 
-/// R17 (herdsman#547): text that names files is never a file served or an image: a message saying `/tmp/a.png`
-/// or `../x.png` comes back as text, and those paths (and traversals under `/look/`) are not served.
 #[test]
 fn r17_paths_in_text_are_never_files_served() {
     let s = setup("r17-paths");
@@ -545,8 +506,6 @@ fn r17_paths_in_text_are_never_files_served() {
     }
 }
 
-/// R20 (herdsman#548): a delivery stuck in shed holds the thread no longer than its call's timeout: a second
-/// message waiting behind it is answered "not delivered" within 30 s.
 #[test]
 fn r20_a_stuck_delivery_never_holds_the_next_one() {
     let s = setup("r20-stuck");
@@ -573,12 +532,10 @@ fn r20_a_stuck_delivery_never_holds_the_next_one() {
         assert_ne!(first.join().unwrap().0, 200);
     });
     s.shed.gate("hang-send", false);
-    // Neither was stored as sent: the page offers a retry.
     let items = s.cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
     assert!(!items.to_string().contains("\"two\""), "{items}");
 }
 
-/// R21 (herdsman#325, #143): an answer to a session that is gone says "not delivered", and the ask stays open.
 #[test]
 fn r21_an_answer_to_a_gone_session_says_not_delivered() {
     let s = setup("r21-gone");
@@ -606,7 +563,6 @@ fn r21_an_answer_to_a_gone_session_says_not_delivered() {
         ask.get("tapped").is_none() && ask.get("chosen").is_none(),
         "{ask}"
     );
-    // A message too.
     let (status, body) = s.cooee.post(
         &format!("/threads/{id}/send"),
         &json!({ "text": "hi", "random_id": "z" }),
@@ -617,8 +573,6 @@ fn r21_an_answer_to_a_gone_session_says_not_delivered() {
     );
 }
 
-/// #48: a start from the page answers at once: listed `connecting`, its first message pending (no item yet), and the
-/// agent started behind it; once shed takes the message it is one item, sent once, and the state moves on.
 #[test]
 fn a_background_start_answers_before_the_agent_runs_and_sends_once() {
     let s = setup("start-later");
@@ -636,7 +590,6 @@ fn a_background_start_answers_before_the_agent_runs_and_sends_once() {
         json!({ "text": "hi there", "random_id": "later" })
     );
     assert_eq!(listed(&s.cooee), std::slice::from_ref(&id));
-    // The same start again while it connects: the same thread, nothing started twice.
     let (_, again) = s.cooee.post("/threads", &new);
     assert_eq!(id_of(&again), id);
     s.shed.gate("hold-run", false);
@@ -652,8 +605,6 @@ fn a_background_start_answers_before_the_agent_runs_and_sends_once() {
     assert_eq!((runs(&s.shed), prompts(&s.shed, &id).len()), (1, 1));
 }
 
-/// #48: a background start that fails stays listed, `unconnected` with why; a retry starts it again and sends the
-/// first message once, its terminal (which came up) never started twice.
 #[test]
 fn a_failed_background_start_says_why_and_a_retry_sends_once() {
     let s = setup("start-later-fails");
@@ -669,7 +620,6 @@ fn a_failed_background_start_says_why_and_a_retry_sends_once() {
     });
     let slice = s.cooee.json(&messages);
     let why = slice["turn"]["note"].as_str().unwrap();
-    // Said with the provider's name, never the agent's id.
     assert!(
         why.starts_with("fake stopped: ") && !why.contains("fake-acp"),
         "{slice}"
@@ -688,14 +638,11 @@ fn a_failed_background_start_says_why_and_a_retry_sends_once() {
     until("it is an item", || {
         s.cooee.json(&messages)["items"][0]["text"] == "hi"
     });
-    // A second retry once it went: nothing more.
     s.cooee.post(&format!("/threads/{id}/retry"), &json!({}));
     thread::sleep(Duration::from_millis(200));
     assert_eq!((runs(&s.shed), prompts(&s.shed, &id).len()), (1, 1));
 }
 
-/// #48: a start with no folder runs in the thread's own scratch folder, `<data>/scratch/<id>`, made for it; it is kept
-/// with no folder and said as `scratch` (the thread's bar and its folder chip), never as its path.
 #[test]
 fn a_start_with_no_folder_runs_in_its_own_scratch_folder() {
     let s = setup("scratch");

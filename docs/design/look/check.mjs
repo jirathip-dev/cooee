@@ -1,5 +1,3 @@
-// #7: herdsman's scheme gate (gate.mjs, serve.js's line for line) over every scheme cooee ships. `node check.mjs`
-// prints PASS/FAIL and each check within 12 % of its minimum; exit 1 on a fail.
 import { readdirSync, readFileSync } from 'node:fs';
 import { gate } from './gate.mjs';
 

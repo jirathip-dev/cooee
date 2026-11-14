@@ -1,5 +1,3 @@
-// HTML-first (#49): with script off, the sheets and a new chat still open, as server HTML: the look sheet (a key
-// posts the pick, and the page comes back drawn in it), Settings, and Use a folder… (#86).
 import { expect, test } from "@playwright/test";
 
 test.use({ javaScriptEnabled: false });
@@ -17,7 +15,6 @@ test("with no script the look sheet, Settings and Use a folder… open", async (
   await open.locator("[data-k=style][data-v=terminal]").click();
   await expect(page.locator("html")).toHaveAttribute("data-style", "terminal");
   await expect(page.locator("body")).toHaveCSS("font-family", /monospace/);
-  // #35: Figures none posts too, and the page drawn for it doesn't list Scene.
   await page.getByRole("button", { name: "look: theme and colours" }).click();
   await expect(open.getByRole("radiogroup", { name: "style" }).getByRole("radio")).toHaveText(["modern", "terminal", "scene"]);
   await open.locator("[data-k=figures][data-v=none]").click();

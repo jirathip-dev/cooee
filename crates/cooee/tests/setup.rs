@@ -55,7 +55,6 @@ esac"#,
     ("curl", r#"test ! -e "$HOME/curl-fails""#),
 ];
 
-/// The commands that change something, as the fakes log them.
 const CHANGES: &[&str] = &[
     "cargo install --locked",
     "shed install",
@@ -66,8 +65,6 @@ const CHANGES: &[&str] = &[
     "tailscale serve --bg",
 ];
 
-/// A fake machine: `HOME` at `home`, the fakes in `home/bin`, a port that is listening and, unless `dry`, a fake shed
-/// server at the per-user socket.
 struct Mac {
     home: PathBuf,
     port: u16,
@@ -107,8 +104,6 @@ impl Mac {
         self.cooee_typing(args, None)
     }
 
-    /// `cooee <args>` with `input` typed in (none: no input). Git never reaches GitHub: the theme index's repo is a
-    /// missing folder here, unless the config names an index of its own.
     fn cooee_typing(&self, args: &[&str], input: Option<&str>) -> Output {
         let mut child = Command::new(BIN)
             .args(args)
@@ -142,7 +137,6 @@ impl Mac {
         child.wait_with_output().unwrap()
     }
 
-    /// The logged commands that change something, then the log is emptied.
     fn changes(&self) -> Vec<String> {
         let log = self.home.join("calls.log");
         let calls = fs::read_to_string(&log).unwrap_or_default();
@@ -159,7 +153,6 @@ impl Mac {
     }
 }
 
-/// Every file under `dir`, relative to it.
 fn files(dir: &Path) -> Vec<String> {
     let mut all = Vec::new();
     for entry in fs::read_dir(dir).unwrap().flatten() {
@@ -178,8 +171,6 @@ fn files(dir: &Path) -> Vec<String> {
     all
 }
 
-/// The owner's terminal plugin (#28) as setup adds it for an instance on `port`: port + 1000, with the 64 hex digit
-/// token written in `config`.
 fn terminal(port: u16, config: &str) -> String {
     let token = config
         .rsplit_once("token = \"")
@@ -346,7 +337,6 @@ fn an_existing_config_keeps_its_keys() {
         "{stdout}"
     );
 
-    // Another port than the config's is refused, the file untouched.
     let out = mac.cooee(&["setup", "--yes", "--port", "1"]);
     assert!(
         String::from_utf8_lossy(&out.stderr).contains(&format!("says port = {}", mac.port)),
@@ -361,7 +351,6 @@ fn an_existing_config_keeps_its_keys() {
 #[test]
 fn setup_installs_the_first_party_themes_chosen_from_the_index() {
     let mac = Mac::new("su-themes", false);
-    // An index whose first-party packs (and one that isn't) are folders of a local repo.
     let repo = mac.home.join("packs.git");
     fs::create_dir_all(&repo).unwrap();
     let packs = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs/themes");
@@ -406,7 +395,6 @@ fn setup_installs_the_first_party_themes_chosen_from_the_index() {
         ),
     )
     .unwrap();
-    // Asked which (farm and kitchen are first-party), kitchen is typed; no Codex, no Gemini.
     let args = ["setup", "--port", &mac.port.to_string()];
     let out = mac.cooee_typing(&args, Some("kitchen\n\n\n"));
     let stdout = String::from_utf8_lossy(&out.stdout);
@@ -435,7 +423,6 @@ fn setup_installs_the_first_party_themes_chosen_from_the_index() {
         lock,
         serde_json::json!([{ "name": "kitchen", "source": "index", "commit": commit, "listed": true }])
     );
-    // The default is all of them: farm, the one left.
     let out = mac.setup(&["--yes"]);
     assert!(out.status.success(), "{out:?}");
     assert!(String::from_utf8_lossy(&out.stdout).contains("installed theme farm\n"));
@@ -482,7 +469,6 @@ fn install_sh_checks_its_tools_then_installs_cooee_and_runs_setup() {
     let install = format!("cargo install --locked --path {}\n", crate_dir.display());
     let mut sign = String::new();
     if cfg!(target_os = "macos") {
-        // #167: no Apple Development identity, no install: an unsigned cooee couldn't keep its secrets.
         let security = bin.join("security");
         fs::write(&security, "#!/bin/sh\necho '  0 valid identities found'\n").unwrap();
         fs::set_permissions(&security, fs::Permissions::from_mode(0o755)).unwrap();

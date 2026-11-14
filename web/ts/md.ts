@@ -1,10 +1,3 @@
-// Markdown for the agent's replies (#43), hand-written: it builds DOM nodes (createElement, textContent), never
-// HTML, so every character of the text is escaped by construction. Blocks: paragraphs, headings, fenced code (its
-// language, a [copy] button, chat.ts's data-copy, and [▸ terminal], its data-term, when the page has the owner
-// terminal's tab), ordered and unordered lists, blockquotes, rules and GitHub tables (in a box that scrolls
-// sideways); inline: bold, italic, code and links, of http and https only (a new tab, rel=noopener). Raw HTML and
-// images stay text. `settled` is how much of a streaming reply is whole blocks.
-
 const el = (tag: string, cls = "", text?: string): HTMLElement => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -92,8 +85,6 @@ function blocks(lines: string[], into: Node): void {
   }
 }
 
-/// A list from line `i`; returns the line after it. Its items' lines are indented past the marker (or lazy
-/// continuations of their text); a blank line between items makes it loose (each item's text a paragraph).
 function list(lines: string[], i: number, into: Node): number {
   const first = (lines[i] ?? "").match(ITEM);
   const ordered = first?.[3] !== undefined;
@@ -126,13 +117,11 @@ function list(lines: string[], i: number, into: Node): number {
     blocks(body, li);
     box.appendChild(li);
   }
-  // A tight list's items hold their text, not paragraphs.
   if (!loose) for (const p of box.querySelectorAll(":scope > li > p")) p.replaceWith(...p.childNodes);
   into.appendChild(box);
   return i;
 }
 
-/// A row's cells: split on `|` outside code and escapes, the outer pipes dropped.
 function cells(line: string): string[] {
   const out: string[] = [];
   let cell = "";
@@ -183,8 +172,6 @@ function table(lines: string[], i: number, into: Node): number {
   return i;
 }
 
-/// A fenced block: its language (when the fence names one), [copy], [▸ terminal] (with the terminal plugin on) and
-/// the code, as it is.
 function code(text: string, lang: string): HTMLElement {
   const box = el("div", "cb");
   const bar = el("div", "cbh");
@@ -214,7 +201,6 @@ const link = (url: string): HTMLAnchorElement => {
   return a;
 };
 
-// Each is tried at a character that can start it (`prev`: the one before); `y` matches at lastIndex only.
 type Rule = [(c: string, prev: string) => boolean, RegExp, (m: RegExpExecArray) => Node];
 const wrap = (tag: string, m: RegExpExecArray): Node => {
   const e = el(tag);

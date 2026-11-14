@@ -1,12 +1,7 @@
-// Notifications in the service worker (sw.js), with pushes delivered through Chromium's DevTools protocol in the
-// shape the server sends (crates/cooee-server/src/push.rs): one per thread (tag), none while that thread is open, and
-// reading the thread clears it.
 import { expect, test } from "@playwright/test";
 
-// The full Chromium (new headless): the headless shell has no notifications.
 test.use({ channel: "chromium" });
 
-/// The service worker's registration id, for `ServiceWorker.deliverPushMessage`.
 async function registration(page, cdp) {
   await page.evaluate(() => navigator.serviceWorker.ready);
   const found = new Promise((ok) =>
@@ -43,12 +38,10 @@ test("two pushes for a thread show one notification; none while it is open; read
   await push("done: Hello");
   await expect.poll(() => shown(page, id)).toEqual(["done: Hello"]);
 
-  // Opening the thread reads it up to its last item: the notification goes.
   await page.goto(`/t/${id}`);
   await expect(page.locator(".blk.ai")).toContainText("Hello");
   await expect.poll(() => shown(page, id)).toEqual([]);
 
-  // While the thread is open in view, a push for it shows nothing.
   const cdp2 = await context.newCDPSession(page);
   const again = await registration(page, cdp2);
   await cdp2.send("ServiceWorker.deliverPushMessage", {

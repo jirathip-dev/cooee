@@ -65,7 +65,6 @@ fn the_machines_tab_shows_each_machine_and_a_dot_while_one_is_offline() {
         "{log}"
     );
 
-    // The alert's dot, once the plugin has told cooee.
     let mut home = String::new();
     for _ in 0..100 {
         home = cooee.get("/").1;

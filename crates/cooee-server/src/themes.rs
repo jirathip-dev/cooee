@@ -1,9 +1,3 @@
-//! Theme packs (docs/themes.md): `cooee theme add|remove|list` and Settings › look › themes. A pack is a folder or
-//! a folder of a git repo; an installed one is copied into `<config dir>/themes/<name>/` once it passes the theme
-//! gate, and pinned in `<data>/themes.lock` (its source and commit). `[new theme]` and `[remix]` make one in
-//! `<config dir>/themes-dev/<name>/` for an agent to build; `[keep]` moves it into `themes/` only once it passes the
-//! gate, and `[publish]` makes it a git repo of its own.
-
 use std::{
     fs, io,
     path::{Path, PathBuf},
@@ -16,7 +10,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::hub::lock;
 
-/// The starter pack `[new theme]` begins from: the plain words, placeholder sprites and scene.
 const STARTER: [(&str, &str); 3] = [
     (
         "theme.json",
@@ -93,7 +86,6 @@ fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
     Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
 }
 
-/// Copies folder `from` into `to` (made), all but `.git`; a symlink is refused, never followed.
 fn copy(from: &Path, to: &Path) -> io::Result<()> {
     fs::create_dir_all(to)?;
     for e in fs::read_dir(from)? {
@@ -190,7 +182,6 @@ impl Themes {
         }
     }
 
-    /// Pins `p` (`None`: unpins `name`).
     fn pin(&self, name: &str, p: Option<Pinned>) -> io::Result<()> {
         let mut all = self.pinned()?;
         all.retain(|x| x.name != name);
@@ -220,7 +211,6 @@ impl Themes {
                 text: String::new(),
             },
             None if source.contains('/') || source.contains(':') => {
-                // A folder by its full path, so its pin says where it was.
                 let source = fs::canonicalize(source)
                     .map_or_else(|_| source.to_owned(), |p| p.to_string_lossy().into_owned());
                 let name = source
@@ -305,8 +295,6 @@ impl Themes {
         )
     }
 
-    /// Fetches `pack`'s repo into its clone in `<data>/themes/<name>.git` and writes its folder at the commit into
-    /// `stage`; returns the commit.
     fn fetch(&self, pack: &Pack, stage: &Path) -> io::Result<String> {
         let repo = self.data.join("themes").join(format!("{}.git", pack.name));
         if repo.exists() {

@@ -1,5 +1,3 @@
-//! The config file: one TOML file, every key optional, unknown keys an error.
-
 use std::{
     env, fs, io,
     net::{IpAddr, Ipv4Addr},
@@ -265,7 +263,6 @@ pub fn save_roots(path: &Path, roots: &[PathBuf]) -> io::Result<()> {
             },
         )
         .collect();
-    // A JSON array of strings is a TOML inline array too.
     let line = format!("roots = {}", serde_json::to_string(&roots)?);
     let table = toml::de::DeTable::parse(&text).map_err(io::Error::other)?;
     let old = table.get_ref().iter().find(|(k, _)| k.get_ref() == "roots");

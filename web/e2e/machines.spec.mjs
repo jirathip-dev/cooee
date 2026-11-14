@@ -1,6 +1,3 @@
-// The machines plugin (crates/cooee-machines), run in cooee by serve.sh over the fake shed: a card for this machine
-// with its numbers, terminals and 24 h sparklines, a tap opens a chart; the Air offline with when it was last seen,
-// and the tab's dot while it is.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -12,11 +9,8 @@ test("the machines tab: a card per machine, a chart on tap, the Air offline and 
   await expect(here.locator(".seen")).toHaveText("online");
   await expect(here.locator("summary").filter({ hasText: "disk free" })).toContainText("GB");
   await expect(here.locator(".tm")).toHaveText("terminals: 1 blocked · 4 exited · 2 working");
-  // A point a minute for 24 h: serve.sh dates the fake day once, so a minute's samples fall out of 24 h per minute
-  // the run has taken; a day kept twice (2878) never passes.
   await expect(here.locator("svg.sp polyline").first()).toHaveAttribute("points", /^(\S+ ){1420,1439}\S+$/);
   await expect(air.locator(".seen")).toHaveText(/^offline · last seen 4\d min ago$/);
-  // The dot: the plugin has told cooee by now; the header is drawn with the page.
   await expect.poll(async () => { await page.reload(); return page.getByRole("link", { name: "Machines (needs you)" }).count(); }).toBe(1);
 
   const load = here.locator("details", { hasText: "load/cpu" });

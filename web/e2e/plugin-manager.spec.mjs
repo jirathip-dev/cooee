@@ -1,6 +1,3 @@
-// Settings › Plugins (#37) at 390: serve.sh's index lists the example plugin as `greet`; a URL gets the "not
-// reviewed" warning. Adding shows the exact commit and commands to confirm; then it runs, its log shows the build,
-// its tab is there with its backend reached, and [remove] takes the tab away. One install: the 390 project only.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -39,7 +36,6 @@ test("Settings › Plugins: add from the index after a confirm, it runs with its
   await shot(page, info, "plugins");
   await audit(page);
 
-  // Its tab, its backend reached with its own token.
   await page.goto("/");
   await expect(page.getByRole("navigation", { name: "tabs" }).getByRole("link", { name: "Greet" })).toBeVisible();
   await page.goto("/p/greet");

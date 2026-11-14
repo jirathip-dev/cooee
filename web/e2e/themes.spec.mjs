@@ -1,16 +1,11 @@
-// Theme packs (#38) from the phone: Settings › look › themes lists the installed packs; [remix] farm opens a chat with
-// an agent in a new theme folder; its live preview (the list and the chat in the theme) reloads when a file is saved;
-// [keep] passes the theme gate and installs it, and the look sheet picks it. Audited at 390 and 1440.
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const shot = (page, info, name) => page.screenshot({ path: `../../ui-${info.project.name}/${name}.png`, fullPage: true });
-// serve.sh's config folder, where themes/ and themes-dev/ are.
 const config = () => dirname(readFileSync(new URL("./.auth/code.config", import.meta.url), "utf8").trim());
 
-// The preview's frames are the list and the chat, audited in their own specs.
 async function audit(page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   const { violations } = await new AxeBuilder({ page }).exclude(".prf iframe").analyze();
@@ -40,7 +35,6 @@ test("remix farm with an agent, watch the preview reload on a save, keep it and 
   await shot(page, info, "themes-preview");
   await audit(page);
 
-  // A save (the agent's) reloads the preview: the page's own mark is gone, the new word shows.
   await page.evaluate(() => { window.before = true; });
   const file = `${config()}/themes-dev/${name}/theme.json`;
   const theme = JSON.parse(readFileSync(file, "utf8"));

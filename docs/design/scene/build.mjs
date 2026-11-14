@@ -1,8 +1,3 @@
-// #34: writes each theme's Scene backdrop, `web/themes/<name>/scene.svg` (390 × 320 shown at the strip's width), from
-// herdsman's Herd scene: kitchen's and garden's `assets/themes/<name>/scene.svg` as they are, and farm's ranch, which
-// herdsman's `assets/herd.js` draws with script (`scene()`, `night()`, `clouds()` and herd.css's light pairs, ported
-// here). The ranch is still: no wind, and night is the `#night` fragment (`scene.svg#night`, by `:target`), since an
-// <img> takes no page CSS. `node docs/design/scene/build.mjs <herdsman checkout>`
 import { readFileSync, writeFileSync } from "node:fs";
 
 const herdsman = process.argv[2];
@@ -14,7 +9,6 @@ for (const t of ["kitchen", "garden"]) {
   writeFileSync(out(t), svg.replace(/^(<svg[^>]*>)/, `$1<!-- herdsman's ${t} scene; docs/design/scene/build.mjs -->`));
 }
 
-// herd.js, as it is there.
 const M64 = (1n << 64n) - 1n;
 const noise = (i, s = 0) => {
   const n = (BigInt(i) * 1664525n + BigInt(s) * 1013904223n) & M64;
@@ -93,7 +87,6 @@ function scene() {
   return `${s}<rect class="wa" width="390" height="320"/>`;
 }
 
-// herd.css: Corral's day and night pairs, the gradients herd.js puts in its defs, and the sky gradient as two.
 const grad = (id, x2, y2, stops, x1 = 0, y1 = 0) =>
   `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops
     .map(([o, c, op]) => `<stop offset="${o}" stop-color="${c}"${op === undefined ? "" : ` stop-opacity="${op}"`}/>`)

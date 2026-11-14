@@ -1,8 +1,3 @@
-//! Pairing (#47): the page, a code typed or scanned (single use, 10 minutes, 5 wrong tries a minute per address), a
-//! new device asking a paired one to approve it (a check word, a push to every paired device, approval needs a
-//! passkey), the QR a paired device shows, and passkeys (`WebAuthn` ES256, platform authenticators): made on a paired
-//! device, they sign a device back in and approve new ones. The server keeps only their public keys.
-
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex, PoisonError},
@@ -28,13 +23,10 @@ use topcoat::{
 
 use super::{COOKIE, Data, Note, Paired, header, hub, now, plain};
 
-/// Wrong codes an address may type a minute.
 const TRIES: usize = 5;
 
-/// How long a passkey challenge is good for, in milliseconds.
 const CHALLENGE_TTL: u64 = 5 * 60 * 1000;
 
-/// The in-memory pairing state: each address's wrong codes in the last minute and the open passkey challenges.
 #[derive(Default)]
 pub(crate) struct Pairing {
     misses: Mutex<HashMap<String, Vec<u64>>>,
@@ -49,7 +41,6 @@ pub(crate) fn devices(cx: &Cx) -> Devices {
     Devices::new(&app_context::<Data>(cx).0)
 }
 
-/// Runs a blocking store call off the async workers.
 async fn store<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&Devices) -> std::io::Result<T> + Send + 'static,
@@ -58,7 +49,6 @@ async fn store<T: Send + 'static>(
     Ok(tokio::task::spawn_blocking(move || f(&devices)).await??)
 }
 
-/// Who is typing: the address `tailscale serve` forwards for (the last `X-Forwarded-For` entry), else this machine.
 fn client(cx: &Cx) -> String {
     header(cx, "x-forwarded-for")
         .and_then(|f| f.rsplit(',').next())
@@ -66,7 +56,6 @@ fn client(cx: &Cx) -> String {
         .to_owned()
 }
 
-/// The request's host name (its `Host` without the port): the passkeys' relying party.
 fn host(cx: &Cx) -> &str {
     header(cx, "host").unwrap_or_default()
 }
@@ -83,7 +72,6 @@ fn see_other(to: &str, cookie: Option<String>) -> Result<Response> {
     Ok(r.body(Body::from(()))?)
 }
 
-/// The pairing cookie for `token` (`Secure` behind https).
 pub(crate) fn cookie(cx: &Cx, token: &str) -> String {
     let secure = header(cx, "origin").is_some_and(|o| o.starts_with("https://"));
     format!(
@@ -92,8 +80,6 @@ pub(crate) fn cookie(cx: &Cx, token: &str) -> String {
     )
 }
 
-/// `?code=` (the QR code's link fills it in), and after a refused code `?bad=wrong&left=`, `?bad=expired&code=` (kept, muted) or
-/// `?bad=limit&wait=`.
 #[derive(Deserialize, Default)]
 struct PairQuery {
     code: Option<String>,
@@ -106,7 +92,6 @@ struct PairQuery {
 async fn pairing_page(cx: &Cx) -> Result<impl View> {
     let q: PairQuery = parse_query_params(cx).unwrap_or_default();
     let agent = header(cx, "user-agent").unwrap_or_default();
-    // Safari on an iPhone or iPad (not another browser there): the Home Screen hint; iOS 26 keeps Share in ⋯.
     let ios = ["iPhone", "iPad"].iter().any(|d| agent.contains(d))
         && agent.contains("Safari/")
         && !["CriOS", "FxiOS", "EdgiOS"]
@@ -131,7 +116,6 @@ async fn pairing_page(cx: &Cx) -> Result<impl View> {
     Ok(cooee_web::pair_page(cx, state))
 }
 
-/// `POST /pair`: the code `cooee pair` or a paired device shows, as one field or the six boxes.
 #[derive(Deserialize)]
 struct PairForm {
     code: String,
@@ -147,7 +131,6 @@ struct PairForm {
     d6: String,
 }
 
-/// Pairs on the right code (then to the list, which offers a passkey); else back to the page saying why.
 #[route(POST "/pair")]
 async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
     let code: String = [&f.code, &f.d2, &f.d3, &f.d4, &f.d5, &f.d6]
@@ -198,8 +181,6 @@ async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
     see_other(&format!("/pair?bad=wrong&left={left}"), None)
 }
 
-/// `POST /pair/request`: a new device asks to pair. Every paired device gets a push and the card; the new device
-/// shows the check word and collects its cookie with the claim.
 #[route(POST "/pair/request")]
 async fn pair_request(cx: &Cx) -> Result<Response> {
     let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
@@ -215,13 +196,11 @@ async fn pair_request(cx: &Cx) -> Result<Response> {
     Json(serde_json::json!({ "word": word, "claim": claim })).into_response(cx)
 }
 
-/// The new device's claim on its request.
 #[derive(Deserialize)]
 struct ClaimBody {
     claim: String,
 }
 
-/// `POST /pair/claim`: 200 with the cookie once approved, 202 while it waits, 403 declined, 410 when it is gone.
 #[route(POST "/pair/claim")]
 async fn pair_claim(cx: &Cx, Json(c): Json<ClaimBody>) -> Result<Response> {
     match store(cx, move |d| d.collect(&c.claim, now())).await? {
@@ -240,13 +219,11 @@ async fn pair_cancel(cx: &Cx, Json(c): Json<ClaimBody>) -> Result<Response> {
     plain(200, "cancelled")
 }
 
-/// `GET /pair/asks`: the requests waiting for an answer (the cards on a paired device).
 #[route(GET "/pair/asks")]
 async fn pair_asks(cx: &Cx) -> Result<Response> {
     Json(store(cx, |d| d.asking(now())).await?).into_response(cx)
 }
 
-/// A passkey's signature (`navigator.credentials.get`), base64url.
 #[derive(Deserialize)]
 pub(crate) struct Assertion {
     id: String,
@@ -255,7 +232,6 @@ pub(crate) struct Assertion {
     sig: String,
 }
 
-/// An answer to a request: approving needs a passkey's assertion.
 #[derive(Deserialize)]
 struct Answer {
     id: String,
@@ -263,7 +239,6 @@ struct Answer {
     passkey: Option<Assertion>,
 }
 
-/// `POST /pair/answer`: approves (with a passkey) or declines a waiting request.
 #[route(POST "/pair/answer")]
 async fn pair_answer(cx: &Cx, Json(a): Json<Answer>) -> Result<Response> {
     if a.yes {
@@ -282,7 +257,6 @@ async fn pair_answer(cx: &Cx, Json(a): Json<Answer>) -> Result<Response> {
     }
 }
 
-/// `POST /devices/pair`: a new code (dropping the open one), its link and the link as a QR code (SVG).
 #[route(POST "/devices/pair")]
 async fn devices_pair(cx: &Cx) -> Result<Response> {
     let code = store(cx, |d| d.pair(now())).await?;
@@ -299,7 +273,6 @@ async fn devices_pair(cx: &Cx) -> Result<Response> {
     .into_response(cx)
 }
 
-/// `POST /passkey/challenge`: a challenge for one passkey ceremony, good for 5 minutes, and the passkeys' ids.
 #[route(POST "/passkey/challenge")]
 async fn passkey_challenge(cx: &Cx) -> Result<Response> {
     let c = B64.encode(random(32)?);
@@ -323,7 +296,6 @@ async fn passkey_challenge(cx: &Cx) -> Result<Response> {
     Json(serde_json::json!({ "challenge": c, "ids": ids })).into_response(cx)
 }
 
-/// Takes `challenge` if this server gave it out in the last 5 minutes: each is good once.
 fn take(cx: &Cx, challenge: &str) -> bool {
     let mut all = pairing(cx)
         .challenges
@@ -336,7 +308,6 @@ fn take(cx: &Cx, challenge: &str) -> bool {
     found.map(|i| all.remove(i)).is_some()
 }
 
-/// What a ceremony's client data says.
 #[derive(Deserialize)]
 struct ClientData {
     #[serde(rename = "type")]
@@ -345,8 +316,6 @@ struct ClientData {
     origin: String,
 }
 
-/// Checks a ceremony of `kind` against this server: its challenge (taken), its origin, the relying party's hash and
-/// the user's presence and verification (Face ID) in the authenticator data.
 fn ceremony(cx: &Cx, kind: &str, client: &[u8], auth: &[u8]) -> Result<(), &'static str> {
     let c: ClientData =
         serde_json::from_slice(client).map_err(|_| "That passkey answer isn't readable.")?;
@@ -364,7 +333,6 @@ fn ceremony(cx: &Cx, kind: &str, client: &[u8], auth: &[u8]) -> Result<(), &'sta
     Ok(())
 }
 
-/// The P-256 point in a public key's `SubjectPublicKeyInfo` (DER), as `getPublicKey()` gives it.
 fn spki_point(spki: &[u8]) -> Option<&[u8]> {
     const P256: [u8; 26] = [
         0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, 0x06, 0x08,
@@ -373,7 +341,6 @@ fn spki_point(spki: &[u8]) -> Option<&[u8]> {
     spki.strip_prefix(&P256[..]).filter(|p| p.len() == 65)
 }
 
-/// Whether `sig` is `key`'s signature over the authenticator data and the client data's hash.
 fn signed(key: &[u8], auth: &[u8], client: &[u8], sig: &[u8]) -> bool {
     let (Ok(key), Ok(sig)) = (VerifyingKey::from_sec1_bytes(key), Signature::from_der(sig)) else {
         return false;
@@ -387,7 +354,6 @@ fn b64(s: &str) -> Vec<u8> {
     B64.decode(s.trim_end_matches('=')).unwrap_or_default()
 }
 
-/// Checks a passkey's assertion: a known passkey signed this server's challenge with Face ID; marks it used.
 pub(crate) async fn assert(cx: &Cx, a: Assertion) -> Result<Result<(), &'static str>> {
     let (client, auth) = (b64(&a.client), b64(&a.auth));
     if let Err(why) = ceremony(cx, "webauthn.get", &client, &auth) {
@@ -410,7 +376,6 @@ pub(crate) async fn assert(cx: &Cx, a: Assertion) -> Result<Result<(), &'static 
     Ok(Ok(()))
 }
 
-/// A new passkey (`navigator.credentials.create`), base64url: its id, its public key (SPKI) and what it signed.
 #[derive(Deserialize)]
 struct NewPasskey {
     id: String,
@@ -419,7 +384,6 @@ struct NewPasskey {
     auth: String,
 }
 
-/// `POST /passkeys`: keeps this device's new passkey.
 #[route(POST "/passkeys")]
 async fn passkey_add(cx: &Cx, Json(p): Json<NewPasskey>) -> Result<Response> {
     let (client, auth, spki) = (b64(&p.client), b64(&p.auth), b64(&p.key));
@@ -444,8 +408,6 @@ async fn passkey_add(cx: &Cx, Json(p): Json<NewPasskey>) -> Result<Response> {
     plain(200, "passkey saved")
 }
 
-/// `GET /passkeys`: every passkey: its id, the device that made it (and whether that is this one), when it was made
-/// and last used.
 #[route(GET "/passkeys")]
 async fn passkey_list(cx: &Cx) -> Result<Response> {
     let me = request_context::<Paired>(cx).0.id.clone();
@@ -457,7 +419,6 @@ async fn passkey_list(cx: &Cx) -> Result<Response> {
     Json(list).into_response(cx)
 }
 
-/// A passkey to remove.
 #[derive(Deserialize)]
 struct PasskeyId {
     id: String,
@@ -472,7 +433,6 @@ async fn passkey_remove(cx: &Cx, Json(p): Json<PasskeyId>) -> Result<Response> {
     }
 }
 
-/// `POST /passkey/signin`: a device that lost its cookie signs back in with its passkey: paired again.
 #[route(POST "/passkey/signin")]
 async fn passkey_signin(cx: &Cx, Json(a): Json<Assertion>) -> Result<Response> {
     let id = a.id.clone();
@@ -486,7 +446,6 @@ async fn passkey_signin(cx: &Cx, Json(a): Json<Assertion>) -> Result<Response> {
         .body(Body::from(()))?)
 }
 
-/// The pairing routes.
 pub(crate) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
     b.page(pairing_page)
         .route(pair)

@@ -16,7 +16,6 @@ test("agents: the list renders, fits the width, no axe violations; + opens a new
   await expect(page.getByRole("button", { name: "folder: scratch ▾" })).toBeVisible();
   await expect(page.getByRole("link", { name: "close the chat" })).toBeVisible();
   if (info.project.name === "1440") {
-    // The chat being started is its own row under the agent, which is not marked.
     await expect(page.locator(".ags .str[aria-current=page]")).toHaveText(/New chat\s*now/);
     await expect(page.locator(".ags .agr.on")).toHaveCount(0);
   }
@@ -44,12 +43,10 @@ test("installable: the manifest, its icons and the service worker load", async (
 
 test("a failed start reads as one plain sentence, never the server's JSON error", async ({ page }) => {
   await page.goto("/new");
-  // No message field: the server refuses the request's JSON.
   await page.locator("#new textarea").evaluate((t) => { t.name = "x"; });
   await page.getByLabel("message", { exact: true }).fill("hi");
   await page.getByRole("button", { name: "send" }).click();
   await expect(page.locator("#new-err")).toHaveText("cooee couldn't do that (error 400): reload and try again.");
-  // cooee's own refusal is shown as it is.
   await page.goto("/new");
   await page.locator("#new input[name=folder]").nth(1).evaluate((r) => { r.value = "/"; r.checked = true; });
   await page.getByLabel("message", { exact: true }).fill("hi");
@@ -80,8 +77,6 @@ test("the current agent's row reads at AA while its chat works, on the light the
 test("an agent's unread side threads show under it, newest 3 and +2; newest opens the newest reply; one row for both", async ({ page }, info) => {
   const r = await page.request.post("/agents", { form: { name: `Topics ${info.project.name}`, profile: "" }, maxRedirects: 0 });
   const profile = new URL(r.headers().location, "http://x").searchParams.get("profile");
-  // Started in turn and never opened, so each has an unread reply: the ongoing chat, then 4 side threads, then one
-  // waiting on a pick (the newest reply).
   const start = async (text, n) => {
     const res = await page.request.post("/threads", { data: { agent: "", profile, text, random_id: `t96-${info.project.name}-${n}` } });
     expect(res.ok()).toBe(true);
@@ -97,14 +92,12 @@ test("an agent's unread side threads show under it, newest 3 and +2; newest open
   const under = agent.locator("+ .ust");
   await expect(under.locator(".str .tt")).toHaveText(["approve an edit", "Topic 4", "Topic 3"]);
   await expect(under.locator(".mo .ds")).toHaveText("+2");
-  // The unread dot and `choose` on the agent's row and the side thread's: the same component.
   await expect(agent.locator(".tt .ur")).toHaveCount(1);
   await expect(agent.locator(".ta .chs")).toHaveText("choose");
   const pick = under.locator(`.str[data-id="${ids[5]}"]`);
   await expect(pick.locator(".tt .ur")).toHaveCount(1);
   await expect(pick.locator(".ta .chs")).toHaveText("choose");
   await expect(under.locator(".str").nth(1).locator(".chs")).toHaveCount(0);
-  // An agent with no unread side threads shows no titles.
   await expect(page.locator(".ags .ust").filter({ hasNot: page.locator(".str.ud") }).locator(".str:not(.nw) .tt")).toHaveCount(0);
   await under.scrollIntoViewIfNeeded();
   await page.screenshot({ path: `../../ui-${info.project.name}/unread-side-threads.png` });

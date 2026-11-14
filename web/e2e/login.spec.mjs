@@ -1,6 +1,3 @@
-// Sign-ins against the fake shed (web/e2e/serve.sh), which runs a fake login program per viewport: Settings ›
-// providers (#48: one flat row per account) starts it for the system default login, shows its screen under the row
-// with the link tappable, types the code in, and shows the account signed in; [+ account] is offered for it.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -20,7 +17,6 @@ test("sign-ins: the provider's own login, its link tappable, a code typed in, th
   await expect(state).toHaveText("signing in");
   const panel = sheet.locator(`.lg[data-provider="${name}"]`);
   await expect(panel.locator(".out")).toContainText("Paste code here");
-  // Under the row that started it.
   expect(await row.evaluate((r) => r.nextElementSibling?.classList.contains("lg"))).toBe(true);
   const link = panel.locator(".out").getByRole("link");
   await expect(link).toHaveText(url);
@@ -28,7 +24,6 @@ test("sign-ins: the provider's own login, its link tappable, a code typed in, th
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 
-  // A tap opens the sign-in page.
   await context.route("https://login.example.com/**", (r) => r.fulfill({ body: "sign in here" }));
   const [popup] = await Promise.all([page.waitForEvent("popup"), link.click()]);
   expect(popup.url()).toBe(url);
@@ -36,7 +31,6 @@ test("sign-ins: the provider's own login, its link tappable, a code typed in, th
 
   await panel.getByLabel(`the code from the ${name} sign-in page`).fill("good-code");
   await panel.getByRole("button", { name: "send" }).click();
-  // The page comes back with Settings › providers open, the account signed in.
   await expect(state).toHaveText("✓ signed in");
   await expect(sheet).toBeVisible();
   await expect(panel).toBeHidden();

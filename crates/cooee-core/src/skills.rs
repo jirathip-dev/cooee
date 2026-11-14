@@ -30,7 +30,6 @@ fn dir(data: &Path, persona: &str) -> std::path::PathBuf {
     data.join("personas").join(persona).join("skills")
 }
 
-/// `name`, if it is one: lowercase letters, digits and `-`, not empty.
 fn checked(name: &str) -> io::Result<&str> {
     let ok = !name.is_empty()
         && !name.starts_with('-')
@@ -56,7 +55,6 @@ impl Skill {
         )
     }
 
-    /// Read from a file's `text`; the name is its folder's.
     fn parse(name: &str, text: &str) -> Self {
         let (head, body) = text
             .strip_prefix("---\n")

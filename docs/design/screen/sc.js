@@ -1,11 +1,3 @@
-// #165 mockup: the Screen sheet. A classic script at the end of each page, so it runs before ../rooms/rm.js (a module)
-// sets the scheme and style and fills the avatars, phone chrome and Home sidebar it draws. It fills:
-//   [data-y=site]  a screen view: the address bar (data-url, data-st and its data-k colour) over the remote page
-//                  (data-pg is the page, data-w the box width; the browser on the Mini is 1280 × 800, fit to the
-//                  width). data-z/data-crop zoom to a field (control mode), data-cur/data-who the agent's cursor,
-//                  data-you your touch, data-rpl the replay badge, data-bare no address bar.
-//   [data-y=fs]    a filmstrip from FS[data-set], data-sel the frame being replayed, data-from and data-n the
-//                  frames in view (the strip scrolls; it opens at the newest).
 const ST = new URLSearchParams(location.search).get('style') || 'modern';
 const WHO = { res: ['Researcher', '--p'], chief: ['Chief', '--l'] };
 const LOCK = '<svg class=lck viewBox="0 0 12 14" width="10" height="12"><rect x="1" y="6" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M3.3 6V4.2a2.7 2.7 0 0 1 5.4 0V6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
@@ -50,7 +42,6 @@ function site(e) {
     + (d.cur ? pin(d.cur, 'cur', d.who) : '') + (d.you ? pin(d.you, 'cur') : '') + (d.rpl ? `<span class=rpl>${d.rpl}</span>` : '') + '</div>';
 }
 
-// Filmstrips: Researcher's morning (the frames the Mini kept), and Chief's with a no-frames site (D3) as a gap.
 const FS = {
   res: [['09:40', 'sec.gov', 'sec'], ['09:41', 'the 10-Q', 'sec', 'snt'], ['09:43', 'Crunchbase', 'cb'], ['09:44', 'sign-in wall', 'li-wall', 'snt'],
     ['09:51', 'you, signing in', 'li-login', 'you'], ['09:53', 'People', 'li-people', 'live']],

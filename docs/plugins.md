@@ -237,7 +237,6 @@ above.
 The backend, `server.mjs`:
 
 ```js
-// cooee's example plugin backend (docs/plugins.md): `PORT=4800 COOEE=http://127.0.0.1:4747 TOKEN=… node server.mjs`.
 import fs from "node:fs";
 import http from "node:http";
 
@@ -251,7 +250,6 @@ const toCooee = async (path, body) => (await fetch(COOEE + path, {
 const read = async (req) => { let b = ""; for await (const c of req) b += c; return b ? JSON.parse(b) : {}; };
 
 http.createServer(async (req, res) => {
-  // Only cooee calls this backend, and it sends the plugin's token.
   if (req.headers.authorization !== `Bearer ${TOKEN}`) return json(res, 401, "no token");
   if (req.url === "/tab.js") return res.writeHead(200, { "content-type": "text/javascript" }).end(fs.readFileSync(new URL("tab.js", import.meta.url)));
   if (req.url === "/whoami") return json(res, 200, { token: "ok", cookie: req.headers.cookie ?? null });
@@ -266,7 +264,6 @@ http.createServer(async (req, res) => {
   if (req.url === "/ask") return json(res, 200, await toCooee("/plugin/card", { thread: body.thread, text: "Ship it?", options: ["yes", "no"] }));
   if (req.url === "/cooee/choice") {
     tell("choice", body.option);
-    // A run card's [approve] carries its sha; herdsman would run it and answer the exit code and output tail.
     if (body.option === "approve" && body.value) return json(res, 200, { line: `ran: exit 0\n\`\`\`\nat ${body.value.slice(0, 12)}\n\`\`\`` });
     return json(res, 200, "ok");
   }
@@ -277,7 +274,6 @@ http.createServer(async (req, res) => {
 The module, `tab.js`:
 
 ```js
-// The example plugin's tab: runs in cooee's sandboxed frame with the `cooee` API (docs/plugins.md).
 const log = document.body.appendChild(document.createElement("ul"));
 const line = (text) => { log.appendChild(document.createElement("li")).textContent = text; };
 const me = await cooee.fetch("/whoami");

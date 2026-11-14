@@ -1,13 +1,9 @@
-//! The cards as HTML for the tab (`tab.js` puts it in the page): per machine its state, its numbers, each with a
-//! 24 h sparkline that opens a chart (a `<details>`), and its terminals by state.
-
 use std::fmt::Write;
 
 use cooee_core::shed_proto::Sample;
 
 use crate::{Card, DAY, Problem};
 
-/// `n` MiB as `512 MB` or `48.2 GB`.
 pub(crate) fn size(mb: u64) -> String {
     if mb < 1024 {
         format!("{mb} MB")
@@ -36,7 +32,6 @@ fn esc(s: &str) -> String {
         .replace('"', "&quot;")
 }
 
-/// The polyline of `(at, value)` over the 24 h before `now` in a `w` × `h` box.
 fn line(points: &[(u64, f64)], now: u64, w: f64, h: f64) -> String {
     let lo = points.iter().map(|p| p.1).fold(f64::INFINITY, f64::min);
     let hi = points.iter().map(|p| p.1).fold(f64::NEG_INFINITY, f64::max);
@@ -57,7 +52,6 @@ fn line(points: &[(u64, f64)], now: u64, w: f64, h: f64) -> String {
         .join(" ")
 }
 
-/// One number: its name and value, its sparkline, and under it (tapped) the 24 h chart with its range.
 fn metric(
     out: &mut String,
     id: &str,

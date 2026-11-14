@@ -1,5 +1,3 @@
-// #10: measures the spike against the issue's criteria. Usage: node measure/measure.mjs <base url> <out dir>
-// The server runs with the defaults (TOKENS=2000, RATE=50). Prints one JSON object; screenshots go to <out dir>.
 import { launch } from './cdp.mjs';
 import { proxy } from './proxy.mjs';
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -15,7 +13,6 @@ const shot = async (page, name) => {
   const { data } = await page.send('Page.captureScreenshot', { format: 'png' });
   writeFileSync(`${OUT}/${name}.png`, Buffer.from(data, 'base64'));
 };
-// In the page: checks every reply render is a prefix of the expected text (no drop, no duplicate, in order).
 const WATCH = `(() => {
   const E = ${JSON.stringify(EXPECTED)};
   window.__bad = []; window.__renders = 0;
@@ -34,7 +31,6 @@ const EVENTS = `(() => {
 const pct = (a, p) => a.length ? [...a].sort((x, y) => x - y)[Math.min(a.length - 1, Math.floor(a.length * p))] : 0;
 const res = { host_load_at_start: loadavg().map(x => +x.toFixed(1)), cpus: cpus().length };
 
-// Types into the composer every 100 ms under a trace until `stop()`; returns the trace's typing numbers.
 async function typing(page, stop, name) {
   await page.eval("document.getElementById('composer').focus()");
   await page.send('Tracing.start', { categories: 'devtools.timeline,disabled-by-default-devtools.timeline', transferMode: 'ReturnAsStream' });
@@ -51,11 +47,9 @@ async function typing(page, stop, name) {
   let trace = ''; for (;;) { const c = await page.send('IO.read', { handle: stream }); trace += c.data; if (c.eof) break; }
   writeFileSync(`${OUT}/${name}-trace.json`, trace);
   const ev = JSON.parse(trace).traceEvents;
-  // Typing latency: a keydown from its timestamp to the commit of the frame showing it.
   const toCommit = ev.filter(e => e.name === 'EventTiming' && e.ph === 'b' && e.args.data.type === 'keydown' && e.args.data.commitFinishTime)
     .map(e => e.args.data.commitFinishTime - e.args.data.timeStamp);
   const tasks = ev.filter(e => e.name === 'RunTask' && e.ph === 'X').map(e => e.dur / 1000);
-  // Event Timing by interaction (input to presentation), as the Performance panel shows it.
   const inter = new Map();
   for (const e of ev) if (e.name === 'EventTiming' && e.ph === 'b' && e.args.data.interactionId)
     inter.set(e.args.data.interactionId, Math.max(inter.get(e.args.data.interactionId) || 0, e.args.data.duration));
@@ -68,7 +62,6 @@ async function typing(page, stop, name) {
     key_presentation_p95_ms: pct(pres, 0.95), key_presentation_max_ms: Math.max(0, ...pres) };
 }
 
-// 0. Control: the same typing on a page with nothing streaming (the host's own noise at 4× throttle).
 console.error(new Date().toISOString(), "phase 0");
 {
   const { page, close } = await launch();
@@ -79,7 +72,6 @@ console.error(new Date().toISOString(), "phase 0");
   close();
 }
 
-// 1. Streaming at 4× CPU throttle while typing into the composer.
 console.error(new Date().toISOString(), "phase 1");
 {
   const { page, close } = await launch();
@@ -92,7 +84,6 @@ console.error(new Date().toISOString(), "phase 1");
   close();
 }
 
-// 2. Reconnect: the connection cut for 10 s mid-stream, through a proxy.
 console.error(new Date().toISOString(), "phase 2");
 {
   const port = +new URL(B).port + 1000;
@@ -114,7 +105,6 @@ console.error(new Date().toISOString(), "phase 2");
   close(); px.close();
 }
 
-// 3. Long thread: 1,000 messages scrolled top to bottom at 4× CPU throttle.
 console.error(new Date().toISOString(), "phase 3");
 {
   const { page, close } = await launch();
@@ -133,7 +123,6 @@ console.error(new Date().toISOString(), "phase 3");
   close();
 }
 
-// 4. Approval: tap → server → row updated (no throttle), timed in the page.
 console.error(new Date().toISOString(), "phase 4");
 {
   const { page, close } = await launch();
@@ -152,7 +141,6 @@ console.error(new Date().toISOString(), "phase 4");
   close();
 }
 
-// 5. Thai in the composer (Chrome): typed keystroke by keystroke, and through IME composition, while streaming.
 console.error(new Date().toISOString(), "phase 5");
 {
   const THAI = 'สวัสดีครับ ที่นี่';
@@ -160,14 +148,12 @@ console.error(new Date().toISOString(), "phase 5");
   await start(); await page.goto(`${B}/live`); await sleep(1000);
   await page.eval(`(() => { const c = document.getElementById('composer'); window.__ce = 0;
     c.addEventListener('compositionend', () => __ce++); c.focus(); c.value = ''; })()`);
-  // (a) a Thai Kedmanee keyboard: one code point per key, tone marks included.
   for (const ch of THAI) { await page.send('Input.insertText', { text: ch }); await sleep(30); }
   const a = await page.eval("document.getElementById('composer').value");
   await page.eval("(() => { const c = document.getElementById('composer'); c.select(); })()");
   await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Backspace', code: 'Backspace', windowsVirtualKeyCode: 8 });
   await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Backspace', code: 'Backspace', windowsVirtualKeyCode: 8 });
   await sleep(100);
-  // (b) an IME composing each word, then committing it.
   for (const word of THAI.split(' ')) {
     let pre = '';
     for (const ch of word) { pre += ch; await page.send('Input.imeSetComposition', { text: pre, selectionStart: pre.length, selectionEnd: pre.length }); await sleep(30); }
@@ -185,13 +171,11 @@ console.error(new Date().toISOString(), "phase 5");
   close();
 }
 
-// 6. Screens at 390 px.
 console.error(new Date().toISOString(), "phase 6");
 {
   const { page, close } = await launch();
   await page.goto(`${B}/`); await sleep(700); await shot(page, 'threads-390');
   await page.goto(`${B}/live`); await sleep(1500); await shot(page, 'live-390');
-  // The sprite's two frames: .kf1/.kf2 opacity sampled 0.6 s apart.
   const f = [];
   for (let i = 0; i < 4; i++) { f.push(await page.eval("getComputedStyle(document.querySelector('.rsp')).getPropertyValue('--o1')")); await sleep(300); }
   res.theme = { sprite_frames: f };

@@ -1,9 +1,3 @@
-// Pairing (#47), where it needs script. On the pairing page: the six code boxes (a digit moves on, ⌫ goes back, a
-// paste fills all six, the sixth sends it; a QR link's code sends itself), the "too many tries" countdown, offline,
-// asking a paired device to approve (the check word, waiting, declined) and signing back in with a passkey. On the
-// thread list: the passkey offer after pairing and the approve cards (a passkey with Face ID approves; a decline can be
-// undone for 10 s). In Settings › devices: pair a device (its QR and code) and the passkeys. It talks to the server only
-// through the JSON API in docs/api.md; the passkeys are WebAuthn (ES256, this device's platform authenticator).
 import { $, make } from "./look.js";
 
 type Assertion = { id: string; client: string; auth: string; sig: string };
@@ -32,7 +26,6 @@ const clock = (s: number): string => `${Math.floor(s / 60)}:${String(Math.max(0,
 const canPasskey = "PublicKeyCredential" in window && isSecureContext;
 const NONE = "No passkey for this cooee on this device. Pair with a code instead.";
 
-/// A new passkey on this device's platform authenticator (Face ID, Touch ID), kept by the server.
 async function savePasskey(): Promise<void> {
   const { challenge, ids } = await post<{ challenge: string; ids: string[] }>("/passkey/challenge", {});
   const c = (await navigator.credentials.create({
@@ -76,7 +69,6 @@ export async function sign(): Promise<Assertion> {
   return { id: c.id, client: b64(r.clientDataJSON), auth: b64(r.authenticatorData), sig: b64(r.signature) };
 }
 
-/// `button`s in a row.
 const acts = (...buttons: [string, () => void, string?][]): HTMLElement => {
   const row = make("div", "acts");
   for (const [text, go, cls] of buttons) {
@@ -88,7 +80,6 @@ const acts = (...buttons: [string, () => void, string?][]): HTMLElement => {
   return row;
 };
 
-// ---- The pairing page.
 const form = $<HTMLFormElement>("#code");
 if (form) {
   const boxes = [...form.querySelectorAll<HTMLInputElement>(".cbx input")];
@@ -129,7 +120,6 @@ if (form) {
   });
   sync();
 
-  // Offline: the card says when it last tried; [try again] sends the code again.
   const offline = $("#offline");
   let tried = 0;
   let tick = 0;
@@ -153,7 +143,6 @@ if (form) {
       };
   };
 
-  // The form posts itself; the server's answer (the list, or this page saying why) is opened.
   let sending = false;
   function send(): void {
     if (sending) return;
@@ -170,10 +159,8 @@ if (form) {
     e.preventDefault();
     if (ready()) send();
   });
-  // A QR link's code: it sends itself.
   if (form.querySelector(".cbx.ok") && ready()) send();
 
-  // Too many tries: the boxes open again when the minute is up.
   const limit = $("#limit");
   if (limit) {
     let wait = Number(limit.dataset.wait) || 60;
@@ -188,7 +175,6 @@ if (form) {
     }, 1000);
   }
 
-  // Ask to pair: the check word, waiting for a paired device's answer.
   const welcome = $("section.wel");
   const [wait, no] = [$("#ask-wait"), $("#ask-no")];
   let claim = "";
@@ -254,7 +240,6 @@ if (form) {
       back();
     };
 
-  // Signing back in with a passkey.
   const pk = $<HTMLButtonElement>("#pk-go");
   const pkErr = $("#pk-err");
   if (pk && !canPasskey) pk.closest(".lrw")?.remove();
@@ -271,7 +256,6 @@ if (form) {
       }
     };
 
-  // The connection dot.
   const dot = $("#cdot");
   const online = (): void => {
     dot?.classList.toggle("off", !navigator.onLine);
@@ -282,10 +266,8 @@ if (form) {
   online();
 }
 
-// ---- The thread list: the passkey offer after pairing, and the approve cards.
 const list = location.pathname === "/" ? $("main.cfm") : null;
 if (list) {
-  // Above the chat-first app's main: a landmark of its own.
   const top = make("section", "pq");
   top.id = "pairing";
   top.setAttribute("aria-label", "pairing");
@@ -333,8 +315,6 @@ if (list) {
     top.prepend(card);
   }
 
-  // Requests to pair: a card each while it waits. One that leaves the list was approved elsewhere (its device is
-  // there, with who approved it) or ran out (5 min); else (cancelled, declined elsewhere) it goes a poll later.
   const cards = new Map<string, HTMLElement>();
   let keys: boolean | null = null;
   let other = "another one";
@@ -497,7 +477,6 @@ if (list) {
   addEventListener("visibilitychange", asks);
 }
 
-// ---- Settings › devices: pair a device (its QR and code), and the passkeys.
 addEventListener("cooee-sheet", (e) => {
   if ((e as CustomEvent).detail !== "settings") return;
   pairBox();
@@ -591,8 +570,6 @@ async function passkeys(): Promise<void> {
   box.replaceChildren(...rows);
 }
 
-// ---- Settings › mcp servers (#56): `+ server` shows its card, the exact command or URL; approving needs Face ID, and
-// the server is added off.
 const mcpAdd = $<HTMLFormElement>("#mcp-add");
 if (mcpAdd) {
   mcpAdd.onsubmit = (e) => {

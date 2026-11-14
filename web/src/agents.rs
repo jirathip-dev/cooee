@@ -1,8 +1,3 @@
-//! Chat-first (#86, docs/design/chat-first): the sidebar is your agents, each a profile (#40) or Plain on an
-//! installed ACP agent, with a name, an avatar and one ongoing chat, its side threads under it; a new chat needs
-//! nothing picked (it runs in a scratch folder of its own) and "Use a folder…" attaches a root's folder at any time.
-//! From 1000 px the sidebar sits beside the pane; on a phone it is the home screen and a chat its own screen.
-
 use std::path::{Path, PathBuf};
 
 use cooee_core::{Agent, Profile, ROOTS_FIX, Sheet, Summary, Thread, Turn, agents_fix};
@@ -76,9 +71,7 @@ impl Side {
             )
         });
         let mut mates: Vec<Mate> = plain.chain(profiles).collect();
-        // A plugin's agents follow the owner's, grouped under its name.
         mates.sort_by_key(|m| !m.group.is_empty());
-        // A thread a plugin lists as one of its agents' is that agent's.
         let listed = |id: &str| {
             self.profiles
                 .iter()
@@ -107,8 +100,6 @@ impl Side {
             mates[at].chats.push(r.clone());
         }
         for m in &mut mates {
-            // The first one started that is still open (an id is its start time in hex), whatever moved since; an
-            // agent whose plugin lists its threads: the newest.
             let newest = self
                 .profiles
                 .iter()
@@ -143,7 +134,6 @@ fn mate(key: String, name: String, profile: &str, agent: &str) -> Mate {
     }
 }
 
-/// The agent a thread of `agent` and `profile` belongs to, as [`Mate::key`].
 pub(crate) fn key(agent: &str, profile: &str) -> String {
     if profile.is_empty() {
         format!("agent={agent}")
@@ -152,7 +142,6 @@ pub(crate) fn key(agent: &str, profile: &str) -> String {
     }
 }
 
-/// A name's initials: the first letters of its first two words, else its first two letters.
 fn initials(name: &str) -> String {
     let words: Vec<&str> = name.split_whitespace().collect();
     let two: String = match words.as_slice() {
@@ -162,8 +151,6 @@ fn initials(name: &str) -> String {
     two.to_uppercase()
 }
 
-/// An agent's avatar: its image, or its sprite while the look shows sprites, else its initials in the `n`th scheme
-/// colour.
 #[component]
 pub(crate) async fn avatar(
     cx: &Cx,
@@ -192,10 +179,8 @@ pub(crate) async fn avatar(
     })
 }
 
-/// How many side threads show under the agent on show; the older fold.
 const SIDE: usize = 5;
 
-/// How many unread side threads show under an agent not on show; the rest are `+N`.
 const UNREAD: usize = 3;
 
 impl Mate {
@@ -217,33 +202,22 @@ impl Mate {
     }
 }
 
-/// A row of the one list (#96, as Telegram's chats and forum topics): an agent's or a side thread's.
 #[derive(Clone)]
 struct Line {
-    /// `agr` (an agent) or `str` (a side thread).
     class: &'static str,
     href: String,
-    /// The chat it opens.
     id: Option<String>,
     title: String,
-    /// On show.
     on: bool,
-    /// The page's own row (`aria-current`).
     page: bool,
-    /// Its unread replies (#43): the count, and the dot when any.
     unseen: usize,
-    /// A pick waits on you (`blocked`).
     choose: bool,
-    /// An agent's: its avatar's colour and its latest chat (its state and last line).
     agent: Option<(usize, Option<Summary>)>,
-    /// An agent's avatar (see [`Mate::avatar`]).
     src: Option<String>,
     at: Option<u64>,
-    /// The routine that started it or sent its last message (#75; empty: none).
     routine: String,
 }
 
-/// A side thread's row: its title, age, unread dot and count (#43), and `choose` while a pick waits.
 fn side(c: &Summary, open: &str) -> Line {
     Line {
         class: "str",
@@ -261,8 +235,6 @@ fn side(c: &Summary, open: &str) -> Line {
     }
 }
 
-/// One row of the list: (an agent's) avatar, the title after the unread dot, `choose`, the age and the count, then
-/// (an agent's) state and last line.
 #[component]
 async fn row(cx: &Cx, l: Line) -> Result<impl View> {
     let look = shown(cx);
@@ -311,7 +283,6 @@ async fn row(cx: &Cx, l: Line) -> Result<impl View> {
     })
 }
 
-/// `newest`: the agent's side thread with the newest unread reply, else its most recent one.
 #[component]
 async fn jump(m: Mate) -> Result<impl View> {
     Ok(view! {
@@ -327,7 +298,6 @@ async fn jump(m: Mate) -> Result<impl View> {
     })
 }
 
-/// The count of messages not seen yet (#43), when there are any.
 #[component]
 async fn badge(n: usize) -> Result<impl View> {
     Ok(view! {
@@ -337,16 +307,12 @@ async fn badge(n: usize) -> Result<impl View> {
     })
 }
 
-/// Where a tap on an agent goes: its ongoing chat, else a new one.
 fn href(m: &Mate) -> String {
     m.chats
         .first()
         .map_or(format!("/new?{}", m.key), |c| format!("/t/{}", c.id))
 }
 
-/// The sidebar: each agent (its avatar, name, age, state and last line; the current one with its side threads and
-/// `+ new chat`), then `+ new agent`. `current` is the agent on show, `open` the chat; `fresh`: a new chat with it,
-/// marked as its own `New chat · now` row.
 #[component]
 async fn sidebar(
     cx: &Cx,
@@ -358,12 +324,10 @@ async fn sidebar(
     fresh: bool,
 ) -> Result<impl View> {
     let look = shown(cx);
-    // A new agent needs one to run: none installed, none to add. Where each plugin's group starts.
     let can_add = !mates.is_empty();
     let heads: Vec<usize> = (0..mates.len())
         .filter(|&i| i == 0 || mates[i - 1].group != mates[i].group)
         .collect();
-    // An agent's row says its latest: its newest chat's state, line and age; bold while any chat is unread.
     let rows: Vec<(usize, Mate, Option<Summary>, bool, bool)> = mates
         .into_iter()
         .enumerate()
@@ -404,7 +368,6 @@ async fn sidebar(
                         }
                     )
                     if !on && m.chats.len() > 1 {
-                        // Its side threads with unread replies, newest first, then `+N` and `newest`.
                         <div class="ust">
                             for c in m.unread().into_iter().take(UNREAD) {
                                 row(l: side(c, &open))
@@ -433,8 +396,6 @@ async fn sidebar(
     })
 }
 
-/// The current agent's side threads (its chats after the ongoing one, the oldest folded), its `New chat · now` row
-/// when `fresh`, and `+ new chat`.
 #[component]
 async fn sides(m: Mate, open: String, fresh: bool) -> Result<impl View> {
     Ok(view! {
@@ -464,7 +425,6 @@ async fn sides(m: Mate, open: String, fresh: bool) -> Result<impl View> {
     })
 }
 
-/// `+ new agent`: a name and a profile (Plain by default), posted to `/agents`.
 #[component]
 async fn new_agent(profiles: Vec<Profile>) -> Result<impl View> {
     Ok(view! {
@@ -493,7 +453,6 @@ async fn new_agent(profiles: Vec<Profile>) -> Result<impl View> {
     })
 }
 
-/// A state's pose in Scene (#34): its 132 × 100 sprite.
 fn pose(st: &str) -> &'static str {
     match st {
         "working" => "edit",
@@ -505,9 +464,6 @@ fn pose(st: &str) -> &'static str {
     }
 }
 
-/// The sidebar in Scene (#34, design §1): one page of the theme's scene, each agent a sprite acting out its ongoing
-/// chat's state over its name card (name, `profile · age`, the state's word), the current one ringed; then the
-/// current agent's chats as chips. `chat.ts` switches the strip to night by the device's clock.
 #[component]
 async fn herd(
     cx: &Cx,
@@ -581,9 +537,6 @@ async fn herd(
     })
 }
 
-/// The folder chip (`folder: scratch ▾`) and its "Use a folder…" panel: `scratch` (this chat's own; on a chat that
-/// already moved, no way back), then each root's folders with how many chats work there. A pick attaches it
-/// (`chat.ts`); in a new chat it is the form's `folder`.
 #[component]
 pub(crate) async fn folder_chip(
     list: Vec<(PathBuf, u8)>,
@@ -660,7 +613,6 @@ pub(crate) async fn folder_chip(
                     "scratch"
                     <span class="ds">"this chat's own"</span>
                 </label>
-                // A root heads its group (`~/Projects`); the folders in it show by name.
                 for (f, depth, n) in list {
                     <label
                         data-d=(depth.to_string())
@@ -688,12 +640,8 @@ pub(crate) async fn folder_chip(
     })
 }
 
-/// The folders a chat may use (with their depth), the threads (to count the chats in each), and the chat's folder
-/// (none: its scratch folder).
 pub(crate) type Places = (Vec<(PathBuf, u8)>, Vec<Summary>, Option<PathBuf>);
 
-/// The composer's chips: the folder (`places`: the folders, the threads and the chat's folder; none for a
-/// Workflow session, whose folder is its tool's), then the model and effort (`now` picked).
 #[component]
 pub(crate) async fn chips(
     places: Option<Places>,
@@ -827,7 +775,6 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
                                         (n, m.name, ongoing, m.avatar, m.key)
                                     },
                                 ),
-                                // Every thread's id, so a ref to one in the chat opens it (#84).
                                 ids: rows.iter().map(|r| r.id.clone()).collect(),
                                 places: (list, rows, folder),
                                 choices: choices
@@ -849,7 +796,6 @@ async fn app(side: Side, pane: Pane) -> Result<impl View> {
     })
 }
 
-/// A phone's `‹` back to the agents, with agent `key` on show.
 #[component]
 pub(crate) async fn back(key: String) -> Result<impl View> {
     Ok(view! {
@@ -859,8 +805,6 @@ pub(crate) async fn back(key: String) -> Result<impl View> {
     })
 }
 
-/// A new chat's bar: `‹` back to the agents, the agent, `New chat`, its folder, and (not on the home page) `×`, back
-/// to the agent's ongoing chat, else the agents.
 #[component]
 async fn bar(home: bool, n: usize, m: Mate) -> Result<impl View> {
     let close = m
@@ -872,7 +816,6 @@ async fn bar(home: bool, n: usize, m: Mate) -> Result<impl View> {
             back(key: m.key.clone())
             avatar(name: m.name.clone(), n: n, big: false, src: m.avatar.clone())
             <div class="tb">
-                // On the home page the header's "cooee" is the page's heading.
                 if home {
                     <h2>"New chat"</h2>
                 } else {
@@ -891,8 +834,6 @@ async fn bar(home: bool, n: usize, m: Mate) -> Result<impl View> {
     })
 }
 
-/// A new chat with `mate`: its hello, then the composer with the folder chip and the model and effort chips. No
-/// agent installed (or `shed agents` failing): what to run instead.
 #[component]
 async fn hello(
     home: bool,
@@ -998,7 +939,6 @@ async fn hello(
 mod tests {
     use super::*;
 
-    /// A thread of agent `a`'s, last active at `at`.
     fn chat(id: &str, at: u64, unread: bool) -> Summary {
         Summary {
             id: id.to_owned(),
@@ -1037,7 +977,6 @@ mod tests {
 
     #[test]
     fn unread_side_threads_come_newest_reply_first_and_newest_jumps_to_the_first() {
-        // `a1` is the ongoing chat (the first started), unread too: never a side thread.
         let m = mate_of(vec![
             chat("a1", 90, true),
             chat("a7", 10, true),

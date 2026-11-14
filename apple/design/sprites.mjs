@@ -1,6 +1,3 @@
-// #124: rasterise the farm pack's scene horses (packs/themes/farm/sprites.svg, s-scene-*) in each persona's coat, and
-// the scene strip, to PNGs the SwiftUI views load. The art is the pack's; only the coats are set here (as #116's ns.css).
-// Usage (repo root): node apple/design/sprites.mjs <chrome-headless-shell>
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -22,12 +19,10 @@ function shoot(html, w, h, file) {
     '--default-background-color=00000000', `--window-size=${w},${h}`, `--screenshot=${join(out, file)}`, `file://${p}`],
     { stdio: 'ignore' });
 }
-// The sprite's own <g style="--c…"> sets the default coat; the coat class overrides it on the inner group.
 for (const [coat, vars] of Object.entries(COATS)) for (const pose of POSES) {
   const html = `<style>html,body{margin:0;background:transparent}svg{display:block}.k g[style]{${vars}!important}
   .k *{animation:none!important}</style><div style="display:none">${sprites}</div>
   <svg class=k width=132 height=100 viewBox="0 0 132 100"><use href="#s-scene-${pose}"/></svg>`;
-  // <use> clones keep the symbol's inline style, so inline the symbol instead and swap its coat.
   const m = sprites.match(new RegExp(`<symbol id="s-scene-${pose}" viewBox="0 0 132 100">([\\s\\S]*?)</symbol>`));
   const body = m[1].replace(/style="--c:[^"]*"/, `style="${vars};--fk:#58a6ff"`);
   shoot(`<style>html,body{margin:0;background:transparent}svg{display:block}*{animation:none!important}</style>

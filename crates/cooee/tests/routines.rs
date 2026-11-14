@@ -18,9 +18,7 @@ use std::{
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
 
-/// `name` called with `args` by thread `id`'s agent through cooee's own MCP server: the tool's result.
 fn call(shed: &FakeShed, id: &str, name: &str, args: &Value) -> Value {
-    // A thread that starts behind its answer gets its file once its agent starts.
     let file = shed.dir.join(format!("mcp-cooee-{id}.json"));
     for _ in 0..100 {
         if file.exists() {
@@ -45,14 +43,12 @@ fn call(shed: &FakeShed, id: &str, name: &str, args: &Value) -> Value {
     serde_json::from_slice::<Value>(&out.stdout).unwrap()["result"].clone()
 }
 
-/// The routines' file, changed by `f`.
 fn change(file: &Path, f: impl FnOnce(&mut Vec<Value>)) {
     let mut v: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
     f(v["routines"].as_array_mut().unwrap());
     fs::write(file, v.to_string()).unwrap();
 }
 
-/// Routine `id` once its tick recorded a due time (the runner ticks as cooee starts).
 fn recorded(file: &Path, id: &str) -> Value {
     for _ in 0..100 {
         let v: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
@@ -72,7 +68,6 @@ fn recorded(file: &Path, id: &str) -> Value {
     );
 }
 
-/// Thread `id`'s messages a routine sent.
 fn runs(cooee: &Cooee, id: &str) -> Vec<Value> {
     let items = cooee.json(&format!("/threads/{id}/messages"))["items"].clone();
     let items = items.as_array().unwrap().iter();
@@ -82,7 +77,6 @@ fn runs(cooee: &Cooee, id: &str) -> Vec<Value> {
         .collect()
 }
 
-/// cooee with the fake shed and a chat with the fake agent: the folder, the shed, cooee and the chat's id.
 fn chat(name: &str) -> (PathBuf, FakeShed, Cooee, String) {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), version());
@@ -97,13 +91,11 @@ fn chat(name: &str) -> (PathBuf, FakeShed, Cooee, String) {
     (dir, shed, cooee, id)
 }
 
-/// `days` days ago, in Unix ms.
 fn ago(days: u64) -> u64 {
     let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
     u64::try_from(now.as_millis()).unwrap() - days * 86_400_000
 }
 
-/// A form post to `path`, as Settings › routines sends one: the status.
 fn form(cooee: &Cooee, path: &str, body: &str) -> String {
     let headers = [
         ("Content-Type", "application/x-www-form-urlencoded"),
@@ -156,7 +148,6 @@ fn a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts() {
     );
     drop(cooee);
 
-    // Made eight days ago, so a Monday 09:00 has passed since: the tick as cooee starts runs it, into its chat.
     let eight_days_ago = ago(8);
     let file = dir.join("data/routines.json");
     change(&file, |list| list[0]["made_at"] = json!(eight_days_ago));
@@ -191,7 +182,6 @@ fn a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts() {
     assert_eq!(prompts(), 1);
     drop(cooee);
 
-    // A restart runs nothing again: a second routine, due too and after it in the file, marks the tick done.
     change(&file, |list| {
         let mut other = list[0].clone();
         other["id"] = json!("r-other");
@@ -206,7 +196,6 @@ fn a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts() {
     assert_eq!((runs(&cooee, &id).len(), prompts()), (2, 1));
     drop(cooee);
 
-    // A crash between the run and its record: the same key runs again and adopts the message already sent.
     change(&file, |list| {
         list[0]["last_due"] = json!(0);
         list[0].as_object_mut().unwrap().remove("last_run");
@@ -245,12 +234,10 @@ fn a_new_thread_routine_starts_a_thread_marked_with_it_in_the_list() {
     };
     assert_eq!(row(&started).unwrap()["routine"], "Daily digest", "{rows}");
     assert_eq!(row(&id).unwrap()["routine"], "", "{rows}");
-    // A routine's own run can't make routines.
     let again = call(&shed, &started, "create_routine", &ask);
     let said = again["content"][0]["text"].as_str().unwrap();
     assert!(said.starts_with("NOT_HERE"), "{said}");
 
-    // Settings › routines pauses it, then deletes it; the thread it started stays.
     assert_eq!(
         form(&cooee, &format!("/routines/{rid}"), "paused=true"),
         "303"

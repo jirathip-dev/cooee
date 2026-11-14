@@ -1,8 +1,3 @@
-// herdsman#553 parity, rows 15–29 (#43, threads and messages; row 24 is #48's): the agents list's (#86) unread mark,
-// badge and live refresh, the title and rename, swipe to archive with undo and restore, markdown and folded tool runs,
-// code blocks' [copy], attachments and the viewer, the outbox, the growing composer, the keyboard, stopping and the
-// offline line, the queue and steering, drafts with files, the long-press menu, and older messages on scroll. Each
-// row's shot is ui-<viewport>/parity-<row>-….png.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
@@ -15,7 +10,6 @@ async function audit(page) {
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" ")}`)).toEqual([]);
 }
 
-// A new chat (#86: nothing to pick) whose turn is done, open; its id. `at`: the agent's new chat (default the first).
 async function thread(page, text = "Say hello", at = "/new") {
   await page.goto(at);
   await page.getByLabel("message", { exact: true }).fill(text);
@@ -30,13 +24,11 @@ async function say(page, text) {
   await page.getByRole("button", { name: "send" }).click();
 }
 
-// An agent of its own (#86), so its first chat is its ongoing one: the agent's row on the list; its new chat's page.
 async function agent(page, name) {
   const r = await page.request.post("/agents", { form: { name, profile: "" }, maxRedirects: 0 });
   expect(r.status()).toBe(303);
   return r.headers().location;
 }
-// The sidebar's row of chat `id`: its agent's row (the ongoing chat) or a side thread's.
 const rowOf = (page, id) => page.locator(`.ags [data-id="${id}"]`);
 
 const box = (page) => page.getByRole("textbox", { name: "message", exact: true });
@@ -48,7 +40,6 @@ test.beforeEach(async ({ page }) => {
 test("row 15: a new reply shows on the open list (dot and badge, no reload); opening the thread clears it", async ({ page }, info) => {
   await page.clock.install();
   const id = await thread(page, "Say hello", await agent(page, `Row15 ${info.project.name}`));
-  // Read: the mark goes after 3 s.
   const marked = () => page.waitForResponse((r) => r.url().endsWith(`/threads/${id}/read`));
   let read = marked();
   await page.clock.runFor(3500);
@@ -136,7 +127,6 @@ test("row 17: a row swiped left is archived, undo brings it back, and the archiv
   await expect(restore).toBeVisible();
   await shot(page, info, "parity-17-archived");
   await audit(page);
-  // Archived on the server: a reload lists it there too.
   await page.reload();
   await expect(row).toHaveCount(0);
   await page.locator("details.arc summary").click();
@@ -159,7 +149,6 @@ test("row 18: a reply's markdown renders (table, code, link, raw HTML as text); 
   await expect(link).toHaveAttribute("rel", "noopener");
   await expect(reply).toContainText("<script>alert(1)</script>");
   await expect(reply.locator("script")).toHaveCount(0);
-  // The table scrolls inside the message, never widening the page.
   const fits = await reply.locator(".tbl").evaluate((t) => t.getBoundingClientRect().right <= innerWidth);
   expect(fits).toBe(true);
   await reply.scrollIntoViewIfNeeded();
@@ -176,7 +165,6 @@ test("row 18: a reply's markdown renders (table, code, link, raw HTML as text); 
   await expect(fold).toHaveText("▾ 3 commands");
   for (const r of await runs.all()) await expect(r).toBeVisible();
   await shot(page, info, "parity-18-fold");
-  // New rows (an update) leave it open.
   await say(page, "Say hello");
   await expect(page.locator(".blk.ai").last()).toContainText("Hello");
   for (const r of await runs.all()) await expect(r).toBeVisible();
@@ -215,7 +203,6 @@ test("row 20: two photos sent in one message show as thumbnails; one opens full 
   await expect(mine.locator(".ct")).toHaveText(/✓$/);
   await expect(mine.locator("a.fi.im img")).toHaveCount(2);
   await expect(page.locator("#picked")).toBeHidden();
-  // Stored on the server, served as images.
   const items = (await (await page.request.get(`/threads/${id}/messages`)).json()).items;
   const files = items.find((i) => i.text === "two photos").files;
   expect(files).toHaveLength(2);
@@ -269,7 +256,6 @@ test("row 22: the box grows with its text to 6 lines, then scrolls; send stays a
 test("row 23: when the keyboard covers the page (iOS: only the visual viewport shrinks), the composer sits on it", async ({ page }, info) => {
   await thread(page);
   const { height } = page.viewportSize();
-  // The Home Screen app's keyboard: the visual viewport 300 px shorter, the page not.
   const keyboard = (up) =>
     page.evaluate((up) => {
       if (up) Object.defineProperty(visualViewport, "height", { get: () => innerHeight - 300, configurable: true });
@@ -334,7 +320,6 @@ test("row 26: a send during a turn is queued; [send now] steers it in; the next 
   await say(page, "then say hello");
   await expect(queue.locator("li")).toHaveCount(1);
   await page.locator("#pill .stop").click();
-  // The turn ends: the queued message goes, and its turn runs.
   await expect(queue).toBeHidden();
   await expect(page.locator(".blk.me").last()).toContainText("then say hello");
   await expect(page.locator(".blk.ai").last()).toContainText("Hello");
@@ -345,7 +330,6 @@ test("row 27: the draft keeps its text and picked files across a reload", async 
   await box(page).fill("half a thought");
   await page.setInputFiles("#files", [icon(192)]);
   await expect(page.locator("#picked img")).toHaveCount(1);
-  // The page hiding saves the draft at once.
   await page.evaluate(() => {
     Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
     document.dispatchEvent(new Event("visibilitychange"));
@@ -378,7 +362,6 @@ test.describe("touch", () => {
     await page.clock.install();
     await thread(page);
     const reply = page.locator(".blk.ai").last();
-    // A real touch held 600 ms, then lifted: the menu stays open after the release.
     const b = await reply.boundingBox();
     const at = [{ x: b.x + 30, y: b.y + 10 }];
     const cdp = await context.newCDPSession(page);
@@ -397,7 +380,6 @@ test.describe("touch", () => {
     await reply.click({ button: "right" });
     await menu.getByRole("menuitem", { name: "quote" }).click();
     await expect(box(page)).toHaveValue("> Hello\n\n");
-    // Esc or a press elsewhere closes it.
     await reply.click({ button: "right" });
     await page.keyboard.press("Escape");
     await expect(menu).toBeHidden();

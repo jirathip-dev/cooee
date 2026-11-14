@@ -1,6 +1,3 @@
-// #251 mockup: native Home v2. No title bar: two floating buttons (the avatar = You, + = new chat) over one scroll that
-// holds the search, the personas row (pinned first) and #229's chats; scrolled, both are gone and the rows run under the
-// top. Pages: modern.html, terminal.html, scene.html. As #229's hw.js: `?mode=dark|light`, `?f=<frame>` one frame alone.
 import { ranch } from './herd.js';
 
 const W = '../../../web/', P = '../../../packs/themes/';
@@ -20,7 +17,6 @@ const ICON = { new: '<path d="M12 5v14M5 12h14"/>', find: '<circle cx="10.5" cy=
   tray: '<path d="M3 13h5l1.5 3h5l1.5-3h5"/><path d="M5.5 5h13L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z"/>' };
 const ic = k => `<svg class=hic viewBox="0 0 24 24" aria-hidden=true>${ICON[k]}</svg>`;
 
-// Personas, pinned first (Chief, Coder, Researcher), each with its state; FIG is web/src/look.rs's two-frame figures.
 const PERS = {
   chief: ['Chief', 'CH', '--l', 'ch', 'done', 1], coder: ['Coder', 'CO', '--c', 'gry', 'working', 1], res: ['Researcher', 'RE', '--p', 'blk', 'needs', 1],
   acct: ['Account Manager', 'AM', '--link', 'bay', 'idle'], cond: ['Conductor', 'CD', '--g', 'wht', 'working'],
@@ -33,7 +29,6 @@ const word = k => theme.words[k];
 const av = id => `<i class="av" style="--av:var(${PERS[id][2]})" aria-hidden=true>${PERS[id][1]}</i>`;
 const fig = (k, cls = '', badge = 0) => `<span class="tmf ${cls}" data-k=${k} aria-label="${esc(word(k))}"><b>${esc(FIG[k][0])}</b><b>${esc(FIG[k][1])}</b>${badge ? `<i class=bd>${badge}</i>` : ''}</span>`;
 
-// #229's content: your personas' chats only, then Others.
 const CHATS = [['coder', 'Flaky e2e on the look sheet', '$ cargo test -p cooee-core', 'now', 2, 'working'],
   ['res', 'Kestrel filings', 'Allow fetch sec.gov/cgi-bin/browse-edgar?', '12m', 1, 'needs'],
   ['cond', 'cooee queue', '#251 design is up for your review', '20m', 3, 'working'],
@@ -51,8 +46,6 @@ const chatRow = ([id, title, last, age, ud, st], sel) => `<a class="pr h2r${sel 
 const othersRow = () => `<a class="pr h2r h2o" href="#"><i class="av oav" aria-hidden=true>${mono() ? '[~]' : ic('tray')}</i><span class=an><b>Others</b></span><span class=ta><i class=h2c>${LOOSE.length}</i></span>
   <span class=tp><span>${LOOSE.join(', ')}</span></span></a>`;
 
-// The top: search, then the personas row. Modern: a field and avatars (a ring while working or waiting); Terminal: the
-// prompt and the figures; Scene: the field on the sky, the Herd strip as the row.
 const search = () => mono() ? `<p class=tmp><b>$</b>grep <i class=tmc></i></p>` : `<p class=h2q>${ic('find')}<span>Search</span></p>`;
 const row = ids => {
   if (mono()) return `<div class=tmr>${ids.map(id => `<a class=pn href="#">${fig(PERS[id][4], '', UNREAD[id])}<span>${esc(PERS[id][0].split(' ')[0].toLowerCase())}</span><small${PERS[id][4] === 'needs' ? ' class=r' : ''}>${esc(word(PERS[id][4]))}</small></a>`).join('')}</div>`;
@@ -60,12 +53,9 @@ const row = ids => {
   const pn = id => `<a class="pn${PERS[id][4] === 'working' ? ' wk' : PERS[id][4] === 'needs' ? ' nd' : ''}" href="#">${av(id)}<span>${esc(PERS[id][0].split(' ')[0])}</span>${UNREAD[id] ? `<i class=bd>${UNREAD[id]}</i>` : ''}</a>`;
   return `<div class=h2p>${pins.map(pn).join('')}${pins.length && rest.length ? '<i class=sep></i>' : ''}${rest.map(pn).join('')}</div>`;
 };
-// The herd's places (px from the strip's bottom edge, on herd.js's 390 × 320 ranch).
 const HERD = { coder: { x: 0, y: 26, w: 74, k: 'wk', run: 70 }, cond: { x: 90, y: 24, w: 72, k: 'wk', run: 60 }, res: { x: 248, y: 30, w: 78, k: 'nd' },
   chief: { x: 168, y: 80, w: 42, k: 'dn' }, acct: { x: 40, y: 100, w: 44, k: 'id' }, writer: { x: 96, y: 104, w: 38, k: 'id', left: true }, design: { x: 222, y: 102, w: 38, k: 'id' } };
 const herdOf = ids => ids.map(id => ({ ...HERD[id], coat: PERS[id][3], pose: POSE[PERS[id][4]], name: PERS[id][0].split(' ')[0], word: HERD[id].w > 60 ? word(PERS[id][4]) : (PERS[id][4] === 'done' ? word('done') : ''), badge: UNREAD[id] }));
-// The full Herd (q1349): bands by state on a 340 px pasture. Working on the trail across the front, waiting at the gate,
-// done in the barn door, idle grazing the pasture between. `t` (0 strip … 1 full) places a horse mid-pull.
 const MD = 340;
 const FULL = { coder: { x: 14, y: 134, w: 118 }, cond: { x: 200, y: 122, w: 112, left: true }, res: { x: 286, y: MD + 26, w: 84 },
   chief: { x: 166, y: MD + 80, w: 46 }, acct: { x: 16, y: 248, w: 72 }, writer: { x: 110, y: 276, w: 64, left: true }, design: { x: 190, y: 240, w: 68 } };
@@ -85,7 +75,6 @@ const home = ({ y = 0, ids = ORDER, sel, night = false, weather = 'calm', wide =
 };
 const status = x => `<p class=tms><span class="s0${x ? ' x' : ''}">${x ? 'mini ✗' : 'mini'}</span><span>${x ? 'load –' : 'load 0.42 calm'}</span><span class=sp></span><span><b>2</b> working</span><span class=wt><b>1</b> waiting</span><span>09:41</span></p>`;
 
-// The chat beside Home in the Mac window (#124's Coder chat).
 const chat = () => `<div class=cvw><ol class=tc aria-label=messages><li class="blk me"><div class=md>The look sheet e2e flakes on CI. Find out why.</div><span class=ct>09:20</span></li>
   <li class="blk run"><span class=k>✓</span><span class=cmd>rg -n "waitFor" web/e2e/look.spec.ts</span></li>
   <li class="blk ai"><b class=k>Coder</b><div class=md><p>It waits for the sheet's first frame, not its fonts. Running the suite with a font-ready wait.</p></div></li>
@@ -96,7 +85,6 @@ const chat = () => `<div class=cvw><ol class=tc aria-label=messages><li class="b
 const phone = (h, cls = '') => `<section class="ph ${cls}">${h}<div class=stb>${SB}</div><i class=isl></i><i class=hind></i></section>`;
 const mac = (side, main) => `<section class="wd mac h2m"><aside class=side>${side}<span class=tl><i></i><i></i><i></i></span></aside><main class=dtl>${main}</main></section>`;
 
-// Scene's motion sheet: one strip per state; ghosts show where the loop goes.
 const motion = () => {
   const s = (lbl, hs, extra = '') => ranch({ h: 150, horses: hs, inner: `<span class=lbl>${lbl}</span>${extra}` });
   return `<div class="scr"><div class=mo>
