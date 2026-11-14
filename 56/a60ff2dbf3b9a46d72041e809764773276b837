@@ -1,0 +1,10 @@
+Decided: the move reuses the "Use a folder…" relaunch path; one function starts the agent at the new place and closes the old session
+Because: crates/cooee-server/src/hub.rs:1474
+Decided: #150's readiness check moved into cooee-server so the move route can call it before starting anything
+Because: "readiness checked (#150) before the move"
+Rejected: a second copy of the readiness check in the server — two ways to do one thing
+Decided: a move is refused while the turn is working, connecting or blocked
+Because: "refused while a turn is working (stop first)"
+Rejected: starting the new session lazily on the next message — the existing relaunch starts at once, and an unready machine fails up front
+Check: move_thread.rs's readiness test fails with nothing started on box, and the idle test's first prompt on box carries the hand-over
+Owner: chats can move to another machine once it checks out ready, and not while the agent is mid-turn
