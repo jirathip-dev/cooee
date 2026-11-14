@@ -1,0 +1,13 @@
+Decided: items are rows keyed (thread, id) in <data>/cooee.db; a later version upserts the row, matching Chat::from_versions
+Because: "with `body` the same JSON as today's line, primary key `(thread, id)`"
+Decided: the index holds history's said() text lowercased; search rechecks each hit, so LIKE wildcards in a word are harmless
+Because: crates/cooee-core/src/history.rs:15
+Decided: an import re-run after a crash upserts the same rows; the rename is fsynced before any append can follow
+Because: "a kill mid-import leaves the old files and imports again cleanly"
+Decided: the hub still loads a live thread whole; paging is in Store::page and the history read
+Because: crates/cooee-server/src/hub.rs:2175
+Rejected: an `after` read only in tests — kept, since the spec names it; it is one SQL branch of page
+Decided: the jsonl-era fixture is folder 0.1.0-items, as there is no later release tag
+Because: crates/cooee-core/tests/upgrade_compat.rs:1
+Check: last page 10k 7131→37 µs and search 30781→410 µs (cooee perf --store, release); the reliability flake reproduces on staging
+Owner: Chats move into one database on first start; the latest page and history search are 16–190× faster.
