@@ -1,0 +1,5 @@
+Decided: merge origin/staging again after #189; the justfile check line takes staging's gates and keeps this PR's lessons gate
+Because: ./justfile:2
+Rejected: chasing the round-4 ui failure — a chat.spec.mjs timing test in web code this PR never touched, and staging removed that suite
+Check: just lessons and just ci-scripts exit 0 at the head, and CI is green
+Owner: This branch is caught up with staging again; nothing about the lessons check changed.
