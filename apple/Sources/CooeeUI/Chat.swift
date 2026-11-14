@@ -1,53 +1,6 @@
 import CooeeCore
 import SwiftUI
 
-public struct ChatActions {
-    public var draft: Binding<String>?
-    public var files: [String]
-    public var send: (() -> Void)?
-    public var attach: ([Attachment]) -> Void
-    public var detach: (Int) -> Void
-    public var stop: () -> Void
-    public var steer: (Int) -> Void
-    public var unqueue: (Int) -> Void
-    public var answer: (Int, BlockAction) -> Void
-    public var answering: Set<Int>
-    public var back: () -> Void
-    public var retry: (Int) -> Void = { _ in }
-    public var places: [String] = []
-    public var counts: [Int?] = []
-    public var new: (() -> Void)?
-    public var open: (Int) -> Void = { _ in }
-    public var attachable: [String] = []
-    public var attachPlugin: (Int) -> Void = { _ in }
-
-    public init(
-        draft: Binding<String>? = nil,
-        files: [String] = [],
-        send: (() -> Void)? = nil,
-        attach: @escaping ([Attachment]) -> Void = { _ in },
-        detach: @escaping (Int) -> Void = { _ in },
-        stop: @escaping () -> Void = {},
-        steer: @escaping (Int) -> Void = { _ in },
-        unqueue: @escaping (Int) -> Void = { _ in },
-        answer: @escaping (Int, BlockAction) -> Void = { _, _ in },
-        answering: Set<Int> = [],
-        back: @escaping () -> Void = {}
-    ) {
-        self.draft = draft
-        self.files = files
-        self.send = send
-        self.attach = attach
-        self.detach = detach
-        self.stop = stop
-        self.steer = steer
-        self.unqueue = unqueue
-        self.answer = answer
-        self.answering = answering
-        self.back = back
-    }
-}
-
 public struct ChatView: View {
     @Environment(\.look) private var look
     private let persona: Persona
@@ -158,10 +111,10 @@ internal struct ChatHeader: View {
                     Button(action: actions.back) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("Back")
                 }
-                Avatar(persona: persona, size: 38)
+                sheet { Avatar(persona: persona, size: 38) }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(persona.name).ui(16, .semibold, look)
-                    AgentChip(persona: persona)
+                    sheet { Text(persona.name).ui(16, .semibold, look) }
+                    chip
                 }
                 Spacer(minLength: 4)
                 if let new = actions.new {
@@ -174,6 +127,23 @@ internal struct ChatHeader: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(palette.line).frame(height: 0.5) }
+    }
+
+    private func sheet(_ label: () -> some View) -> some View {
+        Button {
+            actions.persona?()
+        } label: {
+            label()
+        }
+        .buttonStyle(.plain).accessibilityLabel(persona.name)
+    }
+
+    @ViewBuilder private var chip: some View {
+        if let choices = actions.choices {
+            AgentMenu(persona: persona, choices: choices, effort: false, pick: actions.agent, set: actions.model)
+        } else {
+            AgentChip(persona: persona)
+        }
     }
 
     @ViewBuilder private var more: some View {

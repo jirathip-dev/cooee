@@ -172,7 +172,7 @@ extension PersonaFeature {
         }
     }
 
-    private static func deleting(_ name: String) -> AlertState<Action.Alert> {
+    internal static func deleting(_ name: String) -> AlertState<Action.Alert> {
         AlertState {
             TextState("Delete \(name)?")
         } actions: {

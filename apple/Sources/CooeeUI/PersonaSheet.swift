@@ -7,6 +7,9 @@ public struct PersonaActions {
     public var clear: () -> Void
     public var agent: @MainActor @Sendable (String) -> Void = { _ in }
     public var browse: () -> Void = {}
+    public var more: () -> Void = {}
+    public var delete: (() -> Void)?
+    public var photo: () -> Void = {}
 
     public init(close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {}) {
         self.close = close
@@ -18,12 +21,10 @@ public struct PersonaActions {
 public struct PersonaMemory {
     public let notes: [Field]
     public let count: Int
-    public var more = ""
 
-    public init(notes: [Field], count: Int, more: String = "") {
+    public init(notes: [Field], count: Int) {
         self.notes = notes
         self.count = count
-        self.more = more
     }
 }
 
@@ -71,7 +72,7 @@ public struct PersonaSheet: View {
         persona = Fixtures.persona(personaID)
         _draft = .constant(persona.api)
         choices = PersonaChoices()
-        memory = PersonaMemory(notes: Fixtures.chiefMemory, count: 12, more: "Show all 12")
+        memory = PersonaMemory(notes: Fixtures.chiefMemory, count: 12)
         error = nil
         actions = PersonaActions()
     }
@@ -96,15 +97,17 @@ extension PersonaSheet {
     private var sections: some View {
         VStack(spacing: 18) {
             VStack(spacing: 8) {
-                Avatar(persona: persona, size: 92)
-                Text("Edit avatar").ui(14, .medium, look).foregroundStyle(look.palette.link)
+                Avatar(persona: Persona(api: draft, look: avatarLook, state: persona.state), size: 92)
+                AvatarEditor(avatar: $draft.avatar, photo: actions.photo)
             }
             Group2 {
                 field("Name", $draft.name)
                 HStack {
                     Text("Agent").ui(16, .regular, look)
                     Spacer()
-                    AgentMenu(draft: $draft, choices: choices, pick: actions.agent)
+                    AgentMenu(persona: Persona(draft), choices: choices, pick: actions.agent) {
+                        (draft.model, draft.effort) = ($0, $1)
+                    }
                 }
                 .padding(.horizontal, 14).frame(height: 48)
                 if !look.still {
@@ -126,12 +129,25 @@ extension PersonaSheet {
                 .buttonStyle(.plain).accessibilityLabel("Folder")
             }
             if let error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
+            if let delete = actions.delete {
+                Group2 {
+                    Button(action: delete) {
+                        Text("Delete \(draft.name)…").ui(16, .regular, look).foregroundStyle(look.palette.red)
+                            .frame(maxWidth: .infinity).frame(height: 48)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
+    }
+
+    private var avatarLook: PersonaLook {
+        draft.avatar == persona.api.avatar ? persona.look : Persona(draft).look
     }
 
     @ViewBuilder private var notes: some View {
         let palette = look.palette
-        ForEach(Array(memory.notes.enumerated()), id: \.offset) { _, note in
+        ForEach(Array(memory.notes.prefix(3).enumerated()), id: \.offset) { _, note in
             VStack(alignment: .leading, spacing: 2) {
                 Text(note.key).ui(15, .regular, look).lineLimit(1)
                 Text(note.value).ui(12, .regular, look).foregroundStyle(palette.mute)
@@ -143,7 +159,10 @@ extension PersonaSheet {
             }
         }
         HStack {
-            Text(memory.more).foregroundStyle(palette.link)
+            if memory.count > 3 {
+                Button("Show all \(memory.count)", action: actions.more).buttonStyle(.plain).foregroundStyle(
+                    palette.link)
+            }
             Spacer()
             if look.still {
                 Text("Clear memory…").foregroundStyle(palette.red)

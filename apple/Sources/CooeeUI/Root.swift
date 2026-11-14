@@ -128,6 +128,16 @@ internal struct ChatScreen: View {
         actions.open = { store.send(.plugins(.open(places[$0]))) }
         actions.attachable = attachable.map(\.name)
         actions.attachPlugin = { store.send(.plugins(.attach(attachable[$0]))) }
+        return persona(actions)
+    }
+
+    private func persona(_ chat: ChatActions) -> ChatActions {
+        guard !store.persona.api.id.isEmpty else { return chat }
+        var actions = chat
+        actions.persona = { store.send(.profile) }
+        actions.choices = PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts)
+        actions.agent = { store.send(.pick(.agent($0))) }
+        actions.model = { store.send(.pick(.model($0, $1))) }
         return actions
     }
 
@@ -144,42 +154,8 @@ internal struct ChatScreen: View {
         )
         .task { await store.send(.task).finish() }
         .task { await store.send(.plugins(.load)).finish() }
+        .task { await store.send(.pick(.load)).finish() }
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachSheet(store: $0) }
-    }
-}
-
-internal struct PersonaScreen: View {
-    @Bindable internal var store: StoreOf<PersonaFeature>
-
-    internal var body: some View {
-        PersonaSheet(
-            draft: $store.draft,
-            choices: PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts),
-            memory: PersonaMemory(
-                notes: Listing.memory(store.notes, persona: store.draft.name, now: Date()), count: store.notes.count
-            ),
-            error: store.error,
-            actions: actions
-        )
-        .disabled(store.busy)
-        .task { await store.send(.task).finish() }
-        .sheet(isPresented: Binding(get: { store.folders != nil }, set: { _ in store.send(.folder(nil)) })) {
-            if let listing = store.folders {
-                FolderBrowser(
-                    listing: listing, search: $store.search, browse: { store.send(.browse($0)) },
-                    pick: { store.send(.folder($0)) }
-                )
-            }
-        }
-    }
-
-    private var actions: PersonaActions {
-        var actions = PersonaActions(
-            close: { store.send(.close) }, save: { store.send(.save) }, clear: { store.send(.clearMemory) }
-        )
-        actions.agent = { store.send(.agent($0)) }
-        actions.browse = { store.send(.browse(nil)) }
-        return actions
     }
 }

@@ -142,8 +142,8 @@ public struct ChatFeature: Sendable {
                 return compose(&state, action)
             }
         }
-        Reduce { state, action in plugins(&state, action) }
         Reduce { state, action in agent(&state, action) }
+        Reduce { state, action in plugins(&state, action) }
             .ifLet(\.$screen, action: \.screen) { PluginScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
     }
