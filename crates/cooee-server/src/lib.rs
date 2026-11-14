@@ -616,6 +616,9 @@ fn recipe(
         };
         (p.agent, p.folder.unwrap_or(folder), recipe)
     };
+    if persona.is_some() || !recipe.profile.is_empty() {
+        recipe.launch.meta = logins.no_personal_setup(&agent);
+    }
     recipe.launch.pick(logins.picks(&agent, &picked.1)?);
     (recipe.model, recipe.effort) = picked;
     if let Some(p) = persona {
