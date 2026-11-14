@@ -8,6 +8,7 @@
 mod hub;
 mod login;
 mod look;
+pub mod machine;
 mod manage;
 pub mod mcp;
 mod pairing;
@@ -553,6 +554,49 @@ async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Ite
             (t.model, t.effort),
         )?;
         hub.attach(&id, &a.folder, &recipe)
+    });
+    Ok(Answer(
+        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
+    ))
+}
+
+/// `POST /threads/{id}/move`: to `machine` (#151; empty: this host), once it is ready for the thread's persona.
+#[derive(Deserialize)]
+struct Move {
+    machine: String,
+}
+
+#[route(POST "/threads/{id}/move")]
+async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<cooee_core::Item>> {
+    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
+    let config = Arc::clone(app_context::<Arc<Config>>(cx));
+    let data = app_context::<Data>(cx);
+    let (data, dir) = (data.0.clone(), data.1.clone());
+    let done = tokio::task::spawn_blocking(move || {
+        let (t, _) = hub.thread(&id)?;
+        if !m.machine.is_empty() {
+            let p = personas::find(dir.as_deref(), &data, &t.profile).unwrap_or_else(|_| Persona {
+                id: id.clone(),
+                agent: t.agent.clone(),
+                profile: Some(t.profile.clone()).filter(|p| !p.is_empty()),
+                folder: t
+                    .folder
+                    .as_ref()
+                    .map(|f| f.display().to_string())
+                    .unwrap_or_default(),
+                ..Persona::default()
+            });
+            machine::ready(&config, &m.machine, &p).map_err(HubError::Refused)?;
+        }
+        let list = profiles(&hub, (&data, dir.as_deref()));
+        let (_, _, recipe) = recipe(
+            &logins,
+            (&data, dir.as_deref(), &list),
+            (&t.agent, Some(&t.account), &t.profile),
+            PathBuf::new(),
+            (t.model, t.effort),
+        )?;
+        hub.move_to(&id, &m.machine, &recipe)
     });
     Ok(Answer(
         done.await.map_err(|e| HubError::Refused(e.to_string()))?,
@@ -2175,7 +2219,12 @@ fn names(bind: IpAddr, allowed_hosts: &[String]) -> Vec<String> {
 #[must_use]
 pub fn router(
     (hub, runner): (Arc<Hub>, Arc<routines::Runner>),
-    (logins, manager, machines): (Arc<Logins>, Arc<Manager>, Arc<Machines>),
+    (logins, manager, machines, config_all): (
+        Arc<Logins>,
+        Arc<Manager>,
+        Arc<Machines>,
+        Arc<Config>,
+    ),
     (data, config): (&std::path::Path, Option<&std::path::Path>),
     bind: IpAddr,
     allowed_hosts: &[String],
@@ -2216,6 +2265,7 @@ pub fn router(
     .route(create)
     .route(retry)
     .route(attach)
+    .route(move_thread)
     .route(browse)
     .route(root)
     .route(new_folder)
@@ -2255,6 +2305,7 @@ pub fn router(
     .app_context(logins)
     .app_context(manager)
     .app_context(machines)
+    .app_context(config_all)
     .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))
     .app_context(Arc::new(pairing::Pairing::default()))
     .build()
@@ -2324,6 +2375,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
                 config.shed_dir.clone(),
                 cooee_machines::local_name(),
             )),
+            Arc::new(config.clone()),
         ),
         (&data, config.dir.as_deref()),
         config.bind,
