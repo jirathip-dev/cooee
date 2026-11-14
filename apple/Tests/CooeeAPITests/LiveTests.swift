@@ -49,6 +49,7 @@ internal struct LivePersonaTests {
             let made = try await client.personas().first { $0.id == "scout-\(look)" }
             #expect(made?.character == "Finds the facts first." && made?.instructions == "Cite every source.")
             #expect(made?.pinned == true)
+            #expect(made?.agent == "fake-acp" && made?.folder.hasSuffix("/root/project") == true)
         }
     }
 }

@@ -820,11 +820,9 @@ mod tests {
         assert_eq!(push.bearer(&a, &k, 1000 + 49 * 60), first);
         let later = push.bearer(&a, &k, 1000 + 50 * 60);
         assert_ne!(later, first);
-        assert!(
-            B64.decode(later.split('.').nth(1).unwrap())
-                .unwrap()
-                .starts_with(b"{\"iat\":4000,")
-        );
+        let claims: serde_json::Value =
+            serde_json::from_slice(&B64.decode(later.split('.').nth(1).unwrap()).unwrap()).unwrap();
+        assert_eq!(claims["iat"], 4000);
     }
 
     /// Each paired device's token gets one POST with the APNs headers and the note; a 410 or `BadDeviceToken` drops
