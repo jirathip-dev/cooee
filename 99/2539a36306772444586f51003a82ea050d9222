@@ -1,0 +1,10 @@
+Decided: the app shows a new chat's pending first message as its own bubble, failed with the turn's note when the start fails, and [retry] posts /threads/{id}/retry.
+Because: "keeps the message in the chat with a red failed line and [retry], the same as an offline send"
+Because: apple/Sources/CooeeAPI/Endpoints.swift:26
+Because: crates/cooee-server/src/hub.rs:1174
+Rejected: making the server's background start synchronous — the web chat already relies on the answer-at-once start with pending plus unconnected.
+Rejected: a new pending type — the server's pending is text plus random_id, exactly Queued's shape, so Slice reuses it.
+Decided: an older shed's SHED_VERSION now ends "an older shed; restart shed serve", the plain words the issue asks for.
+Check: ChatOutboxTests drives .task with a /messages slice holding pending and an unconnected state event; drawn keeps the bubble with the reason.
+Check: retry id 0 only restarts when no outbox message has that id and a pending first message exists.
+Owner: on the phone, a first message whose agent can't start now stays with the reason and a retry button.
