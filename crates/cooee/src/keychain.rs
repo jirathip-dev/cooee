@@ -1,5 +1,6 @@
-//! The one read of the macOS keychain: before #99 cooee kept the VAPID key there (service `cooee`); now it lives only
-//! in `<data>/vapid.key`. While there is no key file, a start copies the old key over, once.
+//! The keychain commands. Before #99 cooee kept the VAPID key there (service `cooee`); now it lives only in
+//! `<data>/vapid.key`, and while there is no key file a start copies the old key over, once. `cooee secrets` moves
+//! the secret files into the keychain (#167) and checks each saved secret can be read.
 
 use std::{
     io::Read,
@@ -9,7 +10,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use cooee_core::Config;
+use cooee_core::{Config, secrets};
 use cooee_server::Push;
 
 /// Past this a keychain read gives up: a locked keychain can hang behind a prompt no one sees.
@@ -109,4 +110,35 @@ pub fn command(config: &Config) -> Result<(), String> {
         );
     }
     Ok(())
+}
+
+/// `cooee secrets`: [`secrets::migrate`], then reads each saved secret back; names only, never a value.
+///
+/// # Errors
+/// When there is no data folder, a secret can't be moved, or one can't be read.
+pub fn check(config: &Config) -> Result<(), String> {
+    let data = config
+        .data_dir()
+        .ok_or("no data folder: set `data` or HOME")?;
+    for name in secrets::migrate(&data).map_err(|e| format!("secrets: {e}"))? {
+        println!("moved {name} into the keychain");
+    }
+    let mut failed = 0;
+    for name in secrets::names(&data).map_err(|e| format!("secrets: {e}"))? {
+        let why = match secrets::get(&data, &name) {
+            Ok(Some(_)) => {
+                println!("ok   {name}");
+                continue;
+            }
+            Ok(None) => "gone".to_owned(),
+            Err(e) => e.to_string(),
+        };
+        println!("FAIL {name}: {why}");
+        failed += 1;
+    }
+    if failed == 0 {
+        Ok(())
+    } else {
+        Err(format!("{failed} secret(s) can't be read"))
+    }
 }

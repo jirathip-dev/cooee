@@ -1,0 +1,16 @@
+{
+  "type": "sheet", "id": "review-stale", "title": "Review again", "cancel": "Edit", "done": { "label": "Apply", "action": "apply", "off": false },
+  "blocks": [
+    { "type": "card", "tone": "warn", "title": "fleet.toml changed while you edited",
+      "subtitle": "You applied the orchestrator's c12 at 09:44. Your changes are shown against the new file; nothing was overwritten." },
+    { "type": "section", "header": "changed meanwhile · by c12", "blocks": [
+      { "type": "diff", "file": "[fleet.synergy]", "summary": "applied 09:44",
+        "hunks": [ { "at": "@@ 42 @@", "lines": [ "- serial_max = 3", "+ serial_max = 6   # c12 · q880" ] } ] } ] },
+    { "type": "section", "header": "your changes, on the new file", "blocks": [
+      { "type": "diff", "file": "~/.config/herdsman/fleet.toml", "summary": "+2 −0",
+        "hunks": [
+          { "at": "@@ 158 @@ [fleet.cooee]", "lines": [ "  ui_paths = [\"web/**\"]   # t21 owner q619", "+ lessons = \"off\"" ] },
+          { "at": "@@ 175 @@ [fleet.cooee.role.rev]", "lines": [ "  model = \"claude-sonnet-5-5\"", "+ effort = \"high\"" ] } ] } ] },
+    { "type": "text", "style": "footnote", "markdown": "Had a change touched the same line, Apply would be off until you edit it again." }
+  ]
+}

@@ -47,3 +47,10 @@ Notes:
   the shed connection reuse issue removes.
 - `agents` and `run` still spawn the shed CLI (3-18 ms each), the cost the next issue removes.
 - First token, from `POST` to the first reply chunk: p50 1.6 s, max 2.4 s for one-word replies.
+
+## `history` search (#217)
+
+Every `history` call logs an `http | POST /mcp/agent/history` row in `cooee perf`. Its search is a file scan, no
+index: over 1,000 threads of 20 item lines each (`history::tests::a_search_over_1000_threads_stays_under_200_ms`), a
+release build on the mini took 11-12 ms (3 runs); the debug test asserts under 200 ms. Past 200 ms, a follow-up adds a
+rebuildable index.

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · fleets config (#184): the Fleets list, add a repo, global settings</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../screens-as-data/sd.css">
+<script type="module" src="../screens-as-data/sd.js"></script>
+</head>
+<body>
+<!-- #184: drover's Fleets screens as #125 blocks (fixtures/*.json), drawn by screens-as-data's one renderer over the
+     orchestrator chat (the Conductor persona), as drover's Queue is. ?f=<frame>&mode=dark|light&style=modern|terminal|scene. -->
+<div class="gal">
+<div class="fr"><p class="cap">Fleets · state, lanes, Pause / Resume, a proposal, + Add a repo</p>
+<section class="ph" data-f="fleets"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/fleets.json"></div></section></div>
+
+<div class="fr"><p class="cap">Fleets · scrolled: + Add a repo, Global settings, Edit as text</p>
+<section class="ph" data-f="fleets-end" data-scroll="430"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/fleets.json"></div></section></div>
+
+<div class="fr"><p class="cap">Add a repo · GitHub repo, folder, integration branch, roles from defaults</p>
+<section class="ph" data-f="add"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/add.json"></div></section></div>
+
+<div class="fr"><p class="cap">Global settings · accounts, hosts, limits, notify, what the orchestrator may do</p>
+<section class="ph" data-f="global"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/global.json"></div></section></div>
+
+<div class="fr"><p class="cap">Global settings · scrolled: limits, notify, what the orchestrator may do</p>
+<section class="ph" data-f="global-end" data-scroll="760"><div data-host="chat" data-chat="fixtures/chat.json" data-screen="fixtures/global.json"></div></section></div>
+
+<div class="fr w"><p class="cap">Mac · the Fleets sheet as a panel</p>
+<section class="wd mac" data-f="wide-fleets" data-host="chat" data-wide="1" data-chat="fixtures/chat.json" data-screen="fixtures/fleets.json"></section></div>
+
+</div>
+</body>
+</html>

@@ -1,3 +1,4 @@
+import CooeeCore
 import SwiftUI
 
 #if canImport(UIKit)
@@ -70,4 +71,14 @@ internal func copy(_ text: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
     #endif
+}
+
+extension CooeeCore.Layout {
+    /// The bundled default (`Default/layout.json`): today's screens, drawn before any server answers.
+    public static let bundled: CooeeCore.Layout = {
+        // SAFETY: Default/layout.json is copied into this module's bundle by Package.swift
+        let url = Bundle.module.url(forResource: "layout", withExtension: "json", subdirectory: "Default")!
+        // SAFETY: DefaultLayoutTests decodes the bundled file, so a bad edit fails the tests first
+        return try! CooeeCore.Layout(json: Data(contentsOf: url), etag: "")
+    }()
 }

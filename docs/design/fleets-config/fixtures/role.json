@@ -1,0 +1,152 @@
+{
+ "type": "screen",
+ "id": "role-rev",
+ "title": "rev",
+ "back": "cooee",
+ "pending": {
+  "count": "2 changes",
+  "text": "unsaved",
+  "discard": {
+   "action": "discard"
+  },
+  "review": {
+   "sheet": "/screens/fleets/review"
+  }
+ },
+ "blocks": [
+  {
+   "type": "section",
+   "header": "who reviews",
+   "blocks": [
+    {
+     "type": "form",
+     "id": "rev",
+     "fields": [
+      {
+       "type": "picker",
+       "name": "harness",
+       "label": "Harness",
+       "value": "Claude Code",
+       "options": [
+        "Claude Code",
+        "Hermes",
+        "dsh"
+       ]
+      },
+      {
+       "type": "picker",
+       "name": "model",
+       "label": "Model",
+       "value": "sonnet 5.5",
+       "doc": "herdsman's models",
+       "options": [
+        "opus 5.5",
+        "sonnet 5.5",
+        "haiku 5.5"
+       ],
+       "open": true
+      },
+      {
+       "type": "picker",
+       "name": "effort",
+       "label": "Effort",
+       "value": "high",
+       "was": "model default",
+       "options": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+       ]
+      },
+      {
+       "type": "picker",
+       "name": "host",
+       "label": "Host",
+       "value": "main",
+       "options": [
+        "main",
+        "least busy"
+       ]
+      }
+     ],
+     "action": "edit"
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "accounts · in order",
+   "footer": "A lane signs in with the first one not capped. Drag to reorder.",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "figure": {
+        "icon": "1"
+       },
+       "title": "A · Claude Max",
+       "subtitle": "5h 42% · week 61%",
+       "handle": true,
+       "id": "A"
+      },
+      {
+       "type": "row",
+       "figure": {
+        "icon": "2"
+       },
+       "title": "C · Claude Pro",
+       "subtitle": "5h 8% · week 22%",
+       "handle": true,
+       "lifted": true,
+       "id": "C"
+      },
+      {
+       "type": "row",
+       "figure": {
+        "icon": "3"
+       },
+       "title": "B · Claude Max",
+       "subtitle": {
+        "text": "capped · resets 14:00",
+        "tone": "warn"
+       },
+       "handle": true,
+       "id": "B"
+      }
+     ],
+     "reorder": {
+      "action": "order",
+      "name": "accounts"
+     }
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "more",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "title": "Profile",
+       "value": "fleet-rev",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "title": "MCP servers",
+       "value": "none",
+       "tap": {}
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

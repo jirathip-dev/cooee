@@ -11,7 +11,7 @@
 # `work` and `lab` (signed in, their email `<name>@example.com`), last used for a new thread in root/project and
 # root/other (#48), root/fresh never used; a start in root/slow-<viewport> waits while the spec holds it, one in
 # root/bad-<viewport> fails. One agent profile, `reviewer`, sits beside the main config (#40). Two MCP servers (#56):
-# `files` (a fake stdio server with three tools, on) and `docs` (http, off).
+# `files` (a fake stdio server with three tools, on) and `docs` (http, off). One routine, `renewals`, paused (#75).
 set -eu
 cd "$(dirname "$0")/../.."
 tmp=$(mktemp -d)
@@ -59,6 +59,10 @@ for id in long-390 long-1440; do
     }
   }' >"$tmp/data/threads/$id.jsonl"
 done
+
+# One routine (#75), paused so it never runs, in the 390 long thread's chat.
+printf '{"format":1,"routines":[{"id":"r-1","name":"renewals","trigger":{"schedule":"0 9 * * 1"},"place":{"in":"chat","thread":"long-390"},"prompt":"check the renewals due {{due}}","paused":{"why":"owner"},"made_in":"long-390","made_at":%s000}]}\n' \
+  "$now" >"$tmp/data/routines.json"
 
 # The last pick per folder (#48): closed threads, newer than the long ones, older than any a spec starts.
 for t in project:work:1750000000000 other:lab:1749990000000; do

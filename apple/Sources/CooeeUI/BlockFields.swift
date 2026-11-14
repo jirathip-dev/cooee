@@ -97,11 +97,23 @@ internal struct SecretBlock: View {
 internal struct FieldsBlock: View {
     @Environment(\.card) private var context
     @Environment(\.form) private var shared
+    @Environment(\.act) private var act
     @State private var own: [String: JSONValue] = [:]
     internal let block: JSONValue
 
+    private var live: Binding<[String: JSONValue]>? {
+        guard let action = block.string("action") else { return nil }
+        return Binding {
+            own
+        } set: { edits in
+            let changed = edits.filter { own[$0.key] != $0.value }
+            own = edits
+            act(BlockAction(action: action, values: changed))
+        }
+    }
+
     internal var body: some View {
-        let edits = block["submit"] == nil ? shared ?? $own : $own
+        let edits = live ?? (block["submit"] == nil ? shared ?? $own : $own)
         VStack(alignment: .leading, spacing: 10) {
             ForEach(Array(block.list("fields").enumerated()), id: \.offset) { _, field in
                 FieldRow(field: field, edits: edits)
@@ -137,11 +149,14 @@ internal struct FieldRow: View {
         let palette = look.palette
         Button(action: tap) {
             HStack {
-                Text(field.string("label") ?? name).ui(14, .regular, look).foregroundStyle(palette.mute)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(field.string("label") ?? name).ui(14, .regular, look).foregroundStyle(palette.mute)
+                    if let note { Text(note.text).ui(11, .regular, look).foregroundStyle(note.tint) }
+                }
                 Spacer()
                 Text(shown).ui(14, .regular, look)
             }
-            .padding(.horizontal, 12).frame(height: 38)
+            .padding(.horizontal, 12).frame(minHeight: 38).padding(.vertical, note == nil ? 0 : 4)
             .background(palette.background.opacity(0.5), in: .rect(cornerRadius: 10))
         }
         .buttonStyle(.plain)
@@ -151,6 +166,13 @@ internal struct FieldRow: View {
                 Button(option) { edits[name] = .string(option) }
             }
         }
+    }
+
+    private var note: (text: String, tint: Color)? {
+        let palette = look.palette
+        if let error = field.string("error") { return (error, palette.red) }
+        if let was = field.string("was") { return ("was \(was)", palette.lead) }
+        return field.string("doc").map { ($0, palette.mute) }
     }
 
     private var typing: Binding<Bool> {

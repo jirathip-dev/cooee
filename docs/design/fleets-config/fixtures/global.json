@@ -1,0 +1,247 @@
+{
+ "type": "screen",
+ "id": "global",
+ "title": "Global settings",
+ "back": "Fleets",
+ "blocks": [
+  {
+   "type": "section",
+   "header": "accounts",
+   "footer": "Usage and sign-in as in Settings (#183). Each role uses them in its own order.",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "figure": {
+        "icon": "A"
+       },
+       "title": "A · Claude Max",
+       "subtitle": "5h 42% · week 61%",
+       "badge": {
+        "text": "in use",
+        "tone": "ok"
+       },
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "figure": {
+        "icon": "B"
+       },
+       "title": "B · Claude Max",
+       "subtitle": {
+        "text": "capped · resets 14:00",
+        "tone": "warn"
+       },
+       "badge": {
+        "text": "capped",
+        "tone": "warn"
+       },
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "figure": {
+        "icon": "C"
+       },
+       "title": "C · Claude Pro",
+       "subtitle": "5h 8% · week 22%",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "title": "+ Sign in another account",
+       "style": "link",
+       "tap": {}
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "hosts",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "figure": {
+        "state": "working",
+        "coat": "wht"
+       },
+       "title": "mini",
+       "subtitle": "main · 2 roots · 9 lanes",
+       "value": "on",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "figure": {
+        "state": "idle",
+        "coat": "gry"
+       },
+       "title": "air",
+       "subtitle": "small · shed-acp",
+       "value": "off",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "figure": {
+        "state": "idle",
+        "coat": "blk"
+       },
+       "title": "boat1",
+       "subtitle": "cloud · $40/month · 6 h/day",
+       "value": "off",
+       "tap": {}
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "limits",
+   "blocks": [
+    {
+     "type": "form",
+     "id": "limits",
+     "action": "edit",
+     "fields": [
+      {
+       "type": "picker",
+       "name": "limits.review_rounds",
+       "label": "Review rounds",
+       "value": "6",
+       "doc": "then the issue needs you",
+       "options": [
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "8"
+       ]
+      },
+      {
+       "type": "picker",
+       "name": "limits.stall_minutes",
+       "label": "Stall after",
+       "value": "30 min",
+       "options": []
+      },
+      {
+       "type": "picker",
+       "name": "limits.worktree_budget_gb",
+       "label": "Worktrees",
+       "value": "80 GB",
+       "doc": "then drive frees idle build folders",
+       "options": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "section",
+   "header": "notify",
+   "blocks": [
+    {
+     "type": "list",
+     "rows": [
+      {
+       "type": "row",
+       "figure": {
+        "icon": "!"
+       },
+       "title": "Web push",
+       "subtitle": "paired devices · every fleet",
+       "tap": {}
+      },
+      {
+       "type": "row",
+       "title": "+ Add a notifier",
+       "style": "link",
+       "tap": {}
+      }
+     ]
+    }
+   ]
+  },
+ {
+  "type": "section",
+  "header": "orchestrator may",
+  "footer": "Never merge: only you and drive do. Anything else is a card for you.",
+  "blocks": [
+   {
+    "type": "form",
+    "id": "groups",
+    "action": "edit",
+    "fields": [
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.design",
+      "label": "Design and architect lanes",
+      "value": true,
+      "doc": "spawn … design or architect"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.clean",
+      "label": "Clean",
+      "value": true,
+      "doc": "clean --yes, --orphans, --lane"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.hosts",
+      "label": "Hosts",
+      "value": true,
+      "doc": "hosts on, off, refresh"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.reclaim",
+      "label": "Reclaim",
+      "value": true,
+      "doc": "reclaim idle build folders"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.accounts",
+      "label": "Accounts",
+      "value": true,
+      "doc": "accounts reset"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.runners",
+      "label": "Runners",
+      "value": true,
+      "doc": "runners status, add, revive, remove"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.pause",
+      "label": "Pause and resume",
+      "value": false,
+      "doc": "pause, resume"
+     },
+     {
+      "type": "toggle",
+      "name": "orchestrator.allow.set",
+      "label": "Set a role",
+      "value": false,
+      "doc": "harness, model or effort"
+     }
+    ]
+   }
+  ]
+ }
+ ]
+}

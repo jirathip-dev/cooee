@@ -4,6 +4,7 @@ import SwiftUI
 internal struct ActButton<Label: View>: View {
     @Environment(\.act) private var act
     @Environment(\.openURL) private var openURL
+    @Environment(\.open) private var open
     @State private var pending: JSONValue?
     internal var action: String?
     internal let source: JSONValue
@@ -23,6 +24,8 @@ internal struct ActButton<Label: View>: View {
     private func fire() {
         if let url = source["tap"]?.string("url").flatMap(URL.init(string:)) {
             openURL(url)
+        } else if let sheet = source["tap"]?.string("sheet") {
+            open(sheet)
         } else if let action = BlockAction(action: action, source: source, values: values) {
             act(action)
         }
@@ -66,6 +69,8 @@ internal struct CardBlock: View {
         switch block.string("kind") {
         case "ask": return Kind(label: "ask\(poster)", symbol: "hand.raised.fill", tint: palette.red)
         case "config": return Kind(label: "config\(poster)", symbol: "slider.horizontal.3", tint: palette.cyan)
+        case "proposal":
+            return Kind(label: "config proposal\(poster)", symbol: "slider.horizontal.3", tint: palette.cyan)
         case "secret": return Kind(label: "secret\(poster)", symbol: "key.fill", tint: palette.amber)
         case "run": return Kind(label: "run card\(poster)", symbol: "terminal.fill", tint: palette.lead)
         default: return nil

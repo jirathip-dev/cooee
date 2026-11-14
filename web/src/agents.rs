@@ -239,6 +239,8 @@ struct Line {
     /// An agent's avatar (see [`Mate::avatar`]).
     src: Option<String>,
     at: Option<u64>,
+    /// The routine that started it or sent its last message (#75; empty: none).
+    routine: String,
 }
 
 /// A side thread's row: its title, age, unread dot and count (#43), and `choose` while a pick waits.
@@ -255,6 +257,7 @@ fn side(c: &Summary, open: &str) -> Line {
         agent: None,
         src: None,
         at: Some(c.at),
+        routine: c.routine.clone(),
     }
 }
 
@@ -287,6 +290,9 @@ async fn row(cx: &Cx, l: Line) -> Result<impl View> {
                     <i class="ur" aria-hidden="true"></i>
                 }
                 (l.title.clone())
+                if !l.routine.is_empty() {
+                    <b class="rtn">(format!("⟳ {}", l.routine))</b>
+                }
             </span>
             <span class="ta">
                 if l.choose {
@@ -389,6 +395,10 @@ async fn sidebar(
                             unseen: m.chats.iter().map(|c| c.unseen).sum(),
                             choose: m.chats.iter().any(|c| c.state == "blocked"),
                             at: latest.as_ref().map(|c| c.at),
+                            routine: latest
+                                .as_ref()
+                                .map(|c| c.routine.clone())
+                                .unwrap_or_default(),
                             agent: Some((n, latest)),
                             src: m.avatar.clone(),
                         }
@@ -997,6 +1007,8 @@ mod tests {
             account: String::new(),
             profile: String::new(),
             persona: String::new(),
+            persona_name: String::new(),
+            persona_role: cooee_core::personas::Role::Plain,
             folder: PathBuf::new(),
             machine: String::new(),
             state: "done".to_owned(),
@@ -1007,6 +1019,7 @@ mod tests {
             archived: false,
             workflow: None,
             members: Vec::new(),
+            routine: String::new(),
         }
     }
 

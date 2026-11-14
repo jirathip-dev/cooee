@@ -10,8 +10,15 @@ internal struct BlockRenderTests {
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         .deletingLastPathComponent().appendingPathComponent("docs/design/screens-as-data/fixtures")
 
-    private static func fixture(_ name: String) throws -> JSONValue {
-        try JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: fixtures.appendingPathComponent(name)))
+    private static func fixture(_ name: String, in folder: URL = fixtures) throws -> JSONValue {
+        try JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: folder.appendingPathComponent(name)))
+    }
+
+    private static func fleets(_ name: String) throws -> JSONValue {
+        try fixture(
+            name,
+            in: fixtures.deletingLastPathComponent().deletingLastPathComponent()
+                .appendingPathComponent("fleets-config/fixtures"))
     }
 
     private static func height(_ block: JSONValue) -> Int {
@@ -41,5 +48,46 @@ internal struct BlockRenderTests {
         for event in try Self.fixture("queue-stream.json").items { queue.apply(event: event) }
         let patched = Self.height(queue.root)
         #expect(patched > 200 && patched < Self.height(screen))
+    }
+
+    @Test(arguments: [
+        "fleets.json", "fleet.json", "role.json", "global.json", "text.json", "review.json", "add.json", "stale.json",
+    ])
+    internal func everyFleetsConfigScreenDraws(_ name: String) throws {
+        #expect(Self.height(try Self.fleets(name)) > 300)
+    }
+
+    @Test internal func everyProposalCardDraws() throws {
+        let cards = try Self.fleets("chat.json").list("cards")
+        #expect(cards.count == 2)
+        for card in cards { #expect(Self.height(card) > 150) }
+    }
+
+    @Test internal func anEditorShowsEachErrorUnderItsLine() throws {
+        let screen = try Self.fleets("text.json")
+        let editor = try #require(screen.list("blocks").first { $0.type == "editor" })
+        var clean = LiveScreen(editor)
+        clean.apply(
+            .object(["op": .string("merge"), "id": .string("toml"), "fields": .object(["errors": .array([])])]))
+        #expect(Self.height(editor) > Self.height(clean.root))
+    }
+
+    @Test internal func aDiffDrawsEveryLineOfEveryHunk() throws {
+        let hunk: JSONValue = .object(["at": .string("@@ 1 @@"), "lines": .array([.string("- a"), .string("+ b")])])
+        let one: JSONValue = .object(["type": .string("diff"), "file": .string("fleet.toml"), "hunks": .array([hunk])])
+        let both: JSONValue = .object([
+            "type": .string("diff"), "file": .string("fleet.toml"), "hunks": .array([hunk, hunk]),
+        ])
+        #expect(Self.height(both) > Self.height(one) && Self.height(one) > 0)
+    }
+
+    @Test(arguments: [
+        "Questions for you:\n**HTML or SwiftUI?**", "Questions for you:\n1. **HTML or SwiftUI?**",
+        "the iOS target building.\n## Answering an ask", "fill with them.\n> **Call voice:**",
+    ])
+    internal func aReplyKeepsEachLineOnItsOwnLine(_ markdown: String) {
+        let first = String(markdown.prefix { $0 != "\n" })
+        let text = { (source: String) in JSONValue.object(["type": .string("text"), "markdown": .string(source)]) }
+        #expect(Self.height(text(markdown)) > Self.height(text(first)))
     }
 }

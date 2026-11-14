@@ -26,7 +26,7 @@ use cooee_core::{
 };
 use serde_json::{Value, json};
 
-pub use html::render;
+pub use html::{ago, render};
 
 /// Under this much free disk (10 GB, in MiB) a machine alerts.
 pub const DISK_LOW_MB: u64 = 10 * 1024;

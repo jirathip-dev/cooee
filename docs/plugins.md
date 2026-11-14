@@ -1,8 +1,8 @@
 # Plugins
 
 A plugin adds a tab beside Chat. It is a backend of its own (on this machine or on the tailnet) that serves a UI
-module, an ES module that cooee runs in the tab. herdsman's Queue, Asks and Fleets tabs come this way, through the
-[cooee-drover](https://github.com/jirathip-dev/cooee-drover) plugin ([architecture.md](architecture.md#plugins-m4)).
+module, an ES module that cooee runs in the tab, or native screens (#125). herdsman's Queue, Events and Fleets screens
+come this way, through herdsman's own `drover` plugin ([architecture.md](architecture.md#plugins-m4)).
 
 ## Configuration
 
@@ -60,9 +60,16 @@ it can attach the thread.
   otherwise the old one keeps running. The build before stays, to roll back to.
 - `cooee plugin remove <name> [--purge]` stops it and removes its entries; its folder stays unless `--purge`.
 - `cooee plugin list`: name, version, commit, source (index or url) and state.
-- `cooee plugin check <answer.json>...` (#138) validates a plugin's answers (a screen or any block, a list of them,
-  stream events, places) against `docs/plugins/screens.schema.json`, the JSON Schema of #125's blocks, and names each
-  field that breaks it (`$.blocks[0].rows[0].badge.tone: "red" is not one of …`). An unknown block type passes.
+- `cooee plugin check <answer.json|cooee-plugin.toml>...` (#138) validates a plugin's answers (a screen or any block, a
+  list of them, stream events, places) against `docs/plugins/screens.schema.json`, the JSON Schema of #125's blocks, and
+  names each field that breaks it (`$.blocks[0].rows[0].badge.tone: "red" is not one of …`). An unknown block type
+  passes. A `.toml` file is checked as a manifest, by the rules `cooee plugin add` applies.
+
+A manifest's `attach = "http://127.0.0.1:<port>"` (#226) names a backend that may be running already, like herdsman's
+own `herdsman serve` on :7777: while that port answers, `add` checks it instead of starting `run`, and `cooee serve`
+uses it and starts nothing (`plugin list` says `attached`); when it doesn't, `run` starts on that port. Its
+`attach_token` (`~/` or absolute; q1290) names the 0600 file the running backend keeps its token in, created by the
+backend: `add` reads it and calls the backend with that token, which `run` then gets as `COOEE_PLUGIN_TOKEN` too.
 
 `cooee serve` runs each enabled plugin's backend as its child (no launchd job per plugin) on its port, with its output
 in `<data>/plugins/<name>/plugin.log` (its builds' too). A backend that exits restarts after 1 s, then 2, 4 and 8; the
@@ -160,8 +167,8 @@ tap opens `#<machine>`) when its set of problems changes, and the tab shows a do
 ## First-party plugin: terminal
 
 `crates/cooee-terminal`, built into cooee: a real shell on the Mac from the phone, for the owner-only commands a chat
-hands over (setup, keychain, `launchctl` …), instead of an SSH app. `cooee setup` adds its entry to each instance
-(`cooee` and `cooee-drover`) on the instance's port + 1000 with a fresh token:
+hands over (setup, keychain, `launchctl` …), instead of an SSH app. `cooee setup` adds its entry to each instance on
+the instance's port + 1000 with a fresh token:
 
 ```toml
 [[plugins]]

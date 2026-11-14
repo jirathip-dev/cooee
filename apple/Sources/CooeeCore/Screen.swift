@@ -104,3 +104,14 @@ public struct Confirm: Sendable, Equatable {
         self.destructive = destructive || confirm["destructive"]?.bool == true
     }
 }
+
+extension JSONValue {
+    /// A list's row ids once the row `moved` is dropped in the place of the row `target`.
+    public func rowOrder(moving moved: String, onto target: String) -> [String] {
+        var ids = list("rows").compactMap(\.id)
+        guard let from = ids.firstIndex(of: moved), let place = ids.firstIndex(of: target) else { return ids }
+        ids.remove(at: from)
+        ids.insert(moved, at: place)
+        return ids
+    }
+}

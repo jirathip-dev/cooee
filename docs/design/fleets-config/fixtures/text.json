@@ -1,0 +1,37 @@
+{
+ "type": "screen",
+ "id": "text",
+ "title": "fleet.toml",
+ "back": "cooee",
+ "done": {
+  "label": "Review",
+  "off": true,
+  "action": "review"
+ },
+ "blocks": [
+  {
+   "type": "card",
+   "tone": "bad",
+   "title": "2 errors · fix them to review",
+   "subtitle": "herdsman checks each keystroke; nothing is written yet"
+  },
+  {
+   "type": "editor",
+   "id": "toml",
+   "first": 160,
+   "text": "[fleet.cooee]\nrepo = \"jirathip-dev/cooee\"\nlocal = \"~/Projects/cooee\"\nintegration = \"main\"\nui_paths = [\"web/**\"]   # t21 owner q619\n[fleet.cooee.runtime]\nkind = \"shed-acp\"\n[fleet.cooee.role.impl]\naccounts = [\"A\", \"B\", \"C\"]   # q1080\nharness = \"claude\"\nhost = \"main\"\nprofile = \"fleet-impl\"\nmodel = \"claude-opus-5-5\"\n[fleet.cooee.role.rev]\naccounts = [\"A\", \"C\", \"B\"]\nharness = \"claude\"\nmodel = \"claude-sonnet-5-5\"\neffort = \"max\"",
+   "errors": [
+    {
+     "line": 163,
+     "message": "MAIN_TARGET: integration can't be main; fleet never merges to main"
+    },
+    {
+     "line": 177,
+     "message": "effort: one of none, low, medium, high, xhigh"
+    }
+   ],
+   "name": "toml",
+   "action": "check"
+  }
+ ]
+}
