@@ -23,12 +23,20 @@ public struct RoomRound: Sendable, Equatable {
 
     public func state(_ member: String) -> MemberState { states[member] ?? .waiting }
 
-    public mutating func asked(_ members: [String], text: String, when: Date) {
-        let next: MemberState = text.contains("@") ? .waiting : .upNext
-        states = Dictionary(uniqueKeysWithValues: members.map { ($0, $0 == current ? .replying : next) })
+    public mutating func asked(_ members: [String], named: [String], when: Date) {
+        queue(members, named: named)
         turn = 0
         since = when
         passed = []
+    }
+
+    /// The members a message naming `named` queues, as its round shows them: the named ones, else everyone, up next.
+    public mutating func queue(_ members: [String], named: [String]) {
+        states = Dictionary(
+            uniqueKeysWithValues: members.map { member in
+                let next: MemberState = named.isEmpty || named.contains(member) ? .upNext : .waiting
+                return (member, member == current ? .replying : next)
+            })
     }
 
     public mutating func began(_ member: String) {

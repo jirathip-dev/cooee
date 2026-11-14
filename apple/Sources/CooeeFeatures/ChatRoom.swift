@@ -24,7 +24,8 @@ public struct Room: Equatable, Sendable {
         case .roomStop(let reason):
             round.ended(reason)
         case .item(let item) where item.kind == "you":
-            round.asked(members, text: item.text ?? "", when: Date(timeIntervalSince1970: Double(item.time) / 1000))
+            let named = Mentions.named(item.text ?? "", cast.filter { members.contains($0.id) })
+            round.asked(members, named: named, when: Date(timeIntervalSince1970: Double(item.time) / 1000))
         case .item(let item) where item.kind == "agent":
             if let speaker = item.speaker, !speaker.isEmpty { round.replied(speaker) }
         default:

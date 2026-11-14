@@ -15,10 +15,12 @@ internal struct RoomScreen: View {
         let members = room.members.map { id in
             cast.first { $0.id == id } ?? Persona(APIPersona(id: id, name: id, agent: ""))
         }
-        return RoomScene(
+        var scene = RoomScene(
             title: room.title, members: members, others: cast.filter { !room.members.contains($0.id) },
             round: room.round, items: store.drawn, inspecting: room.inspecting
         )
+        scene.draft = store.draft
+        return scene
     }
 
     private var actions: RoomActions {

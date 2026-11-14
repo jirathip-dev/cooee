@@ -9,6 +9,7 @@ public struct RoomScene {
     public var items: [Item]
     public var inspecting: String?
     public var elapsed = 0
+    public var draft = ""
 
     public init(
         title: String,
@@ -26,7 +27,16 @@ public struct RoomScene {
         self.inspecting = inspecting
     }
 
-    internal var acting: [Persona] {
+    internal var mention: MentionDraft { MentionDraft(draft, members: members.map(\.api)) }
+
+    internal var shown: RoomRound {
+        var shown = round
+        let order = mention.order
+        if !order.isEmpty { shown.queue(members.map(\.id), named: order) }
+        return shown
+    }
+
+    internal func acting(_ round: RoomRound) -> [Persona] {
         members.map { $0.with(state: round.state($0.id).lane) }
     }
 }
@@ -95,10 +105,11 @@ public struct RoomView: View {
                     stop: actions.chat.stop
                 )
             }
-            Composer(hint: "Message the room", actions: actions.chat)
+            if scene.draft.contains("@") { MentionBar(scene: scene, draft: actions.chat.draft) }
+            Composer(hint: "Message the room", draft: scene.draft, actions: actions.chat)
         }
         .padding(.horizontal, wide ? 24 : 12).padding(.bottom, wide ? 14 : 26)
-        .environment(\.members, scene.acting)
+        .environment(\.members, scene.acting(scene.round))
     }
 
     private static func indented(_ item: Item) -> Bool {

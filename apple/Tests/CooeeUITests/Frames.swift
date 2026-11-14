@@ -127,6 +127,8 @@ extension Frame {
             phone("room-member-dark", .farmDark) { MemberSheet.researcher() },
             phone("room-home-dark", .farmDark) { HomeView(chats: Fixtures.roomChats) },
             phone("room-terminal-dark", .farmDark, style: .terminal) { RoomView.kestrel() },
+            phone("room-mention-dark", .farmDark) { RoomView.mentioning() },
+            phone("room-mention-terminal-dark", .farmDark, style: .terminal) { RoomView.mentioning() },
             phone("room-scene-light", .farmLight, style: .scene) { RoomView.kestrel() },
             mac("room-wide-dark", 1440, 900, .farmDark) { WideView.kestrel() },
             Frame(
