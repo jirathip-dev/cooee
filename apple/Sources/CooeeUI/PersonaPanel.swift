@@ -1,12 +1,23 @@
 import CooeeCore
 import SwiftUI
 
+internal struct PanelActions {
+    internal var close: () -> Void = {}
+    internal var edit: (() -> Void)?
+    internal var newChat: (() -> Void)?
+    internal var memory: (() -> Void)?
+    internal var stop: (() -> Void)?
+    internal var open: (Int) -> Void = { _ in }
+    internal var attach: (Int) -> Void = { _ in }
+}
+
 public struct PersonaPanel: View {
     @Environment(\.look) private var look
     private let persona: Persona
     private let content: PanelContent
     private let column: Bool
     private let end: Bool
+    private var actions = PanelActions(edit: {}, newChat: {}, memory: {})
 
     public var body: some View {
         let palette = look.palette
@@ -16,7 +27,8 @@ public struct PersonaPanel: View {
             }
             header
             Scroller(end: end) {
-                PanelSections(content: content).padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
+                PanelSections(content: content, actions: actions).padding(.horizontal, 16).padding(.top, 4).padding(
+                    .bottom, 16)
             }
             footer.padding(.horizontal, 16).padding(.top, 10).padding(.bottom, column ? 16 : 30)
                 .overlay(alignment: .top) { Rectangle().fill(palette.line).frame(height: 0.5) }
@@ -31,6 +43,14 @@ public struct PersonaPanel: View {
         self.column = column
         self.end = end
     }
+
+    internal init(persona: Persona, content: PanelContent, column: Bool, actions: PanelActions) {
+        self.persona = persona
+        self.content = content
+        self.column = column
+        self.actions = actions
+        end = false
+    }
 }
 
 extension PersonaPanel {
@@ -42,40 +62,50 @@ extension PersonaPanel {
                 AgentChip(persona: persona)
             }
             Spacer(minLength: 4)
-            if column {
-                RoundButton(symbol: "sidebar.right", ascii: "]", size: 34).accessibilityLabel("Hide panel")
-            } else {
-                RoundButton(symbol: "xmark", ascii: "x", size: 36).accessibilityLabel("Close")
+            Button(action: actions.close) {
+                if column {
+                    RoundButton(symbol: "sidebar.right", ascii: "]", size: 34)
+                } else {
+                    RoundButton(symbol: "xmark", ascii: "x", size: 36)
+                }
             }
+            .buttonStyle(.plain).accessibilityLabel(column ? "Hide panel" : "Close")
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
     }
 
     private var footer: some View {
-        HStack(spacing: 10) {
-            action("pencil", "Edit")
-            action("square.and.pencil", "New chat")
-            action("brain.head.profile", content.memory > 0 ? "Memory · \(content.memory)" : "Memory")
+        let memory = content.memory > 0 ? "Memory · \(content.memory)" : "Memory"
+        return HStack(spacing: 10) {
+            if let edit = actions.edit { action("pencil", "Edit", "Edit \(persona.name)", edit) }
+            if let newChat = actions.newChat {
+                action("square.and.pencil", "New chat", "New chat with \(persona.name)", newChat)
+            }
+            if let open = actions.memory { action("brain.head.profile", memory, memory, open) }
+            if let stop = actions.stop { action("stop.fill", "Stop", "Stop \(persona.name)", stop) }
         }
     }
 
-    private func action(_ symbol: String, _ title: String) -> some View {
+    private func action(_ symbol: String, _ title: String, _ label: String, _ run: @escaping () -> Void) -> some View {
         let palette = look.palette
-        return VStack(spacing: 6) {
-            if look.mono {
-                Text("[\(title.lowercased())]").ui(13, .semibold, look)
-            } else {
-                Image(systemName: symbol).font(.system(size: 17, weight: .semibold))
-                Text(title).ui(12, .medium, look).lineLimit(1)
+        return Button(action: run) {
+            VStack(spacing: 6) {
+                if look.mono {
+                    Text("[\(title.lowercased())]").ui(13, .semibold, look)
+                } else {
+                    Image(systemName: symbol).font(.system(size: 17, weight: .semibold))
+                    Text(title).ui(12, .medium, look).lineLimit(1)
+                }
+            }
+            .foregroundStyle(palette.link).frame(maxWidth: .infinity).frame(height: 64)
+            .background(
+                palette.card.opacity(look.style == .modern ? 0.75 : 1), in: .rect(cornerRadius: look.mono ? 0 : 16)
+            )
+            .overlay {
+                if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) }
             }
         }
-        .foregroundStyle(palette.link).frame(maxWidth: .infinity).frame(height: 64)
-        .background(
-            palette.card.opacity(look.style == .modern ? 0.75 : 1), in: .rect(cornerRadius: look.mono ? 0 : 16)
-        )
-        .overlay {
-            if look.mono { Rectangle().strokeBorder(palette.edge, lineWidth: 1) }
-        }
+        .buttonStyle(.plain).accessibilityLabel(label)
     }
 
     @ViewBuilder private var background: some View {

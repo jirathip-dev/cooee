@@ -26,6 +26,8 @@ public struct ChatFeature: Sendable {
         public var answering: Set<Int> = []
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
+        public var panel = false
+        public var picked: PanelPick?
         @Presents public var screen: PluginScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
@@ -58,12 +60,15 @@ public struct ChatFeature: Sendable {
         case answered(Int, String?)
         case delegate(Delegate)
         case plugins(PluginAction)
+        case panel(PanelAction)
         case screen(PresentationAction<PluginScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case started(String)
+            case edit(String)
+            case newChat(String)
         }
 
         @CasePathable
@@ -104,6 +109,8 @@ public struct ChatFeature: Sendable {
                 return .none
             case .delivered, .undelivered, .retry:
                 return outbox(&state, action)
+            case .panel(let action):
+                return panel(&state, action)
             default:
                 return compose(&state, action)
             }

@@ -101,23 +101,30 @@ internal struct ChatScreen: View {
             back: onBack
         )
         actions.retry = { store.send(.retry($0)) }
-        let (places, attachable) = (store.places, store.attachable)
+        let places = store.places
         actions.places = places.map(\.label)
         actions.open = { store.send(.plugins(.open(places[$0]))) }
-        actions.attachable = attachable.map(\.name)
-        actions.attachPlugin = { store.send(.plugins(.attach(attachable[$0]))) }
+        actions.more = { store.send(.panel(.show(!store.panel))) }
         return actions
     }
 
     internal var body: some View {
-        ChatView(
-            persona: store.persona,
-            items: store.drawn,
-            working: store.working,
-            since: store.since,
-            queued: store.queue.map(\.text),
-            back: back,
-            actions: actions
+        HStack(spacing: 0) {
+            ChatView(
+                persona: store.persona,
+                items: store.drawn,
+                working: store.working,
+                since: store.since,
+                queued: store.queue.map(\.text),
+                back: back,
+                actions: actions
+            )
+            if !back && store.panel { panel(column: true).frame(width: 360) }
+        }
+        .sheet(
+            isPresented: Binding(get: { back && store.panel }, set: { store.send(.panel(.show($0))) }),
+            onDismiss: { store.send(.panel(.dismissed)) },
+            content: { panel(column: false).presentationBackground(.clear) }
         )
         .task { await store.send(.task).finish() }
         .task { await store.send(.plugins(.load)).finish() }

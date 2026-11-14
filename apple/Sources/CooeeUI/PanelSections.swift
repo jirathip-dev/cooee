@@ -3,14 +3,15 @@ import SwiftUI
 internal struct PanelSections: View {
     @Environment(\.look) internal var look
     internal let content: PanelContent
+    internal var actions = PanelActions()
 
     internal var body: some View {
         VStack(spacing: 18) {
             if !content.screen.isEmpty { screen }
             if !content.terminal.isEmpty { terminal }
             if !content.issues.isEmpty { workflow }
-            routines
-            if !content.places.isEmpty { places }
+            if let routines = content.routines { self.routines(routines) }
+            if !content.places.isEmpty || !content.attachable.isEmpty { places }
         }
     }
 
@@ -57,15 +58,15 @@ internal struct PanelSections: View {
 }
 
 extension PanelSections {
-    private var routines: some View {
+    private func routines(_ routines: [PanelRoutine]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             heading("Routines") {
                 Text(look.mono ? "[+ add]" : "+ Add").ui(14, .semibold, look).foregroundStyle(look.palette.link)
             }
-            if !content.routines.isEmpty {
+            if !routines.isEmpty {
                 Group2 {
-                    ForEach(Array(content.routines.enumerated()), id: \.offset) { index, routine in
-                        routineRow(routine, divider: index < content.routines.count - 1)
+                    ForEach(Array(routines.enumerated()), id: \.offset) { index, routine in
+                        routineRow(routine, divider: index < routines.count - 1)
                     }
                 }
             }
@@ -96,10 +97,24 @@ extension PanelSections {
     private var places: some View {
         Group2(header: "Places") {
             ForEach(Array(content.places.enumerated()), id: \.offset) { index, place in
-                SettingRow(
-                    symbol: place.symbol, title: place.name, tint: look.palette.green, value: "\(place.count)",
-                    divider: index < content.places.count - 1
-                )
+                Button {
+                    actions.open(index)
+                } label: {
+                    SettingRow(
+                        symbol: place.symbol, title: place.name, tint: look.palette.green,
+                        value: place.count > 0 ? "\(place.count)" : "",
+                        divider: index < content.places.count - 1 || !content.attachable.isEmpty
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            ForEach(Array(content.attachable.enumerated()), id: \.offset) { index, name in
+                Button {
+                    actions.attach(index)
+                } label: {
+                    SettingRow(symbol: "plus", title: "Attach \(name)…", divider: index < content.attachable.count - 1)
+                }
+                .buttonStyle(.plain)
             }
         }
     }

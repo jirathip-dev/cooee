@@ -16,8 +16,7 @@ public struct ChatActions {
     public var retry: (Int) -> Void = { _ in }
     public var places: [String] = []
     public var open: (Int) -> Void = { _ in }
-    public var attachable: [String] = []
-    public var attachPlugin: (Int) -> Void = { _ in }
+    public var more: () -> Void = {}
 
     public init(
         draft: Binding<String>? = nil,
@@ -167,19 +166,9 @@ internal struct ChatHeader: View {
         .overlay(alignment: .bottom) { Rectangle().fill(palette.line).frame(height: 0.5) }
     }
 
-    @ViewBuilder private var more: some View {
-        if actions.attachable.isEmpty {
-            RoundButton(symbol: "ellipsis", ascii: "…", size: 40)
-        } else {
-            Menu {
-                ForEach(Array(actions.attachable.enumerated()), id: \.offset) { index, name in
-                    Button("Attach \(name)…") { actions.attachPlugin(index) }
-                }
-            } label: {
-                RoundButton(symbol: "ellipsis", ascii: "…", size: 40)
-            }
+    private var more: some View {
+        Button(action: actions.more) { RoundButton(symbol: "ellipsis", ascii: "…", size: 40) }
             .buttonStyle(.plain).accessibilityLabel("More")
-        }
     }
 
     private var plugins: some View {

@@ -24,7 +24,8 @@ internal struct PanelContent: Sendable {
     internal var terminal: [String] = []
     internal var issues: [PanelIssue] = []
     internal var moreIssues = 0
-    internal var routines: [PanelRoutine] = []
+    internal var routines: [PanelRoutine]? = []
     internal var places: [PanelPlace] = []
+    internal var attachable: [String] = []
     internal var memory = 0
 }

@@ -45,7 +45,6 @@
                 app.buttons["Attach"].firstMatch.tap()
             }
             XCTAssert(queue.waitForExistence(timeout: 20))
-            keep("conductor")
             personaPanel(app)
             app.buttons["Events"].firstMatch.tap()
             XCTAssert(labelled(app, "merged").waitForExistence(timeout: 20))
@@ -163,6 +162,7 @@
     extension LiveUITests {
         @MainActor
         private func personaPanel(_ app: XCUIApplication) {
+            keep("conductor")
             app.buttons["More"].firstMatch.tap()
             XCTAssert(app.buttons["Edit Conductor"].waitForExistence(timeout: 10), "the … opened no Edit Conductor")
             XCTAssert(app.buttons["New chat with Conductor"].exists, "the … opened no New chat with Conductor")

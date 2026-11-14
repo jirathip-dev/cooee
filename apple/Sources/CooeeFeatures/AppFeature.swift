@@ -85,7 +85,7 @@ public struct AppFeature: Sendable {
         case .open(let thread):
             state.path = [thread]
             state.chat = chat(state, thread)
-        case .start(let persona):
+        case .start(let persona), .chat(.delegate(.newChat(let persona))):
             state.path = ["new:\(persona)"]
             state.chat = chat(state, "new:\(persona)")
         case .back:
@@ -95,6 +95,8 @@ public struct AppFeature: Sendable {
             state.path = path
             if path.isEmpty { state.chat = nil }
         case .edit(let id):
+            state.persona = persona(state, id)
+        case .chat(.delegate(.edit(let id))):
             state.persona = persona(state, id)
         default:
             break
