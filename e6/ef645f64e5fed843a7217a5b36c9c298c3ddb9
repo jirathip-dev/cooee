@@ -1,0 +1,7 @@
+Decided: merge origin/staging (#367 landed) and push, so the e2e job reruns on a current base.
+Decided: no design change; the FAIL at fe4655f was e2e's LiveDroverUITests not finding the Pause button.
+Rejected: editing apple/UITests/LiveScreensUITests.swift — an app UI test outside this design-only diff.
+Rejected: committing Xcode's generated Package.resolved — xcodebuild writes it locally and the diff stays design-only.
+Because: "Screenshots and README in `apple/design/native-surfaces/`; the iOS target builds"
+Check: swift test in apple/design/native-surfaces renders 23 frames with no PNG change; the iOS Simulator xcodebuild exits 0 at e6ef645.
+Owner: The branch now includes the latest staging; nothing in the design changed.
