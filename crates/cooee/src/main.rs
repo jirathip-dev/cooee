@@ -19,8 +19,9 @@ mod check;
 mod keychain;
 mod machine;
 mod setup;
+mod update;
 
-const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | machine check <m> [--yes] | push migrate | secrets \
+const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | update [--check] | machine check <m> [--yes] | push migrate | secrets \
                      | perf [--minutes <n>] \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json|cooee-plugin.toml>... \
@@ -104,10 +105,7 @@ fn main() -> ExitCode {
         .or_else(|| Config::default_path(&instance));
     let args: Vec<&str> = args.iter().map(String::as_str).collect();
     let run = match args.as_slice() {
-        ["--version" | "-V"] => {
-            println!("cooee {}", env!("CARGO_PKG_VERSION"));
-            return ExitCode::SUCCESS;
-        }
+        ["--version" | "-V"] => return update::version(),
         ["--help" | "-h"] => {
             println!("{USAGE}");
             return ExitCode::SUCCESS;
@@ -128,6 +126,8 @@ fn main() -> ExitCode {
             return with_config(path.as_deref(), &instance, |config| remove(config, id));
         }
         ["doctor"] => doctor,
+        ["update"] => update::run,
+        ["update", "--check"] => update::check,
         ["machine", "check", m] => {
             return with_config(path.as_deref(), &instance, |c| machine::run(c, m, yes));
         }
@@ -656,6 +656,14 @@ fn label(instance: &str) -> String {
     format!("dev.cooee.{instance}")
 }
 
+/// The launchd label of the instance's `serve` service or its `update` timer.
+fn job(instance: &str, verb: &str) -> String {
+    match verb {
+        "serve" => label(instance),
+        _ => format!("{}.{verb}", label(instance)),
+    }
+}
+
 /// XML text: `&`, `<` and `>` escaped.
 fn xml(s: &str) -> String {
     s.replace('&', "&amp;")
@@ -682,7 +690,7 @@ fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> 
             config.port
         ));
     }
-    let (file, plist) = plist(&config, &path, explicit)?;
+    let (file, plist) = plist(&config, &path, explicit, "serve")?;
     write_plist(&config, &file, &plist)?;
     println!("wrote {}\n\nrun these yourself:", file.display());
     println!("  launchctl bootstrap gui/$(id -u) {}", file.display());
@@ -696,15 +704,20 @@ fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> 
     Ok(())
 }
 
-/// The instance's launchd plist, `~/Library/LaunchAgents/dev.cooee.<instance>.plist`, and its text: `cooee serve`
-/// (with `--config <path>` if `explicit`), kept alive, logging to the data folder.
-fn plist(config: &Config, path: &Path, explicit: bool) -> Result<(PathBuf, String), String> {
+/// The instance's launchd plist, `~/Library/LaunchAgents/<job(instance, verb)>.plist`, and its text: `cooee <verb>`
+/// (with `--config <path>` if `explicit`), logging to the data folder; `serve` kept alive, `update` every 15 minutes.
+fn plist(
+    config: &Config,
+    path: &Path,
+    explicit: bool,
+    verb: &str,
+) -> Result<(PathBuf, String), String> {
     let home = env::var_os("HOME").ok_or("no HOME")?;
     let data = config.data_dir().ok_or("no data folder")?;
     let exe = env::current_exe().map_err(|e| e.to_string())?;
     let mut argv = vec![
         exe.display().to_string(),
-        "serve".into(),
+        verb.into(),
         "--instance".into(),
         config.instance.clone(),
     ];
@@ -715,9 +728,17 @@ fn plist(config: &Config, path: &Path, explicit: bool) -> Result<(PathBuf, Strin
         .iter()
         .map(|a| ["\n    <string>", &xml(a), "</string>"].concat())
         .collect();
-    let log = xml(&data.join("cooee.log").display().to_string());
+    let (log, run) = if verb == "serve" {
+        ("cooee.log", "KeepAlive</key>\n  <true/>")
+    } else {
+        (
+            "update.log",
+            "StartInterval</key>\n  <integer>900</integer>",
+        )
+    };
+    let log = xml(&data.join(log).display().to_string());
     let env_path = xml(&env::var("PATH").unwrap_or_default());
-    let label = label(&config.instance);
+    let label = job(&config.instance, verb);
     let plist = format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -735,8 +756,7 @@ fn plist(config: &Config, path: &Path, explicit: bool) -> Result<(PathBuf, Strin
   </dict>
   <key>RunAtLoad</key>
   <true/>
-  <key>KeepAlive</key>
-  <true/>
+  <key>{run}
   <key>StandardOutPath</key>
   <string>{log}</string>
   <key>StandardErrorPath</key>
@@ -816,6 +836,7 @@ fn doctor(config: &Config) -> Result<(), String> {
         }
         Err(e) => check(false, format!("push keys: {e}")),
     }
+    update::doctor(config);
     match tailnet_name() {
         None => check(false, "tailnet: no name (is Tailscale up?)".to_owned()),
         Some(name) => {

@@ -515,8 +515,12 @@ impl Push {
         self.send_to(None, note);
     }
 
-    /// Sends `note` (see [`Push::send_to`]); the lines to log.
-    fn deliver(&self, to: Option<&str>, note: &Note) -> io::Result<Vec<String>> {
+    /// Sends `note` (see [`Push::send_to`]) and waits; the lines to log.
+    ///
+    /// # Errors
+    ///
+    /// The paired devices or the note can't be read.
+    pub fn deliver(&self, to: Option<&str>, note: &Note) -> io::Result<Vec<String>> {
         let payload = serde_json::to_vec(note)?;
         let paired: Vec<String> = Devices::new(&self.data)
             .list()?
