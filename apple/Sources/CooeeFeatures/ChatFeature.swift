@@ -24,6 +24,7 @@ public struct ChatFeature: Sendable {
         public var files: [Attachment] = []
         public var outbox: [Outgoing] = []
         public var answering: Set<Int> = []
+        public var loading: Bool
         public var room: Room?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
@@ -31,6 +32,7 @@ public struct ChatFeature: Sendable {
         @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
+        public var sending: Bool { outbox.contains { $0.failure == nil } }
         public var drawn: [Item] {
             room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
                 ?? ChatItems.build(items, live: live, outbox: outbox)
@@ -41,6 +43,7 @@ public struct ChatFeature: Sendable {
             self.target = target
             self.persona = persona
             self.room = room
+            if case .thread = target { loading = true } else { loading = false }
         }
     }
 
@@ -165,6 +168,7 @@ extension ChatFeature {
     }
 
     private func load(_ state: inout State, _ slice: Slice) {
+        state.loading = false
         state.items = slice.items
         state.queue = slice.queue
         state.turn = slice.turn

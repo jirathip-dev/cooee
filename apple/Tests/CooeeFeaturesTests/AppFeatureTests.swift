@@ -76,6 +76,7 @@ internal struct AppFeatureTests {
         await store.receive(\.home.refresh)
         await store.receive(\.home.loaded) {
             $0.home?.rows = [row("n1")]
+            $0.home?.loading = false
         }
         await store.send(.start("nobody")) {
             $0.path = ["new:nobody"]
@@ -116,7 +117,10 @@ internal struct AppFeatureTests {
         await store.send(.persona(.presented(.save))) { $0.persona?.busy = true }
         await store.receive(\.persona.presented.delegate.saved) { $0.persona = nil }
         await store.receive(\.home.refresh)
-        await store.receive(\.home.loaded) { $0.home?.rows = [row("n1")] }
+        await store.receive(\.home.loaded) {
+            $0.home?.rows = [row("n1")]
+            $0.home?.loading = false
+        }
     }
 
     @Test internal func aNewPersonaStartsBlankOnTheFirstPersonasAgent() async {

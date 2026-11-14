@@ -25,9 +25,10 @@ internal struct ModelsTests {
         #expect(states.map(\.pose) == ["edit", "needs", "done", "idle", "fail", "merged"])
     }
 
-    @Test internal func aServerPersonaGetsInitialsATintAndACoatByItsID() {
+    @Test internal func aServerPersonaGetsInitialsATintAndItsIDAsItsSpriteSeed() {
         let persona = Persona(manager, state: .needs)
-        #expect(persona.look == PersonaLook(initials: "AM", symbol: "person.fill", tint: .cyan, coat: "gry"))
+        #expect(persona.look == PersonaLook(initials: "AM", symbol: "person.fill", tint: .cyan))
+        #expect(persona.seed == "am" && persona.with(state: .done).seed == "am")
         #expect(persona.id == "am" && persona.name == "Account Manager" && persona.figure == "(!)")
         #expect(persona.word == "at the gate" && persona.pose == "needs")
         #expect(Persona(coder).look.initials == "CO")

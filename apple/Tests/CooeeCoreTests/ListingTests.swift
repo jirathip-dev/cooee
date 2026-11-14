@@ -79,6 +79,15 @@ internal struct ListingTests {
         #expect(PairTarget(typed: "  ") == nil)
         #expect(PairTarget(typed: "http://") == nil)
     }
+
+    @Test internal func aChatWithNoPersonaSeedsItsSpriteByItsThread() {
+        let rows = [
+            row("t1", persona: "", state: "idle", updated: 1), row("t2", persona: "coder", state: "idle", updated: 2),
+        ]
+        let chats = Listing.chats(
+            rows: rows + [row("t3", persona: "", state: "idle", updated: 3)], personas: [coder], now: now)
+        #expect(chats.map(\.persona.seed) == ["t1", "coder", "t3"])
+    }
 }
 
 internal struct FolderListingTests {

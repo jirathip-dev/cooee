@@ -33,16 +33,20 @@ internal struct ChatOutboxTests {
             $0.draft = ""
             $0.outbox = [Outgoing(id: -1, text: "hi")]
         }
+        #expect(store.state.sending)
         await store.receive(\.undelivered) {
             $0.outbox[0].failure = "The agent stopped."
             $0.draft = "hi"
         }
+        #expect(!store.state.sending)
         #expect(store.state.drawn == [.outgoing(Outgoing(id: -1, text: "hi", failure: "The agent stopped."))])
         await store.send(.retry(-1)) {
             $0.outbox[0].failure = nil
             $0.draft = ""
         }
+        #expect(store.state.sending)
         await store.receive(\.delivered) { $0.outbox = [] }
+        #expect(!store.state.sending)
         #expect(calls.all == ["send hi"])
     }
 

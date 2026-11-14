@@ -29,6 +29,8 @@ public struct MenuFeature: Sendable {
         case scheme(LookScheme)
         case style(LookStyle)
         case icon(AppIcon?)
+        case motion(Bool)
+        case sprite(String, String?)
         case push(Bool)
         case pushed(String?)
         case failed(String)
@@ -55,6 +57,10 @@ public struct MenuFeature: Sendable {
                 return look(&state) { $0.style = style }
             case .icon(let icon):
                 return look(&state) { $0.icon = icon }
+            case .motion(let motion):
+                return look(&state) { $0.motion = motion }
+            case .sprite(let seed, let coat):
+                return look(&state) { $0.sprite(seed, coat, in: Cast.farm.theme) }
             case .push(let enabled):
                 return toggle(&state, enabled)
             default:

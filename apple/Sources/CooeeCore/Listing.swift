@@ -19,7 +19,7 @@ public enum Listing {
             let api =
                 personas.first { $0.id == thread.persona }
                 ?? APIPersona(id: thread.agent, name: thread.agent, agent: thread.agent)
-            let persona = Persona(api, state: state)
+            let persona = Persona(api, state: state, seed: api.id == thread.persona ? nil : thread.id)
             let row = Row(
                 id: thread.id,
                 persona: persona.id,

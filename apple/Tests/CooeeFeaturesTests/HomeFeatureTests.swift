@@ -39,6 +39,7 @@ internal struct HomeFeatureTests {
         await store.receive(\.loaded) {
             $0.rows = [rows[0]]
             $0.personas = [coder]
+            $0.loading = false
         }
         await clock.advance(by: .seconds(5))
         await store.receive(\.failed) { $0.error = "Locked." }
@@ -49,7 +50,10 @@ internal struct HomeFeatureTests {
 
     @Test internal func aRefreshLoadsOnceAndClearsTheError() async {
         let store = store([.rows([row("t1")])])
-        await store.send(.failed("Locked.")) { $0.error = "Locked." }
+        await store.send(.failed("Locked.")) {
+            $0.error = "Locked."
+            $0.loading = false
+        }
         await store.send(.refresh)
         await store.receive(\.loaded) {
             $0.rows = [row("t1")]

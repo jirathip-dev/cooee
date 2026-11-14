@@ -11,6 +11,7 @@ public struct HomeFeature: Sendable {
         public var rows: [ThreadRow] = []
         public var personas: [APIPersona] = []
         public var error: String?
+        public var loading = true
 
         public var pinned: [Persona] { Listing.pinned(personas: personas, rows: rows) }
         public var everyone: [Persona] { Listing.everyone(personas: personas, rows: rows) }
@@ -63,9 +64,11 @@ public struct HomeFeature: Sendable {
                 state.rows = rows.filter { !$0.archived }
                 state.personas = personas
                 state.error = nil
+                state.loading = false
                 return .none
             case .failed(let error):
                 state.error = error
+                state.loading = false
                 return .none
             case .delegate:
                 return .none

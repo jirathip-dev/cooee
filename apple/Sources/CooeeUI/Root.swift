@@ -5,6 +5,7 @@ import SwiftUI
 
 public struct AppRoot: View {
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     #if os(iOS)
         @Environment(\.horizontalSizeClass) private var size
     #else
@@ -29,15 +30,25 @@ public struct AppRoot: View {
         .sheet(isPresented: Binding(get: { store.menu.open }, set: { store.send(.menu(.open($0))) })) {
             MenuSheet(store: store.scope(state: \.menu, action: \.menu)).presentationDetents([.medium, .large])
         }
-        .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in PersonaScreen(store: persona) }
+        .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in
+            PersonaScreen(store: persona) { store.send(.menu(.sprite(persona.draft.id, $0))) }
+        }
         .sheet(
             isPresented: Binding(
                 get: { store.newRoom != nil }, set: { if !$0 { store.send(.newRoom(.delegate(.cancel))) } })
         ) {
             if let room = store.scope(state: \.newRoom, action: \.newRoom) { NewRoomScreen(store: room) }
         }
-        .environment(\.look, Look(palette: .farm(dark ? .dark : .light), style: store.menu.settings.style))
+        .environment(\.look, look)
         .preferredColorScheme(store.menu.settings.scheme == .system ? nil : dark ? .dark : .light)
+    }
+
+    private var look: Look {
+        let settings = store.menu.settings
+        var look = Look(palette: .farm(dark ? .dark : .light), style: settings.style)
+        look.moving = settings.moves(reduceMotion: reduceMotion)
+        look.sprites = settings.sprites(in: look.cast.theme)
+        return look
     }
 
     private var dark: Bool {
@@ -52,23 +63,28 @@ public struct AppRoot: View {
         self.store = store
     }
 
-    @ViewBuilder private func content(_ home: StoreOf<HomeFeature>) -> some View {
-        let actions = HomeActions(
+    private var actions: HomeActions {
+        HomeActions(
             menu: { store.send(.menu(.open(true))) },
             new: { store.send(.start($0)) },
             open: { store.send(.open($0)) },
             room: { store.send(.room) },
             edit: { store.send(.edit($0)) }
         )
+    }
+
+    @ViewBuilder private func content(_ home: StoreOf<HomeFeature>) -> some View {
         let chats = home.state.chats(now: Date())
         if size == .compact {
             NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
-                HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
-                    .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
-                    .toolbar(.hidden)
-                    #if os(iOS)
-                        .background(SwipeBack())
-                    #endif
+                HomeView(
+                    personas: home.pinned, all: home.everyone, chats: chats, loading: home.loading, actions: actions
+                )
+                .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
+                .toolbar(.hidden)
+                #if os(iOS)
+                    .background(SwipeBack())
+                #endif
             }
         } else {
             WideView(
@@ -114,6 +130,7 @@ internal struct ChatScreen: View {
             answering: store.answering,
             back: onBack
         )
+        actions.sending = store.sending
         actions.retry = { store.send(.retry($0)) }
         let (places, attachable) = (store.places, store.attachable)
         actions.places = places.map(\.label)
@@ -129,6 +146,7 @@ internal struct ChatScreen: View {
             items: store.drawn,
             working: store.working,
             since: store.since,
+            loading: store.loading,
             queued: store.queue.map(\.text),
             back: back,
             actions: actions
@@ -142,6 +160,7 @@ internal struct ChatScreen: View {
 
 internal struct PersonaScreen: View {
     @Bindable internal var store: StoreOf<PersonaFeature>
+    internal let sprite: (String?) -> Void
 
     internal var body: some View {
         PersonaSheet(
@@ -171,6 +190,7 @@ internal struct PersonaScreen: View {
         )
         actions.agent = { store.send(.agent($0)) }
         actions.browse = { store.send(.browse(nil)) }
+        actions.sprite = sprite
         return actions
     }
 }

@@ -1,3 +1,4 @@
+import CooeeCore
 import SwiftUI
 
 internal struct PanelSections: View {
@@ -44,14 +45,16 @@ internal struct PanelSections: View {
     private func issueRow(_ issue: PanelIssue, divider: Bool) -> some View {
         let palette = look.palette
         let tone = palette.tone(issue.tone) ?? palette.mute
-        return HStack(spacing: 10) {
-            Circle().fill(tone).frame(width: 8, height: 8)
-            Text("#\(issue.number)").ui(14, .semibold, look).monospacedDigit()
-            Text(issue.title).ui(14, .regular, look).lineLimit(1)
-            Spacer(minLength: 4)
-            Text(issue.stage).ui(12, .medium, look).foregroundStyle(tone).lineLimit(1)
+        return Acting(motion: Motion(tone: issue.tone)) { pose in
+            HStack(spacing: 10) {
+                Circle().fill(tone).frame(width: 8, height: 8).acting(pose)
+                Text("#\(issue.number)").ui(14, .semibold, look).monospacedDigit()
+                Text(issue.title).ui(14, .regular, look).lineLimit(1)
+                Spacer(minLength: 4)
+                Text(issue.stage).ui(12, .medium, look).foregroundStyle(tone).lineLimit(1)
+            }
+            .padding(.horizontal, 14).frame(height: 44).background(palette.red.opacity(pose.tint))
         }
-        .padding(.horizontal, 14).frame(height: 44)
         .overlay(alignment: .bottom) { rule(divider) }
     }
 }

@@ -12,6 +12,7 @@ public struct ChatActions {
     public var unqueue: (Int) -> Void
     public var answer: (Int, BlockAction) -> Void
     public var answering: Set<Int>
+    public var sending = false
     public var back: () -> Void
     public var retry: (Int) -> Void = { _ in }
     public var places: [String] = []
@@ -52,6 +53,7 @@ public struct ChatView: View {
     private let items: [Item]
     private var working = false
     private var since: Date?
+    private var loading = false
     private var queued: [String] = []
     private var draft = ""
     private var back = true
@@ -63,8 +65,10 @@ public struct ChatView: View {
             Backdrop()
             VStack(spacing: 0) {
                 ChatHeader(persona: persona, chips: chips, back: back, actions: actions)
+                    .overlay(alignment: .bottom) { if loading { LoadingBar().offset(y: 2) } }
                 Scroller(end: true) {
                     VStack(alignment: .leading, spacing: 14) {
+                        if items.isEmpty { BigSprite(loading: loading) }
                         ForEach(items) { item in
                             ItemView(item: item) { actions.retry(item.id) }.environment(\.act) {
                                 actions.answer(item.id, $0)
@@ -76,7 +80,7 @@ public struct ChatView: View {
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
                 VStack(spacing: 8) {
-                    if working { WorkingPill(since: since, stop: actions.stop) }
+                    if working { WorkingPill(persona: persona, since: since, stop: actions.stop) }
                     Composer(
                         hint: "Message \(persona.name)",
                         queued: queued,
@@ -113,6 +117,7 @@ public struct ChatView: View {
         items: [Item],
         working: Bool,
         since: Date,
+        loading: Bool,
         queued: [String],
         back: Bool,
         actions: ChatActions
@@ -121,6 +126,7 @@ public struct ChatView: View {
         self.items = items
         self.working = working
         self.since = since
+        self.loading = loading
         self.queued = queued
         self.back = back
         self.actions = actions
@@ -202,17 +208,14 @@ internal struct ChatHeader: View {
 
 internal struct WorkingPill: View {
     @Environment(\.look) private var look
+    internal let persona: Persona
     internal var since: Date?
     internal var stop: () -> Void = {}
 
     internal var body: some View {
         let palette = look.palette
         HStack(spacing: 8) {
-            if look.mono {
-                Text("~o=").ui(13, .bold, look).foregroundStyle(palette.cyan)
-            } else {
-                Circle().fill(palette.cyan).frame(width: 8, height: 8)
-            }
+            Acting(motion: .walk) { pose in StateSprite(persona: persona.with(state: .working), frame: pose.frame) }
             if let since {
                 TimelineView(.periodic(from: since, by: 1)) { context in
                     label(Int(context.date.timeIntervalSince(since)))

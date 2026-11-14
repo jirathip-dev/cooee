@@ -58,6 +58,9 @@ public struct Look: Sendable {
     public var palette: Palette
     public var style: LookStyle
     public var still: Bool
+    public var moving = false
+    public var cast = Cast.farm
+    public var sprites: [String: String] = [:]
 
     internal var mono: Bool { style == .terminal }
 
@@ -65,6 +68,10 @@ public struct Look: Sendable {
         self.palette = palette
         self.style = style
         self.still = still
+    }
+
+    internal func coat(_ persona: Persona) -> String {
+        cast.pick(persona.seed, override: sprites[persona.seed] ?? persona.look.coat)
     }
 }
 

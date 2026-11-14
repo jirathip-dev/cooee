@@ -7,6 +7,7 @@ public struct PersonaActions {
     public var clear: () -> Void
     public var agent: @MainActor @Sendable (String) -> Void = { _ in }
     public var browse: () -> Void = {}
+    public var sprite: (String?) -> Void = { _ in }
 
     public init(close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {}) {
         self.close = close
@@ -110,6 +111,7 @@ extension PersonaSheet {
                 if !look.still {
                     Toggle("Pin to Home", isOn: $draft.pinned).ui(16, .regular, look).padding(.horizontal, 14)
                         .frame(height: 48)
+                    if !draft.id.isEmpty { spriteRow }
                 }
             }
             Group2(header: "Character") { paragraph("Character", $draft.character) }
@@ -127,6 +129,24 @@ extension PersonaSheet {
             }
             if let error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
         }
+    }
+
+    private var spriteRow: some View {
+        let cast = look.cast
+        let picked = look.sprites[persona.seed]
+        let name = { (coat: String) in cast.names[cast.coats.firstIndex(of: coat) ?? 0] }
+        return HStack {
+            Text("Sprite").ui(16, .regular, look)
+            Spacer()
+            Menu {
+                Button("Auto") { actions.sprite(nil) }
+                ForEach(cast.coats, id: \.self) { coat in Button(name(coat)) { actions.sprite(coat) } }
+            } label: {
+                Text(picked.map(name) ?? "Auto · \(name(look.coat(persona)))").ui(16, .regular, look)
+                    .foregroundStyle(look.palette.mute)
+            }
+        }
+        .padding(.horizontal, 14).frame(height: 48)
     }
 
     @ViewBuilder private var notes: some View {

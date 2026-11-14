@@ -14,10 +14,15 @@ internal struct Figure: View {
     internal let figure: JSONValue
 
     internal var body: some View {
+        Acting(motion: Motion(tone: figure.string("state") ?? "")) { pose in drawn(pose.frame).acting(pose) }
+    }
+
+    @ViewBuilder private func drawn(_ frame: Int) -> some View {
         let palette = look.palette
         if look.style == .scene, let coat = figure.string("coat") {
-            let pose = LaneState(rawValue: figure.string("state") ?? "")?.pose ?? "idle"
-            Sprite(name: "horse-\(coat)-\(pose)").frame(width: 37, height: 28)
+            let state = LaneState(rawValue: figure.string("state") ?? "") ?? .idle
+            let gait = state == .working && look.moving ? "-gait\(frame)" : ""
+            Sprite(name: "horse-\(coat)-\(state.pose)\(gait)").frame(width: 37, height: 28)
         } else if let icon = figure.string("icon") {
             Image(systemName: icon).font(.system(size: 14, weight: .semibold)).foregroundStyle(palette.link).frame(
                 width: 28)

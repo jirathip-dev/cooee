@@ -49,7 +49,9 @@ internal struct PinnedRow: View {
         let ink = scene ? Color.hex(0x29251a) : palette.foreground
         return VStack(spacing: 6) {
             ZStack(alignment: .topTrailing) {
-                Avatar(persona: persona, size: scene ? 58 : 62)
+                Acting(motion: Motion(persona.state)) { pose in
+                    Avatar(persona: persona, size: scene ? 58 : 62, frame: pose.frame).acting(pose)
+                }
                 if let row = rows.first(where: { $0.persona == persona.id && $0.unseen > 0 }) {
                     Badge(count: row.unseen).offset(x: 4, y: -2)
                 }
@@ -76,13 +78,24 @@ internal struct ChatRow: View {
 
     internal var body: some View {
         let palette = look.palette
+        Acting(motion: Motion(row.state)) { pose in line(pose).background(palette.red.opacity(pose.tint)) }
+            .background(selected ? palette.link.opacity(0.16) : .clear, in: .rect(cornerRadius: look.mono ? 0 : 14))
+            .padding(.horizontal, selected ? 6 : 0)
+            .contentShape(.rect)
+    }
+
+    private func line(_ pose: Pose) -> some View {
+        let palette = look.palette
         let room = !members.isEmpty
-        HStack(spacing: 12) {
-            if room {
-                RoomStack(members: members, size: 22).frame(width: 48, height: 48)
-            } else {
-                Avatar(persona: persona.with(state: row.state), size: 48)
+        return HStack(spacing: 12) {
+            Group {
+                if room {
+                    RoomStack(members: members, size: 22).frame(width: 48, height: 48)
+                } else {
+                    Avatar(persona: persona.with(state: row.state), size: 48, frame: pose.frame)
+                }
             }
+            .acting(pose)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(room ? row.title : persona.name).ui(16, .semibold, look).lineLimit(1)
@@ -95,9 +108,6 @@ internal struct ChatRow: View {
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
-        .background(selected ? palette.link.opacity(0.16) : .clear, in: .rect(cornerRadius: look.mono ? 0 : 14))
-        .padding(.horizontal, selected ? 6 : 0)
-        .contentShape(.rect)
     }
 
     private var detail: some View {
