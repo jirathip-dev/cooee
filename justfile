@@ -1,5 +1,5 @@
 # Every CI gate, locally (the ui gate needs `npm ci` in web/e2e once).
-check: fmt clippy test doc deny cap deps hygiene neutral themes ts ui
+check: fmt clippy test doc deny cap deps hygiene neutral themes ci-scripts ts ui
 
 fmt:
     cargo fmt --all --check
@@ -38,6 +38,10 @@ neutral:
 themes:
     cargo run --quiet --locked -p cooee -- theme check packs/themes/* packs/starter
 
+# The CI's own scripts (#329): which legs a run needs, the staging reuse, the nightly's issue.
+ci-scripts:
+    ci/ci-scripts-test.sh
+
 # web/ts: tsc strict and Biome (blocking), then tsc-rs as a trial (needs `npm ci` in web once).
 ts:
     cd web && npx tsc -p ts && npx tsc -p ts/tsconfig.sw.json && npx biome check ts
@@ -46,6 +50,10 @@ ts:
 # Playwright at 390 and 1440 px with axe; screenshots in ui-390/ and ui-1440/.
 ui:
     cd web/e2e && npx playwright test
+
+# The ui suite `n` times in a row, each run its own server (#388): stops at the first red run.
+ui-stress n="20":
+    scripts/ui-stress.sh {{n}}
 
 # The Swift quality gate on apple/ (#147): format, anti-slop, SwiftLint, build, tests, coverage, Periphery.
 apple-check:

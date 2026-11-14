@@ -1,0 +1,1 @@
+{"format": 1, "root": {"type": "nav", "slots": {"main": [{"type": "chat", "id": "x"}, {"type": "screen", "source": "core", "path": "/screens/home", "id": "x"}]}}}

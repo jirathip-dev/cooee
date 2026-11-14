@@ -319,6 +319,7 @@ if (list) {
           async () => {
             try {
               await savePasskey();
+              keys = true;
               card.replaceChildren(make("p", "et", "✓ passkey saved"), make("p", "m", "settings › devices › passkeys"));
             } catch (x) {
               card.append(make("p", "err", x instanceof Error ? x.message : String(x)));
@@ -373,7 +374,7 @@ if (list) {
     if (open.length && keys === null) {
       const k = await fetch("/passkeys").catch(() => null);
       const list: Key[] | null = k?.ok ? await k.json() : null;
-      keys = list ? list.some((x) => x.mine) : null;
+      keys ??= list ? list.some((x) => x.mine) : null;
       other = list?.find((x) => !x.mine)?.label ?? other;
     }
     for (const a of open) if (!cards.has(a.id)) cards.set(a.id, card(a));

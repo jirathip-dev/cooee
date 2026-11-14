@@ -37,7 +37,7 @@ internal struct TextBlock: View {
         TimelineView(.everyMinute) { context in
             let text = Relative.filled(markdown, until: until, at: context.date)
             if block.string("style") == "footnote" {
-                Text(BlockView.marked(text)).ui(12, .regular, look).foregroundStyle(look.palette.mute)
+                Text(Markdown.inline(text)).ui(12, .regular, look).foregroundStyle(look.palette.mute)
             } else {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(Markdown.blocks(text).enumerated()), id: \.offset) { _, part in BlockView(block: part)

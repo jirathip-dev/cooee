@@ -30,6 +30,12 @@ public struct AppRoot: View {
             MenuSheet(store: store.scope(state: \.menu, action: \.menu)).presentationDetents([.medium, .large])
         }
         .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in PersonaScreen(store: persona) }
+        .sheet(
+            isPresented: Binding(
+                get: { store.newRoom != nil }, set: { if !$0 { store.send(.newRoom(.delegate(.cancel))) } })
+        ) {
+            if let room = store.scope(state: \.newRoom, action: \.newRoom) { NewRoomScreen(store: room) }
+        }
         .environment(\.look, Look(palette: .farm(dark ? .dark : .light), style: store.menu.settings.style))
         .preferredColorScheme(store.menu.settings.scheme == .system ? nil : dark ? .dark : .light)
     }
@@ -51,6 +57,7 @@ public struct AppRoot: View {
             menu: { store.send(.menu(.open(true))) },
             new: { store.send(.start($0)) },
             open: { store.send(.open($0)) },
+            room: { store.send(.room) },
             edit: { store.send(.edit($0)) }
         )
         let chats = home.state.chats(now: Date())
@@ -59,6 +66,9 @@ public struct AppRoot: View {
                 HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
                     .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
                     .toolbar(.hidden)
+                    #if os(iOS)
+                        .background(SwipeBack())
+                    #endif
             }
         } else {
             WideView(
@@ -71,7 +81,14 @@ public struct AppRoot: View {
 
     @ViewBuilder private func chat(back: Bool) -> some View {
         if let chat = store.scope(state: \.chat, action: \.chat) {
-            ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
+            if chat.room != nil {
+                RoomScreen(
+                    store: chat, back: back, persona: { store.send(.start($0)) }, onBack: { store.send(.back) }
+                )
+                .id(store.path.last)
+            } else {
+                ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
+            }
         } else if !back {
             Text("Pick a chat, or start one with +").foregroundStyle(.secondary).frame(maxHeight: .infinity)
         }
@@ -129,16 +146,31 @@ internal struct PersonaScreen: View {
     internal var body: some View {
         PersonaSheet(
             draft: $store.draft,
-            agentOpen: $store.agentOpen,
+            choices: PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts),
             memory: PersonaMemory(
                 notes: Listing.memory(store.notes, persona: store.draft.name, now: Date()), count: store.notes.count
             ),
             error: store.error,
-            actions: PersonaActions(
-                close: { store.send(.close) }, save: { store.send(.save) }, clear: { store.send(.clearMemory) }
-            )
+            actions: actions
         )
         .disabled(store.busy)
         .task { await store.send(.task).finish() }
+        .sheet(isPresented: Binding(get: { store.folders != nil }, set: { _ in store.send(.folder(nil)) })) {
+            if let listing = store.folders {
+                FolderBrowser(
+                    listing: listing, search: $store.search, browse: { store.send(.browse($0)) },
+                    pick: { store.send(.folder($0)) }
+                )
+            }
+        }
+    }
+
+    private var actions: PersonaActions {
+        var actions = PersonaActions(
+            close: { store.send(.close) }, save: { store.send(.save) }, clear: { store.send(.clearMemory) }
+        )
+        actions.agent = { store.send(.agent($0)) }
+        actions.browse = { store.send(.browse(nil)) }
+        return actions
     }
 }

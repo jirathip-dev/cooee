@@ -1,3 +1,4 @@
+import CooeeCore
 import CooeeFeatures
 import SwiftUI
 
@@ -30,27 +31,24 @@ internal struct SettingRow: View {
     internal let symbol: String
     internal let title: String
     internal var tint: Color?
+    internal var icon: AppIcon?
     internal var value = ""
     internal var divider = true
-    internal var edit: Binding<String>?
 
     internal var body: some View {
         let palette = look.palette
         HStack(spacing: 12) {
-            if !look.mono {
+            if let icon {
+                IconImage(icon: icon, size: 30)
+            } else if !look.mono {
                 Image(systemName: symbol).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 30, height: 30).background(tint ?? palette.link, in: .rect(cornerRadius: 8))
             }
             Text(title).ui(16, .regular, look)
             Spacer()
-            if let edit, !look.still {
-                TextField(title, text: edit).multilineTextAlignment(.trailing).ui(15, .regular, look)
-                    .foregroundStyle(palette.mute)
-            } else {
-                Text(value).ui(15, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
-                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(palette.mute)
-            }
+            Text(value).ui(15, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+            Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(palette.mute)
         }
         .padding(.horizontal, 14).frame(height: 48)
         .overlay(alignment: .bottom) {
@@ -62,10 +60,21 @@ internal struct SettingRow: View {
 }
 
 internal struct AvatarMenu: View {
+    private struct Row {
+        internal let page: MenuFeature.Page
+        internal let symbol: String
+        internal let title: String
+        internal let tint: Color
+    }
+
     @Environment(\.look) private var look
     internal var name = "Guy"
     internal var place = "this iPhone · paired to mini"
-    internal var values = ["Modern · Farm", "Asks, done", "Claude, Codex", "3", "mini, air · Terminal", "4"]
+    internal var values: [MenuFeature.Page: String] = [
+        .look: "Modern · Farm", .notifications: "Asks, done", .signIns: "Claude, Codex", .devices: "3",
+        .machines: "mini, air · Terminal", .plugins: "4",
+    ]
+    internal var pages = MenuFeature.Page.allCases
     internal var pick: (MenuFeature.Page) -> Void = { _ in }
 
     internal var body: some View {
@@ -80,16 +89,20 @@ internal struct AvatarMenu: View {
                 Spacer()
             }
             .padding(.horizontal, 6)
-            Group2(header: "Settings") {
-                row(.look, "paintpalette.fill", "Look", palette.amber)
-                row(.notifications, "bell.badge.fill", "Notifications", palette.red)
-                row(.signIns, "person.badge.key.fill", "Sign-ins", palette.purple)
-                row(.devices, "iphone.gen3", "Devices", palette.link, divider: false)
-            }
-            Group2 {
-                row(.machines, "desktopcomputer", "Machines", palette.cyan)
-                row(.plugins, "puzzlepiece.extension.fill", "Plugins", palette.green, divider: false)
-            }
+            group(
+                "Settings",
+                [
+                    Row(page: .look, symbol: "paintpalette.fill", title: "Look", tint: palette.amber),
+                    Row(page: .notifications, symbol: "bell.badge.fill", title: "Notifications", tint: palette.red),
+                    Row(page: .signIns, symbol: "person.badge.key.fill", title: "Sign-ins", tint: palette.purple),
+                    Row(page: .devices, symbol: "iphone.gen3", title: "Devices", tint: palette.link),
+                ])
+            group(
+                "",
+                [
+                    Row(page: .machines, symbol: "desktopcomputer", title: "Machines", tint: palette.cyan),
+                    Row(page: .plugins, symbol: "puzzlepiece.extension.fill", title: "Plugins", tint: palette.green),
+                ])
             Text(look.mono ? "-- v2: these open their screens" : "Machines, Terminal and the plugin sheets open in v2.")
                 .ui(12, .regular, look).foregroundStyle(palette.mute).padding(.leading, 6)
         }
@@ -98,19 +111,24 @@ internal struct AvatarMenu: View {
         .foregroundStyle(palette.foreground)
     }
 
-    private func row(
-        _ page: MenuFeature.Page,
-        _ symbol: String,
-        _ title: String,
-        _ tint: Color,
-        divider: Bool = true
-    ) -> some View {
-        let value = MenuFeature.Page.allCases.firstIndex(of: page).map { values[$0] } ?? ""
-        return Button {
-            pick(page)
-        } label: {
-            SettingRow(symbol: symbol, title: title, tint: tint, value: value, divider: divider).contentShape(.rect)
+    @ViewBuilder
+    private func group(_ header: String, _ rows: [Row]) -> some View {
+        let shown = rows.filter { pages.contains($0.page) }
+        if let last = shown.last {
+            Group2(header: header) {
+                ForEach(shown, id: \.page) { row in
+                    Button {
+                        pick(row.page)
+                    } label: {
+                        SettingRow(
+                            symbol: row.symbol, title: row.title, tint: row.tint, value: values[row.page] ?? "",
+                            divider: row.page != last.page
+                        )
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
-        .buttonStyle(.plain)
     }
 }

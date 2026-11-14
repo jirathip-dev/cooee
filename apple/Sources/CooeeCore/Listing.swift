@@ -29,8 +29,13 @@ public enum Listing {
                 unseen: thread.unseen,
                 state: state
             )
-            return ListedChat(row: row, persona: persona)
+            let members = thread.members.map { id in Persona(personas.first { $0.id == id } ?? named(id)) }
+            return ListedChat(row: row, persona: persona, members: members)
         }
+    }
+
+    private static func named(_ id: String) -> APIPersona {
+        APIPersona(id: id, name: id, agent: "")
     }
 
     public static func memory(_ notes: [PersonaNote], persona: String, now: Date) -> [Field] {

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · persona text (#271): the reader, Memory and Skills, the editor</title>
+<link rel="stylesheet" href="../../../web/src/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../rooms/rm.css">
+<link rel="stylesheet" href="../native-feel/nf.css">
+<link rel="stylesheet" href="pt.css">
+<script type="module" src="pt.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- q1364: full-screen rendered Markdown, a contents list of its headings, Edit. -->
+<div class="fr"><p class="cap">The reader · Instructions, with its contents</p>
+<section class="ph col" data-f="read">
+  <div class="rdn"><a href="#">‹ Conductor</a><b></b><a href="#">Edit</a></div>
+  <div class="rbd" data-z="md" data-toc data-title="Instructions" data-sub="Conductor · edited 2d ago"></div>
+</section></div>
+
+<!-- q1363: Memory reads as a list of notes; + adds one in place, a swipe deletes one. -->
+<div class="fr"><p class="cap">Memory · adding a note, swiping one to Delete</p>
+<section class="ph col" data-f="memory">
+  <div class="rdn"><a href="#">‹ Conductor</a><b></b><span class="tr2"><a href="#">Done</a></span></div>
+  <div class="rbd" style="padding:0"><div class="in"><h1 class="rlt" style="margin-inline:16px">Memory</h1><p class="rsb" style="margin-inline:16px">9 notes</p>
+    <div data-z="notes" data-add data-sw="n7:-88"></div></div></div>
+</section></div>
+
+<!-- q1363: Skills as a list; + New skill adds one, a swipe deletes one, a tap opens it in the reader. -->
+<div class="fr"><p class="cap">Skills · the list, swiping one to Delete</p>
+<section class="ph col" data-f="skills">
+  <div class="rdn"><a href="#">‹ Conductor</a><b></b><a href="#">+</a></div>
+  <div class="rbd" style="padding:0"><div class="in"><h1 class="rlt" style="margin-inline:16px">Skills</h1><p class="rsb" style="margin-inline:16px">3</p>
+    <div data-z="skills" data-sw="triage:-88"></div></div></div>
+</section></div>
+
+<!-- q1364: Edit switches to a full-screen monospace editor; the Markdown key row rides the keyboard. Saves as-is. -->
+<div class="fr"><p class="cap">The editor · monospace, the Markdown key row on the keyboard</p>
+<section class="ph col kbup ed" data-f="edit">
+  <div class="rdn"><a href="#">Cancel</a><b>Instructions</b><a href="#">Done</a></div>
+  <pre class="src" data-z="src" data-caret="13"></pre>
+  <div class="mdk" data-z="keys"></div>
+  <div class="nkb" data-y="nkb" data-pred="sha|shas|shape"></div>
+</section></div>
+
+<!-- 1440: the Mac edits side by side: source left, preview right; the same key row as buttons. -->
+<div class="fr w"><p class="cap">1440 · the Mac: source left, preview right</p>
+<section class="wd mac pc" data-f="wide-edit">
+  <aside class="side"><div class="home" data-y="home" data-wide data-sel="cond"></div></aside>
+  <div class="col2">
+    <header class="rhd"><i class="pa" data-p="cond" data-s="40"></i><span class="hdt"><b>Conductor</b><small>cooee queue · mini</small></span><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+    <ol class="msgs"><li class="at"><p>#251 design is up for your review.</p></li></ol>
+    <div class="dock"><div class="comp"><div class="cfld"><span>Message Conductor</span></div><span class="snd">↑</span></div></div>
+  </div>
+  <aside class="pcol">
+    <div class="pnh"><i class="pa" data-p="cond"></i><span class="hdt"><b>Conductor</b><span class="agc2"><b>Claude Code</b>· opus 5.5</span></span><a class="gb" href="#" data-tx="[x]">×</a></div>
+    <div class="pns" data-z="panel" data-who="cond" style="--y:20px"></div>
+    <div class="pnb" data-z="bar"></div>
+  </aside>
+  <div class="rdim" style="z-index:11"></div>
+  <div class="spw">
+    <div class="spt"><span class="btn2">Cancel</span><b>Conductor · Instructions</b><span class="tr2"><span class="btn2 sv">Save</span></span></div>
+    <div class="mbar2" data-z="keys" data-mac></div>
+    <div class="spl">
+      <pre class="src" data-z="src" data-caret="13"></pre>
+      <div class="rbd" data-z="md"></div>
+    </div>
+  </div>
+</section></div>
+
+</div>
+</body>
+</html>

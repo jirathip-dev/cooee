@@ -92,7 +92,7 @@ internal struct StepHeader: View {
         .overlay {
             VStack(spacing: 4) {
                 Text(title).ui(17, .semibold, look)
-                Text(BlockView.marked(subtitle)).ui(13, .regular, look).foregroundStyle(look.palette.mute)
+                Text(Markdown.inline(subtitle)).ui(13, .regular, look).foregroundStyle(look.palette.mute)
             }
         }
         .padding(.top, 4)

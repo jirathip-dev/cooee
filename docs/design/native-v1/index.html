@@ -21,7 +21,7 @@ const S = [
   ['iPhone, dark', 'home avatar-menu chat-streaming chat-card chat-cards-more persona'.split(' ').map(f => f + '-dark')],
   ['iPhone, light', 'home avatar-menu chat-streaming chat-card chat-cards-more persona'.split(' ').map(f => f + '-light')],
   ['iPhone first run', 'welcome scan nearby address waiting paired'.split(' ').map(f => 'pair-' + f + '-dark')],
-  ['Styles: Terminal and Scene', ['home-terminal-dark', 'chat-terminal-dark', 'home-scene-light']],
+  ['Styles: Terminal and Scene', 'terminal-home-dark terminal-chat-dark terminal-card-dark terminal-persona-dark scene-home-light scene-chat-light scene-card-light'.split(' ').map(f => 'style-' + f)],
   ['Mac: server setup, QR, approve, client', 'welcome folders signins tailscale qr approve'.split(' ').map(f => 'mac-setup-' + f).concat(['mac-connect']), 1],
   ['Mac window: sidebar + chat', ['mac-window-dark', 'mac-window-light'], 1],
 ];
