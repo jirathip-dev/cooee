@@ -1,5 +1,5 @@
 # Every CI gate, locally (the ui gate needs `npm ci` in web/e2e once).
-check: fmt clippy test doc deny cap deps hygiene neutral themes ci-scripts ts ui
+check: fmt clippy test doc deny cap deps hygiene neutral lessons themes ci-scripts ts ui
 
 fmt:
     cargo fmt --all --check
@@ -33,6 +33,10 @@ hygiene:
 neutral:
     scripts/neutral-core.sh
     ci/neutral-core-test.sh
+
+# The lesson checks' own tests (#323); the checks themselves run on a PR in .github/workflows/lessons.yml.
+lessons:
+    ci/pr-body-test.sh
 
 # The theme gate (docs/themes.md) on the first-party packs and the starter.
 themes:
