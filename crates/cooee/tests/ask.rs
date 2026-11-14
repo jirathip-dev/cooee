@@ -2,7 +2,8 @@
 //! server with its thread's token. A persona asks one its `can_message` names and gets the reply as the tool's
 //! result, in a linked exchange thread the owner reads and steers; anyone else is `NOT_ALLOWED`; an asked persona
 //! may ask one more and no further (`DEPTH`, G4); no reply in time is `TIMEOUT`; a session that can't start is
-//! `OFFLINE`.
+//! `OFFLINE`. Each ask is a card in the asker's chat; the owner's note mid-exchange reaches the asked persona marked as
+//! the owner's and goes back to the asker with the reply (#177).
 
 mod support;
 
@@ -109,12 +110,30 @@ impl Setup {
         (text, result["isError"] == json!(true))
     }
 
-    /// The exchange threads linked from thread `id`.
-    fn linked(&self, id: &str) -> Vec<String> {
+    /// Thread `id`'s `ask` cards.
+    fn cards(&self, id: &str) -> Vec<Value> {
         let items = self.items(id);
-        let links = items.iter().filter(|i| i["kind"] == "link");
-        links
-            .map(|i| i["thread"].as_str().unwrap().to_owned())
+        items.into_iter().filter(|i| i["kind"] == "ask").collect()
+    }
+
+    /// The exchange threads thread `id`'s cards open, once each.
+    fn linked(&self, id: &str) -> Vec<String> {
+        let mut linked = Vec::new();
+        for card in self.cards(id) {
+            let x = card["thread"].as_str().unwrap().to_owned();
+            if !x.is_empty() && !linked.contains(&x) {
+                linked.push(x);
+            }
+        }
+        linked
+    }
+
+    /// Each card's `(persona, outcome)`.
+    fn outcomes(&self, id: &str) -> Vec<(Value, Value)> {
+        let cards = self.cards(id);
+        cards
+            .iter()
+            .map(|c| (c["persona"].clone(), c["outcome"].clone()))
             .collect()
     }
 
@@ -133,27 +152,52 @@ fn an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steer
     );
     assert_eq!((reply.as_str(), failed), ("Hello", false));
 
-    // The owner sees the exchange: listed, linked from Ada's thread, the question attributed and Bo's reply.
+    // Ada's chat has the card: whom it asked, what, the outcome and the thread it opens.
+    let card = &s.cards(&ada)[0];
+    let asked = (
+        &card["persona"],
+        &card["name"],
+        &card["text"],
+        &card["outcome"],
+    );
+    assert_eq!(
+        asked,
+        (
+            &json!("bo"),
+            &json!("Bo"),
+            &json!("what is for dinner?"),
+            &json!("replied")
+        )
+    );
+    assert!(card.get("note").is_none(), "{card}");
+
+    // The owner sees the exchange: listed under Ada's thread, the question Ada's and Bo's reply, then its return.
     let linked = s.linked(&ada);
     assert_eq!(linked.len(), 1, "{:?}", s.items(&ada));
     let x = &linked[0].clone();
     let rows = s.cooee.json("/threads");
-    assert!(
-        rows.as_array().unwrap().iter().any(|r| &r["id"] == x),
-        "{rows}"
-    );
-    let said: Vec<(Value, Value)> = s
-        .items(x)
+    let row = rows.as_array().unwrap().iter().find(|r| &r["id"] == x);
+    assert_eq!(row.map(|r| &r["asked_by"]), Some(&json!(ada)), "{rows}");
+    let items = s.items(x);
+    let said: Vec<(Value, Value, Value)> = items
         .iter()
-        .map(|i| (i["kind"].clone(), i["text"].clone()))
+        .map(|i| (i["kind"].clone(), i["speaker"].clone(), i["text"].clone()))
         .collect();
     assert_eq!(
-        said,
+        said[..2],
         [
-            (json!("you"), json!("[Ada]: what is for dinner?")),
-            (json!("agent"), json!("Hello"))
+            (json!("you"), json!("ada"), json!("what is for dinner?")),
+            (json!("agent"), Value::Null, json!("Hello"))
         ]
     );
+    let back = said[2].2.as_str().unwrap();
+    assert!(
+        said[2].0 == "note" && back.starts_with("returned to Ada · "),
+        "{said:?}"
+    );
+    let prompts = s.shed.sent(&format!("cooee-{x}"));
+    let framed = r#"{"prompt":"[Ada]:\n\nwhat is for dinner?"}"#;
+    assert!(prompts[0].contains(framed), "{prompts:?}");
 
     // The next ask reuses it: no other thread.
     let (reply, _) = s.ask(&ada, &json!({ "persona": "bo", "message": "and dessert?" }));
@@ -162,15 +206,57 @@ fn an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steer
     let replies = s.items(x).iter().filter(|i| i["kind"] == "agent").count();
     assert_eq!(replies, 2);
 
-    // The owner replies in it to steer: it reaches Bo's session.
+    // The owner writes a note in it: it reaches Bo's session as the owner's.
     let steer = json!({ "text": "keep it short", "random_id": "steer" });
     assert_eq!(s.cooee.post(&format!("/threads/{x}/send"), &steer).0, 200);
+    let marked = r#""[The owner's note; the asker gets it with your reply]:\n\nkeep it short""#;
     eventually(|| {
         s.shed
             .sent(&format!("cooee-{x}"))
             .iter()
-            .any(|p| p.contains("keep it short"))
+            .any(|p| p.contains(marked))
     });
+}
+
+#[test]
+fn the_owners_note_mid_exchange_reaches_the_asked_persona_and_returns_to_the_asker_with_the_reply()
+{
+    let s = setup("ask-note");
+    let ada = s.start("ada");
+    let message = json!({ "persona": "bo", "message": "wait for a note", "timeout": 10 });
+    let (x, waiting, (reply, failed)) = thread::scope(|scope| {
+        let asking = scope.spawn(|| s.ask(&ada, &message));
+        eventually(|| !s.linked(&ada).is_empty());
+        let x = s.linked(&ada).remove(0);
+        let waiting = s.outcomes(&ada);
+        let note = json!({ "text": "Use the 10-Q", "random_id": "note" });
+        assert_eq!(s.cooee.post(&format!("/threads/{x}/send"), &note).0, 200);
+        (x, waiting, asking.join().unwrap())
+    });
+    assert_eq!(waiting, [(json!("bo"), json!("asking"))]);
+
+    // Bo read the note as the owner's, and Ada got it with Bo's reply.
+    let marked = "[The owner's note; the asker gets it with your reply]:\n\nUse the 10-Q";
+    let want = format!("noted: {marked}\n\n[The owner's note to Bo: Use the 10-Q]");
+    assert_eq!((reply, failed), (want, false));
+    let card = &s.cards(&ada)[0];
+    assert_eq!(
+        (&card["outcome"], &card["note"]),
+        (&json!("replied"), &json!("Use the 10-Q"))
+    );
+
+    // In the exchange the note is the owner's (no speaker), and its end says the note went back.
+    let items = s.items(&x);
+    let note = items.iter().find(|i| i["text"] == "Use the 10-Q").unwrap();
+    assert!(
+        note["kind"] == "you" && note.get("speaker").is_none(),
+        "{note}"
+    );
+    let back = items.last().unwrap()["text"].as_str().unwrap();
+    assert!(
+        back.starts_with("returned to Ada with your note · "),
+        "{back}"
+    );
 }
 
 #[test]
@@ -182,9 +268,11 @@ fn a_persona_its_can_message_doesnt_name_is_not_allowed() {
     let di = s.start("di");
     let (why, failed) = s.ask(&di, &json!({ "persona": "bo", "message": "hi" }));
     assert!(failed && why.starts_with("NOT_ALLOWED: "), "{why}");
-    // Nothing started, nothing linked.
+    // Nothing started, nothing linked: each chat has its refused card.
     assert_eq!(s.threads(), 2);
     assert!(s.linked(&ada).is_empty() && s.linked(&di).is_empty());
+    assert_eq!(s.outcomes(&ada), [(json!("cy"), json!("not_allowed"))]);
+    assert_eq!(s.outcomes(&di), [(json!("bo"), json!("not_allowed"))]);
 }
 
 #[test]
@@ -199,6 +287,7 @@ fn an_asked_persona_may_ask_one_more_and_no_further() {
     let (why, failed) = s.ask(&cy, &json!({ "persona": "ada", "message": "hi" }));
     assert!(failed && why.starts_with("DEPTH: "), "{why}");
     assert_eq!(s.linked(&cy), Vec::<String>::new());
+    assert_eq!(s.outcomes(&cy), [(json!("ada"), json!("depth"))]);
 }
 
 #[test]
@@ -212,10 +301,12 @@ fn no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline() {
     );
     assert!(failed && why.starts_with("TIMEOUT: "), "{why}");
     assert!(at.elapsed() >= Duration::from_secs(1));
+    assert_eq!(s.outcomes(&ada), [(json!("bo"), json!("timeout"))]);
 
     let cy = s.start("cy");
     // Ed's session never comes up in `away`.
     s.shed.gate("fails-in-away", true);
     let (why, failed) = s.ask(&cy, &json!({ "persona": "ed", "message": "hi" }));
     assert!(failed && why.starts_with("OFFLINE: "), "{why}");
+    assert_eq!(s.outcomes(&cy), [(json!("ed"), json!("offline"))]);
 }

@@ -16,6 +16,8 @@ type Item = { id: number; at: number; seq?: number } & (
       by?: string; answered?: number; form?: "config" | "secret" | "thread"; detail?: string; line?: string; until?: number;
       block: Card }  // #138: the #125 card block the native app draws (docs/plugins/screens.schema.json)
   | { kind: "link"; text: string; thread: string; title: string; out?: boolean }
+  | { kind: "ask"; persona: string; name: string; text: string; thread: string;  // #177: an ask_persona card
+      outcome: "asking" | "replied" | "not_allowed" | "depth" | "timeout" | "offline"; secs: number; note?: string }
   | { kind: "plan"; entries: { content: string; status: string; priority?: string }[] }
   | { kind: "note"; text: string }
   | { kind: "ended"; text: string }
@@ -30,7 +32,7 @@ type File = { name: string; data: string }; // data: the bytes in base64
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, persona_name, persona_role, folder, machine, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}, routine}` (`unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted, `persona_name` and `persona_role` its name and role; `machine`: the one it runs on, `""` this host) |
+| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, persona_name, persona_role, folder, machine, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}, routine, asked_by?}` (`asked_by`: a linked exchange's asker thread, #177; `unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted, `persona_name` and `persona_role` its name and role; `machine`: the one it runs on, `""` this host) |
 | `POST /threads` | `{agent, account?, profile?, model?, effort?, folder?, machine?, text, random_id, background?}` (`profile`: a persona's or profile's id; a persona's agent, folder, model, effort and machine are its defaults; `machine` overrides its persona's, `""` this host, one not in `GET /machines` a 400) | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
 | `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
 | `POST /threads/{id}/folder` | `{folder}` (a root or inside one): "Use a folder…"; its agent starts again there and the next message carries a hand-over | the `note` it adds |
@@ -170,9 +172,12 @@ A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the
 `{thread, server: {name, type, command, args, url, why}}` → the card; `POST /mcp/agent/remember` `{thread, server:
 {text?, replaces?, forget?}}` → `remember`'s edit by the thread's persona, its answer the note's id and the use; `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
 (#156) → `ask_persona`'s reply (a string), the thread's persona asking one its `can_message` names in a linked exchange
-thread (the owner reads it and may reply to steer), waiting `timeout` seconds (300, at most 600). A refusal is a 400
+thread (the owner reads it and may write a note), waiting `timeout` seconds (300, at most 600). A refusal is a 400
 starting `NOT_ALLOWED`, `DEPTH` (an asked persona may ask one more, no further), `TIMEOUT` or `OFFLINE` (its session
-can't start).
+can't start). Each ask is an `ask` item in the asker's thread (#177), `asking` until it ends; in the exchange the
+question is a `you` item whose `speaker` is the asker's persona. The owner's message there reaches the asked persona
+marked as the owner's note, and the reply goes back with it (the card's `note`; the exchange ends with the `note`
+item `returned to <asker> [with your note] · <secs>s`).
 `POST /mcp/agent/history` `{thread, server: {query?, thread?, before?, limit?}}` (#217) → `history`'s text: with
 `query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
 at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending

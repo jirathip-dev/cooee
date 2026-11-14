@@ -151,6 +151,7 @@ fn glance(live: &Live) -> Glance {
         | Body::Agent { text, .. }
         | Body::Note { text }
         | Body::Link { text, .. }
+        | Body::Ask { text, .. }
         | Body::Ended { text } => text,
         Body::Tool { title, .. } => title,
         Body::Approval { tool, .. } => tool,
@@ -1598,10 +1599,13 @@ impl Hub {
             l.sending.push(q.random_id.clone());
             let handover = l.meta.handover.clone();
             // After Use a folder…, the hand-over goes once ahead of the next message.
-            let before = if before.trim().is_empty() {
+            // In a linked exchange, the owner's message is a note the asked persona tells from the asker's (#177).
+            let before = if !before.trim().is_empty() {
+                before
+            } else if l.meta.asked_by.is_empty() {
                 handover.as_str()
             } else {
-                before
+                ask::OWNER_NOTE
             };
             let mut prompt = if before.trim().is_empty() {
                 q.text.clone()
@@ -2140,6 +2144,7 @@ impl Hub {
                         .iter()
                         .map(|m| m.persona.clone())
                         .collect(),
+                    asked_by: live.meta.asked_by.clone(),
                 })
             })
             .collect();
