@@ -1,0 +1,30 @@
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-230/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/herdsman/work/cooee/issue-230/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.67s
+     Running tests/folders.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-impl-230/target/debug/deps/folders-287f06d12e651321)
+
+running 6 tests
+test browse_lists_a_root_outside_home_spelled_as_listed ... FAILED
+test picker_lists_sub_folders_two_levels_deep_never_symlinks ... ok
+test browse_lists_only_folders_inside_home ... ok
+test add_and_remove_root_persists_in_the_config ... ok
+test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+
+failures:
+
+---- browse_lists_a_root_outside_home_spelled_as_listed stdout ----
+
+thread 'browse_lists_a_root_outside_home_spelled_as_listed' (103270505) panicked at crates/cooee/tests/support/mod.rs:1102:9:
+assertion `left == right` failed: /folders?path=%2Fvar%2Ffolders%2F51%2Ftp633f_n3tj561q8rqwrqtxw0000gn%2FT%2Fcooee-folders-root-outside-3595%2Froot: /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-folders-root-outside-3595/root is not a folder in your home folder
+  left: 400
+ right: 200
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    browse_lists_a_root_outside_home_spelled_as_listed
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.24s
+
+error: test failed, to rerun pass `-p cooee --test folders`

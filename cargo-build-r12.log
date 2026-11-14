@@ -1,0 +1,7 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-230/crates/cooee-core)
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-230/crates/cooee-machines)
+   Compiling cooee-web v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-230/web)
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-230/crates/cooee-terminal)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-230/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-230/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 16.30s

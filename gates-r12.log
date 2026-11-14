@@ -1,0 +1,5 @@
+cargo build exit 0
+cargo test folders+model exit 0
+cargo fmt exit 0
+neutral exit 0
+swift test exit 0
