@@ -1,0 +1,10 @@
+Decided: Terminal and Scene rooms were already built by #157; this PR closes the remaining gaps against room-terminal-390-dark, room-terminal-1440 and room-scene-390-light.
+Because: "Match its PNGs exactly, in Modern, Terminal and Scene."
+Decided: the state dot is a 12pt fill with a 2pt ring, as rm.css's .sdot (30% of a 40px avatar), in every style.
+Decided: Terminal's header stack is 26pt with 2pt gaps (rm.css .stk .pa --s:26px), so the title fits at full size.
+Decided: a room's owner-only tool row shows a green check in Terminal, as the design draws; other chats keep [ok].
+Decided: the room row in Home shows each member's figure as the header does (state done), so Terminal draws \o/ not -.-.
+Rejected: the asks-you state and rearing at the gate — #178 adds the ask itself and its approval-scene frame; no state exists on staging to draw.
+Rejected: a smaller Terminal body font (design 13px) — it is the app-wide Terminal type from #124, not a room change.
+Check: apple/design/v1/room-terminal-dark.png and room-terminal-wide.png against docs/design/rooms/room-terminal-390-dark.png and room-terminal-1440.png.
+Owner: Rooms in the Terminal look now draw the stop button, state squares, figures and tool row as the design does.
