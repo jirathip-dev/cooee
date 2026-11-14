@@ -1,0 +1,7 @@
+Decided: round 10 merges origin/staging (#328); the one apple job keeps its name and runs only the builds on a PR push, apple-check and e2e behind env FULL (staging push, dispatch, merge-ready label)
+Because: "On `pull_request`, `apple.yml` runs one job, `apple`, in sequence"
+Rejected: restoring #328's build/apple-quality/e2e split — that is four macOS jobs per PR again, against "Two macOS jobs per PR"
+Decided: a label other than merge-ready gets its own concurrency group and skips apple, so it cancels nothing
+Because: "A second push to the same PR cancels the earlier in-progress run of each of the three workflows"
+Check: actionlint exit 0 at the head; a PR push's apple runs xcodebuild only; the merge-ready run's apple runs apple-check and uploads simulator-shots
+Owner: the ruleset requires `apple`; the merge-ready run's apple (full) is the one merge waits on, replacing #328's apple-quality and e2e checks
