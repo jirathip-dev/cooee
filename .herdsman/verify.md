@@ -128,7 +128,7 @@ Selectors this UI answers to (from `web/e2e/*.spec.mjs`):
 
 The native app (`apple/`) in the lane's own iPhone simulator, driven exactly as `apple.yml`'s `e2e` job does: the same
 server (`apple/e2e/serve.sh`: fake agent, personas Coder and Conductor, the `cards` plugin on P+1, the `drover`
-fixture), the same build and the same UI test (`LiveUITests`), once per look. Every command below is that job's, with
+fixture), the same build and the same UI tests (`apple/UITests/Live*UITests.swift`, one per screen, each from a fresh launch), once per look. Every command below is that job's, with
 `$OUT` for `$RUNNER_TEMP` and the lane's port for 4100. It takes P and P+1: run it after the web teardown, in the same
 shell, with bash or zsh (it uses arrays).
 
@@ -253,7 +253,7 @@ gh run download "${run:?no apple run at this head}" -n mac-setup-shots -D "$OUT/
 | iOS: persona editor | `persona` (New chat → New persona…, then Edit a persona) |
 | iOS: settings (avatar menu) | `avatar-menu` (Account; Look → Terminal / Modern) |
 | iOS: Conductor and drover | `attach` (first look only), `conductor`, `events`, `queue`, `queue-live`, `queue-offline` |
-| iOS: the issue's own screen | add a `keep("<name>")` step to `apple/UITests/LiveUITests.swift` in the PR, after the screen it touches |
+| iOS: the issue's own screen | add a `keep("<name>")` step to the `apple/UITests/Live*UITests.swift` test for that screen in the PR, after the screen it touches |
 | Mac: first run, pairing approve | CI `mac-setup-shots`: `mac-setup/` (`welcome`, `folders`, `qr`, `approve`, `approved`), `phone-ask/` (`pair-waiting`, `pair-approved`) |
 
-iOS rows name the screenshot `LiveUITests` keeps on that screen (`$OUT/shots/ios/<look>/`), on the path the test walks.
+iOS rows name the screenshot the live UI tests keep on that screen (`$OUT/shots/ios/<look>/`), on the path the test walks.

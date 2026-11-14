@@ -40,7 +40,7 @@ const SHED_CARGO: [&str; 8] = [
     "--git",
     "https://github.com/jirathip-dev/shed",
     "--rev",
-    "f026a4d35a2705e560a52515da8e3a5d32e4d659",
+    "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb",
     "shed",
 ];
 

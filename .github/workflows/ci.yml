@@ -12,6 +12,12 @@ on:
     types: [opened, synchronize, reopened, labeled]
   schedule:
     - cron: "17 19 * * *"
+  # #388: ui-stress, the ui suite `repeats` times in a row at a ref; only the ui job runs.
+  workflow_dispatch:
+    inputs:
+      repeats:
+        description: how many times the ui suite runs in a row
+        default: "20"
 
 env:
   CARGO_TERM_COLOR: always
@@ -72,13 +78,13 @@ jobs:
           bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
           ./actionlint -color
 
-  # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64 and macOS arm64 (msrv-mac, same steps).
+  # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64; macOS runs stable-mac's tests (#388).
   msrv:
     name: msrv (ubuntu-latest)
     needs: scope
     if: needs.scope.outputs.run == 'true'
     runs-on: ubuntu-latest
-    steps: &msrv
+    steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.REF }}
@@ -95,7 +101,7 @@ jobs:
         run: just clippy
       - name: test (incl. upgrade compatibility and crash injection)
         # #336: on Linux, a session of its own, so a test's group signal can never reach the runner.
-        run: ${{ runner.os == 'Linux' && 'setsid --wait' || '' }} just test
+        run: setsid --wait just test
       - name: doc
         run: just doc
       - name: deny (licences, advisories, duplicate versions)
@@ -117,13 +123,6 @@ jobs:
       - name: CI scripts (scope, reuse, nightly)
         run: just ci-scripts
 
-  msrv-mac:
-    name: msrv (macos-latest)
-    needs: scope
-    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true'
-    runs-on: macos-latest
-    steps: *msrv
-
   stable:
     name: stable (ubuntu-latest)
     needs: scope
@@ -135,16 +134,26 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.REF }}
+      - uses: ./.github/actions/mac-runner
+        if: runner.environment == 'self-hosted'
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: test
         run: ${{ runner.os == 'Linux' && 'setsid --wait' || '' }} cargo test --workspace --locked
 
+  # #365: the macOS leg runs on our own runners (mini-cooee, air-cooee), never for a fork's pull request: that skips
+  # it. The check name stays as the staging ruleset requires it. A newer run of the same ref cancels this leg; a
+  # run that skips it (another label) gets a group of its own, so it cancels nothing.
   stable-mac:
     name: stable (macos-latest)
     needs: scope
-    if: needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true'
-    runs-on: macos-latest
+    if: >-
+      needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: [self-hosted, macOS, ARM64, cooee-mac]
+    concurrency:
+      group: ci-stable-mac-${{ needs.scope.outputs.mac == 'true' && format('{0}-{1}', github.event_name, github.ref) || github.run_id }}
+      cancel-in-progress: true
     env:
       RUSTUP_TOOLCHAIN: stable
     steps: *stable
@@ -196,7 +205,7 @@ jobs:
   # Playwright at 390 and 1440 px with axe accessibility checks; the screenshots are artifacts.
   ui:
     needs: scope
-    if: needs.scope.outputs.run == 'true'
+    if: needs.scope.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -215,8 +224,9 @@ jobs:
       - name: build
         run: cargo build --locked -p cooee
       - name: playwright (390, 1440, axe)
-        working-directory: web/e2e
-        run: npx playwright test
+        env:
+          REPEATS: ${{ inputs.repeats || '1' }}
+        run: scripts/ui-stress.sh "$REPEATS"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -230,7 +240,7 @@ jobs:
 
   # #329: a red nightly opens or updates one `nightly red: <check> since <PR>` issue.
   nightly-red:
-    needs: [scope, actionlint, msrv, msrv-mac, stable, stable-mac, ts, no-node, ui]
+    needs: [scope, actionlint, msrv, stable, stable-mac, ts, no-node, ui]
     if: always() && github.event_name == 'schedule' && contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
     concurrency: nightly-red

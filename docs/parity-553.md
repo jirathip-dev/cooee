@@ -1,5 +1,8 @@
 # Parity audit: herdsman#553 rows 1–35 against cooee core (#21)
 
+This audits the web client, which #189 removes. The native app's audit of every #553 row is
+[parity-553-native.md](parity-553-native.md) (#366).
+
 Audited at `51f92e8` (staging). **done**: cooee does it today; **partial**: some of it; **missing**: none of it.
 Row numbers are #553's.
 

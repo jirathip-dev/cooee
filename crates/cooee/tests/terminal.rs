@@ -13,6 +13,7 @@ use std::{
 };
 
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
+use cooee_core::shed_proto::Hello;
 use p256::ecdsa::{Signature, SigningKey, signature::Signer};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -33,8 +34,12 @@ struct Mac {
 }
 
 fn mac(name: &str) -> Mac {
+    mac_on(name, version())
+}
+
+fn mac_on(name: &str, shed: Hello) -> Mac {
     let dir = scratch(name);
-    let shed = FakeShed::start(&dir.join("shed"), version());
+    let shed = FakeShed::start(&dir.join("shed"), shed);
     let port = TcpListener::bind("127.0.0.1:0")
         .unwrap()
         .local_addr()
@@ -176,6 +181,24 @@ fn no_passkey_is_403_a_passkey_unlocks_and_the_token_alone_is_not_enough() {
         log.iter()
             .all(|l| l["event"] == "unlock" && l["device"].as_str().is_some_and(|d| d.len() == 8))
     );
+}
+
+#[test]
+fn a_shed_of_another_protocol_fails_the_list_naming_both_sides() {
+    let theirs = Hello {
+        build: "fffffff".to_owned(),
+        protocol: 2,
+        ..version()
+    };
+    let m = mac_on("term-version", theirs);
+    m.ceremony(true);
+    let (status, body) = m.cooee.get("/p/terminal/api/list");
+    assert_eq!(status, 502, "{body}");
+    let (v, b) = (&version().version, &version().build);
+    let said = format!(
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server refused it: client {b} / server fffffff: protocol 1 vs 2"
+    );
+    assert!(body.contains(&said), "{body}\nwanted: {said}");
 }
 
 #[test]

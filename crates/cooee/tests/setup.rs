@@ -16,7 +16,7 @@ use std::{
 use support::{FakeShed, scratch, version};
 
 const BIN: &str = env!("CARGO_BIN_EXE_cooee");
-const REV: &str = "f026a4d35a2705e560a52515da8e3a5d32e4d659";
+const REV: &str = "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb";
 
 const FAKES: &[(&str, &str)] = &[
     (
@@ -84,7 +84,9 @@ impl Mac {
             fs::set_permissions(&file, fs::Permissions::from_mode(0o755)).unwrap();
         }
         let shed = (!dry).then(|| FakeShed::start(&home.join("Library/Caches/shed"), version()));
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let listener = std::iter::repeat_with(|| TcpListener::bind("127.0.0.1:0").unwrap())
+            .find(|l| l.local_addr().unwrap().port() <= u16::MAX - 1000)
+            .unwrap();
         let port = listener.local_addr().unwrap().port();
         Self {
             home,
@@ -240,7 +242,7 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
     assert!(out.status.success(), "{out:?}");
     assert_eq!(mac.changes(), Vec::<String>::new());
     for step in [
-        "shed f026a4d",
+        "shed 4ac443d",
         "shed service dev.shed.serve",
         &format!("config {}", mac.config().display()),
         "agents",
