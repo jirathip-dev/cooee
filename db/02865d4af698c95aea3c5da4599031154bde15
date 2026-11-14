@@ -1,0 +1,8 @@
+Decided: merge origin/staging and keep its removal of msrv-mac; the fork guard and our runner labels move onto stable-mac
+Because: .github/workflows/ci.yml:144
+Rejected: keeping msrv-mac on our runners — staging's #388 dropped it (docs/ci/ui-reds.md:128); the FAIL was that leg's flaky reliability test
+Decided: the msrv job drops the mac-runner step, it is ubuntu-only now
+Because: "Move ci's macos legs to our own mini/air runners (like apple-mac), same-repo PRs only, never forks" (q1618)
+Check: stable (macos-latest) and dmg run on mini-cooee or air-cooee on the merge-ready run; a dispatch no longer forces them since #388 (scripts/ci-scope.sh:34)
+Check: actionlint exit 0 and just ci-scripts exit 0 at the pushed head
+Owner: The Mac test leg that kept failing was already removed on staging; the remaining Mac jobs still run only on our own Macs.
