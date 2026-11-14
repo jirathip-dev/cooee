@@ -1,0 +1,11 @@
+Decided: the … is always a Button that toggles ChatFeature's panel; on iPhone the panel is a sheet, on Mac and iPad a 360-pt column beside the chat.
+Because: "the … opens the persona panel, designed in #244 (iPhone full-height sheet, Mac/iPad right column)"
+Decided: in the sheet a pick closes the panel first and runs on the sheet's onDismiss, so Edit's persona sheet and the plugin and attach sheets never present over it.
+Because: apple/Sources/CooeeFeatures/ChatPanel.swift:30
+Decided: the panel lists the persona's plugin places and an Attach row per attachable plugin, and the header Menu of Attach items is gone.
+Because: "its attached plugins' places (#129: e.g. Conductor's Queue, Events, Workflow) and Attach <plugin>… for each attachable plugin"
+Decided: Edit and New chat hide for a chat whose persona is unknown; Stop shows only while a turn runs; Memory, Screen, Terminal and Routines are not drawn live.
+Because: "Never a control that does nothing: an item with no action is hidden, not drawn."
+Rejected: a native routines list — #75's routines belong to a chat, not a persona, and the app has no routine screen or editor yet, so every row would be a dead control.
+Check: LiveUITests opens Conductor's … and finds Edit Conductor and New chat with Conductor with no Attach row; the design frames' snapshots are unchanged.
+Owner: The … in a chat now opens the persona panel with Edit, New chat, the persona's plugins and Stop; routines are not in it yet.
