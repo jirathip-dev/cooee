@@ -1,0 +1,7 @@
+Decided: round 9 merges origin/staging (#365); apple, dmg and stable-mac take #365's self-hosted label, fork guard and mac-runner step, replacing the APPLE_RUNNER expression
+Because: docs/ci-runners.md:21
+Decided: keep one apple job and PR-only cancel; drop #365's per-job concurrency on dmg/stable-mac, which cancelled staging pushes
+Because: "The staging push keeps running to the end"
+Rejected: keeping vars.APPLE_RUNNER beside #365's label — two ways to route the same jobs, and #365 (merged later) skips forks instead of sending them to macos-26
+Check: actionlint exit 0 at the head; on this PR the macOS jobs are apple and dmg (stable-mac skipped unless merge-ready)
+Owner: AC3's APPLE_RUNNER variable is superseded by #365's fixed runner label; the repo variable can be deleted
