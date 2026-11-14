@@ -53,6 +53,25 @@ pub struct Config {
     pub mcp: Vec<crate::mcp::Server>,
     /// Apple push for the native app (`[apns]`, #130); its key is `<data>/apns.p8`.
     pub apns: Option<Apns>,
+    /// GitHub webhooks for routines (`[hooks]`, #261); off when unset.
+    pub hooks: Option<Hooks>,
+}
+
+/// `[hooks]`: a second listener serving only `POST /hooks/github`, published by Tailscale Funnel.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Hooks {
+    /// Where it listens (`127.0.0.1:4748`).
+    pub bind: std::net::SocketAddr,
+    /// Its public URL, as the GitHub webhook has it (`https://<mac>.ts.net:8443/hooks/github`).
+    pub url: String,
+    /// GitHub's API, for the catch-up (default `https://api.github.com`).
+    #[serde(default = "github_api")]
+    pub api: String,
+}
+
+fn github_api() -> String {
+    "https://api.github.com".to_owned()
 }
 
 /// `[apns]`: the owner's APNs key's ids and the app it pushes to; none of it is secret.
@@ -133,6 +152,7 @@ impl Default for Config {
             perf: Perf::default(),
             mcp: Vec::new(),
             apns: None,
+            hooks: None,
         }
     }
 }

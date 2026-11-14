@@ -2,7 +2,7 @@
 //! where · last run · [pause|resume] [delete]`, and its edit (name, schedule, prompt). Routines are made in chat;
 //! there is no "new" form. Every form posts and comes back here.
 
-use cooee_core::routines::{Outcome, Paused, Place, Routine, Trigger};
+use cooee_core::routines::{Outcome, Paused, Place, Routine, Skip, Trigger};
 use topcoat::{Result, context::Cx, view::View, view::component, view::view};
 
 use crate::{age, document};
@@ -24,6 +24,10 @@ fn line(r: &Routine) -> String {
         Some(run) => match &run.outcome {
             Outcome::Ran { .. } => format!("ran {}", age(run.at)),
             Outcome::Failed { why } => format!("failed {}: {why}", age(run.at)),
+            Outcome::Skipped { why: Skip::Paused } => format!("skipped {}: paused", age(run.at)),
+            Outcome::Skipped { why: Skip::Rate } => {
+                format!("skipped {}: 6 runs this hour", age(run.at))
+            }
         },
     };
     let paused = match &r.paused {
@@ -43,8 +47,10 @@ async fn row(r: Routine) -> Result<impl View> {
     } else {
         ("pause", "paused", "true")
     };
-    let Trigger::Schedule(s) = &r.trigger;
-    let when = String::from(s.clone());
+    let when = match &r.trigger {
+        Trigger::Schedule(s) => Some(String::from(s.clone())),
+        Trigger::Github(_) => None,
+    };
     Ok(view! {
         <div class="acr" data-routine=(r.id.clone())>
             <span class="ptg">"⟳"</span>
@@ -79,12 +85,14 @@ async fn row(r: Routine) -> Result<impl View> {
                     aria-label="name"
                     value=(r.name.clone())
                 >
-                <input
-                    name="when"
-                    required=(true)
-                    aria-label="schedule (cron)"
-                    value=(when)
-                >
+                if let Some(w) = when {
+                    <input
+                        name="when"
+                        required=(true)
+                        aria-label="schedule (cron)"
+                        value=(w)
+                    >
+                }
                 <textarea name="prompt" required=(true) aria-label="prompt">
                     (r.prompt.clone())
                 </textarea>

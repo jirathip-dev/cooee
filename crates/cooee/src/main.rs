@@ -836,6 +836,17 @@ fn doctor(config: &Config) -> Result<(), String> {
             );
         }
     }
+    if let Some(h) = &config.hooks {
+        let up = TcpStream::connect_timeout(&h.bind, Duration::from_secs(2)).is_ok();
+        let to = format!("http://{}/hooks/github", h.bind);
+        check(
+            up,
+            format!(
+                "hooks listening on {} for {}\n     funnel: tailscale funnel --bg --https=8443 --set-path /hooks/github {to}",
+                h.bind, h.url
+            ),
+        );
+    }
     if failed.is_empty() {
         Ok(())
     } else {

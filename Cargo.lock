@@ -217,6 +217,7 @@ dependencies = [
 name = "cooee-core"
 version = "0.1.0"
 dependencies = [
+ "hkdf 0.13.0",
  "security-framework",
  "serde",
  "serde_json",
