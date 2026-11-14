@@ -1,7 +1,7 @@
 // #48 mockup: the app's own look on static pages. Served from the repo root (`node docs/design/new-thread/shoot.mjs
-// --serve`), so the pages load design-system/app.css, packs/themes/ and design-system/schemes/ as they are today:
-// nothing here copies the design system. A classic script: it builds `LOOK` (as the server did) and
-// puts the URL's pick in localStorage, where the PWA's look.js read it (gone with #189).
+// --serve`), so the pages load design-system/app.css, design-system/look.js, packs/themes/ and design-system/schemes/
+// as they are today: nothing here copies the design system. A classic script before look.js: it builds `LOOK` (as the
+// server did) and puts the URL's pick in localStorage, where look.js reads it.
 //   ?theme=farm|kitchen|garden|plain  &mode=system|light|dark  &style=modern|terminal  &sprites=on|ascii|off
 //   [data-only="a b"]  shown only on those screens; [data-exp=<screen>] aria-expanded on that screen
 //   [data-ld="claude · jk@work.com"]  the connecting line: what look.js gains for the `loading` state (below)
