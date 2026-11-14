@@ -1,0 +1,7 @@
+Decided: merge staging, which moves the macOS jobs to the self-hosted cooee-mac runner
+Because: .github/workflows/ci.yml:152
+Decided: the screen test's wait fails with its last try: status, GET time, body and plugin.log
+Because: crates/cooee/tests/screens.rs:116
+Rejected: changing deadlines blind — the hosted-macOS timeout did not reproduce locally alone, under 24 CPU hogs, or after the plugins tests
+Check: CI at this head is green, or the screens failure message now names what the poll got
+Owner: no product change this round; if the screen test fails again, its message now says why
