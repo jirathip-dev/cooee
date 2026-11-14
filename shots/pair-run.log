@@ -1,0 +1,1 @@
+usage: CHROME=<binary> verify-browser.mjs <url> <out dir> [--name n] [--recipe f] [--approved dir] [--threshold %] [--trace] [--wait ms]
