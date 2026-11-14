@@ -1,0 +1,13 @@
+Decided: the server reads the app's bundled default with include_str, so there is one default
+Because: crates/cooee-server/src/layout.rs:28
+Decided: the fingerprint is the file's text, not its size and mtime, so a same-size save in one mtime tick still reloads
+Because: crates/cooee-server/src/layout.rs:200
+Decided: a new subscriber gets broken at once while the file is broken
+Because: crates/cooee-server/src/layout.rs:263
+Decided: no queue block for q1687's wait: #189 is already merged into staging and this branch carries it
+Because: q1687
+Rejected: hub-wide fan-out for changed/broken — a broadcast channel owned by the layout keeps the hub untouched
+Rejected: line/col from a positional JSON parser — serde_json keeps none; a rule refusal points at the offending text's first appearance
+Check: every app fixture in apple/Tests/CooeeCoreTests/Fixtures/layouts gets the app's verdict from cooee layout check
+Check: line-cap passes with staging merged (19372 / 27500)
+Owner: The Mac now serves your layout file, keeps the last good one when an edit breaks, and can reset it with a backup.
