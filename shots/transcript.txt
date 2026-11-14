@@ -1,0 +1,46 @@
+ios doctor exit=0
+ios boot exit=0
+ios build exit=0
+ios drive dark exit=0
+ios export dark exit=0
+ios drive light exit=0
+ios export light exit=0
+scratch build exit=0
+scratch build (harness diff: scratch-harness.diff) exit=0
+ios drive scene dark exit=0
+ios export scene dark exit=0
+ios drive scene light exit=0
+ios export scene light exit=0
+ios drive terminal dark exit=65
+ios export terminal dark exit=0
+ios drive terminal light exit=65
+ios export terminal light exit=0
+
+Node.js v24.22.2
+diff ios-queue-scene-390-dark scene-390-dark vs  exit=0
+
+Node.js v24.22.2
+diff ios-queue-scene-390-light scene-390-light vs  exit=0
+
+Node.js v24.22.2
+diff ios-lane-tapped-scene-390-dark lane-390-dark vs  exit=0
+
+Node.js v24.22.2
+diff ios-lane-tapped-scene-390-light lane-390-light vs  exit=0
+
+Node.js v24.22.2
+diff ios-queue-row-open-modern-390-dark rows-modern-390-dark vs  exit=0
+
+Node.js v24.22.2
+diff ios-queue-row-open-modern-390-light rows-modern-390-light vs  exit=0
+
+Node.js v24.22.2
+diff ios-queue-modern-390-dark ask-modern-390-dark vs  exit=0
+
+Node.js v24.22.2
+diff ios-queue-modern-390-light ask-modern-390-light vs  exit=0
+ios kill exit=0
+ios sim delete exit=0
+ios curl exit=7 (7: nothing listens)
+ios sim listed exit=1 (1: gone)
+scratch worktree remove exit=0

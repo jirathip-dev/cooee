@@ -1,0 +1,13 @@
+diff --git a/apple/UITests/LiveUITests.swift b/apple/UITests/LiveUITests.swift
+index 0c6de27e..6d74a25a 100644
+--- a/apple/UITests/LiveUITests.swift
++++ b/apple/UITests/LiveUITests.swift
+@@ -45,7 +45,7 @@
+         internal func launchHome() throws -> XCUIApplication {
+             let link = try XCTUnwrap(ProcessInfo.processInfo.environment["COOEE_PAIR_LINK"], "no COOEE_PAIR_LINK")
+             let app = XCUIApplication()
+-            let modern = Data(#"{"scheme":"system","style":"modern"}"#.utf8).map { String(format: "%02x", $0) }
++            let modern = Data(#"{"scheme":"system","style":"\#(ProcessInfo.processInfo.environment["COOEE_STYLE"] ?? "modern")"}"#.utf8).map { String(format: "%02x", $0) }
+             app.launchArguments = ["-cooee.settings", "<\(modern.joined())>"]
+             app.launch()
+             let start = app.buttons.matching(NSPredicate(format: "label IN %@", ["New chat", "Enter address"]))
