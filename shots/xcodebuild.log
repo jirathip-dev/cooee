@@ -1,0 +1,367 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination "platform=iOS Simulator,id=0EE04EC2-8F04-4C89-9CE6-3C265B3B5650" -derivedDataPath /Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-234-r7/dd build CODE_SIGNING_ALLOWED=NO
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+Resolve Package Graph
+
+Fetching from https://github.com/pointfreeco/swift-composable-architecture (cached)
+
+Fetching from https://github.com/swiftlang/swift-syntax (cached)
+
+Fetching from https://github.com/pointfreeco/swift-concurrency-extras (cached)
+
+Fetching from https://github.com/pointfreeco/swift-dependencies (cached)
+
+Fetching from https://github.com/pointfreeco/swift-issue-reporting (cached)
+
+Fetching from https://github.com/pointfreeco/swift-sharing (cached)
+
+Fetching from https://github.com/pointfreeco/swift-identified-collections (cached)
+
+Fetching from https://github.com/pointfreeco/swift-custom-dump (cached)
+
+Fetching from https://github.com/pointfreeco/swift-navigation (cached)
+
+Fetching from https://github.com/pointfreeco/swift-perception (cached)
+
+Fetching from https://github.com/pointfreeco/swift-case-paths (cached)
+
+Fetching from https://github.com/pointfreeco/combine-schedulers (cached)
+
+Fetching from https://github.com/pointfreeco/swift-clocks (cached)
+
+Fetching from https://github.com/apple/swift-collections (cached)
+
+Creating working copy of package ‘swift-custom-dump’
+
+Checking out 1.7.3 of package ‘swift-custom-dump’
+
+Creating working copy of package ‘swift-clocks’
+
+Checking out 1.1.1 of package ‘swift-clocks’
+
+Creating working copy of package ‘swift-perception’
+
+Checking out 2.0.12 of package ‘swift-perception’
+
+Creating working copy of package ‘swift-concurrency-extras’
+
+Checking out 1.4.3 of package ‘swift-concurrency-extras’
+
+Creating working copy of package ‘swift-composable-architecture’
+
+Checking out 1.26.2 of package ‘swift-composable-architecture’
+
+Creating working copy of package ‘swift-issue-reporting’
+
+Checking out 2.1.2 of package ‘swift-issue-reporting’
+
+Creating working copy of package ‘swift-dependencies’
+
+Checking out 1.17.2 of package ‘swift-dependencies’
+
+Creating working copy of package ‘combine-schedulers’
+
+Checking out 1.2.2 of package ‘combine-schedulers’
+
+Creating working copy of package ‘swift-case-paths’
+
+Checking out 1.10.0 of package ‘swift-case-paths’
+
+Creating working copy of package ‘swift-syntax’
+
+Checking out 604.0.0 of package ‘swift-syntax’
+
+Creating working copy of package ‘swift-collections’
+
+Checking out 1.7.6 of package ‘swift-collections’
+
+Creating working copy of package ‘swift-sharing’
+
+Checking out 2.10.1 of package ‘swift-sharing’
+
+Creating working copy of package ‘swift-navigation’
+
+Checking out 2.11.2 of package ‘swift-navigation’
+
+Creating working copy of package ‘swift-identified-collections’
+
+Checking out 1.1.1 of package ‘swift-identified-collections’
+
+
+Resolved source packages:
+  swift-dependencies: https://github.com/pointfreeco/swift-dependencies @ 1.17.2
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 604.0.0
+  combine-schedulers: https://github.com/pointfreeco/combine-schedulers @ 1.2.2
+  swift-perception: https://github.com/pointfreeco/swift-perception @ 2.0.12
+  Cooee: /Users/jkmacmini/.local/share/drover/work/.build/.scratch/cooee-verify-234-r7/head/apple @ local
+  swift-composable-architecture: https://github.com/pointfreeco/swift-composable-architecture @ 1.26.2
+  swift-identified-collections: https://github.com/pointfreeco/swift-identified-collections @ 1.1.1
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.7.3
+  swift-collections: https://github.com/apple/swift-collections @ 1.7.6
+  swift-issue-reporting: https://github.com/pointfreeco/swift-issue-reporting @ 2.1.2
+  swift-concurrency-extras: https://github.com/pointfreeco/swift-concurrency-extras @ 1.4.3
+  swift-case-paths: https://github.com/pointfreeco/swift-case-paths @ 1.10.0
+  swift-sharing: https://github.com/pointfreeco/swift-sharing @ 2.10.1
+  swift-navigation: https://github.com/pointfreeco/swift-navigation @ 2.11.2
+  swift-clocks: https://github.com/pointfreeco/swift-clocks @ 1.1.1
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-234-r7/dd/SourcePackages/checkouts/swift-composable-architecture/Package.swift:PACKAGE-TARGET:ComposableArchitectureMacros: error: Macro “ComposableArchitectureMacros” from package “swift-composable-architecture” must be enabled before it can be used
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-234-r7/dd/SourcePackages/checkouts/swift-case-paths/Package.swift:PACKAGE-TARGET:CasePathsMacros: error: Macro “CasePathsMacros” from package “swift-case-paths” must be enabled before it can be used
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-234-r7/dd/SourcePackages/checkouts/swift-dependencies/Package.swift:PACKAGE-TARGET:DependenciesMacrosPlugin: error: Macro “DependenciesMacrosPlugin” from package “swift-dependencies” must be enabled before it can be used
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-234-r7/dd/SourcePackages/checkouts/swift-perception/Package.swift:PACKAGE-TARGET:PerceptionMacros: error: Macro “PerceptionMacros” from package “swift-perception” must be enabled before it can be used
+/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-verify-234-r7/dd/SourcePackages/checkouts/swift-navigation/Package.swift:PACKAGE-TARGET:SwiftNavigationMacros: error: Macro “SwiftNavigationMacros” from package “swift-navigation” must be enabled before it can be used
+note: Building targets in dependency order
+note: Target dependency graph (56 targets)
+    Target 'Cooee' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeUI-product' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeApp-product' in project 'Cooee'
+    Target 'CooeeApp-product' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeApp' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeCore' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeAPI' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeFeatures' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeUI' in project 'Cooee'
+        ➜ Explicit dependency on target 'ComposableArchitecture-product' in project 'swift-composable-architecture'
+    Target 'CooeeApp' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeCore' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeAPI' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeFeatures' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeUI' in project 'Cooee'
+        ➜ Explicit dependency on target 'ComposableArchitecture-product' in project 'swift-composable-architecture'
+    Target 'CooeeUI-product' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeUI' in project 'Cooee'
+        ➜ Explicit dependency on target 'Cooee_CooeeUI' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeCore' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeAPI' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeFeatures' in project 'Cooee'
+        ➜ Explicit dependency on target 'ComposableArchitecture-product' in project 'swift-composable-architecture'
+    Target 'CooeeUI' in project 'Cooee'
+        ➜ Explicit dependency on target 'Cooee_CooeeUI' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeCore' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeAPI' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeFeatures' in project 'Cooee'
+        ➜ Explicit dependency on target 'ComposableArchitecture-product' in project 'swift-composable-architecture'
+    Target 'CooeeFeatures' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeCore' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeAPI' in project 'Cooee'
+        ➜ Explicit dependency on target 'ComposableArchitecture-product' in project 'swift-composable-architecture'
+    Target 'ComposableArchitecture-product' in project 'swift-composable-architecture'
+        ➜ Explicit dependency on target 'ComposableArchitecture' in project 'swift-composable-architecture'
+        ➜ Explicit dependency on target 'swift-composable-architecture_ComposableArchitecture' in project 'swift-composable-architecture'
+        ➜ Explicit dependency on target 'ComposableArchitectureMacros' in project 'swift-composable-architecture'
+        ➜ Explicit dependency on target 'CasePaths-product' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'Clocks-product' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'CombineSchedulers-product' in project 'combine-schedulers'
+        ➜ Explicit dependency on target 'ConcurrencyExtras-product' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'CustomDump-product' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'Dependencies-product' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'DependenciesMacros-product' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'IdentifiedCollections-product' in project 'swift-identified-collections'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+        ➜ Explicit dependency on target 'OrderedCollections-product' in project 'swift-collections'
+        ➜ Explicit dependency on target 'Perception-product' in project 'swift-perception'
+        ➜ Explicit dependency on target 'Sharing-product' in project 'swift-sharing'
+        ➜ Explicit dependency on target 'SwiftUINavigation-product' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'UIKitNavigation-product' in project 'swift-navigation'
+    Target 'ComposableArchitecture' in project 'swift-composable-architecture'
+        ➜ Explicit dependency on target 'swift-composable-architecture_ComposableArchitecture' in project 'swift-composable-architecture'
+        ➜ Explicit dependency on target 'ComposableArchitectureMacros' in project 'swift-composable-architecture'
+        ➜ Explicit dependency on target 'CasePaths-product' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'Clocks-product' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'CombineSchedulers-product' in project 'combine-schedulers'
+        ➜ Explicit dependency on target 'ConcurrencyExtras-product' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'CustomDump-product' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'Dependencies-product' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'DependenciesMacros-product' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'IdentifiedCollections-product' in project 'swift-identified-collections'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+        ➜ Explicit dependency on target 'OrderedCollections-product' in project 'swift-collections'
+        ➜ Explicit dependency on target 'Perception-product' in project 'swift-perception'
+        ➜ Explicit dependency on target 'Sharing-product' in project 'swift-sharing'
+        ➜ Explicit dependency on target 'SwiftUINavigation-product' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'UIKitNavigation-product' in project 'swift-navigation'
+    Target 'UIKitNavigation-product' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'UIKitNavigation' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'SwiftNavigationMacros' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'SwiftNavigation' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'UIKitNavigationShim' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'CasePaths-product' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CustomDump-product' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+        ➜ Explicit dependency on target 'Perception-product' in project 'swift-perception'
+        ➜ Explicit dependency on target 'PerceptionCore-product' in project 'swift-perception'
+    Target 'UIKitNavigation' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'SwiftNavigationMacros' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'SwiftNavigation' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'UIKitNavigationShim' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'CasePaths-product' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CustomDump-product' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+        ➜ Explicit dependency on target 'Perception-product' in project 'swift-perception'
+        ➜ Explicit dependency on target 'PerceptionCore-product' in project 'swift-perception'
+    Target 'UIKitNavigationShim' in project 'swift-navigation' (no dependencies)
+    Target 'SwiftUINavigation-product' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'SwiftUINavigation' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'SwiftNavigationMacros' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'SwiftNavigation' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'CasePaths-product' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CustomDump-product' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+        ➜ Explicit dependency on target 'Perception-product' in project 'swift-perception'
+        ➜ Explicit dependency on target 'PerceptionCore-product' in project 'swift-perception'
+    Target 'SwiftUINavigation' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'SwiftNavigationMacros' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'SwiftNavigation' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'CasePaths-product' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CustomDump-product' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+        ➜ Explicit dependency on target 'Perception-product' in project 'swift-perception'
+        ➜ Explicit dependency on target 'PerceptionCore-product' in project 'swift-perception'
+    Target 'SwiftNavigation' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'SwiftNavigationMacros' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'CasePaths-product' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CustomDump-product' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+        ➜ Explicit dependency on target 'Perception-product' in project 'swift-perception'
+        ➜ Explicit dependency on target 'PerceptionCore-product' in project 'swift-perception'
+    Target 'SwiftNavigationMacros' in project 'swift-navigation'
+        ➜ Explicit dependency on target 'CasePathsMacrosSupport-product' in project 'swift-case-paths'
+    Target 'CasePathsMacrosSupport-product' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CasePathsMacrosSupport' in project 'swift-case-paths'
+    Target 'Sharing-product' in project 'swift-sharing'
+        ➜ Explicit dependency on target 'Sharing' in project 'swift-sharing'
+        ➜ Explicit dependency on target 'swift-sharing_Sharing' in project 'swift-sharing'
+        ➜ Explicit dependency on target 'Sharing1' in project 'swift-sharing'
+        ➜ Explicit dependency on target 'Sharing2' in project 'swift-sharing'
+        ➜ Explicit dependency on target 'ConcurrencyExtras-product' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'CustomDump-product' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'Dependencies-product' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'IdentifiedCollections-product' in project 'swift-identified-collections'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+        ➜ Explicit dependency on target 'PerceptionCore-product' in project 'swift-perception'
+    Target 'Sharing' in project 'swift-sharing'
+        ➜ Explicit dependency on target 'swift-sharing_Sharing' in project 'swift-sharing'
+        ➜ Explicit dependency on target 'Sharing1' in project 'swift-sharing'
+        ➜ Explicit dependency on target 'Sharing2' in project 'swift-sharing'
+        ➜ Explicit dependency on target 'ConcurrencyExtras-product' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'CustomDump-product' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'Dependencies-product' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'IdentifiedCollections-product' in project 'swift-identified-collections'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+        ➜ Explicit dependency on target 'PerceptionCore-product' in project 'swift-perception'
+    Target 'PerceptionCore-product' in project 'swift-perception'
+        ➜ Explicit dependency on target 'PerceptionCore' in project 'swift-perception'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'Sharing2' in project 'swift-sharing' (no dependencies)
+    Target 'Sharing1' in project 'swift-sharing' (no dependencies)
+    Target 'swift-sharing_Sharing' in project 'swift-sharing' (no dependencies)
+    Target 'Perception-product' in project 'swift-perception'
+        ➜ Explicit dependency on target 'Perception' in project 'swift-perception'
+        ➜ Explicit dependency on target 'PerceptionCore' in project 'swift-perception'
+        ➜ Explicit dependency on target 'PerceptionMacros' in project 'swift-perception'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'Perception' in project 'swift-perception'
+        ➜ Explicit dependency on target 'PerceptionCore' in project 'swift-perception'
+        ➜ Explicit dependency on target 'PerceptionMacros' in project 'swift-perception'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'PerceptionMacros' in project 'swift-perception' (no dependencies)
+    Target 'PerceptionCore' in project 'swift-perception'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'IdentifiedCollections-product' in project 'swift-identified-collections'
+        ➜ Explicit dependency on target 'IdentifiedCollections' in project 'swift-identified-collections'
+        ➜ Explicit dependency on target 'OrderedCollections-product' in project 'swift-collections'
+    Target 'IdentifiedCollections' in project 'swift-identified-collections'
+        ➜ Explicit dependency on target 'OrderedCollections-product' in project 'swift-collections'
+    Target 'OrderedCollections-product' in project 'swift-collections'
+        ➜ Explicit dependency on target 'OrderedCollections' in project 'swift-collections'
+        ➜ Explicit dependency on target 'InternalCollectionsUtilities' in project 'swift-collections'
+    Target 'OrderedCollections' in project 'swift-collections'
+        ➜ Explicit dependency on target 'InternalCollectionsUtilities' in project 'swift-collections'
+    Target 'InternalCollectionsUtilities' in project 'swift-collections' (no dependencies)
+    Target 'DependenciesMacros-product' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'DependenciesMacros' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'DependenciesMacrosPlugin' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'DependenciesMacros' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'DependenciesMacrosPlugin' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'DependenciesMacrosPlugin' in project 'swift-dependencies' (no dependencies)
+    Target 'Dependencies-product' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'Dependencies' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'Clocks-product' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'CombineSchedulers-product' in project 'combine-schedulers'
+        ➜ Explicit dependency on target 'ConcurrencyExtras-product' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'Dependencies' in project 'swift-dependencies'
+        ➜ Explicit dependency on target 'Clocks-product' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'CombineSchedulers-product' in project 'combine-schedulers'
+        ➜ Explicit dependency on target 'ConcurrencyExtras-product' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'CustomDump-product' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'CustomDump' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'CustomDump' in project 'swift-custom-dump'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'CombineSchedulers-product' in project 'combine-schedulers'
+        ➜ Explicit dependency on target 'CombineSchedulers' in project 'combine-schedulers'
+        ➜ Explicit dependency on target 'ConcurrencyExtras-product' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'CombineSchedulers' in project 'combine-schedulers'
+        ➜ Explicit dependency on target 'ConcurrencyExtras-product' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'Clocks-product' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'ConcurrencyExtras-product' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'ConcurrencyExtras-product' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'ConcurrencyExtras-product' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+    Target 'ConcurrencyExtras' in project 'swift-concurrency-extras' (no dependencies)
+    Target 'CasePaths-product' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CasePaths' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CasePathsCore' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CasePathsMacros' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'CasePaths' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CasePathsCore' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CasePathsMacros' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'CasePathsMacros' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'CasePathsMacrosSupport' in project 'swift-case-paths'
+    Target 'CasePathsMacrosSupport' in project 'swift-case-paths' (no dependencies)
+    Target 'CasePathsCore' in project 'swift-case-paths'
+        ➜ Explicit dependency on target 'IssueReporting-product' in project 'swift-issue-reporting'
+    Target 'IssueReporting-product' in project 'swift-issue-reporting'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'swift-issue-reporting'
+    Target 'IssueReporting' in project 'swift-issue-reporting' (no dependencies)
+    Target 'ComposableArchitectureMacros' in project 'swift-composable-architecture' (no dependencies)
+    Target 'swift-composable-architecture_ComposableArchitecture' in project 'swift-composable-architecture' (no dependencies)
+    Target 'CooeeAPI' in project 'Cooee'
+        ➜ Explicit dependency on target 'CooeeCore' in project 'Cooee'
+    Target 'CooeeCore' in project 'Cooee' (no dependencies)
+    Target 'Cooee_CooeeUI' in project 'Cooee' (no dependencies)
+
+** BUILD FAILED **
+
+
+The following build commands failed:
+	ComputeTargetDependencyGraph
+	Building project Cooee with scheme Cooee
+(2 failures)
+exit=65
