@@ -396,3 +396,61 @@ fn remix_preview_keep_and_publish_from_the_phone() {
     assert_eq!(s.act("new", "name=sea-farm").0, 409);
     assert_eq!(s.act("new", "name=..").0, 409);
 }
+
+#[test]
+fn the_gate_fails_active_content_in_a_packs_svg_and_served_svg_runs_no_script() {
+    let s = setup("th-active");
+    let cases = [
+        ("sprites.svg", "<script>alert(1)</script>", "<script>"),
+        ("scene.svg", "<g onload=\"alert(1)\"/>", "an on* attribute"),
+        ("sprites.svg", "<foreignObject/>", "<foreignObject>"),
+        (
+            "scene.svg",
+            "<use xlink:href=\"https://evil.example/x.svg#a\"/>",
+            "a non-local href",
+        ),
+        (
+            "sprites.svg",
+            "<a href=\"javascript:alert(1)\"/>",
+            "a non-local href",
+        ),
+    ];
+    for (i, (file, bad, why)) in cases.iter().enumerate() {
+        let dir = s.dir.join(format!("active{i}"));
+        farm_at(&dir, false);
+        let svg = fs::read_to_string(dir.join(file)).unwrap();
+        fs::write(
+            dir.join(file),
+            svg.replacen("</svg>", &format!("{bad}</svg>"), 1),
+        )
+        .unwrap();
+        let (ok, out) = s.run(&["theme", "check", &dir.display().to_string()]);
+        assert!(!ok, "{bad}: {out}");
+        assert!(out.contains(&format!("     {file}: {why}")), "{bad}: {out}");
+    }
+    // A local `#id` reference is fine.
+    let dir = s.dir.join("local");
+    farm_at(&dir, false);
+    let svg = fs::read_to_string(dir.join("sprites.svg")).unwrap();
+    fs::write(
+        dir.join("sprites.svg"),
+        svg.replacen("</svg>", "<use href=\"#s-edit\"/></svg>", 1),
+    )
+    .unwrap();
+    let (ok, out) = s.run(&["theme", "check", &dir.display().to_string()]);
+    assert!(ok, "{out}");
+
+    let (ok, out) = s.run(&["theme", "add", "farm"]);
+    assert!(ok, "{out}");
+    until("farm is served", || s.serves("farm"));
+    let (head, _) = s.cooee.raw("GET", "/look/farm/sprites.svg", &[], "");
+    assert!(
+        head.starts_with("HTTP/1.1 200") || head.starts_with("HTTP/1.0 200"),
+        "{head}"
+    );
+    assert!(
+        head.contains("\ncontent-security-policy: default-src 'none'; style-src 'unsafe-inline'\n"),
+        "{head}"
+    );
+    assert!(head.contains("\nx-content-type-options: nosniff"), "{head}");
+}

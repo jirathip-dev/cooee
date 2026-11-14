@@ -132,7 +132,7 @@ impl LookAssets {
     }
 }
 
-/// A file made at start, served with its content type.
+/// A look file made at start, served with its content type and a policy that runs no script in it.
 struct Owned(&'static str, Vec<u8>);
 
 impl IntoResponse for Owned {
@@ -140,6 +140,11 @@ impl IntoResponse for Owned {
         Ok(Response::builder()
             .header("Content-Type", self.0)
             .header("Cache-Control", "no-cache")
+            .header(
+                "Content-Security-Policy",
+                "default-src 'none'; style-src 'unsafe-inline'",
+            )
+            .header("X-Content-Type-Options", "nosniff")
             .body(Body::from(self.1))?)
     }
 }
