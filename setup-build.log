@@ -1,0 +1,48 @@
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.154
+   Compiling foldhash v0.2.0
+   Compiling serde_derive_internals v0.30.0
+   Compiling shed-proto v0.0.0 (https://github.com/jirathip-dev/shed?rev=4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb#4ac443db)
+   Compiling dyn-clone v1.0.20
+   Compiling schemars_derive v1.2.3
+   Compiling smallvec v1.16.4
+   Compiling oxc_index v5.0.0
+   Compiling postcard v1.1.3
+   Compiling serde_urlencoded v0.7.1
+   Compiling oxc_sourcemap v9.0.0
+   Compiling ropey v1.6.1
+   Compiling icu_segmenter v2.4.0
+   Compiling topcoat-view v0.11.0
+   Compiling schemars v1.2.3
+   Compiling topcoat-router v0.11.0
+   Compiling oxc_data_structures v0.157.0
+   Compiling oxc-browserslist v5.0.1
+   Compiling oxc_allocator v0.157.0
+   Compiling oxc_str v0.157.0
+   Compiling topcoat-view-grammar v0.11.0
+   Compiling oxc_span v0.157.0
+   Compiling textwrap v0.16.4
+   Compiling oxc_syntax v0.157.0
+   Compiling topcoat-view-macro v0.11.0
+   Compiling oxc_diagnostics v0.157.0
+   Compiling topcoat v0.11.0
+   Compiling oxc_regular_expression v0.157.0
+   Compiling oxc_compat v0.157.0
+   Compiling oxc_ast v0.157.0
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-365/crates/cooee-core)
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-365/crates/cooee-machines)
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-365/crates/cooee-terminal)
+   Compiling oxc_ecmascript v0.157.0
+   Compiling oxc_ast_visit v0.157.0
+   Compiling oxc_parser v0.157.0
+   Compiling oxc_semantic v0.157.0
+   Compiling oxc_traverse v0.157.0
+   Compiling oxc_codegen v0.157.0
+   Compiling oxc_transformer v0.157.0
+   Compiling oxc_transformer_plugins v0.157.0
+   Compiling oxc v0.157.0
+   Compiling cooee-web v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-365/web)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-365/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-365/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 29.97s
+  Executable tests/setup.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-365/debug/deps/setup-e76ece20ebfe6172)

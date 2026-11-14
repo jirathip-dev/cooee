@@ -1,0 +1,262 @@
+Refreshing run status every 60 seconds. Press Ctrl+C to quit.
+
+* issue-365 apple jirathip-dev/cooee#367 · 43532929072
+Triggered via pull_request about 10 minutes ago
+
+JOBS
+* e2e (ID 132254812080)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ cooee serve (fake agent)
+  ✓ the client against it (swift test)
+  * the app in the simulator
+  * the simulator's personas on the server (swift test)
+  * screenshots
+  * Run actions/upload-artifact@v4
+  * stop the server, delete the simulator
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ apple-quality in 8m17s (ID 132254812402)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ Run taiki-e/install-action@v2
+  ✓ just apple-check
+  ✓ Run actions/upload-artifact@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ build (generic/platform=iOS Simulator) in 1m49s (ID 132254812417)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ xcodebuild
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* build (generic/platform=macOS) (ID 132254812468)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  * xcodebuild
+  * Post Run actions/checkout@v4
+- mac-setup (ID 132254813791)
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+apple-quality: .github#2
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+build (generic/platform=iOS Simulator): .github#4
+
+Refreshing run status every 60 seconds. Press Ctrl+C to quit.
+
+* issue-365 apple jirathip-dev/cooee#367 · 43532929072
+Triggered via pull_request about 11 minutes ago
+
+JOBS
+* e2e (ID 132254812080)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ cooee serve (fake agent)
+  ✓ the client against it (swift test)
+  * the app in the simulator
+  * the simulator's personas on the server (swift test)
+  * screenshots
+  * Run actions/upload-artifact@v4
+  * stop the server, delete the simulator
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ apple-quality in 8m17s (ID 132254812402)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ Run taiki-e/install-action@v2
+  ✓ just apple-check
+  ✓ Run actions/upload-artifact@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ build (generic/platform=iOS Simulator) in 1m49s (ID 132254812417)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ xcodebuild
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* build (generic/platform=macOS) (ID 132254812468)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  * xcodebuild
+  * Post Run actions/checkout@v4
+- mac-setup (ID 132254813791)
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+apple-quality: .github#2
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+build (generic/platform=iOS Simulator): .github#4
+
+Refreshing run status every 60 seconds. Press Ctrl+C to quit.
+
+* issue-365 apple jirathip-dev/cooee#367 · 43532929072
+Triggered via pull_request about 12 minutes ago
+
+JOBS
+* e2e (ID 132254812080)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ cooee serve (fake agent)
+  ✓ the client against it (swift test)
+  ✓ the app in the simulator
+  * the simulator's personas on the server (swift test)
+  * screenshots
+  * Run actions/upload-artifact@v4
+  * stop the server, delete the simulator
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ apple-quality in 8m17s (ID 132254812402)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ Run taiki-e/install-action@v2
+  ✓ just apple-check
+  ✓ Run actions/upload-artifact@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ build (generic/platform=iOS Simulator) in 1m49s (ID 132254812417)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ xcodebuild
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ build (generic/platform=macOS) in 1m45s (ID 132254812468)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ xcodebuild
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+- mac-setup (ID 132254813791)
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+apple-quality: .github#2
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+build (generic/platform=iOS Simulator): .github#4
+
+Refreshing run status every 60 seconds. Press Ctrl+C to quit.
+
+* issue-365 apple jirathip-dev/cooee#367 · 43532929072
+Triggered via pull_request about 14 minutes ago
+
+JOBS
+* e2e (ID 132254812080)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ cooee serve (fake agent)
+  ✓ the client against it (swift test)
+  ✓ the app in the simulator
+  ✓ the simulator's personas on the server (swift test)
+  ✓ screenshots
+  ✓ Run actions/upload-artifact@v4
+  ✓ stop the server, delete the simulator
+  * Post Run Swatinem/rust-cache@v2
+  * Post Run actions/checkout@v4
+✓ apple-quality in 8m17s (ID 132254812402)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ Run taiki-e/install-action@v2
+  ✓ just apple-check
+  ✓ Run actions/upload-artifact@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ build (generic/platform=iOS Simulator) in 1m49s (ID 132254812417)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ xcodebuild
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ build (generic/platform=macOS) in 1m45s (ID 132254812468)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ xcodebuild
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+- mac-setup (ID 132254813791)
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+apple-quality: .github#2
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+build (generic/platform=iOS Simulator): .github#4
+
+✓ issue-365 apple jirathip-dev/cooee#367 · 43532929072
+Triggered via pull_request about 15 minutes ago
+
+JOBS
+✓ e2e in 14m36s (ID 132254812080)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ Run dtolnay/rust-toolchain@1.99.1
+  ✓ Run Swatinem/rust-cache@v2
+  ✓ cooee serve (fake agent)
+  ✓ the client against it (swift test)
+  ✓ the app in the simulator
+  ✓ the simulator's personas on the server (swift test)
+  ✓ screenshots
+  ✓ Run actions/upload-artifact@v4
+  ✓ stop the server, delete the simulator
+  ✓ Post Run Swatinem/rust-cache@v2
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ apple-quality in 8m17s (ID 132254812402)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ Run taiki-e/install-action@v2
+  ✓ just apple-check
+  ✓ Run actions/upload-artifact@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ build (generic/platform=iOS Simulator) in 1m49s (ID 132254812417)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ xcodebuild
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ build (generic/platform=macOS) in 1m45s (ID 132254812468)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run ./.github/actions/mac-runner
+  ✓ xcodebuild
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+- mac-setup (ID 132254813791)
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+apple-quality: .github#2
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+build (generic/platform=iOS Simulator): .github#4
+
