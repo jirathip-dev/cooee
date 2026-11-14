@@ -7,6 +7,8 @@
 # screens kept as the `simulator-shots` artifact. #142: `mac-setup`: the Mac app's first run on the runner starts cooee
 # and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac approves it;
 # the screens kept as the `mac-setup-shots` artifact.
+# #328: a pull request push runs only `build`; `apple-quality` and `e2e` run on a staging push and when herdsman labels
+# the PR `merge-ready` (fleet `merge_label`: on exactly while a review PASS stands at the head), and merge waits on them.
 name: apple
 on:
   push:
@@ -21,6 +23,7 @@ on:
       - ".github/workflows/apple.yml"
       - ".github/actions/mac-runner/**"
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - "scripts/mac-bins.sh"
       - "crates/cooee/src/main.rs"
@@ -31,11 +34,13 @@ on:
       - ".github/workflows/apple.yml"
       - ".github/actions/mac-runner/**"
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.label.name }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   build:
-    if: &ours github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.event_name != 'pull_request' || (github.event.action != 'labeled'
+      && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: &mac [self-hosted, macOS, ARM64, cooee-mac]
     strategy:
       fail-fast: false
@@ -51,7 +56,9 @@ jobs:
           -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO build
 
   apple-quality:
-    if: *ours
+    if: &full >-
+      github.event_name == 'push' || (github.event.action == 'labeled' && github.event.label.name == 'merge-ready'
+      && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: *mac
     timeout-minutes: 60
     steps:
@@ -72,7 +79,7 @@ jobs:
           path: ${{ runner.temp }}/rendered
 
   e2e:
-    if: *ours
+    if: *full
     runs-on: *mac
     timeout-minutes: 60
     steps:
