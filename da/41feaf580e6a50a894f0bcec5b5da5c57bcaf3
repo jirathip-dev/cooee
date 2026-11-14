@@ -1,14 +1,10 @@
-Decided: one Logs::rotate copies the log to <log>.1 and empties it in place, at start and every 10 minutes, for cooee.log, terminal.log and perf.log
+Decided: one Logs::rotate (copy then truncate in place) serves cooee.log, terminal.log and perf.log, run at start and every 10 minutes
 Because: "One rotation function serves all three."
-Rejected: renaming the live log — launchd holds cooee.log open from the plist, so writes would follow the renamed file
-Decided: farm installs from bytes in the build only when the entry matches the built-in index's farm (url, path, commit); any other index or --rev fetches
+Decided: farm at the index's commit installs from bytes compiled into the build; any other pack is a depth-1 sparse fetch of its folder into <data>/themes/<name>/
 Because: q1616
-Decided: an index pack is fetched into <data>/themes/<name>/ by git init, sparse-checkout --no-cone /<path>/, fetch --depth 1 --filter=blob:none, checkout FETCH_HEAD
-Because: "Each is a shallow clone (`--depth 1`) of only its own folder (sparse checkout)."
-Decided: an old <data>/themes/<name>.git is deleted only after its pin's new form is fetched (farm: the build); a pin no longer in the index keeps its old clone
+Decided: on start an old <data>/themes/<name>.git is deleted only after its new form is fetched; an unfetchable one stays and is retried next start
 Because: "only once the new form is in place"
-Decided: kitchen and garden moved to tests/swag/packs, a fixture in swag's layout; farm moved to packs/farm for the build
-Because: "A test installs kitchen from a local swag fixture"
-Rejected: making farm a built-in theme like plain — it would change the default for every server with no themes and could not be removed
-Check: crates/cooee/tests/themes.rs an_index_pack_is_a_shallow_clone_of_its_folder_alone fails on base (base made a full mirror kitchen.git)
-Owner: Logs no longer grow without limit, farm installs offline, and the other themes are small clones, which freed 122 MB on a copy of the mini's data.
+Rejected: renaming the logs instead of copy+truncate — launchd's stdout and the perf writer hold the file open and would keep writing to the rotated file
+Rejected: running the migration on the live mini data folder from the lane — it deletes owner data; measured on a copy of it instead
+Check: kitchen's clone is shallow with only packs/kitchen checked out (tests/themes.rs an_index_pack_is_a_shallow_clone_of_its_folder_alone)
+Owner: Logs stop growing past 16 MB each, and themes take under 1 MB instead of 123 MB; farm works offline on first run.
