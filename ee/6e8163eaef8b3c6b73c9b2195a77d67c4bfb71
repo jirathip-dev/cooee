@@ -1,0 +1,6 @@
+Decided: fix round 3 merges origin/staging; the apple.yml diff is unchanged
+Because: "The merge gate still requires `apple` green at the exact merged head."
+Rejected: re-running e2e at 13671ae — the failing LiveUITests.testPairsStreamsAndShowsHome is the old flaky test staging replaced in #392
+Check: rg testPairsStreamsAndShowsHome apple/UITests/ finds nothing at the head; git diff origin/staging...HEAD touches only apple.yml
+Check: the merge-ready labeled full apple run at this head is green before merge
+Owner: set merge_label = "merge-ready" for cooee and create that label in the repo before this merges
