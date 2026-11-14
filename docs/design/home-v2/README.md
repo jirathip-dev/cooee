@@ -9,7 +9,7 @@ refresh in any Style, because the list is live. A dropped link shows a reconnect
 down past the top stretches the strip into the full Herd. In Modern and Terminal, pulling down only reveals search.
 
 There are three pages, one per Style, built on the live design system as #229's `home-workflow` was. They link
-`web/src/app.css`, `web/schemes/farm*.json` (the same palette as `apple/Sources/CooeeUI/Theme.swift`), #116's
+`design-system/app.css`, `design-system/schemes/farm*.json` (the same palette as `apple/Sources/CooeeUI/Theme.swift`), #116's
 `ns.css` and #125's `sd.css`, plus the farm pack's `theme.json` (its words). The Scene horses are the app's own
 sprites (`apple/Sources/CooeeUI/Sprites/horse-<coat>-<pose>.png`). `h2.css` holds this design's additions. `herd.js`
 is herdsman's Herd ranch (`assets/herd.js` / `herd.css`, #37/#71), copied as q1323 asks. The only things changed in
@@ -38,7 +38,7 @@ window at 1440 × 900 at 1×. **Data:** #124's fixtures, with Writer and Designe
 
 | PNG | shows | decision |
 |---|---|---|
-| `term-top-390-dark.png`, `term-top-390-light.png` | `[g]` and `[+]` in place of the buttons. Search is a prompt line, `$ grep ▌`, with a blinking block cursor. The row is each persona's **ASCII figure** in a ruled box (`web/src/look.rs`'s two frames, `~o=`/`=o~` and so on, swapping on the state's beat), with its name, its farm word (`at the gate` in red) and a square unread count. The chats take the same figures. At the bottom is a **tmux-style status line**: `mini │ load 0.42 calm │ 2 working │ 1 waiting │ 09:41`, with waiting in red. | q1324; owner: `[g]` / `[+]`, no `~/cooee` |
+| `term-top-390-dark.png`, `term-top-390-light.png` | `[g]` and `[+]` in place of the buttons. Search is a prompt line, `$ grep ▌`, with a blinking block cursor. The row is each persona's **ASCII figure** in a ruled box (`crates/cooee-server/src/look.rs`'s two frames, `~o=`/`=o~` and so on, swapping on the state's beat), with its name, its farm word (`at the gate` in red) and a square unread count. The chats take the same figures. At the bottom is a **tmux-style status line**: `mini │ load 0.42 calm │ 2 working │ 1 waiting │ 09:41`, with waiting in red. | q1324; owner: `[g]` / `[+]`, no `~/cooee` |
 | `term-scrolled-390-dark.png`, `term-scrolled-390-light.png` | Scrolled. The top is the background itself with a dashed rule under `[g]` and `[+]`: no glass and no blur. The status line stays. | #251 item 2, Terminal |
 | `term-empty-390-dark.png` | No personas: the prompt, then Others. | #251 item 5 |
 | `term-1440.png` (dark) | Mac window in Terminal. The status line runs under the sidebar. | |
