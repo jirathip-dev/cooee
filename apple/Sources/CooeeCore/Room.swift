@@ -110,6 +110,7 @@ public enum RoomItems {
 public enum Clock {
     public static func time(_ milliseconds: Int64, in zone: TimeZone = .current) -> String {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "HH:mm"
         formatter.timeZone = zone
         return formatter.string(from: Date(timeIntervalSince1970: Double(milliseconds) / 1000))
