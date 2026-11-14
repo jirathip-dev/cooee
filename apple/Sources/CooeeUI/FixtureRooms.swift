@@ -58,10 +58,9 @@ extension Fixtures {
             id: "r2", persona: "chief", title: "Board deck", last: "Chief: Slides 4–9 are in deck/q3.key.", ago: "2d",
             unseen: 0, state: .done
         )
-        return [
-            ListedChat(row: room, persona: persona("chief"), members: kestrel.map(persona)),
-            ListedChat(row: deck, persona: persona("chief"), members: ["chief", "am"].map(persona)),
-        ] + chats.filter { ["t2", "t4"].contains($0.id) }
+        return [ListedChat(row: room, persona: persona("chief"), members: kestrel.map(persona))] + exchangeChats
+            + [ListedChat(row: deck, persona: persona("chief"), members: ["chief", "am"].map(persona))]
+            + chats.filter { ["t2", "t4"].contains($0.id) }
     }
 }
 

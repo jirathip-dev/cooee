@@ -15,7 +15,8 @@ public struct AppRoot: View {
     public var body: some View {
         Group {
             if let home = store.scope(state: \.home, action: \.home) {
-                content(home).task { await home.send(.task).finish() }
+                content(home).environment(\.cast, home.personas.map { Persona($0) })
+                    .task { await home.send(.task).finish() }
             } else if let setup = store.scope(state: \.setup, action: \.setup) {
                 MacSetup(store: setup)
             } else if let pairing = store.scope(state: \.pairing, action: \.pairing) {
@@ -81,7 +82,9 @@ public struct AppRoot: View {
 
     @ViewBuilder private func chat(back: Bool) -> some View {
         if let chat = store.scope(state: \.chat, action: \.chat) {
-            if chat.room != nil {
+            if chat.exchange != nil {
+                LinkedScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
+            } else if chat.room != nil {
                 RoomScreen(
                     store: chat, back: back, persona: { store.send(.start($0)) }, onBack: { store.send(.back) }
                 )
@@ -135,6 +138,8 @@ internal struct ChatScreen: View {
             headed: headed,
             actions: actions
         )
+        .environment(\.openThread) { store.send(.delegate(.open($0))) }
+        .environment(\.editPersona) { store.send(.delegate(.persona($0))) }
         .task { await store.send(.task).finish() }
         .task { await store.send(.plugins(.load)).finish() }
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }

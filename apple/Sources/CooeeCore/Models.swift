@@ -15,6 +15,7 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         case id, title, agent, persona, state, last, unseen, archived
         case updated = "at"
         case roster = "members"
+        case asker = "asked_by"
     }
 
     public let id: String
@@ -27,8 +28,10 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
     public let unseen: Int
     public let archived: Bool
     private let roster: [String]?
+    private let asker: String?
 
     public var members: [String] { roster ?? [] }
+    public var askedBy: String { asker ?? "" }
 
     public init(
         id: String,
@@ -40,7 +43,8 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         updated: Int64,
         unseen: Int,
         archived: Bool,
-        members: [String] = []
+        members: [String] = [],
+        askedBy: String = ""
     ) {
         self.id = id
         self.title = title
@@ -52,6 +56,7 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         self.unseen = unseen
         self.archived = archived
         roster = members.isEmpty ? nil : members
+        asker = askedBy.isEmpty ? nil : askedBy
     }
 }
 
@@ -112,7 +117,8 @@ public struct APIPersona: Codable, Sendable, Equatable, Identifiable {
 
 public struct APIItem: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
-        case id, kind, text, files, title, status, tool, plugin, block, speaker
+        case id, kind, text, files, title, status, tool, plugin, block, speaker, persona, name, thread, outcome, secs,
+            note
         case time = "at"
     }
 
@@ -127,6 +133,12 @@ public struct APIItem: Codable, Sendable, Equatable, Identifiable {
     public var plugin: String?
     public var block: JSONValue?
     public var speaker: String?
+    public var persona: String?
+    public var name: String?
+    public var thread: String?
+    public var outcome: String?
+    public var secs: Int?
+    public var note: String?
 
     public init(
         id: Int,
@@ -216,33 +228,4 @@ public enum StreamEvent: Sendable, Equatable {
     case roomTurn(String)
     case roomStop(String)
     case reset
-}
-
-public struct PairAsk: Codable, Sendable, Equatable {
-    public let word: String
-    public let claim: String
-
-    public init(word: String, claim: String) {
-        self.word = word
-        self.claim = claim
-    }
-}
-
-public enum PairClaim: Sendable, Equatable {
-    case paired(String)
-    case waiting
-    case declined(String)
-    case gone(String)
-}
-
-public struct NearbyServer: Sendable, Equatable, Identifiable {
-    public let name: String
-    public let address: String
-
-    public var id: String { name }
-
-    public init(name: String, address: String) {
-        self.name = name
-        self.address = address
-    }
 }

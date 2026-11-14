@@ -39,7 +39,7 @@ extension ChatFeature {
     }
 
     private func deliver(_ state: State, _ message: Outgoing) -> Effect<Action> {
-        let (threads, server, queue) = (threads, state.server, state.working)
+        let (threads, server, queue) = (threads, state.server, state.working && state.exchange == nil)
         let target = state.target
         return .run { send in
             switch target {

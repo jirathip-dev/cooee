@@ -121,13 +121,17 @@ public struct ListedChat: Identifiable, Sendable, Equatable {
     public let row: Row
     public let persona: Persona
     public let members: [Persona]
+    public let asker: Persona?
+    public let from: String
 
     public var id: String { row.id }
 
-    public init(row: Row, persona: Persona, members: [Persona] = []) {
+    public init(row: Row, persona: Persona, members: [Persona] = [], asker: Persona? = nil, from: String = "") {
         self.row = row
         self.persona = persona
         self.members = members
+        self.asker = asker
+        self.from = from
     }
 }
 

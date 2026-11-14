@@ -14,24 +14,36 @@ public enum Listing {
     }
 
     public static func chats(rows: [ThreadRow], personas: [APIPersona], now: Date) -> [ListedChat] {
-        rows.map { thread in
-            let state = LaneState(api: thread.state)
-            let api =
-                personas.first { $0.id == thread.persona }
-                ?? APIPersona(id: thread.agent, name: thread.agent, agent: thread.agent)
-            let persona = Persona(api, state: state)
-            let row = Row(
-                id: thread.id,
-                persona: persona.id,
-                title: thread.title,
-                last: thread.last,
-                ago: ago(thread.updated, now: now),
-                unseen: thread.unseen,
-                state: state
-            )
-            let members = thread.members.map { id in Persona(personas.first { $0.id == id } ?? named(id)) }
-            return ListedChat(row: row, persona: persona, members: members)
+        nested(rows.map { listed($0, rows: rows, personas: personas, now: now) })
+    }
+
+    /// Each linked exchange right under its asker's chat, and one it asked under it.
+    public static func nested(_ chats: [ListedChat]) -> [ListedChat] {
+        let ids = Set(chats.map(\.id))
+        func under(_ chat: ListedChat) -> [ListedChat] {
+            [chat] + chats.filter { $0.from == chat.id }.flatMap(under)
         }
+        return chats.filter { !ids.contains($0.from) }.flatMap(under)
+    }
+
+    private static func listed(_ thread: ThreadRow, rows: [ThreadRow], personas: [APIPersona], now: Date)
+        -> ListedChat
+    {
+        let state = LaneState(api: thread.state)
+        let api =
+            personas.first { $0.id == thread.persona }
+            ?? APIPersona(id: thread.agent, name: thread.agent, agent: thread.agent)
+        let persona = Persona(api, state: state)
+        let row = Row(
+            id: thread.id, persona: persona.id, title: thread.title, last: thread.last,
+            ago: ago(thread.updated, now: now), unseen: thread.unseen, state: state
+        )
+        let members = thread.members.map { id in Persona(personas.first { $0.id == id } ?? named(id)) }
+        let asker = rows.first { $0.id == thread.askedBy }.map { from in
+            Persona(personas.first { $0.id == from.persona } ?? named(from.persona))
+        }
+        return ListedChat(
+            row: row, persona: persona, members: members, asker: asker, from: asker == nil ? "" : thread.askedBy)
     }
 
     private static func named(_ id: String) -> APIPersona {
@@ -72,5 +84,34 @@ public struct PairTarget: Sendable, Equatable {
         guard let url = base.url else { return nil }
         self.url = url
         code = parts.queryItems?.first { $0.name == "code" }?.value
+    }
+}
+
+public struct PairAsk: Codable, Sendable, Equatable {
+    public let word: String
+    public let claim: String
+
+    public init(word: String, claim: String) {
+        self.word = word
+        self.claim = claim
+    }
+}
+
+public enum PairClaim: Sendable, Equatable {
+    case paired(String)
+    case waiting
+    case declined(String)
+    case gone(String)
+}
+
+public struct NearbyServer: Sendable, Equatable, Identifiable {
+    public let name: String
+    public let address: String
+
+    public var id: String { name }
+
+    public init(name: String, address: String) {
+        self.name = name
+        self.address = address
     }
 }

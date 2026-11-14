@@ -130,14 +130,19 @@ internal struct ChatList: View {
             Text(look.mono ? "# chats" : "Chats").ui(look.mono ? 12 : 20, look.mono ? .regular : .bold, look)
                 .foregroundStyle(look.mono ? palette.mute : palette.foreground).padding(.horizontal, 16)
                 .padding(.bottom, 6).padding(.top, look.style == .scene ? 12 : 0)
-            ForEach(chats) { chat in
+            ForEach(Array(chats.enumerated()), id: \.element.id) { index, chat in
                 Button {
                     open(chat.id)
                 } label: {
-                    ChatRow(row: chat.row, persona: chat.persona, members: chat.members, selected: chat.id == selected)
+                    if let asker = chat.asker {
+                        LinkedRow(chat: chat, asker: asker, selected: chat.id == selected)
+                    } else {
+                        ChatRow(
+                            row: chat.row, persona: chat.persona, members: chat.members, selected: chat.id == selected)
+                    }
                 }
                 .buttonStyle(.plain)
-                if chat.id != chats.last?.id {
+                if index + 1 < chats.count, chats[index + 1].asker == nil {
                     Rectangle().fill(palette.line).frame(height: look.mono ? 0 : 0.5).padding(.leading, 76)
                 }
             }
