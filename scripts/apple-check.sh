@@ -53,10 +53,10 @@ else
   mkdir -p apple/.build
   log="$root/apple/.build/apple-check-build.log"
   step "build (Swift 6, complete concurrency, warnings as errors)"
-  (cd apple && swift build --build-tests -v >"$log" 2>&1) || { tail -50 "$log"; exit 1; }
+  (cd apple && find Sources Tests -name '*.swift' -exec touch {} + && swift build --build-tests --enable-code-coverage -v >"$log" 2>&1) || { tail -50 "$log"; exit 1; }
 
   step "tests with coverage"
-  (cd apple && swift test --enable-code-coverage)
+  (cd apple && swift test --enable-code-coverage --skip-build)
   bin=$(cd apple && swift build --show-bin-path)
   set --
   for object in "$bin"/Cooee*Tests.xctest/Contents/MacOS/*; do
@@ -66,7 +66,8 @@ else
   swift scripts/apple-coverage.swift "$bin/coverage.json"
 
   step "unused imports (swiftlint analyze)"
-  (cd apple && "$tools/swiftlint-0.65.1/swiftlint" analyze --strict --quiet --compiler-log-path "$log")
+  sed 's/\\#/#/g' "$log" >"$log.analyze"
+  (cd apple && "$tools/swiftlint-0.65.1/swiftlint" analyze --strict --quiet --compiler-log-path "$log.analyze")
   echo "no unused imports"
 
   step "Periphery 3.8.0"
