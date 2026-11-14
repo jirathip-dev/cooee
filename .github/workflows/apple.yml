@@ -12,6 +12,7 @@
 # the screens kept as the `mac-setup-shots` artifact.
 # #328: a pull request push runs only `build`; `apple-quality` and `e2e` run on a staging push and when herdsman labels
 # the PR `merge-ready` (fleet `merge_label`: on exactly while a review PASS stands at the head), and merge waits on them.
+# #330: a manual run (workflow_dispatch) runs a staging push's jobs at any ref, to time a branch before it merges.
 name: apple
 on:
   push:
@@ -36,6 +37,7 @@ on:
       - "scripts/apple-coverage.swift"
       - ".github/workflows/apple.yml"
       - ".github/actions/mac-runner/**"
+  workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.label.name }}-${{ github.ref }}
   cancel-in-progress: true
@@ -60,7 +62,7 @@ jobs:
 
   apple-quality:
     if: &full >-
-      github.event_name == 'push' || (github.event.action == 'labeled' && github.event.label.name == 'merge-ready'
+      github.event_name != 'pull_request' || (github.event.action == 'labeled' && github.event.label.name == 'merge-ready'
       && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: *mac
     timeout-minutes: 60
@@ -172,7 +174,7 @@ jobs:
           [ -z "${SIM:-}" ] || xcrun simctl delete "$SIM"
 
   mac-setup:
-    if: github.event_name == 'push'
+    if: github.event_name != 'pull_request'
     runs-on: macos-26
     timeout-minutes: 90
     env:
