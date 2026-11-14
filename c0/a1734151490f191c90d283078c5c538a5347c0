@@ -1,0 +1,10 @@
+Decided: the scan skips comments, CDATA and processing instructions in one left-to-right pass, earliest opener first
+Because: crates/cooee-server/src/look.rs:338
+Decided: the scan runs inside file(), so sprites.svg and scene.svg are checked wherever the gate reads them
+Because: crates/cooee-server/src/look.rs:322
+Rejected: failing any CDATA outright — a skip matches XML and keeps valid packs valid
+Rejected: adding an XML parser dependency — a new dependency needs the owner
+Decided: the CSP and nosniff headers are dropped because staging's #189 removed web/src/lib.rs and the /look/<name>/*.svg route
+Check: commit ab2d05b6 fails cargo test -p cooee --test themes the_gate_fails_active; the head passes it
+Check: theme check still passes farm, kitchen, garden and packs/starter
+Owner: A theme pack can no longer carry scripts or outside links in its pictures, even hidden inside comments or CDATA.
