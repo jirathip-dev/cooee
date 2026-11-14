@@ -40,7 +40,9 @@ internal struct AgentChip: View {
         let palette = look.palette
         HStack(spacing: 4) {
             Text(persona.api.agent).fontWeight(.semibold)
-            Text("· \(persona.api.model)\(effort ? " · \(persona.api.effort)" : "")")
+            Text(
+                [persona.api.model, effort ? persona.api.effort : ""].filter { !$0.isEmpty }.map { "· \($0)" }
+                    .joined(separator: " "))
             Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
         }
         .ui(12, .regular, look).foregroundStyle(palette.mute).lineLimit(1).fixedSize()

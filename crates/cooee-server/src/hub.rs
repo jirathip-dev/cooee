@@ -695,11 +695,7 @@ impl Hub {
             let changes = match got {
                 Ok(t) if t.state == shed_proto::State::Running => {
                     since = Some(since.map_or(live.applied, |s| s.min(live.applied)));
-                    let r = t.reported.unwrap_or(shed_proto::Reported {
-                        state: String::new(),
-                        note: None,
-                        state_source: None,
-                    });
+                    let r = t.reported.unwrap_or_default();
                     live.chat.turn.state = r.state;
                     live.chat.turn.note = r.note;
                     Vec::new()
@@ -1033,12 +1029,29 @@ impl Hub {
         lock(&self.roots).iter().any(inside).then_some(folder)
     }
 
-    /// Settings › Folders: the folders inside `path` (default the home folder; hidden ones if `hidden`), and the roots.
+    /// `folder`, if it is a folder that is a root or inside one, spelled from that root as listed.
+    fn in_root(&self, folder: &Path) -> Option<PathBuf> {
+        let real = folder.canonicalize().ok().filter(|p| p.is_dir())?;
+        lock(&self.roots).iter().find_map(|root| {
+            let rest = real.strip_prefix(root.canonicalize().ok()?).ok()?;
+            Some(if rest.as_os_str().is_empty() {
+                root.clone()
+            } else {
+                root.join(rest)
+            })
+        })
+    }
+
+    /// Settings › Folders and the persona's folder browser: the folders inside `path` (default the home folder; hidden
+    /// ones if `hidden`), and the roots. A root or a folder inside one is spelled from the root as listed.
     ///
     /// # Errors
-    /// [`HubError::Refused`] for a path outside the home folder or not a folder.
+    /// [`HubError::Refused`] for a path outside both the home folder and the roots, or not a folder.
     pub fn browse(&self, path: Option<&Path>, hidden: bool) -> Result<Listing, HubError> {
-        let (path, home) = in_home(path)?;
+        let (path, home) = match path.and_then(|p| self.in_root(p)) {
+            Some(p) => (p, in_home(None)?.1),
+            None => in_home(path)?,
+        };
         let dirs = dirs(&path, hidden).into_iter().filter_map(|d| {
             let name = d.file_name()?.to_string_lossy();
             Some(name.into_owned())
@@ -2798,6 +2811,7 @@ mod tests {
             labels: BTreeMap::new(),
             kind,
             replay: false,
+            parent: None,
         }
     }
 
@@ -2843,10 +2857,9 @@ mod tests {
         let hub = hub(&dir);
         let working = Reported {
             state: "working".to_owned(),
-            note: None,
-            state_source: None,
+            ..Reported::default()
         };
-        hub.apply(event("idle", 1, EventKind::State(working)));
+        hub.apply(event("idle", 1, EventKind::State(Box::new(working))));
         let state = |hub: &Hub| hub.thread("idle").unwrap().1;
         let t0 = now();
         hub.watch(t0 + STUCK - 60_000);
@@ -3000,11 +3013,10 @@ mod tests {
         let unloaded = |hub: &Hub| lock(&lock(&hub.threads)["a"]).unloaded.is_some();
         let before = hub.slice("a", None, 10, 0).unwrap();
         assert!(!unloaded(&hub));
-        let done = Reported {
+        let done = Box::new(Reported {
             state: "done".to_owned(),
-            note: None,
-            state_source: None,
-        };
+            ..Reported::default()
+        });
         let t0 = now();
         hub.apply(event("a", 3, EventKind::State(done.clone())));
         hub.apply(event("a", 4, EventKind::State(done)));

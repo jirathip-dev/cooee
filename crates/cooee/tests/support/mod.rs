@@ -26,7 +26,7 @@ use std::{
 
 use cooee_core::shed_proto::{
     ApprovalOption, ErrorCode, Event, EventKind, Hello, Reported, Request, Response, RpcError,
-    State, TerminalInfo, VERSION,
+    State, TerminalInfo,
 };
 use serde_json::{Value, json};
 
@@ -74,7 +74,7 @@ struct Procs {
 #[derive(Clone)]
 pub struct FakeShed {
     pub dir: PathBuf,
-    version: String,
+    hello: Hello,
     shared: Arc<Mutex<Shared>>,
     procs: Arc<Procs>,
     /// Every request (method, params) in order.
@@ -124,8 +124,8 @@ esac
 "#;
 
 impl FakeShed {
-    /// Starts a fake shed of `version` in `dir`.
-    pub fn start(dir: &Path, version: &str) -> Self {
+    /// Starts a fake shed in `dir` that answers `hello` with its own.
+    pub fn start(dir: &Path, hello: Hello) -> Self {
         fs::create_dir_all(dir).unwrap();
         let cli = dir.join("shed");
         fs::write(&cli, CLI).unwrap();
@@ -142,7 +142,7 @@ impl FakeShed {
         let listener = UnixListener::bind(&socket).unwrap();
         let shed = Self {
             dir: dir.to_owned(),
-            version: version.to_owned(),
+            hello,
             shared: Arc::default(),
             procs: Arc::default(),
             requests: Arc::default(),
@@ -432,6 +432,7 @@ impl FakeShed {
             labels,
             kind,
             replay: false,
+            parent: None,
         };
         s.subs.retain(|tx| tx.send(event.clone()).is_ok());
         s.ring.push(event);
@@ -442,14 +443,14 @@ impl FakeShed {
         let r = Reported {
             state: state.to_owned(),
             note: note.map(str::to_owned),
-            state_source: None,
+            ..Reported::default()
         };
         self.shared
             .lock()
             .unwrap()
             .reported
             .insert(name.to_owned(), r.clone());
-        self.emit(name, EventKind::State(r));
+        self.emit(name, EventKind::State(Box::new(r)));
     }
 
     fn info(name: &str, running: bool, reported: Option<Reported>) -> Value {
@@ -471,6 +472,8 @@ impl FakeShed {
             resources: None,
             acp: Some("fake-acp".to_owned()),
             session: None,
+            records: Vec::new(),
+            parent: None,
         })
     }
 
@@ -618,15 +621,15 @@ impl FakeShed {
                 _ if self.no_link(&name) => Err(RpcError::new(ErrorCode::NoLink, &name)),
                 "machine.links" => Ok(self.links()),
                 "hello" => {
+                    // A protocol-0 shed checks only the product and version; a later one, the protocol too.
                     let theirs: Hello = serde_json::from_value(req.params.clone()).unwrap();
-                    let ours = Hello {
-                        product: "shed".to_owned(),
-                        version: self.version.clone(),
-                    };
-                    if theirs == ours {
+                    let ours = &self.hello;
+                    let protocol = ours.protocol == 0 || theirs.protocol == ours.protocol;
+                    if theirs.product == ours.product && theirs.version == ours.version && protocol
+                    {
                         Ok(json!(ours))
                     } else {
-                        Err(RpcError::version(&theirs.label(), &ours.label()))
+                        Err(RpcError::version(&theirs, ours))
                     }
                 }
                 "get" => self.terminal(&name),
@@ -1223,9 +1226,9 @@ pub fn is_item(e: &Sse, kind: &str) -> bool {
     e.event == "item" && e.data["kind"] == kind
 }
 
-/// The shed version this build speaks.
-pub fn version() -> &'static str {
-    VERSION
+/// The hello this build sends: its shed version, build and protocol.
+pub fn version() -> Hello {
+    Hello::ours()
 }
 
 /// #288: while a call for another thread hangs, thread `other` goes on: its send, the thread list and the home page
