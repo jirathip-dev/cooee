@@ -414,6 +414,16 @@ fn the_gate_fails_active_content_in_a_packs_svg_and_served_svg_runs_no_script() 
             "<a href=\"javascript:alert(1)\"/>",
             "a non-local href",
         ),
+        (
+            "sprites.svg",
+            "<![CDATA[ <!-- ]]><script>alert(1)</script><![CDATA[ --> ]]>",
+            "<script>",
+        ),
+        (
+            "scene.svg",
+            "<?x <!-- ?><script>alert(1)</script><?x --> ?>",
+            "<script>",
+        ),
     ];
     for (i, (file, bad, why)) in cases.iter().enumerate() {
         let dir = s.dir.join(format!("active{i}"));
