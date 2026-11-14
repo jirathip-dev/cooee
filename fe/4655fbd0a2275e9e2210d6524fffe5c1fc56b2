@@ -1,0 +1,7 @@
+Decided: merge origin/staging (37 commits, up to #389) and push, so CI reruns on a current base.
+Decided: no design change; the FAIL at 6a89569 was msrv (macos-latest) failing crates/cooee/tests/screens.rs with a connection reset (502).
+Rejected: editing crates/cooee/tests/screens.rs or its support code — a server test outside this design-only diff.
+Rejected: committing Xcode's generated Package.resolved — xcodebuild writes it locally and the diff stays design-only.
+Because: "Screenshots and README in `apple/design/native-surfaces/`; the iOS target builds"
+Check: swift test in apple/design/native-surfaces renders 23 frames with no PNG change; the iOS Simulator xcodebuild exits 0 at fe4655f.
+Owner: The branch now includes the latest staging; nothing in the design changed.
