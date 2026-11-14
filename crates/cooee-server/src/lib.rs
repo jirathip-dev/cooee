@@ -417,13 +417,16 @@ async fn new_agent(cx: &Cx, Form(a): Form<NewAgent>) -> Result<Response> {
     }
 }
 
-/// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account.
+/// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account; on
+/// `machine` (#150; none or empty: this host).
 #[derive(Deserialize, Default)]
 struct Start {
     #[serde(default)]
     account: Option<String>,
     #[serde(default)]
     new: bool,
+    #[serde(default)]
+    machine: Option<String>,
 }
 
 #[route(POST "/logins/{id}")]
@@ -431,7 +434,11 @@ async fn login_start(cx: &Cx, Json(s): Json<Option<Start>>) -> Result<Answer<()>
     let name = thread_id(cx);
     let s = s.unwrap_or_default();
     Ok(Answer(
-        on_logins(cx, move |l| l.start(&name, s.account.as_deref(), s.new)).await,
+        on_logins(cx, move |l| {
+            let machine = s.machine.filter(|m| !m.is_empty());
+            l.start(&name, (s.account.as_deref(), s.new), machine)
+        })
+        .await,
     ))
 }
 
@@ -969,19 +976,22 @@ async fn room_new(cx: &Cx, Json(r): Json<NewRoom>) -> Result<Answer<Created>> {
     Ok(Answer(id.await.map(|id| Created { id })))
 }
 
-/// `POST /threads/{id}/members`: a persona to add to the room, or to take out (its session closed).
+/// `POST /threads/{id}/members`: a persona to add to the room or move (`at`: its place in room order, from 0;
+/// none: the end), or to take out (its session closed).
 #[derive(Deserialize)]
 struct Seat {
     persona: String,
     #[serde(default)]
     remove: bool,
+    #[serde(default)]
+    at: Option<usize>,
 }
 
 #[route(POST "/threads/{id}/members")]
 async fn members(cx: &Cx, Json(m): Json<Seat>) -> Result<Answer<Vec<String>>> {
     let id = thread_id(cx);
     Ok(Answer(
-        blocking(cx, move |hub| hub.member(&id, &m.persona, m.remove)).await,
+        blocking(cx, move |hub| hub.member(&id, &m.persona, m.remove, m.at)).await,
     ))
 }
 
@@ -1103,6 +1113,26 @@ struct ModelList {
     seen: u64,
     models: Vec<[String; 2]>,
     short: BTreeMap<String, String>,
+}
+
+/// `GET /agents` (#230): each installed agent with the efforts its provider offers.
+#[derive(Serialize)]
+struct AgentRow {
+    id: String,
+    efforts: Vec<String>,
+}
+
+#[route(GET "/agents")]
+async fn agent_list(cx: &Cx) -> Result<Answer<Vec<AgentRow>>> {
+    let logins = logins(cx);
+    let rows = hub(cx).agents().map_err(refused).map(|agents| {
+        let rows = agents.into_iter().map(|a| AgentRow {
+            efforts: logins.efforts(&a.id),
+            id: a.id,
+        });
+        rows.collect()
+    });
+    Ok(Answer(rows))
 }
 
 #[route(GET "/models")]
@@ -2298,6 +2328,7 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
     b.route(persona_list)
         .route(machine_list)
         .route(model_list)
+        .route(agent_list)
         .route(persona_new)
         .route(persona_get)
         .route(persona_put)

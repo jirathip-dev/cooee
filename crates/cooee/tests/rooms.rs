@@ -170,6 +170,21 @@ fn members_join_and_leave_up_to_five_the_conductor_but_never_a_lane() {
     // Twice is once.
     let (_, members) = post(&cooee, &path, &json!({ "persona": "cy" }));
     assert_eq!(members, json!(["ada", "bo", "conductor", "cy"]));
+    // #157: a member moves in room order, twice is once; past the end is the end.
+    let moved = json!({ "persona": "cy", "at": 0 });
+    assert_eq!(
+        post(&cooee, &path, &moved).1,
+        json!(["cy", "ada", "bo", "conductor"])
+    );
+    assert_eq!(
+        post(&cooee, &path, &moved).1,
+        json!(["cy", "ada", "bo", "conductor"])
+    );
+    let back = json!({ "persona": "cy", "at": 9 });
+    assert_eq!(
+        post(&cooee, &path, &back).1,
+        json!(["ada", "bo", "conductor", "cy"])
+    );
     assert_eq!(post(&cooee, &path, &json!({ "persona": "di" })).0, 200);
     let (status, why) = post(&cooee, &path, &json!({ "persona": "ed" }));
     assert!(
@@ -307,6 +322,9 @@ fn with_no_mention_every_member_takes_a_turn_and_a_pass_is_hidden() {
         said(&items),
         pairs(&[("owner", "hi all"), ("ada", "Hello"), ("cy", "Hello")])
     );
+    // #157: the round's end is sent once its last turn is in, so a page can end its round.
+    let done = events.until(|e| e.event == "room-stop").pop().unwrap();
+    assert_eq!(done.data, json!({ "reason": "done" }));
     // Bo took its turn, and Cy was never given its pass.
     assert_eq!(prompts(&dir, &shed, "bo").len(), 1);
     let cy = prompts(&dir, &shed, "cy").remove(0);

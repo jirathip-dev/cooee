@@ -29,6 +29,10 @@ public struct ThreadsClient: Sendable {
         @Sendable (_ server: Server, _ thread: String, _ item: Int, _ option: String, _ value: String?) async throws
             -> Void
     public var start: @Sendable (_ server: Server, _ persona: APIPersona, _ text: String) async throws -> String
+    public var room: @Sendable (_ server: Server, _ title: String, _ members: [String]) async throws -> String
+    public var seat:
+        @Sendable (_ server: Server, _ room: String, _ persona: String, _ place: Int?, _ remove: Bool) async throws
+            -> [String]
 }
 
 @DependencyClient
@@ -37,6 +41,9 @@ public struct PersonasClient: Sendable {
     public var save: @Sendable (_ server: Server, _ persona: APIPersona) async throws -> APIPersona
     public var memory: @Sendable (_ server: Server, _ persona: String) async throws -> [PersonaNote]
     public var forget: @Sendable (_ server: Server, _ persona: String) async throws -> Void
+    public var agents: @Sendable (_ server: Server) async throws -> [AgentOption]
+    public var models: @Sendable (_ server: Server) async throws -> [ModelList]
+    public var folders: @Sendable (_ server: Server, _ path: String?) async throws -> FolderListing
 }
 
 @DependencyClient
