@@ -1,0 +1,15 @@
+
+Running 15 tests using 1 worker
+
+  ✘   1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (3.0m)
+
+
+  1) [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it ──────
+
+    Test timeout of 180000ms exceeded while setting up "page".
+
+    Error Context: test-results/pair.setup.mjs-an-unpaired-24fa3-o-pairing-the-code-pairs-it-pair/error-context.md
+
+  1 failed
+    [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it ───────
+  14 did not run

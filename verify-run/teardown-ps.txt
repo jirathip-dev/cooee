@@ -1,0 +1,7 @@
+ 8022 /Users/jkmacmini/.local/share/herdsman/work/.build/cooee-verify-234-r8/debug/deps/chat-17285c8920ad90ac --ignored --exact fake_shed_server --quiet
+ 8803 /Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-389/debug/deps/chat-17285c8920ad90ac --ignored --exact fake_shed_server --quiet
+62638 node docs/plugins/hello/server.mjs
+62639 node docs/plugins/hello/server.mjs
+62654 /Users/jkmacmini/.local/share/herdsman/work/.build/cooee-verify-388-r1/debug/deps/chat-17285c8920ad90ac --ignored --exact fake_shed_server --quiet
+63678 /Users/jkmacmini/.local/share/herdsman/work/.build/cooee-verify-388-r1/debug/cooee serve --config /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.DFfvkkm0jc/bare/bare.toml
+63778 /Users/jkmacmini/.local/share/herdsman/work/.build/cooee-verify-388-r1/debug/cooee serve --config /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.DFfvkkm0jc/config.toml

@@ -1,0 +1,16 @@
+
+Running 11 tests using 1 worker
+
+  ✓   1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (1.2s)
+  ✓   2 [390] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (414ms)
+  ✓   3 [390] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (337ms)
+  ✓   4 [390] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (386ms)
+  ✓   5 [390] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (357ms)
+  ✓   6 [390] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (348ms)
+  ✓   7 [390] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (367ms)
+  ✓   8 [390] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (388ms)
+  ✓   9 [390] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (329ms)
+  ✓  10 [390] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (377ms)
+  ✓  11 [390] › look.spec.mjs:260:1 › switching style or figures keeps the scroll position (514ms)
+
+  11 passed (17.2s)

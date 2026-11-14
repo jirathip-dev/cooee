@@ -1,0 +1,30 @@
+
+Running 1 test using 1 worker
+
+  pw:api => browserType.launch started +0ms
+  pw:browser <launching> /Users/jkmacmini/Library/Caches/ms-playwright/webkit-2359/pw_run.sh --inspector-pipe --headless --no-startup-window +0ms
+  pw:browser <launched> pid=30577 +3ms
+  pw:api <= browserType.launch succeeded +326ms
+  pw:api => browser.newContext started +1ms
+  pw:api <= browser.newContext succeeded +68ms
+  pw:api => browserContext.newPage started +2ms
+  pw:api => browserContext.close started +30s
+  pw:api <= browserContext.close succeeded +26ms
+  pw:api => browser.close started +18ms
+  pw:browser [pid=30577] <gracefully close start> +30s
+  pw:browser [pid=30577] <process did exit: exitCode=0, signal=null> +5s
+  pw:browser [pid=30577] starting temporary directories cleanup +1ms
+  pw:browser [pid=30577] finished temporary directories cleanup +1ms
+  pw:browser [pid=30577] <gracefully close end> +1ms
+  pw:api <= browser.close succeeded +5s
+  ✘  1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (30.0s)
+
+
+  1) [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it ──────
+
+    Test timeout of 30000ms exceeded while setting up "page".
+
+    Error Context: test-results/pair.setup.mjs-an-unpaired-24fa3-o-pairing-the-code-pairs-it-pair/error-context.md
+
+  1 failed
+    [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it ───────

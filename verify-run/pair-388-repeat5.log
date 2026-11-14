@@ -1,0 +1,29 @@
+
+Running 21 tests using 1 worker
+
+  ✓   1 [pair] › pair.setup.mjs:20:1 › an unpaired browser is sent to pairing; the code pairs it (764ms)
+  ✓   2 [390] › pair.spec.mjs:143:1 › a passkey saved from the offer approves a request that came after one seen without it (#388) (3.7s)
+  ✓   3 [390] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388) (6.4s)
+  ✓   4 [390] › pair.spec.mjs:143:1 › a passkey saved from the offer approves a request that came after one seen without it (#388) (3.6s)
+  ✓   5 [390] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388) (6.4s)
+[WebServer] cooee: slow: POST /pair/cancel 200 753 ms
+[WebServer] cooee: slow: POST /passkeys/remove 200 351 ms
+  ✓   6 [390] › pair.spec.mjs:143:1 › a passkey saved from the offer approves a request that came after one seen without it (#388) (5.4s)
+  ✓   7 [390] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388) (6.9s)
+  ✓   8 [390] › pair.spec.mjs:143:1 › a passkey saved from the offer approves a request that came after one seen without it (#388) (3.6s)
+  ✓   9 [390] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388) (6.4s)
+  ✓  10 [390] › pair.spec.mjs:143:1 › a passkey saved from the offer approves a request that came after one seen without it (#388) (3.6s)
+  ✓  11 [390] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388) (6.4s)
+  -  12 [1440] › pair.spec.mjs:143:1 › a passkey saved from the offer approves a request that came after one seen without it (#388)
+  -  13 [1440] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388)
+  -  14 [1440] › pair.spec.mjs:143:1 › a passkey saved from the offer approves a request that came after one seen without it (#388)
+  -  15 [1440] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388)
+  -  16 [1440] › pair.spec.mjs:143:1 › a passkey saved from the offer approves a request that came after one seen without it (#388)
+  -  17 [1440] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388)
+  -  18 [1440] › pair.spec.mjs:143:1 › a passkey saved from the offer approves a request that came after one seen without it (#388)
+  -  19 [1440] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388)
+  -  20 [1440] › pair.spec.mjs:143:1 › a passkey saved from the offer approves a request that came after one seen without it (#388)
+  -  21 [1440] › pair.spec.mjs:180:1 › a poll that read the passkeys before one was saved does not undo it (#388)
+
+  10 skipped
+  11 passed (1.1m)
