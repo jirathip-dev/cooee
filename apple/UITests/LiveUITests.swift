@@ -46,6 +46,7 @@
             }
             XCTAssert(queue.waitForExistence(timeout: 20))
             keep("conductor")
+            personaPanel(app)
             app.buttons["Events"].firstMatch.tap()
             XCTAssert(labelled(app, "merged").waitForExistence(timeout: 20))
             keep("events")
@@ -160,6 +161,17 @@
     }
 
     extension LiveUITests {
+        @MainActor
+        private func personaPanel(_ app: XCUIApplication) {
+            app.buttons["More"].firstMatch.tap()
+            XCTAssert(app.buttons["Edit Conductor"].waitForExistence(timeout: 10), "the … opened no Edit Conductor")
+            XCTAssert(app.buttons["New chat with Conductor"].exists, "the … opened no New chat with Conductor")
+            XCTAssertFalse(labelled(app, "Attach ").exists, "Conductor still has a plugin to attach")
+            keep("persona-panel")
+            app.buttons["Close"].firstMatch.tap()
+            XCTAssert(app.buttons["Edit Conductor"].waitForNonExistence(timeout: 10))
+        }
+
         @MainActor
         private func swipeBack(_ app: XCUIApplication, _ home: XCUIElement) {
             let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
