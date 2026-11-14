@@ -1,0 +1,9 @@
+# drover arch-check (#356, docs/architecture/hot-files/adr.md): a frozen list takes no new line, a generated file is
+# what `generate` writes, and a code file stays under 800 lines (the baseline's offenders may only shrink).
+frozen = ["crates/cooee-core/src/root.rs"]
+generated = ["Cargo.lock", "crates/cooee-core/src/lib.rs"]
+generate = "scripts/gen.sh"
+
+[[size]]
+paths = ["crates/*/src/**/*.rs"]
+max_file_lines = 800
