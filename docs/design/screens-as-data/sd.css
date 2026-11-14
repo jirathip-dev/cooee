@@ -1,4 +1,4 @@
-/* #125 screens as data, on web/src/app.css and #116's ns.css: only what the blocks add, as tokens. New class names:
+/* #125 screens as data, on design-system/app.css and #116's ns.css: only what the blocks add, as tokens. New class names:
    sbd a row's badge, sst a row's subtitle, tg a toggle, pkv a picker's value, sf a section footer, st/sti the stat
    tiles, spk a sparkline, sbp/sbo a primary / outline button, sim the images block (sic its caption), wv the web-view
    block, cd a card's head (cdt title, cdm meta), cat the block catalogue (blocks.html). */
