@@ -1,0 +1,9 @@
+Decided: cooee update runs the embedded scripts/install.sh with COOEE_REV=<sha>, so the install and codesign steps exist once
+Because: "It installs with the same steps as `install.sh`"
+Decided: the old binary is kept as ~/.cargo/bin/cooee.old and renamed back when the restarted service doesn't answer
+Because: "If that check fails, it puts back the previous binary and restarts it."
+Decided: the timer is a LaunchAgent with a fixed label built by the same plist() as the service, so a second setup skips it
+Because: crates/cooee/src/setup.rs:112
+Rejected: a systemd user timer — setup installs and restarts the service only through launchctl, so Linux has no cooee service to restart
+Check: Push::deliver is still public after #189 and the merge took no other push.rs change of this branch
+Owner: the update branch now sits on staging with #189; all gates pass again at the new head.
