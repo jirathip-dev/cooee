@@ -1,0 +1,28 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r5/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.13s
+drover 0.0.1 from /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/tmp.KSDApG7FSq/drover
+commit a15543956dfb9dd57c61f9627e66d7958b94db5e
+build: python3 -m py_compile screens.py
+run: TOKEN=$COOEE_PLUGIN_TOKEN exec python3 screens.py
+  (its backend runs as you on this Mac)
+tabs: 
+screens: 2 places; actions: filter, drive, pause, drive-all, top, stop, drop
+needs: python3
+not reviewed: this plugin isn't in cooee's index; read its code before you add it
+added drover: cooee serve runs it
+cooee: listening on http://127.0.0.1:41348
+cooee: slow: GET /threads 200 613 ms
+cooee: plugin drover: its profiles: EOF while parsing a value at line 1 column 0
+cooee: plugin drover: its profiles: EOF while parsing a value at line 1 column 0
+cooee: plugin drover: its profiles: EOF while parsing a value at line 1 column 0
+card Allow fetch sec.gov?: 200
+card EDGAR plugin settings: 200
+card EDGAR_API_KEY: 200
+card Install the edgar plugin's Python deps: 200
+cooee: plugin drover: its profiles: EOF while parsing a value at line 1 column 0
+cooee: plugin drover: its profiles: EOF while parsing a value at line 1 column 0
+cooee: plugin drover: its profiles: EOF while parsing a value at line 1 column 0
+card Allow fetch sec.gov?: 200
+card EDGAR plugin settings: 200
+card EDGAR_API_KEY: 200
+card Install the edgar plugin's Python deps: 200

@@ -1,0 +1,127 @@
+Application, 0x10a07be80, pid: 37680, label: 'cooee' <App element pid: 37680>
+  Window (Main), 0x10a07ae40, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4373102592.3>
+    Other, 0x10a07bc00, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4442894848.4>
+      Other, 0x10a07b480, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4442896128.5>
+        Other, 0x10a07a580, {{-402.0, -874.0}, {1206.0, 2622.0}} <AX element pid: 37680, elementOrHash.elementID: 4680700288.1234>
+        Other, 0x10a07abc0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4373136640.6>
+          Other, 0x10a07a800, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4445316800.7>
+            Other, 0x10a07a440, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4442768384.101>
+              Other, 0x10a07bd40, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4648186560.102>
+                Other, 0x10a07b5c0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4374233600.104>
+                  Other, 0x10a07b340, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4619670528.106>
+                    Other, 0x10a078780, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4650399168.1227>
+                      Other, 0x10a07b200, {{0.0, 62.0}, {402.0, 778.0}} <AX element pid: 37680, elementOrHash.elementID: 4648189248.108>
+                      Button, 0x10a078640, {{16.0, 68.0}, {44.0, 44.0}}, label: 'Account' <AX element pid: 37680, elementOrHash.elementID: 4702640864.1428>
+                      Button, 0x10a07af80, {{342.0, 68.0}, {44.0, 44.0}}, label: 'New chat' <AX element pid: 37680, elementOrHash.elementID: 4650393088.1229>
+                        Button, 0x10a07b0c0, {{342.0, 68.0}, {44.0, 44.0}} <AX element pid: 37680, elementOrHash.elementID: 4649454208.113>
+                          Image, 0x10a07a6c0, {{356.3, 82.3}, {15.3, 15.3}}, identifier: 'plus', label: 'Add' <AX element pid: 37680, elementOrHash.elementID: 4702635904.1429>
+                      StaticText, 0x10a07bac0, {{173.5, 78.5}, {55.0, 23.0}}, label: 'cooee' <AX element pid: 37680, elementOrHash.elementID: 4621598176.1230>
+                      ScrollView, 0x10a07aa80, {{0.0, 118.0}, {402.0, 756.0}} <AX element pid: 37680, elementOrHash.elementID: 4621572096.112>
+                        Other, 0x10a07a940, {{0.0, 118.0}, {402.0, 638.7}} <AX element pid: 37680, elementOrHash.elementID: 4619686272.114>
+                          ScrollView, 0x10728fac0, {{0.0, 188.0}, {402.0, 100.3}} <AX element pid: 37680, elementOrHash.elementID: 4677815296.1430>
+                            Other, 0x10728ef80, {{0.0, 188.0}, {192.0, 100.3}} <AX element pid: 37680, elementOrHash.elementID: 4619683072.1432>
+                              Button, 0x10728f5c0, {{16.7, 188.0}, {76.7, 100.3}}, label: 'Scout dark, grazing' <AX element pid: 37680, elementOrHash.elementID: 4702648384.1446>
+                                Image, 0x10728f340, {{16.7, 188.0}, {76.7, 58.0}} <AX element pid: 37680, elementOrHash.elementID: 4702639744.1449>
+                                StaticText, 0x10728d2c0, {{23.5, 254.0}, {63.0, 14.3}}, label: 'Scout dark' <AX element pid: 37680, elementOrHash.elementID: 4702646144.1450>
+                                StaticText, 0x10728d180, {{36.8, 276.3}, {36.3, 12.0}}, label: 'grazing' <AX element pid: 37680, elementOrHash.elementID: 4702636384.1451>
+                              Button, 0x10728f840, {{98.7, 188.0}, {76.7, 100.3}}, label: 'Scout light, grazing' <AX element pid: 37680, elementOrHash.elementID: 4702648704.1447>
+                                Image, 0x10728f980, {{98.7, 188.0}, {76.7, 58.0}} <AX element pid: 37680, elementOrHash.elementID: 4702650144.1452>
+                                StaticText, 0x10728fc00, {{105.7, 254.0}, {62.7, 14.3}}, label: 'Scout light' <AX element pid: 37680, elementOrHash.elementID: 4702648224.1453>
+                                StaticText, 0x10728f700, {{118.8, 276.3}, {36.3, 12.0}}, label: 'grazing' <AX element pid: 37680, elementOrHash.elementID: 4702648864.1454>
+                          StaticText, 0x10b37e800, {{16.0, 316.0}, {55.7, 24.0}}, label: 'Chats' <AX element pid: 37680, elementOrHash.elementID: 4621584096.120>
+                          Image, 0x10b37e1c0, {{0.0, 64.0}, {402.0, 300.0}} <AX element pid: 37680, elementOrHash.elementID: 4702644864.1431>
+                          Button, 0x10b37fe80, {{0.0, 346.0}, {402.0, 68.0}}, label: 'Coder, Show me the cards, 1m, Install the edgar plugin's Python deps, 5' <AX element pid: 37680, elementOrHash.elementID: 4702641984.1024>
+                            Image, 0x10b37ca00, {{16.0, 356.0}, {63.3, 48.0}} <AX element pid: 37680, elementOrHash.elementID: 4702647264.1433>
+                            StaticText, 0x10b37ee40, {{91.4, 358.8}, {46.3, 19.3}}, label: 'Coder' <AX element pid: 37680, elementOrHash.elementID: 4702636064.1026>
+                            StaticText, 0x10b37d900, {{143.7, 360.0}, {123.7, 17.0}}, label: 'Show me the cards' <AX element pid: 37680, elementOrHash.elementID: 4702645504.1027>
+                            StaticText, 0x10b37f340, {{368.7, 360.7}, {17.3, 15.7}}, label: '1m' <AX element pid: 37680, elementOrHash.elementID: 4702647584.1028>
+                            StaticText, 0x10b37e580, {{91.4, 382.7}, {243.7, 17.0}}, label: 'Install the edgar plugin's Python deps' <AX element pid: 37680, elementOrHash.elementID: 4702644064.1029>
+                            StaticText, 0x10b37df40, {{372.0, 384.0}, {8.0, 14.3}}, label: '5' <AX element pid: 37680, elementOrHash.elementID: 4702643584.1030>
+                          Button, 0x10b37e300, {{0.0, 414.7}, {402.0, 68.0}}, label: 'Coder, paragraphs, 1m, **Call voice:** the iOS target building., 1' <AX element pid: 37680, elementOrHash.elementID: 4679482848.739>
+                            Image, 0x10b37f5c0, {{16.0, 424.7}, {63.3, 48.0}} <AX element pid: 37680, elementOrHash.elementID: 4702641504.1434>
+                            StaticText, 0x10b37f980, {{91.4, 427.3}, {46.3, 19.3}}, label: 'Coder' <AX element pid: 37680, elementOrHash.elementID: 4679469888.741>
+                            StaticText, 0x10b37f480, {{143.7, 428.5}, {73.7, 17.0}}, label: 'paragraphs' <AX element pid: 37680, elementOrHash.elementID: 4679472928.742>
+                            StaticText, 0x10b37f840, {{368.7, 429.2}, {17.3, 15.7}}, label: '1m' <AX element pid: 37680, elementOrHash.elementID: 4679473088.743>
+                            StaticText, 0x10b37fc00, {{91.4, 451.2}, {245.0, 17.0}}, label: '**Call voice:** the iOS target building.' <AX element pid: 37680, elementOrHash.elementID: 4679475008.744>
+                            StaticText, 0x10b37da40, {{372.8, 452.5}, {6.3, 14.3}}, label: '1' <AX element pid: 37680, elementOrHash.elementID: 4679467008.745>
+                          Button, 0x10b37e6c0, {{0.0, 483.0}, {402.0, 68.0}}, label: 'Coder, slow 60, 2m, slow 60' <AX element pid: 37680, elementOrHash.elementID: 4679471168.336>
+                            Image, 0x10b37de00, {{16.0, 493.0}, {63.3, 48.0}} <AX element pid: 37680, elementOrHash.elementID: 4702635584.1435>
+                            StaticText, 0x10b37c780, {{91.4, 497.3}, {46.3, 19.3}}, label: 'Coder' <AX element pid: 37680, elementOrHash.elementID: 4679470208.338>
+                            StaticText, 0x10b37ef80, {{143.7, 498.5}, {50.3, 17.0}}, label: 'slow 60' <AX element pid: 37680, elementOrHash.elementID: 4679470528.339>
+                            StaticText, 0x10b37d680, {{366.7, 499.2}, {19.3, 15.7}}, label: '2m' <AX element pid: 37680, elementOrHash.elementID: 4679470688.340>
+                            Image, 0x10b37fac0, {{92.3, 526.7}, {12.7, 3.0}}, identifier: 'ellipsis', label: 'More' <AX element pid: 37680, elementOrHash.elementID: 4702646944.1436>
+                            StaticText, 0x10b37f200, {{112.0, 519.7}, {50.3, 17.0}}, label: 'slow 60' <AX element pid: 37680, elementOrHash.elementID: 4679471008.342>
+                          Button, 0x10b37d7c0, {{0.0, 551.7}, {402.0, 68.0}}, label: 'Coder, Show me the cards, 4m, Install the edgar plugin's Python deps, 5' <AX element pid: 37680, elementOrHash.elementID: 4621586176.122>
+                            Image, 0x10b37c8c0, {{16.0, 561.7}, {63.3, 48.0}} <AX element pid: 37680, elementOrHash.elementID: 4702644224.1437>
+                            StaticText, 0x10b37f700, {{91.4, 564.3}, {46.3, 19.3}}, label: 'Coder' <AX element pid: 37680, elementOrHash.elementID: 4621590976.129>
+                            StaticText, 0x10b37e080, {{143.7, 565.5}, {123.7, 17.0}}, label: 'Show me the cards' <AX element pid: 37680, elementOrHash.elementID: 4621584896.130>
+                            StaticText, 0x10b37ebc0, {{366.3, 566.2}, {19.7, 15.7}}, label: '4m' <AX element pid: 37680, elementOrHash.elementID: 4621594336.131>
+                            StaticText, 0x10b37ed00, {{91.4, 588.2}, {243.7, 17.0}}, label: 'Install the edgar plugin's Python deps' <AX element pid: 37680, elementOrHash.elementID: 4621585216.132>
+                            StaticText, 0x10b37f0c0, {{372.0, 589.5}, {8.0, 14.3}}, label: '5' <AX element pid: 37680, elementOrHash.elementID: 4621585376.133>
+                          Button, 0x10b37e940, {{0.0, 620.0}, {402.0, 68.0}}, label: 'Coder, paragraphs, 4m, **Call voice:** the iOS target building., 1' <AX element pid: 37680, elementOrHash.elementID: 4445321440.123>
+                            Image, 0x10b37ea80, {{16.0, 630.0}, {63.3, 48.0}} <AX element pid: 37680, elementOrHash.elementID: 4702645984.1438>
+                            StaticText, 0x10b37fd40, {{91.4, 632.8}, {46.3, 19.3}}, label: 'Coder' <AX element pid: 37680, elementOrHash.elementID: 4621585056.135>
+                            StaticText, 0x10b37e440, {{143.7, 634.0}, {73.7, 17.0}}, label: 'paragraphs' <AX element pid: 37680, elementOrHash.elementID: 4649024512.136>
+                            StaticText, 0x10b37db80, {{366.3, 634.7}, {19.7, 15.7}}, label: '4m' <AX element pid: 37680, elementOrHash.elementID: 4649024992.137>
+                            StaticText, 0x10a898000, {{91.4, 656.7}, {245.0, 17.0}}, label: '**Call voice:** the iOS target building.' <AX element pid: 37680, elementOrHash.elementID: 4445318400.138>
+                            StaticText, 0x10a898140, {{372.8, 658.0}, {6.3, 14.3}}, label: '1' <AX element pid: 37680, elementOrHash.elementID: 4445308480.139>
+                          Button, 0x10a898280, {{0.0, 688.7}, {402.0, 68.0}}, label: 'Coder, slow 60, 5m, slow 60' <AX element pid: 37680, elementOrHash.elementID: 4445322400.124>
+                            Image, 0x10a8983c0, {{16.0, 698.7}, {63.3, 48.0}} <AX element pid: 37680, elementOrHash.elementID: 4702641024.1439>
+                            StaticText, 0x10a898500, {{91.4, 702.8}, {46.3, 19.3}}, label: 'Coder' <AX element pid: 37680, elementOrHash.elementID: 4445311680.141>
+                            StaticText, 0x10a898640, {{143.7, 704.0}, {50.3, 17.0}}, label: 'slow 60' <AX element pid: 37680, elementOrHash.elementID: 4445322880.142>
+                            StaticText, 0x10a898780, {{366.7, 704.7}, {19.3, 15.7}}, label: '5m' <AX element pid: 37680, elementOrHash.elementID: 4445314400.143>
+                            Image, 0x10a8988c0, {{92.3, 732.3}, {12.7, 3.0}}, identifier: 'ellipsis', label: 'More' <AX element pid: 37680, elementOrHash.elementID: 4702647104.1440>
+                            StaticText, 0x10a898a00, {{112.0, 725.2}, {50.3, 17.0}}, label: 'slow 60' <AX element pid: 37680, elementOrHash.elementID: 4445322560.145>
+                        Other, 0x10a898b40, {{369.0, 118.0}, {30.0, 694.0}}, label: 'Vertical scroll bar, 1 page', value: 0% <AX element pid: 37680, elementOrHash.elementID: 4442145792.1442>
+                          Other, 0x10a898c80, {{396.0, 204.3}, {3.0, 604.7}} <AX element pid: 37680, elementOrHash.elementID: 4648365440.1443>
+                        Other, 0x10a898dc0, {{369.0, 118.0}, {30.0, 694.0}}, label: 'Vertical scroll bar, 1 page', value: 0% <AX element pid: 37680, elementOrHash.elementID: 4442145792.1442>
+                          Other, 0x10a898f00, {{396.0, 204.3}, {3.0, 604.7}} <AX element pid: 37680, elementOrHash.elementID: 4648365440.1443>
+              Toolbar, 0x10a899040, {{0.0, 0.0}, {402.0, 874.0}}, identifier: 'Toolbar', label: 'Toolbar' <AX element pid: 37680, elementOrHash.elementID: 4442769920.103>
+                Other, 0x10a899180, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4621756416.105>
+    Other, 0x10a8992c0, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4680708608.1231>
+      Other, 0x10a899400, {{-402.0, -874.0}, {1206.0, 2622.0}} <AX element pid: 37680, elementOrHash.elementID: 4680697088.1232>
+      Other, 0x10a899540, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4680704128.1233>
+        Button, 0x10a899680, {{151.0, 58.0}, {100.0, 24.0}}, label: 'Sheet Grabber', value: Expanded <AX element pid: 37680, elementOrHash.elementID: 4691518208.1235>
+        Other, 0x10a8997c0, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4442324992.1236>
+          Other, 0x10a899900, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4692452352.1238>
+            Other, 0x10a899a40, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4619230240.1240>
+              Other, 0x10a899b80, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4442330112.1242>
+                NavigationBar, 0x10a899cc0, {{0.0, 78.0}, {402.0, 54.0}}, identifier: 'Look' <AX element pid: 37680, elementOrHash.elementID: 4676927488.1276>
+                  Button, 0x10a899e00, {{16.0, 78.0}, {44.0, 44.0}}, identifier: 'BackButton', label: 'Back' <AX element pid: 37680, elementOrHash.elementID: 4674562752.1277>
+                  StaticText, 0x10a899f40, {{181.7, 87.7}, {38.7, 24.7}}, label: 'Look' <AX element pid: 37680, elementOrHash.elementID: 4442243584.1426>
+                Other, 0x10a89a080, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4648367232.1245>
+                  Other, 0x10a89a1c0, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4442462720.1249>
+                    Other, 0x10a89a300, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4692453376.1279>
+                      Other, 0x10a89a440, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4445322080.1427>
+                        ScrollView, 0x10a89a580, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4621575168.1281>
+                          Other, 0x10a89a6c0, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4373811584.1282>
+                            Other, 0x10a89a800, {{0.0, 62.0}, {402.0, 110.0}} <AX element pid: 37680, elementOrHash.elementID: 4677510784.1286>
+                          Other, 0x10a89a940, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4373821888.1283>
+                          Other, 0x10a89aa80, {{0.0, 132.0}, {402.0, 465.0}} <AX element pid: 37680, elementOrHash.elementID: 4619187968.1284>
+                            StaticText, 0x10a89abc0, {{32.0, 148.0}, {51.0, 14.3}}, label: 'SCHEME' <AX element pid: 37680, elementOrHash.elementID: 4691339104.1287>
+                            Button, 0x10a89ad00, {{16.0, 168.3}, {370.0, 48.0}}, label: 'System', Selected <AX element pid: 37680, elementOrHash.elementID: 4691336384.1288>
+                              StaticText, 0x10a89ae40, {{30.0, 182.7}, {54.0, 19.3}}, label: 'System' <AX element pid: 37680, elementOrHash.elementID: 4691344864.1298>
+                              Image, 0x10a89af80, {{355.7, 185.3}, {14.3, 14.3}}, identifier: 'checkmark', label: 'Selected', Selected <AX element pid: 37680, elementOrHash.elementID: 4691341184.1299>
+                            Button, 0x10a89b0c0, {{16.0, 216.3}, {370.0, 48.0}}, label: 'Light' <AX element pid: 37680, elementOrHash.elementID: 4691334784.1289>
+                            Button, 0x10a89b200, {{16.0, 264.3}, {370.0, 48.0}}, label: 'Dark' <AX element pid: 37680, elementOrHash.elementID: 4691342464.1290>
+                            StaticText, 0x10a89b340, {{32.0, 330.3}, {38.0, 14.3}}, label: 'STYLE' <AX element pid: 37680, elementOrHash.elementID: 4691342304.1291>
+                            Button, 0x10a89b480, {{16.0, 350.7}, {370.0, 48.0}}, label: 'Modern' <AX element pid: 37680, elementOrHash.elementID: 4691331744.1292>
+                            Button, 0x10a89b5c0, {{16.0, 398.7}, {370.0, 48.0}}, label: 'Terminal' <AX element pid: 37680, elementOrHash.elementID: 4691334144.1293>
+                            Button, 0x10a89b700, {{16.0, 446.7}, {370.0, 48.0}}, label: 'Scene', Selected <AX element pid: 37680, elementOrHash.elementID: 4702640384.1441>
+                              StaticText, 0x10a89b840, {{16.0, 446.7}, {370.0, 48.0}}, label: 'Scene' <AX element pid: 37680, elementOrHash.elementID: 4691329344.1300>
+                              Image, 0x10a89b980, {{355.7, 463.7}, {14.3, 14.3}}, identifier: 'checkmark', label: 'Selected', Selected <AX element pid: 37680, elementOrHash.elementID: 4702634944.1448>
+                            StaticText, 0x10a89bac0, {{32.0, 512.7}, {58.0, 14.3}}, label: 'APP ICON' <AX element pid: 37680, elementOrHash.elementID: 4691332384.1295>
+                            Button, 0x10a89bc00, {{16.0, 533.0}, {370.0, 48.0}}, label: 'App icon, Koala' <AX element pid: 37680, elementOrHash.elementID: 4691345024.1296>
+                              Image, 0x10a89bd40, {{30.0, 542.0}, {30.0, 30.0}}, label: 'BushKoalaPreview' <AX element pid: 37680, elementOrHash.elementID: 4691335744.1302>
+                              StaticText, 0x10a89be80, {{72.0, 547.3}, {64.3, 19.3}}, label: 'App icon' <AX element pid: 37680, elementOrHash.elementID: 4691331424.1303>
+                              StaticText, 0x10aac4000, {{313.3, 548.0}, {37.3, 18.0}}, label: 'Koala' <AX element pid: 37680, elementOrHash.elementID: 4691338944.1304>
+                              Image, 0x10aac4140, {{365.0, 551.7}, {6.3, 10.7}}, identifier: 'chevron.right', label: 'Forward' <AX element pid: 37680, elementOrHash.elementID: 4691338144.1305>
+                          Other, 0x10aac4280, {{369.0, 132.0}, {30.0, 680.0}}, label: 'Vertical scroll bar, 1 page', value: 0% <AX element pid: 37680, elementOrHash.elementID: 4442154496.1444>
+                            Other, 0x10aac43c0, {{396.0, 378.0}, {3.0, 431.0}} <AX element pid: 37680, elementOrHash.elementID: 4648360512.1445>
+                          Other, 0x10aac4500, {{369.0, 132.0}, {30.0, 680.0}}, label: 'Vertical scroll bar, 1 page', value: 0% <AX element pid: 37680, elementOrHash.elementID: 4442154496.1444>
+                            Other, 0x10aac4640, {{396.0, 378.0}, {3.0, 431.0}} <AX element pid: 37680, elementOrHash.elementID: 4648360512.1445>
+                Toolbar, 0x10aac4780, {{0.0, 62.0}, {402.0, 812.0}}, identifier: 'Toolbar', label: 'Toolbar' <AX element pid: 37680, elementOrHash.elementID: 4442716672.1246>
+                  Other, 0x10aac48c0, {{0.0, 62.0}, {402.0, 812.0}} <AX element pid: 37680, elementOrHash.elementID: 4691517568.1250>
+  Window, 0x10aac4a00, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4373143040.34>
+    Other, 0x10aac4b40, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4374248448.36>
+      Other, 0x10aac4c80, {{0.0, 0.0}, {402.0, 874.0}} <AX element pid: 37680, elementOrHash.elementID: 4442833408.38>
