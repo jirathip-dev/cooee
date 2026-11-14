@@ -1,0 +1,5 @@
+Decided: merge origin/staging; the snapshot test keeps staging's write/keep helpers and everyStyle split, plus this branch's per-folder lookup and the v2-settings frames in Frame.all
+Because: apple/Tests/CooeeUITests/Frames.swift:45
+Rejected: adding the settings frames to everyStyle — the design pages are only drawn in their own style; that is staging's check for live screens
+Check: SnapshotTests passes in compare mode with no PNG re-recorded, and line-cap on a clean export stays under its caps
+Owner: The design branch now sits on the latest app changes; the design screens are unchanged.
