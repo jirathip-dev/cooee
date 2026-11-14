@@ -306,8 +306,12 @@ impl Logins {
             policy: None,
             resume: None,
             mcp_servers: Vec::new(),
+            meta: None,
             no_hibernate: false,
             machine: machine.clone(),
+            parent: None,
+            rows: None,
+            cols: None,
         };
         let terminal = match self.shed.run(&run) {
             Ok(t) => t.name,

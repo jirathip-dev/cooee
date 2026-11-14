@@ -72,13 +72,6 @@ target=$(cargo metadata --format-version 1 --no-deps | sed -n 's/.*"target_direc
 "$target/debug/cooee" serve --config "$tmp/config.toml" &
 srv=$!
 until curl -s -o /dev/null "http://127.0.0.1:$PORT/pair"; do kill -0 "$srv" || exit 1; sleep 1; done
-plog="$tmp/data/plugins/drover/plugin.log"
-drover_answers() {
-  dport=$(sed -n 's/.* on port \([0-9]*\)$/\1/p' "$plog" 2>/dev/null | tail -1)
-  [ "$(curl -s -m 2 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${dport:-1}/")" != 000 ]
-}
-for _ in $(seq 60); do drover_answers && break; sleep 1; done
-drover_answers || { cat "$plog" >&2; exit 1; }
 code=$("$target/debug/cooee" pair --config "$tmp/config.toml" | sed -n 's/^code  \([0-9]*\) \([0-9]*\).*/\1\2/p')
 cookie=$(curl -s -D - -o /dev/null --data "code=$code" "http://127.0.0.1:$PORT/pair" | sed -n 's/^[Ss]et-[Cc]ookie: cooee=\([^;]*\).*/\1/p')
 env PORT=$((PORT + 1)) COOEE="http://127.0.0.1:$PORT" TOKEN=e2e-cards-plugin-token COOKIE="${cookie:?}" node apple/e2e/cards.mjs &

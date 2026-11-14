@@ -1,7 +1,18 @@
 #if os(iOS)
     import XCTest
 
-    extension LiveUITests {
+    internal final class LiveStyleUITests: LiveUITestCase {
+        @MainActor
+        internal func testEveryStyle() throws {
+            let app = try launchHome()
+            app.buttons["Account"].firstMatch.tap()
+            labelled(app, "Look").tap()
+            everyStyle(app, newChat(app))
+            pickStyle(app, "Modern")
+        }
+    }
+
+    extension LiveUITestCase {
         @MainActor
         internal func everyStyle(_ app: XCUIApplication, _ new: XCUIElement) {
             for style in ["Terminal", "Scene"] {
