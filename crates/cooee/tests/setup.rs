@@ -16,7 +16,7 @@ use std::{
 use support::{FakeShed, scratch, version};
 
 const BIN: &str = env!("CARGO_BIN_EXE_cooee");
-const REV: &str = "f026a4d35a2705e560a52515da8e3a5d32e4d659";
+const REV: &str = "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb";
 
 const FAKES: &[(&str, &str)] = &[
     (
@@ -251,7 +251,7 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
     assert!(out.status.success(), "{out:?}");
     assert_eq!(mac.changes(), Vec::<String>::new());
     for step in [
-        "shed f026a4d",
+        "shed 4ac443d",
         "shed service dev.shed.serve",
         &format!("config {}", mac.config().display()),
         "agents",

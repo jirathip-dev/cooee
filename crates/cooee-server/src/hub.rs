@@ -695,11 +695,7 @@ impl Hub {
             let changes = match got {
                 Ok(t) if t.state == shed_proto::State::Running => {
                     since = Some(since.map_or(live.applied, |s| s.min(live.applied)));
-                    let r = t.reported.unwrap_or(shed_proto::Reported {
-                        state: String::new(),
-                        note: None,
-                        state_source: None,
-                    });
+                    let r = t.reported.unwrap_or_default();
                     live.chat.turn.state = r.state;
                     live.chat.turn.note = r.note;
                     Vec::new()
@@ -2815,6 +2811,7 @@ mod tests {
             labels: BTreeMap::new(),
             kind,
             replay: false,
+            parent: None,
         }
     }
 
@@ -2860,10 +2857,9 @@ mod tests {
         let hub = hub(&dir);
         let working = Reported {
             state: "working".to_owned(),
-            note: None,
-            state_source: None,
+            ..Reported::default()
         };
-        hub.apply(event("idle", 1, EventKind::State(working)));
+        hub.apply(event("idle", 1, EventKind::State(Box::new(working))));
         let state = |hub: &Hub| hub.thread("idle").unwrap().1;
         let t0 = now();
         hub.watch(t0 + STUCK - 60_000);
@@ -3017,11 +3013,10 @@ mod tests {
         let unloaded = |hub: &Hub| lock(&lock(&hub.threads)["a"]).unloaded.is_some();
         let before = hub.slice("a", None, 10, 0).unwrap();
         assert!(!unloaded(&hub));
-        let done = Reported {
+        let done = Box::new(Reported {
             state: "done".to_owned(),
-            note: None,
-            state_source: None,
-        };
+            ..Reported::default()
+        });
         let t0 = now();
         hub.apply(event("a", 3, EventKind::State(done.clone())));
         hub.apply(event("a", 4, EventKind::State(done)));

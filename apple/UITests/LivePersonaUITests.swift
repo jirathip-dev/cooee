@@ -1,7 +1,12 @@
 #if os(iOS)
     import XCTest
 
-    extension LiveUITests {
+    internal final class LivePersonaUITests: LiveUITestCase {
+        @MainActor
+        internal func testPersonaRoundTrip() throws { personaRoundTrip(try launchHome()) }
+    }
+
+    extension LiveUITestCase {
         @MainActor
         internal func personaRoundTrip(_ app: XCUIApplication) {
             let name = "Scout \(ProcessInfo.processInfo.environment["COOEE_LOOK"] ?? "look")"
@@ -11,6 +16,7 @@
             pin(app)
             type(app, "Character", "Finds the facts first.")
             app.buttons["Save"].firstMatch.tap()
+            XCTAssert(app.buttons["Save"].waitForNonExistence(timeout: 10))
             XCTAssert(labelled(app, name).waitForExistence(timeout: 10))
             app.buttons["New chat"].firstMatch.tap()
             app.buttons["Edit a persona"].firstMatch.tap()
