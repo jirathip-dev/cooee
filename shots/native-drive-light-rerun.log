@@ -1,0 +1,101 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination id=0725AF05-3AEF-4F56-BAC8-C6E04C00D3CA -derivedDataPath /Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r6/.verify/dd CODE_SIGNING_ALLOWED=NO "-only-testing:CooeeAppUITests/LiveUITests/testPairsStreamsAndShowsHome" -resultBundlePath /Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r6/.verify/e2e-light-rerun.xcresult test-without-building
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  swift-clocks: https://github.com/pointfreeco/swift-clocks @ 1.1.1
+  swift-composable-architecture: https://github.com/pointfreeco/swift-composable-architecture @ 1.26.2
+  swift-concurrency-extras: https://github.com/pointfreeco/swift-concurrency-extras @ 1.4.3
+  swift-collections: https://github.com/apple/swift-collections @ 1.7.6
+  swift-identified-collections: https://github.com/pointfreeco/swift-identified-collections @ 1.1.1
+  swift-navigation: https://github.com/pointfreeco/swift-navigation @ 2.11.2
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.7.3
+  swift-issue-reporting: https://github.com/pointfreeco/swift-issue-reporting @ 2.1.2
+  swift-sharing: https://github.com/pointfreeco/swift-sharing @ 2.10.1
+  swift-dependencies: https://github.com/pointfreeco/swift-dependencies @ 1.17.2
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 604.0.0
+  Cooee: /Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r6/apple @ local
+  combine-schedulers: https://github.com/pointfreeco/combine-schedulers @ 1.2.2
+  swift-perception: https://github.com/pointfreeco/swift-perception @ 2.0.12
+  swift-case-paths: https://github.com/pointfreeco/swift-case-paths @ 1.10.0
+
+Writing result bundle at path:
+	/Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r6/.verify/e2e-light-rerun.xcresult
+
+2026-11-13 18:17:56.777414+0700 CooeeAppUITests-Runner[50820:123775789] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2569-11-13 18:17:59.582.
+Test Suite 'CooeeAppUITests.xctest' started at 2569-11-13 18:17:59.583.
+Test Suite 'LiveUITests' started at 2569-11-13 18:17:59.583.
+Test Case '-[CooeeAppUITests.LiveUITests testPairsStreamsAndShowsHome]' started.
+    t =     0.00s Start Test at 2569-11-13 18:17:59.585
+    t =     0.03s Set Up
+    t =     0.03s Open com.jirathip.cooee
+    t =     0.03s     Launch com.jirathip.cooee
+2026-11-13 18:17:59.861 xcodebuild[50323:123773407] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-13 18:17:59.861 xcodebuild[50323:123773407] [MT] IDELaunchParametersSnapshot: no debugger version
+objc[50820]: Class UIAccessibilityLoaderWebShared is implemented in both /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.Jnfk9X/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10a224310) and /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.Jnfk9X/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x10a258398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     0.69s         Setting up automation session
+    t =     2.69s         Wait for com.jirathip.cooee to idle
+    t =     3.97s Tap "Enter address" Button
+    t =     3.97s     Wait for com.jirathip.cooee to idle
+    t =     3.97s     Find the "Enter address" Button
+    t =     3.99s     Check for interrupting elements affecting "Enter address" Button
+    t =     4.02s     Synthesize event
+    t =     4.33s     Wait for com.jirathip.cooee to idle
+    t =     4.33s Waiting 10.0s for Any (First Match) to exist
+    t =     5.42s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =     5.42s         Checking existence of `Any (First Match)`
+    t =     5.44s Tap Any (First Match)
+    t =     5.44s     Wait for com.jirathip.cooee to idle
+    t =     5.44s     Find the Any (First Match)
+    t =     5.46s     Check for interrupting elements affecting "server.example.com" TextField
+    t =     5.47s     Synthesize event
+    t =     5.77s     Wait for com.jirathip.cooee to idle
+    t =     5.94s Type 'http://127.0.0.1:4...' into "server.example.com" TextField
+    t =     5.94s     Wait for com.jirathip.cooee to idle
+    t =     6.31s     Find the "server.example.com" TextField
+    t =     6.34s     Check for interrupting elements affecting "server.example.com" TextField
+    t =     6.36s     Synthesize event
+    t =     7.22s     Wait for com.jirathip.cooee to idle
+    t =     7.23s Tap "Connect" Button
+    t =     7.23s     Wait for com.jirathip.cooee to idle
+    t =     7.23s     Find the "Connect" Button
+    t =     8.27s         Find the "Connect" Button (retry 1)
+    t =     9.33s         Find the "Connect" Button (retry 2)
+    t =     9.37s Requesting snapshot of accessibility hierarchy for app with pid 51911
+/Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r6/apple/UITests/LiveUITests.swift:117: error: -[CooeeAppUITests.LiveUITests testPairsStreamsAndShowsHome] : Failed to tap "Connect" Button: No matches found for first query match sequence: `Descendants matching type Button` -> `Elements matching predicate '"Connect" IN identifiers'`, given input App element pid: 51911
+Possibly caused by runtime issues:
+Automation type mismatch: computed Button from legacy attributes vs Key from modern attribute. Input attributes and values: {
+    "XC_kAXXCAttributeAutomationType" = 20;
+    "XC_kAXXCAttributeElementBaseType" = UIAccessibilityElement;
+    "XC_kAXXCAttributeElementType" = UIAccessibilityElementKBKey;
+    "XC_kAXXCAttributeTraits" = 8589934641;
+}
+See test report attachments for more detail.
+    t =     9.43s Tear Down
+Test Case '-[CooeeAppUITests.LiveUITests testPairsStreamsAndShowsHome]' failed (9.656 seconds).
+Test Suite 'LiveUITests' failed at 2569-11-13 18:18:09.241.
+	 Executed 1 test, with 1 failure (0 unexpected) in 9.656 (9.658) seconds
+Test Suite 'CooeeAppUITests.xctest' failed at 2569-11-13 18:18:09.241.
+	 Executed 1 test, with 1 failure (0 unexpected) in 9.656 (9.659) seconds
+Test Suite 'Selected tests' failed at 2569-11-13 18:18:09.242.
+	 Executed 1 test, with 1 failure (0 unexpected) in 9.656 (9.659) seconds
+2026-11-13 18:18:20.148 xcodebuild[50323:123773407] [MT] IDETestOperationsObserverDebug: 24.476 elapsed -- Testing started completed.
+2026-11-13 18:18:20.148 xcodebuild[50323:123773407] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-13 18:18:20.148 xcodebuild[50323:123773407] [MT] IDETestOperationsObserverDebug: 24.476 sec, +24.476 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/jkmacmini/.local/share/drover/work/cooee/verify-234-r6/.verify/e2e-light-rerun.xcresult
+
+Failing tests:
+	LiveUITests.testPairsStreamsAndShowsHome()
+
+** TEST EXECUTE FAILED **
+
+Testing started
