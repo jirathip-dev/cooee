@@ -1,0 +1,5 @@
+Decided: round 8 pins Clock.time's DateFormatter to en_US_POSIX; apple-check failed only in RoomTests on the air-cooee runner ("9:40 AM" vs "09:40")
+Because: "Steps must not assume a fresh machine"
+Rejected: changing the Air's 12-hour clock setting — a user preference rewrites "HH:mm" without a fixed locale, so any 12-hour Mac shows the bug in the app too
+Check: theClockReadsHoursAndMinutesAndTheRoundsMinutesAndSeconds passes on the self-hosted runner at the head; apple green
+Owner: the room's message times now read 24-hour even on a Mac set to a 12-hour clock, matching the design
