@@ -1,0 +1,5 @@
+Decided: merge origin/staging; LiveIconUITests keeps staging's openIconPicker (scroll, then assert Koala) and adds our tap-retry loop inside it
+Because: apple/UITests/LiveIconUITests.swift:49
+Rejected: taking only one side — staging's scroll and our retry fix different lost taps seen on the runners
+Check: actionlint exit 0, just ci-scripts exit 0, apple e2e green on mini-cooee or air-cooee at the pushed head
+Owner: Brought the branch up to date with staging; one test helper merged from both versions, nothing else changed.
