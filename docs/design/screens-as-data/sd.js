@@ -11,7 +11,7 @@
 //   [data-scroll=<px>]                       the sheet scrolled down by that much
 // #184 adds `?style=modern|terminal|scene` (#124's three styles, q947): Scene draws a row's figure with `coat` as its
 // horse acting the state (apple/Sources/CooeeUI/Sprites).
-const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
+const W = '../../../design-system/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark', F = q.get('f'), STYLE = q.get('style') || 'modern';
 const theme = await fetch(`${P}${T}/theme.json`).then(r => r.json());
