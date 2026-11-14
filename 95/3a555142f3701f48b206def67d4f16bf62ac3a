@@ -1,0 +1,9 @@
+Decided: setup checks the running serve's hello, restarts the managed dev.shed.serve after a warning, and stops before cooee's own service on a mismatch it can't fix
+Because: "hold the cooee update back and keep running the old build"
+Decided: the mismatch state lives in the hub, fed by both the event follower and sends, so alerts go once per state
+Because: "Raise one alert per state (mismatch starts, mismatch clears), not one per call"
+Rejected: tracking state in the Shed client — core has no push, and the follower alone missed short mismatches a send saw
+Decided: SHED_CARGO and SHED_LABEL moved to cooee-core so the SHED_VERSION error can name the fix command
+Because: crates/cooee-core/src/shed.rs:37
+Check: the three #397 tests fail at f7284c20 and pass at head; a matching protocol still skips install and restart on setup's second run
+Owner: A shed on the wrong version is now restarted after a warning, or cooee stays on its old build and names the fix.
