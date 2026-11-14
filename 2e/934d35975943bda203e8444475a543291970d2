@@ -1,0 +1,9 @@
+Decided: merge origin/staging; the chat.rs conflict keeps this PR's shed-protocol send test and staging's apple/e2e comment on the fake shed server
+Because: crates/cooee/tests/chat.rs:322
+Decided: setup restarts the managed dev.shed.serve after a warning and stops before cooee's own service on a mismatch it can't fix
+Because: "hold the cooee update back and keep running the old build"
+Decided: the mismatch state lives in the hub, fed by the event follower and sends, so alerts go once per state
+Because: "Raise one alert per state (mismatch starts, mismatch clears), not one per call"
+Rejected: tracking state in the Shed client — core has no push, and the follower alone missed short mismatches a send saw
+Check: the three #397 tests pass at head; reliability's background-start test failed once under full-suite load, then passed 5/5 alone and in a full re-run
+Owner: The branch now sits on the latest staging; no change to the fix itself.
