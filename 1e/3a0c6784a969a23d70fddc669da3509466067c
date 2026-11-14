@@ -1,0 +1,11 @@
+Decided: merged origin/staging; justfile keeps #323's lessons recipe and this PR's themes recipe (packs/farm and the starter)
+Because: "`packs/themes/` is removed from cooee's repo."
+Decided: one Logs::rotate (copy then truncate in place) serves cooee.log, terminal.log and perf.log, run at start and every 10 minutes
+Because: "One rotation function serves all three."
+Decided: farm at the index's commit installs from the build; any other pack is a depth-1 sparse fetch of its folder
+Because: q1616
+Decided: an old <data>/themes/<name>.git is deleted only after its new form is fetched
+Because: "only once the new form is in place"
+Rejected: running the migration on the live mini data folder from the lane — it deletes owner data; measured on a copy instead
+Check: justfile's check line lists lessons and themes, and `just themes` checks packs/farm packs/starter
+Owner: Logs stop growing past 16 MB each, and themes take under 1 MB instead of 123 MB; farm works offline on first run.
