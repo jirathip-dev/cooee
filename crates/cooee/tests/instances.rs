@@ -46,12 +46,21 @@ fn two_instances_never_see_each_others_threads_or_devices() {
     assert!(head.contains(" 401 "), "{head}");
 }
 
-/// `cooee <args>` with `HOME` at `home`, no XDG folders and only the system `PATH` (no shed, no Tailscale).
+/// `cooee <args>` with `HOME` at `home`, no XDG folders and only the system `PATH` (no shed, no Tailscale), but a
+/// `launchctl` with nothing loaded, so the Mac app's login items on this Mac don't make `install` refuse.
 fn cooee(home: &Path, args: &[&str]) -> std::process::Output {
+    let bin = home.join("bin");
+    fs::create_dir_all(&bin).unwrap();
+    fs::write(bin.join("launchctl"), "#!/bin/sh\nexit 1\n").unwrap();
+    fs::set_permissions(
+        bin.join("launchctl"),
+        std::os::unix::fs::PermissionsExt::from_mode(0o755),
+    )
+    .unwrap();
     Command::new(BIN)
         .args(args)
         .env("HOME", home)
-        .env("PATH", "/usr/bin:/bin")
+        .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
         .env_remove("XDG_CONFIG_HOME")
         .env_remove("XDG_DATA_HOME")
         .output()
