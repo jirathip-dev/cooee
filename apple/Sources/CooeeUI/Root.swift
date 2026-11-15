@@ -56,6 +56,7 @@ public struct AppRoot: View {
         let actions = HomeActions(
             menu: { store.send(.menu(.open(true))) },
             new: { store.send(.start($0)) },
+            pin: { store.send(.pin($0)) },
             open: { store.send(.open($0)) },
             room: { store.send(.room) },
             edit: { store.send(.edit($0)) }
@@ -98,6 +99,7 @@ public struct AppRoot: View {
 internal struct ChatScreen: View {
     @Bindable internal var store: StoreOf<ChatFeature>
     internal let back: Bool
+    internal var headed = true
     internal let onBack: () -> Void
 
     private var actions: ChatActions {
@@ -131,6 +133,7 @@ internal struct ChatScreen: View {
             since: store.since,
             queued: store.queue.map(\.text),
             back: back,
+            headed: headed,
             actions: actions
         )
         .task { await store.send(.task).finish() }

@@ -217,3 +217,57 @@ fn a_pack_with_a_symlink_is_never_installed() {
     assert!(!ok && out.contains("icon.png: a symlink"), "{out}");
     assert!(!s.dir.join("themes/evil").exists());
 }
+
+#[test]
+fn the_gate_fails_active_content_in_a_packs_svg() {
+    let s = setup("th-active");
+    let cases = [
+        ("sprites.svg", "<script>alert(1)</script>", "<script>"),
+        ("scene.svg", "<g onload=\"alert(1)\"/>", "an on* attribute"),
+        ("sprites.svg", "<foreignObject/>", "<foreignObject>"),
+        (
+            "scene.svg",
+            "<use xlink:href=\"https://evil.example/x.svg#a\"/>",
+            "a non-local href",
+        ),
+        (
+            "sprites.svg",
+            "<a href=\"javascript:alert(1)\"/>",
+            "a non-local href",
+        ),
+        (
+            "sprites.svg",
+            "<![CDATA[ <!-- ]]><script>alert(1)</script><![CDATA[ --> ]]>",
+            "<script>",
+        ),
+        (
+            "scene.svg",
+            "<?x <!-- ?><script>alert(1)</script><?x --> ?>",
+            "<script>",
+        ),
+    ];
+    for (i, (file, bad, why)) in cases.iter().enumerate() {
+        let dir = s.dir.join(format!("active{i}"));
+        farm_at(&dir, false);
+        let svg = fs::read_to_string(dir.join(file)).unwrap();
+        fs::write(
+            dir.join(file),
+            svg.replacen("</svg>", &format!("{bad}</svg>"), 1),
+        )
+        .unwrap();
+        let (ok, out) = s.run(&["theme", "check", &dir.display().to_string()]);
+        assert!(!ok, "{bad}: {out}");
+        assert!(out.contains(&format!("     {file}: {why}")), "{bad}: {out}");
+    }
+    // A local `#id` reference is fine.
+    let dir = s.dir.join("local");
+    farm_at(&dir, false);
+    let svg = fs::read_to_string(dir.join("sprites.svg")).unwrap();
+    fs::write(
+        dir.join("sprites.svg"),
+        svg.replacen("</svg>", "<use href=\"#s-edit\"/></svg>", 1),
+    )
+    .unwrap();
+    let (ok, out) = s.run(&["theme", "check", &dir.display().to_string()]);
+    assert!(ok, "{out}");
+}

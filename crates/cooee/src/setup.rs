@@ -10,11 +10,9 @@ use std::{
     time::Duration,
 };
 
-use cooee_core::{Config, Shed, provider};
+use cooee_core::{Config, SHED_CARGO, SHED_LABEL, Shed, ShedError, provider};
 
-use super::{SHED_CARGO, doctor, job, load, pair, plist, tailnet_name, write_plist};
-
-const SHED_LABEL: &str = "dev.shed.serve";
+use super::{doctor, job, load, pair, plist, tailnet_name, write_plist};
 
 /// `cooee setup`'s flags.
 pub struct Setup {
@@ -133,15 +131,39 @@ impl Setup {
         Ok(!done)
     }
 
-    /// shed's launchd job (`shed install`), started or restarted onto a new binary, answering `shed ls`.
+    /// shed's launchd job (`shed install`), started or restarted onto a new binary or off another protocol (after a
+    /// warning), answering `shed ls` and this build's hello. A serve on another protocol that isn't the job, or one
+    /// that still is after the restart, stops setup before cooee's own service moves onto this build.
     fn shed_service(&self, gui: &str, updated: bool) -> Result<(), String> {
         let loaded = ok(&["launchctl", "list", SHED_LABEL]);
         let answers = || ok(&["shed", "ls"]);
+        let serve = Shed::new("shed".into(), None);
+        let mismatch = || {
+            serve
+                .hello()
+                .err()
+                .filter(|e| matches!(e, ShedError::Version { .. }))
+        };
+        let held = |e: ShedError| format!("{e}\ncooee's service was left on its running build");
+        let other = mismatch();
         if step(
             &format!("shed service {SHED_LABEL}"),
-            !updated && loaded && answers(),
+            !updated && loaded && other.is_none() && answers(),
         ) {
             return Ok(());
+        }
+        match other {
+            Some(e) if !loaded => return Err(held(e)),
+            _ if loaded => {
+                println!("  warn: restarting shed serve ends every running shed session");
+                if self
+                    .ask("restart it now? [Y/n]", "y")
+                    .starts_with(['n', 'N'])
+                {
+                    return Err("shed serve was not restarted, so cooee wasn't either".to_owned());
+                }
+            }
+            _ => {}
         }
         self.exec(&["shed", "install"])?;
         if loaded {
@@ -156,8 +178,14 @@ impl Setup {
             let file = Path::new(&home).join(format!("Library/LaunchAgents/{SHED_LABEL}.plist"));
             self.exec(&["launchctl", "bootstrap", gui, &file.display().to_string()])?;
         }
-        if !self.dry_run && !wait(answers) {
+        if self.dry_run {
+            return Ok(());
+        }
+        if !wait(answers) {
             return Err("shed doesn't answer `shed ls`; see ~/Library/Logs/shed.log".to_owned());
+        }
+        if !wait(|| mismatch().is_none()) {
+            return mismatch().map_or(Ok(()), |e| Err(held(e)));
         }
         Ok(())
     }

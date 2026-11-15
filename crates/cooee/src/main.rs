@@ -11,7 +11,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Config, Devices, ROOTS_FIX, Shed, agents_fix};
+use cooee_core::{Config, Devices, ROOTS_FIX, SHED_CARGO, Shed, ShedError, agents_fix};
 use qrcode::{QrCode, render::unicode::Dense1x2};
 
 mod accounts;
@@ -26,25 +26,13 @@ const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decli
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json|cooee-plugin.toml>... \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
-                     | theme check <path>... | accounts ls [--json] \
+                     | theme check <path>... | layout check <layout.json>... | accounts ls [--json] \
                      | accounts env <provider> <name> [--require-signed-in] \
                      | accounts add <provider> <name> --folder <path> | accounts rm <provider> <name> | mcp ls \
                      | mcp add <name> (<command> [<arg>...] | --url <url> [--type sse]) \
                      [--env K=secret:N|env:N]... [--header K=secret:N|env:N]... | mcp rm|enable|disable <name> \
                      | mcp proxy <server> --thread <id> | mcp serve --thread <id>> [--instance <name>] [--config <file>] \
                      | cooee --version";
-
-/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the same protocol.
-const SHED_CARGO: [&str; 8] = [
-    "cargo",
-    "install",
-    "--locked",
-    "--git",
-    "https://github.com/jirathip-dev/shed",
-    "--rev",
-    "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb",
-    "shed",
-];
 
 fn shed_install() -> String {
     format!("{} && shed serve", SHED_CARGO.join(" "))
@@ -137,7 +125,7 @@ fn main() -> ExitCode {
             let run = |c: Config| accounts::run(&c, rest, json, require);
             return load(path.as_deref(), &instance).map_or_else(|e| finish(Err(e)), run);
         }
-        ["plugin", "check", files @ ..] => return finish(check::run(files)),
+        [w @ ("plugin" | "layout"), "check", f @ ..] => return finish(check::run(w, f)),
         ["plugin", rest @ ..] => {
             let rest: Vec<String> = rest.iter().map(|a| (*a).to_owned()).collect();
             let rest: Vec<&str> = rest.iter().map(String::as_str).collect();
@@ -810,6 +798,7 @@ fn doctor(config: &Config) -> Result<(), String> {
                 );
             }
         }
+        Err(e @ ShedError::Version { .. }) => check(false, format!("shed: {e}")),
         Err(e) => check(
             false,
             format!("shed: {e}\n     install: {}", shed_install()),

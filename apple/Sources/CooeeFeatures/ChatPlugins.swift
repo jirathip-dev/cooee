@@ -6,6 +6,9 @@ extension ChatFeature {
         switch action {
         case .plugins(let action):
             return plugin(&state, action)
+        case .screen(.presented(.delegate(.open(let thread)))):
+            state.screen = nil
+            return .send(.delegate(.open(thread)))
         case .attaching(.presented(.delegate(.attached))):
             state.attaching = nil
             return .send(.plugins(.load))
@@ -35,8 +38,9 @@ extension ChatFeature {
         let (plugins, server, persona) = (pluginAPI, state.server, state.persona.api.id)
         guard !persona.isEmpty else { return .none }
         return .run { send in
-            await send(
-                .plugins(.loaded(try await plugins.places(server, persona), try await plugins.installed(server))))
+            async let places = plugins.places(server, persona)
+            async let installed = plugins.installed(server)
+            await send(.plugins(.loaded(try await places, try await installed)))
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }
