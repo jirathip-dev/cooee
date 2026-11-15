@@ -1,0 +1,6 @@
+Decided: this PR carries the approved addendum only; no .drover/arch.toml lines are added here
+Because: docs/architecture/hot-files/addendum.md:222
+Because: q1724
+Rejected: adding slices 10-19's frozen and generated lines now — arch-check would fail while the 35 files still exist
+Check: addendum-files.md lists all 35 files from files.md with folder, entries and slice
+Owner: the plan for the last 35 hot files is in; the ten follow-up slices do the moves
