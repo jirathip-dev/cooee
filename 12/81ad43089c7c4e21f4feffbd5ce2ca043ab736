@@ -1,0 +1,13 @@
+Decided: merged staging; #420's doctor.rs is kept as is and this PR adds only the hooks and Funnel line to it
+Because: crates/cooee/src/doctor.rs:94
+Decided: Runner::every binds the [hooks] listener, as it already starts the catch-up, so cooee-server's lib.rs stays at its size baseline
+Because: .drover/arch-baseline.txt:2
+Decided: staging build fix, the proposal cards live in hub/proposals.rs, the code unchanged, so hub.rs fits its baseline
+Because: .drover/arch-baseline.txt:1
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs, so the runner's tick cannot deadlock with it
+Because: crates/cooee-server/src/hub.rs:1870
+Rejected: binding the hooks listener in serve() — it put lib.rs over its arch baseline; Runner::every at routines.rs:83 owns it
+Check: drover arch-check exits 0; cooee doctor prints the hooks line only with [hooks] set
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
