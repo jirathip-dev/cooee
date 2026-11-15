@@ -74,7 +74,12 @@ fn runner(
 #[must_use]
 pub fn router(
     (hub, runner): (Arc<Hub>, Arc<routines::Runner>),
-    (logins, manager, machines): (Arc<Logins>, Arc<Manager>, Arc<Machines>),
+    (logins, manager, machines, config_all): (
+        Arc<Logins>,
+        Arc<Manager>,
+        Arc<Machines>,
+        Arc<Config>,
+    ),
     (data, config): (&std::path::Path, Option<&std::path::Path>),
     bind: IpAddr,
     allowed_hosts: &[String],
@@ -103,6 +108,7 @@ pub fn router(
     .app_context(logins)
     .app_context(manager)
     .app_context(machines)
+    .app_context(config_all)
     .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))
     .app_context(Arc::new(pairing::Pairing::default()))
     .build()
@@ -172,6 +178,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
                 config.shed_dir.clone(),
                 cooee_machines::local_name(),
             )),
+            Arc::new(config.clone()),
         ),
         (&data, config.dir.as_deref()),
         config.bind,

@@ -1,46 +1,18 @@
-//! Folders: browsing them, the roots, a new folder, and a thread's own folder.
+//! Folders: browsing them, the roots and a new folder.
 
 use std::path::PathBuf;
 
 use serde::Deserialize;
 use topcoat::{
     Result,
-    context::{Cx, app_context},
+    context::Cx,
     router::{RouterBuilder, content::Json, parse_query_params, route},
 };
 
 use crate::{
-    HubError, Listing,
-    http::{Answer, Data, blocking, hub, logins, profiles, recipe, thread_id},
+    Listing,
+    http::{Answer, blocking},
 };
-
-/// `POST /threads/{id}/folder`: "Use a folder…" (#86).
-#[derive(Deserialize)]
-struct Attach {
-    folder: PathBuf,
-}
-
-#[route(POST "/threads/{id}/folder")]
-async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Item>> {
-    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
-    let data = app_context::<Data>(cx);
-    let (data, config) = (data.0.clone(), data.1.clone());
-    let done = tokio::task::spawn_blocking(move || {
-        let (t, _) = hub.thread(&id)?;
-        let list = profiles(&hub, (&data, config.as_deref()));
-        let (_, _, recipe) = recipe(
-            &logins,
-            (&data, config.as_deref(), &list),
-            (&t.agent, Some(&t.account), &t.profile),
-            PathBuf::new(),
-            (t.model, t.effort),
-        )?;
-        hub.attach(&id, &a.folder, &recipe)
-    });
-    Ok(Answer(
-        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
-    ))
-}
 
 /// `?path=<folder>&hidden=1`: Settings › Folders.
 #[derive(Deserialize)]
@@ -88,5 +60,5 @@ async fn new_folder(cx: &Cx, Json(f): Json<Folder>) -> Result<Answer<PathBuf>> {
 }
 
 pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
-    b.route(attach).route(browse).route(root).route(new_folder)
+    b.route(browse).route(root).route(new_folder)
 }

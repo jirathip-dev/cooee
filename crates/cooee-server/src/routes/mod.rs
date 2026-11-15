@@ -9,6 +9,7 @@ mod pairing;
 mod personas;
 mod plugins;
 mod push;
+mod relaunch;
 mod report;
 mod rooms;
 mod routines;
@@ -27,6 +28,7 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
     let b = personas::routes(b);
     let b = plugins::routes(b);
     let b = push::routes(b);
+    let b = relaunch::routes(b);
     let b = report::routes(b);
     let b = rooms::routes(b);
     let b = routines::routes(b);

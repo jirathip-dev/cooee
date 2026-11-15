@@ -233,3 +233,28 @@ pub fn rows(config: &Config) -> Vec<Line> {
         })
         .collect()
 }
+
+/// Whether `machine` is ready for persona `p` (#151): shed reaches it and each of `p`'s checks passes there; else
+/// the failed checks.
+///
+/// # Errors
+/// What failed, one check a line.
+pub fn ready(config: &Config, machine: &str, p: &Persona) -> Result<(), String> {
+    let p = Persona {
+        machine: machine.to_owned(),
+        ..p.clone()
+    };
+    let ctx = Ctx {
+        personas: vec![p],
+        ..Ctx::new(config)
+    };
+    let failed: Vec<String> = ctx
+        .check(machine, false)
+        .into_iter()
+        .filter_map(|(ok, what)| (!ok).then_some(what))
+        .collect();
+    if failed.is_empty() {
+        return Ok(());
+    }
+    Err(format!("{machine} isn't ready:\n{}", failed.join("\n")))
+}

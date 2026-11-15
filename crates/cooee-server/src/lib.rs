@@ -9,6 +9,7 @@ mod hub;
 mod layout;
 mod login;
 mod look;
+pub mod machine;
 mod manage;
 pub mod mcp;
 mod pairing;
