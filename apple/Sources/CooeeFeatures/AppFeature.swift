@@ -82,7 +82,11 @@ public struct AppFeature: Sendable {
                 return .send(.home(.refresh))
             case .chat(.delegate(.started(let thread))):
                 state.path = state.path.dropLast() + [thread]
-                state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
+                state.chat = state.chat.map {
+                    var chat = ChatFeature.State(server: $0.server, target: .thread(thread), persona: $0.persona)
+                    chat.machine = $0.machine
+                    return chat
+                }
                 return .send(.home(.refresh))
             case .chat(.delegate(.open(let thread))):
                 return .send(.open(thread))
@@ -177,10 +181,12 @@ extension AppFeature {
         if id.hasPrefix("new:") {
             guard let persona = home.persona(String(id.dropFirst(4))) else { return nil }
             chat = ChatFeature.State(server: home.server, target: .new(persona), persona: Persona(persona))
+            chat.machine.current = persona.machine
         } else {
             let listed = lists.all.first { $0.id == id }?.persona
             let persona = listed ?? Persona(APIPersona(id: "", name: "Chat", agent: ""))
             chat = ChatFeature.State(server: home.server, target: .thread(id), persona: persona)
+            chat.machine.current = home.rows.first { $0.id == id }?.machine ?? ""
         }
         chat.workflow = lists.workflow[chat.persona.id]
         return chat
