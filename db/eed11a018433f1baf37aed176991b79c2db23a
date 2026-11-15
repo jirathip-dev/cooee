@@ -1,0 +1,5 @@
+Decided: merged origin/staging with #242; ChatActions keeps the panel's more beside #242's step, and the header's old attach fields stay gone.
+Because: apple/Sources/CooeeUI/Chat.swift:19
+Rejected: restoring attachable and attachPlugin on ChatActions — the panel's Attach rows replaced them, and nothing reads them now.
+Check: the … still toggles the panel; apple-check, line cap and arch-check are green.
+Owner: The branch is up to date with staging again; the … panel works as before.
