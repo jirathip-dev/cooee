@@ -1,0 +1,7 @@
+Decided: take staging's async event stream (#290); it drops the call's place and deadline before reading
+Because: crates/cooee-server/src/plugin.rs:243
+Decided: Conn's deadline is no longer optional, since a stream no longer reads through it
+Because: crates/cooee-server/src/plugin.rs:56
+Rejected: none
+Check: plugin::tests both pass and cooee/tests/plugins.rs a_hung_plugin_holds_only_its_own_calls passes
+Owner: the branch is up to date with staging; slow plugins still fail only their own calls
