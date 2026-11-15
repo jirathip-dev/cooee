@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!-- #143: as Info.plist (ATS lets local networking through). #333: the Mac app's Sparkle updater. SPARKLE_PUBLIC_KEY is
+     set by scripts/mac-app.sh only for a build with the Developer ID and SPARKLE_ED_KEY; empty, the updater stays off.
+     A daily background check, installed on quit; the installer runs in Sparkle's own XPC service. -->
+<dict>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>SUFeedURL</key>
+	<string>$(SPARKLE_FEED_URL)</string>
+	<key>SUPublicEDKey</key>
+	<string>$(SPARKLE_PUBLIC_KEY)</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+</dict>
+</plist>

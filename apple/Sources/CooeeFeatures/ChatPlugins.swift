@@ -27,7 +27,7 @@ extension ChatFeature {
                 row.places.contains { $0.kind == "header-strip" } && !places.contains { $0.plugin == row.name }
             }
         case .open(let place):
-            state.screen = PluginScreenFeature.State(server: state.server, place: place)
+            state.screen = ScreenFeature.State(server: state.server, place: place)
         case .attach(let plugin):
             state.attaching = AttachFeature.State(server: state.server, persona: state.persona.api, plugin: plugin)
         }

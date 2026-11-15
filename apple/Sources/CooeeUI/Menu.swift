@@ -3,22 +3,36 @@ import CooeeCore
 import CooeeFeatures
 import SwiftUI
 
-internal struct MenuSheet: View {
+internal struct MenuHost: View {
     @Environment(\.look) private var look
-    internal let store: StoreOf<MenuFeature>
+    internal let store: StoreOf<AppFeature>
+    internal let rows: [LayoutNode<LayoutPlace>]
+    internal let compact: Bool
 
     internal var body: some View {
-        NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
+        let menu = store.scope(state: \.menu, action: \.menu)
+        let pages = rows.filter { $0.content == .component(.settings) }.flatMap { $0.config["pages"]?.items ?? [] }
+        NavigationStack(path: Binding(get: { menu.path }, set: { menu.send(.path($0)) })) {
             ScrollView {
-                AvatarMenu(name: "You", place: place, values: values, pages: MenuFeature.Page.drawn) {
-                    store.send(.path(store.path + [$0]))
+                VStack(spacing: 12) {
+                    ForEach(rows, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
                 }
                 .padding(12)
             }
             .background(look.palette.background)
             .navigationDestination(for: MenuFeature.Page.self) { page in
-                MenuPage(store: store, page: page)
+                if pages.contains(.string("\(page)")) { MenuPage(store: menu, page: page) }
             }
+        }
+    }
+}
+
+internal struct MenuScreen: View {
+    internal let store: StoreOf<MenuFeature>
+
+    internal var body: some View {
+        AvatarMenu(name: "You", place: place, values: values, pages: MenuFeature.Page.drawn) {
+            store.send(.path(store.path + [$0]))
         }
     }
 
@@ -30,6 +44,19 @@ internal struct MenuSheet: View {
         let settings = store.settings
         let look = "\(settings.style.rawValue.capitalized) · \(settings.scheme.rawValue.capitalized)"
         return [.look: look, .notifications: settings.push == nil ? "Off" : "On"]
+    }
+}
+
+internal struct ResetLayoutRow: View {
+    internal let reset: () -> Void
+
+    internal var body: some View {
+        Group2 {
+            Button(action: reset) {
+                SettingRow(symbol: "arrow.counterclockwise", title: "Reset layout", divider: false).contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+        }
     }
 }
 

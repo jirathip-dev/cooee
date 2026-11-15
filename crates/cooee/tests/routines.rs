@@ -422,21 +422,16 @@ fn a_github_routine_waits_for_face_id_then_a_signed_delivery_starts_its_thread_o
     thread::sleep(Duration::from_millis(500));
     assert_eq!(threads(&cooee), before);
     assert_eq!(hook(port, "g-1", &sign(&body), &body), 202);
-    let started = (0..100)
+    let (started, text) = (0..100)
         .find_map(|_| {
             thread::sleep(Duration::from_millis(100));
             let now = threads(&cooee);
-            let mut new = now.into_iter().filter(|t| !before.contains(t));
-            new.next()
+            let started = now.into_iter().find(|t| !before.contains(t))?;
+            let items = cooee.json(&format!("/threads/{started}/messages"))["items"].clone();
+            let first = items.as_array()?.iter().find(|i| i["kind"] == "you")?;
+            Some((started, first["text"].clone()))
         })
-        .expect("no thread started");
-    let items = cooee.json(&format!("/threads/{started}/messages"))["items"].clone();
-    let first = items
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|i| i["kind"] == "you");
-    let text = first.unwrap_or_else(|| panic!("{items}"))["text"].clone();
+        .expect("no thread started with a first message");
     assert_eq!(text, "Review Fix login (pull_request.opened)");
 
     // The same delivery again: 200, and still that one thread.
