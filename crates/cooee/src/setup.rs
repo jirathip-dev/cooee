@@ -113,7 +113,7 @@ impl Setup {
             return Ok(());
         }
         println!("doctor:");
-        doctor(&config)
+        doctor::run(&config)
             .map_err(|e| format!("doctor: {e}\nfix it, then run `cooee setup` again"))?;
         println!("\npair your phone:");
         pair(&config)
