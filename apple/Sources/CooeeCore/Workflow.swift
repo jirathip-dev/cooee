@@ -6,16 +6,23 @@ public struct WorkflowLabel: Codable, Sendable, Equatable {
     public let item: String
     public let role: String
     public let round: String
+    public let url: String?
 
     public var stage: String { "\(role) \(round)" }
     public var issue: String { "\(group) \(item)" }
+    public var link: (title: String, url: URL)? {
+        guard let url = url.flatMap(URL.init(string:)), let number = Int(url.lastPathComponent) else { return nil }
+        let kind = url.deletingLastPathComponent().lastPathComponent == "pull" ? "PR" : "issue"
+        return ("\(kind) #\(number)", url)
+    }
 
-    public init(source: String, group: String, item: String, role: String, round: String) {
+    public init(source: String, group: String, item: String, role: String, round: String, url: String? = nil) {
         self.source = source
         self.group = group
         self.item = item
         self.role = role
         self.round = round
+        self.url = url
     }
 }
 
@@ -23,6 +30,7 @@ public struct HomeLists: Sendable, Equatable {
     public var chats: [ListedChat] = []
     public var others: [ListedChat] = []
     public var workflow: [String: [ListedChat]] = [:]
+    public var notes: [String] = []
 
     public var all: [ListedChat] { chats + others + workflow.values.flatMap(\.self) }
     public var othersTitles: [String] { others.map { $0.workflow == nil ? $0.persona.name : $0.row.title } }
@@ -88,8 +96,18 @@ extension Listing {
                 continue
             }
             let place = owners[source].flatMap { plugin in personas.first { $0.plugins.contains(plugin) } }
+            let note = note(source, plugin: owners[source], place: place)
+            if !lists.notes.contains(note) { lists.notes.append(note) }
             if let place { lists.workflow[place.id, default: []].append(listed) } else { lists.others.append(listed) }
         }
         return lists
+    }
+
+    private static func note(_ source: String, plugin: String?, place: APIPersona?) -> String {
+        guard let plugin, let place else {
+            return "Install a plugin that claims source \(source) and attach it to a persona: "
+                + "its sessions move to that persona’s Workflow sheet."
+        }
+        return "\(plugin) claims source \(source): its sessions are in \(place.name) › Workflow."
     }
 }

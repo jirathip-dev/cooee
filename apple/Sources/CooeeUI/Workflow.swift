@@ -33,6 +33,7 @@ internal struct OthersRow: View {
 internal struct OthersView: View {
     @Environment(\.look) private var look
     internal let chats: [ListedChat]
+    internal let notes: [String]
     internal let open: (String) -> Void
     internal let back: () -> Void
 
@@ -41,7 +42,8 @@ internal struct OthersView: View {
         ZStack(alignment: .topLeading) {
             Backdrop()
             VStack(alignment: .leading, spacing: 0) {
-                BackLink(title: "Home", run: back)
+                BackLink(title: "Home", run: back).frame(maxWidth: .infinity, alignment: .leading)
+                    .overlay { Text("Others").ui(17, .semibold, look) }
                 Scroller {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Others").ui(34, .bold, look).padding(.horizontal, 16)
@@ -50,6 +52,10 @@ internal struct OthersView: View {
                         ForEach(Workflow.others(chats), id: \.name) { section in
                             Caps(text: section.name)
                             ChatList(chats: section.chats, title: nil, open: open)
+                        }
+                        ForEach(notes, id: \.self) { note in
+                            Text(note).ui(14, .regular, look).foregroundStyle(palette.mute)
+                                .padding(.horizontal, 32).padding(.top, 14)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -127,25 +133,12 @@ internal struct WorkflowSheet: View {
     }
 
     private func rounds(_ issue: WorkflowIssue) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             ForEach(issue.rounds) { round in
-                Button {
-                    open(round.id)
-                } label: {
-                    HStack(spacing: 8) {
-                        Circle().fill(look.palette.state(round.row.state)).frame(width: 10, height: 10)
-                        Text(round.workflow?.stage ?? round.row.title).ui(15, .semibold, look)
-                        Text(round.row.state.word).ui(14, .regular, look)
-                            .foregroundStyle(look.palette.state(round.row.state))
-                        Spacer()
-                        Text("open chat ›").ui(14, .medium, look).foregroundStyle(look.palette.link)
-                    }
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
+                RoundRow(round: round, current: round.id == issue.latest.id, open: open)
             }
         }
-        .padding(.leading, 64).padding(.trailing, 16).padding(.bottom, 12)
+        .padding(.leading, 28).padding(.trailing, 16).padding(.bottom, 12)
     }
 }
 

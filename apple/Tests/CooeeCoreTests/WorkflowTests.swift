@@ -93,4 +93,26 @@ internal struct WorkflowTests {
         #expect(lane.persona.name == "cooee #33 · impl 1" && lane.persona.api.agent == "drover")
         #expect(lane.persona.look.coat == "bay" && loose.persona.look.coat.isEmpty)
     }
+
+    @Test internal func othersNotesSayWhereEachSourcesSessionsWent() {
+        let attached = Listing.home(rows: rows, personas: [coder, conductor], plugins: [drover], now: now)
+        #expect(
+            attached.notes == [
+                "drover claims source drover: its sessions are in Conductor › Workflow.",
+                "Install a plugin that claims source nightly and attach it to a persona: "
+                    + "its sessions move to that persona’s Workflow sheet.",
+            ])
+        #expect(
+            Listing.home(rows: [row("chat", persona: "coder")], personas: [coder], plugins: [], now: now).notes == [])
+    }
+
+    @Test internal func aRoundsURLLinksItsPullRequestOrIssue() throws {
+        let label = { (url: String?) in
+            WorkflowLabel(source: "drover", group: "cooee", item: "#1", role: "fix", round: "1", url: url)
+        }
+        let pull = try #require(label("https://github.com/o/cooee/pull/228").link)
+        #expect(pull.title == "PR #228" && pull.url.absoluteString == "https://github.com/o/cooee/pull/228")
+        #expect(label("https://github.com/o/cooee/issues/33").link?.title == "issue #33")
+        #expect(label("https://example.com/runs/x").link == nil && label(nil).link == nil)
+    }
 }

@@ -145,9 +145,9 @@ private struct OthersSlot: View {
 
     fileprivate var body: some View {
         if let home = store.scope(state: \.home, action: \.home) {
+            let lists = home.state.lists(now: Date())
             OthersView(
-                chats: home.state.lists(now: Date()).others, open: { store.send(.open($0)) },
-                back: { store.send(.back) }
+                chats: lists.others, notes: lists.notes, open: { store.send(.open($0)) }, back: { store.send(.back) }
             )
             .toolbar(.hidden)
         }
