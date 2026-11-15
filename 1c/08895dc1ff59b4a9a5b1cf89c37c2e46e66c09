@@ -1,0 +1,9 @@
+Decided: slice 0 lands without the frozen line; the root.rs freeze goes in with slice 1
+Because: q1720
+Decided: root.rs keeps the root pub use lines unchanged, so no caller changes
+Because: crates/cooee-core/src/root.rs:1
+Decided: origin/staging merged again (CI-only changes); gen.sh and the size baseline leave no diff
+Because: .drover/arch-baseline.txt:2
+Rejected: a temporary [[collect]] over root.rs — it exempts root.rs while it is in place
+Check: drover arch-check --base origin/staging exits 0, and scripts/gen.sh leaves no diff
+Owner: Adding a core module means running `just gen`; CI says so if it's forgotten. Nothing changes in the app.
