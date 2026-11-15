@@ -1,0 +1,6 @@
+Decided: setup.rs takes staging's shed constants from cooee_core and keeps this branch's job() for launchd labels
+Because: crates/cooee/src/main.rs:648
+Decided: staging build fix: two shed-version tests now expect the message #397 ships
+Because: crates/cooee-core/src/shed.rs:335
+Rejected: none
+Owner: the update branch sits on current staging again and all gates pass; two staging tests that disagreed with the shed message were corrected.
