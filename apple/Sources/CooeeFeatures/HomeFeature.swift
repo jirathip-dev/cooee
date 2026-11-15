@@ -8,6 +8,7 @@ public struct HomeFeature: Sendable {
     @ObservableState
     public struct State: Equatable {
         public let server: Server
+        public var screen: HomeScreen?
         public var rows: [ThreadRow] = []
         public var personas: [APIPersona] = []
         public var error: String?
@@ -31,7 +32,7 @@ public struct HomeFeature: Sendable {
     public enum Action: Sendable {
         case task
         case refresh
-        case loaded([ThreadRow], [APIPersona])
+        case loaded(HomeScreen, [ThreadRow], [APIPersona])
         case failed(String)
         case delegate(Delegate)
 
@@ -42,7 +43,7 @@ public struct HomeFeature: Sendable {
     }
 
     private enum Outcome {
-        case loaded([ThreadRow], [APIPersona])
+        case loaded(HomeScreen, [ThreadRow], [APIPersona])
         case failed(String)
         case unauthorized
     }
@@ -59,7 +60,8 @@ public struct HomeFeature: Sendable {
                 return poll(state.server)
             case .refresh:
                 return refresh(state.server)
-            case .loaded(let rows, let personas):
+            case .loaded(let screen, let rows, let personas):
+                state.screen = screen
                 state.rows = rows.filter { !$0.archived }
                 state.personas = personas
                 state.error = nil
@@ -92,9 +94,8 @@ public struct HomeFeature: Sendable {
 
     private static func load(_ server: Server, _ threads: ThreadsClient) async -> Outcome {
         do {
-            async let rows = threads.threads(server)
-            async let personas = threads.personas(server)
-            return .loaded(try await rows, try await personas)
+            let home = try await threads.home(server)
+            return .loaded(home.screen, home.threads, home.personas)
         } catch let error as APIError where error.status == 401 {
             return .unauthorized
         } catch {
@@ -104,7 +105,7 @@ public struct HomeFeature: Sendable {
 
     private static func report(_ outcome: Outcome, _ send: Send<Action>) async {
         switch outcome {
-        case .loaded(let rows, let personas): await send(.loaded(rows, personas))
+        case .loaded(let screen, let rows, let personas): await send(.loaded(screen, rows, personas))
         case .failed(let error): await send(.failed(error))
         case .unauthorized: await send(.delegate(.unauthorized))
         }

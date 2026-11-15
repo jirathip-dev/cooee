@@ -41,4 +41,6 @@ internal func layout(_ json: String, etag: String = "") -> Layout {
     try! Layout(json: Data(json.utf8), etag: etag)
 }
 
+internal let homeScreen = HomeScreen(title: "cooee", blocks: [.object(["type": .string("chats")])])
+
 internal let testLayout = layout(#"{"format":1,"root":{"type":"nav"}}"#)

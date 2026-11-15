@@ -19,14 +19,13 @@ internal struct HomeFeatureTests {
             HomeFeature()
         } withDependencies: { [clock] in
             $0.continuousClock = clock
-            $0.threads.threads = { _ in
+            $0.threads.home = { _ in
                 switch queue.next() {
-                case .rows(let rows): return rows
+                case .rows(let rows): return HomeAnswer(screen: homeScreen, threads: rows, personas: [coder])
                 case .failure(let error): throw error
-                case nil: return []
+                case nil: return HomeAnswer(screen: homeScreen, threads: [], personas: [coder])
                 }
             }
-            $0.threads.personas = { _ in [coder] }
         }
     }
 
@@ -37,6 +36,7 @@ internal struct HomeFeatureTests {
         ])
         await store.send(.task)
         await store.receive(\.loaded) {
+            $0.screen = homeScreen
             $0.rows = [rows[0]]
             $0.personas = [coder]
         }
@@ -52,6 +52,7 @@ internal struct HomeFeatureTests {
         await store.send(.failed("Locked.")) { $0.error = "Locked." }
         await store.send(.refresh)
         await store.receive(\.loaded) {
+            $0.screen = homeScreen
             $0.rows = [row("t1")]
             $0.personas = [coder]
             $0.error = nil
@@ -61,5 +62,12 @@ internal struct HomeFeatureTests {
         #expect(store.state.chats(now: epoch).map(\.id) == ["t1"])
         #expect(store.state.persona("coder") == coder && store.state.persona("x") == nil)
         await store.send(.delegate(.unauthorized))
+    }
+
+    @Test internal func offlineHomeHoldsNoScreenSoTheBundledOneDraws() async {
+        let store = store([.failure(APIError(status: 502, text: "Offline."))])
+        await store.send(.refresh)
+        await store.receive(\.failed) { $0.error = "Offline." }
+        #expect(store.state.screen == nil && store.state.rows.isEmpty)
     }
 }
