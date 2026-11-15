@@ -1,0 +1,9 @@
+Decided: slice 0 lands without the frozen line; the root.rs freeze goes in with slice 1
+Because: q1720
+Decided: #397's lib.rs conflict resolved by moving its new shed exports into root.rs and rerunning gen.sh
+Because: crates/cooee-core/src/root.rs:13
+Decided: the size baseline is refreshed to staging's sizes after #397
+Because: .drover/arch-baseline.txt:1
+Rejected: a hand-merge of the generated lib.rs — gen.sh owns it
+Check: drover arch-check --base origin/staging exits 0, and scripts/gen.sh leaves no diff
+Owner: Adding a core module means running `just gen`; CI says so if it's forgotten. Nothing changes in the app.
