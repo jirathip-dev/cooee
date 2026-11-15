@@ -1,0 +1,6 @@
+Decided: round 8 merges origin/staging at c326585 (#317 terminal layout); the merge was clean and changes no code of this PR
+Decided: the macOS red at 4cefba7 was tests/plugin_manager.rs's attach backend refusing a connection; this PR never touches it
+Because: crates/cooee/tests/plugin_manager.rs:1
+Rejected: changing the plugin manager or its test here — the issue is chat style, not plugin lifecycle
+Check: apple is green at 4cefba7; stable (macos-latest) runs plugin_manager green at the head
+Owner: Same feature; this round only catches up with staging, CI's reds were pending or an unrelated plugin test.
