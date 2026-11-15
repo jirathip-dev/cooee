@@ -1,4 +1,4 @@
-const W = '../../../web/', P = '../../../packs/themes/';
+const W = '../../../design-system/', P = '../../../packs/themes/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark', F = q.get('f');
 const theme = await fetch(`${P}${T}/theme.json`).then(r => r.json());

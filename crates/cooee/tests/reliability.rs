@@ -204,9 +204,8 @@ fn r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch() {
     let wrong = [("Cookie", "cooee=not-a-token")];
     let (head, _) = s.cooee.raw("GET", "/threads/x/messages", &wrong, "");
     assert!(head.starts_with("HTTP/1.0 401"), "{head}");
-    let (status, page) = s.cooee.get("/");
-    assert_eq!(status, 200, "{page}");
-    assert!(!page.contains("pairing code"), "{page}");
+    let (status, body) = s.cooee.get("/threads");
+    assert_eq!((status, body.as_str()), (200, "[]"));
 
     let devices = s.dir.join("data/devices.json");
     let kept = fs::read(&devices).unwrap();
@@ -214,13 +213,13 @@ fn r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch() {
     let (status, body) = s.cooee.get("/threads/x/messages");
     assert_eq!(status, 503, "{body}");
     assert!(body.contains("can't read its paired devices"), "{body}");
-    assert_eq!(s.cooee.get("/").0, 503);
+    assert_eq!(s.cooee.get("/threads").0, 503);
     fs::write(&devices, kept).unwrap();
-    assert_eq!(s.cooee.get("/").0, 200);
+    assert_eq!(s.cooee.get("/threads").0, 200);
 }
 
 #[test]
-fn r7_page_loads_run_no_subprocess() {
+fn r7_requests_run_no_subprocess() {
     use std::os::unix::fs::PermissionsExt;
     let dir = scratch("r7-no-io");
     let shed = FakeShed::start(&dir.join("shed"), version());
@@ -252,14 +251,13 @@ fn r7_page_loads_run_no_subprocess() {
     let before = calls();
     assert_eq!(before.1, "checked\n", "checked once, at start");
     for _ in 0..5 {
-        assert_eq!(cooee.get("/").0, 200);
-        let (code, page) = cooee.get("/new");
-        assert!(
-            code == 200 && page.contains(r#"name="agent" value="fake-acp""#),
-            "{page}"
-        );
-        assert!(page.contains("✓ signed in"), "{page}");
-        assert_eq!(cooee.get(&format!("/t/{id}")).0, 200);
+        assert_eq!(listed(&cooee), std::slice::from_ref(&id));
+        cooee.json(&format!("/threads/{id}/messages"));
+        let login = cooee.json("/logins/fake");
+        assert!(login.to_string().contains("Signed in"), "{login}");
+        for path in ["/models", "/personas", "/folders"] {
+            cooee.json(path);
+        }
     }
     assert_eq!(calls(), before);
 }
@@ -278,27 +276,15 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
         let log = s.shed.cli_log();
         log.lines().filter(|l| l.ends_with(" agents")).count()
     };
-    let page = s.cooee.get("/new").1;
-    assert!(
-        page.contains(r#"<p class="err">"#) && page.contains("agents down"),
-        "{page}"
-    );
     s.shed.gate("agents-fails", false);
     for _ in 0..10 {
-        assert!(s.cooee.get("/new").1.contains("agents down"));
+        assert_eq!(s.cooee.get("/threads").0, 200);
     }
     assert_eq!(lists(), 1, "{}", s.shed.cli_log());
 
     let (code, body) = s.cooee.post("/threads", &start(&s, "hi", "c1"));
     assert_eq!(code, 200, "{body}");
     assert_eq!(lists(), 2);
-    for _ in 0..10 {
-        let page = s.cooee.get("/new").1;
-        assert!(
-            page.contains("fake-acp") && !page.contains("agents down"),
-            "{page}"
-        );
-    }
     assert_eq!(s.cooee.post("/threads", &start(&s, "again", "c2")).0, 200);
     assert_eq!(lists(), 2, "{}", s.shed.cli_log());
 
@@ -311,11 +297,9 @@ fn agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list() {
         err.contains("cooee: kept the agent list: ") && err.contains("agents down"),
         "{err}"
     );
-    let page = s.cooee.get("/new").1;
-    assert!(
-        page.contains("fake-acp") && !page.contains("agents down"),
-        "{page}"
-    );
+    let (code, body) = s.cooee.post("/threads", &start(&s, "still", "c4"));
+    assert_eq!(code, 200, "{body}");
+    assert_eq!(lists(), 3, "{}", s.shed.cli_log());
 }
 
 #[test]
@@ -494,10 +478,7 @@ fn r17_paths_in_text_are_never_files_served() {
     let traversals = [
         png.to_string_lossy().into_owned(),
         "/../x.png".to_owned(),
-        "/look/../x.png".to_owned(),
-        "/look/farm/../../a.png".to_owned(),
-        "/look/%2e%2e/%2e%2e/a.png".to_owned(),
-        format!("/look/farm/{}", png.display()),
+        "/%2e%2e/a.png".to_owned(),
     ];
     for path in traversals {
         let (status, body) = s.cooee.get(&path);
@@ -658,10 +639,8 @@ fn a_start_with_no_folder_runs_in_its_own_scratch_folder() {
     assert!(dir.is_dir(), "{}", dir.display());
     let cwd = format!("--cwd {}", dir.display());
     assert!(s.shed.cli_log().contains(&cwd), "{}", s.shed.cli_log());
-    let (_, page) = s.cooee.get(&format!("/t/{id}"));
-    assert!(
-        page.contains(r#"<span id="bf">scratch</span> · "#) && page.contains("folder: scratch ▾"),
-        "{page}"
-    );
-    assert!(!page.contains("data/scratch"), "{page}");
+    let list = s.cooee.json("/threads");
+    assert_eq!(list[0]["id"], id.as_str());
+    assert_eq!(list[0]["folder"], "", "{list}");
+    assert!(!list.to_string().contains("data/scratch"), "{list}");
 }

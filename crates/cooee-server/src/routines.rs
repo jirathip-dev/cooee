@@ -15,11 +15,9 @@ use topcoat::{
     router::{
         Body as Bytes, RouterBuilder,
         content::{Form, Json},
-        page,
         response::Response,
         route,
     },
-    view::View,
 };
 
 use crate::{
@@ -253,18 +251,9 @@ async fn routine_list(cx: &Cx) -> Result<Answer<Vec<Routine>>> {
     Ok(Answer(on(cx, Runner::list).await))
 }
 
-#[page("/routines")]
-async fn routine_page(cx: &Cx) -> Result<impl View> {
-    let list = on(cx, Runner::list).await.map_err(std::io::Error::other)?;
-    Ok(cooee_web::routines_page(cx, list))
-}
-
 fn back<T>(done: Result<T, HubError>) -> Result<Response> {
     match done {
-        Ok(_) => Ok(Response::builder()
-            .status(303)
-            .header("Location", "/routines")
-            .body(Bytes::from(()))?),
+        Ok(_) => Ok(Response::builder().status(204).body(Bytes::from(()))?),
         Err(e) => plain(400, &e.to_string()),
     }
 }
@@ -286,7 +275,6 @@ pub fn routes(runner: Arc<Runner>, b: RouterBuilder) -> RouterBuilder {
     b.app_context(runner)
         .route(mcp_routine)
         .route(routine_list)
-        .page(routine_page)
         .route(routine_edit)
         .route(routine_delete)
 }

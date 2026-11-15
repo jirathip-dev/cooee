@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const herdsman = process.argv[2];
 if (!herdsman) throw new Error("usage: node docs/design/scene/build.mjs <herdsman checkout>");
-const out = (t) => new URL(`../../../web/themes/${t}/scene.svg`, import.meta.url);
+const out = (t) => new URL(`../../../design-system/themes/${t}/scene.svg`, import.meta.url);
 
 for (const t of ["kitchen", "garden"]) {
   const svg = readFileSync(`${herdsman}/assets/themes/${t}/scene.svg`, "utf8");

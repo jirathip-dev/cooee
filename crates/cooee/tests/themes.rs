@@ -1,20 +1,13 @@
 //! Theme packs end to end (docs/themes.md): `cooee theme check` passes the first-party packs and fails a broken one;
 //! `cooee theme add` from a fake index (a git repo holding packs in folders, pinned), a git URL ("not reviewed") and a
-//! folder, each pinned in the lock; a pack failing the gate is never installed; list and remove, which `cooee serve`
-//! shows without a restart. From the phone: [remix] copies a theme into themes-dev with an agent thread; its preview's
-//! events say `saved` on each save; [keep] is blocked while it fails the gate (the failures go to its chat) and moves
-//! it into themes/ once it passes; [publish] makes it a git repo.
+//! folder, each pinned in the lock; a pack failing the gate, or holding a symlink, is never installed; list and remove.
 
 mod support;
 
 use std::{
     fs,
-    io::{BufRead, BufReader, Write},
-    net::TcpStream,
     path::{Path, PathBuf},
     process::Command,
-    thread,
-    time::Duration,
 };
 
 use serde_json::{Value, json};
@@ -51,19 +44,9 @@ fn farm_at(to: &Path, broken: bool) {
     }
 }
 
-fn until(what: &str, f: impl Fn() -> bool) {
-    for _ in 0..400 {
-        if f() {
-            return;
-        }
-        thread::sleep(Duration::from_millis(50));
-    }
-    panic!("never: {what}");
-}
-
 struct Setup {
     dir: PathBuf,
-    shed: FakeShed,
+    _shed: FakeShed,
     cooee: Cooee,
     commit: String,
 }
@@ -98,7 +81,7 @@ fn setup(name: &str) -> Setup {
     let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
     Setup {
         dir,
-        shed,
+        _shed: shed,
         cooee,
         commit,
     }
@@ -114,25 +97,6 @@ impl Setup {
 
     fn lock(&self) -> Value {
         serde_json::from_slice(&fs::read(self.dir.join("data/themes.lock")).unwrap()).unwrap()
-    }
-
-    fn act(&self, act: &str, body: &str) -> (u16, String) {
-        let headers = [
-            ("Content-Type", "application/x-www-form-urlencoded"),
-            ("Cookie", self.cooee.cookie.as_str()),
-        ];
-        let (head, text) = self
-            .cooee
-            .raw("POST", &format!("/themes/{act}"), &headers, body);
-        let to = head
-            .lines()
-            .find_map(|l| l.strip_prefix("location: "))
-            .map_or(text, str::to_owned);
-        (head[9..12].parse().unwrap(), to)
-    }
-
-    fn serves(&self, theme: &str) -> bool {
-        self.cooee.get(&format!("/look/{theme}/theme.json")).0 == 200
     }
 }
 
@@ -174,7 +138,6 @@ fn add_remove_and_list_with_the_lock() {
         s.lock(),
         json!([{ "name": "farm", "source": "index", "commit": s.commit, "listed": true }])
     );
-    until("farm is served", || s.serves("farm"));
 
     let (ok, out) = s.run(&["theme", "add", "broken"]);
     assert!(!ok);
@@ -220,13 +183,12 @@ fn add_remove_and_list_with_the_lock() {
     assert!(ok, "{out}");
     assert!(!themes.join("farm").exists());
     assert_eq!(s.lock().as_array().unwrap().len(), 2);
-    until("farm is gone", || !s.serves("farm"));
     let (ok, out) = s.run(&["theme", "remove", "farm"]);
     assert!(!ok && out.contains("farm isn't installed"), "{out}");
 }
 
 #[test]
-fn a_pack_with_a_symlink_is_never_installed_or_served() {
+fn a_pack_with_a_symlink_is_never_installed() {
     let s = setup("th-link");
     let secret = s.dir.join("secret.txt");
     fs::write(&secret, "TOP-SECRET").unwrap();
@@ -245,134 +207,57 @@ fn a_pack_with_a_symlink_is_never_installed_or_served() {
     let (ok, out) = s.run(&["theme", "add", &url, "--yes"]);
     assert!(!ok && out.contains("icon.png: a symlink"), "{out}");
     assert!(!s.dir.join("themes/evil").exists());
-    let (code, body) = s.cooee.get("/look/evil/icon.png");
-    assert!(code != 200 && !body.contains("TOP-SECRET"), "{code} {body}");
-}
-
-fn wait_for_event(s: &Setup, path: &str, name: &str, then: impl FnOnce()) {
-    let mut stream = TcpStream::connect(&s.cooee.addr).unwrap();
-    stream
-        .set_read_timeout(Some(Duration::from_secs(20)))
-        .unwrap();
-    write!(
-        stream,
-        "GET {path} HTTP/1.0\r\nHost: {}\r\nCookie: {}\r\n\r\n",
-        s.cooee.addr, s.cooee.cookie
-    )
-    .unwrap();
-    let mut reader = BufReader::new(stream);
-    let mut line = String::new();
-    reader.read_line(&mut line).unwrap();
-    assert!(line.contains(" 200 "), "{line}");
-    then();
-    loop {
-        line.clear();
-        assert!(reader.read_line(&mut line).unwrap() > 0, "the stream ended");
-        if line.trim_end() == format!("event: {name}") {
-            return;
-        }
-    }
 }
 
 #[test]
-fn remix_preview_keep_and_publish_from_the_phone() {
-    let s = setup("th-remix");
-    assert!(s.run(&["theme", "add", "farm"]).0);
-    until("farm is served", || s.serves("farm"));
-    let (_, page) = s.cooee.get("/");
-    assert!(
-        page.contains(r#"<input type="hidden" name="from" value="farm">"#)
-            && page.contains(r#"<input type="hidden" name="source" value="broken">"#),
-        "{page}"
-    );
-
-    let (status, to) = s.act("remix", "from=farm&name=sea-farm&text=make+it+blue");
-    assert_eq!(status, 303, "{to}");
-    let thread = to.strip_prefix("/t/").unwrap().to_owned();
-    let dev = s.dir.join("themes-dev/sea-farm");
-    assert_eq!(
-        fs::read(dev.join("sprites.svg")).unwrap(),
-        fs::read(s.dir.join("themes/farm/sprites.svg")).unwrap()
-    );
-    let run = s.shed.cli_log();
-    assert!(run.contains(&format!("--cwd {}", dev.display())), "{run}");
-    let sent = s.shed.sent(&format!("cooee-{thread}"));
-    assert!(
-        sent[0]
-            .contains("Theme sea-farm: make it blue\\n\\nYou're building the cooee theme sea-farm"),
-        "{sent:?}"
-    );
-    let (_, chat) = s.cooee.get(&to);
-    assert!(
-        chat.contains(&format!(r#"href="/themes/dev/sea-farm?thread={thread}""#)),
-        "{chat}"
-    );
-    let (status, preview) = s
-        .cooee
-        .get(&format!("/themes/dev/sea-farm?thread={thread}"));
-    assert_eq!(status, 200, "{preview}");
-    assert!(
-        preview.contains("passes the theme gate")
-            && preview.contains(&format!(r#"src="/t/{thread}?preview=sea-farm""#)),
-        "{preview}"
-    );
-    let (_, list) = s.cooee.get("/?preview=sea-farm");
-    assert!(list.contains(r#"data-theme="dev.sea-farm""#), "{list}");
-
-    wait_for_event(&s, "/themes/dev/sea-farm/events", "saved", || {
-        let svg = fs::read_to_string(dev.join("sprites.svg")).unwrap();
+fn the_gate_fails_active_content_in_a_packs_svg() {
+    let s = setup("th-active");
+    let cases = [
+        ("sprites.svg", "<script>alert(1)</script>", "<script>"),
+        ("scene.svg", "<g onload=\"alert(1)\"/>", "an on* attribute"),
+        ("sprites.svg", "<foreignObject/>", "<foreignObject>"),
+        (
+            "scene.svg",
+            "<use xlink:href=\"https://evil.example/x.svg#a\"/>",
+            "a non-local href",
+        ),
+        (
+            "sprites.svg",
+            "<a href=\"javascript:alert(1)\"/>",
+            "a non-local href",
+        ),
+        (
+            "sprites.svg",
+            "<![CDATA[ <!-- ]]><script>alert(1)</script><![CDATA[ --> ]]>",
+            "<script>",
+        ),
+        (
+            "scene.svg",
+            "<?x <!-- ?><script>alert(1)</script><?x --> ?>",
+            "<script>",
+        ),
+    ];
+    for (i, (file, bad, why)) in cases.iter().enumerate() {
+        let dir = s.dir.join(format!("active{i}"));
+        farm_at(&dir, false);
+        let svg = fs::read_to_string(dir.join(file)).unwrap();
         fs::write(
-            dev.join("sprites.svg"),
-            svg.replace("id=\"s-needs\"", "id=\"x\""),
+            dir.join(file),
+            svg.replacen("</svg>", &format!("{bad}</svg>"), 1),
         )
         .unwrap();
-    });
-    let body = format!("name=sea-farm&thread={thread}");
-    assert_eq!(s.act("keep", &body), (303, to.clone()));
-    assert!(dev.exists() && !s.dir.join("themes/sea-farm").exists());
-    until("the failures reach the agent", || {
-        s.shed
-            .sent(&format!("cooee-{thread}"))
-            .iter()
-            .any(|m| m.contains("[keep] it fails the theme gate:\\n  sprites.svg: no s-needs"))
-    });
-    let (_, preview) = s.cooee.get("/themes/dev/sea-farm");
-    assert!(
-        preview.contains("fails the theme gate")
-            && preview.contains("<li>sprites.svg: no s-needs</li>"),
-        "{preview}"
-    );
-
-    farm_at(&dev, false);
-    assert_eq!(s.act("keep", &body), (303, "/#settings/look".to_owned()));
-    assert!(!dev.exists() && s.dir.join("themes/sea-farm/theme.json").exists());
-    assert_eq!(
-        s.lock()[1],
-        json!({ "name": "sea-farm", "source": "made here", "commit": "", "listed": false })
-    );
-    assert!(s.serves("sea-farm"));
-
-    let (status, said) = s.act("publish", "name=sea-farm");
-    assert_eq!(status, 200, "{said}");
-    let repo = s.dir.join("themes/sea-farm");
-    let commit = git(&repo, &["rev-parse", "HEAD"]);
-    assert!(
-        said.contains(&format!("is a git repo now, at {}", &commit[..7])),
-        "{said}"
-    );
-    assert_eq!(s.lock()[1]["commit"], json!(commit));
-
-    let (status, to) = s.act("new", "name=fresh");
-    assert_eq!(status, 303, "{to}");
-    let thread = to.strip_prefix("/t/").unwrap();
-    let body = format!("name=fresh&thread={thread}");
-    assert_eq!(s.act("keep", &body), (303, "/#settings/look".to_owned()));
-    let (status, art) = s.cooee.get("/look/fresh/scene.svg");
-    assert!(
-        status == 200 && art.contains("id=\"night\""),
-        "{status} {art}"
-    );
-
-    assert_eq!(s.act("new", "name=sea-farm").0, 409);
-    assert_eq!(s.act("new", "name=..").0, 409);
+        let (ok, out) = s.run(&["theme", "check", &dir.display().to_string()]);
+        assert!(!ok, "{bad}: {out}");
+        assert!(out.contains(&format!("     {file}: {why}")), "{bad}: {out}");
+    }
+    let dir = s.dir.join("local");
+    farm_at(&dir, false);
+    let svg = fs::read_to_string(dir.join("sprites.svg")).unwrap();
+    fs::write(
+        dir.join("sprites.svg"),
+        svg.replacen("</svg>", "<use href=\"#s-edit\"/></svg>", 1),
+    )
+    .unwrap();
+    let (ok, out) = s.run(&["theme", "check", &dir.display().to_string()]);
+    assert!(ok, "{out}");
 }

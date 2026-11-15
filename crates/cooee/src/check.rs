@@ -5,13 +5,18 @@ use serde_json::Value;
 
 const SCHEMA: &str = include_str!("../../../docs/plugins/screens.schema.json");
 
-/// Checks each file, printing `ok` or `FAIL` and its `$.path: why` lines.
-pub fn run(paths: &[&str]) -> Result<(), String> {
+/// Checks each file (`what`: `plugin` or `layout`), printing `ok` or `FAIL` and its `$.path: why` lines.
+pub fn run(what: &str, paths: &[&str]) -> Result<(), String> {
     let schema: Value = serde_json::from_str(SCHEMA).map_err(|e| format!("the schema: {e}"))?;
     let mut failed = 0;
     for p in paths {
         let read = fs::read_to_string(p).map_err(|e| e.to_string());
-        let fails = if std::path::Path::new(p)
+        let fails = if what == "layout" {
+            let checked = read.and_then(|t| {
+                cooee_server::layout_check(&t).map_err(|b| format!("line {}: {}", b.line, b.why))
+            });
+            checked.err().into_iter().collect()
+        } else if std::path::Path::new(p)
             .extension()
             .is_some_and(|e| e == "toml")
         {
@@ -30,7 +35,7 @@ pub fn run(paths: &[&str]) -> Result<(), String> {
         }
     }
     match (paths.len(), failed) {
-        (0, _) => Err("usage: cooee plugin check <answer.json|cooee-plugin.toml>...".to_owned()),
+        (0, _) => Err("usage: cooee plugin|layout check <file>...".to_owned()),
         (_, 0) => Ok(()),
         _ => Err(format!("{failed} file(s) failed the check")),
     }

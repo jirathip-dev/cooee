@@ -1,4 +1,4 @@
-const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
+const W = '../../../design-system/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', F = q.get('f');
 const STYLE = q.get('style') || document.body.dataset.style || 'modern';

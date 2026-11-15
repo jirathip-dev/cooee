@@ -14,3 +14,4 @@
 - Don't leave unused Swift code — Periphery
 - Don't change a design frame without its snapshot (apple/design/v1) — CooeeUITests SnapshotTests
 - Don't name a provider (claude, anthropic, codex, openai, gemini, hermes) outside crates/cooee-core/src/providers/ and tests — scripts/neutral-core.sh
+- don't push a PR body without a For humans section, with a placeholder, or with evidence at an older sha than the head (enforced by: pr-body `scripts/pr-body.sh`, shadow since 2026-11-13)

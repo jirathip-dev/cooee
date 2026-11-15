@@ -1,4 +1,4 @@
-/* #48: what this design adds to web/src/app.css. Tokens only, no raw colour; the pages load app.css first, unchanged.
+/* #48: what this design adds to design-system/app.css. Tokens only, no raw colour; the pages load app.css first, unchanged.
 
    One size scale for the new-thread view, both sheets and Settings › providers:
      --ctl   every chip, button and one-line input, and the message box's first line   modern 36 px · terminal 28 px

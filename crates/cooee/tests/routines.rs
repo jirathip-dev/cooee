@@ -1,5 +1,5 @@
 //! Routines (#75) end to end with the fake shed (tests/support): an agent makes one in chat with cooee's own
-//! `create_routine` tool (its chat gets the routine line, Settings › routines lists it; a schedule under 15 minutes
+//! `create_routine` tool (its chat gets the routine line, `/routines.json` lists it; a schedule under 15 minutes
 //! apart is refused). A due time that passed runs once, into that chat, marked with the routine in the chat and the
 //! thread list; a restart runs nothing again, and a run whose record was lost (a crash between the run and its
 //! record) adopts the same message instead of sending a second. Settings pauses and deletes it.
@@ -140,12 +140,6 @@ fn a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts() {
         (&list[0]["made_in"], &list[0]["last_due"]),
         (&json!(id), &json!(0))
     );
-    let (status, page) = cooee.get("/routines");
-    assert_eq!(status, 200);
-    assert!(
-        page.contains("Monday renewals") && page.contains("Mondays 09:00"),
-        "{page}"
-    );
     drop(cooee);
 
     let eight_days_ago = ago(8);
@@ -240,12 +234,12 @@ fn a_new_thread_routine_starts_a_thread_marked_with_it_in_the_list() {
 
     assert_eq!(
         form(&cooee, &format!("/routines/{rid}"), "paused=true"),
-        "303"
+        "204"
     );
     assert_eq!(cooee.json("/routines.json")[0]["paused"]["why"], "owner");
     let bad = form(&cooee, &format!("/routines/{rid}"), "when=*%2F5+*+*+*+*");
     assert_eq!(bad, "400");
-    assert_eq!(form(&cooee, &format!("/routines/{rid}/delete"), ""), "303");
+    assert_eq!(form(&cooee, &format!("/routines/{rid}/delete"), ""), "204");
     let left = cooee.json("/routines.json");
     assert_eq!(left, json!([]));
     assert!(

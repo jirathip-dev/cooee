@@ -1,8 +1,8 @@
 //! Agent profiles end to end with the fake shed (tests/support), whose CLI runs the adapter command a start gives
 //! it: Plain starts the agent with nothing added; a file profile's account, settings, env (its secret through the
 //! adapter's shell), policy, its provider's "no personal setup" options and instructions are applied at spawn; a
-//! plugin's profile is listed while the plugin is installed and gone once it is removed; a guard its agent can't run
-//! refuses the start; no secret reaches cooee's config, files or log, or what it tells shed.
+//! plugin's profile starts while the plugin is installed and is refused once it is removed; a guard its agent can't
+//! run refuses the start; no secret reaches cooee's config, files or log, or what it tells shed.
 
 mod support;
 
@@ -88,21 +88,20 @@ impl Setup {
         (id, line.to_owned())
     }
 
-    fn picker(&self) -> String {
-        let page = self.cooee.get("/").1;
-        let at = page.find(r#"<nav class="ags""#).expect("the agents");
-        page[at..at + page[at..].find("</nav>").unwrap()].to_owned()
+    fn row(&self, id: &str) -> Value {
+        let list = self.cooee.json("/threads");
+        let row = list.as_array().unwrap().iter().find(|t| t["id"] == id);
+        row.cloned().unwrap_or_else(|| panic!("no {id} in {list}"))
     }
 
-    fn picker_with(&self, what: &str) -> String {
+    fn backend_up(&self, name: &str) {
         for _ in 0..400 {
-            let agents = self.picker();
-            if agents.contains(what) {
-                return agents;
+            if self.cooee.get(&format!("/p/{name}/api/tab.js")).0 == 200 {
+                return;
             }
             std::thread::sleep(std::time::Duration::from_millis(50));
         }
-        panic!("never {what}: {}", self.picker());
+        panic!("{name}'s backend never answered");
     }
 
     fn files(dir: &Path, out: &mut String) {
@@ -119,16 +118,6 @@ impl Setup {
 #[test]
 fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused() {
     let s = setup("profiles");
-    let picker = s.picker();
-    assert!(
-        picker.contains(r#"href="/new?agent=fake-acp""#)
-            && picker.contains(r#"<span class="tt">Fake</span>"#)
-            && picker.contains(r#"href="/new?profile=coder""#)
-            && picker.contains(r#"<span class="tt">Coder</span>"#)
-            && picker.contains(r#"<span class="tt">Guarded</span>"#)
-            && !picker.contains("Leak"),
-        "{picker}"
-    );
 
     let (id, line) = s.thread("", "hi");
     assert!(
@@ -138,10 +127,11 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     assert_eq!(s.shed.adapter_env(), "", "no adapter command to run");
     let terminal = format!("cooee-{id}");
     assert_eq!(s.shed.sent(&terminal), ["\x1e{\"prompt\":\"hi\"}\n"]);
-    let chat = s.cooee.get(&format!("/t/{id}")).1;
-    assert!(
-        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Plain · fake · main login · "),
-        "{chat}"
+    let row = s.row(&id);
+    assert_eq!(
+        (&row["profile"], &row["agent"], &row["account"]),
+        (&json!(""), &json!("fake-acp"), &json!("")),
+        "{row}"
     );
 
     let (id, line) = s.thread("coder", "hi");
@@ -192,12 +182,12 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     );
     let items = s.cooee.json(&format!("/threads/{id}/messages"));
     assert_eq!(items["items"][0]["text"], "hi", "{items}");
-    let chat = s.cooee.get(&format!("/t/{id}")).1;
-    assert!(
-        chat.contains("<i class=\"dt\"></i><span id=\"net\"></span>Coder · "),
-        "{chat}"
+    let row = s.row(&id);
+    assert_eq!(
+        (&row["profile"], &row["account"]),
+        (&json!("coder"), &json!("work")),
+        "{row}"
     );
-    assert!(s.picker().contains(&format!(r#"href="/t/{id}""#)));
 
     let runs = s.shed.cli_log().matches(" run ").count();
     let (status, body) = s.start("guard", "hi");
@@ -244,7 +234,7 @@ fn git(dir: &Path, args: &[&str]) -> String {
 }
 
 #[test]
-fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_it() {
+fn a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it() {
     let s = setup("profiles-plugin");
     let repo = s.dir.join("plug.git");
     fs::create_dir_all(&repo).unwrap();
@@ -262,8 +252,7 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
     .unwrap();
     git(&repo, &["add", "-A"]);
     git(&repo, &["commit", "--quiet", "-m", "1"]);
-    let option = r#"href="/new?profile=plug/conductor""#;
-    assert!(!s.picker().contains(option));
+    assert_eq!(s.start("plug/conductor", "go").0, 400, "not installed yet");
 
     let url = repo.to_string_lossy().into_owned();
     let out = s.cooee.cli(&["plugin", "add", &url, "--yes"]);
@@ -271,27 +260,15 @@ fn a_plugins_profile_is_listed_while_it_is_installed_and_its_add_confirm_names_i
         out.contains("agent profiles: Conductor (fake-acp)"),
         "{out}"
     );
-    for _ in 0..400 {
-        if s.cooee.get("/p/plug/api/whoami").0 == 200 {
-            break;
-        }
-        std::thread::sleep(std::time::Duration::from_millis(50));
-    }
-    assert!(s.picker_with(option).contains("Conductor"));
+    s.backend_up("plug");
     let (id, _) = s.thread("plug/conductor", "go");
     assert_eq!(
         s.shed.sent(&format!("cooee-{id}")),
         ["\x1e{\"prompt\":\"You are the conductor.\\n\\ngo\"}\n"]
     );
-    assert!(
-        s.cooee
-            .get(&format!("/t/{id}"))
-            .1
-            .contains("<i class=\"dt\"></i><span id=\"net\"></span>Conductor · ")
-    );
+    assert_eq!(s.row(&id)["profile"], "plug/conductor");
 
     s.cooee.cli(&["plugin", "remove", "plug"]);
-    assert!(!s.picker().contains("Conductor"), "{}", s.picker());
     assert_eq!(s.start("plug/conductor", "go").0, 400);
 }
 
@@ -315,23 +292,19 @@ http.createServer(async (req, res) => {{
 }
 
 #[test]
-fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_the_threads_id() {
+fn a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the_threads_id() {
     let s = setup("profiles-served");
     let repo = s.dir.join("plug.git");
     fs::create_dir_all(&repo).unwrap();
     git(&repo, &["init", "--quiet", "-b", "main"]);
     let (list, log) = (s.dir.join("served.json"), s.dir.join("started.log"));
-    let served = |threads: &[&str]| {
-        let v = json!([
-            { "name": "fleet-a", "label": "Fleet A", "agent": "fake-acp", "avatar": "/a.png",
-              "env": { "HERDSMAN_THREAD": "{thread}", "FLEET": "a" }, "threads": threads },
-            { "name": "fleet-b", "label": "Fleet B", "agent": "fake-acp", "hidden": true,
-              "why": "its guard can't be proven" },
-            { "name": "fleet-c", "label": "Fleet C", "agent": "fake-acp" },
-        ]);
-        fs::write(&list, v.to_string()).unwrap();
-    };
-    served(&[]);
+    let served = json!([
+        { "name": "fleet-a", "label": "Fleet A", "agent": "fake-acp",
+          "env": { "HERDSMAN_THREAD": "{thread}", "FLEET": "a" } },
+        { "name": "fleet-b", "label": "Fleet B", "agent": "fake-acp", "hidden": true,
+          "why": "its guard can't be proven" },
+    ]);
+    fs::write(&list, served.to_string()).unwrap();
     fs::write(repo.join("server.mjs"), serving(&list, &log)).unwrap();
     fs::write(
         repo.join("cooee-plugin.toml"),
@@ -345,25 +318,7 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
     s.cooee
         .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
 
-    let agents = s.picker_with(r#"href="/new?profile=plug/fleet-a""#);
-    let group = agents.find(r#"<p class="lb">plug</p>"#).expect(&agents);
-    let a = agents.find(r#"href="/new?profile=plug/fleet-a""#).unwrap();
-    assert!(
-        agents.find("Coder").unwrap() < group && group < a,
-        "{agents}"
-    );
-    let row = |at: usize| &agents[at..at + agents[at..].find("</a>").unwrap()];
-    assert!(
-        row(a).contains(r#"<img class="av" src="/p/plug/api/a.png" alt="">"#)
-            && row(a).contains(r#"<span class="tt">Fleet A</span>"#),
-        "{agents}"
-    );
-    let c = agents.find(r#"href="/new?profile=plug/fleet-c""#).unwrap();
-    assert!(row(c).contains(">FC</i>"), "{agents}");
-    assert!(
-        !agents.contains("fleet-b") && !agents.contains("Fleet B") && !agents.contains("plug/old"),
-        "{agents}"
-    );
+    s.backend_up("plug");
     let runs = s.shed.cli_log().matches(" run ").count();
     let (status, body) = s.start("plug/fleet-b", "go");
     assert_eq!(status, 400, "{body}");
@@ -379,33 +334,6 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_left_out_and_thread_is_th
     }
     let told: Value = serde_json::from_str(fs::read_to_string(&log).unwrap().trim()).unwrap();
     assert_eq!(told, json!({ "thread": id, "profile": "fleet-a" }));
-
-    let (old, _) = s.thread("", "older");
-    let (new, _) = s.thread("", "newer");
-    served(&[&old, &new]);
-    let agents = s.picker_with(&format!(r#"href="/t/{new}""#));
-    let a = agents.find("Fleet A</span>").unwrap();
-    let start = agents[..a].rfind("<a").unwrap();
-    assert!(
-        agents[start..a].contains(&format!(r#"href="/t/{new}""#)),
-        "{agents}"
-    );
-    let chat = s.cooee.get(&format!("/t/{new}")).1;
-    let at = chat.find(r#"<nav class="ags""#).unwrap();
-    let side = &chat[at..at + chat[at..].find("</nav>").unwrap()];
-    let fleet = side.find("Fleet A</span>").unwrap();
-    let under = &side[fleet..side[fleet..].find("+ new chat").unwrap() + fleet];
-    assert!(
-        under.contains(&format!(r#"href="/t/{old}""#))
-            && under.contains(&format!(r#"href="/t/{id}""#)),
-        "{side}"
-    );
-    assert!(
-        side.contains(r#"<a class="agr" href="/new?agent=fake-acp">"#),
-        "{side}"
-    );
-    let back = r#"href="/?list&amp;profile=plug/fleet-a" aria-label="back to agents""#;
-    assert!(chat.contains(back), "{chat}");
 
     s.cooee.cli(&["plugin", "remove", "plug"]);
 }

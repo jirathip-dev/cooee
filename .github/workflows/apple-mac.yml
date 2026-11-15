@@ -19,6 +19,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'merge-ready' && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: read
 defaults:
@@ -51,9 +54,6 @@ jobs:
       needs.scope.outputs.run == 'true' && needs.scope.outputs.mac == 'true' &&
       (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: [self-hosted, macOS, ARM64, cooee-mac]
-    concurrency:
-      group: apple-mac-${{ needs.scope.outputs.mac == 'true' && format('{0}-{1}', github.event_name, github.ref) || github.run_id }}
-      cancel-in-progress: true
     timeout-minutes: 60
     # Pull requests get no environment and no secrets: they build the unsigned .dmg. (`a && '' || b` is always b, as
     # '' is falsy, so the environment name is the truthy branch.)

@@ -1,4 +1,4 @@
-const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
+const W = '../../../design-system/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark', F = q.get('f'), STYLE = q.get('style') || 'modern';
 const theme = await fetch(`${P}${T}/theme.json`).then(r => r.json());

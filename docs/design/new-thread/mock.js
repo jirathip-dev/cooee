@@ -1,13 +1,13 @@
 (() => {
   const q = new URLSearchParams(location.search);
   const get = (u) => { const x = new XMLHttpRequest(); x.open("GET", u, false); x.send(); return JSON.parse(x.responseText); };
-  const THEMES = ["farm", "kitchen", "garden", "terminal"];
+  const THEMES = ["farm", "kitchen", "garden", "plain"];
   const SCHEMES = ["github-dark", "solarized-dark", "gruvbox", "nord", "dracula", "farm", "kitchen", "garden-dark", "paper",
     "farm-light", "kitchen-light", "garden-light"];
   globalThis.LOOK = {
     default: "farm",
-    themes: Object.fromEntries(THEMES.map((t) => [t, get(`/web/themes/${t}/theme.json`)])),
-    schemes: Object.fromEntries(SCHEMES.map((s) => [s, get(`/web/schemes/${s}.json`)])),
+    themes: Object.fromEntries(THEMES.map((t) => [t, get(t === "plain" ? "/design-system/themes/plain/theme.json" : `/packs/themes/${t}/theme.json`)])),
+    schemes: Object.fromEntries(SCHEMES.map((s) => [s, get(`/design-system/schemes/${s}.json`)])),
   };
   const pick = {};
   for (const k of ["theme", "mode", "style", "sprites"]) if (q.get(k)) pick[k] = q.get(k);

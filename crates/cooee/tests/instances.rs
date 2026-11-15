@@ -30,10 +30,10 @@ fn two_instances_never_see_each_others_threads_or_devices() {
         .as_str()
         .unwrap()
         .to_owned();
-    let link = format!(r#"href="/t/{id}""#);
-    assert!(a.get("/").1.contains(&link));
-    let (status, page) = b.get("/");
-    assert!(status == 200 && !page.contains(&link), "{page}");
+    let ids = |c: &Cooee| c.json("/threads").to_string();
+    assert!(ids(&a).contains(&id));
+    let theirs = ids(&b);
+    assert!(!theirs.contains(&id), "{theirs}");
 
     let (devices_a, devices_b) = (a.cli(&["devices"]), b.cli(&["devices"]));
     assert_eq!(
@@ -41,11 +41,8 @@ fn two_instances_never_see_each_others_threads_or_devices() {
         (1, 1)
     );
     assert_ne!(devices_a, devices_b);
-    let (head, _) = b.raw("GET", "/", &[("Cookie", &a.cookie)], "");
-    assert!(
-        head.contains(" 303 ") && head.contains("location: /pair"),
-        "{head}"
-    );
+    let (head, _) = b.raw("GET", "/threads", &[("Cookie", &a.cookie)], "");
+    assert!(head.contains(" 401 "), "{head}");
 }
 
 fn cooee(home: &Path, args: &[&str]) -> std::process::Output {

@@ -4,11 +4,7 @@
 
 mod support;
 
-use std::{
-    fs,
-    path::{Path, PathBuf},
-    thread,
-};
+use std::{fs, path::PathBuf, thread};
 
 use cooee_core::shed_proto::Hello;
 use serde_json::{Value, json};
@@ -21,21 +17,7 @@ struct Setup {
 }
 
 fn setup(name: &str) -> Setup {
-    setup_with(name, &[])
-}
-
-fn setup_with(name: &str, themes: &[&str]) -> Setup {
     let dir = scratch(name);
-    for t in themes {
-        let pack = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../packs/themes")
-            .join(t);
-        fs::create_dir_all(dir.join("themes").join(t)).unwrap();
-        for f in fs::read_dir(pack).unwrap() {
-            let f = f.unwrap();
-            fs::copy(f.path(), dir.join("themes").join(t).join(f.file_name())).unwrap();
-        }
-    }
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
     Setup { dir, shed, cooee }
@@ -127,17 +109,13 @@ fn new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply() {
 
     let kinds: Vec<Value> = s.items(&id).iter().map(|i| i["kind"].clone()).collect();
     assert_eq!(kinds, ["you", "agent"]);
-    let (status, page) = s.cooee.get("/");
-    assert_eq!(status, 200);
-    assert!(
-        page.contains(&format!(r#"href="/t/{id}""#)) && page.contains("Hello"),
-        "{page}"
-    );
-    let (status, page) = s.cooee.get(&format!("/t/{id}"));
-    assert!(
-        status == 200 && page.contains(&format!("data-thread=\"{id}\"")),
-        "{page}"
-    );
+    let list = s.cooee.json("/threads");
+    let row = list
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|t| t["id"] == id.as_str());
+    assert_eq!(row.map(|r| &r["last"]), Some(&json!("Hello")), "{list}");
 }
 
 #[test]
@@ -303,74 +281,6 @@ fn closing_a_thread_kills_and_removes_its_terminal() {
 }
 
 #[test]
-fn scene_draws_the_agents_as_sprites_and_the_current_ones_chats_as_chips() {
-    let s = setup_with("scene", &["farm", "kitchen"]);
-    let ids = [s.create("one"), s.create("two")];
-    let page = |path: &str, pick: &str| {
-        let cookie = format!("{}; cooee-look={pick}", s.cooee.cookie);
-        s.cooee.raw("GET", path, &[("Cookie", &cookie)], "").1
-    };
-    let agents = page("/?list", "").matches(r#"<a class="agr"#).count();
-    assert!(agents >= 1);
-    let scene = page("/?list", "scene:on/style:terminal");
-    assert!(scene.contains(r#"data-style="terminal""#), "{scene}");
-    assert_eq!(
-        scene.matches(r#"<section class="sp""#).count(),
-        1,
-        "{scene}"
-    );
-    assert_eq!(scene.matches(r#"<a class="sb"#).count(), agents, "{scene}");
-    assert!(scene.contains(&format!("{agents} agents")), "{scene}");
-    assert!(!scene.contains(r#"<a class="agr"#), "{scene}");
-    assert!(scene.contains("/look/farm/sprites.svg#s-"), "{scene}");
-    let ongoing = format!(r#"href="/t/{}""#, ids[0]);
-    assert_eq!(
-        scene.matches(r#"aria-current="true""#).count(),
-        1,
-        "{scene}"
-    );
-    let chips = &scene[scene.find(r#"class="scc""#).expect(&scene)..];
-    let chips = &chips[..chips.find("</nav>").unwrap()];
-    assert!(chips.contains(&format!("/t/{}", ids[1])), "{chips}");
-    assert_eq!(scene.matches(&ongoing).count(), 2, "{scene}");
-    assert!(
-        scene.contains(r#"data-v="scene" aria-checked="true""#),
-        "{scene}"
-    );
-    let chat = page(&format!("/t/{}", ids[1]), "scene:on");
-    let ring = chat.find(r#"aria-current="true""#).expect(&chat);
-    let tag = &chat[chat[..ring].rfind("<a").unwrap()..ring];
-    assert!(tag.contains(&ongoing), "{tag}");
-    let chips = &chat[chat.find(r#"class="scc""#).expect(&chat)..];
-    let chips = &chips[..chips.find("</nav>").unwrap()];
-    let first = chips.find(&ongoing).expect(chips);
-    let side = chips
-        .find(&format!(r#"href="/t/{}" aria-current="page""#, ids[1]))
-        .expect(chips);
-    let new = chips.find("+ new chat").expect(chips);
-    assert!(first < side && side < new, "{chips}");
-    for pick in [
-        "scene:on/figures:ascii",
-        "scene:on/figures:none",
-        "scene:on/theme:plain",
-    ] {
-        let list = page("/?list", pick);
-        assert!(!list.contains(r#"id="scene""#), "{pick}");
-        assert!(list.contains(r#"<a class="agr"#), "{pick}");
-        let v = list.find(r#"data-v="scene""#).unwrap();
-        let at = list[..v].rfind("<button").unwrap();
-        let tag = &list[at..v];
-        assert!(tag.contains("hidden"), "{pick}: {tag}");
-    }
-    let (status, art) = s.cooee.get("/look/kitchen/scene.svg");
-    assert_eq!(status, 200);
-    assert!(
-        art.contains(".h-busy,.h-held,.l-overcast,.l-rain{display:none}"),
-        "{art}"
-    );
-}
-
-#[test]
 fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
     for protocol in [0, 2] {
         let dir = scratch(&format!("version-{protocol}"));
@@ -403,7 +313,7 @@ fn a_shed_of_another_protocol_is_refused_naming_both_sides() {
 }
 
 #[test]
-#[ignore = "a server for web/e2e, not a test"]
+#[ignore = "a server for apple/e2e, not a test"]
 fn fake_shed_server() {
     let Some(dir) = std::env::var_os("FAKE_SHED_DIR") else {
         return;

@@ -1,14 +1,15 @@
-const W = '../../../web/';
+const W = '../../../design-system/';
 const q = new URLSearchParams(location.search);
 export const STYLE = q.get('style') || 'modern', T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark';
-const theme = await fetch(`${W}themes/${T}/theme.json`).then(r => r.json());
+const P = T === 'plain' ? `${W}themes/` : '../../../packs/themes/';
+const theme = await fetch(`${P}${T}/theme.json`).then(r => r.json());
 const scheme = await fetch(`${W}schemes/${theme.scheme[MODE]}.json`).then(r => r.json());
 const r = document.documentElement;
 for (const [k, v] of Object.entries(scheme.tokens)) r.style.setProperty(k, v);
 r.style.colorScheme = scheme['color-scheme'];
 Object.assign(r.dataset, { theme: T, style: STYLE === 'terminal' ? 'terminal' : 'modern', scene: STYLE === 'scene' ? 'on' : 'off' });
 if (theme.sprites) {
-  const svg = await fetch(`${W}themes/${T}/sprites.svg`).then(r => r.text());
+  const svg = await fetch(`${P}${T}/sprites.svg`).then(r => r.text());
   document.body.insertAdjacentHTML('afterbegin', `<svg width=0 height=0 style="position:absolute" aria-hidden=true><defs>${svg.replace(/^[\s\S]*?<svg[^>]*>|<\/svg>\s*$/g, '')}</defs></svg>`);
 }
 const ASCII = { edit: ['~o=', '=o~'], read: ['o.o', 'o.-'], run: ['o>_', 'o> '], needs: ['(!)', '[!]'], done: ['\\o/', '|o|'],
