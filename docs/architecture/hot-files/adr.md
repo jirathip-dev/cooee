@@ -2,13 +2,17 @@
 
 ## Summary
 
-Decision: every shared list becomes a folder with one file per entry; the few list files that must still exist are written by one script and never edited or merged by hand; the shared docs and CI lists are split per area. The web client's 20 hot files are left alone: #189, which is ready to merge, deletes them (two are gone already).
-Slices: 0 the script, the core crate's root and the lock file; 1 the server's routes; 2 the hub; 3 the CLI's commands; 4 the test support; 5 the docs and the README; 6 the CI gates and the native e2e steps; 7 to 9 the native app's clients, models, live UI tests and chat actions.
-Open questions: (1) the splits add about 400 lines of file headers while #189 lowers the line cap to the count plus 500: keep 900 of margin there, or file one raise? (2) 35 files that already belong to one area and 6 manifests get a size cap and no new layout: is that enough, or do you want them forced off the report too?
+Decision: every shared list becomes a folder with one file per entry; the list files that must still exist are written by one script; docs and CI lists are split per area (#356, approved). Addendum (#427): the 35 one-area files become folders too, so all of them leave the report.
+Slices: 0 to 9 as approved (0 is merged). Added: 10 to 12 core modules, 13 and 14 server modules, 15 to 17 integration tests, 18 Swift files, 19 the themes doc.
+Open questions: four types every feature adds a field to (thread, config, chat summary, persona) stay one small file each and may be reported again: split them by area next, or wait for the next run (my pick)?
 
 Files: this ADR, [`callers.md`](callers.md) (how the code reads afterwards, written first), [`shapes.md`](shapes.md)
 (the contracts and the generated files), [`boundaries.md`](boundaries.md) (who calls whom, the statecharts),
 [`files.md`](files.md) (each of the 80 files and what happens to it).
+
+**Addendum (#427, q1697):** [`addendum.md`](addendum.md) and [`addendum-files.md`](addendum-files.md) move the 35
+one-area files into the new layout as slices 10 to 19. It replaces decision 11's last sentence and the last
+consequence below; everything else stands as approved.
 
 ## Question
 
@@ -93,9 +97,9 @@ what keeps it that way?
     `ChatFeature.Action` gets one case per area, the area's actions in the area's file (the shape
     `plugins(PluginAction)` already has).
 11. **Files with logic get a size cap, not a freeze.** `[[size]] max_file_lines = 800` on `crates/*/src`; the
-    baseline lists today's offenders, which may only shrink. A one-area module or a manifest gets no new layout
-    ([`files.md`](files.md) names each): it is already a file PRs of other areas have no reason to open once the
-    lists above are gone.
+    baseline lists today's offenders, which may only shrink. A manifest gets no new layout ([`files.md`](files.md)
+    names each). A one-area module, test file, Swift file or doc becomes a folder too: changed by the addendum
+    ([`addendum.md`](addendum.md), #427).
 
 ## Consequences
 
@@ -119,8 +123,7 @@ what keeps it that way?
   `--refactor`; the others are.
 - **If #189 does not merge**, the 20 web files stay hot and need their own ADR; nothing here depends on their layout.
 - **Still on the report afterwards, by design**: `hub.rs`, `main.rs`, `ci.yml`, `apple.yml`, `ChatFeature.swift` as
-  small kernels, and the one-area files whenever their area is busy. The next hotspots run measures whether that is
-  enough (open question 2).
+  small kernels. The 35 one-area files leave it with slices 10 to 19 (the addendum, #427).
 
 ## Slices
 
@@ -250,3 +253,5 @@ glob = "*.swift"
 ```
 
 Slice 9: none (`ChatFeature.swift` is a kernel; SwiftLint's 250-line file and 150-line type limits hold it).
+
+Slices 10 to 19: the lines at the end of [`addendum.md`](addendum.md).
