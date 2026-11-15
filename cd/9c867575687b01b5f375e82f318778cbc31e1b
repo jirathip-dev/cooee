@@ -1,0 +1,7 @@
+Decided: after the CLI split, update's word lives in cmd/update.rs and job()/plist(verb) in service.rs
+Because: crates/cooee/src/service.rs:31
+Decided: send_to hands back its thread handle and cooee update joins it, instead of making deliver public
+Because: crates/cooee-server/src/push.rs:505
+Rejected: a public deliver with an # Errors doc — push.rs would grow past its arch baseline of 1183 lines
+Check: drover arch-check reports 0 violations and update's failure push still lands in update.log
+Owner: the update branch sits on current staging after the CLI split; all gates pass again.
