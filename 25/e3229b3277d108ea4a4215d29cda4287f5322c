@@ -1,0 +1,6 @@
+Decided: round 15 adds LiveWorkflowUITests to apple/e2e/map.toml so the scope job passes; no Swift change
+Because: apple/e2e/map.toml:65
+Because: "Every gate is green; `apple_cap` holds."
+Rejected: mapping Home.swift and SlotView.swift too — unmatched apple paths already run the whole suite
+Check: CI scope is green at this head and the macOS apple job runs the e2e and AC3 screenshots
+Owner: No change to the feature; the test map now lists the new Workflow screen test, so the Mac checks run again.
