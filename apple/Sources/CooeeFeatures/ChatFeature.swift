@@ -31,6 +31,7 @@ public struct ChatFeature: Sendable {
         public var workflow: [ListedChat]?
         public var workflowOpen = false
         public var unfolded: String?
+        public var machine = MachineChip()
         @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
@@ -80,6 +81,7 @@ public struct ChatFeature: Sendable {
         case screen(PresentationAction<ScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
         case workflow(WorkflowAction)
+        case machine(MachineAction)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
@@ -131,7 +133,7 @@ public struct ChatFeature: Sendable {
                 return compose(&state, action)
             }
         }
-        Reduce { state, action in plugins(&state, action) }
+        Reduce { state, action in .merge(plugins(&state, action), machine(&state, action)) }
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
     }
