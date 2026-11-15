@@ -123,11 +123,12 @@ extension PersonaSheet {
                 Button(action: actions.browse) {
                     SettingRow(
                         symbol: "folder.fill", title: "Folder", tint: look.palette.amber, value: draft.folder,
-                        divider: false
+                        divider: !choices.machines.isEmpty
                     )
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).accessibilityLabel("Folder")
+                if !choices.machines.isEmpty { machine }
             }
             if let error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
             if let delete = actions.delete {
@@ -144,6 +145,25 @@ extension PersonaSheet {
 
     private var avatarLook: PersonaLook {
         draft.avatar == persona.api.avatar ? persona.look : Persona(draft).look
+    }
+
+    private var machine: some View {
+        MachineMenu(
+            machines: choices.machines, pick: { draft.machine = $0 },
+            face: {
+                HStack(spacing: 6) {
+                    Text("Machine").ui(16, .regular, look)
+                    Spacer()
+                    if let row = choices.machines.first(where: { $0.name == draft.machine }) {
+                        MachineDot(dot: row.dot)
+                    }
+                    Text(choices.machines.title(draft.machine)).ui(15, .regular, look).foregroundStyle(
+                        look.palette.mute)
+                }
+                .padding(.horizontal, 14).frame(height: 48).contentShape(Rectangle())
+            }
+        )
+        .buttonStyle(.plain).accessibilityLabel("Machine")
     }
 
     private var style: some View {

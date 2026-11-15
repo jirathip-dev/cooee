@@ -11,7 +11,9 @@ internal struct PersonaScreen: View {
         let notes = Listing.memory(store.notes, persona: store.draft.name, now: Date())
         PersonaSheet(
             draft: $store.draft,
-            choices: PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts),
+            choices: PersonaChoices(
+                agents: store.agents, models: store.models, efforts: store.efforts, machines: store.machines
+            ),
             memory: PersonaMemory(notes: notes, count: store.notes.count),
             error: store.error,
             actions: actions

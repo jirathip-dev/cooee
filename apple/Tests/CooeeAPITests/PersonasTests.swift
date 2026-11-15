@@ -118,7 +118,7 @@ internal struct PersonasTests {
     @Test internal func aNewThreadCarriesThePickedModelAndEffort() async throws {
         let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n1"}"#])]])
         let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp", model: "opus", effort: "high")
-        _ = try await server.client().newThread(persona: persona, text: "hi", randomID: "r9")
+        _ = try await server.client().newThread(persona: persona, machine: "", text: "hi", randomID: "r9")
         let sent = try server.decoded("/threads", as: [String: JSONValue].self)
         #expect(sent["model"] == .string("opus") && sent["effort"] == .string("high"))
     }

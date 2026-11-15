@@ -165,10 +165,12 @@ extension AppFeature {
         if id.hasPrefix("new:") {
             guard let persona = home.persona(String(id.dropFirst(4))) else { return nil }
             chat = ChatFeature.State(server: home.server, target: .new(persona), persona: Persona(persona))
+            chat.machine.current = persona.machine
         } else {
             let listed = lists.all.first { $0.id == id }?.persona
             let persona = listed ?? Persona(APIPersona(id: "", name: "Chat", agent: ""))
             chat = ChatFeature.State(server: home.server, target: .thread(id), persona: persona)
+            chat.machine.current = home.rows.first { $0.id == id }?.machine ?? ""
         }
         chat.workflow = lists.workflow[chat.persona.id]
         return chat
@@ -190,12 +192,20 @@ extension AppFeature {
             return .none
         case .started(let thread):
             state.path = state.path.dropLast() + [thread]
-            state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
+            state.chat = state.chat.map { Self.moved($0, to: .thread(thread), persona: $0.persona) }
             return .send(.home(.refresh))
         case .restart(let persona):
             state.path = state.path.dropLast() + ["new:\(persona.id)"]
-            state.chat = state.chat.map { .init(server: $0.server, target: .new(persona), persona: Persona(persona)) }
+            state.chat = state.chat.map { Self.moved($0, to: .new(persona), persona: Persona(persona)) }
             return .none
         }
+    }
+
+    private static func moved(
+        _ chat: ChatFeature.State, to target: ChatFeature.Target, persona: Persona
+    ) -> ChatFeature.State {
+        var moved = ChatFeature.State(server: chat.server, target: target, persona: persona)
+        moved.machine = chat.machine
+        return moved
     }
 }

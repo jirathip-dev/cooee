@@ -11,6 +11,7 @@ public struct PersonaFeature: Sendable {
         public var notes: [PersonaNote] = []
         public var agents: [AgentOption] = []
         public var lists: [ModelList] = []
+        public var machines: [MachineRow] = []
         public var folders: FolderListing?
         public var search = ""
         public var busy = false
@@ -35,6 +36,7 @@ public struct PersonaFeature: Sendable {
         case noted([PersonaNote])
         case offered([AgentOption])
         case listed([ModelList])
+        case machines([MachineRow])
         case agent(String)
         case browse(String?)
         case browsed(FolderListing)
@@ -71,7 +73,8 @@ public struct PersonaFeature: Sendable {
             case .binding, .delegate:
                 return .none
             case .task:
-                return .concatenate(state.isNew ? .none : memory(state), offer(state), models(state))
+                return .concatenate(
+                    state.isNew ? .none : memory(state), offer(state), models(state), machines(state))
             case .agent(let agent):
                 (state.draft.agent, state.draft.model, state.draft.effort) = (agent, "", "")
                 return models(state)
@@ -99,6 +102,8 @@ public struct PersonaFeature: Sendable {
             state.agents = agents
         case .listed(let lists):
             state.lists = lists
+        case .machines(let machines):
+            state.machines = machines
         case .failed(let error):
             state.busy = false
             state.error = error
@@ -156,6 +161,11 @@ extension PersonaFeature {
     private func models(_ state: State) -> Effect<Action> {
         let (personas, server) = (personas, state.server)
         return run { await $0(.listed(try await personas.models(server))) }
+    }
+
+    private func machines(_ state: State) -> Effect<Action> {
+        let (personas, server) = (personas, state.server)
+        return run { await $0(.machines(try await personas.machines(server))) }
     }
 
     private func browse(_ state: inout State, _ path: String?) -> Effect<Action> {

@@ -15,7 +15,7 @@ extension Client {
 
     private struct NewThread: Encodable {
         private enum CodingKeys: String, CodingKey {
-            case agent, profile, model, effort, text, background
+            case agent, profile, model, effort, machine, text, background
             case randomID = "random_id"
         }
 
@@ -23,6 +23,7 @@ extension Client {
         fileprivate let profile: String
         fileprivate let model: String?
         fileprivate let effort: String?
+        fileprivate let machine: String
         fileprivate let text: String
         fileprivate let randomID: String
         fileprivate let background = true
@@ -133,6 +134,10 @@ extension Client {
         try await post("/threads/\(id)/unqueue", ["random_id": randomID])
     }
 
+    public func move(_ id: String, to machine: String) async throws {
+        try await post("/threads/\(id)/move", ["machine": machine])
+    }
+
     public func cancel(_ id: String) async throws {
         try await post("/threads/\(id)/cancel", [String: String]())
     }
@@ -145,12 +150,15 @@ extension Client {
         try await post("/threads/\(id)/read", ["item": item])
     }
 
-    public func newThread(persona: APIPersona, text: String, randomID: String = UUID().uuidString) async throws
-        -> String
-    {
+    public func newThread(
+        persona: APIPersona,
+        machine: String,
+        text: String,
+        randomID: String = UUID().uuidString
+    ) async throws -> String {
         let body = NewThread(
             agent: persona.agent, profile: persona.id, model: persona.model.isEmpty ? nil : persona.model,
-            effort: persona.effort.isEmpty ? nil : persona.effort, text: text, randomID: randomID
+            effort: persona.effort.isEmpty ? nil : persona.effort, machine: machine, text: text, randomID: randomID
         )
         let created: Created = try await call("POST", "/threads", body)
         return created.id

@@ -33,6 +33,7 @@ public struct ChatFeature: Sendable {
         public var workflow: [ListedChat]?
         public var workflowOpen = false
         public var unfolded: String?
+        public var machine = MachineChip()
         @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
@@ -77,6 +78,7 @@ public struct ChatFeature: Sendable {
         case screen(PresentationAction<ScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
         case workflow(WorkflowAction)
+        case machine(MachineAction)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
@@ -109,6 +111,8 @@ public struct ChatFeature: Sendable {
                 return cards(&state, action)
             case .room(let action):
                 return seat(&state, action)
+            case .machine(let action):
+                return machine(&state, action)
             default:
                 return listen(&state, action)
             }
