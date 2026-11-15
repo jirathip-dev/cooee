@@ -1,0 +1,11 @@
+Decided: Sparkle 2.10.1 by SPM on the CooeeApp target, its product gated to macOS (condition: .when(platforms: [.macOS])), so the iOS build never links it.
+Because: "Add Sparkle 2 by Swift Package Manager, for the macOS target only (the iOS app is unchanged)."
+Decided: the updater turns on only when Info.plist carries SUPublicEDKey; mac-app.sh derives it from SPARKLE_ED_KEY and apple-mac.yml hands that key over only with the Developer ID.
+Because: "(unsigned builds), the updater is turned off and Settings says why"
+Decided: an ad hoc (unsigned) build is no longer signed with the hardened runtime: its library validation refused the ad hoc Sparkle.framework and the app died at launch (seen in the local run).
+Decided: the login items restart after the swap (launchctl kickstart -k: stop, then start the new bundled binary), armed when Sparkle stages the update, then the script checks /pair answers on the port.
+Because: "the app stops its cooee and shed login items, swaps the bundle, and starts them again"
+Rejected: stopping them before the swap — they are KeepAlive launchd agents, launchd would start the old binary again at once.
+Decided: the merge with #330 keeps its cached package directory; mac-setup deletes the cached Cooee.app before building versions 1 and 2, so a cache holding the updated app never starts the test at version 2.
+Check: AC3's CI part (login items restart, simulator still paired) runs in apple.yml's mac-setup job, which runs on staging pushes only; the PR shows a recorded local run of the Sparkle part.
+Owner: add SPARKLE_ED_KEY to the mac-release environment; until then and without the Developer ID the app says updates are off.
