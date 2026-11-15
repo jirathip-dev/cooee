@@ -1,0 +1,5 @@
+Decided: merged origin/staging with #426; the panel's action joins ChatFeature's per-area switch and its Stop sends compose's stop.
+Because: apple/Sources/CooeeFeatures/ChatPanel.swift:47
+Rejected: keeping a top-level stop action — #426 moved it under compose, and two spellings would be two ways to do one thing.
+Check: ChatPanelTests still sees the pick's Stop reach threads.stop once; apple-check, line cap and arch-check are green.
+Owner: The branch is up to date with staging again; the … panel works as before.
