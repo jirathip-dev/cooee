@@ -1,0 +1,6 @@
+Decided: the merge of staging's #151 keeps its hub/relaunch.rs for attach and drops this branch's moved copy from hub/send.rs
+Because: crates/cooee-server/src/hub/relaunch.rs:14
+Decided: arch.toml keeps both slices' collect blocks; the baseline is rewritten by drover arch-check --write-baseline
+Because: .drover/arch.toml:11
+Rejected: none
+Owner: Nothing changes in the app; this only brings the hub split up to date with staging.
