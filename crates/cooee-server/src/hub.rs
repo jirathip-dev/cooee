@@ -12,8 +12,8 @@ use std::{
 };
 
 use cooee_core::{
-    Agent, Body, Card, Change, Chat, Config, Item, Kind, Launch, Plugin, Queued, Shed, ShedError,
-    Store, StoreError, Summary, Thread, Turn, Workflow,
+    Agent, Body, Card, Change, Chat, Config, Item, Kind, Launch, Plugin, Profile, Queued, Shed,
+    ShedError, Store, StoreError, Summary, Thread, Turn, Workflow,
     mcp::{self, COOEE, Pick, Server},
     personas,
     routines::Mark,
@@ -26,6 +26,7 @@ use tokio::sync::broadcast;
 
 use crate::{
     mcp::Grant,
+    plugin,
     push::{Note, Push, note},
 };
 
@@ -48,6 +49,7 @@ const CHANGE: u64 = 30 * 60 * 1000;
 
 const TICK: Duration = Duration::from_secs(30);
 const AGENTS_FOR: u64 = 60_000;
+const SERVED_EVERY: Duration = Duration::from_secs(5);
 
 /// Why a thread action failed.
 #[derive(Debug, thiserror::Error)]
@@ -283,6 +285,7 @@ pub struct Hub {
     config: Option<PathBuf>,
     plugins: Mutex<Vec<Plugin>>,
     agents: Mutex<(Result<Vec<Agent>, String>, u64)>,
+    served: Mutex<HashMap<String, Option<Vec<Profile>>>>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
     terminals: Mutex<HashMap<String, Arc<Mutex<Live>>>>,
@@ -515,6 +518,7 @@ impl Hub {
         let (turns, next) = mpsc::channel();
         let hub = Arc::new(Self {
             agents: Mutex::new((shed.agents().map_err(|e| e.to_string()), now())),
+            served: Mutex::default(),
             shed,
             store,
             scratch: data.join("scratch"),
@@ -549,6 +553,14 @@ impl Hub {
         });
         let follower = Arc::clone(&hub);
         thread::spawn(move || follower.follow());
+        let asker = Arc::clone(&hub);
+        thread::spawn(move || {
+            loop {
+                let began = Instant::now();
+                asker.refresh_served();
+                thread::sleep(SERVED_EVERY.saturating_sub(began.elapsed()));
+            }
+        });
         let ticker = Arc::clone(&hub);
         thread::spawn(move || {
             loop {
@@ -932,6 +944,43 @@ impl Hub {
             Err(e) if agents.0.is_ok() => eprintln!("cooee: kept the agent list: {e}"),
             fresh => agents.0 = fresh,
         }
+    }
+
+    /// Installed plugin `name`'s backend: its first tab's entry (its URL and token).
+    #[must_use]
+    pub fn backend(&self, name: &str) -> Option<Plugin> {
+        let lock = cooee_core::plugins::read_lock(&self.data).ok()?;
+        let tabs = lock.into_iter().find(|l| l.name == name)?.tabs;
+        self.plugins().into_iter().find(|p| tabs.contains(&p.name))
+    }
+
+    /// Installed plugin `name`'s profiles as its backend last served them: `None` while no backend runs or when it
+    /// serves none (its manifest's are offered), none before its first answer.
+    #[must_use]
+    pub fn served(&self, name: &str) -> Option<Vec<Profile>> {
+        self.backend(name)?;
+        lock(&self.served)
+            .get(name)
+            .cloned()
+            .unwrap_or(Some(Vec::new()))
+    }
+
+    fn refresh_served(&self) {
+        let mut fresh = HashMap::new();
+        let installed = cooee_core::plugins::read_lock(&self.data).unwrap_or_default();
+        for name in installed.into_iter().filter(|l| l.enabled).map(|l| l.name) {
+            let Some(p) = self.backend(&name) else {
+                continue;
+            };
+            let got = plugin::profiles(&p).or_else(|e| {
+                eprintln!("cooee: plugin {}: its profiles: {e}", p.name);
+                lock(&self.served).get(&name).cloned().ok_or(e)
+            });
+            if let Ok(list) = got {
+                fresh.insert(name, list);
+            }
+        }
+        *lock(&self.served) = fresh;
     }
 
     fn adapter(&self, id: &str) -> Vec<String> {

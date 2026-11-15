@@ -35,3 +35,10 @@ internal func row(_ id: String, persona: String = "coder", state: String = "done
         unseen: 0, archived: archived
     )
 }
+
+internal func layout(_ json: String, etag: String = "") -> Layout {
+    // SAFETY: every caller passes a literal layout the tests expect to decode
+    try! Layout(json: Data(json.utf8), etag: etag)
+}
+
+internal let testLayout = layout(#"{"format":1,"root":{"type":"nav"}}"#)

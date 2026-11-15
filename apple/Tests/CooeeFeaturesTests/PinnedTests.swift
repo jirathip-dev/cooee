@@ -17,7 +17,7 @@ internal struct PinnedTests {
     }
 
     private func store(_ rows: [ThreadRow]) -> TestStoreOf<AppFeature> {
-        var state = AppFeature.State(server: mini)
+        var state = AppFeature.State(layout: testLayout, server: mini)
         state.home?.rows = rows
         state.home?.personas = [coder]
         let (calls, clock) = (calls, clock)

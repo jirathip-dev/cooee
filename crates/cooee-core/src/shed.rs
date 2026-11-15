@@ -315,6 +315,10 @@ impl Shed {
         };
         match conn.call::<Hello>(Method::Hello, json!(ours)) {
             Ok(theirs) if theirs.compatible() => Ok(conn),
+            Ok(theirs) if theirs.protocol < ours.protocol => Err(version(format!(
+                "the server runs {}, an older shed; restart shed serve",
+                side(&theirs)
+            ))),
             Ok(theirs) => Err(version(format!("the server runs {}", side(&theirs)))),
             Err(ShedError::Rpc(e)) if e.code == ErrorCode::Version.code() => {
                 let why = e.message.trim_start_matches("SHED_VERSION: ");
