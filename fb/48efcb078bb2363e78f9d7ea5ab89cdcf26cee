@@ -1,0 +1,13 @@
+Decided: merged staging (#151 moved machine into cooee-server); doctor.rs reaches it through main.rs's import, its body unchanged
+Because: crates/cooee/src/main.rs:16
+Decided: staging build fix, staging's arch-check failed on hub.rs, so the proposal cards live in hub/proposals.rs, the code unchanged
+Because: .drover/arch-baseline.txt:1
+Decided: this PR's growth lives in its own files: GitHub deliveries in core routines/github.rs, cooee doctor in crates/cooee/src/doctor.rs
+Because: .drover/arch.toml:7
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs, so the runner's tick cannot deadlock with it
+Because: crates/cooee-server/src/hub.rs:1870
+Rejected: trimming lines inside hub.rs — moving one cohesive block to a file is what the hot-files ADR asks
+Check: drover arch-check exits 0; NO_HOOKS at crates/cooee-server/src/routines.rs:135 refuses a GitHub routine without [hooks]
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
