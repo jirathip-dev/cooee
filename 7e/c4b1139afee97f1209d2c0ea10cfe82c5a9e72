@@ -1,0 +1,9 @@
+Decided: merged origin/staging (#420, #426); the main.rs conflict keeps staging's code, and the new cmd/ files' rule-breaking comments are stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop #420's move of the commands into cmd/
+Decided: scripts/gen.sh writes cmd/mod.rs with no //! or // header, and both generated files are regenerated, not hand-edited
+Because: crates/cooee/src/main.rs:12
+Rejected: hand-stripping cmd/mod.rs — arch-check fails a generated file that differs from what gen.sh writes
+Check: sh scripts/gen.sh leaves the tree clean, and drover arch-check reports 0 violations
+Check: every changed .rs file under crates/ matches staging once comments are removed, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the new per-command files follow the comment rule
