@@ -36,8 +36,8 @@ public struct AppFeature: Sendable {
         case persona(PresentationAction<PersonaFeature.Action>)
         case edit(String?)
         case open(String)
+        case pin(String)
         case start(String)
-        case pinned(String)
         case back
         case path([String])
     }
@@ -100,11 +100,13 @@ public struct AppFeature: Sendable {
         case .open(let thread):
             state.path = [thread]
             state.chat = chat(state, thread)
+        case .pin(let persona):
+            let newest = state.home?.rows.filter { $0.persona == persona && $0.members.isEmpty }.max {
+                $0.updated < $1.updated
+            }
+            return navigate(&state, newest.map { .open($0.id) } ?? .start(persona))
         case .start(let persona):
             return navigate(&state, .open("new:\(persona)"))
-        case .pinned(let persona):
-            let latest = state.home?.rows.filter { $0.persona == persona }.max { $0.updated < $1.updated }
-            return navigate(&state, .open(latest?.id ?? "new:\(persona)"))
         case .back:
             state.path = Array(state.path.dropLast())
             state.chat = nil

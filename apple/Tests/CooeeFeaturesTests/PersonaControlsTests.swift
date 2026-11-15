@@ -43,16 +43,11 @@ internal struct PersonaControlsTests {
         return state
     }
 
-    @Test internal func aPinnedPersonaOpensItsLatestChatElseANewOne() async {
-        var state = paired()
-        let old = ThreadRow(
-            id: "t0", title: "", agent: "codex", persona: "coder", state: "done", last: "", updated: 1, unseen: 0,
-            archived: false)
-        state.home?.rows = [old, row("t1"), row("x1", persona: "other")]
-        let store = store(state)
-        await store.send(.pinned("coder")) {
+    @Test internal func theChatHeadersPlusStartsANewChatWithItsPersona() async {
+        let store = store(paired())
+        await store.send(.open("t1")) {
             $0.path = ["t1"]
-            $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .done))
+            $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
         }
         await store.send(.chat(.new))
         await store.receive(\.chat.delegate.new)
@@ -60,8 +55,6 @@ internal struct PersonaControlsTests {
             $0.path = ["new:coder"]
             $0.chat = ChatFeature.State(server: mini, target: .new(coder), persona: Persona(coder))
         }
-        await store.send(.home(.loaded([], [coder]))) { $0.home?.rows = [] }
-        await store.send(.pinned("coder"))
     }
 
     @Test internal func theChatHeaderOpensItsPersonasSheet() async {

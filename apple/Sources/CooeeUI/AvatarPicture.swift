@@ -1,5 +1,4 @@
 import ImageIO
-import SwiftUI
 import UniformTypeIdentifiers
 
 internal enum AvatarPicture {

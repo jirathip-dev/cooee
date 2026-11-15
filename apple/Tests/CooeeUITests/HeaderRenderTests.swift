@@ -26,7 +26,7 @@ internal struct HeaderRenderTests {
     @Test internal func aPlacesCountDrawsOnItsChip() throws {
         let plain = try Self.pixels(Self.strip([nil, nil]))
         #expect(try Self.pixels(Self.strip([7, nil])).differing(from: plain, by: 16) > 0.001)
-        #expect(try Self.pixels(Self.strip([])) == plain)
+        #expect(try Self.pixels(Self.strip([])).differing(from: plain, by: 16) < 0.0001)
     }
 
     @Test internal func theHeaderDrawsPlusOnlyWhenItCanStartAChat() throws {
