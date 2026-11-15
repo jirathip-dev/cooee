@@ -1,0 +1,7 @@
+Decided: round 7 merges origin/staging at 62d9f81 (#419 hub split, #276 rooms); the merge was clean
+Decided: the e2e map pairs LiveChatStyleUITests with its test file, Trace.swift and the chat sources
+Because: apple/e2e/map.toml:47
+Because: crates/cooee-server/src/lib.rs:1
+Rejected: raising the lib.rs arch baseline here — staging already raised it to 2329, and this PR never touches lib.rs
+Check: scope, ci-scripts and arch-check are green at the head; dmg had already passed at 749c450
+Owner: Same feature; this round fixes the test map CI needed for the new chat-style test and catches up with staging.
