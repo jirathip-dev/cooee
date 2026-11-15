@@ -12,6 +12,7 @@ internal struct WorkflowNavigationTests {
         state.home?.rows = rows
         state.home?.personas = personas
         state.home?.plugins = plugins
+        state.home?.screen = homeScreen
         return TestStore(initialState: state) {
             AppFeature()
         } withDependencies: {
@@ -43,11 +44,11 @@ internal struct WorkflowNavigationTests {
             $0.chat = ChatFeature.State(server: mini, target: .new(conductor), persona: Persona(conductor))
             $0.chat?.workflow = sessions
         }
-        await store.send(.home(.loaded([row("t1"), lane("l1")], [coder, conductor], []))) {
+        await store.send(.home(.loaded(homeScreen, [row("t1"), lane("l1")], [coder, conductor], []))) {
             $0.home?.plugins = []
             $0.chat?.workflow = nil
         }
-        await store.send(.home(.loaded([row("t1"), lane("l1")], [coder, conductor], [drover]))) {
+        await store.send(.home(.loaded(homeScreen, [row("t1"), lane("l1")], [coder, conductor], [drover]))) {
             $0.home?.plugins = [drover]
             $0.chat?.workflow = sessions
         }

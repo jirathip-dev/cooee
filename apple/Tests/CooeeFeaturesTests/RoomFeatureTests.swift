@@ -116,7 +116,7 @@ internal struct RoomFeatureTests {
             AppFeature()
         } withDependencies: {
             $0.date.now = epoch
-            $0.threads.threads = { _ in rows }
+            $0.threads.home = { _ in HomeAnswer(screen: homeScreen, threads: rows, personas: cast) }
             $0.threads.personas = { _ in cast }
             $0.plugins.installed = { _ in [] }
         }

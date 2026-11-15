@@ -9,6 +9,10 @@ paths = ["crates/*/src/**/*.rs"]
 max_file_lines = 800
 
 [[collect]]
+dir = "crates/cooee-server/src/hub"
+glob = "*.rs"
+
+[[collect]]
 dir = "apple/Sources/CooeeCore/Models"
 glob = "*.swift"
 

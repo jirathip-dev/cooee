@@ -18,6 +18,7 @@ mod plugin;
 mod push;
 mod relaunch;
 mod routines;
+mod screens;
 mod themes;
 
 use std::{
@@ -2087,6 +2088,7 @@ pub fn router(
     .route(layout::get)
     .route(layout::events)
     .route(layout::reset)
+    .route(screens::home::home)
     .app_context(layouts)
     .app_context(hub)
     .app_context(Arc::new(Dots::default()))
