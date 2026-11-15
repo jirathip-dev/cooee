@@ -1,0 +1,7 @@
+Decided: merge origin/staging (#181 queue scene and the web removal) into the branch; Frame.all keeps staging's QueueFrames.all and adds this branch's v2-settings frames
+Because: apple/Tests/CooeeUITests/Frames.swift:45
+Rejected: pushing the previous lane's wip snapshot merge — it also committed ci-wait logs and an Xcode Package.resolved, so the merge was redone cleanly
+Decided: the round's FAIL was only `apple` pending at efae760; it has since gone green, so no source change was needed beyond the staging merge
+Because: apple/design/v2-settings/README.md:4
+Check: the PR is mergeable again, CI is green at ad49838, and SnapshotTests passes in compare mode with no PNG re-recorded
+Owner: The design branch now sits on the latest app changes; the design screens are unchanged.
