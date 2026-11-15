@@ -1,0 +1,14 @@
+Decided: every operation of hub.rs moves as-is to hub/<area>.rs per shapes.md's table; hub.rs keeps the types, open, load, unload and the shed re-attach
+Because: "hub/<area>.rs (hub.rs stays as the kernel: types, open, load, unload)"
+Decided: backend, served and refresh_served (newer than the ADR) go to hub/plugins.rs; event_id goes with subscribe to hub/threads.rs
+Because: crates/cooee-server/src/hub/plugins.rs:1
+Decided: the unit tests move verbatim to hub/tests.rs, so no test line is edited and the kernel stays under 800 lines
+Because: crates/cooee-server/src/hub.rs:37
+Decided: an area's fields stay on Hub, as ask.rs, models.rs and rooms.rs keep theirs today: moving them into a State struct would edit the bodies
+Because: crates/cooee-server/src/hub.rs:354
+Decided: dirs and in_home move with their only caller to hub/folders.rs
+Because: crates/cooee-server/src/hub/folders.rs:11
+Rejected: tests split per area file — they share helpers whose visibility would have to change, an edit the refactor mark forbids
+Check: only imports, module docs, mod lines, pub(super) on methods another file calls and rustfmt's rewrap of those signatures differ
+Check: sh scripts/gen.sh leaves no diff and drover arch-check --base origin/staging exits 0
+Owner: Nothing changes in the app; a new hub feature now goes in its own file under hub/.
