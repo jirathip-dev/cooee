@@ -1,0 +1,9 @@
+Decided: a new `pin` action in AppFeature picks the persona's newest one-to-one thread by its updated time and opens it like a Chats row; with none it falls back to `start`
+Because: "Tapping a pinned persona opens that persona's newest thread (from the rows Home already has)"
+Rejected: changing `start` itself — the + menu's persona entries call it and must still start a new chat
+Rejected: looking the thread up in the SwiftUI view — the reducer owns state and the TestStore test drives it
+Decided: rooms (rows with members) are skipped when picking the pinned persona's thread
+Decided: places and installed plugins load with async let, in parallel; the transcript task already runs apart from the plugin task in ChatScreen
+Because: "The plugin chips (places and plugins) load in parallel and never delay the transcript."
+Check: PinnedTests drives `.pin` then the chat's `.task`, asserting the messages fetch and the read post for the newest thread
+Owner: Tapping a pinned persona now opens its latest chat with the full history and clears its unread badge; a persona with no chat still opens a blank one.
