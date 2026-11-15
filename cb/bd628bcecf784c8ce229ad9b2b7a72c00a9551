@@ -1,0 +1,7 @@
+Decided: merged origin/staging; apple's e2e flag is the scope's e2e and vars.E2E != 'off'
+Because: .github/workflows/apple.yml:67
+Decided: the "e2e off" summary line shows only when vars.E2E is off
+Because: .github/workflows/apple.yml:116
+Rejected: dropping #436's switch now that #430 lands — the owner unsets the variable, not this PR
+Check: with E2E=off, a PR push still builds for iOS Simulator (.github/workflows/apple.yml:99)
+Owner: the switch that turns the simulator tests off still works with the new per-screen runs.
