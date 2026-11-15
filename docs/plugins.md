@@ -112,7 +112,8 @@ improving are owner-only: the CLI on the Mac, or a paired device (a plugin's tok
     is unlocked with its passkey (the `terminal` tab's gate; a stream that ends for good, such as a locked tab's, sends
     `closed`).
 - cooee calls the backend over HTTP/1.0, one connection per call, and passes on only the content type, `Accept` and
-  `Last-Event-ID`. An event stream should send a comment now and then so a closed tab is noticed.
+  `Last-Event-ID`. An event stream should send a comment now and then (cooee passes it on, so a closed tab is
+  noticed); one silent for a minute is closed.
 
 ## From the backend to cooee
 

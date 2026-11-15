@@ -26,6 +26,8 @@
             XCTAssertEqual(app.switches["Pin to Home"].firstMatch.value as? String, "1")
             picksAgentAndFolder(app)
             type(app, "Instructions", "Cite every source.")
+            app.buttons["Detailed"].firstMatch.tap()
+            XCTAssert(app.buttons["Detailed"].firstMatch.isSelected)
             keep("persona")
             app.buttons["Save"].firstMatch.tap()
             XCTAssert(app.buttons["Save"].waitForNonExistence(timeout: 10))

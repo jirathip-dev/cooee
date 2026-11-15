@@ -37,13 +37,16 @@ public struct ChatFeature: Sendable {
         public var working: Bool { turn.working }
         public var drawn: [Item] {
             room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
-                ?? ChatItems.build(items, live: live, outbox: first + outbox)
+                ?? ChatItems.build(
+                    items, live: live, outbox: first + outbox, style: persona.api.style, working: working)
         }
 
         private var first: [Outgoing] {
             let failure = turn.state == "unconnected" ? turn.note ?? "" : nil
             return pending.map { [Outgoing(id: 0, text: $0, failure: failure)] } ?? []
         }
+
+        public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
 
         public init(server: Server, target: Target, persona: Persona, room: Room? = nil) {
             self.server = server
