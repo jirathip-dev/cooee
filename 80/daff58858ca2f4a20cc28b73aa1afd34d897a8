@@ -1,0 +1,6 @@
+Decided: merged origin/staging and ported the linked exchange onto its split files (Models/, hub/send.rs, hub/threads.rs, SlotView, ChatScreen) and its compose/outbox actions
+Because: crates/cooee-server/src/hub/send.rs:121
+Decided: room-pinned-dark, -terminal-dark and -scene-light re-recorded: that Home now shows the exchanges under Coder, like room-home-dark
+Because: "Exchanges hang under their asker's chat in Home (depth 2 under depth 1), on the phone and at 1440"
+Rejected: none
+Owner: Merge-only round; the live phone check with a note mid-exchange is still unverified.
