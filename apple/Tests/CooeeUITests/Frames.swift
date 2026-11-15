@@ -161,6 +161,13 @@ extension Frame {
             phone("room-create-light", .farmLight) { NewRoomSheet.kestrel() },
             phone("room-member-dark", .farmDark) { MemberSheet.researcher() },
             phone("room-home-dark", .farmDark) { HomeView(chats: Fixtures.roomChats) },
+            phone("room-pinned-dark", .farmDark) { HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats) },
+            phone("room-pinned-terminal-dark", .farmDark, style: .terminal) {
+                HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats)
+            },
+            phone("room-pinned-scene-light", .farmLight, style: .scene) {
+                HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats)
+            },
             phone("room-terminal-dark", .farmDark, style: .terminal) { RoomView.kestrel() },
             phone("room-scene-light", .farmLight, style: .scene) { RoomView.kestrel() },
             mac("room-wide-dark", 1440, 900, .farmDark) { WideView.kestrel() },

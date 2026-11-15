@@ -75,6 +75,18 @@ fn display(names: &[Persona], id: &str) -> String {
     }
 }
 
+pub(super) fn seated(room: &Thread) -> Vec<String> {
+    room.members.iter().map(|m| m.persona.clone()).collect()
+}
+
+pub(super) fn said(names: &[Persona], speaker: &str, last: String) -> String {
+    if speaker.is_empty() {
+        last
+    } else {
+        format!("{}: {last}", display(names, speaker))
+    }
+}
+
 fn refused(why: impl Into<String>) -> HubError {
     HubError::Refused(why.into())
 }
@@ -184,10 +196,10 @@ impl Hub {
                 let to = to.unwrap_or(at).min(l.meta.members.len());
                 l.meta.members.insert(to, seat);
             }
-            _ => return Ok(l.meta.members.iter().map(|m| m.persona.clone()).collect()),
+            _ => return Ok(seated(&l.meta)),
         }
         self.store.save(&l.meta)?;
-        let members = l.meta.members.iter().map(|m| m.persona.clone()).collect();
+        let members = seated(&l.meta);
         drop(l);
         if !gone.is_empty() {
             self.close(&gone)?;
@@ -232,7 +244,7 @@ impl Hub {
         let names = personas::list(self.config_dir(), &self.data);
         let mut turns = named(text, &l.meta.members, &names);
         let reason = if turns.is_empty() {
-            turns = l.meta.members.iter().map(|m| m.persona.clone()).collect();
+            turns = seated(&l.meta);
             Reason::Round
         } else {
             Reason::Mention
@@ -465,5 +477,45 @@ impl Hub {
                 eprintln!("cooee: room {room}: {e}");
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use serde_json::json;
+
+    use super::super::tests::{hub, scratch};
+
+    #[test]
+    fn a_rooms_row_names_its_last_speaker() {
+        let dir = scratch("speaker");
+        let threads = dir.join("data/threads");
+        let room = json!({ "format": 1, "thread": { "id": "room", "title": "Kestrel", "messages": [], "kind": "room",
+            "members": [{ "persona": "ada" }, { "persona": "bo" }] } });
+        fs::write(threads.join("room.json"), room.to_string()).unwrap();
+        let line = |id: u64, speaker: &str, kind: &str| {
+            json!({ "id": id, "at": id, "speaker": speaker, "kind": kind, "text": format!("line {id}"), "random_id": "r", "stop_reason": "end_turn" })
+                .to_string()
+        };
+        fs::write(threads.join("room.jsonl"), line(1, "owner", "you") + "\n").unwrap();
+        let chat =
+            json!({ "format": 1, "thread": { "id": "chat", "title": "chat", "messages": [] } });
+        fs::write(threads.join("chat.json"), chat.to_string()).unwrap();
+        fs::write(threads.join("chat.jsonl"), line(1, "", "you") + "\n").unwrap();
+        let last = |id: &str| {
+            hub(&dir)
+                .list()
+                .into_iter()
+                .find(|r| r.id == id)
+                .unwrap()
+                .last
+        };
+        assert_eq!(last("room"), "Owner: line 1");
+        assert_eq!(last("chat"), "line 1");
+        let lines = line(1, "owner", "you") + "\n" + &line(2, "ada", "agent") + "\n";
+        fs::write(threads.join("room.jsonl"), lines).unwrap();
+        assert_eq!(last("room"), "ada: line 2");
     }
 }

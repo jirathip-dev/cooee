@@ -4,7 +4,7 @@ use cooee_core::shed_proto::{EventKind, Reported};
 
 use super::*;
 
-fn hub(dir: &Path) -> Arc<Hub> {
+pub(super) fn hub(dir: &Path) -> Arc<Hub> {
     hub_on(dir, dir.join("no-shed"))
 }
 
@@ -23,7 +23,7 @@ fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
     .unwrap()
 }
 
-fn scratch(name: &str) -> PathBuf {
+pub(super) fn scratch(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("cooee-hub-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(dir.join("data/threads")).unwrap();

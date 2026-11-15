@@ -103,6 +103,7 @@ struct Live {
 struct Glance {
     ask: Option<(String, String, String)>,
     last: String,
+    speaker: String,
     at: u64,
     unseen: usize,
     routine: String,
@@ -144,6 +145,7 @@ fn glance(live: &Live) -> Glance {
         last: waiting
             .unwrap_or_else(|| text.lines().last().unwrap_or("").chars().take(80).collect()),
         at: last.map_or(0, |i| i.at),
+        speaker: last.map(|i| i.speaker.clone()).unwrap_or_default(),
         unseen: items[from..]
             .iter()
             .filter(|i| !matches!(i.body, Body::You { .. }))
