@@ -1,0 +1,15 @@
+Decided: main.rs keeps parse, look-up and exit code; one file per word in cmd/, its mod.rs written by scripts/gen.sh as the table ALL
+Because: "Adds: cmd/, cli.rs (main.rs stays as the kernel: parse, look up, exit code)."
+Decided: layout gets its own cmd/layout.rs, though shapes.md's word list leaves it out: cooee layout check exists today
+Because: crates/cooee/src/cmd/layout.rs:13
+Decided: what setup.rs shares with commands (doctor, pair, plist) moves to helper modules doctor.rs, devices.rs, service.rs, so no command calls another
+Because: crates/cooee/src/setup.rs:15
+Decided: the kernel takes out the union of every command's flags wherever they stand, each once, so every line parses as before
+Because: crates/cooee/src/cli.rs:71
+Decided: a bad sub-command still prints `cooee: <usage>` and exits 1 (Invocation carries the usage line); accounts keeps its own exit codes through Failed::Exit
+Because: crates/cooee/src/cli.rs:155
+Decided: #151's move of machine.rs to cooee-server is taken: cmd/machine.rs and doctor.rs use cooee_server::machine
+Because: crates/cooee/src/cmd/machine.rs:3
+Rejected: Failed::Usage for a bad sub-command as callers.md sketches — it would change exit 1 to 2, a command change the ADR rules out
+Check: sh scripts/gen.sh leaves no diff; drover arch-check --base origin/staging exits 0; cooee --help has the same parts as before, in name order
+Owner: Nothing changes for you, bar cooee --help listing commands alphabetically; adding a CLI command is now one file in cmd/ and running just gen.
