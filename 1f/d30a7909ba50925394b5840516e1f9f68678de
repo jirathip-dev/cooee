@@ -1,0 +1,5 @@
+Decided: merge origin/staging (7b26a56); staging's wait for a note branch from #177 moves into support/agent.rs, and mod.rs stays the generated index
+Because: crates/cooee/tests/support/agent.rs:143
+Rejected: taking staging's monolithic support/mod.rs — it would undo the split this slice exists for
+Check: sh scripts/gen.sh leaves no diff, drover arch-check --base origin/staging exits 0, and cargo test -p cooee passes
+Owner: The branch now includes the latest staging; the one conflict was a new test helper, moved into its new file.
