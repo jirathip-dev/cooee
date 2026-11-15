@@ -1,0 +1,8 @@
+Decided: add timeout-minutes to every job staging's rebuilt workflows left without one; keep staging's existing concurrency blocks
+Because: "`timeout-minutes` on every job in every workflow, sized about 2× its normal green time"
+Rejected: tightening staging's existing apple/apple-mac timeouts — no green-time evidence for the self-hosted runners
+Rejected: the Playwright cache — staging deleted the web client and the ui job (#189), so there is no Playwright to cache
+Decided: raise hub.rs's arch baseline to 3120 as a staging build fix; staging's own arch-check is red on it
+Because: .drover/arch-baseline.txt:1
+Check: each runs-on job in .github/workflows/*.yml has timeout-minutes; arch-check is a reusable call, which cannot take one
+Owner: CI jobs can no longer hang for hours; the Playwright part of the issue went away with the web client.
