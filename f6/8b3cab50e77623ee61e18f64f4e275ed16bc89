@@ -1,0 +1,15 @@
+Decided: each justfile recipe of `check` becomes ci/gates/<name>.sh with the same commands; ci/gates.sh runs them, the justfile keeps check, gen, apple-check
+Because: "Adds: ci/gates/, ci/gates.sh, apple/e2e/steps/, apple/e2e/run.sh."
+Decided: lessons is a twelfth gate (the ADR counts eleven): `just check` already ran it, so msrv now runs ci/pr-body-test.sh too
+Because: ci/gates/lessons.sh:4
+Decided: msrv's eleven steps become one `setsid --wait ci/gates.sh`, so adding a gate edits no workflow; the job name is unchanged
+Because: .github/workflows/ci.yml:103
+Decided: run.sh makes the simulator, starts serve.sh, sources each step in a subshell and always exports screens, stops the server, deletes its simulator
+Because: apple/e2e/run.sh:11
+Decided: the verify recipe's Launch, Drive and Teardown are one run.sh call with the lane's port and $OUT, as the ADR's decision 9 says
+Because: .herdsman/verify.md:52
+Decided: merged origin/staging; the arch-baseline conflict takes staging's lines, which already carry hub.rs at 3120
+Because: .drover/arch-baseline.txt:1
+Rejected: one ci.yml step per gate — every new gate would edit ci.yml again, the conflict the ADR removes
+Check: drover arch-check --base origin/staging exits 0; sh scripts/gen.sh leaves no diff; apple's merge-ready run passes the e2e
+Owner: Gates are now one file each under ci/gates; run one with `just check <name>` instead of `just <name>`.
