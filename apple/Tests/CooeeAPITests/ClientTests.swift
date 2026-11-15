@@ -17,12 +17,13 @@ internal struct ClientTests {
 
     private struct Started: Decodable, Equatable {
         private enum CodingKeys: String, CodingKey {
-            case agent, profile, text, background
+            case agent, profile, machine, text, background
             case randomID = "random_id"
         }
 
         fileprivate let agent: String
         fileprivate let profile: String
+        fileprivate let machine: String
         fileprivate let text: String
         fileprivate let randomID: String
         fileprivate let background: Bool
@@ -96,12 +97,16 @@ internal struct ClientTests {
         #expect(server.body("/threads/a1b2/retry") == "{}")
     }
 
-    @Test internal func aNewThreadStartsForAPersona() async throws {
+    @Test internal func aNewThreadStartsForAPersonaOnTheMachinePicked() async throws {
         let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n1"}"#])]])
-        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp")
-        #expect(try await server.client().newThread(persona: persona, text: "hi", randomID: "r9") == "n1")
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp", machine: "air")
+        let client = server.client()
+        #expect(try await client.newThread(persona: persona, machine: "mini", text: "hi", randomID: "r9") == "n1")
         let body = try server.decoded("/threads", as: Started.self)
-        #expect(body == Started(agent: "fake-acp", profile: "coder", text: "hi", randomID: "r9", background: true))
+        #expect(
+            body
+                == Started(
+                    agent: "fake-acp", profile: "coder", machine: "mini", text: "hi", randomID: "r9", background: true))
     }
 
     @Test internal func cooeesOwnSentenceIsTheError() async throws {

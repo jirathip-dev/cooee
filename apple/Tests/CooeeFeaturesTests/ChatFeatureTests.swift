@@ -38,8 +38,8 @@ internal struct ChatFeatureTests {
             $0.threads.send = { _, thread, text, files, queue in
                 calls.record("\(queue ? "queue" : "send") \(thread) \(text) \(files.count)")
             }
-            $0.threads.start = { _, persona, text in
-                calls.record("start \(persona.id) \(text)")
+            $0.threads.start = { _, persona, machine, text in
+                calls.record("start \(persona.id) \(machine) \(text)")
                 return "n1"
             }
             $0.threads.stop = { _, thread in calls.record("stop \(thread)") }
@@ -80,6 +80,15 @@ internal struct ChatFeatureTests {
         await task.cancel()
         #expect(calls.all == ["read a1 1"])
         #expect(store.state.drawn.count == 2 && !store.state.working)
+    }
+
+    @Test internal func aChatStyleTurnFoldsItsStepsAndThePillNamesTheCurrentOne() {
+        var state = ChatFeature.State(server: mini, target: .thread("a1"), persona: Persona(coder))
+        state.items = slice.items + [APIItem(id: 2, time: 2, kind: "tool", title: "Read a", status: "in_progress")]
+        state.turn = Turn(state: "working")
+        #expect(state.drawn == [.you(id: 1, text: "Fix it", files: [])] && state.step == "Read a")
+        state.persona = Persona(APIPersona(id: "cond", name: "Conductor", agent: "codex", style: .detailed))
+        #expect(state.drawn.count == 2 && state.step == nil)
     }
 
     @Test internal func aFailedLoadSaysWhyAndTriesAgain() async {
@@ -133,7 +142,7 @@ internal struct ChatFeatureTests {
             $0.queue = [Queued(text: "a", randomID: "q1")]
         }
         await store.send(.compose(.steer(0)))
-        #expect(calls.all == ["start coder hi"])
+        #expect(calls.all == ["start coder  hi"])
     }
 
     @Test internal func queuedMessagesAreSteeredOrTakenBack() async {

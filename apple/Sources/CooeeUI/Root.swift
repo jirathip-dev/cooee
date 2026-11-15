@@ -19,6 +19,7 @@ public struct AppRoot: View {
                 SlotView(
                     store: store, node: store.layout.layout.resolved(for: compact ? .compact : .wide), compact: compact
                 )
+                .environment(\.cast, home.personas.map { Persona($0) })
                 .task {
                     store.send(.menu(.load))
                     await home.send(.task).finish()

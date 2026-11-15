@@ -29,7 +29,9 @@ public struct ThreadsClient: Sendable {
     public var answer:
         @Sendable (_ server: Server, _ thread: String, _ item: Int, _ option: String, _ value: String?) async throws
             -> Void
-    public var start: @Sendable (_ server: Server, _ persona: APIPersona, _ text: String) async throws -> String
+    public var start:
+        @Sendable (_ server: Server, _ persona: APIPersona, _ machine: String, _ text: String) async throws -> String
+    public var move: @Sendable (_ server: Server, _ thread: String, _ machine: String) async throws -> Void
     public var retry: @Sendable (_ server: Server, _ thread: String) async throws -> Void
     public var room: @Sendable (_ server: Server, _ title: String, _ members: [String]) async throws -> String
     public var seat:
@@ -45,6 +47,7 @@ public struct PersonasClient: Sendable {
     public var forget: @Sendable (_ server: Server, _ persona: String) async throws -> Void
     public var agents: @Sendable (_ server: Server) async throws -> [AgentOption]
     public var models: @Sendable (_ server: Server) async throws -> [ModelList]
+    public var machines: @Sendable (_ server: Server) async throws -> [MachineRow]
     public var folders: @Sendable (_ server: Server, _ path: String?) async throws -> FolderListing
 }
 
