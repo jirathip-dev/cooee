@@ -3,6 +3,13 @@ import CooeeCore
 import Foundation
 
 extension ChatFeature {
+    @CasePathable
+    public enum Outbox: Sendable, Equatable {
+        case delivered(Int)
+        case undelivered(Int, String)
+        case retry(Int)
+    }
+
     internal func send(_ state: inout State) -> Effect<Action> {
         let text = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty || !state.files.isEmpty else { return .none }
@@ -13,7 +20,7 @@ extension ChatFeature {
         return deliver(state, message)
     }
 
-    internal func outbox(_ state: inout State, _ action: Action) -> Effect<Action> {
+    internal func outbox(_ state: inout State, _ action: Outbox) -> Effect<Action> {
         switch action {
         case .delivered(let id):
             state.outbox.removeAll { $0.id == id }
@@ -34,8 +41,6 @@ extension ChatFeature {
                 state.files = []
             }
             return deliver(state, message)
-        default:
-            break
         }
         return .none
     }
@@ -57,14 +62,14 @@ extension ChatFeature {
             switch target {
             case .thread(let thread):
                 try await threads.send(server, thread, message.text, message.files, queue)
-                await send(.delivered(message.id))
+                await send(.outbox(.delivered(message.id)))
             case .new(let persona):
                 let thread = try await threads.start(server, persona, message.text)
-                await send(.delivered(message.id))
+                await send(.outbox(.delivered(message.id)))
                 await send(.delegate(.started(thread)))
             }
         } catch: { error, send in
-            await send(.undelivered(message.id, error.localizedDescription))
+            await send(.outbox(.undelivered(message.id, error.localizedDescription)))
         }
     }
 }
