@@ -125,14 +125,20 @@ internal struct RoundBody: View {
 }
 
 internal struct LinkChip: View {
-    @Environment(\.look) private var look
     internal let link: JSONValue
 
     internal var body: some View {
         ActButton(source: link) {
-            Text("\(link.string("label") ?? "") ›").ui(14, .medium, look).foregroundStyle(look.palette.link)
-                .padding(.horizontal, 12).frame(height: 32)
-                .overlay(RoundedRectangle(cornerRadius: look.mono ? 4 : 16).stroke(look.palette.edge, lineWidth: 1))
+            Text("\(link.string("label") ?? "") ›").modifier(OutlineChip())
         }
+    }
+}
+
+internal struct OutlineChip: ViewModifier {
+    @Environment(\.look) private var look
+
+    internal func body(content: Content) -> some View {
+        content.ui(14, .medium, look).foregroundStyle(look.palette.link).padding(.horizontal, 12).frame(height: 32)
+            .overlay(RoundedRectangle(cornerRadius: look.mono ? 4 : 16).stroke(look.palette.edge, lineWidth: 1))
     }
 }

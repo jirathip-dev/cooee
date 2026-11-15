@@ -28,6 +28,9 @@ public struct ChatFeature: Sendable {
         public var room: Room?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
+        public var workflow: [ListedChat]?
+        public var workflowOpen = false
+        public var unfolded: String?
         @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
@@ -63,11 +66,13 @@ public struct ChatFeature: Sendable {
         case delegate(Delegate)
         case screen(PresentationAction<ScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
+        case workflow(WorkflowAction)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case started(String)
             case open(String)
+            case round(String)
         }
     }
 
