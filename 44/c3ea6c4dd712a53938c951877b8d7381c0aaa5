@@ -1,0 +1,11 @@
+Decided: merged origin/staging (#229, #289); both sides' AppFeatureTests stubs and serve.sh notes are kept
+Because: apple/e2e/serve.sh:11
+Decided: the looks routes live in themes.rs; lib.rs only registers them, staying at its #356 arch baseline
+Because: crates/cooee-server/src/themes.rs:393
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: "A pack installed or removed on the server shows or disappears in the list"
+Decided: /look/{theme}/ art is served with no cookie, as before #189, for the app's WebKit Scene art
+Because: crates/cooee-server/src/lib.rs:143
+Rejected: an in-memory pack cache with a file watcher — more code than one load per call needs
+Check: drover arch-check, cargo test -p cooee --test themes and swift test pass at head; the PR merges cleanly into staging
+Owner: The branch sits on current staging again; nothing in the Theme picker changed.
