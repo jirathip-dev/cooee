@@ -1,0 +1,10 @@
+Decided: merged origin/staging; the 33 code conflicts keep staging's code with every rule-breaking comment line dropped, 937 in 40 files
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop staging's new code
+Decided: the 40 web/ modify/delete conflicts take staging's deletion of the PWA client
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Decided: the justfile keeps staging's lessons recipe and adds comments to check
+Because: "A CI check (a script or an arch/lint rule) enforcing the rule on every tracked source file"
+Check: git diff -w origin/staging HEAD on crates and docs/design only deletes comment lines (4 JS lines lose only a trailing comment), and scripts/comments.py exits 0
+Check: topcoat fmt and cargo deny pass in CI; neither tool is installed on this host
+Owner: the branch is up to date with staging again, the removed web client stays removed, and staging's new code follows the comment rule
