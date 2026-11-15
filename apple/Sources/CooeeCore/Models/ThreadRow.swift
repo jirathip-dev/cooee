@@ -1,6 +1,6 @@
 public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
-        case id, title, agent, persona, state, last, unseen, archived, workflow
+        case id, title, agent, persona, machine, state, last, unseen, archived, workflow
         case updated = "at"
         case roster = "members"
     }
@@ -9,6 +9,7 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
     public let title: String
     public let agent: String
     public let persona: String
+    public let machine: String?
     public let state: String
     public let last: String
     public let updated: Int64
@@ -30,12 +31,14 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         unseen: Int,
         archived: Bool,
         workflow: WorkflowLabel? = nil,
-        members: [String] = []
+        members: [String] = [],
+        machine: String? = nil
     ) {
         self.id = id
         self.title = title
         self.agent = agent
         self.persona = persona
+        self.machine = machine
         self.state = state
         self.last = last
         self.updated = updated
