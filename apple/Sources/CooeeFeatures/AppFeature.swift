@@ -36,6 +36,7 @@ public struct AppFeature: Sendable {
         case persona(PresentationAction<PersonaFeature.Action>)
         case edit(String?)
         case open(String)
+        case pin(String)
         case start(String)
         case back
         case path([String])
@@ -72,6 +73,8 @@ public struct AppFeature: Sendable {
                 state.path = state.path.dropLast() + [thread]
                 state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
                 return .send(.home(.refresh))
+            case .chat(.delegate(.open(let thread))):
+                return .send(.open(thread))
             case .room:
                 state.newRoom = state.home.map { NewRoomFeature.State(server: $0.server, personas: $0.personas) }
                 return .none
@@ -101,6 +104,11 @@ public struct AppFeature: Sendable {
         case .open(let thread):
             state.path = [thread]
             state.chat = chat(state, thread)
+        case .pin(let persona):
+            let newest = state.home?.rows.filter { $0.persona == persona && $0.members.isEmpty }.max {
+                $0.updated < $1.updated
+            }
+            return navigate(&state, newest.map { .open($0.id) } ?? .start(persona))
         case .start(let persona):
             state.path = ["new:\(persona)"]
             state.chat = chat(state, "new:\(persona)")

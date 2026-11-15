@@ -140,4 +140,10 @@ internal struct PluginScreenFeatureTests {
         }
         #expect(store.state.title == "Hi")
     }
+
+    @Test internal func aLaneTapAsksTheChatToOpenItsThread() async {
+        let store = store()
+        await store.send(.open("herdsman-impl-641"))
+        await store.receive(\.delegate.open, "herdsman-impl-641")
+    }
 }
