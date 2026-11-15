@@ -6,7 +6,7 @@ import Testing
 internal struct ScreensTests {
     private static let row = """
         {"installed": [{"name": "hello", "version": "0.1.0", "commit": "abc", "url": "/r", "listed": true,
-        "state": "running", "places": [{"type": "menu-row", "label": "hello"}],
+        "state": "running", "places": [{"type": "menu-row", "label": "hello"}], "claims": [],
         "permissions": {"places": ["menu-row"], "push": false, "actions": ["wave"], "destructive": [], "network": []}}],
         "index": [], "jobs": {}}
         """
