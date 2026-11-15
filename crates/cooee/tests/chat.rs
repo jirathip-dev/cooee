@@ -340,8 +340,8 @@ fn a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_o
     let (v, b) = (&version().version, &version().build);
     let rev = "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb";
     let needs = format!(
-        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0; \
-         fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev {rev} shed && "
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0, an older shed; \
+         restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev {rev} shed && "
     );
     let notes: Vec<String> = s
         .items(&id)

@@ -1,6 +1,5 @@
 import ComposableArchitecture
 import CooeeCore
-import Foundation
 
 @Reducer
 public struct AppFeature: Sendable {
