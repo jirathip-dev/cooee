@@ -32,7 +32,7 @@ public struct ChatView: View {
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
                 VStack(spacing: 8) {
-                    if working { WorkingPill(since: since, stop: actions.stop) }
+                    if working { WorkingPill(since: since, step: actions.step, stop: actions.stop) }
                     Composer(
                         hint: "Message \(persona.name)",
                         queued: queued,
@@ -192,6 +192,7 @@ internal struct ChatHeader: View {
 internal struct WorkingPill: View {
     @Environment(\.look) private var look
     internal var since: Date?
+    internal var step: String?
     internal var stop: () -> Void = {}
 
     internal var body: some View {
@@ -226,6 +227,8 @@ internal struct WorkingPill: View {
 
     private func label(_ seconds: Int) -> some View {
         let time = "\(max(0, seconds) / 60):\(String(format: "%02d", max(0, seconds) % 60))"
-        return Text(look.mono ? "working \(time)" : "Working · \(time)").ui(13, .medium, look)
+        let what = step ?? (look.mono ? "working" : "Working")
+        return Text(look.mono ? "\(what) \(time)" : "\(what) · \(time)").ui(13, .medium, look).lineLimit(1)
+            .truncationMode(.middle)
     }
 }

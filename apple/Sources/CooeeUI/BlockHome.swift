@@ -10,6 +10,8 @@ public struct HomeActions {
     public var edit: (String?) -> Void
     public var others: [String] = []
     public var openOthers: () -> Void = {}
+    public var rooms: [String] = []
+    public var pinRoom: (String) -> Void = { _ in }
 
     public init(
         menu: @escaping () -> Void = {},
@@ -30,8 +32,9 @@ public struct HomeActions {
 
 public struct HomeView: View {
     @Environment(\.look) private var look
+    private let screen: HomeScreen
     private let menuOpen: Bool
-    private let personas: [Persona]
+    private let pins: [Pin]
     private let all: [Persona]
     private let chats: [ListedChat]
     private let selected: String?
@@ -42,11 +45,9 @@ public struct HomeView: View {
         ZStack(alignment: .topLeading) {
             Backdrop()
             VStack(spacing: 0) {
-                TopBar(personas: all, actions: actions)
+                TopBar(title: screen.title, personas: all, actions: actions)
                 Scroller {
-                    PinnedRow(personas: personas, rows: chats.map(\.row), pin: actions.pin).padding(.top, 6)
-                    ChatList(chats: chats, selected: selected, open: actions.open)
-                        .padding(.top, look.style == .scene ? 0 : 14)
+                    HomeBlocks(screen: screen, pins: pins, chats: chats, selected: selected, actions: actions)
                     if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
                 }
             }
@@ -60,16 +61,18 @@ public struct HomeView: View {
     }
 
     public init(
+        screen: HomeScreen = .bundled,
         menuOpen: Bool = false,
-        personas: [Persona] = Fixtures.personas,
-        all: [Persona]? = nil,
+        pins: [Pin] = Fixtures.personas.map(Pin.persona),
+        all: [Persona] = Fixtures.personas,
         chats: [ListedChat] = Fixtures.chats,
         selected: String? = nil,
         actions: HomeActions = HomeActions()
     ) {
+        self.screen = screen
         self.menuOpen = menuOpen
-        self.personas = personas
-        self.all = all ?? personas
+        self.pins = pins
+        self.all = all
         self.chats = chats
         self.selected = selected
         self.actions = actions
@@ -95,8 +98,34 @@ internal struct AccountAvatar: View {
     }
 }
 
+internal struct HomeBlocks: View {
+    @Environment(\.look) private var look
+    internal let screen: HomeScreen
+    internal let pins: [Pin]
+    internal let chats: [ListedChat]
+    internal var selected: String?
+    internal let actions: HomeActions
+    internal var wide = false
+
+    internal var body: some View {
+        ForEach(Array(screen.blocks.enumerated()), id: \.offset) { _, block in
+            switch block.type {
+            case "pinned":
+                PinnedRow(pins: pins, rows: chats.map(\.row), actions: actions)
+                    .scaleEffect(wide ? 0.9 : 1, anchor: .leading).padding(.top, wide ? 4 : 6)
+            case "chats":
+                ChatList(chats: chats, selected: selected, open: actions.open, actions: actions)
+                    .padding(.top, wide ? 8 : look.style == .scene ? 0 : 14)
+            default:
+                EmptyView()
+            }
+        }
+    }
+}
+
 internal struct TopBar: View {
     @Environment(\.look) private var look
+    internal let title: String
     internal let personas: [Persona]
     internal let actions: HomeActions
 
@@ -105,7 +134,7 @@ internal struct TopBar: View {
             Button(action: actions.menu) { AccountAvatar().padding(4).modifier(RoundSurface(look: look)) }
                 .buttonStyle(.plain).accessibilityLabel("Account")
             Spacer()
-            Text(look.mono ? "~/cooee" : "cooee").ui(19, .bold, look)
+            Text(look.mono ? "~/\(title)" : title).ui(19, .bold, look)
             Spacer()
             Menu {
                 Button("New room", systemImage: "person.3", action: actions.room)
@@ -130,6 +159,7 @@ internal struct ChatList: View {
     internal var title: String? = "Chats"
     internal var selected: String?
     internal var open: (String) -> Void = { _ in }
+    internal var actions: HomeActions?
 
     internal var body: some View {
         let palette = look.palette
@@ -150,6 +180,14 @@ internal struct ChatList: View {
                         word: chat.workflow != nil)
                 }
                 .buttonStyle(.plain)
+                .contextMenu {
+                    if let actions, !chat.members.isEmpty {
+                        let pinned = actions.rooms.contains(chat.id)
+                        Button(pinned ? "Unpin" : "Pin", systemImage: pinned ? "pin.slash" : "pin") {
+                            actions.pinRoom(chat.id)
+                        }
+                    }
+                }
                 if chat.id != chats.last?.id {
                     Rectangle().fill(palette.line).frame(height: look.mono ? 0 : 0.5).padding(.leading, 76)
                 }

@@ -37,6 +37,10 @@ public enum LaneState: String, Sendable, Equatable {
     }
 }
 
+public enum ChatStyle: String, Codable, Sendable {
+    case chat, detailed
+}
+
 public enum Tint: String, Sendable, Equatable, CaseIterable {
     case lead, link, cyan, purple, green, amber
 

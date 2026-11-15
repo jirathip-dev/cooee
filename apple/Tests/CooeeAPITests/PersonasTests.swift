@@ -12,6 +12,7 @@ extension APIPersona {
         coder.avatar = "data:image/png;base64,AA=="
         coder.machine = "air"
         coder.role = "orchestrator"
+        coder.style = .detailed
         coder.fleets = ["cooee"]
         coder.canMessage = ["chief"]
         coder.pinned = true
@@ -37,7 +38,8 @@ internal struct PersonasTests {
         #expect(
             sent.contains(#""can_message":["chief"]"#) && sent.contains(#""machine":"air""#)
                 && sent.contains(#""pinned":true"#)
-                && sent.contains(#""role":"orchestrator""#) && sent.contains(#""fleets":["cooee"]"#))
+                && sent.contains(#""role":"orchestrator""#) && sent.contains(#""fleets":["cooee"]"#)
+                && sent.contains(#""style":"detailed""#))
         _ = try await server.client().create(APIPersona(id: "", name: "Coder", agent: "fake-acp"))
         #expect(server.requests("/personas").first?.httpMethod == "POST")
     }
@@ -111,5 +113,13 @@ internal struct PersonasTests {
         _ = try await client.folders(nil)
         let asked = server.requests("/folders").map { $0.url?.query() }
         #expect(asked == ["path=%2Fw%2Fmy%20app", nil])
+    }
+
+    @Test internal func aNewThreadCarriesThePickedModelAndEffort() async throws {
+        let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n1"}"#])]])
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp", model: "opus", effort: "high")
+        _ = try await server.client().newThread(persona: persona, text: "hi", randomID: "r9")
+        let sent = try server.decoded("/threads", as: [String: JSONValue].self)
+        #expect(sent["model"] == .string("opus") && sent["effort"] == .string("high"))
     }
 }

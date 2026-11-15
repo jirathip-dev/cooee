@@ -13,7 +13,7 @@ internal struct PersonaControlsTests {
             AppFeature()
         } withDependencies: {
             $0.date.now = epoch
-            $0.threads.threads = { _ in [row("n1")] }
+            $0.threads.home = { _ in HomeAnswer(screen: homeScreen, threads: [row("n1")], personas: [coder]) }
             $0.threads.personas = { _ in [coder] }
             $0.plugins.installed = { _ in [] }
             $0.personas.save = { _, persona in
@@ -93,7 +93,10 @@ internal struct PersonaControlsTests {
         }
         await store.receive(\.persona.presented.delegate.deleted) { $0.persona = nil }
         await store.receive(\.home.refresh)
-        await store.receive(\.home.loaded) { $0.home?.rows = [row("n1")] }
+        await store.receive(\.home.loaded) {
+            $0.home?.screen = homeScreen
+            $0.home?.rows = [row("n1")]
+        }
         #expect(calls.all == ["remove coder"])
     }
 

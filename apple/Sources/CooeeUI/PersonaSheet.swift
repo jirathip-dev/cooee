@@ -111,6 +111,7 @@ extension PersonaSheet {
                 }
                 .padding(.horizontal, 14).frame(height: 48)
                 if !look.still {
+                    style
                     Toggle("Pin to Home", isOn: $draft.pinned).ui(16, .regular, look).padding(.horizontal, 14)
                         .frame(height: 48)
                 }
@@ -143,6 +144,22 @@ extension PersonaSheet {
 
     private var avatarLook: PersonaLook {
         draft.avatar == persona.api.avatar ? persona.look : Persona(draft).look
+    }
+
+    private var style: some View {
+        HStack {
+            Text("Style").ui(16, .regular, look)
+            Spacer()
+            Picker("Style", selection: $draft.style) {
+                Text("Chat").tag(ChatStyle.chat)
+                Text("Detailed").tag(ChatStyle.detailed)
+            }
+            .pickerStyle(.segmented).fixedSize()
+        }
+        .padding(.horizontal, 14).frame(height: 48)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(look.palette.line).frame(height: 0.5).padding(.leading, 14)
+        }
     }
 
     @ViewBuilder private var notes: some View {

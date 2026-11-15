@@ -20,6 +20,7 @@ public struct ChatActions {
     public var open: (Int) -> Void = { _ in }
     public var attachable: [String] = []
     public var attachPlugin: (Int) -> Void = { _ in }
+    public var step: String?
     public var workflow: Int?
     public var workflowOpen = false
     public var showWorkflow: () -> Void = {}

@@ -21,7 +21,14 @@ internal struct MenuHost: View {
             }
             .background(look.palette.background)
             .navigationDestination(for: MenuFeature.Page.self) { page in
-                if pages.contains(.string("\(page)")) { MenuPage(store: menu, page: page) }
+                if page == .terminal, let node = rows.first(where: { $0.content == .component(.terminal) }) {
+                    TerminalSlot(
+                        store: store.scope(state: \.terminal, action: \.terminal), config: node.config
+                    ) { menu.send(.path(menu.path.dropLast())) }
+                    .toolbar(.hidden)
+                } else if pages.contains(.string("\(page)")) {
+                    MenuPage(store: menu, page: page)
+                }
             }
         }
     }
@@ -47,13 +54,15 @@ internal struct MenuScreen: View {
     }
 }
 
-internal struct ResetLayoutRow: View {
-    internal let reset: () -> Void
+internal struct ActionRow: View {
+    internal let symbol: String
+    internal let title: String
+    internal let action: () -> Void
 
     internal var body: some View {
         Group2 {
-            Button(action: reset) {
-                SettingRow(symbol: "arrow.counterclockwise", title: "Reset layout", divider: false).contentShape(.rect)
+            Button(action: action) {
+                SettingRow(symbol: symbol, title: title, divider: false).contentShape(.rect)
             }
             .buttonStyle(.plain)
         }
