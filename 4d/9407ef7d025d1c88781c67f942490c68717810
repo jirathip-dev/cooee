@@ -1,0 +1,12 @@
+Decided: support/mod.rs splits into shed, agent, cooee and events; bodies move unchanged, siblings share through pub(super)
+Because: "Adds: support/{shed,agent,cooee,events}.rs."
+Decided: the generated index allows unused_imports on its one pub use line, since a test binary may use nothing of an area
+Because: crates/cooee/tests/support/mod.rs:11
+Decided: gen.sh's flat kind writes the index; modules() skips mod.rs itself
+Because: scripts/gen.sh:10
+Decided: staging build fix: hub.rs's size baseline takes staging's 3120 lines (#303)
+Because: .drover/arch-baseline.txt:1
+Rejected: unused_imports in the module-wide allow — it would hide the children's own unused imports
+Check: sh scripts/gen.sh leaves no diff and drover arch-check --base origin/staging exits 0
+Check: git diff origin/staging moves bodies only: imports and pub(super) differ
+Owner: The test helpers are four files by concern with a generated index; nothing in the app changes.
