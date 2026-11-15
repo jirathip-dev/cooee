@@ -49,6 +49,10 @@ extension Fixtures {
         return scene
     }
 
+    public static var roomPins: [Pin] {
+        personas.prefix(2).map(Pin.persona) + roomChats.prefix(1).map(Pin.room)
+    }
+
     public static var roomChats: [ListedChat] {
         let room = Row(
             id: "r1", persona: "chief", title: "Kestrel launch", last: "Account Manager: Pricing: a 3-year term…",
@@ -95,7 +99,7 @@ extension NewRoomSheet {
 extension WideView where Detail == RoomView {
     public static func kestrel() -> WideView<RoomView> {
         WideView(
-            personas: Fixtures.personas, chats: Fixtures.roomChats, selected: "r1", actions: HomeActions(),
+            chats: Fixtures.roomChats, selected: "r1", actions: HomeActions(),
             detail: { RoomView.kestrel(wide: true) }
         )
     }

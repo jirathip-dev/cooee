@@ -130,8 +130,10 @@ extension Frame {
         }
         let macs = pages.map { name, page in mac("mac-\(name)", 1180, 780, .farmDark) { SettingsWindow(page: page) } }
         let more = [
-            phone("terminal-dark", .farmDark) { MachineTerminal() },
-            phone("you-terminal-dark", .farmDark) { MachineTerminal(own: true) },
+            phone("terminal-dark", .farmDark) { TerminalView.agents() },
+            phone("you-terminal-dark", .farmDark) { TerminalView.own() },
+            phone("you-terminal-terminal-dark", .farmDark, style: .terminal) { TerminalView.own() },
+            phone("you-terminal-scene-light", .farmLight, style: .scene) { TerminalView.own() },
             phone("sign-ins-terminal-dark", .farmDark, style: .terminal) { SignInsView() },
             phone("machines-scene-light", .farmLight, style: .scene) { MachinesView() },
             mac("mac-plugins-light", 1180, 780, .farmLight) { SettingsWindow(page: .plugins) },
@@ -171,6 +173,13 @@ extension Frame {
             phone("room-create-light", .farmLight) { NewRoomSheet.kestrel() },
             phone("room-member-dark", .farmDark) { MemberSheet.researcher() },
             phone("room-home-dark", .farmDark) { HomeView(chats: Fixtures.roomChats) },
+            phone("room-pinned-dark", .farmDark) { HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats) },
+            phone("room-pinned-terminal-dark", .farmDark, style: .terminal) {
+                HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats)
+            },
+            phone("room-pinned-scene-light", .farmLight, style: .scene) {
+                HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats)
+            },
             phone("room-terminal-dark", .farmDark, style: .terminal) { RoomView.kestrel() },
             phone("room-scene-light", .farmLight, style: .scene) { RoomView.kestrel() },
             mac("room-wide-dark", 1440, 900, .farmDark) { WideView.kestrel() },

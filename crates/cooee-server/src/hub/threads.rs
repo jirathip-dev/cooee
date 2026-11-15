@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use cooee_core::{Kind, Summary, Thread, Turn, personas};
 use tokio::sync::broadcast;
 
-use super::{Hub, HubError, LAG, Out, Pending, Resume, Slice, glance, lock, now, waits};
+use super::{Hub, HubError, LAG, Out, Pending, Resume, Slice, glance, lock, now, rooms, waits};
 
 impl Hub {
     /// Renames the thread.
@@ -139,19 +139,14 @@ impl Hub {
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     machine: live.meta.machine.clone(),
                     state: live.chat.turn.state.clone(),
-                    last: g.last,
+                    last: rooms::said(&personas, &g.speaker, g.last),
                     at: g.at,
                     unread: g.unseen > 0,
                     unseen: g.unseen,
                     archived: live.meta.archived,
                     workflow: live.meta.workflow.clone(),
                     routine: g.routine,
-                    members: live
-                        .meta
-                        .members
-                        .iter()
-                        .map(|m| m.persona.clone())
-                        .collect(),
+                    members: rooms::seated(&live.meta),
                 })
             })
             .collect();

@@ -4,9 +4,9 @@ import Foundation
 
 @Reducer
 public struct MenuFeature: Sendable {
-    /// The device-local pages: the `settings` component's, drawn by the app, never by the server.
+    /// The device-local pages the app draws, never the server: the `settings` component's and the terminal.
     public enum Page: String, CaseIterable, Hashable, Sendable {
-        case look, notifications, appIcon
+        case look, notifications, appIcon, terminal
     }
 
     @ObservableState
@@ -35,6 +35,7 @@ public struct MenuFeature: Sendable {
         case scheme(LookScheme)
         case style(LookStyle)
         case icon(AppIcon?)
+        case pinRoom(String)
         case push(Bool)
         case pushed(String?)
         case failed(String)
@@ -56,6 +57,9 @@ public struct MenuFeature: Sendable {
                 state.path = path
             case .scheme(let scheme):
                 state.settings.scheme = scheme
+                settingsStore.save(state.settings)
+            case .pinRoom(let room):
+                state.settings.pin(room: room)
                 settingsStore.save(state.settings)
             case .style(let style):
                 return look(&state) { $0.style = style }
