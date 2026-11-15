@@ -1,0 +1,4 @@
+Decided: merge origin/staging; keep #430's scope job and reapply the schedule, staging checkout ref and E2E override on it
+Because: "On a schedule event the e2e steps run even when `vars.E2E == 'off'`"
+Rejected: none
+Owner: The nightly full app test now sits on top of the new per-screen e2e selection from staging.
