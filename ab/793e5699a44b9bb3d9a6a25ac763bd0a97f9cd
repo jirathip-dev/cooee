@@ -1,0 +1,11 @@
+Decided: LayoutFeature owns only the layout's lifecycle; chat, menu and home reducers stay in AppFeature
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:55
+Decided: a plugin screen node draws nothing until the places merge lands
+Because: apple/Sources/CooeeUI/SlotView.swift:22
+Rejected: a ScreenFeature per plugin node now — the default layout has none, so it would be untested UI
+Decided: offline reset forgets the last good file, so load falls back to the bundled default
+Because: apple/Sources/CooeeFeatures/LayoutFeature.swift:19
+Decided: staging's pin home action moved with the home code from Root.swift into SlotView
+Because: apple/Sources/CooeeUI/SlotView.swift:121
+Check: AppRoot draws SlotView(root) and its home/wide/chat branching is gone; snapshot frames unchanged
+Owner: The app draws its screens from the layout; a broken layout.json keeps the last good one with one amber line.
