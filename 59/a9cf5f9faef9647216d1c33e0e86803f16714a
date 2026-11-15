@@ -1,0 +1,8 @@
+Decided: add timeout-minutes to every job staging's rebuilt workflows left without one; keep staging's existing concurrency blocks
+Because: "`timeout-minutes` on every job in every workflow, sized about 2× its normal green time"
+Rejected: tightening staging's existing apple/apple-mac timeouts — no green-time evidence for the new self-hosted runners
+Rejected: the Playwright cache — staging deleted the web client and the ui job (#189), so there is no Playwright to cache
+Decided: fix the stale expected string in the shed-version chat test as a staging build fix
+Because: crates/cooee-core/src/shed.rs:335
+Check: each job in .github/workflows/*.yml has timeout-minutes; chat.rs and setup.rs shed-version tests are green at this head
+Owner: CI jobs can no longer hang for hours; the Playwright part of the issue went away with the web client.
