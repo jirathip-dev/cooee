@@ -96,7 +96,7 @@ internal struct ChatMachineTests {
             AppFeature()
         } withDependencies: {
             $0.date.now = epoch
-            $0.threads.threads = { _ in [] }
+            $0.threads.home = { _ in HomeAnswer(screen: homeScreen, threads: [], personas: [onAir]) }
             $0.threads.personas = { _ in [onAir] }
             $0.plugins.installed = { _ in [] }
         }

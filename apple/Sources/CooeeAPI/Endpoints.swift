@@ -101,7 +101,7 @@ extension Client {
         try await post("/pair/cancel", ["claim": claim])
     }
 
-    public func threads() async throws -> [ThreadRow] { try await call("GET", "/threads") }
+    public func home() async throws -> HomeAnswer { try await call("GET", "/screens/home") }
 
     public func personas() async throws -> [APIPersona] { try await call("GET", "/personas") }
 

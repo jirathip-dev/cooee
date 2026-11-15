@@ -11,7 +11,7 @@ internal struct LiveTests {
         let client = Client(Server(url: target.url, token: token))
         let coder = try #require(try await client.personas().first { $0.id == "coder" })
         let id = try await client.newThread(persona: coder, machine: "", text: "slow 3")
-        #expect(try await client.threads().contains { $0.id == id && $0.persona == "coder" })
+        #expect(try await client.home().threads.contains { $0.id == id && $0.persona == "coder" })
         let slice = try await client.messages(id)
         var live = ""
         var turn = slice.turn

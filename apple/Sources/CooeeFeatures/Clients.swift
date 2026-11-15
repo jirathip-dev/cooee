@@ -12,7 +12,7 @@ public struct PairingClient: Sendable {
 
 @DependencyClient
 public struct ThreadsClient: Sendable {
-    public var threads: @Sendable (_ server: Server) async throws -> [ThreadRow]
+    public var home: @Sendable (_ server: Server) async throws -> HomeAnswer
     public var personas: @Sendable (_ server: Server) async throws -> [APIPersona]
     public var messages: @Sendable (_ server: Server, _ thread: String) async throws -> Slice
     public var events:
