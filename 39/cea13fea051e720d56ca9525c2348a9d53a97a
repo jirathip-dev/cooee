@@ -1,0 +1,13 @@
+Decided: architecture.md and api.md split into one docs/<area>.md each, bodies moved line for line; both paths frozen
+Because: "Add this slice's `.drover/arch.toml` lines exactly as the ADR's `.drover/arch.toml` section lists them for slice 5"
+Decided: the README's Today list is written by scripts/gen.sh from the area docs' ## Today bullets, in file-name order
+Because: scripts/gen.sh:34
+Decided: sign-ins got their own docs/sign-ins.md, so accounts.md and logins.md link to it without a self-link
+Because: docs/logins.md:3
+Decided: staging build fix: the size baseline takes staging's growth of hub.rs, the only red job on staging's ci
+Because: .drover/arch-baseline.txt:1
+Rejected: a [[collect]] over docs/ — its glob would cover the two frozen paths and exempt them
+Rejected: a hand-written list of area docs in docs/README.md — it would be the next hot list
+Check: drover arch-check --base origin/staging exits 0 and sh scripts/gen.sh leaves no diff
+Check: every non-heading line of the old three docs is in the new docs, bar the repointed links
+Owner: The docs are one page per area now; the README's Today list is built from them. Nothing in the app changes.
