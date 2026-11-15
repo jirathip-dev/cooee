@@ -1,0 +1,12 @@
+Decided: a room's row gets its last speaker from the server: GET /threads now prefixes a room's last line with who said it (Owner, a member's name).
+Because: "its last line shows who spoke (`Coder: …`)"
+Rejected: fetching each room's messages from the app to find the speaker — a request per room on every 5 s poll.
+Decided: a room's pin is kept on this device in the app's settings, not on the server.
+Because: "Scope (native, `apple/`)"
+Rejected: a server-side room pin field — a server API change the issue did not ask for.
+Decided: pin and unpin a room from its row's long-press menu; native rows have no swipe actions yet, so a room row has none either.
+Because: "It takes #232's swipe actions and long-press menu."
+Decided: hub.rs drops its six-line members mapping for rooms::seated, so the file stays under its arch baseline.
+Because: crates/cooee-server/src/hub/rooms.rs:98
+Check: the room row shows 3 stacked avatars then +n, and the pinned row puts the room after the pinned personas (frames room-pinned-*).
+Owner: rooms show in Home with stacked avatars and who spoke; long-press pins one into the top row as a group (a paddock in Scene).
