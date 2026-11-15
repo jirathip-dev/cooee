@@ -1,0 +1,13 @@
+Decided: Models.swift splits into Models/<Type>.swift, one file per type, bodies byte-for-byte; import Foundation only where URL or Data is used
+Because: docs/architecture/hot-files/adr.md:91
+Decided: Root.swift keeps AppRoot; ChatScreen and PersonaScreen move as-is to their own files
+Because: "Adds: Models/, ChatScreen.swift, PersonaScreen.swift, UITests/Live/."
+Decided: the LiveUITests class keeps its name in UITests/Live/LiveUITests.swift; the base case goes to Live/LiveUITestCase.swift
+Because: .github/workflows/apple.yml:257
+Decided: e2e-scope.sh finds LiveUITestCase classes anywhere under apple/UITests; the ci scripts test copies the folder recursively
+Because: scripts/e2e-scope.sh:11
+Decided: merged origin/staging; #229's ThreadRow.workflow lands in Models/ThreadRow.swift, its Workflow sheet in ChatScreen.swift, which imports CooeeCore
+Because: apple/Sources/CooeeUI/ChatScreen.swift:33
+Rejected: moving the other Live*UITests files into Live/ — the issue names only LiveUITests.swift and #443, #406, #405 edit them
+Check: drover arch-check --base origin/staging exits 0; sh scripts/gen.sh leaves no diff; no test body changed, only moved
+Owner: Nothing changes in the app; its data types, two screens and live UI tests each now live in their own files.
