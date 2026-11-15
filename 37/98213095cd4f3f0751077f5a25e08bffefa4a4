@@ -1,0 +1,6 @@
+Decided: merge origin/staging; apple.yml takes staging's scope-job trigger, and shed.rs stays in the push paths and the mac-setup shed-pin read
+Because: scripts/mac-bins.sh:12
+Decided: map crates/cooee-core/src/shed.rs to none in the e2e map so a PR touching the shed pin still runs the mac builds
+Because: apple/e2e/map.toml:75
+Rejected: restoring the pull_request path filter — staging replaced it with scripts/e2e-scope.sh
+Owner: The branch now sits on the latest staging; no change to the fix itself.
