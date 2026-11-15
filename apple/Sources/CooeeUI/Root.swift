@@ -56,6 +56,7 @@ public struct AppRoot: View {
         let actions = HomeActions(
             menu: { store.send(.menu(.open(true))) },
             new: { store.send(.start($0)) },
+            pin: { store.send(.pin($0)) },
             open: { store.send(.open($0)) },
             room: { store.send(.room) },
             edit: { store.send(.edit($0)) }
