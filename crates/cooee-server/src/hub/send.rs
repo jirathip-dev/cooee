@@ -110,10 +110,12 @@ impl Hub {
             let mut l = lock(live);
             l.sending.push(q.random_id.clone());
             let handover = l.meta.handover.clone();
-            let before = if before.trim().is_empty() {
+            let before = if !before.trim().is_empty() {
+                before
+            } else if l.meta.asked_by.is_empty() {
                 handover.as_str()
             } else {
-                before
+                super::ask::OWNER_NOTE
             };
             let mut prompt = if before.trim().is_empty() {
                 q.text.clone()

@@ -128,6 +128,7 @@ fn glance(live: &Live) -> Glance {
         | Body::Agent { text, .. }
         | Body::Note { text }
         | Body::Link { text, .. }
+        | Body::Ask { text, .. }
         | Body::Ended { text } => text,
         Body::Tool { title, .. } => title,
         Body::Approval { tool, .. } => tool,

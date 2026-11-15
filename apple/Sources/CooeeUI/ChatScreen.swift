@@ -56,6 +56,8 @@ internal struct ChatScreen: View {
             headed: headed,
             actions: actions
         )
+        .environment(\.openThread) { store.send(.delegate(.open($0))) }
+        .environment(\.editPersona) { store.send(.delegate(.persona($0))) }
         .task { await store.send(.task).finish() }
         .task { await store.send(.plugins(.load)).finish() }
         .task { await store.send(.machine(.load)).finish() }

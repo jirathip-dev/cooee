@@ -95,6 +95,25 @@ pub enum Body {
         #[serde(default)]
         out: bool,
     },
+    /// The thread's persona asked another through `ask_persona` (#177): the card in the asker's chat.
+    Ask {
+        /// The asked persona's id.
+        persona: String,
+        /// Its name.
+        name: String,
+        /// The question.
+        text: String,
+        /// The linked exchange thread; empty when it was never sent.
+        thread: String,
+        /// `asking`, `replied`, or the refusal's code in lower case (`not_allowed`, `depth`, `timeout`, `offline`).
+        outcome: String,
+        /// How long the reply took, in seconds.
+        #[serde(default)]
+        secs: u64,
+        /// The owner's note to the asked persona, which the asker got with the reply.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        note: String,
+    },
     /// The agent made a routine (#75): `⟳ Created routine: <name> · <when> · <place>`.
     Routine {
         /// Its id.
@@ -199,6 +218,9 @@ pub struct Summary {
     /// A room's member personas, in room order (#154).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub members: Vec<String>,
+    /// A linked exchange's asker (#177): the thread whose persona asked this one's.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub asked_by: String,
     /// The routine that started it or sent its last message (#75; empty: none).
     pub routine: String,
 }

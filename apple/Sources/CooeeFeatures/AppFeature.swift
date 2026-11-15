@@ -90,6 +90,10 @@ public struct AppFeature: Sendable {
                 return .send(.home(.refresh))
             case .chat(.delegate(.open(let thread))):
                 return .send(.open(thread))
+            case .chat(.delegate(.persona(let persona))):
+                return .send(.edit(persona))
+            case .chat(.delegate(.start(let persona))):
+                return .send(.start(persona))
             case .chat(.delegate(.round(let thread))):
                 state.path.append(thread)
                 state.chat = chat(state, thread)
@@ -172,6 +176,10 @@ extension AppFeature {
             let room = Room(title: title, members: members, cast: home.personas)
             let persona = Persona(APIPersona(id: "", name: title, agent: ""))
             return ChatFeature.State(server: home.server, target: .thread(id), persona: persona, room: room)
+        }
+        if let exchange = Exchange.of(id, rows: home.rows, personas: home.personas) {
+            let persona = Persona(exchange.target)
+            return ChatFeature.State(server: home.server, target: .thread(id), persona: persona, exchange: exchange)
         }
         let lists = home.lists(now: now)
         var chat: ChatFeature.State

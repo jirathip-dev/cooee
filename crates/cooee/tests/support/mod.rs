@@ -804,6 +804,18 @@ impl FakeShed {
                 while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
             }
             (vec![reply(&format!("streamed {n} words"), stop)], stop)
+        } else if prompt.contains("wait for a note") {
+            let note = loop {
+                match rx.recv() {
+                    Ok(Input::Prompt(p)) => break p,
+                    Ok(_) => {}
+                    Err(_) => return None,
+                }
+            };
+            (
+                vec![reply(&format!("noted: {note}"), "end_turn")],
+                "end_turn",
+            )
         } else if let Some(said) = prompt.strip_prefix("echo ") {
             (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("exit") {
