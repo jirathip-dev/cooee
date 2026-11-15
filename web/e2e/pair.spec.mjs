@@ -140,6 +140,100 @@ async function paired(browser) {
   return { context, page };
 }
 
+test("a passkey saved from the offer approves a request that came after one seen without it (#388)", async ({ browser, baseURL }) => {
+  // On http://localhost (WebAuthn takes no IP address), with a virtual platform authenticator.
+  const local = `http://localhost:${new URL(baseURL).port}`;
+  const context = await browser.newContext({ ...unpaired, baseURL: local });
+  const page = await context.newPage();
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("WebAuthn.enable");
+  await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true },
+  });
+  const asker = await browser.newContext(unpaired);
+  const ask = async () => (await asker.request.post("/pair/request", { headers: IPAD, data: {} })).json();
+  const first = await ask();
+  try {
+    // Paired now, with a request open: its card asks for a passkey first.
+    await page.goto(`/pair?code=${newCode()}`);
+    await page.waitForURL(/\/$/);
+    const early = page.getByRole("group", { name: `iPad asks to pair: ${first.word}` }).last();
+    await expect(early).toContainText("Approving needs a passkey.");
+    await page.locator("#pairing").getByRole("group", { name: "save a passkey" }).getByRole("button", { name: "save a passkey" }).click();
+    await expect(page.locator("#pairing")).toContainText("✓ passkey saved");
+    // The next request's card approves with it.
+    const next = await ask();
+    const card = page.getByRole("group", { name: `iPad asks to pair: ${next.word}` }).last();
+    await expect(card).toContainText("Pair a new device?");
+    await expect(card.getByRole("button", { name: /^approve with/ })).toBeVisible();
+    for (const { claim } of [first, next]) await asker.request.post("/pair/cancel", { data: { claim } });
+  } finally {
+    const key = (await (await context.request.get("/passkeys")).json()).find((k) => k.mine);
+    if (key) await context.request.post("/passkeys/remove", { data: { id: key.id } });
+    const me = (await (await context.request.get("/devices")).json()).find((d) => d.me);
+    if (me) await context.request.post("/devices/remove", { data: { id: me.id } });
+    await asker.close();
+    await context.close();
+  }
+});
+
+test("a poll that read the passkeys before one was saved does not undo it (#388)", async ({ browser, baseURL }) => {
+  const local = `http://localhost:${new URL(baseURL).port}`;
+  const context = await browser.newContext({ ...unpaired, baseURL: local });
+  const page = await context.newPage();
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("WebAuthn.enable");
+  await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true },
+  });
+  // Two polls overlap, as on a loaded machine: the first answers once the second has read the passkeys, and the
+  // second answers that read (no passkey yet) only after this device saved one.
+  let reads = 0;
+  let overlap;
+  let saved;
+  const second = new Promise((r) => (overlap = r));
+  const stale = new Promise((r) => (saved = r));
+  await page.route("**/passkeys", async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    const n = reads++;
+    const response = await route.fetch();
+    if (n === 0) await second;
+    if (n === 1) {
+      overlap();
+      await stale;
+    }
+    await route.fulfill({ response });
+  });
+  const asker = await browser.newContext(unpaired);
+  const ask = async () => (await asker.request.post("/pair/request", { headers: IPAD, data: {} })).json();
+  const first = await ask();
+  try {
+    await page.goto(`/pair?code=${newCode()}`);
+    await page.waitForURL(/\/$/);
+    const early = page.getByRole("group", { name: `iPad asks to pair: ${first.word}` }).last();
+    await expect(early).toContainText("Approving needs a passkey.", { timeout: 15000 });
+    await page.locator("#pairing").getByRole("group", { name: "save a passkey" }).getByRole("button", { name: "save a passkey" }).click();
+    await expect(page.locator("#pairing")).toContainText("✓ passkey saved");
+    const late = page.waitForResponse((r) => r.url().endsWith("/passkeys") && r.request().method() === "GET");
+    saved();
+    await late;
+    const next = await ask();
+    const card = page.getByRole("group", { name: `iPad asks to pair: ${next.word}` }).last();
+    await expect(card).toContainText("Pair a new device?");
+    await expect(card.getByRole("button", { name: /^approve with/ })).toBeVisible();
+    for (const { claim } of [first, next]) await asker.request.post("/pair/cancel", { data: { claim } });
+  } finally {
+    saved();
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    const key = (await (await context.request.get("/passkeys")).json()).find((k) => k.mine);
+    if (key) await context.request.post("/passkeys/remove", { data: { id: key.id } });
+    const me = (await (await context.request.get("/devices")).json()).find((d) => d.me);
+    if (me) await context.request.post("/devices/remove", { data: { id: me.id } });
+    await asker.close();
+    await context.close();
+  }
+});
+
 test("the approve card: no passkey on this device, approved elsewhere, and a request that ran out", async ({ browser, baseURL }) => {
   // This device (A) has no passkey; another paired device (B) holds the only new one.
   const { context: a, page } = await paired(browser);

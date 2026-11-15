@@ -33,7 +33,7 @@ const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decli
                      | mcp proxy <server> --thread <id> | mcp serve --thread <id>> [--instance <name>] [--config <file>] \
                      | cooee --version";
 
-/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the exact version.
+/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the same protocol.
 const SHED_CARGO: [&str; 8] = [
     "cargo",
     "install",
@@ -41,7 +41,7 @@ const SHED_CARGO: [&str; 8] = [
     "--git",
     "https://github.com/jirathip-dev/shed",
     "--rev",
-    "f026a4d35a2705e560a52515da8e3a5d32e4d659",
+    "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb",
     "shed",
 ];
 
