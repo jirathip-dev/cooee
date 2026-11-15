@@ -76,7 +76,7 @@ internal struct MenuPage: View {
                 case .look: lookPage
                 case .notifications: pushPage
                 case .appIcon: AppIconPicker(store: store)
-                case .signIns, .devices, .machines, .plugins: EmptyView()
+                case .signIns, .devices, .terminal, .machines, .plugins: EmptyView()
                 }
             }
             .padding(16)
@@ -93,6 +93,7 @@ internal struct MenuPage: View {
         case .notifications: "Notifications"
         case .signIns: "Sign-ins"
         case .devices: "Devices"
+        case .terminal: "Terminal"
         case .machines: "Machines"
         case .plugins: "Plugins"
         case .appIcon: "App icon"
