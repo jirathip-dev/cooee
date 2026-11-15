@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · feel pass (#232): the composer on the keyboard, and the haptics</title>
+<link rel="stylesheet" href="../../../design-system/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../rooms/rm.css">
+<link rel="stylesheet" href="nf.css">
+<style>
+.comp .cfld.grow{white-space:normal;align-items:flex-end;min-height:44px;padding:10px 14px;border-radius:22px;line-height:1.35;color:var(--fg)}
+.comp .cfld.grow span{overflow:visible}
+.comp{align-items:flex-end}
+.ph.kbup .dock{padding-bottom:6px}
+</style>
+<script type="module" src="nf.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- The keyboard up: the composer sits on it, the field grows to 5 lines, the last message stays in view. -->
+<div class="fr"><p class="cap">Typing · the composer rides the keyboard</p>
+<section class="ph col kbup" data-f="keys">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><i class="pa" data-p="coder" data-s="38"></i><span class="hdt"><b>Coder</b><small>Export for Kestrel · studio</small></span><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+  <ol class="msgs">
+    <li class="blk me">Export the Kestrel numbers for the board deck.</li>
+    <li class="at"><p>Done: export/summary.md has Q1 to Q3. Q3 was $4.1M, from the press release.</p></li>
+    <li class="te2">✓ replied · 9 tools · 4:02</li>
+  </ol>
+  <div class="dock"><div class="comp"><div class="cfld grow"><span>Rerun it, but take Q3 from the 10-Q filing, not the press release.<i class="caret" style="display:inline-block;width:2px;height:18px;margin-left:1px;vertical-align:-3px;background:var(--link)"></i></span></div><span class="snd">↑</span></div></div>
+  <div class="nkb" data-y="nkb"></div>
+  <span class="ann" style="top:118px;right:12px">.impact(.light) on send</span>
+</section></div>
+
+<!-- Interactive dismiss: drag down through the messages; the keyboard follows the finger, the composer its top. -->
+<div class="fr"><p class="cap">Dragging the keyboard down</p>
+<section class="ph col kbup" data-f="dismiss" style="--kbdown:-150px">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><i class="pa" data-p="coder" data-s="38"></i><span class="hdt"><b>Coder</b><small>Export for Kestrel · studio</small></span><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+  <ol class="msgs">
+    <li class="rnd">Today 09:40</li>
+    <li class="blk me">Export the Kestrel numbers for the board deck.</li>
+    <li class="at"><p>On it. Pulling Q1 to Q3 from the filings folder.</p></li>
+    <li class="mx"><span>read filings/ · write export/summary.md</span><i class="okg">✓ 9 tools</i></li>
+    <li class="at"><p>Done: export/summary.md has Q1 to Q3. Q3 was $4.1M, from the press release.</p></li>
+    <li class="te2">✓ replied · 9 tools · 4:02</li>
+  </ol>
+  <div class="dock"><div class="comp"><div class="cfld grow"><span>Rerun it, but take Q3 from the 10-Q filing, not the press release.</span></div><span class="snd">↑</span></div></div>
+  <div class="nkb" data-y="nkb"></div>
+  <i class="drag" style="left:200px;top:610px;--trail:120px"></i>
+  <span class="ann" style="top:118px;right:12px">the draft stays; nothing plays</span>
+</section></div>
+
+<!-- An approval arrives while typing: the card lands above the composer, the keyboard and the draft stay. -->
+<div class="fr"><p class="cap">An approval arrives while typing</p>
+<section class="ph col kbup" data-f="ask">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a><i class="pa" data-p="coder" data-s="38" data-k="asks"></i><span class="hdt"><b>Coder</b><small>Export for Kestrel · studio</small></span><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+  <ol class="msgs">
+    <li class="blk me">Rerun it with the 10-Q number.</li>
+    <li class="ask" data-t="coder"><span class="awho">✋ Asks you</span><h3>Write deck/q3.key?</h3><p>Coder wants to update slide 6 with $4.1M.</p>
+      <div class="chc"><button>Allow once</button><button class="no">Deny</button></div></li>
+  </ol>
+  <div class="dock"><div class="comp"><div class="cfld grow"><span>And add the source on the slide<i class="caret" style="display:inline-block;width:2px;height:18px;margin-left:1px;vertical-align:-3px;background:var(--link)"></i></span></div><span class="snd">↑</span></div></div>
+  <div class="nkb" data-y="nkb" data-pred="slide|slides|slider"></div>
+  <span class="ann" style="top:118px;right:12px">.warning as it lands</span>
+  <span class="ann" style="top:150px;right:12px">Allow .success · Deny .impact(.medium)</span>
+</section></div>
+
+<!-- 1440: the haptics map, every moment the build wires. -->
+<div class="fr w"><p class="cap">1440 · the haptics map</p>
+<section class="hx" data-f="wide-haptics">
+  <h2>Haptics · <code>sensoryFeedback</code>, one per moment</h2>
+  <p>Each moment plays one feedback, on iPhone only, and only while cooee is in front. The system’s own (swipe thresholds, the long-press, the keyboard) are left alone. cooee has no haptics setting: iOS’s System Haptics switch turns them all off.</p>
+  <div class="hxt">
+    <span class="hth">moment</span><span class="hth">feedback</span><span class="hth">where</span><span class="hth">never</span>
+    <span><b>Send</b></span><span class="hxk">.impact(weight: .light)</span><span>The composer’s send, the moment the message is accepted</span><span class="hxn">A send that fails (that is an error)</span>
+    <span><b>Reply finished</b></span><span class="hxk">.success</span><span>The open chat, when its turn ends with a reply</span><span class="hxn">Other chats: their unread count and the push do it</span>
+    <span><b>An ask or card arrives</b></span><span class="hxk">.warning</span><span>Any screen, once per ask or approval card, as it lands</span><span class="hxn">Again for the same ask; in the background (the push)</span>
+    <span><b>Approve</b></span><span class="hxk">.success</span><span>Allow once, Always, an ask’s recommended choice</span><span class="hxn">—</span>
+    <span><b>Deny</b></span><span class="hxk">.impact(weight: .medium)</span><span>Deny, Stop a turn</span><span class="hxn">.error: denying is not a failure</span>
+    <span><b>Pin, Mute on or off</b></span><span class="hxk">.selection</span><span>Swipe actions and the long-press menu</span><span class="hxn">Archive: the row leaving and Undo are enough</span>
+    <span><b>Errors</b></span><span class="hxk">.error</span><span>A send failed, a tapped retry on the reconnecting line failed, the open chat’s turn failed</span><span class="hxn">A retry that fails again within 10 s</span>
+    <span><b>Swipe, long-press, keyboard</b></span><span class="hxk sys">system</span><span>The full-swipe tick, the context menu’s lift, keyboard clicks</span><span class="hxn">cooee adds nothing on top</span>
+  </div>
+  <div class="hxr">
+    <div><b>At most one per 0.6 s</b>Three asks landing together give one .warning; an error beats anything else in the window.</div>
+    <div><b>Driven by state, not taps</b>Each is a <code>.sensoryFeedback(_, trigger:)</code> on a reducer value (a sent id, a finished turn id, the open ask ids), so a TestStore test can assert it.</div>
+    <div><b>iPad and Mac</b>No haptics: iPad has none, and the Mac trackpad’s are the system’s.</div>
+  </div>
+</section></div>
+
+</div>
+</body>
+</html>

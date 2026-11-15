@@ -32,7 +32,7 @@ internal struct ListingTests {
         #expect(Listing.everyone(personas: [coder, pinned], rows: []).map(\.id) == ["coder", "chief"])
     }
 
-    @Test internal func theChatListDrawsEachRowWithItsPersonaOrItsAgent() {
+    @Test internal func theChatListDrawsEachRowWithItsPersonaOrItsTitleAndAgent() {
         let rows = [
             row("t1", persona: "coder", state: "blocked", updated: 999_990),
             row("t2", persona: "", state: "done", updated: 999_000),
@@ -44,7 +44,8 @@ internal struct ListingTests {
                 == Row(id: "t1", persona: "coder", title: "T t1", last: "last t1", ago: "now", unseen: 1, state: .needs)
         )
         #expect(chats[0].persona.name == "Coder" && chats[0].persona.state == .needs)
-        #expect(chats[1].persona.name == "fake-acp" && chats[1].row.persona == "fake-acp" && chats[1].row.ago == "16m")
+        #expect(chats[1].persona.name == "T t2" && chats[1].row.title == "fake-acp" && chats[1].row.ago == "16m")
+        #expect(chats[1].row.persona.isEmpty && chats[1].persona.look.initials == "T")
     }
 
     @Test(arguments: [
@@ -78,5 +79,15 @@ internal struct ListingTests {
         #expect(link?.url.absoluteString == "http://127.0.0.1:4100" && link?.code == "123456")
         #expect(PairTarget(typed: "  ") == nil)
         #expect(PairTarget(typed: "http://") == nil)
+    }
+}
+
+internal struct FolderListingTests {
+    @Test internal func aSubFolderGoesUpToItsParentAndItsSearchMatchesNamesOnly() {
+        let listing = FolderListing(path: "/w/app", dirs: ["src", "docs", "Spec"], roots: ["/w", "/x/"])
+        #expect(!listing.top && listing.parent == "/w")
+        #expect(listing.shown("s") == ["/w/app/src", "/w/app/docs", "/w/app/Spec"])
+        #expect(listing.shown(" sp ") == ["/w/app/Spec"] && listing.shown("app").isEmpty)
+        #expect(listing.holds("/x/y") && !listing.holds("/wx") && !listing.holds("/x/../etc"))
     }
 }

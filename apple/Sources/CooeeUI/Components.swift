@@ -7,6 +7,14 @@ internal struct Avatar: View {
     internal var size: CGFloat = 44
 
     internal var body: some View {
+        if persona.id.isEmpty && look.style != .terminal {
+            NeutralAvatar(persona: persona, size: size)
+        } else {
+            styled
+        }
+    }
+
+    @ViewBuilder private var styled: some View {
         let palette = look.palette
         let tint = palette.tint(persona.look.tint)
         switch look.style {
@@ -40,7 +48,9 @@ internal struct AgentChip: View {
         let palette = look.palette
         HStack(spacing: 4) {
             Text(persona.api.agent).fontWeight(.semibold)
-            Text("· \(persona.api.model)\(effort ? " · \(persona.api.effort)" : "")")
+            Text(
+                [persona.api.model, effort ? persona.api.effort : ""].filter { !$0.isEmpty }.map { "· \($0)" }
+                    .joined(separator: " "))
             Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
         }
         .ui(12, .regular, look).foregroundStyle(palette.mute).lineLimit(1).fixedSize()
@@ -61,12 +71,12 @@ internal struct RoundButton: View {
     internal var body: some View {
         Group {
             if look.mono {
-                Text("[\(ascii)]").ui(15, .bold, look)
+                Text("[\(ascii)]").ui(15, .bold, look).fixedSize()
             } else {
                 Image(systemName: symbol).font(.system(size: size * 0.42, weight: .semibold))
             }
         }
-        .foregroundStyle(look.palette.foreground).frame(width: size, height: size)
+        .foregroundStyle(look.palette.foreground).frame(minWidth: size, minHeight: size)
         .modifier(RoundSurface(look: look))
     }
 }
@@ -82,11 +92,12 @@ internal struct RoundSurface: ViewModifier {
 internal struct Badge: View {
     @Environment(\.look) private var look
     internal let count: Int
+    internal var tint: Color?
 
     internal var body: some View {
         Text("\(count)").ui(12, .bold, look).foregroundStyle(look.palette.dark ? .black : .white)
             .padding(.horizontal, 6).frame(minWidth: 20, minHeight: 20)
-            .background(look.palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule()))
+            .background(tint ?? look.palette.link, in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule()))
     }
 }
 
@@ -106,6 +117,7 @@ internal struct CardButton: View {
                 primary ? tint : tint.opacity(look.mono ? 0 : 0.12),
                 in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule())
             )
+            .accessibilityLabel(title)
     }
 }
 

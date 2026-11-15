@@ -1,4 +1,4 @@
-/* #116 the native shell, on web/src/app.css (the shared tokens, blocks, avatars, chips, Scene): this design's additions
+/* #116 the native shell, on design-system/app.css (the shared tokens, blocks, avatars, chips, Scene): this design's additions
    as tokens only. No raw colour but the phone's own chrome (the island is black on every scheme) and Scene's coats
    (herdsman's, as app.css's Scene block). New class names: ph a 390 × 844 phone screen, stb its status bar, isl the
    island, hind the home indicator; wd a 1440 window, lst its list column, dtl its detail; scr a screen, nb its nav bar

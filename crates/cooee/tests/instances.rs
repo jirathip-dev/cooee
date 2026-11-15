@@ -15,7 +15,7 @@ fn two_instances_never_see_each_others_threads_or_devices() {
     let dir = scratch("instances");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let a = Cooee::start_instance(&dir, &shed.dir, "cooee");
-    let b = Cooee::start_instance(&dir, &shed.dir, "cooee-drover");
+    let b = Cooee::start_instance(&dir, &shed.dir, "drover");
 
     let folder = dir.join("root/project");
     let new =
@@ -25,15 +25,15 @@ fn two_instances_never_see_each_others_threads_or_devices() {
 
     let share = dir.join("home/.local/share/cooee");
     assert!(share.join("cooee").is_dir());
-    assert!(share.join("cooee-drover").is_dir());
+    assert!(share.join("drover").is_dir());
     let id = serde_json::from_str::<serde_json::Value>(&body).unwrap()["id"]
         .as_str()
         .unwrap()
         .to_owned();
-    let link = format!(r#"href="/t/{id}""#);
-    assert!(a.get("/").1.contains(&link));
-    let (status, page) = b.get("/");
-    assert!(status == 200 && !page.contains(&link), "{page}");
+    let ids = |c: &Cooee| c.json("/threads").to_string();
+    assert!(ids(&a).contains(&id));
+    let theirs = ids(&b);
+    assert!(!theirs.contains(&id), "{theirs}");
 
     let (devices_a, devices_b) = (a.cli(&["devices"]), b.cli(&["devices"]));
     assert_eq!(
@@ -42,11 +42,8 @@ fn two_instances_never_see_each_others_threads_or_devices() {
     );
     assert_ne!(devices_a, devices_b);
     // a's cookie is not a device of b's.
-    let (head, _) = b.raw("GET", "/", &[("Cookie", &a.cookie)], "");
-    assert!(
-        head.contains(" 303 ") && head.contains("location: /pair"),
-        "{head}"
-    );
+    let (head, _) = b.raw("GET", "/threads", &[("Cookie", &a.cookie)], "");
+    assert!(head.contains(" 401 "), "{head}");
 }
 
 /// `cooee <args>` with `HOME` at `home`, no XDG folders and only the system `PATH` (no shed, no Tailscale).

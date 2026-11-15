@@ -94,6 +94,20 @@ fn display(names: &[Persona], id: &str) -> String {
     }
 }
 
+/// A room's members' persona ids, in room order.
+pub(super) fn seated(room: &Thread) -> Vec<String> {
+    room.members.iter().map(|m| m.persona.clone()).collect()
+}
+
+/// A row's last line: in a room, who said it first (#276).
+pub(super) fn said(names: &[Persona], speaker: &str, last: String) -> String {
+    if speaker.is_empty() {
+        last
+    } else {
+        format!("{}: {last}", display(names, speaker))
+    }
+}
+
 fn refused(why: impl Into<String>) -> HubError {
     HubError::Refused(why.into())
 }
@@ -162,12 +176,18 @@ impl Hub {
         Ok(self.mint(random_id, make)?.0)
     }
 
-    /// Adds persona `persona` to room `room` at its end, or (`remove`) takes it out and closes its session. Either
-    /// twice does it once. Returns the members.
+    /// Adds persona `persona` to room `room` at room order `at` (`None`: its end), moves a member there, or
+    /// (`remove`) takes it out and closes its session. Any of them twice does it once. Returns the members.
     ///
     /// # Errors
     /// [`HubError::Refused`] for a thread that isn't a room, a sixth member or one that can't join.
-    pub fn member(&self, room: &str, persona: &str, remove: bool) -> Result<Vec<String>, HubError> {
+    pub fn member(
+        &self,
+        room: &str,
+        persona: &str,
+        remove: bool,
+        to: Option<usize>,
+    ) -> Result<Vec<String>, HubError> {
         if !remove {
             self.joinable(persona)?;
         }
@@ -186,14 +206,23 @@ impl Hub {
             (None, false) if l.meta.members.len() >= MEMBERS => {
                 return Err(refused(format!("a room has at most {MEMBERS} members")));
             }
-            (None, false) => l.meta.members.push(Member {
-                persona: persona.to_owned(),
-                ..Member::default()
-            }),
-            _ => return Ok(l.meta.members.iter().map(|m| m.persona.clone()).collect()),
+            (None, false) => {
+                let seat = Member {
+                    persona: persona.to_owned(),
+                    ..Member::default()
+                };
+                let to = to.unwrap_or(usize::MAX).min(l.meta.members.len());
+                l.meta.members.insert(to, seat);
+            }
+            (Some(at), false) if to.is_some_and(|to| to != at) => {
+                let seat = l.meta.members.remove(at);
+                let to = to.unwrap_or(at).min(l.meta.members.len());
+                l.meta.members.insert(to, seat);
+            }
+            _ => return Ok(seated(&l.meta)),
         }
         self.store.save(&l.meta)?;
-        let members = l.meta.members.iter().map(|m| m.persona.clone()).collect();
+        let members = seated(&l.meta);
         drop(l);
         if !gone.is_empty() {
             self.close(&gone)?;
@@ -234,13 +263,14 @@ impl Hub {
             text: q.text,
             random_id: q.random_id,
             files: q.files,
+            routine: None,
         };
         let item = l.chat.said(now(), 0, OWNER.to_owned(), body);
         let idle = l.meta.round.is_empty();
         let names = personas::list(self.config_dir(), &self.data);
         let mut turns = named(text, &l.meta.members, &names);
         let reason = if turns.is_empty() {
-            turns = l.meta.members.iter().map(|m| m.persona.clone()).collect();
+            turns = seated(&l.meta);
             Reason::Round
         } else {
             Reason::Mention
@@ -268,6 +298,11 @@ impl Hub {
         let (persona, session, prompt, random_id) = {
             let mut l = lock(&live);
             let Some(turn) = l.meta.round.first().cloned() else {
+                if l.meta.taken > 0 {
+                    l.meta.taken = 0;
+                    self.store.save(&l.meta)?;
+                    l.emit("room-stop", json!({ "reason": "done" }).to_string());
+                }
                 return Ok(());
             };
             let (persona, reason) = (turn.member, turn.reason);
@@ -483,5 +518,46 @@ impl Hub {
                 eprintln!("cooee: room {room}: {e}");
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use serde_json::json;
+
+    use super::super::tests::{hub, scratch};
+
+    /// #276: a room's row says who spoke last, the owner or a member; a chat's row says only what.
+    #[test]
+    fn a_rooms_row_names_its_last_speaker() {
+        let dir = scratch("speaker");
+        let threads = dir.join("data/threads");
+        let room = json!({ "format": 1, "thread": { "id": "room", "title": "Kestrel", "messages": [], "kind": "room",
+            "members": [{ "persona": "ada" }, { "persona": "bo" }] } });
+        fs::write(threads.join("room.json"), room.to_string()).unwrap();
+        let line = |id: u64, speaker: &str, kind: &str| {
+            json!({ "id": id, "at": id, "speaker": speaker, "kind": kind, "text": format!("line {id}"), "random_id": "r", "stop_reason": "end_turn" })
+                .to_string()
+        };
+        fs::write(threads.join("room.jsonl"), line(1, "owner", "you") + "\n").unwrap();
+        let chat =
+            json!({ "format": 1, "thread": { "id": "chat", "title": "chat", "messages": [] } });
+        fs::write(threads.join("chat.json"), chat.to_string()).unwrap();
+        fs::write(threads.join("chat.jsonl"), line(1, "", "you") + "\n").unwrap();
+        let last = |id: &str| {
+            hub(&dir)
+                .list()
+                .into_iter()
+                .find(|r| r.id == id)
+                .unwrap()
+                .last
+        };
+        assert_eq!(last("room"), "Owner: line 1");
+        assert_eq!(last("chat"), "line 1");
+        let lines = line(1, "owner", "you") + "\n" + &line(2, "ada", "agent") + "\n";
+        fs::write(threads.join("room.jsonl"), lines).unwrap();
+        assert_eq!(last("room"), "ada: line 2");
     }
 }

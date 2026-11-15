@@ -1,7 +1,8 @@
 //! Plugin screens as data (#125, #140): the example plugin (docs/plugins/hello-py) added from a git repo of its own,
 //! its screen and live stream through cooee's `/p/<plugin>/screens/` proxy, an action through `POST /p/<plugin>/action`
 //! and one outside its `[permissions]` refused before the backend sees it, and its header-strip chip on the persona
-//! it's attached to.
+//! it's attached to. It runs with a resolver that never answers (#388: a macOS runner's reverse DNS), so the backend
+//! must start without a DNS lookup.
 
 mod support;
 
@@ -38,10 +39,21 @@ fn hello_repo(repo: &Path) {
     let strip = "[[places]]\ntype = \"header-strip\"\nid = \"waves\"\npersona = \"pal\"\nlabel = \"Waves\"\n\
                  screen = \"/screens/hello\"\n\n[permissions]\nplaces = [\"menu-row\", \"header-strip\"]\n";
     let manifest = manifest.replace("[permissions]\nplaces = [\"menu-row\"]\n", strip);
+    let manifest = format!("claims = [\"lab\"]\n{manifest}");
     fs::write(repo.join("cooee-plugin.toml"), manifest).unwrap();
     git(repo, &["init", "--quiet", "-b", "main"]);
     git(repo, &["add", "-A"]);
     git(repo, &["commit", "--quiet", "-m", "hello"]);
+}
+
+/// A Python path whose `sitecustomize` makes every reverse lookup hang 60 s, then fail: a resolver that never answers.
+fn no_dns(dir: &Path) -> String {
+    let py = dir.join("no-dns");
+    fs::create_dir_all(&py).unwrap();
+    let hang = "import socket, time\n\ndef hang(*_):\n    time.sleep(60)\n    raise OSError(\"no answer\")\n\n\
+                socket.gethostbyaddr = hang\n";
+    fs::write(py.join("sitecustomize.py"), hang).unwrap();
+    py.to_string_lossy().into_owned()
 }
 
 /// `cooee serve`, sent SIGTERM when dropped (a failed assert too), so it stops the backends it runs.
@@ -82,10 +94,23 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
     let dir = scratch("screens");
     let shed = FakeShed::start(&dir.join("shed"), version());
     hello_repo(&dir.join("hello.git"));
-    let serve = Serve(Cooee::start(&dir, &shed.dir));
+    let py = no_dns(&dir);
+    let serve = Serve(Cooee::start_env(
+        &dir,
+        &shed.dir,
+        "",
+        &[("PYTHONPATH", &py)],
+    ));
     let cooee = &serve.0;
     let url = dir.join("hello.git").to_string_lossy().into_owned();
-    let out = cooee.cli(&["plugin", "add", &url, "--yes"]);
+    let add = cooee
+        .command()
+        .env("PYTHONPATH", &py)
+        .args(["plugin", "add", &url, "--yes"])
+        .output()
+        .unwrap();
+    assert!(add.status.success(), "{add:?}");
+    let out = String::from_utf8(add.stdout).unwrap();
     assert!(out.contains("screens: 2 places; actions: wave"), "{out}");
     until("its screen", || {
         cooee.get("/p/hello/screens/hello").0 == 200
@@ -161,7 +186,11 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
     );
     let row = &cooee.json("/plugins")["installed"][0];
     assert_eq!(
-        (&row["permissions"]["actions"], &row["places"][0]["type"]),
-        (&json!(["wave"]), &json!("menu-row"))
+        (
+            &row["permissions"]["actions"],
+            &row["places"][0]["type"],
+            &row["claims"]
+        ),
+        (&json!(["wave"]), &json!("menu-row"), &json!(["lab"]))
     );
 }

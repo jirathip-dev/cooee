@@ -119,7 +119,7 @@ impl Setup {
         let run = self.shed.calls("run", &terminal)[0].clone();
         let pending = self.accounts().join(".new-account-2");
         assert!(pending.is_dir(), "the login runs in a new folder");
-        assert!(!self.page().contains(r#"data-account="account-2""#));
+        assert!(self.refused("account-2"), "not listed while the login runs");
         let sent = self
             .cooee
             .post("/logins/fake/send", &json!({ "text": code }));
@@ -127,8 +127,17 @@ impl Setup {
         (run, self.until(|v| v["state"] == "ended"))
     }
 
-    fn page(&self) -> String {
-        self.cooee.get("/new").1
+    /// A thread on `account` is refused: the account isn't listed.
+    fn refused(&self, account: &str) -> bool {
+        let new = json!({ "agent": "fake-acp", "account": account, "folder": self.dir.join("root"), "text": "hi", "random_id": "r" });
+        self.cooee.post("/threads", &new).0 == 400
+    }
+
+    /// The account `GET /threads` notes for thread `id`.
+    fn account_of(&self, id: &str) -> Value {
+        let list = self.cooee.json("/threads");
+        let row = list.as_array().unwrap().iter().find(|t| t["id"] == id);
+        row.unwrap()["account"].clone()
     }
 
     /// Starts a thread on `fake-acp` with `account` (none: the default); returns its id and its `shed run` line.
@@ -177,16 +186,11 @@ impl Setup {
 #[test]
 fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it() {
     let s = setup("accounts");
-    s.until(|v| v["status"]["unknown"] == false);
-    let page = s.page();
-    assert!(
-        page.contains(r#"<div class="acr" data-provider="fake" data-account=""><span class="ptg">fake</span><span class="sk">main login</span><span class="st m">signed out</span>"#)
-            && page.contains("+ account")
-            && !page.contains("System default"),
-        "{page}"
-    );
+    let v = s.until(|v| v["status"]["unknown"] == false);
+    assert_eq!(v["status"]["signed_in"], false, "{v}");
+    assert_eq!(v["status"]["line"], "signed out", "{v}");
 
-    // A failed login: no row, the folder gone.
+    // A failed login: not listed, the folder gone.
     let (run, v) = s.add("bad-code");
     let pending = s.accounts().join(".new-account-2");
     assert_eq!(
@@ -199,53 +203,32 @@ fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_ou
     );
     assert_eq!(v["why"], "the login command exited 1");
     assert!(!pending.exists() && !s.accounts().join("account-2").exists());
-    assert!(!s.page().contains(r#"data-account="account-2""#));
+    assert!(s.refused("account-2"));
 
-    // A successful one: the folder is listed, its status a plain row.
+    // A successful one: the folder is listed, its status a plain line.
     let (_, v) = s.add("good-code");
     assert_eq!(v["why"], "the login command finished");
     let folder = s.accounts().join("account-2");
     assert!(folder.join("creds").is_file() && !pending.exists());
-    let page = s.page();
+    let v = s.until(|v| v["status"]["signed_in"] == true);
+    assert_eq!(v["status"]["who"], "account-2@example.com", "{v}");
+    let line = v["status"]["line"].as_str().unwrap();
     assert!(
-        page.contains(r#"data-account="account-2"><span class="ptg">fake</span><span class="sk">account-2@example.com</span><span class="st g">✓ signed in</span>"#)
-            && !page.contains("make default")
-            && !page.contains("default for new threads"),
-        "{page}"
-    );
-    // The page's own data (the looks, #49) aside.
-    let (head, rest) = page
-        .split_once(r#"<script type="application/json" id="looks">"#)
-        .unwrap();
-    let page = format!("{head}{}", rest.split_once("</script>").unwrap().1);
-    assert!(
-        !page.contains("loggedIn") && !page.contains("{\""),
-        "no raw JSON: {page}"
+        line.contains("account-2@example.com") && !line.contains("loggedIn") && !line.contains('{'),
+        "no raw JSON: {line}"
     );
     // No account named: the system default, no folder.
     let (id, line) = s.thread(None);
     assert!(!line.contains("env"), "{line}");
-    assert!(
-        s.cooee
-            .get(&format!("/t/{id}"))
-            .1
-            .contains("fake · main login · ")
-    );
+    assert_eq!(s.account_of(&id), "");
     // A thread's own pick: that account's folder.
     let (id, line) = s.thread(Some("account-2"));
     assert!(
         line.ends_with(&format!(" -- env FAKE_HOME={} fake-acp", folder.display())),
         "{line}"
     );
-    let (_, chat) = s.cooee.get(&format!("/t/{id}"));
-    assert!(chat.contains("fake · account-2@example.com · "), "{chat}");
-    assert!(!chat.contains(">fake-acp"), "no agent id on screen: {chat}");
-    assert_eq!(
-        s.cooee
-            .post("/threads", &json!({ "agent": "fake-acp", "account": "nope", "folder": s.dir.join("root"), "text": "hi", "random_id": "r" }))
-            .0,
-        400
-    );
+    assert_eq!(s.account_of(&id), "account-2");
+    assert!(s.refused("nope"));
 
     // Sign out: the logout runs for the folder, then the folder is removed.
     let (status, body) = s
@@ -257,42 +240,37 @@ fn add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_ou
         format!("{}\n", folder.display())
     );
     assert!(!folder.exists());
-    let page = s.page();
-    assert!(!page.contains(r#"data-account="account-2""#), "{page}");
+    assert!(s.refused("account-2"));
 
     let written = s.written();
     assert!(!written.contains(&s.token), "a token was written");
 }
 
+/// On the main login: the only one whose status `GET /logins/{provider}` shows after a restart.
 #[test]
 fn signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted() {
     let mut s = setup("accounts-stale");
-    let (_, v) = s.add("good-code");
+    let (status, body) = s.cooee.post("/logins/fake", &json!({}));
+    assert_eq!(status, 200, "{body}");
+    s.until(|v| v["screen"].as_str().unwrap().contains("Paste code"));
+    let sent = s
+        .cooee
+        .post("/logins/fake/send", &json!({ "text": "good-code" }));
+    assert_eq!(sent.0, 200, "{}", sent.1);
+    let v = s.until(|v| v["state"] == "ended");
     assert_eq!(v["why"], "the login command finished");
-    let row = r#"data-account="account-2"><span class="ptg">fake</span><span class="sk">account-2</span><span class="st m">signed out</span>"#;
-    assert!(s.page().contains(r#"data-account="account-2"><span class="ptg">fake</span><span class="sk">account-2@example.com</span><span class="st g">✓ signed in</span>"#));
-    // The help says where logins live.
-    assert!(
-        s.page()
-            .contains(r#"<a href="https://github.com/jirathip-dev/cooee/blob/main/docs/logins.md" target="_blank" rel="noopener">Where logins live</a>"#)
-    );
+    let v = s.until(|v| v["status"]["signed_in"] == true);
+    assert_eq!(v["status"]["who"], "system@example.com", "{v}");
 
     // The login is lost outside cooee (revoked, its Keychain item gone); the sign-in stays noted.
-    fs::remove_file(s.accounts().join("account-2/creds")).unwrap();
+    fs::remove_file(s.dir.join("system/creds")).unwrap();
     let noted = fs::read_to_string(s.accounts().join(".cooee.json")).unwrap();
-    assert!(noted.contains("account-2"), "{noted}");
+    assert!(noted.contains(r#""signed_in":{"":"#), "{noted}");
     s.cooee.child.kill().unwrap();
     s.cooee.child.wait().unwrap();
-    // A fresh start checks every account's status: signed out, whatever was noted.
+    // A fresh start checks the status: signed out, whatever was noted.
     s.cooee = Cooee::start_with(&s.dir, &s.shed.dir, &s.extra);
-    let start = Instant::now();
-    let page = loop {
-        let page = s.page();
-        if page.contains(row) || start.elapsed() > Duration::from_secs(10) {
-            break page;
-        }
-        thread::sleep(Duration::from_millis(20));
-    };
-    assert!(page.contains(row), "{page}");
-    assert!(!page.contains("✓ signed in"), "{page}");
+    let v = s.until(|v| v["status"]["unknown"] == false);
+    assert_eq!(v["status"]["signed_in"], false, "{v}");
+    assert_eq!(v["status"]["line"], "signed out", "{v}");
 }

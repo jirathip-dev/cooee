@@ -63,7 +63,8 @@ public struct MacConnect: View {
 
 public struct WideView<Detail: View>: View {
     @Environment(\.look) private var look
-    private let personas: [Persona]
+    private let screen: HomeScreen
+    private let pins: [Pin]
     private let all: [Persona]
     private let chats: [ListedChat]
     private let selected: String?
@@ -74,11 +75,12 @@ public struct WideView<Detail: View>: View {
         let palette = look.palette
         HStack(spacing: 0) {
             VStack(spacing: 0) {
-                TopBar(personas: all, actions: actions).padding(.top, look.still ? 34 : 8)
+                TopBar(title: screen.title, personas: all, actions: actions).padding(.top, look.still ? 34 : 8)
                 Scroller {
-                    PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new)
-                        .scaleEffect(0.9, anchor: .leading).padding(.top, 4)
-                    ChatList(chats: chats, selected: selected, open: actions.open).padding(.top, 8)
+                    HomeBlocks(
+                        screen: screen, pins: pins, chats: chats, selected: selected, actions: actions, wide: true
+                    )
+                    if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
                 }
             }
             .frame(width: 360).background(palette.card.opacity(look.style == .modern ? 0.45 : 0.8))
@@ -89,15 +91,17 @@ public struct WideView<Detail: View>: View {
     }
 
     public init(
-        personas: [Persona],
-        all: [Persona]? = nil,
+        screen: HomeScreen = .bundled,
+        pins: [Pin] = Fixtures.personas.map(Pin.persona),
+        all: [Persona] = Fixtures.personas,
         chats: [ListedChat],
         selected: String?,
         actions: HomeActions,
         @ViewBuilder detail: () -> Detail
     ) {
-        self.personas = personas
-        self.all = all ?? personas
+        self.screen = screen
+        self.pins = pins
+        self.all = all
         self.chats = chats
         self.selected = selected
         self.actions = actions
@@ -107,7 +111,7 @@ public struct WideView<Detail: View>: View {
 
 extension WideView where Detail == ChatView {
     public init() {
-        self.init(personas: Fixtures.personas, chats: Fixtures.chats, selected: "t1", actions: HomeActions()) {
+        self.init(chats: Fixtures.chats, selected: "t1", actions: HomeActions()) {
             ChatView.streaming(back: false)
         }
     }

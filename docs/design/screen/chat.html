@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>cooee · the Screen in chat (#165): the screen block, a handoff, its Live Activity, the secret drop</title>
+<link rel="stylesheet" href="../../../design-system/app.css">
+<link rel="stylesheet" href="../native-shell/ns.css">
+<link rel="stylesheet" href="../rooms/rm.css">
+<link rel="stylesheet" href="sc.css">
+<script type="module" src="../rooms/rm.js"></script>
+</head>
+<body>
+<div class="gal">
+
+<!-- The screen block (#140) and a handoff (W5) in Researcher's chat: the frame it asked for, then the sign-in wall as
+     a handoff card. The pill says Researcher waits for you. -->
+<div class="fr"><p class="cap">Chat · a screen block, then a handoff</p>
+<section class="ph col" data-f="block">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <i class="pa" data-p="res" data-k="asks" data-pose="needs" data-fig="(!)"></i><span class="hdt"><b>Researcher</b><small>Kestrel filings</small></span>
+    <a class="gb" href="#" data-tx="[scr]" aria-label="screen" style="color:var(--link)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></a></header>
+  <ol class="msgs">
+    <li class="blk me">Who runs Kestrel? I need the leadership before the 28th.</li>
+    <li class="at"><p>The 10-Q names the CEO and CFO only. LinkedIn has the rest:</p>
+      <div class="sblk"><div class="xscr" style="margin:0;border-radius:0;box-shadow:none" data-y="site" data-pg="li-wall" data-w="330" data-bare="1"></div>
+        <div class="sbf"><span><b>linkedin.com</b> · 09:44 · a frame I asked for</span><a href="#">Open ›</a></div></div></li>
+    <li class="ask ho"><p class="awho">✋ Handoff <i class="pa" data-p="res" data-s="22"></i><span>Researcher</span></p>
+      <h3>Sign in to linkedin.com</h3>
+      <p>Take control for 10 min and sign in with your account. Researcher never sees your password, and goes on once you hand back.</p>
+      <div class="chc"><button type="button" class="rec">Take control</button><button type="button">Not now</button></div></li>
+  </ol>
+  <div class="dock">
+    <div class="rp wait"><span><i class="sd"></i><b>Researcher waits for you</b> · 2 min</span><button type="button" class="stop">Stop</button></div>
+    <div class="comp"><a class="gb" href="#" data-tx="[+]">+</a><span class="cfld"><span>Message Researcher</span></span><span class="snd">↑</span></div>
+  </div>
+</section></div>
+
+<!-- The Live Activity (#80) of that handoff on the lock screen: who waits, for what, how long. No Take control here: a tap
+     opens the app behind Face ID. -->
+<div class="fr"><p class="cap">Live Activity · the handoff on the lock screen</p>
+<section class="ph" data-f="activity">
+  <div class="lock">
+    <p class="dt2">Thursday 12 November</p><p class="clk">9:46</p>
+    <div class="stack">
+      <div class="la"><div class="lh"><i class="pa" data-p="res" data-k="asks" data-pose="needs" data-fig="(!)"></i>
+        <span><b>Researcher waits for you</b><small>Sign in to linkedin.com · Kestrel filings</small></span><span class="tm">2m</span></div>
+        <div class="lb3"><a class="xbt" href="#">Not now</a></div></div>
+    </div>
+  </div>
+</section></div>
+
+<!-- The same Live Activity in the Dynamic Island, the last 30 s of your lease: Hand back only; +10 min is in the app. -->
+<div class="fr"><p class="cap">Dynamic Island · your lease, outside cooee</p>
+<section class="ph" data-f="island">
+  <div class="home2"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="di"><div class="dh"><i class="pa" data-p="res" data-k="waiting"></i>
+    <span><b>You have control</b><small>back to Researcher at 0:00</small></span><span class="tm">0:28</span></div>
+    <div class="db"><a class="xbt amb" href="#">Hand back</a></div></div>
+</section></div>
+
+<!-- The secret drop: Researcher asks for a key; you paste it into the Keychain on mini; Researcher gets a reference. -->
+<div class="fr"><p class="cap">Secret drop · into the Keychain, never the chat</p>
+<section class="ph col" data-f="secret">
+  <header class="rhd"><a class="gb" href="#" data-tx="[<]" aria-label="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <i class="pa" data-p="res"></i><span class="hdt"><b>Researcher</b><small>Kestrel filings</small></span></header>
+  <div class="rdim"></div>
+  <div class="rsh" style="--top:96px">
+    <i class="gr2"></i>
+    <div class="shb"><a href="#">Cancel</a><b>Drop a secret</b><a href="#">Drop</a></div>
+    <div class="rshi">
+      <div class="ask ho" style="box-shadow:inset 0 0 0 1px var(--rim),inset 3px 0 0 var(--link)"><p class="awho" style="color:var(--link)"><i class="pa" data-p="res" data-s="22"></i><span>Researcher</span> asks for</p>
+        <h3>A Crunchbase API key</h3><p>To pull Kestrel's funding rounds. crunchbase.com is on its sites.</p></div>
+      <p class="lb2">Name</p>
+      <div class="rfl"><span class="fr2"><span class="tx" style="font-family:var(--mono)"><b>CRUNCHBASE_KEY</b></span></span></div>
+      <p class="lb2">Value</p>
+      <div class="rfl"><span class="xsec"><span>••••••••••••</span><small>pasted · 40 chars</small><i class="eye">◎</i></span></div>
+      <p class="lb2">Used by</p>
+      <div class="rfl avs"><span class="fr2"><i class="pa" data-p="res"></i><span class="tx"><b>Researcher</b><small>on crunchbase.com only</small></span><span class="rsv">›</span></span></div>
+      <div class="vlt">
+        <p><i>🔒</i><span>Kept in the <b>Keychain on mini</b>. Only the signed cooee reads it, and every read has a time limit.</span></p>
+      </div>
+    </div>
+  </div>
+</section></div>
+
+<!-- 1440: the same chat in the Mac window, the screen blocks and the handoff card in place; the Screen pane closed. -->
+<div class="fr w"><p class="cap">1440 · the block and the handoff in the Mac window</p>
+<section class="wd mac two2" data-f="wide-chat">
+  <aside class="side" data-x="side" data-sel="res"></aside>
+  <div class="col2">
+    <header class="rhd"><i class="pa" data-p="res" data-k="asks" data-pose="needs" data-fig="(!)"></i><span class="hdt"><b>Researcher</b><small>Kestrel filings</small></span>
+      <a class="gb" href="#" data-tx="[scr]" aria-label="screen" style="color:var(--link)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></a><a class="gb" href="#" data-tx="[…]" aria-label="more">⋯</a></header>
+    <ol class="msgs">
+      <li class="blk me">Pull Kestrel's latest filing and the Q3 numbers.</li>
+      <li class="at"><p>Q3 revenue was <b>$4.1M</b>, up 12% on Q2. Here is the filing list I read it from:</p>
+        <div class="sblk" style="max-width:420px"><div class="xscr" style="margin:0;border-radius:0;box-shadow:none" data-y="site" data-pg="sec" data-w="420" data-bare="1"></div>
+          <div class="sbf"><span><b>sec.gov</b> · 09:41 · a frame I asked for</span><a href="#">Open ›</a></div></div></li>
+      <li class="blk me">Who runs Kestrel? I need the leadership before the 28th.</li>
+      <li class="at"><p>The 10-Q names the CEO and CFO only. LinkedIn has the rest:</p>
+        <div class="sblk" style="max-width:420px"><div class="xscr" style="margin:0;border-radius:0;box-shadow:none" data-y="site" data-pg="li-wall" data-w="420" data-bare="1"></div>
+          <div class="sbf"><span><b>linkedin.com</b> · 09:44 · a frame I asked for</span><a href="#">Open ›</a></div></div></li>
+      <li class="ask ho" style="max-width:520px"><p class="awho">✋ Handoff <i class="pa" data-p="res" data-s="22"></i><span>Researcher</span></p>
+        <h3>Sign in to linkedin.com</h3>
+        <p>Take control for 10 min and sign in with your account. Researcher never sees your password, and goes on once you hand back.</p>
+        <div class="chc"><button type="button" class="rec">Take control</button><button type="button">Not now</button></div></li>
+    </ol>
+    <div class="dock">
+      <div class="rp wait"><span><i class="sd"></i><b>Researcher waits for you</b> · 2 min</span><button type="button" class="stop">Stop</button></div>
+      <div class="comp"><a class="gb" href="#" data-tx="[+]">+</a><span class="cfld"><span>Message Researcher</span></span><span class="snd">↑</span></div>
+    </div>
+  </div>
+</section></div>
+
+</div>
+<script src="sc.js"></script>
+</body>
+</html>

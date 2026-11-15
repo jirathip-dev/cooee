@@ -15,7 +15,7 @@
 // [data-focus=<field name>] the field a tap opened (`tap.focus`),
 // [data-select=<state> data-then=<screen>] a state selected on the map, that screen's blocks beside it (1440), [data-menu=<label>] the sheet's ⋯ menu open, that row marked.
 import { diagram } from '../workflow-diagram/dg.js';
-const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
+const W = '../../../design-system/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark', F = q.get('f'), STYLE = q.get('style') || 'modern';
 const theme = await fetch(`${P}${T}/theme.json`).then(r => r.json());
