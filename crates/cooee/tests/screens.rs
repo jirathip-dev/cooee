@@ -13,7 +13,7 @@ use std::{
     path::Path,
     process::Command,
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use serde_json::{Value, json};
@@ -64,14 +64,16 @@ impl Drop for Serve {
     }
 }
 
-fn until(what: &str, f: impl Fn() -> bool) {
+fn until(what: &str, f: impl Fn() -> Result<(), String>) {
+    let mut last = String::new();
     for _ in 0..400 {
-        if f() {
-            return;
+        match f() {
+            Ok(()) => return,
+            Err(e) => last = e,
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("never: {what}");
+    panic!("never: {what}; the last try: {last}");
 }
 
 fn next_data(r: &mut BufReader<TcpStream>) -> Value {
@@ -107,8 +109,15 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
     assert!(add.status.success(), "{add:?}");
     let out = String::from_utf8(add.stdout).unwrap();
     assert!(out.contains("screens: 2 places; actions: wave"), "{out}");
+    let log = dir.join("data/plugins/hello/plugin.log");
     until("its screen", || {
-        cooee.get("/p/hello/screens/hello").0 == 200
+        let at = Instant::now();
+        let (status, body) = cooee.get("/p/hello/screens/hello");
+        let took = at.elapsed();
+        let log = fs::read_to_string(&log).unwrap_or_default();
+        (status == 200)
+            .then_some(())
+            .ok_or_else(|| format!("{status} after {took:?}: {body}\nplugin.log:\n{log}"))
     });
 
     let screen = cooee.json("/p/hello/screens/hello");
