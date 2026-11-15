@@ -1,0 +1,5 @@
+Decided: merge origin/staging; .drover/arch.toml keeps both sides: staging's frozen list and two collects, plus this slice's generated support/mod.rs and its collect
+Because: .drover/arch.toml:4
+Rejected: none
+Check: sh scripts/gen.sh leaves no diff and drover arch-check --base origin/staging exits 0
+Owner: The branch now includes the latest staging; the only conflict was the architecture check's settings file, where both sides' entries were kept.
