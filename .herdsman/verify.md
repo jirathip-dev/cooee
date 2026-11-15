@@ -128,6 +128,7 @@ gh run download "${run:?no apple run at this head}" -n mac-setup-shots -D "$OUT/
 | iOS: persona editor | `persona` (New chat → New persona…, then Edit a persona) |
 | iOS: settings (avatar menu) | `avatar-menu` (Account; Look → Terminal / Modern) |
 | iOS: Conductor and drover | `attach` (first look only), `conductor`, `events`, `queue`, `queue-live`, `queue-offline` |
+| iOS: Workflow and Others | `conductor-workflow`, `workflow` (one issue unfolded), `workflow-round`, `home-no-lanes`, `others` (`LiveWorkflowUITests`) |
 | iOS: the issue's own screen | add a `keep("<name>")` step to the `apple/UITests/Live*UITests.swift` test for that screen in the PR, after the screen it touches |
 | Mac: first run, pairing approve | CI `mac-setup-shots`: `mac-setup/` (`welcome`, `folders`, `qr`, `approve`, `approved`), `phone-ask/` (`pair-waiting`, `pair-approved`) |
 
