@@ -38,6 +38,19 @@
             XCTAssert(app.staticTexts["Paired with 127.0.0.1"].waitForExistence(timeout: 600))
             keep("pair-approved")
         }
+
+        @MainActor
+        internal func testStaysPairedAfterTheMacUpdates() throws {
+            guard ProcessInfo.processInfo.environment["COOEE_AFTER_UPDATE"] == "1" else {
+                throw XCTSkip("CI's mac-setup job sets COOEE_AFTER_UPDATE, once the Mac has updated itself")
+            }
+            let app = XCUIApplication()
+            app.launch()
+            XCTAssert(newChat(app).waitForExistence(timeout: 30), "still paired: home, not the pairing screen")
+            newChat(app).tap()
+            XCTAssert(app.buttons["Coder"].firstMatch.waitForExistence(timeout: 30), "the updated server answers")
+            keep("after-mac-update")
+        }
     }
 
     internal class LiveUITestCase: XCTestCase {

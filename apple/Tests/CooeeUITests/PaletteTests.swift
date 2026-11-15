@@ -10,7 +10,7 @@ internal struct PaletteTests {
 
     private static let schemes = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        .deletingLastPathComponent().appendingPathComponent("web/schemes")
+        .deletingLastPathComponent().appendingPathComponent("design-system/schemes")
 
     private static func tokens(_ name: String) throws -> [String: String] {
         let data = try Data(contentsOf: schemes.appendingPathComponent("\(name).json"))

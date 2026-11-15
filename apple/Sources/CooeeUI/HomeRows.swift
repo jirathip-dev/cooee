@@ -5,7 +5,7 @@ internal struct PinnedRow: View {
     @Environment(\.look) private var look
     internal let personas: [Persona]
     internal let rows: [Row]
-    internal var new: (String) -> Void = { _ in }
+    internal var pin: (String) -> Void = { _ in }
 
     private var scene: Bool { look.style == .scene }
 
@@ -36,7 +36,7 @@ internal struct PinnedRow: View {
             HStack(alignment: .bottom, spacing: scene ? 4 : 14) {
                 ForEach(personas) { persona in
                     Button {
-                        new(persona.id)
+                        pin(persona.id)
                     } label: {
                         pin(persona)
                     }
@@ -83,7 +83,7 @@ internal struct ChatRow: View {
         let room = !members.isEmpty
         HStack(spacing: 12) {
             if room {
-                RoomStack(members: members, size: 22).frame(width: 48, height: 48)
+                RoomStack(members: members, size: 22, state: .done).frame(width: 48, height: 48)
             } else {
                 Avatar(persona: persona.with(state: row.state), size: 48)
             }
