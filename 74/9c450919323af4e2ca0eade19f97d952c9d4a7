@@ -1,0 +1,13 @@
+Decided: round 6 finishes the merge of staging at b7585b9, then merges staging at 9cea27f (#425 Models/ split, #426 chat actions per area)
+Decided: a workflow or stranger thread's persona stays Detailed after staging's Listing.stranger
+Because: apple/Sources/CooeeCore/Listing.swift:40
+Because: "Conductor (orchestrator personas) and workflow lanes default `detailed`"
+Decided: ChatItems.build takes staging's pending-plus-outbox with this PR's style and working
+Because: apple/Sources/CooeeFeatures/ChatFeature.swift:41
+Decided: staging's ChatScreen.swift passes the working step to the chat
+Because: apple/Sources/CooeeUI/ChatScreen.swift:36
+Decided: home.json's persona has style, because GET /screens/home lists personas as GET /personas does
+Because: apple/Tests/CooeeAPITests/Fixtures/home.json:61
+Rejected: making style optional in the decoder — the server always sends it, so the fixture was what fell behind
+Check: apple-check, cargo test --workspace and clippy pass at the head; the CI red was only a pending iOS build
+Owner: Same feature; this round catches up with staging's file splits and keeps the chat style wired through them.
