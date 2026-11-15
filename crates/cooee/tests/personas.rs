@@ -13,6 +13,7 @@ use std::{
     process::{Command, Stdio},
 };
 
+use cooee_core::personas::PLAIN;
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
 
@@ -137,9 +138,11 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     assert!(fs::read_to_string(&file).unwrap().contains("pinned = true"));
     assert_eq!(s.call("PUT", "/personas/nobody", Some(&edit)).0, 400);
 
+    assert_eq!(chief["style"], "chat");
+    let chat = format!("A calm chef.\n\nAnswer in two lines.\n\n{PLAIN}\n\nhi");
     let (id, line, prompt) = s.start("chief-cook");
     assert!(line.contains(" --acp fake-acp "), "{line}");
-    assert_eq!(prompt, "A calm chef.\n\nAnswer in two lines.\n\nhi");
+    assert_eq!(prompt, chat);
     assert_eq!(s.row_persona(&id), "chief-cook");
 
     let said = s.remember(&id, &json!({ "text": "The owner takes tea, no sugar." }));
@@ -167,7 +170,7 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     assert!(
         prompt.starts_with("A calm chef.\n\nAnswer in two lines.\n\nYour notes")
             && prompt.contains(&format!(
-                "- [{}] The owner takes tea, no sugar.\n- [{}] Call me Sam.",
+                "- [{}] The owner takes tea, no sugar.\n- [{}] Call me Sam.\n\n{PLAIN}\n\nhi",
                 ids[0], ids[1]
             ))
             && prompt.ends_with("\n\nhi"),
@@ -180,7 +183,7 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     assert_eq!(s.cooee.json("/personas/chief-cook/memory"), json!([]));
     assert_eq!(s.cooee.json("/personas/chief-cook")["name"], "Chief");
     let (_, _, prompt) = s.start("chief-cook");
-    assert_eq!(prompt, "A calm chef.\n\nAnswer in two lines.\n\nhi");
+    assert_eq!(prompt, chat);
     assert_eq!(
         s.cooee.json(&format!("/threads/{id}/messages"))["items"][0]["text"],
         "hi"
@@ -213,6 +216,19 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
 }
 
 #[test]
+fn a_detailed_persona_gets_no_plain_line() {
+    let s = setup("personas-detailed");
+    let new = json!({ "name": "Chief", "character": "A calm chef.", "instructions": "Answer in two lines.",
+                      "agent": "fake-acp", "folder": "scratch", "style": "detailed" });
+    assert_eq!(s.call("POST", "/personas", Some(&new)).0, 200);
+    let file = fs::read_to_string(s.dir.join("personas/chief.toml")).unwrap();
+    assert!(file.contains("style = \"detailed\""), "{file}");
+    assert_eq!(s.cooee.json("/personas/chief")["style"], "detailed");
+    let (_, _, prompt) = s.start("chief");
+    assert_eq!(prompt, "A calm chef.\n\nAnswer in two lines.\n\nhi");
+}
+
+#[test]
 fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
     let s = setup("personas-migrate");
     let profile = s.dir.join("profiles/coder.toml");
@@ -223,7 +239,7 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
         json!([{ "id": "coder", "name": "Coder", "avatar": "idle", "character": "",
                  "instructions": "Follow the house rules.\n", "folder": "", "agent": "fake-acp",
                  "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [], "pinned": false, "profile": "coder",
-                 "role": "", "fleets": [] }])
+                 "role": "", "style": "chat", "fleets": [] }])
     );
 
     let check = |prompt: &str| {
@@ -235,7 +251,7 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
         assert_eq!(sent, prompt);
         assert_eq!(s.row_persona(&id), "coder");
     };
-    check("Follow the house rules.\n\nhi");
+    check(&format!("Follow the house rules.\n\n{PLAIN}\n\nhi"));
 
     let mut edit = list[0].clone();
     edit["character"] = json!("Gruff but kind.");
@@ -248,7 +264,9 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
     );
     assert!(s.dir.join("personas/coder.toml").exists());
     assert_eq!(fs::read_to_string(&profile).unwrap(), before);
-    check("Gruff but kind.\n\nFollow the house rules.\n\nhi");
+    check(&format!(
+        "Gruff but kind.\n\nFollow the house rules.\n\n{PLAIN}\n\nhi"
+    ));
 
     assert_eq!(s.call("DELETE", "/personas/coder", None).0, 200);
     assert!(!profile.exists() && !s.dir.join("personas/coder.toml").exists());
@@ -315,6 +333,8 @@ fn migration_keeps_the_name_and_sets_the_orchestrator_role() {
         (json!("Maestro"), json!("orchestrator"), json!([]))
     );
     assert_eq!(seen("coder"), (json!("Coder"), json!(""), json!([])));
+    assert_eq!(read("conductor")["style"], "detailed");
+    assert_eq!(read("coder")["style"], "chat");
     install_drover(&s);
     assert_eq!(seen("conductor").2, json!(["drover"]));
     assert_eq!(seen("coder").2, json!([]));
@@ -329,6 +349,13 @@ fn migration_keeps_the_name_and_sets_the_orchestrator_role() {
         seen("conductor"),
         (json!("Navi"), json!("orchestrator"), json!(["drover"]))
     );
+    assert_eq!(read("conductor")["style"], "detailed");
+    fs::write(
+        s.dir.join("personas/conductor.toml"),
+        "name = \"Navi\"\nagent = \"fake-acp\"\nstyle = \"chat\"\n",
+    )
+    .unwrap();
+    assert_eq!(read("conductor")["style"], "chat");
 }
 
 #[test]
@@ -469,7 +496,7 @@ fn a_persona_and_its_threads_name_their_machine() {
         read,
         json!({ "id": "old", "name": "Old", "character": "Kept.", "instructions": "Still.", "folder": "scratch",
                 "agent": "fake-acp", "model": "", "effort": "", "machine": "", "plugins": [], "can_message": [],
-                "pinned": false, "role": "", "fleets": [] })
+                "pinned": false, "role": "", "style": "chat", "fleets": [] })
     );
     assert_eq!(s.cooee.json("/personas/coder")["machine"], "");
     let (plain, _, _) = s.start("old");
@@ -575,7 +602,7 @@ fn old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief() {
     assert_eq!(
         brief,
         format!(
-            "Your notes (edit them with your remember tool):\n- [{tea}] Tea, no sugar.\n- [{long}] {big}\n\nhi"
+            "Your notes (edit them with your remember tool):\n- [{tea}] Tea, no sugar.\n- [{long}] {big}\n\n{PLAIN}\n\nhi"
         )
     );
     let (second, _, again) = s.start("cook");
