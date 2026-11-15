@@ -28,4 +28,9 @@ internal struct DefaultLayoutTests {
                 "menu": .sheet, "settings": .sheet, "terminal": .menu, "reset-layout": .menu,
             ])
     }
+
+    @Test internal func theBundledHomeDrawsItsPinnedRowThenItsChats() {
+        #expect(HomeScreen.bundled.title == "cooee")
+        #expect(HomeScreen.bundled.blocks.map(\.type) == ["pinned", "chats"])
+    }
 }

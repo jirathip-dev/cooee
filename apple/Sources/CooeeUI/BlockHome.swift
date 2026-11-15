@@ -8,6 +8,8 @@ public struct HomeActions {
     public var open: (String) -> Void
     public var room: () -> Void
     public var edit: (String?) -> Void
+    public var others: [String] = []
+    public var openOthers: () -> Void = {}
 
     public init(
         menu: @escaping () -> Void = {},
@@ -28,6 +30,7 @@ public struct HomeActions {
 
 public struct HomeView: View {
     @Environment(\.look) private var look
+    private let screen: HomeScreen
     private let menuOpen: Bool
     private let personas: [Persona]
     private let all: [Persona]
@@ -40,11 +43,10 @@ public struct HomeView: View {
         ZStack(alignment: .topLeading) {
             Backdrop()
             VStack(spacing: 0) {
-                TopBar(personas: all, actions: actions)
+                TopBar(title: screen.title, personas: all, actions: actions)
                 Scroller {
-                    PinnedRow(personas: personas, rows: chats.map(\.row), pin: actions.pin).padding(.top, 6)
-                    ChatList(chats: chats, selected: selected, open: actions.open)
-                        .padding(.top, look.style == .scene ? 0 : 14)
+                    HomeBlocks(screen: screen, personas: personas, chats: chats, selected: selected, actions: actions)
+                    if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
                 }
             }
             .blur(radius: menuOpen ? 10 : 0)
@@ -57,6 +59,7 @@ public struct HomeView: View {
     }
 
     public init(
+        screen: HomeScreen = .bundled,
         menuOpen: Bool = false,
         personas: [Persona] = Fixtures.personas,
         all: [Persona]? = nil,
@@ -64,6 +67,7 @@ public struct HomeView: View {
         selected: String? = nil,
         actions: HomeActions = HomeActions()
     ) {
+        self.screen = screen
         self.menuOpen = menuOpen
         self.personas = personas
         self.all = all ?? personas
@@ -92,8 +96,34 @@ internal struct AccountAvatar: View {
     }
 }
 
+internal struct HomeBlocks: View {
+    @Environment(\.look) private var look
+    internal let screen: HomeScreen
+    internal let personas: [Persona]
+    internal let chats: [ListedChat]
+    internal var selected: String?
+    internal let actions: HomeActions
+    internal var wide = false
+
+    internal var body: some View {
+        ForEach(Array(screen.blocks.enumerated()), id: \.offset) { _, block in
+            switch block.type {
+            case "pinned":
+                PinnedRow(personas: personas, rows: chats.map(\.row), pin: actions.pin)
+                    .scaleEffect(wide ? 0.9 : 1, anchor: .leading).padding(.top, wide ? 4 : 6)
+            case "chats":
+                ChatList(chats: chats, selected: selected, open: actions.open)
+                    .padding(.top, wide ? 8 : look.style == .scene ? 0 : 14)
+            default:
+                EmptyView()
+            }
+        }
+    }
+}
+
 internal struct TopBar: View {
     @Environment(\.look) private var look
+    internal let title: String
     internal let personas: [Persona]
     internal let actions: HomeActions
 
@@ -102,7 +132,7 @@ internal struct TopBar: View {
             Button(action: actions.menu) { AccountAvatar().padding(4).modifier(RoundSurface(look: look)) }
                 .buttonStyle(.plain).accessibilityLabel("Account")
             Spacer()
-            Text(look.mono ? "~/cooee" : "cooee").ui(19, .bold, look)
+            Text(look.mono ? "~/\(title)" : title).ui(19, .bold, look)
             Spacer()
             Menu {
                 Button("New room", systemImage: "person.3", action: actions.room)
@@ -124,20 +154,27 @@ internal struct TopBar: View {
 internal struct ChatList: View {
     @Environment(\.look) private var look
     internal let chats: [ListedChat]
+    internal var title: String? = "Chats"
     internal var selected: String?
     internal var open: (String) -> Void = { _ in }
 
     internal var body: some View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 0) {
-            Text(look.mono ? "# chats" : "Chats").ui(look.mono ? 12 : 20, look.mono ? .regular : .bold, look)
+            if let title {
+                Text(look.mono ? "# \(title.lowercased())" : title).ui(
+                    look.mono ? 12 : 20, look.mono ? .regular : .bold, look
+                )
                 .foregroundStyle(look.mono ? palette.mute : palette.foreground).padding(.horizontal, 16)
                 .padding(.bottom, 6).padding(.top, look.style == .scene ? 12 : 0)
+            }
             ForEach(chats) { chat in
                 Button {
                     open(chat.id)
                 } label: {
-                    ChatRow(row: chat.row, persona: chat.persona, members: chat.members, selected: chat.id == selected)
+                    ChatRow(
+                        row: chat.row, persona: chat.persona, members: chat.members, selected: chat.id == selected,
+                        word: chat.workflow != nil)
                 }
                 .buttonStyle(.plain)
                 if chat.id != chats.last?.id {

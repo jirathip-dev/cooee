@@ -73,8 +73,12 @@ private struct NavHost: View {
                 NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
                     main.first { $0.content != .component(.chat) && !$0.locked }
                         .map { SlotView(store: store, node: $0, compact: true) }
-                        .navigationDestination(for: String.self) { _ in
-                            chat.map { SlotView(store: store, node: $0, compact: true) }.toolbar(.hidden)
+                        .navigationDestination(for: String.self) { id in
+                            if id == AppFeature.others {
+                                OthersSlot(store: store)
+                            } else {
+                                chat.map { SlotView(store: store, node: $0, compact: true) }.toolbar(.hidden)
+                            }
                         }
                         .toolbar(.hidden)
                         #if os(iOS)
@@ -82,7 +86,13 @@ private struct NavHost: View {
                         #endif
                 }
             } else {
-                HomeSlot(store: store, wide: true) { chat.map { SlotView(store: store, node: $0, compact: false) } }
+                HomeSlot(store: store, wide: true) {
+                    if store.path.last == AppFeature.others {
+                        OthersSlot(store: store)
+                    } else {
+                        chat.map { SlotView(store: store, node: $0, compact: false) }
+                    }
+                }
             }
         }
         .sheet(isPresented: Binding(get: { store.menu.open }, set: { store.send(.menu(.open($0))) })) {
@@ -99,15 +109,19 @@ private struct HomeSlot<Detail: View>: View {
 
     fileprivate var body: some View {
         if let home = store.scope(state: \.home, action: \.home) {
-            let chats = home.state.chats(now: Date())
+            let (screen, lists) = (home.screen ?? .bundled, home.state.lists(now: Date()))
+            let (chats, actions) = (lists.chats, actions(others: lists.othersTitles))
             Group {
                 if wide {
                     WideView(
-                        personas: home.pinned, all: home.everyone, chats: chats, selected: store.path.last,
+                        screen: screen, personas: home.pinned, all: home.everyone, chats: chats,
+                        selected: store.path.last,
                         actions: actions
                     ) { detail }
                 } else {
-                    HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
+                    HomeView(
+                        screen: screen, personas: home.pinned, all: home.everyone, chats: chats, actions: actions
+                    )
                 }
             }
             .overlay(alignment: .bottom) {
@@ -118,8 +132,8 @@ private struct HomeSlot<Detail: View>: View {
         }
     }
 
-    private var actions: HomeActions {
-        HomeActions(
+    private func actions(others: [String]) -> HomeActions {
+        var actions = HomeActions(
             menu: { store.send(.menu(.open(true))) },
             new: { store.send(.start($0)) },
             pin: { store.send(.pin($0)) },
@@ -127,6 +141,23 @@ private struct HomeSlot<Detail: View>: View {
             room: { store.send(.room) },
             edit: { store.send(.edit($0)) }
         )
+        actions.others = others
+        actions.openOthers = { store.send(.open(AppFeature.others)) }
+        return actions
+    }
+}
+
+private struct OthersSlot: View {
+    fileprivate let store: StoreOf<AppFeature>
+
+    fileprivate var body: some View {
+        if let home = store.scope(state: \.home, action: \.home) {
+            let lists = home.state.lists(now: Date())
+            OthersView(
+                chats: lists.others, notes: lists.notes, open: { store.send(.open($0)) }, back: { store.send(.back) }
+            )
+            .toolbar(.hidden)
+        }
     }
 }
 
@@ -142,7 +173,9 @@ private struct ChatSlot: View {
                 )
                 .id(store.path.last)
             } else {
-                ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
+                let round = store.path.count > 1 && store.path.first != AppFeature.others
+                ChatScreen(store: chat, back: back, backTo: round ? "Workflow" : nil) { store.send(.back) }
+                    .id(store.path.last)
             }
         } else if !back {
             Text("Pick a chat, or start one with +").foregroundStyle(.secondary).frame(maxHeight: .infinity)

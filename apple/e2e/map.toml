@@ -19,7 +19,8 @@
 "apple/Sources/CooeeUI/Components.swift" = "all"
 "apple/Sources/CooeeUI/Root.swift" = "all"
 "apple/Cooee/*" = "all"
-"apple/UITests/LiveUITests.swift" = "all"
+"apple/UITests/Live/LiveUITestCase.swift" = "all"
+"apple/UITests/Live/LiveUITests.swift" = "all"
 "design-system/*" = "all"
 # The server the app talks to: its crates, `cooee serve`, the fake agent serve.sh runs, and what they all compile.
 "crates/cooee-server/*" = "all"
@@ -60,6 +61,8 @@
 "apple/Sources/CooeeFeatures/AttachFeature.swift" = "LiveDroverUITests"
 "apple/UITests/LiveQueueUITests.swift" = "LiveDroverUITests"
 "apple/e2e/screens.py" = "LiveDroverUITests"
+"apple/Sources/CooeeUI/Workflow.swift" = "LiveWorkflowUITests"
+"apple/UITests/LiveWorkflowUITests.swift" = "LiveWorkflowUITests"
 # No simulator e2e: docs, design frames, unit tests, the Swift gates and the Mac-only screens (mac-setup covers those).
 "apple/*.md" = "none"
 "apple/design/*" = "none"

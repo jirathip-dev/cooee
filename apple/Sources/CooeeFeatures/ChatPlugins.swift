@@ -2,6 +2,21 @@ import ComposableArchitecture
 import CooeeCore
 
 extension ChatFeature {
+    @CasePathable
+    public enum WorkflowAction: Sendable, Equatable {
+        case show(Bool)
+        case unfold(String)
+        case open(String)
+    }
+
+    @CasePathable
+    public enum PluginAction: Sendable, Equatable {
+        case load
+        case loaded([Place], [PluginRow])
+        case open(Place)
+        case attach(PluginRow)
+    }
+
     internal func plugins(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .plugins(let action):
@@ -12,12 +27,20 @@ extension ChatFeature {
         case .attaching(.presented(.delegate(.attached))):
             state.attaching = nil
             return .send(.plugins(.load))
+        case .workflow(.show(let open)):
+            state.workflowOpen = open
+        case .workflow(.unfold(let issue)):
+            state.unfolded = state.unfolded == issue ? nil : issue
+        case .workflow(.open(let thread)):
+            state.workflowOpen = false
+            return .send(.delegate(.round(thread)))
         default:
-            return .none
+            break
         }
+        return .none
     }
 
-    private func plugin(_ state: inout State, _ action: Action.PluginAction) -> Effect<Action> {
+    private func plugin(_ state: inout State, _ action: PluginAction) -> Effect<Action> {
         switch action {
         case .load:
             return load(state)

@@ -16,8 +16,8 @@ use std::{
 };
 
 use cooee_core::{
-    Agent, Body, Card, Change, Chat, Config, Item, Kind, Launch, Plugin, Queued, Shed, ShedError,
-    Store, StoreError, Summary, Thread, Turn, Workflow,
+    Agent, Body, Card, Change, Chat, Config, Item, Kind, Launch, Plugin, Profile, Queued, Shed,
+    ShedError, Store, StoreError, Summary, Thread, Turn, Workflow,
     mcp::{self, COOEE, Pick, Server},
     personas,
     routines::Mark,
@@ -30,11 +30,13 @@ use tokio::sync::broadcast;
 
 use crate::{
     mcp::Grant,
+    plugin,
     push::{Note, Push, note},
 };
 
 mod ask;
 mod models;
+mod relaunch;
 mod rooms;
 pub use rooms::Starter;
 
@@ -60,6 +62,8 @@ const CHANGE: u64 = 30 * 60 * 1000;
 const TICK: Duration = Duration::from_secs(30);
 /// How long the agent list is kept before the background refreshes it (#55), in milliseconds.
 const AGENTS_FOR: u64 = 60_000;
+/// How often the installed plugins' backends are asked for their profiles again (#289).
+const SERVED_EVERY: Duration = Duration::from_secs(5);
 
 /// Why a thread action failed.
 #[derive(Debug, thiserror::Error)]
@@ -323,6 +327,8 @@ pub struct Hub {
     plugins: Mutex<Vec<Plugin>>,
     /// `shed agents`, as last checked, and when: a page load never runs the CLI itself (herdsman#337).
     agents: Mutex<(Result<Vec<Agent>, String>, u64)>,
+    /// Each installed plugin's served profiles as its backend last answered: a page never asks a backend (#289).
+    served: Mutex<HashMap<String, Option<Vec<Profile>>>>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
     /// The same threads by terminal: a shed event locks only its own thread.
@@ -575,6 +581,7 @@ impl Hub {
         let (turns, next) = mpsc::channel();
         let hub = Arc::new(Self {
             agents: Mutex::new((shed.agents().map_err(|e| e.to_string()), now())),
+            served: Mutex::default(),
             shed,
             store,
             scratch: data.join("scratch"),
@@ -609,6 +616,14 @@ impl Hub {
         });
         let follower = Arc::clone(&hub);
         thread::spawn(move || follower.follow());
+        let asker = Arc::clone(&hub);
+        thread::spawn(move || {
+            loop {
+                let began = Instant::now();
+                asker.refresh_served();
+                thread::sleep(SERVED_EVERY.saturating_sub(began.elapsed()));
+            }
+        });
         let ticker = Arc::clone(&hub);
         thread::spawn(move || {
             loop {
@@ -1015,6 +1030,45 @@ impl Hub {
             Err(e) if agents.0.is_ok() => eprintln!("cooee: kept the agent list: {e}"),
             fresh => agents.0 = fresh,
         }
+    }
+
+    /// Installed plugin `name`'s backend: its first tab's entry (its URL and token).
+    #[must_use]
+    pub fn backend(&self, name: &str) -> Option<Plugin> {
+        let lock = cooee_core::plugins::read_lock(&self.data).ok()?;
+        let tabs = lock.into_iter().find(|l| l.name == name)?.tabs;
+        self.plugins().into_iter().find(|p| tabs.contains(&p.name))
+    }
+
+    /// Installed plugin `name`'s profiles as its backend last served them: `None` while no backend runs or when it
+    /// serves none (its manifest's are offered), none before its first answer.
+    #[must_use]
+    pub fn served(&self, name: &str) -> Option<Vec<Profile>> {
+        self.backend(name)?;
+        lock(&self.served)
+            .get(name)
+            .cloned()
+            .unwrap_or(Some(Vec::new()))
+    }
+
+    /// Asks each enabled installed plugin's backend for its profiles, the cache never locked while one is asked; a
+    /// failed ask keeps the last answer (logged).
+    fn refresh_served(&self) {
+        let mut fresh = HashMap::new();
+        let installed = cooee_core::plugins::read_lock(&self.data).unwrap_or_default();
+        for name in installed.into_iter().filter(|l| l.enabled).map(|l| l.name) {
+            let Some(p) = self.backend(&name) else {
+                continue;
+            };
+            let got = plugin::profiles(&p).or_else(|e| {
+                eprintln!("cooee: plugin {}: its profiles: {e}", p.name);
+                lock(&self.served).get(&name).cloned().ok_or(e)
+            });
+            if let Ok(list) = got {
+                fresh.insert(name, list);
+            }
+        }
+        *lock(&self.served) = fresh;
     }
 
     /// Agent `id`'s adapter command, from the list as last checked; an id it lacks refreshes it once (#55). Empty
@@ -1462,92 +1516,6 @@ impl Hub {
             return self.room_send(&live, text, random_id, files);
         }
         self.send_after(id, text, random_id, files, "")
-    }
-
-    /// "Use a folder…" (#86): thread `id`'s later turns run in `folder` (inside a root). shed fixes a session's folder
-    /// when it starts, so its agent starts again there as `recipe` says, and the next message carries a hand-over:
-    /// the profile's instructions, where it was and its last turns. The chat says so; the old terminal is closed.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a folder outside the roots, or a closed or Workflow thread; [`HubError::Shed`]
-    /// when the agent can't start there (the thread stays where it was).
-    pub fn attach(&self, id: &str, folder: &Path, recipe: &Recipe) -> Result<Item, HubError> {
-        let folder = self.allowed(folder).ok_or_else(|| outside(folder))?;
-        let live = self.live(id)?;
-        let (agent, old) = {
-            let l = lock(&live);
-            if l.meta.closed || l.meta.workflow.is_some() {
-                return Err(HubError::Refused(
-                    "only an open chat of your own can move".to_owned(),
-                ));
-            }
-            (l.meta.agent.clone(), l.meta.terminal.clone())
-        };
-        let machine = lock(&live).meta.machine.clone();
-        let terminal = on_machine(&machine, &format!("cooee-{id}-{:x}", now()));
-        let labels = BTreeMap::from([
-            (LABEL.to_owned(), "1".to_owned()),
-            (format!("{LABEL}.thread"), id.to_owned()),
-        ]);
-        let started = self
-            .mcp_launch(id, recipe)
-            .and_then(|launch| {
-                let cmd = self.adapter(&agent);
-                let run = (agent.as_str(), cmd.as_slice());
-                Ok(self
-                    .shed
-                    .run_acp(&terminal, run, &folder, &labels, &launch)?)
-            })
-            .and_then(|_| Ok(self.shed.ready(&terminal)?));
-        if let Some((file, _)) = &recipe.launch.secrets {
-            let _ = fs::remove_file(file);
-        }
-        let session = started?;
-        let mut live = lock(&live);
-        let was = live
-            .meta
-            .folder
-            .clone()
-            .unwrap_or_else(|| self.scratch.join(id));
-        let turns: Vec<String> = live
-            .chat
-            .items
-            .iter()
-            .filter_map(|i| match &i.body {
-                Body::You { text, .. } => Some(format!("Owner: {text}")),
-                Body::Agent { text, .. } => Some(format!("You: {text}")),
-                _ => None,
-            })
-            .collect();
-        let last = turns[turns.len().saturating_sub(6)..].join("\n\n");
-        let handover = format!(
-            "{}\n\nThis chat moved from {} to {}, where you now run; what it made before is still there. Its last turns:\n\n{last}",
-            recipe.instructions.trim_end(),
-            was.display(),
-            folder.display()
-        );
-        handover.trim_start().clone_into(&mut live.meta.handover);
-        live.meta.terminal.clone_from(&terminal);
-        {
-            let mut terminals = lock(&self.terminals);
-            let me = terminals.remove(&old);
-            terminals.extend(me.map(|l| (terminal.clone(), l)));
-        }
-        live.meta.folder = Some(folder.clone());
-        self.store.save(&live.meta)?;
-        let text = format!("now in {} · later turns run here", short(&folder));
-        let item = live.chat.push(now(), 0, Body::Note { text });
-        live.publish(self, vec![Change::Item(item.clone())])?;
-        drop(live);
-        if let Some(s) = session
-            && let Err(e) = self.settle(id, &terminal, &s)
-        {
-            eprintln!("cooee: {id}: model: {e}");
-        }
-        if let Err(e) = self.shed.close(&old) {
-            eprintln!("cooee: {e}");
-        }
-        Ok(item)
     }
 
     /// [`Hub::send`] with `before` (a profile's instructions) ahead of the text for the agent; only the text is stored.
