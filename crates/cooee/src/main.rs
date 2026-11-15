@@ -11,7 +11,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Config, Devices, ROOTS_FIX, Shed, agents_fix};
+use cooee_core::{Config, Devices, ROOTS_FIX, SHED_CARGO, Shed, ShedError, agents_fix};
 use qrcode::{QrCode, render::unicode::Dense1x2};
 
 mod accounts;
@@ -32,18 +32,6 @@ const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decli
                      [--env K=secret:N|env:N]... [--header K=secret:N|env:N]... | mcp rm|enable|disable <name> \
                      | mcp proxy <server> --thread <id> | mcp serve --thread <id>> [--instance <name>] [--config <file>] \
                      | cooee --version";
-
-/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the same protocol.
-const SHED_CARGO: [&str; 8] = [
-    "cargo",
-    "install",
-    "--locked",
-    "--git",
-    "https://github.com/jirathip-dev/shed",
-    "--rev",
-    "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb",
-    "shed",
-];
 
 fn shed_install() -> String {
     format!("{} && shed serve", SHED_CARGO.join(" "))
@@ -790,6 +778,7 @@ fn doctor(config: &Config) -> Result<(), String> {
                 );
             }
         }
+        Err(e @ ShedError::Version { .. }) => check(false, format!("shed: {e}")),
         Err(e) => check(
             false,
             format!("shed: {e}\n     install: {}", shed_install()),

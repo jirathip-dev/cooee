@@ -72,3 +72,4 @@
 "scripts/apple-check.sh" = "none"
 "scripts/apple-coverage.swift" = "none"
 "scripts/mac-bins.sh" = "none"
+"crates/cooee-core/src/shed.rs" = "none"

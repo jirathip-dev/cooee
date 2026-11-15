@@ -34,7 +34,10 @@ pub enum ShedError {
         source: io::Error,
     },
     /// shed speaks another protocol than the `shed-proto` cooee was built with.
-    #[error("SHED_VERSION: cooee speaks shed {ours}; {theirs}")]
+    #[error(
+        "SHED_VERSION: cooee speaks shed {ours}; {theirs}; fix: {}",
+        shed_fix()
+    )]
     Version {
         /// This build's shed version, build and protocol.
         ours: String,
@@ -69,6 +72,32 @@ impl ShedError {
     pub fn no_link(&self) -> bool {
         matches!(self, Self::Rpc(e) if e.code == ErrorCode::NoLink.code())
     }
+}
+
+/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the same protocol.
+pub const SHED_CARGO: [&str; 8] = [
+    "cargo",
+    "install",
+    "--locked",
+    "--git",
+    "https://github.com/jirathip-dev/shed",
+    "--rev",
+    "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb",
+    "shed",
+];
+
+/// shed's launchd job on macOS (`shed install`).
+pub const SHED_LABEL: &str = "dev.shed.serve";
+
+/// The command that installs the shed this build speaks and restarts its serve onto it.
+#[must_use]
+pub fn shed_fix() -> String {
+    let restart = if cfg!(target_os = "macos") {
+        format!("launchctl kickstart -k gui/$(id -u)/{SHED_LABEL}")
+    } else {
+        "shed serve".to_owned()
+    };
+    format!("{} && {restart}", SHED_CARGO.join(" "))
 }
 
 /// A hello's version, build and protocol, as [`ShedError::Version`] names each side.
