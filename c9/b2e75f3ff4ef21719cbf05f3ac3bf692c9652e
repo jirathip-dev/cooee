@@ -1,0 +1,5 @@
+Decided: the relaunch Hub methods and both relaunch routes moved unchanged into their own files, so hub.rs and lib.rs are under the size baseline
+Because: .drover/arch.toml:8
+Rejected: refreshing the size baseline — it lets offenders only shrink, and this PR grew them
+Check: drover arch-check reports 0 violations; move_thread.rs and the attach tests still pass
+Owner: no behaviour change; the move-a-chat code now lives in its own files to pass the file-size check
