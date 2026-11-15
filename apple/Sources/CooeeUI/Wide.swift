@@ -63,6 +63,7 @@ public struct MacConnect: View {
 
 public struct WideView<Detail: View>: View {
     @Environment(\.look) private var look
+    private let screen: HomeScreen
     private let pins: [Pin]
     private let all: [Persona]
     private let chats: [ListedChat]
@@ -74,11 +75,11 @@ public struct WideView<Detail: View>: View {
         let palette = look.palette
         HStack(spacing: 0) {
             VStack(spacing: 0) {
-                TopBar(personas: all, actions: actions).padding(.top, look.still ? 34 : 8)
+                TopBar(title: screen.title, personas: all, actions: actions).padding(.top, look.still ? 34 : 8)
                 Scroller {
-                    PinnedRow(pins: pins, rows: chats.map(\.row), actions: actions)
-                        .scaleEffect(0.9, anchor: .leading).padding(.top, 4)
-                    ChatList(chats: chats, selected: selected, open: actions.open, actions: actions).padding(.top, 8)
+                    HomeBlocks(
+                        screen: screen, pins: pins, chats: chats, selected: selected, actions: actions, wide: true
+                    )
                     if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
                 }
             }
@@ -90,6 +91,7 @@ public struct WideView<Detail: View>: View {
     }
 
     public init(
+        screen: HomeScreen = .bundled,
         pins: [Pin] = Fixtures.personas.map(Pin.persona),
         all: [Persona] = Fixtures.personas,
         chats: [ListedChat],
@@ -97,6 +99,7 @@ public struct WideView<Detail: View>: View {
         actions: HomeActions,
         @ViewBuilder detail: () -> Detail
     ) {
+        self.screen = screen
         self.pins = pins
         self.all = all
         self.chats = chats

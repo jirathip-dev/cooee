@@ -105,17 +105,17 @@ private struct HomeSlot<Detail: View>: View {
 
     fileprivate var body: some View {
         if let home = store.scope(state: \.home, action: \.home) {
-            let lists = home.state.lists(now: Date())
+            let (screen, lists) = (home.screen ?? .bundled, home.state.lists(now: Date()))
             let (chats, actions) = (lists.chats, actions(others: lists.othersTitles))
             let pins = lists.pins(home.pinned, rooms: actions.rooms)
             Group {
                 if wide {
-                    WideView(pins: pins, all: home.everyone, chats: chats, selected: store.path.last, actions: actions)
-                    {
-                        detail
-                    }
+                    WideView(
+                        screen: screen, pins: pins, all: home.everyone, chats: chats, selected: store.path.last,
+                        actions: actions
+                    ) { detail }
                 } else {
-                    HomeView(pins: pins, all: home.everyone, chats: chats, actions: actions)
+                    HomeView(screen: screen, pins: pins, all: home.everyone, chats: chats, actions: actions)
                 }
             }
             .overlay(alignment: .bottom) {
