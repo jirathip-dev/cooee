@@ -1,0 +1,11 @@
+Decided: merged origin/staging; /api/v1/looks and the pack art route moved from the deleted web/src/lib.rs into cooee-server
+Because: crates/cooee-server/src/lib.rs:1848
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: "A pack installed or removed on the server shows or disappears in the list"
+Decided: /look/{theme}/ art is served with no cookie, as it was before #189, for the app's WebKit Scene art
+Because: crates/cooee-server/src/lib.rs:143
+Decided: staging build fix: chat.rs and setup.rs shed-version tests now expect the message shed.rs sends
+Because: crates/cooee-core/src/shed.rs:335
+Rejected: an in-memory pack cache with a file watcher — more code than one load per call needs
+Check: cargo test -p cooee --test themes and cargo test --workspace pass at head; the PR merges cleanly into staging
+Owner: The branch sits on current staging again; the Theme list and pack art now come from the server's own API.
