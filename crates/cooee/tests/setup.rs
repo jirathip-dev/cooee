@@ -285,8 +285,8 @@ fn old_shed(mac: &Mac) -> (FakeShed, String) {
         "shed serve"
     };
     let said = format!(
-        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0; \
-         fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev {REV} shed && {restart}"
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0, an older shed; \
+         restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev {REV} shed && {restart}"
     );
     fs::write(
         mac.home.join("cargo.list"),
