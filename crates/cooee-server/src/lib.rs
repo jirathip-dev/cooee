@@ -9,13 +9,16 @@ mod hub;
 mod layout;
 mod login;
 mod look;
+pub mod machine;
 mod manage;
 pub mod mcp;
 mod pairing;
 mod passkey;
 mod plugin;
 mod push;
+mod relaunch;
 mod routines;
+mod screens;
 mod themes;
 
 use std::{
@@ -527,34 +530,6 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
         )?;
         let name = provider_name(&t.agent, &logins.statuses());
         hub.retry(&id, recipe, &name)
-    });
-    Ok(Answer(
-        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
-    ))
-}
-
-/// `POST /threads/{id}/folder`: "Use a folder…" (#86).
-#[derive(Deserialize)]
-struct Attach {
-    folder: PathBuf,
-}
-
-#[route(POST "/threads/{id}/folder")]
-async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Item>> {
-    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
-    let data = app_context::<Data>(cx);
-    let (data, config) = (data.0.clone(), data.1.clone());
-    let done = tokio::task::spawn_blocking(move || {
-        let (t, _) = hub.thread(&id)?;
-        let list = profiles(&hub, (&data, config.as_deref()));
-        let (_, _, recipe) = recipe(
-            &logins,
-            (&data, config.as_deref(), &list),
-            (&t.agent, Some(&t.account), &t.profile),
-            PathBuf::new(),
-            (t.model, t.effort),
-        )?;
-        hub.attach(&id, &a.folder, &recipe)
     });
     Ok(Answer(
         done.await.map_err(|e| HubError::Refused(e.to_string()))?,
@@ -1226,13 +1201,12 @@ async fn pass_on(
         .header("content-type")
         .is_some_and(|t| t.starts_with("text/event-stream"))
     {
-        reply.body.get_ref().set_read_timeout(None)?;
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        std::thread::spawn(move || plugin::events(reply, |e| open() && tx.send(e).is_ok()));
-        let stream = stream::unfold(rx, move |mut rx| async move {
-            let e = rx.recv().await?;
-            Some((Result::<Event>::Ok(relay(e)), rx))
-        });
+        let stream = plugin::events(reply)?
+            .take_while(move |_| std::future::ready(open()))
+            .map(move |heard| match heard {
+                plugin::Heard::Event(e) => Result::<Event>::Ok(relay(e)),
+                plugin::Heard::Beat => Ok(Event::new().comment("")),
+            });
         return Sse::new(stream)
             .keep_alive(KeepAlive::new())
             .into_response(cx);
@@ -2168,7 +2142,12 @@ fn names(bind: IpAddr, allowed_hosts: &[String]) -> Vec<String> {
 #[must_use]
 pub fn router(
     (hub, runner): (Arc<Hub>, Arc<routines::Runner>),
-    (logins, manager, machines): (Arc<Logins>, Arc<Manager>, Arc<Machines>),
+    (logins, manager, machines, config_all): (
+        Arc<Logins>,
+        Arc<Manager>,
+        Arc<Machines>,
+        Arc<Config>,
+    ),
     (data, config): (&std::path::Path, Option<&std::path::Path>),
     bind: IpAddr,
     allowed_hosts: &[String],
@@ -2209,7 +2188,8 @@ pub fn router(
     .route(events)
     .route(create)
     .route(retry)
-    .route(attach)
+    .route(relaunch::attach)
+    .route(relaunch::move_thread)
     .route(browse)
     .route(root)
     .route(new_folder)
@@ -2246,6 +2226,7 @@ pub fn router(
     .route(layout::get)
     .route(layout::events)
     .route(layout::reset)
+    .route(screens::home::home)
     .app_context(layouts)
     .app_context(hub)
     .app_context(Arc::new(Dots::default()))
@@ -2253,6 +2234,7 @@ pub fn router(
     .app_context(logins)
     .app_context(manager)
     .app_context(machines)
+    .app_context(config_all)
     .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))
     .app_context(Arc::new(pairing::Pairing::default()))
     .build()
@@ -2322,6 +2304,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
                 config.shed_dir.clone(),
                 cooee_machines::local_name(),
             )),
+            Arc::new(config.clone()),
         ),
         (&data, config.dir.as_deref()),
         config.bind,

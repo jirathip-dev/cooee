@@ -18,10 +18,13 @@ public struct ChatActions {
     public var open: (Int) -> Void = { _ in }
     public var attachable: [String] = []
     public var attachPlugin: (Int) -> Void = { _ in }
+    public var step: String?
     public var workflow: Int?
     public var workflowOpen = false
     public var showWorkflow: () -> Void = {}
     public var backTo: String?
+    public var machine: MachineRow?
+    public var showMachine: () -> Void = {}
 
     public init(
         draft: Binding<String>? = nil,
@@ -81,7 +84,7 @@ public struct ChatView: View {
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
                 VStack(spacing: 8) {
-                    if working { WorkingPill(since: since, stop: actions.stop) }
+                    if working { WorkingPill(since: since, step: actions.step, stop: actions.stop) }
                     Composer(
                         hint: "Message \(persona.name)",
                         queued: queued,
@@ -165,7 +168,13 @@ internal struct ChatHeader: View {
                 Avatar(persona: persona, size: 38)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(persona.name).ui(16, .semibold, look)
-                    AgentChip(persona: persona)
+                    HStack(spacing: 6) {
+                        AgentChip(persona: persona)
+                        if let machine = actions.machine {
+                            Button(action: actions.showMachine) { MachineChipLabel(machine: machine) }
+                                .buttonStyle(.plain).accessibilityLabel("Machine \(machine.title)")
+                        }
+                    }
                 }
                 Spacer(minLength: 4)
                 more
@@ -209,46 +218,5 @@ internal struct ChatHeader: View {
             }
         }
         .padding(.leading, back ? 50 : 0)
-    }
-}
-
-internal struct WorkingPill: View {
-    @Environment(\.look) private var look
-    internal var since: Date?
-    internal var stop: () -> Void = {}
-
-    internal var body: some View {
-        let palette = look.palette
-        HStack(spacing: 8) {
-            if look.mono {
-                Text("~o=").ui(13, .bold, look).foregroundStyle(palette.cyan)
-            } else {
-                Circle().fill(palette.cyan).frame(width: 8, height: 8)
-            }
-            if let since {
-                TimelineView(.periodic(from: since, by: 1)) { context in
-                    label(Int(context.date.timeIntervalSince(since)))
-                }
-            } else {
-                label(42)
-            }
-            Spacer()
-            Button(action: stop) {
-                HStack(spacing: 4) {
-                    Image(systemName: "stop.fill").font(.system(size: 10))
-                    Text("Stop")
-                }
-                .ui(13, .semibold, look).foregroundStyle(palette.red)
-                .padding(.horizontal, 10).frame(height: 28).background(palette.red.opacity(0.14), in: .capsule)
-            }
-            .buttonStyle(.plain).accessibilityLabel("Stop")
-        }
-        .padding(.leading, 14).padding(.trailing, 6).frame(height: 40)
-        .surface(look, radius: 20)
-    }
-
-    private func label(_ seconds: Int) -> some View {
-        let time = "\(max(0, seconds) / 60):\(String(format: "%02d", max(0, seconds) % 60))"
-        return Text(look.mono ? "working \(time)" : "Working · \(time)").ui(13, .medium, look)
     }
 }

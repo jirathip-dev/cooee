@@ -5,11 +5,18 @@ public struct PersonaChoices {
     public var agents: [AgentOption]
     public var models: [String]
     public var efforts: [String]
+    public var machines: [MachineRow]
 
-    public init(agents: [AgentOption] = [], models: [String] = [], efforts: [String] = []) {
+    public init(
+        agents: [AgentOption] = [],
+        models: [String] = [],
+        efforts: [String] = [],
+        machines: [MachineRow] = []
+    ) {
         self.agents = agents
         self.models = models
         self.efforts = efforts
+        self.machines = machines
     }
 }
 

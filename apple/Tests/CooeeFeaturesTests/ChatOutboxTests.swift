@@ -19,7 +19,7 @@ internal struct ChatOutboxTests {
                 if let refused = refusals.next() { throw refused }
                 calls.record("send \(text)")
             }
-            $0.threads.start = { _, _, _ in throw refusal }
+            $0.threads.start = { _, _, _, _ in throw refusal }
         }
     }
 
@@ -29,36 +29,36 @@ internal struct ChatOutboxTests {
             $0.turn = Turn(state: "ended")
             $0.since = epoch
         }
-        await store.send(.draftChanged("hi")) { $0.draft = "hi" }
-        await store.send(.send) {
+        await store.send(.compose(.draftChanged("hi"))) { $0.draft = "hi" }
+        await store.send(.compose(.send)) {
             $0.draft = ""
             $0.outbox = [Outgoing(id: -1, text: "hi")]
         }
-        await store.receive(\.undelivered) {
+        await store.receive(\.outbox.undelivered) {
             $0.outbox[0].failure = "The agent stopped."
             $0.draft = "hi"
         }
         #expect(store.state.drawn == [.outgoing(Outgoing(id: -1, text: "hi", failure: "The agent stopped."))])
-        await store.send(.retry(-1)) {
+        await store.send(.outbox(.retry(-1))) {
             $0.outbox[0].failure = nil
             $0.draft = ""
         }
-        await store.receive(\.delivered) { $0.outbox = [] }
+        await store.receive(\.outbox.delivered) { $0.outbox = [] }
         #expect(calls.all == ["send hi"])
     }
 
     @Test internal func aFailedFirstMessageStaysOnItsBubble() async {
         let store = store(.new(coder), refusing: APIError(status: 500, text: "No agent."))
-        await store.send(.draftChanged("hi")) { $0.draft = "hi" }
-        await store.send(.send) {
+        await store.send(.compose(.draftChanged("hi"))) { $0.draft = "hi" }
+        await store.send(.compose(.send)) {
             $0.draft = ""
             $0.outbox = [Outgoing(id: -1, text: "hi")]
         }
-        await store.receive(\.undelivered) {
+        await store.receive(\.outbox.undelivered) {
             $0.outbox[0].failure = "No agent."
             $0.draft = "hi"
         }
-        await store.send(.retry(7))
+        await store.send(.outbox(.retry(7)))
         #expect(store.state.error == nil)
     }
 
@@ -98,7 +98,7 @@ internal struct ChatOutboxTests {
             $0.since = epoch
             $0.pending = "hi"
         }
-        await store.send(.retry(0))
+        await store.send(.outbox(.retry(0)))
         #expect(calls.all == ["retry a1"])
         await store.send(.event(.state(Turn(state: "connecting")))) { $0.turn = Turn(state: "connecting") }
         #expect(store.state.drawn == [.outgoing(Outgoing(id: 0, text: "hi"))])
@@ -121,7 +121,7 @@ internal struct ChatOutboxTests {
             $0.pending = "hi"
         }
         #expect(store.state.drawn == [.outgoing(Outgoing(id: 0, text: "hi", failure: ""))])
-        await store.send(.retry(0))
+        await store.send(.outbox(.retry(0)))
         await store.receive(\.failed) { $0.error = "Shed is still down." }
     }
 }

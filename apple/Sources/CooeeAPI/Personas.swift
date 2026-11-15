@@ -28,6 +28,8 @@ extension Client {
 
     public func models() async throws -> [ModelList] { try await call("GET", "/models") }
 
+    public func machines() async throws -> [MachineRow] { try await call("GET", "/machines") }
+
     public func folders(_ path: String?) async throws -> FolderListing {
         let query = path.map { "?path=" + ($0.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "") }
         return try await call("GET", "/folders" + (query ?? ""))
