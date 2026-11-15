@@ -760,13 +760,9 @@ fn runner(
     hub: &Arc<Hub>,
     logins: Arc<Logins>,
     data: &std::path::Path,
-    settings: &Config,
+    c: &Config,
 ) -> Arc<routines::Runner> {
-    let (dir, config, hooks) = (
-        data.to_owned(),
-        settings.dir.clone(),
-        settings.hooks.clone(),
-    );
+    let (dir, config) = (data.to_owned(), c.dir.clone());
     let data = dir.clone();
     let start: routines::Start = Box::new(move |hub, who| {
         let list = profiles(hub, (&data, config.as_deref()));
@@ -783,7 +779,7 @@ fn runner(
         let name = provider_name(&agent, &logins.statuses());
         Ok((agent, name, folder, recipe))
     });
-    Arc::new(routines::Runner::new(Arc::clone(hub), &dir, start, hooks))
+    Arc::new(routines::Runner::new(Arc::clone(hub), &dir, start, c))
 }
 
 /// `POST /rooms` (#154): a room of member personas, in room order.
@@ -2322,11 +2318,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             let addr = listener.local_addr()?;
             hub.listening(format!("http://127.0.0.1:{}", addr.port()));
             manager.supervise(hub, format!("http://127.0.0.1:{}", addr.port()));
-            if let Some(h) = &config.hooks {
-                let hooks = tokio::net::TcpListener::bind(h.bind).await?;
-                tokio::spawn(topcoat::serve(hooks, routines::hooks(Arc::clone(&runner))));
-            }
-            routines::Runner::every(runner, Duration::from_secs(30));
+            routines::Runner::every(runner, Duration::from_secs(30))?;
             ready(addr);
             topcoat::serve(listener, router).await
         });

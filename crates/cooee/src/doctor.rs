@@ -1,4 +1,4 @@
-//! `cooee doctor`: the instance's service, port, shed, machines, push keys, tailnet URL and GitHub hooks.
+//! `cooee doctor`'s checks; `cooee setup` runs them too.
 
 use std::{
     net::{Ipv4Addr, SocketAddr, TcpStream},
@@ -7,11 +7,12 @@ use std::{
 };
 
 use cooee_core::{Config, ROOTS_FIX, Shed, ShedError, agents_fix};
+use cooee_server::machine;
 
-use crate::{label, machine, shed_install, tailnet_name};
+use crate::service::{label, shed_install, tailnet_name};
 
 /// Checks the instance: its service, port, shed, each machine (#150), push keys and tailnet URL; fails if any fails.
-pub fn run(config: &Config) -> Result<(), String> {
+pub(crate) fn doctor(config: &Config) -> Result<(), String> {
     let mut failed = Vec::new();
     let mut check = |ok: bool, what: String| {
         println!("{} {what}", if ok { "ok  " } else { "FAIL" });

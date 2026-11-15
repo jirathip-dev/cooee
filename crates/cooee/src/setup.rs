@@ -12,7 +12,12 @@ use std::{
 
 use cooee_core::{Config, SHED_CARGO, SHED_LABEL, Shed, ShedError, provider};
 
-use super::{doctor, label, load, pair, plist, tailnet_name, write_plist};
+use crate::{
+    cli::load,
+    devices::pair,
+    doctor::doctor,
+    service::{label, plist, tailnet_name, write_plist},
+};
 
 /// `cooee setup`'s flags.
 pub struct Setup {
@@ -113,7 +118,7 @@ impl Setup {
             return Ok(());
         }
         println!("doctor:");
-        doctor::run(&config)
+        doctor(&config)
             .map_err(|e| format!("doctor: {e}\nfix it, then run `cooee setup` again"))?;
         println!("\npair your phone:");
         pair(&config)

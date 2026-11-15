@@ -12,7 +12,7 @@ use std::{
 };
 
 use cooee_core::{
-    Body, Hooks,
+    Body, Config, Hooks,
     routines::{
         Ask, Book, Delivery, Edit, Fields, Outcome, Paused, Place, Routine, Routines, Run, Trigger,
         Who, local,
@@ -61,13 +61,13 @@ pub struct Runner {
 const HOUR: u64 = 3_600_000;
 
 impl Runner {
-    /// The routines in `data`, run on `hub`; `new_thread` runs start with `start`; GitHub events come on `hooks`.
+    /// The routines in `data`, run on `hub`; `new_thread` runs start with `start`; GitHub events come on `config`'s `[hooks]`.
     #[must_use]
-    pub fn new(hub: Arc<Hub>, data: &std::path::Path, start: Start, hooks: Option<Hooks>) -> Self {
+    pub fn new(hub: Arc<Hub>, data: &std::path::Path, start: Start, config: &Config) -> Self {
         Self {
             hub,
             data: data.to_owned(),
-            hooks,
+            hooks: config.hooks.clone(),
             file: Routines::new(data),
             lock: Mutex::new(()),
             start,
@@ -75,9 +75,17 @@ impl Runner {
         }
     }
 
-    /// Runs [`Runner::tick`] every `beat`, from now on, and with `[hooks]` [`Runner::catch_up`] every 15 minutes.
-    pub fn every(runner: Arc<Self>, beat: Duration) {
-        if runner.hooks.is_some() {
+    /// Runs [`Runner::tick`] every `beat`, from now on; with `[hooks]`, [`hooks`] on its `bind` and
+    /// [`Runner::catch_up`] every 15 minutes. Call it inside the server's runtime.
+    ///
+    /// # Errors
+    /// When `[hooks] bind` can't be listened on.
+    pub fn every(runner: Arc<Self>, beat: Duration) -> std::io::Result<()> {
+        if let Some(h) = &runner.hooks {
+            let listener = std::net::TcpListener::bind(h.bind)?;
+            listener.set_nonblocking(true)?;
+            let listener = tokio::net::TcpListener::from_std(listener)?;
+            tokio::spawn(topcoat::serve(listener, hooks(Arc::clone(&runner))));
             let poll = Arc::clone(&runner);
             std::thread::spawn(move || {
                 loop {
@@ -92,6 +100,7 @@ impl Runner {
                 std::thread::sleep(beat);
             }
         });
+        Ok(())
     }
 
     /// Every routine.
