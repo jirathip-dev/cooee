@@ -49,6 +49,10 @@ extension Fixtures {
         return scene
     }
 
+    public static var roomPins: [Pin] {
+        personas.prefix(2).map(Pin.persona) + roomChats.prefix(1).map(Pin.room)
+    }
+
     public static var roomChats: [ListedChat] {
         let room = Row(
             id: "r1", persona: "chief", title: "Kestrel launch", last: "Account Manager: Pricing: a 3-year term…",
@@ -58,10 +62,9 @@ extension Fixtures {
             id: "r2", persona: "chief", title: "Board deck", last: "Chief: Slides 4–9 are in deck/q3.key.", ago: "2d",
             unseen: 0, state: .done
         )
-        return [
-            ListedChat(row: room, persona: persona("chief"), members: kestrel.map(persona)),
-            ListedChat(row: deck, persona: persona("chief"), members: ["chief", "am"].map(persona)),
-        ] + chats.filter { ["t2", "t4"].contains($0.id) }
+        return [ListedChat(row: room, persona: persona("chief"), members: kestrel.map(persona))] + exchangeChats
+            + [ListedChat(row: deck, persona: persona("chief"), members: ["chief", "am"].map(persona))]
+            + chats.filter { ["t2", "t4"].contains($0.id) }
     }
 }
 
@@ -95,7 +98,7 @@ extension NewRoomSheet {
 extension WideView where Detail == RoomView {
     public static func kestrel() -> WideView<RoomView> {
         WideView(
-            personas: Fixtures.personas, chats: Fixtures.roomChats, selected: "r1", actions: HomeActions(),
+            chats: Fixtures.roomChats, selected: "r1", actions: HomeActions(),
             detail: { RoomView.kestrel(wide: true) }
         )
     }

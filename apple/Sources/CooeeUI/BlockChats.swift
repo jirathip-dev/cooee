@@ -3,9 +3,9 @@ import SwiftUI
 
 internal struct PinnedRow: View {
     @Environment(\.look) private var look
-    internal let personas: [Persona]
+    internal let pins: [Pin]
     internal let rows: [Row]
-    internal var pin: (String) -> Void = { _ in }
+    internal var actions = HomeActions()
 
     private var scene: Bool { look.style == .scene }
 
@@ -30,13 +30,22 @@ internal struct PinnedRow: View {
     private var strip: some View {
         Scroller(axis: .horizontal) {
             HStack(alignment: .bottom, spacing: scene ? 4 : 14) {
-                ForEach(personas) { persona in
-                    Button {
-                        pin(persona.id)
-                    } label: {
-                        pin(persona)
+                ForEach(pins) { pin in
+                    switch pin {
+                    case .persona(let persona):
+                        Button {
+                            actions.pin(persona.id)
+                        } label: {
+                            self.pin(persona)
+                        }.buttonStyle(.plain)
+                    case .room(let room):
+                        Button {
+                            actions.open(room.id)
+                        } label: {
+                            RoomPin(room: room)
+                        }.buttonStyle(.plain)
+                            .accessibilityLabel(room.row.title)
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 16)
@@ -73,13 +82,14 @@ internal struct ChatRow: View {
     internal let persona: Persona
     internal var members: [Persona] = []
     internal var selected = false
+    internal var word = false
 
     internal var body: some View {
         let palette = look.palette
         let room = !members.isEmpty
         HStack(spacing: 12) {
             if room {
-                RoomStack(members: members, size: 22, state: .done).frame(width: 48, height: 48)
+                RoomStack(members: members, size: 26, grid: false, most: 3).frame(minWidth: 48, minHeight: 48)
             } else {
                 Avatar(persona: persona.with(state: row.state), size: 48)
             }
@@ -114,9 +124,43 @@ internal struct ChatRow: View {
             if row.state == .working && !look.mono {
                 Image(systemName: "ellipsis").font(.system(size: 13, weight: .bold)).foregroundStyle(palette.cyan)
             }
+            if word { Text("\(row.state.word) ·").ui(14, .regular, look).foregroundStyle(palette.state(row.state)) }
             Text(row.last).ui(14, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
             Spacer(minLength: 4)
             if row.unseen > 0 { Badge(count: row.unseen) }
         }
+    }
+}
+
+internal struct LinkedRow: View {
+    @Environment(\.look) private var look
+    @Environment(\.cast) private var cast
+    internal let chat: ListedChat
+    internal let asker: Persona
+    internal var selected = false
+
+    internal var body: some View {
+        let palette = look.palette
+        let pair = [asker, chat.persona].map { persona in cast.first { $0.id == persona.id } ?? persona }
+        HStack(spacing: 10) {
+            RoomStack(members: pair, size: 26, grid: false).frame(width: 46, alignment: .leading)
+            Text("\(Text("⇄ ").foregroundStyle(palette.mute))\(pair[0].name) ⇄ \(pair[1].name)")
+                .ui(15, .regular, look).lineLimit(1)
+            Spacer(minLength: 4)
+            Text(chat.row.ago).ui(13, .regular, look).foregroundStyle(palette.mute)
+        }
+        .padding(.leading, 12).padding(.trailing, 16).frame(height: 50)
+        .background(selected ? palette.link.opacity(0.16) : .clear, in: .rect(cornerRadius: look.mono ? 0 : 12))
+        .background(alignment: .topLeading) {
+            Path { path in
+                path.move(to: .zero)
+                path.addLine(to: CGPoint(x: 0, y: 20))
+                path.addQuadCurve(to: CGPoint(x: 8, y: 28), control: CGPoint(x: 0, y: 28))
+                path.addLine(to: CGPoint(x: 12, y: 28))
+            }
+            .stroke(palette.edge, lineWidth: 1.5).frame(width: 12, height: 28).offset(x: -16, y: -4)
+        }
+        .padding(.leading, 46).padding(.trailing, selected ? 6 : 0)
+        .contentShape(.rect)
     }
 }

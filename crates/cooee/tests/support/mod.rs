@@ -819,7 +819,11 @@ impl FakeShed {
             self.emit(name, text("w0 "));
             while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
             (vec![reply("w0 ", "cancelled")], "cancelled")
-        } else if let Some(n) = prompt.strip_prefix("slow ") {
+        } else if let Some(n) = prompt
+            .rsplit("\n\n")
+            .next()
+            .and_then(|m| m.strip_prefix("slow "))
+        {
             let n: usize = n.trim().parse().unwrap();
             let mut stop = "end_turn";
             for i in 0..n {
@@ -835,6 +839,19 @@ impl FakeShed {
                 while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
             }
             (vec![reply(&format!("streamed {n} words"), stop)], stop)
+        } else if prompt.contains("wait for a note") {
+            // A linked exchange's asked persona that answers once the owner's note comes (#177).
+            let note = loop {
+                match rx.recv() {
+                    Ok(Input::Prompt(p)) => break p,
+                    Ok(_) => {}
+                    Err(_) => return None,
+                }
+            };
+            (
+                vec![reply(&format!("noted: {note}"), "end_turn")],
+                "end_turn",
+            )
         } else if let Some(said) = prompt.strip_prefix("echo ") {
             (vec![reply(said, "end_turn")], "end_turn")
         } else if prompt.contains("exit") {

@@ -96,14 +96,14 @@ internal struct RoomFeatureTests {
         } withDependencies: {
             dependencies(&$0)
         }
-        await store.send(.inspect("a")) { $0.room?.inspecting = "a" }
-        await store.send(.move("b", 0)) { $0.room?.members = ["b", "a"] }
-        await store.receive(\.seated)
-        await store.send(.seat("c"))
-        await store.receive(\.seated) { $0.room?.members = ["b", "a", "c"] }
-        await store.send(.unseat("c")) { $0.room?.inspecting = nil }
-        await store.receive(\.seated) { $0.room?.members = ["b", "a"] }
-        await store.send(.seat("f"))
+        await store.send(.room(.inspect("a"))) { $0.room?.inspecting = "a" }
+        await store.send(.room(.move("b", 0))) { $0.room?.members = ["b", "a"] }
+        await store.receive(\.room.seated)
+        await store.send(.room(.seat("c")))
+        await store.receive(\.room.seated) { $0.room?.members = ["b", "a", "c"] }
+        await store.send(.room(.unseat("c"))) { $0.room?.inspecting = nil }
+        await store.receive(\.room.seated) { $0.room?.members = ["b", "a"] }
+        await store.send(.room(.seat("f")))
         await store.receive(\.failed) { $0.error = "a room has at most 5 members" }
         #expect(calls.all == ["seat r1 b 0 false", "seat r1 c end false", "seat r1 c end true", "seat r1 f end false"])
     }
@@ -116,8 +116,9 @@ internal struct RoomFeatureTests {
             AppFeature()
         } withDependencies: {
             $0.date.now = epoch
-            $0.threads.threads = { _ in rows }
+            $0.threads.home = { _ in HomeAnswer(screen: homeScreen, threads: rows, personas: cast) }
             $0.threads.personas = { _ in cast }
+            $0.plugins.installed = { _ in [] }
         }
         store.exhaustivity = .off
         await store.send(.room) { $0.newRoom = NewRoomFeature.State(server: mini, personas: self.cast) }
