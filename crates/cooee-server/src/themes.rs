@@ -12,7 +12,19 @@ use std::{
 use cooee_core::{Config, plugins::Listed};
 use serde::{Deserialize, Serialize};
 
-use crate::hub::lock;
+use topcoat::{
+    Result,
+    context::{Cx, app_context},
+    router::{
+        Body,
+        content::Json,
+        path_param,
+        response::{IntoResponse, Response},
+        route,
+    },
+};
+
+use crate::{Data, hub::lock, look::Looks, plain};
 
 fn other(why: impl Into<String>) -> io::Error {
     io::Error::other(why.into())
@@ -365,5 +377,59 @@ impl Themes {
         }
         rows.sort_by(|a, b| a.name.cmp(&b.name));
         Ok(rows)
+    }
+}
+
+/// The native look sheet's routes (#252): the installed packs as JSON and their art, read as they are now.
+pub(crate) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+    b.route(looks_json).route(look_art)
+}
+
+fn looks(cx: &Cx) -> impl Future<Output = Result<Looks, tokio::task::JoinError>> {
+    let config = app_context::<Data>(cx).1.clone();
+    tokio::task::spawn_blocking(move || Looks::load(config.as_deref(), None).0)
+}
+
+#[route(GET "/api/v1/looks")]
+async fn looks_json(cx: &Cx) -> Result<Response> {
+    Json(looks(cx).await?).into_response(cx)
+}
+
+path_param!(look);
+path_param!(art);
+
+/// A sprite sheet's frames show the first; a scene shows its calm layers only (#34).
+const FRAMES: &[u8] = b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
+const CALM: &[u8] = b"<style>.h-busy,.h-held,.l-overcast,.l-rain{display:none}</style>";
+
+fn with_rule(svg: &[u8], rule: &[u8]) -> Vec<u8> {
+    let at = svg
+        .windows(4)
+        .position(|w| w == b"<svg")
+        .and_then(|i| svg[i..].iter().position(|&b| b == b'>').map(|j| i + j + 1))
+        .unwrap_or(0);
+    [&svg[..at], rule, &svg[at..]].concat()
+}
+
+/// A pack's `sprites.svg` or `scene.svg`, for the native app's Scene art; no cookie needed.
+#[route(GET "/look/{look}/{art}")]
+async fn look_art(cx: &Cx) -> Result<Response> {
+    let (name, art) = (path_param::<Look>(cx).to_owned(), path_param::<Art>(cx));
+    let looks = looks(cx).await?;
+    let theme = looks.themes.get(&name);
+    let svg = match art {
+        "sprites.svg" => theme
+            .and_then(|t| t.sprite_sheet.as_deref())
+            .map(|b| with_rule(b, FRAMES)),
+        "scene.svg" => theme
+            .and_then(|t| t.scene_art.as_deref())
+            .map(|b| with_rule(b, CALM)),
+        _ => None,
+    };
+    match svg {
+        Some(svg) => Ok(Response::builder()
+            .header("Content-Type", "image/svg+xml")
+            .body(Body::from(svg))?),
+        None => plain(404, "no such theme art"),
     }
 }

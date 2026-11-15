@@ -486,7 +486,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         };
         // A plugin's profile: its backend is told the thread's id (so it can attach it).
         let ours = list.into_iter().find(|p| p.id() == profile);
-        let ours = ours.and_then(|p| Some((backend(&hub, &data, p.plugin.as_deref()?)?, p.name)));
+        let ours = ours.and_then(|p| Some((hub.backend(p.plugin.as_deref()?)?, p.name)));
         if let Some((b, name)) = ours
             && let Err(e) = plugin::started(&b, &id, &name)
         {
@@ -1134,11 +1134,9 @@ fn profiles(
     hub: &Hub,
     (data, config): (&std::path::Path, Option<&std::path::Path>),
 ) -> Vec<cooee_core::Profile> {
-    let mut list = cooee_core::profiles::list(config, data, |name| {
-        plugin::profiles(&backend(hub, data, name)?)
-    });
+    let mut list = cooee_core::profiles::list(config, data, |name| hub.served(name));
     for p in &mut list {
-        let via = p.plugin.as_deref().and_then(|n| backend(hub, data, n));
+        let via = p.plugin.as_deref().and_then(|n| hub.backend(n));
         if let (Some(via), Some(a)) = (via, &mut p.avatar)
             && a.starts_with('/')
         {
@@ -1146,13 +1144,6 @@ fn profiles(
         }
     }
     list
-}
-
-/// Installed plugin `name`'s backend: its first tab's entry (its URL and token).
-fn backend(hub: &Hub, data: &std::path::Path, name: &str) -> Option<Plugin> {
-    let lock = cooee_core::plugins::read_lock(data).ok()?;
-    let tabs = lock.into_iter().find(|l| l.name == name)?.tabs;
-    hub.plugins().into_iter().find(|p| tabs.contains(&p.name))
 }
 
 path_param!(name);
@@ -1265,7 +1256,7 @@ fn with_screens(cx: &Cx) -> Option<(Plugin, cooee_core::plugins::Manifest)> {
     let data = &app_context::<Data>(cx).0;
     let lock = cooee_core::plugins::read_lock(data).ok()?;
     let m = cooee_core::plugins::manifest(data, lock.iter().find(|l| l.name == name)?).ok()?;
-    let p = backend(app_context::<Arc<Hub>>(cx), data, name)?;
+    let p = app_context::<Arc<Hub>>(cx).backend(name)?;
     (!m.places.is_empty()).then_some((p, m))
 }
 
@@ -1844,59 +1835,6 @@ async fn on_personas<T: Send + 'static>(
     Ok(Answer(done.await))
 }
 
-/// The installed themes and schemes as JSON (#252), for the native look sheet: the packs as they are now.
-#[route(GET "/api/v1/looks")]
-async fn looks_json(cx: &Cx) -> Result<Response> {
-    let config = app_context::<Data>(cx).1.clone();
-    let looks =
-        tokio::task::spawn_blocking(move || look::Looks::load(config.as_deref(), None).0).await?;
-    Json(looks).into_response(cx)
-}
-
-path_param!(look);
-path_param!(art);
-
-/// A sprite sheet's frames show the first; a scene shows its calm layers only (#34).
-const FRAMES: &[u8] = b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
-const CALM: &[u8] = b"<style>.h-busy,.h-held,.l-overcast,.l-rain{display:none}</style>";
-
-fn with_rule(svg: &[u8], rule: &[u8]) -> Vec<u8> {
-    let at = svg
-        .windows(4)
-        .position(|w| w == b"<svg")
-        .and_then(|i| svg[i..].iter().position(|&b| b == b'>').map(|j| i + j + 1))
-        .unwrap_or(0);
-    [&svg[..at], rule, &svg[at..]].concat()
-}
-
-/// A pack's `sprites.svg` or `scene.svg` (#252), for the native app's Scene art; no cookie needed.
-#[route(GET "/look/{look}/{art}")]
-async fn look_art(cx: &Cx) -> Result<Response> {
-    let (config, name, art) = (
-        app_context::<Data>(cx).1.clone(),
-        path_param::<Look>(cx).to_owned(),
-        path_param::<Art>(cx).to_owned(),
-    );
-    let looks =
-        tokio::task::spawn_blocking(move || look::Looks::load(config.as_deref(), None).0).await?;
-    let theme = looks.themes.get(&name);
-    let svg = match art.as_str() {
-        "sprites.svg" => theme
-            .and_then(|t| t.sprite_sheet.as_deref())
-            .map(|b| with_rule(b, FRAMES)),
-        "scene.svg" => theme
-            .and_then(|t| t.scene_art.as_deref())
-            .map(|b| with_rule(b, CALM)),
-        _ => None,
-    };
-    match svg {
-        Some(svg) => Ok(Response::builder()
-            .header("Content-Type", "image/svg+xml")
-            .body(Body::from(svg))?),
-        None => plain(404, "no such theme art"),
-    }
-}
-
 #[route(GET "/personas")]
 async fn persona_list(cx: &Cx) -> Result<Answer<Vec<Persona>>> {
     on_personas(cx, |d, c| Ok(personas::list(Some(c), d))).await
@@ -2244,13 +2182,13 @@ pub fn router(
     };
     routines::routes(
         runner,
-        room_routes(persona_routes(pairing::routes(
+        room_routes(persona_routes(themes::routes(pairing::routes(
             Router::builder()
                 .layer(Timing)
                 .layer(gate)
                 // A message's photos come as base64.
                 .layer(BodyLimit::max(64 << 20).at("/threads")),
-        ))),
+        )))),
     )
     .route(push_key)
     .route(push_subscribe)
@@ -2308,8 +2246,6 @@ pub fn router(
     .route(layout::get)
     .route(layout::events)
     .route(layout::reset)
-    .route(looks_json)
-    .route(look_art)
     .app_context(layouts)
     .app_context(hub)
     .app_context(Arc::new(Dots::default()))
