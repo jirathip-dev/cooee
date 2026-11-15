@@ -23,6 +23,7 @@ public struct ChatFeature: Sendable {
         public var draft = ""
         public var files: [Attachment] = []
         public var outbox: [Outgoing] = []
+        public var pending: String?
         public var answering: Set<Int> = []
         public var room: Room?
         public var exchange: Exchange?
@@ -35,7 +36,12 @@ public struct ChatFeature: Sendable {
         public var drawn: [Item] {
             if let exchange { return LinkedItems.build(items, exchange: exchange, outbox: outbox, now: since) }
             return room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
-                ?? ChatItems.build(items, live: live, outbox: outbox)
+                ?? ChatItems.build(items, live: live, outbox: first + outbox)
+        }
+
+        private var first: [Outgoing] {
+            let failure = turn.state == "unconnected" ? turn.note ?? "" : nil
+            return pending.map { [Outgoing(id: 0, text: $0, failure: failure)] } ?? []
         }
 
         public init(server: Server, target: Target, persona: Persona, room: Room? = nil, exchange: Exchange? = nil) {
@@ -175,6 +181,7 @@ extension ChatFeature {
         state.queue = slice.queue
         state.turn = slice.turn
         state.since = now
+        state.pending = slice.pending?.text
         state.live = slice.turn.working ? slice.turn.text ?? "" : ""
     }
 
@@ -201,6 +208,7 @@ extension ChatFeature {
         } else {
             state.items.append(item)
         }
+        if item.kind == "you" { state.pending = nil }
         if item.kind == "agent" { state.live = "" }
     }
 
