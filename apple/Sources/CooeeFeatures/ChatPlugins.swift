@@ -2,6 +2,14 @@ import ComposableArchitecture
 import CooeeCore
 
 extension ChatFeature {
+    @CasePathable
+    public enum PluginAction: Sendable, Equatable {
+        case load
+        case loaded([Place], [PluginRow])
+        case open(Place)
+        case attach(PluginRow)
+    }
+
     internal func plugins(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .plugins(let action):
@@ -17,7 +25,7 @@ extension ChatFeature {
         }
     }
 
-    private func plugin(_ state: inout State, _ action: Action.PluginAction) -> Effect<Action> {
+    private func plugin(_ state: inout State, _ action: PluginAction) -> Effect<Action> {
         switch action {
         case .load:
             return load(state)
