@@ -33,6 +33,8 @@ internal struct ItemView: View {
             Said(speaker: speaker, time: time, blocks: blocks)
         case .divider(_, let text):
             RoundDivider(text: text)
+        case .asked(_, let ask):
+            AskCard(ask: ask)
         }
     }
 }
@@ -40,12 +42,16 @@ internal struct ItemView: View {
 internal struct YouBubble: View {
     @Environment(\.look) private var look
     @Environment(\.members) private var members
+    @Environment(\.noteTo) private var noteTo
     internal let text: String
     internal let files: [String]
 
     internal var body: some View {
         let palette = look.palette
         VStack(alignment: .trailing, spacing: 6) {
+            if let noteTo {
+                Text("Your note · to \(noteTo)").ui(13, .regular, look).foregroundStyle(palette.mute)
+            }
             ForEach(files, id: \.self) { file in
                 Label(file, systemImage: "doc.text").ui(13, .regular, look).foregroundStyle(palette.mute)
                     .padding(.horizontal, 10).padding(.vertical, 6)
