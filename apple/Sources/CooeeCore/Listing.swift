@@ -14,24 +14,32 @@ public enum Listing {
     }
 
     public static func chats(rows: [ThreadRow], personas: [APIPersona], now: Date) -> [ListedChat] {
-        rows.map { thread in
+        let cast = everyone(personas: personas, rows: rows)
+        return rows.map { thread in
             let state = LaneState(api: thread.state)
-            let api =
-                personas.first { $0.id == thread.persona }
-                ?? APIPersona(id: thread.agent, name: thread.agent, agent: thread.agent)
-            let persona = Persona(api, state: state)
+            let owner = personas.first { $0.id == thread.persona }
+            let persona = owner.map { Persona($0, state: state) } ?? stranger(thread, state: state)
             let row = Row(
                 id: thread.id,
                 persona: persona.id,
-                title: thread.title,
+                title: owner == nil && thread.workflow == nil && thread.members.isEmpty ? thread.agent : thread.title,
                 last: thread.last,
                 ago: ago(thread.updated, now: now),
                 unseen: thread.unseen,
                 state: state
             )
-            let members = thread.members.map { id in Persona(personas.first { $0.id == id } ?? named(id)) }
-            return ListedChat(row: row, persona: persona, members: members)
+            let members = thread.members.map { id in cast.first { $0.id == id } ?? Persona(named(id)) }
+            return ListedChat(row: row, persona: persona, workflow: thread.workflow, members: members)
         }
+    }
+
+    private static func stranger(_ thread: ThreadRow, state: LaneState) -> Persona {
+        let label = thread.workflow
+        let name = label.map { "\($0.group) \($0.item) · \($0.stage)" } ?? thread.title
+        let api = APIPersona(id: "", name: name, agent: label?.source ?? thread.agent, model: label?.role ?? "")
+        let look = PersonaLook(
+            initials: String(name.prefix(1)).uppercased(), symbol: "", tint: .lead, coat: label == nil ? "" : "bay")
+        return Persona(api: api, look: look, state: state)
     }
 
     private static func named(_ id: String) -> APIPersona {
@@ -52,6 +60,25 @@ public enum Listing {
         case ..<86400: return "\(seconds / 3600)h"
         default: return "\(seconds / 86400)d"
         }
+    }
+}
+
+public enum Pin: Identifiable, Sendable, Equatable {
+    case persona(Persona)
+    case room(ListedChat)
+
+    public var id: String {
+        switch self {
+        case .persona(let persona): persona.id
+        case .room(let room): room.id
+        }
+    }
+}
+
+extension HomeLists {
+    public func pins(_ personas: [Persona], rooms: [String]) -> [Pin] {
+        let pinned = rooms.compactMap { id in chats.first { $0.id == id && !$0.members.isEmpty } }
+        return personas.map(Pin.persona) + pinned.map(Pin.room)
     }
 }
 

@@ -1,5 +1,5 @@
 # Every CI gate, locally.
-check: fmt clippy test doc deny cap deps hygiene neutral themes ci-scripts
+check: fmt clippy test doc deny cap deps hygiene neutral lessons themes ci-scripts
 
 fmt:
     cargo fmt --all --check
@@ -34,6 +34,10 @@ neutral:
     scripts/neutral-core.sh
     ci/neutral-core-test.sh
 
+# The lesson checks' own tests (#323); the checks themselves run on a PR in .github/workflows/lessons.yml.
+lessons:
+    ci/pr-body-test.sh
+
 # The theme gate (docs/themes.md) on the first-party packs and the starter.
 themes:
     cargo run --quiet --locked -p cooee -- theme check packs/themes/* packs/starter
@@ -41,6 +45,10 @@ themes:
 # The CI's own scripts (#329): which legs a run needs, the staging reuse, the nightly's issue.
 ci-scripts:
     ci/ci-scripts-test.sh
+
+# Rewrites every generated file (#356): the crate indexes and Cargo.lock. A conflict in one: take either side, run it.
+gen:
+    scripts/gen.sh
 
 # The Swift quality gate on apple/ (#147): format, anti-slop, SwiftLint, build, tests, coverage, Periphery.
 apple-check:

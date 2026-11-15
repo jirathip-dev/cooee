@@ -1,0 +1,25 @@
+name: lessons
+on:
+  pull_request:
+    branches: [main, staging]
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  # #323: the lesson checks in .herdsman/rules.md. A shadow check's failure goes to the job summary and never fails
+  # the job; its own fixture test does.
+  lessons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: pr-body checker test
+        run: ci/pr-body-test.sh
+      - name: pr-body (shadow)
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          printf '%s\n' "$BODY" > "$RUNNER_TEMP/body.md"
+          if ! scripts/pr-body.sh "$RUNNER_TEMP/body.md" "$HEAD" > "$RUNNER_TEMP/out"; then
+            { echo "### pr-body would fail (shadow)"; echo '```'; cat "$RUNNER_TEMP/out"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          cat "$RUNNER_TEMP/out"
