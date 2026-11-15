@@ -18,7 +18,7 @@ internal struct SlotView: View {
             case .screen(.core, path: "/screens/menu"):
                 MenuScreen(store: store.scope(state: \.menu, action: \.menu))
             case .screen(.core, path: "/screens/reset-layout"):
-                ResetLayoutRow { store.send(.layout(.reset)) }
+                ActionRow(symbol: "arrow.counterclockwise", title: "Reset layout") { store.send(.layout(.reset)) }
             case .screen:
                 EmptyView()
             }
@@ -45,7 +45,11 @@ internal struct ComponentView: View {
                 QRScanner { store.send(.pairing(.connect($0))) }
             #endif
         case .menuHost: MenuHost(store: store, rows: slot("rows"), compact: compact)
-        case .settings, .sidebar, .terminal: EmptyView()
+        case .terminal:
+            ActionRow(symbol: "terminal.fill", title: "Terminal") {
+                store.send(.menu(.path(store.menu.path + [.terminal])))
+            }
+        case .settings, .sidebar: EmptyView()
         }
     }
 

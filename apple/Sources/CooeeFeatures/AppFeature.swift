@@ -12,6 +12,7 @@ public struct AppFeature: Sendable {
         public var newRoom: NewRoomFeature.State?
         public var path: [String] = []
         public var menu: MenuFeature.State
+        public var terminal: TerminalFeature.State
         public var layout: LayoutFeature.State
         @Presents public var persona: PersonaFeature.State?
         public let mac: Bool
@@ -23,6 +24,7 @@ public struct AppFeature: Sendable {
             pairing = server == nil && !mac ? PairingFeature.State() : nil
             setup = server == nil && mac ? MacSetupFeature.State() : nil
             menu = MenuFeature.State(server: server, settings: settings)
+            terminal = TerminalFeature.State(server: server)
         }
     }
 
@@ -35,6 +37,7 @@ public struct AppFeature: Sendable {
         case newRoom(NewRoomFeature.Action)
         case room
         case menu(MenuFeature.Action)
+        case terminal(TerminalFeature.Action)
         case layout(LayoutFeature.Action)
         case persona(PresentationAction<PersonaFeature.Action>)
         case edit(String?)
@@ -53,6 +56,7 @@ public struct AppFeature: Sendable {
     public var body: some ReducerOf<Self> {
         Scope(state: \.menu, action: \.menu) { MenuFeature() }
         Scope(state: \.layout, action: \.layout) { LayoutFeature() }
+        Scope(state: \.terminal, action: \.terminal) { TerminalFeature() }
         Reduce { state, action in
             switch action {
             case .pairing(.delegate(.paired(let server))), .setup(.delegate(.paired(let server))):

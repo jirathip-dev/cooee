@@ -130,8 +130,10 @@ extension Frame {
         }
         let macs = pages.map { name, page in mac("mac-\(name)", 1180, 780, .farmDark) { SettingsWindow(page: page) } }
         let more = [
-            phone("terminal-dark", .farmDark) { MachineTerminal() },
-            phone("you-terminal-dark", .farmDark) { MachineTerminal(own: true) },
+            phone("terminal-dark", .farmDark) { TerminalView.agents() },
+            phone("you-terminal-dark", .farmDark) { TerminalView.own() },
+            phone("you-terminal-terminal-dark", .farmDark, style: .terminal) { TerminalView.own() },
+            phone("you-terminal-scene-light", .farmLight, style: .scene) { TerminalView.own() },
             phone("sign-ins-terminal-dark", .farmDark, style: .terminal) { SignInsView() },
             phone("machines-scene-light", .farmLight, style: .scene) { MachinesView() },
             mac("mac-plugins-light", 1180, 780, .farmLight) { SettingsWindow(page: .plugins) },
