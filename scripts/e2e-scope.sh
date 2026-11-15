@@ -8,7 +8,7 @@
 set -eu
 map=apple/e2e/map.toml
 rules=$(sed -n 's/^"\([^"]*\)" *= *"\([^"]*\)".*/\1 \2/p' "$map")
-classes=$(sed -n 's/.*final class \([A-Za-z]*\): LiveUITestCase.*/\1/p' apple/UITests/*.swift)
+classes=$(find apple/UITests -name '*.swift' -exec sed -n 's/.*final class \([A-Za-z]*\): LiveUITestCase.*/\1/p' {} +)
 named=$(printf '%s\n' "$rules" | cut -d' ' -f2- | tr ' ' '\n' | sort -u)
 for c in $classes; do
   printf '%s\n' "$named" | grep -qx "$c" || { echo "$map names no line for the UI test class $c" >&2; exit 1; }

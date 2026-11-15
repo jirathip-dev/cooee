@@ -1,8 +1,17 @@
 # drover arch-check (#356, docs/architecture/hot-files/adr.md): a generated file is what `generate` writes, and a
 # code file stays under 800 lines (the baseline's offenders may only shrink). Frozen lists start with slice 1 (q1720).
+frozen = ["apple/Sources/CooeeCore/Models.swift", "apple/UITests/LiveUITests.swift"]
 generated = ["Cargo.lock", "crates/cooee-core/src/lib.rs"]
 generate = "scripts/gen.sh"
 
 [[size]]
 paths = ["crates/*/src/**/*.rs"]
 max_file_lines = 800
+
+[[collect]]
+dir = "apple/Sources/CooeeCore/Models"
+glob = "*.swift"
+
+[[collect]]
+dir = "apple/UITests/Live"
+glob = "*.swift"
