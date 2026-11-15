@@ -1,0 +1,13 @@
+Decided: merged staging again; staging's head failed two shed-version tests, so this PR carries a staging build fix updating their expected text
+Because: crates/cooee-core/src/shed.rs:335
+Decided: the web client's routine edits went with #189's removal of that client
+Because: q1595
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs, so the runner's tick cannot deadlock with it
+Because: crates/cooee-server/src/hub.rs:1901
+Decided: a GitHub routine without [hooks] is refused NO_HOOKS
+Because: crates/cooee-server/src/routines.rs:135
+Rejected: leaving staging red for its own owner to fix — the standing answer is to fix the minimal break here
+Check: cargo test -p cooee --test chat and --test setup pass at head; staging's own CI fails them
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
