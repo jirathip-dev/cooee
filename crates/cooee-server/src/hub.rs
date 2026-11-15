@@ -6,7 +6,11 @@ use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError, mpsc},
+    sync::{
+        Arc, Mutex, MutexGuard, OnceLock, PoisonError,
+        atomic::{AtomicBool, Ordering},
+        mpsc,
+    },
     thread,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -309,8 +313,10 @@ pub struct Hub {
     /// `<data>/files/<thread>/`: the files sent with messages.
     files: PathBuf,
     push: Push,
+    /// Whether shed was last seen on another protocol (#397): its alerts go once per state.
+    shed_version: AtomicBool,
     /// The server's default theme, whose words a push says.
-    theme: cooee_web::Theme,
+    theme: crate::look::Theme,
     roots: Mutex<Vec<PathBuf>>,
     /// The config file the roots are saved in.
     config: Option<PathBuf>,
@@ -331,8 +337,8 @@ pub struct Hub {
     mcp_key: String,
     /// The servers and skills agents proposed, by thread and card, until answered (a restart drops them).
     proposals: Mutex<HashMap<(String, u64), Proposed>>,
-    /// Each server's tools as last listed, for the profile sheet; held while the registry is written.
-    tools: Mutex<HashMap<String, cooee_web::Tools>>,
+    /// Held while the MCP registry is written.
+    registry: Mutex<()>,
     /// The rooms with a member's turn to start, for the turn worker.
     turns: mpsc::Sender<String>,
     /// How a room's member session starts, given its persona.
@@ -538,7 +544,7 @@ impl Hub {
         shed: Shed,
         data: &Path,
         (roots, config): (Vec<PathBuf>, Option<PathBuf>),
-        theme: cooee_web::Theme,
+        theme: crate::look::Theme,
         plugins: Vec<Plugin>,
         apns: Option<cooee_core::Apns>,
     ) -> Result<Arc<Self>, HubError> {
@@ -574,6 +580,7 @@ impl Hub {
             scratch: data.join("scratch"),
             files: data.join("files"),
             push: Push::new(data).with_apns(apns),
+            shed_version: AtomicBool::new(false),
             theme,
             roots: Mutex::new(roots),
             config,
@@ -586,7 +593,7 @@ impl Hub {
             url: OnceLock::new(),
             mcp_key,
             proposals: Mutex::default(),
-            tools: Mutex::default(),
+            registry: Mutex::default(),
             turns,
             starter: OnceLock::new(),
             asks: Mutex::default(),
@@ -776,6 +783,7 @@ impl Hub {
                 .and_then(|since| self.shed.events(BTreeMap::new(), last.or(since)));
             match stream {
                 Ok(events) => {
+                    self.shed_seen(None);
                     said.clear();
                     for event in events {
                         last = Some(event.seq);
@@ -784,12 +792,38 @@ impl Hub {
                 }
                 Err(e) if e.to_string() != said => {
                     said = e.to_string();
-                    eprintln!("cooee: {said}");
+                    if !self.shed_seen(Some(&e)) {
+                        eprintln!("cooee: {said}");
+                    }
                 }
                 Err(_) => {}
             }
             thread::sleep(Duration::from_secs(1));
         }
+    }
+
+    /// Notes a shed call's outcome: a mismatch starting or clearing goes to the server log and the owner's alerts,
+    /// once per state, not per call (#397). Whether `error` was a mismatch.
+    fn shed_seen(&self, error: Option<&ShedError>) -> bool {
+        let version = matches!(error, Some(ShedError::Version { .. }));
+        if error.is_some() && !version
+            || self.shed_version.swap(version, Ordering::SeqCst) == version
+        {
+            return version;
+        }
+        let body = error.map_or(
+            "shed speaks this build's protocol again".to_owned(),
+            ToString::to_string,
+        );
+        eprintln!("cooee: {body}");
+        self.push.send(&Note {
+            title: "cooee".to_owned(),
+            body,
+            tag: "shed".to_owned(),
+            url: "/".to_owned(),
+            item: 0,
+        });
+        version
     }
 
     /// Applies one shed event to the thread whose terminal it names; a new Workflow session's first is listed.
@@ -1501,10 +1535,7 @@ impl Hub {
         }
         live.meta.folder = Some(folder.clone());
         self.store.save(&live.meta)?;
-        let text = format!(
-            "now in {} · later turns run here",
-            cooee_web::short(&folder)
-        );
+        let text = format!("now in {} · later turns run here", short(&folder));
         let item = live.chat.push(now(), 0, Body::Note { text });
         live.publish(self, vec![Change::Item(item.clone())])?;
         drop(live);
@@ -1631,6 +1662,23 @@ impl Hub {
         let sent = self.prompt(&terminal, &machine, ended, prompt.trim());
         let mut l = lock(live);
         l.sending.retain(|r| *r != q.random_id);
+        let mismatch = match &sent {
+            Ok(()) => self.shed_seen(None),
+            Err(HubError::Shed(e)) => self.shed_seen(Some(e)),
+            Err(_) => false,
+        };
+        if let (true, Err(e)) = (mismatch, &sent) {
+            let item = l.chat.push(
+                now(),
+                0,
+                Body::Note {
+                    text: e.to_string(),
+                },
+            );
+            if let Err(e) = l.publish(self, vec![Change::Item(item)]) {
+                eprintln!("cooee: {e}");
+            }
+        }
         let stored = sent.and_then(|()| self.store_sent(&mut l, q, start, &handover));
         let held = if l.sending.is_empty() {
             std::mem::take(&mut l.held)
@@ -2370,7 +2418,7 @@ impl Hub {
         &self,
         f: impl FnOnce(&mut Vec<Server>) -> Result<String, String>,
     ) -> Result<String, HubError> {
-        let mut tools = lock(&self.tools);
+        let _held = lock(&self.registry);
         let Some(c) = &self.config else {
             return Err(HubError::Refused(
                 "there is no config file to save MCP servers in".to_owned(),
@@ -2380,7 +2428,6 @@ impl Hub {
         let said = f(&mut list).map_err(HubError::Refused)?;
         mcp::check(&list).map_err(HubError::Refused)?;
         mcp::save(c, &list).map_err(|e| refused(c, &e))?;
-        tools.clear();
         Ok(said)
     }
 
@@ -2393,50 +2440,6 @@ impl Hub {
     fn picks(&self, id: &str) -> Vec<Pick> {
         cooee_core::profiles::find(self.config_dir(), &self.data, id)
             .map_or_else(|_| Vec::new(), |p| p.mcp)
-    }
-
-    /// Saves profile `id`'s picks (an owner's profile only), each naming a server in the registry.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a plugin's profile, an unknown server or a file that can't be written.
-    pub fn set_picks(&self, id: &str, picks: &[Pick]) -> Result<(), HubError> {
-        let servers = self.mcp()?;
-        if let Some(p) = picks
-            .iter()
-            .find(|p| !servers.iter().any(|s| s.name == p.server))
-        {
-            return Err(HubError::Refused(format!(
-                "there is no MCP server {}",
-                p.server
-            )));
-        }
-        let file = self
-            .config_dir()
-            .and_then(|c| cooee_core::profiles::file(c, id));
-        let file =
-            file.ok_or_else(|| HubError::Refused(format!("{id} isn't one of your own profiles")))?;
-        mcp::save_picks(&file, picks).map_err(|e| refused(&file, &e))
-    }
-
-    /// Server `name`'s tools (name, description), listed once and kept until the registry changes.
-    ///
-    /// # Errors
-    /// Why they couldn't be listed (no such server, a reference that doesn't resolve, no answer).
-    pub fn mcp_tools(&self, name: &str) -> cooee_web::Tools {
-        if let Some(t) = lock(&self.tools).get(name) {
-            return t.clone();
-        }
-        let s = self
-            .mcp()
-            .map_err(|e| e.to_string())?
-            .into_iter()
-            .find(|s| s.name == name);
-        let listed = s
-            .ok_or_else(|| format!("no MCP server {name}"))
-            .and_then(|s| self.grant_of(s, None))
-            .and_then(|g| crate::mcp::tools(&g));
-        lock(&self.tools).insert(name.to_owned(), listed.clone());
-        listed
     }
 
     /// `s` resolved, with `tools` allowed.
@@ -2760,6 +2763,27 @@ fn waits(body: &Body) -> bool {
     matches!(body, Body::Approval { chosen: None, card, .. } if card.form.as_deref() == Some("config") && card.line.is_none())
 }
 
+/// `~/x` for a folder under `$HOME` (as given, or resolved: a folder a chat works in is stored resolved); none
+/// (empty): `scratch`, a chat's own folder.
+fn short(folder: &Path) -> String {
+    if folder.as_os_str().is_empty() {
+        return "scratch".to_owned();
+    }
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    let homes = home
+        .iter()
+        .flat_map(|h| [h.clone(), h.canonicalize().unwrap_or_default()]);
+    let homes = homes.filter(|h| h.has_root());
+    let rest = homes
+        .into_iter()
+        .find_map(|h| folder.strip_prefix(h).ok().map(Path::to_path_buf));
+    match rest {
+        Some(rest) if rest.as_os_str().is_empty() => "~".to_owned(),
+        Some(rest) => format!("~/{}", rest.display()),
+        None => folder.display().to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
@@ -2776,7 +2800,7 @@ mod tests {
     /// [`hub`] with `bin` as the shed CLI.
     fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
         let shed = Shed::new(bin, Some(dir.join("no-shed-dir")));
-        let (looks, _) = cooee_web::Looks::load(None, None);
+        let (looks, _) = crate::look::Looks::load(None, None);
         let theme = looks.themes[&looks.default].clone();
         Hub::open(
             shed,

@@ -109,7 +109,7 @@ internal struct RoomFeatureTests {
     }
 
     @Test internal func aRoomIsMadeFromHomeAndOpensFromTheList() async {
-        var state = AppFeature.State(server: mini)
+        var state = AppFeature.State(layout: testLayout, server: mini)
         state.home?.personas = cast
         let (rows, cast) = ([roomRow()], cast)
         let store = TestStore(initialState: state) {

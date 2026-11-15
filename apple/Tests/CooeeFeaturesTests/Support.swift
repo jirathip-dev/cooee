@@ -47,3 +47,10 @@ internal func lane(_ id: String, item: String = "#33", state: String = "working"
         workflow: WorkflowLabel(source: "drover", group: "cooee", item: item, role: "impl", round: "1")
     )
 }
+
+internal func layout(_ json: String, etag: String = "") -> Layout {
+    // SAFETY: every caller passes a literal layout the tests expect to decode
+    try! Layout(json: Data(json.utf8), etag: etag)
+}
+
+internal let testLayout = layout(#"{"format":1,"root":{"type":"nav"}}"#)

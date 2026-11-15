@@ -76,7 +76,7 @@ public struct WideView<Detail: View>: View {
             VStack(spacing: 0) {
                 TopBar(personas: all, actions: actions).padding(.top, look.still ? 34 : 8)
                 Scroller {
-                    PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new)
+                    PinnedRow(personas: personas, rows: chats.map(\.row), pin: actions.pin)
                         .scaleEffect(0.9, anchor: .leading).padding(.top, 4)
                     ChatList(chats: chats, selected: selected, open: actions.open).padding(.top, 8)
                     if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }

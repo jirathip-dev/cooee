@@ -8,7 +8,7 @@ internal struct WorkflowNavigationTests {
     private func store(rows: [ThreadRow], personas: [APIPersona] = [coder], plugins: [PluginRow] = [])
         -> TestStoreOf<AppFeature>
     {
-        var state = AppFeature.State(server: mini)
+        var state = AppFeature.State(layout: testLayout, server: mini)
         state.home?.rows = rows
         state.home?.personas = personas
         state.home?.plugins = plugins
@@ -53,7 +53,7 @@ internal struct WorkflowNavigationTests {
         }
         await store.send(.chat(.workflow(.show(true)))) { $0.chat?.workflowOpen = true }
         await store.send(.chat(.workflow(.open("l1")))) { $0.chat?.workflowOpen = false }
-        await store.receive(\.chat.delegate.open) {
+        await store.receive(\.chat.delegate.round) {
             $0.path = ["new:cond", "l1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("l1"), persona: sessions[0].persona)
         }
@@ -70,7 +70,7 @@ internal struct WorkflowNavigationTests {
             $0.path = ["new:cond"]
             sheet(&$0)
         }
-        await store.send(.chat(.delegate(.open("l1")))) {
+        await store.send(.chat(.delegate(.round("l1")))) {
             $0.path = ["new:cond", "l1"]
             $0.chat = ChatFeature.State(server: mini, target: .thread("l1"), persona: sessions[0].persona)
         }

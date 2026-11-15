@@ -15,6 +15,9 @@ extension ChatFeature {
         switch action {
         case .plugins(let action):
             return plugin(&state, action)
+        case .screen(.presented(.delegate(.open(let thread)))):
+            state.screen = nil
+            return .send(.delegate(.open(thread)))
         case .attaching(.presented(.delegate(.attached))):
             state.attaching = nil
             return .send(.plugins(.load))
@@ -24,7 +27,7 @@ extension ChatFeature {
             state.unfolded = state.unfolded == issue ? nil : issue
         case .workflow(.open(let thread)):
             state.workflowOpen = false
-            return .send(.delegate(.open(thread)))
+            return .send(.delegate(.round(thread)))
         default:
             break
         }
@@ -41,7 +44,7 @@ extension ChatFeature {
                 row.places.contains { $0.kind == "header-strip" } && !places.contains { $0.plugin == row.name }
             }
         case .open(let place):
-            state.screen = PluginScreenFeature.State(server: state.server, place: place)
+            state.screen = ScreenFeature.State(server: state.server, place: place)
         case .attach(let plugin):
             state.attaching = AttachFeature.State(server: state.server, persona: state.persona.api, plugin: plugin)
         }
@@ -52,8 +55,9 @@ extension ChatFeature {
         let (plugins, server, persona) = (pluginAPI, state.server, state.persona.api.id)
         guard !persona.isEmpty else { return .none }
         return .run { send in
-            await send(
-                .plugins(.loaded(try await plugins.places(server, persona), try await plugins.installed(server))))
+            async let places = plugins.places(server, persona)
+            async let installed = plugins.installed(server)
+            await send(.plugins(.loaded(try await places, try await installed)))
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }

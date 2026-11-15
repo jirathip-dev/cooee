@@ -13,6 +13,7 @@ use std::{
     process::{Command, Output, Stdio},
 };
 
+use cooee_core::shed_proto::Hello;
 use support::{FakeShed, scratch, version};
 
 const BIN: &str = env!("CARGO_BIN_EXE_cooee");
@@ -264,9 +265,86 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
         );
     }
     assert!(
-        stdout.contains("pair your phone:\nScan it") && stdout.contains("\ncode  "),
+        stdout.contains("pair your phone:\nType the link") && stdout.contains("\ncode  "),
         "{stdout}"
     );
+}
+
+/// A shed on another protocol than this build's: its fix, as an error names it.
+fn old_shed(mac: &Mac) -> (FakeShed, String) {
+    let at = mac.home.join("Library/Caches/shed");
+    let old = Hello {
+        build: "fffffff".to_owned(),
+        protocol: 0,
+        ..version()
+    };
+    let (v, b) = (&version().version, &version().build);
+    let restart = if cfg!(target_os = "macos") {
+        "launchctl kickstart -k gui/$(id -u)/dev.shed.serve"
+    } else {
+        "shed serve"
+    };
+    let said = format!(
+        "SHED_VERSION: cooee speaks shed {v} ({b}) protocol 1; the server runs {v} (fffffff) protocol 0; \
+         fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev {REV} shed && {restart}"
+    );
+    fs::write(
+        mac.home.join("cargo.list"),
+        format!(
+            "shed v0.0.0 (https://github.com/jirathip-dev/shed?rev={REV}#{}):\n",
+            &REV[..8]
+        ),
+    )
+    .unwrap();
+    (FakeShed::start(&at, old), said)
+}
+
+/// #397: shed's job runs the pinned binary but its serve still speaks protocol 0: setup warns, restarts it, connects
+/// again, and only then restarts cooee onto this build.
+#[test]
+fn a_managed_shed_on_another_protocol_is_restarted_after_a_warning() {
+    let mac = Mac::new("su-shed-old", true);
+    let (old, _) = old_shed(&mac);
+    fs::write(mac.home.join("loaded-dev.shed.serve"), "").unwrap();
+    let log = mac.home.join("calls.log");
+    let swap = std::thread::spawn(move || {
+        let kicked = || fs::read_to_string(&log).is_ok_and(|l| l.contains("launchctl kickstart"));
+        for _ in 0..1000 {
+            if kicked() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        old.restart(version())
+    });
+    let out = mac.setup(&["--yes"]);
+    let _new = swap.join().unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{out:?}");
+    let warn = stdout.find("restarting shed serve ends every running shed session");
+    let restart = stdout.find("$ launchctl kickstart");
+    assert!(warn.is_some() && warn < restart, "{stdout}");
+    let changes = mac.changes();
+    let at = |c: &str| changes.iter().position(|l| l.starts_with(c));
+    assert!(
+        at("shed install") < at("launchctl kickstart -k")
+            && at("launchctl kickstart -k") < at("launchctl bootstrap"),
+        "{changes:?}"
+    );
+    assert!(changes[1].ends_with("/dev.shed.serve"), "{changes:?}");
+}
+
+/// #397: a shed serve on another protocol that isn't cooee's launchd job is left alone, and so is cooee: setup stops
+/// before restarting cooee onto this build, naming both sides and the fix.
+#[test]
+fn an_unmanaged_shed_on_another_protocol_holds_cooee_back_naming_the_fix() {
+    let mac = Mac::new("su-shed-un", true);
+    let (_old, said) = old_shed(&mac);
+    let out = mac.setup(&["--yes"]);
+    assert_eq!(out.status.code(), Some(1), "{out:?}");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains(&said), "{stderr}\nwanted: {said}");
+    assert_eq!(mac.changes(), Vec::<String>::new());
 }
 
 #[test]

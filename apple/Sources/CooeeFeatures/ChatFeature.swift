@@ -23,6 +23,7 @@ public struct ChatFeature: Sendable {
         public var draft = ""
         public var files: [Attachment] = []
         public var outbox: [Outgoing] = []
+        public var pending: String?
         public var answering: Set<Int> = []
         public var room: Room?
         public var places: [Place] = []
@@ -30,13 +31,18 @@ public struct ChatFeature: Sendable {
         public var workflow: [ListedChat]?
         public var workflowOpen = false
         public var unfolded: String?
-        @Presents public var screen: PluginScreenFeature.State?
+        @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
         public var drawn: [Item] {
             room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
-                ?? ChatItems.build(items, live: live, outbox: outbox)
+                ?? ChatItems.build(items, live: live, outbox: first + outbox)
+        }
+
+        private var first: [Outgoing] {
+            let failure = turn.state == "unconnected" ? turn.note ?? "" : nil
+            return pending.map { [Outgoing(id: 0, text: $0, failure: failure)] } ?? []
         }
 
         public init(server: Server, target: Target, persona: Persona, room: Room? = nil) {
@@ -71,7 +77,7 @@ public struct ChatFeature: Sendable {
         case seated([String])
         case delegate(Delegate)
         case plugins(PluginAction)
-        case screen(PresentationAction<PluginScreenFeature.Action>)
+        case screen(PresentationAction<ScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
         case workflow(WorkflowAction)
 
@@ -79,6 +85,7 @@ public struct ChatFeature: Sendable {
         public enum Delegate: Sendable, Equatable {
             case started(String)
             case open(String)
+            case round(String)
         }
 
         @CasePathable
@@ -125,7 +132,7 @@ public struct ChatFeature: Sendable {
             }
         }
         Reduce { state, action in plugins(&state, action) }
-            .ifLet(\.$screen, action: \.screen) { PluginScreenFeature() }
+            .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
     }
 }
@@ -174,6 +181,7 @@ extension ChatFeature {
         state.queue = slice.queue
         state.turn = slice.turn
         state.since = now
+        state.pending = slice.pending?.text
         state.live = slice.turn.working ? slice.turn.text ?? "" : ""
     }
 
@@ -200,6 +208,7 @@ extension ChatFeature {
         } else {
             state.items.append(item)
         }
+        if item.kind == "you" { state.pending = nil }
         if item.kind == "agent" { state.live = "" }
     }
 

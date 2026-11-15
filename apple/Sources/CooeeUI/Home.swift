@@ -4,6 +4,7 @@ import SwiftUI
 public struct HomeActions {
     public var menu: () -> Void
     public var new: (String) -> Void
+    public var pin: (String) -> Void
     public var open: (String) -> Void
     public var room: () -> Void
     public var edit: (String?) -> Void
@@ -13,12 +14,14 @@ public struct HomeActions {
     public init(
         menu: @escaping () -> Void = {},
         new: @escaping (String) -> Void = { _ in },
+        pin: @escaping (String) -> Void = { _ in },
         open: @escaping (String) -> Void = { _ in },
         room: @escaping () -> Void = {},
         edit: @escaping (String?) -> Void = { _ in }
     ) {
         self.menu = menu
         self.new = new
+        self.pin = pin
         self.open = open
         self.room = room
         self.edit = edit
@@ -41,7 +44,7 @@ public struct HomeView: View {
             VStack(spacing: 0) {
                 TopBar(personas: all, actions: actions)
                 Scroller {
-                    PinnedRow(personas: personas, rows: chats.map(\.row), new: actions.new).padding(.top, 6)
+                    PinnedRow(personas: personas, rows: chats.map(\.row), pin: actions.pin).padding(.top, 6)
                     ChatList(chats: chats, selected: selected, open: actions.open)
                         .padding(.top, look.style == .scene ? 0 : 14)
                     if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }

@@ -33,6 +33,13 @@ for (const [coat, vars] of Object.entries(COATS)) for (const pose of POSES) {
   shoot(`<style>html,body{margin:0;background:transparent}svg{display:block}*{animation:none!important}</style>
   <svg width=132 height=100 viewBox="0 0 132 100">${body}</svg>`, 132, 100, `horse-${coat}-${pose}.png`);
 }
+// #181: Modern's row figures, the pack's own row sprites (frame 1), one per lane state and working tool.
+for (const id of ['edit', 'read', 'run', 'idle', 'done', 'needs', 'fail', 'merged']) {
+  const [, box, body] = sprites.match(new RegExp(`<symbol id="s-${id}" viewBox="([^"]*)">([\\s\\S]*?)</symbol>`));
+  const [, , w, h] = box.split(' ').map(Number);
+  shoot(`<style>html,body{margin:0;background:transparent}svg{display:block}.kf2{display:none}</style>
+  <svg width=${w} height=${h} viewBox="${box}">${body}</svg>`, w, h, `row-${id}.png`);
+}
 shoot(`<style>html,body{margin:0}svg{display:block;width:402px;height:300px}</style>${readFileSync('packs/themes/farm/scene.svg', 'utf8')}`,
   402, 300, 'scene-strip.png');
 console.log('ok');

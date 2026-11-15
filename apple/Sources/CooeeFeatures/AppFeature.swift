@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import CooeeCore
+import Foundation
 
 @Reducer
 public struct AppFeature: Sendable {
@@ -14,11 +15,13 @@ public struct AppFeature: Sendable {
         public var newRoom: NewRoomFeature.State?
         public var path: [String] = []
         public var menu: MenuFeature.State
+        public var layout: LayoutFeature.State
         @Presents public var persona: PersonaFeature.State?
         public let mac: Bool
 
-        public init(server: Server?, settings: Settings = Settings(), mac: Bool = false) {
+        public init(layout: Layout, server: Server?, settings: Settings = Settings(), mac: Bool = false) {
             self.mac = mac
+            self.layout = LayoutFeature.State(server: server, layout: layout)
             home = server.map(HomeFeature.State.init)
             pairing = server == nil && !mac ? PairingFeature.State() : nil
             setup = server == nil && mac ? MacSetupFeature.State() : nil
@@ -35,9 +38,11 @@ public struct AppFeature: Sendable {
         case newRoom(NewRoomFeature.Action)
         case room
         case menu(MenuFeature.Action)
+        case layout(LayoutFeature.Action)
         case persona(PresentationAction<PersonaFeature.Action>)
         case edit(String?)
         case open(String)
+        case pin(String)
         case start(String)
         case back
         case path([String])
@@ -50,14 +55,16 @@ public struct AppFeature: Sendable {
 
     public var body: some ReducerOf<Self> {
         Scope(state: \.menu, action: \.menu) { MenuFeature() }
+        Scope(state: \.layout, action: \.layout) { LayoutFeature() }
         Reduce { state, action in
             switch action {
             case .pairing(.delegate(.paired(let server))), .setup(.delegate(.paired(let server))):
-                state = State(server: server, settings: state.menu.settings, mac: state.mac)
+                state = State(
+                    layout: state.layout.layout, server: server, settings: state.menu.settings, mac: state.mac)
                 return .none
             case .home(.delegate(.unauthorized)):
                 serverStore.clear()
-                state = State(server: nil, settings: state.menu.settings, mac: state.mac)
+                state = State(layout: state.layout.layout, server: nil, settings: state.menu.settings, mac: state.mac)
                 return .none
             case .setup(.delegate(.clientOnly)):
                 state.setup = nil
@@ -75,6 +82,8 @@ public struct AppFeature: Sendable {
                 state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
                 return .send(.home(.refresh))
             case .chat(.delegate(.open(let thread))):
+                return .send(.open(thread))
+            case .chat(.delegate(.round(let thread))):
                 state.path.append(thread)
                 state.chat = chat(state, thread)
                 return .none
@@ -111,6 +120,11 @@ public struct AppFeature: Sendable {
         case .open(let thread):
             state.path = (state.path.first == Self.others && thread != Self.others ? [Self.others] : []) + [thread]
             state.chat = chat(state, thread)
+        case .pin(let persona):
+            let newest = state.home?.rows.filter { $0.persona == persona && $0.members.isEmpty }.max {
+                $0.updated < $1.updated
+            }
+            return navigate(&state, newest.map { .open($0.id) } ?? .start(persona))
         case .start(let persona):
             state.path = ["new:\(persona)"]
             state.chat = chat(state, "new:\(persona)")
