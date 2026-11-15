@@ -1,0 +1,7 @@
+Decided: merge origin/staging (418b880); arch.toml and gen.sh keep both sides, staging's cmd/mod.rs generator and ban beside this slice's support index
+Because: .drover/arch.toml:4
+Decided: staging's one support/mod.rs edit, the slow N prompt reading the last paragraph, moves into support/agent.rs; mod.rs stays generated
+Because: crates/cooee/tests/support/agent.rs:123
+Rejected: taking staging's monolithic support/mod.rs — it would undo the split this slice exists for
+Check: sh scripts/gen.sh leaves no diff and drover arch-check --base origin/staging exits 0
+Owner: The branch now includes the latest staging; the conflicts were settled by keeping both sides' changes.
