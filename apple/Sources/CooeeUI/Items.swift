@@ -23,6 +23,8 @@ internal struct ItemView: View {
             .modifier(Copyable(text: item.plainText ?? ""))
         case .tools(_, let rows):
             ToolFold(rows: rows)
+        case .trace(_, let steps, let seconds):
+            TraceRow(steps: steps, seconds: seconds)
         case .note(_, let text):
             Text(text).ui(13, .regular, look).foregroundStyle(look.palette.mute).frame(maxWidth: .infinity)
         case .card(_, let poster, let block):
@@ -216,7 +218,8 @@ internal struct ToolFold: View {
     @ViewBuilder private func mark(_ last: ToolRow) -> some View {
         let tint = last.running ? look.palette.cyan : look.palette.green
         if look.mono {
-            Text(last.running ? "o>_" : "[ok]").ui(13, .bold, look).foregroundStyle(tint).fixedSize()
+            Text(last.running ? "o>_" : members.isEmpty ? "[ok]" : "✓").ui(13, .bold, look).foregroundStyle(tint)
+                .fixedSize()
         } else {
             Image(systemName: last.running ? "gearshape.2.fill" : "checkmark.circle.fill")
                 .font(.system(size: 13)).foregroundStyle(tint)

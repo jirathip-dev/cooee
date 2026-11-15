@@ -89,7 +89,7 @@ extension LinkedView {
 extension WideView where Detail == LinkedView {
     public static func linked() -> WideView<LinkedView> {
         WideView(
-            personas: Fixtures.personas, chats: Fixtures.roomChats, selected: "x1", actions: HomeActions(),
+            chats: Fixtures.roomChats, selected: "x1", actions: HomeActions(),
             detail: { LinkedView.researcher(wide: true) }
         )
     }

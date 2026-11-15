@@ -125,7 +125,7 @@ internal struct RoomHeader: View {
                 Button(action: onBack) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                     .buttonStyle(.plain).accessibilityLabel("Back")
             }
-            RoomStack(members: scene.members, size: 30, grid: false, state: .done)
+            RoomStack(members: scene.members, size: look.mono ? 26 : 30, grid: false, state: .done)
             VStack(alignment: .leading, spacing: 2) {
                 Text(scene.title).ui(17, .semibold, look).lineLimit(1).minimumScaleFactor(0.8)
                 Text("\(scene.members.count) members · \(RoomRound.turns) turns max").ui(13, .regular, look)

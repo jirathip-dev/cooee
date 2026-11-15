@@ -196,7 +196,7 @@ fn an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steer
         "{said:?}"
     );
     let prompts = s.shed.sent(&format!("cooee-{x}"));
-    let framed = r#"{"prompt":"[Ada]:\n\nwhat is for dinner?"}"#;
+    let framed = r#"\n\n[Ada]:\n\nwhat is for dinner?"}"#;
     assert!(prompts[0].contains(framed), "{prompts:?}");
 
     // The next ask reuses it: no other thread.

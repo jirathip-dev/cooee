@@ -352,7 +352,8 @@
               "screen": { "type": "string" }
             }
           }
-        }
+        },
+        "claims": { "type": "array", "items": { "type": "string" } }
       }
     },
     "attach": {

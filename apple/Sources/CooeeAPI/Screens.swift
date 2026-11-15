@@ -22,13 +22,21 @@ extension Client {
         return list.installed
     }
 
-    public func screen(_ plugin: String, _ path: String) async throws -> JSONValue {
-        try await call("GET", "/p/\(plugin)\(path)")
+    private static func prefix(_ source: LayoutSource) -> String {
+        switch source {
+        case .core: ""
+        case .plugin(let plugin): "/p/\(plugin)"
+        }
     }
 
-    public func act(_ plugin: String, screen: String, _ action: BlockAction) async throws -> JSONValue {
+    public func screen(_ source: LayoutSource, _ path: String) async throws -> JSONValue {
+        try await call("GET", Self.prefix(source) + path)
+    }
+
+    public func act(_ source: LayoutSource, screen: String, _ action: BlockAction) async throws -> JSONValue {
         let body = ScreenAction(screen: screen, block: "", action: action.action, values: action.values)
-        return try await call("POST", "/p/\(plugin)/action", body)
+        let path = source == .core ? "/screens/action" : "/p/\(source.name)/action"
+        return try await call("POST", path, body)
     }
 
     public func attach(_ plugin: String, to persona: String) async throws {
@@ -40,11 +48,11 @@ extension Client {
         _ = try await send(request("PUT", "/personas/\(persona)", json: JSONValue.object(fields)))
     }
 
-    public func screenEvents(_ plugin: String, _ path: String) -> AsyncThrowingStream<JSONValue, any Error> {
+    public func screenEvents(_ source: LayoutSource, _ path: String) -> AsyncThrowingStream<JSONValue, any Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let (bytes, response) = try await session.bytes(for: request("GET", "/p/\(plugin)\(path)"))
+                    let (bytes, response) = try await session.bytes(for: request("GET", Self.prefix(source) + path))
                     let status = try Self.http(response).statusCode
                     if status >= 400 { throw APIError(status: status, text: "") }
                     for try await line in bytes.lines where line.hasPrefix("data:") {

@@ -58,7 +58,7 @@ another run; load the newest slice again).
 
 ## Personas (#126)
 
-A persona is `{id, name, role, fleets, avatar?, character, instructions, folder, agent, model, effort, machine, plugins, can_message, pinned, profile?}`: `avatar` an image
+A persona is `{id, name, role, style, fleets, avatar?, character, instructions, folder, agent, model, effort, machine, plugins, can_message, pinned, profile?}`: `avatar` an image
 (`https://…`, `data:image/…`; none: the client draws initials), `folder` an owned folder or `scratch`, `agent`, `model`
 and `effort` its defaults. It is `<config>/personas/<id>.toml`; an owner profile with no persona of its name is read
 as one (`profile`: the profile it runs as, its account, settings, env, MCP servers and policy kept; never set over the
@@ -75,7 +75,10 @@ or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos o
 cover too): an installed `drover` is attached to each orchestrator by its role, never its name. The persona read
 from a `conductor` profile (or saved from one before #159) is an orchestrator, its name kept. `machine` (#148) is the one its threads run on: `""` this host (every
 persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
-with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). A skill
+with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). `style`
+(#242) is how the native app draws its chats: `chat` (only each turn's reply, its tool steps folded into one row that
+opens a trace sheet; each new session is also told to answer short and plain) or `detailed` (every step, as before).
+A file without one reads as `detailed` for an orchestrator and `chat` for any other persona. A skill
 (#218) is `<data>/personas/<id>/skills/<name>/SKILL.md`, front matter (`name`, `description`) and a body, at most 20;
 each session's brief lists them `name: description` by name, never a body, which the persona reads with the `skill`
 tool. Clearing the notes leaves the skills; deleting the persona removes both. An unknown id or a broken rule is a
@@ -151,7 +154,7 @@ tool. Clearing the notes leaves the skills; deleting the persona removes both. A
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /plugins` | | `{installed: {name, version, commit, listed, state, enabled, first_party, improving?, previous?, tabs, places, permissions}[], index: {name, description}[], jobs: {name: text}, issues}` |
+| `GET /plugins` | | `{installed: {name, version, commit, listed, state, enabled, first_party, improving?, previous?, tabs, places, claims, permissions}[], index: {name, description}[], jobs: {name: text}, issues}` (`claims` (#229): the workflow `source` labels its manifest claims; the native app draws a `GET /threads` row whose `workflow.source` one claims in that plugin's place on a persona it is attached to, and any other workflow row under Home's Others) |
 | `GET /plugins/log?name=N` | | the plugin's log, text |
 | `POST /plugins/plan` | `{source}` or `{name, at}` | `{commit, text}`: what would run, to confirm |
 | `POST /plugins/add`, `/plugins/update` | the plan's body and its `commit` (a confirm holds for that commit only) | a JSON string (`"installing"`, …) |
@@ -212,6 +215,7 @@ default (`apple/Sources/CooeeUI/Default/layout.json`). A bad write changes nothi
 | `GET /layout` | | `{etag, layout}` and an `ETag` header; 304 with no body when `If-None-Match` names it |
 | `GET /layout/events` | | SSE: `changed {etag}` after a good write; `broken {line, col, why}` after a bad one, and at once to a new subscriber while the file is broken |
 | `POST /layout/reset` | | writes the default to `layout.json`, the old file kept as `layout.json.bak`; answers as `GET /layout`; 409 with no config folder |
+| `GET /screens/home` | | core's home (#311): `{type: "screen", source: "core", id, title, blocks, threads, personas}`, the app's bundled `Default/screens/home.json` with `threads` as `GET /threads` and `personas` as `GET /personas`; `source` is always the server's |
 
 ## Pairing (no cookie needed)
 

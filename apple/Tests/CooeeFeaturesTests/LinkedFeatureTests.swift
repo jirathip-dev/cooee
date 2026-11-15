@@ -9,7 +9,7 @@ internal struct LinkedFeatureTests {
     private let res = APIPersona(id: "res", name: "Researcher", agent: "claude")
 
     private func paired() -> AppFeature.State {
-        var state = AppFeature.State(server: mini)
+        var state = AppFeature.State(layout: testLayout, server: mini)
         let asked = ThreadRow(
             id: "x1", title: "", agent: "claude", persona: "res", state: "done", last: "", updated: 999_000_000,
             unseen: 0, archived: false, askedBy: "c1"
@@ -56,13 +56,13 @@ internal struct LinkedFeatureTests {
             $0.turn = Turn(state: "working")
             $0.since = epoch
         }
-        await store.send(.draftChanged("Use the 10-Q")) { $0.draft = "Use the 10-Q" }
-        await store.send(.send) {
+        await store.send(.compose(.draftChanged("Use the 10-Q"))) { $0.draft = "Use the 10-Q" }
+        await store.send(.compose(.send)) {
             $0.draft = ""
             $0.outbox = [Outgoing(id: -1, text: "Use the 10-Q")]
         }
         #expect(store.state.drawn == [.outgoing(Outgoing(id: -1, text: "Use the 10-Q"))])
-        await store.receive(\.delivered) { $0.outbox = [] }
+        await store.receive(\.outbox.delivered) { $0.outbox = [] }
         #expect(calls.all == ["send x1 Use the 10-Q queue=false"])
     }
 }

@@ -150,9 +150,10 @@ internal struct LinkedScreen: View {
     internal var body: some View {
         if let exchange = store.exchange {
             let chat = ChatActions(
-                draft: Binding(get: { store.draft }, set: { store.send(.draftChanged($0)) }),
-                files: store.files.map(\.name), send: { store.send(.send) }, attach: { store.send(.attach($0)) },
-                detach: { store.send(.detach($0)) }, back: onBack
+                draft: Binding(get: { store.draft }, set: { store.send(.compose(.draftChanged($0))) }),
+                files: store.files.map(\.name), send: { store.send(.compose(.send)) },
+                attach: { store.send(.compose(.attach($0))) },
+                detach: { store.send(.compose(.detach($0))) }, back: onBack
             )
             let theirs =
                 exchange.chat.map { ChatFeature.Action.delegate(.open($0)) } ?? .delegate(.start(exchange.target.id))

@@ -30,20 +30,32 @@ public enum Listing {
         -> ListedChat
     {
         let state = LaneState(api: thread.state)
-        let api =
-            personas.first { $0.id == thread.persona }
-            ?? APIPersona(id: thread.agent, name: thread.agent, agent: thread.agent)
-        let persona = Persona(api, state: state)
+        let owner = personas.first { $0.id == thread.persona }
+        let persona = owner.map { Persona($0, state: state) } ?? stranger(thread, state: state)
         let row = Row(
-            id: thread.id, persona: persona.id, title: thread.title, last: thread.last,
-            ago: ago(thread.updated, now: now), unseen: thread.unseen, state: state
+            id: thread.id, persona: persona.id,
+            title: owner == nil && thread.workflow == nil && thread.members.isEmpty ? thread.agent : thread.title,
+            last: thread.last, ago: ago(thread.updated, now: now), unseen: thread.unseen, state: state
         )
-        let members = thread.members.map { id in Persona(personas.first { $0.id == id } ?? named(id)) }
+        let cast = everyone(personas: personas, rows: rows)
+        let members = thread.members.map { id in cast.first { $0.id == id } ?? Persona(named(id)) }
         let asker = rows.first { $0.id == thread.askedBy }.map { from in
             Persona(personas.first { $0.id == from.persona } ?? named(from.persona))
         }
         return ListedChat(
-            row: row, persona: persona, members: members, asker: asker, from: asker == nil ? "" : thread.askedBy)
+            row: row, persona: persona, workflow: thread.workflow, members: members, asker: asker,
+            from: asker == nil ? "" : thread.askedBy)
+    }
+
+    private static func stranger(_ thread: ThreadRow, state: LaneState) -> Persona {
+        let label = thread.workflow
+        let name = label.map { "\($0.group) \($0.item) · \($0.stage)" } ?? thread.title
+        let api = APIPersona(
+            id: "", name: name, agent: label?.source ?? thread.agent, model: label?.role ?? "",
+            style: .detailed)
+        let look = PersonaLook(
+            initials: String(name.prefix(1)).uppercased(), symbol: "", tint: .lead, coat: label == nil ? "" : "bay")
+        return Persona(api: api, look: look, state: state)
     }
 
     private static func named(_ id: String) -> APIPersona {
@@ -67,6 +79,25 @@ public enum Listing {
     }
 }
 
+public enum Pin: Identifiable, Sendable, Equatable {
+    case persona(Persona)
+    case room(ListedChat)
+
+    public var id: String {
+        switch self {
+        case .persona(let persona): persona.id
+        case .room(let room): room.id
+        }
+    }
+}
+
+extension HomeLists {
+    public func pins(_ personas: [Persona], rooms: [String]) -> [Pin] {
+        let pinned = rooms.compactMap { id in chats.first { $0.id == id && !$0.members.isEmpty } }
+        return personas.map(Pin.persona) + pinned.map(Pin.room)
+    }
+}
+
 public struct PairTarget: Sendable, Equatable {
     public let url: URL
     public let code: String?
@@ -84,34 +115,5 @@ public struct PairTarget: Sendable, Equatable {
         guard let url = base.url else { return nil }
         self.url = url
         code = parts.queryItems?.first { $0.name == "code" }?.value
-    }
-}
-
-public struct PairAsk: Codable, Sendable, Equatable {
-    public let word: String
-    public let claim: String
-
-    public init(word: String, claim: String) {
-        self.word = word
-        self.claim = claim
-    }
-}
-
-public enum PairClaim: Sendable, Equatable {
-    case paired(String)
-    case waiting
-    case declined(String)
-    case gone(String)
-}
-
-public struct NearbyServer: Sendable, Equatable, Identifiable {
-    public let name: String
-    public let address: String
-
-    public var id: String { name }
-
-    public init(name: String, address: String) {
-        self.name = name
-        self.address = address
     }
 }
