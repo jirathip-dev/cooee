@@ -3,6 +3,10 @@
 cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.md`), as the #7 design
 (`docs/design/look/`) draws it. A theme is a folder of data and a scheme is a JSON file. Neither holds code.
 
+## Today
+
+- **Looks:** Modern, Terminal and Scene styles; farm, kitchen and garden theme packs (#65, #66, #67).
+
 ## A theme pack: `themes/<name>/`
 
 A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` is built in;

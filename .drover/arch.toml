@@ -1,6 +1,7 @@
 # drover arch-check (#356, docs/architecture/hot-files/adr.md): a generated file is what `generate` writes, and a
-# code file stays under 800 lines (the baseline's offenders may only shrink). Frozen lists start with slice 1 (q1720).
-generated = ["Cargo.lock", "crates/cooee-core/src/lib.rs"]
+# code file stays under 800 lines (the baseline's offenders may only shrink). The root.rs freeze comes with slice 1 (q1720).
+frozen = ["docs/architecture.md", "docs/api.md"]
+generated = ["Cargo.lock", "crates/cooee-core/src/lib.rs", "README.md"]
 generate = "scripts/gen.sh"
 
 [[size]]

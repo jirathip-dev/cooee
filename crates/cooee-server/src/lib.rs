@@ -1,4 +1,4 @@
-//! cooee's HTTP server: the native app's JSON API (docs/api.md), the threads' live events over SSE (replayed from the
+//! cooee's HTTP server: the native app's JSON API (docs/README.md), the threads' live events over SSE (replayed from the
 //! last seen event on reconnect), provider logins, pairing and push. Every request must name one of the server's own
 //! hosts (`Host`, and `Origin` when sent: no DNS rebinding), and every call but pairing needs a paired device's
 //! cookie; a plugin's backend posts with its token instead and is reached through cooee's proxy (docs/plugins.md).
@@ -412,7 +412,7 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
-/// `GET /threads`: every thread's row, newest first (docs/api.md).
+/// `GET /threads`: every thread's row, newest first (docs/chat.md).
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
     Ok(Answer(blocking(cx, |hub| Ok(hub.list())).await))
@@ -1821,7 +1821,7 @@ async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>
     ))
 }
 
-/// A persona call (#126; docs/api.md) off the async workers, given the data and config folders.
+/// A persona call (#126; docs/personas.md) off the async workers, given the data and config folders.
 async fn on_personas<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&std::path::Path, &std::path::Path) -> io::Result<T> + Send + 'static,

@@ -46,7 +46,7 @@ themes:
 ci-scripts:
     ci/ci-scripts-test.sh
 
-# Rewrites every generated file (#356): the crate indexes and Cargo.lock. A conflict in one: take either side, run it.
+# Rewrites every generated file (#356): the crate indexes, Cargo.lock and the README's Today list. A conflict in one: take either side, run it.
 gen:
     scripts/gen.sh
 
