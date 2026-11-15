@@ -8,8 +8,9 @@
 # approves it; the screens kept as the `mac-setup-shots` artifact. #328: on a pull request push `apple` runs only the
 # builds; `just apple-check` and the e2e steps run on a staging push and when herdsman labels the PR `merge-ready`
 # (fleet `merge_label`: on exactly while a review PASS stands at the head), and merge waits on that run.
-# #330: SwiftPM packages and builds are cached per Xcode. The e2e steps build the iOS Simulator app once (every arch)
-# and test that build; a staging push or manual run builds the Mac app in `mac-setup` only, so `apple` skips its builds.
+# #330: `mac-setup` caches its SwiftPM packages and builds per runner image. The e2e steps build the app once for
+# their simulator and test that build; a staging push or manual run builds the Mac app in `mac-setup` only, so `apple`
+# skips its builds. Every build names a concrete destination: a generic one builds every architecture.
 name: apple
 on:
   push:
@@ -55,17 +56,6 @@ jobs:
           tool: just
       - uses: dtolnay/rust-toolchain@1.99.1
       - uses: Swatinem/rust-cache@v2
-      - id: xcode
-        run: echo "v=$(xcodebuild -version | tr -d ' \n')" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
-        with:
-          path: |
-            .tools
-            tools/anti-slop-swift/.build
-            apple/.build
-            ${{ runner.temp }}/packages
-            ${{ runner.temp }}/derived
-          key: apple-${{ steps.xcode.outputs.v }}-${{ hashFiles('apple/Package.resolved', 'tools/anti-slop-swift/Package.resolved') }}
       - name: the simulator, created and booted in the background
         if: env.FULL == 'true'
         run: |
@@ -80,8 +70,7 @@ jobs:
           [ "$FULL" = true ] || destinations+=("generic/platform=iOS Simulator")
           for destination in "${destinations[@]}"; do
             xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "$destination" \
-              -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/derived" \
-              CODE_SIGNING_ALLOWED=NO build
+              -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO build
           done
       - name: just apple-check
         if: env.FULL == 'true'
@@ -115,8 +104,8 @@ jobs:
         if: env.FULL == 'true'
         working-directory: apple
         run: |
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=iOS Simulator' \
-            -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/derived" build-for-testing
+          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$SIM" \
+            -derivedDataPath "$RUNNER_TEMP/derived" build-for-testing
           xcrun simctl bootstatus "$SIM" -b >>"$RUNNER_TEMP/boot.log" 2>&1 || { cat "$RUNNER_TEMP/boot.log"; exit 1; }
           for look in dark light; do
             xcrun simctl ui "$SIM" appearance "$look"
@@ -184,7 +173,7 @@ jobs:
           sim=$(xcrun simctl create "cooee-ask-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" "iPhone 17")
           echo "SIM=$sim" >> "$GITHUB_ENV"
           xcrun simctl bootstatus "$sim" -b >"$RUNNER_TEMP/boot.log" 2>&1 &
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'generic/platform=macOS' \
+          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'platform=macOS' \
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/mac" \
             COOEE_BIN_DIR="$RUNNER_TEMP/bin" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= build-for-testing
           xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim" \
