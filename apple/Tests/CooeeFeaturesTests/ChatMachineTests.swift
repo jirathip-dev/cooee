@@ -57,12 +57,12 @@ internal struct ChatMachineTests {
         #expect(!store.state.target.started)
         await store.send(.machine(.show(true))) { $0.machine.open = true }
         await store.send(.machine(.pick("d1"))) { ($0.machine.current, $0.machine.open) = ("d1", false) }
-        await store.send(.draftChanged("hi")) { $0.draft = "hi" }
-        await store.send(.send) {
+        await store.send(.compose(.draftChanged("hi"))) { $0.draft = "hi" }
+        await store.send(.compose(.send)) {
             $0.draft = ""
             $0.outbox = [Outgoing(id: -1, text: "hi")]
         }
-        await store.receive(\.delivered) { $0.outbox = [] }
+        await store.receive(\.outbox.delivered) { $0.outbox = [] }
         await store.receive(\.delegate.started)
         #expect(calls.all == ["start coder d1 hi"])
     }

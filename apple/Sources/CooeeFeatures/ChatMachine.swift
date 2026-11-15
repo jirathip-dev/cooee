@@ -38,8 +38,7 @@ extension ChatFeature.Action {
 }
 
 extension ChatFeature {
-    internal func machine(_ state: inout State, _ action: Action) -> Effect<Action> {
-        guard case .machine(let action) = action else { return .none }
+    internal func machine(_ state: inout State, _ action: Action.MachineAction) -> Effect<Action> {
         switch action {
         case .load:
             return state.room == nil ? machines(state) : .none
@@ -74,10 +73,9 @@ extension ChatFeature {
     }
 
     private func machines(_ state: State) -> Effect<Action> {
-        @Dependency(\.personas) var personas
-        let (client, server) = (personas, state.server)
+        let (personas, server) = (personas, state.server)
         return .run { send in
-            await send(.machine(.loaded(try await client.machines(server))))
+            await send(.machine(.loaded(try await personas.machines(server))))
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }
