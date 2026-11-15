@@ -1,0 +1,9 @@
+Decided: a schedule cron "41 18 * * *" and E2E env true on schedule and workflow_dispatch, else #436's vars.E2E rule unchanged
+Because: "On a schedule event the e2e steps run even when `vars.E2E == 'off'`"
+Decided: the apple job's checkout ref is staging on a schedule event only
+Because: "A scheduled run checks out `staging` (not the default branch)"
+Decided: mac-setup skips the schedule event; it stays on staging pushes and manual runs
+Because: .github/workflows/apple.yml:159
+Rejected: running mac-setup nightly — new GitHub-hosted macOS minutes the issue did not ask for (#330 cut them)
+Check: on pull_request and push the E2E expression reduces to the old one exactly
+Owner: The full app test runs every night on staging once this reaches main; PRs still follow the e2e switch.
