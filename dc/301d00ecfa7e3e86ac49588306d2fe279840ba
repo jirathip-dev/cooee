@@ -1,0 +1,6 @@
+Decided: merged origin/staging (#419, #311); the hub.rs conflict keeps staging's code, and the rule-breaking comments in #419's new hub/ files are stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop #419's split of hub.rs into hub/<area>.rs
+Check: every changed .rs file under crates/ matches staging once comments are removed, and scripts/comments.py exits 0
+Check: drover arch-check reports 0 violations and sh scripts/gen.sh leaves the tree clean
+Owner: the branch is up to date with staging again, and the server's newly split hub files follow the comment rule
