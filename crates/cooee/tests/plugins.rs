@@ -1,6 +1,6 @@
 //! Plugins end to end: `cooee serve` with two plugins, each on a fake backend that records what it is sent. The
-//! proxy carries the plugin's own token and never the device's cookie, an event stream comes through, the frame is
-//! sandboxed, a backend posts with its token or is refused, and a choice card's answer goes to its own plugin.
+//! proxy carries the plugin's own token and never the device's cookie, an event stream comes through, a backend
+//! posts with its token or is refused, and a choice card's answer goes to its own plugin.
 
 mod support;
 
@@ -100,11 +100,21 @@ fn answer(
         );
         return;
     }
+    if path == "/beats" {
+        let mut s = r.into_inner();
+        let _ = write!(
+            s,
+            "HTTP/1.0 200 OK\r\nContent-Type: text/event-stream\r\n\r\n"
+        );
+        while s.write_all(b": beat\n\n").is_ok() {
+            thread::sleep(Duration::from_millis(50));
+        }
+        log.lock()
+            .unwrap()
+            .push(("closed /beats".to_owned(), String::new()));
+        return;
+    }
     let (kind, text) = match path.as_str() {
-        "/tab.js" => (
-            "text/javascript",
-            "document.body.append('module ran');".to_owned(),
-        ),
         "/events" => (
             "text/event-stream",
             ": open\n\nid: 7\nevent: tick\ndata: one\ndata: two\n\n".to_owned(),
@@ -231,50 +241,32 @@ fn a_backends_event_stream_comes_through_the_proxy() {
     assert!(head.contains("last-event-id: 6\r\n"), "{head}");
 }
 
+/// #290: a page closed on a stream that only ever hears heartbeats lets go of its backend connection at once.
 #[test]
-fn the_tab_frames_the_module_in_a_sandbox() {
-    let s = setup("plugin-frame");
-    let (code, page) = s.cooee.get("/");
-    assert_eq!(code, 200);
-    assert!(
-        page.contains(r#"<a href="/p/a""#) && page.contains("Alpha") && page.contains("Beta"),
-        "{page}"
-    );
-    let (code, page) = s.cooee.get("/p/a");
-    assert_eq!(code, 200);
-    assert!(
-        page.contains(r#"sandbox="allow-scripts""#) && page.contains(r#"data-src="/p/a/frame""#),
-        "{page}"
-    );
-
-    let (head, page) = s
-        .cooee
-        .raw("GET", "/p/a/frame", &[("Cookie", &s.cooee.cookie)], "");
-    assert_eq!(status(&head), 200, "{head}");
-    let csp = head
-        .lines()
-        .find_map(|l| l.strip_prefix("content-security-policy: "))
+fn a_closed_page_closes_its_backend_stream() {
+    let s = setup("plugin-sse-closed");
+    let mut stream = TcpStream::connect(&s.cooee.addr).unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(20)))
         .unwrap();
-    for rule in [
-        "sandbox allow-scripts;",
-        "default-src 'none';",
-        "script-src 'sha256-",
-    ] {
-        assert!(csp.contains(rule), "{csp}");
+    write!(
+        stream,
+        "GET /p/a/api/beats HTTP/1.0\r\nHost: {}\r\nCookie: {}\r\n\r\n",
+        s.cooee.addr, s.cooee.cookie
+    )
+    .unwrap();
+    let mut lines = BufReader::new(stream).lines().map(Result::unwrap);
+    let head = lines.next().unwrap();
+    assert!(head.contains(" 200 "), "{head}");
+    drop(lines);
+    let closed = || s.a.seen().iter().any(|(h, _)| h == "closed /beats");
+    for _ in 0..100 {
+        if closed() {
+            return;
+        }
+        thread::sleep(Duration::from_millis(50));
     }
-    assert!(
-        !csp.contains("allow-same-origin") && !csp.contains("connect-src"),
-        "{csp}"
-    );
-    assert!(
-        page.contains("globalThis.cooee") && page.contains("document.body.append('module ran');"),
-        "{page}"
-    );
-    let (head, _) = s.a.seen().pop().unwrap();
-    assert!(
-        head.starts_with("get /tab.js ") && head.contains(TOKEN_A),
-        "{head}"
-    );
+    panic!("the backend's stream is still open 5 s after its page closed");
 }
 
 #[test]
@@ -388,7 +380,7 @@ fn the_docs_show_the_example_plugin_the_ui_tests_run() {
 }
 
 #[test]
-fn a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab() {
+fn a_plugin_names_its_push_tag_and_sets_its_dot_only_with_its_token() {
     let s = setup("plugin-dot");
     let a = format!("Bearer {TOKEN_A}");
     let push = json!({ "text": "air offline", "path": "air", "tag": "machine" });
@@ -400,27 +392,14 @@ fn a_plugin_names_its_push_tag_and_puts_a_dot_on_its_own_tab() {
         (&json!("machine"), &json!("/p/a#air"))
     );
 
-    let dot = "Alpha<i class=\"dot\" aria-hidden=\"true\">●</i>";
-    assert!(!s.cooee.get("/").1.contains("class=\"dot\""));
     assert_eq!(
         s.as_backend("/plugin/dot", "", &json!({ "on": true })).0,
         401
     );
-    assert_eq!(
-        s.as_backend("/plugin/dot", &a, &json!({ "on": true })).0,
-        200
-    );
-    let home = s.cooee.get("/").1;
-    assert!(
-        home.contains(dot) && home.matches("class=\"dot\"").count() == 1,
-        "{home}"
-    );
-    assert!(s.cooee.get("/p/b").1.contains(dot));
-    assert_eq!(
-        s.as_backend("/plugin/dot", &a, &json!({ "on": false })).0,
-        200
-    );
-    assert!(!s.cooee.get("/").1.contains("class=\"dot\""));
+    for on in [true, false] {
+        let (code, body) = s.as_backend("/plugin/dot", &a, &json!({ "on": on }));
+        assert_eq!((code, body), (200, on.to_string()));
+    }
 }
 
 /// This device's label, as an answer's `by` names it.
@@ -865,11 +844,11 @@ fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
     );
 }
 
-/// #138: `cooee plugin check` passes every #125 and #184 fixture and fails a broken answer, naming the field.
+/// #138: `cooee plugin check` passes every #125, #181 and #184 fixture and fails a broken answer, naming the field.
 #[test]
 fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let design = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/design");
-    let mut files: Vec<_> = ["screens-as-data", "fleets-config"]
+    let mut files: Vec<_> = ["screens-as-data", "fleets-config", "queue-scene"]
         .iter()
         .flat_map(|d| std::fs::read_dir(design.join(d).join("fixtures")).unwrap())
         .map(|f| f.unwrap().path())
@@ -883,7 +862,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let said = String::from_utf8_lossy(&out.stdout);
     assert!(
         out.status.success()
-            && said.lines().count() == 19
+            && said.lines().count() == 21
             && said.lines().all(|l| l.starts_with("ok")),
         "{said}"
     );
@@ -893,7 +872,9 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
         { "type": "list", "rows": [{ "type": "row", "title": "#722", "badge": { "text": "impl", "tone": "red" } }] },
         { "type": "secret", "name": "GH_TOKEN", "action": "set", "value": "leaked" },
         { "type": "editor", "name": "toml", "text": "" },
-        { "type": "a-newer-block" } ] });
+        { "type": "a-newer-block" },
+        { "type": "scene", "lanes": [{ "id": "l-1", "title": "#1", "state": "lost" }] },
+        { "type": "row", "title": "#2", "rounds": [{ "id": "r-1", "state": "done" }] } ] });
     let (ok, said) = checked(&s, &broken);
     assert!(!ok);
     assert_eq!(
@@ -902,6 +883,8 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
             "$.blocks[0].rows[0].badge.tone: \"red\" is not one of \"ok\", \"warn\", \"bad\", \"info\", \"mute\", \"accent\", \"working\", \"needs\", \"done\", \"fail\", \"idle\"",
             "$.blocks[1].value: must not be sent",
             "$.blocks[2].action: is required",
+            "$.blocks[4].lanes[0].state: \"lost\" is not one of \"working\", \"needs\", \"done\", \"idle\", \"fail\", \"merged\"",
+            "$.blocks[5].rounds[0].name: is required",
         ]
     );
 }

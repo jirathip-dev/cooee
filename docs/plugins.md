@@ -112,10 +112,10 @@ improving are owner-only: the CLI on the Mac, or a paired device (a plugin's tok
     is unlocked with its passkey (the `terminal` tab's gate; a stream that ends for good, such as a locked tab's, sends
     `closed`).
 - cooee calls the backend over HTTP/1.0, one connection per call, and passes on only the content type, `Accept` and
-  `Last-Event-ID`. An event stream should send a comment now and then so a closed tab is noticed. A call has a
-  total deadline, connect to last byte (30 s through the tab's proxy, 5 s for a screen, 10 s for an action or a card's
-  answer; a stream's deadline ends once its head is in), and a backend has at most 8 calls in flight: one more fails
-  at once with a 502 `busy`.
+  `Last-Event-ID`. An event stream should send a comment now and then (cooee passes it on, so a closed tab is
+  noticed); one silent for a minute is closed. A call has a total deadline, connect to last byte (30 s through the
+  tab's proxy, 5 s for a screen, 10 s for an action or a card's answer; a stream's deadline ends once its head is in),
+  and a backend has at most 8 calls in flight: one more fails at once with a 502 `busy`.
 
 ## From the backend to cooee
 
@@ -210,6 +210,8 @@ frontend code (the spec: [design/screens-as-data](design/screens-as-data/README.
 and what it may do:
 
 ```toml
+claims = ["drover"]               # the workflow sources it owns (#229): those sessions show in its place, not as chats
+
 [[places]]
 type = "header-strip"             # a chip under a persona's chat header; or "menu-row" (the avatar menu), "chat-cards"
 id = "queue"
@@ -232,8 +234,8 @@ An action not in `actions` gets a 403 and never reaches the backend. A plugin wi
 
 ## Example
 
-`docs/plugins/hello/` is a plugin in about 30 lines, used by the tests (`web/e2e/plugins.spec.mjs`; its manifest by
-`web/e2e/plugin-manager.spec.mjs`). Run it with
+`docs/plugins/hello/` is a plugin in about 30 lines, used by the tests (`crates/cooee/tests/plugins.rs`; its manifest by
+`crates/cooee/tests/plugin_manager.rs`). Run it with
 `PORT=4800 COOEE=http://127.0.0.1:4747 TOKEN=a-long-random-secret node docs/plugins/hello/server.mjs` and the entry
 above.
 

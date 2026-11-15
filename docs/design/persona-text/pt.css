@@ -1,4 +1,4 @@
-/* #271 persona text: setup by chat, the panel's About block, the long-text reader and editor. On web/src/app.css
+/* #271 persona text: setup by chat, the panel's About block, the long-text reader and editor. On design-system/app.css
    (tokens, .chc), native-shell's phone chrome (ns.css), rooms' native classes (rm.css: .pa .gb .rhd .hdt .agc2 .msgs
    .at .te2 .mx .ask .dock .comp .rsh .gr2 .shb .rshi .lb2 .rfl .fr2 .wd.mac .side .hr) and native-feel's (nf.css:
    .home .sw .nsw .sa .nkb .ann). Tokens only; no raw colour.

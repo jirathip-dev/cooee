@@ -5,7 +5,7 @@ import Foundation
 @Reducer
 public struct MenuFeature: Sendable {
     public enum Page: CaseIterable, Hashable, Sendable {
-        case look, notifications, signIns, devices, machines, plugins, appIcon
+        case look, notifications, signIns, devices, terminal, machines, plugins, appIcon
     }
 
     @ObservableState
@@ -29,6 +29,7 @@ public struct MenuFeature: Sendable {
         case scheme(LookScheme)
         case style(LookStyle)
         case icon(AppIcon?)
+        case pinRoom(String)
         case push(Bool)
         case pushed(String?)
         case failed(String)
@@ -50,6 +51,9 @@ public struct MenuFeature: Sendable {
                 state.path = path
             case .scheme(let scheme):
                 state.settings.scheme = scheme
+                settingsStore.save(state.settings)
+            case .pinRoom(let room):
+                state.settings.pin(room: room)
                 settingsStore.save(state.settings)
             case .style(let style):
                 return look(&state) { $0.style = style }

@@ -11,9 +11,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-use base64::{Engine, engine::general_purpose::STANDARD};
 use cooee_core::{Plugin, Profile};
-use sha2::{Digest, Sha256};
+use futures_util::{Stream, stream};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 
 /// The largest answer cooee passes on.
 const MAX_BODY: u64 = 16 << 20;
@@ -50,19 +50,16 @@ impl Drop for Permit {
     }
 }
 
-/// A backend's connection, read until its deadline (none: an event stream).
+/// A backend's connection, read and written until its deadline.
 pub struct Conn {
     s: TcpStream,
-    until: Option<Instant>,
+    until: Instant,
 }
 
 impl Conn {
     /// The time left before the deadline.
     fn left(&self) -> io::Result<Option<Duration>> {
-        let Some(until) = self.until else {
-            return Ok(None);
-        };
-        let left = until.saturating_duration_since(Instant::now());
+        let left = self.until.saturating_duration_since(Instant::now());
         if left.is_zero() {
             return Err(io::Error::new(io::ErrorKind::TimedOut, "past the deadline"));
         }
@@ -173,7 +170,7 @@ pub fn call(
         .ok_or_else(|| io::Error::other(format!("{authority}: no address")))?;
     let mut s = Conn {
         s: TcpStream::connect_timeout(&addr, deadline.min(Duration::from_secs(5)))?,
-        until: Some(until),
+        until,
     };
     let slash = if base.is_empty() { "" } else { "/" };
     let mut head = format!(
@@ -226,48 +223,63 @@ pub struct Sse {
     pub data: String,
 }
 
-/// Reads `reply`'s event stream, giving each event to `f` until it returns false or the stream ends; a stream has
-/// no deadline and holds no place among its backend's calls.
-pub fn events(reply: Reply, mut f: impl FnMut(Sse) -> bool) {
-    let Reply {
-        mut body, permit, ..
-    } = reply;
+/// What a backend's stream said: an event, or a comment (its heartbeat).
+pub enum Heard {
+    Event(Sse),
+    Beat,
+}
+
+/// How long a backend's stream may stay silent before cooee closes it.
+pub const IDLE: Duration = Duration::from_secs(60);
+
+/// `reply`'s event stream, read only as it is pulled (so a slow page holds back the backend, never a buffer); it ends
+/// when the backend closes it or is silent for `IDLE`, and dropping it closes the connection. A stream has no
+/// deadline and holds no place among its backend's calls.
+///
+/// # Errors
+/// When the connection can't join the async runtime.
+pub fn events(reply: Reply) -> io::Result<impl Stream<Item = Heard> + Send + 'static> {
+    let Reply { body, permit, .. } = reply;
     drop(permit);
-    body.get_mut().until = None;
-    let mut e = Sse {
-        id: None,
-        event: String::new(),
-        data: String::new(),
-    };
-    let mut lines = body.lines();
-    while let Some(Ok(line)) = lines.next() {
-        let (k, v) = line.split_once(':').unwrap_or((&line, ""));
-        let v = v.strip_prefix(' ').unwrap_or(v).to_owned();
-        match k {
-            "" if line.is_empty() && !e.data.is_empty() => {
-                let id = e.id.clone();
-                let done = std::mem::replace(
-                    &mut e,
-                    Sse {
-                        id,
-                        event: String::new(),
-                        data: String::new(),
-                    },
-                );
-                if !f(done) {
-                    return;
+    let read = body.buffer().to_vec();
+    let socket = body.into_inner().s;
+    socket.set_nonblocking(true)?;
+    let socket = tokio::net::TcpStream::from_std(socket)?;
+    let lines =
+        tokio::io::BufReader::new(AsyncReadExt::chain(io::Cursor::new(read), socket)).lines();
+    Ok(stream::unfold(
+        (lines, None::<String>),
+        |(mut lines, mut id)| async move {
+            let (mut event, mut data) = (String::new(), String::new());
+            loop {
+                let line = tokio::time::timeout(IDLE, lines.next_line()).await;
+                let Ok(Ok(Some(line))) = line else {
+                    return None;
+                };
+                let (k, v) = line.split_once(':').unwrap_or((&line, ""));
+                let v = v.strip_prefix(' ').unwrap_or(v);
+                match k {
+                    "" if line.is_empty() && !data.is_empty() => {
+                        let e = Sse {
+                            id: id.clone(),
+                            event,
+                            data,
+                        };
+                        return Some((Heard::Event(e), (lines, id)));
+                    }
+                    "" if !line.is_empty() => return Some((Heard::Beat, (lines, id))),
+                    "id" => id = Some(v.to_owned()),
+                    "event" => v.clone_into(&mut event),
+                    "data" if data.is_empty() => v.clone_into(&mut data),
+                    "data" => {
+                        data.push('\n');
+                        data.push_str(v);
+                    }
+                    _ => {}
                 }
             }
-            "id" => e.id = Some(v),
-            "event" => e.event = v,
-            "data" if e.data.is_empty() => e.data = v,
-            "data" => {
-                e.data.push('\n');
-                e.data.push_str(&v);
-            }
-            _ => {}
-        }
-    }
+        },
+    ))
 }
 
 /// Sends `by`'s answer to choice card `item` in `thread`: `POST /cooee/choice` `{thread, item, option, by}`, with a
@@ -310,17 +322,20 @@ pub fn answer(
 }
 
 /// The agent profiles `p`'s backend serves: `GET /cooee/profiles` answers `{"profiles": [...]}`. `None` when it
-/// answers 404 (it serves none: its manifest's are offered); any other answer offers none.
-pub fn profiles(p: &Plugin) -> Option<Vec<Profile>> {
-    let got = call(
+/// answers 404 (it serves none: its manifest's are offered).
+///
+/// # Errors
+/// When the backend can't be reached in 5 s, or answers anything else.
+pub fn profiles(p: &Plugin) -> io::Result<Option<Vec<Profile>>> {
+    let r = call(
         p,
         "GET",
         "/cooee/profiles",
         &[],
         &[],
         Duration::from_secs(5),
-    );
-    let list = got.and_then(|r| match r.status {
+    )?;
+    match r.status {
         404 => Ok(None),
         200 => {
             #[derive(serde::Deserialize)]
@@ -332,11 +347,7 @@ pub fn profiles(p: &Plugin) -> Option<Vec<Profile>> {
             ))
         }
         code => Err(io::Error::other(format!("the backend answered {code}"))),
-    });
-    list.unwrap_or_else(|e| {
-        eprintln!("cooee: plugin {}: its profiles: {e}", p.name);
-        Some(Vec::new())
-    })
+    }
 }
 
 /// Tells `p`'s backend thread `thread` started as its profile `profile`: `POST /cooee/thread-started`
@@ -361,49 +372,54 @@ pub fn started(p: &Plugin, thread: &str, profile: &str) -> io::Result<()> {
     }
 }
 
-/// The frame page for `p`: its UI module (fetched from the backend) after `api`, in one inline module script, and
-/// the page's Content-Security-Policy: a sandbox (an opaque origin, even opened on its own), only that script, no
-/// connections; the module reaches cooee through the parent page only.
-///
-/// # Errors
-/// When the module can't be fetched or would end its script element.
-pub fn frame(p: &Plugin, api: &str) -> io::Result<(String, String)> {
-    let reply = call(p, "GET", &p.module, &[], &[], Duration::from_secs(10))?;
-    if reply.status != 200 {
-        return Err(io::Error::other(format!(
-            "the module answered {}",
-            reply.status
-        )));
-    }
-    let module = String::from_utf8(reply.bytes()?).map_err(io::Error::other)?;
-    if module.to_ascii_lowercase().contains("</script") {
-        return Err(io::Error::other("the module contains </script"));
-    }
-    let script = format!("{api}\n{module}");
-    let hash = STANDARD.encode(Sha256::digest(script.as_bytes()));
-    let title = p
-        .label
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;");
-    let page = format!(
-        "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>{title}</title>\
-         <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>:root{{color-scheme:light dark}}\
-         body{{margin:0;padding:12px;background:var(--bg);color:var(--fg);font:var(--fs,15px)/1.4 var(--font,system-ui)}}</style>\
-         </head><body><script type=\"module\">{script}</script></body></html>"
-    );
-    let csp = format!(
-        "sandbox allow-scripts; default-src 'none'; script-src 'sha256-{hash}'; style-src 'unsafe-inline'; \
-         img-src data: blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
-    );
-    Ok((page, csp))
-}
-
 #[cfg(test)]
 mod tests {
-    use std::{net::TcpListener, thread};
+    use std::{net::TcpListener, sync::mpsc, thread};
+
+    use futures_util::StreamExt;
 
     use super::*;
+
+    /// A backend that sends a heartbeat and one event, then nothing, and says when cooee closes the connection.
+    fn silent_backend() -> (Plugin, mpsc::Receiver<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let (closed, rx) = mpsc::channel();
+        thread::spawn(move || {
+            let (mut s, _) = listener.accept().unwrap();
+            let mut head = [0; 1024];
+            let _ = s.read(&mut head).unwrap();
+            let sent =
+                "HTTP/1.0 200 OK\r\nContent-Type: text/event-stream\r\n\r\n: open\n\ndata: one\n\n";
+            s.write_all(sent.as_bytes()).unwrap();
+            while s.read(&mut head).is_ok_and(|n| n > 0) {}
+            closed.send(()).unwrap();
+        });
+        let p = Plugin {
+            name: "a".to_owned(),
+            label: "A".to_owned(),
+            url: format!("http://127.0.0.1:{port}"),
+            module: String::new(),
+            token: "token-a-0123456789abcdef".to_owned(),
+        };
+        (p, rx)
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn a_silent_backend_stream_is_closed_after_idle() {
+        let (p, closed) = silent_backend();
+        let reply = call(&p, "GET", "/events", &[], &[], Duration::from_secs(5)).unwrap();
+        let mut heard = Box::pin(events(reply).unwrap());
+        let started = tokio::time::Instant::now();
+        assert!(matches!(heard.next().await, Some(Heard::Beat)));
+        let Some(Heard::Event(e)) = heard.next().await else {
+            panic!("no event");
+        };
+        assert_eq!(e.data, "one");
+        assert!(heard.next().await.is_none());
+        assert_eq!(started.elapsed(), IDLE);
+        closed.recv_timeout(Duration::from_secs(5)).unwrap();
+    }
 
     /// A backend that answers one byte a second: its head at once when `head`, else that too a byte a second.
     fn trickle(head: bool) -> Plugin {

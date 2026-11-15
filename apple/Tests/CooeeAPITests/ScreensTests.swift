@@ -6,7 +6,7 @@ import Testing
 internal struct ScreensTests {
     private static let row = """
         {"installed": [{"name": "hello", "version": "0.1.0", "commit": "abc", "url": "/r", "listed": true,
-        "state": "running", "places": [{"type": "menu-row", "label": "hello"}],
+        "state": "running", "places": [{"type": "menu-row", "label": "hello"}], "claims": [],
         "permissions": {"places": ["menu-row"], "push": false, "actions": ["wave"], "destructive": [], "network": []}}],
         "index": [], "jobs": {}}
         """
@@ -23,14 +23,14 @@ internal struct ScreensTests {
         #expect(
             try await client.places("cond") == [Place(plugin: "d", key: "q", label: "Queue", screen: "/screens/queue")])
         #expect(try await client.plugins().map(\.permissions.actions) == [["wave"]])
-        #expect(try await client.screen("d", "/screens/queue").string("title") == "Queue")
+        #expect(try await client.screen(.plugin("d"), "/screens/queue").string("title") == "Queue")
     }
 
     @Test internal func anActionPostsTheScreenTheActionAndItsValuesAndGetsOps() async throws {
         let ops = #"{"ops":[{"op":"merge","id":"waves","fields":{"value":"1"}}]}"#
         let server = CannedServer(["/p/hello/action": [Answer(headers: json, chunks: [ops])]])
         let action = BlockAction(action: "wave", values: ["n": .number(2)])
-        let answer = try await server.client().act("hello", screen: "hello", action)
+        let answer = try await server.client().act(.plugin("hello"), screen: "hello", action)
         #expect(answer["ops"]?.items.count == 1)
         let sent = try server.decoded("/p/hello/action", as: JSONValue.self)
         #expect(
@@ -40,7 +40,7 @@ internal struct ScreensTests {
     @Test internal func aRefusedActionThrowsItsStatus() async throws {
         let server = CannedServer(["/p/hello/action": [Answer(status: 403, chunks: ["no"])]])
         await #expect(throws: APIError(status: 403, text: "")) {
-            try await server.client().act("hello", screen: "", BlockAction(action: "drop", values: [:]))
+            try await server.client().act(.plugin("hello"), screen: "", BlockAction(action: "drop", values: [:]))
         }
     }
 
@@ -72,12 +72,12 @@ internal struct ScreensTests {
             "/p/d/screens/gone": [Answer(status: 404, chunks: [])],
         ])
         var seqs: [Double] = []
-        for try await event in server.client().screenEvents("d", "/screens/queue/stream") {
+        for try await event in server.client().screenEvents(.plugin("d"), "/screens/queue/stream") {
             seqs.append(event["seq"]?.number ?? 0)
         }
         #expect(seqs == [1, 2])
         await #expect(throws: APIError(status: 404, text: "")) {
-            for try await _ in server.client().screenEvents("d", "/screens/gone") {}
+            for try await _ in server.client().screenEvents(.plugin("d"), "/screens/gone") {}
         }
     }
 
