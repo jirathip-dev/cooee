@@ -1,0 +1,6 @@
+Decided: merged origin/staging, keeping the persona panel on top of staging's layout, pin and ScreenFeature changes.
+Because: apple/Sources/CooeeUI/Root.swift:87
+Decided: the chat's Edit delegate is handled in AppFeature's reducer, not navigate, to keep navigate under SwiftLint's limits.
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:83
+Rejected: none
+Owner: The branch is up to date with staging again; the … panel works as before.
