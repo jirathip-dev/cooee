@@ -60,6 +60,8 @@
 "apple/Sources/CooeeFeatures/AttachFeature.swift" = "LiveDroverUITests"
 "apple/UITests/LiveQueueUITests.swift" = "LiveDroverUITests"
 "apple/e2e/screens.py" = "LiveDroverUITests"
+"apple/Sources/CooeeUI/Workflow.swift" = "LiveWorkflowUITests"
+"apple/UITests/LiveWorkflowUITests.swift" = "LiveWorkflowUITests"
 # No simulator e2e: docs, design frames, unit tests, the Swift gates and the Mac-only screens (mac-setup covers those).
 "apple/*.md" = "none"
 "apple/design/*" = "none"
