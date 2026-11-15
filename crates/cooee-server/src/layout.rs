@@ -22,7 +22,10 @@ use topcoat::{
     },
 };
 
-use crate::{header, hub::lock, plain};
+use crate::{
+    http::{header, plain},
+    hub::lock,
+};
 
 /// The layout an app draws when the owner has none: the app's bundled default.
 const DEFAULT: &str = include_str!("../../../apple/Sources/CooeeUI/Default/layout.json");
