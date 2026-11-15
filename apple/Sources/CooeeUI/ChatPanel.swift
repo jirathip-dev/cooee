@@ -1,5 +1,4 @@
 import CooeeFeatures
-import SwiftUI
 
 extension ChatScreen {
     internal func panel(column: Bool) -> PersonaPanel {
