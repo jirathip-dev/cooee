@@ -1,0 +1,10 @@
+Decided: round 17 removes this PR's unused import Foundation from AppFeature.swift, the apple-quality swiftlint analyze error
+Because: apple/Sources/CooeeFeatures/AppFeature.swift:1
+Decided: the red Rust test was staging's own; I fixed its expected text, then staging's #289 made the same fix and its version won the merge
+Because: crates/cooee-core/src/shed.rs:335
+Because: "Every gate is green; `apple_cap` holds."
+Rejected: keeping my own wording in chat.rs and setup.rs — staging's matches and leaves this PR out of those files
+Rejected: the dmg job as a code finding — it was a flaky runner's hdiutil step
+Check: git diff origin/staging HEAD -- crates/cooee/tests/chat.rs crates/cooee/tests/setup.rs is empty
+Check: CI stable, msrv and apple-quality are green at this head
+Owner: No change to the feature; this round fixes a leftover import and catches up with staging, so the checks go green.
