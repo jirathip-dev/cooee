@@ -58,7 +58,11 @@ internal struct PersonaRenderTests {
     @Test internal func memoryDrawsOnlyTheNewestThreeNotes() throws {
         let newest = (1...3).map { Field("Note \($0)", "from you · \($0)d") }
         let five = try Self.sheet(newest + [Field("Old 4", "4d"), Field("Old 5", "5d")])
-        #expect(try Self.sheet(newest + [Field("Other 4", "6d"), Field("Other 5", "7d")]) == five)
-        #expect(try Self.sheet([Field("Changed", "1m")] + newest.dropFirst() + newest.prefix(2)) != five)
+        #expect(
+            try Self.sheet(newest + [Field("Other 4", "6d"), Field("Other 5", "7d")]).differing(from: five, by: 16)
+                < 0.0001)
+        #expect(
+            try Self.sheet([Field("Changed", "1m")] + newest.dropFirst() + newest.prefix(2)).differing(
+                from: five, by: 16) > 0.001)
     }
 }

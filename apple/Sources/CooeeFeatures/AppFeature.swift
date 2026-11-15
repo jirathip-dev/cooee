@@ -12,11 +12,13 @@ public struct AppFeature: Sendable {
         public var newRoom: NewRoomFeature.State?
         public var path: [String] = []
         public var menu: MenuFeature.State
+        public var layout: LayoutFeature.State
         @Presents public var persona: PersonaFeature.State?
         public let mac: Bool
 
-        public init(server: Server?, settings: Settings = Settings(), mac: Bool = false) {
+        public init(layout: Layout, server: Server?, settings: Settings = Settings(), mac: Bool = false) {
             self.mac = mac
+            self.layout = LayoutFeature.State(server: server, layout: layout)
             home = server.map(HomeFeature.State.init)
             pairing = server == nil && !mac ? PairingFeature.State() : nil
             setup = server == nil && mac ? MacSetupFeature.State() : nil
@@ -33,6 +35,7 @@ public struct AppFeature: Sendable {
         case newRoom(NewRoomFeature.Action)
         case room
         case menu(MenuFeature.Action)
+        case layout(LayoutFeature.Action)
         case persona(PresentationAction<PersonaFeature.Action>)
         case edit(String?)
         case open(String)
@@ -49,14 +52,16 @@ public struct AppFeature: Sendable {
 
     public var body: some ReducerOf<Self> {
         Scope(state: \.menu, action: \.menu) { MenuFeature() }
+        Scope(state: \.layout, action: \.layout) { LayoutFeature() }
         Reduce { state, action in
             switch action {
             case .pairing(.delegate(.paired(let server))), .setup(.delegate(.paired(let server))):
-                state = State(server: server, settings: state.menu.settings, mac: state.mac)
+                state = State(
+                    layout: state.layout.layout, server: server, settings: state.menu.settings, mac: state.mac)
                 return .none
             case .home(.delegate(.unauthorized)):
                 serverStore.clear()
-                state = State(server: nil, settings: state.menu.settings, mac: state.mac)
+                state = State(layout: state.layout.layout, server: nil, settings: state.menu.settings, mac: state.mac)
                 return .none
             case .setup(.delegate(.clientOnly)):
                 state.setup = nil
@@ -121,25 +126,6 @@ public struct AppFeature: Sendable {
         return .none
     }
 
-    private func relay(_ state: inout State, _ delegate: ChatFeature.Action.Delegate) -> Effect<Action> {
-        switch delegate {
-        case .new(let persona):
-            return .send(.start(persona))
-        case .edit(let persona):
-            return .send(.edit(persona))
-        case .open(let thread):
-            return .send(.open(thread))
-        case .started(let thread):
-            state.path = state.path.dropLast() + [thread]
-            state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
-            return .send(.home(.refresh))
-        case .restart(let persona):
-            state.path = state.path.dropLast() + ["new:\(persona.id)"]
-            state.chat = state.chat.map { .init(server: $0.server, target: .new(persona), persona: Persona(persona)) }
-            return .none
-        }
-    }
-
     private func persona(_ state: State, _ id: String?) -> PersonaFeature.State? {
         guard let home = state.home else { return nil }
         let blank = APIPersona(id: "", name: "", agent: home.personas.first?.agent ?? "")
@@ -161,5 +147,26 @@ public struct AppFeature: Sendable {
         let listed = home.chats(now: now).first { $0.id == id }?.persona
         let persona = listed ?? Persona(APIPersona(id: "", name: "Chat", agent: ""))
         return ChatFeature.State(server: home.server, target: .thread(id), persona: persona)
+    }
+}
+
+extension AppFeature {
+    private func relay(_ state: inout State, _ delegate: ChatFeature.Action.Delegate) -> Effect<Action> {
+        switch delegate {
+        case .new(let persona):
+            return .send(.start(persona))
+        case .edit(let persona):
+            return .send(.edit(persona))
+        case .open(let thread):
+            return .send(.open(thread))
+        case .started(let thread):
+            state.path = state.path.dropLast() + [thread]
+            state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
+            return .send(.home(.refresh))
+        case .restart(let persona):
+            state.path = state.path.dropLast() + ["new:\(persona.id)"]
+            state.chat = state.chat.map { .init(server: $0.server, target: .new(persona), persona: Persona(persona)) }
+            return .none
+        }
     }
 }

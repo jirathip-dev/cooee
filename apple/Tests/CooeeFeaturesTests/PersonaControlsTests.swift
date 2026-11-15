@@ -37,7 +37,7 @@ internal struct PersonaControlsTests {
     }
 
     private func paired() -> AppFeature.State {
-        var state = AppFeature.State(server: mini)
+        var state = AppFeature.State(layout: testLayout, server: mini)
         state.home?.rows = [row("t1", state: "working")]
         state.home?.personas = [coder]
         return state

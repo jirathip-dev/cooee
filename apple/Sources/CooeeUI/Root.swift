@@ -15,7 +15,12 @@ public struct AppRoot: View {
     public var body: some View {
         Group {
             if let home = store.scope(state: \.home, action: \.home) {
-                content(home).task { await home.send(.task).finish() }
+                let compact = size == .compact
+                SlotView(
+                    store: store, node: store.layout.layout.resolved(for: compact ? .compact : .wide), compact: compact
+                )
+                .task { await home.send(.task).finish() }
+                .task { await store.send(.layout(.task)).finish() }
             } else if let setup = store.scope(state: \.setup, action: \.setup) {
                 MacSetup(store: setup)
             } else if let pairing = store.scope(state: \.pairing, action: \.pairing) {
@@ -25,9 +30,6 @@ public struct AppRoot: View {
                     PhoneOnboarding(store: pairing)
                 }
             }
-        }
-        .sheet(isPresented: Binding(get: { store.menu.open }, set: { store.send(.menu(.open($0))) })) {
-            MenuSheet(store: store.scope(state: \.menu, action: \.menu)).presentationDetents([.medium, .large])
         }
         .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in PersonaScreen(store: persona) }
         .sheet(
@@ -51,52 +53,6 @@ public struct AppRoot: View {
     public init(store: StoreOf<AppFeature>) {
         self.store = store
     }
-
-    private var actions: HomeActions {
-        HomeActions(
-            menu: { store.send(.menu(.open(true))) },
-            new: { store.send(.start($0)) },
-            pin: { store.send(.pin($0)) },
-            open: { store.send(.open($0)) },
-            room: { store.send(.room) },
-            edit: { store.send(.edit($0)) }
-        )
-    }
-
-    @ViewBuilder private func content(_ home: StoreOf<HomeFeature>) -> some View {
-        let chats = home.state.chats(now: Date())
-        if size == .compact {
-            NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
-                HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
-                    .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
-                    .toolbar(.hidden)
-                    #if os(iOS)
-                        .background(SwipeBack())
-                    #endif
-            }
-        } else {
-            WideView(
-                personas: home.pinned, all: home.everyone, chats: chats, selected: store.path.last, actions: actions
-            ) {
-                chat(back: false)
-            }
-        }
-    }
-
-    @ViewBuilder private func chat(back: Bool) -> some View {
-        if let chat = store.scope(state: \.chat, action: \.chat) {
-            if chat.room != nil {
-                RoomScreen(
-                    store: chat, back: back, persona: { store.send(.start($0)) }, onBack: { store.send(.back) }
-                )
-                .id(store.path.last)
-            } else {
-                ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
-            }
-        } else if !back {
-            Text("Pick a chat, or start one with +").foregroundStyle(.secondary).frame(maxHeight: .infinity)
-        }
-    }
 }
 
 internal struct ChatScreen: View {
@@ -105,7 +61,7 @@ internal struct ChatScreen: View {
     internal var headed = true
     internal let onBack: () -> Void
 
-    private var actions: ChatActions {
+    internal static func actions(_ store: StoreOf<ChatFeature>, back onBack: @escaping () -> Void) -> ChatActions {
         var actions = ChatActions(
             draft: Binding(get: { store.draft }, set: { store.send(.draftChanged($0)) }),
             files: store.files.map(\.name),
@@ -127,10 +83,10 @@ internal struct ChatScreen: View {
         actions.open = { store.send(.plugins(.open(places[$0]))) }
         actions.attachable = attachable.map(\.name)
         actions.attachPlugin = { store.send(.plugins(.attach(attachable[$0]))) }
-        return persona(actions)
+        return persona(store, actions)
     }
 
-    private func persona(_ chat: ChatActions) -> ChatActions {
+    private static func persona(_ store: StoreOf<ChatFeature>, _ chat: ChatActions) -> ChatActions {
         guard !store.persona.api.id.isEmpty else { return chat }
         var actions = chat
         actions.persona = { store.send(.profile) }
@@ -149,7 +105,7 @@ internal struct ChatScreen: View {
             queued: store.queue.map(\.text),
             back: back,
             headed: headed,
-            actions: actions
+            actions: Self.actions(store, back: onBack)
         )
         .task { await store.send(.task).finish() }
         .task { await store.send(.plugins(.load)).finish() }
