@@ -1,0 +1,246 @@
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeFeatures/AppFeature.swift:5:15: error: external macro implementation type 'ComposableArchitectureMacros.ReducerMacro' could not be found for macro 'Reducer()'; No such file or directory
+public struct AppFeature: Sendable {
+              ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/.build/checkouts/swift-composable-architecture/Sources/ComposableArchitecture/Macros.swift:18:14: note: 'Reducer()' declared here
+public macro Reducer() =
+             ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeFeatures/AppFeature.swift:50:27: error: type 'AppFeature' does not conform to protocol 'Reducer'
+    public var body: some ReducerOf<Self> {
+                          ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeFeatures/AppFeature.swift:5:15: error: external macro implementation type 'ComposableArchitectureMacros.ReducerMacro' could not be found for macro 'Reducer()'; No such file or directory
+public struct AppFeature: Sendable {
+              ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/.build/checkouts/swift-composable-architecture/Sources/ComposableArchitecture/Macros.swift:18:14: note: 'Reducer()' declared here
+public macro Reducer() =
+             ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeFeatures/AppFeature.swift:50:27: error: type 'AppFeature' does not conform to protocol 'Reducer'
+    public var body: some ReducerOf<Self> {
+                          ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeFeatures/PersonaFeature.swift:6:15: error: external macro implementation type 'ComposableArchitectureMacros.ReducerMacro' could not be found for macro 'Reducer()'; No such file or directory
+public struct PersonaFeature: Sendable {
+              ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/.build/checkouts/swift-composable-architecture/Sources/ComposableArchitecture/Macros.swift:18:14: note: 'Reducer()' declared here
+public macro Reducer() =
+             ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeFeatures/PersonaFeature.swift:56:27: error: type 'PersonaFeature' does not conform to protocol 'Reducer'
+    public var body: some ReducerOf<Self> {
+                          ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeApp/Push.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeApp/Push.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeApp/Push.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeApp/Push.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeApp/Push.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeApp/Push.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeApp/Push.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Scanner.swift:6:53: error: cannot find type 'DataScannerViewControllerDelegate' in scope
+        internal final class Coordinator: NSObject, DataScannerViewControllerDelegate {
+                                                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Scanner.swift:19:51: error: cannot reference invalid declaration 'items'
+                for case .barcode(let barcode) in items {
+                                                  ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Scanner.swift:16:24: note: 'items' declared here
+                didAdd items: [RecognizedItem],
+                       ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Scanner.swift:17:28: error: cannot find type 'RecognizedItem' in scope
+                allItems: [RecognizedItem]
+                           ^~~~~~~~~~~~~~
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Scanner.swift:19:51: error: cannot reference invalid declaration 'items'
+                for case .barcode(let barcode) in items {
+                                                  ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Scanner.swift:16:24: note: 'items' declared here
+                didAdd items: [RecognizedItem],
+                       ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Scanner.swift:31:27: error: cannot find 'DataScannerViewController' in scope
+            let scanner = DataScannerViewController(
+                          ^~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Scanner.swift:32:63: error: reference to member 'qr' cannot be resolved without a contextual type
+                recognizedDataTypes: [.barcode(symbologies: [.qr])],
+                                                              ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Scanner.swift:30:65: error: cannot find type 'DataScannerViewController' in scope
+        internal func makeUIViewController(context: Context) -> DataScannerViewController {
+                                                                ^~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Scanner.swift:30:53: error: cannot find type 'Context' in scope
+        internal func makeUIViewController(context: Context) -> DataScannerViewController {
+                                                    ^~~~~~~
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Scanner.swift:5:32: error: cannot find type 'UIViewControllerRepresentable' in scope
+    internal struct QRScanner: UIViewControllerRepresentable {
+                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:16:36: error: cannot find type 'UIViewController' in scope
+        private final class Probe: UIViewController {
+                                   ^~~~~~~~~~~~~~~~
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/SwipeBack.swift:3:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Layout.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Layout.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Layout.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Layout.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Layout.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Layout.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Layout.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Layout.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Layout.swift:5:12: error: no such module 'UIKit'
+    import UIKit
+           ^
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Copyable.swift:37:24: error: cannot find 'UITextView' in scope
+            let view = UITextView()
+                       ^~~~~~~~~~
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Copyable.swift:36:55: error: cannot find type 'UITextView' in scope
+        internal func makeUIView(context: Context) -> UITextView {
+                                                      ^~~~~~~~~~
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Copyable.swift:36:43: error: cannot find type 'Context' in scope
+        internal func makeUIView(context: Context) -> UITextView {
+                                          ^~~~~~~
+/Users/jkmacmini/.local/share/drover/work/cooee/issue-432/apple/Sources/CooeeUI/Copyable.swift:33:37: error: cannot find type 'UIViewRepresentable' in scope
+    internal struct SelectableText: UIViewRepresentable {
+                                    ^~~~~~~~~~~~~~~~~~~
