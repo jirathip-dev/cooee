@@ -73,13 +73,14 @@ internal struct ChatRow: View {
     internal let persona: Persona
     internal var members: [Persona] = []
     internal var selected = false
+    internal var word = false
 
     internal var body: some View {
         let palette = look.palette
         let room = !members.isEmpty
         HStack(spacing: 12) {
             if room {
-                RoomStack(members: members, size: 22).frame(width: 48, height: 48)
+                RoomStack(members: members, size: 22, state: .done).frame(width: 48, height: 48)
             } else {
                 Avatar(persona: persona.with(state: row.state), size: 48)
             }
@@ -114,6 +115,7 @@ internal struct ChatRow: View {
             if row.state == .working && !look.mono {
                 Image(systemName: "ellipsis").font(.system(size: 13, weight: .bold)).foregroundStyle(palette.cyan)
             }
+            if word { Text("\(row.state.word) ·").ui(14, .regular, look).foregroundStyle(palette.state(row.state)) }
             Text(row.last).ui(14, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
             Spacer(minLength: 4)
             if row.unseen > 0 { Badge(count: row.unseen) }
