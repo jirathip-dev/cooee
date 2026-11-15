@@ -1,0 +1,13 @@
+Decided: the trust rule lives in one CooeeCore type (CardTrust) and CardBlock asks it at draw time; ScreenFeature does not strip blocks.
+Because: "secret/run/confirm/permissions with no poster draw `MissingPoster`; only core may post permissions."
+Rejected: dropping permissions blocks in ScreenFeature — live ops and kept screens bypass a load-time filter; the renderer sees every path.
+Decided: CardContext.poster is a LayoutSource? set only by BlocksView(_, source:); the chat's own cards map plugin nil to core so today's labels don't change.
+Because: apple/Sources/CooeeUI/Items.swift:29
+Decided: the avatar-menu frame draws the shared MenuBlocks renderer over a fixture screen while the bundled menu.json lists only rows that open a server screen or a local page.
+Because: "Menu frames unchanged."
+Decided: on merging #317, MenuFeature.Page keeps terminal; its component row pushes it on the menu stack.
+Because: apple/Sources/CooeeUI/SlotView.swift:50
+Decided: PluginRow.may and source deleted from Swift; the server words the permissions card now.
+Because: apple/Sources/CooeeCore/Plugins.swift:53
+Check: TrustRenderTests compares a card with fake poster/source/by fields to one without, and SnapshotTests' 12 missing-poster frames.
+Owner: The avatar menu, settings pages and attach sheet now come from the Mac as screens; unsigned sensitive cards show a red not-drawn line.
