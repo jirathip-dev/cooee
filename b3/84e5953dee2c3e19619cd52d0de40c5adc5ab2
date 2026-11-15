@@ -1,0 +1,10 @@
+Decided: #151's relaunch routes (attach, move_thread) become the routes/relaunch.rs area; attach leaves routes/folders.rs
+Because: crates/cooee-server/src/routes/relaunch.rs:93
+Decided: router takes the Config as staging's #151 does, registered with app_context in serve.rs
+Because: crates/cooee-server/src/serve.rs:111
+Decided: arch.toml keeps staging's apple frozen and collect lines beside slice 1's; the baseline is rewritten after the merge
+Because: .drover/arch.toml:3
+Rejected: keeping relaunch.rs at the crate root as staging has it — a route file outside routes/ breaks the ADR's one-file-per-area layout
+Check: sh scripts/gen.sh leaves no diff, and CI arch-check is green (a local drover older than #1075 flags only root.rs's new lines)
+Check: the perf.rs flake (a half-written perf.log line) is outside this PR; it passes alone 3 of 3
+Owner: Nothing changes in the app; the moved threads feature from #151 now lives in the server's routes folder too.
