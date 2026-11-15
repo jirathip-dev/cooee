@@ -1,0 +1,7 @@
+Decided: merge origin/staging; take staging's .drover/arch-baseline.txt, dropping my hub.rs baseline line
+Because: .drover/arch-baseline.txt:1
+Decided: no code change for the red msrv terminal test; it is a flake this workflow-only diff cannot cause
+Because: crates/cooee/tests/terminal.rs:345
+Rejected: editing the terminal test — out of scope; it passes locally and on staging's CI
+Check: diff vs staging is .github/workflows/*.yml only; CI green at this head
+Owner: Brought up to date with staging; the earlier red check was an unrelated flaky test.
