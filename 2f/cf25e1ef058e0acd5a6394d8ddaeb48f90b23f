@@ -1,0 +1,5 @@
+Decided: staging build fix: the two shed-version tests expect the server's current SHED_VERSION wording, with "an older shed; restart shed serve".
+Because: crates/cooee-core/src/shed.rs:335
+Rejected: changing the server message back — a later staging merge chose that wording and its own test at crates/cooee/tests/chat.rs:307 asserts it.
+Check: cargo test --workspace --locked is green, and staging's chat.rs:353 failure is gone from the PR's CI.
+Owner: Fixed two Rust tests that staging broke so this PR's checks can go green; the app change is the same as before.
