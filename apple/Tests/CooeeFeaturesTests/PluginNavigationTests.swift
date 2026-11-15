@@ -17,11 +17,11 @@ internal struct PluginNavigationTests {
     private func store(
         showing screen: JSONValue? = nil,
         _ dependencies: @escaping (inout DependencyValues) -> Void
-    ) -> TestStoreOf<PluginScreenFeature> {
-        var state = PluginScreenFeature.State(server: mini, place: Self.queue)
+    ) -> TestStoreOf<ScreenFeature> {
+        var state = ScreenFeature.State(server: mini, place: Self.queue)
         state.screen = screen.map(LiveScreen.init)
         return TestStore(initialState: state) {
-            PluginScreenFeature()
+            ScreenFeature()
         } withDependencies: {
             $0.date.now = epoch
             $0.screenCache.save = { _, _ in }

@@ -46,7 +46,7 @@ internal struct ChatPluginsTests {
             $0.attachable = [Self.hello]
         }
         await store.send(.plugins(.open(Self.queue))) {
-            $0.screen = PluginScreenFeature.State(server: mini, place: Self.queue)
+            $0.screen = ScreenFeature.State(server: mini, place: Self.queue)
         }
         await store.send(.screen(.dismiss)) { $0.screen = nil }
     }
@@ -89,7 +89,7 @@ internal struct ChatPluginsTests {
     @Test internal func aThreadTappedOnAScreenClosesItAndOpensThatChat() async {
         let store = store()
         await store.send(.plugins(.open(Self.queue))) {
-            $0.screen = PluginScreenFeature.State(server: mini, place: Self.queue)
+            $0.screen = ScreenFeature.State(server: mini, place: Self.queue)
         }
         await store.send(.screen(.presented(.delegate(.open("herdsman-impl-641"))))) { $0.screen = nil }
         await store.receive(\.delegate.open, "herdsman-impl-641")

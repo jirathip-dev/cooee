@@ -35,7 +35,7 @@ internal struct PluginScreenSheet: View {
     #else
         private let size: UserInterfaceSizeClass? = .regular
     #endif
-    internal let store: StoreOf<PluginScreenFeature>
+    internal let store: StoreOf<ScreenFeature>
 
     internal var body: some View {
         screen.accessibilityHidden(store.lane != nil).overlay { lane }
@@ -45,7 +45,7 @@ internal struct PluginScreenSheet: View {
         if let lane = store.scope(state: \.lane, action: \.lane.presented), case .thread(let thread) = lane.target {
             LaneChatSheet(
                 store: lane, head: LaneHead(thread: thread, screen: store.screen?.root ?? .null),
-                back: "‹ \(store.place.label)"
+                back: "‹ \(store.label)"
             ) {
                 store.send(.lane(.dismiss))
             } done: {
@@ -57,7 +57,7 @@ internal struct PluginScreenSheet: View {
     private var screen: some View {
         let palette = look.palette
         return VStack(spacing: 0) {
-            SheetBar(cancel: back, title: store.offline ? "" : store.place.label, done: "Done") { dismiss() }
+            SheetBar(cancel: back, title: store.offline ? "" : store.label, done: "Done") { dismiss() }
             if let who = store.unreachable { offline(who) }
             ScrollView {
                 Group {
@@ -71,7 +71,7 @@ internal struct PluginScreenSheet: View {
                         }
                         .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
                     } else if store.offline {
-                        Text("Nothing kept from \(store.place.label) yet.").foregroundStyle(palette.mute)
+                        Text("Nothing kept from \(store.label) yet.").foregroundStyle(palette.mute)
                     } else {
                         ProgressView()
                     }
@@ -98,7 +98,7 @@ internal struct PluginScreenSheet: View {
             TimelineView(.everyMinute) { context in
                 Text(
                     Offline.line(
-                        who: who, title: "\(store.place.plugin)'s \(store.title)", asOf: store.asOf, now: context.date))
+                        who: who, title: "\(store.source.name)'s \(store.title)", asOf: store.asOf, now: context.date))
             }
             .ui(13, .medium, look)
             Spacer(minLength: 4)

@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 
 mod hub;
+mod layout;
 mod login;
 mod look;
 pub mod machine;
@@ -56,6 +57,7 @@ use topcoat::{
 };
 
 pub use hub::{CardSpec, Hub, HubError, Listing, Out, Recipe, Resume, Slice, Upload};
+pub use layout::{Broken, Layouts, check as layout_check};
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use look::check;
 pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
@@ -485,7 +487,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         };
         // A plugin's profile: its backend is told the thread's id (so it can attach it).
         let ours = list.into_iter().find(|p| p.id() == profile);
-        let ours = ours.and_then(|p| Some((backend(&hub, &data, p.plugin.as_deref()?)?, p.name)));
+        let ours = ours.and_then(|p| Some((hub.backend(p.plugin.as_deref()?)?, p.name)));
         if let Some((b, name)) = ours
             && let Err(e) = plugin::started(&b, &id, &name)
         {
@@ -1176,11 +1178,9 @@ fn profiles(
     hub: &Hub,
     (data, config): (&std::path::Path, Option<&std::path::Path>),
 ) -> Vec<cooee_core::Profile> {
-    let mut list = cooee_core::profiles::list(config, data, |name| {
-        plugin::profiles(&backend(hub, data, name)?)
-    });
+    let mut list = cooee_core::profiles::list(config, data, |name| hub.served(name));
     for p in &mut list {
-        let via = p.plugin.as_deref().and_then(|n| backend(hub, data, n));
+        let via = p.plugin.as_deref().and_then(|n| hub.backend(n));
         if let (Some(via), Some(a)) = (via, &mut p.avatar)
             && a.starts_with('/')
         {
@@ -1188,13 +1188,6 @@ fn profiles(
         }
     }
     list
-}
-
-/// Installed plugin `name`'s backend: its first tab's entry (its URL and token).
-fn backend(hub: &Hub, data: &std::path::Path, name: &str) -> Option<Plugin> {
-    let lock = cooee_core::plugins::read_lock(data).ok()?;
-    let tabs = lock.into_iter().find(|l| l.name == name)?.tabs;
-    hub.plugins().into_iter().find(|p| tabs.contains(&p.name))
 }
 
 path_param!(name);
@@ -1307,7 +1300,7 @@ fn with_screens(cx: &Cx) -> Option<(Plugin, cooee_core::plugins::Manifest)> {
     let data = &app_context::<Data>(cx).0;
     let lock = cooee_core::plugins::read_lock(data).ok()?;
     let m = cooee_core::plugins::manifest(data, lock.iter().find(|l| l.name == name)?).ok()?;
-    let p = backend(app_context::<Arc<Hub>>(cx), data, name)?;
+    let p = app_context::<Arc<Hub>>(cx).backend(name)?;
     (!m.places.is_empty()).then_some((p, m))
 }
 
@@ -2228,6 +2221,7 @@ pub fn router(
     (data, config): (&std::path::Path, Option<&std::path::Path>),
     bind: IpAddr,
     allowed_hosts: &[String],
+    layouts: Arc<Layouts>,
 ) -> Router {
     hub.set_starter(starter(Arc::clone(&logins), data, config));
     let gate = Gate {
@@ -2299,6 +2293,10 @@ pub fn router(
     .route(mcp_grant)
     .route(mcp_propose)
     .route(mcp_ask)
+    .route(layout::get)
+    .route(layout::events)
+    .route(layout::reset)
+    .app_context(layouts)
     .app_context(hub)
     .app_context(Arc::new(Dots::default()))
     .app_context(Arc::new(Unlocks::default()))
@@ -2380,6 +2378,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         (&data, config.dir.as_deref()),
         config.bind,
         &config.allowed_hosts,
+        Layouts::watch(config.dir.clone()),
     );
     let served = tokio::runtime::Builder::new_multi_thread()
         .enable_all()

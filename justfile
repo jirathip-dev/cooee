@@ -46,6 +46,10 @@ themes:
 ci-scripts:
     ci/ci-scripts-test.sh
 
+# Rewrites every generated file (#356): the crate indexes and Cargo.lock. A conflict in one: take either side, run it.
+gen:
+    scripts/gen.sh
+
 # The Swift quality gate on apple/ (#147): format, anti-slop, SwiftLint, build, tests, coverage, Periphery.
 apple-check:
     scripts/apple-check.sh
