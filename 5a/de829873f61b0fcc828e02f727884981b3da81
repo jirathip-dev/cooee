@@ -1,0 +1,14 @@
+Decided: an unfolded issue's rounds hang on a line with their state dot, age and chevron; the current round adds a card with its last line, open chat and the label's PR or issue link
+Because: docs/design/home-workflow/README.md:42
+Because: apple/Sources/CooeeUI/WorkflowRounds.swift:4
+Decided: the link comes from the workflow label's url, which GET /threads already sends; a pull url reads PR #n, an issue url issue #n
+Because: apple/Sources/CooeeCore/Workflow.swift:13
+Rejected: the last three tool lines — the thread list carries only each thread's last line; fetching every round's items is a new call for one card
+Decided: Others gets its inline nav title and one footnote per workflow source, from the same Core pass that sorts the rows
+Because: "so nothing is lost while drover is not installed"
+Because: apple/Sources/CooeeCore/Workflow.swift:106
+Decided: the outlined chip style moved out of LinkChip into one modifier both chips share
+Because: apple/Sources/CooeeUI/BlockRounds.swift:137
+Check: the e2e workflow shot shows the round line and its card; the others shot shows the nav title and the drover footnote
+Check: apple-check passes up to swiftlint analyze, which segfaults locally (exit 139); Periphery and anti-slop's tests run by hand pass
+Owner: The Workflow sheet's rounds and the Others screen now look like the approved design.
