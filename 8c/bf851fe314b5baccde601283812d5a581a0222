@@ -1,0 +1,7 @@
+Decided: the mac build reads the shed pin from cooee-core's shed.rs, where this PR moved SHED_CARGO
+Because: crates/cooee-core/src/shed.rs:78
+Decided: the apple workflow and ci-scope also run on a change to shed.rs, since the dmg now builds shed from its pin
+Because: scripts/mac-bins.sh:12
+Rejected: moving SHED_CARGO back into main.rs — the SHED_VERSION error in cooee-core needs the fix command
+Check: scripts/mac-bins.sh builds cooee and installs shed at rev 4ac443d (exit 0 at 8cbf851)
+Owner: The Mac app build finds the pinned shed version again; no change to the fix itself.
