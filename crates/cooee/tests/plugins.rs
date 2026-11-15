@@ -99,6 +99,20 @@ fn answer(
         );
         return;
     }
+    if path == "/beats" {
+        let mut s = r.into_inner();
+        let _ = write!(
+            s,
+            "HTTP/1.0 200 OK\r\nContent-Type: text/event-stream\r\n\r\n"
+        );
+        while s.write_all(b": beat\n\n").is_ok() {
+            thread::sleep(Duration::from_millis(50));
+        }
+        log.lock()
+            .unwrap()
+            .push(("closed /beats".to_owned(), String::new()));
+        return;
+    }
     let (kind, text) = match path.as_str() {
         "/events" => (
             "text/event-stream",
@@ -224,6 +238,34 @@ fn a_backends_event_stream_comes_through_the_proxy() {
     assert_eq!(data, json!({ "event": "tick", "data": "one\ntwo" }));
     let (head, _) = s.a.seen().pop().unwrap();
     assert!(head.contains("last-event-id: 6\r\n"), "{head}");
+}
+
+/// #290: a page closed on a stream that only ever hears heartbeats lets go of its backend connection at once.
+#[test]
+fn a_closed_page_closes_its_backend_stream() {
+    let s = setup("plugin-sse-closed");
+    let mut stream = TcpStream::connect(&s.cooee.addr).unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(20)))
+        .unwrap();
+    write!(
+        stream,
+        "GET /p/a/api/beats HTTP/1.0\r\nHost: {}\r\nCookie: {}\r\n\r\n",
+        s.cooee.addr, s.cooee.cookie
+    )
+    .unwrap();
+    let mut lines = BufReader::new(stream).lines().map(Result::unwrap);
+    let head = lines.next().unwrap();
+    assert!(head.contains(" 200 "), "{head}");
+    drop(lines);
+    let closed = || s.a.seen().iter().any(|(h, _)| h == "closed /beats");
+    for _ in 0..100 {
+        if closed() {
+            return;
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+    panic!("the backend's stream is still open 5 s after its page closed");
 }
 
 #[test]

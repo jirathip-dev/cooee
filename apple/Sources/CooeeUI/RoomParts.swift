@@ -74,22 +74,29 @@ internal struct RoomStack: View {
     internal let members: [Persona]
     internal var size: CGFloat = 22
     internal var grid = true
-    internal var state = LaneState.idle
+    internal var most = 4
+    internal var state: LaneState?
 
     internal var body: some View {
-        let shown = Array(members.prefix(4))
+        let shown = Array(members.prefix(most))
         if grid && shown.count > 2 {
             Grid(horizontalSpacing: 4, verticalSpacing: 4) {
                 GridRow { avatars(shown.prefix(2)) }
                 GridRow { avatars(shown.dropFirst(2)) }
             }
         } else {
-            HStack(spacing: grid ? 4 : look.mono ? 2 : -size * 0.45) { avatars(shown[...]) }
+            HStack(spacing: grid ? 4 : look.mono ? 2 : -size * 0.45) {
+                avatars(shown[...])
+                if members.count > most {
+                    Text("+\(members.count - most)").ui(size * 0.45, .semibold, look).foregroundStyle(look.palette.mute)
+                        .padding(.leading, look.mono ? 0 : size * 0.5)
+                }
+            }
         }
     }
 
     private func avatars(_ some: ArraySlice<Persona>) -> some View {
-        ForEach(some) { persona in Avatar(persona: persona.with(state: state), size: size) }
+        ForEach(some) { persona in Avatar(persona: state.map(persona.with) ?? persona, size: size) }
     }
 }
 

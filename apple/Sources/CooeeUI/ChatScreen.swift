@@ -12,19 +12,19 @@ internal struct ChatScreen: View {
 
     internal static func actions(_ store: StoreOf<ChatFeature>, back onBack: @escaping () -> Void) -> ChatActions {
         var actions = ChatActions(
-            draft: Binding(get: { store.draft }, set: { store.send(.draftChanged($0)) }),
+            draft: Binding(get: { store.draft }, set: { store.send(.compose(.draftChanged($0))) }),
             files: store.files.map(\.name),
-            send: { store.send(.send) },
-            attach: { store.send(.attach($0)) },
-            detach: { store.send(.detach($0)) },
-            stop: { store.send(.stop) },
-            steer: { store.send(.steer($0)) },
-            unqueue: { store.send(.unqueue($0)) },
-            answer: { store.send(.answer($0, $1)) },
+            send: { store.send(.compose(.send)) },
+            attach: { store.send(.compose(.attach($0))) },
+            detach: { store.send(.compose(.detach($0))) },
+            stop: { store.send(.compose(.stop)) },
+            steer: { store.send(.compose(.steer($0))) },
+            unqueue: { store.send(.compose(.unqueue($0))) },
+            answer: { store.send(.cards(.answer($0, $1))) },
             answering: store.answering,
             back: onBack
         )
-        actions.retry = { store.send(.retry($0)) }
+        actions.retry = { store.send(.outbox(.retry($0))) }
         let (places, attachable) = (store.places, store.attachable)
         actions.places = places.map(\.label)
         actions.open = { store.send(.plugins(.open(places[$0]))) }
@@ -33,12 +33,15 @@ internal struct ChatScreen: View {
         actions.workflow = store.workflow.map { Workflow.issues($0).count(where: \.needsYou) }
         actions.showWorkflow = { store.send(.workflow(.show(true))) }
         actions.workflowOpen = store.workflowOpen
+        actions.step = store.step
         return actions
     }
 
     private var actions: ChatActions {
         var actions = Self.actions(store, back: onBack)
         actions.backTo = backTo
+        actions.machine = store.machine.shown
+        actions.showMachine = { store.send(.machine(.show(true))) }
         return actions
     }
 
@@ -55,6 +58,7 @@ internal struct ChatScreen: View {
         )
         .task { await store.send(.task).finish() }
         .task { await store.send(.plugins(.load)).finish() }
+        .task { await store.send(.machine(.load)).finish() }
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachSheet(store: $0) }
         .sheet(isPresented: Binding(get: { store.workflowOpen }, set: { store.send(.workflow(.show($0))) })) {
@@ -66,6 +70,13 @@ internal struct ChatScreen: View {
                 done: { store.send(.workflow(.show(false))) }
             )
             .presentationDetents([.fraction(0.8)])
+        }
+        .sheet(isPresented: Binding(get: { store.machine.open }, set: { store.send(.machine(.show($0))) })) {
+            MachineSheet(
+                chip: store.machine, started: store.target.started,
+                pick: { store.send(.machine(.pick($0))) }, done: { store.send(.machine(.show(false))) }
+            )
+            .presentationDetents([.medium])
         }
     }
 }

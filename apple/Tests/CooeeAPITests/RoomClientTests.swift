@@ -6,12 +6,12 @@ internal struct RoomClientTests {
     @Test internal func aRoomIsMadeOfItsMembersInRoomOrder() async throws {
         let server = CannedServer([
             "/rooms": [Answer(headers: json, chunks: [#"{"id":"r1"}"#])],
-            "/threads": [
+            "/screens/home": [
                 Answer(
                     headers: json,
                     chunks: [
-                        #"[{"id":"r1","title":"Kestrel","agent":"","persona":"","state":"","last":"Hi","at":1,"#
-                            + #""unseen":0,"archived":false,"members":["chief","am"]}]"#
+                        #"{"title":"cooee","blocks":[],"personas":[],"threads":[{"id":"r1","title":"Kestrel","agent":"","persona":"","state":"","last":"Hi","at":1,"#
+                            + #""unseen":0,"archived":false,"members":["chief","am"]}]}"#
                     ]
                 )
             ],
@@ -25,7 +25,7 @@ internal struct RoomClientTests {
                     "random_id": .string("n1"),
                 ]
         )
-        #expect(try await client.threads().map(\.members) == [["chief", "am"]])
+        #expect(try await client.home().threads.map(\.members) == [["chief", "am"]])
     }
 
     @Test internal func aMemberMovesInRoomOrder() async throws {

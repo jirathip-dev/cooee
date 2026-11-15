@@ -9,7 +9,9 @@ internal struct PersonaScreen: View {
     internal var body: some View {
         PersonaSheet(
             draft: $store.draft,
-            choices: PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts),
+            choices: PersonaChoices(
+                agents: store.agents, models: store.models, efforts: store.efforts, machines: store.machines
+            ),
             memory: PersonaMemory(
                 notes: Listing.memory(store.notes, persona: store.draft.name, now: Date()), count: store.notes.count
             ),
