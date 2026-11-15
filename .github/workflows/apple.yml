@@ -13,6 +13,8 @@
 # skips its builds. Every build names a concrete destination: a generic one builds every architecture. #430: on a
 # pull request `scope` (scripts/e2e-scope.sh) picks the e2e tests apple/e2e/map.toml pairs with the changed paths; a
 # change that reaches no Apple surface gets an `apple` that passes on ubuntu-latest, "no screens touched".
+# #440: the e2e runs nightly on staging's head (and on a manual run) whatever `vars.E2E` says; PRs and staging pushes
+# follow `vars.E2E` (#436: `off` skips the e2e steps).
 name: apple
 on:
   push:
@@ -29,6 +31,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
+  schedule:
+    - cron: "41 18 * * *"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'merge-ready' && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -48,6 +52,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
+          ref: ${{ github.event_name == 'schedule' && 'staging' || '' }}
       - name: scope
         id: scope
         env:
@@ -64,12 +69,15 @@ jobs:
     env:
       MAC: ${{ needs.scope.outputs.mac }}
       FULL: ${{ needs.scope.outputs.full }}
-      E2E: ${{ needs.scope.outputs.e2e == 'true' && vars.E2E != 'off' }}
+      E2E: >-
+        ${{ needs.scope.outputs.e2e == 'true' && (github.event_name == 'schedule'
+        || github.event_name == 'workflow_dispatch' || vars.E2E != 'off') }}
       ONLY: ${{ needs.scope.outputs.only }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
+          ref: ${{ github.event_name == 'schedule' && 'staging' || '' }}
       - uses: ./.github/actions/mac-runner
         if: env.MAC == 'true'
       - name: which e2e tests, and why
@@ -177,7 +185,7 @@ jobs:
           [ -z "${SIM:-}" ] || xcrun simctl delete "$SIM"
 
   mac-setup:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.event_name != 'schedule'
     runs-on: macos-26
     timeout-minutes: 90
     env:
