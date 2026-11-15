@@ -84,7 +84,7 @@ internal struct RoomStack: View {
                 GridRow { avatars(shown.dropFirst(2)) }
             }
         } else {
-            HStack(spacing: grid || look.mono ? 4 : -size * 0.45) { avatars(shown[...]) }
+            HStack(spacing: grid ? 4 : look.mono ? 2 : -size * 0.45) { avatars(shown[...]) }
         }
     }
 
@@ -98,10 +98,8 @@ internal struct StateDot: View {
     internal let state: MemberState
 
     internal var body: some View {
-        let dot = RoundedRectangle(cornerRadius: look.mono ? 0 : 5.5)
-        dot.fill(state.color(look.palette)).frame(width: 11, height: 11)
-            .overlay(dot.strokeBorder(look.palette.background, lineWidth: 2)).frame(width: 14, height: 14)
-            .background(look.palette.background, in: .rect(cornerRadius: look.mono ? 0 : 7))
+        RoundedRectangle(cornerRadius: look.mono ? 0 : 6).fill(state.color(look.palette)).frame(width: 12, height: 12)
+            .padding(2).background(look.palette.background, in: .rect(cornerRadius: look.mono ? 0 : 8))
     }
 }
 
@@ -142,10 +140,10 @@ internal struct RoundPill: View {
             }
             Spacer()
             Button(action: stop) {
-                HStack(spacing: 4) {
+                HStack(spacing: look.mono ? 0 : 4) {
                     if look.mono { Text("[") }
                     Image(systemName: "stop.fill").font(.system(size: 10))
-                    Text(look.mono ? "Stop]" : "Stop")
+                    Text(look.mono ? " Stop]" : "Stop")
                 }
                 .ui(14, .semibold, look).foregroundStyle(palette.red)
                 .padding(.horizontal, 12).frame(height: 30)
