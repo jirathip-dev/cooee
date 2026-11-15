@@ -54,6 +54,7 @@ internal struct ClientTests {
         let server = CannedServer([
             "/threads/a1b2/send": [empty], "/threads/a1b2/queue": [empty], "/threads/a1b2/steer": [empty],
             "/threads/a1b2/unqueue": [empty], "/threads/a1b2/cancel": [empty], "/threads/a1b2/read": [empty],
+            "/threads/a1b2/retry": [empty],
         ])
         let client = server.client()
         let file = CooeeCore.Attachment(name: "a.txt", bytes: Data("hi".utf8))
@@ -63,6 +64,7 @@ internal struct ClientTests {
         try await client.unqueue("a1b2", "q2")
         try await client.cancel("a1b2")
         try await client.read("a1b2", upTo: 4)
+        try await client.retry("a1b2")
         let sent = try server.decoded("/threads/a1b2/send", as: Sent.self)
         #expect(sent == Sent(text: "first", randomID: "r1", files: [file]) && file.data == "aGk=")
         #expect(
@@ -72,6 +74,7 @@ internal struct ClientTests {
         #expect(try server.decoded("/threads/a1b2/unqueue", as: [String: String].self) == ["random_id": "q2"])
         #expect(server.body("/threads/a1b2/cancel") == "{}")
         #expect(server.body("/threads/a1b2/read") == #"{"item":4}"#)
+        #expect(server.body("/threads/a1b2/retry") == "{}")
     }
 
     @Test internal func aNewThreadStartsForAPersona() async throws {

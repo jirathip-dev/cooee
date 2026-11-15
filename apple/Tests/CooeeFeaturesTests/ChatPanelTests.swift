@@ -63,7 +63,7 @@ internal struct ChatPanelTests {
         let store = app()
         await store.send(.chat(.panel(.run(.open(Self.queue)))))
         await store.receive(\.chat.plugins.open) {
-            $0.chat?.screen = PluginScreenFeature.State(server: mini, place: Self.queue)
+            $0.chat?.screen = ScreenFeature.State(server: mini, place: Self.queue)
         }
         await store.send(.chat(.screen(.dismiss))) { $0.chat?.screen = nil }
         await store.send(.chat(.panel(.run(.attach(Self.drover)))))

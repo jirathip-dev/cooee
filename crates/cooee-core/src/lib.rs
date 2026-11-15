@@ -34,7 +34,7 @@ pub use devices::{
 pub use login::{Ran, Spec, Status, links, redact};
 pub use profiles::Profile;
 pub use provider::{Entry, Plain, Provider, Providers, agents_fix};
-pub use shed::{Agent, Launch, Shed, ShedError};
+pub use shed::{Agent, Launch, SHED_CARGO, SHED_LABEL, Shed, ShedError, shed_fix};
 pub use shed_proto;
 pub use store::{
     FORMAT, Kind, Member, Message, Queued, Reason, Role, RoomTurn, Store, StoreError, Thread,

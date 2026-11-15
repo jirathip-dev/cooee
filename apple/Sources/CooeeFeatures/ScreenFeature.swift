@@ -4,11 +4,13 @@ import CooeeCore
 import Foundation
 
 @Reducer
-public struct PluginScreenFeature: Sendable {
+public struct ScreenFeature: Sendable {
     @ObservableState
     public struct State: Equatable {
         public let server: Server
-        public let place: Place
+        public let source: LayoutSource
+        public let home: String
+        public let label: String
         public var screen: LiveScreen?
         public var asOf: Date?
         public var unreachable: String?
@@ -18,13 +20,19 @@ public struct PluginScreenFeature: Sendable {
         @Presents public var lane: ChatFeature.State?
 
         public var offline: Bool { unreachable != nil }
-        public var title: String { screen?.root.string("title") ?? place.label }
-        public var current: String { path.last ?? place.screen }
-        public var key: String { "\(server.url.absoluteString)|\(place.plugin)|\(current)" }
+        public var title: String { screen?.root.string("title") ?? label }
+        public var current: String { path.last ?? home }
+        public var key: String { "\(server.url.absoluteString)|\(source.name)|\(current)" }
+
+        public init(server: Server, source: LayoutSource, path: String, label: String) {
+            self.server = server
+            self.source = source
+            self.home = path
+            self.label = label
+        }
 
         public init(server: Server, place: Place) {
-            self.server = server
-            self.place = place
+            self.init(server: server, source: .plugin(place.plugin), path: place.screen, label: place.label)
         }
     }
 
@@ -85,23 +93,23 @@ public struct PluginScreenFeature: Sendable {
     }
 }
 
-extension PluginScreenFeature {
-    internal static func who(_ error: any Error, plugin: String) -> String {
+extension ScreenFeature {
+    internal static func who(_ error: any Error, source: LayoutSource) -> String {
         guard let error = error as? APIError, error.status > 0 else { return "Mac unreachable" }
-        return "\(plugin) isn't answering"
+        return "\(source.name) isn't answering"
     }
 
     private func follow(_ state: State) -> Effect<Action> {
-        let (plugins, clock, server, place, path) = (plugins, clock, state.server, state.place, state.current)
+        let (plugins, clock, server, source, path) = (plugins, clock, state.server, state.source, state.current)
         return .run { send in
             while true {
                 do {
-                    let screen = try await plugins.screen(server, place.plugin, path)
+                    let screen = try await plugins.screen(server, source, path)
                     await send(.loaded(screen))
                     guard let stream = screen.string("stream") else { return }
-                    for try await event in plugins.events(server, place.plugin, stream) { await send(.event(event)) }
+                    for try await event in plugins.events(server, source, stream) { await send(.event(event)) }
                 } catch {
-                    await send(.failed(Self.who(error, plugin: place.plugin)))
+                    await send(.failed(Self.who(error, source: source)))
                 }
                 try await clock.sleep(for: .seconds(5))
             }
@@ -139,10 +147,10 @@ extension PluginScreenFeature {
     private func act(_ state: inout State, _ action: BlockAction) -> Effect<Action> {
         guard !state.offline, !state.acting else { return .none }
         state.acting = true
-        let (plugins, server, plugin) = (plugins, state.server, state.place.plugin)
+        let (plugins, server, source) = (plugins, state.server, state.source)
         let screen = state.screen?.root.string("id") ?? ""
         return .run { send in
-            await send(.acted(try await plugins.act(server, plugin, screen, action), nil))
+            await send(.acted(try await plugins.act(server, source, screen, action), nil))
         } catch: { error, send in
             await send(.acted(nil, error.localizedDescription))
         }
