@@ -1,0 +1,2 @@
+network 401: GET http://127.0.0.1:41773/
+network 401: GET http://127.0.0.1:41773/favicon.ico

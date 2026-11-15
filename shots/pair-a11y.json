@@ -1,0 +1,11 @@
+{
+ "url": "http://127.0.0.1:41773/pair?code=746465",
+ "nodes": 21,
+ "issues": [
+  {
+   "role": "image",
+   "issue": "no accessible name",
+   "node": 2
+  }
+ ]
+}

@@ -1,0 +1,18 @@
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/verify-356-r1/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/verify-356-r1/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 40.90s
+build-exit=0
+verify-browser: http://127.0.0.1:41773/: 0 console lines, 2 failed requests, 0 a11y issues; shots/home-1440.png shots/home-390.png
+FAIL network 401: GET http://127.0.0.1:41773/
+FAIL network 401: GET http://127.0.0.1:41773/favicon.ico
+exit=1
+verify-browser: http://127.0.0.1:41773/pair?code=746465: 0 console lines, 2 failed requests, 1 a11y issues; shots/pair-1440.png shots/pair-390.png
+FAIL network 405: GET http://127.0.0.1:41773/pair?code=746465
+FAIL network failed: GET http://127.0.0.1:41773/pair?code=746465 (net::ERR_HTTP_RESPONSE_CODE_FAILURE)
+exit=1
+head / 401
+head /favicon.ico 401
+head /pair?code=1 405
+staging / 401
+staging /favicon.ico 401
+staging /pair?code=1 405

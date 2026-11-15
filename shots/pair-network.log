@@ -1,0 +1,2 @@
+network 405: GET http://127.0.0.1:41773/pair?code=746465
+network failed: GET http://127.0.0.1:41773/pair?code=746465 (net::ERR_HTTP_RESPONSE_CODE_FAILURE)
