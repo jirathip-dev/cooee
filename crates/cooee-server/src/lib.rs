@@ -2162,13 +2162,13 @@ pub fn router(
     };
     routines::routes(
         runner,
-        room_routes(persona_routes(pairing::routes(
+        room_routes(persona_routes(screens::routes(pairing::routes(
             Router::builder()
                 .layer(Timing)
                 .layer(gate)
                 // A message's photos come as base64.
                 .layer(BodyLimit::max(64 << 20).at("/threads")),
-        ))),
+        )))),
     )
     .route(push_key)
     .route(push_subscribe)
@@ -2227,7 +2227,6 @@ pub fn router(
     .route(layout::get)
     .route(layout::events)
     .route(layout::reset)
-    .route(screens::home::home)
     .app_context(layouts)
     .app_context(hub)
     .app_context(Arc::new(Dots::default()))

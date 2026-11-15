@@ -10,7 +10,7 @@ internal struct MenuHost: View {
     internal let compact: Bool
 
     internal var body: some View {
-        let menu = store.scope(state: \.menu, action: \.menu)
+        @Bindable var menu = store.scope(state: \.menu, action: \.menu)
         let pages = rows.filter { $0.content == .component(.settings) }.flatMap { $0.config["pages"]?.items ?? [] }
         NavigationStack(path: Binding(get: { menu.path }, set: { menu.send(.path($0)) })) {
             ScrollView {
@@ -21,8 +21,9 @@ internal struct MenuHost: View {
             }
             .background(look.palette.background)
             .navigationDestination(for: MenuFeature.Page.self) { page in
-                if pages.contains(.string("\(page)")) { MenuPage(store: menu, page: page) }
+                if pages.contains(.string(page.rawValue)) { MenuPage(store: menu, page: page) }
             }
+            .navigationDestination(item: $menu.scope(state: \.page, action: \.page)) { PluginScreenSheet(store: $0) }
         }
     }
 }
@@ -31,8 +32,12 @@ internal struct MenuScreen: View {
     internal let store: StoreOf<MenuFeature>
 
     internal var body: some View {
-        AvatarMenu(name: "You", place: place, values: values, pages: MenuFeature.Page.drawn) {
-            store.send(.path(store.path + [$0]))
+        MenuBlocks(screen: store.screen ?? .bundledMenu, place: place, values: values) { row in
+            if let page = row.string("page").flatMap(MenuFeature.Page.init(rawValue:)) {
+                store.send(.path(store.path + [page]))
+            } else if let path = row.string("open") {
+                store.send(.show(path, label: row.string("title") ?? ""))
+            }
         }
     }
 
@@ -40,10 +45,10 @@ internal struct MenuScreen: View {
         "this device · paired to \(store.server?.url.host() ?? "no server")"
     }
 
-    private var values: [MenuFeature.Page: String] {
+    private var values: [String: String] {
         let settings = store.settings
         let look = "\(settings.style.rawValue.capitalized) · \(settings.scheme.rawValue.capitalized)"
-        return [.look: look, .notifications: settings.push == nil ? "Off" : "On"]
+        return ["look": look, "notifications": settings.push == nil ? "Off" : "On"]
     }
 }
 
@@ -60,10 +65,6 @@ internal struct ResetLayoutRow: View {
     }
 }
 
-extension MenuFeature.Page {
-    internal static let drawn: [Self] = [.look, .notifications]
-}
-
 internal struct MenuPage: View {
     @Environment(\.look) private var look
     internal let store: StoreOf<MenuFeature>
@@ -76,7 +77,6 @@ internal struct MenuPage: View {
                 case .look: lookPage
                 case .notifications: pushPage
                 case .appIcon: AppIconPicker(store: store)
-                case .signIns, .devices, .terminal, .machines, .plugins: EmptyView()
                 }
             }
             .padding(16)
@@ -91,11 +91,6 @@ internal struct MenuPage: View {
         switch page {
         case .look: "Look"
         case .notifications: "Notifications"
-        case .signIns: "Sign-ins"
-        case .devices: "Devices"
-        case .terminal: "Terminal"
-        case .machines: "Machines"
-        case .plugins: "Plugins"
         case .appIcon: "App icon"
         }
     }

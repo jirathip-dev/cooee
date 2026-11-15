@@ -52,7 +52,8 @@ public struct HomeView: View {
             .blur(radius: menuOpen ? 10 : 0)
             if menuOpen {
                 palette.background.opacity(0.55).ignoresSafeArea()
-                AvatarMenu().padding(.top, 58).padding(.horizontal, 12)
+                MenuBlocks(screen: Fixtures.menu, name: "Guy", place: "this iPhone · paired to mini")
+                    .padding(.top, 58).padding(.horizontal, 12)
             }
         }
         .foregroundStyle(palette.foreground)
