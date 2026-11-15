@@ -11,6 +11,8 @@
 # #330: `mac-setup` caches its SwiftPM packages and builds per runner image. The e2e steps build the app once for
 # their simulator and test that build; a staging push or manual run builds the Mac app in `mac-setup` only, so `apple`
 # skips its builds. Every build names a concrete destination: a generic one builds every architecture.
+# #440: the e2e runs nightly on staging's head (and on a manual run) whatever `vars.E2E` says; PRs and staging pushes
+# follow `vars.E2E` (#436: `off` skips the e2e steps).
 name: apple
 on:
   push:
@@ -36,6 +38,8 @@ on:
       - ".github/workflows/apple.yml"
       - ".github/actions/mac-runner/**"
   workflow_dispatch:
+  schedule:
+    - cron: "41 18 * * *"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'merge-ready' && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -48,9 +52,13 @@ jobs:
     timeout-minutes: 120
     env:
       FULL: ${{ github.event_name != 'pull_request' || github.event.action == 'labeled' }}
-      E2E: ${{ vars.E2E != 'off' && (github.event_name != 'pull_request' || github.event.action == 'labeled') }}
+      E2E: >-
+        ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (vars.E2E != 'off'
+        && (github.event_name != 'pull_request' || github.event.action == 'labeled')) }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'staging' || '' }}
       - uses: ./.github/actions/mac-runner
       - uses: taiki-e/install-action@v2
         with:
@@ -148,7 +156,7 @@ jobs:
           [ -z "${SIM:-}" ] || xcrun simctl delete "$SIM"
 
   mac-setup:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.event_name != 'schedule'
     runs-on: macos-26
     timeout-minutes: 90
     env:
