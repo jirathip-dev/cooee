@@ -2,6 +2,12 @@ import ComposableArchitecture
 import CooeeCore
 import CooeeFeatures
 
+#if os(iOS)
+    import UIKit
+#else
+    import AppKit
+#endif
+
 extension AppIconClient: DependencyKey {
     public static let liveValue = AppIconClient(set: { icon in try await apply(icon) })
 
