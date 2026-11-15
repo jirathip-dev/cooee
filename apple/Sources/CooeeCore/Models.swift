@@ -189,12 +189,30 @@ public struct Slice: Codable, Sendable, Equatable {
     public let turn: Turn
     public let cursor: String
     public let queue: [Queued]
+    public var asks: [RoomAsk]?
 
-    public init(items: [APIItem], turn: Turn, cursor: String, queue: [Queued]) {
+    public init(items: [APIItem], turn: Turn, cursor: String, queue: [Queued], asks: [RoomAsk]? = nil) {
         self.items = items
         self.turn = turn
         self.cursor = cursor
         self.queue = queue
+        self.asks = asks
+    }
+}
+
+public struct RoomAsk: Codable, Sendable, Equatable {
+    public let member: String
+    public let session: String
+    public let item: APIItem
+
+    public var open: Bool {
+        item.block?.list("blocks").contains { ["choice", "secret", "run"].contains($0.type) } ?? false
+    }
+
+    public init(member: String, session: String, item: APIItem) {
+        self.member = member
+        self.session = session
+        self.item = item
     }
 }
 
@@ -215,6 +233,7 @@ public enum StreamEvent: Sendable, Equatable {
     case queue([Queued])
     case roomTurn(String)
     case roomStop(String)
+    case roomAsk(RoomAsk)
     case reset
 }
 

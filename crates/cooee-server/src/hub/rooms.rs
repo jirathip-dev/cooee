@@ -17,10 +17,22 @@ use cooee_core::{
     Body, Change, Item, Kind, Member, Reason, RoomTurn, Thread,
     personas::{self, Persona},
 };
+use serde::Serialize;
 use serde_json::json;
 
 use super::{Hub, HubError, Live, Recipe, Upload, lock, now};
 use crate::push::Note;
+
+/// A member's ask as its room shows it (#178): the member, its session (where the answer goes) and the card.
+#[derive(Debug, Clone, Serialize)]
+pub struct RoomAsk {
+    /// The member's persona id.
+    pub member: String,
+    /// The member's session's thread id.
+    pub session: String,
+    /// The approval, as the member's session has it.
+    pub item: Item,
+}
 
 /// How a room member's session starts, given its persona: its agent, folder and recipe.
 pub type Starter =
@@ -117,6 +129,35 @@ impl Hub {
         let name = display(&names, persona);
         let note = Note::new(room, (key, &name, line), item, &self.theme);
         self.push.send(&note.in_room(room, &name, item));
+    }
+
+    /// Member session `meta`'s approval `item` changed: its room's pages get it as `room-ask`, and the room's
+    /// deadline is paused while any member's ask is open (#178).
+    pub(super) fn room_ask(&self, meta: &Thread, item: Item) {
+        let Ok(room) = self.live(&meta.room) else {
+            return;
+        };
+        let mut l = lock(&room);
+        let open = matches!(&item.body, Body::Approval { tapped: None, chosen: None, card, .. } if card.line.is_none());
+        l.asks
+            .retain(|a| a.session != meta.id || a.item.id != item.id);
+        let ask = RoomAsk {
+            member: meta.profile.clone(),
+            session: meta.id.clone(),
+            item,
+        };
+        l.emit("room-ask", json!(ask).to_string());
+        let at = now();
+        if open {
+            l.asks.push(ask);
+            l.paused = if l.paused == 0 { at } else { l.paused };
+        } else if l.asks.is_empty() && l.paused > 0 {
+            l.meta.asked_at += at.saturating_sub(l.paused);
+            l.paused = 0;
+            if let Err(e) = self.store.save(&l.meta) {
+                eprintln!("cooee: room {}: {e}", l.meta.id);
+            }
+        }
     }
 
     /// Sets how a member's session starts (once).
@@ -469,6 +510,7 @@ impl Hub {
             return Ok(());
         };
         l.meta.round.clear();
+        (l.asks, l.paused) = (Vec::new(), 0);
         self.store.save(&l.meta)?;
         l.emit("room-stop", json!({ "reason": why }).to_string());
         if !note.is_empty() {
@@ -494,7 +536,8 @@ impl Hub {
             .iter()
             .filter_map(|live| {
                 let l = lock(live);
-                let due = !l.meta.round.is_empty() && now >= l.meta.asked_at + DEADLINE;
+                let due =
+                    !l.meta.round.is_empty() && l.paused == 0 && now >= l.meta.asked_at + DEADLINE;
                 due.then(|| l.meta.id.clone())
             })
             .collect();

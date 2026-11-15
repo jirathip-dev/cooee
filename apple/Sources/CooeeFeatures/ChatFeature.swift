@@ -32,7 +32,7 @@ public struct ChatFeature: Sendable {
 
         public var working: Bool { turn.working }
         public var drawn: [Item] {
-            room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
+            room.map { RoomItems.build(items, names: $0.names, last: $0.round) + $0.cards }
                 ?? ChatItems.build(items, live: live, outbox: outbox)
         }
 
@@ -102,7 +102,7 @@ public struct ChatFeature: Sendable {
                 load(&state, slice)
                 return .none
             case .event(let event):
-                state.room?.hear(event)
+                state.room?.hear(event, when: now)
                 apply(&state, event)
                 return .none
             case .failed(let error):
@@ -171,6 +171,7 @@ extension ChatFeature {
         state.turn = slice.turn
         state.since = now
         state.live = slice.turn.working ? slice.turn.text ?? "" : ""
+        state.room?.heard(slice.asks ?? [], when: now)
     }
 
     private func apply(_ state: inout State, _ event: StreamEvent) {
@@ -185,7 +186,7 @@ extension ChatFeature {
             if !state.working { state.live = "" }
         case .queue(let queue):
             state.queue = queue
-        case .reset, .roomTurn, .roomStop:
+        case .reset, .roomTurn, .roomStop, .roomAsk:
             break
         }
     }
@@ -200,11 +201,13 @@ extension ChatFeature {
     }
 
     private func answer(_ state: inout State, _ item: Int, _ action: BlockAction) -> Effect<Action> {
-        guard case .thread(let thread) = state.target, let answer = action.answer else { return .none }
+        guard case .thread(var thread) = state.target, let answer = action.answer else { return .none }
+        var asked = item
+        if let ask = state.room?.ask(item) { (thread, asked) = (ask.session, ask.item.id) }
         state.answering.insert(item)
         let (threads, server) = (threads, state.server)
-        return .run { send in
-            try await threads.answer(server, thread, item, answer.option, answer.value)
+        return .run { [thread, asked] send in
+            try await threads.answer(server, thread, asked, answer.option, answer.value)
             await send(.answered(item, nil))
         } catch: { error, send in
             await send(.answered(item, error.localizedDescription))

@@ -34,7 +34,7 @@ type File = { name: string; data: string }; // data: the bytes in base64
 | `POST /threads` | `{agent, account?, profile?, model?, effort?, folder?, machine?, text, random_id, background?}` (`profile`: a persona's or profile's id; a persona's agent, folder, model, effort and machine are its defaults; `machine` overrides its persona's, `""` this host, one not in `GET /machines` a 400) | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
 | `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
 | `POST /threads/{id}/folder` | `{folder}` (a root or inside one): "Use a folder…"; its agent starts again there and the next message carries a hand-over | the `note` it adds |
-| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, queue: Queued[], waiting: Item \| null, pending?: {text, random_id}}` (`waiting`: the oldest config card that waits; `pending`: the first message while the thread connects) |
+| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, queue: Queued[], waiting: Item \| null, pending?: {text, random_id}, asks?: RoomAsk[]}` (`waiting`: the oldest config card that waits; `pending`: the first message while the thread connects; `asks`: a room's members' open asks, `{member, session, item}`, answered with `POST /threads/{session}/approve`) |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |
 | `POST /threads/{id}/send` | `{text, random_id, files?: File[]}` (a retry with the same id is stored once; the agent gets the files' paths under the text) | `Item` |
 | `POST /threads/{id}/queue` | as `send`: held until the turn in progress ends, then sent (between turns: at once) | `Queued[]` |
@@ -51,7 +51,7 @@ type File = { name: string; data: string }; // data: the bytes in base64
 | `POST /threads/{id}/read` | `{item}`: read up to this id | `null` |
 
 The event stream's events, each with an id `<boot>.<seq>` to resume after: `item` (an `Item`, new or changed), `text`
-(`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), `queue` (the `Queued[]` now), and `reset` (`{}`: too far behind or
+(`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), `queue` (the `Queued[]` now), in a room `room-ask` (a `RoomAsk`, opened or settled; the room's 10 minutes pause while one is open), and `reset` (`{}`: too far behind or
 another run; load the newest slice again).
 
 ## Personas (#126)

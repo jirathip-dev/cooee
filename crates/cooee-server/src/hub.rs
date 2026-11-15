@@ -108,6 +108,10 @@ struct Live {
     sent: Option<Instant>,
     /// A room's round was stopped while its working member's session was starting: cancel it once started (#155).
     stopped_starting: bool,
+    /// A room's members' open asks, oldest first (#178).
+    asks: Vec<rooms::RoomAsk>,
+    /// Since when a room's deadline is paused on an open ask, in Unix milliseconds; 0: running (#178).
+    paused: u64,
     /// When it was last used, in Unix milliseconds.
     used: u64,
     /// Its row's view of the chat while the chat is unloaded (only its turn stays); `None` while loaded.
@@ -215,6 +219,9 @@ pub struct Slice {
     pub queue: Vec<Queued>,
     /// The oldest config card that waits (#553 row 32), wherever it is.
     pub waiting: Option<Item>,
+    /// A room's members' open asks (#178).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub asks: Vec<rooms::RoomAsk>,
 }
 
 /// A thread's first message while it connects: its text and the start's id (the item it becomes has it).
@@ -440,6 +447,8 @@ impl Live {
             pending: None,
             sent: None,
             stopped_starting: false,
+            asks: Vec::new(),
+            paused: 0,
             used: now(),
             unloaded: None,
             sending: Vec::new(),
@@ -496,6 +505,7 @@ impl Live {
     fn publish(&mut self, hub: &Hub, changes: Vec<Change>) -> Result<(), StoreError> {
         let store = &hub.store;
         for mut change in changes {
+            let mut ask = None;
             if let Change::Item(i) = &mut change
                 && matches!(i.body, Body::Approval { .. })
                 && !self.meta.room.is_empty()
@@ -504,6 +514,7 @@ impl Live {
                 if let Some(c) = self.chat.items.iter_mut().find(|c| c.id == i.id) {
                     c.speaker.clone_from(&i.speaker);
                 }
+                ask = Some(i.clone());
             }
             let watched = self.tx.as_ref().is_some_and(|t| t.receiver_count() > 0);
             if let Some(n) = note(
@@ -521,6 +532,9 @@ impl Live {
                 }
                 Change::Text(text) => self.emit("text", json!({ "text": text }).to_string()),
                 Change::State(turn) => self.emit("state", json!(turn).to_string()),
+            }
+            if let Some(item) = ask {
+                hub.room_ask(&self.meta, item);
             }
         }
         Ok(())
@@ -2198,6 +2212,7 @@ impl Hub {
             }),
             queue: live.meta.queue.clone(),
             waiting: items.iter().find(|i| waits(&i.body)).cloned(),
+            asks: live.asks.clone(),
         })
     }
 
@@ -2737,7 +2752,7 @@ fn short(folder: &Path) -> String {
 mod tests {
     use std::time::Instant;
 
-    use cooee_core::shed_proto::{EventKind, Reported};
+    use cooee_core::shed_proto::{ApprovalOption, EventKind, Reported};
 
     use super::*;
 
@@ -2880,6 +2895,61 @@ mod tests {
         assert!(note.data.contains("10 minutes passed"), "{}", note.data);
         hub.watch(t0 + 2 * rooms::DEADLINE);
         assert!(rx.try_recv().is_err());
+    }
+
+    /// #178: a member's open ask reaches its room's pages and slice with the member's session, and pauses the room's
+    /// deadline (a fake clock); answering it closes it there and resumes the deadline, shifted by the pause.
+    #[test]
+    fn a_members_ask_shows_in_its_room_and_pauses_its_deadline() {
+        let dir = scratch("room-ask");
+        let t0 = now();
+        let turn = |m: &str| json!({ "member": m, "reason": "round" });
+        let threads = dir.join("data/threads");
+        let room = json!({ "format": 1, "thread": { "id": "room", "title": "room", "messages": [], "kind": "room",
+            "members": [{ "persona": "ada", "session": "s1" }], "round": [turn("ada")], "asked_at": t0 - 9 * 60_000 } });
+        fs::write(threads.join("room.json"), room.to_string()).unwrap();
+        fs::write(threads.join("room.jsonl"), "").unwrap();
+        let member = json!({ "format": 1, "thread": { "id": "s1", "title": "s1", "messages": [],
+            "terminal": "cooee-s1", "room": "room", "profile": "ada" } });
+        fs::write(threads.join("s1.json"), member.to_string()).unwrap();
+        fs::write(threads.join("s1.jsonl"), "").unwrap();
+        let hub = hub(&dir);
+        let (_, mut rx) = hub.subscribe("room", "").unwrap();
+        let option = ApprovalOption {
+            id: "once".into(),
+            name: "Allow once".into(),
+            kind: "allow_once".into(),
+        };
+        let (tool, options) = ("fetch sec.gov".to_owned(), vec![option]);
+        hub.apply(event("s1", 1, EventKind::ApprovalRequest { tool, options }));
+        let ask = rx.try_recv().unwrap();
+        let data: serde_json::Value = serde_json::from_str(&ask.data).unwrap();
+        assert_eq!(ask.event, "room-ask");
+        assert_eq!(
+            (&data["member"], &data["session"]),
+            (&json!("ada"), &json!("s1"))
+        );
+        assert_eq!(data["item"]["block"]["title"], "fetch sec.gov");
+        let asks = |hub: &Hub| hub.slice("room", None, 50, 0).unwrap().asks.len();
+        assert_eq!(asks(&hub), 1);
+        let round = |hub: &Hub| hub.thread("room").unwrap().0.round.len();
+        hub.watch(now() + rooms::DEADLINE);
+        assert_eq!(round(&hub), 1, "the deadline waits while the ask is open");
+        lock(&hub.live("room").unwrap()).paused -= 5 * 60_000;
+        hub.apply(event(
+            "s1",
+            2,
+            EventKind::Approved {
+                option: "once".into(),
+            },
+        ));
+        let answered = rx.try_recv().unwrap();
+        assert!(answered.data.contains("✓ once"), "{}", answered.data);
+        assert_eq!(asks(&hub), 0);
+        hub.watch(now() + 3 * 60_000);
+        assert_eq!(round(&hub), 1, "five paused minutes moved the deadline on");
+        hub.watch(now() + 6 * 60_000);
+        assert_eq!(round(&hub), 0);
     }
 
     /// #155: a member's session that started after its reply was already in is kept, never cancelled; one that

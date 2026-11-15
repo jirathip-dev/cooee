@@ -8,6 +8,9 @@ public struct Room: Equatable, Sendable {
     public let cast: [APIPersona]
     public var round = RoomRound()
     public var inspecting: String?
+    public var asks: [RoomAsk] = []
+
+    private static let cards = Int.min / 2
 
     public var names: [String: String] { Dictionary(cast.map { ($0.id, $0.name) }) { first, _ in first } }
 
@@ -17,8 +20,25 @@ public struct Room: Equatable, Sendable {
         self.cast = cast
     }
 
-    internal mutating func hear(_ event: StreamEvent) {
+    public var cards: [Item] {
+        asks.enumerated().compactMap { index, ask in
+            ask.item.block.map { .card(id: Self.cards + index, poster: ask.member, block: $0) }
+        }
+    }
+
+    internal func ask(_ card: Int) -> RoomAsk? {
+        asks.indices.contains(card - Self.cards) ? asks[card - Self.cards] : nil
+    }
+
+    internal mutating func heard(_ asks: [RoomAsk], when: Date) {
+        self.asks = asks.filter(\.open)
+        if let first = self.asks.first { round.asks(first.member, when: when) } else { round.answered(when: when) }
+    }
+
+    internal mutating func hear(_ event: StreamEvent, when: @autoclosure () -> Date) {
         switch event {
+        case .roomAsk(let ask):
+            heard(asks.filter { $0.session != ask.session || $0.item.id != ask.item.id } + [ask], when: when())
         case .roomTurn(let member):
             round.began(member)
         case .roomStop(let reason):
