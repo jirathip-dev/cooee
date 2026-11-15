@@ -121,7 +121,7 @@ grep -qF "gh issue edit 6 -R o/r --title nightly red: stable (macos-latest) sinc
 # has every line in WANT (one per argument).
 mkdir -p "$t/e2e/apple/e2e" "$t/e2e/apple/UITests" "$t/e2e/scripts"
 cp "$here/apple/e2e/map.toml" "$t/e2e/apple/e2e/"
-cp "$here"/apple/UITests/*.swift "$t/e2e/apple/UITests/"
+cp -R "$here"/apple/UITests/* "$t/e2e/apple/UITests/"
 cp "$here/scripts/e2e-scope.sh" "$t/e2e/scripts/"
 cd "$t/e2e"
 git init -q -b staging
