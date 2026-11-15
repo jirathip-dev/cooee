@@ -19,14 +19,13 @@ internal struct HomeFeatureTests {
             HomeFeature()
         } withDependencies: { [clock] in
             $0.continuousClock = clock
-            $0.threads.threads = { _ in
+            $0.threads.home = { _ in
                 switch queue.next() {
-                case .rows(let rows): return rows
+                case .rows(let rows): return HomeAnswer(screen: homeScreen, threads: rows, personas: [coder])
                 case .failure(let error): throw error
-                case nil: return []
+                case nil: return HomeAnswer(screen: homeScreen, threads: [], personas: [coder])
                 }
             }
-            $0.threads.personas = { _ in [coder] }
             $0.plugins.installed = { _ in [drover] }
         }
     }
@@ -38,6 +37,7 @@ internal struct HomeFeatureTests {
         ])
         await store.send(.task)
         await store.receive(\.loaded) {
+            $0.screen = homeScreen
             $0.rows = [rows[0]]
             $0.personas = [coder]
             $0.plugins = [drover]
@@ -51,18 +51,21 @@ internal struct HomeFeatureTests {
 
     @Test internal func homeListsPersonasChatsOnlyAndALaneFallsIntoOthersUntilAPluginClaimsIt() async {
         let rows = [row("t1"), lane("l1"), row("loose", persona: "")]
-        let store = store([.rows(rows)])
-        store.dependencies.threads.personas = { _ in [coder, conductor] }
+        let store = store([])
+        store.dependencies.threads.home = { _ in
+            HomeAnswer(screen: homeScreen, threads: rows, personas: [coder, conductor])
+        }
         store.dependencies.plugins.installed = { _ in [] }
         await store.send(.refresh)
         await store.receive(\.loaded) {
+            $0.screen = homeScreen
             $0.rows = rows
             $0.personas = [coder, conductor]
         }
         var lists = store.state.lists(now: epoch)
         #expect(lists.chats.map(\.id) == ["t1"] && lists.workflow.isEmpty)
         #expect(lists.others.map(\.id) == ["l1", "loose"])
-        await store.send(.loaded(rows, [coder, conductor], [drover])) { $0.plugins = [drover] }
+        await store.send(.loaded(homeScreen, rows, [coder, conductor], [drover])) { $0.plugins = [drover] }
         lists = store.state.lists(now: epoch)
         #expect(lists.chats.map(\.id) == ["t1"] && lists.others.map(\.id) == ["loose"])
         #expect(lists.workflow.mapValues { $0.map(\.id) } == ["cond": ["l1"]])
@@ -73,6 +76,7 @@ internal struct HomeFeatureTests {
         await store.send(.failed("Locked.")) { $0.error = "Locked." }
         await store.send(.refresh)
         await store.receive(\.loaded) {
+            $0.screen = homeScreen
             $0.rows = [row("t1")]
             $0.personas = [coder]
             $0.plugins = [drover]
@@ -83,5 +87,12 @@ internal struct HomeFeatureTests {
         #expect(store.state.lists(now: epoch).chats.map(\.id) == ["t1"])
         #expect(store.state.persona("coder") == coder && store.state.persona("x") == nil)
         await store.send(.delegate(.unauthorized))
+    }
+
+    @Test internal func offlineHomeHoldsNoScreenSoTheBundledOneDraws() async {
+        let store = store([.failure(APIError(status: 502, text: "Offline."))])
+        await store.send(.refresh)
+        await store.receive(\.failed) { $0.error = "Offline." }
+        #expect(store.state.screen == nil && store.state.rows.isEmpty)
     }
 }

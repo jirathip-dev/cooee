@@ -207,6 +207,7 @@ default (`apple/Sources/CooeeUI/Default/layout.json`). A bad write changes nothi
 | `GET /layout` | | `{etag, layout}` and an `ETag` header; 304 with no body when `If-None-Match` names it |
 | `GET /layout/events` | | SSE: `changed {etag}` after a good write; `broken {line, col, why}` after a bad one, and at once to a new subscriber while the file is broken |
 | `POST /layout/reset` | | writes the default to `layout.json`, the old file kept as `layout.json.bak`; answers as `GET /layout`; 409 with no config folder |
+| `GET /screens/home` | | core's home (#311): `{type: "screen", source: "core", id, title, blocks, threads, personas}`, the app's bundled `Default/screens/home.json` with `threads` as `GET /threads` and `personas` as `GET /personas`; `source` is always the server's |
 
 ## Pairing (no cookie needed)
 

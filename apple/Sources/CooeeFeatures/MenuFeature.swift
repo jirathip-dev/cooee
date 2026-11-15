@@ -33,6 +33,7 @@ public struct MenuFeature: Sendable {
         case style(LookStyle)
         case theme(String)
         case icon(AppIcon?)
+        case pinRoom(String)
         case push(Bool)
         case pushed(String?)
         case failed(String)
@@ -85,6 +86,8 @@ public struct MenuFeature: Sendable {
             state.settings.scheme = scheme
         case .theme(let theme):
             state.settings.theme = theme
+        case .pinRoom(let room):
+            state.settings.pin(room: room)
         default:
             return pushed(&state, action)
         }

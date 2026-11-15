@@ -16,7 +16,7 @@ extension PairingClient: DependencyKey {
 
 extension ThreadsClient: DependencyKey {
     public static let liveValue = ThreadsClient(
-        threads: { server in try await Client(server).threads() },
+        home: { server in try await Client(server).home() },
         personas: { server in try await Client(server).personas() },
         looks: { server in try await Client(server).looks() },
         messages: { server, thread in try await Client(server).messages(thread) },

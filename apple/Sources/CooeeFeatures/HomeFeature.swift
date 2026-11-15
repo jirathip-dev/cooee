@@ -8,6 +8,7 @@ public struct HomeFeature: Sendable {
     @ObservableState
     public struct State: Equatable {
         public let server: Server
+        public var screen: HomeScreen?
         public var rows: [ThreadRow] = []
         public var personas: [APIPersona] = []
         public var plugins: [PluginRow] = []
@@ -32,7 +33,7 @@ public struct HomeFeature: Sendable {
     public enum Action: Sendable {
         case task
         case refresh
-        case loaded([ThreadRow], [APIPersona], [PluginRow])
+        case loaded(HomeScreen, [ThreadRow], [APIPersona], [PluginRow])
         case failed(String)
         case delegate(Delegate)
 
@@ -43,7 +44,7 @@ public struct HomeFeature: Sendable {
     }
 
     private enum Outcome {
-        case loaded([ThreadRow], [APIPersona], [PluginRow])
+        case loaded(HomeScreen, [ThreadRow], [APIPersona], [PluginRow])
         case failed(String)
         case unauthorized
     }
@@ -61,7 +62,8 @@ public struct HomeFeature: Sendable {
                 return poll(state.server)
             case .refresh:
                 return refresh(state.server)
-            case .loaded(let rows, let personas, let plugins):
+            case .loaded(let screen, let rows, let personas, let plugins):
+                state.screen = screen
                 state.rows = rows.filter { !$0.archived }
                 state.personas = personas
                 state.plugins = plugins
@@ -95,10 +97,10 @@ public struct HomeFeature: Sendable {
 
     private static func load(_ server: Server, _ threads: ThreadsClient, _ plugins: PluginsClient) async -> Outcome {
         do {
-            async let rows = threads.threads(server)
-            async let personas = threads.personas(server)
+            async let home = threads.home(server)
             async let installed = plugins.installed(server)
-            return .loaded(try await rows, try await personas, try await installed)
+            let (answer, rows) = (try await home, try await installed)
+            return .loaded(answer.screen, answer.threads, answer.personas, rows)
         } catch let error as APIError where error.status == 401 {
             return .unauthorized
         } catch {
@@ -108,7 +110,8 @@ public struct HomeFeature: Sendable {
 
     private static func report(_ outcome: Outcome, _ send: Send<Action>) async {
         switch outcome {
-        case .loaded(let rows, let personas, let plugins): await send(.loaded(rows, personas, plugins))
+        case .loaded(let screen, let rows, let personas, let plugins):
+            await send(.loaded(screen, rows, personas, plugins))
         case .failed(let error): await send(.failed(error))
         case .unauthorized: await send(.delegate(.unauthorized))
         }

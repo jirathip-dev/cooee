@@ -108,3 +108,13 @@ extension CooeeCore.Layout {
         return try! CooeeCore.Layout(json: Data(contentsOf: url), etag: "")
     }()
 }
+
+extension HomeScreen {
+    /// The bundled home (`Default/screens/home.json`): drawn until the server's first answer, and offline.
+    public static let bundled: HomeScreen = {
+        // SAFETY: Default/screens/home.json is copied into this module's bundle by Package.swift
+        let url = Bundle.module.url(forResource: "home", withExtension: "json", subdirectory: "Default/screens")!
+        // SAFETY: DefaultLayoutTests decodes the bundled home, so a bad edit fails the tests first
+        return try! JSONDecoder().decode(HomeScreen.self, from: Data(contentsOf: url))
+    }()
+}
