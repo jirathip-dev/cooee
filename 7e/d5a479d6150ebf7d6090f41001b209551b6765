@@ -1,0 +1,10 @@
+Decided: round 13 merges origin/staging; #310 moved Home and the chat into SlotView, so Others and the Workflow back label move there too
+Because: apple/Sources/CooeeUI/SlotView.swift:108
+Decided: a Workflow round tap sends its own round delegate and pushes; #181's lane tap still replaces the open chat
+Because: apple/Sources/CooeeFeatures/ChatPlugins.swift:30
+Because: "tap a round to open that session as a normal chat"
+Rejected: one shared open delegate — #181's test wants the lane tap to replace the path, while a round must return to the sheet
+Decided: AppFeature's helpers sit in a same-file extension to stay under SwiftLint's 150-line type body
+Check: apple-check passes every step up to swiftlint analyze, which segfaults locally (exit 139); CI apple-quality decides it
+Check: e2e others and workflow shots at this head, now drawn through SlotView
+Owner: Same feature, caught up with staging's new layout system; Others and the Workflow sheet now work inside it.
