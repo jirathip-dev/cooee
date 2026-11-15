@@ -28,10 +28,14 @@ internal struct PinnedTests {
             $0.continuousClock = clock
             $0.threads.messages = { _, thread in
                 calls.record("messages \(thread)")
-                return Slice(items: [APIItem(id: 7, time: 1, kind: "agent", text: "Hi")], turn: Turn(state: "done"), cursor: "c", queue: [])
+                return Slice(
+                    items: [APIItem(id: 7, time: 1, kind: "agent", text: "Hi")], turn: Turn(state: "done"), cursor: "c",
+                    queue: [])
             }
             $0.threads.read = { _, thread, item in calls.record("read \(thread) \(item)") }
-            $0.threads.events = { _, _, _ in AsyncThrowingStream { $0.finish(throwing: APIError(status: 404, text: "Gone.")) } }
+            $0.threads.events = { _, _, _ in
+                AsyncThrowingStream { $0.finish(throwing: APIError(status: 404, text: "Gone.")) }
+            }
         }
     }
 
