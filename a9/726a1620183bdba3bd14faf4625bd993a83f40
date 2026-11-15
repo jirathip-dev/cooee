@@ -1,0 +1,13 @@
+Decided: staging build fix, staging's arch-check fails on hub.rs, so the proposal cards move to hub/proposals.rs, the code unchanged
+Because: .drover/arch-baseline.txt:1
+Decided: this PR's growth moves out too: GitHub deliveries to core routines/github.rs, cooee doctor to crates/cooee/src/doctor.rs
+Because: .drover/arch.toml:7
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs, so the runner's tick cannot deadlock with it
+Because: crates/cooee-server/src/hub.rs:1955
+Decided: a GitHub routine without [hooks] is refused NO_HOOKS
+Because: crates/cooee-server/src/routines.rs:135
+Rejected: trimming lines inside hub.rs — moving one cohesive block to a file is what the hot-files ADR asks
+Check: drover arch-check exits 0; the webhook test now waits for the run's first message, not just its thread
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
