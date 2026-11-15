@@ -1,0 +1,11 @@
+Decided: this PR is slice 0 only; slices 1-9 and the 35 one-area moves become serial issues the orchestrator files
+Because: q1706
+Decided: gen.sh writes the core lib.rs and runs cargo update --workspace for Cargo.lock; slice 0 adds only the kinds slice 0 needs
+Because: scripts/gen.sh:34
+Decided: the output is already rustfmt-clean, so gen.sh calls no rustfmt and the reusable arch-check job needs no extra component
+Because: scripts/gen.sh:22
+Decided: the arch-check CI job calls drover's reusable workflow, on staging like the drover it installs
+Because: .github/workflows/ci.yml:80
+Rejected: a [[collect]] on crates/cooee-core/src — its glob would exempt the frozen root.rs
+Check: arch-check fails a new line in root.rs, a hand edit of lib.rs and a new module without just gen (log in the PR body)
+Owner: Adding a core module now means running `just gen`; CI says so when someone forgets, and nothing about the app changes.
