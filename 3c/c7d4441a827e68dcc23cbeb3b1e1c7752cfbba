@@ -1,0 +1,14 @@
+Decided: the handlers of lib.rs, pairing.rs and routines.rs move as-is to routes/<area>.rs per shapes.md's route areas; Pairing and the routine Runner stay where they are
+Because: crates/cooee-server/src/pairing.rs:28
+Decided: serve.rs registers the runner with app_context, so routes/routines.rs exports routes(b) like every other area
+Because: crates/cooee-server/src/serve.rs:101
+Decided: plugins registers its own Dots; what two areas need (Answer, recipe, profiles, Code, Created, AgentAsk) lives in http.rs
+Because: crates/cooee-server/src/routes/plugins.rs:542
+Decided: layout stays a private module, though shapes.md's private list predates it
+Because: scripts/gen.sh:52
+Decided: root.rs also re-exports router and serve, which lived at the root before
+Because: crates/cooee-server/src/root.rs:9
+Rejected: dropping the server root.rs freeze until drover's arch-check catches up — drover#1075 (closed) reads frozen from the base, so CI passes it
+Check: sh scripts/gen.sh leaves no diff, and CI arch-check is green (a local drover older than #1075 flags only root.rs's new lines)
+Check: git diff origin/staging moves bodies only: imports, pub(crate) and the routes(b) wrappers differ
+Owner: Nothing changes in the app; adding a server route now means adding one file in routes/ and running just gen.
