@@ -34,7 +34,16 @@ public struct Room: Equatable, Sendable {
 }
 
 extension ChatFeature {
-    internal func seat(_ state: inout State, _ action: Action) -> Effect<Action> {
+    @CasePathable
+    public enum Seats: Sendable, Equatable {
+        case inspect(String?)
+        case move(String, Int)
+        case seat(String)
+        case unseat(String)
+        case seated([String])
+    }
+
+    internal func seat(_ state: inout State, _ action: Seats) -> Effect<Action> {
         guard var room = state.room else { return .none }
         defer { state.room = room }
         switch action {
@@ -50,8 +59,6 @@ extension ChatFeature {
             return seated(state, member, remove: true)
         case .seated(let members):
             room.members = members
-        default:
-            break
         }
         return .none
     }
@@ -60,7 +67,7 @@ extension ChatFeature {
         guard case .thread(let thread) = state.target else { return .none }
         let (threads, server) = (threads, state.server)
         return .run { send in
-            await send(.seated(try await threads.seat(server, thread, persona, place, remove)))
+            await send(.room(.seated(try await threads.seat(server, thread, persona, place, remove))))
         } catch: { error, send in
             await send(.failed(error.localizedDescription))
         }

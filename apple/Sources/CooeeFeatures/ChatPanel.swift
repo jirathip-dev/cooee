@@ -44,7 +44,7 @@ extension ChatFeature {
         case .newChat: return .send(.delegate(.newChat(persona)))
         case .open(let place): return .send(.plugins(.open(place)))
         case .attach(let plugin): return .send(.plugins(.attach(plugin)))
-        case .stop: return .send(.stop)
+        case .stop: return .send(.compose(.stop))
         }
     }
 }
