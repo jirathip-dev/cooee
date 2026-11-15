@@ -125,6 +125,8 @@ cp "$here"/apple/UITests/*.swift "$t/e2e/apple/UITests/"
 cp "$here/scripts/e2e-scope.sh" "$t/e2e/scripts/"
 cd "$t/e2e"
 git init -q -b staging
+git config user.email ci@example.com
+git config user.name ci
 git add -A
 git commit -qm base
 e2ebase=$(git rev-parse HEAD)
