@@ -1,0 +1,14 @@
+Decided: ChatFeature.Action has one case per area; each area's enum and reducer sit in that area's file
+Because: "the nested enums move to their files (ChatFeature.swift stays as the kernel: one Action case per area)"
+Decided: the kernel's task, loaded, event and failed go through one listen function so body's switch stays under SwiftLint's complexity 8
+Because: apple/.swiftlint.yml:37
+Decided: no .drover/arch.toml lines for this slice
+Because: docs/architecture/hot-files/adr.md:252
+Decided: staging build fix, hub.rs's arch baseline takes staging's 3120 lines; staging's ci arch-check is red on it
+Because: .drover/arch-baseline.txt:1
+Decided: screen keeps ScreenFeature.Action; shapes.md's PluginScreenFeature would be a type rename
+Because: apple/Sources/CooeeFeatures/ChatFeature.swift:64
+Rejected: moving State's fields per area — shapes.md keeps State flat because every chat view reads it
+Check: tests change only in how actions are spelled (.compose(.send), \.outbox.delivered); no assertion changed
+Check: sh scripts/apple-check.sh exits 0 and drover arch-check --base origin/staging exits 0
+Owner: Nothing changes in the app; each part of the chat's code now lives in its own file.
