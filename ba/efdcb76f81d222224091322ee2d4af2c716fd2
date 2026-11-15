@@ -1,0 +1,11 @@
+Decided: merged origin/staging (#276); the room pin action sits in MenuFeature's pick beside the theme, keeping body under complexity 8
+Because: apple/Sources/CooeeFeatures/MenuFeature.swift:88
+Decided: Settings' own decoder reads #276's pinned rooms, else they would be lost on relaunch
+Because: apple/Sources/CooeeCore/Settings.swift:35
+Decided: the looks routes live in themes.rs; lib.rs only registers them, staying at its arch baseline
+Because: crates/cooee-server/src/themes.rs:393
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: "A pack installed or removed on the server shows or disappears in the list"
+Rejected: an in-memory pack cache with a file watcher — more code than one load per call needs
+Check: swift test (RoomPinTests, MenuFeatureTests), cargo test --workspace and drover arch-check pass at head
+Owner: The branch sits on current staging again; pinned rooms and the Theme picker both keep working.
