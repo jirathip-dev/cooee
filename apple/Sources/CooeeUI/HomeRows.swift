@@ -5,7 +5,7 @@ internal struct PinnedRow: View {
     @Environment(\.look) private var look
     internal let personas: [Persona]
     internal let rows: [Row]
-    internal var new: (String) -> Void = { _ in }
+    internal var pin: (String) -> Void = { _ in }
 
     private var scene: Bool { look.style == .scene }
 
@@ -32,7 +32,7 @@ internal struct PinnedRow: View {
             HStack(alignment: .bottom, spacing: scene ? 4 : 14) {
                 ForEach(personas) { persona in
                     Button {
-                        new(persona.id)
+                        pin(persona.id)
                     } label: {
                         pin(persona)
                     }
@@ -71,16 +71,23 @@ internal struct ChatRow: View {
     @Environment(\.look) private var look
     internal let row: Row
     internal let persona: Persona
+    internal var members: [Persona] = []
     internal var selected = false
 
     internal var body: some View {
         let palette = look.palette
+        let room = !members.isEmpty
         HStack(spacing: 12) {
-            Avatar(persona: persona.with(state: row.state), size: 48)
+            if room {
+                RoomStack(members: members, size: 22, state: .done).frame(width: 48, height: 48)
+            } else {
+                Avatar(persona: persona.with(state: row.state), size: 48)
+            }
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(persona.name).ui(16, .semibold, look).lineLimit(1)
-                    Text(row.title).ui(14, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+                    Text(room ? row.title : persona.name).ui(16, .semibold, look).lineLimit(1)
+                    Text(room ? "\(members.count) members" : row.title).ui(14, .regular, look)
+                        .foregroundStyle(palette.mute).lineLimit(1)
                     Spacer(minLength: 4)
                     Text(row.ago).ui(13, .regular, look).foregroundStyle(row.unseen > 0 ? palette.link : palette.mute)
                 }

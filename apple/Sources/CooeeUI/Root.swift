@@ -15,7 +15,12 @@ public struct AppRoot: View {
     public var body: some View {
         Group {
             if let home = store.scope(state: \.home, action: \.home) {
-                content(home).task { await home.send(.task).finish() }
+                let compact = size == .compact
+                SlotView(
+                    store: store, node: store.layout.layout.resolved(for: compact ? .compact : .wide), compact: compact
+                )
+                .task { await home.send(.task).finish() }
+                .task { await store.send(.layout(.task)).finish() }
             } else if let setup = store.scope(state: \.setup, action: \.setup) {
                 MacSetup(store: setup)
             } else if let pairing = store.scope(state: \.pairing, action: \.pairing) {
@@ -26,10 +31,13 @@ public struct AppRoot: View {
                 }
             }
         }
-        .sheet(isPresented: Binding(get: { store.menu.open }, set: { store.send(.menu(.open($0))) })) {
-            MenuSheet(store: store.scope(state: \.menu, action: \.menu)).presentationDetents([.medium, .large])
-        }
         .sheet(item: $store.scope(state: \.persona, action: \.persona)) { persona in PersonaScreen(store: persona) }
+        .sheet(
+            isPresented: Binding(
+                get: { store.newRoom != nil }, set: { if !$0 { store.send(.newRoom(.delegate(.cancel))) } })
+        ) {
+            if let room = store.scope(state: \.newRoom, action: \.newRoom) { NewRoomScreen(store: room) }
+        }
         .environment(\.look, Look(palette: .farm(dark ? .dark : .light), style: store.menu.settings.style))
         .preferredColorScheme(store.menu.settings.scheme == .system ? nil : dark ? .dark : .light)
     }
@@ -45,45 +53,15 @@ public struct AppRoot: View {
     public init(store: StoreOf<AppFeature>) {
         self.store = store
     }
-
-    @ViewBuilder private func content(_ home: StoreOf<HomeFeature>) -> some View {
-        let actions = HomeActions(
-            menu: { store.send(.menu(.open(true))) },
-            new: { store.send(.start($0)) },
-            open: { store.send(.open($0)) },
-            edit: { store.send(.edit($0)) }
-        )
-        let chats = home.state.chats(now: Date())
-        if size == .compact {
-            NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
-                HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
-                    .navigationDestination(for: String.self) { _ in chat(back: true).toolbar(.hidden) }
-                    .toolbar(.hidden)
-            }
-        } else {
-            WideView(
-                personas: home.pinned, all: home.everyone, chats: chats, selected: store.path.last, actions: actions
-            ) {
-                chat(back: false)
-            }
-        }
-    }
-
-    @ViewBuilder private func chat(back: Bool) -> some View {
-        if let chat = store.scope(state: \.chat, action: \.chat) {
-            ChatScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
-        } else if !back {
-            Text("Pick a chat, or start one with +").foregroundStyle(.secondary).frame(maxHeight: .infinity)
-        }
-    }
 }
 
 internal struct ChatScreen: View {
     @Bindable internal var store: StoreOf<ChatFeature>
     internal let back: Bool
+    internal var headed = true
     internal let onBack: () -> Void
 
-    private var actions: ChatActions {
+    internal static func actions(_ store: StoreOf<ChatFeature>, back onBack: @escaping () -> Void) -> ChatActions {
         var actions = ChatActions(
             draft: Binding(get: { store.draft }, set: { store.send(.draftChanged($0)) }),
             files: store.files.map(\.name),
@@ -114,7 +92,8 @@ internal struct ChatScreen: View {
             since: store.since,
             queued: store.queue.map(\.text),
             back: back,
-            actions: actions
+            headed: headed,
+            actions: Self.actions(store, back: onBack)
         )
         .task { await store.send(.task).finish() }
         .task { await store.send(.plugins(.load)).finish() }
@@ -129,16 +108,31 @@ internal struct PersonaScreen: View {
     internal var body: some View {
         PersonaSheet(
             draft: $store.draft,
-            agentOpen: $store.agentOpen,
+            choices: PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts),
             memory: PersonaMemory(
                 notes: Listing.memory(store.notes, persona: store.draft.name, now: Date()), count: store.notes.count
             ),
             error: store.error,
-            actions: PersonaActions(
-                close: { store.send(.close) }, save: { store.send(.save) }, clear: { store.send(.clearMemory) }
-            )
+            actions: actions
         )
         .disabled(store.busy)
         .task { await store.send(.task).finish() }
+        .sheet(isPresented: Binding(get: { store.folders != nil }, set: { _ in store.send(.folder(nil)) })) {
+            if let listing = store.folders {
+                FolderBrowser(
+                    listing: listing, search: $store.search, browse: { store.send(.browse($0)) },
+                    pick: { store.send(.folder($0)) }
+                )
+            }
+        }
+    }
+
+    private var actions: PersonaActions {
+        var actions = PersonaActions(
+            close: { store.send(.close) }, save: { store.send(.save) }, clear: { store.send(.clearMemory) }
+        )
+        actions.agent = { store.send(.agent($0)) }
+        actions.browse = { store.send(.browse(nil)) }
+        return actions
     }
 }

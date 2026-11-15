@@ -18,6 +18,7 @@ internal struct MenuFeatureTests {
             }
             $0.push.token = { "ab12" }
             $0.push.register = { _, token, enabled in calls.record("register \(token) \(enabled)") }
+            $0.appIcon.set = { icon in calls.record("icon \(icon.asset)") }
         }
     }
 
@@ -31,7 +32,30 @@ internal struct MenuFeatureTests {
             $0.open = false
             $0.path = []
         }
-        #expect(calls.all == ["save dark modern -", "save dark terminal -"])
+        #expect(calls.all == ["save dark modern -", "save dark terminal -", "icon TerminalPrompt"])
+    }
+
+    @Test internal func aPickedIconStaysThroughStyleChangesUntilTheLookIsFollowedAgain() async {
+        let store = store()
+        let koala = IconSet.bush.icons[2]
+        await store.send(.icon(koala)) { $0.settings.icon = koala }
+        await store.send(.style(.scene)) { $0.settings.style = .scene }
+        await store.send(.icon(nil)) { $0.settings.icon = nil }
+        await store.send(.icon(IconSet.farm.icons[0])) {
+            $0.settings.icon = IconSet.farm.icons[0]
+        }
+        #expect(
+            calls.all == [
+                "save system modern -", "icon BushKoala", "save system scene -", "save system scene -", "icon FarmBay",
+                "save system scene -",
+            ])
+    }
+
+    @Test internal func aRefusedIconChangeSaysWhichTileToTapAgain() async {
+        let store = store()
+        store.dependencies.appIcon.set = { _ in throw APIError(status: 0, text: "no") }
+        await store.send(.style(.terminal)) { $0.settings.style = .terminal }
+        await store.receive(\.failed) { $0.error = "Couldn't change the Home Screen icon. Tap Prompt to try again." }
     }
 
     @Test internal func pushOnRegistersTheDeviceTokenAndOffRemovesIt() async {

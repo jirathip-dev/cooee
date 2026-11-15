@@ -1,11 +1,11 @@
 # cooee's JSON and SSE API
 
-Everything `web/ts` calls (#49), and what a native app would call too. Pages are server HTML; the script never reads
-them, only these endpoints. Every call needs a paired device's `cooee` cookie (pairing and `/look` excepted), and a
+Everything the native app (`apple/Sources/CooeeAPI`) and the plugins call; cooee serves no pages since #189. Every
+call needs a paired device's `cooee` cookie (pairing excepted), and a
 request must name one of the server's own hosts (`Host`, and `Origin` when sent).
 
 A failure is a status ≥ 400. When the body is cooee's own sentence, the answer carries `Cooee-Error: 1` and a
-`text/plain` body to show as it is; any other failure is worded by the page. `Item` is one row of a thread:
+`text/plain` body to show as it is; any other failure is worded by the app. `Item` is one row of a thread:
 
 ```ts
 type Item = { id: number; at: number; seq?: number } & (
@@ -30,11 +30,10 @@ type File = { name: string; data: string }; // data: the bytes in base64
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, persona_name, persona_role, folder, machine, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}}` (`unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted, `persona_name` and `persona_role` its name and role; `machine`: the one it runs on, `""` this host) |
+| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, persona_name, persona_role, folder, machine, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}, routine}` (`unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted, `persona_name` and `persona_role` its name and role; `machine`: the one it runs on, `""` this host) |
 | `POST /threads` | `{agent, account?, profile?, model?, effort?, folder?, machine?, text, random_id, background?}` (`profile`: a persona's or profile's id; a persona's agent, folder, model, effort and machine are its defaults; `machine` overrides its persona's, `""` this host, one not in `GET /machines` a 400) | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
 | `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
 | `POST /threads/{id}/folder` | `{folder}` (a root or inside one): "Use a folder…"; its agent starts again there and the next message carries a hand-over | the `note` it adds |
-| `POST /agents` | a form: `name`, `profile` (`""`: Plain on the first installed agent) | 303 to its new chat; the agent is saved as `<config>/profiles/<name>.toml` |
 | `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, queue: Queued[], waiting: Item \| null, pending?: {text, random_id}}` (`waiting`: the oldest config card that waits; `pending`: the first message while the thread connects) |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |
 | `POST /threads/{id}/send` | `{text, random_id, files?: File[]}` (a retry with the same id is stored once; the agent gets the files' paths under the text) | `Item` |
@@ -71,15 +70,19 @@ the ids, so notes are merged or forgotten first; a persona already past it keeps
 shrink them. `plugins` (#129) are the installed plugins (or config
 `[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. `role` (#159) is `""` (a plain persona)
 or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos or fleets it covers, which another may
-cover too): an installed `cooee-drover` is attached to each orchestrator by its role, never its name. The persona read
+cover too): an installed `drover` is attached to each orchestrator by its role, never its name. The persona read
 from a `conductor` profile (or saved from one before #159) is an orchestrator, its name kept. `machine` (#148) is the one its threads run on: `""` this host (every
 persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
-with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). An unknown
-id or a broken rule is a 400 with the reason.
+with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). A skill
+(#218) is `<data>/personas/<id>/skills/<name>/SKILL.md`, front matter (`name`, `description`) and a body, at most 20;
+each session's brief lists them `name: description` by name, never a body, which the persona reads with the `skill`
+tool. Clearing the notes leaves the skills; deleting the persona removes both. An unknown id or a broken rule is a
+400 with the reason.
 
 | Call | Body | Answer |
 |---|---|---|
 | `GET /machines` | | the machines a persona or thread may name, this host first: `{name, host, online, last_seen?, health?, error?}[]` (`name` `""` for this host, `host` its host name; `online` and `last_seen` shed's link to it, `health` its last sample from the machines plugin's `shed machine stats`) |
+| `GET /agents` | | the installed agents a persona or thread may name (#230), as `shed agents` last listed them: `{id, efforts: string[]}[]` (`efforts`: the ones its provider offers, `[]` for none); shed failing is a 400 with why |
 | `GET /personas` | | every persona, by id |
 | `POST /personas` | a persona without `id` (its id is made from `name`, not taken) | the persona |
 | `GET /personas/{id}` | | the persona |
@@ -91,12 +94,17 @@ id or a broken rule is a 400 with the reason.
 | `PUT /personas/{id}/memory/{note}` | `{text}` | the note, its text replaced, by `owner` |
 | `DELETE /personas/{id}/memory/{note}` | | `null`: that note goes, the others stay |
 | `DELETE /personas/{id}/memory` | | `null`: the notes go, the persona and its chats stay |
+| `GET /personas/{id}/skills` | | its skills (#218), `{name, description, body}[]`, by name |
+| `POST /personas/{id}/skills` | `{name, description, body}` | the skill; a name taken, a 21st skill, or a description not one line of at most 120 characters is a 400 |
+| `GET /personas/{id}/skills/{name}` | | the skill |
+| `PUT /personas/{id}/skills/{name}` | `{name, description, body}` | the skill, renamed when `name` differs |
+| `DELETE /personas/{id}/skills/{name}` | | `null` |
 
 ## Folders
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /folders?path=P&hidden=1` | | `{path, home, dirs: string[], roots: string[]}` |
+| `GET /folders?path=P&hidden=1` | | `{path, home, dirs: string[], roots: string[]}`: `P` (default home) inside home or a root; a root or a folder in one is spelled from the root as listed |
 | `POST /roots` | `{path, remove?}` | the roots, `string[]` |
 | `POST /folders/new` | `{parent, name}` | the new folder's path, `string` |
 
@@ -149,17 +157,12 @@ id or a broken rule is a 400 with the reason.
 | `POST /plugins/improve` | `{name, text}` | `{thread}` |
 | `POST /plugins/approve`, `/plugins/rollback`, `/plugins/remove` | `{name}` | a JSON string |
 
-## MCP servers (Settings › mcp servers, #56)
+## MCP servers (#56)
 
-Native forms, as theme packs; `GET /mcp` is the page.
+The registry is the Mac's: `cooee mcp add|rm|enable|disable`.
 
 | Call | Body | Answer |
 |---|---|---|
-| `POST /mcp/servers` | `name`, `type`, `target` (the command line or URL), `passkey` (an assertion, JSON) | 200 text; 403 without Face ID; 400 for a name taken |
-| `POST /mcp/servers/<name>` | `enabled` = `on` or `off`, nothing else | 303 to `/mcp`; 403 for any other field (a command, args, URL, env or headers: the Mac's) |
-| `POST /mcp/servers/<name>/remove` | | 303 to `/mcp` |
-| `POST /mcp/secret` | `name`, `value` | 303 to `/mcp`: saved to the keychain (else `<data>/secrets/`) |
-| `POST /profiles/<id>/mcp` | `s:<server>` per server, `t:<server>:<tool>` per tool (all ticked: all tools) | 303 to `/mcp` |
 | `POST /threads/<id>/approve` | on an MCP proposal's card, `approve` needs `passkey` | as any card; 403 without Face ID |
 
 A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the thread's token>`, no cookie:
@@ -174,39 +177,53 @@ can't start).
 `query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
 at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending
 `older: before=<item>` when more are left. Another persona's thread is a 400.
+`POST /mcp/agent/routine` `{thread, server: {name, when, prompt, place?}}` (#75) → `create_routine`'s item, the
+`routine` line it adds to the thread. A refusal is a 400 starting `BAD_SCHEDULE`, `BAD_NAME`, `BAD_PROMPT`,
+`BAD_PLACE`, `TOO_MANY` or `NOT_HERE` (a Workflow session or a routine's own run).
+`POST /mcp/agent/skill` `{thread, server: {read} | {propose: {name, description, body, replaces?}}}` (#218) → `skill`'s
+text: with `read`, the persona's skill's body (8,000 characters at most; another persona's is a 400); with `propose`,
+a card (`form: "skill"`, `detail` the new file, or for `replaces` its diff) whose `approve` saves it, `decline` or no
+answer nothing.
 
-## Theme packs (Settings › look › themes, [docs/themes.md](themes.md))
+## Routines (#75)
 
-Native forms (`application/x-www-form-urlencoded`); each answers with a redirect, or a 409 with the reason as text.
+| Route | Form | Answer |
+|---|---|---|
+| `GET /routines.json` | | `Routine[]`: `{id, name, trigger: {schedule}, place: {in: chat, thread} \| {in: new_thread, who}, prompt, paused?: {why: owner \| chat_gone}, made_in, made_at, last_due, last_run?: {at, key, outcome: ran \| failed, thread \| why}}` |
+| `POST /routines/<id>` | `name`, `when`, `prompt`, `paused` (`true`/`false`), each optional | 204; 400 with the refusal |
+| `POST /routines/<id>/delete` | | 204; the threads it ran in stay |
+
+A row's `routine` is the name of the routine whose run started the thread, else of the one that sent its last `you`
+item (that item's `routine: {id, name}`); `""` for none. The `routine` item is `{routine, name, when, place}`.
+
+## Layout (#300, [architecture/layout-blocks](architecture/layout-blocks/adr.md))
+
+The owner's `layout.json` beside `config.toml`, read every second. The server serves only a layout that passes the
+app's rules (`cooee layout check <file>` runs the same ones): with no file, or no good one yet, the app's bundled
+default (`apple/Sources/CooeeUI/Default/layout.json`). A bad write changes nothing served.
 
 | Call | Body | Answer |
 |---|---|---|
-| `POST /themes/add` | `source`: the index's name or a git URL | 303 to `/#settings/look` |
-| `POST /themes/remove` | `name` | 303 to `/#settings/look` |
-| `POST /themes/new`, `/themes/remix` | `name`, `text`, and for remix `from` | 303 to the agent's chat, `/t/<id>` |
-| `POST /themes/keep` | `name`, `thread` | 303 to `/#settings/look`; failing the gate, to the chat, where the failures were sent |
-| `POST /themes/publish` | `name` | 200, text: where its git repo is |
-| `GET /themes/dev/<name>?thread=<id>` | | the live preview page |
-| `GET /themes/dev/<name>/events` | | SSE: `saved` each time a file of the theme changes (the looks reloaded) |
-
-A page with `?preview=<name>` shows the theme being built in `themes-dev/<name>/`.
+| `GET /layout` | | `{etag, layout}` and an `ETag` header; 304 with no body when `If-None-Match` names it |
+| `GET /layout/events` | | SSE: `changed {etag}` after a good write; `broken {line, col, why}` after a bad one, and at once to a new subscriber while the file is broken |
+| `POST /layout/reset` | | writes the default to `layout.json`, the old file kept as `layout.json.bak`; answers as `GET /layout`; 409 with no config folder |
 
 ## Pairing (no cookie needed)
 
 | Call | Body | Answer |
 |---|---|---|
-| `POST /pair` | a form: `code` (or `code` and `d2`…`d6`, the six boxes) | 303 to `/?paired` with the cookie, else to `/pair?bad=wrong&left=N`, `bad=expired` or `bad=limit&wait=S` (5 wrong codes a minute per address) |
+| `POST /pair` | a form: `code` (or `code` and `d2`…`d6`) | 303 to `/?paired` with the cookie, else to `/pair?bad=wrong&left=N`, `bad=expired` or `bad=limit&wait=S` (5 wrong codes a minute per address) |
 | `POST /pair/request` | `{}` | `{word, claim}`: the check word; every paired device gets a push and the card |
 | `POST /pair/claim` | `{claim}` | 200 with the cookie once approved, 202 while it waits, 403 declined (who said no, text), 410 when it's gone (5 minutes) |
 | `POST /pair/cancel` | `{claim}` | text |
 | `POST /passkey/challenge` | `{}` | `{challenge, ids}`: a challenge good once for 5 minutes, the passkeys' ids |
 | `POST /passkey/signin` | a passkey's `{id, client, auth, sig}` (`navigator.credentials.get`, user verified) | 200 with the cookie, 403 why not |
 
-## Plugin tabs
+## Plugin backends
 
-A plugin's frame asks the page, which calls `GET` or `POST /p/{name}/api/{path}` (the plugin's own backend through
-cooee's proxy, with its token, never the cookie). An event stream comes back as SSE messages of `{event, data}`. The
-`terminal` tab's calls need the device unlocked with its passkey: else 403 `locked` (header `Cooee-Locked: 1`).
+`GET` or `POST /p/{name}/api/{path}` reaches the plugin's own backend through cooee's proxy, with its token, never the
+cookie. An event stream comes back as SSE messages of `{event, data}`. The `terminal` plugin's calls need the device
+unlocked with its passkey: else 403 `locked` (header `Cooee-Locked: 1`).
 
 ## Plugin screens (#125)
 
@@ -217,10 +234,3 @@ reaches them through cooee, with the plugin's token, never the cookie:
 |---|---|---|
 | `GET /p/{plugin}/screens/{path}` | | the backend's `GET /screens/{path}`: a screen (JSON), or its stream (SSE, each event `{seq, ops}` as sent, its id kept; `Last-Event-ID` goes along) |
 | `POST /p/{plugin}/action` | `{screen, block, action, values}` | the backend's answer to `POST /action` (`by`: the device), as it sent it; 403 for an action not in its `[permissions] actions` (never sent); 404 for no installed plugin with places; 502 when the backend can't be reached |
-
-## The look
-
-The pick is the `cooee-look` cookie (`theme:kitchen/mode:dark/style:terminal/scene:on/figures:none/dark:nord/light:paper`, any
-keys unset), which `look.ts` writes. With no script, the look sheet's form posts `POST /look` (a form: `to`, the page
-to go back to, and the one key tapped), which sets the cookie and answers 303 to `to`. The themes' data is at
-`GET /look/{theme}/theme.json`, `sprites.svg` and `icon.png`.

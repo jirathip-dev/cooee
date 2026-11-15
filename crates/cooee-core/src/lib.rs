@@ -7,6 +7,7 @@ mod blocks;
 mod chat;
 mod config;
 mod devices;
+pub mod group;
 pub mod history;
 mod login;
 pub mod mcp;
@@ -17,8 +18,10 @@ pub mod plugins;
 pub mod profiles;
 pub mod provider;
 mod providers;
+pub mod routines;
 pub mod secrets;
 mod shed;
+pub mod skills;
 mod store;
 
 pub use accounts::{Account, Accounts, Sheet, Usage, Window};
@@ -31,7 +34,7 @@ pub use devices::{
 pub use login::{Ran, Spec, Status, links, redact};
 pub use profiles::Profile;
 pub use provider::{Entry, Plain, Provider, Providers, agents_fix};
-pub use shed::{Agent, Launch, Shed, ShedError};
+pub use shed::{Agent, Launch, SHED_CARGO, SHED_LABEL, Shed, ShedError, shed_fix};
 pub use shed_proto;
 pub use store::{
     FORMAT, Kind, Member, Message, Queued, Reason, Role, RoomTurn, Store, StoreError, Thread,

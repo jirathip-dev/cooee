@@ -1,9 +1,20 @@
-# #124: build the native app (apple/) for iOS and macOS on a GitHub-hosted macOS runner (free on this public repo); no
-# signing. #147: `apple-quality` runs `just apple-check`, every Swift gate (format, anti-slop, SwiftLint, tests,
-# coverage, Periphery). #143: `e2e`: the app in the iOS simulator against a real `cooee serve` (apple/e2e/serve.sh), its
-# screens kept as the `simulator-shots` artifact. #142: `mac-setup`: the Mac app's first run on the runner starts cooee
-# and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac approves it;
-# the screens kept as the `mac-setup-shots` artifact.
+# #124: build the native app (apple/) for iOS and macOS; no signing. #147: `just apple-check`, every Swift gate (format,
+# anti-slop, SwiftLint, tests, coverage, Periphery). #143: the app in the iOS simulator against a real `cooee serve`
+# (apple/e2e/serve.sh), its screens kept as the `simulator-shots` artifact. #277: all three in one `apple` job, so a PR
+# takes one macOS runner here; a newer push to a PR cancels its older run. #365: `apple` runs on our own runners
+# (mini-cooee, air-cooee), never for a fork's pull request (it shows skipped). #142: `mac-setup` (staging pushes and
+# workflow_dispatch only, on GitHub's macos-26, docs/ci-runners.md says why): the Mac app's first run on the runner
+# starts cooee and shed as login items and shows the QR; the app in the iPhone simulator asks to pair and the Mac
+# approves it; the screens kept as the `mac-setup-shots` artifact. #328: on a pull request push `apple` runs only the
+# builds; `just apple-check` and the e2e steps run on a staging push and when herdsman labels the PR `merge-ready`
+# (fleet `merge_label`: on exactly while a review PASS stands at the head), and merge waits on that run.
+# #330: `mac-setup` caches its SwiftPM packages and builds per runner image. The e2e steps build the app once for
+# their simulator and test that build; a staging push or manual run builds the Mac app in `mac-setup` only, so `apple`
+# skips its builds. Every build names a concrete destination: a generic one builds every architecture. #430: on a
+# pull request `scope` (scripts/e2e-scope.sh) picks the e2e tests apple/e2e/map.toml pairs with the changed paths; a
+# change that reaches no Apple surface gets an `apple` that passes on ubuntu-latest, "no screens touched".
+# #440: the e2e runs nightly on staging's head (and on a manual run) whatever `vars.E2E` says; PRs and staging pushes
+# follow `vars.E2E` (#436: `off` skips the e2e steps).
 name: apple
 on:
   push:
@@ -11,95 +22,151 @@ on:
     paths:
       - "scripts/mac-bins.sh"
       - "crates/cooee/src/main.rs"
+      - "crates/cooee-core/src/shed.rs"
       - "apple/**"
       - "tools/anti-slop-swift/**"
       - "scripts/apple-check.sh"
       - "scripts/apple-coverage.swift"
       - ".github/workflows/apple.yml"
+      - ".github/actions/mac-runner/**"
   pull_request:
-    paths:
-      - "scripts/mac-bins.sh"
-      - "crates/cooee/src/main.rs"
-      - "apple/**"
-      - "tools/anti-slop-swift/**"
-      - "scripts/apple-check.sh"
-      - "scripts/apple-coverage.swift"
-      - ".github/workflows/apple.yml"
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+  schedule:
+    - cron: "41 18 * * *"
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'merge-ready' && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  build:
-    runs-on: macos-26
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        destination: ["generic/platform=iOS Simulator", "generic/platform=macOS"]
+  scope:
+    if: >-
+      github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository
+      && (github.event.action != 'labeled' || github.event.label.name == 'merge-ready'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mac: ${{ steps.scope.outputs.mac }}
+      full: ${{ steps.scope.outputs.full }}
+      e2e: ${{ steps.scope.outputs.e2e }}
+      only: ${{ steps.scope.outputs.only }}
+      persona: ${{ steps.scope.outputs.persona }}
     steps:
       - uses: actions/checkout@v4
-      - name: xcodebuild
-        working-directory: apple
-        run: >-
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination '${{ matrix.destination }}'
-          CODE_SIGNING_ALLOWED=NO build
+        with:
+          fetch-depth: 2
+          ref: ${{ github.event_name == 'schedule' && 'staging' || '' }}
+      - name: scope
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+        run: |
+          set -o pipefail
+          scripts/e2e-scope.sh | tee -a "$GITHUB_OUTPUT"
 
-  apple-quality:
-    runs-on: macos-26
-    timeout-minutes: 45
+  apple:
+    needs: scope
+    runs-on: ${{ needs.scope.outputs.mac == 'true' && fromJSON('["self-hosted","macOS","ARM64","cooee-mac"]') || 'ubuntu-latest' }}
+    timeout-minutes: 120
+    env:
+      MAC: ${{ needs.scope.outputs.mac }}
+      FULL: ${{ needs.scope.outputs.full }}
+      E2E: >-
+        ${{ needs.scope.outputs.e2e == 'true' && (github.event_name == 'schedule'
+        || github.event_name == 'workflow_dispatch' || vars.E2E != 'off') }}
+      ONLY: ${{ needs.scope.outputs.only }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          ref: ${{ github.event_name == 'schedule' && 'staging' || '' }}
+      - uses: ./.github/actions/mac-runner
+        if: env.MAC == 'true'
+      - name: which e2e tests, and why
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+        run: SUMMARY="$GITHUB_STEP_SUMMARY" scripts/e2e-scope.sh && cat "$GITHUB_STEP_SUMMARY"
       - uses: taiki-e/install-action@v2
+        if: env.MAC == 'true'
         with:
           tool: just
+      - uses: dtolnay/rust-toolchain@1.99.1
+        if: env.MAC == 'true'
+      - uses: Swatinem/rust-cache@v2
+        if: env.MAC == 'true'
+      - name: the simulator, created and booted in the background
+        if: env.E2E == 'true'
+        run: |
+          sim=$(xcrun simctl create "cooee-e2e-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" "iPhone 17")
+          echo "SIM=$sim" >> "$GITHUB_ENV"
+          xcrun simctl bootstatus "$sim" -b >"$RUNNER_TEMP/boot.log" 2>&1 &
+      - name: xcodebuild (iOS Simulator, macOS)
+        if: github.event_name == 'pull_request' && env.MAC == 'true'
+        working-directory: apple
+        run: |
+          destinations=("generic/platform=macOS")
+          [ "$E2E" = true ] || destinations+=("generic/platform=iOS Simulator")
+          for destination in "${destinations[@]}"; do
+            xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "$destination" \
+              -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO build
+          done
       - name: just apple-check
+        if: env.FULL == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: just apple-check
-
-  e2e:
-    runs-on: macos-26
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.99.1
-      - uses: Swatinem/rust-cache@v2
+          COOEE_RENDERED: ${{ runner.temp }}/rendered
+        run: mkdir -p "$COOEE_RENDERED" && just apple-check
+      - uses: actions/upload-artifact@v4
+        if: always() && env.FULL == 'true'
+        with:
+          name: rendered-frames
+          path: ${{ runner.temp }}/rendered
+      - name: e2e off
+        if: vars.E2E == 'off'
+        run: echo "e2e off (vars.E2E=off)" >> "$GITHUB_STEP_SUMMARY"
       - name: cooee serve (fake agent)
+        if: env.E2E == 'true'
         run: |
           PORT=4100 PAIR_LINK="$RUNNER_TEMP/pair" apple/e2e/serve.sh >"$RUNNER_TEMP/serve.log" 2>&1 &
           serve=$!
+          echo "SERVE=$serve" >> "$GITHUB_ENV"
           until [ -s "$RUNNER_TEMP/pair" ]; do
             kill -0 "$serve" 2>/dev/null || { cat "$RUNNER_TEMP/serve.log"; exit 1; }
             sleep 2
           done
           cat "$RUNNER_TEMP/serve.log"
       - name: the client against it (swift test)
+        if: env.E2E == 'true'
         working-directory: apple
         run: COOEE_PAIR_LINK="$(cat "$RUNNER_TEMP/pair")" swift test --filter LiveTests
       # Once per appearance, set with simctl (the test's own XCUIDevice.appearance left this simulator light); each
       # run pairs afresh, so the keychain is emptied first. The app builds before any code is minted: a code lives 10 min.
       - name: the app in the simulator
+        if: env.E2E == 'true'
         working-directory: apple
         run: |
-          sim=$(xcrun simctl create cooee-e2e "iPhone 17")
-          xcrun simctl bootstatus "$sim" -b
-          build=(xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim")
-          "${build[@]}" build-for-testing
+          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$SIM" \
+            -derivedDataPath "$RUNNER_TEMP/derived" build-for-testing
+          xcrun simctl bootstatus "$SIM" -b >>"$RUNNER_TEMP/boot.log" 2>&1 || { cat "$RUNNER_TEMP/boot.log"; exit 1; }
+          read -ra only <<< "$ONLY"
           for look in dark light; do
-            xcrun simctl ui "$sim" appearance "$look"
-            xcrun simctl keychain "$sim" reset
+            xcrun simctl ui "$SIM" appearance "$look"
+            xcrun simctl keychain "$SIM" reset
             link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
-            TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" "${build[@]}" \
-              -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" test-without-building
+            TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" xcodebuild test-without-building \
+              -xctestrun "$(ls "$RUNNER_TEMP"/derived/Build/Products/*.xctestrun)" -destination "id=$SIM" \
+              -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" "${only[@]}"
           done
       # #139: the personas the simulator made and edited, read back from the server, and a client round trip.
       - name: the simulator's personas on the server (swift test)
+        if: env.E2E == 'true' && needs.scope.outputs.persona == 'true'
         working-directory: apple
         run: |
           link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
           COOEE_PERSONA_LINK="$link" COOEE_SIM_LOOKS="dark light" swift test --filter LivePersonaTests
       - name: screenshots
-        if: always()
+        if: always() && env.E2E == 'true'
         run: |
           mkdir -p simulator-shots
           for look in dark light; do
@@ -109,32 +176,60 @@ jobs:
           cp "$RUNNER_TEMP/serve.log" simulator-shots/ || true
           ls simulator-shots
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && env.E2E == 'true'
         with:
           name: simulator-shots
           path: simulator-shots
+      - name: stop the server, delete the simulator
+        if: always() && env.MAC == 'true'
+        run: |
+          [ -z "${SERVE:-}" ] || kill "$SERVE" 2>/dev/null || true
+          [ -z "${SIM:-}" ] || xcrun simctl delete "$SIM"
 
   mac-setup:
+    if: github.event_name != 'pull_request' && github.event_name != 'schedule'
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 90
     env:
       SHOTS: ${{ github.workspace }}/mac-setup-shots
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.99.1
       - uses: Swatinem/rust-cache@v2
+      - id: image
+        run: echo "v=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
+      - id: shed
+        run: echo "rev=$(sed -n 's/^ *"\([0-9a-f]\{40\}\)",$/\1/p' crates/cooee-core/src/shed.rs | head -1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}/bin/shed-root
+            ${{ runner.temp }}/packages
+            ${{ runner.temp }}/mac
+            ${{ runner.temp }}/ios
+          key: apple-mac-setup-${{ steps.image.outputs.v }}-${{ steps.shed.outputs.rev }}-${{ hashFiles('apple/Package.resolved') }}
       - name: cooee and shed for the app
         run: scripts/mac-bins.sh "$RUNNER_TEMP/bin"
+      # #333: the Mac app is built twice, versions 1 and 2, with a throwaway Sparkle key and a local appcast.
       - name: build for testing (the Mac app with them inside, and the app in the simulator)
         working-directory: apple
         run: |
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'platform=macOS' \
-            -derivedDataPath "$RUNNER_TEMP/mac" COOEE_BIN_DIR="$RUNNER_TEMP/bin" CODE_SIGN_IDENTITY=- \
-            CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= build-for-testing
-          sim=$(xcrun simctl create cooee-ask "iPhone 17")
+          sim=$(xcrun simctl create "cooee-ask-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" "iPhone 17")
           echo "SIM=$sim" >> "$GITHUB_ENV"
+          xcrun simctl bootstatus "$sim" -b >"$RUNNER_TEMP/boot.log" 2>&1 &
+          key=$(openssl rand -base64 32)
+          echo "UPDATE_KEY=$key" >> "$GITHUB_ENV"
+          public=$(SPARKLE_ED_KEY=$key swift ../scripts/sparkle-public-key.swift)
+          rm -rf "${RUNNER_TEMP:?}/mac/Build/Products/Debug/Cooee.app"
+          for build in 1:mac 2:mac2; do
+            xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'platform=macOS' \
+              -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/${build#*:}" \
+              COOEE_BIN_DIR="$RUNNER_TEMP/bin" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
+              CURRENT_PROJECT_VERSION="${build%:*}" SPARKLE_PUBLIC_KEY="$public" \
+              SPARKLE_FEED_URL=http://127.0.0.1:8787/appcast.xml build-for-testing
+          done
           xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim" \
-            -derivedDataPath "$RUNNER_TEMP/ios" build-for-testing
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/ios" build-for-testing
       # The Mac test sets the Mac up and waits on its QR screen; once its pairing code is open (devices.json), the
       # phone asks by address, and the Mac test approves it.
       - name: the Mac sets itself up; the phone asks and the Mac approves it
@@ -142,7 +237,8 @@ jobs:
         run: |
           sudo automationmodetool enable-automationmode-without-authentication || true
           TEST_RUNNER_COOEE_MAC_SETUP=1 xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination 'platform=macOS' \
-            -derivedDataPath "$RUNNER_TEMP/mac" -only-testing:CooeeAppUITests/MacSetupUITests \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/mac" \
+            -only-testing:CooeeAppUITests/MacSetupUITests \
             -resultBundlePath "$RUNNER_TEMP/mac-setup.xcresult" test-without-building >"$RUNNER_TEMP/mac-test.log" 2>&1 &
           mac=$!
           devices="$HOME/.local/share/cooee/cooee/devices.json"
@@ -158,13 +254,62 @@ jobs:
           curl -sS -o /dev/null -w 'cooee answers %{http_code}\n' http://127.0.0.1:4747/pair
           xcrun simctl bootstatus "$SIM" -b
           TEST_RUNNER_COOEE_ASK_ADDRESS=http://127.0.0.1:4747 xcodebuild -project Cooee.xcodeproj -scheme Cooee \
-            -destination "id=$SIM" -derivedDataPath "$RUNNER_TEMP/ios" \
+            -destination "id=$SIM" -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/ios" \
             -only-testing:CooeeAppUITests/LiveUITests/testAsksAndTheMacApprovesIt \
             -resultBundlePath "$RUNNER_TEMP/phone-ask.xcresult" test-without-building
           status=0
           wait "$mac" || status=$?
           tail -40 "$RUNNER_TEMP/mac-test.log"
           exit "$status"
+      # #333: version 1 finds version 2 on a local appcast (EdDSA-signed, with a delta), installs it on quit and restarts
+      # cooee and shed; port 4747 answers and the phone is still paired.
+      - name: the Mac updates itself through a local appcast; the phone stays paired
+        working-directory: apple
+        run: |
+          app="$RUNNER_TEMP/mac/Build/Products/Debug/Cooee.app"
+          feed="$RUNNER_TEMP/feed"
+          mkdir -p "$feed/1" "$feed/2"
+          ditto "$app" "$feed/1/Cooee.app"
+          ditto "$RUNNER_TEMP/mac2/Build/Products/Debug/Cooee.app" "$feed/2/Cooee.app"
+          for version in 1 2; do
+            hdiutil create -quiet -volname cooee -srcfolder "$feed/$version" -format UDZO "$feed/Cooee-$version.dmg"
+            rm -rf "${feed:?}/$version"
+          done
+          printf '%s' "$UPDATE_KEY" | "$RUNNER_TEMP/packages/artifacts/sparkle/Sparkle/bin/generate_appcast" \
+            --ed-key-file - --download-url-prefix http://127.0.0.1:8787/ "$feed"
+          cat "$feed/appcast.xml"
+          python3 -m http.server 8787 --bind 127.0.0.1 -d "$feed" >"$RUNNER_TEMP/feed.log" 2>&1 &
+          echo "FEED=$!" >> "$GITHUB_ENV"
+          pid() { launchctl print "gui/$(id -u)/com.jirathip.cooee.$1" | awk '$1 == "pid" { print $3 }'; }
+          serve=$(pid serve)
+          shed=$(pid shed)
+          defaults write com.jirathip.cooee SUHasLaunchedBefore -bool YES
+          defaults write com.jirathip.cooee SULastCheckTime -date "2000-01-01 00:00:00 +0000"
+          log="$HOME/Library/Logs/cooee-update.log"
+          open "$app"
+          waited=0
+          until grep -q waiting "$log" 2>/dev/null; do
+            [ "$waited" -lt 300 ] || { echo "no update staged"; cat "$RUNNER_TEMP/feed.log"; exit 1; }
+            sleep 5
+            waited=$((waited + 5))
+          done
+          osascript -e 'tell application id "com.jirathip.cooee" to quit'
+          waited=0
+          until grep -q "cooee answers on 4747" "$log" 2>/dev/null; do
+            [ "$waited" -lt 300 ] || { cat "$log"; exit 1; }
+            sleep 5
+            waited=$((waited + 5))
+          done
+          cat "$log" "$RUNNER_TEMP/feed.log"
+          echo "login item pids: cooee $serve -> $(pid serve), shed $shed -> $(pid shed)"
+          version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Contents/Info.plist")
+          [ "$version" = 2 ] || { echo "the app is version $version, not 2"; exit 1; }
+          [ -n "$(pid serve)" ] && [ "$(pid serve)" != "$serve" ] || { echo "cooee did not restart"; exit 1; }
+          [ -n "$(pid shed)" ] && [ "$(pid shed)" != "$shed" ] || { echo "shed did not restart"; exit 1; }
+          curl -sSf -o /dev/null -w 'cooee answers %{http_code}\n' http://127.0.0.1:4747/pair
+          TEST_RUNNER_COOEE_AFTER_UPDATE=1 xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination "id=$SIM" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/ios" -only-testing:CooeeAppUITests/LiveUITests/testStaysPairedAfterTheMacUpdates \
+            -resultBundlePath "$RUNNER_TEMP/after-update.xcresult" test-without-building
       - name: what the Mac ran (on failure)
         if: failure()
         run: |
@@ -181,7 +326,7 @@ jobs:
         if: always()
         run: |
           mkdir -p "$SHOTS"
-          for run in mac-setup phone-ask; do
+          for run in mac-setup phone-ask after-update; do
             xcrun xcresulttool export attachments --path "$RUNNER_TEMP/$run.xcresult" --output-path "$SHOTS/$run" || true
           done
           cp "$RUNNER_TEMP/mac-test.log" "$SHOTS/" || true
@@ -191,3 +336,8 @@ jobs:
         with:
           name: mac-setup-shots
           path: mac-setup-shots
+      - name: delete the simulator, stop the appcast server
+        if: always()
+        run: |
+          [ -z "${FEED:-}" ] || kill "$FEED" 2>/dev/null || true
+          [ -z "${SIM:-}" ] || { xcrun simctl shutdown "$SIM" || true; xcrun simctl delete "$SIM"; }
