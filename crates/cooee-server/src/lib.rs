@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 
 mod hub;
+mod layout;
 mod login;
 mod look;
 mod manage;
@@ -55,6 +56,7 @@ use topcoat::{
 };
 
 pub use hub::{CardSpec, Hub, HubError, Listing, Out, Recipe, Resume, Slice, Upload};
+pub use layout::{Broken, Layouts, check as layout_check};
 pub use login::{LOGIN_TIMEOUT, Logins, View as LoginView};
 pub use look::check;
 pub use manage::{Backoff, ISSUES, Manager, Plan, Row};
@@ -2179,6 +2181,7 @@ pub fn router(
     (data, config): (&std::path::Path, Option<&std::path::Path>),
     bind: IpAddr,
     allowed_hosts: &[String],
+    layouts: Arc<Layouts>,
 ) -> Router {
     hub.set_starter(starter(Arc::clone(&logins), data, config));
     let gate = Gate {
@@ -2249,6 +2252,10 @@ pub fn router(
     .route(mcp_grant)
     .route(mcp_propose)
     .route(mcp_ask)
+    .route(layout::get)
+    .route(layout::events)
+    .route(layout::reset)
+    .app_context(layouts)
     .app_context(hub)
     .app_context(Arc::new(Dots::default()))
     .app_context(Arc::new(Unlocks::default()))
@@ -2328,6 +2335,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         (&data, config.dir.as_deref()),
         config.bind,
         &config.allowed_hosts,
+        Layouts::watch(config.dir.clone()),
     );
     let served = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
