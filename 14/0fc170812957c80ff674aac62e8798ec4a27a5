@@ -1,0 +1,5 @@
+Decided: merge staging and rerun CI instead of editing the dmg step
+Because: scripts/mac-app.sh:43
+Rejected: changing hdiutil flags — the branch does not touch the dmg step, and staging's own dmg runs pass
+Check: the dmg job is green at this head; plugin::tests and cooee/tests/plugins.rs still pass
+Owner: no product change; the failed Mac disk-image build was a runner hiccup, rerun on fresh staging
