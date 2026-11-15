@@ -1,5 +1,5 @@
 //! The shed client: shed's JSON-RPC over its Unix socket, on a small pool of reused connections, each new one starting
-//! with the exact-version `hello` (ACP terminals for threads, plain ones for logins); and the `shed` CLI for what the socket doesn't offer (`agents`, `run --acp`).
+//! with the same-protocol `hello` (ACP terminals for threads, plain ones for logins); and the `shed` CLI for what the socket doesn't offer (`agents`, `run --acp`).
 
 use std::{
     collections::BTreeMap,
@@ -10,7 +10,7 @@ use std::{
     path::{Path, PathBuf},
     process::Command,
     sync::{Arc, Mutex, MutexGuard, PoisonError},
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -33,12 +33,15 @@ pub enum ShedError {
         /// The underlying error.
         source: io::Error,
     },
-    /// shed runs another version than the `shed-proto` cooee was built with.
-    #[error("shed version mismatch (cooee speaks shed {ours}): {theirs}")]
+    /// shed speaks another protocol than the `shed-proto` cooee was built with.
+    #[error(
+        "SHED_VERSION: cooee speaks shed {ours}; {theirs}; fix: {}",
+        shed_fix()
+    )]
     Version {
-        /// This build's shed version.
+        /// This build's shed version, build and protocol.
         ours: String,
-        /// The server's refusal, or the version it runs.
+        /// The server's refusal, or the version, build and protocol it runs.
         theirs: String,
     },
     /// shed answered with an error.
@@ -69,6 +72,42 @@ impl ShedError {
     pub fn no_link(&self) -> bool {
         matches!(self, Self::Rpc(e) if e.code == ErrorCode::NoLink.code())
     }
+}
+
+/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the same protocol.
+pub const SHED_CARGO: [&str; 8] = [
+    "cargo",
+    "install",
+    "--locked",
+    "--git",
+    "https://github.com/jirathip-dev/shed",
+    "--rev",
+    "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb",
+    "shed",
+];
+
+/// shed's launchd job on macOS (`shed install`).
+pub const SHED_LABEL: &str = "dev.shed.serve";
+
+/// The command that installs the shed this build speaks and restarts its serve onto it.
+#[must_use]
+pub fn shed_fix() -> String {
+    let restart = if cfg!(target_os = "macos") {
+        format!("launchctl kickstart -k gui/$(id -u)/{SHED_LABEL}")
+    } else {
+        "shed serve".to_owned()
+    };
+    format!("{} && {restart}", SHED_CARGO.join(" "))
+}
+
+/// A hello's version, build and protocol, as [`ShedError::Version`] names each side.
+fn side(hello: &Hello) -> String {
+    format!(
+        "{} ({}) protocol {}",
+        hello.version,
+        hello.label(),
+        hello.protocol
+    )
 }
 
 /// How long one call may wait for shed's answer: a stuck call fails, and frees the thread it holds, rather than
@@ -108,6 +147,8 @@ pub struct Launch {
     /// `--mcp`: the file the session's MCP servers pass through (written here, removed once shed has read it), and
     /// the servers, in ACP's shape (#56).
     pub mcp: Option<(PathBuf, Vec<Value>)>,
+    /// `--meta`: the session's options, sent as ACP `_meta` (a profile's provider's "no personal setup", #320).
+    pub meta: Option<Value>,
 }
 
 impl Launch {
@@ -187,7 +228,8 @@ impl Conn {
             Method::Send,
             json!(SendParams {
                 name: name.into(),
-                text
+                text,
+                ..SendParams::default()
             }),
         )?;
         Ok(())
@@ -235,7 +277,7 @@ impl Shed {
 
     /// Runs `f` on an idle connection, else a new one, and keeps the connection for reuse unless it broke. When an
     /// idle one broke before `f` sent anything (shed restarted since), the pool is dropped and `f` runs once more on
-    /// a new connection, whose hello checks the version again; a request that was sent is never resent (#24 R14).
+    /// a new connection, whose hello checks the protocol again; a request that was sent is never resent (#24 R14).
     fn with<R>(
         &self,
         mut f: impl FnMut(&mut Conn) -> Result<R, ShedError>,
@@ -284,14 +326,19 @@ impl Shed {
         };
         let ours = Hello::ours();
         let version = |theirs| ShedError::Version {
-            ours: ours.version.clone(),
+            ours: side(&ours),
             theirs,
         };
         match conn.call::<Hello>(Method::Hello, json!(ours)) {
-            Ok(theirs) if theirs == ours => Ok(conn),
-            Ok(theirs) => Err(version(format!("the server runs {}", theirs.label()))),
+            Ok(theirs) if theirs.compatible() => Ok(conn),
+            Ok(theirs) if theirs.protocol < ours.protocol => Err(version(format!(
+                "the server runs {}, an older shed; restart shed serve",
+                side(&theirs)
+            ))),
+            Ok(theirs) => Err(version(format!("the server runs {}", side(&theirs)))),
             Err(ShedError::Rpc(e)) if e.code == ErrorCode::Version.code() => {
-                Err(version(e.message))
+                let why = e.message.trim_start_matches("SHED_VERSION: ");
+                Err(version(format!("the server refused it: {why}")))
             }
             Err(e) => Err(e),
         }
@@ -349,10 +396,10 @@ impl Shed {
         }))
     }
 
-    /// Checks the server answers and runs this version.
+    /// Checks the server answers and speaks this protocol.
     ///
     /// # Errors
-    /// [`ShedError::Version`] on another version; [`ShedError::Io`] when nothing listens.
+    /// [`ShedError::Version`] on another protocol; [`ShedError::Io`] when nothing listens.
     pub fn hello(&self) -> Result<(), ShedError> {
         self.connect().map(drop)
     }
@@ -372,7 +419,9 @@ impl Shed {
     pub fn ready(&self, name: &str) -> Result<Option<AcpSession>, ShedError> {
         let wait = WaitParams {
             name: name.into(),
+            children: None,
             until: Vec::new(),
+            kind: None,
             output: Some("ACP session ready".to_owned()),
             timeout: Some(60.0),
         };
@@ -405,8 +454,7 @@ impl Shed {
     pub fn prompt(&self, name: &str, text: &str) -> Result<(), ShedError> {
         let report = Reported {
             state: "working".to_owned(),
-            note: None,
-            state_source: None,
+            ..Reported::default()
         };
         let state = StateParams {
             name: name.into(),
@@ -461,7 +509,13 @@ impl Shed {
     /// # Errors
     /// [`ShedError`] when the call fails.
     pub fn ls(&self, labels: BTreeMap<String, String>) -> Result<Vec<TerminalInfo>, ShedError> {
-        self.call(Method::Ls, &json!(LsParams { labels }))
+        self.call(
+            Method::Ls,
+            &json!(LsParams {
+                labels,
+                ..LsParams::default()
+            }),
+        )
     }
 
     /// Resizes terminal `name`.
@@ -501,6 +555,9 @@ impl Shed {
         let send = SendParams {
             name: name.into(),
             text: text.into(),
+            no_enter: true,
+            no_paste: true,
+            ..SendParams::default()
         };
         let keys = KeysParams {
             name: name.into(),
@@ -519,7 +576,9 @@ impl Shed {
     pub fn exited(&self, name: &str, timeout: f64) -> Result<WaitResult, ShedError> {
         let wait = WaitParams {
             name: name.into(),
+            children: None,
             until: Vec::new(),
+            kind: None,
             output: None,
             timeout: Some(timeout),
         };
@@ -557,8 +616,55 @@ impl Shed {
     /// # Errors
     /// [`ShedError`] when the call fails.
     pub fn link(&self, machine: &str) -> Result<Option<Link>, ShedError> {
-        let mut links: BTreeMap<String, Link> = self.call(Method::MachineLinks, &json!({}))?;
-        Ok(links.remove(machine))
+        Ok(self.links()?.remove(machine))
+    }
+
+    /// Every machine's held link, by name (`machine.links`).
+    ///
+    /// # Errors
+    /// [`ShedError`] when the call fails.
+    pub fn links(&self) -> Result<BTreeMap<String, Link>, ShedError> {
+        self.call(Method::MachineLinks, &json!({}))
+    }
+
+    /// Runs `cmd` to its end in a plain terminal on `machine` (#150), then removes it: its exit code, `None` when
+    /// it ran past `timeout` seconds or ended without one.
+    ///
+    /// # Errors
+    /// [`ShedError`] when it can't start or be waited for.
+    pub fn run_on(
+        &self,
+        machine: &str,
+        cmd: Vec<String>,
+        timeout: f64,
+    ) -> Result<Option<i32>, ShedError> {
+        let at = SystemTime::now().duration_since(UNIX_EPOCH);
+        let run = RunParams {
+            name: Some(format!("cooee-check-{:x}", at.map_or(0, |d| d.as_nanos()))),
+            labels: BTreeMap::from([("cooee-check".to_owned(), "1".to_owned())]),
+            cwd: PathBuf::from("/"),
+            keep: false,
+            idle_after: None,
+            cmd,
+            acp: None,
+            policy: None,
+            resume: None,
+            mcp_servers: Vec::new(),
+            meta: None,
+            no_hibernate: false,
+            machine: Some(machine.to_owned()),
+            parent: None,
+            rows: None,
+            cols: None,
+        };
+        let name = self.run(&run)?.name;
+        let waited = self.exited(&name, timeout);
+        self.close(&name)?;
+        let waited = waited?;
+        Ok(waited
+            .terminal
+            .exit
+            .filter(|_| waited.outcome != WaitOutcome::Timeout))
     }
 
     /// The installed ACP agents (`shed agents`).
@@ -611,6 +717,10 @@ impl Shed {
                 detail: format!("{}: {e}", file.display()),
             })?;
             args.extend(["--mcp", path]);
+        }
+        let meta = launch.meta.as_ref().map(Value::to_string);
+        if let Some(meta) = &meta {
+            args.extend(["--meta", meta]);
         }
         let mut tail: Vec<String> = Vec::new();
         if !launch.env.is_empty() || launch.secrets.is_some() || !launch.args.is_empty() {

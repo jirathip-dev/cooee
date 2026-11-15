@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "root": {
+    "type": "nav",
+    "slots": {
+      "main": [{ "type": "screen", "source": "core", "path": "/screens/home", "id": "home", "place": "push" }],
+      "menu": [
+        { "type": "screen", "source": "evil", "path": "/screens/pairing", "id": "fake-pairing", "place": "hidden" },
+        { "type": "screen", "source": "core", "path": "/screens/reset-layout", "place": "hidden" },
+        { "type": "screen", "source": "core", "path": "/screens/menu", "id": "menu", "place": "sheet" }
+      ]
+    }
+  }
+}

@@ -11,38 +11,27 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Config, Devices, ROOTS_FIX, Shed, agents_fix};
+use cooee_core::{Config, Devices, ROOTS_FIX, SHED_CARGO, Shed, ShedError, agents_fix};
 use qrcode::{QrCode, render::unicode::Dense1x2};
 
 mod accounts;
 mod check;
 mod keychain;
+mod machine;
 mod setup;
 
-const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | push migrate | secrets \
+const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | machine check <m> [--yes] | push migrate | secrets \
                      | perf [--minutes <n>] \
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
-                     | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json>... \
+                     | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json|cooee-plugin.toml>... \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
-                     | theme check <path>... | accounts ls [--json] \
+                     | theme check <path>... | layout check <layout.json>... | accounts ls [--json] \
                      | accounts env <provider> <name> [--require-signed-in] \
                      | accounts add <provider> <name> --folder <path> | accounts rm <provider> <name> | mcp ls \
                      | mcp add <name> (<command> [<arg>...] | --url <url> [--type sse]) \
                      [--env K=secret:N|env:N]... [--header K=secret:N|env:N]... | mcp rm|enable|disable <name> \
                      | mcp proxy <server> --thread <id> | mcp serve --thread <id>> [--instance <name>] [--config <file>] \
                      | cooee --version";
-
-/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the exact version.
-const SHED_CARGO: [&str; 8] = [
-    "cargo",
-    "install",
-    "--locked",
-    "--git",
-    "https://github.com/jirathip-dev/shed",
-    "--rev",
-    "f026a4d35a2705e560a52515da8e3a5d32e4d659",
-    "shed",
-];
 
 fn shed_install() -> String {
     format!("{} && shed serve", SHED_CARGO.join(" "))
@@ -127,13 +116,16 @@ fn main() -> ExitCode {
             return with_config(path.as_deref(), &instance, |config| remove(config, id));
         }
         ["doctor"] => doctor,
+        ["machine", "check", m] => {
+            return with_config(path.as_deref(), &instance, |c| machine::run(c, m, yes));
+        }
         ["push", "migrate"] => keychain::command,
         ["secrets"] => keychain::check,
         ["accounts", rest @ ..] => {
             let run = |c: Config| accounts::run(&c, rest, json, require);
             return load(path.as_deref(), &instance).map_or_else(|e| finish(Err(e)), run);
         }
-        ["plugin", "check", files @ ..] => return finish(check::run(files)),
+        [w @ ("plugin" | "layout"), "check", f @ ..] => return finish(check::run(w, f)),
         ["plugin", rest @ ..] => {
             let rest: Vec<String> = rest.iter().map(|a| (*a).to_owned()).collect();
             let rest: Vec<&str> = rest.iter().map(String::as_str).collect();
@@ -170,9 +162,7 @@ fn main() -> ExitCode {
             };
             return finish(path.map_err(str::to_owned).and_then(|p| setup.run(&p)));
         }
-        _ => {
-            return usage();
-        }
+        _ => return usage(),
     };
     with_config(path.as_deref(), &instance, run)
 }
@@ -269,7 +259,7 @@ fn pair(config: &Config) -> Result<(), String> {
         Some(host) => format!("https://{host}:{}/pair?code={code}", config.port),
         None => format!("http://127.0.0.1:{}/pair?code={code}", config.port),
     };
-    println!("Scan it with the new device's Camera, or open the link and type the code.");
+    println!("Type the link into the cooee app on the new device.");
     if let Ok(qr) = QrCode::new(&url) {
         println!("{}", qr.render::<Dense1x2>().quiet_zone(true).build());
     }
@@ -591,7 +581,7 @@ fn theme(config: &Config, args: &[&str], rev: Option<&str>, yes: bool) -> Result
     if let ["check", paths @ ..] = args {
         let mut failed = 0;
         for p in paths {
-            match cooee_web::check(Path::new(p)) {
+            match cooee_server::check(Path::new(p)) {
                 Ok(()) => println!("ok   {p}"),
                 Err(fails) => {
                     failed += 1;
@@ -755,7 +745,7 @@ fn write_plist(config: &Config, file: &Path, plist: &str) -> Result<(), String> 
     fs::write(file, plist).map_err(|e| e.to_string())
 }
 
-/// Checks the instance: its service, port, shed, push keys and tailnet URL; fails if any check fails.
+/// Checks the instance: its service, port, shed, each machine (#150), push keys and tailnet URL; fails if any fails.
 fn doctor(config: &Config) -> Result<(), String> {
     let mut failed = Vec::new();
     let mut check = |ok: bool, what: String| {
@@ -788,10 +778,14 @@ fn doctor(config: &Config) -> Result<(), String> {
                 );
             }
         }
+        Err(e @ ShedError::Version { .. }) => check(false, format!("shed: {e}")),
         Err(e) => check(
             false,
             format!("shed: {e}\n     install: {}", shed_install()),
         ),
+    }
+    for (ok, what) in machine::rows(config) {
+        check(ok, what);
     }
     if config.roots.is_empty() {
         println!("warn no roots configured\n     fix: add {ROOTS_FIX} to config.toml");

@@ -3,20 +3,36 @@ import CooeeCore
 import CooeeFeatures
 import SwiftUI
 
-internal struct MenuSheet: View {
+internal struct MenuHost: View {
     @Environment(\.look) private var look
-    internal let store: StoreOf<MenuFeature>
+    internal let store: StoreOf<AppFeature>
+    internal let rows: [LayoutNode<LayoutPlace>]
+    internal let compact: Bool
 
     internal var body: some View {
-        NavigationStack(path: Binding(get: { store.path }, set: { store.send(.path($0)) })) {
+        let menu = store.scope(state: \.menu, action: \.menu)
+        let pages = rows.filter { $0.content == .component(.settings) }.flatMap { $0.config["pages"]?.items ?? [] }
+        NavigationStack(path: Binding(get: { menu.path }, set: { menu.send(.path($0)) })) {
             ScrollView {
-                AvatarMenu(name: "You", place: place, values: values) { store.send(.path(store.path + [$0])) }
-                    .padding(12)
+                VStack(spacing: 12) {
+                    ForEach(rows, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
+                }
+                .padding(12)
             }
             .background(look.palette.background)
             .navigationDestination(for: MenuFeature.Page.self) { page in
-                MenuPage(store: store, page: page)
+                if pages.contains(.string("\(page)")) { MenuPage(store: menu, page: page) }
             }
+        }
+    }
+}
+
+internal struct MenuScreen: View {
+    internal let store: StoreOf<MenuFeature>
+
+    internal var body: some View {
+        AvatarMenu(name: "You", place: place, values: values, pages: MenuFeature.Page.drawn) {
+            store.send(.path(store.path + [$0]))
         }
     }
 
@@ -24,11 +40,28 @@ internal struct MenuSheet: View {
         "this device · paired to \(store.server?.url.host() ?? "no server")"
     }
 
-    private var values: [String] {
+    private var values: [MenuFeature.Page: String] {
         let settings = store.settings
         let look = "\(settings.style.rawValue.capitalized) · \(settings.scheme.rawValue.capitalized)"
-        return [look, settings.push == nil ? "Off" : "On", "v2", "v2", "v2", "v2"]
+        return [.look: look, .notifications: settings.push == nil ? "Off" : "On"]
     }
+}
+
+internal struct ResetLayoutRow: View {
+    internal let reset: () -> Void
+
+    internal var body: some View {
+        Group2 {
+            Button(action: reset) {
+                SettingRow(symbol: "arrow.counterclockwise", title: "Reset layout", divider: false).contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+extension MenuFeature.Page {
+    internal static let drawn: [Self] = [.look, .notifications]
 }
 
 internal struct MenuPage: View {
@@ -42,10 +75,12 @@ internal struct MenuPage: View {
                 switch page {
                 case .look: lookPage
                 case .notifications: pushPage
-                default: Text("This opens in v2.").ui(15, .regular, look).padding(.top, 40)
+                case .appIcon: AppIconPicker(store: store)
+                case .signIns, .devices, .terminal, .machines, .plugins: EmptyView()
                 }
             }
             .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(look.palette.background)
         .foregroundStyle(look.palette.foreground)
@@ -58,8 +93,10 @@ internal struct MenuPage: View {
         case .notifications: "Notifications"
         case .signIns: "Sign-ins"
         case .devices: "Devices"
+        case .terminal: "Terminal"
         case .machines: "Machines"
         case .plugins: "Plugins"
+        case .appIcon: "App icon"
         }
     }
 
@@ -75,6 +112,18 @@ internal struct MenuPage: View {
             ForEach(LookStyle.allCases, id: \.self) { style in
                 pick(style.rawValue.capitalized, selected: store.settings.style == style) { store.send(.style(style)) }
             }
+        }
+        Group2(header: "App icon") {
+            Button {
+                store.send(.path(store.path + [.appIcon]))
+            } label: {
+                SettingRow(
+                    symbol: "app", title: "App icon", icon: store.settings.appIcon,
+                    value: store.settings.icon?.name ?? "Follows the look", divider: false
+                )
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
         }
     }
 

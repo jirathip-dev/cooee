@@ -1,3 +1,5 @@
+import Foundation
+
 public enum LaneState: String, Sendable, Equatable {
     case working, needs, done, idle, fail, merged
 
@@ -51,6 +53,13 @@ public struct PersonaLook: Sendable, Equatable {
         self.tint = tint
         self.coat = coat
     }
+
+    public static func seed(_ key: String) -> Int { key.unicodeScalars.reduce(0) { $0 + Int($1.value) } }
+
+    public static func coat(_ key: String) -> String {
+        let coats = ["ch", "gry", "blk", "bay", "wht"]
+        return coats[seed(key) % coats.count]
+    }
 }
 
 public struct Persona: Identifiable, Sendable, Equatable {
@@ -74,13 +83,11 @@ public struct Persona: Identifiable, Sendable, Equatable {
         let words = api.name.split(separator: " ")
         let initials =
             words.count > 1 ? words.prefix(2).compactMap(\.first).map(String.init).joined() : String(api.name.prefix(2))
-        let seed = api.id.unicodeScalars.reduce(0) { $0 + Int($1.value) }
-        let coats = ["ch", "gry", "blk", "bay", "wht"]
         let look = PersonaLook(
             initials: initials.uppercased(),
             symbol: "person.fill",
-            tint: Tint.allCases[seed % Tint.allCases.count],
-            coat: coats[seed % coats.count]
+            tint: Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count],
+            coat: PersonaLook.coat(api.id)
         )
         self.init(api: api, look: look, state: state)
     }
@@ -113,11 +120,68 @@ public struct Row: Identifiable, Sendable, Equatable {
 public struct ListedChat: Identifiable, Sendable, Equatable {
     public let row: Row
     public let persona: Persona
+    public let members: [Persona]
 
     public var id: String { row.id }
 
-    public init(row: Row, persona: Persona) {
+    public init(row: Row, persona: Persona, members: [Persona] = []) {
         self.row = row
         self.persona = persona
+        self.members = members
+    }
+}
+
+public struct AgentOption: Codable, Sendable, Equatable, Identifiable {
+    public let id: String
+    public let efforts: [String]
+
+    public init(id: String, efforts: [String] = []) {
+        self.id = id
+        self.efforts = efforts
+    }
+}
+
+public struct ModelList: Codable, Sendable, Equatable {
+    public let agent: String
+    public let models: [[String]]
+    public let short: [String: String]
+
+    public init(agent: String, models: [[String]], short: [String: String] = [:]) {
+        self.agent = agent
+        self.models = models
+        self.short = short
+    }
+
+    public static func picks(_ lists: [Self], agent: String) -> [String] {
+        let mine = lists.filter { $0.agent == agent }
+        let ids = Set(mine.flatMap { $0.models.compactMap(\.first) }).sorted()
+        return Set(mine.flatMap(\.short.keys)).sorted() + ids
+    }
+}
+
+public struct FolderListing: Codable, Sendable, Equatable {
+    public let path: String
+    public let dirs: [String]
+    public let roots: [String]
+
+    public var top: Bool { !holds(path) }
+    public var parent: String? { roots.contains(path) || top ? nil : (path as NSString).deletingLastPathComponent }
+
+    public init(path: String, dirs: [String], roots: [String]) {
+        self.path = path
+        self.dirs = dirs
+        self.roots = roots
+    }
+
+    public func holds(_ folder: String) -> Bool {
+        let folder = (folder as NSString).standardizingPath
+        return roots.contains { folder == $0 || folder.hasPrefix($0.hasSuffix("/") ? $0 : $0 + "/") }
+    }
+
+    public func shown(_ search: String) -> [String] {
+        let all = top ? roots : dirs.map { (path as NSString).appendingPathComponent($0) }
+        let words = search.trimmingCharacters(in: .whitespaces)
+        return words.isEmpty
+            ? all : all.filter { ($0 as NSString).lastPathComponent.localizedCaseInsensitiveContains(words) }
     }
 }

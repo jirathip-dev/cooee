@@ -23,19 +23,30 @@ public struct ChatFeature: Sendable {
         public var draft = ""
         public var files: [Attachment] = []
         public var outbox: [Outgoing] = []
+        public var pending: String?
         public var answering: Set<Int> = []
+        public var room: Room?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
-        @Presents public var screen: PluginScreenFeature.State?
+        @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
-        public var drawn: [Item] { ChatItems.build(items, live: live, outbox: outbox) }
+        public var drawn: [Item] {
+            room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
+                ?? ChatItems.build(items, live: live, outbox: first + outbox)
+        }
 
-        public init(server: Server, target: Target, persona: Persona) {
+        private var first: [Outgoing] {
+            let failure = turn.state == "unconnected" ? turn.note ?? "" : nil
+            return pending.map { [Outgoing(id: 0, text: $0, failure: failure)] } ?? []
+        }
+
+        public init(server: Server, target: Target, persona: Persona, room: Room? = nil) {
             self.server = server
             self.target = target
             self.persona = persona
+            self.room = room
         }
     }
 
@@ -56,14 +67,20 @@ public struct ChatFeature: Sendable {
         case unqueue(Int)
         case answer(Int, BlockAction)
         case answered(Int, String?)
+        case inspect(String?)
+        case move(String, Int)
+        case seat(String)
+        case unseat(String)
+        case seated([String])
         case delegate(Delegate)
         case plugins(PluginAction)
-        case screen(PresentationAction<PluginScreenFeature.Action>)
+        case screen(PresentationAction<ScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case started(String)
+            case open(String)
         }
 
         @CasePathable
@@ -91,6 +108,7 @@ public struct ChatFeature: Sendable {
                 load(&state, slice)
                 return .none
             case .event(let event):
+                state.room?.hear(event)
                 apply(&state, event)
                 return .none
             case .failed(let error):
@@ -109,7 +127,7 @@ public struct ChatFeature: Sendable {
             }
         }
         Reduce { state, action in plugins(&state, action) }
-            .ifLet(\.$screen, action: \.screen) { PluginScreenFeature() }
+            .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
     }
 }
@@ -130,7 +148,7 @@ extension ChatFeature {
         case .steer(let index), .unqueue(let index):
             return queued(state, action, index)
         default:
-            break
+            return seat(&state, action)
         }
         return .none
     }
@@ -158,6 +176,7 @@ extension ChatFeature {
         state.queue = slice.queue
         state.turn = slice.turn
         state.since = now
+        state.pending = slice.pending?.text
         state.live = slice.turn.working ? slice.turn.text ?? "" : ""
     }
 
@@ -173,7 +192,7 @@ extension ChatFeature {
             if !state.working { state.live = "" }
         case .queue(let queue):
             state.queue = queue
-        case .reset:
+        case .reset, .roomTurn, .roomStop:
             break
         }
     }
@@ -184,6 +203,7 @@ extension ChatFeature {
         } else {
             state.items.append(item)
         }
+        if item.kind == "you" { state.pending = nil }
         if item.kind == "agent" { state.live = "" }
     }
 

@@ -21,12 +21,12 @@ use std::{
         mpsc::{self, Receiver, Sender},
     },
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use cooee_core::shed_proto::{
     ApprovalOption, ErrorCode, Event, EventKind, Hello, Reported, Request, Response, RpcError,
-    State, TerminalInfo, VERSION,
+    State, TerminalInfo,
 };
 use serde_json::{Value, json};
 
@@ -74,7 +74,7 @@ struct Procs {
 #[derive(Clone)]
 pub struct FakeShed {
     pub dir: PathBuf,
-    version: String,
+    hello: Hello,
     shared: Arc<Mutex<Shared>>,
     procs: Arc<Procs>,
     /// Every request (method, params) in order.
@@ -124,8 +124,8 @@ esac
 "#;
 
 impl FakeShed {
-    /// Starts a fake shed of `version` in `dir`.
-    pub fn start(dir: &Path, version: &str) -> Self {
+    /// Starts a fake shed in `dir` that answers `hello` with its own.
+    pub fn start(dir: &Path, hello: Hello) -> Self {
         fs::create_dir_all(dir).unwrap();
         let cli = dir.join("shed");
         fs::write(&cli, CLI).unwrap();
@@ -137,17 +137,33 @@ impl FakeShed {
         )
         .unwrap();
         fs::set_permissions(&adapter, fs::Permissions::from_mode(0o755)).unwrap();
-        let socket = dir.join("shed.sock");
-        let _ = fs::remove_file(&socket);
-        let listener = UnixListener::bind(&socket).unwrap();
-        let shed = Self {
+        Self {
             dir: dir.to_owned(),
-            version: version.to_owned(),
+            hello,
             shared: Arc::default(),
             procs: Arc::default(),
             requests: Arc::default(),
             conns: Arc::default(),
-        };
+        }
+        .listen()
+    }
+
+    /// Restarts this server on `hello`, as a shed restart onto another build does; its terminals live on.
+    pub fn restart(&self, hello: Hello) -> Self {
+        self.stop();
+        Self {
+            hello,
+            conns: Arc::default(),
+            ..self.clone()
+        }
+        .listen()
+    }
+
+    fn listen(self) -> Self {
+        let socket = self.dir.join("shed.sock");
+        let _ = fs::remove_file(&socket);
+        let listener = UnixListener::bind(&socket).unwrap();
+        let shed = self;
         let server = shed.clone();
         thread::spawn(move || {
             for conn in listener.incoming().flatten() {
@@ -175,6 +191,7 @@ impl FakeShed {
     /// is, so none with an event stream open).
     pub fn stop(&self) {
         let _ = fs::remove_file(self.dir.join("shed.sock"));
+        self.shared.lock().unwrap().subs.clear();
         let conns = std::mem::take(&mut self.conns.lock().unwrap().0);
         for conn in &conns {
             let _ = conn.shutdown(Shutdown::Both);
@@ -206,8 +223,8 @@ impl FakeShed {
     }
 
     /// Shuts (`true`) or opens gate `name`: `hold-run` and `run-fails` for the CLI's `run`, `hold-ready` (the
-    /// session-ready `wait` waits), `ready-timeout` (it times out), `hang-send` (every `send` waits) and `hangup` (a
-    /// request is recorded, then its connection closed unanswered).
+    /// session-ready `wait` waits), `ready-timeout` (it times out), `hang-send` (every `send` waits; `hang-send-<name>`:
+    /// terminal `<name>`'s) and `hangup` (a request is recorded, then its connection closed unanswered).
     pub fn gate(&self, name: &str, shut: bool) {
         let path = self.dir.join(name);
         if shut {
@@ -329,8 +346,18 @@ impl FakeShed {
     }
 
     /// `run`: starts `cmd` in `cwd` for real, its stdout and stderr the screen, its stdin what `send`/`keys` type.
+    /// With a `machine` (#150) it is that machine's `<machine>/<name>`, refused `NoLink` unless its link is up, its
+    /// programs looked up in `dir/on-<machine>` first.
     fn run(&self, params: &Value) -> Result<Value, RpcError> {
-        let name = params["name"].as_str().unwrap().to_owned();
+        let mut name = params["name"].as_str().unwrap().to_owned();
+        let mut path = env::var("PATH").unwrap_or_default();
+        if let Some(m) = params["machine"].as_str() {
+            name = format!("{m}/{name}");
+            if self.no_link(&name) {
+                return Err(RpcError::new(ErrorCode::NoLink, &name));
+            }
+            path = format!("{}:{path}", self.dir.join(format!("on-{m}")).display());
+        }
         // The owner's shells (#28) are listed by `ls`, with their labels.
         if params["labels"]["cooee.owner"] == "1" {
             let labels = serde_json::from_value(params["labels"].clone()).unwrap();
@@ -343,6 +370,7 @@ impl FakeShed {
         let cmd: Vec<String> = serde_json::from_value(params["cmd"].clone()).unwrap();
         let mut child = Command::new(&cmd[0])
             .args(&cmd[1..])
+            .env("PATH", path)
             .current_dir(params["cwd"].as_str().unwrap())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -421,6 +449,7 @@ impl FakeShed {
             labels,
             kind,
             replay: false,
+            parent: None,
         };
         s.subs.retain(|tx| tx.send(event.clone()).is_ok());
         s.ring.push(event);
@@ -431,14 +460,14 @@ impl FakeShed {
         let r = Reported {
             state: state.to_owned(),
             note: note.map(str::to_owned),
-            state_source: None,
+            ..Reported::default()
         };
         self.shared
             .lock()
             .unwrap()
             .reported
             .insert(name.to_owned(), r.clone());
-        self.emit(name, EventKind::State(r));
+        self.emit(name, EventKind::State(Box::new(r)));
     }
 
     fn info(name: &str, running: bool, reported: Option<Reported>) -> Value {
@@ -460,6 +489,8 @@ impl FakeShed {
             resources: None,
             acp: Some("fake-acp".to_owned()),
             session: None,
+            records: Vec::new(),
+            parent: None,
         })
     }
 
@@ -510,6 +541,7 @@ impl FakeShed {
     /// `send`: held while `hang-send` is shut; refused for a terminal that is gone.
     fn send(&self, name: &str, text: &str) -> Result<Value, RpcError> {
         self.hold("hang-send");
+        self.hold(&format!("hang-send-{name}"));
         self.terminal(name)?;
         if !self.type_in(name, text) {
             self.input(name, text);
@@ -606,15 +638,15 @@ impl FakeShed {
                 _ if self.no_link(&name) => Err(RpcError::new(ErrorCode::NoLink, &name)),
                 "machine.links" => Ok(self.links()),
                 "hello" => {
+                    // A protocol-0 shed checks only the product and version; a later one, the protocol too.
                     let theirs: Hello = serde_json::from_value(req.params.clone()).unwrap();
-                    let ours = Hello {
-                        product: "shed".to_owned(),
-                        version: self.version.clone(),
-                    };
-                    if theirs == ours {
+                    let ours = &self.hello;
+                    let protocol = ours.protocol == 0 || theirs.protocol == ours.protocol;
+                    if theirs.product == ours.product && theirs.version == ours.version && protocol
+                    {
                         Ok(json!(ours))
                     } else {
-                        Err(RpcError::version(&theirs.label(), &ours.label()))
+                        Err(RpcError::version(&theirs, ours))
                     }
                 }
                 "get" => self.terminal(&name),
@@ -1140,7 +1172,20 @@ shed_dir = {}
 }
 
 impl Drop for Cooee {
+    /// SIGTERM, so `cooee serve` stops what it runs; SIGKILL if it hasn't ended within 5 s.
     fn drop(&mut self) {
+        if !matches!(self.child.try_wait(), Ok(None)) {
+            return;
+        }
+        let _ = Command::new("kill")
+            .args(["-TERM", &self.child.id().to_string()])
+            .status();
+        for _ in 0..100 {
+            if !matches!(self.child.try_wait(), Ok(None)) {
+                return;
+            }
+            thread::sleep(Duration::from_millis(50));
+        }
         let _ = self.child.kill();
         let _ = self.child.wait();
     }
@@ -1198,7 +1243,34 @@ pub fn is_item(e: &Sse, kind: &str) -> bool {
     e.event == "item" && e.data["kind"] == kind
 }
 
-/// The shed version this build speaks.
-pub fn version() -> &'static str {
-    VERSION
+/// The hello this build sends: its shed version, build and protocol.
+pub fn version() -> Hello {
+    Hello::ours()
+}
+
+/// #288: while a call for another thread hangs, thread `other` goes on: its send, the thread list and the home page
+/// each answer within 200 ms, and its reply streams in.
+pub fn others_go_on(cooee: &Cooee, other: &str) {
+    let cursor = cooee.json(&format!("/threads/{other}/messages"))["cursor"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let mut events = cooee.events(other, &cursor, false);
+    let (path, send) = (
+        format!("/threads/{other}/send"),
+        serde_json::json!({ "text": "Say hi again", "random_id": "go-on" }),
+    );
+    let quick = |what: &str, call: &dyn Fn() -> (u16, String)| {
+        let at = Instant::now();
+        let (status, body) = call();
+        let took = at.elapsed();
+        assert_eq!(status, 200, "{what}: {body}");
+        assert!(took < Duration::from_millis(200), "{what} took {took:?}");
+    };
+    quick("send", &|| cooee.post(&path, &send));
+    quick("list", &|| cooee.get("/threads"));
+    quick("messages", &|| {
+        cooee.get(&format!("/threads/{other}/messages"))
+    });
+    events.until(|e| is_item(e, "agent"));
 }

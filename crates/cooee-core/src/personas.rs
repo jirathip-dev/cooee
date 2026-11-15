@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use crate::{plugins, profiles, skills};
 
 /// drover's installed name (`plugins/index.toml`).
-const DROVER: &str = "cooee-drover";
+const DROVER: &str = "drover";
 
 /// What a persona is (#159), apart from its name: drover attaches by it.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
