@@ -76,6 +76,12 @@ jobs:
           bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
           ./actionlint -color
 
+  # #356: .drover/arch.toml (frozen lists, generated files current, the 800-line cap), by drover's reusable step.
+  arch-check:
+    needs: scope
+    if: needs.scope.outputs.run == 'true'
+    uses: jirathip-dev/drover/.github/workflows/arch-check.yml@staging
+
   # Every gate on the MSRV toolchain (rust-toolchain.toml), on Linux x86_64; macOS runs stable-mac's tests (#388).
   msrv:
     name: msrv (ubuntu-latest)
@@ -154,7 +160,7 @@ jobs:
 
   # #329: a red nightly opens or updates one `nightly red: <check> since <PR>` issue.
   nightly-red:
-    needs: [scope, actionlint, msrv, stable, stable-mac]
+    needs: [scope, actionlint, arch-check, msrv, stable, stable-mac]
     if: always() && github.event_name == 'schedule' && contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 5
