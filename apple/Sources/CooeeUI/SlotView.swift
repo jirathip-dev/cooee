@@ -107,14 +107,15 @@ private struct HomeSlot<Detail: View>: View {
         if let home = store.scope(state: \.home, action: \.home) {
             let lists = home.state.lists(now: Date())
             let (chats, actions) = (lists.chats, actions(others: lists.othersTitles))
+            let pins = lists.pins(home.pinned, rooms: actions.rooms)
             Group {
                 if wide {
-                    WideView(
-                        personas: home.pinned, all: home.everyone, chats: chats, selected: store.path.last,
-                        actions: actions
-                    ) { detail }
+                    WideView(pins: pins, all: home.everyone, chats: chats, selected: store.path.last, actions: actions)
+                    {
+                        detail
+                    }
                 } else {
-                    HomeView(personas: home.pinned, all: home.everyone, chats: chats, actions: actions)
+                    HomeView(pins: pins, all: home.everyone, chats: chats, actions: actions)
                 }
             }
             .overlay(alignment: .bottom) {
@@ -136,6 +137,8 @@ private struct HomeSlot<Detail: View>: View {
         )
         actions.others = others
         actions.openOthers = { store.send(.open(AppFeature.others)) }
+        actions.rooms = store.menu.settings.pinnedRooms
+        actions.pinRoom = { store.send(.menu(.pinRoom($0))) }
         return actions
     }
 }

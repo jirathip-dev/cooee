@@ -132,6 +132,8 @@ struct Glance {
     ask: Option<(String, String, String)>,
     /// The approval that waits, else the newest item's last line.
     last: String,
+    /// Who said the newest item: a room's member or its owner, `""` in a chat.
+    speaker: String,
     /// When the newest item came.
     at: u64,
     /// How many items, not the owner's own, came after the read mark.
@@ -175,6 +177,7 @@ fn glance(live: &Live) -> Glance {
         last: waiting
             .unwrap_or_else(|| text.lines().last().unwrap_or("").chars().take(80).collect()),
         at: last.map_or(0, |i| i.at),
+        speaker: last.map(|i| i.speaker.clone()).unwrap_or_default(),
         unseen: items[from..]
             .iter()
             .filter(|i| !matches!(i.body, Body::You { .. }))
@@ -2231,19 +2234,14 @@ impl Hub {
                     folder: live.meta.folder.clone().unwrap_or_default(),
                     machine: live.meta.machine.clone(),
                     state: live.chat.turn.state.clone(),
-                    last: g.last,
+                    last: rooms::said(&personas, &g.speaker, g.last),
                     at: g.at,
                     unread: g.unseen > 0,
                     unseen: g.unseen,
                     archived: live.meta.archived,
                     workflow: live.meta.workflow.clone(),
                     routine: g.routine,
-                    members: live
-                        .meta
-                        .members
-                        .iter()
-                        .map(|m| m.persona.clone())
-                        .collect(),
+                    members: rooms::seated(&live.meta),
                 })
             })
             .collect();
@@ -2846,7 +2844,7 @@ mod tests {
     use super::*;
 
     /// A hub over `dir`'s data with no shed (its follower retries in the background, harmlessly).
-    fn hub(dir: &Path) -> Arc<Hub> {
+    pub(super) fn hub(dir: &Path) -> Arc<Hub> {
         hub_on(dir, dir.join("no-shed"))
     }
 
@@ -2866,7 +2864,7 @@ mod tests {
         .unwrap()
     }
 
-    fn scratch(name: &str) -> PathBuf {
+    pub(super) fn scratch(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("cooee-hub-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(dir.join("data/threads")).unwrap();

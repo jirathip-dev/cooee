@@ -63,7 +63,7 @@ public struct MacConnect: View {
 
 public struct WideView<Detail: View>: View {
     @Environment(\.look) private var look
-    private let personas: [Persona]
+    private let pins: [Pin]
     private let all: [Persona]
     private let chats: [ListedChat]
     private let selected: String?
@@ -76,9 +76,9 @@ public struct WideView<Detail: View>: View {
             VStack(spacing: 0) {
                 TopBar(personas: all, actions: actions).padding(.top, look.still ? 34 : 8)
                 Scroller {
-                    PinnedRow(personas: personas, rows: chats.map(\.row), pin: actions.pin)
+                    PinnedRow(pins: pins, rows: chats.map(\.row), actions: actions)
                         .scaleEffect(0.9, anchor: .leading).padding(.top, 4)
-                    ChatList(chats: chats, selected: selected, open: actions.open).padding(.top, 8)
+                    ChatList(chats: chats, selected: selected, open: actions.open, actions: actions).padding(.top, 8)
                     if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
                 }
             }
@@ -90,15 +90,15 @@ public struct WideView<Detail: View>: View {
     }
 
     public init(
-        personas: [Persona],
-        all: [Persona]? = nil,
+        pins: [Pin] = Fixtures.personas.map(Pin.persona),
+        all: [Persona] = Fixtures.personas,
         chats: [ListedChat],
         selected: String?,
         actions: HomeActions,
         @ViewBuilder detail: () -> Detail
     ) {
-        self.personas = personas
-        self.all = all ?? personas
+        self.pins = pins
+        self.all = all
         self.chats = chats
         self.selected = selected
         self.actions = actions
@@ -108,7 +108,7 @@ public struct WideView<Detail: View>: View {
 
 extension WideView where Detail == ChatView {
     public init() {
-        self.init(personas: Fixtures.personas, chats: Fixtures.chats, selected: "t1", actions: HomeActions()) {
+        self.init(chats: Fixtures.chats, selected: "t1", actions: HomeActions()) {
             ChatView.streaming(back: false)
         }
     }
