@@ -1,6 +1,6 @@
 # #124: build the native app (apple/) for iOS and macOS; no signing. #147: `just apple-check`, every Swift gate (format,
 # anti-slop, SwiftLint, tests, coverage, Periphery). #143: the app in the iOS simulator against a real `cooee serve`
-# (apple/e2e/serve.sh), its screens kept as the `simulator-shots` artifact. #277: all three in one `apple` job, so a PR
+# (apple/e2e/run.sh), its screens kept as the `simulator-shots` artifact. #277: all three in one `apple` job, so a PR
 # takes one macOS runner here; a newer push to a PR cancels its older run. #365: `apple` runs on our own runners
 # (mini-cooee, air-cooee), never for a fork's pull request (it shows skipped). #142: `mac-setup` (staging pushes and
 # workflow_dispatch only, on GitHub's macos-26, docs/ci-runners.md says why): the Mac app's first run on the runner
@@ -94,12 +94,6 @@ jobs:
         if: env.MAC == 'true'
       - uses: Swatinem/rust-cache@v2
         if: env.MAC == 'true'
-      - name: the simulator, created and booted in the background
-        if: env.E2E == 'true'
-        run: |
-          sim=$(xcrun simctl create "cooee-e2e-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" "iPhone 17")
-          echo "SIM=$sim" >> "$GITHUB_ENV"
-          xcrun simctl bootstatus "$sim" -b >"$RUNNER_TEMP/boot.log" 2>&1 &
       - name: xcodebuild (iOS Simulator, macOS)
         if: github.event_name == 'pull_request' && env.MAC == 'true'
         working-directory: apple
@@ -124,66 +118,18 @@ jobs:
       - name: e2e off
         if: vars.E2E == 'off'
         run: echo "e2e off (vars.E2E=off)" >> "$GITHUB_STEP_SUMMARY"
-      - name: cooee serve (fake agent)
+      # #356: the server, the simulator, every step of apple/e2e/steps/, the screens and the teardown (apple/e2e/run.sh).
+      - name: the app and the client against cooee serve (apple/e2e/run.sh)
         if: env.E2E == 'true'
-        run: |
-          PORT=4100 PAIR_LINK="$RUNNER_TEMP/pair" apple/e2e/serve.sh >"$RUNNER_TEMP/serve.log" 2>&1 &
-          serve=$!
-          echo "SERVE=$serve" >> "$GITHUB_ENV"
-          until [ -s "$RUNNER_TEMP/pair" ]; do
-            kill -0 "$serve" 2>/dev/null || { cat "$RUNNER_TEMP/serve.log"; exit 1; }
-            sleep 2
-          done
-          cat "$RUNNER_TEMP/serve.log"
-      - name: the client against it (swift test)
-        if: env.E2E == 'true'
-        working-directory: apple
-        run: COOEE_PAIR_LINK="$(cat "$RUNNER_TEMP/pair")" swift test --filter LiveTests
-      # Once per appearance, set with simctl (the test's own XCUIDevice.appearance left this simulator light); each
-      # run pairs afresh, so the keychain is emptied first. The app builds before any code is minted: a code lives 10 min.
-      - name: the app in the simulator
-        if: env.E2E == 'true'
-        working-directory: apple
-        run: |
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$SIM" \
-            -derivedDataPath "$RUNNER_TEMP/derived" build-for-testing
-          xcrun simctl bootstatus "$SIM" -b >>"$RUNNER_TEMP/boot.log" 2>&1 || { cat "$RUNNER_TEMP/boot.log"; exit 1; }
-          read -ra only <<< "$ONLY"
-          for look in dark light; do
-            xcrun simctl ui "$SIM" appearance "$look"
-            xcrun simctl keychain "$SIM" reset
-            link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
-            TEST_RUNNER_COOEE_LOOK="$look" TEST_RUNNER_COOEE_PAIR_LINK="$link" xcodebuild test-without-building \
-              -xctestrun "$(ls "$RUNNER_TEMP"/derived/Build/Products/*.xctestrun)" -destination "id=$SIM" \
-              -resultBundlePath "$RUNNER_TEMP/e2e-$look.xcresult" "${only[@]}"
-          done
-      # #139: the personas the simulator made and edited, read back from the server, and a client round trip.
-      - name: the simulator's personas on the server (swift test)
-        if: env.E2E == 'true' && needs.scope.outputs.persona == 'true'
-        working-directory: apple
-        run: |
-          link=$(sh -c "$(cat "$RUNNER_TEMP/pair.again")" | sed -n 's/^link  //p')
-          COOEE_PERSONA_LINK="$link" COOEE_SIM_LOOKS="dark light" swift test --filter LivePersonaTests
-      - name: screenshots
-        if: always() && env.E2E == 'true'
-        run: |
-          mkdir -p simulator-shots
-          for look in dark light; do
-            xcrun xcresulttool export attachments --path "$RUNNER_TEMP/e2e-$look.xcresult" \
-              --output-path "simulator-shots/$look" || true
-          done
-          cp "$RUNNER_TEMP/serve.log" simulator-shots/ || true
-          ls simulator-shots
+        env:
+          E2E_DIR: ${{ runner.temp }}
+          PERSONA: ${{ needs.scope.outputs.persona }}
+        run: apple/e2e/run.sh
       - uses: actions/upload-artifact@v4
         if: always() && env.E2E == 'true'
         with:
           name: simulator-shots
           path: simulator-shots
-      - name: stop the server, delete the simulator
-        if: always() && env.MAC == 'true'
-        run: |
-          [ -z "${SERVE:-}" ] || kill "$SERVE" 2>/dev/null || true
-          [ -z "${SIM:-}" ] || xcrun simctl delete "$SIM"
 
   mac-setup:
     if: github.event_name != 'pull_request' && github.event_name != 'schedule'
