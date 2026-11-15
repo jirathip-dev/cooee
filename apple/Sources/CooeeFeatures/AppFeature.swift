@@ -80,6 +80,9 @@ public struct AppFeature: Sendable {
                 return .send(.home(.refresh))
             case .chat(.delegate(.open(let thread))):
                 return .send(.open(thread))
+            case .chat(.delegate(.edit(let id))):
+                state.persona = persona(state, id)
+                return .none
             case .room:
                 state.newRoom = state.home.map { NewRoomFeature.State(server: $0.server, personas: $0.personas) }
                 return .none
@@ -124,8 +127,6 @@ public struct AppFeature: Sendable {
             state.path = path
             if path.isEmpty { state.chat = nil }
         case .edit(let id):
-            state.persona = persona(state, id)
-        case .chat(.delegate(.edit(let id))):
             state.persona = persona(state, id)
         default:
             break

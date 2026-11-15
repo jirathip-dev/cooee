@@ -15,7 +15,7 @@ internal struct ChatPanelTests {
     private let calls = Calls()
 
     private func app() -> TestStoreOf<AppFeature> {
-        var state = AppFeature.State(server: mini)
+        var state = AppFeature.State(layout: testLayout, server: mini)
         state.home?.rows = [row("t1")]
         state.home?.personas = [coder]
         state.path = ["t1"]
