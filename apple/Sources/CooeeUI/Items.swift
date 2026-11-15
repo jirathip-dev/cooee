@@ -212,7 +212,8 @@ internal struct ToolFold: View {
     @ViewBuilder private func mark(_ last: ToolRow) -> some View {
         let tint = last.running ? look.palette.cyan : look.palette.green
         if look.mono {
-            Text(last.running ? "o>_" : "[ok]").ui(13, .bold, look).foregroundStyle(tint).fixedSize()
+            Text(last.running ? "o>_" : members.isEmpty ? "[ok]" : "✓").ui(13, .bold, look).foregroundStyle(tint)
+                .fixedSize()
         } else {
             Image(systemName: last.running ? "gearshape.2.fill" : "checkmark.circle.fill")
                 .font(.system(size: 13)).foregroundStyle(tint)

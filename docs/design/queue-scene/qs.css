@@ -1,0 +1,63 @@
+/* #181 on web/src/app.css, #116's ns.css and #125's sd.css: only what the scene block and the fold-open rows add.
+   New class names: scb the scene block (bg its strip, fld its field, ln a lane: hs its horse, nc its name card, nw its
+   word and age, nz the first lane of the next place), fo a row folded open (its .rns are ns.css's rounds), hf a row's
+   horse, tf a row's Terminal figure, lc/lhd a lane's chat pushed on the sheet and its head, bh what is behind the sheet. */
+[data-k=idle]{--k:var(--mute)}
+
+/* The scene block: the native strip (HomeRows' PinnedRow): 180 pt, the strip picture filled, the horses on one line
+   that scrolls sideways, a light name card on the daylight art in both modes (as the app's 0xf5efda / 0x29251a). */
+.scb{position:relative;height:180px;margin:-4px 0 12px;overflow:hidden}
+.scb .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 72%}
+.scb .fld{position:absolute;flex-wrap:nowrap;justify-content:flex-start;left:0;right:0;bottom:8px;display:flex;align-items:flex-end;gap:4px;overflow-x:auto;scrollbar-width:none;padding:0 16px}
+.scb::after{content:"";position:absolute;top:0;right:0;bottom:0;width:28px;background:linear-gradient(90deg,transparent,#0002);pointer-events:none}
+.ln{flex:none;width:92px;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:#29251a}
+.ln.nz{margin-left:10px}
+.ln .hs{width:88px;height:66px;object-fit:contain}
+.nc{max-width:92px;padding:2px 7px;border-radius:999px;background:#f5efdad9;font:500 12px/1.3 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nc b{font-weight:700}
+.nw{max-width:92px;font:400 10px/1.2 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#29251a;text-shadow:0 0 4px #f5efda}
+.ln:is([data-k=needs],[data-k=fail]) .nw{color:#b81d3c;font-weight:600}
+.ln[data-k=needs] .nc{background:#f6d9d3;box-shadow:0 0 0 1.5px #b81d3c}
+
+/* A row's figure per look: the horse (Scene), the ASCII figure (Terminal); Modern keeps sd.css's .rsp. */
+.gr .hf{flex:none;width:37px;height:28px;object-fit:contain;margin-left:-6px}
+.tf{flex:none;width:3.2ch;font:700 12px/1 var(--mono);color:var(--k)}
+
+/* A row folded open: its head (the chevron turned down, the subtitle dropped) and #116's rounds on their line. */
+.cv.dn{transform:rotate(90deg)}
+.fo{position:relative}
+.fo>.gr{min-height:52px}
+.ak .fo .rns{margin:0 0 10px 22px;padding-left:24px}
+.ak .fo .rn .rh::before{left:-30px}.ak .fo .rn.cur .rh::before{left:-32px}
+.fo .rh{min-height:40px;font-size:var(--fs-meta)}.fo .rh b{font-size:var(--fs)}
+.fo .rnb .sim{margin:0;padding:0}.fo .rnb .txt{margin:0}.fo .rnb .oth{margin:0}
+.fo .rnb .oth input{width:100%;box-sizing:border-box;min-height:var(--ctl);padding:0 12px;border:1px solid var(--edge);border-radius:var(--r-row);background:var(--bg);font:var(--fs-meta) var(--font);color:var(--fg)}
+.fo .rnb .chc{display:flex;flex-wrap:wrap;gap:8px}
+html[data-style=terminal] .rh::before{content:"o";width:auto;height:auto;border-radius:0;background:var(--bg);box-shadow:none;color:var(--k);font:700 12px/1 var(--mono);top:14px}
+html[data-style=terminal] .rn[data-k=done] .rh::before{content:"+"}html[data-style=terminal] .rn[data-k=fail] .rh::before{content:"x"}
+html[data-style=terminal] .rn[data-k=needs] .rh::before{content:"!"}html[data-style=terminal] .rn[data-k=working] .rh::before{content:">"}
+html[data-style=terminal] .rn.cur .rh::before{width:auto;height:auto}
+html[data-style=terminal] .rns{border-left-style:dashed}
+html[data-style=terminal] .chip::after{content:""}
+
+/* What is behind the sheet: the top of the Conductor chat, its header strip's chips. */
+.bh{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:calc(var(--sat) + 8px) 16px 8px}
+.bh b{margin-right:auto;font-size:var(--fs-key)}
+.bh .hsc{min-height:28px;font-size:13px}
+
+/* A lane's chat pushed on the sheet. */
+.lc{display:flex;flex-direction:column}
+.lhd{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:.5px solid var(--sep)}
+.lhd>span{flex:1;min-width:0;display:flex;flex-direction:column}.lhd small{font-size:var(--fs-meta);color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lhd .w{color:var(--k)}.lhd .chip{flex:none;font-size:var(--fs-meta)}
+.lhd .lh{width:53px;height:40px;object-fit:contain}.lhd .rsp{width:28px;height:28px}
+.lc .tc{flex:1;overflow:hidden}
+.lc .blk.run.live{border-color:var(--a)}.lc .blk.run.live .cmd{color:var(--a)}
+.lc .tw{padding-bottom:calc(var(--sab) + 26px)}
+
+/* The Mac window (1440 × 900): sd.css's sidebar and detail, the Queue as its centred panel. */
+.sdh{margin:0;padding:16px 20px 8px;font-size:var(--fs-key)}
+.side .gs{margin:0 8px}.side .gr.sel{background:var(--press)}
+.wd .dtl{position:relative;padding-top:56px}.wd .bh{padding:12px 24px}
+.wd .ps{top:64px;bottom:24px;width:680px;left:calc(50% - 170px)}
+.wd .scb{height:200px}

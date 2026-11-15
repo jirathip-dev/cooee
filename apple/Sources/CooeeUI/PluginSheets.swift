@@ -30,12 +30,34 @@ internal struct SheetBar: View {
 internal struct PluginScreenSheet: View {
     @Environment(\.look) private var look
     @Environment(\.dismiss) private var dismiss
-    internal let store: StoreOf<PluginScreenFeature>
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var size
+    #else
+        private let size: UserInterfaceSizeClass? = .regular
+    #endif
+    internal let store: StoreOf<ScreenFeature>
 
     internal var body: some View {
+        screen.accessibilityHidden(store.lane != nil).overlay { lane }
+    }
+
+    @ViewBuilder private var lane: some View {
+        if let lane = store.scope(state: \.lane, action: \.lane.presented), case .thread(let thread) = lane.target {
+            LaneChatSheet(
+                store: lane, head: LaneHead(thread: thread, screen: store.screen?.root ?? .null),
+                back: "‹ \(store.label)"
+            ) {
+                store.send(.lane(.dismiss))
+            } done: {
+                dismiss()
+            }
+        }
+    }
+
+    private var screen: some View {
         let palette = look.palette
-        VStack(spacing: 0) {
-            SheetBar(cancel: back, title: store.offline ? "" : store.place.label, done: "Done") { dismiss() }
+        return VStack(spacing: 0) {
+            SheetBar(cancel: back, title: store.offline ? "" : store.label, done: "Done") { dismiss() }
             if let who = store.unreachable { offline(who) }
             ScrollView {
                 Group {
@@ -44,15 +66,17 @@ internal struct PluginScreenSheet: View {
                             store.send(.act($0))
                         } open: {
                             store.send(.navigate($0))
+                        } openThread: { thread in
+                            if size == .compact { store.send(.push(thread)) } else { store.send(.open(thread)) }
                         }
                         .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
                     } else if store.offline {
-                        Text("Nothing kept from \(store.place.label) yet.").foregroundStyle(palette.mute)
+                        Text("Nothing kept from \(store.label) yet.").foregroundStyle(palette.mute)
                     } else {
                         ProgressView()
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(BlocksView.inset)
             }
             if let said = store.said { Text(said).ui(13, .regular, look).foregroundStyle(palette.mute).padding(8) }
             if let pending = store.screen?.root["pending"] {
@@ -74,7 +98,7 @@ internal struct PluginScreenSheet: View {
             TimelineView(.everyMinute) { context in
                 Text(
                     Offline.line(
-                        who: who, title: "\(store.place.plugin)'s \(store.title)", asOf: store.asOf, now: context.date))
+                        who: who, title: "\(store.source.name)'s \(store.title)", asOf: store.asOf, now: context.date))
             }
             .ui(13, .medium, look)
             Spacer(minLength: 4)

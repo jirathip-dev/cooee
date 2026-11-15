@@ -57,6 +57,13 @@ public struct PersonaLook: Sendable, Equatable {
         self.tint = tint
         self.coat = coat
     }
+
+    public static func seed(_ key: String) -> Int { key.unicodeScalars.reduce(0) { $0 + Int($1.value) } }
+
+    public static func coat(_ key: String) -> String {
+        let coats = ["ch", "gry", "blk", "bay", "wht"]
+        return coats[seed(key) % coats.count]
+    }
 }
 
 public struct Persona: Identifiable, Sendable, Equatable {
@@ -80,13 +87,11 @@ public struct Persona: Identifiable, Sendable, Equatable {
         let words = api.name.split(separator: " ")
         let initials =
             words.count > 1 ? words.prefix(2).compactMap(\.first).map(String.init).joined() : String(api.name.prefix(2))
-        let seed = api.id.unicodeScalars.reduce(0) { $0 + Int($1.value) }
-        let coats = ["ch", "gry", "blk", "bay", "wht"]
         let look = PersonaLook(
             initials: initials.uppercased(),
             symbol: "person.fill",
-            tint: Tint.allCases[seed % Tint.allCases.count],
-            coat: coats[seed % coats.count]
+            tint: Tint.allCases[PersonaLook.seed(api.id) % Tint.allCases.count],
+            coat: PersonaLook.coat(api.id)
         )
         self.init(api: api, look: look, state: state)
     }
@@ -119,13 +124,15 @@ public struct Row: Identifiable, Sendable, Equatable {
 public struct ListedChat: Identifiable, Sendable, Equatable {
     public let row: Row
     public let persona: Persona
+    public let workflow: WorkflowLabel?
     public let members: [Persona]
 
     public var id: String { row.id }
 
-    public init(row: Row, persona: Persona, members: [Persona] = []) {
+    public init(row: Row, persona: Persona, workflow: WorkflowLabel? = nil, members: [Persona] = []) {
         self.row = row
         self.persona = persona
+        self.workflow = workflow
         self.members = members
     }
 }

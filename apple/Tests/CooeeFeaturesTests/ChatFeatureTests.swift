@@ -103,45 +103,45 @@ internal struct ChatFeatureTests {
     @Test internal func aSendQueuesWhileATurnRuns() async {
         let store = store()
         let file = Attachment(name: "a.txt", bytes: Data("hi".utf8))
-        await store.send(.draftChanged("  first ")) { $0.draft = "  first " }
-        await store.send(.attach([file, file])) { $0.files = [file, file] }
-        await store.send(.detach(1)) { $0.files = [file] }
-        await store.send(.detach(5))
-        await store.send(.send) {
+        await store.send(.compose(.draftChanged("  first "))) { $0.draft = "  first " }
+        await store.send(.compose(.attach([file, file]))) { $0.files = [file, file] }
+        await store.send(.compose(.detach(1))) { $0.files = [file] }
+        await store.send(.compose(.detach(5)))
+        await store.send(.compose(.send)) {
             $0.draft = ""
             $0.files = []
             $0.outbox = [Outgoing(id: -1, text: "first", files: [file])]
         }
-        await store.receive(\.delivered) { $0.outbox = [] }
-        await store.send(.send)
+        await store.receive(\.outbox.delivered) { $0.outbox = [] }
+        await store.send(.compose(.send))
         await store.send(.event(.state(Turn(state: "working")))) {
             $0.turn = Turn(state: "working")
             $0.since = epoch
         }
-        await store.send(.draftChanged("second")) { $0.draft = "second" }
-        await store.send(.send) {
+        await store.send(.compose(.draftChanged("second"))) { $0.draft = "second" }
+        await store.send(.compose(.send)) {
             $0.draft = ""
             $0.outbox = [Outgoing(id: -1, text: "second")]
         }
-        await store.receive(\.delivered) { $0.outbox = [] }
+        await store.receive(\.outbox.delivered) { $0.outbox = [] }
         #expect(calls.all == ["send a1 first 1", "queue a1 second 0"])
     }
 
     @Test internal func theFirstMessageStartsANewChat() async {
         let store = store(.new(coder))
         await store.send(.task)
-        await store.send(.draftChanged("hi")) { $0.draft = "hi" }
-        await store.send(.send) {
+        await store.send(.compose(.draftChanged("hi"))) { $0.draft = "hi" }
+        await store.send(.compose(.send)) {
             $0.draft = ""
             $0.outbox = [Outgoing(id: -1, text: "hi")]
         }
-        await store.receive(\.delivered) { $0.outbox = [] }
+        await store.receive(\.outbox.delivered) { $0.outbox = [] }
         await store.receive(\.delegate.started)
-        await store.send(.stop)
+        await store.send(.compose(.stop))
         await store.send(.event(.queue([Queued(text: "a", randomID: "q1")]))) {
             $0.queue = [Queued(text: "a", randomID: "q1")]
         }
-        await store.send(.steer(0))
+        await store.send(.compose(.steer(0)))
         #expect(calls.all == ["start coder hi"])
     }
 
@@ -150,17 +150,17 @@ internal struct ChatFeatureTests {
         await store.send(.event(.queue([Queued(text: "a", randomID: "q1"), Queued(text: "b", randomID: "q2")]))) {
             $0.queue = [Queued(text: "a", randomID: "q1"), Queued(text: "b", randomID: "q2")]
         }
-        await store.send(.steer(0))
-        await store.send(.unqueue(1))
-        await store.send(.unqueue(7))
-        await store.send(.stop)
+        await store.send(.compose(.steer(0)))
+        await store.send(.compose(.unqueue(1)))
+        await store.send(.compose(.unqueue(7)))
+        await store.send(.compose(.stop))
         await store.finish()
         #expect(calls.all == ["steer a1 q1", "unqueue a1 q2", "stop a1"])
     }
 
     @Test internal func aFailedCallSaysWhy() async {
         let store = store { $0.threads.stop = { _, _ in throw APIError(status: 409, text: "Nothing runs.") } }
-        await store.send(.stop)
+        await store.send(.compose(.stop))
         await store.receive(\.failed) { $0.error = "Nothing runs." }
     }
 }

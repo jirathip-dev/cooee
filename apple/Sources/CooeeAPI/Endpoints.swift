@@ -100,7 +100,7 @@ extension Client {
         try await post("/pair/cancel", ["claim": claim])
     }
 
-    public func threads() async throws -> [ThreadRow] { try await call("GET", "/threads") }
+    public func home() async throws -> HomeAnswer { try await call("GET", "/screens/home") }
 
     public func personas() async throws -> [APIPersona] { try await call("GET", "/personas") }
 
@@ -117,6 +117,10 @@ extension Client {
     ) async throws {
         let message = Message(text: text, randomID: randomID, files: files.isEmpty ? nil : files)
         try await post("/threads/\(id)/\(queue ? "queue" : "send")", message)
+    }
+
+    public func retry(_ id: String) async throws {
+        try await post("/threads/\(id)/retry", [String: String]())
     }
 
     public func steer(_ id: String, _ randomID: String) async throws {

@@ -19,6 +19,10 @@ public struct ChatActions {
     public var attachable: [String] = []
     public var attachPlugin: (Int) -> Void = { _ in }
     public var step: String?
+    public var workflow: Int?
+    public var workflowOpen = false
+    public var showWorkflow: () -> Void = {}
+    public var backTo: String?
 
     public init(
         draft: Binding<String>? = nil,
@@ -56,6 +60,7 @@ public struct ChatView: View {
     private var queued: [String] = []
     private var draft = ""
     private var back = true
+    private var headed = true
     private var chips: [String]
     private var actions = ChatActions()
 
@@ -63,7 +68,7 @@ public struct ChatView: View {
         ZStack {
             Backdrop()
             VStack(spacing: 0) {
-                ChatHeader(persona: persona, chips: chips, back: back, actions: actions)
+                if headed { ChatHeader(persona: persona, chips: chips, back: back, actions: actions) }
                 Scroller(end: true) {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(items) { item in
@@ -116,6 +121,7 @@ public struct ChatView: View {
         since: Date,
         queued: [String],
         back: Bool,
+        headed: Bool = true,
         actions: ChatActions
     ) {
         self.persona = persona
@@ -124,6 +130,7 @@ public struct ChatView: View {
         self.since = since
         self.queued = queued
         self.back = back
+        self.headed = headed
         self.actions = actions
         chips = actions.places
     }
@@ -150,7 +157,9 @@ internal struct ChatHeader: View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                if back {
+                if let title = actions.backTo {
+                    BackLink(title: title, run: actions.back).padding(.horizontal, -14)
+                } else if back {
                     Button(action: actions.back) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("Back")
                 }
@@ -162,7 +171,7 @@ internal struct ChatHeader: View {
                 Spacer(minLength: 4)
                 more
             }
-            if !chips.isEmpty { plugins }
+            if !chips.isEmpty || actions.workflow != nil { plugins }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(palette.line).frame(height: 0.5) }
@@ -195,6 +204,9 @@ internal struct ChatHeader: View {
                         .modifier(RoundSurface(look: look))
                 }
                 .buttonStyle(.plain)
+            }
+            if let count = actions.workflow {
+                WorkflowChip(count: count, lit: actions.workflowOpen, open: actions.showWorkflow)
             }
         }
         .padding(.leading, back ? 50 : 0)

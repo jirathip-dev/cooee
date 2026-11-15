@@ -16,7 +16,7 @@ D1–D4 (q1061, q1063, q1065, q1068, 2026-11-10), the default lease of 10 min, a
 language as #153's rooms does: round glass buttons, the persona header, the working pill with Stop, and choice
 cards, in the three styles (q947).
 
-There are three pages, built on the live design system. They link `web/src/app.css`, `web/schemes/`, the farm pack,
+There are three pages, built on the live design system. They link `design-system/app.css`, `design-system/schemes/`, the farm pack,
 native-shell's phone chrome (`ns.css`), and #153's `rooms/rm.css` and `rooms/rm.js` (the avatars in three styles,
 the Home sidebar, the ask card, the sheet and the dock), without copying any of them. `sc.css` holds this design's
 additions as tokens only, with two exceptions:

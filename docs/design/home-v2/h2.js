@@ -3,7 +3,7 @@
 // top. Pages: modern.html, terminal.html, scene.html. As #229's hw.js: `?mode=dark|light`, `?f=<frame>` one frame alone.
 import { ranch } from './herd.js';
 
-const W = '../../../web/', P = '../../../packs/themes/';
+const W = '../../../design-system/', P = '../../../packs/themes/';
 const q = new URLSearchParams(location.search);
 const gal = document.querySelector('.gal'), PAGE = gal.dataset.page;
 const STYLE = PAGE === 'modern' ? 'modern' : PAGE, MODE = q.get('mode') || (PAGE === 'scene' ? 'light' : 'dark'), F = q.get('f');
@@ -20,7 +20,7 @@ const ICON = { new: '<path d="M12 5v14M5 12h14"/>', find: '<circle cx="10.5" cy=
   tray: '<path d="M3 13h5l1.5 3h5l1.5-3h5"/><path d="M5.5 5h13L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z"/>' };
 const ic = k => `<svg class=hic viewBox="0 0 24 24" aria-hidden=true>${ICON[k]}</svg>`;
 
-// Personas, pinned first (Chief, Coder, Researcher), each with its state; FIG is web/src/look.rs's two-frame figures.
+// Personas, pinned first (Chief, Coder, Researcher), each with its state; FIG is crates/cooee-server/src/look.rs's two-frame figures.
 const PERS = {
   chief: ['Chief', 'CH', '--l', 'ch', 'done', 1], coder: ['Coder', 'CO', '--c', 'gry', 'working', 1], res: ['Researcher', 'RE', '--p', 'blk', 'needs', 1],
   acct: ['Account Manager', 'AM', '--link', 'bay', 'idle'], cond: ['Conductor', 'CD', '--g', 'wht', 'working'],
