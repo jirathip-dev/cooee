@@ -64,7 +64,7 @@ jobs:
     env:
       MAC: ${{ needs.scope.outputs.mac }}
       FULL: ${{ needs.scope.outputs.full }}
-      E2E: ${{ needs.scope.outputs.e2e }}
+      E2E: ${{ needs.scope.outputs.e2e == 'true' && vars.E2E != 'off' }}
       ONLY: ${{ needs.scope.outputs.only }}
     steps:
       - uses: actions/checkout@v4
@@ -112,6 +112,9 @@ jobs:
         with:
           name: rendered-frames
           path: ${{ runner.temp }}/rendered
+      - name: e2e off
+        if: vars.E2E == 'off'
+        run: echo "e2e off (vars.E2E=off)" >> "$GITHUB_STEP_SUMMARY"
       - name: cooee serve (fake agent)
         if: env.E2E == 'true'
         run: |
