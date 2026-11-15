@@ -1,0 +1,13 @@
+Decided: ChatFeature.Action has one case per area; each area's enum and reducer sit in that area's file
+Because: "the nested enums move to their files (ChatFeature.swift stays as the kernel: one Action case per area)"
+Decided: the kernel's task, loaded, event and failed go through one listen function so body's switch stays under SwiftLint's complexity 8
+Because: apple/.swiftlint.yml:37
+Decided: no .drover/arch.toml lines for this slice
+Because: docs/architecture/hot-files/adr.md:252
+Decided: Root.swift is staging's as-is; #425 moved ChatScreen to its own file, where its actions are respelled
+Because: apple/Sources/CooeeUI/ChatScreen.swift:15
+Decided: #229's WorkflowAction moves out of Action to sit beside the other chat area enums
+Because: apple/Sources/CooeeFeatures/ChatPlugins.swift:6
+Rejected: moving State's fields per area — shapes.md keeps State flat because every chat view reads it
+Check: tests change only in how actions are spelled; sh scripts/apple-check.sh and drover arch-check exit 0
+Owner: Nothing changes in the app; each part of the chat's code now lives in its own file.
