@@ -1,0 +1,9 @@
+Decided: the hang test times POST /threads starts, since staging serves no rendered agent list and a start reads the profiles each time
+Because: crates/cooee-server/src/lib.rs:463
+Decided: staging's plugin tests retry a refused start for up to 20 s, the list showing within one 5 s refresh
+Because: "A changed profile list shows within one refresh interval"
+Decided: staging build fix: #397's shed-version tests expect the wording #396 put in shed.rs
+Because: crates/cooee-core/src/shed.rs:335
+Rejected: changing the shed message back — #396's chat.rs:307 test and the app rely on the new text
+Check: with Hub::served calling plugin::profiles directly the hang test fails on a 5.00 s start
+Owner: merged with the latest staging; the slow-plugin check now times starting a chat, and two tests staging broke pass again
