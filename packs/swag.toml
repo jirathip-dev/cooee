@@ -3,11 +3,11 @@
 # has them; a file that doesn't match its sha256 is never installed and fails the test. To take a change from swag,
 # bump `commit` and the sums together; a new pack (bush) is four more lines.
 url = "https://github.com/jirathip-dev/swag"
-commit = "8964e64b8869cf9dc892819e172305cb6c601adc"
+commit = "26b0b2c8d248f04271cd1f88f27cc176f75ca8a6"
 
 [sha256]
 "farm/theme.json" = "7354e21805950c028542ff10a2db204500628d50194e943a3425634bfa983289"
-"farm/sprites.svg" = "e7f68ac1df8e078fb5dc78b7a7842223296cf28b2980e00ae50b420783414070"
+"farm/sprites.svg" = "ec767800e18b7aaaa8f478c3c646b1538909f0d9950cc72a39711aab571c9e6c"
 "farm/scene.svg" = "bb87bd49991def69aafe6a41bfcf56f9c80f7c948f4116629fc2280133184944"
 "farm/icon.png" = "8e2fe144213d25a23922c4318d3e84e2996b509773ac33891149d6c5856a9f62"
 "garden/theme.json" = "7fcfe481ee40d4ad35f949e3f968696c6800c1de5378a35411e79f21828b3fce"
