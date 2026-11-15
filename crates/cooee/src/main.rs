@@ -25,7 +25,7 @@ const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decli
                      | setup [--port <p>] [--dry-run] [--yes] | plugin add <name | git-url> [--rev <r>] [--yes] \
                      | plugin update [<name>] [--yes] | plugin remove <name> [--purge] | plugin list | plugin check <answer.json|cooee-plugin.toml>... \
                      | theme add <name | git-url | path> [--rev <r>] [--yes] | theme remove <name> | theme list \
-                     | theme check <path>... | accounts ls [--json] \
+                     | theme check <path>... | layout check <layout.json>... | accounts ls [--json] \
                      | accounts env <provider> <name> [--require-signed-in] \
                      | accounts add <provider> <name> --folder <path> | accounts rm <provider> <name> | mcp ls \
                      | mcp add <name> (<command> [<arg>...] | --url <url> [--type sse]) \
@@ -33,7 +33,7 @@ const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decli
                      | mcp proxy <server> --thread <id> | mcp serve --thread <id>> [--instance <name>] [--config <file>] \
                      | cooee --version";
 
-/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the exact version.
+/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the same protocol.
 const SHED_CARGO: [&str; 8] = [
     "cargo",
     "install",
@@ -41,7 +41,7 @@ const SHED_CARGO: [&str; 8] = [
     "--git",
     "https://github.com/jirathip-dev/shed",
     "--rev",
-    "f026a4d35a2705e560a52515da8e3a5d32e4d659",
+    "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb",
     "shed",
 ];
 
@@ -137,7 +137,7 @@ fn main() -> ExitCode {
             let run = |c: Config| accounts::run(&c, rest, json, require);
             return load(path.as_deref(), &instance).map_or_else(|e| finish(Err(e)), run);
         }
-        ["plugin", "check", files @ ..] => return finish(check::run(files)),
+        [w @ ("plugin" | "layout"), "check", f @ ..] => return finish(check::run(w, f)),
         ["plugin", rest @ ..] => {
             let rest: Vec<String> = rest.iter().map(|a| (*a).to_owned()).collect();
             let rest: Vec<&str> = rest.iter().map(String::as_str).collect();
@@ -271,7 +271,7 @@ fn pair(config: &Config) -> Result<(), String> {
         Some(host) => format!("https://{host}:{}/pair?code={code}", config.port),
         None => format!("http://127.0.0.1:{}/pair?code={code}", config.port),
     };
-    println!("Scan it with the new device's Camera, or open the link and type the code.");
+    println!("Type the link into the cooee app on the new device.");
     if let Ok(qr) = QrCode::new(&url) {
         println!("{}", qr.render::<Dense1x2>().quiet_zone(true).build());
     }
@@ -593,7 +593,7 @@ fn theme(config: &Config, args: &[&str], rev: Option<&str>, yes: bool) -> Result
     if let ["check", paths @ ..] = args {
         let mut failed = 0;
         for p in paths {
-            match cooee_web::check(Path::new(p)) {
+            match cooee_server::check(Path::new(p)) {
                 Ok(()) => println!("ok   {p}"),
                 Err(fails) => {
                     failed += 1;

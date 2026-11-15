@@ -6,6 +6,9 @@ extension ChatFeature {
         switch action {
         case .plugins(let action):
             return plugin(&state, action)
+        case .screen(.presented(.delegate(.open(let thread)))):
+            state.screen = nil
+            return .send(.delegate(.open(thread)))
         case .attaching(.presented(.delegate(.attached))):
             state.attaching = nil
             return .send(.plugins(.load))
