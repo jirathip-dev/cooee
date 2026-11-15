@@ -12,7 +12,7 @@ The phone frames are 402 × 874 pt (iPhone 17) at 2×, with the status bar, isla
 frames are the window's content at 2× with its traffic lights drawn. Simulator screenshots come from the CI job
 (`.github/workflows/apple.yml`) or a Mac with Xcode 26.
 
-Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the farm pack's own horses
+Look: farm scheme (`design-system/schemes/farm.json`, `farm-light.json`). Scene uses the farm pack's own horses
 (`packs/themes/farm/sprites.svg`, `s-scene-*`), rasterised in each persona's coat by `apple/design/sprites.mjs`.
 
 ## iPhone 17, dark and light (`-dark.png`, `-light.png`)
@@ -33,13 +33,21 @@ Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the f
 | `pair-waiting-*` | Waiting for approval, **the check word shown** (`maple`, from `POST /pair/request`), 4:51 left; any paired device can approve; Cancel. | |
 | `pair-paired-*` | Paired with mini: the personas waiting, then Go to Home. | |
 
-## Styles (q947)
+## Styles (q947, #141)
+
+Every frame above also renders in all three styles: `CooeeUITests`' `frameFitsInEveryStyle` draws each one in Modern,
+Terminal and Scene and fails if anything spills outside the frame (CI keeps the renders as the `snapshots` artifact).
+These are the style frames kept as designs:
 
 | PNG | shows |
 |---|---|
-| `home-terminal-dark.png` | Terminal: SF Mono throughout, the ASCII figures (`web/src/look.rs`) in ruled boxes as avatars, the farm's state words, `# pinned`, `# chats`, `[g]` and `[+]`. |
-| `chat-terminal-dark.png` | A Terminal chat: `> you`, `[ok]` and `o>_` tool rows, `~o= working`, bracketed buttons. |
-| `home-scene-light.png` | Scene: the pinned personas are the farm's horses in their coats, acting their state, standing in the farm strip (`scene.svg`) with their names and words (`at the gate` in red); the chat list's avatars are their horses too. |
+| `style-terminal-home-dark.png` | Terminal: SF Mono throughout, the ASCII figures (`crates/cooee-server/src/look.rs`) in ruled boxes as avatars, the farm's state words, `# pinned`, `# chats`, `[g]` and `[+]`. |
+| `style-terminal-chat-dark.png` | A Terminal chat: `> you`, `[ok]` and `o>_` tool rows, `~o= working`, bracketed buttons. |
+| `style-terminal-card-dark.png` | A block-rendered choice card in Terminal: `## ask`, square edges, `[ Allow once ]`. |
+| `style-terminal-persona-dark.png` | A sheet in Terminal: the persona sheet with `# headers` and ruled groups. |
+| `style-scene-home-light.png` | Scene: the pinned personas are the farm's horses in their coats, acting their state, standing in the farm strip (`scene.svg`) with their names and words (`at the gate` in red); the chat list's avatars are their horses too. |
+| `style-scene-chat-light.png` | A Scene chat: the persona's horse in the header. |
+| `style-scene-card-light.png` | A block-rendered choice card in Scene: the pack's card with its edge. |
 
 ## Mac (the app as the server, q962 option 1)
 
@@ -53,6 +61,19 @@ Look: farm scheme (`web/schemes/farm.json`, `farm-light.json`). Scene uses the f
 | `mac-setup-approve.png` | A phone asks: **Approve** prompt with the same check word `maple`, its address, Decline / Approve · Touch ID. |
 | `mac-connect.png` | The Mac app as a **client only**: Connect to a server: Nearby, an address, or scan its QR with the Mac's camera. |
 | `mac-window-dark.png`, `mac-window-light.png` | The Mac window: Home as the sidebar (pinned row, chat list with Coder selected) beside the open chat. iPad uses the same split. |
+
+## Queue in Scene (#181)
+
+drover's Queue (`docs/design/queue-scene/fixtures/queue.json`, its times moved to the frame's now, the revise note's text
+field left out because `ImageRenderer` cannot draw it) as the sheet's blocks.
+
+| PNG | shows |
+|---|---|
+| `queue-scene-dark.png`, `queue-scene-light.png` | **Scene**: the `scene` block, a horse per lane in its place: #730 at the gate (red-ringed card), #655 refused at the fence (its own pose, q1244), the trail, the stable, grazing. The rows below carry the same horse. #730's needs-you round is folded open with the ask. |
+| `queue-modern-dark.png`, `queue-modern-light.png` | **Modern**: no strip; the rows' figures are the farm pack's row sprites (`row-<state>.png`); #730 folded open (the rounds line, the lane, the ask's buttons, `lane chat ›`), #655 and the in-progress rows folded with their subtitle. |
+| `queue-terminal-dark.png`, `queue-terminal-light.png` | **Terminal**: the ASCII figures, the dashed round line with a glyph per state, bracketed buttons; no strip. |
+| `queue-mac-scene-dark.png`, `queue-mac-modern-dark.png`, `queue-mac-terminal-dark.png` | The Queue panel at 1440: the strip shows all seven lanes. |
+| `queue-figures-modern-dark.png` | Modern's row figure for every lane state (working: edit, read, run; needs, fail, done, idle), cropped tight so a figure change shows. |
 
 ## Not drawn
 

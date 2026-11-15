@@ -40,7 +40,9 @@ internal struct AgentChip: View {
         let palette = look.palette
         HStack(spacing: 4) {
             Text(persona.api.agent).fontWeight(.semibold)
-            Text("· \(persona.api.model)\(effort ? " · \(persona.api.effort)" : "")")
+            Text(
+                [persona.api.model, effort ? persona.api.effort : ""].filter { !$0.isEmpty }.map { "· \($0)" }
+                    .joined(separator: " "))
             Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
         }
         .ui(12, .regular, look).foregroundStyle(palette.mute).lineLimit(1).fixedSize()
@@ -61,12 +63,12 @@ internal struct RoundButton: View {
     internal var body: some View {
         Group {
             if look.mono {
-                Text("[\(ascii)]").ui(15, .bold, look)
+                Text("[\(ascii)]").ui(15, .bold, look).fixedSize()
             } else {
                 Image(systemName: symbol).font(.system(size: size * 0.42, weight: .semibold))
             }
         }
-        .foregroundStyle(look.palette.foreground).frame(width: size, height: size)
+        .foregroundStyle(look.palette.foreground).frame(minWidth: size, minHeight: size)
         .modifier(RoundSurface(look: look))
     }
 }
@@ -106,6 +108,7 @@ internal struct CardButton: View {
                 primary ? tint : tint.opacity(look.mono ? 0 : 0.12),
                 in: look.mono ? AnyShape(Rectangle()) : AnyShape(Capsule())
             )
+            .accessibilityLabel(title)
     }
 }
 

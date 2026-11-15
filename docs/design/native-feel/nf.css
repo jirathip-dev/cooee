@@ -1,4 +1,4 @@
-/* #232 the native iOS feel pass, on web/src/app.css (tokens, .blk.me, .chc), native-shell's phone chrome (ns.css)
+/* #232 the native iOS feel pass, on design-system/app.css (tokens, .blk.me, .chc), native-shell's phone chrome (ns.css)
    and rooms' native language (rm.css: .pa avatars, .stk, .gb, .rhd, .hr rows, .msgs, .dock, .comp, .ask, .rsh
    sheets, .wd.mac, .side). Tokens only; no raw colour.
    New class names: htop the two floating buttons (#251; acct the account avatar); scroll Home's list; srch search;

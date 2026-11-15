@@ -1,6 +1,6 @@
-//! A fresh instance: with no agents in shed, a new chat says what to run instead of showing a composer; with no
-//! `roots`, a chat still starts (in its scratch folder) and Use a folder… says how to add one; a provider whose CLI is
-//! missing shows its install line, and `cooee doctor` warns about both; with one root, a thread starts in the root.
+//! A fresh instance: with no agents in shed and no `roots`, `cooee doctor` warns about both; with no roots, a chat
+//! still starts (in its scratch folder) and Use a folder… is refused; a provider whose CLI is missing reports its install line; with one root, a
+//! thread starts in the root.
 
 mod support;
 
@@ -19,27 +19,14 @@ fn no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns() {
                  status = [\"true\"]\ninstall = \"npm install -g @openai/codex\"\n";
     let cooee = Cooee::start_with(&dir, &shed.dir, &format!("roots = []\n{codex}"));
 
-    let (status, page) = cooee.get("/new");
-    assert_eq!(status, 200, "{page}");
-    assert!(
-        page.contains("no agents installed · on the Mac:<code>shed agents add claude-acp</code>")
-            && page.contains(r#"data-copy="shed agents add claude-acp""#),
-        "{page}"
+    // codex's CLI is missing: `not installed` with its install line; not signed in.
+    let v = cooee.json("/logins/codex");
+    assert_eq!(
+        v["status"]["install"], "npm install -g @openai/codex",
+        "{v}"
     );
-    // Nothing to send with: no composer.
-    assert!(
-        !page.contains("<select") && !page.contains(r#"<form id="new">"#),
-        "{page}"
-    );
-    // codex's CLI is missing: one row, `not installed` and [copy install]; no sign-in, no accounts.
-    assert!(
-        page.contains(r#"<div class="acr ni"><span class="ptg">codex</span><span class="sk">not installed</span><button type="button" class="sec" data-copy="npm install -g @openai/codex" title="npm install -g @openai/codex">copy install</button></div>"#),
-        "{page}"
-    );
-    assert!(
-        !page.contains("sign in") && !page.contains("+ account"),
-        "{page}"
-    );
+    assert_eq!(v["status"]["line"], "not installed on this Mac", "{v}");
+    assert_eq!(v["status"]["signed_in"], false, "{v}");
 
     let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
         .arg("--config")
@@ -69,15 +56,8 @@ fn with_one_root_and_nothing_in_it_a_thread_starts_in_the_root() {
         &format!("roots = [{:?}]\n", root.to_string_lossy()),
     );
 
-    // A new chat's folder chip: scratch (picked), then the root.
-    let (_, page) = cooee.get("/");
-    let option = format!(r#"name="folder" value="{}">"#, root.display());
-    assert!(
-        page.contains(r#"name="folder" value="" checked="">scratch"#)
-            && page.contains(&option)
-            && page.matches(r#"name="folder""#).count() == 2,
-        "{page}"
-    );
+    // The root is the one folder offered.
+    assert_eq!(cooee.json("/folders")["roots"], json!([root]));
     let new = json!({ "agent": "fake-acp", "folder": root, "text": "hi", "random_id": "r0" });
     let (status, body) = cooee.post("/threads", &new);
     assert_eq!(status, 200, "{body}");
@@ -86,18 +66,26 @@ fn with_one_root_and_nothing_in_it_a_thread_starts_in_the_root() {
 }
 
 #[test]
-fn with_no_roots_a_chat_still_starts_in_scratch_and_use_a_folder_says_how_to_add_one() {
+fn with_no_roots_a_chat_still_starts_in_scratch_and_use_a_folder_is_refused() {
     let dir = scratch("first-run-noroots");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start_with(&dir, &shed.dir, "roots = []\n");
-    let (_, page) = cooee.get("/");
-    assert!(
-        page.contains(r#"no folders set · add<code>roots = ["~/Projects"]</code>to config.toml"#)
-            && page.contains(r#"data-copy="roots = [&quot;~/Projects&quot;]""#)
-            && page.contains(r#"<button type="submit">send</button>"#),
-        "{page}"
-    );
+    assert_eq!(cooee.json("/folders")["roots"], json!([]));
     let new = json!({ "agent": "fake-acp", "text": "hi", "random_id": "r0" });
     let (status, body) = cooee.post("/threads", &new);
     assert_eq!(status, 200, "{body}");
+    let id = serde_json::from_str::<serde_json::Value>(&body).unwrap()["id"].clone();
+    let own = dir.join("data/scratch").join(id.as_str().unwrap());
+    let cwd = format!("--cwd {} ", own.display());
+    assert!(shed.cli_log().contains(&cwd), "{}", shed.cli_log());
+    // Use a folder… has no root to take one from.
+    let attach = json!({ "folder": dir });
+    let (status, body) = cooee.post(
+        &format!("/threads/{}/folder", id.as_str().unwrap()),
+        &attach,
+    );
+    assert!(
+        status == 400 && body.contains("not inside a configured root"),
+        "{status} {body}"
+    );
 }
