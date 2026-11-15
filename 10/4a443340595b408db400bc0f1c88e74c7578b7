@@ -1,0 +1,5 @@
+Decided: merged origin/staging with #425; Root.swift is staging's, and the panel's ChatScreen changes move with ChatScreen to its own file.
+Because: apple/Sources/CooeeUI/ChatScreen.swift:46
+Rejected: keeping ChatScreen in Root.swift — #425 split it out to shrink a hot file.
+Check: the … still toggles the panel (column on Mac and iPad, sheet on iPhone); apple-check, line cap and arch-check are green.
+Owner: The branch is up to date with staging again; the … panel works as before.
