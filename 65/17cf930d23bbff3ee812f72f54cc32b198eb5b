@@ -1,0 +1,13 @@
+Decided: core's home is GET /screens/home: the app's bundled Default/screens/home.json filled with today's threads and personas; the server sets source core.
+Because: "`cooee-server/src/screens/{mod,home}.rs`, block builders, `source: \"core\"` set by the server on the wire."
+Because: crates/cooee-server/src/screens/mod.rs:10
+Decided: home draws its blocks in the screen's order; `pinned` and `chats` are block renderers made from the old pinned-row and chat-row views.
+Because: apple/Sources/CooeeUI/BlockHome.swift:108
+Rejected: generic `row` blocks with figures — RowView's 15pt title and 44pt rows differ from the chat row's, so home-390 and wide-1440 would change.
+Rejected: building row text (ago, unseen, room members) in Rust — it would duplicate CooeeCore's Listing and its clock; the app lists from the same threads and personas as before.
+Decided: the app makes one call (/screens/home) where it made two (/threads, /personas); Client.threads() is deleted, not kept beside it.
+Because: "Offline draws the bundled home."
+Because: apple/Sources/CooeeUI/SlotView.swift:98
+Decided: no home stream yet; the app re-reads /screens/home every 5 s as it re-read /threads.
+Check: every home and wide frame passes SnapshotTests unchanged; the server test compares /screens/home with the bundled file and with /threads and /personas.
+Owner: Home now comes from the server as a screen, and the app draws a built-in copy until it answers or when offline; nothing looks different.
