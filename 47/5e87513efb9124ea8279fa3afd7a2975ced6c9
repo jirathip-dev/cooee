@@ -1,0 +1,7 @@
+Decided: merged origin/staging with #229, keeping the persona panel beside #229's Workflow chip and sheet; the panel's Attach rows stay the only attach path.
+Because: apple/Sources/CooeeUI/Root.swift:83
+Decided: ChatPanel.swift drops its SwiftUI import, which swiftlint analyze flags as unused after the merge.
+Because: apple/Sources/CooeeUI/ChatPanel.swift:1
+Rejected: a Workflow row in the panel in this round — an update round resolves conflicts, it does not add scope.
+Check: the … still opens the panel and the Workflow chip still opens its sheet; apple-check, line cap and arch-check are green.
+Owner: The branch has #229's Workflow sheet now; the … panel works as before.
