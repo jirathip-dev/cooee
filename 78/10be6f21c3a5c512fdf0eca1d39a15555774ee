@@ -1,0 +1,13 @@
+Decided: merged staging after #189; its removal of the web client wins, so the Settings page edits and web card tweaks go with it
+Because: q1595
+Decided: an event routine from create_routine raises a Face ID card (form routine) through a generic hub proposal; approving re-makes and saves it, declining saves nothing
+Because: q1351
+Decided: approve releases the thread's lock before a proposal's action runs; the runner's tick takes its lock then the thread's
+Because: crates/cooee-server/src/hub.rs:1850
+Decided: the hooks listener is its own topcoat router with one route and topcoat's default 2 MiB body limit
+Because: crates/cooee-server/src/routines.rs:514
+Decided: a GitHub routine without [hooks] is refused NO_HOOKS, since neither the webhook nor the catch-up could reach it
+Because: crates/cooee-server/src/routines.rs:135
+Rejected: a time crate to parse delivered_at — lexicographic UTC comparison is enough and adds no dependency
+Check: tests/routines.rs github and catch-up tests pass after the merge; docs/api.md routines table keeps the 204 answers with the GitHub trigger
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
