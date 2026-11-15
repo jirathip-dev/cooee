@@ -1,0 +1,10 @@
+Decided: a pure-sh map ("glob" = "tests" lines) read by scripts/e2e-scope.sh; no TOML parser on the macOS runners' python 3.9
+Because: "A checked-in map, e.g. `apple/e2e/map.toml`, pairs path globs with the UI test classes"
+Decided: an ubuntu scope job; apple runs on ubuntu-latest and passes when no Apple surface is touched
+Because: "A docs-only or Rust-CLI-only PR skips the e2e steps, and `apple` still reports success"
+Decided: an apple/ path no map line matches runs the full suite
+Because: "or any path the map doesn't cover runs the full suite. When in doubt, run it all."
+Rejected: keeping the pull_request paths filter — a docs PR would get no apple check at all, not a passed one
+Check: the staging push path still runs every step, both looks, with an empty -only-testing list (scripts/e2e-scope.sh:19)
+Check: the real narrowed merge-ready run is unverified: this PR maps to all; the first single-screen PR shows it
+Owner: after a review passes, the simulator tests now run only for the screens a change touches.
