@@ -1,0 +1,12 @@
+Decided: the room's stream and slice carry its members' open asks as room-ask {member, session, item}; the app answers in the member's session.
+Because: q1689
+Decided: the room deadline pauses while any member's ask is open and moves on by the pause when the last one settles.
+Because: "the clock is paused and leaves the pill"
+Decided: the ask card reuses the chat's choice card; its header draws the member's avatar and name when the poster is a room member.
+Because: "the choice card naming the member"
+Rejected: mirroring the approval into the room's own items — room and session item ids collide and answers would need a mapping.
+Decided: two #397 tests now expect the shed wording the code uses (staging build fix).
+Because: crates/cooee-core/src/shed.rs:335
+Check: the open asks and the pause live in memory only: a server restart forgets them until the member's approval comes again.
+Check: pushes are R5's (#158) server code; this PR changes no push, so push-390-dark is the lock screen the live check shows.
+Owner: a member's ask now shows in its room on the phone, pauses the room's clock and is answered from there.
