@@ -1,0 +1,5 @@
+Decided: merge origin/staging; .drover/arch-baseline.txt takes staging's lib.rs 2345 and manage.rs 1162
+Because: .drover/arch-baseline.txt:2
+Rejected: none
+Check: wc -l of each baseline file equals its baseline line, and drover arch-check --base origin/staging exits 0
+Owner: The branch now includes the latest staging; the only conflict was a file-size record, settled in staging's favour.
