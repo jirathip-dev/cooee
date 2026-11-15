@@ -13,7 +13,6 @@ mod cmd;
 mod devices;
 mod doctor;
 mod keychain;
-mod machine;
 mod service;
 mod setup;
 

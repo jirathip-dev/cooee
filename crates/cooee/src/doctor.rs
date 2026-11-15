@@ -7,11 +7,9 @@ use std::{
 };
 
 use cooee_core::{Config, ROOTS_FIX, Shed, ShedError, agents_fix};
+use cooee_server::machine;
 
-use crate::{
-    machine,
-    service::{label, shed_install, tailnet_name},
-};
+use crate::service::{label, shed_install, tailnet_name};
 
 /// Checks the instance: its service, port, shed, each machine (#150), push keys and tailnet URL; fails if any fails.
 pub(crate) fn doctor(config: &Config) -> Result<(), String> {

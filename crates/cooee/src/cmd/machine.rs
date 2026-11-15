@@ -1,9 +1,8 @@
 //! `cooee machine check <m> [--yes]`: one machine's setup (#150).
 
-use crate::{
-    cli::{Failed, Flag, Invocation},
-    machine,
-};
+use cooee_server::machine;
+
+use crate::cli::{Failed, Flag, Invocation};
 
 pub(super) const USAGE: &str = "machine check <m> [--yes]";
 pub(super) const FLAGS: &[Flag] = &[Flag::Switch("--yes")];
