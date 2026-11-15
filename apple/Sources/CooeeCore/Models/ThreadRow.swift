@@ -3,6 +3,7 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         case id, title, agent, persona, machine, state, last, unseen, archived, workflow
         case updated = "at"
         case roster = "members"
+        case asker = "asked_by"
     }
 
     public let id: String
@@ -17,8 +18,10 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
     public let archived: Bool
     public let workflow: WorkflowLabel?
     private let roster: [String]?
+    private let asker: String?
 
     public var members: [String] { roster ?? [] }
+    public var askedBy: String { asker ?? "" }
 
     public init(
         id: String,
@@ -32,7 +35,8 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         archived: Bool,
         workflow: WorkflowLabel? = nil,
         members: [String] = [],
-        machine: String? = nil
+        machine: String? = nil,
+        askedBy: String = ""
     ) {
         self.id = id
         self.title = title
@@ -46,5 +50,6 @@ public struct ThreadRow: Codable, Sendable, Equatable, Identifiable {
         self.archived = archived
         self.workflow = workflow
         roster = members.isEmpty ? nil : members
+        asker = askedBy.isEmpty ? nil : askedBy
     }
 }
