@@ -1,0 +1,8 @@
+Decided: #181's farm fail-scene sprite landed in swag by PR (jirathip-dev/swag#2); cooee bumps only the pin's commit and that file's sha256
+Because: q1711
+Decided: staging's merge resolves to its side where #189 removed the web client, the /themes routes and [new theme]/[keep]; the swag install path stays
+Because: crates/cooee-server/src/themes.rs:1
+Rejected: committing staging's farm sprites.svg into packs/themes/ — it is the git-ignored vendored copy; the pin's sum would no longer match
+Check: swag#2 must merge with a merge commit so 26b0b2c stays on swag main; a squash needs another pin bump
+Check: changing one sum in packs/swag.toml makes `cargo test -p cooee-core swag` exit 101
+Owner: Farm's refused-horse fail scene now comes from swag; merge swag PR #2 with a merge commit.
