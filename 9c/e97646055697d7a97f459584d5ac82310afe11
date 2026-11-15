@@ -1,0 +1,10 @@
+Decided: merged origin/staging (#151, #421); the hub.rs and lib.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #151's relaunch split
+Decided: machine.rs gets its //! module doc back, since #151 made it a pub mod
+Because: crates/cooee-server/src/lib.rs:12
+Decided: no code change for the reliability.rs background-start race seen at host load 25
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: every changed .rs file under crates/ matches staging once comments are removed, and scripts/comments.py exits 0
+Check: clippy and just doc are green at the head; the reliability test passes in CI
+Owner: the branch is up to date with staging again, and the newly public machine module keeps its description
