@@ -12,7 +12,12 @@ use std::{
 
 use cooee_core::{Config, SHED_CARGO, SHED_LABEL, Shed, ShedError, provider};
 
-use super::{doctor, job, load, pair, plist, tailnet_name, write_plist};
+use crate::{
+    cli::load,
+    devices::pair,
+    doctor::doctor,
+    service::{job, plist, tailnet_name, write_plist},
+};
 
 /// `cooee setup`'s flags.
 pub struct Setup {
@@ -24,7 +29,7 @@ pub struct Setup {
 }
 
 /// Whether `argv` exits 0 (its output dropped).
-pub(super) fn ok(argv: &[&str]) -> bool {
+pub(crate) fn ok(argv: &[&str]) -> bool {
     Command::new(argv[0])
         .args(&argv[1..])
         .stdout(Stdio::null())
@@ -34,7 +39,7 @@ pub(super) fn ok(argv: &[&str]) -> bool {
 }
 
 /// `argv`'s stdout, if it exits 0.
-pub(super) fn output(argv: &[&str]) -> Option<String> {
+pub(crate) fn output(argv: &[&str]) -> Option<String> {
     let out = Command::new(argv[0]).args(&argv[1..]).output().ok()?;
     out.status
         .success()
@@ -42,7 +47,7 @@ pub(super) fn output(argv: &[&str]) -> Option<String> {
 }
 
 /// Polls `f` for up to 10 seconds.
-pub(super) fn wait(f: impl Fn() -> bool) -> bool {
+pub(crate) fn wait(f: impl Fn() -> bool) -> bool {
     (0..40).any(|_| {
         let done = f();
         if !done {

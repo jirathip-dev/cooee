@@ -8,6 +8,7 @@ mod support;
 
 use std::{fs, path::Path, thread, time::Duration};
 
+use cooee_core::personas::PLAIN;
 use serde_json::{Value, json};
 use support::{Cooee, Events, FakeShed, scratch, version};
 
@@ -297,11 +298,12 @@ fn mentioned_members_take_turns_in_mention_order_and_no_one_else() {
         pairs(&[("owner", first), ("cy", "Hello"), ("ada", "Hello")])
     );
     assert!(run_line(&dir, "bo").is_none(), "bo wasn't named");
-    // A member's first turn tells it who is in the room and how to pass.
+    // A member's first turn tells it who is in the room and how to pass, after its Chat style's line (#242).
     let cy = prompts(&dir, &shed, "cy").remove(0);
     assert!(
-        cy.starts_with("You are Cy, a member of a room with the owner and Ada, Bo.")
-            && cy.contains("Reply exactly [pass]"),
+        cy.starts_with(&format!(
+            "{PLAIN}\n\nYou are Cy, a member of a room with the owner and Ada, Bo."
+        )) && cy.contains("Reply exactly [pass]"),
         "{cy}"
     );
 }

@@ -46,7 +46,7 @@ internal struct ChatPluginsTests {
             $0.attachable = [Self.hello]
         }
         await store.send(.plugins(.open(Self.queue))) {
-            $0.screen = PluginScreenFeature.State(server: mini, place: Self.queue)
+            $0.screen = ScreenFeature.State(server: mini, place: Self.queue)
         }
         await store.send(.screen(.dismiss)) { $0.screen = nil }
     }
@@ -62,6 +62,15 @@ internal struct ChatPluginsTests {
         await store.receive(\.plugins.load)
         await store.receive(\.plugins.loaded) { $0.places = [Self.queue, Self.queue] }
         #expect(calls.all == ["attach hello cond", "places cond"])
+    }
+
+    @Test internal func theWorkflowSheetOpensAndUnfoldsOneIssueAtATime() async {
+        let store = store()
+        await store.send(.workflow(.show(true))) { $0.workflowOpen = true }
+        await store.send(.workflow(.unfold("cooee #33"))) { $0.unfolded = "cooee #33" }
+        await store.send(.workflow(.unfold("cooee #31"))) { $0.unfolded = "cooee #31" }
+        await store.send(.workflow(.unfold("cooee #31"))) { $0.unfolded = nil }
+        await store.send(.workflow(.show(false))) { $0.workflowOpen = false }
     }
 
     @Test internal func aChatWithNoPersonaLoadsNoStripAndAFailedLoadSaysWhy() async {
@@ -89,7 +98,7 @@ internal struct ChatPluginsTests {
     @Test internal func aThreadTappedOnAScreenClosesItAndOpensThatChat() async {
         let store = store()
         await store.send(.plugins(.open(Self.queue))) {
-            $0.screen = PluginScreenFeature.State(server: mini, place: Self.queue)
+            $0.screen = ScreenFeature.State(server: mini, place: Self.queue)
         }
         await store.send(.screen(.presented(.delegate(.open("herdsman-impl-641"))))) { $0.screen = nil }
         await store.receive(\.delegate.open, "herdsman-impl-641")

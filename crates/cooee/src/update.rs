@@ -11,7 +11,7 @@ use std::{
 
 use cooee_core::Config;
 
-use super::{label, now, setup};
+use crate::{devices::now, service::label, setup};
 
 const INSTALL: &str = include_str!("../../../scripts/install.sh");
 
@@ -121,10 +121,8 @@ fn update(config: &Config, check: bool) -> Result<(), String> {
                 item: 0,
             };
             let push = cooee_server::Push::new(&data).with_apns(config.apns.clone());
-            let sent = push
-                .deliver(None, &note)
-                .map_or_else(|e| format!(": {e}"), |l| l.concat());
-            log(&data, &format!("{why}; push{sent}"))?;
+            log(&data, &why)?;
+            push.send_to(None, &note).join().ok();
             Err(why)
         }
     }
