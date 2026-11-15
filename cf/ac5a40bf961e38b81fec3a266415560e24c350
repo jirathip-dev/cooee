@@ -1,0 +1,15 @@
+Decided: Clients.swift splits into Clients/<Name>.swift, each with its struct, testValue and DependencyValues accessor; bodies move as-is
+Because: docs/architecture/hot-files/shapes.md:19
+Decided: Live.swift splits into Live/<Name>+Live.swift, one per DependencyKey extension, including PluginsClient, ScreenCache, LayoutClient and LayoutStore whose structs live elsewhere
+Because: docs/architecture/hot-files/adr.md:91
+Decided: CooeeRoot moves verbatim to CooeeApp/CooeeRoot.swift
+Because: "Adds: Clients/, Live/, CooeeRoot.swift."
+Decided: each new file imports only what its body uses, sorted; ComposableArchitecture kept everywhere
+Because: apple/.swiftlint.yml:29
+Decided: staging build fix: the size baseline takes hub.rs at 3120 lines, staging's arch-check is red on it (same line as #420 and #421)
+Because: .drover/arch-baseline.txt:1
+Decided: AppIconClient+Live imports UIKit or AppKit per platform: the analyzer calls SwiftUI unused there, the build needs NSApplication
+Because: apple/Sources/CooeeApp/Push.swift:4
+Rejected: one Clients file per area instead of per client — the ADR names one file per client
+Check: sorted body lines of the old two files equal the new files' bar imports and the eight added DependencyValues extension lines
+Owner: Nothing changes in the app; a new native client is now one file in Clients/ and one in Live/.
