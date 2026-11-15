@@ -3,9 +3,9 @@ import SwiftUI
 
 internal struct PinnedRow: View {
     @Environment(\.look) private var look
-    internal let personas: [Persona]
+    internal let pins: [Pin]
     internal let rows: [Row]
-    internal var pin: (String) -> Void = { _ in }
+    internal var actions = HomeActions()
 
     private var scene: Bool { look.style == .scene }
 
@@ -30,13 +30,22 @@ internal struct PinnedRow: View {
     private var strip: some View {
         Scroller(axis: .horizontal) {
             HStack(alignment: .bottom, spacing: scene ? 4 : 14) {
-                ForEach(personas) { persona in
-                    Button {
-                        pin(persona.id)
-                    } label: {
-                        pin(persona)
+                ForEach(pins) { pin in
+                    switch pin {
+                    case .persona(let persona):
+                        Button {
+                            actions.pin(persona.id)
+                        } label: {
+                            self.pin(persona)
+                        }.buttonStyle(.plain)
+                    case .room(let room):
+                        Button {
+                            actions.open(room.id)
+                        } label: {
+                            RoomPin(room: room)
+                        }.buttonStyle(.plain)
+                            .accessibilityLabel(room.row.title)
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 16)
@@ -80,7 +89,7 @@ internal struct ChatRow: View {
         let room = !members.isEmpty
         HStack(spacing: 12) {
             if room {
-                RoomStack(members: members, size: 22, state: .done).frame(width: 48, height: 48)
+                RoomStack(members: members, size: 26, grid: false, most: 3).frame(minWidth: 48, minHeight: 48)
             } else {
                 Avatar(persona: persona.with(state: row.state), size: 48)
             }

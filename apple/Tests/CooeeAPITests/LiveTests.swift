@@ -11,7 +11,7 @@ internal struct LiveTests {
         let client = Client(Server(url: target.url, token: token))
         let coder = try #require(try await client.personas().first { $0.id == "coder" })
         let id = try await client.newThread(persona: coder, text: "slow 3")
-        #expect(try await client.threads().contains { $0.id == id && $0.persona == "coder" })
+        #expect(try await client.home().threads.contains { $0.id == id && $0.persona == "coder" })
         let slice = try await client.messages(id)
         var live = ""
         var turn = slice.turn
@@ -48,7 +48,7 @@ internal struct LivePersonaTests {
         for look in (environment["COOEE_SIM_LOOKS"] ?? "").split(separator: " ") {
             let made = try await client.personas().first { $0.id == "scout-\(look)" }
             #expect(made?.character == "Finds the facts first." && made?.instructions == "Cite every source.")
-            #expect(made?.pinned == true)
+            #expect(made?.pinned == true && made?.style == .detailed)
             #expect(made?.agent == "fake-acp" && made?.folder.hasSuffix("/root/project") == true)
         }
     }

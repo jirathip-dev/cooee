@@ -32,6 +32,7 @@ internal struct ChatScreen: View {
         actions.workflow = store.workflow.map { Workflow.issues($0).count(where: \.needsYou) }
         actions.showWorkflow = { store.send(.workflow(.show(true))) }
         actions.workflowOpen = store.workflowOpen
+        actions.step = store.step
         return actions
     }
 

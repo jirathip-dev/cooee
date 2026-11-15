@@ -139,6 +139,10 @@
             labelled(app, "Notifications").tap()
             XCTAssert(app.switches["Push notifications"].waitForExistence(timeout: 5))
             keep("avatar-menu-notifications")
+            app.navigationBars.buttons.firstMatch.tap()
+            labelled(app, "Terminal").tap()
+            XCTAssert(labelled(app, "Terminal ·").waitForExistence(timeout: 5))
+            keep("avatar-menu-terminal")
         }
     }
 #endif
