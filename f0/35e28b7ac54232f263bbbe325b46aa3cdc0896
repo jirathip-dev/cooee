@@ -1,0 +1,8 @@
+Decided: merged origin/staging (#397); the shed.rs, hub.rs, main.rs, setup.rs and tests/chat.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #397's shed protocol check
+Decided: no code change for the one-off plugins.rs timing failure in the first test run
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on the six touched files only deletes comment lines, and scripts/comments.py exits 0
+Check: tests/plugins.rs differs from staging only by deleted comments; it passed 3/3 alone and in the full rerun
+Owner: the branch is up to date with staging again, and the new shed version-check code follows the comment rule
