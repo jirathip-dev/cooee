@@ -38,8 +38,8 @@ internal struct ChatFeatureTests {
             $0.threads.send = { _, thread, text, files, queue in
                 calls.record("\(queue ? "queue" : "send") \(thread) \(text) \(files.count)")
             }
-            $0.threads.start = { _, persona, text in
-                calls.record("start \(persona.id) \(text)")
+            $0.threads.start = { _, persona, machine, text in
+                calls.record("start \(persona.id) \(machine) \(text)")
                 return "n1"
             }
             $0.threads.stop = { _, thread in calls.record("stop \(thread)") }
@@ -142,7 +142,7 @@ internal struct ChatFeatureTests {
             $0.queue = [Queued(text: "a", randomID: "q1")]
         }
         await store.send(.compose(.steer(0)))
-        #expect(calls.all == ["start coder hi"])
+        #expect(calls.all == ["start coder  hi"])
     }
 
     @Test internal func queuedMessagesAreSteeredOrTakenBack() async {
