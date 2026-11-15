@@ -1,0 +1,6 @@
+Decided: merge origin/staging; the room speaker prefix and rooms::seated move into hub/threads.rs where #419 put the list, and #311's HomeBlocks takes this PR's pins.
+Because: crates/cooee-server/src/hub/threads.rs:142
+Decided: staging build fix: the lib.rs arch baseline goes 2327 to 2329, the size staging already has.
+Because: .drover/arch-baseline.txt:1
+Rejected: none
+Owner: merge-only round onto staging; rooms in Home work as before.
