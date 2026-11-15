@@ -6,3 +6,7 @@ generate = "scripts/gen.sh"
 [[size]]
 paths = ["crates/*/src/**/*.rs"]
 max_file_lines = 800
+
+[[collect]]
+dir = "crates/cooee-server/src/hub"
+glob = "*.rs"
