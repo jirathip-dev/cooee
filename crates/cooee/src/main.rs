@@ -12,13 +12,13 @@ use std::{
 };
 
 use cooee_core::{Config, Devices, SHED_CARGO, Shed};
+use cooee_server::machine;
 use qrcode::{QrCode, render::unicode::Dense1x2};
 
 mod accounts;
 mod check;
 mod doctor;
 mod keychain;
-mod machine;
 mod setup;
 
 const USAGE: &str = "usage: cooee <serve | pair | pair asks | pair approve|decline <id> | devices | reports | devices rm <id> | install --port <p> | doctor | machine check <m> [--yes] | push migrate | secrets \
