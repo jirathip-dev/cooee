@@ -141,7 +141,9 @@ public struct AppFeature: Sendable {
         }
         return .none
     }
+}
 
+extension AppFeature {
     private func pop(_ state: inout State, to path: [String]) {
         let round = state.home?.lists(now: now).all.first { $0.id == state.path.last }?.workflow
         state.path = path
