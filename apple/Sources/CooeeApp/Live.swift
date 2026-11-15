@@ -31,6 +31,7 @@ extension ThreadsClient: DependencyKey {
             try await Client(server).answer(thread, item: item, option: option, value: value)
         },
         start: { server, persona, text in try await Client(server).newThread(persona: persona, text: text) },
+        retry: { server, thread in try await Client(server).retry(thread) },
         room: { server, title, members in try await Client(server).newRoom(title: title, members: members) },
         seat: { server, room, persona, place, remove in
             try await Client(server).seat(room, persona: persona, place: place, remove: remove)
