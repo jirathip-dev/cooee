@@ -59,6 +59,7 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
     public let url: String
     public let listed: Bool
     public let places: [PluginPlace]
+    public let claims: [String]
     public let permissions: PluginPermissions
 
     public var id: String { name }
@@ -73,7 +74,8 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
             default: "\(place.label) row in Plugins"
             }
         }
-        return lines + (permissions.push ? ["notifications"] : [])
+        let claimed = claims.map { "sessions labelled source=\($0) in its Workflow sheet" }
+        return lines + claimed + (permissions.push ? ["notifications"] : [])
     }
 
     public init(
@@ -83,6 +85,7 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
         url: String = "",
         listed: Bool = true,
         places: [PluginPlace],
+        claims: [String] = [],
         permissions: PluginPermissions
     ) {
         self.name = name
@@ -91,6 +94,7 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
         self.url = url
         self.listed = listed
         self.places = places
+        self.claims = claims
         self.permissions = permissions
     }
 }

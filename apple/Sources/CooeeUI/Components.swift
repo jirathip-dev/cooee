@@ -7,6 +7,14 @@ internal struct Avatar: View {
     internal var size: CGFloat = 44
 
     internal var body: some View {
+        if persona.id.isEmpty && look.style != .terminal {
+            NeutralAvatar(persona: persona, size: size)
+        } else {
+            styled
+        }
+    }
+
+    @ViewBuilder private var styled: some View {
         let palette = look.palette
         let tint = palette.tint(persona.look.tint)
         switch look.style {

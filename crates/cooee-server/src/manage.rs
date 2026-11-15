@@ -87,6 +87,8 @@ pub struct Row {
     pub first_party: bool,
     /// Where its screens go (#125), shown with its permissions when it's attached to a persona.
     pub places: Vec<plugins::Place>,
+    /// The workflow sources it claims (#229).
+    pub claims: Vec<String>,
     /// Its manifest's `[permissions]`.
     pub permissions: plugins::Permissions,
 }
@@ -232,12 +234,8 @@ fn entries(m: &Manifest, port: u16, token: &str) -> Vec<Plugin> {
 /// What a build's backend must serve to be healthy: its first tab's module, else its first place's screen.
 fn first_path(m: &Manifest) -> String {
     let tab = m.tabs.first().map(|t| t.module.clone());
-    let screen = m
-        .places
-        .iter()
-        .map(|p| p.screen.clone())
-        .find(|s| !s.is_empty());
-    tab.or(screen).unwrap_or_default()
+    let screen = m.places.iter().find(|p| !p.screen.is_empty());
+    tab.or(screen.map(|p| p.screen.clone())).unwrap_or_default()
 }
 
 impl Manager {
@@ -791,25 +789,25 @@ impl Manager {
         let rows = self.installed()?.into_iter().map(|l| {
             let state = if let Some(job) = lock(&self.jobs).get(&l.name) {
                 job.clone()
+            } else if !l.enabled && l.note.is_empty() {
+                "off".to_owned()
             } else if !l.enabled {
-                if l.note.is_empty() {
-                    "off".to_owned()
-                } else {
-                    l.note.clone()
-                }
+                l.note.clone()
             } else if let Some(run) = lock(&self.runs).get(&l.name) {
                 run.state.clone()
             } else {
                 (if up(l.port) { "running" } else { "not running" }).to_owned()
             };
             let first_party = self.index.iter().any(|x| x.name == l.name && x.first_party);
-            let m = plugins::manifest(&self.data, &l).ok();
-            let (places, permissions) = m.map(|m| (m.places, m.permissions)).unwrap_or_default();
+            let (places, claims, permissions) = plugins::manifest(&self.data, &l)
+                .map(|m| (m.places, m.claims, m.permissions))
+                .unwrap_or_default();
             Row {
                 locked: l,
                 state,
                 first_party,
                 places,
+                claims,
                 permissions,
             }
         });

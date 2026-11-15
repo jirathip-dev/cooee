@@ -20,6 +20,10 @@ public struct ChatActions {
     public var open: (Int) -> Void = { _ in }
     public var attachable: [String] = []
     public var attachPlugin: (Int) -> Void = { _ in }
+    public var workflow: Int?
+    public var workflowOpen = false
+    public var showWorkflow: () -> Void = {}
+    public var backTo: String?
     public var persona: (() -> Void)?
     public var choices: PersonaChoices?
     public var agent: @MainActor @Sendable (String) -> Void = { _ in }

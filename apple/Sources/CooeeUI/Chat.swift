@@ -107,7 +107,9 @@ internal struct ChatHeader: View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                if back {
+                if let title = actions.backTo {
+                    BackLink(title: title, run: actions.back).padding(.horizontal, -14)
+                } else if back {
                     Button(action: actions.back) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("Back")
                 }
@@ -123,7 +125,7 @@ internal struct ChatHeader: View {
                 }
                 more
             }
-            if !chips.isEmpty { plugins }
+            if !chips.isEmpty || actions.workflow != nil { plugins }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(palette.line).frame(height: 0.5) }
@@ -178,6 +180,9 @@ internal struct ChatHeader: View {
                     .modifier(RoundSurface(look: look))
                 }
                 .buttonStyle(.plain)
+            }
+            if let count = actions.workflow {
+                WorkflowChip(count: count, lit: actions.workflowOpen, open: actions.showWorkflow)
             }
         }
         .padding(.leading, back ? 50 : 0)

@@ -30,6 +30,9 @@ public struct ChatFeature: Sendable {
         public var attachable: [PluginRow] = []
         public var agents: [AgentOption] = []
         public var lists: [ModelList] = []
+        public var workflow: [ListedChat]?
+        public var workflowOpen = false
+        public var unfolded: String?
         @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
@@ -83,6 +86,7 @@ public struct ChatFeature: Sendable {
         case plugins(PluginAction)
         case screen(PresentationAction<ScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
+        case workflow(WorkflowAction)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
@@ -91,6 +95,7 @@ public struct ChatFeature: Sendable {
             case open(String)
             case edit(String)
             case restart(APIPersona)
+            case round(String)
         }
 
         @CasePathable
@@ -243,28 +248,6 @@ extension ChatFeature {
             await send(.answered(item, nil))
         } catch: { error, send in
             await send(.answered(item, error.localizedDescription))
-        }
-    }
-
-    private func queued(_ state: State, _ action: Action, _ index: Int) -> Effect<Action> {
-        guard state.queue.indices.contains(index) else { return .none }
-        let randomID = state.queue[index].randomID
-        guard case .steer = action else {
-            return act(state) { threads, server, thread in try await threads.unqueue(server, thread, randomID) }
-        }
-        return act(state) { threads, server, thread in try await threads.steer(server, thread, randomID) }
-    }
-
-    internal func act(
-        _ state: State,
-        _ call: @escaping @Sendable (ThreadsClient, Server, String) async throws -> Void
-    ) -> Effect<Action> {
-        guard case .thread(let thread) = state.target else { return .none }
-        let (threads, server) = (threads, state.server)
-        return .run { _ in
-            try await call(threads, server, thread)
-        } catch: { error, send in
-            await send(.failed(error.localizedDescription))
         }
     }
 }

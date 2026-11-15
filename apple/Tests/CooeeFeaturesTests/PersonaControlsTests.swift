@@ -15,6 +15,7 @@ internal struct PersonaControlsTests {
             $0.date.now = epoch
             $0.threads.threads = { _ in [row("n1")] }
             $0.threads.personas = { _ in [coder] }
+            $0.plugins.installed = { _ in [] }
             $0.personas.save = { _, persona in
                 calls.record("put \(persona.id) \(persona.avatar ?? "")")
                 return persona

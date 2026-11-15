@@ -59,6 +59,7 @@ internal struct ChatScreen: View {
     @Bindable internal var store: StoreOf<ChatFeature>
     internal let back: Bool
     internal var headed = true
+    internal var backTo: String?
     internal let onBack: () -> Void
 
     internal static func actions(_ store: StoreOf<ChatFeature>, back onBack: @escaping () -> Void) -> ChatActions {
@@ -83,16 +84,25 @@ internal struct ChatScreen: View {
         actions.open = { store.send(.plugins(.open(places[$0]))) }
         actions.attachable = attachable.map(\.name)
         actions.attachPlugin = { store.send(.plugins(.attach(attachable[$0]))) }
-        return persona(store, actions)
+        return extras(store, actions)
     }
 
-    private static func persona(_ store: StoreOf<ChatFeature>, _ chat: ChatActions) -> ChatActions {
-        guard !store.persona.api.id.isEmpty else { return chat }
+    private static func extras(_ store: StoreOf<ChatFeature>, _ chat: ChatActions) -> ChatActions {
         var actions = chat
+        actions.workflow = store.workflow.map { Workflow.issues($0).count(where: \.needsYou) }
+        actions.showWorkflow = { store.send(.workflow(.show(true))) }
+        actions.workflowOpen = store.workflowOpen
+        guard !store.persona.api.id.isEmpty else { return actions }
         actions.persona = { store.send(.profile) }
         actions.choices = PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts)
         actions.agent = { store.send(.pick(.agent($0))) }
         actions.model = { store.send(.pick(.model($0, $1))) }
+        return actions
+    }
+
+    private var actions: ChatActions {
+        var actions = Self.actions(store, back: onBack)
+        actions.backTo = backTo
         return actions
     }
 
@@ -105,12 +115,22 @@ internal struct ChatScreen: View {
             queued: store.queue.map(\.text),
             back: back,
             headed: headed,
-            actions: Self.actions(store, back: onBack)
+            actions: actions
         )
         .task { await store.send(.task).finish() }
         .task { await store.send(.plugins(.load)).finish() }
         .task { await store.send(.pick(.load)).finish() }
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachSheet(store: $0) }
+        .sheet(isPresented: Binding(get: { store.workflowOpen }, set: { store.send(.workflow(.show($0))) })) {
+            WorkflowSheet(
+                issues: Workflow.issues(store.workflow ?? []),
+                unfolded: store.unfolded,
+                unfold: { store.send(.workflow(.unfold($0))) },
+                open: { store.send(.workflow(.open($0))) },
+                done: { store.send(.workflow(.show(false))) }
+            )
+            .presentationDetents([.fraction(0.8)])
+        }
     }
 }
