@@ -15,6 +15,7 @@ on:
     paths:
       - "scripts/mac-bins.sh"
       - "crates/cooee/src/main.rs"
+      - "crates/cooee-core/src/shed.rs"
       - "apple/**"
       - "tools/anti-slop-swift/**"
       - "scripts/apple-check.sh"
@@ -26,6 +27,7 @@ on:
     paths:
       - "scripts/mac-bins.sh"
       - "crates/cooee/src/main.rs"
+      - "crates/cooee-core/src/shed.rs"
       - "apple/**"
       - "tools/anti-slop-swift/**"
       - "scripts/apple-check.sh"
