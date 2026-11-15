@@ -110,7 +110,8 @@ public struct HomeFeature: Sendable {
 
     private static func report(_ outcome: Outcome, _ send: Send<Action>) async {
         switch outcome {
-        case .loaded(let screen, let rows, let personas, let plugins): await send(.loaded(screen, rows, personas, plugins))
+        case .loaded(let screen, let rows, let personas, let plugins):
+            await send(.loaded(screen, rows, personas, plugins))
         case .failed(let error): await send(.failed(error))
         case .unauthorized: await send(.delegate(.unauthorized))
         }
