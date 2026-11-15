@@ -1,0 +1,79 @@
+ios doctor exit=0
+ios serve ready after 27s exit=0
+No runtime specified, using 'iOS 27.2 (27.2 - 24B8117) - com.apple.CoreSimulator.SimRuntime.iOS-27-2'
+sim=6AE2F129-2C20-4E3E-A313-676B7172607C
+ios boot exit=0
+ios build exit=0
+apple run: 43658808111 
+no valid artifacts found to download
+mac shots run 43658808111 exit=1
+ios drive dark exit=0
+Exported 8 attachments for: LiveDroverUITests/testOpensDroversScreens():
+File: 4F0C00A4-DB24-4F64-8E89-C2765FC2B43F.png, suggested name: "queue-offline-dark_0_830A89B7-7E5C-4335-A019-92DD639FCD5C.png"
+File: B6041F02-BAC1-46EA-964F-82CB7E181C80.png, suggested name: "lane-tapped-dark_0_AC3F020C-C0E8-4E0F-9463-C534F3BA47CE.png"
+File: 48FBDAD9-1762-4046-A6D0-ED4ADAF829A6.png, suggested name: "queue-row-open-dark_0_13C38FEB-C2F2-4D87-87C7-562FCBEBED6D.png"
+File: 794D8F28-8142-4539-BE9E-DCE036F8CC9D.png, suggested name: "queue-live-dark_0_BF0A32B0-9D09-4D73-913A-706EF3D1FFA8.png"
+File: F734244C-2595-474F-89A3-9CD916DE7F01.png, suggested name: "queue-dark_0_EFA25F19-6012-42C8-8CB4-204F954941C3.png"
+File: F0888685-B05D-4792-9EA1-3616C630D5B9.png, suggested name: "events-dark_0_8C63B1F5-9C4A-4398-AF9A-B74A4E07E0E3.png"
+File: 8B13E43D-FD41-41AC-B30B-BA3680ACC895.png, suggested name: "conductor-dark_0_17B4EEEE-DD90-4B34-8B1D-D210E43EDDE9.png"
+File: 2D4A0A9F-95E8-45EF-89A6-7687F2D1DEB4.png, suggested name: "pair-paired-dark_0_B1027A5D-312E-4E88-8C1E-2CC9B038B4FD.png"
+
+Exported 6 attachments for: LiveIconUITests/testAppIcon():
+File: F29E9FFD-54CF-446F-85FF-D25244A8CC89.png, suggested name: "home-icon-koala-after-scene-icon-dark_0_35BAC723-8414-4682-A505-F34E147579E2.png"
+File: BD0F512D-FD51-486B-B6EB-5D774F51E428.png, suggested name: "home-icon-koala-after-scene-dark_0_1EA169C1-729E-4866-AA81-FF6E5D18B888.png"
+File: 9144C499-F33D-4484-8988-7EA73657F3B0.png, suggested name: "app-icon-picked-dark_0_C6AF8BF4-9AE6-401A-B4FA-4329C39C47B7.png"
+File: 490CB419-F18E-4296-A26E-4291CE4DDB09.png, suggested name: "app-icon-following-dark_0_66A9984F-E224-44D0-8040-ADC6D3EFBDEE.png"
+File: AABC9FC5-0010-4297-A5FF-AE8816380850.png, suggested name: "home-icon-terminal-icon-dark_0_A239B96B-8B5B-4394-B1EE-755C7780AF77.png"
+File: E06F2D7B-112F-40E5-B7C4-EC27C6F812EE.png, suggested name: "home-icon-terminal-dark_0_A06A28C5-E2F0-461D-A002-067F16934F20.png"
+
+Exported 3 attachments for: LiveIconUITests/testAvatarMenu():
+File: 3D42407A-B561-4752-8C5B-C00749FD624F.png, suggested name: "avatar-menu-notifications-dark_0_AEEC1ED6-DB10-466F-88C6-AFE711AF92CB.png"
+File: 6230FA8E-DC22-4390-841E-7EC93A5B2CCF.png, suggested name: "avatar-menu-look-dark_0_EA857610-5EDE-4C1D-9F29-C58788A21A55.png"
+File: 9256E061-AE5C-498A-8F78-6C482FFD735E.png, suggested name: "avatar-menu-dark_0_3EDD80F9-B551-4D1B-B4A0-F8B640E574CF.png"
+
+Exported 6 attachments for: LiveStyleUITests/testEveryStyle():
+File: 363DD71E-C542-4132-A35E-E20FCE8B22D1.png, suggested name: "chat-cards-scene-dark_0_D9A435A3-B100-4F55-84BC-6380F165017D.png"
+File: 3E16FDE8-29ED-4E17-9A88-1339C7ED95CE.png, suggested name: "home-scene-dark_0_463A5079-998A-4BC6-B048-430CAE6A0E2A.png"
+File: E100DD16-FB18-4D2D-80B3-1AFB108DEECD.png, suggested name: "look-scene-dark_0_B0F6F04E-A2CF-4FC3-9403-E9571B23E8B8.png"
+File: 4B316122-62D8-402D-951C-C172EDB8041F.png, suggested name: "chat-cards-terminal-dark_0_80AD5A89-8E4C-4E4E-A6E3-E3847B078503.png"
+File: 36BD066B-877A-4BCF-AF43-66ABDC329430.png, suggested name: "home-terminal-dark_0_8E90D973-C8ED-4C5B-B5C6-F11131BCE35C.png"
+File: 0B07D3E9-45C5-4831-8E0C-1040359C9876.png, suggested name: "look-terminal-dark_0_B79E7D2B-33C7-4303-AE6F-0F108C4657E9.png"
+
+Exported 1 attachment for: LiveUITests/testPairsStreamsAndQueues():
+File: 2F668E83-9320-4F58-AF22-382C099EA0D5.png, suggested name: "chat-streaming-dark_0_D066DB1A-657F-45C7-90BB-55F6EAB05849.png"
+
+Exported 1 attachment for: LiveUITests/testShowsHome():
+File: 4299640A-95D2-4EF5-9418-FB612A7FBF26.png, suggested name: "home-dark_0_4B62E3EC-55F9-47F0-8DB0-440D46CEE7A1.png"
+
+Skipped export for LiveUITests/testAsksAndTheMacApprovesIt(): no matching attachments
+
+Exported 3 attachments for: LiveChatUITests/testCopiesAReply():
+File: 2A6622A7-0720-450B-A01C-2D4F7721A5F0.png, suggested name: "select-text-dark_0_C497E8E3-B65C-4938-AD5D-9FC4C667A09C.png"
+File: BA4C7935-451B-4C8F-BFE8-6ABA54A8B781.png, suggested name: "message-menu-dark_0_43B3D5A7-3BEC-492C-B79B-FE69235F27FC.png"
+File: 0FDD1B46-843A-495D-A6D3-C00F170CA87E.png, suggested name: "chat-paragraphs-dark_0_37A063C1-44CC-4325-893A-BFD14727DFB8.png"
+
+Exported 3 attachments for: LiveChatUITests/testAnswersEachCard():
+File: 76089407-BE0A-4176-808F-25D7631D3597.png, suggested name: "swipe-back-dark_0_8C57EC1E-BFB5-4BC8-86F6-BE7683D060FE.png"
+File: 1C580790-8BBB-41C4-A831-DFF05EABD503.png, suggested name: "chat-cards-answered-dark_0_3CC7C9B1-E48D-47BE-A71A-64D1482C8937.png"
+File: D34B2946-A996-4A69-87F1-28DC55D59D76.png, suggested name: "chat-cards-dark_0_136E6E88-94F8-42A5-B01E-F3C23297E8FD.png"
+
+Exported 3 attachments for: LivePersonaUITests/testPersonaRoundTrip():
+File: 87004FC6-0610-4A68-984D-8E7FDCBF1C9E.png, suggested name: "persona-dark_0_82086483-4C01-43DC-B332-63E7285BD67F.png"
+File: BEBC64EE-8FCB-4B60-92D8-35987491DCDF.png, suggested name: "persona-folders-dark_0_58DDC882-80EE-4697-BB03-F7F68181827B.png"
+File: CB25D9D8-D6FC-4B2C-A5CF-DF7F8BD06545.png, suggested name: "persona-menu-dark_0_C24035D1-C172-4EA0-8C4B-0366D995259E.png"
+
+Generated manifest file with attachment details: /Users/jkmacmini/.local/share/drover/work/cooee/verify-239-r6/.verify/shots/ios/dark/manifest.json
+ios export dark exit=0
+(light rerun: first attempt killed by the lane's background time limit; partial bundle moved aside)
+snapshot tests (design/v1 + design/v2-settings, compare mode) exit=0
+ios drive light exit=65
+ios export light exit=0
+(fresh server for the light look: the killed light attempt left a 'Scout light' persona on the first server)
+ios kill (server 1) exit=0
+ios serve (server 2) ready after 5s exit=0
+ios drive light (server 2) exit=0
+ios export light exit=0
+ios kill exit=0
+ios sim delete exit=0
+ios curl exit=7 (7: nothing listens)
+ios sim listed exit=1 (1: gone)
