@@ -1,0 +1,9 @@
+Decided: a second job env E2E gates the e2e steps; FULL still gates just apple-check and its upload
+Because: "Everything else in `apple` runs as today: the iOS and macOS builds, and `just apple-check` where it runs now"
+Rejected: redefining FULL as the spec example shows — it would also switch apple-check off
+Decided: LiveTests (the client against cooee serve) goes off with the server, since it needs it
+Because: "the e2e steps (the server, the simulator e2e in dark and light, `LivePersonaTests`, the screenshots export)"
+Decided: an e2e off step writes the job summary only on a full run that skipped the e2e
+Because: "The job summary says \"e2e off (vars.E2E=off)\" when it is skipped."
+Check: an unset vars.E2E evaluates '' != 'off' to true, so the full path is unchanged
+Owner: set the repo variable E2E=off to skip the simulator tests; unset or on brings them back.
