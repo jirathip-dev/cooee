@@ -2,8 +2,18 @@ import ComposableArchitecture
 import CooeeCore
 
 extension ChatFeature {
+    @CasePathable
+    public enum Pick: Sendable, Equatable {
+        case load
+        case loaded([AgentOption], [ModelList])
+        case agent(String)
+        case model(String, String)
+    }
+
     internal func agent(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
+        case .new:
+            return .send(.delegate(.new(state.persona.api.id)))
         case .profile:
             return .send(.delegate(.edit(state.persona.api.id)))
         case .pick(.load):
@@ -18,7 +28,7 @@ extension ChatFeature {
         }
     }
 
-    private func choose(_ state: inout State, _ pick: Action.Pick) -> Effect<Action> {
+    private func choose(_ state: inout State, _ pick: Pick) -> Effect<Action> {
         var persona = state.persona.api
         switch pick {
         case .agent(let agent) where agent != persona.agent:

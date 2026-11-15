@@ -47,7 +47,6 @@
 "apple/Sources/CooeeUI/Items.swift" = "LiveUITests LiveChatUITests LiveStyleUITests"
 "apple/Sources/CooeeFeatures/ChatFeature.swift" = "LiveUITests LiveChatUITests LiveStyleUITests LiveControlsUITests"
 "apple/Sources/CooeeFeatures/ChatAgent.swift" = "LiveControlsUITests"
-"apple/Sources/CooeeFeatures/ChatCalls.swift" = "LiveUITests LiveChatUITests"
 "apple/Sources/CooeeUI/ChatActions.swift" = "LiveUITests LiveChatUITests LiveControlsUITests"
 "apple/Sources/CooeeUI/AvatarPicture.swift" = "LiveControlsUITests"
 "apple/UITests/Live/LiveControlsUITests.swift" = "LiveControlsUITests"

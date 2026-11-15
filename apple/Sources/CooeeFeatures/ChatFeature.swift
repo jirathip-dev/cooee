@@ -62,28 +62,15 @@ public struct ChatFeature: Sendable {
         case loaded(Slice)
         case event(StreamEvent)
         case failed(String)
-        case draftChanged(String)
-        case attach([Attachment])
-        case detach(Int)
-        case send
-        case delivered(Int)
-        case undelivered(Int, String)
-        case retry(Int)
-        case stop
-        case steer(Int)
-        case unqueue(Int)
-        case answer(Int, BlockAction)
-        case answered(Int, String?)
+        case compose(Compose)
+        case outbox(Outbox)
+        case cards(Cards)
+        case room(Seats)
         case new
         case profile
         case pick(Pick)
-        case inspect(String?)
-        case move(String, Int)
-        case seat(String)
-        case unseat(String)
-        case seated([String])
-        case delegate(Delegate)
         case plugins(PluginAction)
+        case delegate(Delegate)
         case screen(PresentationAction<ScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
         case workflow(WorkflowAction)
@@ -97,28 +84,12 @@ public struct ChatFeature: Sendable {
             case restart(APIPersona)
             case round(String)
         }
-
-        @CasePathable
-        public enum Pick: Sendable, Equatable {
-            case load
-            case loaded([AgentOption], [ModelList])
-            case agent(String)
-            case model(String, String)
-        }
-
-        @CasePathable
-        public enum PluginAction: Sendable, Equatable {
-            case load
-            case loaded([Place], [PluginRow])
-            case open(Place)
-            case attach(PluginRow)
-        }
     }
 
     @Dependency(\.threads) internal var threads
     @Dependency(\.plugins) internal var pluginAPI
     @Dependency(\.personas) internal var personas
-    @Dependency(\.ownerCheck) private var ownerCheck
+    @Dependency(\.ownerCheck) internal var ownerCheck
     @Dependency(\.continuousClock) private var clock
     @Dependency(\.date.now) private var now
 
@@ -127,30 +98,16 @@ public struct ChatFeature: Sendable {
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .task:
-                return open(state)
-            case .loaded(let slice):
-                load(&state, slice)
-                return .none
-            case .event(let event):
-                state.room?.hear(event)
-                apply(&state, event)
-                return .none
-            case .failed(let error):
-                state.error = error
-                return .none
-            case .answer(let item, let action):
-                return answer(&state, item, action)
-            case .answered(let item, let error):
-                state.answering.remove(item)
-                state.error = error ?? state.error
-                return .none
-            case .new:
-                return .send(.delegate(.new(state.persona.api.id)))
-            case .delivered, .undelivered, .retry:
-                return outbox(&state, action)
-            default:
+            case .compose(let action):
                 return compose(&state, action)
+            case .outbox(let action):
+                return outbox(&state, action)
+            case .cards(let action):
+                return cards(&state, action)
+            case .room(let action):
+                return seat(&state, action)
+            default:
+                return listen(&state, action)
             }
         }
         Reduce { state, action in agent(&state, action) }
@@ -161,22 +118,19 @@ public struct ChatFeature: Sendable {
 }
 
 extension ChatFeature {
-    private func compose(_ state: inout State, _ action: Action) -> Effect<Action> {
+    private func listen(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
-        case .draftChanged(let text):
-            state.draft = text
-        case .attach(let files):
-            state.files += files
-        case .detach(let index):
-            if state.files.indices.contains(index) { state.files.remove(at: index) }
-        case .send:
-            return send(&state)
-        case .stop:
-            return act(state) { threads, server, thread in try await threads.stop(server, thread) }
-        case .steer(let index), .unqueue(let index):
-            return queued(state, action, index)
+        case .task:
+            return open(state)
+        case .loaded(let slice):
+            load(&state, slice)
+        case .event(let event):
+            state.room?.hear(event)
+            apply(&state, event)
+        case .failed(let error):
+            state.error = error
         default:
-            return seat(&state, action)
+            break
         }
         return .none
     }
@@ -233,21 +187,5 @@ extension ChatFeature {
         }
         if item.kind == "you" { state.pending = nil }
         if item.kind == "agent" { state.live = "" }
-    }
-
-    private func answer(_ state: inout State, _ item: Int, _ action: BlockAction) -> Effect<Action> {
-        guard case .thread(let thread) = state.target, let answer = action.answer else { return .none }
-        state.answering.insert(item)
-        let secret = state.items.first { $0.id == item }?.block?.string("kind") == "secret"
-        let (threads, server, owner) = (threads, state.server, ownerCheck)
-        return .run { send in
-            if secret, await !owner.confirm("Send the secret to its plugin") {
-                return await send(.answered(item, "Not sent: it wasn't confirmed it's you."))
-            }
-            try await threads.answer(server, thread, item, answer.option, answer.value)
-            await send(.answered(item, nil))
-        } catch: { error, send in
-            await send(.answered(item, error.localizedDescription))
-        }
     }
 }

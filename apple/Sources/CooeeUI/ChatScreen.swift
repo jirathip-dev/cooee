@@ -12,19 +12,19 @@ internal struct ChatScreen: View {
 
     internal static func actions(_ store: StoreOf<ChatFeature>, back onBack: @escaping () -> Void) -> ChatActions {
         var actions = ChatActions(
-            draft: Binding(get: { store.draft }, set: { store.send(.draftChanged($0)) }),
+            draft: Binding(get: { store.draft }, set: { store.send(.compose(.draftChanged($0))) }),
             files: store.files.map(\.name),
-            send: { store.send(.send) },
-            attach: { store.send(.attach($0)) },
-            detach: { store.send(.detach($0)) },
-            stop: { store.send(.stop) },
-            steer: { store.send(.steer($0)) },
-            unqueue: { store.send(.unqueue($0)) },
-            answer: { store.send(.answer($0, $1)) },
+            send: { store.send(.compose(.send)) },
+            attach: { store.send(.compose(.attach($0))) },
+            detach: { store.send(.compose(.detach($0))) },
+            stop: { store.send(.compose(.stop)) },
+            steer: { store.send(.compose(.steer($0))) },
+            unqueue: { store.send(.compose(.unqueue($0))) },
+            answer: { store.send(.cards(.answer($0, $1))) },
             answering: store.answering,
             back: onBack
         )
-        actions.retry = { store.send(.retry($0)) }
+        actions.retry = { store.send(.outbox(.retry($0))) }
         let (places, attachable) = (store.places, store.attachable)
         actions.places = places.map(\.label)
         actions.counts = places.map(\.count)

@@ -54,12 +54,12 @@ internal struct ChatAgentTests {
             $0.persona = Persona(
                 APIPersona(id: "coder", name: "Coder", agent: "fake-acp", model: "opus", effort: "max"))
         }
-        await store.send(.draftChanged("hi")) { $0.draft = "hi" }
-        await store.send(.send) {
+        await store.send(.compose(.draftChanged("hi"))) { $0.draft = "hi" }
+        await store.send(.compose(.send)) {
             $0.draft = ""
             $0.outbox = [Outgoing(id: -1, text: "hi")]
         }
-        await store.receive(\.delivered) { $0.outbox = [] }
+        await store.receive(\.outbox.delivered) { $0.outbox = [] }
         await store.receive(\.delegate.started)
         #expect(calls.all == ["start fake-acp opus max hi"])
     }
