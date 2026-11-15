@@ -82,6 +82,15 @@ internal struct ChatFeatureTests {
         #expect(store.state.drawn.count == 2 && !store.state.working)
     }
 
+    @Test internal func aChatStyleTurnFoldsItsStepsAndThePillNamesTheCurrentOne() {
+        var state = ChatFeature.State(server: mini, target: .thread("a1"), persona: Persona(coder))
+        state.items = slice.items + [APIItem(id: 2, time: 2, kind: "tool", title: "Read a", status: "in_progress")]
+        state.turn = Turn(state: "working")
+        #expect(state.drawn == [.you(id: 1, text: "Fix it", files: [])] && state.step == "Read a")
+        state.persona = Persona(APIPersona(id: "cond", name: "Conductor", agent: "codex", style: .detailed))
+        #expect(state.drawn.count == 2 && state.step == nil)
+    }
+
     @Test internal func aFailedLoadSaysWhyAndTriesAgain() async {
         let store = store { $0.threads.messages = { _, _ in throw APIError(status: 500, text: "Locked.") } }
         let task = await store.send(.task)

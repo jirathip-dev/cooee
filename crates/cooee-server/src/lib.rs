@@ -1201,13 +1201,12 @@ async fn pass_on(
         .header("content-type")
         .is_some_and(|t| t.starts_with("text/event-stream"))
     {
-        reply.body.get_ref().set_read_timeout(None)?;
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        std::thread::spawn(move || plugin::events(reply, |e| open() && tx.send(e).is_ok()));
-        let stream = stream::unfold(rx, move |mut rx| async move {
-            let e = rx.recv().await?;
-            Some((Result::<Event>::Ok(relay(e)), rx))
-        });
+        let stream = plugin::events(reply)?
+            .take_while(move |_| std::future::ready(open()))
+            .map(move |heard| match heard {
+                plugin::Heard::Event(e) => Result::<Event>::Ok(relay(e)),
+                plugin::Heard::Beat => Ok(Event::new().comment("")),
+            });
         return Sse::new(stream)
             .keep_alive(KeepAlive::new())
             .into_response(cx);

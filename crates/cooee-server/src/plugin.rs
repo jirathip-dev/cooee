@@ -9,6 +9,8 @@ use std::{
 };
 
 use cooee_core::{Plugin, Profile};
+use futures_util::{Stream, stream};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 
 /// The largest answer cooee passes on.
 const MAX_BODY: u64 = 16 << 20;
@@ -146,42 +148,60 @@ pub struct Sse {
     pub data: String,
 }
 
-/// Reads `reply`'s event stream, giving each event to `f` until it returns false or the stream ends.
-pub fn events(reply: Reply, mut f: impl FnMut(Sse) -> bool) {
-    let mut e = Sse {
-        id: None,
-        event: String::new(),
-        data: String::new(),
-    };
-    let mut lines = reply.body.lines();
-    while let Some(Ok(line)) = lines.next() {
-        let (k, v) = line.split_once(':').unwrap_or((&line, ""));
-        let v = v.strip_prefix(' ').unwrap_or(v).to_owned();
-        match k {
-            "" if line.is_empty() && !e.data.is_empty() => {
-                let id = e.id.clone();
-                let done = std::mem::replace(
-                    &mut e,
-                    Sse {
-                        id,
-                        event: String::new(),
-                        data: String::new(),
-                    },
-                );
-                if !f(done) {
-                    return;
+/// What a backend's stream said: an event, or a comment (its heartbeat).
+pub enum Heard {
+    Event(Sse),
+    Beat,
+}
+
+/// How long a backend's stream may stay silent before cooee closes it.
+pub const IDLE: Duration = Duration::from_secs(60);
+
+/// `reply`'s event stream, read only as it is pulled (so a slow page holds back the backend, never a buffer); it ends
+/// when the backend closes it or is silent for `IDLE`, and dropping it closes the connection.
+///
+/// # Errors
+/// When the connection can't join the async runtime.
+pub fn events(reply: Reply) -> io::Result<impl Stream<Item = Heard> + Send + 'static> {
+    let read = reply.body.buffer().to_vec();
+    let socket = reply.body.into_inner();
+    socket.set_nonblocking(true)?;
+    let socket = tokio::net::TcpStream::from_std(socket)?;
+    let lines =
+        tokio::io::BufReader::new(AsyncReadExt::chain(io::Cursor::new(read), socket)).lines();
+    Ok(stream::unfold(
+        (lines, None::<String>),
+        |(mut lines, mut id)| async move {
+            let (mut event, mut data) = (String::new(), String::new());
+            loop {
+                let line = tokio::time::timeout(IDLE, lines.next_line()).await;
+                let Ok(Ok(Some(line))) = line else {
+                    return None;
+                };
+                let (k, v) = line.split_once(':').unwrap_or((&line, ""));
+                let v = v.strip_prefix(' ').unwrap_or(v);
+                match k {
+                    "" if line.is_empty() && !data.is_empty() => {
+                        let e = Sse {
+                            id: id.clone(),
+                            event,
+                            data,
+                        };
+                        return Some((Heard::Event(e), (lines, id)));
+                    }
+                    "" if !line.is_empty() => return Some((Heard::Beat, (lines, id))),
+                    "id" => id = Some(v.to_owned()),
+                    "event" => v.clone_into(&mut event),
+                    "data" if data.is_empty() => v.clone_into(&mut data),
+                    "data" => {
+                        data.push('\n');
+                        data.push_str(v);
+                    }
+                    _ => {}
                 }
             }
-            "id" => e.id = Some(v),
-            "event" => e.event = v,
-            "data" if e.data.is_empty() => e.data = v,
-            "data" => {
-                e.data.push('\n');
-                e.data.push_str(&v);
-            }
-            _ => {}
-        }
-    }
+        },
+    ))
 }
 
 /// Sends `by`'s answer to choice card `item` in `thread`: `POST /cooee/choice` `{thread, item, option, by}`, with a
@@ -271,5 +291,55 @@ pub fn started(p: &Plugin, thread: &str, profile: &str) -> io::Result<()> {
     match reply.status {
         200..=299 => Ok(()),
         code => Err(io::Error::other(format!("the backend answered {code}"))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{net::TcpListener, sync::mpsc, thread};
+
+    use futures_util::StreamExt;
+
+    use super::*;
+
+    /// A backend that sends a heartbeat and one event, then nothing, and says when cooee closes the connection.
+    fn silent_backend() -> (Plugin, mpsc::Receiver<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let (closed, rx) = mpsc::channel();
+        thread::spawn(move || {
+            let (mut s, _) = listener.accept().unwrap();
+            let mut head = [0; 1024];
+            let _ = s.read(&mut head).unwrap();
+            let sent =
+                "HTTP/1.0 200 OK\r\nContent-Type: text/event-stream\r\n\r\n: open\n\ndata: one\n\n";
+            s.write_all(sent.as_bytes()).unwrap();
+            while s.read(&mut head).is_ok_and(|n| n > 0) {}
+            closed.send(()).unwrap();
+        });
+        let p = Plugin {
+            name: "a".to_owned(),
+            label: "A".to_owned(),
+            url: format!("http://127.0.0.1:{port}"),
+            module: String::new(),
+            token: "token-a-0123456789abcdef".to_owned(),
+        };
+        (p, rx)
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn a_silent_backend_stream_is_closed_after_idle() {
+        let (p, closed) = silent_backend();
+        let reply = call(&p, "GET", "/events", &[], &[], None).unwrap();
+        let mut heard = Box::pin(events(reply).unwrap());
+        let started = tokio::time::Instant::now();
+        assert!(matches!(heard.next().await, Some(Heard::Beat)));
+        let Some(Heard::Event(e)) = heard.next().await else {
+            panic!("no event");
+        };
+        assert_eq!(e.data, "one");
+        assert!(heard.next().await.is_none());
+        assert_eq!(started.elapsed(), IDLE);
+        closed.recv_timeout(Duration::from_secs(5)).unwrap();
     }
 }

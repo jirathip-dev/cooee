@@ -18,7 +18,7 @@ internal struct SlotView: View {
             case .screen(.core, path: "/screens/menu"):
                 MenuScreen(store: store.scope(state: \.menu, action: \.menu))
             case .screen(.core, path: "/screens/reset-layout"):
-                ResetLayoutRow { store.send(.layout(.reset)) }
+                ActionRow(symbol: "arrow.counterclockwise", title: "Reset layout") { store.send(.layout(.reset)) }
             case .screen:
                 EmptyView()
             }
@@ -45,7 +45,11 @@ internal struct ComponentView: View {
                 QRScanner { store.send(.pairing(.connect($0))) }
             #endif
         case .menuHost: MenuHost(store: store, rows: slot("rows"), compact: compact)
-        case .settings, .sidebar, .terminal: EmptyView()
+        case .terminal:
+            ActionRow(symbol: "terminal.fill", title: "Terminal") {
+                store.send(.menu(.path(store.menu.path + [.terminal])))
+            }
+        case .settings, .sidebar: EmptyView()
         }
     }
 
@@ -107,17 +111,15 @@ private struct HomeSlot<Detail: View>: View {
         if let home = store.scope(state: \.home, action: \.home) {
             let (screen, lists) = (home.screen ?? .bundled, home.state.lists(now: Date()))
             let (chats, actions) = (lists.chats, actions(others: lists.othersTitles))
+            let pins = lists.pins(home.pinned, rooms: actions.rooms)
             Group {
                 if wide {
                     WideView(
-                        screen: screen, personas: home.pinned, all: home.everyone, chats: chats,
-                        selected: store.path.last,
+                        screen: screen, pins: pins, all: home.everyone, chats: chats, selected: store.path.last,
                         actions: actions
                     ) { detail }
                 } else {
-                    HomeView(
-                        screen: screen, personas: home.pinned, all: home.everyone, chats: chats, actions: actions
-                    )
+                    HomeView(screen: screen, pins: pins, all: home.everyone, chats: chats, actions: actions)
                 }
             }
             .overlay(alignment: .bottom) {
@@ -139,6 +141,8 @@ private struct HomeSlot<Detail: View>: View {
         )
         actions.others = others
         actions.openOthers = { store.send(.open(AppFeature.others)) }
+        actions.rooms = store.menu.settings.pinnedRooms
+        actions.pinRoom = { store.send(.menu(.pinRoom($0))) }
         return actions
     }
 }

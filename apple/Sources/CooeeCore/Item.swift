@@ -47,6 +47,7 @@ public enum Item: Identifiable, Sendable, Equatable {
     case outgoing(Outgoing)
     case agent(id: Int, markdown: [Block])
     case tools(id: Int, rows: [ToolRow])
+    case trace(id: Int, steps: [ToolRow], seconds: Int)
     case card(id: Int, poster: String?, block: JSONValue)
     case note(id: Int, text: String)
     case said(id: Int, speaker: String, time: String, markdown: [Block])
@@ -54,8 +55,8 @@ public enum Item: Identifiable, Sendable, Equatable {
 
     public var id: Int {
         switch self {
-        case .you(let id, _, _), .agent(let id, _), .tools(let id, _), .card(let id, _, _), .note(let id, _),
-            .said(let id, _, _, _), .divider(let id, _):
+        case .you(let id, _, _), .agent(let id, _), .tools(let id, _), .trace(let id, _, _), .card(let id, _, _),
+            .note(let id, _), .said(let id, _, _, _), .divider(let id, _):
             id
         case .outgoing(let message):
             message.id
@@ -68,7 +69,7 @@ public enum Item: Identifiable, Sendable, Equatable {
         case .you(_, let text, _): text
         case .outgoing(let message): message.text
         case .agent(_, let blocks), .said(_, _, _, let blocks): blocks.map(\.plainText).joined(separator: "\n\n")
-        case .tools, .card, .note, .divider: nil
+        case .tools, .trace, .card, .note, .divider: nil
         }
     }
 }
@@ -85,10 +86,18 @@ extension Block {
 }
 
 public enum ChatItems {
-    public static func build(_ items: [APIItem], live: String, outbox: [Outgoing] = []) -> [Item] {
+    public static func build(
+        _ items: [APIItem],
+        live: String,
+        outbox: [Outgoing] = [],
+        style: ChatStyle = .detailed,
+        working: Bool = false
+    ) -> [Item] {
         var out: [Item] = []
-        for item in items {
-            append(item, to: &out)
+        if style == .chat {
+            folded(items, working: working, into: &out)
+        } else {
+            for item in items { append(item, to: &out) }
         }
         out += outbox.map(Item.outgoing)
         if !live.isEmpty {
@@ -115,14 +124,46 @@ public enum ChatItems {
         }
     }
 
-    private static func fold(_ item: APIItem, into out: inout [Item]) {
+    public static func step(_ items: [APIItem]) -> String? {
+        items.reversed().prefix { $0.kind != "you" && $0.kind != "agent" }.first { $0.kind == "tool" }?.title
+    }
+
+    private static func folded(_ items: [APIItem], working: Bool, into out: inout [Item]) {
+        var steps: [APIItem] = []
+        for item in items {
+            switch item.kind {
+            case "tool":
+                steps.append(item)
+            case "agent":
+                append(item, to: &out)
+                trace(&steps, until: item.time, into: &out)
+            case "you":
+                trace(&steps, until: steps.last?.time ?? 0, into: &out)
+                append(item, to: &out)
+            default:
+                append(item, to: &out)
+            }
+        }
+        if !working { trace(&steps, until: steps.last?.time ?? 0, into: &out) }
+    }
+
+    private static func trace(_ steps: inout [APIItem], until end: Int64, into out: inout [Item]) {
+        guard let first = steps.first else { return }
+        out.append(.trace(id: first.id, steps: steps.map(row), seconds: Int(max(end, first.time) - first.time) / 1000))
+        steps = []
+    }
+
+    private static func row(_ item: APIItem) -> ToolRow {
         let status = item.status == "completed" ? "done" : item.status == "failed" ? "failed" : "running"
-        let row = ToolRow(item.title ?? "", status)
+        return ToolRow(item.title ?? "", status)
+    }
+
+    private static func fold(_ item: APIItem, into out: inout [Item]) {
         guard case .tools(let id, let rows) = out.last else {
-            out.append(.tools(id: item.id, rows: [row]))
+            out.append(.tools(id: item.id, rows: [row(item)]))
             return
         }
-        out[out.count - 1] = .tools(id: id, rows: rows + [row])
+        out[out.count - 1] = .tools(id: id, rows: rows + [row(item)])
     }
 }
 
