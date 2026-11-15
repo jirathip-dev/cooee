@@ -79,6 +79,9 @@ stateDiagram-v2
 | area file | 35 one-area files | allowed | `[[size]]` on Rust, SwiftLint on Swift |
 | manifest | 6 | allowed | cargo, SwiftPM, drover's hook on `ci/cap.toml` |
 
+The addendum (#427) empties the `area file` row: slices 10 to 19 turn its 35 files into 16 generated lists and 19
+frozen paths. Its chart and its rules are in [`addendum.md`](addendum.md).
+
 ## A generated index during a PR
 
 ```mermaid
