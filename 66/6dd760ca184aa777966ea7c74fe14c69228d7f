@@ -1,0 +1,11 @@
+Decided: one chip in the chat header serves both cases: on a thread a pick moves it, and on a new chat a pick is the machine override sent with the first message.
+Because: "New thread: an optional machine override"
+Because: apple/Sources/CooeeFeatures/ChatMachine.swift:61
+Decided: readiness problems are the machine's own offline state and error, plus the server's move refusal, which names each failed check.
+Because: "Tap for health, readiness problems and **Move…**"
+Rejected: a new readiness endpoint on the server — the move route already refuses with each failed check, and the issue only asks for the native side.
+Decided: Computers and Desks are grouped by an optional kind; Watch screen and Take over are left out until desks exist.
+Because: "Only desks offer **Watch screen** and **Take over** (q1070; desks are cooee#168–#173, which wait)"
+Decided: the row and chip appear only once the machine list has loaded, so the fixture design frames stay the same.
+Check: a new chat started from the chip runs on the picked machine, and it keeps that pick once it becomes a thread (AppFeature.swift:177).
+Owner: the persona sheet picks a machine, and a chat's header chip shows its health and moves the chat.
