@@ -6,7 +6,7 @@ import Foundation
 import Testing
 
 @MainActor
-internal struct PluginScreenFeatureTests {
+internal struct ScreenFeatureTests {
     nonisolated private static let queue = Place(
         plugin: "drover", key: "queue", label: "Queue", screen: "/screens/queue")
     nonisolated private static let screen: JSONValue = .object([
@@ -26,10 +26,10 @@ internal struct PluginScreenFeatureTests {
 
     private func store(
         _ dependencies: @escaping (inout DependencyValues) -> Void = { _ in }
-    ) -> TestStoreOf<PluginScreenFeature> {
+    ) -> TestStoreOf<ScreenFeature> {
         let (calls, clock) = (calls, clock)
-        return TestStore(initialState: PluginScreenFeature.State(server: mini, place: Self.queue)) {
-            PluginScreenFeature()
+        return TestStore(initialState: ScreenFeature.State(server: mini, place: Self.queue)) {
+            ScreenFeature()
         } withDependencies: {
             $0.date.now = epoch
             $0.continuousClock = clock
@@ -48,7 +48,7 @@ internal struct PluginScreenFeatureTests {
     @Test internal func aScreenLoadsFollowsItsStreamAndIsKept() async {
         let store = store {
             $0.plugins.screen = { _, plugin, path in
-                #expect(plugin == "drover" && path == "/screens/queue")
+                #expect(plugin == .plugin("drover") && path == "/screens/queue")
                 return Self.screen
             }
             $0.plugins.events = { _, _, path in
@@ -101,15 +101,15 @@ internal struct PluginScreenFeatureTests {
 
     @Test internal func anActionAppliesItsAnswersOpsAndSaysItsToast() async {
         let answer: JSONValue = .object(["toast": .string("Driving"), "ops": Self.merge["ops"] ?? .null])
-        var state = PluginScreenFeature.State(server: mini, place: Self.queue)
+        var state = ScreenFeature.State(server: mini, place: Self.queue)
         state.screen = LiveScreen(Self.screen)
         let store = TestStore(initialState: state) {
-            PluginScreenFeature()
+            ScreenFeature()
         } withDependencies: {
             $0.date.now = epoch
             $0.screenCache.save = { _, _ in }
             $0.plugins.act = { _, plugin, screen, action in
-                #expect(plugin == "drover" && screen == "queue" && action.action == "drive")
+                #expect(plugin == .plugin("drover") && screen == "queue" && action.action == "drive")
                 return answer
             }
         }
@@ -145,5 +145,26 @@ internal struct PluginScreenFeatureTests {
         let store = store()
         await store.send(.open("herdsman-impl-641"))
         await store.receive(\.delegate.open, "herdsman-impl-641")
+    }
+
+    @Test internal func aCoreScreenIsFetchedFromCoreAndKeptUnderCore() async {
+        let home = ScreenFeature.State(server: mini, source: .core, path: "/screens/home", label: "Home")
+        let calls = calls
+        let store = TestStore(initialState: home) {
+            ScreenFeature()
+        } withDependencies: {
+            $0.date.now = epoch
+            $0.screenCache.save = { key, _ in calls.record("keep \(key)") }
+            $0.plugins.screen = { _, source, path in
+                #expect(source == .core && path == "/screens/home")
+                return .object(["title": .string("cooee")])
+            }
+        }
+        await store.send(.retry)
+        await store.receive(\.loaded) {
+            $0.screen = LiveScreen(.object(["title": .string("cooee")]))
+            $0.asOf = epoch
+        }
+        #expect(calls.all == ["keep https://mini.local|core|/screens/home"])
     }
 }

@@ -27,7 +27,7 @@ public struct ChatFeature: Sendable {
         public var room: Room?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
-        @Presents public var screen: PluginScreenFeature.State?
+        @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
@@ -68,7 +68,7 @@ public struct ChatFeature: Sendable {
         case seated([String])
         case delegate(Delegate)
         case plugins(PluginAction)
-        case screen(PresentationAction<PluginScreenFeature.Action>)
+        case screen(PresentationAction<ScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
 
         @CasePathable
@@ -121,7 +121,7 @@ public struct ChatFeature: Sendable {
             }
         }
         Reduce { state, action in plugins(&state, action) }
-            .ifLet(\.$screen, action: \.screen) { PluginScreenFeature() }
+            .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
     }
 }

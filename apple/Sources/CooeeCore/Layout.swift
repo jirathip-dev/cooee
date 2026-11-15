@@ -24,7 +24,8 @@ public enum LayoutSource: Sendable, Equatable {
     case core
     case plugin(String)
 
-    internal var name: String {
+    /// The name a screen's key and a refusal use: `core` or the plugin's.
+    public var name: String {
         switch self {
         case .core: "core"
         case .plugin(let name): name
