@@ -1,0 +1,10 @@
+Decided: a terminal node placed menu draws a Terminal row that pushes the native terminal in the menu sheet, on compact and wide alike
+Because: "Opens from a layout node on compact and wide."
+Decided: typed text travels as Keystrokes, whose description and mirror are redacted, so no dump or log can show it
+Because: "Keystrokes are never logged."
+Decided: MachineTerminal preview became the data-driven TerminalView, its two frames unchanged; Terminal and Scene style frames added
+Because: "Snapshot frames for the terminal component in each style."
+Decided: merged staging again for the arch-check red; staging already raised the lib.rs baseline to 2329, no Rust change here
+Rejected: unlocking the terminal from the app without a passkey — weakens the server's gate, an owner security call
+Check: TerminalFeatureTests whatIsTypedNeverShowsInAnActionOrStateDump and the you-terminal-* frames
+Owner: the app shows the terminal but says Locked until the app can unlock with a passkey; that needs your call in a follow-up
