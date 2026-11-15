@@ -1203,11 +1203,9 @@ async fn pass_on(
     {
         let stream = plugin::events(reply)?
             .take_while(move |_| std::future::ready(open()))
-            .map(move |heard| {
-                Result::<Event>::Ok(match heard {
-                    plugin::Heard::Event(e) => relay(e),
-                    plugin::Heard::Beat => Event::new().comment(""),
-                })
+            .map(move |heard| match heard {
+                plugin::Heard::Event(e) => Result::<Event>::Ok(relay(e)),
+                plugin::Heard::Beat => Ok(Event::new().comment("")),
             });
         return Sse::new(stream)
             .keep_alive(KeepAlive::new())
