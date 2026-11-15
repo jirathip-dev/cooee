@@ -1,0 +1,5 @@
+Decided: merge origin/staging (840cbf5), no conflicts, and re-run CI on the new head; the test support code is unchanged this round
+Because: crates/cooee/tests/support/cooee.rs:295
+Rejected: loosening the 200 ms bound in others_go_on — it is the #288 contract, and it moved unchanged from staging's support/mod.rs, so the round-1 red (231 ms) was runner timing, not this slice
+Check: sh scripts/gen.sh leaves no diff, drover arch-check --base origin/staging exits 0, and the CI stable job is green at the head
+Owner: The branch picked up the latest staging and the checks run again; the earlier failure was a slow test machine, not a change in this work.
