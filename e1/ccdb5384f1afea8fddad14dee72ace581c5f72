@@ -1,0 +1,11 @@
+Decided: manage.rs trims back to 1162 lines, under its 1164 baseline, with no behaviour change
+Because: crates/cooee-server/src/manage.rs:236
+Because: docs/architecture/hot-files/adr.md:111
+Decided: the size baseline is refreshed for staging's own #289 hub.rs growth, a staging build fix
+Because: .drover/arch-baseline.txt:1
+Because: "Every gate is green; `apple_cap` holds."
+Rejected: moving part of hub.rs out — that file grew in staging, not in this PR
+Decided: the wip snapshot's logs and Package.resolved are untracked again
+Check: drover arch-check reports 0 violations at this head
+Check: git diff 9123c79 HEAD -- apple is empty, so the apple evidence from round 17 still holds
+Owner: No change to the feature; this round gets the file-size check green again.
