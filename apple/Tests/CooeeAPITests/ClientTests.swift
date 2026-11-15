@@ -38,6 +38,7 @@ internal struct ClientTests {
         let rows = try await client.threads()
         #expect(rows.map(\.id) == ["a1b2", "old"])
         #expect(rows[0].persona == "coder" && rows[0].unseen == 2 && rows[0].state == "working" && rows[1].archived)
+        #expect(rows[0].workflow == nil && rows[1].workflow?.source == "drover" && rows[1].workflow?.stage == "impl 1")
         let personas = try await client.personas()
         #expect(personas == [.coder])
         let slice = try await client.messages("a1b2")
