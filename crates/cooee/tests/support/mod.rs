@@ -127,17 +127,33 @@ impl FakeShed {
         )
         .unwrap();
         fs::set_permissions(&adapter, fs::Permissions::from_mode(0o755)).unwrap();
-        let socket = dir.join("shed.sock");
-        let _ = fs::remove_file(&socket);
-        let listener = UnixListener::bind(&socket).unwrap();
-        let shed = Self {
+        Self {
             dir: dir.to_owned(),
             hello,
             shared: Arc::default(),
             procs: Arc::default(),
             requests: Arc::default(),
             conns: Arc::default(),
-        };
+        }
+        .listen()
+    }
+
+    /// Restarts this server on `hello`, as a shed restart onto another build does; its terminals live on.
+    pub fn restart(&self, hello: Hello) -> Self {
+        self.stop();
+        Self {
+            hello,
+            conns: Arc::default(),
+            ..self.clone()
+        }
+        .listen()
+    }
+
+    fn listen(self) -> Self {
+        let socket = self.dir.join("shed.sock");
+        let _ = fs::remove_file(&socket);
+        let listener = UnixListener::bind(&socket).unwrap();
+        let shed = self;
         let server = shed.clone();
         thread::spawn(move || {
             for conn in listener.incoming().flatten() {
@@ -165,6 +181,7 @@ impl FakeShed {
     /// is, so none with an event stream open).
     pub fn stop(&self) {
         let _ = fs::remove_file(self.dir.join("shed.sock"));
+        self.shared.lock().unwrap().subs.clear();
         let conns = std::mem::take(&mut self.conns.lock().unwrap().0);
         for conn in &conns {
             let _ = conn.shutdown(Shutdown::Both);

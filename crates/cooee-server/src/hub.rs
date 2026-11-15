@@ -2,7 +2,11 @@ use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError, mpsc},
+    sync::{
+        Arc, Mutex, MutexGuard, OnceLock, PoisonError,
+        atomic::{AtomicBool, Ordering},
+        mpsc,
+    },
     thread,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -273,6 +277,7 @@ pub struct Hub {
     scratch: PathBuf,
     files: PathBuf,
     push: Push,
+    shed_version: AtomicBool,
     theme: crate::look::Theme,
     roots: Mutex<Vec<PathBuf>>,
     config: Option<PathBuf>,
@@ -515,6 +520,7 @@ impl Hub {
             scratch: data.join("scratch"),
             files: data.join("files"),
             push: Push::new(data).with_apns(apns),
+            shed_version: AtomicBool::new(false),
             theme,
             roots: Mutex::new(roots),
             config,
@@ -709,6 +715,7 @@ impl Hub {
                 .and_then(|since| self.shed.events(BTreeMap::new(), last.or(since)));
             match stream {
                 Ok(events) => {
+                    self.shed_seen(None);
                     said.clear();
                     for event in events {
                         last = Some(event.seq);
@@ -717,12 +724,36 @@ impl Hub {
                 }
                 Err(e) if e.to_string() != said => {
                     said = e.to_string();
-                    eprintln!("cooee: {said}");
+                    if !self.shed_seen(Some(&e)) {
+                        eprintln!("cooee: {said}");
+                    }
                 }
                 Err(_) => {}
             }
             thread::sleep(Duration::from_secs(1));
         }
+    }
+
+    fn shed_seen(&self, error: Option<&ShedError>) -> bool {
+        let version = matches!(error, Some(ShedError::Version { .. }));
+        if error.is_some() && !version
+            || self.shed_version.swap(version, Ordering::SeqCst) == version
+        {
+            return version;
+        }
+        let body = error.map_or(
+            "shed speaks this build's protocol again".to_owned(),
+            ToString::to_string,
+        );
+        eprintln!("cooee: {body}");
+        self.push.send(&Note {
+            title: "cooee".to_owned(),
+            body,
+            tag: "shed".to_owned(),
+            url: "/".to_owned(),
+            item: 0,
+        });
+        version
     }
 
     /// Applies one shed event to the thread whose terminal it names; a new Workflow session's first is listed.
@@ -1519,6 +1550,23 @@ impl Hub {
         let sent = self.prompt(&terminal, &machine, ended, prompt.trim());
         let mut l = lock(live);
         l.sending.retain(|r| *r != q.random_id);
+        let mismatch = match &sent {
+            Ok(()) => self.shed_seen(None),
+            Err(HubError::Shed(e)) => self.shed_seen(Some(e)),
+            Err(_) => false,
+        };
+        if let (true, Err(e)) = (mismatch, &sent) {
+            let item = l.chat.push(
+                now(),
+                0,
+                Body::Note {
+                    text: e.to_string(),
+                },
+            );
+            if let Err(e) = l.publish(self, vec![Change::Item(item)]) {
+                eprintln!("cooee: {e}");
+            }
+        }
         let stored = sent.and_then(|()| self.store_sent(&mut l, q, start, &handover));
         let held = if l.sending.is_empty() {
             std::mem::take(&mut l.held)
