@@ -1,0 +1,14 @@
+Decided: core's home is GET /screens/home: the app's bundled Default/screens/home.json filled with today's threads and personas; the server sets source core.
+Because: "`cooee-server/src/screens/{mod,home}.rs`, block builders, `source: \"core\"` set by the server on the wire."
+Because: crates/cooee-server/src/screens/mod.rs:10
+Decided: home draws its blocks in the screen's order; `pinned` and `chats` are block renderers made from the old pinned-row and chat-row views.
+Because: apple/Sources/CooeeUI/BlockHome.swift:111
+Rejected: generic `row` blocks with figures — RowView's 15pt title and 44pt rows differ from the chat row's, so home-390 and wide-1440 would change.
+Decided: the app makes one call (/screens/home) plus staging's plugins call where it made /threads and /personas; Client.threads() is deleted.
+Because: "Offline draws the bundled home."
+Because: apple/Sources/CooeeUI/SlotView.swift:108
+Decided: staging's Others row (#229) draws after the home blocks, as it drew after the chat list; it is not a block in this issue.
+Because: apple/Sources/CooeeUI/BlockHome.swift:49
+Decided: no home stream yet; the app re-reads /screens/home every 5 s as it re-read /threads.
+Check: every home and wide frame passes SnapshotTests unchanged after the staging merge; HomeFeatureTests and WorkflowNavigationTests load through the home client.
+Owner: Home now comes from the server as a screen, and the app draws a built-in copy until it answers or when offline; nothing looks different.
