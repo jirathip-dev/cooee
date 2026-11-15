@@ -30,6 +30,7 @@ mod folders;
 mod mcp;
 mod models;
 mod plugins;
+mod relaunch;
 mod rooms;
 mod send;
 mod start;
