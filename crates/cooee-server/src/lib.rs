@@ -18,6 +18,7 @@ mod plugin;
 mod push;
 mod relaunch;
 mod routines;
+mod screens;
 mod themes;
 
 use std::{
@@ -753,33 +754,6 @@ fn starter(
             empty,
         )
     })
-}
-
-/// The routines' runner (#75): a `new_thread` run starts as the chat that made it did.
-fn runner(
-    hub: &Arc<Hub>,
-    logins: Arc<Logins>,
-    data: &std::path::Path,
-    c: &Config,
-) -> Arc<routines::Runner> {
-    let (dir, config) = (data.to_owned(), c.dir.clone());
-    let data = dir.clone();
-    let start: routines::Start = Box::new(move |hub, who| {
-        let list = profiles(hub, (&data, config.as_deref()));
-        let (agent, folder, mut recipe) = recipe(
-            &logins,
-            (&data, config.as_deref(), &list),
-            (&who.agent, Some(&who.account), &who.profile),
-            who.folder.clone(),
-            (who.model.clone(), who.effort.clone()),
-        )?;
-        if recipe.machine.is_empty() {
-            recipe.machine.clone_from(&who.machine);
-        }
-        let name = provider_name(&agent, &logins.statuses());
-        Ok((agent, name, folder, recipe))
-    });
-    Arc::new(routines::Runner::new(Arc::clone(hub), &dir, start, c))
 }
 
 /// `POST /rooms` (#154): a room of member personas, in room order.
@@ -2226,6 +2200,7 @@ pub fn router(
     .route(layout::get)
     .route(layout::events)
     .route(layout::reset)
+    .route(screens::home::home)
     .app_context(layouts)
     .app_context(hub)
     .app_context(Arc::new(Dots::default()))
@@ -2292,7 +2267,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
             std::thread::sleep(Duration::from_hours(1));
         }
     });
-    let runner = runner(&hub, Arc::clone(&logins), &data, config);
+    let runner = routines::serving(&hub, Arc::clone(&logins), &data, config);
     let router = router(
         (Arc::clone(&hub), Arc::clone(&runner)),
         (

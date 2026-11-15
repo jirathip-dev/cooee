@@ -574,6 +574,33 @@ fn minutes(z: &str) -> Option<i32> {
     }
 }
 
+/// The routines' runner (#75): a `new_thread` run starts as the chat that made it did.
+pub(crate) fn serving(
+    hub: &Arc<Hub>,
+    logins: Arc<crate::Logins>,
+    data: &std::path::Path,
+    c: &Config,
+) -> Arc<Runner> {
+    let (dir, config) = (data.to_owned(), c.dir.clone());
+    let data = dir.clone();
+    let start: Start = Box::new(move |hub, who| {
+        let list = crate::profiles(hub, (&data, config.as_deref()));
+        let (agent, folder, mut recipe) = crate::recipe(
+            &logins,
+            (&data, config.as_deref(), &list),
+            (&who.agent, Some(&who.account), &who.profile),
+            who.folder.clone(),
+            (who.model.clone(), who.effort.clone()),
+        )?;
+        if recipe.machine.is_empty() {
+            recipe.machine.clone_from(&who.machine);
+        }
+        let name = crate::provider_name(&agent, &logins.statuses());
+        Ok((agent, name, folder, recipe))
+    });
+    Arc::new(Runner::new(Arc::clone(hub), &dir, start, c))
+}
+
 #[cfg(test)]
 mod tests {
     #[test]

@@ -30,6 +30,7 @@ public struct HomeActions {
 
 public struct HomeView: View {
     @Environment(\.look) private var look
+    private let screen: HomeScreen
     private let menuOpen: Bool
     private let personas: [Persona]
     private let all: [Persona]
@@ -42,11 +43,9 @@ public struct HomeView: View {
         ZStack(alignment: .topLeading) {
             Backdrop()
             VStack(spacing: 0) {
-                TopBar(personas: all, actions: actions)
+                TopBar(title: screen.title, personas: all, actions: actions)
                 Scroller {
-                    PinnedRow(personas: personas, rows: chats.map(\.row), pin: actions.pin).padding(.top, 6)
-                    ChatList(chats: chats, selected: selected, open: actions.open)
-                        .padding(.top, look.style == .scene ? 0 : 14)
+                    HomeBlocks(screen: screen, personas: personas, chats: chats, selected: selected, actions: actions)
                     if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
                 }
             }
@@ -60,6 +59,7 @@ public struct HomeView: View {
     }
 
     public init(
+        screen: HomeScreen = .bundled,
         menuOpen: Bool = false,
         personas: [Persona] = Fixtures.personas,
         all: [Persona]? = nil,
@@ -67,6 +67,7 @@ public struct HomeView: View {
         selected: String? = nil,
         actions: HomeActions = HomeActions()
     ) {
+        self.screen = screen
         self.menuOpen = menuOpen
         self.personas = personas
         self.all = all ?? personas
@@ -95,8 +96,34 @@ internal struct AccountAvatar: View {
     }
 }
 
+internal struct HomeBlocks: View {
+    @Environment(\.look) private var look
+    internal let screen: HomeScreen
+    internal let personas: [Persona]
+    internal let chats: [ListedChat]
+    internal var selected: String?
+    internal let actions: HomeActions
+    internal var wide = false
+
+    internal var body: some View {
+        ForEach(Array(screen.blocks.enumerated()), id: \.offset) { _, block in
+            switch block.type {
+            case "pinned":
+                PinnedRow(personas: personas, rows: chats.map(\.row), pin: actions.pin)
+                    .scaleEffect(wide ? 0.9 : 1, anchor: .leading).padding(.top, wide ? 4 : 6)
+            case "chats":
+                ChatList(chats: chats, selected: selected, open: actions.open)
+                    .padding(.top, wide ? 8 : look.style == .scene ? 0 : 14)
+            default:
+                EmptyView()
+            }
+        }
+    }
+}
+
 internal struct TopBar: View {
     @Environment(\.look) private var look
+    internal let title: String
     internal let personas: [Persona]
     internal let actions: HomeActions
 
@@ -105,7 +132,7 @@ internal struct TopBar: View {
             Button(action: actions.menu) { AccountAvatar().padding(4).modifier(RoundSurface(look: look)) }
                 .buttonStyle(.plain).accessibilityLabel("Account")
             Spacer()
-            Text(look.mono ? "~/cooee" : "cooee").ui(19, .bold, look)
+            Text(look.mono ? "~/\(title)" : title).ui(19, .bold, look)
             Spacer()
             Menu {
                 Button("New room", systemImage: "person.3", action: actions.room)
