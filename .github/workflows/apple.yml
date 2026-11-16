@@ -208,7 +208,7 @@ jobs:
           tail -40 "$RUNNER_TEMP/mac-test.log"
           exit "$status"
       # #333: version 1 finds version 2 on a local appcast (EdDSA-signed, with a delta), installs it on quit and restarts
-      # cooee and shed; port 4747 answers and the phone is still paired.
+      # cooee and shed; port 4747 answers, the phone is still paired and lists the Coder persona written before the update.
       - name: the Mac updates itself through a local appcast; the phone stays paired
         working-directory: apple
         run: |
@@ -229,6 +229,8 @@ jobs:
           pid() { launchctl print "gui/$(id -u)/com.jirathip.cooee.$1" | awk '$1 == "pid" { print $3 }'; }
           serve=$(pid serve)
           shed=$(pid shed)
+          mkdir -p "$HOME/.config/cooee/cooee/personas"
+          printf 'name = "Coder"\nagent = "fake-acp"\n' >"$HOME/.config/cooee/cooee/personas/coder.toml"
           defaults write com.jirathip.cooee SUHasLaunchedBefore -bool YES
           defaults write com.jirathip.cooee SULastCheckTime -date "2000-01-01 00:00:00 +0000"
           log="$HOME/Library/Logs/cooee-update.log"
