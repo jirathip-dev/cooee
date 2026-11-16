@@ -1,0 +1,7 @@
+Decided: Client's clock is typed any _Concurrency.Clock<Duration>, since CooeeCore's public enum Clock shadows the stdlib protocol
+Because: apple/Sources/CooeeCore/Room.swift:126
+Decided: scripts/comments.py counts a #[macro_export] macro_rules! as public API, so say!, note! and say_open! keep their ///
+Rejected: deleting those /// lines — missing_docs warns on exported macros and clippy runs with -D warnings
+Because: Cargo.toml:41
+Check: ci/comments-test.sh has an exported macro passing and an unexported one failing; the apple and dmg legs build at the head
+Owner: the app build and a comment check that broke in the last round are fixed; nothing else changes
