@@ -46,12 +46,7 @@ public struct Diagram: Sendable, Equatable {
     }
 
     private var forward: [Edge] {
-        parsed.filter { edge in
-            guard let from = order.firstIndex(of: edge.from), let end = order.firstIndex(of: edge.into) else {
-                return false
-            }
-            return end > from
-        }
+        parsed.filter { (order.firstIndex(of: $0.from) ?? .max) < (order.firstIndex(of: $0.into) ?? -1) }
     }
 
     private mutating func placeSpine() {

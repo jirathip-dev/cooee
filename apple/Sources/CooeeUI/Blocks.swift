@@ -68,27 +68,16 @@ private struct OpenThreadKey: EnvironmentKey {
     fileprivate static var defaultValue: @MainActor (String) -> Void { { _ in } }
 }
 
-private struct FocusKey: EnvironmentKey {
-    fileprivate static var defaultValue: String? { nil }
-}
-
-private struct PickedKey: EnvironmentKey {
-    fileprivate static var defaultValue: String? { nil }
-}
-
 private struct OpenBesideKey: EnvironmentKey {
     fileprivate static var defaultValue: (@MainActor (String) -> Void)? { nil }
 }
 
-private struct CardKey: EnvironmentKey {
-    fileprivate static var defaultValue: CardContext { CardContext() }
-}
-
-private struct FormKey: EnvironmentKey {
-    fileprivate static var defaultValue: Binding<[String: JSONValue]>? { nil }
-}
-
 extension EnvironmentValues {
+    @Entry internal var focus: String?
+    @Entry internal var picked: String?
+    @Entry internal var card = CardContext()
+    @Entry internal var form: Binding<[String: JSONValue]>?
+
     internal var act: @MainActor (BlockAction) -> Void {
         get { self[ActKey.self] }
         set { self[ActKey.self] = newValue }
@@ -104,29 +93,9 @@ extension EnvironmentValues {
         set { self[OpenThreadKey.self] = newValue }
     }
 
-    internal var focus: String? {
-        get { self[FocusKey.self] }
-        set { self[FocusKey.self] = newValue }
-    }
-
-    internal var picked: String? {
-        get { self[PickedKey.self] }
-        set { self[PickedKey.self] = newValue }
-    }
-
     internal var openBeside: (@MainActor (String) -> Void)? {
         get { self[OpenBesideKey.self] }
         set { self[OpenBesideKey.self] = newValue }
-    }
-
-    internal var card: CardContext {
-        get { self[CardKey.self] }
-        set { self[CardKey.self] = newValue }
-    }
-
-    internal var form: Binding<[String: JSONValue]>? {
-        get { self[FormKey.self] }
-        set { self[FormKey.self] = newValue }
     }
 }
 
