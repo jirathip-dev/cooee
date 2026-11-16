@@ -276,10 +276,18 @@ fn an_agents_launch_keys_are_read_only_and_an_edit_keeps_them() {
 }
 
 #[test]
-fn a_persona_without_instructions_takes_its_profiles() {
-    let s = setup("personas-pinstr");
-    let personas = s.dir.join("personas");
+fn a_migrated_persona_without_instructions_takes_its_profiles() {
+    let dir = scratch("personas-pinstr");
+    let (personas, profiles) = (dir.join("personas"), dir.join("profiles"));
     fs::create_dir_all(&personas).unwrap();
+    fs::create_dir_all(&profiles).unwrap();
+    fs::write(
+        profiles.join("coder.toml"),
+        "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\ninstructions = \"coder.md\"\n\
+         policy = \"allow\"\n[env]\nMODE = \"review\"\n",
+    )
+    .unwrap();
+    fs::write(profiles.join("coder.md"), "Follow the house rules.\n").unwrap();
     let persona = |id: &str, more: &str| {
         let text = format!(
             "name = \"{id}\"\nagent = \"fake-acp\"\nprofile = \"coder\"\nstyle = \"detailed\"\ncharacter = \"Calm.\"\n{more}"
@@ -288,6 +296,13 @@ fn a_persona_without_instructions_takes_its_profiles() {
     };
     persona("lead", "");
     persona("own", "instructions = \"My own rules.\"\n");
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let cooee = Cooee::start(&dir, &shed.dir);
+    let s = Setup { dir, shed, cooee };
+    assert_eq!(
+        fs::read_to_string(s.dir.join("agents/lead/INSTRUCTIONS.md")).unwrap(),
+        "Follow the house rules.\n"
+    );
     let note = json!({ "text": "Tea, no sugar." });
     let (status, added) = s.call("POST", "/personas/lead/memory", Some(&note));
     assert_eq!(status, 200, "{added}");
