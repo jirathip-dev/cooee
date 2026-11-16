@@ -1,0 +1,15 @@
+Decided: the clippy gate runs twice: lib, bin and build code with every ban denied, then the test targets with unwrap, expect, panic and indexing allowed, since tests/ helpers sit outside clippy.toml's allow-*-in-tests
+Because: "tests may unwrap/expect/index via clippy.toml `allow-*-in-tests`"
+Decided: printing goes through one module, cooee_core::out (say!, note!), in core because the server, terminal and machines crates print too and cannot depend on the CLI crate
+Because: crates/cooee-core/src/out.rs:8
+Decided: clock.rs owns now, instant and sleep; config.rs owns env_var; .drover/arch.toml bans the rest (the repo's arch file, not .herdsman/)
+Because: .drover/arch.toml:40
+Decided: the std::process ban stays the existing Command::new one: ExitCode, Stdio and Child are types, not process starts
+Rejected: a literal `std::process` ban — it trips on ExitCode and on tests' process::id, while `use std::{process::…}` slips past it
+Decided: no TypeScript exists yet, so scripts/ts-bans.py scans .ts/.tsx and needs a strict tsconfig; biome or tsc would be a new dependency
+Rejected: adding biome — a new dependency needs the owner
+Decided: Swift keeps DispatchQueue only in Nearby.swift (NWBrowser takes a queue) and UserDefaults.standard only in CooeeApp/Live.swift, where the SettingsStore client gets its live value
+Because: apple/.swiftlint.yml:60
+Check: ci/bans-test.sh and ci/swift-bans-test.sh each plant every ban and assert the named lint or rule fails it
+Check: Swift was linted and formatted locally but not built or tested (xcodebuild waits on the host's heavy slot); the apple CI legs prove it
+Owner: risky calls (unwrap, panics, raw prints, clock and env reads) are now refused by CI in Rust, TypeScript and Swift; the app behaves the same
