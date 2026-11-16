@@ -235,7 +235,7 @@ fn runner(cx: &Cx) -> Arc<Runner> {
 }
 
 /// Runs `f` on the runner off the async workers.
-async fn on<T: Send + 'static>(
+pub(crate) async fn on<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&Runner) -> Result<T, HubError> + Send + 'static,
 ) -> Result<T, HubError> {
