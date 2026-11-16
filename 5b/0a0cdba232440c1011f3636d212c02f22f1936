@@ -1,0 +1,15 @@
+Decided: one BlockActs modifier gives rows and cards their `menu` as a context menu (long-press, right-click) and rows a real drag-to-reveal swipe on iOS; on the Mac swipe items join the context menu
+Because: apple/Sources/CooeeUI/BlockActs.swift:4
+Because: "Real `swipe` on rows (replaces the context-menu stand-in)"
+Rejected: SwiftUI swipeActions — it only works inside a List, and block lists are VStacks inside the screen's ScrollView
+Decided: `refresh: true` pulls to refresh on compact and draws a toolbar refresh button on wide; both re-fetch through ScreenFeature's existing retry
+Because: "`refresh` flag on screen (pull-to-refresh)"
+Because: apple/Sources/CooeeUI/PluginSheets.swift:63
+Decided: `transition` is a layout node field beside `place`, refused by the app decoder and `cooee layout check` when it is not push, sheet, fade or none
+Because: crates/cooee-server/src/layout.rs:142
+Decided: still frames show each addition mid-use (swipe open, menu shown, refresh button, a sheet half in) through the real views; a system menu popup cannot be captured by ImageRenderer
+Because: apple/Sources/CooeeUI/Fixtures/BlockAdditions.swift:5
+Decided: staging was merged in, not rebased, so the pushed history is never rewritten
+Check: SnapshotTests passes every frame with the existing PNGs untouched; the 12 new ones are in apple/design/v3-additions
+Check: plugin_check_knows_swipe_menu_and_refresh fails on staging (refresh "yes" and menu objects pass unchecked there)
+Owner: Plugin rows can be swiped and long-pressed, screens can be pulled to refresh, and a layout can choose how each screen slides in.
