@@ -1,0 +1,317 @@
+Decided: just comments takes the TODO(#N) numbers from the checker's own lexer (comments.py --todos), not a raw grep over the source
+Because: ci/comments-test.sh:26
+Rejected: rewording the anti-slop Swift fixture so the grep misses it — the grep would still count any comment-shaped text in a string
+Decided: --todos reuses the same Lexer the rule check uses, so a string literal's "// TODO(#147)" is never a comment
+Because: scripts/comments.py:218
+Check: ci/comments-test.sh:26 fails unless --todos prints only 201 for a file with a TODO in a Swift multi-line string and one real TODO comment
+Check: the msrv job's comments step is green at the head
+Owner: the comment check no longer trips over a TODO written inside a test's text, so CI's comment step passes
+
+Decided: merged origin/staging; conflicts keep staging's code with comments dropped, and staging's new rule-breaking comments are stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: none
+Check: just comments is green at the head and the merge's diff -w against staging is only deleted comment lines
+Owner: the branch is up to date with staging and the new secrets and fleets-config code follows the same comment rule
+
+Decided: merged origin/staging (#159); both personas.rs conflicts keep staging's code and drop the 44 comment lines that break the rule
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop #159's new code
+Decided: no code change for the ui job's long-task failure in chat.spec.mjs
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on both personas.rs files is only deleted comment lines
+Check: the ui long-task failure also hits staging's own ci runs (staging head 9ab48cbf failed it)
+Owner: the branch is up to date with staging again, and the new personas code follows the comment rule
+
+Decided: merged origin/staging (#217); the lib.rs conflict keeps staging's code, and history.rs's 6 rule-breaking comment lines are stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: committing the superseded lane's wip snapshot as is — it carried gate logs and pr-body.md into git
+Decided: no code change for the ui job's chat.spec.mjs long-task check
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on both history.rs files is only deleted comment lines
+Check: build (generic/platform=macOS) and ui are green at the head; ui's long-task check also fails intermittently on staging
+Owner: the branch is up to date with staging again, and the new history tool's code follows the comment rule
+
+Decided: merged origin/staging; the lib.rs, mcp.rs and personas.rs conflicts keep staging's code with every rule-breaking comment line stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop staging's new code
+Decided: no code change for the review's pending iOS Simulator build check; it was queued on macOS runners, not failing
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on the three conflicted files is only deleted comment lines
+Check: CI's macOS jobs and ui are green at the head
+Owner: the branch is up to date with staging again, and the newly merged server code follows the comment rule
+
+Decided: merged origin/staging; the hub.rs and lib.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: none
+Check: git diff -w origin/staging HEAD adds no lines in hub.rs, lib.rs or the skills files, only deletes comment lines
+Owner: the branch is up to date with staging again, and the new skills code follows the comment rule
+
+Decided: merged origin/staging (#149); the html.rs conflict keeps staging's side, whose ago is now pub so its /// stays
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop staging's pub and must_use on ago
+Decided: no code change for the pending iOS Simulator build; it was queued on macOS runners, not failing
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on html.rs, hub.rs and the remote, personas and support tests is only deleted comment lines
+Check: the iOS Simulator and macOS build checks are green at the head
+Owner: the branch is up to date with staging again, and the new remote-machine code follows the comment rule
+
+Decided: merged origin/staging (#271); the new persona-text mockup scripts' 21 comment lines are stripped, nothing else changes
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: excluding docs/design from the check — the rule covers "every tracked source file", and earlier mockup scripts were stripped the same way
+Decided: no code change for the review's pending iOS Simulator build; it was queued on macOS runners, not failing
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w 968f0a2's merge of staging to HEAD on pt.js and shoot.mjs is only deleted comment lines, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the new persona-text mockup scripts follow the comment rule
+
+Decided: merged origin/staging (597473a8); the hub.rs, lib.rs, push.rs and look.spec.mjs conflicts keep staging's code with every rule-breaking comment line dropped, and 82 such lines staging added elsewhere are stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop staging's new code
+Check: git diff -w origin/staging HEAD on the four conflicted files and the routines, app-icons and screen files is only deleted comment lines, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the new routines, app-icon and screen code follows the comment rule
+
+Decided: merged origin/staging (f5bf384f); the devices.rs conflict keeps staging's code with its rule-breaking comment lines dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop #294's new cache test
+Decided: the /// on the private Stamp struct is stripped; its meaning is in Stamp::of
+Because: crates/cooee-core/src/devices.rs:167
+Check: git diff -w origin/staging HEAD on devices.rs is only deleted comment lines, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the new device-cache code follows the comment rule
+
+Decided: merged origin/staging (#226); the personas.rs, manage.rs and check.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #226's attach-backend code
+Decided: no code change for the 5 tests/setup.rs failures in the first local run
+Because: crates/cooee/src/setup.rs:197
+Check: git diff -w origin/staging HEAD on manage.rs, check.rs, personas.rs and tests/plugin_manager.rs and plugins.rs is only deleted comment lines, and scripts/comments.py exits 0
+Check: setup tests fail only when macOS hands out a bound port above 64535; an origin/staging checkout failed them the same way, and the rerun passed
+Owner: the branch is up to date with staging again, and the new plugin-manager code follows the comment rule
+
+Decided: merged origin/staging (#181); the hub.rs and plugins.rs conflicts keep staging's code with every rule-breaking comment line dropped, plus 2 in tests/chat.rs
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #181's terminal lock and hanging-plugin test
+Decided: no code change for the failed iOS Simulator build at d0b1c75; every macOS job was cancelled with zero steps run, never given a runner
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on hub.rs, plugins.rs and chat.rs is only deleted comment lines, and scripts/comments.py exits 0
+Check: the macOS jobs run and pass at the head
+Owner: the branch is up to date with staging again, and the new per-terminal locking code follows the comment rule
+
+Decided: merged origin/staging (#150, #208); the lib.rs, login.rs, main.rs, rooms.rs and support/mod.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #150's machine check and #208's room code
+Decided: staging's new comments in machine.rs, tests/login.rs and tests/machine_check.rs are stripped, and the blank first lines they left are dropped
+Because: crates/cooee/src/machine.rs:1
+Check: git diff -w origin/staging HEAD on the conflicted files adds no lines, only deletes comment lines, and scripts/comments.py exits 0
+Check: the macOS and iOS Simulator jobs run and pass at the head
+Owner: the branch is up to date with staging again, and the new machine-check and room code follows the comment rule
+
+Decided: no code change for the review's CI FAIL at 957f2ca; the iOS Simulator build was queued on macOS runners and the ubuntu jobs got a runner shutdown signal mid-test
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Rejected: retrying CI on the old head alone — staging had moved, so the merge reruns every job anyway
+Decided: merged origin/staging (#255); a clean merge of 5 Swift files kept exactly as staging has them
+Because: apple/Sources/CooeeUI/Sheets.swift:1
+Check: git diff origin/staging HEAD on the 5 merged Swift files is empty, and just comments exits 0
+Check: the macOS, iOS Simulator and ubuntu jobs run and pass at the head
+Owner: the branch is up to date with staging again; the earlier red CI was runners going away, not the change
+
+Decided: merged origin/staging (6d75396f); the manage.rs conflict keeps staging's health-check supervisor code with its 44 rule-breaking comment lines dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop staging's hung-backend health checks and their tests
+Check: git diff -w origin/staging HEAD on manage.rs adds no lines, only deletes comment lines, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the new plugin health-check code follows the comment rule
+
+Decided: merged origin/staging (ecdeb73d); the login.rs, plugin_manager.rs, justfile and chat.spec.mjs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #293's orphan-backend test and #355's CPU-time long-task check
+Decided: staging's new /// on private items in tests/group.rs, manage.rs's BACKEND and tests/support/mod.rs's Drop are stripped
+Because: crates/cooee-server/src/manage.rs:35
+Check: git diff -w origin/staging HEAD on the touched files adds only the justfile's comments recipe, and just comments exits 0
+Owner: the branch is up to date with staging again, and the new orphan-backend and chat-trace code follows the comment rule
+
+Decided: merged origin/staging (df4395f6); the chat.rs, shed.rs, hub.rs, main.rs, tests/profiles.rs and tests/screens.rs conflicts keep staging's code with every rule-breaking comment line dropped, 545 lines in all
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: committing the superseded lane's wip snapshot — it carried gate logs and pr-body.md into git
+Decided: no code change for the one-off rooms.rs cap-count failure in the first test run
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on the 12 touched files only deletes lines (bar one assert! rustfmt joined in tests/model.rs), and scripts/comments.py exits 0
+Check: tests/rooms.rs differs from staging only by deleted comments; it passed 3/3 alone and in the full rerun
+Owner: the branch is up to date with staging again, and the newly merged shed, profiles and screens code follows the comment rule
+
+Decided: merged origin/staging; the 33 code conflicts keep staging's code with every rule-breaking comment line dropped, 937 in 40 files
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop staging's new code
+Decided: the 40 web/ modify/delete conflicts take staging's deletion of the PWA client
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Decided: the justfile keeps staging's lessons recipe and adds comments to check
+Because: "A CI check (a script or an arch/lint rule) enforcing the rule on every tracked source file"
+Check: git diff -w origin/staging HEAD on crates and docs/design only deletes comment lines (4 JS lines lose only a trailing comment), and scripts/comments.py exits 0
+Check: topcoat fmt and cargo deny pass in CI; neither tool is installed on this host
+Owner: the branch is up to date with staging again, the removed web client stays removed, and staging's new code follows the comment rule
+
+Decided: merged origin/staging (#397); the shed.rs, hub.rs, main.rs, setup.rs and tests/chat.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #397's shed protocol check
+Decided: no code change for the one-off plugins.rs timing failure in the first test run
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: git diff -w origin/staging HEAD on the six touched files only deletes comment lines, and scripts/comments.py exits 0
+Check: tests/plugins.rs differs from staging only by deleted comments; it passed 3/3 alone and in the full rerun
+Owner: the branch is up to date with staging again, and the new shed version-check code follows the comment rule
+
+Decided: merged origin/staging (#289); the hub.rs, lib.rs and tests/profiles.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #289's new code
+Decided: scripts/gen.sh no longer writes a plain // line into the generated core lib.rs, and lib.rs is regenerated, not hand-edited
+Because: scripts/gen.sh:22
+Rejected: hand-stripping lib.rs — arch-check fails a generated file that differs from what gen.sh writes
+Decided: no code change for the one-off plugins.rs 200 ms timing failure at host load 14-17
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: sh scripts/gen.sh leaves crates/cooee-core/src/lib.rs unchanged at the head, and drover arch-check is green in CI
+Check: git diff -w origin/staging HEAD only deletes comment lines bar the gen.sh printf, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the file generator no longer writes a comment the rule forbids
+
+Decided: merged origin/staging (#151, #421); the hub.rs and lib.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #151's relaunch split
+Decided: machine.rs gets its //! module doc back, since #151 made it a pub mod
+Because: crates/cooee-server/src/lib.rs:12
+Decided: no code change for the reliability.rs background-start race seen at host load 25
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: every changed .rs file under crates/ matches staging once comments are removed, and scripts/comments.py exits 0
+Check: clippy and just doc are green at the head; the reliability test passes in CI
+Owner: the branch is up to date with staging again, and the newly public machine module keeps its description
+
+Decided: merged origin/staging (#420, #426); the main.rs conflict keeps staging's code, and the new cmd/ files' rule-breaking comments are stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop #420's move of the commands into cmd/
+Decided: scripts/gen.sh writes cmd/mod.rs with no //! or // header, and both generated files are regenerated, not hand-edited
+Because: crates/cooee/src/main.rs:12
+Rejected: hand-stripping cmd/mod.rs — arch-check fails a generated file that differs from what gen.sh writes
+Check: sh scripts/gen.sh leaves the tree clean, and drover arch-check reports 0 violations
+Check: every changed .rs file under crates/ matches staging once comments are removed, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the new per-command files follow the comment rule
+
+Decided: merged origin/staging (#419, #311); the hub.rs conflict keeps staging's code, and the rule-breaking comments in #419's new hub/ files are stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop #419's split of hub.rs into hub/<area>.rs
+Check: every changed .rs file under crates/ matches staging once comments are removed, and scripts/comments.py exits 0
+Check: drover arch-check reports 0 violations and sh scripts/gen.sh leaves the tree clean
+Owner: the branch is up to date with staging again, and the server's newly split hub files follow the comment rule
+
+Decided: merged origin/staging (#276); the hub.rs and hub/tests.rs conflicts keep staging's code, and the rule-breaking comments there and in hub/rooms.rs are stripped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #276's rooms in Home's chat list
+Check: every changed .rs and .swift file matches staging once comments are removed, and scripts/comments.py exits 0
+Check: drover arch-check reports 0 violations and sh scripts/gen.sh leaves the tree clean
+Owner: the branch is up to date with staging again, and the new rooms code follows the comment rule
+
+Decided: merged origin/staging (#242, #290, #317); the personas and rooms conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #242's per-persona chat style
+Check: every changed .rs and .swift file matches staging once comments are removed, and scripts/comments.py exits 0
+Check: drover arch-check reports 0 violations and sh scripts/gen.sh leaves the tree clean
+Owner: the branch is up to date with staging again, and the new chat-style and plugin code follows the comment rule
+
+Decided: no code change for the tests/terminal.rs failures in CI at b512fce6
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Rejected: editing the terminal tests — they match staging once comments are removed, and staging's CI passes them
+Decided: merged origin/staging (#152), a clean merge with no new rule-breaking comments
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Check: stable (ubuntu-latest) is green at the head, including tests/terminal.rs
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Owner: the red CI run was a terminal-test flake the comment change cannot cause; the branch is up to date with staging again
+
+Decided: merged origin/staging (#177); the hub/ask.rs, hub/send.rs and tests/ask.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #177's linked exchanges and the owner's note
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: drover arch-check reports 0 violations and sh scripts/gen.sh leaves the tree clean
+Owner: the branch is up to date with staging again, and the new linked-exchange code follows the comment rule
+
+Decided: merged origin/staging (#291); the plugin.rs, tests/plugins.rs and tests/screens.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #291's call deadline and per-plugin concurrency limit
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: drover arch-check reports 0 violations and sh scripts/gen.sh leaves the tree clean
+Owner: the branch is up to date with staging again, and the new plugin call limits follow the comment rule
+
+Decided: merged origin/staging (#332, #427); the service.rs and setup.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #332's self-update to main's newest green build
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: drover arch-check reports 0 violations and sh scripts/gen.sh leaves the tree clean
+Owner: the branch is up to date with staging again, and the new self-update code follows the comment rule
+
+Decided: merged origin/staging (#312, #421); the screens/mod.rs and tests/support/mod.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #421's per-area test support split
+Decided: gen.sh's new flat() writes support/mod.rs with no //! or // header, and the file is regenerated, not hand-edited
+Because: scripts/gen.sh:33
+Rejected: hand-stripping support/mod.rs — arch-check fails a generated file that differs from what gen.sh writes
+Decided: no code change for the one-off perf.rs read of a half-written log line at host load 54
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: sh scripts/gen.sh leaves the tree clean, and drover arch-check reports 0 violations
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the newly split test support follows the comment rule
+
+Decided: merged origin/staging (#178, #263); the hub.rs and hub/tests.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #178's asks in rooms
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: the comments step still runs in .github/workflows/ci.yml after #263, and drover arch-check reports 0 violations
+Owner: the branch is up to date with staging again, and the new room-ask code follows the comment rule
+
+Decided: merged origin/staging (#313); the layout.rs conflict keeps staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop #313's Mac sidebar component
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: drover arch-check reports 0 violations and sh scripts/gen.sh leaves the tree clean
+Owner: the branch is up to date with staging again, and the new sidebar layout code follows the comment rule
+
+Decided: merged origin/staging (#463); the accounts.rs and tests/accounts_env.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #463's pinned clock for the usage test
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: drover arch-check reports 0 violations and sh scripts/gen.sh leaves the tree clean
+Owner: the branch is up to date with staging again, and the accounts usage fix follows the comment rule
+
+Decided: merged origin/staging (#464); the tests/plugins.rs conflict keeps staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflict — it would drop #464's hung-plugin test without the 200 ms budget
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: drover arch-check reports 0 violations and sh scripts/gen.sh leaves the tree clean
+Owner: the branch is up to date with staging again, and the steadier hung-plugin test follows the comment rule
+
+Decided: merged origin/staging (#423, #416); the justfile and ci.yml take staging's side, and the comment rule is a new gate file, ci/gates/comments.sh
+Because: "A CI check (a script or an arch/lint rule) enforcing the rule on every tracked source file, tests included"
+Rejected: keeping a comments recipe in the justfile — #423 froze it, and ci/gates.sh runs every file in ci/gates/ with no line elsewhere
+Decided: the single gates step in ci.yml gets GH_TOKEN, so the TODO(#N) open-issue check can call gh
+Because: ci/gates/comments.sh:6
+Decided: .herdsman/rules.md names ci/gates/comments.sh as the rule's enforcer
+Because: "Add the rule as a line in .herdsman/rules.md naming its enforcer"
+Check: ci/gates.sh comments exits 0, and the gates step in CI runs the comments gate and stays green
+Check: the justfile is identical to staging's, and drover arch-check reports 0 violations
+Owner: the comment check now runs as one of CI's standard gates, the same way every other check does since #423
+
+Decided: merged origin/staging (#314, #465); the lib.rs and routines.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #314's persona panel and sheet screens
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: the msrv job's gates step runs ci/gates/comments.sh and is green at the head
+Owner: the branch is up to date with staging again, and the new persona screens follow the comment rule
+
+Decided: merged origin/staging (#213); the tests/plugins.rs and screens-as-data/sd.js conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #213's workflow map
+Decided: no code change for the reliability.rs background-start race in the first gates run at host load 27
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: the merge leaves crates/cooee-core/src/lib.rs unchanged, and drover arch-check reports 0 violations
+Owner: the branch is up to date with staging again, and the new workflow-map code follows the comment rule
+
+Decided: merged origin/staging (#318); the themes, setup and design-script conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #318's pinned first-party theme packs
+Decided: docs/design/look/build.mjs takes staging's deletion
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: the justfile equals staging's and ci.yml differs only by the gates step's GH_TOKEN
+Owner: the branch is up to date with staging again, and the new theme-pack code follows the comment rule
