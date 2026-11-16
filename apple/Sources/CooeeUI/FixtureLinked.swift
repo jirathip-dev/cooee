@@ -1,4 +1,5 @@
 import CooeeCore
+import SwiftUI
 
 extension Fixtures {
     private static let question = "What did Kestrel report for Q3 revenue? I need the number and the filing date."
@@ -86,10 +87,10 @@ extension LinkedView {
     }
 }
 
-extension WideView where Detail == LinkedView {
-    public static func linked() -> WideView<LinkedView> {
-        WideView(
-            chats: Fixtures.roomChats, selected: "x1", actions: HomeActions(),
+extension Sidebar where Column == EmptyView, Detail == LinkedView {
+    public static func linked() -> Sidebar<EmptyView, LinkedView> {
+        Sidebar(
+            chats: Fixtures.roomChats, selected: "x1", actions: HomeActions(), column: { EmptyView() },
             detail: { LinkedView.researcher(wide: true) }
         )
     }

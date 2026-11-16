@@ -6,7 +6,7 @@ import Foundation
 @Reducer
 public struct ScreenFeature: Sendable {
     @ObservableState
-    public struct State: Equatable {
+    public struct State: Equatable, Identifiable {
         public let server: Server
         public let source: LayoutSource
         public let home: String
@@ -23,6 +23,10 @@ public struct ScreenFeature: Sendable {
         public var title: String { screen?.root.string("title") ?? label }
         public var current: String { path.last ?? home }
         public var key: String { "\(server.url.absoluteString)|\(source.name)|\(current)" }
+        public var id: String { Self.id(source, home) }
+
+        /// The id of the screen `source` serves at `path`, as a layout node names it.
+        public static func id(_ source: LayoutSource, _ path: String) -> String { "\(source.name)|\(path)" }
 
         public init(server: Server, source: LayoutSource, path: String, label: String) {
             self.server = server

@@ -560,16 +560,16 @@ fn recipe(
         }
     }
     let (agent, profile, folder) = match &persona {
-        Some(p) if !["", "scratch"].contains(&p.folder.as_str()) => (
-            p.agent.as_str(),
-            p.profile.as_deref().unwrap_or(""),
-            PathBuf::from(&p.folder),
-        ),
-        Some(p) => (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder),
+        Some(p) => {
+            let keep = ["", "scratch"].contains(&p.folder.as_str());
+            let folder = if keep { folder } else { (&p.folder).into() };
+            (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder)
+        }
         None => (agent, profile, folder),
     };
     let (agent, folder, mut recipe) = if profile.is_empty() {
-        let (account, launch) = logins.home(agent, account)?;
+        let (account, mut launch) = logins.home(agent, account)?;
+        launch.meta = persona.as_ref().and(logins.no_personal_setup(agent));
         let recipe = Recipe {
             account,
             launch,
@@ -1176,8 +1176,8 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
     }
     let reply = tokio::task::spawn_blocking(move || {
         let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
-        let timeout = Some(Duration::from_secs(30));
-        plugin::call(&p, &method, &target, &headers, body.as_bytes(), timeout)
+        let deadline = Duration::from_secs(30);
+        plugin::call(&p, &method, &target, &headers, body.as_bytes(), deadline)
     })
     .await?;
     let reply = match reply {
@@ -1280,14 +1280,7 @@ async fn screen(cx: &Cx) -> Result<Response> {
         .collect();
     let reply = tokio::task::spawn_blocking(move || {
         let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
-        plugin::call(
-            &p,
-            "GET",
-            &target,
-            &headers,
-            &[],
-            Some(Duration::from_secs(5)),
-        )
+        plugin::call(&p, "GET", &target, &headers, &[], Duration::from_secs(5))
     })
     .await?;
     match reply {
@@ -1327,14 +1320,14 @@ async fn screen_action(cx: &Cx, Json(a): Json<BlockAct>) -> Result<Response> {
     });
     let reply = tokio::task::spawn_blocking(move || {
         let json = [("Content-Type", "application/json")];
-        let timeout = Some(Duration::from_secs(10));
+        let deadline = Duration::from_secs(10);
         plugin::call(
             &p,
             "POST",
             "/action",
             &json,
             body.to_string().as_bytes(),
-            timeout,
+            deadline,
         )
     })
     .await?;
@@ -1824,7 +1817,7 @@ async fn persona_new(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
 }
 
 /// Saves `p`, its plugins (#129) each an installed one and its machine (#148) an allowed one.
-async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
+pub(crate) async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
     let installed = hub(cx).installed();
     let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
     on_personas(cx, move |d, c| {
@@ -2161,13 +2154,13 @@ pub fn router(
     };
     routines::routes(
         runner,
-        room_routes(persona_routes(pairing::routes(
+        room_routes(persona_routes(screens::routes(pairing::routes(
             Router::builder()
                 .layer(Timing)
                 .layer(gate)
                 // A message's photos come as base64.
                 .layer(BodyLimit::max(64 << 20).at("/threads")),
-        ))),
+        )))),
     )
     .route(push_key)
     .route(push_subscribe)
@@ -2226,7 +2219,6 @@ pub fn router(
     .route(layout::get)
     .route(layout::events)
     .route(layout::reset)
-    .route(screens::home::home)
     .app_context(layouts)
     .app_context(hub)
     .app_context(Arc::new(Dots::default()))

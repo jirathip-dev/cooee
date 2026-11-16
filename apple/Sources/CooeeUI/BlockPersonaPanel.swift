@@ -8,16 +8,15 @@ internal struct PanelActions {
     internal var memory: (() -> Void)?
     internal var stop: (() -> Void)?
     internal var open: (Int) -> Void = { _ in }
-    internal var attach: (Int) -> Void = { _ in }
 }
 
-public struct PersonaPanel: View {
+public struct PersonaPanelBlocks: View {
     @Environment(\.look) private var look
     private let persona: Persona
-    private let content: PanelContent
+    private let screen: JSONValue
     private let column: Bool
     private let end: Bool
-    private var actions = PanelActions(edit: {}, newChat: {}, memory: {})
+    private let actions: PanelActions
 
     public var body: some View {
         let palette = look.palette
@@ -27,7 +26,7 @@ public struct PersonaPanel: View {
             }
             header
             Scroller(end: end) {
-                PanelSections(content: content, actions: actions).padding(.horizontal, 16).padding(.top, 4).padding(
+                PersonaBlocks(screen: screen, open: actions.open).padding(.horizontal, 16).padding(.top, 4).padding(
                     .bottom, 16)
             }
             footer.padding(.horizontal, 16).padding(.top, 10).padding(.bottom, column ? 16 : 30)
@@ -39,21 +38,23 @@ public struct PersonaPanel: View {
 
     public init(personaID: String = "cond", column: Bool = false, end: Bool = false) {
         persona = Fixtures.persona(personaID)
-        content = PanelContent.fixture(personaID)
+        screen = JSONValue.personaPanels[personaID] ?? .bundledPersona
         self.column = column
         self.end = end
+        let edit = screen.list("blocks").contains { $0.type == "edit" }
+        actions = PanelActions(edit: edit ? {} : nil, newChat: {}, memory: {})
     }
 
-    internal init(persona: Persona, content: PanelContent, column: Bool, actions: PanelActions) {
+    internal init(persona: Persona, screen: JSONValue, column: Bool, actions: PanelActions) {
         self.persona = persona
-        self.content = content
+        self.screen = screen
         self.column = column
         self.actions = actions
         end = false
     }
 }
 
-extension PersonaPanel {
+extension PersonaPanelBlocks {
     private var header: some View {
         HStack(spacing: 10) {
             Avatar(persona: persona, size: column ? 36 : 44)
@@ -75,7 +76,9 @@ extension PersonaPanel {
     }
 
     private var footer: some View {
-        let memory = content.memory > 0 ? "Memory · \(content.memory)" : "Memory"
+        let blocks = screen.list("blocks")
+        let count = Int(blocks.first { $0.type == "memory" }?["count"]?.number ?? 0)
+        let memory = count > 0 ? "Memory · \(count)" : "Memory"
         return HStack(spacing: 10) {
             if let edit = actions.edit { action("pencil", "Edit", "Edit \(persona.name)", edit) }
             if let newChat = actions.newChat {
@@ -121,4 +124,12 @@ extension PersonaPanel {
                 .ignoresSafeArea()
         }
     }
+}
+
+extension JSONValue {
+    internal static let bundledPersona: JSONValue = {
+        // SAFETY: Default/screens/persona.json is copied into this module's bundle by Package.swift
+        let url = Bundle.module.url(forResource: "persona", withExtension: "json", subdirectory: "Default/screens")!
+        return (try? JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: url))) ?? .null
+    }()
 }

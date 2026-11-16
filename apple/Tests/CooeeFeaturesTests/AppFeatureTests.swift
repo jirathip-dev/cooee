@@ -61,7 +61,6 @@ internal struct AppFeatureTests {
             $0.path = []
             $0.chat = nil
         }
-        await store.send(.menu(.open(true))) { $0.menu.open = true }
     }
 
     @Test internal func aNewChatBecomesItsThreadOnceStarted() async {
@@ -114,7 +113,7 @@ internal struct AppFeatureTests {
 
     @Test internal func aSavedPersonaClosesItsSheetAndHomeReloads() async {
         let store = store(paired())
-        store.dependencies.personas.save = { _, persona in persona }
+        store.dependencies.plugins.act = { _, _, _, action in .object(action.values) }
         await store.send(.edit("coder")) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
         await store.send(.persona(.presented(.binding(.set(\.draft.character, "Terse."))))) {
             $0.persona?.draft.character = "Terse."

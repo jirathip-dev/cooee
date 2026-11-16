@@ -1,7 +1,8 @@
+import CooeeCore
 import CooeeFeatures
 
 extension ChatScreen {
-    internal func panel(column: Bool) -> PersonaPanel {
+    internal func panel(column: Bool) -> PersonaPanelBlocks {
         let (persona, places, attachable) = (store.persona, store.places, store.attachable)
         let pick: (PanelPick) -> Void = { store.send(.panel(column ? .run($0) : .pick($0))) }
         let known = !persona.api.id.isEmpty
@@ -10,14 +11,16 @@ extension ChatScreen {
             edit: known ? { pick(.edit) } : nil,
             newChat: known ? { pick(.newChat) } : nil,
             stop: store.working ? { pick(.stop) } : nil,
-            open: { pick(.open(places[$0])) },
-            attach: { pick(.attach(attachable[$0])) }
+            open: { $0 < places.count ? pick(.open(places[$0])) : pick(.attach(attachable[$0 - places.count])) }
         )
-        let content = PanelContent(
-            routines: nil,
-            places: places.map { PanelPlace(name: $0.label, symbol: "square.grid.2x2", count: 0) },
-            attachable: attachable.map(\.name)
-        )
-        return PersonaPanel(persona: persona, content: content, column: column, actions: actions)
+        let rows =
+            places.map { Self.row("square.grid.2x2", $0.label) }
+            + attachable.map { Self.row("plus", "Attach \($0.name)…") }
+        let screen = JSONValue.object(["blocks": .array([.object(["type": .string("places"), "rows": .array(rows)])])])
+        return PersonaPanelBlocks(persona: persona, screen: screen, column: column, actions: actions)
+    }
+
+    private static func row(_ symbol: String, _ title: String) -> JSONValue {
+        .object(["symbol": .string(symbol), "title": .string(title)])
     }
 }

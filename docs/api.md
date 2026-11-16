@@ -36,7 +36,7 @@ type File = { name: string; data: string }; // data: the bytes in base64
 | `POST /threads` | `{agent, account?, profile?, model?, effort?, folder?, machine?, text, random_id, background?}` (`profile`: a persona's or profile's id; a persona's agent, folder, model, effort and machine are its defaults; `machine` overrides its persona's, `""` this host, one not in `GET /machines` a 400) | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
 | `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
 | `POST /threads/{id}/folder` | `{folder}` (a root or inside one): "Use a folder…"; its agent starts again there and the next message carries a hand-over | the `note` it adds |
-| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, queue: Queued[], waiting: Item \| null, pending?: {text, random_id}}` (`waiting`: the oldest config card that waits; `pending`: the first message while the thread connects) |
+| `GET /threads/{id}/messages?before=N` or `?around=ID&before=N&after=N` | | `{items: Item[], skipped_before, skipped_after, turn: Turn, cursor, queue: Queued[], waiting: Item \| null, pending?: {text, random_id}, asks?: RoomAsk[]}` (`waiting`: the oldest config card that waits; `pending`: the first message while the thread connects; `asks`: a room's members' open asks, `{member, session, item}`, answered with `POST /threads/{session}/approve`) |
 | `GET /threads/{id}/events?since=<cursor>` | SSE; a reconnect sends `Last-Event-ID` | events below |
 | `POST /threads/{id}/send` | `{text, random_id, files?: File[]}` (a retry with the same id is stored once; the agent gets the files' paths under the text) | `Item` |
 | `POST /threads/{id}/queue` | as `send`: held until the turn in progress ends, then sent (between turns: at once) | `Queued[]` |
@@ -53,7 +53,7 @@ type File = { name: string; data: string }; // data: the bytes in base64
 | `POST /threads/{id}/read` | `{item}`: read up to this id | `null` |
 
 The event stream's events, each with an id `<boot>.<seq>` to resume after: `item` (an `Item`, new or changed), `text`
-(`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), `queue` (the `Queued[]` now), and `reset` (`{}`: too far behind or
+(`{text}`: the reply so far grows by it), `state` (a `Turn` without `text`), `queue` (the `Queued[]` now), in a room `room-ask` (a `RoomAsk`, opened or settled; the room's 10 minutes pause while one is open), and `reset` (`{}`: too far behind or
 another run; load the newest slice again).
 
 ## Personas (#126)
@@ -212,10 +212,15 @@ default (`apple/Sources/CooeeUI/Default/layout.json`). A bad write changes nothi
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /layout` | | `{etag, layout}` and an `ETag` header; 304 with no body when `If-None-Match` names it |
+| `GET /layout` | | `{etag, layout, skipped}` and an `ETag` header; 304 with no body when `If-None-Match` names it. Each enabled plugin's manifest places are merged in (`header-strip` in the chat's `strip`, `chat-cards` in its `cards`, `menu-row` in the nav's `menu`) unless the file places that plugin; a plugin screen its `[permissions] places` doesn't allow there (`cards` needs `chat-cards`, `menu` `menu-row`, any other shown place `header-strip`) is dropped, and `skipped` lists `<json path>: <why>` for each |
 | `GET /layout/events` | | SSE: `changed {etag}` after a good write; `broken {line, col, why}` after a bad one, and at once to a new subscriber while the file is broken |
 | `POST /layout/reset` | | writes the default to `layout.json`, the old file kept as `layout.json.bak`; answers as `GET /layout`; 409 with no config folder |
 | `GET /screens/home` | | core's home (#311): `{type: "screen", source: "core", id, title, blocks, threads, personas}`, the app's bundled `Default/screens/home.json` with `threads` as `GET /threads` and `personas` as `GET /personas`; `source` is always the server's |
+| `GET /screens/menu` | | core's avatar menu (#312): the app's bundled `Default/screens/menu.json` with `source: "core"`; the rows that open a server screen carry a `value`: `signins` the signed-in accounts joined `, `, `devices` the paired count, `machines` the hosts joined `, `, `plugins` the installed count |
+| `GET /screens/settings/{devices,signins,machines,plugins}` | | core's settings screens (#312): `{type: "screen", source: "core", id, title, blocks}`, one `list` of `row`s from the data `GET /devices`, the sign-ins sheet, `GET /machines` and `GET /plugins` read |
+| `GET /screens/plugins/{name}/attach?persona=<id>` | | the attach sheet (#312): screen `attach`, one `card` of kind `permissions` (only core sends it): what installed plugin `name` may do for the persona, its actions (destructive ones always confirmed first) and the hosts its backend reaches; 404 for a plugin or persona that doesn't exist |
+| `GET /screens/persona/{id}` | | the persona panel and its edit sheet (#314): the app's bundled `Default/screens/persona.json` with `source: "core"`, `title` the persona's name; blocks `screen`, `terminal`, `workflow` (left empty by core), `routines` (`rows` `{id, name, when, on}`: the routines that post to its chats or start threads as it), `places` (`rows` `{id, plugin, title, open}`: its attached plugins' places), `memory` (`count`, `notes` as `GET /personas/{id}/memory`) and `edit`; 404 for a persona that doesn't exist |
+| `POST /screens/action` | `{screen, block, action, values}` | an action on a core screen (#314): on `/screens/persona/<id>`, `save` puts `values` as the persona (as `PUT /personas/{id}`) and answers it, `clear` forgets its memory and answers the screen again; 400 for another screen or action |
 
 ## Pairing (no cookie needed)
 

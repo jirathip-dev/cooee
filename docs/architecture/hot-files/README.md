@@ -1,12 +1,17 @@
-# Hot files (#356)
+# Hot files (#356) and the 35 one-area files (#427)
 
 ## Summary
 
-Decision: every shared list becomes a folder with one file per entry; the few list files that must still exist are written by one script and never edited or merged by hand; the shared docs and CI lists are split per area. The web client's 20 hot files are left alone: #189, which is ready to merge, deletes them (two are gone already).
-Slices: 0 the script, the core crate's root and the lock file; 1 the server's routes; 2 the hub; 3 the CLI's commands; 4 the test support; 5 the docs and the README; 6 the CI gates and the native e2e steps; 7 to 9 the native app's clients, models, live UI tests and chat actions.
-Open questions: (1) the splits add about 400 lines of file headers while #189 lowers the line cap to the count plus 500: keep 900 of margin there, or file one raise? (2) 35 files that already belong to one area and 6 manifests get a size cap and no new layout: is that enough, or do you want them forced off the report too?
+Decision: each of the 35 one-area files becomes a folder of files, one per concern. A Rust module keeps its path as the folder's list, written by the script; a test, Swift or doc file is deleted and its path frozen. All 35 leave the report.
+Slices: 10 to 12 core modules, 13 and 14 server modules, 15 to 17 integration tests, 18 Swift files, 19 the themes doc; one serial PR each.
+Open questions: four types every feature adds a field to (thread, config, chat summary, persona) stay one small file each and may be reported again: split them by area next, or wait for the next run (my pick)?
 
 ## Read in this order
+
+For #427, read the addendum: [`addendum.md`](addendum.md) (how the code reads afterwards, the question, the options,
+the decision, slices 10 to 19 and their `.drover/arch.toml` lines), then [`addendum-files.md`](addendum-files.md)
+(each of the 35 files: its folder, its entries, its slice; what the script writes). The rest is the ADR approved
+in #356, which the addendum changes in one place: its decision 11.
 
 1. [`adr.md`](adr.md): the question, what the code says, the options, the decision, the slices and the exact
    `.drover/arch.toml` lines per slice.
@@ -24,7 +29,7 @@ Open questions: (1) the splits add about 400 lines of file headers while #189 lo
 |---|---:|---:|---:|
 | The web client: deleted by #189 (two gone already) | 20 | 2,030 (33 %) | 168 (34 %) |
 | Converted by slices 0 to 9 | 19 | 2,911 (48 %) | 150 (30 %) |
-| One area's own file: a size cap, no new layout | 35 | 970 (16 %) | 157 (32 %) |
+| One area's own file: a folder each, by slices 10 to 19 (the addendum, #427) | 35 | 970 (16 %) | 157 (32 %) |
 | Manifests and the cap file: as they are | 6 | 106 (1 %) | 15 (3 %) |
 
 ## The mechanisms
@@ -49,3 +54,7 @@ Open questions: (1) the splits add about 400 lines of file headers while #189 lo
 - `cargo update --workspace --dry-run` on this tree locks 0 packages: the lock file's generator is a no-op when the
   lock is current.
 - #189's head: 19,022 non-test lines by `scripts/line-cap.sh`; the 20 web files are deleted or moved.
+- For the addendum (#427): a scratch crate with a generated module list beside its folder and a test target as a
+  folder passes `cargo clippy --all-targets -- -D warnings`, `cargo fmt --check` and `cargo test`; the script's two
+  new kinds write nothing on a second run; `drover arch-check` with slices 10 to 19's lines on staging's head
+  (34c1f32) exits 0.
