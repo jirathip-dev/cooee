@@ -1,0 +1,5 @@
+Decided: merged origin/staging; this PR's rotation, shallow fetch and farm-first pick list now print through say!/note!
+Decided: the [logs] row moves to docs/configuration.md, as staging deleted docs/architecture.md
+Because: "One rotation function serves all three."
+Rejected: none
+Owner: Brought up to date with staging; logs still rotate and old theme clones still go on next start.
