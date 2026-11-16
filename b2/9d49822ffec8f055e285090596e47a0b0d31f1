@@ -1,0 +1,7 @@
+Decided: apple_cap goes to 14316 in one step; line_cap stays 27500
+Because: "`ci/cap.toml`: `apple_cap = 14316`. `line_cap` stays 27,500."
+Decided: line-cap runs on a clean git archive export so apple/.build is not counted
+Because: scripts/line-cap.sh:16
+Rejected: two staged raises, one per ask — the owner picked a single raise in q1733 and q1735
+Check: scripts/line-cap.sh prints apple lines 12810 / 14316 and exits 0
+Owner: The app code's size limit rises to 14,316 lines for the whole queue; nothing else changes.
