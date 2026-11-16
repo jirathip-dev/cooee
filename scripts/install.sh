@@ -1,6 +1,7 @@
 #!/bin/sh
 # cooee's installer: `curl -fsSL https://raw.githubusercontent.com/jirathip-dev/cooee/main/scripts/install.sh | sh`,
 # or ./scripts/install.sh from a clone. It installs cooee with cargo, then runs `cooee setup` with its arguments.
+# `cooee update` (#332) runs it with COOEE_REV=<sha>: that commit is installed (its --version shows it), no setup.
 set -eu
 need() {
   command -v "$1" >/dev/null 2>&1 || { printf 'cooee: %s not found: %s\n' "$1" "$2" >&2; exit 1; }
@@ -8,7 +9,9 @@ need() {
 need cargo "install Rust from https://rustup.rs"
 need tailscale "install Tailscale from https://tailscale.com/download, sign in, and put its CLI on PATH"
 dir=$(dirname "$0")
-if [ -f "$dir/../crates/cooee/Cargo.toml" ]; then
+if [ -n "${COOEE_REV:-}" ]; then
+  cargo install --locked --git https://github.com/jirathip-dev/cooee --rev "$COOEE_REV" cooee
+elif [ -f "$dir/../crates/cooee/Cargo.toml" ]; then
   cargo install --locked --path "$dir/../crates/cooee"
 else
   cargo install --locked --git https://github.com/jirathip-dev/cooee cooee
@@ -23,6 +26,7 @@ if [ "$(uname)" = Darwin ]; then
   limit codesign --force --sign "$id" --identifier cooee "$HOME/.cargo/bin/cooee" ||
     { echo "cooee: codesign failed or waited on a keychain dialog: allow codesign to use the key, then run this again" >&2; exit 1; }
 fi
+[ -z "${COOEE_REV:-}" ] || exit 0
 # Piped into sh, stdin is the script: setup's questions read the terminal instead.
 if (: </dev/tty) 2>/dev/null; then
   exec cooee setup "$@" </dev/tty

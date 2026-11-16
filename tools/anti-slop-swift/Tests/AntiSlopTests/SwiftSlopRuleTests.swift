@@ -3,7 +3,6 @@ import XCTest
 @testable import AntiSlopCore
 
 final class SwiftSlopRuleTests: XCTestCase {
-    // MARK: Helpers
 
     private func lint(_ source: String, _ ruleType: SlopRule.Type) -> [Violation] {
         AntiSlop.lint(source: source, fileName: "test.swift", rules: [ruleType])
@@ -40,8 +39,6 @@ final class SwiftSlopRuleTests: XCTestCase {
         )
     }
 
-    // MARK: no-fatal-error
-
     func testFatalErrorWithoutSafetyCommentIsRejected() {
         assertViolation("fatalError(\"unreachable\")", NoFatalErrorRule.self)
     }
@@ -65,8 +62,6 @@ final class SwiftSlopRuleTests: XCTestCase {
         assertClean("precondition(count > 0)", NoFatalErrorRule.self)
     }
 
-    // MARK: no-implicitly-unwrapped-optionals
-
     func testIUOVariableIsRejected() {
         assertViolation("var cache: [String: Data]!", NoImplicitlyUnwrappedOptionalsRule.self)
     }
@@ -83,8 +78,6 @@ final class SwiftSlopRuleTests: XCTestCase {
         assertClean("var cache: [String: Data]?", NoImplicitlyUnwrappedOptionalsRule.self)
         assertClean("func lookup() -> String? { nil }", NoImplicitlyUnwrappedOptionalsRule.self)
     }
-
-    // MARK: no-as-any-cast
 
     func testAsAnyWithoutSafetyCommentIsRejected() {
         assertViolation("let boxed = value as Any", NoAsAnyCastRule.self)
@@ -107,8 +100,6 @@ final class SwiftSlopRuleTests: XCTestCase {
     func testConcreteCastIsClean() {
         assertClean("let user = value as User", NoAsAnyCastRule.self)
     }
-
-    // MARK: no-swallowed-errors
 
     func testEmptyCatchIsRejected() {
         assertViolation(
@@ -162,15 +153,11 @@ final class SwiftSlopRuleTests: XCTestCase {
         )
     }
 
-    // MARK: no-bool-literal-comparisons
-
     func testTernaryOfLiteralsIsRejected() {
         assertViolation("let enabled = flag ? true : false", NoBoolLiteralComparisonsRule.self)
     }
 
     func testBinaryBoolLiteralComparisonsAreAllowed() {
-        // Optional Bools make `x == true` meaningful; a syntax-level linter
-        // cannot see operand types, so binary comparisons are not flagged.
         assertClean("if flag == true {}", NoBoolLiteralComparisonsRule.self)
         assertClean("if flag != false {}", NoBoolLiteralComparisonsRule.self)
     }
@@ -184,8 +171,6 @@ final class SwiftSlopRuleTests: XCTestCase {
     func testValueComparisonAgainstBoolVariableIsClean() {
         assertClean("if lhs == rhs {}", NoBoolLiteralComparisonsRule.self)
     }
-
-    // MARK: no-hardcoded-secrets
 
     func testHardcodedAPIKeyIsRejected() {
         assertViolation(
@@ -214,7 +199,6 @@ final class SwiftSlopRuleTests: XCTestCase {
     }
 
     func testEnvironmentVariableNameLiteralsAreClean() {
-        // A SCREAMING_CASE literal is an env-var name, not a committed secret.
         assertClean(
             "let apiKeyName = \"MERERUN_API_KEY\"",
             NoHardcodedSecretsRule.self
@@ -233,7 +217,6 @@ final class SwiftSlopRuleTests: XCTestCase {
     }
 
     func testIdentifierShapedLiteralsWithoutKeyLikeNamesStayFlagged() {
-        // Shape alone is not enough; declaration intent is required.
         assertViolation(
             "let password = \"correct-horse-battery-staple\"",
             NoHardcodedSecretsRule.self
@@ -245,7 +228,6 @@ final class SwiftSlopRuleTests: XCTestCase {
     }
 
     func testMixedAlphanumericValuesStayFlagged() {
-        // Letter-only segment exemption must not swallow key-like tokens.
         assertViolation(
             "let apiKey = \"sk-live-abc123\"",
             NoHardcodedSecretsRule.self

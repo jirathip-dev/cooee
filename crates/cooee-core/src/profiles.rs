@@ -7,7 +7,7 @@
 
 use std::{
     collections::BTreeMap,
-    env, fs, io,
+    fs, io,
     path::{Path, PathBuf},
 };
 
@@ -125,9 +125,8 @@ impl Profile {
         Ok(())
     }
 
-    /// Its paths made whole: `~/x` under `$HOME`, others under `base`.
     fn rooted(mut self, base: &Path) -> Self {
-        let home = env::var_os("HOME").map(PathBuf::from);
+        let home = crate::env_var("HOME").map(PathBuf::from);
         let whole = |p: &mut PathBuf, base: &Path| {
             *p = match (p.strip_prefix("~"), &home) {
                 (Ok(rest), Some(home)) => home.join(rest),
@@ -213,7 +212,7 @@ pub fn list(
             read.and_then(|t| toml::from_str::<Profile>(&t).map_err(|e| e.message().to_owned()));
         match parsed.and_then(|p| p.check().map(|()| p)) {
             Ok(p) => out.push(p.rooted(file.parent().unwrap_or(&file))),
-            Err(e) => eprintln!("cooee: {}: {e}", file.display()),
+            Err(e) => crate::note!("cooee: {}: {e}", file.display()),
         }
     }
     for l in plugins::read_lock(data)
@@ -227,7 +226,7 @@ pub fn list(
         } else {
             let read = fs::read_to_string(build.join("cooee-plugin.toml"));
             let Ok(m) = read.and_then(|t| Manifest::parse(&t)) else {
-                eprintln!("cooee: {}: no readable cooee-plugin.toml", build.display());
+                crate::note!("cooee: {}: no readable cooee-plugin.toml", build.display());
                 continue;
             };
             m.profiles
@@ -238,7 +237,7 @@ pub fn list(
                     plugin: Some(l.name.clone()),
                     ..p.rooted(&build)
                 }),
-                Err(e) => eprintln!("cooee: plugin {}: {e}", l.name),
+                Err(e) => crate::note!("cooee: plugin {}: {e}", l.name),
             }
         }
     }
@@ -315,7 +314,6 @@ pub fn create(
     if taken || file.exists() {
         return Err(refused(format!("there is an agent {} already", p.name)));
     }
-    // TOML's basic strings read JSON's.
     let q = |v: &str| serde_json::to_string(v).unwrap_or_default();
     let paths = [
         ("folder", &p.folder),
@@ -397,7 +395,9 @@ mod tests {
 
     #[test]
     fn secrets_are_read_from_their_files_and_plain_values_kept() {
-        let data = env::temp_dir().join(format!("cooee-profile-env-{}", std::process::id()));
+        let data = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-profile-env-{}", std::process::id())),
+        );
         fs::create_dir_all(data.join("secrets")).unwrap();
         fs::write(data.join("secrets/S"), "s3cret\n").unwrap();
         let p = profile("env = { A = \"x\", B = \"secret:S\" }");

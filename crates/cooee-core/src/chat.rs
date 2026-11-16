@@ -1,8 +1,3 @@
-//! A thread's chat: its committed items and the turn in progress, built from shed's ACP events.
-//!
-//! Every shed event maps through one exhaustive `match` (no wildcard arm): a new shed event kind fails the build
-//! here instead of being guessed at. An event line this build can't read is dropped and logged by the client.
-
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -99,6 +94,25 @@ pub enum Body {
         /// Whether it points onward (`continued in`) rather than back (`from`).
         #[serde(default)]
         out: bool,
+    },
+    /// The thread's persona asked another through `ask_persona` (#177): the card in the asker's chat.
+    Ask {
+        /// The asked persona's id.
+        persona: String,
+        /// Its name.
+        name: String,
+        /// The question.
+        text: String,
+        /// The linked exchange thread; empty when it was never sent.
+        thread: String,
+        /// `asking`, `replied`, or the refusal's code in lower case (`not_allowed`, `depth`, `timeout`, `offline`).
+        outcome: String,
+        /// How long the reply took, in seconds.
+        #[serde(default)]
+        secs: u64,
+        /// The owner's note to the asked persona, which the asker got with the reply.
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        note: String,
     },
     /// The agent made a routine (#75): `⟳ Created routine: <name> · <when> · <place>`.
     Routine {
@@ -198,12 +212,17 @@ pub struct Summary {
     pub unseen: usize,
     /// Archived: listed apart until restored.
     pub archived: bool,
+    /// A setup chat (#270).
+    pub setup: bool,
     /// A session a tool started (#33): its labels.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workflow: Option<crate::Workflow>,
     /// A room's member personas, in room order (#154).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub members: Vec<String>,
+    /// A linked exchange's asker (#177): the thread whose persona asked this one's.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub asked_by: String,
     /// The routine that started it or sent its last message (#75; empty: none).
     pub routine: String,
 }
@@ -230,7 +249,6 @@ pub struct Chat {
     pub items: Vec<Item>,
     /// The turn in progress.
     pub turn: Turn,
-    /// Where the current turn's items start in `items`.
     start: usize,
 }
 
@@ -252,11 +270,13 @@ impl Chat {
         self.items.iter().map(|i| i.seq).max().unwrap_or(0)
     }
 
-    /// Adds or replaces `item`. `items` stay sorted by id, so each lookup is a binary search: folding a long
-    /// history is never quadratic (herdsman#447), and a repeated id is one row.
     fn put(&mut self, item: Item) -> Item {
         match self.items.binary_search_by_key(&item.id, |i| i.id) {
-            Ok(at) => self.items[at].clone_from(&item),
+            Ok(at) => {
+                if let Some(i) = self.items.get_mut(at) {
+                    i.clone_from(&item);
+                }
+            }
             Err(at) => self.items.insert(at, item.clone()),
         }
         item
@@ -282,15 +302,16 @@ impl Chat {
     /// Replaces item `id`'s body; `None` when there is no such item.
     pub fn update(&mut self, id: u64, seq: u64, f: impl FnOnce(&mut Body)) -> Option<Item> {
         let at = self.items.binary_search_by_key(&id, |i| i.id).ok()?;
-        let item = &mut self.items[at];
+        let item = self.items.get_mut(at)?;
         f(&mut item.body);
         item.seq = item.seq.max(seq);
         Some(item.clone())
     }
 
-    /// The id of the current turn's last item matching `f`.
     fn find(&self, f: impl Fn(&Body) -> bool) -> Option<u64> {
-        self.items[self.start.min(self.items.len())..]
+        self.items
+            .get(self.start..)
+            .unwrap_or_default()
             .iter()
             .rev()
             .find(|i| f(&i.body))
@@ -303,11 +324,12 @@ impl Chat {
         Change::State(self.turn.clone())
     }
 
-    /// Ends the turn: the reply so far is dropped and tool calls still going are written back as ended (and as
-    /// `status`, if given).
     fn end(&mut self, at: u64, seq: u64, status: Option<&str>) -> Vec<Change> {
         self.turn.text.clear();
-        let open: Vec<u64> = self.items[self.start.min(self.items.len())..]
+        let open: Vec<u64> = self
+            .items
+            .get(self.start..)
+            .unwrap_or_default()
             .iter()
             .filter(|i| matches!(&i.body, Body::Tool { ended: None, .. }))
             .map(|i| i.id)
@@ -336,7 +358,6 @@ impl Chat {
     /// Applies shed event `seq` of this thread's terminal at time `at`.
     pub fn apply(&mut self, at: u64, seq: u64, event: EventKind) -> Vec<Change> {
         match event {
-            // Not shown: the start, resources, the agent's mode, session and usage; the prompt is stored when it is sent.
             EventKind::Started
             | EventKind::Resources(_)
             | EventKind::Mode { .. }
@@ -509,8 +530,6 @@ mod tests {
         );
     }
 
-    /// #553 row 31: a conductor's answer takes the owner's change until its `until`, then none; an owner's own
-    /// answer takes no second tap.
     #[test]
     fn a_conductors_answer_may_be_changed_for_its_window_only() {
         let mut chat = Chat::default();
@@ -545,8 +564,6 @@ mod tests {
         assert!(chat.tap(id, "yes", "iPhone", 99).is_none(), "once");
     }
 
-    /// R6 (herdsman#447): folding 30,000 stored versions of 1,000 rows (a thread's load) takes under 300 ms: each
-    /// version finds its row by binary search, never by a scan.
     #[test]
     fn r6_folding_a_long_log_is_within_budget() {
         let versions: Vec<Item> = (0..30)
@@ -563,14 +580,13 @@ mod tests {
                 })
             })
             .collect();
-        let at = std::time::Instant::now();
+        let at = crate::clock::instant();
         let chat = Chat::from_versions(versions);
         let took = at.elapsed();
         assert_eq!((chat.items.len(), chat.seq()), (1000, 30_000));
         assert!(took < std::time::Duration::from_millis(300), "{took:?}");
     }
 
-    /// R16 (herdsman#516): versions repeating one id fold into one row, however often they repeat.
     #[test]
     fn a_repeated_id_is_one_row() {
         let you = |text: &str| Item {

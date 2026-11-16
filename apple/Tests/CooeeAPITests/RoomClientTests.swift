@@ -6,12 +6,12 @@ internal struct RoomClientTests {
     @Test internal func aRoomIsMadeOfItsMembersInRoomOrder() async throws {
         let server = CannedServer([
             "/rooms": [Answer(headers: json, chunks: [#"{"id":"r1"}"#])],
-            "/threads": [
+            "/screens/home": [
                 Answer(
                     headers: json,
                     chunks: [
-                        #"[{"id":"r1","title":"Kestrel","agent":"","persona":"","state":"","last":"Hi","at":1,"#
-                            + #""unseen":0,"archived":false,"members":["chief","am"]}]"#
+                        #"{"title":"cooee","blocks":[],"personas":[],"threads":[{"id":"r1","title":"Kestrel","agent":"","persona":"","state":"","last":"Hi","at":1,"#
+                            + #""unseen":0,"archived":false,"members":["chief","am"]}]}"#
                     ]
                 )
             ],
@@ -25,7 +25,7 @@ internal struct RoomClientTests {
                     "random_id": .string("n1"),
                 ]
         )
-        #expect(try await client.threads().map(\.members) == [["chief", "am"]])
+        #expect(try await client.home().threads.map(\.members) == [["chief", "am"]])
     }
 
     @Test internal func aMemberMovesInRoomOrder() async throws {
@@ -55,5 +55,24 @@ internal struct RoomClientTests {
         for try await event in server.client().events("r1", since: "b.0") { got.append(event) }
         let reply = APIItem(id: 3, time: 1, kind: "agent", text: "Hi", speaker: "am")
         #expect(got == [.roomTurn("am"), .item(reply), .roomStop("done"), .reset])
+    }
+
+    @Test internal func aMembersAskIsARoomEvent() async throws {
+        let server = CannedServer([
+            "/threads/r1/events": [
+                Answer(
+                    headers: sse,
+                    chunks: [
+                        "id: b.1\nevent: room-ask\ndata: {\"member\":\"res\",\"session\":\"s1\",\"item\":",
+                        "{\"id\":7,\"at\":1,\"kind\":\"approval\",\"speaker\":\"res\",\"block\":{\"type\":\"card\",",
+                        "\"blocks\":[{\"type\":\"choice\"}]}}}\n\nid: b.2\nevent: reset\ndata: {}\n\n",
+                    ]
+                )
+            ]
+        ])
+        var got: [StreamEvent] = []
+        for try await event in server.client().events("r1", since: "b.0") { got.append(event) }
+        guard case .roomAsk(let ask) = got.first else { return #expect(Bool(false)) }
+        #expect(ask.member == "res" && ask.session == "s1" && ask.item.id == 7 && ask.open)
     }
 }

@@ -17,7 +17,7 @@ if [ "${EVENT:?}" = pull_request ]; then
   for p in $(git diff --name-only 'HEAD^1' HEAD); do
     case $p in
       # The app, the dmg build, the API the app calls (routes, pairing, push) and the `cooee serve` its e2e runs.
-      apple/* | scripts/mac-app.sh | scripts/mac-bins.sh | crates/cooee-server/src/* | crates/cooee/src/main.rs) mac=true ;;
+      apple/* | scripts/mac-app.sh | scripts/mac-bins.sh | crates/cooee-server/src/* | crates/cooee/src/main.rs | crates/cooee-core/src/shed.rs) mac=true ;;
       # The toolchain and dependencies every macOS build compiles, and this CI itself.
       Cargo.toml | Cargo.lock | rust-toolchain.toml | .github/workflows/ci.yml | .github/workflows/apple-mac.yml) mac=true ;;
       scripts/ci-scope.sh) mac=true ;;

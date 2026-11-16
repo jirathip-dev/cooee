@@ -15,7 +15,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{plugins, profiles, skills};
 
-/// drover's installed name (`plugins/index.toml`).
 const DROVER: &str = "drover";
 
 /// What a persona is (#159), apart from its name: drover attaches by it.
@@ -30,6 +29,21 @@ pub enum Role {
     Orchestrator,
 }
 
+/// How a persona's native chat reads (#242).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Style {
+    /// Only the final reply, its steps folded into one row; told to answer short and plain.
+    #[default]
+    Chat,
+    /// Every step, as it happens.
+    Detailed,
+}
+
+/// What a [`Style::Chat`] persona's new session is told after its brief.
+pub const PLAIN: &str =
+    "Answer short, plain and conversational: summarise, and give the details only when asked.";
+
 /// One persona.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
@@ -41,6 +55,8 @@ pub struct Persona {
     pub name: String,
     /// Its role (#159).
     pub role: Role,
+    /// How its chat reads (#242): `chat` unless set, `detailed` for an orchestrator.
+    pub style: Style,
     /// The repos or fleets it covers (#159); another persona may cover them too.
     pub fleets: Vec<String>,
     /// An image (as a profile's avatar); none: the client draws its initials.
@@ -84,6 +100,11 @@ pub struct Place {
     pub screen: String,
 }
 
+/// What a setup chat's brief adds (#270).
+pub const SETUP: &str = "This is a setup chat. Interview the owner, one question at a time, about your purpose, \
+tone, boundaries and way of working; then write your Character and Instructions with your update_persona tool. \
+Here each update is saved at once.";
+
 /// The most characters a persona's notes hold in all (#216).
 pub const CAP: usize = 2000;
 
@@ -105,7 +126,6 @@ fn refused(why: String) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, why)
 }
 
-/// Its notes' file.
 fn memory(data: &Path, id: &str) -> PathBuf {
     data.join("personas").join(id).join("memory.jsonl")
 }
@@ -125,7 +145,7 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
         let read = fs::read_to_string(&file).map_err(|e| e.to_string());
         match read.and_then(|t| from_file(id, &t).map_err(|e| e.message().to_owned())) {
             Ok(p) => out.push(p),
-            Err(e) => eprintln!("cooee: {}: {e}", file.display()),
+            Err(e) => crate::note!("cooee: {}: {e}", file.display()),
         }
     }
     for p in profiles::list(config, data, |_| None) {
@@ -142,6 +162,7 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
                     .unwrap_or_default(),
                 agent: p.agent,
                 role: role(&p.name, None),
+                style: style(role(&p.name, None), None),
                 profile: Some(p.name),
                 ..Persona::default()
             });
@@ -158,20 +179,28 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
     out
 }
 
-/// Persona `id` from its file's `text`.
 fn from_file(id: &str, text: &str) -> Result<Persona, toml::de::Error> {
     let table: toml::Table = toml::from_str(text)?;
     let set = table.contains_key("role");
+    let styled = table.contains_key("style");
     let p: Persona = toml::Value::Table(table).try_into()?;
+    let role = role(id, set.then_some(p.role));
     Ok(Persona {
         id: id.to_owned(),
-        role: role(id, set.then_some(p.role)),
+        role,
+        style: style(role, styled.then_some(p.style)),
         ..p
     })
 }
 
-/// The role of the persona `id` (or read from profile `id`): the one it has, else (saved before #159) the conductor's
-/// is an orchestrator.
+fn style(role: Role, set: Option<Style>) -> Style {
+    set.unwrap_or(if role == Role::Orchestrator {
+        Style::Detailed
+    } else {
+        Style::Chat
+    })
+}
+
 fn role(id: &str, set: Option<Role>) -> Role {
     set.unwrap_or(if id == "conductor" {
         Role::Orchestrator
@@ -247,14 +276,13 @@ pub fn save(config: &Path, data: &Path, mut p: Persona) -> io::Result<Persona> {
             "a persona needs a name, an agent, and an image or none as its avatar".to_owned(),
         ));
     }
-    // TOML's basic strings and arrays read JSON's; every field is a string or a list of them.
     let fields = serde_json::to_value(Persona {
         id: String::new(),
         ..p.clone()
     })?;
     let mut text = String::new();
     for (k, v) in fields.as_object().into_iter().flatten() {
-        let _ = writeln!(text, "{k} = {v}");
+        writeln!(text, "{k} = {v}").ok();
     }
     fs::create_dir_all(config.join("personas"))?;
     fs::write(config.join("personas").join(format!("{}.toml", p.id)), text)?;
@@ -278,7 +306,6 @@ pub fn remove(config: &Path, data: &Path, id: &str) -> io::Result<()> {
     gone(fs::remove_dir_all(data.join("personas").join(id)))
 }
 
-/// `r`, a missing file being no error.
 fn gone(r: io::Result<()>) -> io::Result<()> {
     match r {
         Err(e) if e.kind() != io::ErrorKind::NotFound => Err(e),
@@ -308,12 +335,16 @@ pub fn notes(data: &Path, id: &str) -> Vec<Note> {
         .collect();
     if notes.iter().any(|n| n.id.is_empty()) {
         for i in 0..notes.len() {
-            if notes[i].id.is_empty() {
-                notes[i].id = fresh(&notes, &notes[i]);
+            let id = match notes.get(i) {
+                Some(n) if n.id.is_empty() => fresh(&notes, n),
+                _ => continue,
+            };
+            if let Some(n) = notes.get_mut(i) {
+                n.id = id;
             }
         }
         if let Err(e) = write(data, id, &notes) {
-            eprintln!("cooee: persona {id}: notes: {e}");
+            crate::note!("cooee: persona {id}: notes: {e}");
         }
     }
     notes
@@ -404,23 +435,25 @@ pub fn forget(data: &Path, id: &str) -> io::Result<()> {
 }
 
 impl Persona {
-    /// What its agent gets ahead of a new session's first message: its Character, Instructions, notes and skills'
-    /// descriptions (#218), by name; never a skill's body.
+    /// What its agent gets ahead of a new session's first message: its Character, Instructions, notes, skills'
+    /// descriptions (#218), by name, never a skill's body, and, in [`Style::Chat`], [`PLAIN`].
     #[must_use]
     pub fn brief(&self, data: &Path) -> String {
         let mut notes = String::from("Your notes (edit them with your remember tool):");
         for n in self::notes(data, &self.id) {
-            let _ = write!(notes, "\n- [{}] {}", n.id, n.text);
+            write!(notes, "\n- [{}] {}", n.id, n.text).ok();
         }
         let mut skills = String::from("Your skills (read one with cooee's skill tool):");
         for s in skills::list(data, &self.id).iter().take(skills::MAX) {
-            let _ = write!(skills, "\n- {}: {}", s.name, s.description);
+            write!(skills, "\n- {}: {}", s.name, s.description).ok();
         }
+        let plain = if self.style == Style::Chat { PLAIN } else { "" };
         let parts = [
             self.character.trim(),
             self.instructions.trim(),
             &notes,
             &skills,
+            plain,
         ];
         let parts = parts
             .into_iter()

@@ -293,7 +293,6 @@ impl Routine {
     }
 }
 
-/// `<data>/routines.json`.
 #[derive(Debug, Serialize, Deserialize)]
 struct File {
     format: u32,
@@ -353,7 +352,6 @@ mod tests {
     use super::*;
 
     const MIN: u64 = 60_000;
-    /// 2024-11-11 00:00 UTC, a Monday.
     const MON: u64 = 1_731_283_200_000;
 
     fn ask(when: &str, place: &str) -> Ask {
@@ -394,7 +392,6 @@ mod tests {
         assert_eq!(r.text(nine, 0), "Renewals due 2024-11-11 09:00?");
         r.last_due = nine;
         assert_eq!(r.due(nine + 5 * MIN, 0), None);
-        // Asleep a fortnight: the two missed Mondays run once, as the newest.
         assert_eq!(
             r.due(nine + 14 * 1440 * MIN, 0),
             Some(nine + 14 * 1440 * MIN)
@@ -450,7 +447,9 @@ mod tests {
 
     #[test]
     fn the_file_round_trips_and_refuses_a_newer_format() {
-        let dir = std::env::temp_dir().join(format!("cooee-routines-{}", std::process::id()));
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-routines-{}", std::process::id())),
+        );
         let file = Routines::new(&dir);
         assert_eq!(file.load().unwrap(), Vec::new());
         let mut r = Routine::make(&[], ask("0 9 * * 1", ""), &chat(), MON).unwrap();

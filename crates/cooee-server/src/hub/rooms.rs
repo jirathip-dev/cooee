@@ -1,12 +1,3 @@
-//! Rooms (#154): a thread of the owner and 2 to 5 member personas, each in its own ACP session (a hidden thread,
-//! started on its first turn). Each turn sends the member the room's final replies it hasn't had, attributed
-//! (`[Name]: …`): never tool rows, approvals or files.
-//!
-//! The turn engine (#155): an owner message's @mentioned members take turns in mention order; with no mention every
-//! member gets one turn in room order and may pass (a reply of exactly [`PASS`], never shown). A reply naming another
-//! member gives it a turn. At most [`TURNS`] turns per owner message, the last told it is winding down, and none
-//! after [`DEADLINE`]; stop (the room's cancel) cancels the member taking its turn and drops the rest.
-
 use std::{
     fs,
     path::PathBuf,
@@ -17,34 +8,45 @@ use cooee_core::{
     Body, Change, Item, Kind, Member, Reason, RoomTurn, Thread,
     personas::{self, Persona},
 };
+use serde::Serialize;
 use serde_json::json;
 
 use super::{Hub, HubError, Live, Recipe, Upload, lock, now};
 use crate::push::Note;
 
+/// A member's ask as its room shows it (#178): the member, its session (where the answer goes) and the card.
+#[derive(Debug, Clone, Serialize)]
+pub struct RoomAsk {
+    /// The member's persona id.
+    pub member: String,
+    /// The member's session's thread id.
+    pub session: String,
+    /// The approval, as the member's session has it.
+    pub item: Item,
+}
+
+#[derive(Debug, Default)]
+pub(super) struct OpenAsks {
+    pub(super) open: Vec<RoomAsk>,
+    pub(super) paused: u64,
+}
+
 /// How a room member's session starts, given its persona: its agent, folder and recipe.
 pub type Starter =
     Box<dyn Fn(&Hub, &str) -> Result<(String, PathBuf, Recipe), HubError> + Send + Sync>;
 
-/// The most members a room has (G6).
 const MEMBERS: usize = 5;
 
-/// Who speaks for the owner in a room.
 const OWNER: &str = "owner";
 
-/// The most member turns one owner message starts (G2).
 const TURNS: usize = 6;
 
-/// How long after the owner's message its turns may run, in milliseconds (G2).
 pub(super) const DEADLINE: u64 = 10 * 60 * 1000;
 
-/// A member's whole reply when it passes: not shown in the room.
 const PASS: &str = "[pass]";
 
-/// Told to the member taking the last turn an owner message allows.
 const WIND_DOWN: &str = "(This is the last turn on the owner's message: wind down; naming a member starts no more turns.)";
 
-/// The words `text` names with `@`, keyed (spaces dropped, any case), in order.
 fn mentions(text: &str) -> impl Iterator<Item = String> {
     text.match_indices('@').filter_map(|(at, _)| {
         let before = text[..at].chars().next_back();
@@ -63,7 +65,6 @@ fn key(s: &str) -> String {
     s.replace(' ', "").to_lowercase()
 }
 
-/// The members `text` names with `@` and their id or name (spaces dropped, any case), in the order named, once each.
 fn named(text: &str, members: &[Member], names: &[Persona]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for word in mentions(text) {
@@ -80,12 +81,10 @@ fn named(text: &str, members: &[Member], names: &[Persona]) -> Vec<String> {
     out
 }
 
-/// A reply addresses the owner when it names `@you` or `@owner` (#158).
 fn addresses_owner(text: &str) -> bool {
     mentions(text).any(|w| w == "you" || w == OWNER)
 }
 
-/// How the room shows `id`: the owner, a persona's name, else the id.
 fn display(names: &[Persona], id: &str) -> String {
     match names.iter().find(|p| p.id == id) {
         _ if id == OWNER => "Owner".to_owned(),
@@ -94,12 +93,23 @@ fn display(names: &[Persona], id: &str) -> String {
     }
 }
 
+pub(super) fn seated(room: &Thread) -> Vec<String> {
+    room.members.iter().map(|m| m.persona.clone()).collect()
+}
+
+pub(super) fn said(names: &[Persona], speaker: &str, last: String) -> String {
+    if speaker.is_empty() {
+        last
+    } else {
+        format!("{}: {last}", display(names, speaker))
+    }
+}
+
 fn refused(why: impl Into<String>) -> HubError {
     HubError::Refused(why.into())
 }
 
 impl Hub {
-    /// `note` about thread `meta`, said by its room when `meta` is a member's session (#158).
     pub(super) fn routed(&self, meta: &Thread, note: Note) -> Note {
         let room = Some(&meta.room).filter(|r| !r.is_empty());
         let Some(room) = room.and_then(|r| self.live(r).ok()) else {
@@ -111,7 +121,6 @@ impl Hub {
         note.in_room(&room.meta, &display(&names, &meta.profile), last)
     }
 
-    /// Pushes room `room`'s `key` (`needs`, `fail`) about member `persona`, `line`, at item `item` (#158).
     fn room_push(&self, room: &Thread, persona: &str, (key, line): (&str, &str), item: u64) {
         let names = personas::list(self.config_dir(), &self.data);
         let name = display(&names, persona);
@@ -119,9 +128,41 @@ impl Hub {
         self.push.send(&note.in_room(room, &name, item));
     }
 
+    pub(super) fn room_ask(&self, meta: &Thread, item: Item) {
+        let Ok(room) = self.live(&meta.room) else {
+            return;
+        };
+        let mut l = lock(&room);
+        let open = matches!(&item.body, Body::Approval { tapped: None, chosen: None, card, .. } if card.line.is_none());
+        l.asks
+            .open
+            .retain(|a| a.session != meta.id || a.item.id != item.id);
+        let ask = RoomAsk {
+            member: meta.profile.clone(),
+            session: meta.id.clone(),
+            item,
+        };
+        l.emit("room-ask", json!(ask).to_string());
+        let at = now();
+        if open {
+            l.asks.open.push(ask);
+            l.asks.paused = if l.asks.paused == 0 {
+                at
+            } else {
+                l.asks.paused
+            };
+        } else if l.asks.open.is_empty() && l.asks.paused > 0 {
+            l.meta.asked_at += at.saturating_sub(l.asks.paused);
+            l.asks.paused = 0;
+            if let Err(e) = self.store.save(&l.meta) {
+                cooee_core::note!("cooee: room {}: {e}", l.meta.id);
+            }
+        }
+    }
+
     /// Sets how a member's session starts (once).
     pub fn set_starter(&self, starter: Starter) {
-        let _ = self.starter.set(starter);
+        self.starter.set(starter).ok();
     }
 
     /// A new room of `members` (persona ids, in room order), titled `title` (empty: their ids); once per
@@ -139,7 +180,7 @@ impl Hub {
             return Err(refused(format!("a room has 2 to {MEMBERS} members")));
         }
         for (i, m) in members.iter().enumerate() {
-            if members[..i].contains(m) {
+            if members.iter().take(i).any(|o| o == m) {
                 return Err(refused(format!("{m} is in the room twice")));
             }
             self.joinable(m)?;
@@ -205,10 +246,10 @@ impl Hub {
                 let to = to.unwrap_or(at).min(l.meta.members.len());
                 l.meta.members.insert(to, seat);
             }
-            _ => return Ok(l.meta.members.iter().map(|m| m.persona.clone()).collect()),
+            _ => return Ok(seated(&l.meta)),
         }
         self.store.save(&l.meta)?;
-        let members = l.meta.members.iter().map(|m| m.persona.clone()).collect();
+        let members = seated(&l.meta);
         drop(l);
         if !gone.is_empty() {
             self.close(&gone)?;
@@ -216,7 +257,6 @@ impl Hub {
         Ok(members)
     }
 
-    /// Persona `persona` may join a room: the conductor's may, a lane thread may not (G5).
     fn joinable(&self, persona: &str) -> Result<(), HubError> {
         if self
             .live(persona)
@@ -231,8 +271,6 @@ impl Hub {
             .map_err(|e| refused(e.to_string()))
     }
 
-    /// The owner's message to room `live`: stored as the owner's; then, after the member taking its turn now, its
-    /// mentioned members take turns, else every member in room order (G1). Earlier messages' queued turns are dropped.
     pub(super) fn room_send(
         &self,
         live: &Arc<Mutex<Live>>,
@@ -256,7 +294,7 @@ impl Hub {
         let names = personas::list(self.config_dir(), &self.data);
         let mut turns = named(text, &l.meta.members, &names);
         let reason = if turns.is_empty() {
-            turns = l.meta.members.iter().map(|m| m.persona.clone()).collect();
+            turns = seated(&l.meta);
             Reason::Round
         } else {
             Reason::Mention
@@ -276,9 +314,6 @@ impl Hub {
         Ok(item)
     }
 
-    /// Starts the turn of room `room`'s next member: its session (started now if it has none, told who is in the
-    /// room) gets the room's final replies since its last turn, attributed; the last turn is told it is winding down.
-    /// One that can't take it is said so in the room, and skipped.
     pub(super) fn take_turn(&self, room: &str) -> Result<(), HubError> {
         let live = self.live(room)?;
         let (persona, session, prompt, random_id) = {
@@ -344,8 +379,6 @@ impl Hub {
         self.started(room, &persona, started)
     }
 
-    /// Member `persona`'s turn in room `room` started (`Ok`: its session) or couldn't: its session is kept, and
-    /// cancelled if [stop] came while it started; one that couldn't is said so in the room, and skipped.
     pub(super) fn started(
         &self,
         room: &str,
@@ -354,7 +387,6 @@ impl Hub {
     ) -> Result<(), HubError> {
         let live = self.live(room)?;
         let mut l = lock(&live);
-        // [stop] had no session to cancel. (Its turn may also be gone because it already replied: no stop.)
         let stopped = std::mem::take(&mut l.stopped_starting);
         match started {
             Ok(session) => {
@@ -380,8 +412,6 @@ impl Hub {
         }
     }
 
-    /// Starts a session of persona `persona` with `prompt`, its recipe as `seat` makes it (a room's member, an
-    /// asked persona); returns its thread id.
     pub(super) fn seat(
         &self,
         persona: &str,
@@ -394,16 +424,12 @@ impl Hub {
         let seated = self
             .place(&folder)
             .and_then(|folder| self.start(&agent, &folder, prompt, random_id, &recipe));
-        // As in [`Hub::start`], which a folder outside the roots never reaches.
         if let Some((file, _)) = &recipe.launch.secrets {
-            let _ = fs::remove_file(file);
+            fs::remove_file(file).ok();
         }
         seated
     }
 
-    /// Member `persona`'s turn in room `room` ended with `reply` (its final reply, `None`: none): stored as its unless
-    /// it passed, the members it names queued (up to the turn cap: past it they are dropped and the room told), and
-    /// the next member's turn starts. A reply out of turn (a member taken out, a stopped round) is dropped.
     pub(super) fn replied(
         &self,
         room: &str,
@@ -460,8 +486,6 @@ impl Hub {
             .map_err(|e| refused(e.to_string()))
     }
 
-    /// Ends room `room`'s round, `why` (`stop`, `deadline`), with `note` (if any) said in the room: its queued turns
-    /// are dropped and the member taking its turn is cancelled. Twice, or with no round, does nothing.
     pub(super) fn stop_round(&self, room: &str, why: &str, note: &str) -> Result<(), HubError> {
         let live = self.live(room)?;
         let mut l = lock(&live);
@@ -469,6 +493,7 @@ impl Hub {
             return Ok(());
         };
         l.meta.round.clear();
+        l.asks = OpenAsks::default();
         self.store.save(&l.meta)?;
         l.emit("room-stop", json!({ "reason": why }).to_string());
         if !note.is_empty() {
@@ -487,22 +512,63 @@ impl Hub {
         }
     }
 
-    /// Stops each room's round whose owner message is [`DEADLINE`] old at `now` (G2).
     pub(super) fn deadlines(&self, now: u64) {
         let due: Vec<String> = self
             .all()
             .iter()
             .filter_map(|live| {
                 let l = lock(live);
-                let due = !l.meta.round.is_empty() && now >= l.meta.asked_at + DEADLINE;
+                let due = !l.meta.round.is_empty()
+                    && l.asks.paused == 0
+                    && now >= l.meta.asked_at + DEADLINE;
                 due.then(|| l.meta.id.clone())
             })
             .collect();
         for room in due {
             let note = "10 minutes passed: this message's turns stopped";
             if let Err(e) = self.stop_round(&room, "deadline", note) {
-                eprintln!("cooee: room {room}: {e}");
+                cooee_core::note!("cooee: room {room}: {e}");
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use serde_json::json;
+
+    use super::super::tests::{hub, scratch};
+
+    #[test]
+    fn a_rooms_row_names_its_last_speaker() {
+        let dir = scratch("speaker");
+        let threads = dir.join("data/threads");
+        let room = json!({ "format": 1, "thread": { "id": "room", "title": "Kestrel", "messages": [], "kind": "room",
+            "members": [{ "persona": "ada" }, { "persona": "bo" }] } });
+        fs::write(threads.join("room.json"), room.to_string()).unwrap();
+        let line = |id: u64, speaker: &str, kind: &str| {
+            json!({ "id": id, "at": id, "speaker": speaker, "kind": kind, "text": format!("line {id}"), "random_id": "r", "stop_reason": "end_turn" })
+                .to_string()
+        };
+        fs::write(threads.join("room.jsonl"), line(1, "owner", "you") + "\n").unwrap();
+        let chat =
+            json!({ "format": 1, "thread": { "id": "chat", "title": "chat", "messages": [] } });
+        fs::write(threads.join("chat.json"), chat.to_string()).unwrap();
+        fs::write(threads.join("chat.jsonl"), line(1, "", "you") + "\n").unwrap();
+        let last = |id: &str| {
+            hub(&dir)
+                .list()
+                .into_iter()
+                .find(|r| r.id == id)
+                .unwrap()
+                .last
+        };
+        assert_eq!(last("room"), "Owner: line 1");
+        assert_eq!(last("chat"), "line 1");
+        let lines = line(1, "owner", "you") + "\n" + &line(2, "ada", "agent") + "\n";
+        fs::write(threads.join("room.jsonl"), lines).unwrap();
+        assert_eq!(last("room"), "ada: line 2");
     }
 }

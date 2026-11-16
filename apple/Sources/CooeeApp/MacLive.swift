@@ -7,9 +7,47 @@
     import LocalAuthentication
     import ServiceManagement
 
-    internal enum LoginItem: String {
+    internal enum LoginItem: String, CaseIterable {
         case cooee = "com.jirathip.cooee.serve"
         case shed = "com.jirathip.cooee.shed"
+
+        private static let restartScript = #"""
+            lock="${TMPDIR:-/tmp}/cooee-update.lock"
+            mkdir "$lock" 2>/dev/null || exit 0
+            trap 'rmdir "$lock"' EXIT
+            echo "$(date) waiting for $1 to leave version $2"
+            while [ "$(/usr/bin/defaults read "$1/Contents/Info.plist" CFBundleVersion 2>/dev/null || echo "$2")" = "$2" ]; do
+              sleep 2
+            done
+            port=$3
+            shift 3
+            for label in "$@"; do /bin/launchctl kickstart -k "gui/$(id -u)/$label" && echo "$(date) restarted $label"; done
+            for _ in $(seq 120); do
+              /usr/bin/curl -fsS -o /dev/null "http://127.0.0.1:$port/pair" && { echo "$(date) cooee answers on $port"; exit 0; }
+              sleep 0.5
+            done
+            echo "$(date) cooee does not answer on $port"
+            exit 1
+            """#
+
+        internal static func restartAfterUpdate(port: Int) {
+            let process = Process()
+            process.executableURL = URL(filePath: "/bin/sh")
+            let bundle = Bundle.main
+            let version = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+            process.arguments =
+                ["-c", restartScript, "restart", bundle.bundleURL.path(percentEncoded: false), version, "\(port)"]
+                + allCases.map(\.rawValue)
+            let log = URL.homeDirectory.appending(path: "Library/Logs/cooee-update.log")
+            if !FileManager.default.fileExists(atPath: log.path()) {
+                FileManager.default.createFile(atPath: log.path(), contents: nil)
+            }
+            let handle = try? FileHandle(forWritingTo: log)
+            _ = try? handle?.seekToEnd()
+            process.standardOutput = handle
+            process.standardError = handle
+            try? process.run()
+        }
 
         internal func register() -> ServiceState {
             let service = SMAppService.agent(plistName: "\(rawValue).plist")

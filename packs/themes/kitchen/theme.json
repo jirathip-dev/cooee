@@ -1,8 +1,0 @@
-{
-  "label": "kitchen",
-  "scheme": { "dark": "kitchen", "light": "kitchen-light" },
-  "sprites": true,
-  "moments": true,
-  "words": { "working": "on the line", "needs": "the bell", "done": "at the pass", "fail": "sent back", "idle": "standing by",
-    "merged": "order up", "loading": "firing up", "empty-threads": "nobody on the line" }
-}

@@ -14,10 +14,18 @@ public struct ChatActions {
     public var answering: Set<Int>
     public var back: () -> Void
     public var retry: (Int) -> Void = { _ in }
+    public var view: () -> Void = {}
     public var places: [String] = []
     public var open: (Int) -> Void = { _ in }
     public var attachable: [String] = []
     public var attachPlugin: (Int) -> Void = { _ in }
+    public var step: String?
+    public var workflow: Int?
+    public var workflowOpen = false
+    public var showWorkflow: () -> Void = {}
+    public var backTo: String?
+    public var machine: MachineRow?
+    public var showMachine: () -> Void = {}
 
     public init(
         draft: Binding<String>? = nil,
@@ -67,17 +75,17 @@ public struct ChatView: View {
                 Scroller(end: true) {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(items) { item in
-                            ItemView(item: item) { actions.retry(item.id) }.environment(\.act) {
-                                actions.answer(item.id, $0)
-                            }
-                            .disabled(actions.answering.contains(item.id))
+                            ItemView(item: item, retry: { actions.retry(item.id) }, view: actions.view)
+                                .environment(\.act) { actions.answer(item.id, $0) }
+                                .disabled(actions.answering.contains(item.id))
                         }
                     }
                     .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 16)
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
+                .environment(\.asker, persona)
                 VStack(spacing: 8) {
-                    if working { WorkingPill(since: since, stop: actions.stop) }
+                    if working { WorkingPill(since: since, step: actions.step, stop: actions.stop) }
                     Composer(
                         hint: "Message \(persona.name)",
                         queued: queued,
@@ -139,6 +147,8 @@ public struct ChatView: View {
     public static func conductor() -> ChatView { ChatView(personaID: "cond", items: Fixtures.conductor) }
 
     public static func moreCards() -> ChatView { ChatView(personaID: "res", items: Fixtures.moreCards) }
+
+    public static func asked() -> ChatView { ChatView(personaID: "coder", items: Fixtures.asked) }
 }
 
 internal struct ChatHeader: View {
@@ -152,19 +162,27 @@ internal struct ChatHeader: View {
         let palette = look.palette
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                if back {
+                if let title = actions.backTo {
+                    BackLink(title: title, run: actions.back).padding(.horizontal, -14)
+                } else if back {
                     Button(action: actions.back) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("Back")
                 }
                 Avatar(persona: persona, size: 38)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(persona.name).ui(16, .semibold, look)
-                    AgentChip(persona: persona)
+                    HStack(spacing: 6) {
+                        AgentChip(persona: persona)
+                        if let machine = actions.machine {
+                            Button(action: actions.showMachine) { MachineChipLabel(machine: machine) }
+                                .buttonStyle(.plain).accessibilityLabel("Machine \(machine.title)")
+                        }
+                    }
                 }
                 Spacer(minLength: 4)
                 more
             }
-            if !chips.isEmpty { plugins }
+            if !chips.isEmpty || actions.workflow != nil { plugins }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(palette.line).frame(height: 0.5) }
@@ -198,48 +216,10 @@ internal struct ChatHeader: View {
                 }
                 .buttonStyle(.plain)
             }
+            if let count = actions.workflow {
+                WorkflowChip(count: count, lit: actions.workflowOpen, open: actions.showWorkflow)
+            }
         }
         .padding(.leading, back ? 50 : 0)
-    }
-}
-
-internal struct WorkingPill: View {
-    @Environment(\.look) private var look
-    internal var since: Date?
-    internal var stop: () -> Void = {}
-
-    internal var body: some View {
-        let palette = look.palette
-        HStack(spacing: 8) {
-            if look.mono {
-                Text("~o=").ui(13, .bold, look).foregroundStyle(palette.cyan)
-            } else {
-                Circle().fill(palette.cyan).frame(width: 8, height: 8)
-            }
-            if let since {
-                TimelineView(.periodic(from: since, by: 1)) { context in
-                    label(Int(context.date.timeIntervalSince(since)))
-                }
-            } else {
-                label(42)
-            }
-            Spacer()
-            Button(action: stop) {
-                HStack(spacing: 4) {
-                    Image(systemName: "stop.fill").font(.system(size: 10))
-                    Text("Stop")
-                }
-                .ui(13, .semibold, look).foregroundStyle(palette.red)
-                .padding(.horizontal, 10).frame(height: 28).background(palette.red.opacity(0.14), in: .capsule)
-            }
-            .buttonStyle(.plain).accessibilityLabel("Stop")
-        }
-        .padding(.leading, 14).padding(.trailing, 6).frame(height: 40)
-        .surface(look, radius: 20)
-    }
-
-    private func label(_ seconds: Int) -> some View {
-        let time = "\(max(0, seconds) / 60):\(String(format: "%02d", max(0, seconds) % 60))"
-        return Text(look.mono ? "working \(time)" : "Working · \(time)").ui(13, .medium, look)
     }
 }

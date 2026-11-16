@@ -46,7 +46,7 @@ internal struct ChatPluginsTests {
             $0.attachable = [Self.hello]
         }
         await store.send(.plugins(.open(Self.queue))) {
-            $0.screen = PluginScreenFeature.State(server: mini, place: Self.queue)
+            $0.screen = ScreenFeature.State(server: mini, place: Self.queue)
         }
         await store.send(.screen(.dismiss)) { $0.screen = nil }
     }
@@ -64,12 +64,37 @@ internal struct ChatPluginsTests {
         #expect(calls.all == ["attach hello cond", "places cond"])
     }
 
+    @Test internal func theWorkflowSheetOpensAndUnfoldsOneIssueAtATime() async {
+        let store = store()
+        await store.send(.workflow(.show(true))) { $0.workflowOpen = true }
+        await store.send(.workflow(.unfold("cooee #33"))) { $0.unfolded = "cooee #33" }
+        await store.send(.workflow(.unfold("cooee #31"))) { $0.unfolded = "cooee #31" }
+        await store.send(.workflow(.unfold("cooee #31"))) { $0.unfolded = nil }
+        await store.send(.workflow(.show(false))) { $0.workflowOpen = false }
+    }
+
     @Test internal func aChatWithNoPersonaLoadsNoStripAndAFailedLoadSaysWhy() async {
         await store(APIPersona(id: "", name: "Chat", agent: "")).send(.plugins(.load))
         let failing = store()
         failing.dependencies.plugins.installed = { _ in throw APIError(status: 500, text: "down") }
         await failing.send(.plugins(.load))
         await failing.receive(\.failed) { $0.error = "down" }
+    }
+
+    @Test internal func theAttachSheetIsCoresPermissionsScreenForThatPluginAndPersona() async {
+        let state = AttachFeature.State(server: mini, persona: Self.conductor, plugin: Self.hello)
+        let screen = JSONValue(json: #"{"type": "screen", "id": "attach", "title": "Attach hello"}"#)
+        let store = TestStore(initialState: state) {
+            AttachFeature()
+        } withDependencies: {
+            $0.plugins.screen = { [calls] _, source, path in
+                calls.record("\(source.name) \(path)")
+                return screen
+            }
+        }
+        await store.send(.task)
+        await store.receive(\.loaded) { $0.screen = screen }
+        #expect(calls.all == ["core /screens/plugins/hello/attach?persona=cond"])
     }
 
     @Test internal func aFailedAttachSaysWhyAndCanBeTriedAgain() async {
@@ -89,7 +114,7 @@ internal struct ChatPluginsTests {
     @Test internal func aThreadTappedOnAScreenClosesItAndOpensThatChat() async {
         let store = store()
         await store.send(.plugins(.open(Self.queue))) {
-            $0.screen = PluginScreenFeature.State(server: mini, place: Self.queue)
+            $0.screen = ScreenFeature.State(server: mini, place: Self.queue)
         }
         await store.send(.screen(.presented(.delegate(.open("herdsman-impl-641"))))) { $0.screen = nil }
         await store.receive(\.delegate.open, "herdsman-impl-641")
