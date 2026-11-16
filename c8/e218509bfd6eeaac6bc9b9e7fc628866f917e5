@@ -1,0 +1,11 @@
+Decided: the live panel draws a Workflow section from the chat's workflow chats, three issues needs-you first, and All N issues opens #229's Workflow sheet.
+Because: "its workflows and routines (#86), each opening its screen, and a way to add one"
+Decided: the live Workflow section hides the list/map toggle, which has no action in the app yet.
+Because: "Never a control that does nothing: an item with no action is hidden, not drawn."
+Decided: Places rows show the place's count from staging's Place.count as the row value.
+Because: apple/Sources/CooeeUI/ChatPanel.swift:19
+Rejected: a per-plugin icon on Places rows — neither Place nor the plugin manifest carries an icon; adding one is a plugin-format change in two repos.
+Decided: merged origin/staging; the … stays the panel's Button, since staging's #240 still drew it bare, and ChatActions keeps more in its new file.
+Because: apple/Sources/CooeeUI/ChatActions.swift:22
+Check: LiveDroverUITests finds WORKFLOW in Conductor's panel; ChatPanelTests sees All issues open the Workflow sheet after the panel closes.
+Owner: The … panel now shows the persona's workflow issues, and All issues opens the Workflow sheet; plugin places show their counts.
