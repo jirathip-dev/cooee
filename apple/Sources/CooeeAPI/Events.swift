@@ -66,10 +66,10 @@ extension Client {
                         continuation.finish(throwing: error)
                         return
                     } catch {
-                        try? await Task.sleep(for: retry)
+                        try? await clock.sleep(for: retry)
                         continue
                     }
-                    try? await Task.sleep(for: retry)
+                    try? await clock.sleep(for: retry)
                 }
                 continuation.finish()
             }

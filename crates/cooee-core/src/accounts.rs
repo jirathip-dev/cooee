@@ -210,7 +210,7 @@ impl Accounts {
             _ => match p.usage(dir, now) {
                 Some(u) => {
                     meta.usage.insert(name.to_owned(), u);
-                    let _ = self.save(&p.spec().name, &meta);
+                    self.save(&p.spec().name, &meta).ok();
                     Some(u)
                 }
                 None => last,
@@ -248,7 +248,7 @@ impl Accounts {
 
     /// Removes the folder of new account `name` whose login failed.
     pub fn drop_pending(&self, provider: &str, name: &str) {
-        let _ = fs::remove_dir_all(self.root.join(provider).join(format!(".new-{name}")));
+        fs::remove_dir_all(self.root.join(provider).join(format!(".new-{name}"))).ok();
     }
 
     /// Removes added account `name`'s folder (an adopted one's link only; the system default's is never touched), and
@@ -273,7 +273,9 @@ mod tests {
 
     #[test]
     fn system_first_a_new_account_listed_once_adopted_and_removal() {
-        let data = std::env::temp_dir().join(format!("cooee-accounts-{}", std::process::id()));
+        let data = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-accounts-{}", std::process::id())),
+        );
         let a = Accounts::new(&data);
         let names = |a: &Accounts| -> Vec<String> {
             a.list("claude").into_iter().map(|a| a.name).collect()
@@ -301,8 +303,10 @@ mod tests {
 
     #[test]
     fn a_dead_logins_leftover_folder_never_blocks_a_new_account() {
-        let data = std::env::temp_dir().join(format!("cooee-accounts-dead-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&data);
+        let data = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-accounts-dead-{}", std::process::id())),
+        );
+        fs::remove_dir_all(&data).ok();
         let a = Accounts::new(&data);
         fs::create_dir_all(data.join("accounts/claude/.new-account-2")).unwrap();
         let (name, dir) = a.pending("claude").unwrap();

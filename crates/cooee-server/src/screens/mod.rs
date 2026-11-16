@@ -20,6 +20,8 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
 }
 
 fn core(mut screen: Value) -> Value {
-    screen["source"] = Value::from("core");
+    if let Some(o) = screen.as_object_mut() {
+        o.insert("source".to_owned(), Value::from("core"));
+    }
     screen
 }

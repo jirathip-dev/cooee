@@ -2,9 +2,9 @@ use std::{
     env,
     io::Read,
     path::Path,
-    process::{Child, Command, Stdio},
+    process::{Child, Stdio},
     thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 #[cfg(unix)]
@@ -111,7 +111,7 @@ impl dyn Provider + '_ {
         let Some((bin, args)) = cmd.split_first() else {
             return Err("no command".to_owned());
         };
-        let mut command = Command::new(bin);
+        let mut command = crate::runner::command(bin);
         for var in self.scrub() {
             command.env_remove(var);
         }
@@ -134,16 +134,28 @@ impl dyn Provider + '_ {
                 s
             })
         };
-        let stdout = drain(child.stdout.take().map(|r| Box::new(r) as _));
-        let stderr = drain(child.stderr.take().map(|r| Box::new(r) as _));
-        let deadline = Instant::now() + LIMIT;
+        let stdout = drain(
+            child
+                .stdout
+                .take()
+                .map(|r| -> Box<dyn Read + Send> { Box::new(r) }),
+        );
+        let stderr = drain(
+            child
+                .stderr
+                .take()
+                .map(|r| -> Box<dyn Read + Send> { Box::new(r) }),
+        );
+        let deadline = crate::clock::instant() + LIMIT;
         let ok = loop {
             match child.try_wait() {
                 Ok(Some(status)) => break status.success(),
-                Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(20)),
+                Ok(None) if crate::clock::instant() < deadline => {
+                    crate::clock::sleep(Duration::from_millis(20));
+                }
                 _ => {
                     kill_group(&mut child);
-                    let _ = child.wait();
+                    child.wait().ok();
                     return Ok(None);
                 }
             }
@@ -262,10 +274,10 @@ fn kill_group(child: &mut Child) {
     #[cfg(unix)]
     {
         crate::group::signal(child, "-TERM");
-        thread::sleep(Duration::from_millis(200));
+        crate::clock::sleep(Duration::from_millis(200));
         crate::group::signal(child, "-KILL");
     }
-    let _ = child.kill();
+    child.kill().ok();
 }
 
 pub(crate) fn one_line(text: &str) -> String {
@@ -280,7 +292,7 @@ fn installed(bin: &str) -> bool {
     if path.components().count() > 1 {
         return path.is_file();
     }
-    env::var_os("PATH").is_some_and(|p| env::split_paths(&p).any(|d| d.join(bin).is_file()))
+    crate::env_var("PATH").is_some_and(|p| env::split_paths(&p).any(|d| d.join(bin).is_file()))
 }
 
 fn tokenish(c: char) -> bool {
@@ -419,7 +431,9 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn a_timeout_kills_the_command_and_what_it_started() {
-        let pids = env::temp_dir().join(format!("cooee-hung-{}", std::process::id()));
+        let pids = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-hung-{}", std::process::id())),
+        );
         let p = plain(Spec {
             status: ["sh", "-c", r#"sleep 600 & echo $$ $! > "$H"; sleep 600"#]
                 .map(String::from)
@@ -427,23 +441,23 @@ mod tests {
             home: "H".to_owned(),
             ..Spec::default()
         });
-        let started = Instant::now();
+        let started = crate::clock::instant();
         let s = p.check(Some(&pids));
         assert!(started.elapsed() < LIMIT + Duration::from_secs(2));
         assert_eq!(s, Status::unknown(TIMED_OUT));
         let pids = std::fs::read_to_string(&pids).unwrap();
         let alive = |pid: &str| {
-            Command::new("kill")
+            crate::runner::command("kill")
                 .args(["-0", pid])
                 .stderr(Stdio::null())
                 .status()
                 .unwrap()
                 .success()
         };
-        let gone = Instant::now() + Duration::from_secs(2);
+        let gone = crate::clock::instant() + Duration::from_secs(2);
         for pid in pids.split_whitespace() {
-            while alive(pid) && Instant::now() < gone {
-                thread::sleep(Duration::from_millis(20));
+            while alive(pid) && crate::clock::instant() < gone {
+                crate::clock::sleep(Duration::from_millis(20));
             }
             assert!(!alive(pid), "pid {pid} still alive");
         }

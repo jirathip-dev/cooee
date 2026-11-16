@@ -34,7 +34,7 @@ impl Hub {
                 continue;
             };
             let got = plugin::profiles(&p).or_else(|e| {
-                eprintln!("cooee: plugin {}: its profiles: {e}", p.name);
+                cooee_core::note!("cooee: plugin {}: its profiles: {e}", p.name);
                 lock(&self.served).get(&name).cloned().ok_or(e)
             });
             if let Ok(list) = got {

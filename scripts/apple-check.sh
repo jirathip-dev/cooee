@@ -45,6 +45,7 @@ step "SwiftLint 0.65.1"
 fetch swiftlint 0.65.1 https://github.com/realm/SwiftLint/releases/download/0.65.1/portable_swiftlint.zip \
   c1e429b0599cf1b516f369a2d9ec04eaf0e436f3c12b637df8851fa52ff694d0
 (cd apple && "$tools/swiftlint-0.65.1/swiftlint" lint --strict --quiet)
+ci/swift-bans-test.sh "$tools/swiftlint-0.65.1/swiftlint"
 echo "no violations"
 
 if [ "$xcode" = no ]; then
