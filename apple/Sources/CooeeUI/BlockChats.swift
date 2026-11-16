@@ -131,3 +131,36 @@ internal struct ChatRow: View {
         }
     }
 }
+
+internal struct LinkedRow: View {
+    @Environment(\.look) private var look
+    @Environment(\.cast) private var cast
+    internal let chat: ListedChat
+    internal let asker: Persona
+    internal var selected = false
+
+    internal var body: some View {
+        let palette = look.palette
+        let pair = [asker, chat.persona].map { persona in cast.first { $0.id == persona.id } ?? persona }
+        HStack(spacing: 10) {
+            RoomStack(members: pair, size: 26, grid: false).frame(width: 46, alignment: .leading)
+            Text("\(Text("⇄ ").foregroundStyle(palette.mute))\(pair[0].name) ⇄ \(pair[1].name)")
+                .ui(15, .regular, look).lineLimit(1)
+            Spacer(minLength: 4)
+            Text(chat.row.ago).ui(13, .regular, look).foregroundStyle(palette.mute)
+        }
+        .padding(.leading, 12).padding(.trailing, 16).frame(height: 50)
+        .background(selected ? palette.link.opacity(0.16) : .clear, in: .rect(cornerRadius: look.mono ? 0 : 12))
+        .background(alignment: .topLeading) {
+            Path { path in
+                path.move(to: .zero)
+                path.addLine(to: CGPoint(x: 0, y: 20))
+                path.addQuadCurve(to: CGPoint(x: 8, y: 28), control: CGPoint(x: 0, y: 28))
+                path.addLine(to: CGPoint(x: 12, y: 28))
+            }
+            .stroke(palette.edge, lineWidth: 1.5).frame(width: 12, height: 28).offset(x: -16, y: -4)
+        }
+        .padding(.leading, 46).padding(.trailing, selected ? 6 : 0)
+        .contentShape(.rect)
+    }
+}

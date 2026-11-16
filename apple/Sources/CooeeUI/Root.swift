@@ -19,6 +19,7 @@ public struct AppRoot: View {
                 SlotView(
                     store: store, node: store.layout.layout.resolved(for: compact ? .compact : .wide), compact: compact
                 )
+                .environment(\.cast, home.personas.map { Persona($0) })
                 .task { await home.send(.task).finish() }
                 .task { await store.send(.layout(.task)).finish() }
             } else if let setup = store.scope(state: \.setup, action: \.setup) {

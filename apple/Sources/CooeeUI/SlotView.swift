@@ -167,7 +167,9 @@ private struct ChatSlot: View {
 
     fileprivate var body: some View {
         if let chat = store.scope(state: \.chat, action: \.chat) {
-            if chat.room != nil {
+            if chat.exchange != nil {
+                LinkedScreen(store: chat, back: back) { store.send(.back) }.id(store.path.last)
+            } else if chat.room != nil {
                 RoomScreen(
                     store: chat, back: back, persona: { store.send(.start($0)) }, onBack: { store.send(.back) }
                 )

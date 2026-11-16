@@ -90,9 +90,10 @@ public struct AppFeature: Sendable {
                 return .send(.home(.refresh))
             case .chat(.delegate(.open(let thread))):
                 return .send(.open(thread))
-            case .chat(.delegate(.edit(let id))):
-                state.persona = persona(state, id)
-                return .none
+            case .chat(.delegate(.persona(let persona))):
+                return .send(.edit(persona))
+            case .chat(.delegate(.start(let persona))):
+                return .send(.start(persona))
             case .chat(.delegate(.round(let thread))):
                 state.path.append(thread)
                 state.chat = chat(state, thread)
@@ -135,7 +136,7 @@ public struct AppFeature: Sendable {
                 $0.updated < $1.updated
             }
             return navigate(&state, newest.map { .open($0.id) } ?? .start(persona))
-        case .start(let persona), .chat(.delegate(.newChat(let persona))):
+        case .start(let persona):
             state.path = ["new:\(persona)"]
             state.chat = chat(state, "new:\(persona)")
         case .back:
@@ -175,6 +176,10 @@ extension AppFeature {
             let room = Room(title: title, members: members, cast: home.personas)
             let persona = Persona(APIPersona(id: "", name: title, agent: ""))
             return ChatFeature.State(server: home.server, target: .thread(id), persona: persona, room: room)
+        }
+        if let exchange = Exchange.of(id, rows: home.rows, personas: home.personas) {
+            let persona = Persona(exchange.target)
+            return ChatFeature.State(server: home.server, target: .thread(id), persona: persona, exchange: exchange)
         }
         let lists = home.lists(now: now)
         var chat: ChatFeature.State

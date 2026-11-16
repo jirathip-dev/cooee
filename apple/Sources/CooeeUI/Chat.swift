@@ -82,6 +82,7 @@ public struct ChatView: View {
                     .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 16)
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
+                .environment(\.asker, persona)
                 VStack(spacing: 8) {
                     if working { WorkingPill(since: since, step: actions.step, stop: actions.stop) }
                     Composer(
@@ -145,6 +146,8 @@ public struct ChatView: View {
     public static func conductor() -> ChatView { ChatView(personaID: "cond", items: Fixtures.conductor) }
 
     public static func moreCards() -> ChatView { ChatView(personaID: "res", items: Fixtures.moreCards) }
+
+    public static func asked() -> ChatView { ChatView(personaID: "coder", items: Fixtures.asked) }
 }
 
 internal struct ChatHeader: View {

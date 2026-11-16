@@ -50,10 +50,12 @@ internal struct ChatPanelTests {
             $0.chat?.picked = .edit
         }
         await store.send(.chat(.panel(.dismissed))) { $0.chat?.picked = nil }
-        await store.receive(\.chat.delegate.edit) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
+        await store.receive(\.chat.delegate.persona)
+        await store.receive(\.edit) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
         await store.send(.persona(.dismiss)) { $0.persona = nil }
         await store.send(.chat(.panel(.run(.newChat))))
-        await store.receive(\.chat.delegate.newChat) {
+        await store.receive(\.chat.delegate.start)
+        await store.receive(\.start) {
             $0.path = ["new:coder"]
             $0.chat = ChatFeature.State(server: mini, target: .new(coder), persona: Persona(coder))
         }

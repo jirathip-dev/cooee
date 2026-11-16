@@ -40,8 +40,8 @@ extension ChatFeature {
     private func run(_ state: State, _ pick: PanelPick) -> Effect<Action> {
         let persona = state.persona.api.id
         switch pick {
-        case .edit: return .send(.delegate(.edit(persona)))
-        case .newChat: return .send(.delegate(.newChat(persona)))
+        case .edit: return .send(.delegate(.persona(persona)))
+        case .newChat: return .send(.delegate(.start(persona)))
         case .open(let place): return .send(.plugins(.open(place)))
         case .attach(let plugin): return .send(.plugins(.attach(plugin)))
         case .stop: return .send(.compose(.stop))

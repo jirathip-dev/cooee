@@ -52,11 +52,12 @@ public enum Item: Identifiable, Sendable, Equatable {
     case note(id: Int, text: String)
     case said(id: Int, speaker: String, time: String, markdown: [Block])
     case divider(id: Int, text: String)
+    case asked(id: Int, Ask)
 
     public var id: Int {
         switch self {
         case .you(let id, _, _), .agent(let id, _), .tools(let id, _), .trace(let id, _, _), .card(let id, _, _),
-            .note(let id, _), .said(let id, _, _, _), .divider(let id, _):
+            .note(let id, _), .said(let id, _, _, _), .divider(let id, _), .asked(let id, _):
             id
         case .outgoing(let message):
             message.id
@@ -69,7 +70,7 @@ public enum Item: Identifiable, Sendable, Equatable {
         case .you(_, let text, _): text
         case .outgoing(let message): message.text
         case .agent(_, let blocks), .said(_, _, _, let blocks): blocks.map(\.plainText).joined(separator: "\n\n")
-        case .tools, .trace, .card, .note, .divider: nil
+        case .tools, .trace, .card, .note, .divider, .asked: nil
         }
     }
 }
@@ -114,14 +115,18 @@ public enum ChatItems {
             out.append(.agent(id: item.id, markdown: Markdown.blocks(item.text ?? "")))
         case "tool":
             fold(item, into: &out)
-        case "approval":
-            guard let block = item.block else { return }
-            out.append(.card(id: item.id, poster: item.plugin, block: block))
+        case "approval", "ask":
+            if let card = card(item) { out.append(card) }
         default:
             guard let text = item.text, !text.isEmpty else { return }
             if case .note(_, text)? = out.last { return }
             out.append(.note(id: item.id, text: text))
         }
+    }
+
+    private static func card(_ item: APIItem) -> Item? {
+        if let ask = Ask(item) { return .asked(id: item.id, ask) }
+        return item.block.map { .card(id: item.id, poster: item.plugin, block: $0) }
     }
 
     public static func step(_ items: [APIItem]) -> String? {

@@ -26,6 +26,7 @@ public struct ChatFeature: Sendable {
         public var pending: String?
         public var answering: Set<Int> = []
         public var room: Room?
+        public var exchange: Exchange?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
         public var panel = false
@@ -39,7 +40,8 @@ public struct ChatFeature: Sendable {
 
         public var working: Bool { turn.working }
         public var drawn: [Item] {
-            room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
+            if let exchange { return LinkedItems.build(items, exchange: exchange, outbox: outbox, now: since) }
+            return room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
                 ?? ChatItems.build(
                     items, live: live, outbox: first + outbox, style: persona.api.style, working: working)
         }
@@ -51,11 +53,12 @@ public struct ChatFeature: Sendable {
 
         public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
 
-        public init(server: Server, target: Target, persona: Persona, room: Room? = nil) {
+        public init(server: Server, target: Target, persona: Persona, room: Room? = nil, exchange: Exchange? = nil) {
             self.server = server
             self.target = target
             self.persona = persona
             self.room = room
+            self.exchange = exchange
         }
     }
 
@@ -79,9 +82,9 @@ public struct ChatFeature: Sendable {
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case started(String)
-            case edit(String)
-            case newChat(String)
             case open(String)
+            case persona(String)
+            case start(String)
             case round(String)
         }
     }
