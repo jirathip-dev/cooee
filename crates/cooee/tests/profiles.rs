@@ -281,7 +281,7 @@ fn a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it()
     fs::create_dir_all(s.dir.join("personas")).unwrap();
     fs::write(
         s.dir.join("personas/lead.toml"),
-        "name = \"Lead\"\nagent = \"fake-acp\"\nprofile = \"plug/conductor\"\ncharacter = \"Calm.\"\n",
+        "name = \"Lead\"\nagent = \"fake-acp\"\nprofile = \"plug/conductor\"\nstyle = \"detailed\"\ncharacter = \"Calm.\"\n",
     )
     .unwrap();
     let (id, _) = s.thread("lead", "go");

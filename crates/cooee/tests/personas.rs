@@ -280,7 +280,7 @@ fn a_persona_without_instructions_takes_its_profiles() {
     fs::create_dir_all(&personas).unwrap();
     let persona = |id: &str, more: &str| {
         let text = format!(
-            "name = \"{id}\"\nagent = \"fake-acp\"\nprofile = \"coder\"\ncharacter = \"Calm.\"\n{more}"
+            "name = \"{id}\"\nagent = \"fake-acp\"\nprofile = \"coder\"\nstyle = \"detailed\"\ncharacter = \"Calm.\"\n{more}"
         );
         fs::write(personas.join(format!("{id}.toml")), text).unwrap();
     };
