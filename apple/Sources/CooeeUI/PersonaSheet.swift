@@ -108,6 +108,7 @@ extension PersonaSheet {
                 }
                 .padding(.horizontal, 14).frame(height: 48)
                 if !look.still {
+                    style
                     Toggle("Pin to Home", isOn: $draft.pinned).ui(16, .regular, look).padding(.horizontal, 14)
                         .frame(height: 48)
                 }
@@ -119,13 +120,49 @@ extension PersonaSheet {
                 Button(action: actions.browse) {
                     SettingRow(
                         symbol: "folder.fill", title: "Folder", tint: look.palette.amber, value: draft.folder,
-                        divider: false
+                        divider: !choices.machines.isEmpty
                     )
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).accessibilityLabel("Folder")
+                if !choices.machines.isEmpty { machine }
             }
             if let error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
+        }
+    }
+
+    private var machine: some View {
+        MachineMenu(
+            machines: choices.machines, pick: { draft.machine = $0 },
+            face: {
+                HStack(spacing: 6) {
+                    Text("Machine").ui(16, .regular, look)
+                    Spacer()
+                    if let row = choices.machines.first(where: { $0.name == draft.machine }) {
+                        MachineDot(dot: row.dot)
+                    }
+                    Text(choices.machines.title(draft.machine)).ui(15, .regular, look).foregroundStyle(
+                        look.palette.mute)
+                }
+                .padding(.horizontal, 14).frame(height: 48).contentShape(Rectangle())
+            }
+        )
+        .buttonStyle(.plain).accessibilityLabel("Machine")
+    }
+
+    private var style: some View {
+        HStack {
+            Text("Style").ui(16, .regular, look)
+            Spacer()
+            Picker("Style", selection: $draft.style) {
+                Text("Chat").tag(ChatStyle.chat)
+                Text("Detailed").tag(ChatStyle.detailed)
+            }
+            .pickerStyle(.segmented).fixedSize()
+        }
+        .padding(.horizontal, 14).frame(height: 48)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(look.palette.line).frame(height: 0.5).padding(.leading, 14)
         }
     }
 

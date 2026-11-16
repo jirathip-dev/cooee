@@ -11,6 +11,7 @@ public struct Settings: Codable, Sendable, Equatable {
     public var style: LookStyle
     public var push: String?
     public var icon: AppIcon?
+    private var rooms: [String]?
 
     public init(scheme: LookScheme = .system, style: LookStyle = .modern, push: String? = nil) {
         self.scheme = scheme
@@ -19,4 +20,9 @@ public struct Settings: Codable, Sendable, Equatable {
     }
 
     public var appIcon: AppIcon { icon ?? .following(style) }
+    public var pinnedRooms: [String] { rooms ?? [] }
+
+    public mutating func pin(room: String) {
+        rooms = pinnedRooms.contains(room) ? pinnedRooms.filter { $0 != room } : pinnedRooms + [room]
+    }
 }

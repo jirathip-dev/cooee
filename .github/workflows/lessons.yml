@@ -9,6 +9,7 @@ jobs:
   # the job; its own fixture test does.
   lessons:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: pr-body checker test

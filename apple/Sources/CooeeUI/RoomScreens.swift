@@ -24,18 +24,18 @@ internal struct RoomScreen: View {
     private var actions: RoomActions {
         RoomActions(
             chat: ChatActions(
-                draft: Binding(get: { store.draft }, set: { store.send(.draftChanged($0)) }),
+                draft: Binding(get: { store.draft }, set: { store.send(.compose(.draftChanged($0))) }),
                 files: store.files.map(\.name),
-                send: { store.send(.send) },
-                attach: { store.send(.attach($0)) },
-                detach: { store.send(.detach($0)) },
-                stop: { store.send(.stop) },
+                send: { store.send(.compose(.send)) },
+                attach: { store.send(.compose(.attach($0))) },
+                detach: { store.send(.compose(.detach($0))) },
+                stop: { store.send(.compose(.stop)) },
                 back: onBack
             ),
-            inspect: { store.send(.inspect($0)) },
-            move: { store.send(.move($0, $1)) },
-            add: { store.send(.seat($0)) },
-            remove: { store.send(.unseat($0)) },
+            inspect: { store.send(.room(.inspect($0))) },
+            move: { store.send(.room(.move($0, $1))) },
+            add: { store.send(.room(.seat($0))) },
+            remove: { store.send(.room(.unseat($0))) },
             persona: persona
         )
     }
@@ -45,7 +45,7 @@ internal struct RoomScreen: View {
             RoomView(scene: scene, back: back, wide: !back, actions: actions)
                 .sheet(
                     isPresented: Binding(
-                        get: { scene.inspecting != nil }, set: { if !$0 { store.send(.inspect(nil)) } })
+                        get: { scene.inspecting != nil }, set: { if !$0 { store.send(.room(.inspect(nil))) } })
                 ) {
                     if let member = scene.members.first(where: { $0.id == scene.inspecting }) {
                         MemberSheet(scene: scene, member: member, actions: actions).presentationDetents([

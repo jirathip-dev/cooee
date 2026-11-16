@@ -12,7 +12,12 @@ use std::{
 
 use cooee_core::{Config, SHED_CARGO, SHED_LABEL, Shed, ShedError, provider};
 
-use super::{doctor, label, load, pair, plist, tailnet_name, write_plist};
+use crate::{
+    cli::load,
+    devices::pair,
+    doctor::doctor,
+    service::{job, plist, tailnet_name, write_plist},
+};
 
 /// `cooee setup`'s flags.
 pub struct Setup {
@@ -24,7 +29,7 @@ pub struct Setup {
 }
 
 /// Whether `argv` exits 0 (its output dropped).
-fn ok(argv: &[&str]) -> bool {
+pub(crate) fn ok(argv: &[&str]) -> bool {
     Command::new(argv[0])
         .args(&argv[1..])
         .stdout(Stdio::null())
@@ -34,7 +39,7 @@ fn ok(argv: &[&str]) -> bool {
 }
 
 /// `argv`'s stdout, if it exits 0.
-fn output(argv: &[&str]) -> Option<String> {
+pub(crate) fn output(argv: &[&str]) -> Option<String> {
     let out = Command::new(argv[0]).args(&argv[1..]).output().ok()?;
     out.status
         .success()
@@ -42,7 +47,7 @@ fn output(argv: &[&str]) -> Option<String> {
 }
 
 /// Polls `f` for up to 10 seconds.
-fn wait(f: impl Fn() -> bool) -> bool {
+pub(crate) fn wait(f: impl Fn() -> bool) -> bool {
     (0..40).any(|_| {
         let done = f();
         if !done {
@@ -106,7 +111,8 @@ impl Setup {
         let (config, changed) = self.config(path)?;
         self.themes(&config)?;
         self.agents(&config)?;
-        self.service(&config, path, &gui, changed)?;
+        self.service(&config, path, &gui, changed, "serve")?;
+        self.service(&config, path, &gui, false, "update")?;
         self.tailnet(config.port)?;
         if self.dry_run {
             println!("would run: cooee doctor, then cooee pair");
@@ -344,16 +350,18 @@ impl Setup {
         Ok(())
     }
 
-    /// cooee's launchd job: its plist written and loaded, restarted onto a changed config.
+    /// cooee's launchd job for `verb` (its service, or its update timer): its plist written and loaded, restarted
+    /// onto a changed config.
     fn service(
         &self,
         config: &Config,
         path: &Path,
         gui: &str,
         changed: bool,
+        verb: &str,
     ) -> Result<(), String> {
-        let label = label(&self.instance);
-        let (file, text) = plist(config, path, self.explicit)?;
+        let label = job(&self.instance, verb);
+        let (file, text) = plist(config, path, self.explicit, verb)?;
         let same = fs::read_to_string(&file).is_ok_and(|t| t == text);
         let loaded = ok(&["launchctl", "list", &label]);
         if step(
