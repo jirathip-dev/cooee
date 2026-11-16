@@ -821,11 +821,16 @@ fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
 #[test]
 fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let design = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/design");
-    let mut files: Vec<_> = ["screens-as-data", "fleets-config", "queue-scene"]
-        .iter()
-        .flat_map(|d| std::fs::read_dir(design.join(d).join("fixtures")).unwrap())
-        .map(|f| f.unwrap().path())
-        .collect();
+    let mut files: Vec<_> = [
+        "screens-as-data",
+        "fleets-config",
+        "queue-scene",
+        "workflow-diagram",
+    ]
+    .iter()
+    .flat_map(|d| std::fs::read_dir(design.join(d).join("fixtures")).unwrap())
+    .map(|f| f.unwrap().path())
+    .collect();
     files.sort();
     let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
         .args(["plugin", "check"])
@@ -835,7 +840,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let said = String::from_utf8_lossy(&out.stdout);
     assert!(
         out.status.success()
-            && said.lines().count() == 21
+            && said.lines().count() == 25
             && said.lines().all(|l| l.starts_with("ok")),
         "{said}"
     );

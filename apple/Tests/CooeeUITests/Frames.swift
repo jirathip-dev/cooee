@@ -42,7 +42,9 @@ extension Frame {
     private static let phoneWidth: CGFloat = 402
     private static let phoneHeight: CGFloat = 874
 
-    internal static var all: [Frame] { designs + styled + settings + missingPoster + QueueFrames.all }
+    internal static var all: [Frame] {
+        designs + styled + settings + missingPoster + QueueFrames.all + DiagramFrames.all
+    }
 
     internal static var everyStyle: [Frame] {
         designs.flatMap { frame in LookStyle.allCases.map(frame.styled) }
