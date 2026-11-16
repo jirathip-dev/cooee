@@ -2,7 +2,7 @@ import Foundation
 
 public struct Place: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
-        case plugin, label, screen
+        case plugin, label, screen, count
         case key = "id"
     }
 
@@ -10,14 +10,16 @@ public struct Place: Codable, Sendable, Equatable, Identifiable {
     public let key: String
     public let label: String
     public let screen: String
+    public var count: Int?
 
     public var id: String { "\(plugin)\(screen)" }
 
-    public init(plugin: String, key: String, label: String, screen: String) {
+    public init(plugin: String, key: String, label: String, screen: String, count: Int? = nil) {
         self.plugin = plugin
         self.key = key
         self.label = label
         self.screen = screen
+        self.count = count
     }
 }
 
@@ -61,20 +63,6 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
     public let permissions: PluginPermissions
 
     public var id: String { name }
-
-    public var source: String { listed ? "cooee's index" : url }
-
-    public var may: [String] {
-        let lines = places.map { place in
-            switch place.kind {
-            case "header-strip": "\(place.label) chip on the header strip"
-            case "chat-cards": "cards in its chats"
-            default: "\(place.label) row in Plugins"
-            }
-        }
-        let claimed = claims.map { "sessions labelled source=\($0) in its Workflow sheet" }
-        return lines + claimed + (permissions.push ? ["notifications"] : [])
-    }
 
     public init(
         name: String,

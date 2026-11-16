@@ -17,25 +17,30 @@ internal struct ClientTests {
 
     private struct Started: Decodable, Equatable {
         private enum CodingKeys: String, CodingKey {
-            case agent, profile, text, background
+            case agent, profile, machine, text, background, setup
             case randomID = "random_id"
         }
 
         fileprivate let agent: String
         fileprivate let profile: String
+        fileprivate let machine: String
         fileprivate let text: String
         fileprivate let randomID: String
         fileprivate let background: Bool
+        fileprivate var setup = false
     }
 
-    @Test internal func threadsPersonasAndASliceDecodeAsDocumented() async throws {
+    @Test internal func homePersonasAndASliceDecodeAsDocumented() async throws {
         let server = CannedServer([
-            "/threads": [try Fixture.answer("threads.json")],
+            "/screens/home": [try Fixture.answer("home.json")],
             "/personas": [try Fixture.answer("personas.json")],
             "/threads/a1b2/messages": [try Fixture.answer("messages.json")],
         ])
         let client = server.client()
-        let rows = try await client.threads()
+        let home = try await client.home()
+        let rows = home.threads
+        #expect(home.screen.title == "cooee" && home.screen.blocks.map(\.type) == ["pinned", "chats"])
+        #expect(home.personas == [.coder])
         #expect(rows.map(\.id) == ["a1b2", "old"])
         #expect(rows[0].persona == "coder" && rows[0].unseen == 2 && rows[0].state == "working" && rows[1].archived)
         #expect(rows[0].workflow == nil && rows[1].workflow?.source == "drover" && rows[1].workflow?.stage == "impl 1")
@@ -46,7 +51,7 @@ internal struct ClientTests {
         #expect(slice.queue == [Queued(text: "Then open the PR", randomID: "q1")])
         #expect(
             slice.items.map(\.kind) == ["you", "tool", "tool", "approval", "link", "plan", "note", "agent", "ended"])
-        #expect(server.requests("/threads").first?.value(forHTTPHeaderField: "Cookie") == "cooee=tok")
+        #expect(server.requests("/screens/home").first?.value(forHTTPHeaderField: "Cookie") == "cooee=tok")
         #expect(server.requests("/threads/a1b2/messages").first?.url?.query == "before=50")
     }
 
@@ -78,21 +83,26 @@ internal struct ClientTests {
         #expect(server.body("/threads/a1b2/retry") == "{}")
     }
 
-    @Test internal func aNewThreadStartsForAPersona() async throws {
+    @Test internal func aNewThreadStartsForAPersonaOnTheMachinePicked() async throws {
         let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n1"}"#])]])
-        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp")
-        #expect(try await server.client().newThread(persona: persona, text: "hi", randomID: "r9") == "n1")
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp", machine: "air")
+        let client = server.client()
+        #expect(try await client.newThread(persona: persona, machine: "mini", text: "hi", randomID: "r9") == "n1")
         let body = try server.decoded("/threads", as: Started.self)
-        #expect(body == Started(agent: "fake-acp", profile: "coder", text: "hi", randomID: "r9", background: true))
+        #expect(
+            body
+                == Started(
+                    agent: "fake-acp", profile: "coder", machine: "mini", text: "hi", randomID: "r9", background: true))
+        #expect(server.body("/threads")?.contains("model") == false)
     }
 
     @Test internal func cooeesOwnSentenceIsTheError() async throws {
         let server = CannedServer([
-            "/threads": [Answer(status: 500, headers: ["Cooee-Error": "1"], chunks: ["The store is locked."])],
+            "/screens/home": [Answer(status: 500, headers: ["Cooee-Error": "1"], chunks: ["The store is locked."])],
             "/personas": [Answer(status: 401, chunks: ["nope"])],
         ])
         let client = server.client()
-        await #expect(throws: APIError(status: 500, text: "The store is locked.")) { try await client.threads() }
+        await #expect(throws: APIError(status: 500, text: "The store is locked.")) { try await client.home() }
         await #expect(throws: APIError(status: 401, text: "")) { try await client.personas() }
         #expect(APIError(status: 401, text: "").errorDescription == "The server answered 401.")
         #expect(APIError(status: 500, text: "Locked.").errorDescription == "Locked.")
@@ -154,5 +164,19 @@ internal struct ClientTests {
         #expect(client.base == server.url)
         #expect(try client.request("GET", "/threads").value(forHTTPHeaderField: "Cookie") == "cooee=t1")
         #expect(throws: APIError.self) { try Client.http(URLResponse()) }
+    }
+}
+
+extension ClientTests {
+    @Test internal func aSetupChatSaysSo() async throws {
+        let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n2"}"#])]])
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp")
+        #expect(
+            try await server.client().newThread(persona: persona, machine: "", text: "hi", setup: true, randomID: "r8")
+                == "n2")
+        let body = try server.decoded("/threads", as: Started.self)
+        let want = Started(
+            agent: "fake-acp", profile: "coder", machine: "", text: "hi", randomID: "r8", background: true, setup: true)
+        #expect(body == want)
     }
 }

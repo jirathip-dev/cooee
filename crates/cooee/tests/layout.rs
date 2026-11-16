@@ -17,7 +17,6 @@ use support::{Cooee, FakeShed, scratch, version};
 
 const DEFAULT: &str = include_str!("../../../apple/Sources/CooeeUI/Default/layout.json");
 
-/// `/layout/events`, read event by event: `(name, data)`.
 struct Events(BufReader<TcpStream>);
 
 impl Events {
@@ -53,7 +52,6 @@ impl Events {
     }
 }
 
-/// `GET /layout` with `If-None-Match: etag`: the status, `ETag` header and body.
 fn layout(c: &Cooee, etag: &str) -> (u16, String, String) {
     let cookie = c.cookie.as_str();
     let (head, body) = c.raw(
@@ -89,7 +87,6 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
     let c = Cooee::start(&dir, &shed.dir);
     let file = dir.join("layout.json");
 
-    // No file: the default, with its etag; 304 when the app already has it.
     let (code, tag, body) = layout(&c, "");
     let first: Value = serde_json::from_str(&body).unwrap();
     assert_eq!(
@@ -104,7 +101,6 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
         (304, tag.as_str(), "")
     );
 
-    // A good write is served and announced.
     let mut events = Events::open(&c);
     let good = DEFAULT.replace(r#""id": "home""#, r#""id": "home", "label": "Home""#);
     fs::write(&file, &good).unwrap();
@@ -118,7 +114,6 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
         "Home"
     );
 
-    // A bad one: `broken` with its line, and the good one is still served.
     let bad = good.replace(r#""place": "sheet" }"#, r#""place": "float" }"#);
     fs::write(&file, &bad).unwrap();
     let line = bad.lines().position(|l| l.contains("float")).unwrap() + 1;
@@ -133,16 +128,20 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
         "{data}"
     );
     assert_eq!(layout(&c, &good_tag).0, 304);
-    // A new subscriber hears it's broken at once.
     assert_eq!(Events::open(&c).next().0, "broken");
 
-    // `cooee layout check`, the same rules: the default passes, the bad file fails at that line.
     fs::write(dir.join("default.json"), DEFAULT).unwrap();
     assert!(check(&c, &dir.join("default.json")).0);
+    let faded = DEFAULT.replace(
+        r#""place": "sheet" }"#,
+        r#""place": "sheet", "transition": "fade" }"#,
+    );
+    assert_ne!(faded, DEFAULT);
+    fs::write(dir.join("faded.json"), &faded).unwrap();
+    assert!(check(&c, &dir.join("faded.json")).0);
     let fixtures = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../apple/Tests/CooeeCoreTests/Fixtures/layouts");
     for f in fs::read_dir(fixtures).unwrap() {
-        // The app's own refusals: each bad fixture fails here too; a locked screen named in a file is dropped.
         let f = f.unwrap().path();
         let ok = f.ends_with("locked-replaced.json");
         assert_eq!(check(&c, &f).0, ok, "{}", f.display());
@@ -153,7 +152,6 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
         "{out}"
     );
 
-    // Reset: the default written, the bad file kept as .bak, served and announced.
     let (code, body) = c.post("/layout/reset", &Value::Null);
     let reset: Value = serde_json::from_str(&body).unwrap();
     assert_eq!((code, &reset["etag"]), (200, &first["etag"]), "{body}");
@@ -164,4 +162,64 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
     );
     assert_eq!(events.next().0, "changed");
     assert_eq!(layout(&c, &tag).0, 304);
+}
+
+const MANIFEST: &str = "name = \"drover\"\nversion = \"0.1.0\"\nbuild = \"true\"\nrun = \"true\"\n\n[[places]]\n\
+                        type = \"header-strip\"\nlabel = \"Queue\"\nscreen = \"/screens/queue\"\n\n[permissions]\n\
+                        places = [\"header-strip\", \"menu-row\"]\n";
+
+#[test]
+fn a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped() {
+    let dir = scratch("layout-places");
+    let build = dir.join("data/plugins/drover/builds/c0ffee12345");
+    fs::create_dir_all(&build).unwrap();
+    fs::write(build.join("cooee-plugin.toml"), MANIFEST).unwrap();
+    let lock = serde_json::json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0ffee12345",
+                                    "version": "0.1.0", "listed": true, "tabs": [], "port": 1, "enabled": true }]);
+    fs::write(dir.join("data/plugins.lock"), lock.to_string()).unwrap();
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let c = Cooee::start(&dir, &shed.dir);
+    let served = |c: &Cooee| serde_json::from_str::<Value>(&layout(c, "").2).unwrap();
+
+    let first = served(&c);
+    let strip = &first["layout"]["root"]["slots"]["main"][1]["slots"]["strip"];
+    assert_eq!(
+        strip,
+        &serde_json::json!([{ "type": "screen", "id": "drover-0", "source": "drover", "path": "/screens/queue",
+                              "label": "Queue", "place": "strip" }]),
+        "{first}"
+    );
+    assert_eq!(first["skipped"], serde_json::json!([]));
+
+    let mut events = Events::open(&c);
+    let moved = DEFAULT
+        .replace(
+            r#"{ "type": "sidebar", "#,
+            r#"{ "type": "sidebar", "slots": { "top": [{ "type": "screen", "source": "drover", "path": "/screens/queue", "label": "Queue", "place": { "wide": "column", "compact": "menu" } }] }, "#,
+        )
+        .replace(
+            r#""config": { "composer": true"#,
+            r#""slots": { "cards": [{ "type": "screen", "source": "drover", "path": "/screens/cards", "place": "cards" }] }, "config": { "composer": true"#,
+        );
+    fs::write(dir.join("layout.json"), &moved).unwrap();
+    assert_eq!(events.next().0, "changed");
+    let answer = served(&c);
+    let root = &answer["layout"]["root"];
+    assert_eq!(
+        root["slots"]["side"][0]["slots"]["top"][0]["place"],
+        serde_json::json!({ "wide": "column", "compact": "menu" }),
+        "{answer}"
+    );
+    assert_eq!(
+        root["slots"]["main"][1]["slots"],
+        serde_json::json!({ "cards": [] })
+    );
+    assert_eq!(root["slots"]["main"][0]["id"], "home");
+    assert_eq!(
+        answer["skipped"],
+        serde_json::json!([
+            r#"root.slots.main[1].slots.cards[0]: drover may not be placed "cards""#
+        ])
+    );
+    assert_ne!(answer["etag"], first["etag"]);
 }

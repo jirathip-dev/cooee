@@ -1,5 +1,3 @@
-//! The owner's `layout.json` beside `config.toml`, checked by the app's rules, served as the last good one (#300).
-
 use std::{
     collections::HashSet,
     fs, io,
@@ -22,9 +20,10 @@ use topcoat::{
     },
 };
 
-use crate::{header, hub::lock, plain};
+use cooee_core::plugins::{self, Manifest, PlaceKind};
 
-/// The layout an app draws when the owner has none: the app's bundled default.
+use crate::{Data, header, hub::lock, plain};
+
 const DEFAULT: &str = include_str!("../../../apple/Sources/CooeeUI/Default/layout.json");
 
 const KINDS: [(&str, &[&str], &[&str]); 8] = [
@@ -40,6 +39,7 @@ const KINDS: [(&str, &[&str], &[&str]); 8] = [
 const PLACES: [&str; 9] = [
     "push", "sheet", "panel", "column", "strip", "cards", "menu", "inline", "hidden",
 ];
+const TRANSITIONS: [&str; 4] = ["push", "sheet", "fade", "none"];
 const LOCKED: [&str; 2] = ["/screens/pairing", "/screens/reset-layout"];
 
 /// Why a layout was refused, and where: `line` and `col` count from 1.
@@ -72,23 +72,19 @@ pub fn check(text: &str) -> Result<Value, Broken> {
         col: e.column(),
         why: e.to_string(),
     })?;
-    if file["format"].as_f64() != Some(1.0) {
-        return Err(at(
-            "\"format\"",
-            0,
-            format!("format {} is not 1", file["format"]),
-        ));
+    let format = file.get("format").unwrap_or(&Value::Null);
+    if format.as_f64() != Some(1.0) {
+        return Err(at("\"format\"", 0, format!("format {format} is not 1")));
     }
-    if file["root"]["type"] != "nav" {
+    let root = file.get("root").unwrap_or(&Value::Null);
+    if root.get("type").is_none_or(|t| t != "nav") {
         return Err(at("\"root\"", 0, "root: not a nav".into()));
     }
     let mut ids: HashSet<String> = ["pairing", "reset-layout"].map(str::to_owned).into();
-    node(&file["root"], "root", 1, &mut ids)
-        .map_err(|(why, bad, nth)| at(&format!("{bad:?}"), nth, why))?;
+    node(root, "root", 1, &mut ids).map_err(|(why, bad, nth)| at(&format!("{bad:?}"), nth, why))?;
     Ok(file)
 }
 
-/// Checks one node and its slots (`ids`: the ids taken so far): `Err((why, the offending text, its occurrence))`.
 fn node(
     n: &Value,
     path: &str,
@@ -136,6 +132,15 @@ fn node(
     if !place.is_null() && named == [None; 3] {
         return fail("no place in", "place");
     }
+    if let Some(t) = n.get("transition") {
+        let name = t.as_str().unwrap_or_default();
+        if !TRANSITIONS.contains(&name) {
+            return fail(
+                "unknown transition",
+                if name.is_empty() { "transition" } else { name },
+            );
+        }
+    }
     for k in n["config"].as_object().into_iter().flat_map(|o| o.keys()) {
         if !config.contains(&k.as_str()) {
             return fail("unknown config", k);
@@ -152,12 +157,130 @@ fn node(
     Ok(())
 }
 
-/// What `GET /layout` serves, and why the file isn't it when it's broken.
+fn merged(mut layout: Value, plugins: &[Manifest]) -> (Value, Vec<String>) {
+    let mut placed = Vec::new();
+    sources(layout.get("root").unwrap_or(&Value::Null), &mut placed);
+    for m in plugins.iter().filter(|m| !placed.contains(&m.name)) {
+        let screens = m
+            .places
+            .iter()
+            .filter(|p| p.screen.starts_with("/screens/"));
+        for (i, p) in screens.enumerate() {
+            let (kind, slot, place) = match p.kind {
+                PlaceKind::HeaderStrip => ("chat", "strip", "strip"),
+                PlaceKind::ChatCards => ("chat", "cards", "cards"),
+                PlaceKind::MenuRow => ("nav", "menu", "menu"),
+            };
+            let Some(host) = layout.get_mut("root").and_then(|r| find(r, kind)) else {
+                continue;
+            };
+            let Some(slots) = host
+                .as_object_mut()
+                .map(|h| h.entry("slots").or_insert(Value::Null))
+            else {
+                continue;
+            };
+            if slots.is_null() {
+                *slots = json!({});
+            }
+            let Some(list) = slots
+                .as_object_mut()
+                .map(|s| s.entry(slot).or_insert(Value::Null))
+            else {
+                continue;
+            };
+            if list.is_null() {
+                *list = json!([]);
+            }
+            if let Some(list) = list.as_array_mut() {
+                list.push(
+                    json!({ "type": "screen", "id": format!("{}-{i}", m.name), "source": m.name,
+                                  "path": p.screen, "label": p.label, "place": place }),
+                );
+            }
+        }
+    }
+    let mut skipped = Vec::new();
+    if let Some(root) = layout.get_mut("root") {
+        prune(root, "root", plugins, &mut skipped);
+    }
+    (layout, skipped)
+}
+
+fn sources(n: &Value, out: &mut Vec<String>) {
+    out.extend(n["source"].as_str().map(str::to_owned));
+    for children in n["slots"].as_object().into_iter().flat_map(|o| o.values()) {
+        for child in children.as_array().into_iter().flatten() {
+            sources(child, out);
+        }
+    }
+}
+
+fn find<'a>(n: &'a mut Value, kind: &str) -> Option<&'a mut Value> {
+    if n["type"] == kind {
+        return Some(n);
+    }
+    let slots = n.get_mut("slots")?.as_object_mut()?.values_mut();
+    slots
+        .flat_map(|c| c.as_array_mut().into_iter().flatten())
+        .find_map(|c| find(c, kind))
+}
+
+fn prune(n: &mut Value, path: &str, plugins: &[Manifest], skipped: &mut Vec<String>) {
+    let Some(slots) = n.get_mut("slots").and_then(Value::as_object_mut) else {
+        return;
+    };
+    for (slot, children) in slots {
+        let Some(list) = children.as_array_mut() else {
+            continue;
+        };
+        let mut i = 0;
+        list.retain_mut(|child| {
+            let at = format!("{path}.slots.{slot}[{i}]");
+            i += 1;
+            if let Some(why) = refused(child, plugins) {
+                skipped.push(format!("{at}: {why}"));
+                return false;
+            }
+            prune(child, &at, plugins, skipped);
+            true
+        });
+    }
+}
+
+fn refused(n: &Value, plugins: &[Manifest]) -> Option<String> {
+    let source = n["source"]
+        .as_str()
+        .filter(|s| n["type"] == "screen" && *s != "core")?;
+    let Some(m) = plugins.iter().find(|m| m.name == source) else {
+        return Some(format!("no enabled plugin {source:?}"));
+    };
+    let place = &n["place"];
+    let named: Vec<&str> = [place, &place["compact"], &place["wide"]]
+        .iter()
+        .filter_map(|p| p.as_str())
+        .collect();
+    let needs = |p: &str| match p {
+        "hidden" => None,
+        "cards" => Some(PlaceKind::ChatCards),
+        "menu" => Some(PlaceKind::MenuRow),
+        _ => Some(PlaceKind::HeaderStrip),
+    };
+    let places = if named.is_empty() {
+        vec!["inline"]
+    } else {
+        named
+    };
+    let bad = places
+        .into_iter()
+        .find(|p| needs(p).is_some_and(|k| !m.permissions.places.contains(&k)))?;
+    Some(format!("{source} may not be placed {bad:?}"))
+}
+
 struct Served {
     etag: String,
     layout: Value,
     broken: Option<Broken>,
-    /// The file's text last read (none: no file), so a broken one is reported once.
     seen: Option<String>,
 }
 
@@ -186,14 +309,12 @@ impl Layouts {
         std::thread::spawn(move || {
             loop {
                 again.reload();
-                std::thread::sleep(Duration::from_secs(1));
+                cooee_core::clock::sleep(Duration::from_secs(1));
             }
         });
         me
     }
 
-    /// Reads the file again: a good change is served and `changed` fanned out; a bad one is fanned out as `broken`
-    /// and the last good layout stays.
     fn reload(&self) {
         let text = self.file.as_ref().and_then(|f| fs::read_to_string(f).ok());
         let mut s = lock(&self.served);
@@ -209,10 +330,9 @@ impl Layouts {
             }
             Err(b) => ("broken", json!(s.broken.insert(b))),
         };
-        let _ = self.tx.send((said.0, said.1.to_string()));
+        self.tx.send((said.0, said.1.to_string())).ok();
     }
 
-    /// Writes the default over the file, keeping the old one as `layout.json.bak`.
     fn reset(&self) -> io::Result<()> {
         let Some(file) = &self.file else {
             return Err(io::Error::other("no config folder"));
@@ -238,15 +358,30 @@ pub async fn get(cx: &Cx) -> Result<Response> {
     answer(cx)
 }
 
+fn manifests(cx: &Cx) -> Vec<Manifest> {
+    let data = &app_context::<Data>(cx).0;
+    let installed = plugins::read_lock(data).unwrap_or_default();
+    let enabled = installed.iter().filter(|l| l.enabled);
+    enabled
+        .filter_map(|l| plugins::manifest(data, l).ok())
+        .collect()
+}
+
 fn answer(cx: &Cx) -> Result<Response> {
     let l = layouts(cx);
     let s = lock(&l.served);
-    let tag = format!("\"{}\"", s.etag);
+    let (layout, skipped) = merged(s.layout.clone(), &manifests(cx));
+    let etag = if layout == s.layout {
+        s.etag.clone()
+    } else {
+        cooee_core::sha256(format!("{}{layout}", s.etag).as_bytes())
+    };
+    let tag = format!("\"{etag}\"");
     let same = header(cx, "if-none-match").is_some_and(|m| m.split(',').any(|m| m.trim() == tag));
     let body = if same {
         String::new()
     } else {
-        json!({ "etag": s.etag, "layout": s.layout }).to_string()
+        json!({ "etag": etag, "layout": layout, "skipped": skipped }).to_string()
     };
     Ok(Response::builder()
         .status(if same { 304 } else { 200 })
@@ -264,7 +399,6 @@ pub async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + u
         .broken
         .as_ref()
         .map(|b| ("broken", json!(b).to_string()));
-    // A subscriber that fell behind is dropped; it reconnects and reads `GET /layout`.
     let rest = stream::unfold(
         rx,
         |mut rx| async move { rx.recv().await.ok().map(|e| (e, rx)) },

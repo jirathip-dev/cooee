@@ -4,11 +4,10 @@ import CooeeCore
 @DependencyClient
 public struct PersonasClient: Sendable {
     public var create: @Sendable (_ server: Server, _ persona: APIPersona) async throws -> APIPersona
-    public var save: @Sendable (_ server: Server, _ persona: APIPersona) async throws -> APIPersona
-    public var memory: @Sendable (_ server: Server, _ persona: String) async throws -> [PersonaNote]
-    public var forget: @Sendable (_ server: Server, _ persona: String) async throws -> Void
+    public var remove: @Sendable (_ server: Server, _ persona: String) async throws -> Void
     public var agents: @Sendable (_ server: Server) async throws -> [AgentOption]
     public var models: @Sendable (_ server: Server) async throws -> [ModelList]
+    public var machines: @Sendable (_ server: Server) async throws -> [MachineRow]
     public var folders: @Sendable (_ server: Server, _ path: String?) async throws -> FolderListing
 }
 

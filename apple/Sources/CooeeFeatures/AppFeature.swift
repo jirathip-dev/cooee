@@ -14,6 +14,7 @@ public struct AppFeature: Sendable {
         public var newRoom: NewRoomFeature.State?
         public var path: [String] = []
         public var menu: MenuFeature.State
+        public var terminal: TerminalFeature.State
         public var layout: LayoutFeature.State
         @Presents public var persona: PersonaFeature.State?
         public let mac: Bool
@@ -25,6 +26,7 @@ public struct AppFeature: Sendable {
             pairing = server == nil && !mac ? PairingFeature.State() : nil
             setup = server == nil && mac ? MacSetupFeature.State() : nil
             menu = MenuFeature.State(server: server, settings: settings)
+            terminal = TerminalFeature.State(server: server)
         }
     }
 
@@ -37,6 +39,7 @@ public struct AppFeature: Sendable {
         case newRoom(NewRoomFeature.Action)
         case room
         case menu(MenuFeature.Action)
+        case terminal(TerminalFeature.Action)
         case layout(LayoutFeature.Action)
         case persona(PresentationAction<PersonaFeature.Action>)
         case edit(String?)
@@ -55,6 +58,7 @@ public struct AppFeature: Sendable {
     public var body: some ReducerOf<Self> {
         Scope(state: \.menu, action: \.menu) { MenuFeature() }
         Scope(state: \.layout, action: \.layout) { LayoutFeature() }
+        Scope(state: \.terminal, action: \.terminal) { TerminalFeature() }
         Reduce { state, action in
             switch action {
             case .pairing(.delegate(.paired(let server))), .setup(.delegate(.paired(let server))):
@@ -73,19 +77,18 @@ public struct AppFeature: Sendable {
                 state.pairing = nil
                 state.setup = MacSetupFeature.State()
                 return .none
-            case .persona(.presented(.delegate(.saved))):
+            case .persona(.presented(.delegate(.saved))), .persona(.presented(.delegate(.deleted))):
                 state.persona = nil
                 return .send(.home(.refresh))
-            case .chat(.delegate(.started(let thread))):
-                state.path = state.path.dropLast() + [thread]
-                state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
+            case .persona(.presented(.delegate(.chat(let persona)))):
+                state.persona = nil
+                state.path = ["setup:\(persona.id)"]
+                state.chat = state.home.map {
+                    ChatFeature.State(server: $0.server, target: .setup(persona), persona: Persona(persona))
+                }
                 return .send(.home(.refresh))
-            case .chat(.delegate(.open(let thread))):
-                return .send(.open(thread))
-            case .chat(.delegate(.round(let thread))):
-                state.path.append(thread)
-                state.chat = chat(state, thread)
-                return .none
+            case .chat(.delegate(let delegate)):
+                return relay(&state, delegate)
             case .home(.loaded):
                 let workflow = state.home?.lists(now: now).workflow[state.chat?.persona.id ?? ""]
                 state.chat?.workflow = workflow
@@ -125,8 +128,7 @@ public struct AppFeature: Sendable {
             }
             return navigate(&state, newest.map { .open($0.id) } ?? .start(persona))
         case .start(let persona):
-            state.path = ["new:\(persona)"]
-            state.chat = chat(state, "new:\(persona)")
+            return navigate(&state, .open("new:\(persona)"))
         case .back:
             pop(&state, to: Array(state.path.dropLast()))
         case .path(let path) where path.count < state.path.count:
@@ -165,17 +167,56 @@ extension AppFeature {
             let persona = Persona(APIPersona(id: "", name: title, agent: ""))
             return ChatFeature.State(server: home.server, target: .thread(id), persona: persona, room: room)
         }
+        if let exchange = Exchange.of(id, rows: home.rows, personas: home.personas) {
+            let persona = Persona(exchange.target)
+            return ChatFeature.State(server: home.server, target: .thread(id), persona: persona, exchange: exchange)
+        }
         let lists = home.lists(now: now)
         var chat: ChatFeature.State
         if id.hasPrefix("new:") {
             guard let persona = home.persona(String(id.dropFirst(4))) else { return nil }
             chat = ChatFeature.State(server: home.server, target: .new(persona), persona: Persona(persona))
+            chat.machine.current = persona.machine
         } else {
             let listed = lists.all.first { $0.id == id }?.persona
             let persona = listed ?? Persona(APIPersona(id: "", name: "Chat", agent: ""))
             chat = ChatFeature.State(server: home.server, target: .thread(id), persona: persona)
+            chat.machine.current = home.rows.first { $0.id == id }?.machine ?? ""
         }
         chat.workflow = lists.workflow[chat.persona.id]
         return chat
+    }
+}
+
+extension AppFeature {
+    private func relay(_ state: inout State, _ delegate: ChatFeature.Action.Delegate) -> Effect<Action> {
+        switch delegate {
+        case .start(let persona):
+            return .send(.start(persona))
+        case .persona(let persona):
+            return .send(.edit(persona))
+        case .open(let thread):
+            return .send(.open(thread))
+        case .round(let thread):
+            state.path.append(thread)
+            state.chat = chat(state, thread)
+            return .none
+        case .started(let thread):
+            state.path = state.path.dropLast() + [thread]
+            state.chat = state.chat.map { Self.moved($0, to: .thread(thread), persona: $0.persona) }
+            return .send(.home(.refresh))
+        case .restart(let persona):
+            state.path = state.path.dropLast() + ["new:\(persona.id)"]
+            state.chat = state.chat.map { Self.moved($0, to: .new(persona), persona: Persona(persona)) }
+            return .none
+        }
+    }
+
+    private static func moved(
+        _ chat: ChatFeature.State, to target: ChatFeature.Target, persona: Persona
+    ) -> ChatFeature.State {
+        var moved = ChatFeature.State(server: chat.server, target: target, persona: persona)
+        moved.machine = chat.machine
+        return moved
     }
 }

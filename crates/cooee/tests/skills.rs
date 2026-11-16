@@ -12,7 +12,7 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, scratch, version};
+use support::{Cooee, FakeShed, agent, scratch, version};
 
 struct Setup {
     dir: PathBuf,
@@ -22,14 +22,10 @@ struct Setup {
 
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
-    fs::create_dir_all(dir.join("personas")).unwrap();
     for n in ["Ada", "Bo"] {
-        let file = dir.join(format!("personas/{}.toml", n.to_lowercase()));
-        fs::write(
-            file,
-            format!("name = \"{n}\"\nagent = \"fake-acp\"\ncharacter = \"I am {n}.\"\n"),
-        )
-        .unwrap();
+        let toml = format!("name = \"{n}\"\nagent = \"fake-acp\"\nstyle = \"detailed\"\n");
+        let home = agent(&dir, &n.to_lowercase(), &toml, "");
+        fs::write(home.join("CHARACTER.md"), format!("I am {n}.")).unwrap();
     }
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
@@ -45,7 +41,6 @@ impl Setup {
         )
     }
 
-    /// A new thread as `persona`: its id and the first prompt its agent got.
     fn start(&self, persona: &str) -> (String, String) {
         let random = format!("start-{}", self.shed.cli_log().len());
         let new =
@@ -58,7 +53,6 @@ impl Setup {
         (id, prompt["prompt"].as_str().unwrap().to_owned())
     }
 
-    /// `skill` called by thread `id`'s agent through cooee's own MCP server: the tool's text and whether it failed.
     fn skill(&self, id: &str, args: &Value) -> (String, bool) {
         let file = self.shed.dir.join(format!("mcp-cooee-{id}.json"));
         let servers: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
@@ -85,7 +79,6 @@ impl Setup {
         (text, result["isError"] == json!(true))
     }
 
-    /// Thread `id`'s newest skill card.
     fn card(&self, id: &str) -> Value {
         let items = self.cooee.json(&format!("/threads/{id}/messages"));
         let mut cards = items["items"].as_array().unwrap().iter();
@@ -95,7 +88,6 @@ impl Setup {
             .clone()
     }
 
-    /// The owner taps `option` on card `card` of thread `id`.
     fn answer(&self, id: &str, card: &Value, option: &str) -> Value {
         let tap = json!({ "item": card["id"], "option": option });
         let (status, body) = self.call("POST", &format!("/threads/{id}/approve"), Some(&tap));
@@ -105,7 +97,7 @@ impl Setup {
 
     fn file(&self, persona: &str, name: &str) -> PathBuf {
         self.dir
-            .join(format!("data/personas/{persona}/skills/{name}/SKILL.md"))
+            .join(format!("agents/{persona}/skills/{name}/SKILL.md"))
     }
 }
 
@@ -129,14 +121,12 @@ fn an_approved_skill_is_saved_and_briefed_by_description_and_a_refused_one_is_no
         "unanswered: nothing saved"
     );
 
-    // Refused: nothing saved.
     let other = json!({ "name": "deploy", "description": "How I deploy.", "body": "Ship it." });
     assert!(!s.skill(&id, &json!({ "propose": other })).1);
     let declined = s.answer(&id, &s.card(&id), "decline");
     assert_eq!(declined["line"], "declined");
     assert!(!s.file("ada", "deploy").exists());
 
-    // Approved: saved as the file, listed by description in the next session's brief, never its body.
     let approved = s.answer(&id, &card, "approve");
     assert_eq!(approved["line"], "saved skill release");
     assert_eq!(
@@ -148,10 +138,8 @@ fn an_approved_skill_is_saved_and_briefed_by_description_and_a_refused_one_is_no
         brief,
         "I am Ada.\n\nYour skills (read one with cooee's skill tool):\n- release: How I cut a release.\n\nhi"
     );
-    // Byte-identical while the skills are unchanged.
     assert_eq!(s.start("ada").1, brief);
 
-    // Its body on demand, to its own persona only.
     assert_eq!(
         s.skill(&next, &json!({ "read": "release" })),
         ("1. Tag it.\n2. Write the notes.".to_owned(), false)
@@ -166,7 +154,6 @@ fn an_approved_skill_is_saved_and_briefed_by_description_and_a_refused_one_is_no
         "{refused}"
     );
 
-    // An edit shows as a diff, and is saved only once approved.
     let edit = json!({ "name": "release", "description": "How I cut a release.",
                        "body": "1. Tag it.\n2. Write the notes.\n3. Post them.", "replaces": "release" });
     assert!(!s.skill(&next, &json!({ "propose": edit })).1);
@@ -196,7 +183,6 @@ fn an_approved_skill_is_saved_and_briefed_by_description_and_a_refused_one_is_no
             .contains("3. Post them.")
     );
 
-    // Clearing its notes leaves its skills.
     assert_eq!(s.call("DELETE", "/personas/ada/memory", None).0, 200);
     assert!(s.file("ada", "release").exists());
 }
@@ -220,7 +206,6 @@ fn the_app_keeps_skills_and_the_twenty_first_is_refused() {
     assert!(failed, "{said}");
     assert_eq!(said, "a persona keeps at most 20 skills");
 
-    // Too long a description, or a name taken, is refused.
     let long = json!({ "name": "long", "description": "x".repeat(121), "body": "" });
     assert_eq!(s.call("POST", "/personas/bo/skills", Some(&long)).0, 400);
     assert_eq!(
@@ -228,7 +213,6 @@ fn the_app_keeps_skills_and_the_twenty_first_is_refused() {
         400
     );
 
-    // Read, edit (renamed), delete.
     assert_eq!(s.cooee.json("/personas/ada/skills/s01")["body"], "Do it.");
     let renamed = json!({ "name": "first", "description": "The first.", "body": "Do it first." });
     let (status, body) = s.call("PUT", "/personas/ada/skills/s01", Some(&renamed));

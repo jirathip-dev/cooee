@@ -15,14 +15,18 @@ extension Client {
 
     private struct NewThread: Encodable {
         private enum CodingKeys: String, CodingKey {
-            case agent, profile, text, background
+            case agent, profile, model, effort, machine, text, background, setup
             case randomID = "random_id"
         }
 
         fileprivate let agent: String
         fileprivate let profile: String
+        fileprivate let model: String?
+        fileprivate let effort: String?
+        fileprivate let machine: String
         fileprivate let text: String
         fileprivate let randomID: String
+        fileprivate let setup: Bool
         fileprivate let background = true
     }
 
@@ -100,9 +104,11 @@ extension Client {
         try await post("/pair/cancel", ["claim": claim])
     }
 
-    public func threads() async throws -> [ThreadRow] { try await call("GET", "/threads") }
+    public func home() async throws -> HomeAnswer { try await call("GET", "/screens/home") }
 
     public func personas() async throws -> [APIPersona] { try await call("GET", "/personas") }
+
+    public func looks() async throws -> Looks { try await call("GET", "/api/v1/looks") }
 
     public func messages(_ id: String, before: Int = 50) async throws -> Slice {
         try await call("GET", "/threads/\(id)/messages?before=\(before)")
@@ -131,6 +137,10 @@ extension Client {
         try await post("/threads/\(id)/unqueue", ["random_id": randomID])
     }
 
+    public func move(_ id: String, to machine: String) async throws {
+        try await post("/threads/\(id)/move", ["machine": machine])
+    }
+
     public func cancel(_ id: String) async throws {
         try await post("/threads/\(id)/cancel", [String: String]())
     }
@@ -143,10 +153,18 @@ extension Client {
         try await post("/threads/\(id)/read", ["item": item])
     }
 
-    public func newThread(persona: APIPersona, text: String, randomID: String = UUID().uuidString) async throws
-        -> String
-    {
-        let body = NewThread(agent: persona.agent, profile: persona.id, text: text, randomID: randomID)
+    public func newThread(
+        persona: APIPersona,
+        machine: String,
+        text: String,
+        setup: Bool = false,
+        randomID: String = UUID().uuidString
+    ) async throws -> String {
+        let body = NewThread(
+            agent: persona.agent, profile: persona.id, model: persona.model.isEmpty ? nil : persona.model,
+            effort: persona.effort.isEmpty ? nil : persona.effort, machine: machine, text: text, randomID: randomID,
+            setup: setup
+        )
         let created: Created = try await call("POST", "/threads", body)
         return created.id
     }

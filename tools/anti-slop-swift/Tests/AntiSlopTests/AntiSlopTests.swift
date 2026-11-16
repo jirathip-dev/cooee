@@ -3,7 +3,6 @@ import XCTest
 @testable import AntiSlopCore
 
 final class AntiSlopTests: XCTestCase {
-    // MARK: Helpers
 
     private func lint(_ source: String, _ ruleType: SlopRule.Type) -> [Violation] {
         AntiSlop.lint(source: source, fileName: "test.swift", rules: [ruleType])
@@ -44,8 +43,6 @@ final class AntiSlopTests: XCTestCase {
         )
     }
 
-    // MARK: no-chained-type-casts
-
     func testChainedForcedCastIsRejected() {
         assertViolation("let x = value as! Foo as! Bar", NoChainedTypeCastsRule.self)
     }
@@ -58,8 +55,6 @@ final class AntiSlopTests: XCTestCase {
         assertClean("let x = value as! Foo", NoChainedTypeCastsRule.self)
         assertClean("let x = value as? Foo", NoChainedTypeCastsRule.self)
     }
-
-    // MARK: require-safety-comment-for-forced-cast
 
     func testForcedCastWithoutSafetyCommentIsRejected() {
         assertViolation(
@@ -89,8 +84,6 @@ final class AntiSlopTests: XCTestCase {
         )
     }
 
-    // MARK: no-force-try
-
     func testForceTryWithoutSafetyCommentIsRejected() {
         assertViolation("let x = try! decode()", NoForceTryRule.self)
     }
@@ -108,8 +101,6 @@ final class AntiSlopTests: XCTestCase {
     func testPlainTryIsClean() {
         assertClean("let x = try decode()", NoForceTryRule.self)
     }
-
-    // MARK: no-force-unwrap
 
     func testForceUnwrapWithoutSafetyCommentIsRejected() {
         assertViolation("let x = optionalValue!", NoForceUnwrapRule.self)
@@ -139,8 +130,6 @@ final class AntiSlopTests: XCTestCase {
         assertClean("if a != b {}", NoForceUnwrapRule.self)
     }
 
-    // MARK: no-any-parameters
-
     func testAnyParameterIsRejected() {
         assertViolation("func handle(input: Any) {}", NoAnyParametersRule.self)
     }
@@ -158,8 +147,6 @@ final class AntiSlopTests: XCTestCase {
         assertClean("struct User {}; func handle(user: User) {}", NoAnyParametersRule.self)
     }
 
-    // MARK: no-any-returns
-
     func testAnyReturnIsRejected() {
         assertViolation("func load() -> Any { 1 }", NoAnyReturnsRule.self)
     }
@@ -168,8 +155,6 @@ final class AntiSlopTests: XCTestCase {
         assertClean("func load() -> Int { 1 }", NoAnyReturnsRule.self)
         assertClean("struct User {}; func load() -> User { User() }", NoAnyReturnsRule.self)
     }
-
-    // MARK: no-any-typealiases
 
     func testAnyTypealiasIsRejected() {
         assertViolation("typealias Payload = Any", NoAnyTypeAliasesRule.self)
@@ -183,8 +168,6 @@ final class AntiSlopTests: XCTestCase {
         assertClean("typealias Handler = () -> Void", NoAnyTypeAliasesRule.self)
     }
 
-    // MARK: no-any-dictionary-value
-
     func testAnyDictionaryValueIsRejected() {
         assertViolation("let metadata: [String: Any] = [:]", NoAnyDictionaryValueRule.self)
     }
@@ -192,8 +175,6 @@ final class AntiSlopTests: XCTestCase {
     func testConcreteDictionaryValueIsClean() {
         assertClean("let metadata: [String: Int] = [:]", NoAnyDictionaryValueRule.self)
     }
-
-    // MARK: no-shape-in-symbol-names
 
     func testShapeInTypeNameIsRejected() {
         assertViolation("struct UserShape {}", NoShapeInSymbolNamesRule.self)
@@ -212,8 +193,6 @@ final class AntiSlopTests: XCTestCase {
         assertClean("let count = 1", NoShapeInSymbolNamesRule.self)
     }
 
-    // MARK: no-key-value-coding
-
     func testValueForKeyIsRejected() {
         assertViolation("let x = owner.value(forKey: \"name\")", NoKeyValueCodingRule.self)
     }
@@ -227,7 +206,6 @@ final class AntiSlopTests: XCTestCase {
     }
 
     func testSetNilValueForKeyWithUnlabeledArgumentIsRejected() {
-        // NSObject.setNilValueForKey(_:) has no argument label.
         assertViolation("owner.setNilValueForKey(\"count\")", NoKeyValueCodingRule.self)
     }
 
@@ -237,7 +215,6 @@ final class AntiSlopTests: XCTestCase {
     }
 
     func testTypedSelectorDispatchIsClean() {
-        // Vision-style typed perform(_:) takes an array, not a selector.
         assertClean("handler.perform([request])", NoKeyValueCodingRule.self)
     }
 
@@ -246,12 +223,9 @@ final class AntiSlopTests: XCTestCase {
     }
 
     func testSetValueWithoutKeyLabelIsClean() {
-        // The where-clause must apply to setValue too, not only setNilValueForKey.
         assertClean("owner.setValue(1)", NoKeyValueCodingRule.self)
         assertClean("owner.setValue(1, forKeyPath2: \"k\")", NoKeyValueCodingRule.self)
     }
-
-    // MARK: no-runtime-type-sniffing
 
     func testStringDescribingTypeOfIsRejected() {
         assertViolation(
@@ -271,8 +245,6 @@ final class AntiSlopTests: XCTestCase {
         assertClean("let name = String(describing: value)", NoRuntimeTypeSniffingRule.self)
         assertClean("let n = type(of: value)", NoRuntimeTypeSniffingRule.self)
     }
-
-    // MARK: end-to-end
 
     func testMultipleRulesReportTogether() {
         let violations = AntiSlop.lint(

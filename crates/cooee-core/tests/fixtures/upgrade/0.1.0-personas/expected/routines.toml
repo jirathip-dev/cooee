@@ -1,0 +1,28 @@
+[[routine]]
+id = "r-1731283200000"
+name = "Monday renewals"
+when = "0 9 * * 1"
+prompt = "Which renewals are due {{due}}?"
+paused = true
+
+[routine.place]
+in = "chat"
+thread = "t-kai"
+
+[[routine]]
+id = "r-1731369600000"
+name = "Daily digest"
+when = "30 18 * * *"
+prompt = "Digest for {{due}}"
+
+[routine.place]
+in = "new_thread"
+
+[routine.place.who]
+agent = "fake-acp"
+account = "work"
+profile = "kai"
+folder = "/srv/kai"
+model = "sonnet"
+effort = "high"
+machine = "air"

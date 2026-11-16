@@ -47,3 +47,31 @@ nesting:
   function_level:
     warning: 2
     error: 2
+opt_in_rules:
+  - implicitly_unwrapped_optional
+implicitly_unwrapped_optional:
+  mode: all
+  severity: error
+custom_rules:
+  no_print:
+    regex: '\bprint\('
+    message: "#203: no print(; show it in the UI or return it"
+    severity: error
+  no_dispatch_queue:
+    regex: '\bDispatchQueue\b'
+    excluded: "Sources/CooeeAPI/Nearby.swift"
+    message: "#203: no DispatchQueue; use Swift concurrency (Nearby.swift only: Network's browser takes a queue)"
+    severity: error
+  user_defaults_in_client:
+    regex: 'UserDefaults\.standard'
+    excluded: "Sources/CooeeApp/Live.swift"
+    message: "#203: UserDefaults.standard only in its Features @Dependency client's live value (CooeeApp/Live.swift)"
+    severity: error
+  task_sleep_behind_clock:
+    regex: 'Task\.sleep'
+    message: "#203: no Task.sleep; sleep on a clock dependency (@Dependency(\\.continuousClock), an injected Clock)"
+    severity: error
+  fatal_error_needs_safety:
+    regex: '(^|\n)(?![ \t]*// SAFETY:)[^\n]*\n[ \t]*fatalError\('
+    message: "#203: no fatalError without a // SAFETY: line right above it"
+    severity: error

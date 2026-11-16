@@ -5,5 +5,6 @@ public enum StreamEvent: Sendable, Equatable {
     case queue([Queued])
     case roomTurn(String)
     case roomStop(String)
+    case roomAsk(RoomAsk)
     case reset
 }

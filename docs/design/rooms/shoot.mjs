@@ -1,7 +1,3 @@
-// #153: shoot each frame alone (`?f=`): a phone screen at 390 × 844 (DPR 2) and a window at 1440 × 900 (DPR 1), farm
-// scheme, under reduced motion, in a style (Modern, Terminal, Scene). Each shot is checked: no sideways scroll, nothing
-// past the right edge, a cut line ellipsised. No deps: Chrome's --remote-debugging-pipe, as native-shell/shoot.mjs.
-// Usage (repo root): node docs/design/rooms/shoot.mjs <chrome-headless-shell> [regexp]
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -10,8 +6,6 @@ import { extname, join } from 'node:path';
 
 const here = new URL('.', import.meta.url).pathname, root = join(here, '../../..');
 const [chrome, re] = process.argv.slice(2);
-// [page, frame, width, style, modes]: the PNG is `<frame>[-<style>]-390-<mode>.png` or `<frame>[-<style>]-1440.png`
-// (Modern unnamed).
 const BOTH = ['dark', 'light'];
 const VIEWS = [
   ['room', 'home', 390, 'modern', ['dark']], ['room', 'create', 390, 'modern', BOTH], ['room', 'room', 390, 'modern', BOTH], ['room', 'mention', 390, 'modern', ['dark']],
@@ -52,7 +46,6 @@ function audit() {
   const bad = [], W = innerWidth, name = e => e.tagName.toLowerCase() + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/).join('.') : '') + ` "${(e.textContent || '').trim().slice(0, 30)}"`;
   if (document.documentElement.scrollWidth > W) bad.push(`sideways scroll ${document.documentElement.scrollWidth} > ${W}`);
   for (const e of document.querySelectorAll('.one *')) {
-    // svg and the status bar are not text.
     if (!e.getClientRects().length || e.closest('svg,.stb,.rdim')) continue;
     const r = e.getBoundingClientRect(), s = getComputedStyle(e);
     if (s.visibility === 'hidden' || r.bottom < 0 || r.top > innerHeight) continue;

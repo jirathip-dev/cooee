@@ -24,17 +24,26 @@ internal struct Avatar: View {
                     LinearGradient(
                         colors: [tint.opacity(0.95), tint.opacity(0.6)], startPoint: .top, endPoint: .bottom)
                 )
-                .overlay(
-                    Image(systemName: persona.look.symbol).font(.system(size: size * 0.40, weight: .semibold))
-                        .foregroundStyle(palette.dark ? Color.black.opacity(0.75) : .white)
-                )
+                .overlay { face.foregroundStyle(palette.dark ? Color.black.opacity(0.75) : .white) }
+                .clipShape(Circle())
                 .frame(width: size, height: size)
         case .terminal:
             Text(persona.figure).font(.system(size: size * 0.30, weight: .bold, design: .monospaced))
                 .foregroundStyle(tint).frame(width: size, height: size)
                 .overlay(Rectangle().strokeBorder(tint.opacity(0.7), lineWidth: 1))
         case .scene:
-            Sprite(name: "horse-\(persona.look.coat)-\(persona.pose)").frame(width: size * 1.32, height: size)
+            Sprite(name: "horse-\(persona.look.coat)-\(persona.pose)", pack: "sprites.svg#s-\(persona.pose)").frame(
+                width: size * 1.32, height: size)
+        }
+    }
+
+    @ViewBuilder private var face: some View {
+        if let photo = AvatarPicture.image(persona.api.avatar) {
+            Image(decorative: photo, scale: 1).resizable().scaledToFill()
+        } else if persona.look.symbol.isEmpty {
+            Text(persona.look.initials).font(.system(size: size * 0.36, weight: .semibold))
+        } else {
+            Image(systemName: persona.look.symbol).font(.system(size: size * 0.40, weight: .semibold))
         }
     }
 }
