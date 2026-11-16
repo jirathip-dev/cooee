@@ -497,3 +497,53 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     let out = fs::read_to_string(shed.dir.join("hook.out")).unwrap();
     assert_eq!(out, "REFUSED MAIN_TARGET\nexit 2\n");
 }
+
+fn options(line: &str) -> Option<Value> {
+    let meta = line.split(" --meta ").nth(1)?.split(' ').next()?;
+    let meta: Value = serde_json::from_str(meta).unwrap();
+    Some(meta["claudeCode"]["options"].clone())
+}
+
+#[test]
+fn a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it() {
+    let s = setup("persona-no-personal");
+    fs::create_dir_all(s.dir.join("personas")).unwrap();
+    fs::write(
+        s.dir.join("personas/ada.toml"),
+        "name = \"Ada\"\nagent = \"fake-acp\"\n",
+    )
+    .unwrap();
+    let personal = |line: &str| {
+        let o = options(line).unwrap_or_else(|| panic!("#416: no options in {line}"));
+        assert_eq!(o["strictMcpConfig"], true, "{line}");
+        assert_eq!(o["settingSources"], json!(["project", "local"]), "{line}");
+    };
+
+    let (_, line) = s.thread("ada", "hi");
+    personal(&line);
+    let (_, line) = s.thread("", "hi");
+    assert_eq!(options(&line), None, "{line}");
+
+    let room = json!({ "members": ["ada", "coder"], "random_id": "room" });
+    let (status, body) = s.cooee.post("/rooms", &room);
+    assert_eq!(status, 200, "{body}");
+    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let said = json!({ "text": "hi all", "random_id": "said" });
+    let (status, body) = s.cooee.post(&format!("/threads/{id}/send"), &said);
+    assert_eq!(status, 200, "{body}");
+    for member in ["ada", "coder"] {
+        let label = format!("cooee.member={member}");
+        let line = (0..200).find_map(|_| {
+            let log = s.shed.cli_log();
+            let line = log.lines().find(|l| l.contains(&label)).map(str::to_owned);
+            line.or_else(|| {
+                std::thread::sleep(std::time::Duration::from_millis(50));
+                None
+            })
+        });
+        personal(&line.unwrap_or_else(|| panic!("{member}'s room session never started")));
+    }
+}
