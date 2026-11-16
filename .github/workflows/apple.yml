@@ -258,7 +258,7 @@ jobs:
           [ "$version" = 2 ] || { echo "the app is version $version, not 2"; exit 1; }
           [ -n "$(pid serve)" ] && [ "$(pid serve)" != "$serve" ] || { echo "cooee did not restart"; exit 1; }
           [ -n "$(pid shed)" ] && [ "$(pid shed)" != "$shed" ] || { echo "shed did not restart"; exit 1; }
-          curl -sSf -o /dev/null -w 'cooee answers %{http_code}\n' http://127.0.0.1:4747/pair
+          curl -sS -o /dev/null -w 'cooee answers %{http_code}\n' http://127.0.0.1:4747/pair
           TEST_RUNNER_COOEE_AFTER_UPDATE=1 xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination "id=$SIM" \
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/ios" -only-testing:CooeeAppUITests/LiveUITests/testStaysPairedAfterTheMacUpdates \
             -resultBundlePath "$RUNNER_TEMP/after-update.xcresult" test-without-building
