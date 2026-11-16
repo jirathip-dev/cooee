@@ -1,8 +1,0 @@
-{
-  "label": "garden",
-  "scheme": { "dark": "garden-dark", "light": "garden-light" },
-  "sprites": true,
-  "moments": true,
-  "words": { "working": "being tended", "needs": "thirsty", "done": "ready", "fail": "leaf drop", "idle": "resting",
-    "merged": "sold!", "loading": "watering", "empty-threads": "the shop's quiet" }
-}

@@ -1,6 +1,3 @@
-//! The shed client: shed's JSON-RPC over its Unix socket, on a small pool of reused connections, each new one starting
-//! with the same-protocol `hello` (ACP terminals for threads, plain ones for logins); and the `shed` CLI for what the socket doesn't offer (`agents`, `run --acp`).
-
 use std::{
     collections::BTreeMap,
     env,
@@ -34,7 +31,10 @@ pub enum ShedError {
         source: io::Error,
     },
     /// shed speaks another protocol than the `shed-proto` cooee was built with.
-    #[error("SHED_VERSION: cooee speaks shed {ours}; {theirs}")]
+    #[error(
+        "SHED_VERSION: cooee speaks shed {ours}; {theirs}; fix: {}",
+        shed_fix()
+    )]
     Version {
         /// This build's shed version, build and protocol.
         ours: String,
@@ -71,7 +71,32 @@ impl ShedError {
     }
 }
 
-/// A hello's version, build and protocol, as [`ShedError::Version`] names each side.
+/// shed's install command: the rev `shed-proto` is pinned to in Cargo.toml, since the hello needs the same protocol.
+pub const SHED_CARGO: [&str; 8] = [
+    "cargo",
+    "install",
+    "--locked",
+    "--git",
+    "https://github.com/jirathip-dev/shed",
+    "--rev",
+    "4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb",
+    "shed",
+];
+
+/// shed's launchd job on macOS (`shed install`).
+pub const SHED_LABEL: &str = "dev.shed.serve";
+
+/// The command that installs the shed this build speaks and restarts its serve onto it.
+#[must_use]
+pub fn shed_fix() -> String {
+    let restart = if cfg!(target_os = "macos") {
+        format!("launchctl kickstart -k gui/$(id -u)/{SHED_LABEL}")
+    } else {
+        "shed serve".to_owned()
+    };
+    format!("{} && {restart}", SHED_CARGO.join(" "))
+}
+
 fn side(hello: &Hello) -> String {
     format!(
         "{} ({}) protocol {}",
@@ -81,11 +106,8 @@ fn side(hello: &Hello) -> String {
     )
 }
 
-/// How long one call may wait for shed's answer: a stuck call fails, and frees the thread it holds, rather than
-/// waiting for ever (herdsman#548). A `wait` gets its own timeout on top.
 const CALL: Duration = Duration::from_secs(10);
 
-/// How many idle, helloed connections a [`Shed`] keeps for reuse (#54).
 const POOL: usize = 4;
 
 /// An installed ACP agent, as `shed agents` lists it.
@@ -149,18 +171,15 @@ pub struct Shed {
     pub bin: PathBuf,
     /// shed's `--dir`, if not the per-user default.
     pub dir: Option<PathBuf>,
-    /// Idle connections past the hello, shared by clones.
     pool: Arc<Mutex<Vec<Conn>>>,
 }
 
-/// One connection, past the hello.
 #[derive(Debug)]
 struct Conn {
     reader: BufReader<UnixStream>,
     writer: UnixStream,
     path: PathBuf,
     id: u64,
-    /// Requests fully written.
     sent: u64,
 }
 
@@ -192,7 +211,6 @@ impl Conn {
         }
     }
 
-    /// Delivers one input to ACP terminal `name`'s bridge: `RS`, the JSON, a newline (shed's `acp::frame`).
     fn input(&mut self, name: &str, input: &Value) -> Result<(), ShedError> {
         let text = format!("\x1e{input}\n");
         let _: Value = self.call(
@@ -206,7 +224,6 @@ impl Conn {
         Ok(())
     }
 
-    /// The next line, `None` once the server closed the connection.
     fn line(&mut self) -> Result<Option<String>, ShedError> {
         let mut line = String::new();
         let n = self.reader.read_line(&mut line).map_err(self.io())?;
@@ -246,9 +263,6 @@ impl Shed {
         self.pool.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
-    /// Runs `f` on an idle connection, else a new one, and keeps the connection for reuse unless it broke. When an
-    /// idle one broke before `f` sent anything (shed restarted since), the pool is dropped and `f` runs once more on
-    /// a new connection, whose hello checks the protocol again; a request that was sent is never resent (#24 R14).
     fn with<R>(
         &self,
         mut f: impl FnMut(&mut Conn) -> Result<R, ShedError>,
@@ -279,7 +293,6 @@ impl Shed {
         self.connect_for(CALL)
     }
 
-    /// A connection whose reads and writes give up after `timeout`.
     fn connect_for(&self, timeout: Duration) -> Result<Conn, ShedError> {
         let io = |source| ShedError::Io {
             path: self.socket.clone(),
@@ -302,6 +315,10 @@ impl Shed {
         };
         match conn.call::<Hello>(Method::Hello, json!(ours)) {
             Ok(theirs) if theirs.compatible() => Ok(conn),
+            Ok(theirs) if theirs.protocol < ours.protocol => Err(version(format!(
+                "the server runs {}, an older shed; restart shed serve",
+                side(&theirs)
+            ))),
             Ok(theirs) => Err(version(format!("the server runs {}", side(&theirs)))),
             Err(ShedError::Rpc(e)) if e.code == ErrorCode::Version.code() => {
                 let why = e.message.trim_start_matches("SHED_VERSION: ");
@@ -343,7 +360,6 @@ impl Shed {
         conn.writer
             .set_read_timeout(Some(tick))
             .map_err(conn.io())?;
-        // Kept across ticks: a tick may land mid-line.
         let mut line = String::new();
         Ok(std::iter::from_fn(move || {
             loop {
@@ -565,7 +581,6 @@ impl Shed {
     ) -> Result<impl Iterator<Item = Event>, ShedError> {
         let mut conn = self.connect()?;
         let _: Value = conn.call(Method::Events, json!(EventsParams { labels, since }))?;
-        // The stream may be quiet for hours.
         conn.writer.set_read_timeout(None).map_err(conn.io())?;
         Ok(std::iter::from_fn(move || {
             loop {

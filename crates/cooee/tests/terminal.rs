@@ -21,7 +21,6 @@ use support::{Cooee, FakeShed, scratch, version};
 
 const TOKEN: &str = "terminal-token-0123456789";
 
-/// A P-256 key's `SubjectPublicKeyInfo` up to its point.
 const SPKI_P256: [u8; 26] = [
     0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, 0x06, 0x08, 0x2a,
     0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x03, 0x42, 0x00,
@@ -34,12 +33,10 @@ struct Mac {
     backend: String,
 }
 
-/// `cooee serve` with the terminal plugin, shells running `/bin/sh -l` in `dir/home`.
 fn mac(name: &str) -> Mac {
     mac_on(name, version())
 }
 
-/// [`mac`] over a fake shed that answers `hello` with `shed`.
 fn mac_on(name: &str, shed: Hello) -> Mac {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), shed);
@@ -63,13 +60,11 @@ fn mac_on(name: &str, shed: Hello) -> Mac {
     }
 }
 
-/// The device's authenticator, as Face ID's would be.
 fn key() -> SigningKey {
     SigningKey::from_slice(&[5; 32]).unwrap()
 }
 
 impl Mac {
-    /// The passkey ceremony as the page runs it: a challenge, then a registration (first time) or a signed unlock.
     fn ceremony(&self, register: bool) -> (u16, String) {
         let (status, o) = self.cooee.post("/passkey/options", &json!({}));
         assert_eq!(status, 200, "{o}");
@@ -116,7 +111,6 @@ impl Mac {
             .collect()
     }
 
-    /// Terminal `name`'s screen stream through cooee: each `screen` update.
     fn watch(&self, name: &str) -> impl Iterator<Item = Value> {
         let mut s = TcpStream::connect(&self.cooee.addr).unwrap();
         s.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
@@ -142,7 +136,6 @@ impl Mac {
     }
 }
 
-/// The text of each row an update carries.
 fn texts(u: &Value) -> Vec<String> {
     u["lines"]
         .as_array()
@@ -166,7 +159,6 @@ fn no_passkey_is_403_a_passkey_unlocks_and_the_token_alone_is_not_enough() {
     assert_eq!((status, body.as_str()), (403, "locked"));
     assert_eq!(m.ceremony(false).0, 403, "an unlock before any passkey");
 
-    // The backend itself, called with the plugin's token but no unlocked device, refuses too.
     let mut s = TcpStream::connect(&m.backend).unwrap();
     write!(
         s,
@@ -177,13 +169,11 @@ fn no_passkey_is_403_a_passkey_unlocks_and_the_token_alone_is_not_enough() {
     BufReader::new(s).read_line(&mut status).unwrap();
     assert!(status.starts_with("HTTP/1.0 403"), "{status}");
 
-    // First use: this device registers its passkey, which unlocks the tab.
     let (status, body) = m.ceremony(true);
     assert_eq!((status, body.as_str()), (200, "unlocked"));
     assert_eq!(m.list(), json!([]));
     let (status, body) = m.ceremony(true);
     assert_eq!(status, 403, "a second passkey: {body}");
-    // Then each unlock signs a fresh challenge with it.
     assert_eq!(m.ceremony(false), (200, "unlocked".to_owned()));
     let log = m.log();
     assert_eq!(log.len(), 2, "{log:?}");
@@ -193,7 +183,6 @@ fn no_passkey_is_403_a_passkey_unlocks_and_the_token_alone_is_not_enough() {
     );
 }
 
-/// The tab shows a failed list's sentence (`tab.js`): a shed of another protocol names both sides there.
 #[test]
 fn a_shed_of_another_protocol_fails_the_list_naming_both_sides() {
     let theirs = Hello {
@@ -233,7 +222,6 @@ fn a_shell_starts_its_screen_diffs_stream_and_typed_text_and_keys_arrive() {
         (Some("shell"), Some(name.as_str()))
     );
 
-    // The owner's shell first, then the agents' terminals.
     let list = m.list();
     assert_eq!(list[0]["name"], name.as_str());
     assert_eq!(
@@ -298,7 +286,6 @@ fn a_shell_starts_its_screen_diffs_stream_and_typed_text_and_keys_arrive() {
     );
     assert_eq!(m.shed.calls("terminal.resize", &name)[0]["cols"], 44);
 
-    // Close ends it in shed; the list drops it.
     assert_eq!(m.api("/close", &json!({ "terminal": name })).0, 200);
     assert_eq!(m.shed.calls("kill", &name).len(), 1);
     assert_eq!(
@@ -346,7 +333,6 @@ fn an_agents_terminal_can_be_watched_but_refuses_input() {
 fn insert_text_types_into_the_shell_and_never_presses_enter() {
     let m = mac("term-insert");
     m.ceremony(true);
-    // No shell yet: it starts one.
     let (status, body) = m.api("/insert", &json!({ "text": "cooee doctor\n" }));
     assert_eq!(status, 200, "{body}");
     let name = serde_json::from_str::<Value>(&body).unwrap()["terminal"]

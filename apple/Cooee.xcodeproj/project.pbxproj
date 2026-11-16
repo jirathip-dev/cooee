@@ -265,6 +265,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
+				"INFOPLIST_FILE[sdk=macosx*]" = "Info-mac.plist";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
 				INFOPLIST_KEY_CFBundleDisplayName = cooee;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the QR code your cooee server shows, to pair.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find cooee servers on this network.";
@@ -276,6 +278,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.jirathip.cooee;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
+				SPARKLE_FEED_URL = "https://github.com/jirathip-dev/cooee/releases/latest/download/appcast.xml";
+				SPARKLE_PUBLIC_KEY = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -298,6 +302,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
+				"INFOPLIST_FILE[sdk=macosx*]" = "Info-mac.plist";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
 				INFOPLIST_KEY_CFBundleDisplayName = cooee;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the QR code your cooee server shows, to pair.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find cooee servers on this network.";
@@ -309,6 +315,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.jirathip.cooee;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
+				SPARKLE_FEED_URL = "https://github.com/jirathip-dev/cooee/releases/latest/download/appcast.xml";
+				SPARKLE_PUBLIC_KEY = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;

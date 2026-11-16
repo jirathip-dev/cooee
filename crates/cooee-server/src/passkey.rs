@@ -1,8 +1,3 @@
-//! The passkey gate (#28): a tab that runs commands on the Mac (the `terminal` plugin) needs the device's passkey
-//! (`WebAuthn`, Face ID on iPhone) on top of its pairing. The ceremony runs in cooee's page, never in the sandboxed
-//! frame; cooee checks it here. A device registers its passkey on first use; an unlock lasts while the tab is used
-//! and ends after [`IDLE`] without a call. Only ES256 (P-256) keys, with user verification.
-
 use std::{
     collections::HashMap,
     sync::{Mutex, PoisonError},
@@ -20,10 +15,8 @@ pub const GATED: &str = "terminal";
 /// An unlock ends after this long without a call, in milliseconds: 10 minutes.
 pub const IDLE: u64 = 10 * 60 * 1000;
 
-/// How long a challenge is good for, in milliseconds.
 const CHALLENGE_TTL: u64 = 2 * 60 * 1000;
 
-/// A P-256 key's `SubjectPublicKeyInfo` up to its point (what `getPublicKey()` gives, 91 bytes in all).
 const SPKI_P256: [u8; 26] = [
     0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, 0x06, 0x08, 0x2a,
     0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x03, 0x42, 0x00,
@@ -61,7 +54,6 @@ impl Unlocks {
         Ok(c)
     }
 
-    /// `device`'s open challenge, once, if still good.
     fn take(&self, device: &str, now: u64) -> Option<Vec<u8>> {
         let (c, at) = lock(&self.challenges).remove(device)?;
         (at + CHALLENGE_TTL > now).then_some(c)
@@ -157,15 +149,12 @@ fn decode(s: &str) -> Result<Vec<u8>, String> {
         .map_err(|_| "bad base64url".to_owned())
 }
 
-/// The host's name, without its port.
 fn name(host: &str) -> &str {
     host.rsplit_once(':')
         .filter(|(_, port)| port.bytes().all(|b| b.is_ascii_digit()))
         .map_or(host, |(n, _)| n)
 }
 
-/// Checks the browser's client data and the authenticator's data: the ceremony `kind`, our `challenge`, an origin
-/// on `host`, the relying party `host`'s name, user present and verified (Face ID, not just a tap).
 fn ceremony(
     client: &[u8],
     auth: &[u8],
@@ -191,7 +180,6 @@ fn ceremony(
     Ok(())
 }
 
-/// A DER ECDSA signature as `r || s`, 32 bytes each.
 fn der(sig: &[u8]) -> Option<[u8; 64]> {
     let (&len, mut rest) = sig.strip_prefix(&[0x30])?.split_first()?;
     if usize::from(len) != rest.len() {
@@ -217,7 +205,6 @@ mod tests {
     const HOST: &str = "mac.tailnet.example:4747";
     const DEVICE: &str = "d1";
 
-    /// The authenticator: a P-256 key, as Face ID's would be.
     fn key() -> SigningKey {
         SigningKey::from_slice(&[7; 32]).unwrap()
     }
@@ -227,7 +214,6 @@ mod tests {
         B64.encode(c.to_string())
     }
 
-    /// The authenticator's data: the relying party's hash, then `flags`, then a zero counter.
     fn auth(rp: &str, flags: u8) -> Vec<u8> {
         [
             Sha256::digest(rp.as_bytes()).as_slice(),
@@ -249,7 +235,6 @@ mod tests {
         u.register(DEVICE, HOST, &p, 1)
     }
 
-    /// An unlock signed by `by`, the challenge asked for at `at`, sent at `now`.
     fn unlock(u: &Unlocks, pk: &Passkey, by: &SigningKey, at: u64, now: u64) -> Result<(), String> {
         let c = u.challenge(DEVICE, at).unwrap();
         let (cl, au) = (
@@ -302,8 +287,6 @@ mod tests {
         assert!(u.open(DEVICE, 1));
     }
 
-    /// The fake clock: 10 minutes without a call lock the tab; a call before that keeps it open; Face ID again
-    /// unlocks it.
     #[test]
     fn ten_idle_minutes_lock_and_face_id_unlocks_again() {
         let u = Unlocks::default();

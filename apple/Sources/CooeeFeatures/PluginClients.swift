@@ -5,12 +5,13 @@ import CooeeCore
 public struct PluginsClient: Sendable {
     public var places: @Sendable (_ server: Server, _ persona: String) async throws -> [Place]
     public var installed: @Sendable (_ server: Server) async throws -> [PluginRow]
-    public var screen: @Sendable (_ server: Server, _ plugin: String, _ path: String) async throws -> JSONValue
+    public var screen: @Sendable (_ server: Server, _ source: LayoutSource, _ path: String) async throws -> JSONValue
     public var events:
-        @Sendable (_ server: Server, _ plugin: String, _ path: String) -> AsyncThrowingStream<JSONValue, any Error> =
-            { _, _, _ in .finished() }
+        @Sendable (_ server: Server, _ source: LayoutSource, _ path: String) -> AsyncThrowingStream<
+            JSONValue, any Error
+        > = { _, _, _ in .finished() }
     public var act:
-        @Sendable (_ server: Server, _ plugin: String, _ screen: String, _ action: BlockAction) async throws
+        @Sendable (_ server: Server, _ source: LayoutSource, _ screen: String, _ action: BlockAction) async throws
             -> JSONValue
     public var attach: @Sendable (_ server: Server, _ plugin: String, _ persona: String) async throws -> Void
 }
