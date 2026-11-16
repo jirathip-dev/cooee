@@ -31,6 +31,7 @@ internal struct SidebarRenderTests {
             $0.plugins.screen = { _, _, _ in Self.queue }
             $0.screenCache.save = { _, _ in }
             $0.continuousClock = TestClock()
+            $0.date.now = Date(timeIntervalSince1970: 0)
         }
         let view = SlotView(store: store, node: layout.resolved(for: .wide), compact: false)
             .frame(width: 1440, height: 900).environment(\.look, Look(palette: .farmDark, still: true))

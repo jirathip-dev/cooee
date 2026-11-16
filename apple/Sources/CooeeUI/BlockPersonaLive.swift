@@ -1,19 +1,22 @@
+import CooeeCore
 import SwiftUI
 
-extension PanelSections {
-    internal var screen: some View {
-        Group2(header: "Screen") {
-            page.overlay(alignment: .topTrailing) { badge(look.mono ? "live" : "● LIVE") }.padding(8)
-            if content.sites > 0 {
-                more("Sites · \(content.sites)").overlay(alignment: .top) { rule(true) }
+extension PersonaBlocks {
+    internal func live(_ block: JSONValue) -> some View {
+        let sites = Int(block["sites"]?.number ?? 0)
+        return Group2(header: "Screen") {
+            page(block.string("url") ?? "").overlay(alignment: .topTrailing) { badge(look.mono ? "live" : "● LIVE") }
+                .padding(8)
+            if sites > 0 {
+                more("Sites · \(sites)").overlay(alignment: .top) { rule(true) }
             }
         }
     }
 
-    internal var terminal: some View {
+    internal func terminal(_ block: JSONValue) -> some View {
         Group2(header: "Terminal") {
             VStack(alignment: .leading, spacing: 3) {
-                ForEach(content.terminal, id: \.self) { line in
+                ForEach(block.list("lines").compactMap(\.string), id: \.self) { line in
                     Text(line).font(.system(size: 11, design: .monospaced)).lineLimit(1)
                 }
                 Rectangle().frame(width: 7, height: 13)
@@ -26,10 +29,10 @@ extension PanelSections {
         }
     }
 
-    private var page: some View {
+    private func page(_ url: String) -> some View {
         let palette = look.palette
         return VStack(alignment: .leading, spacing: 8) {
-            Text(content.screen).ui(10, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
+            Text(url).ui(10, .regular, look).foregroundStyle(palette.mute).lineLimit(1)
                 .padding(.horizontal, 10).frame(maxWidth: .infinity, alignment: .leading).frame(height: 20)
                 .background(palette.edge.opacity(0.35), in: .capsule)
             bar(palette.foreground, height: 9).frame(width: 120)
