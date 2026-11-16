@@ -1,14 +1,16 @@
 import CooeeCore
 import Foundation
 
-/// What `GET /layout` and `POST /layout/reset` answer: the served layout and its etag.
+/// What `GET /layout` and `POST /layout/reset` answer: the served layout, its etag and the plugin nodes dropped.
 public struct LayoutAnswer: Codable, Sendable, Equatable {
     public let etag: String
     public let layout: JSONValue
+    public let skipped: [String]?
 
-    public init(etag: String, layout: JSONValue) {
+    public init(etag: String, layout: JSONValue, skipped: [String]? = nil) {
         self.etag = etag
         self.layout = layout
+        self.skipped = skipped
     }
 }
 

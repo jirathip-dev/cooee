@@ -41,10 +41,11 @@ internal struct LivePersonaTests {
         let client = Client(Server(url: target.url, token: token))
         var probe = try await client.create(APIPersona(id: "", name: "Probe", agent: "fake-acp"))
         probe.character = "Checks the round trip."
-        #expect(try await client.save(probe) == probe)
+        let screen = "/screens/persona/\(probe.id)"
+        _ = try await client.act(.core, screen: screen, .save(probe))
         #expect(try await client.personas().contains(probe))
-        #expect(try await client.memory(probe.id).isEmpty)
-        try await client.forget(probe.id)
+        let cleared = try await client.act(.core, screen: screen, BlockAction(action: "clear", values: [:]))
+        #expect(cleared.list("blocks").first { $0.type == "memory" }?["count"] == .number(0))
         for look in (environment["COOEE_SIM_LOOKS"] ?? "").split(separator: " ") {
             let made = try await client.personas().first { $0.id == "scout-\(look)" }
             #expect(made?.character == "Finds the facts first." && made?.instructions == "Cite every source.")
