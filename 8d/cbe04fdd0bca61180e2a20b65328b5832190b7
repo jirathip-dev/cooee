@@ -1,0 +1,7 @@
+Decided: merged origin/staging again; it carries the apple_cap raise to 14316, so the line cap passes without trimming
+Because: q1735
+Decided: no code change for the red apple job; it was the self-hosted runner losing its connection mid-build
+Because: "Impl: the apple CI job; simulator screenshots matching the approved frames"
+Rejected: trimming apple lines further — the owner chose the cap raise in q1735
+Check: line cap 13156 / 14316 and apple-check exit 0 on a clean export at the head; apple CI green on rerun
+Owner: The workflow map branch is up to date with staging and fits the app's raised size limit.
