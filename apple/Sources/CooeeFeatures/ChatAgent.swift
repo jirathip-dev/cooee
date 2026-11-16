@@ -13,9 +13,9 @@ extension ChatFeature {
     internal func agent(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .new:
-            return .send(.delegate(.new(state.persona.api.id)))
+            return .send(.delegate(.start(state.persona.api.id)))
         case .profile:
-            return .send(.delegate(.edit(state.persona.api.id)))
+            return .send(.delegate(.persona(state.persona.api.id)))
         case .pick(.load):
             return offer(state)
         case .pick(.loaded(let agents, let lists)):

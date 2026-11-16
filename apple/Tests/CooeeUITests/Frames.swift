@@ -173,6 +173,11 @@ extension Frame {
             phone("room-terminal-dark", .farmDark, style: .terminal) { RoomView.kestrel() },
             phone("room-scene-light", .farmLight, style: .scene) { RoomView.kestrel() },
             mac("room-wide-dark", 1440, 900, .farmDark) { WideView.kestrel() },
+            phone("asked-dark", .farmDark) { ChatView.asked() },
+            phone("asked-light", .farmLight) { ChatView.asked() },
+            phone("linked-dark", .farmDark) { LinkedView.researcher() },
+            phone("linked-terminal-dark", .farmDark, style: .terminal) { LinkedView.researcher() },
+            mac("linked-wide-light", 1440, 900, .farmLight) { WideView.linked() },
             Frame(
                 name: "room-terminal-wide", width: 1440, height: 900, palette: .farmDark, style: .terminal,
                 phone: false,

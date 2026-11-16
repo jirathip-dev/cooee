@@ -69,6 +69,6 @@ internal struct ChatAgentTests {
         await room.send(.pick(.load))
         let chat = store(.thread("a1"))
         await chat.send(.profile)
-        await chat.receive(\.delegate.edit, "coder")
+        await chat.receive(\.delegate.persona, "coder")
     }
 }

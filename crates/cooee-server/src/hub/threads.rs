@@ -147,6 +147,7 @@ impl Hub {
                     workflow: live.meta.workflow.clone(),
                     routine: g.routine,
                     members: rooms::seated(&live.meta),
+                    asked_by: live.meta.asked_by.clone(),
                 })
             })
             .collect();

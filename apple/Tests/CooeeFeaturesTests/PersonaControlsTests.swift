@@ -51,7 +51,7 @@ internal struct PersonaControlsTests {
             $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
         }
         await store.send(.chat(.new))
-        await store.receive(\.chat.delegate.new)
+        await store.receive(\.chat.delegate.start)
         await store.receive(\.start) {
             $0.path = ["new:coder"]
             $0.chat = ChatFeature.State(server: mini, target: .new(coder), persona: Persona(coder))
@@ -65,7 +65,7 @@ internal struct PersonaControlsTests {
             $0.chat = ChatFeature.State(server: mini, target: .thread("t1"), persona: Persona(coder, state: .working))
         }
         await store.send(.chat(.profile))
-        await store.receive(\.chat.delegate.edit)
+        await store.receive(\.chat.delegate.persona)
         await store.receive(\.edit) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
     }
 

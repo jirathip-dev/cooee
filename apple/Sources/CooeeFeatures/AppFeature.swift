@@ -160,6 +160,10 @@ extension AppFeature {
             let persona = Persona(APIPersona(id: "", name: title, agent: ""))
             return ChatFeature.State(server: home.server, target: .thread(id), persona: persona, room: room)
         }
+        if let exchange = Exchange.of(id, rows: home.rows, personas: home.personas) {
+            let persona = Persona(exchange.target)
+            return ChatFeature.State(server: home.server, target: .thread(id), persona: persona, exchange: exchange)
+        }
         let lists = home.lists(now: now)
         var chat: ChatFeature.State
         if id.hasPrefix("new:") {
@@ -180,9 +184,9 @@ extension AppFeature {
 extension AppFeature {
     private func relay(_ state: inout State, _ delegate: ChatFeature.Action.Delegate) -> Effect<Action> {
         switch delegate {
-        case .new(let persona):
+        case .start(let persona):
             return .send(.start(persona))
-        case .edit(let persona):
+        case .persona(let persona):
             return .send(.edit(persona))
         case .open(let thread):
             return .send(.open(thread))
