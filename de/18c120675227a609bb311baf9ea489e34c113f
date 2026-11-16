@@ -1,0 +1,5 @@
+Decided: move the phone approval steps into approvePhone so the setup test body is under 25 lines
+Because: apple/UITests/MacSetupUITests.swift:26
+Rejected: a swiftlint disable — the repo rule caps functions at 25 lines and allows no such comments
+Check: the apple job is green at this head; mac-setup still needs the workflow_dispatch run from q1729
+Owner: the setup test was one line too long for the lint check; it is split so the checks pass again
