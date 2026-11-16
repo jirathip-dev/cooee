@@ -1,0 +1,5 @@
+Decided: accounts ls reads "now" from COOEE_NOW when set; the usage test pins it to 2026-11-16 00:01 UTC
+Because: "The time it reads as \"now\" is fixed (an injected clock or env override in the fixture)"
+Rejected: an in-process injected clock — the test drives the real binary, so the clock has to cross a process boundary
+Check: commit 1 fails with weekly 0 vs 40 (the staging symptom); head passes, asserting exact reset times and age_s
+Owner: The account usage test no longer depends on the time of day it runs.
