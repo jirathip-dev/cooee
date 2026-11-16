@@ -81,6 +81,22 @@ internal struct ChatPluginsTests {
         await failing.receive(\.failed) { $0.error = "down" }
     }
 
+    @Test internal func theAttachSheetIsCoresPermissionsScreenForThatPluginAndPersona() async {
+        let state = AttachFeature.State(server: mini, persona: Self.conductor, plugin: Self.hello)
+        let screen = JSONValue(json: #"{"type": "screen", "id": "attach", "title": "Attach hello"}"#)
+        let store = TestStore(initialState: state) {
+            AttachFeature()
+        } withDependencies: {
+            $0.plugins.screen = { [calls] _, source, path in
+                calls.record("\(source.name) \(path)")
+                return screen
+            }
+        }
+        await store.send(.task)
+        await store.receive(\.loaded) { $0.screen = screen }
+        #expect(calls.all == ["core /screens/plugins/hello/attach?persona=cond"])
+    }
+
     @Test internal func aFailedAttachSaysWhyAndCanBeTriedAgain() async {
         let state = AttachFeature.State(server: mini, persona: Self.conductor, plugin: Self.hello)
         let store = TestStore(initialState: state) {

@@ -216,6 +216,9 @@ default (`apple/Sources/CooeeUI/Default/layout.json`). A bad write changes nothi
 | `GET /layout/events` | | SSE: `changed {etag}` after a good write; `broken {line, col, why}` after a bad one, and at once to a new subscriber while the file is broken |
 | `POST /layout/reset` | | writes the default to `layout.json`, the old file kept as `layout.json.bak`; answers as `GET /layout`; 409 with no config folder |
 | `GET /screens/home` | | core's home (#311): `{type: "screen", source: "core", id, title, blocks, threads, personas}`, the app's bundled `Default/screens/home.json` with `threads` as `GET /threads` and `personas` as `GET /personas`; `source` is always the server's |
+| `GET /screens/menu` | | core's avatar menu (#312): the app's bundled `Default/screens/menu.json` with `source: "core"`; the rows that open a server screen carry a `value`: `signins` the signed-in accounts joined `, `, `devices` the paired count, `machines` the hosts joined `, `, `plugins` the installed count |
+| `GET /screens/settings/{devices,signins,machines,plugins}` | | core's settings screens (#312): `{type: "screen", source: "core", id, title, blocks}`, one `list` of `row`s from the data `GET /devices`, the sign-ins sheet, `GET /machines` and `GET /plugins` read |
+| `GET /screens/plugins/{name}/attach?persona=<id>` | | the attach sheet (#312): screen `attach`, one `card` of kind `permissions` (only core sends it): what installed plugin `name` may do for the persona, its actions (destructive ones always confirmed first) and the hosts its backend reaches; 404 for a plugin or persona that doesn't exist |
 
 ## Pairing (no cookie needed)
 

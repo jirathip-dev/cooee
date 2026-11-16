@@ -6,22 +6,25 @@ public struct BlocksView: View {
     public static let inset: CGFloat = 16
 
     private let block: JSONValue
+    private let source: LayoutSource?
     private let act: @MainActor (BlockAction) -> Void
     private let open: @MainActor (String) -> Void
     private let openThread: @MainActor (String) -> Void
 
     public var body: some View {
         BlockNode(block: block).environment(\.act, act).environment(\.open, open)
-            .environment(\.openThread, openThread)
+            .environment(\.openThread, openThread).environment(\.card, CardContext(poster: source))
     }
 
     public init(
         _ block: JSONValue,
+        source: LayoutSource?,
         act: @escaping @MainActor (BlockAction) -> Void = { _ in },
         open: @escaping @MainActor (String) -> Void = { _ in },
         openThread: @escaping @MainActor (String) -> Void = { _ in }
     ) {
         self.block = block
+        self.source = source
         self.act = act
         self.open = open
         self.openThread = openThread
@@ -29,7 +32,7 @@ public struct BlocksView: View {
 }
 
 internal struct CardContext {
-    internal var poster: String?
+    internal var poster: LayoutSource?
     internal var tint: Color?
 }
 
