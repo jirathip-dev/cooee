@@ -1,0 +1,4 @@
+Decided: merged origin/staging f1f0073fb (hot-files addendum, plugin.rs changes) with no conflicts; nothing of this branch moved
+Because: crates/cooee/src/service.rs:31
+Rejected: none
+Owner: the update branch sits on current staging again; all gates pass at the new head.
