@@ -403,9 +403,15 @@ fn with_rule(svg: &[u8], rule: &[u8]) -> Vec<u8> {
     let at = svg
         .windows(4)
         .position(|w| w == b"<svg")
-        .and_then(|i| svg[i..].iter().position(|&b| b == b'>').map(|j| i + j + 1))
+        .and_then(|i| {
+            svg.iter()
+                .skip(i)
+                .position(|&b| b == b'>')
+                .map(|j| i + j + 1)
+        })
         .unwrap_or(0);
-    [&svg[..at], rule, &svg[at..]].concat()
+    let (head, tail) = svg.split_at_checked(at).unwrap_or((&[], svg));
+    [head, rule, tail].concat()
 }
 
 #[route(GET "/look/{look}/{art}")]
