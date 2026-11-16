@@ -12,6 +12,8 @@ internal struct SidebarLayoutTests {
           "place": {"wide": "column", "compact": "menu"}, "slots": {"top": [{"type": "screen", "source": "drover",
           "path": "/screens/queue", "label": "Queue", "place": {"wide": "column", "compact": "menu"}}]}}]}}}
         """#
+    nonisolated private static let bare = LayoutAnswer(
+        etag: "e4", layout: .object(["format": .number(1), "root": .object(["type": .string("nav")])]))
     nonisolated private static let why = #"root.slots.main[1].slots.cards[0]: drover may not be placed "cards""#
 
     @Test internal func aScreenMovedToTheSidebarIsFollowedThereAndASkippedNodeIsReported() async throws {
@@ -33,11 +35,7 @@ internal struct SidebarLayoutTests {
             ]
             $0.broken = "layout.json \(Self.why) · not drawn"
         }
-        await store.send(
-            .fetched(
-                LayoutAnswer(
-                    etag: "e4", layout: .object(["format": .number(1), "root": .object(["type": .string("nav")])])))
-        ) {
+        await store.send(.fetched(Self.bare)) {
             $0.layout = layout(#"{"format":1,"root":{"type":"nav"}}"#, etag: "e4")
             $0.screens = []
             $0.broken = nil

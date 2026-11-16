@@ -8,7 +8,7 @@ import Testing
 
 @MainActor
 internal struct SidebarRenderTests {
-    private static let queue = JSONValue(
+    nonisolated private static let queue = JSONValue(
         json: #"{"type": "screen", "blocks": [{"type": "row", "title": "Three lanes wait on review"}]}"#)
     private static let node = #"""
         , "slots": {"top": [{"type": "screen", "source": "drover", "path": "/screens/queue", "label": "Queue",
@@ -25,7 +25,13 @@ internal struct SidebarRenderTests {
         let layout = try CooeeCore.Layout(json: Data(json.utf8), etag: "")
         var state = AppFeature.State(layout: layout, server: Server(url: URL(filePath: "/"), token: "t"))
         for id in state.layout.screens.ids { state.layout.screens[id: id]?.screen = LiveScreen(queue) }
-        let store = Store(initialState: state) { AppFeature() }
+        let store = Store(initialState: state) {
+            AppFeature()
+        } withDependencies: {
+            $0.plugins.screen = { _, _, _ in Self.queue }
+            $0.screenCache.save = { _, _ in }
+            $0.continuousClock = TestClock()
+        }
         let view = SlotView(store: store, node: layout.resolved(for: .wide), compact: false)
             .frame(width: 1440, height: 900).environment(\.look, Look(palette: .farmDark, still: true))
         let image = try #require(ImageRenderer(content: view).cgImage)
