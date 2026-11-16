@@ -37,6 +37,10 @@ public enum LaneState: String, Sendable, Equatable {
     }
 }
 
+public enum ChatStyle: String, Codable, Sendable {
+    case chat, detailed
+}
+
 public enum Tint: Sendable, Equatable, CaseIterable {
     case lead, link, cyan, purple, green, amber
 }
@@ -120,14 +124,23 @@ public struct Row: Identifiable, Sendable, Equatable {
 public struct ListedChat: Identifiable, Sendable, Equatable {
     public let row: Row
     public let persona: Persona
+    public let workflow: WorkflowLabel?
     public let members: [Persona]
+    public let asker: Persona?
+    public let from: String
 
     public var id: String { row.id }
 
-    public init(row: Row, persona: Persona, members: [Persona] = []) {
+    public init(
+        row: Row, persona: Persona, workflow: WorkflowLabel? = nil, members: [Persona] = [], asker: Persona? = nil,
+        from: String = ""
+    ) {
         self.row = row
         self.persona = persona
+        self.workflow = workflow
         self.members = members
+        self.asker = asker
+        self.from = from
     }
 }
 
@@ -183,5 +196,13 @@ public struct FolderListing: Codable, Sendable, Equatable {
         let words = search.trimmingCharacters(in: .whitespaces)
         return words.isEmpty
             ? all : all.filter { ($0 as NSString).lastPathComponent.localizedCaseInsensitiveContains(words) }
+    }
+}
+
+extension BlockAction {
+    public static func save(_ persona: APIPersona) -> Self {
+        let data = (try? JSONEncoder().encode(persona)) ?? Data()
+        let value = (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
+        return Self(action: "save", values: value.fields)
     }
 }

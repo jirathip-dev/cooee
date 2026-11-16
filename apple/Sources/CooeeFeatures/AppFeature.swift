@@ -3,6 +3,8 @@ import CooeeCore
 
 @Reducer
 public struct AppFeature: Sendable {
+    public static let others = "others"
+
     @ObservableState
     public struct State: Equatable {
         public var home: HomeFeature.State?
@@ -12,15 +14,19 @@ public struct AppFeature: Sendable {
         public var newRoom: NewRoomFeature.State?
         public var path: [String] = []
         public var menu: MenuFeature.State
+        public var terminal: TerminalFeature.State
+        public var layout: LayoutFeature.State
         @Presents public var persona: PersonaFeature.State?
         public let mac: Bool
 
-        public init(server: Server?, settings: Settings = Settings(), mac: Bool = false) {
+        public init(layout: Layout, server: Server?, settings: Settings = Settings(), mac: Bool = false) {
             self.mac = mac
+            self.layout = LayoutFeature.State(server: server, layout: layout)
             home = server.map(HomeFeature.State.init)
             pairing = server == nil && !mac ? PairingFeature.State() : nil
             setup = server == nil && mac ? MacSetupFeature.State() : nil
             menu = MenuFeature.State(server: server, settings: settings)
+            terminal = TerminalFeature.State(server: server)
         }
     }
 
@@ -33,9 +39,12 @@ public struct AppFeature: Sendable {
         case newRoom(NewRoomFeature.Action)
         case room
         case menu(MenuFeature.Action)
+        case terminal(TerminalFeature.Action)
+        case layout(LayoutFeature.Action)
         case persona(PresentationAction<PersonaFeature.Action>)
         case edit(String?)
         case open(String)
+        case pin(String)
         case start(String)
         case back
         case path([String])
@@ -48,14 +57,17 @@ public struct AppFeature: Sendable {
 
     public var body: some ReducerOf<Self> {
         Scope(state: \.menu, action: \.menu) { MenuFeature() }
+        Scope(state: \.layout, action: \.layout) { LayoutFeature() }
+        Scope(state: \.terminal, action: \.terminal) { TerminalFeature() }
         Reduce { state, action in
             switch action {
             case .pairing(.delegate(.paired(let server))), .setup(.delegate(.paired(let server))):
-                state = State(server: server, settings: state.menu.settings, mac: state.mac)
+                state = State(
+                    layout: state.layout.layout, server: server, settings: state.menu.settings, mac: state.mac)
                 return .none
             case .home(.delegate(.unauthorized)):
                 serverStore.clear()
-                state = State(server: nil, settings: state.menu.settings, mac: state.mac)
+                state = State(layout: state.layout.layout, server: nil, settings: state.menu.settings, mac: state.mac)
                 return .none
             case .setup(.delegate(.clientOnly)):
                 state.setup = nil
@@ -70,10 +82,26 @@ public struct AppFeature: Sendable {
                 return .send(.home(.refresh))
             case .chat(.delegate(.started(let thread))):
                 state.path = state.path.dropLast() + [thread]
-                state.chat = state.chat.map { .init(server: $0.server, target: .thread(thread), persona: $0.persona) }
+                state.chat = state.chat.map {
+                    var chat = ChatFeature.State(server: $0.server, target: .thread(thread), persona: $0.persona)
+                    chat.machine = $0.machine
+                    return chat
+                }
                 return .send(.home(.refresh))
             case .chat(.delegate(.open(let thread))):
                 return .send(.open(thread))
+            case .chat(.delegate(.persona(let persona))):
+                return .send(.edit(persona))
+            case .chat(.delegate(.start(let persona))):
+                return .send(.start(persona))
+            case .chat(.delegate(.round(let thread))):
+                state.path.append(thread)
+                state.chat = chat(state, thread)
+                return .none
+            case .home(.loaded):
+                let workflow = state.home?.lists(now: now).workflow[state.chat?.persona.id ?? ""]
+                state.chat?.workflow = workflow
+                return .none
             case .room:
                 state.newRoom = state.home.map { NewRoomFeature.State(server: $0.server, personas: $0.personas) }
                 return .none
@@ -101,23 +129,38 @@ public struct AppFeature: Sendable {
     private func navigate(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .open(let thread):
-            state.path = [thread]
+            state.path = (state.path.first == Self.others && thread != Self.others ? [Self.others] : []) + [thread]
             state.chat = chat(state, thread)
+        case .pin(let persona):
+            let newest = state.home?.rows.filter { $0.persona == persona && $0.members.isEmpty }.max {
+                $0.updated < $1.updated
+            }
+            return navigate(&state, newest.map { .open($0.id) } ?? .start(persona))
         case .start(let persona):
             state.path = ["new:\(persona)"]
             state.chat = chat(state, "new:\(persona)")
         case .back:
-            state.path = Array(state.path.dropLast())
-            state.chat = nil
+            pop(&state, to: Array(state.path.dropLast()))
+        case .path(let path) where path.count < state.path.count:
+            pop(&state, to: path)
         case .path(let path):
             state.path = path
-            if path.isEmpty { state.chat = nil }
         case .edit(let id):
             state.persona = persona(state, id)
         default:
             break
         }
         return .none
+    }
+}
+
+extension AppFeature {
+    private func pop(_ state: inout State, to path: [String]) {
+        let round = state.home?.lists(now: now).all.first { $0.id == state.path.last }?.workflow
+        state.path = path
+        state.chat = path.last.flatMap { $0 == Self.others ? nil : chat(state, $0) }
+        state.chat?.workflowOpen = true
+        state.chat?.unfolded = round?.issue
     }
 
     private func persona(_ state: State, _ id: String?) -> PersonaFeature.State? {
@@ -127,19 +170,30 @@ public struct AppFeature: Sendable {
     }
 
     private func chat(_ state: State, _ id: String, room: (String, [String])? = nil) -> ChatFeature.State? {
-        guard let home = state.home else { return nil }
+        guard let home = state.home, id != Self.others else { return nil }
         let row = home.rows.first { $0.id == id && !$0.members.isEmpty }
         if let (title, members) = room ?? row.map({ ($0.title, $0.members) }) {
             let room = Room(title: title, members: members, cast: home.personas)
             let persona = Persona(APIPersona(id: "", name: title, agent: ""))
             return ChatFeature.State(server: home.server, target: .thread(id), persona: persona, room: room)
         }
+        if let exchange = Exchange.of(id, rows: home.rows, personas: home.personas) {
+            let persona = Persona(exchange.target)
+            return ChatFeature.State(server: home.server, target: .thread(id), persona: persona, exchange: exchange)
+        }
+        let lists = home.lists(now: now)
+        var chat: ChatFeature.State
         if id.hasPrefix("new:") {
             guard let persona = home.persona(String(id.dropFirst(4))) else { return nil }
-            return ChatFeature.State(server: home.server, target: .new(persona), persona: Persona(persona))
+            chat = ChatFeature.State(server: home.server, target: .new(persona), persona: Persona(persona))
+            chat.machine.current = persona.machine
+        } else {
+            let listed = lists.all.first { $0.id == id }?.persona
+            let persona = listed ?? Persona(APIPersona(id: "", name: "Chat", agent: ""))
+            chat = ChatFeature.State(server: home.server, target: .thread(id), persona: persona)
+            chat.machine.current = home.rows.first { $0.id == id }?.machine ?? ""
         }
-        let listed = home.chats(now: now).first { $0.id == id }?.persona
-        let persona = listed ?? Persona(APIPersona(id: "", name: "Chat", agent: ""))
-        return ChatFeature.State(server: home.server, target: .thread(id), persona: persona)
+        chat.workflow = lists.workflow[chat.persona.id]
+        return chat
     }
 }

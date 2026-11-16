@@ -9,13 +9,16 @@ mod hub;
 mod layout;
 mod login;
 mod look;
+pub mod machine;
 mod manage;
 pub mod mcp;
 mod pairing;
 mod passkey;
 mod plugin;
 mod push;
+mod relaunch;
 mod routines;
+mod screens;
 mod themes;
 
 use std::{
@@ -486,7 +489,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         };
         // A plugin's profile: its backend is told the thread's id (so it can attach it).
         let ours = list.into_iter().find(|p| p.id() == profile);
-        let ours = ours.and_then(|p| Some((backend(&hub, &data, p.plugin.as_deref()?)?, p.name)));
+        let ours = ours.and_then(|p| Some((hub.backend(p.plugin.as_deref()?)?, p.name)));
         if let Some((b, name)) = ours
             && let Err(e) = plugin::started(&b, &id, &name)
         {
@@ -533,34 +536,6 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
     ))
 }
 
-/// `POST /threads/{id}/folder`: "Use a folder…" (#86).
-#[derive(Deserialize)]
-struct Attach {
-    folder: PathBuf,
-}
-
-#[route(POST "/threads/{id}/folder")]
-async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Item>> {
-    let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
-    let data = app_context::<Data>(cx);
-    let (data, config) = (data.0.clone(), data.1.clone());
-    let done = tokio::task::spawn_blocking(move || {
-        let (t, _) = hub.thread(&id)?;
-        let list = profiles(&hub, (&data, config.as_deref()));
-        let (_, _, recipe) = recipe(
-            &logins,
-            (&data, config.as_deref(), &list),
-            (&t.agent, Some(&t.account), &t.profile),
-            PathBuf::new(),
-            (t.model, t.effort),
-        )?;
-        hub.attach(&id, &a.folder, &recipe)
-    });
-    Ok(Answer(
-        done.await.map_err(|e| HubError::Refused(e.to_string()))?,
-    ))
-}
-
 /// How a thread of `agent` starts in `folder`: Plain with `account`, or as agent profile `profile` (non-empty: its
 /// agent, and its folder if it has one; one of `list`, not hidden), on the model and effort `picked`. Returns its
 /// agent and folder too.
@@ -585,16 +560,16 @@ fn recipe(
         }
     }
     let (agent, profile, folder) = match &persona {
-        Some(p) if !["", "scratch"].contains(&p.folder.as_str()) => (
-            p.agent.as_str(),
-            p.profile.as_deref().unwrap_or(""),
-            PathBuf::from(&p.folder),
-        ),
-        Some(p) => (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder),
+        Some(p) => {
+            let keep = ["", "scratch"].contains(&p.folder.as_str());
+            let folder = if keep { folder } else { (&p.folder).into() };
+            (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder)
+        }
         None => (agent, profile, folder),
     };
     let (agent, folder, mut recipe) = if profile.is_empty() {
-        let (account, launch) = logins.home(agent, account)?;
+        let (account, mut launch) = logins.home(agent, account)?;
+        launch.meta = persona.as_ref().and(logins.no_personal_setup(agent));
         let recipe = Recipe {
             account,
             launch,
@@ -1134,11 +1109,9 @@ fn profiles(
     hub: &Hub,
     (data, config): (&std::path::Path, Option<&std::path::Path>),
 ) -> Vec<cooee_core::Profile> {
-    let mut list = cooee_core::profiles::list(config, data, |name| {
-        plugin::profiles(&backend(hub, data, name)?)
-    });
+    let mut list = cooee_core::profiles::list(config, data, |name| hub.served(name));
     for p in &mut list {
-        let via = p.plugin.as_deref().and_then(|n| backend(hub, data, n));
+        let via = p.plugin.as_deref().and_then(|n| hub.backend(n));
         if let (Some(via), Some(a)) = (via, &mut p.avatar)
             && a.starts_with('/')
         {
@@ -1146,13 +1119,6 @@ fn profiles(
         }
     }
     list
-}
-
-/// Installed plugin `name`'s backend: its first tab's entry (its URL and token).
-fn backend(hub: &Hub, data: &std::path::Path, name: &str) -> Option<Plugin> {
-    let lock = cooee_core::plugins::read_lock(data).ok()?;
-    let tabs = lock.into_iter().find(|l| l.name == name)?.tabs;
-    hub.plugins().into_iter().find(|p| tabs.contains(&p.name))
 }
 
 path_param!(name);
@@ -1210,8 +1176,8 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
     }
     let reply = tokio::task::spawn_blocking(move || {
         let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
-        let timeout = Some(Duration::from_secs(30));
-        plugin::call(&p, &method, &target, &headers, body.as_bytes(), timeout)
+        let deadline = Duration::from_secs(30);
+        plugin::call(&p, &method, &target, &headers, body.as_bytes(), deadline)
     })
     .await?;
     let reply = match reply {
@@ -1235,13 +1201,12 @@ async fn pass_on(
         .header("content-type")
         .is_some_and(|t| t.starts_with("text/event-stream"))
     {
-        reply.body.get_ref().set_read_timeout(None)?;
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        std::thread::spawn(move || plugin::events(reply, |e| open() && tx.send(e).is_ok()));
-        let stream = stream::unfold(rx, move |mut rx| async move {
-            let e = rx.recv().await?;
-            Some((Result::<Event>::Ok(relay(e)), rx))
-        });
+        let stream = plugin::events(reply)?
+            .take_while(move |_| std::future::ready(open()))
+            .map(move |heard| match heard {
+                plugin::Heard::Event(e) => Result::<Event>::Ok(relay(e)),
+                plugin::Heard::Beat => Ok(Event::new().comment("")),
+            });
         return Sse::new(stream)
             .keep_alive(KeepAlive::new())
             .into_response(cx);
@@ -1265,7 +1230,7 @@ fn with_screens(cx: &Cx) -> Option<(Plugin, cooee_core::plugins::Manifest)> {
     let data = &app_context::<Data>(cx).0;
     let lock = cooee_core::plugins::read_lock(data).ok()?;
     let m = cooee_core::plugins::manifest(data, lock.iter().find(|l| l.name == name)?).ok()?;
-    let p = backend(app_context::<Arc<Hub>>(cx), data, name)?;
+    let p = app_context::<Arc<Hub>>(cx).backend(name)?;
     (!m.places.is_empty()).then_some((p, m))
 }
 
@@ -1315,14 +1280,7 @@ async fn screen(cx: &Cx) -> Result<Response> {
         .collect();
     let reply = tokio::task::spawn_blocking(move || {
         let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
-        plugin::call(
-            &p,
-            "GET",
-            &target,
-            &headers,
-            &[],
-            Some(Duration::from_secs(5)),
-        )
+        plugin::call(&p, "GET", &target, &headers, &[], Duration::from_secs(5))
     })
     .await?;
     match reply {
@@ -1362,14 +1320,14 @@ async fn screen_action(cx: &Cx, Json(a): Json<BlockAct>) -> Result<Response> {
     });
     let reply = tokio::task::spawn_blocking(move || {
         let json = [("Content-Type", "application/json")];
-        let timeout = Some(Duration::from_secs(10));
+        let deadline = Duration::from_secs(10);
         plugin::call(
             &p,
             "POST",
             "/action",
             &json,
             body.to_string().as_bytes(),
-            timeout,
+            deadline,
         )
     })
     .await?;
@@ -1859,7 +1817,7 @@ async fn persona_new(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
 }
 
 /// Saves `p`, its plugins (#129) each an installed one and its machine (#148) an allowed one.
-async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
+pub(crate) async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
     let installed = hub(cx).installed();
     let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
     on_personas(cx, move |d, c| {
@@ -2177,7 +2135,12 @@ fn names(bind: IpAddr, allowed_hosts: &[String]) -> Vec<String> {
 #[must_use]
 pub fn router(
     (hub, runner): (Arc<Hub>, Arc<routines::Runner>),
-    (logins, manager, machines): (Arc<Logins>, Arc<Manager>, Arc<Machines>),
+    (logins, manager, machines, config_all): (
+        Arc<Logins>,
+        Arc<Manager>,
+        Arc<Machines>,
+        Arc<Config>,
+    ),
     (data, config): (&std::path::Path, Option<&std::path::Path>),
     bind: IpAddr,
     allowed_hosts: &[String],
@@ -2191,13 +2154,13 @@ pub fn router(
     };
     routines::routes(
         runner,
-        room_routes(persona_routes(pairing::routes(
+        room_routes(persona_routes(screens::routes(pairing::routes(
             Router::builder()
                 .layer(Timing)
                 .layer(gate)
                 // A message's photos come as base64.
                 .layer(BodyLimit::max(64 << 20).at("/threads")),
-        ))),
+        )))),
     )
     .route(push_key)
     .route(push_subscribe)
@@ -2218,7 +2181,8 @@ pub fn router(
     .route(events)
     .route(create)
     .route(retry)
-    .route(attach)
+    .route(relaunch::attach)
+    .route(relaunch::move_thread)
     .route(browse)
     .route(root)
     .route(new_folder)
@@ -2262,6 +2226,7 @@ pub fn router(
     .app_context(logins)
     .app_context(manager)
     .app_context(machines)
+    .app_context(config_all)
     .app_context(Data(data.to_owned(), config.map(ToOwned::to_owned)))
     .app_context(Arc::new(pairing::Pairing::default()))
     .build()
@@ -2331,6 +2296,7 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
                 config.shed_dir.clone(),
                 cooee_machines::local_name(),
             )),
+            Arc::new(config.clone()),
         ),
         (&data, config.dir.as_deref()),
         config.bind,
