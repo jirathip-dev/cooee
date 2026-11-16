@@ -1,0 +1,11 @@
+Decided: merge origin/staging; #242's persona style moves onto agents::Agent (agent.toml `style`, unset: detailed for an orchestrator, chat for the rest)
+Because: crates/cooee-core/src/agents.rs:229
+Decided: a plugin's lent agent is Style::Detailed, so it gets no plain-answer line, as a plugin profile thread did on staging
+Because: crates/cooee-core/src/profiles.rs:109
+Decided: `config migrate` is crates/cooee/src/cmd/config.rs and the shared migrate step lives in cli.rs, since #356 bans cmd:: outside main.rs
+Because: .drover/arch.toml:28
+Decided: toml_text moves to root.rs because lib.rs is generated now; #201's comment rule strips the branch's private doc comments
+Because: .drover/arch.toml:4
+Rejected: none
+Check: the upgrade fixtures' expected agent.toml now carry `style`; personas.rs's detailed-style test writes agents/chief/agent.toml
+Owner: brought up to date with staging; agents keep the new chat style setting
