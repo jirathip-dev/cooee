@@ -5,10 +5,14 @@ use serde::Deserialize;
 use topcoat::{
     Result,
     context::{Cx, app_context},
-    router::{content::Json, route},
+    router::{RouterBuilder, content::Json, route},
 };
 
-use crate::{Answer, Data, HubError, hub, logins, machine, profiles, recipe, thread_id};
+use crate::{
+    HubError,
+    http::{Answer, Data, hub, logins, profiles, recipe, thread_id},
+    machine,
+};
 
 #[derive(Deserialize)]
 struct Attach {
@@ -16,7 +20,7 @@ struct Attach {
 }
 
 #[route(POST "/threads/{id}/folder")]
-pub(crate) async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Item>> {
+async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Item>> {
     let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
     let data = app_context::<Data>(cx);
     let (data, config) = (data.0.clone(), data.1.clone());
@@ -43,7 +47,7 @@ struct Move {
 }
 
 #[route(POST "/threads/{id}/move")]
-pub(crate) async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<cooee_core::Item>> {
+async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<cooee_core::Item>> {
     let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
     let config = Arc::clone(app_context::<Arc<Config>>(cx));
     let data = app_context::<Data>(cx);
@@ -78,4 +82,8 @@ pub(crate) async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<c
     Ok(Answer(
         done.await.map_err(|e| HubError::Refused(e.to_string()))?,
     ))
+}
+
+pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
+    b.route(attach).route(move_thread)
 }

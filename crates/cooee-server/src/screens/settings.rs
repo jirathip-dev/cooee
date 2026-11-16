@@ -11,7 +11,11 @@ use topcoat::{
     router::route,
 };
 
-use crate::{Answer, HubError, Paired, blocking, manager, on_logins, pairing, refused};
+use crate::{
+    HubError,
+    http::{Answer, Paired, blocking, manager, on_logins, refused},
+    pairing,
+};
 
 fn list(id: &str, title: &str, rows: &[Value]) -> Value {
     let blocks = json!([{ "type": "list", "id": id, "rows": rows }]);

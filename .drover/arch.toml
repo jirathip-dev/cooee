@@ -1,12 +1,16 @@
 # drover arch-check (#356, docs/architecture/hot-files/adr.md): a generated file is what `generate` writes, and a
 # code file stays under 800 lines (the baseline's offenders may only shrink). Frozen lists start with slice 1 (q1720).
-frozen = ["apple/Sources/CooeeCore/Models.swift", "apple/UITests/LiveUITests.swift", "justfile", "docs/architecture.md", "docs/api.md", "apple/Sources/CooeeFeatures/Clients.swift", "apple/Sources/CooeeApp/Live.swift"]
-generated = ["Cargo.lock", "crates/cooee-core/src/lib.rs", "crates/cooee/src/cmd/mod.rs", "crates/cooee/tests/support/mod.rs", "README.md"]
+frozen = ["apple/Sources/CooeeApp/Live.swift", "apple/Sources/CooeeCore/Models.swift", "apple/Sources/CooeeFeatures/Clients.swift", "apple/UITests/LiveUITests.swift", "crates/cooee-core/src/root.rs", "crates/cooee-server/src/root.rs", "docs/api.md", "docs/architecture.md", "justfile"]
+generated = ["Cargo.lock", "README.md", "crates/cooee-core/src/lib.rs", "crates/cooee-server/src/lib.rs", "crates/cooee-server/src/routes/mod.rs", "crates/cooee/src/cmd/mod.rs", "crates/cooee/tests/support/mod.rs"]
 generate = "scripts/gen.sh"
 
 [[size]]
 paths = ["crates/*/src/**/*.rs"]
 max_file_lines = 800
+
+[[collect]]
+dir = "crates/cooee-server/src/routes"
+glob = "*.rs"
 
 [[collect]]
 dir = "crates/cooee-server/src/hub"
@@ -19,6 +23,12 @@ glob = "*.swift"
 [[collect]]
 dir = "apple/UITests/Live"
 glob = "*.swift"
+
+[[ban]]
+pattern = "routes::"
+paths = ["crates/cooee-server/src/**"]
+except = ["crates/cooee-server/src/serve.rs", "crates/cooee-server/src/routes/mod.rs"]
+reason = "#356: a route area is reached only through routes::routes, from serve.rs; areas share through http.rs and the hub"
 
 [[collect]]
 dir = "apple/Sources/CooeeFeatures/Clients"
