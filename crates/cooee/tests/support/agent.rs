@@ -1,5 +1,3 @@
-//! The scripted ACP agent of a fake shed terminal: a prompt's words pick its reply.
-
 use std::{
     env,
     sync::mpsc::{self, Receiver},
@@ -12,7 +10,6 @@ use serde_json::{Value, json};
 
 use super::FakeShed;
 
-/// What the scripted agent of a terminal is told.
 #[derive(Debug, Clone, PartialEq)]
 pub(super) enum Input {
     Prompt(String),
@@ -40,7 +37,6 @@ impl FakeShed {
         tx.send(input).unwrap();
     }
 
-    /// The scripted agent: a prompt's words pick the script.
     fn agent(&self, name: &str, rx: &Receiver<Input>) {
         while let Ok(input) = rx.recv() {
             let Input::Prompt(prompt) = input else {
@@ -60,7 +56,6 @@ impl FakeShed {
         }
     }
 
-    /// One turn's script: the events that end it and its stop reason (`None` when the agent exits).
     fn script(
         &self,
         name: &str,
@@ -79,7 +74,6 @@ impl FakeShed {
         } else if prompt.contains("approve") {
             self.approval(name, rx)
         } else if prompt.contains("markdown") {
-            // Streamed a line at a time, then the whole reply.
             let mut events: Vec<EventKind> = MARKDOWN.split_inclusive('\n').map(text).collect();
             events.push(reply(MARKDOWN, "end_turn"));
             (events, "end_turn")
@@ -135,13 +129,11 @@ impl FakeShed {
                 }
                 self.emit(name, text(&format!("w{i} ")));
             }
-            // The reply waits for a stop, so a page can be read with the whole stream, however late it reconnects.
             if stop == "end_turn" {
                 while rx.recv().is_ok_and(|i| i != Input::Cancel) {}
             }
             (vec![reply(&format!("streamed {n} words"), stop)], stop)
         } else if prompt.contains("wait for a note") {
-            // A linked exchange's asked persona that answers once the owner's note comes (#177).
             let note = loop {
                 match rx.recv() {
                     Ok(Input::Prompt(p)) => break p,
@@ -165,7 +157,6 @@ impl FakeShed {
         })
     }
 
-    /// Asks before an edit and waits for `approve` (or a cancel).
     fn approval(&self, name: &str, rx: &Receiver<Input>) -> (Vec<EventKind>, &'static str) {
         let call = "Edit src/lib.rs";
         self.emit(name, tool("c2", call, "pending"));

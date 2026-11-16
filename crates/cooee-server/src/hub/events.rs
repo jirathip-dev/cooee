@@ -1,5 +1,3 @@
-//! The shed events stream: each event applied to its thread, what follows it, and the stuck-turn watch.
-
 use std::{
     collections::BTreeMap,
     sync::{Mutex, atomic::Ordering},
@@ -18,8 +16,6 @@ use crate::push::Note;
 use super::{After, Hub, HubError, Live, STUCK, lock, now};
 
 impl Hub {
-    /// Follows shed's events for every terminal, for ever: re-attaches, subscribes, applies; on a break, waits a
-    /// second and does it again from the last event seen.
     pub(super) fn follow(&self) {
         let mut last: Option<u64> = None;
         let mut said = String::new();
@@ -48,8 +44,6 @@ impl Hub {
         }
     }
 
-    /// Notes a shed call's outcome: a mismatch starting or clearing goes to the server log and the owner's alerts,
-    /// once per state, not per call (#397). Whether `error` was a mismatch.
     pub(super) fn shed_seen(&self, error: Option<&ShedError>) -> bool {
         let version = matches!(error, Some(ShedError::Version { .. }));
         if error.is_some() && !version
@@ -82,7 +76,6 @@ impl Hub {
         let Some(found) = found else { return };
         let mut live = lock(&found);
         if !live.sending.is_empty() {
-            // Its prompt is on its way: applied once that is stored, after it.
             live.held.push(event);
             return;
         }
@@ -95,7 +88,6 @@ impl Hub {
         self.after(&found, after);
     }
 
-    /// Applies `event` to the thread `live`; what is left to do once it is unlocked.
     pub(super) fn applied(&self, live: &mut Live, event: Event) -> Option<After> {
         if event.seq <= live.applied {
             return None;
@@ -104,13 +96,11 @@ impl Hub {
         live.moved = now();
         let mut changes = Vec::new();
         if live.stuck {
-            // It moves again: back to working (a state event below says more).
             live.stuck = false;
             "working".clone_into(&mut live.chat.turn.state);
             live.chat.turn.note = None;
             changes.push(Change::State(live.chat.turn.clone()));
         }
-        // A Workflow session's prompts come from its tool: shown as the owner's own are (#33).
         if let (Some(_), shed_proto::EventKind::Turn { prompt }) =
             (&live.meta.workflow, &event.kind)
         {
@@ -138,7 +128,6 @@ impl Hub {
         if let Some(sent) = live.sent.take_if(|_| chunk) {
             cooee_core::perf::first_token(&live.meta.id, &live.meta.agent, sent);
         }
-        // A member's final reply goes to its room (#154); a cancelled one is a stopped round's, never the next's.
         let reply = changes.iter().find_map(|c| match c {
             Change::Item(i) if matches!(&i.body, Body::Agent { stop_reason, .. } if stop_reason != "cancelled") => {
                 Some(i.body.clone())
@@ -159,7 +148,6 @@ impl Hub {
         })
     }
 
-    /// Does what applying an event to thread `live` left: sends its next queued message, passes its reply on.
     pub(super) fn after(&self, live: &Mutex<Live>, after: Option<After>) {
         let Some(After {
             next,
@@ -173,7 +161,6 @@ impl Hub {
         let done = next.and_then(|q| self.send_next(live, q));
         let done = match reply {
             Some(body) if !seat.0.is_empty() => done.and(self.replied(&seat.0, &seat.1, body)),
-            // An asked persona's reply goes to its asker's pending `ask_persona` (#156).
             Some(Body::Agent { text, .. }) => {
                 lock(&self.asks).remove(&asked).map(|tx| tx.send(text));
                 done
@@ -185,8 +172,6 @@ impl Hub {
         }
     }
 
-    /// Between turns (no message on its way), takes the first queued message to send (the next one goes as that
-    /// turn ends).
     pub(super) fn drain(&self, live: &mut Live) -> Result<Option<Queued>, HubError> {
         let between = !matches!(
             live.chat.turn.state.as_str(),
@@ -200,7 +185,6 @@ impl Hub {
         Ok(Some(next))
     }
 
-    /// Delivers what [`Hub::drain`] took, if anything.
     pub(super) fn send_next(
         &self,
         live: &Mutex<Live>,
@@ -209,7 +193,6 @@ impl Hub {
         next.map_or(Ok(()), |q| self.deliver(live, q, "").map(drop))
     }
 
-    /// Saves the queue and tells the pages.
     pub(super) fn queued(&self, live: &mut Live) -> Result<(), HubError> {
         self.store.save(&live.meta)?;
         let data = json!(live.meta.queue).to_string();

@@ -11,15 +11,12 @@ use cooee_core::{
     shed_proto::LinkState,
 };
 
-/// How long one check may run there, in seconds.
 const PROBE: f64 = 30.0;
-/// How long a clone may run there, in seconds.
 const CLONE: f64 = 600.0;
 
 /// One check's line: whether it passed, and what it says (with its fix when it failed).
 pub type Line = (bool, String);
 
-/// What the checks read: the config, its shed, providers, accounts and personas.
 struct Ctx {
     shed: Shed,
     providers: Providers,
@@ -42,14 +39,12 @@ impl Ctx {
         }
     }
 
-    /// `cmd` on `machine`: whether it exited 0.
     fn ran(&self, machine: &str, cmd: &[&str], timeout: f64) -> Result<bool, String> {
         let cmd = cmd.iter().map(|w| (*w).to_owned()).collect();
         let exit = self.shed.run_on(machine, cmd, timeout);
         exit.map(|e| e == Some(0)).map_err(|e| e.to_string())
     }
 
-    /// Every check of `machine`, applying the fixes with `yes`.
     fn check(&self, machine: &str, yes: bool) -> Vec<Line> {
         let link = match self.shed.link(machine) {
             Ok(Some(l)) if l.state == LinkState::Up => Ok(()),
@@ -71,7 +66,6 @@ impl Ctx {
         vec![(false, format!("shed on {machine}: {why}"))]
     }
 
-    /// Persona `p`'s checks on `machine`.
     fn persona(&self, machine: &str, p: &Persona, yes: bool) -> Vec<Line> {
         let profile = p
             .profile

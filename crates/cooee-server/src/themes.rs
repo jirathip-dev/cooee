@@ -1,8 +1,3 @@
-//! Theme packs (docs/themes.md): `cooee theme add|remove|list`. A pack is a folder or a folder of a git repo; an
-//! installed one is copied into `<config dir>/themes/<name>/` once it passes the theme gate, and pinned in
-//! `<data>/themes.lock` (its source and commit). The first-party packs are swag's, at its pin, from the build's own
-//! checked copy (`cooee_core::swag`).
-
 use std::{
     fs, io,
     path::{Path, PathBuf},
@@ -76,7 +71,6 @@ fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
     Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
 }
 
-/// Copies folder `from` into `to` (made), all but `.git`; a symlink is refused, never followed.
 fn copy(from: &Path, to: &Path) -> io::Result<()> {
     fs::create_dir_all(to)?;
     for e in fs::read_dir(from)? {
@@ -166,7 +160,6 @@ impl Themes {
         }
     }
 
-    /// Pins `p` (`None`: unpins `name`).
     fn pin(&self, name: &str, p: Option<Pinned>) -> io::Result<()> {
         let mut all = self.pinned()?;
         all.retain(|x| x.name != name);
@@ -196,7 +189,6 @@ impl Themes {
                 text: String::new(),
             }
         } else if source.contains('/') || source.contains(':') {
-            // A folder by its full path, so its pin says where it was.
             let source = fs::canonicalize(source)
                 .map_or_else(|_| source.to_owned(), |p| p.to_string_lossy().into_owned());
             let name = source
@@ -278,7 +270,6 @@ impl Themes {
         )
     }
 
-    /// Writes first-party pack `name`'s files, each matching its sha256 in swag's pin, into `stage`; returns the commit.
     fn vendored(&self, name: &str, stage: &Path) -> io::Result<String> {
         fs::create_dir_all(stage)?;
         for (file, bytes) in self.swag.files(name)? {
@@ -287,8 +278,6 @@ impl Themes {
         Ok(self.swag.commit.clone())
     }
 
-    /// Fetches `pack`'s repo into its clone in `<data>/themes/<name>.git` and writes its folder at the commit into
-    /// `stage`; returns the commit.
     fn fetch(&self, pack: &Pack, stage: &Path) -> io::Result<String> {
         let repo = self.data.join("themes").join(format!("{}.git", pack.name));
         if repo.exists() {

@@ -1,7 +1,3 @@
-//! The models each agent offers (#193), kept per agent and account from each session's start and a daily probe; a
-//! thread's pick is resolved against them and set on its session. A pinned model that is gone falls back to its
-//! family's short name, said once on the thread (and its persona's notes).
-
 use std::{collections::BTreeMap, fs};
 
 use cooee_core::{
@@ -13,7 +9,6 @@ use cooee_core::{
 
 use super::{Hub, HubError, lock, now};
 
-/// How old a list gets before the daily probe asks its agent again, in milliseconds.
 const DAY: u64 = 24 * 60 * 60 * 1000;
 
 impl Hub {
@@ -31,7 +26,6 @@ impl Hub {
         found.find(|o| o.account == account).cloned()
     }
 
-    /// Refuses `pick` for `agent` on `account` when its models are known and none fits it.
     pub(super) fn offers(&self, agent: &str, account: &str, pick: &str) -> Result<(), HubError> {
         match self.offered(agent, account) {
             Some(o) if !pick.is_empty() && o.resolve(pick).is_none() => Err(HubError::Refused(
@@ -41,7 +35,6 @@ impl Hub {
         }
     }
 
-    /// Keeps `models` (none: kept as they were) as `agent`'s on `account`, seen now.
     fn seen(&self, agent: &str, account: &str, models: &[[String; 2]]) {
         if models.is_empty() {
             return;
@@ -59,7 +52,6 @@ impl Hub {
         }
     }
 
-    /// Thread `id`'s session `s` came up on `terminal`: its models are kept and the thread's pick set on it.
     pub(super) fn settle(&self, id: &str, terminal: &str, s: &AcpSession) -> Result<(), HubError> {
         let live = self.live(id)?;
         let mut live = lock(&live);

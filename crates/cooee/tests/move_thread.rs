@@ -16,7 +16,6 @@ use std::{
 use serde_json::{Value, json};
 use support::{Cooee, Events, FakeShed, is_item, scratch, version};
 
-/// cooee on the fake shed with `box` up, provider `fake` (agent `fake-acp`) installed and signed in.
 fn setup(name: &str) -> (PathBuf, FakeShed, Cooee) {
     let dir = scratch(name);
     let shed = FakeShed::start(&dir.join("shed"), version());
@@ -45,7 +44,6 @@ fn setup(name: &str) -> (PathBuf, FakeShed, Cooee) {
     (dir, shed, cooee)
 }
 
-/// A thread on this host in `root/project` that said `echo hello` and got `hello`; its id and its events.
 fn idle_thread(dir: &Path, cooee: &Cooee) -> (String, Events) {
     let new = json!({ "agent": "fake-acp", "folder": dir.join("root/project"), "text": "echo hello",
                       "random_id": "start" });
@@ -93,7 +91,6 @@ fn row(cooee: &Cooee, id: &str) -> Value {
     rows.into_iter().find(|r| r["id"] == id).cloned().unwrap()
 }
 
-/// The checks (#150) that ran on box: plain terminals started there.
 fn checks_on_box(shed: &FakeShed) -> usize {
     let requests = shed.requests.lock().unwrap();
     let runs = requests
@@ -102,7 +99,6 @@ fn checks_on_box(shed: &FakeShed) -> usize {
     runs.count()
 }
 
-/// The agent sessions started on box.
 fn sessions_on_box(shed: &FakeShed) -> Vec<String> {
     let log = shed.cli_log();
     let runs = log.lines().filter(|l| l.contains("--on box run --acp"));

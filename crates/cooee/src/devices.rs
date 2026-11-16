@@ -1,5 +1,3 @@
-//! This machine's paired devices and a new pairing code: what `cooee pair`, `cooee devices` and `cooee setup` share.
-
 use std::{
     io::{IsTerminal, Write},
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -15,14 +13,10 @@ pub(crate) fn devices_of(config: &Config) -> Result<Devices, String> {
     Ok(Devices::new(&data))
 }
 
-/// Prints a new pairing code, the link to enter it at and that link as a QR code; in a terminal, then waits for it
-/// to be used (Ctrl-C leaves the code open until it runs out).
 pub(crate) fn pair(config: &Config) -> Result<(), String> {
     let devices = devices_of(config)?;
     let had = devices.list().map_err(|e| e.to_string())?.len();
     let code = devices.pair(now()).map_err(|e| e.to_string())?;
-    // Behind `tailscale serve --https=<port>` the phone uses https, the first allowed name and the port; else this
-    // machine itself.
     let url = match config.allowed_hosts.first() {
         Some(host) => format!("https://{host}:{}/pair?code={code}", config.port),
         None => format!("http://127.0.0.1:{}/pair?code={code}", config.port),
@@ -52,7 +46,6 @@ pub(crate) fn pair(config: &Config) -> Result<(), String> {
     Ok(())
 }
 
-/// Unix milliseconds.
 pub(crate) fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)

@@ -20,7 +20,6 @@ use topcoat::{
 
 use crate::{Answer, Data, HubError, blocking, persona_save, plain, refused, routines, thread_id};
 
-/// The panel the app draws for a new persona or offline: every section, empty.
 const BUNDLED: &str =
     include_str!("../../../../apple/Sources/CooeeUI/Default/screens/persona.json");
 
@@ -66,7 +65,6 @@ pub async fn action(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<Value>> {
     }
 }
 
-/// Forgets `id`'s memory; its screen again.
 async fn clear(cx: &Cx, id: String) -> Result<Value, HubError> {
     let (data, config) = data(cx);
     let id = blocking(cx, move |_| {
@@ -120,7 +118,6 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
     .await
 }
 
-/// `{id, name, when, on}`: `when` in words.
 fn routine(r: &Routine) -> Value {
     let Trigger::Schedule(s) = &r.trigger;
     json!({ "id": r.id, "name": r.name, "when": s.describe(), "on": r.paused.is_none() })

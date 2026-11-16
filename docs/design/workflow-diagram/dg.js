@@ -1,14 +1,7 @@
-// #213 mockup: the `diagram` block. herdsman sends Mermaid source (a stateDiagram-v2) with `counts` per state and
-// `nodes` (a state's tone and tap, a timer's [limits] key, label and value). The native app parses that small subset
-// and lays it out itself, no web view, always top to bottom (q1298): one straight spine, the states beside it in two
-// side columns, short unlabelled lines that never cross. Styles (q947): Modern rounded, Terminal square and mono, Scene
-// a horse acting each state.
 const TONE = { working: 'working', needs: 'needs', done: 'done', fail: 'fail', idle: 'idle' };
 let seq = 0;
 const POSE = { working: 'edit', needs: 'needs', done: 'merged', fail: 'fail', idle: 'idle' };
 
-// The subset: `A --> B`, `A --> B : label` (the label is not drawn), `[*]`, `state "Name" as id`, `state id`,
-// comments. The declaration order is the reading order: an edge to a state declared earlier goes back.
 export function parse(src) {
   const names = {}, order = [], edges = [], add = id => { if (!order.includes(id)) order.push(id); return id; };
   for (const raw of src.split('\n')) {
@@ -25,12 +18,6 @@ export function parse(src) {
   return { order, names, edges };
 }
 
-// The rules, so the app needs no layout heuristic and herdsman's source alone decides the picture:
-// 1. The spine is the longest forward path from the state `[*]` enters (the first edge wins a tie). It is one column.
-// 2. A forward edge that jumps over spine states is not drawn; the states it jumps are marked "optional".
-// 3. Every other state sits beside the first spine state it touches: right (side 1) if it leads back into the spine
-//    (blocked, fix), left (side -1) if it leads away (the timers); one touching no spine state goes under its
-//    predecessors (needs human). Two edges between the same states are one line with two heads.
 export function layout(g) {
   const at = id => g.order.indexOf(id), fwd = g.edges.filter(e => at(e.a) >= 0 && at(e.b) > at(e.a));
   const len = {}, next = {};
@@ -64,7 +51,6 @@ export function layout(g) {
   return { spine, row, side, optional, edges };
 }
 
-// A polyline with its corners rounded by r (0 in Terminal).
 const poly = (P, r) => P.reduce((d, [x, y], i) => {
   if (i === 0) return `M${x} ${y}`;
   if (i === P.length - 1 || !r) return `${d} L${x} ${y}`;
@@ -93,7 +79,6 @@ export function diagram(b, { esc, STYLE, SPR, wide, words }) {
     if (A.Y === B.Y) P = A.X < B.X ? [[A.r, A.Y], [B.l, B.Y]] : [[A.l, A.Y], [B.r, B.Y]];
     else if (A.X === B.X && Math.abs(row[a] - row[to]) === 1) P = A.Y < B.Y ? [[A.X, A.b], [B.X, B.t]] : [[A.X, A.t], [B.X, B.b]];
     else if (A.X === B.X) {
-      // Down the outer gutter, past the states between them in that column.
       const o = side[a] < 0 ? A.l : A.r, gx = side[a] < 0 ? o - GUT + 3 : o + GUT - 3;
       P = [[o, A.Y], [gx, A.Y], [gx, B.Y], [o, B.Y]];
     } else if (side[a] === 0) P = [[B.X > A.X ? A.r : A.l, A.Y], [B.X, A.Y], [B.X, B.Y > A.Y ? B.t : B.b]];

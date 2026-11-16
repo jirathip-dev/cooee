@@ -1,5 +1,3 @@
-//! `cooee push migrate`: the push key into the keychain.
-
 use crate::{
     cli::{Failed, Flag, Invocation},
     keychain,
