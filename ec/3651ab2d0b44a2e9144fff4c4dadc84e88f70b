@@ -1,0 +1,17 @@
+Decided: in recipe(), a persona with blank instructions takes the instructions text its profile's recipe already read, then builds its brief as before
+Because: "has empty `instructions` gets the profile's instructions file text in that place of its brief"
+Decided: the fallback lives where the persona's brief replaces the profile's, so owner and plugin profiles share one path
+Because: crates/cooee-server/src/lib.rs:625
+Decided: the editor shows "from profile <id>" read-only when the persona names a profile and has no instructions; the app holds no profile list, so the id (e.g. drover/cooee) is the label shown
+Because: apple/Sources/CooeeUI/PersonaSheet.swift:134
+Rejected: a profile_label field on Persona — Persona is also the saved TOML, so a display-only field would leak into owner files
+Rejected: reading the profile's file again in Persona::brief — the recipe already read it, with its error refused at start
+Check: a_persona_without_instructions_takes_its_profiles and the plugin step in a_plugins_profile_starts fail at base 06f657513 and pass at the head
+Owner: A persona that points at a profile and leaves Instructions empty now uses that profile's instructions, so the Orchestrator can follow drover's rules without its own copy.
+
+Decided: merged origin/staging, keeping the from-profile Instructions view next to staging's machine and style rows in BlockPersonaEdit.swift
+Because: "The persona editor shows such a persona's instructions as \"from profile <label>\", read-only."
+Decided: the #417 test personas set style detailed so their brief stays character, instructions, notes
+Because: crates/cooee/tests/personas.rs:283
+Rejected: none
+Owner: The branch is brought up to date with staging. The feature is unchanged.
