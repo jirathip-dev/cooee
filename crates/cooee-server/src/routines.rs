@@ -1,7 +1,3 @@
-//! Routines' runner (#75): every 30 seconds it runs each routine whose due time passed, once, and records it;
-//! `create_routine` and the routines' API change them. The run's key is the hub's `random_id`, so a crash between
-//! a run and its record runs into the same thread or message again, never a second one.
-
 use std::{
     path::PathBuf,
     process::Command,
@@ -13,7 +9,10 @@ use cooee_core::{
     routines::{Ask, Edit, Outcome, Paused, Place, Routine, Routines, Run, Who},
 };
 
-use topcoat::Result;
+use topcoat::{
+    Result,
+    context::{Cx, app_context},
+};
 
 use crate::{
     http::refused,
@@ -29,14 +28,11 @@ pub type Start =
 pub struct Runner {
     hub: Arc<Hub>,
     file: Routines,
-    /// Held over each read-change-write of the file.
     lock: Mutex<()>,
     start: Start,
-    /// The Mac's UTC offset in minutes, and when it was read (ms).
     offset: Mutex<(i32, u64)>,
 }
 
-/// An hour, in milliseconds.
 const HOUR: u64 = 3_600_000;
 
 impl Runner {
@@ -70,7 +66,6 @@ impl Runner {
         self.file.load().map_err(refused)
     }
 
-    /// Changes the routines with `f`, under the lock, and saves them.
     fn change<T>(
         &self,
         f: impl FnOnce(&mut Vec<Routine>) -> Result<T, HubError>,
@@ -179,7 +174,6 @@ impl Runner {
         }
     }
 
-    /// Runs `r` for due time `due`: into its chat, or as a new thread.
     fn run(&self, r: &Routine, due: u64, offset: i32) -> Outcome {
         let (text, key, mark) = (r.text(due, offset), r.key(due), Some(r.mark()));
         let ran = match &r.place {
@@ -204,7 +198,6 @@ impl Runner {
         )
     }
 
-    /// The Mac's UTC offset in minutes (`date +%z`), read again after an hour.
     fn offset(&self, now: u64) -> i32 {
         let mut o = self.offset.lock().unwrap_or_else(PoisonError::into_inner);
         if o.1 == 0 || now.saturating_sub(o.1) >= HOUR {
@@ -219,7 +212,20 @@ impl Runner {
     }
 }
 
-/// `+0700` as 420, `-0330` as -210.
+fn runner(cx: &Cx) -> Arc<Runner> {
+    Arc::clone(app_context::<Arc<Runner>>(cx))
+}
+
+pub(crate) async fn on<T: Send + 'static>(
+    cx: &Cx,
+    f: impl FnOnce(&Runner) -> Result<T, HubError> + Send + 'static,
+) -> Result<T, HubError> {
+    let r = runner(cx);
+    tokio::task::spawn_blocking(move || f(&r))
+        .await
+        .map_err(refused)?
+}
+
 fn minutes(z: &str) -> Option<i32> {
     let (sign, hhmm) = z.split_at_checked(1)?;
     let n: i32 = hhmm.parse().ok().filter(|_| hhmm.len() == 4)?;

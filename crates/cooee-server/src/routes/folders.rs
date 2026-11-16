@@ -1,5 +1,3 @@
-//! Folders: browsing them, the roots and a new folder.
-
 use std::path::PathBuf;
 
 use serde::Deserialize;
@@ -14,7 +12,6 @@ use crate::{
     http::{Answer, blocking},
 };
 
-/// `?path=<folder>&hidden=1`: Settings › Folders.
 #[derive(Deserialize)]
 struct Browse {
     path: Option<PathBuf>,
@@ -30,7 +27,6 @@ async fn browse(cx: &Cx) -> Result<Answer<Listing>> {
     ))
 }
 
-/// `POST /roots`: a folder to add as a root, or to remove.
 #[derive(Deserialize)]
 struct Root {
     path: PathBuf,
@@ -45,7 +41,6 @@ async fn root(cx: &Cx, Json(r): Json<Root>) -> Result<Answer<Vec<PathBuf>>> {
     ))
 }
 
-/// `POST /folders/new`: a folder to make inside `parent`.
 #[derive(Deserialize)]
 struct Folder {
     parent: PathBuf,

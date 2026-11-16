@@ -34,6 +34,7 @@ defaults:
 jobs:
   scope:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       run: ${{ steps.scope.outputs.run }}
       mac: ${{ steps.scope.outputs.mac }}

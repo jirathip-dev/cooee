@@ -1,5 +1,3 @@
-//! What the route areas share: the request's device or plugin, the hub and logins, the JSON answer and its errors.
-
 use std::{
     io,
     path::PathBuf,
@@ -7,7 +5,10 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use cooee_core::{Device, Plugin, ShedError, personas};
+use cooee_core::{
+    Device, Plugin, ShedError,
+    personas::{self, Persona},
+};
 use cooee_machines::Machines;
 use serde::{Deserialize, Serialize};
 use topcoat::{
@@ -22,9 +23,8 @@ use topcoat::{
     },
 };
 
-use crate::{Hub, HubError, Logins, Recipe};
+use crate::{Hub, HubError, Logins, Manager, Recipe};
 
-/// The pairing cookie.
 pub(crate) const COOKIE: &str = "cooee";
 
 pub(crate) fn now() -> u64 {
@@ -33,7 +33,6 @@ pub(crate) fn now() -> u64 {
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
 
-/// cooee's own error: one plain sentence, marked so the page shows it (`chat.ts` words any other failure itself).
 pub(crate) fn plain(status: u16, text: &str) -> Result<Response> {
     Ok(Response::builder()
         .status(status)
@@ -46,10 +45,8 @@ pub(crate) fn header<'a>(cx: &'a Cx, name: &str) -> Option<&'a str> {
     headers(cx).get(name).and_then(|v| v.to_str().ok())
 }
 
-/// The request's paired device, put in the request context by the [`Gate`].
 pub(crate) struct Paired(pub(crate) Device);
 
-/// The plugin whose token a `/plugin/` request carries, put in the request context by the [`Gate`].
 pub(crate) struct Caller(pub(crate) Plugin);
 
 path_param!(pub(crate) id: String);
@@ -65,7 +62,6 @@ pub(crate) fn hub(cx: &Cx) -> Arc<Hub> {
     Arc::clone(app_context::<Arc<Hub>>(cx))
 }
 
-/// Runs a blocking hub call off the async workers.
 pub(crate) async fn blocking<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&Hub) -> Result<T, HubError> + Send + 'static,
@@ -76,7 +72,6 @@ pub(crate) async fn blocking<T: Send + 'static>(
         .map_err(|e| HubError::Refused(e.to_string()))?
 }
 
-/// A JSON answer: the value, or the error's status and message.
 pub(crate) struct Answer<T>(pub(crate) Result<T, HubError>);
 
 impl<T: Serialize> IntoResponse for Answer<T> {
@@ -85,12 +80,10 @@ impl<T: Serialize> IntoResponse for Answer<T> {
             Ok(value) => return Json(value).into_response(cx),
             Err(e @ HubError::NoThread(_)) => (404, e.to_string()),
             Err(e @ HubError::Refused(_)) => (400, e.to_string()),
-            // An answer or message to a session that is gone says so (herdsman#325).
             Err(HubError::Shed(e)) if e.no_such_terminal() => (
                 410,
                 "Not delivered: this thread's agent is gone.".to_owned(),
             ),
-            // shed's own errors go to the log; the page gets a sentence.
             Err(HubError::Shed(
                 e @ (ShedError::Rpc(_) | ShedError::Bad(_) | ShedError::Cli { .. }),
             )) => {
@@ -111,19 +104,16 @@ pub(crate) fn logins(cx: &Cx) -> Arc<Logins> {
     Arc::clone(app_context::<Arc<Logins>>(cx))
 }
 
-/// `POST /logins/{id}/send`: a code from the sign-in page.
 #[derive(Deserialize)]
 pub(crate) struct Code {
     pub(crate) text: String,
 }
 
-/// A new thread's id.
 #[derive(Serialize)]
 pub(crate) struct Created {
     pub(crate) id: String,
 }
 
-/// A provider's name for ACP agent `agent` (`acme` for `acme-acp`): never the agent's id on screen.
 pub(crate) fn provider_name(agent: &str, providers: &[cooee_core::Sheet]) -> String {
     providers
         .iter()
@@ -134,9 +124,6 @@ pub(crate) fn provider_name(agent: &str, providers: &[cooee_core::Sheet]) -> Str
         )
 }
 
-/// How a thread of `agent` starts in `folder`: Plain with `account`, or as agent profile `profile` (non-empty: its
-/// agent, and its folder if it has one; one of `list`, not hidden), on the model and effort `picked`. Returns its
-/// agent and folder too.
 pub(crate) fn recipe(
     logins: &Logins,
     (data, config, list): (
@@ -148,7 +135,6 @@ pub(crate) fn recipe(
     folder: PathBuf,
     mut picked: (String, String),
 ) -> Result<(String, PathBuf, Recipe), HubError> {
-    // A persona (#126): its agent, as the profile it runs as or Plain, in its folder, on its model and effort.
     let persona = personas::find(config, data, profile).ok();
     if let Some(p) = &persona {
         for (pick, default) in [(&mut picked.0, &p.model), (&mut picked.1, &p.effort)] {
@@ -158,16 +144,16 @@ pub(crate) fn recipe(
         }
     }
     let (agent, profile, folder) = match &persona {
-        Some(p) if !["", "scratch"].contains(&p.folder.as_str()) => (
-            p.agent.as_str(),
-            p.profile.as_deref().unwrap_or(""),
-            PathBuf::from(&p.folder),
-        ),
-        Some(p) => (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder),
+        Some(p) => {
+            let keep = ["", "scratch"].contains(&p.folder.as_str());
+            let folder = if keep { folder } else { (&p.folder).into() };
+            (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder)
+        }
         None => (agent, profile, folder),
     };
     let (agent, folder, mut recipe) = if profile.is_empty() {
-        let (account, launch) = logins.home(agent, account)?;
+        let (account, mut launch) = logins.home(agent, account)?;
+        launch.meta = persona.as_ref().and(logins.no_personal_setup(agent));
         let recipe = Recipe {
             account,
             launch,
@@ -201,11 +187,8 @@ pub(crate) fn recipe(
     Ok((agent, folder, recipe))
 }
 
-/// The data folder, and the config's folder (its `profiles/`).
 pub(crate) struct Data(pub(crate) PathBuf, pub(crate) Option<PathBuf>);
 
-/// The agent profiles (Plain aside), hidden ones too; a plugin's from its backend when it serves them, a `/path`
-/// avatar through its proxy.
 pub(crate) fn profiles(
     hub: &Hub,
     (data, config): (&std::path::Path, Option<&std::path::Path>),
@@ -229,7 +212,6 @@ pub(crate) fn refused(e: impl std::fmt::Display) -> HubError {
     HubError::Refused(e.to_string())
 }
 
-/// A thread's MCP proxy or cooee's own server asking (#56): `{thread, server}`, with the thread's token.
 #[derive(Deserialize)]
 pub(crate) struct AgentAsk {
     pub(crate) thread: String,
@@ -237,13 +219,11 @@ pub(crate) struct AgentAsk {
     pub(crate) server: serde_json::Value,
 }
 
-/// The `Authorization: Bearer` token.
 pub(crate) fn bearer(cx: &Cx) -> String {
     let token = header(cx, "authorization").and_then(|a| a.strip_prefix("Bearer "));
     token.unwrap_or_default().to_owned()
 }
 
-/// A persona call (#126; docs/api.md) off the async workers, given the data and config folders.
 pub(crate) async fn on_personas<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&std::path::Path, &std::path::Path) -> io::Result<T> + Send + 'static,
@@ -257,7 +237,6 @@ pub(crate) async fn on_personas<T: Send + 'static>(
     Ok(Answer(done.await))
 }
 
-/// Whether `machine` may run a thread (#148): this host (empty), or one added to shed (`shed machine ls`).
 pub(crate) fn allowed(machines: &Machines, machine: &str) -> std::result::Result<(), String> {
     if machine.is_empty() || machines.added().iter().any(|m| m == machine) {
         Ok(())
@@ -266,4 +245,32 @@ pub(crate) fn allowed(machines: &Machines, machine: &str) -> std::result::Result
             "no machine {machine}: add it with shed machine add"
         ))
     }
+}
+
+pub(crate) fn manager(cx: &Cx) -> Arc<Manager> {
+    Arc::clone(app_context::<Arc<Manager>>(cx))
+}
+
+pub(crate) async fn on_logins<T: Send + 'static>(
+    cx: &Cx,
+    f: impl FnOnce(&Arc<Logins>) -> Result<T, HubError> + Send + 'static,
+) -> Result<T, HubError> {
+    let logins = logins(cx);
+    tokio::task::spawn_blocking(move || f(&logins))
+        .await
+        .map_err(|e| HubError::Refused(e.to_string()))?
+}
+
+pub(crate) async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
+    let installed = hub(cx).installed();
+    let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
+    on_personas(cx, move |d, c| {
+        let why = match p.plugins.iter().find(|n| !installed.contains(n)) {
+            Some(n) => Err(format!("no installed plugin {n}")),
+            None => allowed(&machines, &p.machine),
+        };
+        why.map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+        personas::save(c, d, p)
+    })
+    .await
 }

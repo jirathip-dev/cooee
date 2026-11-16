@@ -1,5 +1,3 @@
-//! The routes that start a thread's agent again at a new place: "Use a folder…" (#86) and a move to another machine (#151).
-
 use std::{path::PathBuf, sync::Arc};
 
 use cooee_core::{
@@ -19,7 +17,6 @@ use crate::{
     machine,
 };
 
-/// `POST /threads/{id}/folder`: "Use a folder…" (#86).
 #[derive(Deserialize)]
 struct Attach {
     folder: PathBuf,
@@ -47,7 +44,6 @@ async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooee_core::Ite
     ))
 }
 
-/// `POST /threads/{id}/move`: to `machine` (#151; empty: this host), once it is ready for the thread's persona.
 #[derive(Deserialize)]
 struct Move {
     machine: String,

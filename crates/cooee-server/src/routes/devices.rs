@@ -1,5 +1,3 @@
-//! Paired devices and their passkeys.
-
 use std::sync::Arc;
 
 use serde::Deserialize;
@@ -22,7 +20,6 @@ use crate::{
     passkey::{self, Unlocks},
 };
 
-/// `GET /devices`: the paired devices, this one marked `me`.
 #[route(GET "/devices")]
 async fn device_list(cx: &Cx) -> Result<Response> {
     let (devices, me) = (devices(cx), request_context::<Paired>(cx).0.id.clone());
@@ -36,13 +33,11 @@ async fn device_list(cx: &Cx) -> Result<Response> {
     Json(list).into_response(cx)
 }
 
-/// A device to unpair.
 #[derive(Deserialize)]
 struct DeviceId {
     id: String,
 }
 
-/// `POST /devices/remove`: unpairs a device (its pushes stop too).
 #[route(POST "/devices/remove")]
 async fn device_remove(cx: &Cx, Json(d): Json<DeviceId>) -> Result<Response> {
     let devices = devices(cx);
@@ -54,14 +49,12 @@ async fn device_remove(cx: &Cx, Json(d): Json<DeviceId>) -> Result<Response> {
     }
 }
 
-/// A device's new name.
 #[derive(Deserialize)]
 struct Rename {
     id: String,
     label: String,
 }
 
-/// `POST /devices/rename`: names a device (or the one an approved request becomes).
 #[route(POST "/devices/rename")]
 async fn device_rename(cx: &Cx, Json(r): Json<Rename>) -> Result<Response> {
     let (devices, label) = (
@@ -79,8 +72,6 @@ async fn device_rename(cx: &Cx, Json(r): Json<Rename>) -> Result<Response> {
     }
 }
 
-/// `POST /passkey/options`: a challenge for this device's passkey ceremony, and its passkey's id once it has one
-/// (none: the page registers one).
 #[route(POST "/passkey/options")]
 async fn passkey_options(cx: &Cx) -> Result<Response> {
     let me = &request_context::<Paired>(cx).0;
@@ -90,8 +81,6 @@ async fn passkey_options(cx: &Cx) -> Result<Response> {
     Json(serde_json::json!({ "challenge": challenge, "id": id })).into_response(cx)
 }
 
-/// `POST /passkey/register` (the device's first passkey) and `/passkey/unlock`: either unlocks the gated tab for
-/// [`passkey::IDLE`]; each unlock goes to `<data>/terminal.log` with the time and device.
 #[route(POST "/passkey/{rest}")]
 async fn passkey_check(cx: &Cx, Json(p): Json<passkey::Proof>) -> Result<Response> {
     let me = request_context::<Paired>(cx).0.clone();

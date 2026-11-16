@@ -1,5 +1,3 @@
-//! The router over every route area behind the gate, and the server that runs it.
-
 use std::{
     io,
     net::{IpAddr, SocketAddr},
@@ -18,10 +16,9 @@ use crate::{
     http::{Data, profiles, provider_name, recipe},
     hub, layout, look, pairing,
     passkey::Unlocks,
-    plugin, routes, routines,
+    plugin, routes, routines, screens,
 };
 
-/// A room member's session starts as its persona's chat does (#154).
 fn starter(
     logins: Arc<Logins>,
     data: &std::path::Path,
@@ -42,7 +39,6 @@ fn starter(
     })
 }
 
-/// The routines' runner (#75): a `new_thread` run starts as the chat that made it did.
 fn runner(
     hub: &Arc<Hub>,
     logins: Arc<Logins>,
@@ -91,13 +87,12 @@ pub fn router(
         devices: Devices::new(data),
         hub: Arc::clone(&hub),
     };
-    routes::routes(
+    screens::routes(routes::routes(
         Router::builder()
             .layer(Timing)
             .layer(gate)
-            // A message's photos come as base64.
             .layer(BodyLimit::max(64 << 20).at("/threads")),
-    )
+    ))
     .route(layout::get)
     .route(layout::events)
     .route(layout::reset)
@@ -153,7 +148,6 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
         manager.tabs(),
         config.apns.clone(),
     )?;
-    // The models' daily refresh (#193): each agent and account seen a day ago or more is asked again.
     let (daily, signins) = (Arc::clone(&hub), Arc::clone(&logins));
     std::thread::spawn(move || {
         loop {

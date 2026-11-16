@@ -1,5 +1,3 @@
-//! Alerts: web push subscriptions, APNs tokens, and a test alert.
-
 use std::io;
 
 use serde::Deserialize;
@@ -28,7 +26,6 @@ async fn push_key(cx: &Cx) -> Result<Response> {
     }
 }
 
-/// `POST /push/subscribe`: the browser's subscription (`PushSubscription.toJSON()`'s endpoint and keys).
 #[derive(Deserialize)]
 struct Subscribe {
     endpoint: String,
@@ -54,7 +51,6 @@ async fn push_subscribe(cx: &Cx, Json(s): Json<Subscribe>) -> Result<Response> {
     }
 }
 
-/// `POST`/`DELETE /push/apns`: this native device's APNs token (`env`: default the config's).
 #[derive(Deserialize)]
 struct Token {
     token: String,
@@ -84,7 +80,6 @@ async fn apns_remove(cx: &Cx, Json(t): Json<Token>) -> Result<Response> {
     }
 }
 
-/// A subscription to drop.
 #[derive(Deserialize)]
 struct Endpoint {
     endpoint: String,
@@ -99,21 +94,18 @@ async fn push_unsubscribe(cx: &Cx, Json(e): Json<Endpoint>) -> Result<Response> 
     }
 }
 
-/// `GET /push/endpoints`: this device's subscriptions, so the page says truly whether alerts are on.
 #[route(GET "/push/endpoints")]
 async fn push_endpoints(cx: &Cx) -> Result<Response> {
     let me = &request_context::<Paired>(cx).0.id;
     Json(hub(cx).push().endpoints(me)).into_response(cx)
 }
 
-/// `GET /push/reset`: why this device's alerts stopped (`null` unless they did), so the page asks to turn them on.
 #[route(GET "/push/reset")]
 async fn push_reset(cx: &Cx) -> Result<Response> {
     let me = &request_context::<Paired>(cx).0.id;
     Json(hub(cx).push().reset(me)).into_response(cx)
 }
 
-/// `POST /push/test`: "alerts are on" to this device only.
 #[route(POST "/push/test")]
 async fn push_test(cx: &Cx) -> Result<Response> {
     let (hub, me) = (hub(cx), request_context::<Paired>(cx).0.id.clone());

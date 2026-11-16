@@ -1,7 +1,3 @@
-//! Provider logins (docs/logins.md): start one, watch it, send its code, cancel it, sign out.
-
-use std::sync::Arc;
-
 use serde::Deserialize;
 use topcoat::{
     Result,
@@ -10,23 +6,10 @@ use topcoat::{
 };
 
 use crate::{
-    HubError, LoginView, Logins,
-    http::{Answer, Code, logins, thread_id},
+    LoginView,
+    http::{Answer, Code, logins, on_logins, thread_id},
 };
 
-/// Runs a blocking login call off the async workers.
-async fn on_logins<T: Send + 'static>(
-    cx: &Cx,
-    f: impl FnOnce(&Arc<Logins>) -> Result<T, HubError> + Send + 'static,
-) -> Result<T, HubError> {
-    let logins = logins(cx);
-    tokio::task::spawn_blocking(move || f(&logins))
-        .await
-        .map_err(|e| HubError::Refused(e.to_string()))?
-}
-
-/// `POST /logins/{id}`: a login for `account` (none: the system default), or with `new` for a new account; on
-/// `machine` (#150; none or empty: this host).
 #[derive(Deserialize, Default)]
 struct Start {
     #[serde(default)]
@@ -50,7 +33,6 @@ async fn login_start(cx: &Cx, Json(s): Json<Option<Start>>) -> Result<Answer<()>
     ))
 }
 
-/// `POST /logins/{id}/signout`: account `account` (empty: the system default).
 #[derive(Deserialize)]
 struct Pick {
     account: String,
@@ -64,7 +46,6 @@ async fn login_signout(cx: &Cx, Json(p): Json<Pick>) -> Result<Answer<()>> {
     ))
 }
 
-/// `POST /logins`: the sign-ins card opened; checks the accounts' status again, never waiting on it (#106).
 #[route(POST "/logins")]
 async fn logins_check(cx: &Cx) -> Result<Answer<()>> {
     logins(cx).ask();

@@ -1,5 +1,3 @@
-//! A problem reported from the page.
-
 use serde::{Deserialize, Serialize};
 use topcoat::{
     Result,
@@ -9,7 +7,6 @@ use topcoat::{
 
 use crate::http::{Data, Paired, now, plain};
 
-/// `POST /report`: a problem reported from the page (report mode): the note and the element it is about.
 #[derive(Deserialize, Serialize)]
 struct Report {
     note: String,
@@ -25,7 +22,6 @@ struct Report {
     viewport: String,
 }
 
-/// Appends the report to `<data>/reports.jsonl`, with when and which device; `cooee reports` lists them.
 #[route(POST "/report")]
 async fn report(cx: &Cx, Json(r): Json<Report>) -> Result<Response> {
     if r.note.trim().is_empty() {

@@ -14,7 +14,7 @@ internal struct AppFeatureTests {
         } withDependencies: {
             $0.date.now = epoch
             $0.serverStore.clear = { calls.record("clear") }
-            $0.threads.threads = { _ in [row("n1")] }
+            $0.threads.home = { _ in HomeAnswer(screen: homeScreen, threads: [row("n1")], personas: [coder]) }
             $0.threads.personas = { _ in [coder] }
             $0.plugins.installed = { _ in [] }
         }
@@ -61,7 +61,6 @@ internal struct AppFeatureTests {
             $0.path = []
             $0.chat = nil
         }
-        await store.send(.menu(.open(true))) { $0.menu.open = true }
     }
 
     @Test internal func aNewChatBecomesItsThreadOnceStarted() async {
@@ -76,6 +75,7 @@ internal struct AppFeatureTests {
         }
         await store.receive(\.home.refresh)
         await store.receive(\.home.loaded) {
+            $0.home?.screen = homeScreen
             $0.home?.rows = [row("n1")]
         }
         await store.send(.start("nobody")) {
@@ -113,7 +113,7 @@ internal struct AppFeatureTests {
 
     @Test internal func aSavedPersonaClosesItsSheetAndHomeReloads() async {
         let store = store(paired())
-        store.dependencies.personas.save = { _, persona in persona }
+        store.dependencies.plugins.act = { _, _, _, action in .object(action.values) }
         await store.send(.edit("coder")) { $0.persona = PersonaFeature.State(server: mini, persona: coder) }
         await store.send(.persona(.presented(.binding(.set(\.draft.character, "Terse."))))) {
             $0.persona?.draft.character = "Terse."
@@ -121,7 +121,10 @@ internal struct AppFeatureTests {
         await store.send(.persona(.presented(.save))) { $0.persona?.busy = true }
         await store.receive(\.persona.presented.delegate.saved) { $0.persona = nil }
         await store.receive(\.home.refresh)
-        await store.receive(\.home.loaded) { $0.home?.rows = [row("n1")] }
+        await store.receive(\.home.loaded) {
+            $0.home?.screen = homeScreen
+            $0.home?.rows = [row("n1")]
+        }
     }
 
     @Test internal func aNewPersonaStartsBlankOnTheFirstPersonasAgent() async {

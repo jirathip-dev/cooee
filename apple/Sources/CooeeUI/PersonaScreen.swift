@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import CooeeCore
 import CooeeFeatures
 import SwiftUI
 
@@ -7,12 +6,12 @@ internal struct PersonaScreen: View {
     @Bindable internal var store: StoreOf<PersonaFeature>
 
     internal var body: some View {
-        PersonaSheet(
+        PersonaEditBlocks(
             draft: $store.draft,
-            choices: PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts),
-            memory: PersonaMemory(
-                notes: Listing.memory(store.notes, persona: store.draft.name, now: Date()), count: store.notes.count
+            choices: PersonaChoices(
+                agents: store.agents, models: store.models, efforts: store.efforts, machines: store.machines
             ),
+            screen: store.screen ?? .bundledPersona,
             error: store.error,
             actions: actions
         )

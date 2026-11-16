@@ -1,8 +1,3 @@
-//! Pairing (#47): the page, a code typed or scanned (single use, 10 minutes, 5 wrong tries a minute per address), a
-//! new device asking a paired one to approve it (a check word, a push to every paired device, approval needs a
-//! passkey), the QR a paired device shows, and passkeys (`WebAuthn` ES256, platform authenticators): made on a paired
-//! device, they sign a device back in and approve new ones. The server keeps only their public keys.
-
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex, PoisonError},
@@ -20,10 +15,8 @@ use topcoat::{
 
 use crate::http::{COOKIE, Data, header, now};
 
-/// How long a passkey challenge is good for, in milliseconds.
 pub(crate) const CHALLENGE_TTL: u64 = 5 * 60 * 1000;
 
-/// The in-memory pairing state: each address's wrong codes in the last minute and the open passkey challenges.
 #[derive(Default)]
 pub(crate) struct Pairing {
     pub(crate) misses: Mutex<HashMap<String, Vec<u64>>>,
@@ -38,7 +31,6 @@ pub(crate) fn devices(cx: &Cx) -> Devices {
     Devices::new(&app_context::<Data>(cx).0)
 }
 
-/// Runs a blocking store call off the async workers.
 pub(crate) async fn store<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&Devices) -> std::io::Result<T> + Send + 'static,
@@ -47,7 +39,6 @@ pub(crate) async fn store<T: Send + 'static>(
     Ok(tokio::task::spawn_blocking(move || f(&devices)).await??)
 }
 
-/// The request's host name (its `Host` without the port): the passkeys' relying party.
 pub(crate) fn host(cx: &Cx) -> &str {
     header(cx, "host").unwrap_or_default()
 }
@@ -56,7 +47,6 @@ pub(crate) fn rp_id(host: &str) -> &str {
     host.split(':').next().unwrap_or(host)
 }
 
-/// The pairing cookie for `token` (`Secure` behind https).
 pub(crate) fn cookie(cx: &Cx, token: &str) -> String {
     let secure = header(cx, "origin").is_some_and(|o| o.starts_with("https://"));
     format!(
@@ -65,7 +55,6 @@ pub(crate) fn cookie(cx: &Cx, token: &str) -> String {
     )
 }
 
-/// A passkey's signature (`navigator.credentials.get`), base64url.
 #[derive(Deserialize)]
 pub(crate) struct Assertion {
     pub(crate) id: String,
@@ -74,7 +63,6 @@ pub(crate) struct Assertion {
     sig: String,
 }
 
-/// Takes `challenge` if this server gave it out in the last 5 minutes: each is good once.
 pub(crate) fn take(cx: &Cx, challenge: &str) -> bool {
     let mut all = pairing(cx)
         .challenges
@@ -87,7 +75,6 @@ pub(crate) fn take(cx: &Cx, challenge: &str) -> bool {
     found.map(|i| all.remove(i)).is_some()
 }
 
-/// What a ceremony's client data says.
 #[derive(Deserialize)]
 struct ClientData {
     #[serde(rename = "type")]
@@ -96,8 +83,6 @@ struct ClientData {
     origin: String,
 }
 
-/// Checks a ceremony of `kind` against this server: its challenge (taken), its origin, the relying party's hash and
-/// the user's presence and verification (Face ID) in the authenticator data.
 pub(crate) fn ceremony(
     cx: &Cx,
     kind: &str,
@@ -120,7 +105,6 @@ pub(crate) fn ceremony(
     Ok(())
 }
 
-/// The P-256 point in a public key's `SubjectPublicKeyInfo` (DER), as `getPublicKey()` gives it.
 pub(crate) fn spki_point(spki: &[u8]) -> Option<&[u8]> {
     const P256: [u8; 26] = [
         0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, 0x06, 0x08,
@@ -129,7 +113,6 @@ pub(crate) fn spki_point(spki: &[u8]) -> Option<&[u8]> {
     spki.strip_prefix(&P256[..]).filter(|p| p.len() == 65)
 }
 
-/// Whether `sig` is `key`'s signature over the authenticator data and the client data's hash.
 fn signed(key: &[u8], auth: &[u8], client: &[u8], sig: &[u8]) -> bool {
     let (Ok(key), Ok(sig)) = (VerifyingKey::from_sec1_bytes(key), Signature::from_der(sig)) else {
         return false;
@@ -143,7 +126,6 @@ pub(crate) fn b64(s: &str) -> Vec<u8> {
     B64.decode(s.trim_end_matches('=')).unwrap_or_default()
 }
 
-/// Checks a passkey's assertion: a known passkey signed this server's challenge with Face ID; marks it used.
 pub(crate) async fn assert(cx: &Cx, a: Assertion) -> Result<Result<(), &'static str>> {
     let (client, auth) = (b64(&a.client), b64(&a.auth));
     if let Err(why) = ceremony(cx, "webauthn.get", &client, &auth) {

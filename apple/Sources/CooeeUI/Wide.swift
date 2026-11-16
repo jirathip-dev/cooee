@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import CooeeCore
 import CooeeFeatures
 import SwiftUI
 
@@ -58,59 +57,6 @@ public struct MacConnect: View {
     public init(store: StoreOf<PairingFeature>, setUp: @escaping () -> Void) {
         self.store = store
         self.setUp = setUp
-    }
-}
-
-public struct WideView<Detail: View>: View {
-    @Environment(\.look) private var look
-    private let personas: [Persona]
-    private let all: [Persona]
-    private let chats: [ListedChat]
-    private let selected: String?
-    private let actions: HomeActions
-    private let detail: Detail
-
-    public var body: some View {
-        let palette = look.palette
-        HStack(spacing: 0) {
-            VStack(spacing: 0) {
-                TopBar(personas: all, actions: actions).padding(.top, look.still ? 34 : 8)
-                Scroller {
-                    PinnedRow(personas: personas, rows: chats.map(\.row), pin: actions.pin)
-                        .scaleEffect(0.9, anchor: .leading).padding(.top, 4)
-                    ChatList(chats: chats, selected: selected, open: actions.open).padding(.top, 8)
-                    if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
-                }
-            }
-            .frame(width: 360).background(palette.card.opacity(look.style == .modern ? 0.45 : 0.8))
-            .overlay(alignment: .trailing) { Rectangle().fill(palette.line).frame(width: 1) }
-            detail.padding(.top, 12).frame(maxWidth: .infinity)
-        }
-        .foregroundStyle(palette.foreground)
-    }
-
-    public init(
-        personas: [Persona],
-        all: [Persona]? = nil,
-        chats: [ListedChat],
-        selected: String?,
-        actions: HomeActions,
-        @ViewBuilder detail: () -> Detail
-    ) {
-        self.personas = personas
-        self.all = all ?? personas
-        self.chats = chats
-        self.selected = selected
-        self.actions = actions
-        self.detail = detail()
-    }
-}
-
-extension WideView where Detail == ChatView {
-    public init() {
-        self.init(personas: Fixtures.personas, chats: Fixtures.chats, selected: "t1", actions: HomeActions()) {
-            ChatView.streaming(back: false)
-        }
     }
 }
 

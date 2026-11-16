@@ -1,5 +1,3 @@
-//! Pairing's calls (#47): a code, a request a paired device approves, and passkeys.
-
 use std::sync::PoisonError;
 
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD as B64};
@@ -26,10 +24,8 @@ use crate::{
     },
 };
 
-/// Wrong codes an address may type a minute.
 const TRIES: usize = 5;
 
-/// Who is typing: the address `tailscale serve` forwards for (the last `X-Forwarded-For` entry), else this machine.
 fn client(cx: &Cx) -> String {
     header(cx, "x-forwarded-for")
         .and_then(|f| f.rsplit(',').next())
@@ -45,7 +41,6 @@ fn see_other(to: &str, cookie: Option<String>) -> Result<Response> {
     Ok(r.body(Body::from(()))?)
 }
 
-/// `POST /pair`: the code `cooee pair` or a paired device shows, as one field or the six boxes.
 #[derive(Deserialize)]
 struct PairForm {
     code: String,
@@ -61,7 +56,6 @@ struct PairForm {
     d6: String,
 }
 
-/// Pairs on the right code (then to the list, which offers a passkey); else back to the page saying why.
 #[route(POST "/pair")]
 async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
     let code: String = [&f.code, &f.d2, &f.d3, &f.d4, &f.d5, &f.d6]
@@ -112,8 +106,6 @@ async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
     see_other(&format!("/pair?bad=wrong&left={left}"), None)
 }
 
-/// `POST /pair/request`: a new device asks to pair. Every paired device gets a push and the card; the new device
-/// shows the check word and collects its cookie with the claim.
 #[route(POST "/pair/request")]
 async fn pair_request(cx: &Cx) -> Result<Response> {
     let agent = header(cx, "user-agent").unwrap_or_default().to_owned();
@@ -129,13 +121,11 @@ async fn pair_request(cx: &Cx) -> Result<Response> {
     Json(serde_json::json!({ "word": word, "claim": claim })).into_response(cx)
 }
 
-/// The new device's claim on its request.
 #[derive(Deserialize)]
 struct ClaimBody {
     claim: String,
 }
 
-/// `POST /pair/claim`: 200 with the cookie once approved, 202 while it waits, 403 declined, 410 when it is gone.
 #[route(POST "/pair/claim")]
 async fn pair_claim(cx: &Cx, Json(c): Json<ClaimBody>) -> Result<Response> {
     match store(cx, move |d| d.collect(&c.claim, now())).await? {
@@ -154,13 +144,11 @@ async fn pair_cancel(cx: &Cx, Json(c): Json<ClaimBody>) -> Result<Response> {
     plain(200, "cancelled")
 }
 
-/// `GET /pair/asks`: the requests waiting for an answer (the cards on a paired device).
 #[route(GET "/pair/asks")]
 async fn pair_asks(cx: &Cx) -> Result<Response> {
     Json(store(cx, |d| d.asking(now())).await?).into_response(cx)
 }
 
-/// An answer to a request: approving needs a passkey's assertion.
 #[derive(Deserialize)]
 struct Answer {
     id: String,
@@ -168,7 +156,6 @@ struct Answer {
     passkey: Option<Assertion>,
 }
 
-/// `POST /pair/answer`: approves (with a passkey) or declines a waiting request.
 #[route(POST "/pair/answer")]
 async fn pair_answer(cx: &Cx, Json(a): Json<Answer>) -> Result<Response> {
     if a.yes {
@@ -187,7 +174,6 @@ async fn pair_answer(cx: &Cx, Json(a): Json<Answer>) -> Result<Response> {
     }
 }
 
-/// `POST /devices/pair`: a new code (dropping the open one), its link and the link as a QR code (SVG).
 #[route(POST "/devices/pair")]
 async fn devices_pair(cx: &Cx) -> Result<Response> {
     let code = store(cx, |d| d.pair(now())).await?;
@@ -204,7 +190,6 @@ async fn devices_pair(cx: &Cx) -> Result<Response> {
     .into_response(cx)
 }
 
-/// `POST /passkey/challenge`: a challenge for one passkey ceremony, good for 5 minutes, and the passkeys' ids.
 #[route(POST "/passkey/challenge")]
 async fn passkey_challenge(cx: &Cx) -> Result<Response> {
     let c = B64.encode(random(32)?);
@@ -228,7 +213,6 @@ async fn passkey_challenge(cx: &Cx) -> Result<Response> {
     Json(serde_json::json!({ "challenge": c, "ids": ids })).into_response(cx)
 }
 
-/// A new passkey (`navigator.credentials.create`), base64url: its id, its public key (SPKI) and what it signed.
 #[derive(Deserialize)]
 struct NewPasskey {
     id: String,
@@ -237,7 +221,6 @@ struct NewPasskey {
     auth: String,
 }
 
-/// `POST /passkeys`: keeps this device's new passkey.
 #[route(POST "/passkeys")]
 async fn passkey_add(cx: &Cx, Json(p): Json<NewPasskey>) -> Result<Response> {
     let (client, auth, spki) = (b64(&p.client), b64(&p.auth), b64(&p.key));
@@ -262,8 +245,6 @@ async fn passkey_add(cx: &Cx, Json(p): Json<NewPasskey>) -> Result<Response> {
     plain(200, "passkey saved")
 }
 
-/// `GET /passkeys`: every passkey: its id, the device that made it (and whether that is this one), when it was made
-/// and last used.
 #[route(GET "/passkeys")]
 async fn passkey_list(cx: &Cx) -> Result<Response> {
     let me = request_context::<Paired>(cx).0.id.clone();
@@ -275,7 +256,6 @@ async fn passkey_list(cx: &Cx) -> Result<Response> {
     Json(list).into_response(cx)
 }
 
-/// A passkey to remove.
 #[derive(Deserialize)]
 struct PasskeyId {
     id: String,
@@ -290,7 +270,6 @@ async fn passkey_remove(cx: &Cx, Json(p): Json<PasskeyId>) -> Result<Response> {
     }
 }
 
-/// `POST /passkey/signin`: a device that lost its cookie signs back in with its passkey: paired again.
 #[route(POST "/passkey/signin")]
 async fn passkey_signin(cx: &Cx, Json(a): Json<Assertion>) -> Result<Response> {
     let id = a.id.clone();
@@ -304,7 +283,6 @@ async fn passkey_signin(cx: &Cx, Json(a): Json<Assertion>) -> Result<Response> {
         .body(Body::from(()))?)
 }
 
-/// The pairing routes.
 pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
     b.route(pair)
         .route(pair_request)

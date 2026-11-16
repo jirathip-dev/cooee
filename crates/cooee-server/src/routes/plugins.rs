@@ -1,9 +1,7 @@
-//! Plugins: their proxy and screens, Settings › Plugins, and what a plugin's backend posts.
-
 use std::{io, sync::Arc, time::Duration};
 
 use cooee_core::Plugin;
-use futures_util::stream;
+use futures_util::StreamExt;
 use serde::Deserialize;
 use topcoat::{
     Result,
@@ -25,18 +23,16 @@ use topcoat::{
 use crate::{
     CardSpec, Hub, HubError, ISSUES, Logins, Manager, Note, Plan, Recipe,
     http::{
-        Answer, Caller, Data, Name, Paired, blocking, header, hub, logins, now, plain, refused,
-        thread_id,
+        Answer, Caller, Data, Name, Paired, blocking, header, hub, logins, manager, now, plain,
+        refused, thread_id,
     },
     passkey::{self, Unlocks},
     plugin,
 };
 
-/// The plugins whose tab shows a dot (`POST /plugin/dot`), by name; kept in memory only.
 #[derive(Default)]
 struct Dots(std::sync::Mutex<std::collections::BTreeSet<String>>);
 
-/// The plugin tab the path names (a plugin with screens only has none).
 fn named(cx: &Cx) -> Result<Plugin> {
     let name = path_param::<Name>(cx);
     let hub = app_context::<Arc<Hub>>(cx);
@@ -44,7 +40,6 @@ fn named(cx: &Cx) -> Result<Plugin> {
     Ok(found.ok_or_else(not_found)?)
 }
 
-/// A backend's event as one `{event, data}` message (a page's `EventSource` hears only those), its id kept.
 fn relay(e: plugin::Sse) -> Event {
     let event = if e.event.is_empty() {
         "message"
@@ -58,8 +53,6 @@ fn relay(e: plugin::Sse) -> Event {
     }
 }
 
-/// `/p/<name>/api/<path>`: `<path>` on the plugin's backend with its token. Only the content type, `Accept` and
-/// `Last-Event-ID` go along (never the cookie); an event stream comes back as `{event, data}` messages.
 #[route([GET, POST] "/p/{name}/api/{*rest}")]
 async fn proxy(cx: &Cx, body: String) -> Result<Response> {
     let p = named(cx)?;
@@ -72,8 +65,6 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
         .into_iter()
         .filter_map(|h| Some((h, header(cx, h)?.to_owned())))
         .collect();
-    // The gated tab: only an unlocked device's calls get through, and each counts as use; the backend learns which
-    // device (it refuses calls without one).
     let me = request_context::<Paired>(cx).0.id.clone();
     let unlocks = Arc::clone(app_context::<Arc<Unlocks>>(cx));
     let gated = p.name == passkey::GATED;
@@ -88,21 +79,18 @@ async fn proxy(cx: &Cx, body: String) -> Result<Response> {
     }
     let reply = tokio::task::spawn_blocking(move || {
         let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
-        let timeout = Some(Duration::from_secs(30));
-        plugin::call(&p, &method, &target, &headers, body.as_bytes(), timeout)
+        let deadline = Duration::from_secs(30);
+        plugin::call(&p, &method, &target, &headers, body.as_bytes(), deadline)
     })
     .await?;
     let reply = match reply {
         Ok(r) => r,
         Err(e) => return plain(502, &format!("{prefix}: {e}")),
     };
-    // A locked device's stream ends at its next event.
     let open = move || !gated || unlocks.open(&me, now());
     pass_on(cx, reply, relay, open).await
 }
 
-/// A backend's answer passed on: an event stream event by event (each through `relay` while `open`), else its
-/// status, content type and body.
 async fn pass_on(
     cx: &Cx,
     reply: plugin::Reply,
@@ -113,13 +101,12 @@ async fn pass_on(
         .header("content-type")
         .is_some_and(|t| t.starts_with("text/event-stream"))
     {
-        reply.body.get_ref().set_read_timeout(None)?;
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        std::thread::spawn(move || plugin::events(reply, |e| open() && tx.send(e).is_ok()));
-        let stream = stream::unfold(rx, move |mut rx| async move {
-            let e = rx.recv().await?;
-            Some((Result::<Event>::Ok(relay(e)), rx))
-        });
+        let stream = plugin::events(reply)?
+            .take_while(move |_| std::future::ready(open()))
+            .map(move |heard| match heard {
+                plugin::Heard::Event(e) => Result::<Event>::Ok(relay(e)),
+                plugin::Heard::Beat => Ok(Event::new().comment("")),
+            });
         return Sse::new(stream)
             .keep_alive(KeepAlive::new())
             .into_response(cx);
@@ -137,7 +124,6 @@ async fn pass_on(
         .body(Body::from(bytes))?)
 }
 
-/// Installed plugin `{name}`'s backend and manifest, when it has places: only those have screens (#125).
 fn with_screens(cx: &Cx) -> Option<(Plugin, cooee_core::plugins::Manifest)> {
     let name = path_param::<Name>(cx);
     let data = &app_context::<Data>(cx).0;
@@ -147,7 +133,6 @@ fn with_screens(cx: &Cx) -> Option<(Plugin, cooee_core::plugins::Manifest)> {
     (!m.places.is_empty()).then_some((p, m))
 }
 
-/// A screen stream's event as the backend sent it: its `{seq, ops}` data, its name and id.
 fn ops(e: plugin::Sse) -> Event {
     let out = Event::new().data(e.data);
     let out = if e.event.is_empty() {
@@ -161,8 +146,6 @@ fn ops(e: plugin::Sse) -> Event {
     }
 }
 
-/// `GET /p/<plugin>/screens/<path>` (#125): a screen from a plugin with places, off its backend with its token
-/// (`Accept` and `Last-Event-ID` go along, never the cookie); a stream of block ops comes back event by event.
 #[route(GET "/p/{name}/screens/{*rest}")]
 async fn screen(cx: &Cx) -> Result<Response> {
     let Some((p, m)) = with_screens(cx) else {
@@ -193,14 +176,7 @@ async fn screen(cx: &Cx) -> Result<Response> {
         .collect();
     let reply = tokio::task::spawn_blocking(move || {
         let headers: Vec<(&str, &str)> = pass.iter().map(|(k, v)| (*k, v.as_str())).collect();
-        plugin::call(
-            &p,
-            "GET",
-            &target,
-            &headers,
-            &[],
-            Some(Duration::from_secs(5)),
-        )
+        plugin::call(&p, "GET", &target, &headers, &[], Duration::from_secs(5))
     })
     .await?;
     match reply {
@@ -209,7 +185,6 @@ async fn screen(cx: &Cx) -> Result<Response> {
     }
 }
 
-/// One action from a plugin's screen or card (#125): the block it came from and its values.
 #[derive(Deserialize)]
 struct BlockAct {
     #[serde(default)]
@@ -221,8 +196,6 @@ struct BlockAct {
     values: serde_json::Map<String, serde_json::Value>,
 }
 
-/// `POST /p/<plugin>/action` (#125): one action to its backend's `POST /action`, with the device that sent it as
-/// `by`; one not in its manifest's `[permissions]` actions is refused (403) and never sent.
 #[route(POST "/p/{name}/action")]
 async fn screen_action(cx: &Cx, Json(a): Json<BlockAct>) -> Result<Response> {
     let Some((p, m)) = with_screens(cx) else {
@@ -240,14 +213,14 @@ async fn screen_action(cx: &Cx, Json(a): Json<BlockAct>) -> Result<Response> {
     });
     let reply = tokio::task::spawn_blocking(move || {
         let json = [("Content-Type", "application/json")];
-        let timeout = Some(Duration::from_secs(10));
+        let deadline = Duration::from_secs(10);
         plugin::call(
             &p,
             "POST",
             "/action",
             &json,
             body.to_string().as_bytes(),
-            timeout,
+            deadline,
         )
     })
     .await?;
@@ -257,11 +230,6 @@ async fn screen_action(cx: &Cx, Json(a): Json<BlockAct>) -> Result<Response> {
     }
 }
 
-fn manager(cx: &Cx) -> Arc<Manager> {
-    Arc::clone(app_context::<Arc<Manager>>(cx))
-}
-
-/// `GET /plugins`: Settings › Plugins: the installed plugins with their state, the index, the jobs in progress.
 #[route(GET "/plugins")]
 async fn plugin_list(cx: &Cx) -> Result<Answer<serde_json::Value>> {
     let m = manager(cx);
@@ -277,13 +245,11 @@ async fn plugin_list(cx: &Cx) -> Result<Answer<serde_json::Value>> {
     ))
 }
 
-/// `?name=`: whose log.
 #[derive(Deserialize)]
 struct LogQuery {
     name: String,
 }
 
-/// `GET /plugins/log?name=`: the end of a plugin's log (its builds' and backend's output).
 #[route(GET "/plugins/log")]
 async fn plugin_log(cx: &Cx) -> Result<Response> {
     let q: LogQuery =
@@ -304,22 +270,18 @@ async fn plugin_log(cx: &Cx) -> Result<Response> {
     )
 }
 
-/// `POST /plugins/<action>`: Settings › Plugins' buttons.
 #[derive(Deserialize, Default)]
 #[serde(default)]
 struct Act {
     name: String,
     source: String,
     rev: Option<String>,
-    /// The commit the owner confirmed (add, update).
     commit: String,
     purge: bool,
     on: bool,
     text: String,
 }
 
-/// `[improve]`: a thread with the first agent (its default account) in the plugin's checkout, on its
-/// `cooee-improve` branch, with the owner's `text`.
 fn improve(
     m: &Manager,
     hub: &Hub,
@@ -346,7 +308,6 @@ fn improve(
     Ok(thread)
 }
 
-/// A thread with the first agent in shed (its default account) in `folder`, starting with `prompt`.
 fn agent_thread(
     hub: &Hub,
     logins: &Logins,
@@ -372,7 +333,6 @@ async fn plugin_act(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<serde_json::Va
     let (act, m, hub, logins) = (thread_id(cx), manager(cx), hub(cx), logins(cx));
     let done = tokio::task::spawn_blocking(move || {
         let said = |what: &str| Ok(serde_json::json!(what));
-        // A confirm holds for the exact commit it showed.
         let confirmed = |p: &Plan| {
             let again = "It changed since you confirmed: confirm again.";
             (p.commit == a.commit)
@@ -422,7 +382,6 @@ async fn plugin_act(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<serde_json::Va
                 .map(|t| serde_json::json!({ "thread": t })),
             _ => Err(HubError::Refused(format!("no plugin action {act}"))),
         };
-        // The tabs follow at once (the supervisor would within half a second).
         hub.set_plugins(m.tabs());
         done
     });
@@ -431,8 +390,6 @@ async fn plugin_act(cx: &Cx, Json(a): Json<Act>) -> Result<Answer<serde_json::Va
     ))
 }
 
-/// `POST /plugin/push`: a line from a plugin; a tap opens its tab (at `#<path>`, when given). A newer push of the same
-/// `tag` (default `plugin-<name>`) replaces the older one.
 #[derive(Deserialize)]
 struct PluginPush {
     text: String,
@@ -468,7 +425,6 @@ async fn plugin_push(cx: &Cx, Json(b): Json<PluginPush>) -> Result<Response> {
     Json(note).into_response(cx)
 }
 
-/// `POST /plugin/dot` `{"on": bool}`: shows or clears the dot on the plugin's tab.
 #[derive(Deserialize)]
 struct Dot {
     on: bool,
@@ -487,15 +443,12 @@ async fn plugin_dot(cx: &Cx, Json(d): Json<Dot>) -> Result<Response> {
     Json(d.on).into_response(cx)
 }
 
-/// `POST /plugin/card`: a plugin's card in a thread ([`CardSpec`]).
 #[route(POST "/plugin/card")]
 async fn plugin_card(cx: &Cx, Json(c): Json<CardSpec>) -> Result<Answer<cooee_core::Item>> {
     let p = request_context::<Caller>(cx).0.clone();
     Ok(Answer(blocking(cx, move |hub| hub.card(&p, c)).await))
 }
 
-/// `POST /plugin/handoff` `{from, to, text}`: `from` shows `continued in` `to`, which gets `text` `from` it; `POST
-/// /plugin/line` `{thread, from, text}`: a line flowing back into `thread` from thread `from` (#553 row 35).
 #[derive(Deserialize)]
 struct Handoff {
     #[serde(alias = "thread")]

@@ -1,7 +1,3 @@
-//! The gate: every request must name one of the server's own hosts (`Host`, and `Origin` when sent: no DNS
-//! rebinding), and every call but pairing needs a paired device's cookie; a plugin's backend posts with its token
-//! instead and is reached through cooee's proxy (docs/plugins.md). And every request's timing.
-
 use std::{net::IpAddr, sync::Arc};
 
 use cooee_core::Devices;
@@ -20,7 +16,6 @@ use crate::{
     http::{COOKIE, Caller, Paired, header, now, plain},
 };
 
-/// The paths an unpaired device may call: pairing.
 pub(crate) const OPEN: [&str; 6] = [
     "/pair",
     "/pair/request",
@@ -30,18 +25,13 @@ pub(crate) const OPEN: [&str; 6] = [
     "/passkey/signin",
 ];
 
-/// Checks every request: its `Host` (and `Origin`, when sent) must be one of `names`, and an API call must carry a
-/// paired device's cookie.
 pub(crate) struct Gate {
-    /// localhost, the bind address and `allowed_hosts`; matched exactly, so a `*` never widens them.
     pub(crate) names: Vec<String>,
     pub(crate) devices: Devices,
-    /// Its plugins are the ones a backend's token may name.
     pub(crate) hub: Arc<Hub>,
 }
 
 impl Gate {
-    /// Whether `host` (`name` or `name:port`) is one of ours.
     fn ours(&self, host: &str) -> bool {
         let name = if host.starts_with('[') {
             host.split_inclusive(']').next().unwrap_or(host)
@@ -72,7 +62,6 @@ impl Layer for Gate {
             if OPEN.contains(&path) {
                 return next.run(cx, body).await;
             }
-            // A thread's MCP proxy carries the thread's token, checked by the call.
             if path.starts_with("/mcp/agent/") {
                 return next.run(cx, body).await;
             }
@@ -91,7 +80,6 @@ impl Layer for Gate {
                 c.split(';')
                     .find_map(|c| c.trim().strip_prefix(COOKIE)?.strip_prefix('='))
             });
-            // A store that can't be read is a 503: never taken for "unpaired" (herdsman#501).
             let found = match token.map(|t| self.devices.find(t, now())).transpose() {
                 Ok(found) => found.flatten(),
                 Err(e) => {
@@ -110,7 +98,6 @@ impl Layer for Gate {
     }
 }
 
-/// Times every request (#53): its method, route pattern, status and duration go to `perf.log`.
 pub(crate) struct Timing;
 
 impl Layer for Timing {
@@ -133,7 +120,6 @@ impl Layer for Timing {
     }
 }
 
-/// The names a request may give as its Host: localhost, `bind` unless it is unspecified, and `allowed_hosts`.
 pub(crate) fn names(bind: IpAddr, allowed_hosts: &[String]) -> Vec<String> {
     let mut names: Vec<String> = ["localhost", "127.0.0.1", "[::1]"]
         .map(str::to_owned)

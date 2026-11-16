@@ -1,5 +1,3 @@
-//! A persona's skills (#218).
-
 use cooee_core::{personas, skills};
 use topcoat::{
     Result,

@@ -1,5 +1,3 @@
-//! A thread: its messages and live events, starting and retrying it, what is sent to it, its cards and model.
-
 use std::{path::PathBuf, sync::Arc};
 
 use cooee_machines::Machines;
@@ -31,7 +29,6 @@ use crate::{
     pairing, plugin,
 };
 
-/// `?around=<id>&before=N&after=N`.
 #[derive(Deserialize)]
 struct SliceQuery {
     around: Option<u64>,
@@ -62,7 +59,6 @@ fn sse(hub: &Hub, out: &Out) -> Event {
         .data(out.data.as_str())
 }
 
-/// `?since=<cursor>`, for the first connection (a reconnect sends `Last-Event-ID`).
 #[derive(Deserialize)]
 struct Since {
     since: Option<String>,
@@ -86,7 +82,6 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
         if !live {
             return None;
         }
-        // A page that fell behind gets disconnected and resumes from its last event.
         match rx.recv().await {
             Ok(out) => Some((Ok(sse(&hub, &out)), (hub, rx, live))),
             Err(RecvError::Lagged(_) | RecvError::Closed) => None,
@@ -95,37 +90,28 @@ async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + use<>
     Ok(Sse::new(stream::iter(first.into_iter().map(Ok)).chain(rest)).keep_alive(KeepAlive::new()))
 }
 
-/// `GET /threads`: every thread's row, newest first (docs/api.md).
 #[route(GET "/threads")]
 async fn thread_list(cx: &Cx) -> Result<Answer<Vec<cooee_core::Summary>>> {
     Ok(Answer(blocking(cx, |hub| Ok(hub.list())).await))
 }
 
-/// `POST /threads`: a new thread.
 #[derive(Deserialize)]
 struct New {
     agent: String,
-    /// None or empty: the thread's own scratch folder (#48).
     #[serde(default)]
     folder: PathBuf,
     text: String,
     random_id: String,
-    /// The agent's provider account (none: the system default).
     #[serde(default)]
     account: Option<String>,
-    /// Answer with the id at once and connect behind it (#48: the page opens the chat on send); else once the
-    /// agent took the first message.
     #[serde(default)]
     background: bool,
-    /// The agent profile's id (none or empty: Plain, with `agent` and `account`).
     #[serde(default)]
     profile: Option<String>,
-    /// The model and effort (#553 row 34; empty: the agent's default).
     #[serde(default)]
     model: String,
     #[serde(default)]
     effort: String,
-    /// The machine it runs on (#148): none, its persona's (this host without one); empty: this host.
     #[serde(default)]
     machine: Option<String>,
 }
@@ -161,7 +147,6 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         } else {
             hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)?
         };
-        // A plugin's profile: its backend is told the thread's id (so it can attach it).
         let ours = list.into_iter().find(|p| p.id() == profile);
         let ours = ours.and_then(|p| Some((hub.backend(p.plugin.as_deref()?)?, p.name)));
         if let Some((b, name)) = ours
@@ -175,7 +160,6 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
     Ok(Answer(id.map(|id| Created { id })))
 }
 
-/// `POST /threads/{id}/retry`: starts a thread whose start failed again, with its first message (#48).
 #[route(POST "/threads/{id}/retry")]
 async fn retry(cx: &Cx) -> Result<Answer<()>> {
     let (id, hub, logins) = (thread_id(cx), hub(cx), logins(cx));
@@ -199,7 +183,6 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
     ))
 }
 
-/// `POST /threads/{id}/send` and `/queue`: the text and its files.
 #[derive(Deserialize)]
 struct Message {
     text: String,
@@ -208,7 +191,6 @@ struct Message {
     files: Vec<File>,
 }
 
-/// A file sent with a message, its bytes in base64.
 #[derive(Deserialize)]
 struct File {
     name: String,
@@ -250,7 +232,6 @@ async fn queue(cx: &Cx, Json(m): Json<Message>) -> Result<Answer<Vec<cooee_core:
     ))
 }
 
-/// `POST /threads/{id}/unqueue` and `/steer`: a queued message.
 #[derive(Deserialize)]
 struct Queued {
     random_id: String,
@@ -272,7 +253,6 @@ async fn steer(cx: &Cx, Json(q): Json<Queued>) -> Result<Answer<Vec<cooee_core::
     ))
 }
 
-/// `POST /threads/{id}/title`.
 #[derive(Deserialize)]
 struct Title {
     title: String,
@@ -286,7 +266,6 @@ async fn retitle(cx: &Cx, Json(t): Json<Title>) -> Result<Answer<()>> {
     ))
 }
 
-/// `POST /threads/{id}/archive`: `on` archives it, else it is restored.
 #[derive(Deserialize)]
 struct Archive {
     on: bool,
@@ -300,8 +279,6 @@ async fn archive(cx: &Cx, Json(a): Json<Archive>) -> Result<Answer<()>> {
     ))
 }
 
-/// `GET /threads/{id}/files/{name}`: a file sent in the thread. Only images show as themselves; anything else
-/// downloads, and nothing runs (`sandbox`, `nosniff`).
 #[route(GET "/threads/{id}/files/{name}")]
 async fn thread_file(cx: &Cx) -> Result<Response> {
     let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
@@ -336,14 +313,12 @@ async fn thread_file(cx: &Cx) -> Result<Response> {
     Ok(r.body(Body::from(bytes))?)
 }
 
-/// `POST /threads/{id}/approve`: a choice, an "other" text, or a secret card's `value` (passed to its plugin only).
 #[derive(Deserialize)]
 struct Approve {
     item: u64,
     option: String,
     #[serde(default)]
     value: Option<String>,
-    /// Approving an MCP server an agent proposed needs Face ID (#56).
     #[serde(default)]
     passkey: Option<pairing::Assertion>,
 }
@@ -369,7 +344,6 @@ async fn approve(cx: &Cx, Json(a): Json<Approve>) -> Result<Response> {
     .into_response(cx)
 }
 
-/// `POST /threads/{id}/model` `{model, effort}`: the composer's chip (#553 row 34; empty: the default).
 #[derive(Deserialize)]
 struct ModelPick {
     #[serde(default)]
@@ -403,7 +377,6 @@ async fn close(cx: &Cx) -> Result<Answer<()>> {
     Ok(Answer(blocking(cx, move |hub| hub.close(&id)).await))
 }
 
-/// `POST /threads/{id}/read`.
 #[derive(Deserialize)]
 struct Read {
     item: u64,

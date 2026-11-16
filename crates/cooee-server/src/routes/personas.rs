@@ -1,6 +1,4 @@
-//! Personas (#126), their memory, and what a persona picks from: the machines, agents and models.
-
-use std::{collections::BTreeMap, io, sync::Arc};
+use std::{collections::BTreeMap, sync::Arc};
 
 use cooee_core::personas::{self, Persona};
 use cooee_machines::Machines;
@@ -12,10 +10,9 @@ use topcoat::{
 };
 
 use crate::http::{
-    Answer, Code, Name, allowed, blocking, hub, logins, now, on_personas, refused, thread_id,
+    Answer, Code, Name, blocking, hub, logins, now, on_personas, persona_save, refused, thread_id,
 };
 
-/// `GET /models` (#193): each agent and account's models as last seen, each short name with what it resolves to now.
 #[derive(Serialize)]
 struct ModelList {
     agent: String,
@@ -25,7 +22,6 @@ struct ModelList {
     short: BTreeMap<String, String>,
 }
 
-/// `GET /agents` (#230): each installed agent with the efforts its provider offers.
 #[derive(Serialize)]
 struct AgentRow {
     id: String,
@@ -71,23 +67,6 @@ async fn persona_new(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
     persona_save(cx, p).await
 }
 
-/// Saves `p`, its plugins (#129) each an installed one and its machine (#148) an allowed one.
-async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
-    let installed = hub(cx).installed();
-    let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
-    on_personas(cx, move |d, c| {
-        let why = match p.plugins.iter().find(|n| !installed.contains(n)) {
-            Some(n) => Err(format!("no installed plugin {n}")),
-            None => allowed(&machines, &p.machine),
-        };
-        why.map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-        personas::save(c, d, p)
-    })
-    .await
-}
-
-/// One machine a thread may run on (#148): its name (empty: this host, `host` its host name), whether shed reaches
-/// it, when it last answered and its health now (the machines plugin's card).
 #[derive(Serialize)]
 struct MachineRow {
     name: String,
@@ -98,7 +77,6 @@ struct MachineRow {
     error: Option<String>,
 }
 
-/// `GET /machines`: the allowed machines, this host first.
 #[route(GET "/machines")]
 async fn machine_list(cx: &Cx) -> Result<Answer<Vec<MachineRow>>> {
     let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
@@ -141,7 +119,6 @@ async fn persona_put(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
     persona_save(cx, p).await
 }
 
-/// `GET /personas/{id}/places`: its header strip, its attached plugins' `header-strip` chips (#125, q984).
 #[route(GET "/personas/{id}/places")]
 async fn places(cx: &Cx) -> Result<Answer<Vec<personas::Place>>> {
     let id = thread_id(cx);

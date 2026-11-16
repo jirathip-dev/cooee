@@ -1,5 +1,3 @@
-//! A thread's MCP proxy and cooee's own MCP server asking, with the thread's token (#56).
-
 use std::time::Duration;
 
 use cooee_core::personas;
@@ -15,7 +13,6 @@ use crate::{
     mcp,
 };
 
-/// `POST /mcp/agent/remember` `{thread, server: {text?, replaces?, forget?}}`: `remember`'s edit (#126, #216).
 #[route(POST "/mcp/agent/remember")]
 async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let (token, e) = (bearer(cx), serde_json::from_value(a.server));
@@ -25,8 +22,6 @@ async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>
     ))
 }
 
-/// `POST /mcp/agent/skill` `{thread, server: {read} | {propose: {name, description, body, replaces?}}}`: `skill`'s
-/// text (#218): the body read, or that the card is up.
 #[route(POST "/mcp/agent/skill")]
 async fn mcp_skill(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let token = bearer(cx);
@@ -47,7 +42,6 @@ async fn mcp_skill(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     ))
 }
 
-/// `POST /mcp/agent/grant` `{thread, server}`: the server resolved, in memory, and the tools it may offer.
 #[route(POST "/mcp/agent/grant")]
 async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant>> {
     let (token, server) = (bearer(cx), a.server.as_str().unwrap_or_default().to_owned());
@@ -56,8 +50,6 @@ async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant
     ))
 }
 
-/// `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout}}`: `ask_persona`'s reply (#156); `timeout`
-/// in seconds, 300 unless given, at most 600.
 #[route(POST "/mcp/agent/ask")]
 async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let (token, s) = (bearer(cx), a.server);
@@ -72,7 +64,6 @@ async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     ))
 }
 
-/// `POST /mcp/agent/history` `{thread, server: {query, thread, before, limit}}`: `history`'s text (#217).
 #[route(POST "/mcp/agent/history")]
 async fn mcp_history(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let (token, s) = (bearer(cx), a.server);
@@ -87,7 +78,6 @@ async fn mcp_history(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>>
     ))
 }
 
-/// `POST /mcp/agent/propose` `{thread, server: {name, type, command, args, url, why}}`: `propose_server`'s card.
 #[route(POST "/mcp/agent/propose")]
 async fn mcp_propose(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<cooee_core::Item>> {
     let token = bearer(cx);

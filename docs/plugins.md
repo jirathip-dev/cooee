@@ -112,7 +112,10 @@ improving are owner-only: the CLI on the Mac, or a paired device (a plugin's tok
     is unlocked with its passkey (the `terminal` tab's gate; a stream that ends for good, such as a locked tab's, sends
     `closed`).
 - cooee calls the backend over HTTP/1.0, one connection per call, and passes on only the content type, `Accept` and
-  `Last-Event-ID`. An event stream should send a comment now and then so a closed tab is noticed.
+  `Last-Event-ID`. An event stream should send a comment now and then (cooee passes it on, so a closed tab is
+  noticed); one silent for a minute is closed. A call has a total deadline, connect to last byte (30 s through the
+  tab's proxy, 5 s for a screen, 10 s for an action or a card's answer; a stream's deadline ends once its head is in),
+  and a backend has at most 8 calls in flight: one more fails at once with a 502 `busy`.
 
 ## From the backend to cooee
 
@@ -239,7 +242,6 @@ above.
 The backend, `server.mjs`:
 
 ```js
-// cooee's example plugin backend (docs/plugins.md): `PORT=4800 COOEE=http://127.0.0.1:4747 TOKEN=… node server.mjs`.
 import fs from "node:fs";
 import http from "node:http";
 
@@ -253,7 +255,6 @@ const toCooee = async (path, body) => (await fetch(COOEE + path, {
 const read = async (req) => { let b = ""; for await (const c of req) b += c; return b ? JSON.parse(b) : {}; };
 
 http.createServer(async (req, res) => {
-  // Only cooee calls this backend, and it sends the plugin's token.
   if (req.headers.authorization !== `Bearer ${TOKEN}`) return json(res, 401, "no token");
   if (req.url === "/tab.js") return res.writeHead(200, { "content-type": "text/javascript" }).end(fs.readFileSync(new URL("tab.js", import.meta.url)));
   if (req.url === "/whoami") return json(res, 200, { token: "ok", cookie: req.headers.cookie ?? null });
@@ -268,7 +269,6 @@ http.createServer(async (req, res) => {
   if (req.url === "/ask") return json(res, 200, await toCooee("/plugin/card", { thread: body.thread, text: "Ship it?", options: ["yes", "no"] }));
   if (req.url === "/cooee/choice") {
     tell("choice", body.option);
-    // A run card's [approve] carries its sha; herdsman would run it and answer the exit code and output tail.
     if (body.option === "approve" && body.value) return json(res, 200, { line: `ran: exit 0\n\`\`\`\nat ${body.value.slice(0, 12)}\n\`\`\`` });
     return json(res, 200, "ok");
   }
@@ -279,7 +279,6 @@ http.createServer(async (req, res) => {
 The module, `tab.js`:
 
 ```js
-// The example plugin's tab: runs in cooee's sandboxed frame with the `cooee` API (docs/plugins.md).
 const log = document.body.appendChild(document.createElement("ul"));
 const line = (text) => { log.appendChild(document.createElement("li")).textContent = text; };
 const me = await cooee.fetch("/whoami");

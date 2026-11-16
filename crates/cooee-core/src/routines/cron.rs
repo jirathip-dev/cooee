@@ -1,5 +1,3 @@
-//! A routine's schedule (#75): five-field cron in the Mac's local time, with no time crate.
-
 use serde::{Deserialize, Serialize};
 
 const DAY: i64 = 1440;
@@ -99,7 +97,6 @@ impl Schedule {
         (self.fields[f] >> n) & 1 == 1
     }
 
-    /// The minutes of a day it runs at, in order.
     fn times(&self) -> Vec<i64> {
         let hours = (0..24).filter(|h| self.has(1, *h));
         hours
@@ -107,7 +104,6 @@ impl Schedule {
             .collect()
     }
 
-    /// Whether it runs on day `day` (days since 1970-01-01, a Thursday).
     fn on(&self, day: i64) -> bool {
         let (_, month, date) = civil(day);
         let (d, w) = (self.has(2, date), self.has(4, (day + 4).rem_euclid(7)));
@@ -128,7 +124,6 @@ impl From<Schedule> for String {
     }
 }
 
-/// One field's values as bits: a comma list of `*`, `n`, `a-b`, each optionally `/step`.
 fn field(word: &str, (lo, hi): (u8, u8)) -> Option<u64> {
     let mut bits = 0;
     for item in word.split(',') {
@@ -152,7 +147,6 @@ fn field(word: &str, (lo, hi): (u8, u8)) -> Option<u64> {
     Some(bits)
 }
 
-/// Year, month and day of day `z` since 1970-01-01 (Howard Hinnant's `civil_from_days`).
 fn civil(z: i64) -> (i64, i64, i64) {
     let z = z + 719_468;
     let era = z.div_euclid(146_097);
@@ -181,14 +175,12 @@ mod tests {
     use super::*;
 
     const MIN: u64 = 60_000;
-    /// 2024-11-11 00:00 UTC, a Monday.
     const MON: u64 = 1_731_283_200_000;
 
     #[test]
     fn latest_is_the_newest_due_time_in_local_time() {
         let s = Schedule::parse("0 9 * * 1").unwrap();
         assert_eq!(s.describe(), "Mondays 09:00");
-        // Bangkok (+07:00): Monday 09:00 local is 02:00 UTC.
         let nine = MON + 2 * 60 * MIN;
         assert_eq!(s.latest(nine, 420), Some(nine));
         assert_eq!(s.latest(nine + 3 * MIN, 420), Some(nine));
@@ -202,7 +194,6 @@ mod tests {
 
     #[test]
     fn day_of_month_and_day_of_week_both_set_match_either() {
-        // The 1st, or a Friday: 2024-11-08 is a Friday, 2024-11-01 is one too; Monday the 11th is neither.
         let s = Schedule::parse("0 0 1 * 5").unwrap();
         assert_eq!(s.latest(MON, 0), Some(MON - 3 * 1440 * MIN));
         let first = Schedule::parse("0 0 1 * *").unwrap();

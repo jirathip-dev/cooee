@@ -1,5 +1,3 @@
-//! The names callers import from the crate root. Add none: a new module is public and reached by its path.
-
 pub use crate::hub::{CardSpec, Hub, HubError, Listing, Out, Recipe, Resume, Slice, Upload};
 pub use crate::layout::{Broken, Layouts, check as layout_check};
 pub use crate::login::{LOGIN_TIMEOUT, Logins, View as LoginView};
