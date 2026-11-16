@@ -1,0 +1,11 @@
+Decided: the fake plugin's hang ends after HANG (10 s) and each call to another thread is bounded at HANG / 2, not 200 ms
+Because: "the call completes well before the plugin's hang ends, with the hang made long, say 10 s, and the bound a fraction of it"
+Because: crates/cooee/tests/support/cooee.rs:279
+Decided: after the other thread and plugin b answered, assert the 8 hung calls are still unanswered (no clock)
+Because: crates/cooee/tests/plugins.rs:973
+Decided: the 600 clients' connect retries go 50 to 500; a 20-run loop hit Connection reset by peer on run 8 (macOS backlog)
+Because: crates/cooee/tests/plugins.rs:934
+Rejected: a commit-1 failing test — the bug is the test's own bound, it fails only on a slow runner; PR Repro section shows it with a 250 ms server delay
+Rejected: dropping the time bound entirely — the client in support has no read timeout, so a held server would hang the test forever
+Check: with a hold put back (hub calls wait on hung plugin calls) the test fails at plugins.rs:973; at base a 250 ms slower server fails cooee.rs:295
+Owner: The plugin test no longer fails on a slow test machine; it still catches a stuck plugin holding up other chats.
