@@ -132,6 +132,19 @@ public enum Clock {
         return formatter.string(from: Date(timeIntervalSince1970: Double(milliseconds) / 1000))
     }
 
+    /// `Today 09:50`, or the day and the time when it is not `now`'s day.
+    public static func day(_ milliseconds: Int64, now: Date, in zone: TimeZone = .current) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone
+        let date = Date(timeIntervalSince1970: Double(milliseconds) / 1000)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "d MMM"
+        formatter.timeZone = zone
+        let day = calendar.isDate(date, inSameDayAs: now) ? "Today" : formatter.string(from: date)
+        return "\(day) \(time(milliseconds, in: zone))"
+    }
+
     public static func round(_ seconds: Int) -> String {
         let seconds = max(0, seconds)
         return "\(seconds / 60):\(String(format: "%02d", seconds % 60))"

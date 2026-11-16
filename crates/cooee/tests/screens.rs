@@ -13,7 +13,7 @@ use std::{
     path::Path,
     process::Command,
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use serde_json::{Value, json};
@@ -39,6 +39,7 @@ fn hello_repo(repo: &Path) {
     let strip = "[[places]]\ntype = \"header-strip\"\nid = \"waves\"\npersona = \"pal\"\nlabel = \"Waves\"\n\
                  screen = \"/screens/hello\"\n\n[permissions]\nplaces = [\"menu-row\", \"header-strip\"]\n";
     let manifest = manifest.replace("[permissions]\nplaces = [\"menu-row\"]\n", strip);
+    let manifest = format!("claims = [\"lab\"]\n{manifest}");
     fs::write(repo.join("cooee-plugin.toml"), manifest).unwrap();
     git(repo, &["init", "--quiet", "-b", "main"]);
     git(repo, &["add", "-A"]);
@@ -66,15 +67,17 @@ impl Drop for Serve {
     }
 }
 
-/// Waits (up to 20 s) for `f`.
-fn until(what: &str, f: impl Fn() -> bool) {
+/// Waits (up to 20 s) for `f`; failing, says what its last try got.
+fn until(what: &str, f: impl Fn() -> Result<(), String>) {
+    let mut last = String::new();
     for _ in 0..400 {
-        if f() {
-            return;
+        match f() {
+            Ok(()) => return,
+            Err(e) => last = e,
         }
         thread::sleep(Duration::from_millis(50));
     }
-    panic!("never: {what}");
+    panic!("never: {what}; the last try: {last}");
 }
 
 /// The `data:` of the next event on an open stream.
@@ -111,8 +114,15 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
     assert!(add.status.success(), "{add:?}");
     let out = String::from_utf8(add.stdout).unwrap();
     assert!(out.contains("screens: 2 places; actions: wave"), "{out}");
+    let log = dir.join("data/plugins/hello/plugin.log");
     until("its screen", || {
-        cooee.get("/p/hello/screens/hello").0 == 200
+        let at = Instant::now();
+        let (status, body) = cooee.get("/p/hello/screens/hello");
+        let took = at.elapsed();
+        let log = fs::read_to_string(&log).unwrap_or_default();
+        (status == 200)
+            .then_some(())
+            .ok_or_else(|| format!("{status} after {took:?}: {body}\nplugin.log:\n{log}"))
     });
 
     let screen = cooee.json("/p/hello/screens/hello");
@@ -185,7 +195,11 @@ fn a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refu
     );
     let row = &cooee.json("/plugins")["installed"][0];
     assert_eq!(
-        (&row["permissions"]["actions"], &row["places"][0]["type"]),
-        (&json!(["wave"]), &json!("menu-row"))
+        (
+            &row["permissions"]["actions"],
+            &row["places"][0]["type"],
+            &row["claims"]
+        ),
+        (&json!(["wave"]), &json!("menu-row"), &json!(["lab"]))
     );
 }

@@ -43,6 +43,7 @@ jobs:
       github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository
       && (github.event.action != 'labeled' || github.event.label.name == 'merge-ready'))
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       mac: ${{ steps.scope.outputs.mac }}
       full: ${{ steps.scope.outputs.full }}
@@ -209,15 +210,24 @@ jobs:
           key: apple-mac-setup-${{ steps.image.outputs.v }}-${{ steps.shed.outputs.rev }}-${{ hashFiles('apple/Package.resolved') }}
       - name: cooee and shed for the app
         run: scripts/mac-bins.sh "$RUNNER_TEMP/bin"
+      # #333: the Mac app is built twice, versions 1 and 2, with a throwaway Sparkle key and a local appcast.
       - name: build for testing (the Mac app with them inside, and the app in the simulator)
         working-directory: apple
         run: |
           sim=$(xcrun simctl create "cooee-ask-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" "iPhone 17")
           echo "SIM=$sim" >> "$GITHUB_ENV"
           xcrun simctl bootstatus "$sim" -b >"$RUNNER_TEMP/boot.log" 2>&1 &
-          xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'platform=macOS' \
-            -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/mac" \
-            COOEE_BIN_DIR="$RUNNER_TEMP/bin" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= build-for-testing
+          key=$(openssl rand -base64 32)
+          echo "UPDATE_KEY=$key" >> "$GITHUB_ENV"
+          public=$(SPARKLE_ED_KEY=$key swift ../scripts/sparkle-public-key.swift)
+          rm -rf "${RUNNER_TEMP:?}/mac/Build/Products/Debug/Cooee.app"
+          for build in 1:mac 2:mac2; do
+            xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination 'platform=macOS' \
+              -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/${build#*:}" \
+              COOEE_BIN_DIR="$RUNNER_TEMP/bin" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
+              CURRENT_PROJECT_VERSION="${build%:*}" SPARKLE_PUBLIC_KEY="$public" \
+              SPARKLE_FEED_URL=http://127.0.0.1:8787/appcast.xml build-for-testing
+          done
           xcodebuild -skipMacroValidation -project Cooee.xcodeproj -scheme Cooee -destination "id=$sim" \
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/ios" build-for-testing
       # The Mac test sets the Mac up and waits on its QR screen; once its pairing code is open (devices.json), the
@@ -251,6 +261,55 @@ jobs:
           wait "$mac" || status=$?
           tail -40 "$RUNNER_TEMP/mac-test.log"
           exit "$status"
+      # #333: version 1 finds version 2 on a local appcast (EdDSA-signed, with a delta), installs it on quit and restarts
+      # cooee and shed; port 4747 answers and the phone is still paired.
+      - name: the Mac updates itself through a local appcast; the phone stays paired
+        working-directory: apple
+        run: |
+          app="$RUNNER_TEMP/mac/Build/Products/Debug/Cooee.app"
+          feed="$RUNNER_TEMP/feed"
+          mkdir -p "$feed/1" "$feed/2"
+          ditto "$app" "$feed/1/Cooee.app"
+          ditto "$RUNNER_TEMP/mac2/Build/Products/Debug/Cooee.app" "$feed/2/Cooee.app"
+          for version in 1 2; do
+            hdiutil create -quiet -volname cooee -srcfolder "$feed/$version" -format UDZO "$feed/Cooee-$version.dmg"
+            rm -rf "${feed:?}/$version"
+          done
+          printf '%s' "$UPDATE_KEY" | "$RUNNER_TEMP/packages/artifacts/sparkle/Sparkle/bin/generate_appcast" \
+            --ed-key-file - --download-url-prefix http://127.0.0.1:8787/ "$feed"
+          cat "$feed/appcast.xml"
+          python3 -m http.server 8787 --bind 127.0.0.1 -d "$feed" >"$RUNNER_TEMP/feed.log" 2>&1 &
+          echo "FEED=$!" >> "$GITHUB_ENV"
+          pid() { launchctl print "gui/$(id -u)/com.jirathip.cooee.$1" | awk '$1 == "pid" { print $3 }'; }
+          serve=$(pid serve)
+          shed=$(pid shed)
+          defaults write com.jirathip.cooee SUHasLaunchedBefore -bool YES
+          defaults write com.jirathip.cooee SULastCheckTime -date "2000-01-01 00:00:00 +0000"
+          log="$HOME/Library/Logs/cooee-update.log"
+          open "$app"
+          waited=0
+          until grep -q waiting "$log" 2>/dev/null; do
+            [ "$waited" -lt 300 ] || { echo "no update staged"; cat "$RUNNER_TEMP/feed.log"; exit 1; }
+            sleep 5
+            waited=$((waited + 5))
+          done
+          osascript -e 'tell application id "com.jirathip.cooee" to quit'
+          waited=0
+          until grep -q "cooee answers on 4747" "$log" 2>/dev/null; do
+            [ "$waited" -lt 300 ] || { cat "$log"; exit 1; }
+            sleep 5
+            waited=$((waited + 5))
+          done
+          cat "$log" "$RUNNER_TEMP/feed.log"
+          echo "login item pids: cooee $serve -> $(pid serve), shed $shed -> $(pid shed)"
+          version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Contents/Info.plist")
+          [ "$version" = 2 ] || { echo "the app is version $version, not 2"; exit 1; }
+          [ -n "$(pid serve)" ] && [ "$(pid serve)" != "$serve" ] || { echo "cooee did not restart"; exit 1; }
+          [ -n "$(pid shed)" ] && [ "$(pid shed)" != "$shed" ] || { echo "shed did not restart"; exit 1; }
+          curl -sSf -o /dev/null -w 'cooee answers %{http_code}\n' http://127.0.0.1:4747/pair
+          TEST_RUNNER_COOEE_AFTER_UPDATE=1 xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination "id=$SIM" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/ios" -only-testing:CooeeAppUITests/LiveUITests/testStaysPairedAfterTheMacUpdates \
+            -resultBundlePath "$RUNNER_TEMP/after-update.xcresult" test-without-building
       - name: what the Mac ran (on failure)
         if: failure()
         run: |
@@ -267,7 +326,7 @@ jobs:
         if: always()
         run: |
           mkdir -p "$SHOTS"
-          for run in mac-setup phone-ask; do
+          for run in mac-setup phone-ask after-update; do
             xcrun xcresulttool export attachments --path "$RUNNER_TEMP/$run.xcresult" --output-path "$SHOTS/$run" || true
           done
           cp "$RUNNER_TEMP/mac-test.log" "$SHOTS/" || true
@@ -277,6 +336,8 @@ jobs:
         with:
           name: mac-setup-shots
           path: mac-setup-shots
-      - name: delete the simulator
-        if: always() && env.SIM != ''
-        run: xcrun simctl shutdown "$SIM" || true; xcrun simctl delete "$SIM"
+      - name: delete the simulator, stop the appcast server
+        if: always()
+        run: |
+          [ -z "${FEED:-}" ] || kill "$FEED" 2>/dev/null || true
+          [ -z "${SIM:-}" ] || { xcrun simctl shutdown "$SIM" || true; xcrun simctl delete "$SIM"; }

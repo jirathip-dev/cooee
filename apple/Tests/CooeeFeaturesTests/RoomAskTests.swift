@@ -39,8 +39,8 @@ internal struct RoomAskTests {
         #expect(store.state.room?.round.state("a") == .asking)
         guard case .card(let card, "a", _)? = store.state.drawn.last else { return #expect(Bool(false)) }
         let once = BlockAction(action: "answer", values: ["choice": .string("once")])
-        await store.send(.answer(card, once)) { $0.answering = [card] }
-        await store.receive(\.answered) { $0.answering = [] }
+        await store.send(.cards(.answer(card, once))) { $0.answering = [card] }
+        await store.receive(\.cards.answered) { $0.answering = [] }
         #expect(calls.all == ["answer s1 7 once"])
     }
 

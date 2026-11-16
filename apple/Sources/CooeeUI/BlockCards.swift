@@ -69,7 +69,8 @@ internal struct CardBlock: View {
 
     private var kind: Kind? {
         let palette = look.palette
-        let poster = member == nil ? context.poster.map { " · \($0)" } ?? "" : " ·"
+        let poster =
+            if member != nil { " ·" } else if case .plugin(let name) = context.poster { " · \(name)" } else { "" }
         switch block.string("kind") {
         case "ask": return Kind(label: "ask\(poster)", symbol: "hand.raised.fill", tint: palette.red)
         case "config": return Kind(label: "config\(poster)", symbol: "slider.horizontal.3", tint: palette.cyan)
@@ -77,11 +78,22 @@ internal struct CardBlock: View {
             return Kind(label: "config proposal\(poster)", symbol: "slider.horizontal.3", tint: palette.cyan)
         case "secret": return Kind(label: "secret\(poster)", symbol: "key.fill", tint: palette.amber)
         case "run": return Kind(label: "run card\(poster)", symbol: "terminal.fill", tint: palette.lead)
+        case "confirm": return Kind(label: "confirm\(poster)", symbol: "checkmark.shield.fill", tint: palette.red)
+        case "permissions":
+            return Kind(label: "permissions\(poster)", symbol: "lock.shield.fill", tint: palette.purple)
         default: return nil
         }
     }
 
     internal var body: some View {
+        if CardTrust.draws(block.string("kind"), from: context.poster) {
+            card
+        } else {
+            MissingPoster(kind: block.string("kind") ?? "")
+        }
+    }
+
+    @ViewBuilder private var card: some View {
         let tint = kind?.tint ?? look.palette.tone(block.string("tone")) ?? look.palette.lead
         VStack(alignment: .leading, spacing: 10) {
             header(tint)
@@ -110,7 +122,10 @@ internal struct CardBlock: View {
         }
     }
 
-    private var member: Persona? { members.first { $0.id == context.poster } }
+    private var member: Persona? {
+        guard case .plugin(let id) = context.poster else { return nil }
+        return members.first { $0.id == id }
+    }
 
     @ViewBuilder
     private func header(_ tint: Color) -> some View {
@@ -132,6 +147,18 @@ internal struct CardBlock: View {
             }
             .foregroundStyle(tint)
         }
+    }
+}
+
+internal struct MissingPoster: View {
+    @Environment(\.look) private var look
+    internal let kind: String
+
+    internal var body: some View {
+        let label = "\(kind) · source unknown · not drawn"
+        Label(look.mono ? "## \(label)" : label.uppercased(), systemImage: "exclamationmark.octagon.fill")
+            .labelStyle(.titleAndIcon).ui(11, .bold, look).foregroundStyle(look.palette.red)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(14).surface(look, radius: 20)
     }
 }
 
