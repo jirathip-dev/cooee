@@ -1,0 +1,7 @@
+Decided: #417's empty-persona instructions fallback goes into http.rs's recipe, where lib.rs's recipe body moved in slice 1
+Because: crates/cooee-server/src/http.rs:182
+Decided: staging's #202 runner ban merges beside slice 1's arch lines; the baseline is rewritten for staging's look.rs, manage.rs and push.rs growth
+Because: .drover/arch.toml:59
+Rejected: none
+Check: sh scripts/gen.sh leaves no diff; drover arch-check --base origin/staging has 0 violations
+Owner: Nothing changes in the app; the split server files now include staging's persona fix.
