@@ -58,6 +58,7 @@ internal struct Confirming: ViewModifier {
 internal struct CardBlock: View {
     @Environment(\.look) private var look
     @Environment(\.card) private var context
+    @Environment(\.members) private var members
     internal let block: JSONValue
 
     private struct Kind {
@@ -68,7 +69,8 @@ internal struct CardBlock: View {
 
     private var kind: Kind? {
         let palette = look.palette
-        let poster = if case .plugin(let name) = context.poster { " · \(name)" } else { "" }
+        let poster =
+            if member != nil { " ·" } else if case .plugin(let name) = context.poster { " · \(name)" } else { "" }
         switch block.string("kind") {
         case "ask": return Kind(label: "ask\(poster)", symbol: "hand.raised.fill", tint: palette.red)
         case "config": return Kind(label: "config\(poster)", symbol: "slider.horizontal.3", tint: palette.cyan)
@@ -120,15 +122,24 @@ internal struct CardBlock: View {
         }
     }
 
+    private var member: Persona? {
+        guard case .plugin(let id) = context.poster else { return nil }
+        return members.first { $0.id == id }
+    }
+
     @ViewBuilder
     private func header(_ tint: Color) -> some View {
         let meta = block.string("meta")
         let badge = block["badge"]
-        if kind != nil || meta != nil || badge != nil {
+        if kind != nil || meta != nil || badge != nil || member != nil {
             HStack(spacing: 6) {
                 if let kind {
                     if !look.mono { Image(systemName: kind.symbol).font(.system(size: 12, weight: .bold)) }
                     Text(look.mono ? "## \(kind.label)" : kind.label.uppercased()).ui(11, .bold, look)
+                }
+                if let member {
+                    Avatar(persona: member, size: 22)
+                    Text(member.name).ui(15, .semibold, look).foregroundStyle(look.palette.tint(member.look.tint))
                 }
                 Spacer(minLength: 4)
                 if let badge { Pill(badge: badge) }

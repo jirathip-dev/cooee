@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use cooee_core::shed_proto::{EventKind, Reported};
+use cooee_core::shed_proto::{ApprovalOption, EventKind, Reported};
 
 use super::*;
 
@@ -132,6 +132,59 @@ fn a_rooms_turns_stop_at_the_deadline() {
     assert!(note.data.contains("10 minutes passed"), "{}", note.data);
     hub.watch(t0 + 2 * rooms::DEADLINE);
     assert!(rx.try_recv().is_err());
+}
+
+#[test]
+fn a_members_ask_shows_in_its_room_and_pauses_its_deadline() {
+    let dir = scratch("room-ask");
+    let t0 = now();
+    let turn = |m: &str| json!({ "member": m, "reason": "round" });
+    let threads = dir.join("data/threads");
+    let room = json!({ "format": 1, "thread": { "id": "room", "title": "room", "messages": [], "kind": "room",
+        "members": [{ "persona": "ada", "session": "s1" }], "round": [turn("ada")], "asked_at": t0 - 9 * 60_000 } });
+    fs::write(threads.join("room.json"), room.to_string()).unwrap();
+    fs::write(threads.join("room.jsonl"), "").unwrap();
+    let member = json!({ "format": 1, "thread": { "id": "s1", "title": "s1", "messages": [],
+        "terminal": "cooee-s1", "room": "room", "profile": "ada" } });
+    fs::write(threads.join("s1.json"), member.to_string()).unwrap();
+    fs::write(threads.join("s1.jsonl"), "").unwrap();
+    let hub = hub(&dir);
+    let (_, mut rx) = hub.subscribe("room", "").unwrap();
+    let option = ApprovalOption {
+        id: "once".into(),
+        name: "Allow once".into(),
+        kind: "allow_once".into(),
+    };
+    let (tool, options) = ("fetch sec.gov".to_owned(), vec![option]);
+    hub.apply(event("s1", 1, EventKind::ApprovalRequest { tool, options }));
+    let ask = rx.try_recv().unwrap();
+    let data: serde_json::Value = serde_json::from_str(&ask.data).unwrap();
+    assert_eq!(ask.event, "room-ask");
+    assert_eq!(
+        (&data["member"], &data["session"]),
+        (&json!("ada"), &json!("s1"))
+    );
+    assert_eq!(data["item"]["block"]["title"], "fetch sec.gov");
+    let asks = |hub: &Hub| hub.slice("room", None, 50, 0).unwrap().asks.len();
+    assert_eq!(asks(&hub), 1);
+    let round = |hub: &Hub| hub.thread("room").unwrap().0.round.len();
+    hub.watch(now() + rooms::DEADLINE);
+    assert_eq!(round(&hub), 1, "the deadline waits while the ask is open");
+    lock(&hub.live("room").unwrap()).asks.paused -= 5 * 60_000;
+    hub.apply(event(
+        "s1",
+        2,
+        EventKind::Approved {
+            option: "once".into(),
+        },
+    ));
+    let answered = rx.try_recv().unwrap();
+    assert!(answered.data.contains("✓ once"), "{}", answered.data);
+    assert_eq!(asks(&hub), 0);
+    hub.watch(now() + 3 * 60_000);
+    assert_eq!(round(&hub), 1, "five paused minutes moved the deadline on");
+    hub.watch(now() + 6 * 60_000);
+    assert_eq!(round(&hub), 0);
 }
 
 #[test]
