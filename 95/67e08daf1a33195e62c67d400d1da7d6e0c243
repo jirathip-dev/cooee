@@ -1,0 +1,11 @@
+Decided: a persona thread with no profile gets the no-personal-setup options in recipe's home branch; profile threads keep #320's Logins::profile path
+Because: crates/cooee-server/src/lib.rs:572
+Because: crates/cooee-server/src/login.rs:534
+Because: "every persona chat starts without the owner's personal setup; only a plain chat with no persona keeps it"
+Decided: fold the two persona folder match arms into one so lib.rs stays at its staging size
+Because: crates/cooee-server/src/lib.rs:563
+Rejected: one condition after both branches with Logins::profile no longer setting meta — costs 3 lib.rs lines that arch-check refuses
+Rejected: taking lines out of an unrelated part of lib.rs — churn the issue did not ask for
+Check: profiles.rs a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it fails on staging crates/cooee-server, passes at head
+Check: accounts_env ls_json_carries_usage… fails the same on clean staging 80c359e8a
+Owner: Persona chats and room members start without your personal Claude setup and connectors; plain chats keep it.
