@@ -14,6 +14,7 @@ mod secrets;
 mod serve;
 mod setup;
 mod theme;
+mod update;
 
 use crate::cli::Command;
 
@@ -113,5 +114,11 @@ pub(crate) const ALL: &[Command] = &[
         usage: theme::USAGE,
         flags: theme::FLAGS,
         run: theme::run,
+    },
+    Command {
+        name: "update",
+        usage: update::USAGE,
+        flags: update::FLAGS,
+        run: update::run,
     },
 ];

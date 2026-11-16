@@ -13,7 +13,7 @@ use crate::{
     cli::load,
     devices::pair,
     doctor::doctor,
-    service::{label, plist, tailnet_name, write_plist},
+    service::{job, plist, tailnet_name, write_plist},
 };
 
 /// `cooee setup`'s flags.
@@ -25,7 +25,7 @@ pub struct Setup {
     pub yes: bool,
 }
 
-fn ok(argv: &[&str]) -> bool {
+pub(crate) fn ok(argv: &[&str]) -> bool {
     Command::new(argv[0])
         .args(&argv[1..])
         .stdout(Stdio::null())
@@ -34,14 +34,14 @@ fn ok(argv: &[&str]) -> bool {
         .is_ok_and(|s| s.success())
 }
 
-fn output(argv: &[&str]) -> Option<String> {
+pub(crate) fn output(argv: &[&str]) -> Option<String> {
     let out = Command::new(argv[0]).args(&argv[1..]).output().ok()?;
     out.status
         .success()
         .then(|| String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
-fn wait(f: impl Fn() -> bool) -> bool {
+pub(crate) fn wait(f: impl Fn() -> bool) -> bool {
     (0..40).any(|_| {
         let done = f();
         if !done {
@@ -102,7 +102,8 @@ impl Setup {
         let (config, changed) = self.config(path)?;
         self.themes(&config)?;
         self.agents(&config)?;
-        self.service(&config, path, &gui, changed)?;
+        self.service(&config, path, &gui, changed, "serve")?;
+        self.service(&config, path, &gui, false, "update")?;
         self.tailnet(config.port)?;
         if self.dry_run {
             println!("would run: cooee doctor, then cooee pair");
@@ -336,9 +337,10 @@ impl Setup {
         path: &Path,
         gui: &str,
         changed: bool,
+        verb: &str,
     ) -> Result<(), String> {
-        let label = label(&self.instance);
-        let (file, text) = plist(config, path, self.explicit)?;
+        let label = job(&self.instance, verb);
+        let (file, text) = plist(config, path, self.explicit, verb)?;
         let same = fs::read_to_string(&file).is_ok_and(|t| t == text);
         let loaded = ok(&["launchctl", "list", &label]);
         if step(

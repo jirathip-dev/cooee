@@ -15,6 +15,7 @@ mod doctor;
 mod keychain;
 mod service;
 mod setup;
+mod update;
 
 fn usage_line() -> String {
     let parts: Vec<&str> = cmd::ALL.iter().map(|c| c.usage).collect();
@@ -43,10 +44,7 @@ fn main() -> ExitCode {
         return ExitCode::from(2);
     }
     let result = match inv.words().as_slice() {
-        ["--version" | "-V"] => {
-            println!("cooee {}", env!("CARGO_PKG_VERSION"));
-            return ExitCode::SUCCESS;
-        }
+        ["--version" | "-V"] => return update::version(),
         ["--help" | "-h"] => {
             println!("{usage}");
             return ExitCode::SUCCESS;

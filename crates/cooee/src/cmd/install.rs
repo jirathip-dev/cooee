@@ -41,7 +41,7 @@ fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> 
             config.port
         ));
     }
-    let (file, plist) = plist(&config, &path, explicit)?;
+    let (file, plist) = plist(&config, &path, explicit, "serve")?;
     write_plist(&config, &file, &plist)?;
     println!("wrote {}\n\nrun these yourself:", file.display());
     println!("  launchctl bootstrap gui/$(id -u) {}", file.display());
