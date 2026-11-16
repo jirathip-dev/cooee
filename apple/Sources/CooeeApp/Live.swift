@@ -5,6 +5,10 @@ import CooeeFeatures
 import CooeeUI
 import SwiftUI
 
+#if os(iOS)
+    import LocalAuthentication
+#endif
+
 extension PairingClient: DependencyKey {
     public static let liveValue = PairingClient(
         pair: { url, code in try await Client(base: url).pair(code: code) },
@@ -28,6 +32,9 @@ extension ThreadsClient: DependencyKey {
         unqueue: { server, thread, randomID in try await Client(server).unqueue(thread, randomID) },
         stop: { server, thread in try await Client(server).cancel(thread) },
         read: { server, thread, item in try await Client(server).read(thread, upTo: item) },
+        model: { server, thread, model, effort in
+            try await Client(server).model(thread, model: model, effort: effort)
+        },
         answer: { server, thread, item, option, value in
             try await Client(server).answer(thread, item: item, option: option, value: value)
         },
@@ -46,6 +53,7 @@ extension ThreadsClient: DependencyKey {
 extension PersonasClient: DependencyKey {
     public static let liveValue = PersonasClient(
         create: { server, persona in try await Client(server).create(persona) },
+        remove: { server, persona in try await Client(server).remove(persona) },
         agents: { server in try await Client(server).agents() },
         models: { server in try await Client(server).models() },
         machines: { server in try await Client(server).machines() },
@@ -58,6 +66,18 @@ extension PushClient: DependencyKey {
         token: { try await PushDelegate.token() },
         register: { server, token, enabled in try await Client(server).push(token, enabled: enabled) }
     )
+}
+
+extension OwnerCheck: DependencyKey {
+    public static let liveValue = OwnerCheck { reason in
+        #if os(iOS)
+            let context = LAContext()
+            guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: nil) else { return true }
+            return (try? await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason)) ?? false
+        #else
+            return true
+        #endif
+    }
 }
 
 extension SettingsStore: DependencyKey {

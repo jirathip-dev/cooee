@@ -1,5 +1,7 @@
 import ComposableArchitecture
+import CooeeCore
 import CooeeFeatures
+import PhotosUI
 import SwiftUI
 
 internal struct PersonaScreen: View {
@@ -25,6 +27,25 @@ internal struct PersonaScreen: View {
                 )
             }
         }
+        .sheet(isPresented: $store.showingAll) {
+            AllNotes(
+                notes: PersonaEditBlocks.notes(store.screen ?? .bundledPersona, persona: store.draft.name, now: Date())
+            ) { store.showingAll = false }
+        }
+        .alert($store.scope(state: \.alert, action: \.alert))
+        .photosPicker(isPresented: $store.choosingPhoto, selection: photo, matching: .images)
+    }
+
+    private var photo: Binding<PhotosPickerItem?> {
+        Binding(
+            get: { nil },
+            set: { item in
+                Task {
+                    guard let data = try? await item?.loadTransferable(type: Data.self) else { return }
+                    store.draft.avatar = AvatarPicture.dataURL(data) ?? store.draft.avatar
+                }
+            }
+        )
     }
 
     private var actions: PersonaActions {
@@ -34,6 +55,27 @@ internal struct PersonaScreen: View {
         )
         actions.agent = { store.send(.agent($0)) }
         actions.browse = { store.send(.browse(nil)) }
+        actions.more = { store.send(.showAll) }
+        actions.delete = store.isNew ? nil : { store.send(.delete) }
+        actions.photo = { store.choosingPhoto = true }
         return actions
+    }
+}
+
+internal struct AllNotes: View {
+    internal let notes: [Field]
+    internal let done: () -> Void
+
+    internal var body: some View {
+        NavigationStack {
+            List(Array(notes.enumerated()), id: \.offset) { _, note in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(note.key)
+                    Text(note.value).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Memory · \(notes.count) notes")
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done", action: done) } }
+        }
     }
 }

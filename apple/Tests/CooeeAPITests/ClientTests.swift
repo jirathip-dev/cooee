@@ -93,6 +93,7 @@ internal struct ClientTests {
             body
                 == Started(
                     agent: "fake-acp", profile: "coder", machine: "mini", text: "hi", randomID: "r9", background: true))
+        #expect(server.body("/threads")?.contains("model") == false)
     }
 
     @Test internal func cooeesOwnSentenceIsTheError() async throws {
