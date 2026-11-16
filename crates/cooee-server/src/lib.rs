@@ -1694,7 +1694,7 @@ async fn persona_new(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
     persona_save(cx, p).await
 }
 
-async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
+pub(crate) async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
     let installed = hub(cx).installed();
     let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
     on_personas(cx, move |d, c| {

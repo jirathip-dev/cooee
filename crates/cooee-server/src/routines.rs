@@ -224,7 +224,7 @@ fn runner(cx: &Cx) -> Arc<Runner> {
     Arc::clone(app_context::<Arc<Runner>>(cx))
 }
 
-async fn on<T: Send + 'static>(
+pub(crate) async fn on<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&Runner) -> Result<T, HubError> + Send + 'static,
 ) -> Result<T, HubError> {

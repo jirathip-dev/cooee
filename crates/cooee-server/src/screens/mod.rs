@@ -1,6 +1,7 @@
 pub mod attach;
 pub mod home;
 pub mod menu;
+pub mod persona;
 pub mod settings;
 
 use serde_json::Value;
@@ -14,6 +15,8 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(settings::machines)
         .route(settings::plugins)
         .route(attach::attach)
+        .route(persona::persona)
+        .route(persona::action)
 }
 
 fn core(mut screen: Value) -> Value {
