@@ -1,0 +1,429 @@
+stable (ubuntu-latest)	test	﻿2026-11-15T22:19:32.1671498Z ##[group]Run setsid --wait cargo test --workspace --locked
+stable (ubuntu-latest)	test	2026-11-15T22:19:32.1671980Z ^[[36;1msetsid --wait cargo test --workspace --locked^[[0m
+stable (ubuntu-latest)	test	2026-11-15T22:19:32.1724073Z shell: /usr/bin/bash -e {0}
+stable (ubuntu-latest)	test	2026-11-15T22:19:32.1724348Z env:
+stable (ubuntu-latest)	test	2026-11-15T22:19:32.1724561Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	test	2026-11-15T22:19:32.1724808Z   REF: 
+stable (ubuntu-latest)	test	2026-11-15T22:19:32.1725013Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	test	2026-11-15T22:19:32.1725278Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	test	2026-11-15T22:19:32.1725549Z   CARGO_INCREMENTAL: 0
+stable (ubuntu-latest)	test	2026-11-15T22:19:32.1725779Z   CACHE_ON_FAILURE: false
+stable (ubuntu-latest)	test	2026-11-15T22:19:32.1726020Z ##[endgroup]
+stable (ubuntu-latest)	test	2026-11-15T22:19:32.2196277Z ^[[1m^[[92m    Updating^[[0m crates.io index
+stable (ubuntu-latest)	test	2026-11-15T22:19:33.0204164Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+stable (ubuntu-latest)	test	2026-11-15T22:19:35.5199338Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+stable (ubuntu-latest)	test	2026-11-15T22:19:35.5200777Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+stable (ubuntu-latest)	test	2026-11-15T22:19:36.1949458Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+stable (ubuntu-latest)	test	2026-11-15T22:19:48.9863519Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.1490352Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 37.95s
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.1698063Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/build/cooee/4495d5694ed4786e/out/cooee-4495d5694ed4786e)
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.1710585Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.1710769Z running 0 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.1712672Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.1713878Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/build/cooee/ebcb476e1475269f/out/accounts-ebcb476e1475269f)
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.1714838Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.1715225Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.1723899Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.1724076Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.3538246Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.4621266Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.4622625Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.4627352Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.4629366Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.4630549Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/build/cooee/1f53d7690f8d05e6/out/accounts_env-1f53d7690f8d05e6)
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.4643186Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.4643375Z running 7 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.4725665Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.4909247Z test an_inherited_token_never_signs_a_folder_in ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.5836290Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.5936712Z test unknown_provider_or_account_refuses_on_one_line ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.5969622Z test ls_json_lists_every_account_without_its_token ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.6587252Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.6673564Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.6674303Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.6674762Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.6675329Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.6676888Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/build/cooee/9ea44c17a5bd2188/out/ask-9ea44c17a5bd2188)
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.6689028Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.6689223Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.8128066Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.8283074Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:10.8325329Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:11.8374973Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:11.8375911Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:11.8379427Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.17s
+stable (ubuntu-latest)	test	2026-11-15T22:20:11.8380123Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:11.8386785Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/build/cooee/9a94954e86b5350e/out/chat-9a94954e86b5350e)
+stable (ubuntu-latest)	test	2026-11-15T22:20:11.8400040Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:11.8400247Z running 12 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:11.9657482Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:11.9679416Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:11.9970896Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.0515381Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.0820252Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.0976938Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.1405847Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.1406746Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.1576211Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.1836130Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.2022492Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.2345487Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.2346415Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.2348543Z test result: ok. 11 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.39s
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.2349395Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.2360628Z ^[[1m^[[92m     Running^[[0m tests/chat_first.rs (target/debug/build/cooee/83fea87db9ede78d/out/chat_first-83fea87db9ede78d)
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.2377930Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.2378120Z running 1 test
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3636626Z test a_new_chat_runs_in_its_own_scratch_folder_and_a_folder_attached_takes_later_turns ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3638529Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3639056Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3639654Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3644770Z ^[[1m^[[92m     Running^[[0m tests/cli.rs (target/debug/build/cooee/42311513c86792cd/out/cli-42311513c86792cd)
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3658693Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3658907Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3709696Z test version ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3710509Z test listening_beyond_localhost_needs_allowed_hosts ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3728803Z cooee: shed at /run/user/1001/shed.sock: No such file or directory (os error 2)
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3734673Z test unknown_args_and_config_keys_fail ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3783694Z test serve_listens_on_localhost_at_the_configured_port ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3784240Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3784699Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3785310Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3787776Z ^[[1m^[[92m     Running^[[0m tests/first_run.rs (target/debug/build/cooee/d64f57a57c9fb603/out/first_run-d64f57a57c9fb603)
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3799079Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.3799495Z running 3 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.4716224Z test no_agents_and_no_roots_show_the_fix_lines_and_doctor_warns ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.4836564Z test with_no_roots_a_chat_still_starts_in_scratch_and_use_a_folder_is_refused ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.4879771Z test with_one_root_and_nothing_in_it_a_thread_starts_in_the_root ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.4880602Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.4881171Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.4881729Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.4889302Z ^[[1m^[[92m     Running^[[0m tests/folders.rs (target/debug/build/cooee/b394e59eb3b70497/out/folders-b394e59eb3b70497)
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.4903849Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.4904061Z running 5 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.5971027Z test browse_lists_a_root_outside_home_spelled_as_listed ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.6018415Z test browse_lists_only_folders_inside_home ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.6029681Z test dot_dot_symlink_and_absolute_escapes_are_refused ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.6057154Z test add_and_remove_root_persists_in_the_config ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.6910080Z test new_folder_is_made_inside_a_root_and_a_thread_starts_there ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.6910660Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.6911066Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.6911632Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.6919636Z ^[[1m^[[92m     Running^[[0m tests/history.rs (target/debug/build/cooee/59e7b1af0ada80ed/out/history-59e7b1af0ada80ed)
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.6933186Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.6933397Z running 1 test
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.8757280Z test a_persona_finds_and_reads_its_own_threads_and_not_another_personas ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.8761325Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.8761968Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.8762513Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.8763719Z ^[[1m^[[92m     Running^[[0m tests/home_screen.rs (target/debug/build/cooee/bb5c48d0f5a04d16/out/home_screen-bb5c48d0f5a04d16)
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.8778035Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.8778187Z running 1 test
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.9706393Z test home_is_the_bundled_screen_filled_with_todays_threads_and_personas ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.9707209Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.9707985Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.9708707Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.9712607Z ^[[1m^[[92m     Running^[[0m tests/instances.rs (target/debug/build/cooee/856f242d8152ccdd/out/instances-856f242d8152ccdd)
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.9725853Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.9726063Z running 3 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.9865069Z test install_writes_a_plist_and_prints_the_commands ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:12.9911432Z test doctor_reports_a_missing_shed ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:13.1584610Z test two_instances_never_see_each_others_threads_or_devices ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:13.1586002Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:13.1586796Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+stable (ubuntu-latest)	test	2026-11-15T22:20:13.1587565Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:13.1589190Z ^[[1m^[[92m     Running^[[0m tests/layout.rs (target/debug/build/cooee/7e1d08338c66ad03/out/layout-7e1d08338c66ad03)
+stable (ubuntu-latest)	test	2026-11-15T22:20:13.1601839Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:13.1601996Z running 1 test
+stable (ubuntu-latest)	test	2026-11-15T22:20:15.2794860Z test a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:15.2795422Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:15.2795824Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.12s
+stable (ubuntu-latest)	test	2026-11-15T22:20:15.2796630Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:15.2797427Z ^[[1m^[[92m     Running^[[0m tests/login.rs (target/debug/build/cooee/aa1028455ce6c21c/out/login-aa1028455ce6c21c)
+stable (ubuntu-latest)	test	2026-11-15T22:20:15.2810083Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:15.2810268Z running 5 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:15.3854459Z test a_failed_sign_out_keeps_the_last_known_status ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:15.4068892Z test a_sign_in_started_for_a_remote_machine_runs_there ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:15.4300173Z test a_login_left_for_10_minutes_is_killed_and_removed ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:15.5123285Z test login_shows_the_link_sends_the_code_and_detects_success_never_storing_the_screen ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.0849179Z test a_hanging_status_check_never_holds_a_request_and_runs_once ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.0851188Z ^[[1m^[[92m     Running^[[0m tests/machine_check.rs (target/debug/build/cooee/b32e9ffd9d0b15a7/out/machine_check-b32e9ffd9d0b15a7)
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.0852268Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.0852834Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.80s
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.0853559Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.0862888Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.0863063Z running 5 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.1352563Z test a_machine_shed_cant_reach_or_doesnt_have_fails_its_first_check_and_runs_nothing_there ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.1659054Z test a_ready_machine_passes_every_check_each_run_there ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.2130121Z test each_check_fails_with_its_part_missing_there_and_says_the_fix ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.2192173Z test doctor_has_a_row_per_machine ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.2643605Z test yes_clones_the_folder_and_copies_the_settings_there_once ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.2644031Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.2644301Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.2644668Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.2652989Z ^[[1m^[[92m     Running^[[0m tests/machines.rs (target/debug/build/cooee/6fc782be738c9109/out/machines-6fc782be738c9109)
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.2664183Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.2664450Z running 1 test
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.6564792Z test the_machines_plugin_serves_each_machine_card_and_marks_one_offline ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.6565787Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.6566436Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.6567018Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.6569471Z ^[[1m^[[92m     Running^[[0m tests/mcp.rs (target/debug/build/cooee/a030cd2b23c3a005/out/mcp-a030cd2b23c3a005)
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.6583289Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.6583500Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.6688364Z test a_literal_token_in_the_registry_is_refused_at_load_naming_the_key_only ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.6919131Z test the_mac_adds_toggles_and_removes_servers_with_references_only ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.8100810Z test propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_it_off ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.8449675Z test the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no_value_is_written ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.8450936Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.8451788Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.8452639Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.8460567Z ^[[1m^[[92m     Running^[[0m tests/model.rs (target/debug/build/cooee/5776ad3a3ce7e395/out/model-5776ad3a3ce7e395)
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.8477273Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.8478284Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.9553913Z test the_agent_list_carries_each_agents_efforts ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:27.9569355Z test a_day_old_list_is_asked_again ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.0039856Z test row_34_a_thread_starts_on_its_pick_and_a_new_model_shows ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.0259501Z test a_gone_pin_falls_back_with_one_line_and_a_short_name_moves_on ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.0260490Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.0261187Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.0261880Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.0270494Z ^[[1m^[[92m     Running^[[0m tests/move_thread.rs (target/debug/build/cooee/64d73329d86ecc89/out/move_thread-64d73329d86ecc89)
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.0283881Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.0284056Z running 3 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.1542563Z test a_move_to_a_machine_not_ready_is_refused_with_its_failed_checks_and_starts_nothing_there ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.1756791Z test an_idle_thread_moves_after_box_is_checked_and_the_next_message_starts_there_with_a_hand_over ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.1904823Z test a_move_is_refused_while_a_turn_works_and_goes_once_it_is_stopped ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.1905644Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.1906534Z test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.1907175Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.1915779Z ^[[1m^[[92m     Running^[[0m tests/pairing.rs (target/debug/build/cooee/664a60c4660a7fcf/out/pairing-664a60c4660a7fcf)
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.1929511Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.1929701Z running 16 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.3001984Z test a_declined_request_tells_the_new_device_who_said_no ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.3056523Z test a_foreign_host_or_origin_is_refused_even_paired ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.3350835Z test a_passkey_signs_a_device_back_in_and_can_be_removed ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.3970173Z test a_qr_codes_link_carries_a_code_that_pairs_at_once ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.4023205Z test a_report_is_kept_and_listed ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.4254653Z test a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.4472640Z test a_wrong_expired_or_reused_code_says_so ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.5047204Z test alerts_status_test_and_off_are_this_devices ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.5121431Z test devices_are_listed_and_removed_from_the_phone ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.5446409Z test five_wrong_codes_a_minute_refuse_that_address ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.5554329Z test pair_use_remove_and_only_the_hash_on_disk ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.5862902Z test push_subscriptions_are_checked_and_tied_to_the_device ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.6009498Z test the_mac_declines_a_request_from_the_cli ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.6393476Z test the_new_calls_need_a_paired_device_but_pairing_requests_do_not ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.6419377Z test the_mac_lists_and_approves_a_request_from_the_cli ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.6734044Z test unpaired_reads_and_writes_are_refused ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.6736039Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.6736656Z test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.6737352Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.6748344Z ^[[1m^[[92m     Running^[[0m tests/perf.rs (target/debug/build/cooee/ce17d891a8ad5473/out/perf-ce17d891a8ad5473)
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.6761671Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.6762089Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.6868942Z test cooee_perf_turns_a_log_into_the_table ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.7705057Z test a_fast_request_under_the_default_threshold_is_debug_only ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.7868131Z test requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.7892557Z test first_token_is_logged_once_per_prompt_and_nothing_private_is ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.7893052Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.7893394Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.7893889Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.7901176Z ^[[1m^[[92m     Running^[[0m tests/personas.rs (target/debug/build/cooee/c9f70d01a210cc5c/out/personas-c9f70d01a210cc5c)
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.7914066Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.7914358Z running 11 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.9043347Z test a_plugin_is_attached_to_a_persona_and_detached ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:28.9119936Z test a_detailed_persona_gets_no_plain_line ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.0138399Z test migration_keeps_the_name_and_sets_the_orchestrator_role ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.0281525Z test a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.0515495Z test a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.0955381Z test a_persona_and_its_threads_name_their_machine ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.1610972Z test old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.1629529Z test renaming_the_orchestrator_changes_no_attachment ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.1864698Z test the_plugin_attaches_by_role ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.1908298Z test remember_adds_replaces_and_forgets_one_note_under_the_cap ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.2742813Z test two_orchestrator_personas_each_with_their_own_fleets ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.2748375Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.2748949Z test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.2749645Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.2754120Z ^[[1m^[[92m     Running^[[0m tests/plugin_manager.rs (target/debug/build/cooee/2461c981ffe9bc1d/out/plugin_manager-2461c981ffe9bc1d)
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.2767290Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:29.2767578Z running 8 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:30.0380419Z test add_from_the_index_clones_builds_writes_the_entry_and_token_starts_it_and_locks_it ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:30.2007397Z test a_backend_ends_when_cooee_is_killed_and_a_restart_starts_it_again ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:30.5238269Z test an_attach_backend_that_answers_is_used_and_run_only_starts_once_it_is_gone ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:30.7423775Z test an_index_plugin_has_no_warning_and_a_url_plugin_is_not_reviewed ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:31.0268693Z test a_failed_update_keeps_the_old_build_and_a_good_one_swaps_in ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:31.0517068Z test only_a_paired_device_may_add_and_a_first_party_plugin_is_improved_via_an_issue ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:31.9185497Z test improve_makes_a_branch_an_approval_builds_and_swaps_it_in_and_it_rolls_back ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.1044897Z test remove_stops_it_and_keeps_the_checkout_unless_purged ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.1045754Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.1046248Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.83s
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.1046874Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.1058080Z ^[[1m^[[92m     Running^[[0m tests/plugins.rs (target/debug/build/cooee/a2dae476a13917ef/out/plugins-a2dae476a13917ef)
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.1071201Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.1071564Z running 19 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.2086406Z test a_backends_event_stream_comes_through_the_proxy ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.2301121Z test a_choice_card_goes_into_the_thread_and_its_answer_to_its_own_plugin ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.2589381Z test a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.2628851Z test a_plugin_with_no_token_configured_does_not_start ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.3145660Z test a_plugin_names_its_push_tag_and_sets_its_dot_only_with_its_token ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.3462637Z test a_plugin_without_its_token_is_refused ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.3593682Z test a_closed_page_closes_its_backend_stream ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.3664576Z test a_hanging_plugin_answer_never_holds_another_thread ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.4396658Z test a_run_card_approves_once_with_its_sha_and_shows_the_tail ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.4573624Z test plugin_check_checks_a_manifest ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.4835250Z test cooees_own_cards_go_out_as_blocks_and_settle_to_their_line ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.5386054Z test plugin_check_passes_the_fixtures_and_names_a_broken_field ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.5576943Z test row_30_choice_rows_recommended_first_other_text_and_who_and_when ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.5724372Z test row_31_a_conductors_answer_takes_one_change_from_the_owner ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.5726779Z test the_docs_show_the_example_plugin_the_ui_tests_run ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.6021588Z test row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.6477549Z test row_33_a_secrets_value_reaches_its_plugin_only ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.6611550Z test the_proxy_sends_the_plugins_own_token_and_never_the_cookie ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.6792830Z test row_35_handoff_chips_flow_back_lines_and_pick_a_thread ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.6799077Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.6799673Z test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.6800179Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.6816541Z ^[[1m^[[92m     Running^[[0m tests/profiles.rs (target/debug/build/cooee/ca9268d9110d063b/out/profiles-ca9268d9110d063b)
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.6829189Z 
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.6829378Z running 5 tests
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.8209688Z test a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a_command ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:33.9936778Z test plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:38.7894699Z test a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:20:38.7982187Z test a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the_threads_id ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.5858845Z test a_hanging_backend_never_slows_a_start_which_takes_its_last_answered_profiles ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.5859761Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.5861536Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 30.90s
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.5862231Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.5870926Z ^[[1m^[[92m     Running^[[0m tests/reliability.rs (target/debug/build/cooee/bc96cc6b200e7f9f/out/reliability-bc96cc6b200e7f9f)
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.5882937Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.5883086Z running 14 tests
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.7053592Z test a_start_with_no_folder_runs_in_its_own_scratch_folder ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.7062985Z test a_background_start_answers_before_the_agent_runs_and_sends_once ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.7526912Z test agents_are_listed_from_the_hub_and_a_failed_refresh_keeps_the_list ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.8158702Z test r11_a_slow_start_is_adopted_once ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.8250885Z test r10_an_ask_made_during_the_start_is_listed_and_answerable ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.8362745Z test r13_malformed_input_or_config_is_denied_with_a_reason ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.9165357Z test r16_a_repeated_id_is_one_row_however_often_it_is_refreshed ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.9368143Z test r17_paths_in_text_are_never_files_served ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.9378455Z test a_failed_background_start_says_why_and_a_retry_sends_once ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:04.9490685Z test r14_a_crash_between_start_and_send_is_recovered_once ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:05.0355660Z test r3_a_store_error_is_a_503_not_unpaired_and_a_401_does_not_latch ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:05.0666627Z test r21_an_answer_to_a_gone_session_says_not_delivered ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:05.0705541Z test r7_requests_run_no_subprocess ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.2974371Z test r20_a_stuck_delivery_never_holds_the_next_one ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.2975776Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.2978091Z test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.71s
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.2978866Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.2990182Z ^[[1m^[[92m     Running^[[0m tests/remote.rs (target/debug/build/cooee/1467d20630c29510/out/remote-1467d20630c29510)
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.3002518Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.3002710Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.5102531Z test a_thread_on_a_machine_starts_replies_approves_and_cancels_there_and_is_found_after_a_restart ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.5352384Z test an_offline_or_unknown_machine_refuses_the_start_and_the_send_with_when_it_was_last_seen ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.5353210Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.5353585Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.5354828Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.5361846Z ^[[1m^[[92m     Running^[[0m tests/rooms.rs (target/debug/build/cooee/a476d0489ae5e228/out/rooms-a476d0489ae5e228)
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.5374164Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.5374321Z running 10 tests
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.6937822Z test members_are_given_final_replies_only ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.7325392Z test a_chain_stops_at_six_turns_on_one_message_the_last_told_to_wind_down ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.7547397Z test each_member_takes_a_turn_in_its_own_session_and_hears_the_others_attributed ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.8545585Z test a_room_pushes_only_when_a_member_addresses_the_owner_asks_or_fails ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.8914262Z test mentioned_members_take_turns_in_mention_order_and_no_one_else ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:15.9478163Z test stop_cancels_the_member_taking_its_turn_and_drops_the_rest ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.0158345Z test members_join_and_leave_up_to_five_the_conductor_but_never_a_lane ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.0372447Z test stop_while_a_members_session_starts_cancels_it_once_started ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.1149483Z test with_no_mention_every_member_takes_a_turn_and_a_pass_is_hidden ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.1369797Z test two_members_naming_each_other_stop_at_the_cap_each_message ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.1372400Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.1373426Z test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.60s
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.1374260Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.1388135Z ^[[1m^[[92m     Running^[[0m tests/routines.rs (target/debug/build/cooee/c2d984393c2118c6/out/routines-c2d984393c2118c6)
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.1400572Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.1400747Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.3336660Z test a_new_thread_routine_starts_a_thread_marked_with_it_in_the_list ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.4813153Z test a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.4814365Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.4814784Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.4815482Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.4824043Z ^[[1m^[[92m     Running^[[0m tests/screens.rs (target/debug/build/cooee/6513097856b90bc9/out/screens-6513097856b90bc9)
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.4837249Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:16.4837454Z running 1 test
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.0983010Z test a_plugin_screen_streams_its_ops_and_an_action_outside_its_permissions_is_refused ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.0983527Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.0983847Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.61s
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.0984235Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.0986945Z ^[[1m^[[92m     Running^[[0m tests/secrets.rs (target/debug/build/cooee/1230a28926cab1e5/out/secrets-1230a28926cab1e5)
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.0998289Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.0998481Z running 0 tests
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.0998714Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.0999147Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.0999776Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.1001219Z ^[[1m^[[92m     Running^[[0m tests/setup.rs (target/debug/build/cooee/91d1e02e6489c7a4/out/setup-91d1e02e6489c7a4)
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.1011213Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.1011390Z running 8 tests
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.1901928Z test a_doctor_failure_stops_with_its_fix ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.2051735Z test an_unmanaged_shed_on_another_protocol_holds_cooee_back_naming_the_fix ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.2149480Z test an_existing_config_keeps_its_keys ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.2279239Z test install_sh_checks_its_tools_then_installs_cooee_and_runs_setup ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.2280104Z test dry_run_writes_nothing_and_prints_every_command ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.2694214Z test a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4050320Z test setup_installs_the_first_party_themes_chosen_from_the_index ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4349967Z test a_managed_shed_on_another_protocol_is_restarted_after_a_warning ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4350744Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4351252Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4352572Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4358008Z ^[[1m^[[92m     Running^[[0m tests/shed_pool.rs (target/debug/build/cooee/816e49d33cbd94ad/out/shed_pool-816e49d33cbd94ad)
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4370118Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4370300Z running 5 tests
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4394613Z test a_request_that_was_sent_is_never_resent ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4402134Z test a_shed_of_the_same_protocol_and_another_build_is_accepted ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4429069Z test sequential_calls_share_one_connection_and_one_hello ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4452385Z test another_protocol_after_a_restart_is_a_version_error ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4454143Z test a_call_after_a_restart_reconnects_and_succeeds ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4454768Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4458724Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4459366Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4460220Z ^[[1m^[[92m     Running^[[0m tests/skills.rs (target/debug/build/cooee/ee6c93a4371b011c/out/skills-ee6c93a4371b011c)
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4471760Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.4472037Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.5811303Z test the_app_keeps_skills_and_the_twenty_first_is_refused ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.6116991Z test an_approved_skill_is_saved_and_briefed_by_description_and_a_refused_one_is_not ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.6118034Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.6118468Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.6118931Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.6123719Z ^[[1m^[[92m     Running^[[0m tests/terminal.rs (target/debug/build/cooee/84c9306146316079/out/terminal-84c9306146316079)
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.6136135Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.6136324Z running 5 tests
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.8327219Z test a_shell_starts_its_screen_diffs_stream_and_typed_text_and_keys_arrive ... FAILED
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.8403059Z test a_shed_of_another_protocol_fails_the_list_naming_both_sides ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:17.9367336Z test insert_text_types_into_the_shell_and_never_presses_enter ... FAILED
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.0506025Z test no_passkey_is_403_a_passkey_unlocks_and_the_token_alone_is_not_enough ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1522406Z test an_agents_terminal_can_be_watched_but_refuses_input ... ok
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1522949Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1523086Z failures:
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1523256Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1523651Z ---- a_shell_starts_its_screen_diffs_stream_and_typed_text_and_keys_arrive stdout ----
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1524100Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1524645Z thread 'a_shell_starts_its_screen_diffs_stream_and_typed_text_and_keys_arrive' (11316) panicked at crates/cooee/tests/terminal.rs:215:42:
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1525473Z index out of bounds: the len is 0 but the index is 0
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1526013Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1526451Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1526700Z ---- insert_text_types_into_the_shell_and_never_presses_enter stdout ----
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1527099Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1527568Z thread 'insert_text_types_into_the_shell_and_never_presses_enter' (11318) panicked at crates/cooee/tests/terminal.rs:343:5:
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1528907Z assertion `left == right` failed: the same shell
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1529531Z   left: String("owner-1a1e14cede6")
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1530048Z  right: "owner-1a1e14cede7"
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1530344Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1530352Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1530507Z failures:
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1531151Z     a_shell_starts_its_screen_diffs_stream_and_typed_text_and_keys_arrive
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1531975Z     insert_text_types_into_the_shell_and_never_presses_enter
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1532487Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1533079Z test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.54s
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1533803Z 
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1537527Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test terminal`
+stable (ubuntu-latest)	test	2026-11-15T22:21:18.1605463Z ##[error]Process completed with exit code 101.

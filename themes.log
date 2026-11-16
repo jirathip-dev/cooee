@@ -1,0 +1,5 @@
+cargo run --quiet --locked -p cooee -- theme check packs/themes/* packs/starter
+ok   packs/themes/farm
+ok   packs/themes/garden
+ok   packs/themes/kitchen
+ok   packs/starter

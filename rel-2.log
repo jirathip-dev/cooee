@@ -1,0 +1,21 @@
+
+running 1 test
+a_background_start_answers_before_the_agent_runs_and_sends_once --- FAILED
+
+failures:
+
+---- a_background_start_answers_before_the_agent_runs_and_sends_once stdout ----
+
+thread 'a_background_start_answers_before_the_agent_runs_and_sends_once' (164445223) panicked at crates/cooee/tests/reliability.rs:586:5:
+assertion `left == right` failed
+  left: (2, 1)
+ right: (1, 1)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_background_start_answers_before_the_agent_runs_and_sends_once
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 16 filtered out; finished in 5.08s
+
+error: test failed, to rerun pass `-p cooee --test reliability`
