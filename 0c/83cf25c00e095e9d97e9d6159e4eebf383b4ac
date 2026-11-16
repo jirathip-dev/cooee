@@ -1,0 +1,4 @@
+Decided: merged origin/staging twice; arch.toml keeps staging's generated, collect and ban lines beside this slice's justfile freeze and three collects
+Because: .drover/arch.toml:4
+Rejected: none
+Owner: Brought the branch up to date with staging; nothing in this change moved.
