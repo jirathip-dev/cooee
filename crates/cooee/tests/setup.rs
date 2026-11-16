@@ -1,7 +1,8 @@
 //! `cooee setup` with fake `cargo`, `shed`, `launchctl`, `tailscale` and `curl` on `PATH` (each logs its arguments to
 //! `$HOME/calls.log` and keeps its state in `$HOME`) and a fake shed server for doctor's hello: a fresh machine runs
 //! every step once, in order; a second run skips them all; `--dry-run` writes nothing; a doctor failure stops with its
-//! fix; an existing config keeps its keys. Also `scripts/install.sh`.
+//! fix; an existing config keeps its keys. Also `scripts/install.sh`, and `cooee update` (#332) against a fake GitHub
+//! API (`curl`), with the fake `launchctl kickstart` serving the installed binary that `curl` asks on the port.
 
 mod support;
 
@@ -24,6 +25,7 @@ const FAKES: &[(&str, &str)] = &[
         "cargo",
         r#"case "$*" in
 "install --list") cat "$HOME/cargo.list" 2>/dev/null ;;
+*jirathip-dev/cooee\ --rev*) cp "$HOME/new-cooee" "$HOME/.cargo/bin/cooee" ;;
 install*) while [ $# -gt 0 ]; do [ "$1" = --rev ] && rev=$2; shift; done
   echo "shed v0.0.0 (https://github.com/jirathip-dev/shed?rev=$rev#${rev%????????????????????????????????}):" >>"$HOME/cargo.list" ;;
 esac"#,
@@ -43,6 +45,7 @@ esac"#,
         r#"case "$1" in
 list) test -e "$HOME/loaded-$2" ;;
 bootstrap) touch "$HOME/loaded-$(basename "$3" .plist)" ;;
+kickstart) cp "$HOME/.cargo/bin/cooee" "$HOME/serving" 2>/dev/null || true ;;
 esac"#,
     ),
     (
@@ -53,7 +56,15 @@ esac"#,
 "serve --bg"*) port=${3#--https=}; echo "{\"TCP\":{\"$port\":{\"HTTPS\":true}}}" >"$HOME/served.json" ;;
 esac"#,
     ),
-    ("curl", r#"test ! -e "$HOME/curl-fails""#),
+    (
+        "curl",
+        r#"case "$*" in
+*/commits/main) cat "$HOME/main.json" ;;
+*api.github.com*) cat "$HOME/runs.json" ;;
+*127.0.0.1*) "$HOME/serving" ;;
+*) test ! -e "$HOME/curl-fails" ;;
+esac"#,
+    ),
 ];
 
 /// The commands that change something, as the fakes log them.
@@ -223,6 +234,9 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
             format!("launchctl bootstrap {gui} {home}/Library/LaunchAgents/dev.shed.serve.plist"),
             "shed agents add claude-acp".to_owned(),
             format!("launchctl bootstrap {gui} {plist}"),
+            format!(
+                "launchctl bootstrap {gui} {home}/Library/LaunchAgents/dev.cooee.cooee.update.plist"
+            ),
             format!("tailscale serve --bg --https={port} http://127.0.0.1:{port}"),
         ]
     );
@@ -238,6 +252,16 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
         fs::read_to_string(&plist)
             .unwrap()
             .contains("<string>dev.cooee.cooee</string>")
+    );
+    let timer = fs::read_to_string(
+        mac.home
+            .join("Library/LaunchAgents/dev.cooee.cooee.update.plist"),
+    )
+    .unwrap();
+    assert!(
+        timer.contains("<string>update</string>")
+            && timer.contains("<key>StartInterval</key>\n  <integer>900</integer>"),
+        "{timer}"
     );
     assert!(
         stdout.contains("doctor:\nok   service dev.cooee.cooee loaded")
@@ -257,6 +281,7 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
         &format!("config {}", mac.config().display()),
         "agents",
         "cooee service dev.cooee.cooee",
+        "cooee service dev.cooee.cooee.update",
         &format!("tailscale serve {port}"),
     ] {
         assert!(
@@ -587,5 +612,172 @@ fn install_sh_checks_its_tools_then_installs_cooee_and_runs_setup() {
     assert_eq!(
         fs::read_to_string(home.join("calls.log")).unwrap(),
         format!("{install}{sign}cooee setup --instance drover\n")
+    );
+}
+
+const SHA: &str = "2222222222222222222222222222222222222222";
+
+/// A fake Mac with the `old` binary installed and serving, main's head at [`SHA`] with ci `conclusion` and the
+/// `new` binary at that commit.
+fn updating(name: &str, conclusion: &str, new: &str) -> Mac {
+    let mac = Mac::new(name, true);
+    let exe = |file: &Path, body: &str| {
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(file, format!("#!/bin/sh\n{body}\n")).unwrap();
+        fs::set_permissions(file, fs::Permissions::from_mode(0o755)).unwrap();
+    };
+    let id = "Apple Development: Test (ABCDE12345)";
+    exe(
+        &mac.home.join("bin/security"),
+        &format!("echo '  1) 0123 \"{id}\"'"),
+    );
+    exe(
+        &mac.home.join("bin/codesign"),
+        "printf '%s\\n' \"codesign $*\" >>\"$HOME/calls.log\"",
+    );
+    exe(&mac.home.join(".cargo/bin/cooee"), "echo old");
+    exe(&mac.home.join("serving"), "echo old");
+    exe(&mac.home.join("new-cooee"), new);
+    fs::write(mac.home.join("main.json"), format!(r#"{{"sha":"{SHA}"}}"#)).unwrap();
+    let run =
+        format!(r#"{{"workflow_runs":[{{"conclusion":"{conclusion}","head_sha":"{SHA}"}}]}}"#);
+    fs::write(mac.home.join("runs.json"), run).unwrap();
+    fs::create_dir_all(mac.config().parent().unwrap()).unwrap();
+    fs::write(mac.config(), format!("port = {}\n", mac.port)).unwrap();
+    fs::create_dir_all(mac.data()).unwrap();
+    mac
+}
+
+impl Mac {
+    fn data(&self) -> PathBuf {
+        self.home.join(".local/share/cooee/cooee")
+    }
+
+    /// What `name` under `HOME` prints when run.
+    fn prints(&self, name: &str) -> String {
+        let out = Command::new(self.home.join(name)).output().unwrap();
+        String::from_utf8(out.stdout).unwrap()
+    }
+}
+
+#[test]
+fn update_check_says_what_it_would_install_and_changes_nothing() {
+    let mac = updating("up-check", "success", "echo new");
+    fs::write(mac.home.join("calls.log"), "").unwrap();
+    let before = files(&mac.home);
+    let out = mac.cooee(&["update", "--check"]);
+    assert!(out.status.success(), "{out:?}");
+    assert_eq!(
+        String::from_utf8_lossy(&out.stdout),
+        format!(
+            "would install {SHA}, restart dev.cooee.cooee and check that port {} answers\n",
+            mac.port
+        )
+    );
+    let calls = fs::read_to_string(mac.home.join("calls.log")).unwrap();
+    assert!(calls.lines().all(|l| l.starts_with("curl ")), "{calls}");
+    assert_eq!(files(&mac.home), before);
+    assert_eq!(
+        (mac.prints(".cargo/bin/cooee"), mac.prints("serving")),
+        ("old\n".into(), "old\n".into())
+    );
+}
+
+#[test]
+fn update_installs_a_new_green_head_and_doctor_shows_it() {
+    let mac = updating("up-green", "success", "echo new");
+    let out = mac.cooee(&["update"]);
+    assert!(out.status.success(), "{out:?}");
+    let calls = fs::read_to_string(mac.home.join("calls.log")).unwrap();
+    assert!(
+        calls.contains(&format!(
+            "cargo install --locked --git https://github.com/jirathip-dev/cooee --rev {SHA} cooee\n"
+        )),
+        "{calls}"
+    );
+    assert!(calls.contains("launchctl kickstart -k gui/"), "{calls}");
+    assert_eq!(mac.prints("serving"), "new\n");
+    let log = fs::read_to_string(mac.data().join("update.log")).unwrap();
+    assert!(log.ends_with(&format!(" installed {SHA}\n")), "{log}");
+    let out = mac.cooee(&["doctor"]);
+    assert!(
+        String::from_utf8_lossy(&out.stdout)
+            .contains("info update: installed unknown, main's green head 2222222, last check 0 min ago, auto-update on\n"),
+        "{out:?}"
+    );
+}
+
+#[test]
+fn a_red_head_or_auto_update_off_installs_nothing() {
+    let mac = updating("up-red", "failure", "echo new");
+    let out = mac.cooee(&["update"]);
+    assert!(out.status.success(), "{out:?}");
+    let log = fs::read_to_string(mac.data().join("update.log")).unwrap();
+    assert!(
+        log.ends_with(" main 2222222: ci failure, not installed\n"),
+        "{log}"
+    );
+    fs::write(
+        mac.config(),
+        format!("port = {}\nauto_update = false\n", mac.port),
+    )
+    .unwrap();
+    fs::write(
+        mac.home.join("runs.json"),
+        r#"{"workflow_runs":[{"conclusion":"success"}]}"#,
+    )
+    .unwrap();
+    let out = mac.cooee(&["update"]);
+    assert!(
+        String::from_utf8_lossy(&out.stdout).starts_with("auto-update is off"),
+        "{out:?}"
+    );
+    assert!(
+        !fs::read_to_string(mac.home.join("calls.log"))
+            .unwrap()
+            .contains("install")
+    );
+    assert_eq!(mac.prints(".cargo/bin/cooee"), "old\n");
+}
+
+#[test]
+fn a_new_build_that_does_not_answer_is_rolled_back_and_the_old_one_serves_again() {
+    let mac = updating("up-rollback", "success", "exit 1");
+    let out = mac.cooee(&["update"]);
+    assert_eq!(out.status.code(), Some(1), "{out:?}");
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        err.contains(&format!(
+            "2222222 not installed: the service doesn't answer on port {}; rolled back to the old binary: it serves again",
+            mac.port
+        )),
+        "{err}"
+    );
+    let calls = fs::read_to_string(mac.home.join("calls.log")).unwrap();
+    assert_eq!(
+        calls.matches("launchctl kickstart -k").count(),
+        2,
+        "{calls}"
+    );
+    assert_eq!(
+        (mac.prints(".cargo/bin/cooee"), mac.prints("serving")),
+        ("old\n".into(), "old\n".into())
+    );
+    assert_eq!(
+        fs::read_to_string(mac.data().join("update.failed")).unwrap(),
+        SHA
+    );
+    // The next check doesn't try the same commit again.
+    fs::write(mac.home.join("calls.log"), "").unwrap();
+    assert!(mac.cooee(&["update"]).status.success());
+    let log = fs::read_to_string(mac.data().join("update.log")).unwrap();
+    assert!(
+        log.ends_with(" main 2222222 failed to install before: it waits for a newer one\n"),
+        "{log}"
+    );
+    assert!(
+        !fs::read_to_string(mac.home.join("calls.log"))
+            .unwrap()
+            .contains("cargo install")
     );
 }

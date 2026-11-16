@@ -43,7 +43,7 @@ public struct ChatFeature: Sendable {
         public var efforts: [String] { agents.first { $0.id == persona.api.agent }?.efforts ?? [] }
         public var drawn: [Item] {
             if let exchange { return LinkedItems.build(items, exchange: exchange, outbox: outbox, now: since) }
-            return room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
+            return room.map { RoomItems.build(items, names: $0.names, last: $0.round) + $0.cards }
                 ?? ChatItems.build(
                     items, live: live, outbox: first + outbox, style: persona.api.style, working: working)
         }
@@ -135,7 +135,7 @@ extension ChatFeature {
         case .loaded(let slice):
             load(&state, slice)
         case .event(let event):
-            state.room?.hear(event)
+            state.room?.hear(event, when: now)
             apply(&state, event)
         case .failed(let error):
             state.error = error
@@ -170,6 +170,7 @@ extension ChatFeature {
         state.since = now
         state.pending = slice.pending?.text
         state.live = slice.turn.working ? slice.turn.text ?? "" : ""
+        state.room?.heard(slice.asks ?? [], when: now)
     }
 
     private func apply(_ state: inout State, _ event: StreamEvent) {
@@ -184,7 +185,7 @@ extension ChatFeature {
             if !state.working { state.live = "" }
         case .queue(let queue):
             state.queue = queue
-        case .reset, .roomTurn, .roomStop:
+        case .reset, .roomTurn, .roomStop, .roomAsk:
             break
         }
     }

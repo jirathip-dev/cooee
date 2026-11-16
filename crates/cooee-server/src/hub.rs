@@ -116,6 +116,8 @@ struct Live {
     sent: Option<Instant>,
     /// A room's round was stopped while its working member's session was starting: cancel it once started (#155).
     stopped_starting: bool,
+    /// A room's members' open asks and its deadline's pause on them (#178).
+    asks: rooms::OpenAsks,
     /// When it was last used, in Unix milliseconds.
     used: u64,
     /// Its row's view of the chat while the chat is unloaded (only its turn stays); `None` while loaded.
@@ -227,6 +229,9 @@ pub struct Slice {
     pub queue: Vec<Queued>,
     /// The oldest config card that waits (#553 row 32), wherever it is.
     pub waiting: Option<Item>,
+    /// A room's members' open asks (#178).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub asks: Vec<rooms::RoomAsk>,
 }
 
 /// A thread's first message while it connects: its text and the start's id (the item it becomes has it).
@@ -417,6 +422,7 @@ impl Live {
             pending: None,
             sent: None,
             stopped_starting: false,
+            asks: rooms::OpenAsks::default(),
             used: now(),
             unloaded: None,
             sending: Vec::new(),
@@ -481,6 +487,7 @@ impl Live {
                 if let Some(c) = self.chat.items.iter_mut().find(|c| c.id == i.id) {
                     c.speaker.clone_from(&i.speaker);
                 }
+                hub.room_ask(&self.meta, i.clone());
             }
             let watched = self.tx.as_ref().is_some_and(|t| t.receiver_count() > 0);
             if let Some(n) = note(
