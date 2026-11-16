@@ -1,0 +1,6 @@
+Decided: at regular width a state tap loads its screen beside the map (ScreenFeature beside), the tapped state ringed; on a phone it still pushes
+Because: docs/design/workflow-diagram/README.md:88
+Rejected: a second child ScreenFeature store for the side panel — one fetch into state.beside does it in fewer lines under apple_cap
+Rejected: pushing the filtered Queue on the Mac — the FAIL finding; the approved design fills the space beside the map
+Check: workflow-map-mac-split-dark snapshot against docs/design/workflow-diagram/map-1440.png; PluginNavigationTests beside tests; other frames unchanged
+Owner: On the Mac, tapping a state now shows its issues beside the map instead of replacing it.
