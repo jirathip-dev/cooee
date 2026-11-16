@@ -1,0 +1,11 @@
+Decided: arch.toml's frozen and generated lists go back to one line each, as staging writes them
+Because: ci/drover-checks-test.sh:10
+Decided: recipe and profiles take staging's agents-based bodies verbatim, replacing the persona-based recipe as staging does
+Because: crates/cooee-server/src/http.rs:122
+Decided: #252's theme routes stay in themes.rs and are registered in serve.rs beside routes::routes, like screens
+Because: crates/cooee-server/src/serve.rs:94
+Decided: #270's mcp_persona joins the mcp route area
+Because: crates/cooee-server/src/routes/mcp.rs:123
+Rejected: editing ci/drover-checks-test.sh to handle multi-line arrays — it's a staging script outside slice 1, and a one-line list is enough
+Check: ci/drover-checks-test.sh exits 0; the 110 registered routes match staging's; gen.sh leaves no diff; arch-check --base origin/staging has 0 violations
+Owner: Nothing changes in the app; the red lessons check is fixed and the split server files carry staging's latest features.
