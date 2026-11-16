@@ -1,0 +1,5 @@
+Decided: merged origin/staging (#422) in; staging deleted docs/api.md, so this PR's transition sentence moved to the same layout paragraph in docs/layout.md
+Because: docs/layout.md:9
+Rejected: keeping docs/api.md — staging deleted it and arch.toml freezes it
+Check: docs/layout.md names push, sheet, fade and none as the node transitions; docs/api.md is gone
+Owner: The branch is up to date with staging again; the note on screen transitions now lives in the layout doc.
