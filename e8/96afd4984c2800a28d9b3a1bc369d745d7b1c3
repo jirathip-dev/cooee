@@ -1,0 +1,6 @@
+Decided: merged origin/staging, keeping the from-profile Instructions view next to staging's machine and style rows in BlockPersonaEdit.swift
+Because: "The persona editor shows such a persona's instructions as \"from profile <label>\", read-only."
+Decided: the #417 test personas set style detailed so their brief stays character, instructions, notes
+Because: crates/cooee/tests/personas.rs:283
+Rejected: none
+Owner: The branch is brought up to date with staging. The feature is unchanged.
