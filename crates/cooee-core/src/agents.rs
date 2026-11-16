@@ -5,7 +5,6 @@
 
 use std::{
     collections::BTreeMap,
-    env,
     fmt::Write as _,
     fs, io,
     path::{Path, PathBuf},
@@ -174,7 +173,7 @@ pub fn slug(label: &str) -> String {
 }
 
 pub(crate) fn whole(p: &Path, base: &Path) -> PathBuf {
-    match (p.strip_prefix("~"), env::var_os("HOME")) {
+    match (p.strip_prefix("~"), crate::env_var("HOME")) {
         (Ok(rest), Some(home)) => PathBuf::from(home).join(rest),
         _ => base.join(p),
     }
