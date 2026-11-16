@@ -23,7 +23,6 @@ fn every_earlier_release_loads_without_losing_data() {
         for id in store.ids().unwrap() {
             let file = release.join("threads").join(format!("{id}.json"));
             let thread = store.load(&id).unwrap_or_else(|e| panic!("{e}"));
-            // Every field of the old file survives into the typed thread.
             let raw: serde_json::Value = serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();
             assert_eq!(
                 serde_json::to_value(&thread).unwrap(),
@@ -31,9 +30,7 @@ fn every_earlier_release_loads_without_losing_data() {
                 "{}",
                 file.display()
             );
-            // #148: every thread from before is on this host.
             assert_eq!(thread.machine, "", "{}", file.display());
-            // And this build writes it back unchanged.
             rewritten.save(&thread).unwrap();
             assert_eq!(rewritten.load(&id).unwrap(), thread);
             checked += 1;
@@ -42,8 +39,6 @@ fn every_earlier_release_loads_without_losing_data() {
     assert!(checked >= 2, "fixtures missing under {}", root.display());
 }
 
-/// R2 (herdsman#539): every release's `config.toml` still loads, so an upgrade never stops the service on a key it
-/// used to read. A release that retires a key must keep reading it (with a warning) before this test passes again.
 #[test]
 fn every_earlier_release_config_loads() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/upgrade");

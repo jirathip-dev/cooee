@@ -17,7 +17,6 @@ use support::{Cooee, FakeShed, scratch, version};
 
 const DEFAULT: &str = include_str!("../../../apple/Sources/CooeeUI/Default/layout.json");
 
-/// `/layout/events`, read event by event: `(name, data)`.
 struct Events(BufReader<TcpStream>);
 
 impl Events {
@@ -53,7 +52,6 @@ impl Events {
     }
 }
 
-/// `GET /layout` with `If-None-Match: etag`: the status, `ETag` header and body.
 fn layout(c: &Cooee, etag: &str) -> (u16, String, String) {
     let cookie = c.cookie.as_str();
     let (head, body) = c.raw(
@@ -89,7 +87,6 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
     let c = Cooee::start(&dir, &shed.dir);
     let file = dir.join("layout.json");
 
-    // No file: the default, with its etag; 304 when the app already has it.
     let (code, tag, body) = layout(&c, "");
     let first: Value = serde_json::from_str(&body).unwrap();
     assert_eq!(
@@ -104,7 +101,6 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
         (304, tag.as_str(), "")
     );
 
-    // A good write is served and announced.
     let mut events = Events::open(&c);
     let good = DEFAULT.replace(r#""id": "home""#, r#""id": "home", "label": "Home""#);
     fs::write(&file, &good).unwrap();
@@ -118,7 +114,6 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
         "Home"
     );
 
-    // A bad one: `broken` with its line, and the good one is still served.
     let bad = good.replace(r#""place": "sheet" }"#, r#""place": "float" }"#);
     fs::write(&file, &bad).unwrap();
     let line = bad.lines().position(|l| l.contains("float")).unwrap() + 1;
@@ -133,10 +128,8 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
         "{data}"
     );
     assert_eq!(layout(&c, &good_tag).0, 304);
-    // A new subscriber hears it's broken at once.
     assert_eq!(Events::open(&c).next().0, "broken");
 
-    // `cooee layout check`, the same rules: the default passes, the bad file fails at that line.
     fs::write(dir.join("default.json"), DEFAULT).unwrap();
     assert!(check(&c, &dir.join("default.json")).0);
     let faded = DEFAULT.replace(
@@ -149,7 +142,6 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
     let fixtures = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../apple/Tests/CooeeCoreTests/Fixtures/layouts");
     for f in fs::read_dir(fixtures).unwrap() {
-        // The app's own refusals: each bad fixture fails here too; a locked screen named in a file is dropped.
         let f = f.unwrap().path();
         let ok = f.ends_with("locked-replaced.json");
         assert_eq!(check(&c, &f).0, ok, "{}", f.display());
@@ -160,7 +152,6 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
         "{out}"
     );
 
-    // Reset: the default written, the bad file kept as .bak, served and announced.
     let (code, body) = c.post("/layout/reset", &Value::Null);
     let reset: Value = serde_json::from_str(&body).unwrap();
     assert_eq!((code, &reset["etag"]), (200, &first["etag"]), "{body}");
@@ -173,7 +164,6 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
     assert_eq!(layout(&c, &tag).0, 304);
 }
 
-/// Installed `drover`: a Queue chip it may show as a chip, a sheet, a sidebar column or a menu row, never as cards.
 const MANIFEST: &str = "name = \"drover\"\nversion = \"0.1.0\"\nbuild = \"true\"\nrun = \"true\"\n\n[[places]]\n\
                         type = \"header-strip\"\nlabel = \"Queue\"\nscreen = \"/screens/queue\"\n\n[permissions]\n\
                         places = [\"header-strip\", \"menu-row\"]\n";
@@ -191,7 +181,6 @@ fn a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped() {
     let c = Cooee::start(&dir, &shed.dir);
     let served = |c: &Cooee| serde_json::from_str::<Value>(&layout(c, "").2).unwrap();
 
-    // No file: the default, drover's Queue chip in the chat's strip.
     let first = served(&c);
     let strip = &first["layout"]["root"]["slots"]["main"][1]["slots"]["strip"];
     assert_eq!(
@@ -202,8 +191,6 @@ fn a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped() {
     );
     assert_eq!(first["skipped"], serde_json::json!([]));
 
-    // The owner moves Queue to the Mac's sidebar (a menu row on iPhone) and asks for its cards: the sidebar keeps
-    // it, the cards node is skipped and reported, the rest is served as written and nothing is merged.
     let mut events = Events::open(&c);
     let moved = DEFAULT
         .replace(

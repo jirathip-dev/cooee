@@ -20,9 +20,6 @@ use std::{
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, HANG, is_item, others_go_on, scratch, version};
 
-/// A plugin backend on a free port: every request's head (request line and lowercased headers) and body. Its
-/// next answer to `/cooee/choice` is `choice`'s, when set; while `hang` is set (for at most [`HANG`]) it answers no
-/// choice.
 struct Backend {
     port: u16,
     seen: Arc<Mutex<Vec<(String, String)>>>,
@@ -52,7 +49,6 @@ impl Backend {
         }
     }
 
-    /// The `/cooee/choice` bodies it was sent.
     fn choices(&self) -> Vec<Value> {
         self.seen()
             .into_iter()
@@ -152,7 +148,6 @@ fn setup(name: &str) -> Setup {
     };
     let extra = plugin("a", "Alpha", a.port, TOKEN_A) + &plugin("b", "Beta", b.port, TOKEN_B);
     let cooee = Cooee::start_with(&dir, &shed.dir, &extra);
-    // Both plugins attached to persona `chief` (#129): their cards go to its threads only.
     let chief = json!({ "name": "Chief", "agent": "fake-acp", "plugins": ["a", "b"] });
     let (code, body) = cooee.post("/personas", &chief);
     assert_eq!(code, 200, "{body}");
@@ -170,7 +165,6 @@ fn status(head: &str) -> u16 {
 }
 
 impl Setup {
-    /// POSTs `body` to `path` as a plugin backend would: with `auth` (maybe none) and no cookie.
     fn as_backend(&self, path: &str, auth: &str, body: &Value) -> (u16, String) {
         let json = ("Content-Type", "application/json");
         let headers: &[(&str, &str)] = if auth.is_empty() {
@@ -201,7 +195,6 @@ fn the_proxy_sends_the_plugins_own_token_and_never_the_cookie() {
     );
     assert_eq!(sent, r#"{"n":1}"#);
 
-    // The other plugin's backend gets its own token; neither sees the other's calls.
     assert_eq!(s.cooee.get("/p/b/api/echo").0, 200);
     let (head, _) = s.b.seen().pop().unwrap();
     assert!(
@@ -211,7 +204,6 @@ fn the_proxy_sends_the_plugins_own_token_and_never_the_cookie() {
     assert_eq!(s.a.seen().len(), 1);
     assert!(s.b.seen().iter().all(|(h, _)| !h.contains(TOKEN_A)));
 
-    // An unpaired caller doesn't get through; an unknown plugin is not found.
     let (head, _) = s.cooee.raw("GET", "/p/a/api/echo", &[], "");
     assert_eq!(status(&head), 401);
     assert_eq!(s.a.seen().len(), 1);
@@ -246,7 +238,6 @@ fn a_backends_event_stream_comes_through_the_proxy() {
     assert!(head.contains("last-event-id: 6\r\n"), "{head}");
 }
 
-/// #290: a page closed on a stream that only ever hears heartbeats lets go of its backend connection at once.
 #[test]
 fn a_closed_page_closes_its_backend_stream() {
     let s = setup("plugin-sse-closed");
@@ -283,7 +274,6 @@ fn a_plugin_without_its_token_is_refused() {
         assert_eq!(s.as_backend("/plugin/push", auth, &push).0, 401, "{auth}");
         assert_eq!(s.as_backend("/plugin/card", auth, &card).0, 401, "{auth}");
     }
-    // A paired device's cookie is not a plugin's token.
     assert_eq!(s.cooee.post("/plugin/push", &push).0, 401);
 
     let (code, note) = s.as_backend("/plugin/push", &format!("Bearer {TOKEN_A}"), &push);
@@ -407,19 +397,16 @@ fn a_plugin_names_its_push_tag_and_sets_its_dot_only_with_its_token() {
     }
 }
 
-/// This device's label, as an answer's `by` names it.
 fn me(s: &Setup) -> String {
     let devices = s.cooee.json("/devices");
     let me = devices.as_array().unwrap().iter().find(|d| d["me"] == true);
     me.unwrap()["label"].as_str().unwrap().to_owned()
 }
 
-/// A new thread's id: one of persona `chief`'s.
 fn new_thread(s: &Setup, text: &str) -> String {
     thread_of(s, "chief", text)
 }
 
-/// A new thread of persona `persona` (none: Plain), once its agent has answered: its id.
 fn thread_of(s: &Setup, persona: &str, text: &str) -> String {
     let random = format!("r-{persona}-{text}");
     let new = json!({ "agent": "fake-acp", "profile": persona, "folder": s.dir.join("root/project"), "text": text, "random_id": random });
@@ -437,13 +424,11 @@ fn thread_of(s: &Setup, persona: &str, text: &str) -> String {
 }
 
 impl Setup {
-    /// Plugin a's card: its status and answer.
     fn card(&self, card: &Value) -> (u16, Value) {
         let (code, body) = self.as_backend("/plugin/card", &format!("Bearer {TOKEN_A}"), card);
         (code, serde_json::from_str(&body).unwrap_or(Value::Null))
     }
 
-    /// The owner's answer to `item` in `thread`.
     fn tap(&self, thread: &str, answer: &Value) -> Value {
         let (code, body) = self
             .cooee
@@ -453,8 +438,6 @@ impl Setup {
     }
 }
 
-/// #553 row 30: the recommended choice comes first and says so; the "other" box's text goes to the plugin like a
-/// choice; the answer keeps who (this device) and when.
 #[test]
 fn row_30_choice_rows_recommended_first_other_text_and_who_and_when() {
     let s = setup("card-30");
@@ -482,8 +465,6 @@ fn row_30_choice_rows_recommended_first_other_text_and_who_and_when() {
     assert!(answer["answered"].as_u64().unwrap() >= card["at"].as_u64().unwrap());
 }
 
-/// #553 row 31: a card the conductor answered itself shows its answer with [change] for 30 minutes; the owner's
-/// change goes to the plugin, and is the last.
 #[test]
 fn row_31_a_conductors_answer_takes_one_change_from_the_owner() {
     let s = setup("card-31");
@@ -516,8 +497,6 @@ fn row_31_a_conductors_answer_takes_one_change_from_the_owner() {
     );
 }
 
-/// #553 row 32: a config card carries its diff and waits (the slice and the thread list say so); [apply] settles
-/// it with the plugin's line; a plugin's 409 leaves it stale, with no buttons.
 #[test]
 fn row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale() {
     let s = setup("card-32");
@@ -571,7 +550,6 @@ fn row_32_config_card_waits_applies_with_the_plugins_line_or_goes_stale() {
     assert_eq!(s.a.choices().len(), 2, "a stale card takes no second tap");
 }
 
-/// #553 row 33: a secret card's value goes to its plugin and nowhere else: not the item, not the thread's files.
 #[test]
 fn row_33_a_secrets_value_reaches_its_plugin_only() {
     let s = setup("card-33");
@@ -603,8 +581,6 @@ fn row_33_a_secrets_value_reaches_its_plugin_only() {
     );
 }
 
-/// #553 row 35: a handoff puts `continued in` in the source and the text `from` it in the target; a line flows
-/// back; a pick-a-thread card offers the other open threads.
 #[test]
 fn row_35_handoff_chips_flow_back_lines_and_pick_a_thread() {
     let s = setup("card-35");
@@ -662,9 +638,6 @@ fn row_35_handoff_chips_flow_back_lines_and_pick_a_thread() {
     );
 }
 
-/// #83: a herdsman run card shows its command and sha; [approve] goes to the plugin once, carrying the card's sha
-/// (never the page's value), and settles with the exit code and output tail; a second approve sends nothing; [deny]
-/// carries no sha; an expired card's 409 leaves it stale.
 #[test]
 fn a_run_card_approves_once_with_its_sha_and_shows_the_tail() {
     let s = setup("card-83");
@@ -737,7 +710,6 @@ fn a_run_card_approves_once_with_its_sha_and_shows_the_tail() {
     );
 }
 
-/// #129: a plugin's card goes only to a thread of a persona it is attached to; any other is refused, with why.
 #[test]
 fn a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused() {
     let s = setup("card-unattached");
@@ -760,7 +732,6 @@ fn a_card_to_a_thread_of_a_persona_its_plugin_isnt_attached_to_is_refused() {
     assert_eq!(code, 200, "{body}");
 }
 
-/// `cooee plugin check` on `answer`: whether it passed, and what it printed.
 fn checked(s: &Setup, answer: &Value) -> (bool, String) {
     let file = s.dir.join("answer.json");
     std::fs::write(&file, answer.to_string()).unwrap();
@@ -775,8 +746,6 @@ fn checked(s: &Setup, answer: &Value) -> (bool, String) {
     )
 }
 
-/// #138: cooee's own choice, config, secret and run cards go out as #125 card blocks the schema passes, in the
-/// card's answer and in the thread's slice; once settled, a card shows its line and no longer asks.
 #[test]
 fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
     let s = setup("card-blocks");
@@ -849,7 +818,6 @@ fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
     );
 }
 
-/// #138: `cooee plugin check` passes every #125, #181, #184 and #213 fixture and fails a broken answer, naming the field.
 #[test]
 fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let design = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/design");
@@ -899,8 +867,6 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     );
 }
 
-/// #315: `cooee plugin check` passes a row's swipe and menu, a card's menu and a screen's refresh, and names each
-/// bad value.
 #[test]
 fn plugin_check_knows_swipe_menu_and_refresh() {
     let s = setup("additions-check");
@@ -927,8 +893,6 @@ fn plugin_check_knows_swipe_menu_and_refresh() {
     );
 }
 
-/// #288: a plugin whose answer hangs holds only its own card: meanwhile another thread's send, the thread list and
-/// the home page each answer, and that thread's reply streams in.
 #[test]
 fn a_hanging_plugin_answer_never_holds_another_thread() {
     let s = setup("plugin-hang");
@@ -953,8 +917,6 @@ fn a_hanging_plugin_answer_never_holds_another_thread() {
     });
 }
 
-/// #291: more calls to a hung plugin than the server has blocking threads: the first 8 wait on it, the rest fail at
-/// once, and meanwhile, while those 8 still hang, the hub and the other plugin each answer.
 #[test]
 fn a_hung_plugin_holds_only_its_own_calls() {
     let s = setup("plugin-busy");
@@ -1011,7 +973,6 @@ fn a_hung_plugin_holds_only_its_own_calls() {
     });
 }
 
-/// #226: `cooee plugin check` checks a `cooee-plugin.toml` by the manifest's rules, `attach` included.
 #[test]
 fn plugin_check_checks_a_manifest() {
     let s = setup("manifest-check");

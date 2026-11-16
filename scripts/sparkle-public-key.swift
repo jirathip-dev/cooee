@@ -1,5 +1,3 @@
-// #333: prints the public EdDSA key (base64) of Sparkle's private key in SPARKLE_ED_KEY: generate_keys exports the
-// 32-byte seed; an older export is 96 bytes, the expanded private key then the public key.
 import CryptoKit
 import Foundation
 

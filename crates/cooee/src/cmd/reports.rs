@@ -1,5 +1,3 @@
-//! `cooee reports`: the problems reported from the page.
-
 use cooee_core::Config;
 
 use crate::cli::{Failed, Flag, Invocation};
@@ -14,8 +12,6 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
     }
 }
 
-/// Lists the problems reported from the page (report mode), oldest first: when, the device, the page, the element
-/// and the note.
 fn reports(config: &Config) -> Result<(), String> {
     let data = config
         .data_dir()

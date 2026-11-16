@@ -1,5 +1,3 @@
-//! "Use a folder…" (#86) and a move to another machine (#151): a thread's agent starts again at its new place.
-
 use std::{collections::BTreeMap, fs, path::Path};
 
 use super::{
@@ -41,13 +39,6 @@ impl Hub {
         self.relaunch(id, (&folder, machine), recipe)
     }
 
-    /// Thread `id`'s later turns run in `folder` on `machine`. shed fixes a session's folder and machine when it
-    /// starts, so its agent starts again there as `recipe` says, and the next message carries a hand-over: the
-    /// profile's instructions, where it was and its last turns. The chat says so; the old terminal is closed.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a closed or Workflow thread; [`HubError::Shed`] when the agent can't start there
-    /// (the thread stays where it was).
     fn relaunch(
         &self,
         id: &str,

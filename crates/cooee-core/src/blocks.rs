@@ -1,6 +1,3 @@
-//! cooee's own chat cards as #125 blocks (#138): each approval goes out with the card block the native app draws
-//! (docs/plugins/screens.schema.json), so the app has one card renderer for cooee's cards and a plugin's.
-
 use serde::{Serialize, Serializer};
 use serde_json::{Value, json};
 
@@ -123,8 +120,6 @@ mod tests {
         }
     }
 
-    /// A conductor's answer shows its line and still asks while it may be changed; then only the line. The stored
-    /// item reads back as it was, its block left out.
     #[test]
     fn a_settled_card_asks_only_while_it_may_change_and_reads_back_without_its_block() {
         let types = |item: &Item| -> Vec<Value> {

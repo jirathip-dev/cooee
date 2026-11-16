@@ -17,7 +17,6 @@ mod service;
 mod setup;
 mod update;
 
-/// The usage line, every command's part in name order.
 fn usage_line() -> String {
     let parts: Vec<&str> = cmd::ALL.iter().map(|c| c.usage).collect();
     format!(
@@ -26,7 +25,6 @@ fn usage_line() -> String {
     )
 }
 
-/// Whether `instance` is a valid instance name: lowercase letters, digits and `-`.
 fn named(instance: &str) -> bool {
     !instance.is_empty()
         && instance

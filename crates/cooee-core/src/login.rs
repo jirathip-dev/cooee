@@ -1,6 +1,3 @@
-//! Provider sign-ins: each provider's own login, logout and status commands (config), run for one account's config
-//! folder; its signed-in state, and what of a login terminal's screen may reach the page: tokens redacted, links found.
-
 use std::{
     env,
     io::Read,
@@ -110,9 +107,6 @@ impl dyn Provider + '_ {
         self.spec().login.first().is_some_and(|b| !installed(b))
     }
 
-    /// Runs `cmd` (10 s at most) for the account in `home`, without its scrubbed variables; none when it timed out.
-    /// On unix it leads its own process group, so a timeout also ends what it started (#105: `security` on a locked
-    /// Keychain).
     fn run(&self, cmd: &[String], home: Option<&Path>) -> Result<Option<Ran>, String> {
         let Some((bin, args)) = cmd.split_first() else {
             return Err("no command".to_owned());
@@ -147,7 +141,6 @@ impl dyn Provider + '_ {
             match child.try_wait() {
                 Ok(Some(status)) => break status.success(),
                 Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(20)),
-                // The drain threads are left to end on their own: the group's death closes the pipes' write ends.
                 _ => {
                     kill_group(&mut child);
                     let _ = child.wait();
@@ -209,7 +202,6 @@ impl dyn Provider + '_ {
     }
 }
 
-/// A status command's plain reading: signed in when it exited 0, its output (stdout, else stderr) the line.
 pub(crate) fn plain_status(ran: &Ran) -> Status {
     let out = if ran.stdout.trim().is_empty() {
         &ran.stderr
@@ -236,7 +228,6 @@ pub struct Status {
     pub usage: Option<Usage>,
 }
 
-/// The status line of a status command that timed out.
 const TIMED_OUT: &str = "can't tell: the status command timed out";
 
 impl Status {
@@ -265,10 +256,8 @@ impl Status {
     }
 }
 
-/// How long a provider command may run (shorter in tests, so the timeout test is quick).
 const LIMIT: Duration = Duration::from_secs(if cfg!(test) { 2 } else { 10 });
 
-/// Ends `child` and, on unix, its whole process group (it leads it): SIGTERM, then SIGKILL 200 ms later.
 fn kill_group(child: &mut Child) {
     #[cfg(unix)]
     {
@@ -279,7 +268,6 @@ fn kill_group(child: &mut Child) {
     let _ = child.kill();
 }
 
-/// `text` on one line, redacted, at most 80 characters.
 pub(crate) fn one_line(text: &str) -> String {
     redact(&text.split_whitespace().collect::<Vec<_>>().join(" "))
         .chars()
@@ -287,7 +275,6 @@ pub(crate) fn one_line(text: &str) -> String {
         .collect()
 }
 
-/// Whether `bin` is a file, or one on `PATH` when it is a bare name.
 fn installed(bin: &str) -> bool {
     let path = Path::new(bin);
     if path.components().count() > 1 {
@@ -296,7 +283,6 @@ fn installed(bin: &str) -> bool {
     env::var_os("PATH").is_some_and(|p| env::split_paths(&p).any(|d| d.join(bin).is_file()))
 }
 
-/// Whether `c` may be part of a token.
 fn tokenish(c: char) -> bool {
     c.is_ascii_alphanumeric() || "-_.+=~".contains(c)
 }
@@ -404,7 +390,6 @@ mod tests {
         assert_eq!((s.signed_in, s.line.as_str()), (true, "Logged in as owner"));
         let s = p("echo not signed in >&2; exit 1").check(None);
         assert_eq!((s.signed_in, s.line.as_str()), (false, "not signed in"));
-        // An account's status runs with its folder in the provider's variable.
         let s = p("echo \"in $COOEE_TEST_HOME\"").check(Some(Path::new("/x/work")));
         assert_eq!((s.signed_in, s.line.as_str()), (true, "in /x/work"));
         assert_eq!(p("echo \"$COOEE_TEST_HOME\"").check(None).line, "");
@@ -445,7 +430,6 @@ mod tests {
         let started = Instant::now();
         let s = p.check(Some(&pids));
         assert!(started.elapsed() < LIMIT + Duration::from_secs(2));
-        // #106: it reads as unknown, never as signed out.
         assert_eq!(s, Status::unknown(TIMED_OUT));
         let pids = std::fs::read_to_string(&pids).unwrap();
         let alive = |pid: &str| {
@@ -456,7 +440,6 @@ mod tests {
                 .unwrap()
                 .success()
         };
-        // The orphaned child is reaped by init, so give it a moment to leave the process table.
         let gone = Instant::now() + Duration::from_secs(2);
         for pid in pids.split_whitespace() {
             while alive(pid) && Instant::now() < gone {

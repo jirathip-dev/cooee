@@ -30,7 +30,6 @@ fn packs() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs")
 }
 
-/// farm's pack copied to `to`, its `s-needs` gone when `broken`.
 fn farm_at(to: &Path, broken: bool) {
     fs::create_dir_all(to).unwrap();
     for f in ["theme.json", "sprites.svg", "scene.svg", "icon.png"] {
@@ -46,7 +45,6 @@ fn farm_at(to: &Path, broken: bool) {
     }
 }
 
-/// `cooee serve`, beside `sea.git`, a repo that is a pack at its root, and `broken.git`, one failing the gate.
 struct Setup {
     dir: PathBuf,
     _shed: FakeShed,
@@ -72,7 +70,6 @@ fn setup(name: &str) -> Setup {
 }
 
 impl Setup {
-    /// `cooee <args>`: whether it succeeded, and its stdout and stderr.
     fn run(&self, args: &[&str]) -> (bool, String) {
         let out = self.cooee.command().args(args).output().unwrap();
         let text = String::from_utf8_lossy(&out.stdout).into_owned()
@@ -111,7 +108,6 @@ fn add_remove_and_list_with_the_lock() {
     let s = setup("th-add");
     let (_, list) = s.run(&["theme", "list"]);
     assert!(list.starts_with("no themes installed"), "{list}");
-    // A first-party pack: swag's at its pin, from the build's checked copy, never fetched.
     let swag = Swag::pinned();
     let (ok, out) = s.run(&["theme", "add", "farm"]);
     assert!(ok, "{out}");
@@ -137,7 +133,6 @@ fn add_remove_and_list_with_the_lock() {
         "{out}"
     );
 
-    // A pack failing the gate is never installed.
     let broken = s.dir.join("broken.git").display().to_string();
     let (ok, out) = s.run(&["theme", "add", &broken, "--yes"]);
     assert!(!ok);
@@ -147,7 +142,6 @@ fn add_remove_and_list_with_the_lock() {
     );
     assert!(!themes.join("broken").exists());
 
-    // A git URL that isn't first-party is "not reviewed" and needs a yes.
     let sea = s.dir.join("sea.git").display().to_string();
     let (ok, out) = s.run(&["theme", "add", &sea]);
     assert!(
@@ -157,7 +151,6 @@ fn add_remove_and_list_with_the_lock() {
     assert!(!themes.join("sea").exists());
     let (ok, out) = s.run(&["theme", "add", &sea, "--yes"]);
     assert!(ok, "{out}");
-    // A folder, pinned at its repo's commit when it is in one.
     let kitchen = packs().join("themes/kitchen").display().to_string();
     let (ok, out) = s.run(&["theme", "add", &kitchen, "--yes"]);
     assert!(ok, "{out}");
@@ -200,10 +193,8 @@ fn a_pack_with_a_symlink_is_never_installed() {
     std::os::unix::fs::symlink(&secret, evil.join("icon.png")).unwrap();
     let (ok, out) = s.run(&["theme", "check", &evil.display().to_string()]);
     assert!(!ok && out.contains("icon.png: a symlink"), "{out}");
-    // From a folder: refused, not followed.
     let (ok, out) = s.run(&["theme", "add", &evil.display().to_string(), "--yes"]);
     assert!(!ok && out.contains("icon.png: a symlink"), "{out}");
-    // From a git URL: the archive keeps the link, so the gate refuses it.
     git(&evil, &["init", "--quiet", "-b", "main"]);
     git(&evil, &["add", "-A"]);
     git(&evil, &["commit", "--quiet", "-m", "evil"]);
@@ -254,7 +245,6 @@ fn the_gate_fails_active_content_in_a_packs_svg() {
         assert!(!ok, "{bad}: {out}");
         assert!(out.contains(&format!("     {file}: {why}")), "{bad}: {out}");
     }
-    // A local `#id` reference is fine.
     let dir = s.dir.join("local");
     farm_at(&dir, false);
     let svg = fs::read_to_string(dir.join("sprites.svg")).unwrap();
