@@ -1,7 +1,7 @@
 //! `GET /screens/plugins/{name}/attach?persona=` (#312): the attach sheet as data, one `permissions` card of what
 //! installed plugin `name` may do for the persona. Only core serves this card kind.
 
-use cooee_core::{personas, plugins::PlaceKind};
+use cooee_core::{agents, plugins::PlaceKind};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use topcoat::{
@@ -35,7 +35,7 @@ pub async fn attach(cx: &Cx) -> Result<Response> {
             return Ok(Err(format!("{name} isn't installed.")));
         };
         Ok::<_, std::io::Error>(
-            personas::find(config.as_deref(), &data, &q.persona)
+            agents::find(config.as_deref(), &data, &q.persona)
                 .map(|p| sheet(&row, &p.name))
                 .map_err(|e| e.to_string()),
         )

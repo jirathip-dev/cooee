@@ -1,9 +1,6 @@
 use std::{path::PathBuf, sync::Arc};
 
-use cooee_core::{
-    Config,
-    personas::{self, Persona},
-};
+use cooee_core::{Config, agents::Agent};
 use serde::Deserialize;
 use topcoat::{
     Result,
@@ -54,16 +51,17 @@ pub(crate) async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<c
     let done = tokio::task::spawn_blocking(move || {
         let (t, _) = hub.thread(&id)?;
         if !m.machine.is_empty() {
-            let p = personas::find(dir.as_deref(), &data, &t.profile).unwrap_or_else(|_| Persona {
+            let found = profiles(&hub, (&data, dir.as_deref()));
+            let found = found.into_iter().find(|a| a.id == t.profile);
+            let p = found.unwrap_or_else(|| Agent {
                 id: id.clone(),
                 agent: t.agent.clone(),
-                profile: Some(t.profile.clone()).filter(|p| !p.is_empty()),
                 folder: t
                     .folder
                     .as_ref()
                     .map(|f| f.display().to_string())
                     .unwrap_or_default(),
-                ..Persona::default()
+                ..Agent::default()
             });
             machine::ready(&config, &m.machine, &p).map_err(HubError::Refused)?;
         }

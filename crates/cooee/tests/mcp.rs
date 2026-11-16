@@ -22,7 +22,7 @@ use p256::{
 };
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use support::{Cooee, FakeShed, scratch, version};
+use support::{Cooee, FakeShed, agent, scratch, version};
 
 const SERVER: &str = r#"#!/bin/sh
 : >"$(dirname "$0")/ran"
@@ -59,12 +59,9 @@ fn setup(name: &str) -> Setup {
     fs::create_dir_all(server.parent().unwrap()).unwrap();
     fs::write(&server, SERVER).unwrap();
     fs::set_permissions(&server, fs::Permissions::from_mode(0o755)).unwrap();
-    fs::create_dir_all(dir.join("profiles")).unwrap();
-    fs::write(
-        dir.join("profiles/coder.toml"),
-        "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"fs\"\ntools = [\"a\"]\n",
-    )
-    .unwrap();
+    let coder =
+        "name = \"Coder\"\nagent = \"fake-acp\"\n\n[[mcp]]\nserver = \"fs\"\ntools = [\"a\"]\n";
+    agent(&dir, "coder", coder, "");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let extra = format!(
         "[[mcp]]\nname = \"fs\"\ncommand = {:?}\nenv = {{ TOKEN = \"secret:TOKEN\", WANT = \"env:WANT_TOKEN\" }}\n",

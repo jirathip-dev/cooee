@@ -32,8 +32,8 @@ use std::{
 
 use cooee_core::{
     Config, Device, Devices, Plugin, ShedError,
-    personas::{self, Persona},
-    skills,
+    agents::{self, Agent},
+    memory, skills,
 };
 use cooee_machines::Machines;
 use futures_util::{Stream, StreamExt, stream};
@@ -452,8 +452,10 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         } else {
             hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)?
         };
-        let ours = list.into_iter().find(|p| p.id() == profile);
-        let ours = ours.and_then(|p| Some((hub.backend(p.plugin.as_deref()?)?, p.name)));
+        let ours = list.into_iter().find(|a| a.id == profile).and_then(|a| {
+            let name = a.id.split_once('/')?.1.to_owned();
+            Some((hub.backend(&a.lent?.plugin)?, name))
+        });
         if let Some((b, name)) = ours
             && let Err(e) = plugin::started(&b, &id, &name)
         {
@@ -500,34 +502,13 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
 
 fn recipe(
     logins: &Logins,
-    (data, config, list): (
-        &std::path::Path,
-        Option<&std::path::Path>,
-        &[cooee_core::Profile],
-    ),
-    (agent, account, profile): (&str, Option<&str>, &str),
+    (data, config, list): (&std::path::Path, Option<&std::path::Path>, &[Agent]),
+    (agent, account, id): (&str, Option<&str>, &str),
     folder: PathBuf,
     (mut picked, setup): ((String, String), bool),
 ) -> Result<(String, PathBuf, Recipe), HubError> {
-    let persona = personas::find(config, data, profile).ok();
-    if let Some(p) = &persona {
-        for (pick, default) in [(&mut picked.0, &p.model), (&mut picked.1, &p.effort)] {
-            if pick.is_empty() {
-                pick.clone_from(default);
-            }
-        }
-    }
-    let (agent, profile, folder) = match &persona {
-        Some(p) => {
-            let keep = ["", "scratch"].contains(&p.folder.as_str());
-            let folder = if keep { folder } else { (&p.folder).into() };
-            (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder)
-        }
-        None => (agent, profile, folder),
-    };
-    let (agent, folder, mut recipe) = if profile.is_empty() {
-        let (account, mut launch) = logins.home(agent, account)?;
-        launch.meta = persona.as_ref().and(logins.no_personal_setup(agent));
+    let (agent, folder, mut recipe) = if id.is_empty() {
+        let (account, launch) = logins.home(agent, account)?;
         let recipe = Recipe {
             account,
             launch,
@@ -535,39 +516,42 @@ fn recipe(
         };
         (agent.to_owned(), folder, recipe)
     } else {
-        let p = list.iter().find(|p| p.id() == profile).cloned();
-        let p = p.ok_or_else(|| refused(format!("no profile {profile}")))?;
-        if p.hidden {
-            return Err(refused(format!("profile {profile} is hidden: {}", p.why)));
+        let a = list.iter().find(|a| a.id == id);
+        let a = a.ok_or_else(|| refused(format!("no profile {id}")))?;
+        if let Some(why) = a.lent.as_ref().and_then(|l| l.hidden.as_ref()) {
+            return Err(refused(format!("profile {id} is hidden: {why}")));
         }
-        let (account, launch, instructions) = logins.profile(&p, data)?;
+        for (pick, default) in [(&mut picked.0, &a.model), (&mut picked.1, &a.effort)] {
+            if pick.is_empty() {
+                pick.clone_from(default);
+            }
+        }
+        let (account, launch) = logins.agent(a, account, data)?;
         let recipe = Recipe {
             account,
-            profile: p.id(),
+            profile: a.id.clone(),
             launch,
-            instructions,
-            mcp: p.mcp.iter().map(|k| k.server.clone()).collect(),
+            instructions: a.brief(config),
+            mcp: a.mcp.iter().map(|k| k.server.clone()).collect(),
+            machine: a.machine.clone(),
             ..Recipe::default()
         };
-        (p.agent, p.folder.unwrap_or(folder), recipe)
+        (a.agent.clone(), a.work_folder().unwrap_or(folder), recipe)
     };
     recipe.launch.pick(logins.picks(&agent, &picked.1)?);
     (recipe.model, recipe.effort) = picked;
-    if let Some(mut p) = persona {
-        if p.instructions.trim().is_empty() {
-            p.instructions = std::mem::take(&mut recipe.instructions);
-        }
-        recipe.instructions = p.brief(data);
-        recipe.profile = p.id;
-        recipe.machine = p.machine;
-    } else if setup {
-        return Err(refused("a setup chat needs a persona"));
-    }
     if setup {
-        if !recipe.instructions.is_empty() {
-            recipe.instructions.push_str("\n\n");
+        if id.is_empty() || list.iter().any(|a| a.id == id && a.lent.is_some()) {
+            return Err(refused("a setup chat needs one of your own personas"));
         }
-        recipe.instructions.push_str(personas::SETUP);
+        if !recipe.instructions.is_empty() {
+            recipe.instructions.push_str(
+                "
+
+",
+            );
+        }
+        recipe.instructions.push_str(agents::SETUP);
         recipe.setup = true;
     }
     Ok((agent, folder, recipe))
@@ -725,7 +709,7 @@ fn runner(
     config: Option<&std::path::Path>,
 ) -> Arc<routines::Runner> {
     let (dir, config) = (data.to_owned(), config.map(ToOwned::to_owned));
-    let data = dir.clone();
+    let (data, settings) = (dir.clone(), config.clone());
     let start: routines::Start = Box::new(move |hub, who| {
         let list = profiles(hub, (&data, config.as_deref()));
         let (agent, folder, mut recipe) = recipe(
@@ -741,7 +725,11 @@ fn runner(
         let name = provider_name(&agent, &logins.statuses());
         Ok((agent, name, folder, recipe))
     });
-    Arc::new(routines::Runner::new(Arc::clone(hub), &dir, start))
+    Arc::new(routines::Runner::new(
+        Arc::clone(hub),
+        (settings.as_deref(), &dir),
+        start,
+    ))
 }
 
 #[derive(Deserialize)]
@@ -1041,13 +1029,10 @@ async fn passkey_check(cx: &Cx, Json(p): Json<passkey::Proof>) -> Result<Respons
 
 struct Data(PathBuf, Option<PathBuf>);
 
-fn profiles(
-    hub: &Hub,
-    (data, config): (&std::path::Path, Option<&std::path::Path>),
-) -> Vec<cooee_core::Profile> {
-    let mut list = cooee_core::profiles::list(config, data, |name| hub.served(name));
+fn profiles(hub: &Hub, (data, config): (&std::path::Path, Option<&std::path::Path>)) -> Vec<Agent> {
+    let mut list = agents::all(config, data, |name| hub.served(name));
     for p in &mut list {
-        let via = p.plugin.as_deref().and_then(|n| hub.backend(n));
+        let via = p.lent.as_ref().and_then(|l| hub.backend(&l.plugin));
         if let (Some(via), Some(a)) = (via, &mut p.avatar)
             && a.starts_with('/')
         {
@@ -1678,7 +1663,7 @@ fn bearer(cx: &Cx) -> String {
 #[route(POST "/mcp/agent/remember")]
 async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let (token, e) = (bearer(cx), serde_json::from_value(a.server));
-    let e: personas::Edit = e.map_err(|e| refused(format!("remember: {e}")))?;
+    let e: memory::Edit = e.map_err(|e| refused(format!("remember: {e}")))?;
     Ok(Answer(
         blocking(cx, move |hub| hub.remember(&a.thread, &token, &e)).await,
     ))
@@ -1703,27 +1688,27 @@ async fn on_personas<T: Send + 'static>(
     let d = app_context::<Data>(cx);
     let (data, config) = (d.0.clone(), d.1.clone());
     let done = blocking(cx, move |_| {
-        let config = config.ok_or_else(|| refused("there is no config folder for personas"))?;
+        let config = config.ok_or_else(|| refused("there is no config folder for agents"))?;
         f(&data, &config).map_err(refused)
     });
     Ok(Answer(done.await))
 }
 
 #[route(GET "/personas")]
-async fn persona_list(cx: &Cx) -> Result<Answer<Vec<Persona>>> {
-    on_personas(cx, |d, c| Ok(personas::list(Some(c), d))).await
+async fn persona_list(cx: &Cx) -> Result<Answer<Vec<Agent>>> {
+    on_personas(cx, |d, c| Ok(agents::list(Some(c), d))).await
 }
 
 #[route(POST "/personas")]
-async fn persona_new(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>> {
-    let p = Persona {
+async fn persona_new(cx: &Cx, Json(p): Json<Agent>) -> Result<Answer<Agent>> {
+    let p = Agent {
         id: String::new(),
         ..p
     };
     persona_save(cx, p).await
 }
 
-pub(crate) async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
+pub(crate) async fn persona_save(cx: &Cx, p: Agent) -> Result<Answer<Agent>> {
     let installed = hub(cx).installed();
     let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
     on_personas(cx, move |d, c| {
@@ -1732,7 +1717,7 @@ pub(crate) async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>>
             None => allowed(&machines, &p.machine),
         };
         why.map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-        personas::save(c, d, p)
+        agents::save(c, d, p)
     })
     .await
 }
@@ -1785,14 +1770,14 @@ async fn machine_list(cx: &Cx) -> Result<Answer<Vec<MachineRow>>> {
 }
 
 #[route(GET "/personas/{id}")]
-async fn persona_get(cx: &Cx) -> Result<Answer<Persona>> {
+async fn persona_get(cx: &Cx) -> Result<Answer<Agent>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| personas::find(Some(c), d, &id)).await
+    on_personas(cx, move |d, c| agents::find(Some(c), d, &id)).await
 }
 
 #[route(PUT "/personas/{id}")]
-async fn persona_put(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>> {
-    let p = Persona {
+async fn persona_put(cx: &Cx, Json(p): Json<Agent>) -> Result<Answer<Agent>> {
+    let p = Agent {
         id: thread_id(cx),
         ..p
     };
@@ -1800,59 +1785,55 @@ async fn persona_put(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
 }
 
 #[route(GET "/personas/{id}/places")]
-async fn places(cx: &Cx) -> Result<Answer<Vec<personas::Place>>> {
+async fn places(cx: &Cx) -> Result<Answer<Vec<agents::Place>>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| personas::places(Some(c), d, &id)).await
+    on_personas(cx, move |d, c| agents::places(Some(c), d, &id)).await
 }
 
 #[route(DELETE "/personas/{id}")]
 async fn persona_delete(cx: &Cx) -> Result<Answer<()>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| personas::remove(c, d, &id)).await
+    on_personas(cx, move |_, c| agents::remove(c, &id)).await
 }
 
 #[route(GET "/personas/{id}/memory")]
-async fn memory(cx: &Cx) -> Result<Answer<Vec<personas::Note>>> {
+async fn memory_list(cx: &Cx) -> Result<Answer<Vec<memory::Note>>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| {
-        Ok(personas::notes(d, &personas::find(Some(c), d, &id)?.id))
-    })
-    .await
+    on_personas(cx, move |_, c| Ok(memory::notes(&agents::home(c, &id)?))).await
 }
 
-async fn owner_edit(cx: &Cx, e: personas::Edit) -> Result<Answer<Option<personas::Note>>> {
+async fn owner_edit(cx: &Cx, e: memory::Edit) -> Result<Answer<Option<memory::Note>>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| {
-        let id = personas::find(Some(c), d, &id)?.id;
-        personas::remember(d, &id, "owner", &e, now())
+    on_personas(cx, move |_, c| {
+        memory::remember(&agents::home(c, &id)?, "owner", &e, now())
     })
     .await
 }
 
 #[route(POST "/personas/{id}/memory")]
-async fn memory_add(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<personas::Note>>> {
-    let e = personas::Edit {
+async fn memory_add(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<memory::Note>>> {
+    let e = memory::Edit {
         text: Some(n.text),
-        ..personas::Edit::default()
+        ..memory::Edit::default()
     };
     owner_edit(cx, e).await
 }
 
 #[route(PUT "/personas/{id}/memory/{name}")]
-async fn memory_put(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<personas::Note>>> {
-    let e = personas::Edit {
+async fn memory_put(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<memory::Note>>> {
+    let e = memory::Edit {
         text: Some(n.text),
         replaces: Some(path_param::<Name>(cx).to_owned()),
-        ..personas::Edit::default()
+        ..memory::Edit::default()
     };
     owner_edit(cx, e).await
 }
 
 #[route(DELETE "/personas/{id}/memory/{name}")]
-async fn memory_drop(cx: &Cx) -> Result<Answer<Option<personas::Note>>> {
-    let e = personas::Edit {
+async fn memory_drop(cx: &Cx) -> Result<Answer<Option<memory::Note>>> {
+    let e = memory::Edit {
         forget: vec![path_param::<Name>(cx).to_owned()],
-        ..personas::Edit::default()
+        ..memory::Edit::default()
     };
     owner_edit(cx, e).await
 }
@@ -1860,10 +1841,7 @@ async fn memory_drop(cx: &Cx) -> Result<Answer<Option<personas::Note>>> {
 #[route(DELETE "/personas/{id}/memory")]
 async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| {
-        personas::forget(d, &personas::find(Some(c), d, &id)?.id)
-    })
-    .await
+    on_personas(cx, move |_, c| memory::forget(&agents::home(c, &id)?)).await
 }
 
 fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
@@ -1878,7 +1856,7 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
         .route(places)
         .route(screen)
         .route(screen_action)
-        .route(memory)
+        .route(memory_list)
         .route(memory_add)
         .route(memory_put)
         .route(memory_drop)
@@ -1897,17 +1875,14 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
 #[route(GET "/personas/{id}/skills")]
 async fn skill_list(cx: &Cx) -> Result<Answer<Vec<skills::Skill>>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| {
-        Ok(skills::list(d, &personas::find(Some(c), d, &id)?.id))
-    })
-    .await
+    on_personas(cx, move |_, c| Ok(skills::list(&agents::home(c, &id)?))).await
 }
 
 #[route(POST "/personas/{id}/skills")]
 async fn skill_add(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| {
-        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, None)
+    on_personas(cx, move |_, c| {
+        skills::save(&agents::home(c, &id)?, s, None)
     })
     .await
 }
@@ -1915,17 +1890,14 @@ async fn skill_add(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skill
 #[route(GET "/personas/{id}/skills/{name}")]
 async fn skill_get(cx: &Cx) -> Result<Answer<skills::Skill>> {
     let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
-    on_personas(cx, move |d, c| {
-        skills::read(d, &personas::find(Some(c), d, &id)?.id, &name)
-    })
-    .await
+    on_personas(cx, move |_, c| skills::read(&agents::home(c, &id)?, &name)).await
 }
 
 #[route(PUT "/personas/{id}/skills/{name}")]
 async fn skill_put(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
     let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
-    on_personas(cx, move |d, c| {
-        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, Some(&name))
+    on_personas(cx, move |_, c| {
+        skills::save(&agents::home(c, &id)?, s, Some(&name))
     })
     .await
 }
@@ -1933,8 +1905,8 @@ async fn skill_put(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skill
 #[route(DELETE "/personas/{id}/skills/{name}")]
 async fn skill_delete(cx: &Cx) -> Result<Answer<()>> {
     let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
-    on_personas(cx, move |d, c| {
-        skills::remove(d, &personas::find(Some(c), d, &id)?.id, &name)
+    on_personas(cx, move |_, c| {
+        skills::remove(&agents::home(c, &id)?, &name)
     })
     .await
 }

@@ -7,7 +7,8 @@
 use std::{collections::BTreeSet, fs, path::Path};
 
 use cooee_core::{
-    Accounts, Config, Provider, Providers, Shed, personas, personas::Persona, profiles,
+    Accounts, Config, Provider, Providers, Shed,
+    agents::{self, Agent},
     shed_proto::LinkState,
 };
 
@@ -21,9 +22,7 @@ struct Ctx {
     shed: Shed,
     providers: Providers,
     accounts: Option<Accounts>,
-    personas: Vec<Persona>,
-    config: Option<std::path::PathBuf>,
-    data: std::path::PathBuf,
+    personas: Vec<Agent>,
 }
 
 impl Ctx {
@@ -33,9 +32,7 @@ impl Ctx {
             shed: Shed::new(config.shed.clone(), config.shed_dir.clone()),
             providers: Providers::new(&config.providers),
             accounts: config.data_dir().map(|d| Accounts::new(&d)),
-            personas: personas::list(config.dir.as_deref(), &data),
-            config: config.dir.clone(),
-            data,
+            personas: agents::list(config.dir.as_deref(), &data),
         }
     }
 
@@ -66,15 +63,11 @@ impl Ctx {
         vec![(false, format!("shed on {machine}: {why}"))]
     }
 
-    fn persona(&self, machine: &str, p: &Persona, yes: bool) -> Vec<Line> {
-        let profile = p
-            .profile
-            .as_deref()
-            .and_then(|id| profiles::find(self.config.as_deref(), &self.data, id).ok());
+    fn persona(&self, machine: &str, p: &Agent, yes: bool) -> Vec<Line> {
         let mut out = Vec::new();
         match self.providers.for_agent(&p.agent) {
             Some(provider) => {
-                let account = profile.as_ref().and_then(|f| f.account.as_deref());
+                let account = p.account.as_deref();
                 out.push(self.cli(machine, provider.as_ref()));
                 out.push(self.signed_in(machine, provider.as_ref(), account.unwrap_or("")));
             }
@@ -83,8 +76,8 @@ impl Ctx {
         if !matches!(p.folder.as_str(), "" | "scratch") {
             out.push(self.folder(machine, &p.folder, yes));
         }
-        if let Some(settings) = profile.and_then(|f| f.settings) {
-            out.push(self.rules(machine, &settings, yes));
+        if let Some(settings) = &p.settings {
+            out.push(self.rules(machine, settings, yes));
         }
         out.into_iter()
             .map(|(ok, what)| (ok, format!("{}: {what}", p.id)))
@@ -233,8 +226,8 @@ pub fn rows(config: &Config) -> Vec<Line> {
 ///
 /// # Errors
 /// What failed, one check a line.
-pub fn ready(config: &Config, machine: &str, p: &Persona) -> Result<(), String> {
-    let p = Persona {
+pub fn ready(config: &Config, machine: &str, p: &Agent) -> Result<(), String> {
+    let p = Agent {
         machine: machine.to_owned(),
         ..p.clone()
     };

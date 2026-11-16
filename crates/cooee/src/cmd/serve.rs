@@ -18,6 +18,9 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
 }
 
 fn serve(config: &Config) -> Result<(), String> {
+    if let Err(e) = crate::cli::migrate(config, false) {
+        cooee_core::note!("cooee: {e}");
+    }
     let machines = config.plugins.iter().find(|p| p.name == "machines");
     let terminal = config
         .plugins

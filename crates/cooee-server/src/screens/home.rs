@@ -1,6 +1,6 @@
 //! `GET /screens/home` (#311): the app's bundled home, its blocks filled with the threads and personas they draw.
 
-use cooee_core::personas;
+use cooee_core::agents;
 use serde_json::{Value, json};
 use topcoat::{
     Result,
@@ -24,7 +24,7 @@ pub async fn home(cx: &Cx) -> Result<Answer<Value>> {
             o.insert("threads".to_owned(), json!(hub.list()));
             o.insert(
                 "personas".to_owned(),
-                json!(personas::list(config.as_deref(), &data)),
+                json!(agents::list(config.as_deref(), &data)),
             );
         }
         Ok(super::core(screen))
