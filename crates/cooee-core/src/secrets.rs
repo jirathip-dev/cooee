@@ -241,7 +241,7 @@ mod tests {
         let d = crate::scratch::owned(
             std::env::temp_dir().join(format!("cooee-secrets-{name}-{}", std::process::id())),
         );
-        let _ = fs::remove_dir_all(&d);
+        fs::remove_dir_all(&d).ok();
         fs::create_dir_all(d.join("secrets")).unwrap();
         d
     }
@@ -250,7 +250,7 @@ mod tests {
     fn a_keychain_call_that_hangs_is_a_time_out_error() {
         let (_hold, gate) = mpsc::channel::<()>();
         let r = limited(Duration::from_millis(20), move || {
-            let _ = gate.recv();
+            gate.recv().ok();
             Ok(())
         });
         let e = r.unwrap_err();

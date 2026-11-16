@@ -32,27 +32,35 @@ impl Schedule {
     pub fn parse(text: &str) -> Result<Self, String> {
         let words: Vec<&str> = text.split_whitespace().collect();
         let bad = |why: String| format!("BAD_SCHEDULE: {text:?} {why}");
-        if words.len() != 5 {
+        let Ok(five) = <[&str; 5]>::try_from(words.as_slice()) else {
             return Err(bad(
                 "isn't 5 fields: minute hour day-of-month month day-of-week".to_owned(),
             ));
-        }
+        };
         let mut fields = [0; 5];
-        for (i, w) in words.iter().enumerate() {
-            fields[i] =
-                field(w, RANGES[i]).ok_or_else(|| bad(format!("has a bad {}", NAMES[i])))?;
+        for ((f, w), (range, name)) in fields
+            .iter_mut()
+            .zip(five)
+            .zip(RANGES.into_iter().zip(NAMES))
+        {
+            *f = field(w, range).ok_or_else(|| bad(format!("has a bad {name}")))?;
         }
+        let [_, _, dom, _, dow] = five;
         if (fields[4] >> 7) & 1 == 1 {
             fields[4] = (fields[4] | 1) & !(1 << 7);
         }
         let s = Self {
             text: words.join(" "),
             fields,
-            either_day: !words[2].starts_with('*') && !words[4].starts_with('*'),
+            either_day: !dom.starts_with('*') && !dow.starts_with('*'),
         };
         let times = s.times();
         let wrap = times.first().map_or(DAY, |f| f + DAY) - times.last().copied().unwrap_or(0);
-        let gap = times.windows(2).map(|w| w[1] - w[0]).fold(wrap, i64::min);
+        let gap = times
+            .iter()
+            .zip(times.iter().skip(1))
+            .map(|(a, b)| b - a)
+            .fold(wrap, i64::min);
         if gap < 15 {
             return Err(bad("runs more often than every 15 minutes".to_owned()));
         }
@@ -82,11 +90,14 @@ impl Schedule {
     #[must_use]
     pub fn describe(&self) -> String {
         let w: Vec<&str> = self.text.split(' ').collect();
-        let (Ok(m), Ok(h)) = (w[0].parse::<u8>(), w[1].parse::<u8>()) else {
+        let Ok([m, h, dom, mon, dow]) = <[&str; 5]>::try_from(w.as_slice()) else {
             return self.text.clone();
         };
-        let day = w[4].parse::<usize>().ok().and_then(|d| DAYS.get(d % 7));
-        match (w[2], w[3], w[4], day) {
+        let (Ok(m), Ok(h)) = (m.parse::<u8>(), h.parse::<u8>()) else {
+            return self.text.clone();
+        };
+        let day = dow.parse::<usize>().ok().and_then(|d| DAYS.get(d % 7));
+        match (dom, mon, dow, day) {
             ("*", "*", "*", _) => format!("every day {h:02}:{m:02}"),
             ("*", "*", _, Some(d)) => format!("{d} {h:02}:{m:02}"),
             _ => self.text.clone(),
@@ -94,7 +105,7 @@ impl Schedule {
     }
 
     fn has(&self, f: usize, n: i64) -> bool {
-        (self.fields[f] >> n) & 1 == 1
+        self.fields.get(f).is_some_and(|b| (b >> n) & 1 == 1)
     }
 
     fn times(&self) -> Vec<i64> {

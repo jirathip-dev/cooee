@@ -36,7 +36,7 @@ fn b64(bytes: &[u8]) -> String {
             | u32::from(*c.get(2).unwrap_or(&0));
         for i in 0..4 {
             out.push(if i <= c.len() {
-                A[(n >> (18 - 6 * i) & 63) as usize] as char
+                char::from(A[usize::try_from(n >> (18 - 6 * i) & 63).unwrap()])
             } else {
                 '='
             });

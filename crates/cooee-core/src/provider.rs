@@ -75,11 +75,11 @@ impl Providers {
     /// Each spec built by the entry its `base`, else its `name`, names; else [`Plain`].
     #[must_use]
     pub fn new(specs: &[Spec]) -> Self {
-        let build = |s: &Spec| {
+        let build = |s: &Spec| -> Arc<dyn Provider> {
             let name = s.base.as_deref().unwrap_or(&s.name);
             match REGISTRY.iter().find(|e| e.name == name) {
                 Some(e) => (e.build)(s.clone()),
-                None => Arc::new(Plain(s.clone())) as Arc<dyn Provider>,
+                None => Arc::new(Plain(s.clone())),
             }
         };
         Self(specs.iter().map(build).collect())

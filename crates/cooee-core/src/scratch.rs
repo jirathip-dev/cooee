@@ -7,7 +7,7 @@ struct Owned(RefCell<Vec<PathBuf>>);
 impl Drop for Owned {
     fn drop(&mut self) {
         for p in self.0.get_mut().drain(..) {
-            let _ = fs::remove_dir_all(&p).or_else(|_| fs::remove_file(&p));
+            fs::remove_dir_all(&p).or_else(|_| fs::remove_file(&p)).ok();
         }
     }
 }

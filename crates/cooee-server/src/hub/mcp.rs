@@ -76,7 +76,7 @@ impl Proposal {
 impl Hub {
     /// Agents' MCP proxies reach cooee at `url` (`cooee serve`, once it listens).
     pub fn listening(&self, url: String) {
-        let _ = self.url.set(url);
+        self.url.set(url).ok();
     }
 
     /// The registry, read from the config file now.

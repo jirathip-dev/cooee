@@ -11,7 +11,7 @@ use crate::service::{label, shed_install, tailnet_name};
 pub(crate) fn doctor(config: &Config) -> Result<(), String> {
     let mut failed = Vec::new();
     let mut check = |ok: bool, what: String| {
-        println!("{} {what}", if ok { "ok  " } else { "FAIL" });
+        cooee_core::say!("{} {what}", if ok { "ok  " } else { "FAIL" });
         if !ok {
             failed.push(format!("FAIL {what}"));
         }
@@ -34,7 +34,7 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
         Ok(()) => {
             check(true, format!("shed at {}", shed.socket.display()));
             if shed.agents().is_ok_and(|a| a.is_empty()) {
-                println!(
+                cooee_core::say!(
                     "warn no agents installed in shed\n     fix: {}",
                     agents_fix()
                 );
@@ -50,20 +50,20 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
         check(ok, what);
     }
     if config.roots.is_empty() {
-        println!("warn no roots configured\n     fix: add {ROOTS_FIX} to config.toml");
+        cooee_core::say!("warn no roots configured\n     fix: add {ROOTS_FIX} to config.toml");
     }
     let data = config.data_dir().ok_or("no data folder")?;
     match cooee_server::Push::new(&data)
         .with_apns(config.apns.clone())
         .apns_ready()
     {
-        Ok(()) => println!("ok   apns ready"),
-        Err(why) => println!("warn apns: {why}: the native app gets no pushes"),
+        Ok(()) => cooee_core::say!("ok   apns ready"),
+        Err(why) => cooee_core::say!("warn apns: {why}: the native app gets no pushes"),
     }
     match cooee_server::Push::new(&data).has_key() {
-        Ok(true) => println!("ok   push keys stored"),
+        Ok(true) => cooee_core::say!("ok   push keys stored"),
         Ok(false) => {
-            println!("ok   push keys: none yet (made when a phone turns on notifications)");
+            cooee_core::say!("ok   push keys: none yet (made when a phone turns on notifications)");
         }
         Err(e) => check(false, format!("push keys: {e}")),
     }

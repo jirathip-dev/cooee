@@ -25,9 +25,14 @@ fn reports(config: &Config) -> Result<(), String> {
         .lines()
         .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
     {
-        let s = |k: &str| r[k].as_str().unwrap_or_default().to_owned();
-        let at = r["at"].as_u64().unwrap_or(0) / 1000;
-        println!(
+        let s = |k: &str| {
+            r.get(k)
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_owned()
+        };
+        let at = r.get("at").and_then(serde_json::Value::as_u64).unwrap_or(0) / 1000;
+        cooee_core::say!(
             "{at}  {}  {}  {}\n    {}",
             s("device"),
             s("path"),
@@ -36,7 +41,7 @@ fn reports(config: &Config) -> Result<(), String> {
         );
     }
     if text.is_empty() {
-        println!("no reports");
+        cooee_core::say!("no reports");
     }
     Ok(())
 }

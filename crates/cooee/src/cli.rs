@@ -160,14 +160,14 @@ pub(crate) fn load(path: Option<&Path>, instance: &str) -> Result<Config, String
 }
 
 pub(crate) fn confirm(text: &str, yes: bool) -> Result<(), String> {
-    println!("{text}");
+    cooee_core::say!("{text}");
     if yes {
         return Ok(());
     }
-    print!("go ahead? [y/N] ");
-    let _ = std::io::Write::flush(&mut std::io::stdout());
+    cooee_core::say_open!("go ahead? [y/N] ");
+    std::io::Write::flush(&mut std::io::stdout()).ok();
     let mut answer = String::new();
-    let _ = std::io::stdin().read_line(&mut answer);
+    std::io::stdin().read_line(&mut answer).ok();
     match answer.trim() {
         "y" | "yes" => Ok(()),
         _ => Err("nothing changed".to_owned()),

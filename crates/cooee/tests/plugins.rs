@@ -95,18 +95,20 @@ fn answer(
         && let Some((code, v)) = choice.lock().unwrap().take()
     {
         let mut s = r.into_inner();
-        let _ = write!(
+        write!(
             s,
             "HTTP/1.0 {code} X\r\nContent-Type: application/json\r\n\r\n{v}"
-        );
+        )
+        .ok();
         return;
     }
     if path == "/beats" {
         let mut s = r.into_inner();
-        let _ = write!(
+        write!(
             s,
             "HTTP/1.0 200 OK\r\nContent-Type: text/event-stream\r\n\r\n"
-        );
+        )
+        .ok();
         while s.write_all(b": beat\n\n").is_ok() {
             thread::sleep(Duration::from_millis(50));
         }
@@ -123,7 +125,7 @@ fn answer(
         _ => ("application/json", json!({ "path": path }).to_string()),
     };
     let mut s = r.into_inner();
-    let _ = write!(s, "HTTP/1.0 200 OK\r\nContent-Type: {kind}\r\n\r\n{text}");
+    write!(s, "HTTP/1.0 200 OK\r\nContent-Type: {kind}\r\n\r\n{text}").ok();
 }
 
 const TOKEN_A: &str = "token-a-0123456789abcdef";
@@ -925,7 +927,7 @@ fn a_hung_plugin_holds_only_its_own_calls() {
         for _ in 0..600 {
             let tx = tx.clone();
             scope.spawn(move || {
-                let _ = tx.send(call());
+                tx.send(call()).ok();
             });
         }
         let busy: Vec<String> = answers.iter().take(592).collect();

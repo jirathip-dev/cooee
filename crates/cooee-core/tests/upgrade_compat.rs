@@ -18,7 +18,7 @@ fn every_earlier_release_loads_without_losing_data() {
             release.file_name().unwrap().to_string_lossy(),
             std::process::id()
         )));
-        let _ = fs::remove_dir_all(&scratch);
+        fs::remove_dir_all(&scratch).ok();
         let rewritten = Store::open(&scratch).unwrap();
         for id in store.ids().unwrap() {
             let file = release.join("threads").join(format!("{id}.json"));

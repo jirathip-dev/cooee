@@ -36,6 +36,30 @@ paths = ["crates/*/src/**"]
 except = ["crates/cooee-core/src/runner.rs"]
 reason = "#202: only the runner starts a process: use cooee_core::runner::command"
 
+[[ban]]
+pattern = "thread::sleep"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/clock.rs"]
+reason = "#203: only the clock sleeps: use cooee_core::clock::sleep"
+
+[[ban]]
+pattern = "SystemTime::now"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/clock.rs"]
+reason = "#203: only the clock reads the time: use cooee_core::clock::now"
+
+[[ban]]
+pattern = "Instant::now"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/clock.rs"]
+reason = "#203: only the clock reads the time: use cooee_core::clock::instant"
+
+[[ban]]
+pattern = "env::var"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/config.rs"]
+reason = "#203: only the config module reads the environment: use cooee_core::env_var"
+
 [[collect]]
 dir = "crates/cooee/tests/support"
 glob = "*.rs"

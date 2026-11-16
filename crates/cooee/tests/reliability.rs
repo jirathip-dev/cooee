@@ -418,7 +418,7 @@ fn r14_a_crash_between_start_and_send_is_recovered_once() {
         .args(["-9", &cooee.child.id().to_string()])
         .status();
     assert!(killed.unwrap().success());
-    let _ = lost.join();
+    lost.join().ok();
     drop(cooee);
     shed.gate("hold-ready", false);
 

@@ -21,13 +21,14 @@ pub struct Swag {
 }
 
 impl Swag {
-    /// The pin this build was made from.
-    ///
-    /// # Panics
-    /// Never once its test passes: the pin is compiled in.
+    /// The pin this build was made from (compiled in; its test parses it); unparsable, a pin with no files.
     #[must_use]
     pub fn pinned() -> Self {
-        toml::from_str(PIN).expect("packs/swag.toml parses")
+        toml::from_str(PIN).unwrap_or_else(|_| Self {
+            url: String::new(),
+            commit: String::new(),
+            sha256: BTreeMap::new(),
+        })
     }
 
     /// The packs' names, in name order.
