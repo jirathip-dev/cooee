@@ -11,7 +11,7 @@ use std::{
 use serde::Deserialize;
 
 use crate::{
-    agents::{self, Agent, Role},
+    agents::{self, Agent, Role, Style},
     memory::{self, Note},
     profiles::Profile,
     routines::{self, Routine},
@@ -30,9 +30,6 @@ pub enum State {
     Old,
 }
 
-/// One step of the move: a file of the new layout (its bytes, what it was made from, a note shown after it), a file
-/// copied byte for byte, something the owner should know (files and keys, never a value), or an old path renamed as
-/// its backup.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Step {
     Write {
@@ -63,12 +60,12 @@ pub struct Plan {
     routines: usize,
 }
 
-/// A persona file as the last build before `agents/` wrote it.
 #[derive(Debug, Default, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 struct Persona {
     name: String,
     role: Option<Role>,
+    style: Option<Style>,
     fleets: Vec<String>,
     avatar: Option<String>,
     character: String,
@@ -84,13 +81,11 @@ struct Persona {
     profile: Option<String>,
 }
 
-/// `<data>/routines.json`.
 #[derive(Deserialize)]
 struct OldRoutines {
     routines: Vec<Routine>,
 }
 
-/// The files under `dir`, at any depth, sorted.
 fn files_under(dir: &Path) -> Vec<PathBuf> {
     let mut out = Vec::new();
     for e in fs::read_dir(dir).into_iter().flatten().flatten() {
@@ -105,7 +100,6 @@ fn files_under(dir: &Path) -> Vec<PathBuf> {
     out
 }
 
-/// The `.toml` files in `dir`, sorted.
 fn tomls(dir: &Path) -> Vec<PathBuf> {
     let mut out: Vec<PathBuf> = fs::read_dir(dir)
         .into_iter()
@@ -189,7 +183,6 @@ impl Plan {
         self.state
     }
 
-    /// `p` as a line shows it: under the config folder relative, under the data folder `<data>/…`.
     fn show(&self, p: &Path) -> String {
         match (p.strip_prefix(&self.config), p.strip_prefix(&self.data)) {
             (Ok(rel), _) => rel.display().to_string(),
@@ -212,7 +205,6 @@ impl Plan {
         });
     }
 
-    /// The owner's profiles that can run: by name, each with its file; the others warned of.
     fn profiles(&mut self) -> Vec<(PathBuf, Agent)> {
         let dir = self.config.join("profiles");
         let mut out: Vec<(PathBuf, Agent)> = Vec::new();
@@ -265,8 +257,6 @@ impl Plan {
         out
     }
 
-    /// Every agent's folder: each persona, merged with the profile it runs as, then each profile with no persona of
-    /// its name; then the notes and skills of ids that are no agent.
     fn agents(&mut self) {
         let profiles = self.profiles();
         let lent = agents::all(None, &self.data, |_| None);
@@ -298,14 +288,16 @@ impl Plan {
                     .map(|a| (PathBuf::new(), a.clone()));
                 (name.to_owned(), owner.or(theirs))
             });
+            let role = p.role.unwrap_or(if id == "conductor" {
+                Role::Orchestrator
+            } else {
+                Role::Plain
+            });
             let mut a = Agent {
                 id: id.clone(),
                 name: p.name,
-                role: p.role.unwrap_or(if id == "conductor" {
-                    Role::Orchestrator
-                } else {
-                    Role::Plain
-                }),
+                role,
+                style: agents::style(role, p.style),
                 fleets: p.fleets,
                 avatar: p.avatar,
                 character: p.character,
@@ -342,7 +334,8 @@ impl Plan {
                 } else {
                     Role::Plain
                 };
-                made.push((Agent { role, ..f }, vec![file]));
+                let style = agents::style(role, None);
+                made.push((Agent { role, style, ..f }, vec![file]));
             }
         }
         let mut ids: Vec<String> = made.iter().map(|(a, _)| a.id.clone()).collect();
@@ -363,7 +356,6 @@ impl Plan {
         }
     }
 
-    /// `a`, a persona, as it ran as profile `f`: the profile's agent, folder and launch keys win.
     fn merge(&mut self, a: &mut Agent, f: Agent, shown: &str) {
         let id = a.id.clone();
         if f.name != a.name {
@@ -395,8 +387,6 @@ impl Plan {
             (f.account, f.settings, f.env, f.mcp, f.policy);
     }
 
-    /// Agent `a`'s folder, made from the files `from`: its three files, a settings file inside `profiles/` copied
-    /// in, then its notes and skills.
     fn folder(&mut self, mut a: Agent, from: &[PathBuf]) {
         let dir = self.config.join("agents").join(&a.id);
         let profiles = self.config.join("profiles");
@@ -429,7 +419,6 @@ impl Plan {
         self.kept(&a.id);
     }
 
-    /// Agent `id`'s notes and skills, from `<data>/personas/<id>/`.
     fn kept(&mut self, id: &str) {
         let (old, dir) = (
             self.data.join("personas").join(id),
@@ -454,7 +443,6 @@ impl Plan {
         }
     }
 
-    /// `routines.toml` and `<data>/routine-runs.json` from `<data>/routines.json`.
     fn routines(&mut self) {
         let file = self.data.join("routines.json");
         let Ok(bytes) = fs::read(&file) else { return };

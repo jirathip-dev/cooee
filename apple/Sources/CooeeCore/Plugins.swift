@@ -57,22 +57,10 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
     public let url: String
     public let listed: Bool
     public let places: [PluginPlace]
+    public let claims: [String]
     public let permissions: PluginPermissions
 
     public var id: String { name }
-
-    public var source: String { listed ? "cooee's index" : url }
-
-    public var may: [String] {
-        let lines = places.map { place in
-            switch place.kind {
-            case "header-strip": "\(place.label) chip on the header strip"
-            case "chat-cards": "cards in its chats"
-            default: "\(place.label) row in Plugins"
-            }
-        }
-        return lines + (permissions.push ? ["notifications"] : [])
-    }
 
     public init(
         name: String,
@@ -81,6 +69,7 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
         url: String = "",
         listed: Bool = true,
         places: [PluginPlace],
+        claims: [String] = [],
         permissions: PluginPermissions
     ) {
         self.name = name
@@ -89,6 +78,7 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
         self.url = url
         self.listed = listed
         self.places = places
+        self.claims = claims
         self.permissions = permissions
     }
 }

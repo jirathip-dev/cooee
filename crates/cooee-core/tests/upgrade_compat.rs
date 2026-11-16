@@ -21,7 +21,6 @@ fn releases() -> Vec<PathBuf> {
     out
 }
 
-/// A release folder's config and data folders.
 fn folders(release: &Path) -> (PathBuf, PathBuf) {
     if release.join("config").is_dir() {
         (release.join("config"), release.join("data"))
@@ -30,7 +29,6 @@ fn folders(release: &Path) -> (PathBuf, PathBuf) {
     }
 }
 
-/// Every file under `dir`, by its path relative to `dir`, with its bytes.
 fn tree(dir: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     fn walk(root: &Path, dir: &Path, out: &mut BTreeMap<PathBuf, Vec<u8>>) {
         for e in fs::read_dir(dir).into_iter().flatten().flatten() {
@@ -50,7 +48,6 @@ fn tree(dir: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     out
 }
 
-/// `from`'s files copied under `to`.
 fn copy(from: &Path, to: &Path) {
     for (rel, bytes) in tree(from) {
         fs::create_dir_all(to.join(&rel).parent().unwrap()).unwrap();
@@ -74,7 +71,6 @@ fn every_earlier_release_loads_without_losing_data() {
         for id in store.ids().unwrap() {
             let file = data.join("threads").join(format!("{id}.json"));
             let thread = store.load(&id).unwrap_or_else(|e| panic!("{e}"));
-            // Every field of the old file survives into the typed thread.
             let raw: serde_json::Value = serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();
             assert_eq!(
                 serde_json::to_value(&thread).unwrap(),
@@ -82,9 +78,7 @@ fn every_earlier_release_loads_without_losing_data() {
                 "{}",
                 file.display()
             );
-            // #148: every thread from before is on this host.
             assert_eq!(thread.machine, "", "{}", file.display());
-            // And this build writes it back unchanged.
             rewritten.save(&thread).unwrap();
             assert_eq!(rewritten.load(&id).unwrap(), thread);
             checked += 1;
@@ -93,8 +87,6 @@ fn every_earlier_release_loads_without_losing_data() {
     assert!(checked >= 3, "fixtures missing");
 }
 
-/// R2 (herdsman#539): every release's `config.toml` still loads, so an upgrade never stops the service on a key it
-/// used to read. A release that retires a key must keep reading it (with a warning) before this test passes again.
 #[test]
 fn every_earlier_release_config_loads() {
     let mut checked = 0;
@@ -109,7 +101,6 @@ fn every_earlier_release_config_loads() {
     assert!(checked >= 2, "no config fixture");
 }
 
-/// The leaf values of a TOML or JSON value, as text.
 fn leaves(v: &serde_json::Value, out: &mut Vec<String>) {
     match v {
         serde_json::Value::Object(m) => m.values().for_each(|v| leaves(v, out)),
@@ -122,7 +113,6 @@ fn leaves(v: &serde_json::Value, out: &mut Vec<String>) {
 
 const DAY: &str = "2026-11-14";
 
-/// The migrated files, as `expected/` lays them out: `agents/…`, `routines.toml` and `routine-runs.json`.
 fn migrated(config: &Path, data: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     let mut new: BTreeMap<PathBuf, Vec<u8>> = tree(&config.join("agents"))
         .into_iter()
@@ -135,7 +125,6 @@ fn migrated(config: &Path, data: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     new
 }
 
-/// Asserts every value of a moved persona, profile, note or routine in `before` is in `new`'s paths or text.
 fn nothing_lost(name: &str, before: &BTreeMap<PathBuf, Vec<u8>>, new: &BTreeMap<PathBuf, Vec<u8>>) {
     let mut text = String::new();
     for (p, b) in new {
@@ -171,17 +160,12 @@ fn nothing_lost(name: &str, before: &BTreeMap<PathBuf, Vec<u8>>, new: &BTreeMap<
             _ => {}
         }
     }
-    // The cells where the persona's wins (the profile's label and avatar, its unread instructions file), and an
-    // instructions file's name (its text is INSTRUCTIONS.md).
     let overridden = ["Kai the Coder", "s-kai", "kai.md", "coder.md"];
     for v in values.iter().filter(|v| !overridden.contains(&v.as_str())) {
         assert!(text.contains(v.as_str()), "{name}: {v:?} is lost");
     }
 }
 
-/// #359: on a copy of each release, the move keeps every old file byte for byte under its backup name, writes the
-/// expected tree, finds every old value in the new files (the profile's label and instructions file a persona
-/// overrides aside), and a second run is done with nothing to do and moves nothing.
 #[test]
 fn every_earlier_release_migrates_once_losing_nothing() {
     let mut moved = 0;
@@ -198,7 +182,6 @@ fn every_earlier_release_migrates_once_losing_nothing() {
         plan.apply(|_| {}).unwrap();
         let after = tree(&scratch);
 
-        // Every old file, byte for byte, under its own name or its backup's.
         let rel = |p: &Path| p.strip_prefix(&scratch).unwrap().to_owned();
         let olds = [
             config.join("personas"),
@@ -243,7 +226,6 @@ fn every_earlier_release_migrates_once_losing_nothing() {
             nothing_lost(&name, &before, &new);
         }
 
-        // Once: a second plan has nothing to do, and running it moves nothing.
         let again = migrate::plan(&config, &data, DAY);
         let want = if old {
             migrate::State::Done

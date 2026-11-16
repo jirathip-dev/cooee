@@ -1,5 +1,6 @@
 name = "Kai"
 role = "orchestrator"
+style = "detailed"
 fleets = ["cooee","drover"]
 avatar = "https://example.com/kai.png"
 folder = "/srv/site"

@@ -24,8 +24,6 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use support::{Cooee, FakeShed, agent, scratch, version};
 
-/// The fake MCP server: tools a, b and c; a call says which tool ran and whether `TOKEN` (a `secret:`) equals
-/// `WANT` (an `env:`); `ran` is touched when it starts.
 const SERVER: &str = r#"#!/bin/sh
 : >"$(dirname "$0")/ran"
 while IFS= read -r line; do
@@ -48,12 +46,9 @@ struct Setup {
     dir: PathBuf,
     shed: FakeShed,
     cooee: Cooee,
-    /// A secret-shaped value, built at runtime: `secret:TOKEN` and `env:WANT_TOKEN`.
     token: String,
 }
 
-/// cooee with the fake server `fs` (its `TOKEN` a secret, its `WANT` from cooee's environment) and the profile
-/// agent `coder` picking `fs` with only tool `a`.
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     let token = format!("tk-{}", "q7".repeat(16));
@@ -82,7 +77,6 @@ fn setup(name: &str) -> Setup {
 }
 
 impl Setup {
-    /// Starts a thread with `profile` (empty: Plain); its id and the MCP servers its agent was given.
     fn thread(&self, profile: &str) -> (String, Vec<Value>) {
         let random = format!("start-{}", self.shed.cli_log().len());
         let new = json!({ "agent": "fake-acp", "profile": profile, "folder": self.dir.join("root"),
@@ -98,22 +92,17 @@ impl Setup {
         (id, servers.as_array().unwrap().clone())
     }
 
-    /// The servers' list as `cooee mcp ls` prints it.
     fn ls(&self) -> String {
         self.cooee.cli(&["mcp", "ls"])
     }
 }
 
-/// How an ACP adapter talks to its MCP servers.
 #[derive(Clone, Copy, Debug)]
 enum Agent {
-    /// Claude's adapter: numeric ids from 0, protocol 2025-06-18.
     Claude,
-    /// Codex's: string ids, protocol 2025-03-26, `tools/list` with a cursor.
     Codex,
 }
 
-/// One MCP server an agent started from its session's list, as that agent runs it.
 struct Mcp {
     child: Child,
     stdin: ChildStdin,
@@ -123,7 +112,6 @@ struct Mcp {
 }
 
 impl Mcp {
-    /// Starts `entry` (ACP's stdio shape) and initializes it as `agent` does.
     fn start(entry: &Value, agent: Agent) -> Self {
         let mut c = Command::new(entry["command"].as_str().unwrap());
         c.args(
@@ -163,7 +151,6 @@ impl Mcp {
         m
     }
 
-    /// One request: its result, or its error's message.
     fn call(&mut self, method: &str, params: &Value) -> Result<Value, String> {
         let id = match self.agent {
             Agent::Claude => json!(self.next),
@@ -183,7 +170,6 @@ impl Mcp {
         }
     }
 
-    /// The tools it offers.
     fn tools(&mut self) -> Vec<String> {
         let params = match self.agent {
             Agent::Claude => json!({}),
@@ -196,7 +182,6 @@ impl Mcp {
             .collect()
     }
 
-    /// Calls `tool`: its text, or the error.
     fn run(&mut self, tool: &str, arguments: &Value) -> Result<String, String> {
         let r = self.call(
             "tools/call",
@@ -213,7 +198,6 @@ impl Drop for Mcp {
     }
 }
 
-/// The session's server named `name`.
 fn named<'a>(servers: &'a [Value], name: &str) -> &'a Value {
     servers
         .iter()
@@ -221,7 +205,6 @@ fn named<'a>(servers: &'a [Value], name: &str) -> &'a Value {
         .unwrap_or_else(|| panic!("no {name} in {servers:?}"))
 }
 
-/// Every file under `dir` but its `secrets/`, as text.
 fn files(dir: &Path, out: &mut String) {
     for e in fs::read_dir(dir).into_iter().flatten().flatten() {
         if e.file_name() == "secrets" {
@@ -279,7 +262,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
 {
     let s = setup("mcp-proxy");
     let (id, servers) = s.thread("coder");
-    // cooee's own server, then the profile's pick, each through cooee.
     let names: Vec<&str> = servers
         .iter()
         .map(|s| s["name"].as_str().unwrap())
@@ -294,7 +276,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
     for agent in [Agent::Claude, Agent::Codex] {
         let mut m = Mcp::start(fs_entry, agent);
         assert_eq!(m.tools(), ["a"], "{agent:?}");
-        // The secret and the environment reference both resolved, in the server's own environment.
         assert_eq!(
             m.run("a", &json!({})),
             Ok("a ran; the token matches".to_owned()),
@@ -308,7 +289,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
         assert!(m.run("c", &json!({})).is_err(), "{agent:?}");
     }
 
-    // A Plain thread gets cooee's own server only; its token gets no grant for fs, nor another thread's.
     let (plain, servers) = s.thread("");
     assert_eq!(servers.len(), 1, "{servers:?}");
     let proxy = |var: &Value| {
@@ -334,7 +314,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
         "{e}"
     );
 
-    // Closing the thread revokes its token: the proxy's next call is refused.
     let mut m = Mcp::start(fs_entry, Agent::Claude);
     assert!(m.run("a", &json!({})).is_ok());
     assert_eq!(
@@ -345,8 +324,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
     assert!(e.contains("closed"), "{e}");
     drop(m);
 
-    // The value is nowhere but its own store: not the config, the data folder, cooee's log, what shed was told or
-    // the thread's events.
     let mut all = fs::read_to_string(&s.cooee.config).unwrap();
     files(&s.dir.join("data"), &mut all);
     files(&s.shed.dir, &mut all);
@@ -363,7 +340,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
     assert_eq!(left, ["TOKEN"], "the --mcp file is gone");
 }
 
-/// A fake platform authenticator, as in tests/pairing.rs: one P-256 passkey signing for this server's origin.
 struct Authenticator {
     key: SigningKey,
     id: String,
@@ -397,7 +373,6 @@ impl Authenticator {
         (auth, client, B64.encode(sig.to_der().as_bytes()))
     }
 
-    /// Saves the passkey for the paired device.
     fn save(&self, c: &Cooee) {
         let (auth, client, _) = self.signed("webauthn.create", c);
         let mut spki = vec![
@@ -411,7 +386,6 @@ impl Authenticator {
         assert_eq!(c.post("/passkeys", &key).0, 200);
     }
 
-    /// `navigator.credentials.get` after Face ID.
     fn get(&self, c: &Cooee) -> Value {
         let (auth, client, sig) = self.signed("webauthn.get", c);
         json!({ "id": self.id, "client": B64.encode(client), "auth": B64.encode(auth), "sig": sig })
@@ -442,7 +416,6 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
         said.starts_with("Proposed.") && said.contains("Nothing has run"),
         "{said}"
     );
-    // A proposal that breaks a rule is the tool's error.
     let bad = cooee.call("tools/call", &json!({ "name": "propose_server", "arguments": { "name": "fs", "type": "stdio", "command": "x" } }));
     assert!(
         bad.unwrap()["content"][0]["text"]
@@ -473,7 +446,6 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
         "nothing runs before approval"
     );
 
-    // Approving needs Face ID: none, or a passkey this cooee doesn't know, is refused.
     let approve = |passkey: Value| {
         s.cooee.post(
             &format!("/threads/{id}/approve"),

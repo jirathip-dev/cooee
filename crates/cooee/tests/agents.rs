@@ -12,6 +12,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use cooee_core::agents::PLAIN;
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, agent, scratch, version};
 
@@ -48,7 +49,8 @@ fn a_folder_written_by_hand_is_listed_and_starts_a_chat() {
     assert!(line.contains(" --acp fake-acp "), "{line}");
     let sent = shed.sent(&format!("cooee-{id}"));
     let prompt: Value = serde_json::from_str(sent[0].trim_start_matches('\x1e')).unwrap();
-    assert_eq!(prompt["prompt"], "Answer in one paragraph.\n\nhi");
+    let brief = format!("Answer in one paragraph.\n\n{PLAIN}\n\nhi");
+    assert_eq!(prompt["prompt"], brief);
 }
 
 #[test]
@@ -95,7 +97,6 @@ fn a_malformed_agent_toml_hides_only_that_agent_and_the_log_never_quotes_it() {
     assert_eq!(cooee.post("/threads", &new).0, 400);
 }
 
-/// Every file under `dir`, by its path, with its bytes.
 fn tree(dir: &Path, out: &mut BTreeMap<PathBuf, Vec<u8>>) {
     for e in fs::read_dir(dir).into_iter().flatten().flatten() {
         let p = e.path();

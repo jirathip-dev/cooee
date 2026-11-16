@@ -10,7 +10,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::agents::{self, Agent, Lent};
+use crate::agents::{self, Agent, Lent, Style};
 
 /// One agent profile.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -74,7 +74,6 @@ impl Profile {
             .map_err(|e| format!("profile {}: {e}", self.name))
     }
 
-    /// Its paths made whole: `~/x` under `$HOME`, others under `base`.
     pub(crate) fn rooted(mut self, base: &Path) -> Self {
         let paths = [&mut self.instructions, &mut self.settings, &mut self.folder];
         for p in paths.into_iter().flatten() {
@@ -83,7 +82,6 @@ impl Profile {
         self
     }
 
-    /// Its keys as an agent's (its label the name, its instructions as given).
     pub(crate) fn into_agent(self, instructions: String) -> Agent {
         Agent {
             name: self.label,
@@ -123,6 +121,7 @@ impl Profile {
         };
         Ok(Agent {
             id: format!("{plugin}/{}", p.name),
+            style: Style::Detailed,
             lent: Some(lent),
             ..p.into_agent(text)
         })

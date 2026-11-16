@@ -1,7 +1,3 @@
-// #251 (from #229's): shoot each frame alone (`?f=`): a phone screen at 390 × 844 (DPR 2, farm dark and light) and a Mac window at
-// 1440 × 900 (DPR 1), under reduced motion. Each shot is checked: no sideways scroll, nothing past the right edge, a cut
-// line ellipsised. No deps: Chrome's --remote-debugging-pipe, as docs/design/native-shell/shoot.mjs.
-// Usage (repo root): node docs/design/home-v2/shoot.mjs <chrome-headless-shell> [regexp]
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -10,7 +6,6 @@ import { extname, join } from 'node:path';
 
 const here = new URL('.', import.meta.url).pathname, root = join(here, '../../..');
 const [chrome, re] = process.argv.slice(2);
-// [page, frame, width, modes]: the PNG is `<frame>-390-<mode>.png`, or `<frame without wide->-1440.png`.
 const BOTH = ['dark', 'light'];
 const VIEWS = [
   ['modern', 'top', 390, BOTH], ['modern', 'scrolled', 390, BOTH], ['modern', 'empty', 390, BOTH], ['modern', 'reconnect', 390, ['light']],
@@ -53,7 +48,6 @@ function audit() {
   const bad = [], W = innerWidth, name = e => e.tagName.toLowerCase() + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/).join('.') : '') + ` "${(e.textContent || '').trim().slice(0, 30)}"`;
   if (document.documentElement.scrollWidth > W) bad.push(`sideways scroll ${document.documentElement.scrollWidth} > ${W}`);
   for (const e of document.querySelectorAll('.one *')) {
-    // The header strip scrolls sideways by design; a row's name line (.an) ellipsises as one, its muted title inside it.
     if (!e.getClientRects().length || e.closest('.hs,.an,svg,.stb,.h2p,.tmr,.hd2,.tms')) continue;
     const r = e.getBoundingClientRect(), s = getComputedStyle(e);
     if (s.visibility === 'hidden' || r.bottom < 0 || r.top > innerHeight) continue;

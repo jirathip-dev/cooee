@@ -46,7 +46,6 @@ fn refused(why: String) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, why)
 }
 
-/// The note on line `line`, if it is one (its id empty when it has none yet).
 fn parse(line: &str) -> Option<Note> {
     let mut rest = line.strip_prefix("- ")?;
     let (mut by, mut at) = ("owner".to_owned(), 0);
@@ -76,7 +75,6 @@ fn parse(line: &str) -> Option<Note> {
     })
 }
 
-/// `notes` as `memory.md`'s text; any without an id get one.
 pub(crate) fn render(mut notes: Vec<Note>) -> (Vec<Note>, String) {
     for i in 0..notes.len() {
         if notes[i].id.is_empty() {

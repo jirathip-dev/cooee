@@ -15,7 +15,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{mcp, memory, plugins, profiles::Profile, skills};
 
-/// drover's installed name (`plugins/index.toml`).
 const DROVER: &str = "drover";
 
 /// Variables, `K=V`.
@@ -33,6 +32,21 @@ pub enum Role {
     Orchestrator,
 }
 
+/// How an agent's native chat reads (#242).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Style {
+    /// Only the final reply, its steps folded into one row; told to answer short and plain.
+    #[default]
+    Chat,
+    /// Every step, as it happens.
+    Detailed,
+}
+
+/// What a [`Style::Chat`] agent's new session is told after its brief.
+pub const PLAIN: &str =
+    "Answer short, plain and conversational: summarise, and give the details only when asked.";
+
 /// One agent: JSON on the wire (`/personas`); `agent.toml` is this without `id`, `character` and `instructions`.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
@@ -43,6 +57,8 @@ pub struct Agent {
     pub name: String,
     /// Its role (#159).
     pub role: Role,
+    /// How its chat reads (#242): `chat` unless set, `detailed` for an orchestrator.
+    pub style: Style,
     /// The repos or fleets it covers (#159).
     pub fleets: Vec<String>,
     /// An image (`https://…`, `data:image/…`, a plugin's `/path`) or a theme's sprite id; none: its initials.
@@ -157,7 +173,6 @@ pub fn slug(label: &str) -> String {
     name.trim_end_matches('-').to_owned()
 }
 
-/// `p` made whole: `~/x` under `$HOME`, a relative path under `base`.
 pub(crate) fn whole(p: &Path, base: &Path) -> PathBuf {
     match (p.strip_prefix("~"), env::var_os("HOME")) {
         (Ok(rest), Some(home)) => PathBuf::from(home).join(rest),
@@ -185,7 +200,6 @@ pub fn home(config: &Path, id: &str) -> io::Result<Home> {
     }
 }
 
-/// `file`, an `agent.toml`, as written; an error names the line or the key, never the file's text.
 fn parse(file: &Path) -> Result<Agent, String> {
     let text = fs::read_to_string(file).map_err(|e| e.kind().to_string())?;
     let line = |e: toml::de::Error| {
@@ -206,10 +220,20 @@ fn parse(file: &Path) -> Result<Agent, String> {
         ));
     }
     a.check()?;
-    Ok(a)
+    Ok(Agent {
+        style: style(a.role, table.contains_key("style").then_some(a.style)),
+        ..a
+    })
 }
 
-/// The agent in folder `d`, named `id`.
+pub(crate) fn style(role: Role, set: Option<Style>) -> Style {
+    set.unwrap_or(if role == Role::Orchestrator {
+        Style::Detailed
+    } else {
+        Style::Chat
+    })
+}
+
 fn load(d: &Path, id: &str) -> Result<Agent, String> {
     let a = parse(&d.join("agent.toml"))?;
     let md = |n: &str| fs::read_to_string(d.join(n)).unwrap_or_default();
@@ -301,7 +325,6 @@ pub fn find(config: Option<&Path>, data: &Path, id: &str) -> io::Result<Agent> {
     found.ok_or_else(|| refused(format!("no persona {id}")))
 }
 
-/// `agent.toml`, `INSTRUCTIONS.md` and `CHARACTER.md` for `a`: the existing idiom, no TOML writer.
 pub(crate) fn files(a: &Agent) -> [(&'static str, Vec<u8>); 3] {
     let card = Agent {
         id: String::new(),
@@ -450,8 +473,8 @@ impl Agent {
         (!matches!(self.folder.as_str(), "" | "scratch")).then(|| PathBuf::from(&self.folder))
     }
 
-    /// What its agent gets ahead of a new session's first message: its Character, Instructions, notes and skills'
-    /// descriptions (#218); never a skill's body.
+    /// What its agent gets ahead of a new session's first message: its Character, Instructions, notes, skills'
+    /// descriptions (#218), never a skill's body, and, in [`Style::Chat`], [`PLAIN`].
     #[must_use]
     pub fn brief(&self, config: Option<&Path>) -> String {
         let home = config
@@ -467,11 +490,13 @@ impl Agent {
                 let _ = write!(skills, "\n- {}: {}", s.name, s.description);
             }
         }
+        let plain = if self.style == Style::Chat { PLAIN } else { "" };
         let parts = [
             self.character.trim(),
             self.instructions.trim(),
             &notes,
             &skills,
+            plain,
         ];
         let parts = parts
             .into_iter()

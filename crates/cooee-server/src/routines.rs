@@ -1,7 +1,3 @@
-//! Routines' runner (#75): every 30 seconds it runs each routine whose due time passed, once, and records it;
-//! `create_routine` and the routines' API change them. The run's key is the hub's `random_id`, so a crash between
-//! a run and its record runs into the same thread or message again, never a second one.
-
 use std::{
     path::PathBuf,
     process::Command,
@@ -40,14 +36,11 @@ pub type Start =
 pub struct Runner {
     hub: Arc<Hub>,
     file: Routines,
-    /// Held over each read-change-write of the file.
     lock: Mutex<()>,
     start: Start,
-    /// The Mac's UTC offset in minutes, and when it was read (ms).
     offset: Mutex<(i32, u64)>,
 }
 
-/// An hour, in milliseconds.
 const HOUR: u64 = 3_600_000;
 
 impl Runner {
@@ -86,7 +79,6 @@ impl Runner {
         self.file.load().map_err(refused)
     }
 
-    /// Changes the routines with `f`, under the lock, and saves them.
     fn change<T>(
         &self,
         f: impl FnOnce(&mut Vec<Routine>) -> Result<T, HubError>,
@@ -161,7 +153,6 @@ impl Runner {
             Ok(list) => list,
             Err(e) => return eprintln!("cooee: routines: {e}"),
         };
-        // One typed by hand into routines.toml has no run state yet: it first runs at its next due time.
         let made: Vec<()> = list
             .iter_mut()
             .filter(|r| r.made_at == 0)
@@ -206,7 +197,6 @@ impl Runner {
         }
     }
 
-    /// Runs `r` for due time `due`: into its chat, or as a new thread.
     fn run(&self, r: &Routine, due: u64, offset: i32) -> Outcome {
         let (text, key, mark) = (r.text(due, offset), r.key(due), Some(r.mark()));
         let ran = match &r.place {
@@ -231,7 +221,6 @@ impl Runner {
         )
     }
 
-    /// The Mac's UTC offset in minutes (`date +%z`), read again after an hour.
     fn offset(&self, now: u64) -> i32 {
         let mut o = self.offset.lock().unwrap_or_else(PoisonError::into_inner);
         if o.1 == 0 || now.saturating_sub(o.1) >= HOUR {
@@ -250,8 +239,7 @@ fn runner(cx: &Cx) -> Arc<Runner> {
     Arc::clone(app_context::<Arc<Runner>>(cx))
 }
 
-/// Runs `f` on the runner off the async workers.
-async fn on<T: Send + 'static>(
+pub(crate) async fn on<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&Runner) -> Result<T, HubError> + Send + 'static,
 ) -> Result<T, HubError> {
@@ -261,7 +249,6 @@ async fn on<T: Send + 'static>(
         .map_err(refused)?
 }
 
-/// `POST /mcp/agent/routine` `{thread, server: {name, when, prompt, place?}}`: `create_routine`'s line.
 #[route(POST "/mcp/agent/routine")]
 async fn mcp_routine(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Item>> {
     let token = bearer(cx);
@@ -274,13 +261,11 @@ async fn mcp_routine(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Item>> {
     ))
 }
 
-/// `GET /routines.json`: every routine.
 #[route(GET "/routines.json")]
 async fn routine_list(cx: &Cx) -> Result<Answer<Vec<Routine>>> {
     Ok(Answer(on(cx, Runner::list).await))
 }
 
-/// A 204, or the reason.
 fn back<T>(done: Result<T, HubError>) -> Result<Response> {
     match done {
         Ok(_) => Ok(Response::builder().status(204).body(Bytes::from(()))?),
@@ -288,14 +273,12 @@ fn back<T>(done: Result<T, HubError>) -> Result<Response> {
     }
 }
 
-/// `POST /routines/{id}` `name`, `when`, `prompt`, `paused` (each optional): its edit.
 #[route(POST "/routines/{id}")]
 async fn routine_edit(cx: &Cx, Form(e): Form<Edit>) -> Result<Response> {
     let id = thread_id(cx);
     back(on(cx, move |r| r.edit(&id, e, now())).await)
 }
 
-/// `POST /routines/{id}/delete`.
 #[route(POST "/routines/{id}/delete")]
 async fn routine_delete(cx: &Cx) -> Result<Response> {
     let id = thread_id(cx);
@@ -311,7 +294,6 @@ pub fn routes(runner: Arc<Runner>, b: RouterBuilder) -> RouterBuilder {
         .route(routine_delete)
 }
 
-/// `+0700` as 420, `-0330` as -210.
 fn minutes(z: &str) -> Option<i32> {
     let (sign, hhmm) = z.split_at_checked(1)?;
     let n: i32 = hhmm.parse().ok().filter(|_| hhmm.len() == 4)?;

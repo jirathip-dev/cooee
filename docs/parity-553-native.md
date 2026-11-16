@@ -59,7 +59,7 @@ action with an empty block id (→ #378).
 ## drover queue (rows 36–48)
 
 Served by herdsman as the conductor's Queue header-strip screen (`screens.rs` `queue_screen`), drawn by
-`CooeeFeatures/PluginScreenFeature.swift` and `CooeeUI/Block*.swift`.
+`CooeeFeatures/ScreenFeature.swift` and `CooeeUI/Block*.swift`.
 
 | # | feature | gate | state | where | gap | issue | phone check |
 |---|---|---|---|---|---|---|---|

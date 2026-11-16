@@ -296,7 +296,6 @@ impl Routine {
     }
 }
 
-/// `<config>/routines.toml`.
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Settings {
@@ -304,7 +303,6 @@ struct Settings {
     routine: Vec<Def>,
 }
 
-/// One routine's settings: what the owner may edit by hand.
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Def {
@@ -317,7 +315,6 @@ struct Def {
     place: Place,
 }
 
-/// `<data>/routine-runs.json`.
 #[derive(Debug, Serialize, Deserialize)]
 struct Runs {
     format: u32,
@@ -325,7 +322,6 @@ struct Runs {
     runs: BTreeMap<String, State>,
 }
 
-/// One routine's run state; none yet (one typed by hand): made at the runner's next tick.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 struct State {
@@ -338,7 +334,6 @@ struct State {
     chat_gone: Option<String>,
 }
 
-/// `routines.toml`'s text and `routine-runs.json`'s bytes for `routines`.
 pub(crate) fn files(routines: &[Routine]) -> (String, Vec<u8>) {
     let mut settings = Settings::default();
     let mut runs = Runs {
@@ -372,7 +367,6 @@ pub(crate) fn files(routines: &[Routine]) -> (String, Vec<u8>) {
     (toml, serde_json::to_vec_pretty(&runs).unwrap_or_default())
 }
 
-/// `path`'s bytes; none when there is no such file.
 fn read(path: &Path) -> io::Result<Option<Vec<u8>>> {
     match fs::read(path) {
         Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
@@ -461,7 +455,6 @@ mod tests {
     use super::*;
 
     const MIN: u64 = 60_000;
-    /// 2024-11-11 00:00 UTC, a Monday.
     const MON: u64 = 1_731_283_200_000;
 
     fn ask(when: &str, place: &str) -> Ask {
@@ -502,7 +495,6 @@ mod tests {
         assert_eq!(r.text(nine, 0), "Renewals due 2024-11-11 09:00?");
         r.last_due = nine;
         assert_eq!(r.due(nine + 5 * MIN, 0), None);
-        // Asleep a fortnight: the two missed Mondays run once, as the newest.
         assert_eq!(
             r.due(nine + 14 * 1440 * MIN, 0),
             Some(nine + 14 * 1440 * MIN)
