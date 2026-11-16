@@ -1,0 +1,7 @@
+Decided: merged origin/staging (#472, #473), bringing ci/drover-checks-test.sh that the lessons check runs
+Because: .github/workflows/lessons.yml:21
+Decided: with_rule splits the art at the style insert with split_at_checked, for staging's clippy slicing ban
+Because: crates/cooee-server/src/themes.rs:413
+Rejected: an allow on indexing_slicing — the gate caps allows and the checked split costs no lines
+Check: ci/gates.sh clippy, the lessons checker tests, cargo test -p cooee --test themes and scripts/apple-check.sh pass at head
+Owner: The branch sits on current staging again; the Theme picker is unchanged.
