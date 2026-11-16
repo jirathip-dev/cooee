@@ -1,0 +1,7 @@
+Decided: staging's #412 merges cleanly; it touches no server-crate file, so slice 1's layout is unchanged
+Because: crates/cooee/src/setup.rs:1
+Decided: round 2's FAIL was a pending dmg check at the old head; the new push re-runs CI rather than changing code
+Because: crates/cooee-server/src/serve.rs:90
+Rejected: drover done --no-change — staging had moved, so the head needed the merge anyway
+Check: sh scripts/gen.sh leaves no diff; drover arch-check --base origin/staging has 0 violations; dmg and macOS jobs green at the head
+Owner: Nothing changes in the app; the branch now carries staging's Mac install changes and CI runs again.
