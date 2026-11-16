@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    env, fs,
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::ExitCode,
@@ -195,9 +195,14 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
 
 fn row(e: &Entry, accounts: &Accounts) -> Value {
     let (signed_in, error) = e.state();
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| d.as_secs());
+    let now = env::var("COOEE_NOW")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| {
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map_or(0, |d| d.as_secs())
+        });
     let usage = match &e.login {
         Login::Folder(dir) if signed_in => accounts.usage(e.provider, &e.name, dir.as_deref(), now),
         _ => None,

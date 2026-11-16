@@ -14,6 +14,7 @@ use std::{
 use serde_json::{Value, json};
 
 const BIN: &str = env!("CARGO_BIN_EXE_cooee");
+const NOW: u64 = 1_794_787_260;
 
 struct Fixture {
     dir: PathBuf,
@@ -60,6 +61,7 @@ impl Fixture {
             .arg("--config")
             .arg(self.dir.join("config.toml"))
             .env("CLAUDE_CODE_OAUTH_TOKEN", "inherited-login")
+            .env("COOEE_NOW", NOW.to_string())
             .output()
             .unwrap();
         let (stdout, stderr) = (
@@ -247,8 +249,8 @@ fn ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age() 
     fs::write(
         f.folder("work").join("usage.txt"),
         "Current session: 12% used · resets 3pm (UTC)\n\
-         Current week (all models): 40% used · resets 11:59pm (UTC)\n\
-         Current week (Fable): 0% used · resets 11:59pm (UTC)\n",
+         Current week (all models): 40% used · resets Nov 16 at 2am (UTC)\n\
+         Current week (Fable): 0% used · resets Nov 16 at 2am (UTC)\n",
     )
     .unwrap();
     let usage = |f: &Fixture| {
@@ -259,20 +261,14 @@ fn ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age() 
         assert_eq!(idle, Value::Null, "a signed-out account has no reading");
         work
     };
-    let u = usage(&f);
-    assert_eq!(
-        (&u["five_hour"]["used_pct"], &u["seven_day"]["used_pct"]),
-        (&json!(12), &json!(40))
-    );
-    assert!(u["age_s"].as_u64().unwrap() < 60, "{u}");
-
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
     let w = |used, resets_at| json!({ "used_pct": used, "resets_at": resets_at });
+    assert_eq!(
+        usage(&f),
+        json!({ "five_hour": w(12, NOW + 53_940), "seven_day": w(40, NOW + 7_140), "read_at": NOW, "age_s": 0 })
+    );
+
     let reading = json!({ "usage": { "work": {
-        "five_hour": w(97, now - 60), "seven_day": w(55, now + 86_400), "read_at": now - 120 } } });
+        "five_hour": w(97, NOW - 60), "seven_day": w(55, NOW + 86_400), "read_at": NOW - 120 } } });
     fs::write(
         f.dir.join("data/accounts/fake/.cooee.json"),
         reading.to_string(),
@@ -283,5 +279,5 @@ fn ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age() 
         (&u["five_hour"]["used_pct"], &u["seven_day"]["used_pct"]),
         (&json!(0), &json!(55))
     );
-    assert!((120..180).contains(&u["age_s"].as_u64().unwrap()), "{u}");
+    assert_eq!(u["age_s"], json!(120), "{u}");
 }
