@@ -1,0 +1,5 @@
+Decided: merged origin/staging (#201 comment rule) in, keeping its stripped test comments and this PR's new plugin-check test without its doc comment
+Because: crates/cooee/tests/plugins.rs:870
+Rejected: none
+Check: crates/cooee/tests/plugins.rs keeps plugin_check_knows_swipe_menu_and_refresh and scripts/comments.py passes
+Owner: The branch is up to date with staging again; nothing in the feature changed.
