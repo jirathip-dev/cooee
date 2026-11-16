@@ -1,0 +1,8 @@
+Decided: merged origin/staging (#318); the themes, setup and design-script conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #318's pinned first-party theme packs
+Decided: docs/design/look/build.mjs takes staging's deletion
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: the justfile equals staging's and ci.yml differs only by the gates step's GH_TOKEN
+Owner: the branch is up to date with staging again, and the new theme-pack code follows the comment rule
