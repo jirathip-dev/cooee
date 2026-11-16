@@ -8,6 +8,7 @@ internal struct PanelActions {
     internal var memory: (() -> Void)?
     internal var stop: (() -> Void)?
     internal var open: (Int) -> Void = { _ in }
+    internal var workflow: () -> Void = {}
 }
 
 public struct PersonaPanelBlocks: View {
@@ -26,8 +27,9 @@ public struct PersonaPanelBlocks: View {
             }
             header
             Scroller(end: end) {
-                PersonaBlocks(screen: screen, open: actions.open).padding(.horizontal, 16).padding(.top, 4).padding(
-                    .bottom, 16)
+                PersonaBlocks(screen: screen, open: actions.open, workflow: actions.workflow).padding(.horizontal, 16)
+                    .padding(.top, 4).padding(
+                        .bottom, 16)
             }
             footer.padding(.horizontal, 16).padding(.top, 10).padding(.bottom, column ? 16 : 30)
                 .overlay(alignment: .top) { Rectangle().fill(palette.line).frame(height: 0.5) }

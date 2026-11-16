@@ -6,6 +6,7 @@ public enum PanelPick: Sendable, Equatable {
     case newChat
     case open(Place)
     case attach(PluginRow)
+    case workflow
     case stop
 }
 
@@ -44,6 +45,7 @@ extension ChatFeature {
         case .newChat: return .send(.delegate(.start(persona)))
         case .open(let place): return .send(.plugins(.open(place)))
         case .attach(let plugin): return .send(.plugins(.attach(plugin)))
+        case .workflow: return .send(.workflow(.show(true)))
         case .stop: return .send(.compose(.stop))
         }
     }

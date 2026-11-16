@@ -32,6 +32,7 @@
             XCTAssert(app.buttons["Edit Conductor"].waitForExistence(timeout: 10), "the … opened no Edit Conductor")
             XCTAssert(app.buttons["New chat with Conductor"].exists, "the … opened no New chat with Conductor")
             XCTAssertFalse(labelled(app, "Attach ").exists, "Conductor still has a plugin to attach")
+            XCTAssert(labelled(app, "WORKFLOW").exists, "the panel has no Workflow for Conductor")
             keep("persona-panel")
             app.buttons["Close"].firstMatch.tap()
             XCTAssert(app.buttons["Edit Conductor"].waitForNonExistence(timeout: 10))

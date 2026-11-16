@@ -11,16 +11,34 @@ extension ChatScreen {
             edit: known ? { pick(.edit) } : nil,
             newChat: known ? { pick(.newChat) } : nil,
             stop: store.working ? { pick(.stop) } : nil,
-            open: { $0 < places.count ? pick(.open(places[$0])) : pick(.attach(attachable[$0 - places.count])) }
+            open: { $0 < places.count ? pick(.open(places[$0])) : pick(.attach(attachable[$0 - places.count])) },
+            workflow: { pick(.workflow) }
         )
         let rows =
             places.map { Self.row("square.grid.2x2", $0.label) }
             + attachable.map { Self.row("plus", "Attach \($0.name)…") }
-        let screen = JSONValue.object(["blocks": .array([.object(["type": .string("places"), "rows": .array(rows)])])])
+        let blocks = [Self.workflow(store.workflow ?? []), .object(["type": .string("places"), "rows": .array(rows)])]
+        let screen = JSONValue.object(["blocks": .array(blocks)])
         return PersonaPanelBlocks(persona: persona, screen: screen, column: column, actions: actions)
     }
 
     private static func row(_ symbol: String, _ title: String) -> JSONValue {
         .object(["symbol": .string(symbol), "title": .string(title)])
+    }
+
+    private static func workflow(_ chats: [ListedChat]) -> JSONValue {
+        let issues = Workflow.issues(chats)
+        let rows = issues.prefix(3).map { issue -> JSONValue in
+            let (row, label) = (issue.latest.row, issue.latest.workflow)
+            return .object([
+                "number": .number(Double(Int(label?.item.filter(\.isNumber) ?? "") ?? 0)),
+                "title": .string(row.title), "stage": .string(label?.stage ?? ""),
+                "tone": .string(row.state == .merged ? "done" : row.state.rawValue),
+            ])
+        }
+        return .object([
+            "type": .string("workflow"), "map": .bool(false), "issues": .array(Array(rows)),
+            "more": .number(Double(issues.count - rows.count)),
+        ])
     }
 }

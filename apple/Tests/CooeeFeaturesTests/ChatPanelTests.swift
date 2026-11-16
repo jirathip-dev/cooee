@@ -42,6 +42,17 @@ internal struct ChatPanelTests {
         #expect(calls.all == ["stop t1"])
     }
 
+    @Test internal func allIssuesOpensTheWorkflowSheetOnceThePanelHasGone() async {
+        let store = app()
+        await store.send(.chat(.panel(.show(true)))) { $0.chat?.panel = true }
+        await store.send(.chat(.panel(.pick(.workflow)))) {
+            $0.chat?.panel = false
+            $0.chat?.picked = .workflow
+        }
+        await store.send(.chat(.panel(.dismissed))) { $0.chat?.picked = nil }
+        await store.receive(\.chat.workflow.show) { $0.chat?.workflowOpen = true }
+    }
+
     @Test internal func editOpensThePersonaSheetAndNewChatStartsOneWithThePersona() async {
         let store = app()
         await store.send(.chat(.panel(.show(true)))) { $0.chat?.panel = true }
