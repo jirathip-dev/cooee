@@ -1,0 +1,10 @@
+Decided: one cooee_core::runner::command is the only Command::new in src, enforced by an arch.toml ban rather than a new script
+Because: "Only the runner spawns processes (as herdsman #713)."
+Rejected: adding timeouts or limits in the runner now — "Behaviour unchanged; tests pass." forbids it in this PR
+Decided: the test gate runs under a fresh TMPDIR and fails on anything left; tests register their paths with scratch::owned (thread-local, removed at thread end)
+Because: ci/gates/test.sh:6
+Rejected: tempfile dev-dependency — a new dependency needs the owner; a guard type return would ripple to hundreds of call sites
+Decided: lessons.yml runs drover lesson-check instead of the hand-rolled pr-body shadow step
+Because: "Lesson checks (herdsman #510: shadow then active) wired into CI."
+Check: ci/drover-checks-test.sh and ci/test-gate-test.sh fail on their planted breakage; the lessons job summary shows pr-body passing on this PR
+Owner: CI now enforces the four herdsman rules; the app is unchanged.
