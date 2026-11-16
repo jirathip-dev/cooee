@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
 
-const here = new URL('.', import.meta.url).pathname, root = new URL('..', import.meta.url).pathname;
+const here = new URL('.', import.meta.url).pathname, root = new URL('../../..', import.meta.url).pathname;
 const [chrome] = process.argv.slice(2);
 const VIEWS = [];
 for (const [w, dpr] of [[390, 2], [1440, 1]]) for (const m of ['dark', 'light']) for (const p of ['pair', 'approve'])
@@ -21,7 +21,7 @@ const srv = createServer((q, r) => {
   } catch { r.writeHead(404).end(); }
 }).listen(0, '127.0.0.1');
 await new Promise(ok => srv.on('listening', ok));
-const base = `http://127.0.0.1:${srv.address().port}/`;
+const base = `http://127.0.0.1:${srv.address().port}/docs/design/`;
 
 const c = spawn(chrome, ['--headless', '--no-sandbox', '--hide-scrollbars', '--remote-debugging-pipe', '--no-first-run',
   `--user-data-dir=${mkdtempSync(join(tmpdir(), 'cooee-prof-'))}`], { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] });

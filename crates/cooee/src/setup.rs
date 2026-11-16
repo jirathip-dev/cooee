@@ -272,10 +272,9 @@ impl Setup {
         };
         let have: Vec<String> = t.list().map_err(e)?.into_iter().map(|p| p.name).collect();
         let first: Vec<&str> = t
-            .index()
-            .iter()
-            .filter(|l| l.first_party && !have.contains(&l.name))
-            .map(|l| l.name.as_str())
+            .first_party()
+            .into_iter()
+            .filter(|n| !have.iter().any(|h| h == n))
             .collect();
         if step("themes", first.is_empty()) {
             return Ok(());

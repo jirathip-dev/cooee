@@ -3,3 +3,5 @@
 node_modules/
 /.verify/
 target*/
+/packs/themes/
+/packs/themes.commit

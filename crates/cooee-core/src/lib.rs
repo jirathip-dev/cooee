@@ -24,5 +24,6 @@ pub mod secrets;
 mod shed;
 pub mod skills;
 mod store;
+pub mod swag;
 
 pub use root::*;
