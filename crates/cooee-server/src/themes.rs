@@ -375,7 +375,6 @@ impl Themes {
     }
 }
 
-/// The native look sheet's routes (#252): the installed packs as JSON and their art, read as they are now.
 pub(crate) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
     b.route(looks_json).route(look_art)
 }
@@ -393,7 +392,6 @@ async fn looks_json(cx: &Cx) -> Result<Response> {
 path_param!(look);
 path_param!(art);
 
-/// A sprite sheet's frames show the first; a scene shows its calm layers only (#34).
 const FRAMES: &[u8] = b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
 const CALM: &[u8] = b"<style>.h-busy,.h-held,.l-overcast,.l-rain{display:none}</style>";
 
@@ -406,7 +404,6 @@ fn with_rule(svg: &[u8], rule: &[u8]) -> Vec<u8> {
     [&svg[..at], rule, &svg[at..]].concat()
 }
 
-/// A pack's `sprites.svg` or `scene.svg`, for the native app's Scene art; no cookie needed.
 #[route(GET "/look/{look}/{art}")]
 async fn look_art(cx: &Cx) -> Result<Response> {
     let (name, art) = (path_param::<Look>(cx).to_owned(), path_param::<Art>(cx));

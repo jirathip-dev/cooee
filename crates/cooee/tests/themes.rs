@@ -132,14 +132,12 @@ fn add_remove_and_list_with_the_lock() {
         !ok && out.contains("sea isn't a first-party theme (farm garden kitchen)"),
         "{out}"
     );
-    // The server shows it in the native look sheet's list (#252).
     let looks = s.cooee.json("/api/v1/looks");
     assert_eq!(
         looks["themes"]["farm"]["scheme"],
         json!({"dark": "farm", "light": "farm-light"})
     );
     assert_eq!(looks["schemes"]["farm"]["tokens"]["--bg"], "#0f1a13");
-    // Its art, with no cookie, for the native app's Scene.
     let (head, svg) = s.cooee.raw("GET", "/look/farm/sprites.svg", &[], "");
     assert!(head.contains("image/svg+xml"), "{head}");
     assert!(
