@@ -1,0 +1,8 @@
+Decided: the update step waits up to 30 s for the local appcast to answer on 8787 before it opens version 1
+Because: .github/workflows/apple.yml:219
+Because: "the Mac app at version 1 finds version 2 on the local appcast"
+Rejected: a retry of the step or of Sparkle's check — Sparkle checks once at launch, then waits 24h, so the feed must be up first
+Rejected: the self-hosted Mac runner — the cause is the step's start order, not the runner
+Check: dispatch run 43936975933 at 471cccb shows Sparkle's 19:48:03 check refused on 127.0.0.1:8787 (errno 61), 4 s after the feed started
+Check: mac-setup needs one more workflow_dispatch run at this head (q1729)
+Owner: the app sometimes looked for the update before CI's local update server was up; CI now waits for that server first
