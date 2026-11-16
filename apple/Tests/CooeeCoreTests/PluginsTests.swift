@@ -3,7 +3,7 @@ import Foundation
 import Testing
 
 internal struct PluginsTests {
-    @Test internal func aPluginRowSaysWhatItMayDoInPlainWords() throws {
+    @Test internal func aPluginRowDecodesItsPermissions() throws {
         let json = """
             {"name": "drover", "version": "0.4.0", "commit": "b3f8ce2e61", "url": "https://x/d", "listed": false,
              "state": "running", "places": [{"type": "header-strip", "id": "queue", "persona": "conductor",
@@ -13,16 +13,8 @@ internal struct PluginsTests {
              "actions": ["drive", "drop"], "destructive": ["drop"], "network": []}}
             """
         let row = try JSONDecoder().decode(PluginRow.self, from: Data(json.utf8))
-        #expect(row.id == "drover" && row.source == "https://x/d")
-        #expect(
-            row.may == [
-                "Queue chip on the header strip", "cards in its chats", "drover row in Plugins",
-                "sessions labelled source=drover in its Workflow sheet", "notifications",
-            ]
-        )
+        #expect(row.id == "drover" && row.claims == ["drover"] && row.permissions.push)
         #expect(row.permissions.destructive == ["drop"])
-        let listed = PluginRow(name: "hello", version: "1", commit: "c", places: [], permissions: PluginPermissions())
-        #expect(listed.source == "cooee's index" && listed.may.isEmpty)
     }
 
     @Test internal func aPlaceKeepsItsIdAsItsKey() throws {

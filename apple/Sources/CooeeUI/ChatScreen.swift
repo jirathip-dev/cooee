@@ -62,7 +62,7 @@ internal struct ChatScreen: View {
         .task { await store.send(.plugins(.load)).finish() }
         .task { await store.send(.machine(.load)).finish() }
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
-        .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachSheet(store: $0) }
+        .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachScreen(store: $0) }
         .sheet(isPresented: Binding(get: { store.workflowOpen }, set: { store.send(.workflow(.show($0))) })) {
             WorkflowSheet(
                 issues: Workflow.issues(store.workflow ?? []),

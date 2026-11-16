@@ -42,7 +42,7 @@ extension Frame {
     private static let phoneWidth: CGFloat = 402
     private static let phoneHeight: CGFloat = 874
 
-    internal static var all: [Frame] { designs + styled + settings + QueueFrames.all }
+    internal static var all: [Frame] { designs + styled + settings + missingPoster + QueueFrames.all }
 
     internal static var everyStyle: [Frame] {
         designs.flatMap { frame in LookStyle.allCases.map(frame.styled) }
@@ -120,7 +120,7 @@ extension Frame {
     }
 
     private static var settings: [Frame] {
-        let pages: [(String, MenuFeature.Page)] = [
+        let pages: [(String, SettingsFrame)] = [
             ("sign-ins", .signIns), ("devices", .devices), ("machines", .machines), ("plugins", .plugins),
         ]
         let phones = pages.flatMap { name, page in
@@ -146,12 +146,22 @@ extension Frame {
     }
 
     @MainActor @ViewBuilder
-    private static func settingsPage(_ page: MenuFeature.Page) -> some View {
+    private static func settingsPage(_ page: SettingsFrame) -> some View {
         switch page {
         case .signIns: SignInsView()
         case .devices: DevicesView()
         case .machines: MachinesView()
         default: PluginsView()
+        }
+    }
+
+    private static var missingPoster: [Frame] {
+        CardTrust.guarded.sorted().flatMap { kind in
+            let card = JSONValue(json: #"{"type": "card", "id": "c", "kind": "\#(kind)", "title": "EDGAR_API_KEY"}"#)
+            let frame = phone("missing-poster-\(kind)", .farmDark) {
+                Color.clear.overlay(alignment: .top) { BlocksView(card, source: nil).padding(BlocksView.inset) }
+            }
+            return LookStyle.allCases.map(frame.styled)
         }
     }
 

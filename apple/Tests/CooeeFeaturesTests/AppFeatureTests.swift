@@ -62,8 +62,6 @@ internal struct AppFeatureTests {
             $0.path = []
             $0.chat = nil
         }
-        await store.send(.menu(.open(true))) { $0.menu.open = true }
-        await store.receive(\.menu.looks)
     }
 
     @Test internal func aNewChatBecomesItsThreadOnceStarted() async {
