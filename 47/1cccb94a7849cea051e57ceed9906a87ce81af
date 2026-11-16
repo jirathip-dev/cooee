@@ -1,0 +1,9 @@
+Decided: the update step writes a Coder persona on the Mac before updating, so the phone's after-update check has a persona to find
+Because: apple/e2e/serve.sh:83
+Because: crates/cooee-core/src/personas.rs:133
+Because: "the phone stays paired"
+Rejected: dropping the Coder assertion from the phone test — then nothing shows the updated server answers with the Mac's kept config
+Rejected: a retry or longer wait — no persona exists to appear, so waiting never helps
+Check: dispatch run 43866709032 at a6554c6 staged and installed version 2 and cooee answered 405; only the Coder check failed
+Check: mac-setup needs one more workflow_dispatch run at this head (q1729)
+Owner: the update works; the phone's last check looked for a sample persona only the test server has, so CI now creates it on the Mac
