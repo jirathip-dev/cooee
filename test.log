@@ -1,0 +1,32 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-417/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.68s
+     Running tests/personas.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-417/debug/deps/personas-c1f08e630bfdc09c)
+
+running 12 tests
+test migration_keeps_the_name_and_sets_the_orchestrator_role ... ok
+test a_detailed_persona_gets_no_plain_line ... ok
+test the_plugin_attaches_by_role ... ok
+test a_plugin_is_attached_to_a_persona_and_detached ... ok
+test renaming_the_orchestrator_changes_no_attachment ... ok
+test a_persona_without_instructions_takes_its_profiles ... ok
+test a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it ... ok
+test two_orchestrator_personas_each_with_their_own_fleets ... ok
+test old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief ... ok
+test remember_adds_replaces_and_forgets_one_note_under_the_cap ... ok
+test a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session ... ok
+test a_persona_and_its_threads_name_their_machine ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.91s
+
+     Running tests/profiles.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-417/debug/deps/profiles-21df5082291fdd7a)
+
+running 6 tests
+test a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a_command ... ok
+test plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused ... ok
+test a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it ... ok
+test a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it ... ok
+test a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the_threads_id ... ok
+test a_hanging_backend_never_slows_a_start_which_takes_its_last_answered_profiles ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 30.31s
+
