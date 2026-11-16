@@ -1,0 +1,6 @@
+Decided: move this PR's three setup-chat tests into same-file extensions of ClientTests, AppFeatureTests and ChatFeatureTests
+Because: apple/Tests/CooeeFeaturesTests/AppFeatureTests.swift:172
+Rejected: raise SwiftLint's type_body_length — the rule caps type size at 150 lines and is not this issue's to change
+Rejected: committing the previous lane's wip snapshot — it held only local log files
+Check: SwiftLint passes in the apple job; the three tests still run (refineByChatOpensASetupChat, aSetupChatStartsInSetupMode, aSetupChatSaysSo)
+Owner: Same feature; this round only moves three tests so the Apple lint passes.
