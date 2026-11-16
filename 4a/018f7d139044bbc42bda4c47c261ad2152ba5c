@@ -1,0 +1,5 @@
+Decided: merged origin/staging (#244, #318 and the rest) instead of rebasing, so no history is rewritten or force-pushed.
+Because: apple/Sources/CooeeUI/ChatPanel.swift:5
+Rejected: a rebase — the lane's rules forbid history rewrites and force-pushes on a PR branch.
+Check: the merge had no conflicts; apple-check, cargo test, line cap and arch-check are green.
+Owner: The branch has the latest staging; the … panel works as before.
