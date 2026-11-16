@@ -1,0 +1,9 @@
+fmt=0
+clippy=101
+arch=0
+arch-check: 1612 files, 0 violations
+apple lines: 12630 / 13000
+cap=0
+neutral=0
+hygiene=0
+dep=0

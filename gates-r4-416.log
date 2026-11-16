@@ -1,0 +1,10 @@
+fmt 0
+clippy 0
+test-all 0
+non-test lines: 20625 / 27500
+apple lines: 12726 / 13000
+cap 0
+core names no provider
+neutral 0
+arch-check: 1631 files, 0 violations
+arch 0

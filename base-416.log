@@ -1,0 +1,28 @@
+    Blocking waiting for file lock on package cache
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/.build/.scratch/cooee-impl-416/staging/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.61s
+     Running tests/profiles.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/.scratch/cooee-impl-416/target/debug/deps/profiles-abf9f81e9b8b14a2)
+
+running 6 tests
+test a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it ... FAILED
+test a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a_command ... ok
+test plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused ... ok
+test a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it ... ok
+test a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the_threads_id ... ok
+test a_hanging_backend_never_slows_a_start_which_takes_its_last_answered_profiles ... ok
+
+failures:
+
+---- a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it stdout ----
+
+thread 'a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it' (221702687) panicked at crates/cooee/tests/profiles.rs:550:49:
+#416: no options in --dir /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-persona-no-personal-6194/shed --json run --acp fake-acp --name cooee-t1a1e21936a7 --cwd /private/var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-persona-no-personal-6194/root --label cooee=1 --label cooee.thread=t1a1e21936a7 --mcp /var/folders/51/tp633f_n3tj561q8rqwrqtxw0000gn/T/cooee-persona-no-personal-6194/data/secrets/.mcp-t1a1e21936a7-1a1e21936cc.json
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 31.47s
+
+error: test failed, to rerun pass `-p cooee --test profiles`

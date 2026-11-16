@@ -1,0 +1,31 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-416/crates/cooee-core)
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-416/crates/cooee-machines)
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-416/crates/cooee-terminal)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-416/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-416/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.15s
+     Running tests/accounts_env.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-416/debug/deps/accounts_env-29806703f12c9b5b)
+
+running 7 tests
+test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+test unknown_provider_or_account_refuses_on_one_line ... ok
+test an_inherited_token_never_signs_a_folder_in ... ok
+test ls_json_lists_every_account_without_its_token ... ok
+test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.93s
+
+     Running tests/profiles.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-416/debug/deps/profiles-abf9f81e9b8b14a2)
+
+running 6 tests
+test a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it ... ok
+test a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a_command ... ok
+test plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused ... ok
+test a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it ... ok
+test a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the_threads_id ... ok
+test a_hanging_backend_never_slows_a_start_which_takes_its_last_answered_profiles ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 30.65s
+

@@ -1,0 +1,890 @@
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	﻿2026-11-16T01:17:11.6703628Z ##[group]Run setsid --wait just test
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:11.6704000Z ^[[36;1msetsid --wait just test^[[0m
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:11.6753754Z shell: /usr/bin/bash -e {0}
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:11.6754028Z env:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:11.6754230Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:11.6754468Z   REF: 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:11.6754666Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:11.6754945Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:11.6755176Z   CACHE_ON_FAILURE: false
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:11.6755400Z ##[endgroup]
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:11.6876929Z cargo test --workspace --locked
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:11.8541334Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:14.2644174Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:14.2670063Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:14.8743895Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:27.1575020Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.5028172Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 34.78s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.5203698Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/deps/cooee-9b306da653b94a17)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.5214828Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.5215037Z running 0 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.5218360Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/deps/accounts-00710270a9d0b9db)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.5218980Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.5219824Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.5220730Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.5228408Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.5228583Z running 2 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.7044242Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.8094265Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.8095274Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.8096181Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.8096889Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.8099449Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/deps/accounts_env-2302e0c86aaa77c9)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.8111583Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.8111964Z running 7 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.8271524Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.8448553Z test an_inherited_token_never_signs_a_folder_in ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.9373271Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.9468821Z test unknown_provider_or_account_refuses_on_one_line ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:46.9508106Z test ls_json_lists_every_account_without_its_token ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:47.0105228Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:47.0206251Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:47.0207018Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:47.0207472Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:47.0208064Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:47.0209380Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/deps/ask-9f2f0b43c804d909)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:47.0221614Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:47.0221951Z running 4 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:47.1715604Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:47.1791271Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:47.1860031Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.1900949Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.1908410Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.1908758Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.17s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.1909645Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.1912262Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/deps/chat-6d513def6b7d0430)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.1923772Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.1923963Z running 12 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.3138022Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.3264340Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.3551199Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.4014599Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.4251308Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... FAILED
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.4515283Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.4924594Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.4925532Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5058385Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5247098Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5442293Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5822021Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5822969Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5832349Z failures:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5832593Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5833032Z ---- a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed stdout ----
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5833503Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5834027Z thread 'a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed' (4747) panicked at crates/cooee/tests/chat.rs:353:5:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5837671Z ["SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && shed serve", "SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && shed serve"]
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5841242Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5841941Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5841950Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5842087Z failures:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5842661Z     a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5843641Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5844183Z test result: FAILED. 10 passed; 1 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.39s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5844875Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5845507Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test chat`
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5906975Z error: recipe `test` failed on line 14 with exit code 101
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T01:17:48.5925938Z ##[error]Process completed with exit code 101.
+stable (ubuntu-latest)	test	﻿2026-11-16T01:16:56.7059581Z ##[group]Run setsid --wait cargo test --workspace --locked
+stable (ubuntu-latest)	test	2026-11-16T01:16:56.7059842Z ^[[36;1msetsid --wait cargo test --workspace --locked^[[0m
+stable (ubuntu-latest)	test	2026-11-16T01:16:56.7099643Z shell: /usr/bin/bash -e {0}
+stable (ubuntu-latest)	test	2026-11-16T01:16:56.7099786Z env:
+stable (ubuntu-latest)	test	2026-11-16T01:16:56.7099900Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	test	2026-11-16T01:16:56.7100026Z   REF: 
+stable (ubuntu-latest)	test	2026-11-16T01:16:56.7100134Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	test	2026-11-16T01:16:56.7100274Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	test	2026-11-16T01:16:56.7100415Z   CARGO_INCREMENTAL: 0
+stable (ubuntu-latest)	test	2026-11-16T01:16:56.7100539Z   CACHE_ON_FAILURE: false
+stable (ubuntu-latest)	test	2026-11-16T01:16:56.7100665Z ##[endgroup]
+stable (ubuntu-latest)	test	2026-11-16T01:16:56.7412963Z ^[[1m^[[92m    Updating^[[0m crates.io index
+stable (ubuntu-latest)	test	2026-11-16T01:16:57.8593227Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+stable (ubuntu-latest)	test	2026-11-16T01:16:59.3020744Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+stable (ubuntu-latest)	test	2026-11-16T01:16:59.3021778Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+stable (ubuntu-latest)	test	2026-11-16T01:16:59.6778621Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+stable (ubuntu-latest)	test	2026-11-16T01:17:06.9900017Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.3070829Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 22.58s
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.3471173Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/build/cooee/4536207da0469da6/out/cooee-4536207da0469da6)
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.3481272Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.3481381Z running 0 tests
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.3481499Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.3481718Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.3482007Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.3483078Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/build/cooee/22a34c1d7ec8680b/out/accounts-22a34c1d7ec8680b)
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.3491816Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.3492002Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.5234627Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.6222355Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.6223027Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.6223279Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.6223545Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.6227604Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/build/cooee/8745e36eab7f6baf/out/accounts_env-8745e36eab7f6baf)
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.6235923Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.6236043Z running 7 tests
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.6389030Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.6551974Z test an_inherited_token_never_signs_a_folder_in ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.7443598Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.7509897Z test unknown_provider_or_account_refuses_on_one_line ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.7590573Z test ls_json_lists_every_account_without_its_token ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.8138117Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.8257791Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.8258008Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.8258156Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.8258382Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.8261154Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/build/cooee/ef1bade73b9efbf5/out/ask-ef1bade73b9efbf5)
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.8269039Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.8269127Z running 4 tests
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.9733956Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.9782627Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:19.9812754Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:20.9840923Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:20.9841252Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:20.9841759Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.16s
+stable (ubuntu-latest)	test	2026-11-16T01:17:20.9842154Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:20.9849105Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/build/cooee/ca7aac46b1044a2a/out/chat-ca7aac46b1044a2a)
+stable (ubuntu-latest)	test	2026-11-16T01:17:20.9857188Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:20.9857314Z running 12 tests
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.0764925Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.0860031Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.1088129Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.1692703Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.1817047Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... FAILED
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.1937045Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.2418990Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.2419622Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.2553603Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.2651040Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.2931167Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3182537Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3182805Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3183959Z failures:
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3184179Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3184468Z ---- a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed stdout ----
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3184925Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3185291Z thread 'a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed' (4208) panicked at crates/cooee/tests/chat.rs:353:5:
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3187476Z ["SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && shed serve", "SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && shed serve"]
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3189198Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3189461Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3189464Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3189536Z failures:
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3189834Z     a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3190123Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3190338Z test result: FAILED. 10 passed; 1 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.33s
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3190638Z 
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3193896Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test chat`
+stable (ubuntu-latest)	test	2026-11-16T01:17:21.3248594Z ##[error]Process completed with exit code 101.
+stable (macos-latest)	test	﻿2026-11-16T01:50:30.7568020Z ##[group]Run cargo test --workspace --locked
+stable (macos-latest)	test	2026-11-16T01:50:30.7568200Z ^[[36;1m cargo test --workspace --locked^[[0m
+stable (macos-latest)	test	2026-11-16T01:50:30.7629250Z shell: /bin/bash -e {0}
+stable (macos-latest)	test	2026-11-16T01:50:30.7629370Z env:
+stable (macos-latest)	test	2026-11-16T01:50:30.7629460Z   CARGO_TERM_COLOR: always
+stable (macos-latest)	test	2026-11-16T01:50:30.7629570Z   REF: 
+stable (macos-latest)	test	2026-11-16T01:50:30.7629660Z   RUSTUP_TOOLCHAIN: stable
+stable (macos-latest)	test	2026-11-16T01:50:30.7629780Z   TMPDIR: /tmp/air-cooee/
+stable (macos-latest)	test	2026-11-16T01:50:30.7629970Z   CARGO_HOME: /Users/jirathip/services/actions-runner-cooee/_work/_tool/cooee/cargo
+stable (macos-latest)	test	2026-11-16T01:50:30.7630260Z   RUSTUP_HOME: /Users/jirathip/services/actions-runner-cooee/_work/_tool/cooee/rustup
+stable (macos-latest)	test	2026-11-16T01:50:30.7630520Z   GIT_CONFIG_GLOBAL: /Users/jirathip/services/actions-runner-cooee/_work/_temp/gitconfig
+stable (macos-latest)	test	2026-11-16T01:50:30.7630730Z   GIT_CONFIG_NOSYSTEM: 1
+stable (macos-latest)	test	2026-11-16T01:50:30.7630840Z   CARGO_NET_GIT_FETCH_WITH_CLI: true
+stable (macos-latest)	test	2026-11-16T01:50:30.7631200Z   DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+stable (macos-latest)	test	2026-11-16T01:50:30.7631370Z   CARGO_INCREMENTAL: 0
+stable (macos-latest)	test	2026-11-16T01:50:30.7631490Z   CACHE_ON_FAILURE: false
+stable (macos-latest)	test	2026-11-16T01:50:30.7631600Z ##[endgroup]
+stable (macos-latest)	test	2026-11-16T01:50:30.9057460Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/Users/jirathip/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-core)
+stable (macos-latest)	test	2026-11-16T01:50:34.2515770Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/Users/jirathip/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-machines)
+stable (macos-latest)	test	2026-11-16T01:50:34.2516400Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/Users/jirathip/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-terminal)
+stable (macos-latest)	test	2026-11-16T01:50:34.3889930Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/Users/jirathip/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-server)
+stable (macos-latest)	test	2026-11-16T01:50:40.3284270Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/Users/jirathip/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee)
+stable (macos-latest)	test	2026-11-16T01:50:45.3874300Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 14.58s
+stable (macos-latest)	test	2026-11-16T01:50:45.3971820Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/build/cooee/be8dee4d00d7f189/out/cooee-be8dee4d00d7f189)
+stable (macos-latest)	test	2026-11-16T01:50:45.8373960Z 
+stable (macos-latest)	test	2026-11-16T01:50:45.8374590Z running 0 tests
+stable (macos-latest)	test	2026-11-16T01:50:45.8374980Z 
+stable (macos-latest)	test	2026-11-16T01:50:45.8375600Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (macos-latest)	test	2026-11-16T01:50:45.8376470Z 
+stable (macos-latest)	test	2026-11-16T01:50:45.8387790Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/build/cooee/8108b4b6b2a50cf5/out/accounts-8108b4b6b2a50cf5)
+stable (macos-latest)	test	2026-11-16T01:50:46.3069500Z 
+stable (macos-latest)	test	2026-11-16T01:50:46.3071040Z running 2 tests
+stable (macos-latest)	test	2026-11-16T01:50:49.5862480Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+stable (macos-latest)	test	2026-11-16T01:50:50.0782590Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+stable (macos-latest)	test	2026-11-16T01:50:50.0784210Z 
+stable (macos-latest)	test	2026-11-16T01:50:50.0785900Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/build/cooee/4b96b8bcddbd5eed/out/accounts_env-4b96b8bcddbd5eed)
+stable (macos-latest)	test	2026-11-16T01:50:50.0788190Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.77s
+stable (macos-latest)	test	2026-11-16T01:50:50.0789320Z 
+stable (macos-latest)	test	2026-11-16T01:50:50.5372750Z 
+stable (macos-latest)	test	2026-11-16T01:50:50.5373930Z running 7 tests
+stable (macos-latest)	test	2026-11-16T01:50:50.5790940Z test unknown_provider_or_account_refuses_on_one_line ... ok
+stable (macos-latest)	test	2026-11-16T01:50:50.5863610Z test an_inherited_token_never_signs_a_folder_in ... ok
+stable (macos-latest)	test	2026-11-16T01:50:50.6894070Z test ls_json_lists_every_account_without_its_token ... ok
+stable (macos-latest)	test	2026-11-16T01:50:50.6929050Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+stable (macos-latest)	test	2026-11-16T01:50:50.7084490Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+stable (macos-latest)	test	2026-11-16T01:50:50.8019720Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+stable (macos-latest)	test	2026-11-16T01:50:50.8197370Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+stable (macos-latest)	test	2026-11-16T01:50:50.8197690Z 
+stable (macos-latest)	test	2026-11-16T01:50:50.8197920Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+stable (macos-latest)	test	2026-11-16T01:50:50.8198820Z 
+stable (macos-latest)	test	2026-11-16T01:50:50.8201190Z ^[[1m^[[92m     Running^[[0m tests/ask.rs (target/debug/build/cooee/c961e6adc7a320b3/out/ask-c961e6adc7a320b3)
+stable (macos-latest)	test	2026-11-16T01:50:51.3013910Z 
+stable (macos-latest)	test	2026-11-16T01:50:51.3015150Z running 4 tests
+stable (macos-latest)	test	2026-11-16T01:50:52.0360680Z test an_asked_persona_may_ask_one_more_and_no_further ... ok
+stable (macos-latest)	test	2026-11-16T01:50:52.0894320Z test a_persona_its_can_message_doesnt_name_is_not_allowed ... ok
+stable (macos-latest)	test	2026-11-16T01:50:52.2530580Z test an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steers ... ok
+stable (macos-latest)	test	2026-11-16T01:50:53.5422720Z test no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline ... ok
+stable (macos-latest)	test	2026-11-16T01:50:53.5423400Z 
+stable (macos-latest)	test	2026-11-16T01:50:53.5423750Z test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.24s
+stable (macos-latest)	test	2026-11-16T01:50:53.5430660Z 
+stable (macos-latest)	test	2026-11-16T01:50:53.5439040Z ^[[1m^[[92m     Running^[[0m tests/chat.rs (target/debug/build/cooee/253bfb5e8dc730df/out/chat-253bfb5e8dc730df)
+stable (macos-latest)	test	2026-11-16T01:50:54.1975870Z 
+stable (macos-latest)	test	2026-11-16T01:50:54.1977600Z running 12 tests
+stable (macos-latest)	test	2026-11-16T01:50:54.6369510Z test a_hanging_shed_approve_never_holds_another_thread ... ok
+stable (macos-latest)	test	2026-11-16T01:50:54.6369830Z test fake_shed_server ... ignored, a server for apple/e2e, not a test
+stable (macos-latest)	test	2026-11-16T01:50:54.7142580Z test closing_a_thread_kills_and_removes_its_terminal ... ok
+stable (macos-latest)	test	2026-11-16T01:50:54.8698650Z test an_approval_is_sent_to_shed_once_however_often_it_is_tapped ... ok
+stable (macos-latest)	test	2026-11-16T01:50:55.0153180Z test a_reconnect_with_last_event_id_replays_without_gaps_or_duplicates ... ok
+stable (macos-latest)	test	2026-11-16T01:50:55.1965570Z test a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed ... FAILED
+stable (macos-latest)	test	2026-11-16T01:50:55.4909600Z test cancel_ends_the_turn_and_writes_back_the_tool_call_in_progress ... ok
+stable (macos-latest)	test	2026-11-16T01:50:55.6432080Z test a_message_to_a_stopped_agent_is_refused_never_stored_as_sent ... ok
+stable (macos-latest)	test	2026-11-16T01:50:55.8461820Z test a_tool_call_is_one_row_updated_in_place_and_a_retried_send_is_stored_once ... ok
+stable (macos-latest)	test	2026-11-16T01:50:56.0851630Z test a_restarted_cooee_reattaches_to_its_terminals_and_catches_up ... ok
+stable (macos-latest)	test	2026-11-16T01:50:56.0972100Z test new_thread_runs_the_agent_in_an_allowed_folder_and_streams_the_reply ... ok
+stable (macos-latest)	test	2026-11-16T01:50:56.2015910Z test a_shed_of_another_protocol_is_refused_naming_both_sides ... ok
+stable (macos-latest)	test	2026-11-16T01:50:56.2017180Z 
+stable (macos-latest)	test	2026-11-16T01:50:56.2017460Z failures:
+stable (macos-latest)	test	2026-11-16T01:50:56.2017880Z 
+stable (macos-latest)	test	2026-11-16T01:50:56.2018870Z ---- a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed stdout ----
+stable (macos-latest)	test	2026-11-16T01:50:56.2020140Z 
+stable (macos-latest)	test	2026-11-16T01:50:56.2021700Z thread 'a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed' (17561331) panicked at crates/cooee/tests/chat.rs:353:5:
+stable (macos-latest)	test	2026-11-16T01:50:56.2030370Z ["SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && launchctl kickstart -k gui/$(id -u)/dev.shed.serve", "SHED_VERSION: cooee speaks shed 0.0.0 (4ac443d) protocol 1; the server runs 0.0.0 (fffffff) protocol 0, an older shed; restart shed serve; fix: cargo install --locked --git https://github.com/jirathip-dev/shed --rev 4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb shed && launchctl kickstart -k gui/$(id -u)/dev.shed.serve"]
+stable (macos-latest)	test	2026-11-16T01:50:56.2038470Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+stable (macos-latest)	test	2026-11-16T01:50:56.2039470Z 
+stable (macos-latest)	test	2026-11-16T01:50:56.2039480Z 
+stable (macos-latest)	test	2026-11-16T01:50:56.2039750Z failures:
+stable (macos-latest)	test	2026-11-16T01:50:56.2040870Z     a_send_to_a_shed_on_another_protocol_says_why_in_the_chat_then_goes_through_once_fixed
+stable (macos-latest)	test	2026-11-16T01:50:56.2042010Z 
+stable (macos-latest)	test	2026-11-16T01:50:56.2042840Z test result: FAILED. 10 passed; 1 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.00s
+stable (macos-latest)	test	2026-11-16T01:50:56.2044080Z 
+stable (macos-latest)	test	2026-11-16T01:50:56.2063060Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test chat`
+stable (macos-latest)	test	2026-11-16T01:50:56.2144380Z ##[error]Process completed with exit code 101.
+arch-check / arch-check	UNKNOWN STEP	﻿2026-11-16T01:16:39.2360483Z Current runner version: '2.338.2'
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2383826Z ##[group]Runner Image Provisioner
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2384728Z Hosted Compute Agent
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2385347Z Version: 20261103.629
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2385936Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2386508Z Build Date: 2026-11-03T17:26:59Z
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2387402Z Worker ID: {46a6e95a-4d07-40fe-af74-f56dd3471552}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2388000Z Region: centralus
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2388454Z Cloud: Azure
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2388878Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2390179Z ##[group]Operating System
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2390661Z Ubuntu
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2391139Z 26.04.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2391569Z LTS
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2391948Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2392423Z ##[group]Runner Image
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2392895Z Image: ubuntu-26.04
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2393341Z Version: 20261111.196.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2394356Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261111.196/images/ubuntu/Ubuntu2604-Readme.md
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2395684Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261111.196
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2396430Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2397626Z ##[group]GITHUB_TOKEN Permissions
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2399853Z Contents: read
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2400397Z Metadata: read
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2400826Z Packages: read
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2401242Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2403487Z Secret source: Actions
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2404220Z Cache mode: write
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2405114Z Prepare workflow directory
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2725948Z Prepare all required actions
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.2771608Z Getting action download info
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.5119957Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.5990234Z Download action repository 'dtolnay/rust-toolchain@1.99.1' (SHA:263313d2989f864a2b8613f97277288638e7d8f8)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.8663384Z Uses: jirathip-dev/drover/.github/workflows/arch-check.yml@refs/heads/staging (95d82357216b860a6da59cb20052403449e551f4)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.8667619Z ##[group] Inputs
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.8668140Z   config: .drover/arch.toml
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.8668603Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.8669148Z Complete job name: arch-check / arch-check
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9711063Z ##[group]Run actions/checkout@v4
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9711761Z with:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9712218Z   fetch-depth: 2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9712693Z   repository: jirathip-dev/cooee
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9715888Z   token: ***
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9716297Z   ssh-strict: true
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9716881Z   ssh-user: git
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9717361Z   persist-credentials: true
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9717807Z   clean: true
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9718286Z   sparse-checkout-cone-mode: true
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9718777Z   fetch-tags: false
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9719186Z   show-progress: true
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9719619Z   lfs: false
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9720008Z   submodules: false
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9720464Z   set-safe-directory: true
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9720951Z   allow-unsafe-pr-checkout: false
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:39.9721648Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2210064Z Syncing repository: jirathip-dev/cooee
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2212733Z ##[group]Getting Git version info
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2213625Z Working directory is '/home/runner/work/cooee/cooee'
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2214744Z [command]/usr/bin/git version
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2215300Z git version 2.56.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2233008Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2245912Z Temporarily overriding HOME='/home/runner/work/_temp/5fb2cdd7-2ba6-4ddb-892c-af1189bedbd0' before making global git config changes
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2247834Z Adding repository directory to the temporary git global config as a safe directory
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2252125Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2316136Z Deleting the contents of '/home/runner/work/cooee/cooee'
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2319739Z ##[group]Initializing the repository
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2323799Z [command]/usr/bin/git init /home/runner/work/cooee/cooee
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2431215Z hint: Using 'master' as the name for the initial branch. This default branch name
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2432480Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2433415Z hint: to use in all of your new repositories, which will suppress this warning,
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2434230Z hint: call:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2434670Z hint:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2435195Z hint: 	git config --global init.defaultBranch <name>
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2435869Z hint:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2436446Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2437636Z hint: 'development'. The just-created branch can be renamed via this command:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2438383Z hint:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2438841Z hint: 	git branch -m <name>
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2439582Z hint:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2440650Z hint: Disable this message with "git config set advice.defaultBranchName false"
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2441997Z Initialized empty Git repository in /home/runner/work/cooee/cooee/.git/
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2451617Z [command]/usr/bin/git remote add origin https://github.com/jirathip-dev/cooee
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2501418Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2502977Z ##[group]Disabling automatic garbage collection
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2504583Z [command]/usr/bin/git config --local gc.auto 0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2533952Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2535619Z ##[group]Setting up auth
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2540749Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2569549Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.2969255Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.3000071Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.3228609Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.3260640Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.3467540Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.3503285Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.3504447Z ##[group]Fetching the repository
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:40.3511768Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin +d414ca997b62cadaeb72f50ff8f5897df0c4323a:refs/remotes/pull/418/merge
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:44.7180446Z From https://github.com/jirathip-dev/cooee
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:44.7183252Z  * [new ref]         d414ca997b62cadaeb72f50ff8f5897df0c4323a -> pull/418/merge
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:44.7188178Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:44.7189938Z ##[group]Determining the checkout info
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:44.7191893Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:44.7194388Z [command]/usr/bin/git sparse-checkout disable
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:44.7247784Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:44.7274651Z ##[group]Checking out the ref
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:44.7277113Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/418/merge
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3590181Z Note: switching to 'refs/remotes/pull/418/merge'.
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3590826Z 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3591227Z You are in 'detached HEAD' state. You can look around, make experimental
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3591696Z changes and commit them, and you can discard any commits you make in this
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3592187Z state without impacting any branches by switching back to a branch.
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3592839Z 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3593061Z If you want to create a new branch to retain commits you create, you may
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3593494Z do so (now or later) by using -c with the switch command. Example:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3593748Z 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3593925Z   git switch -c <new-branch-name>
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3594101Z 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3594250Z Or undo this operation with:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3594409Z 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3594546Z   git switch -
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3594706Z 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3594940Z Turn off this advice by setting config variable advice.detachedHead to false
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3595247Z 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3595517Z HEAD is now at d414ca9 Merge 7d8863e067b3238a66f3117691915a204641af7d into 2de207086b51c9b748b084341cae0b90a351bde0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3610952Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3655387Z [command]/usr/bin/git log -1 --format=%H
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3674819Z d414ca997b62cadaeb72f50ff8f5897df0c4323a
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3962114Z ##[group]Run dtolnay/rust-toolchain@1.99.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3962469Z with:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.3962727Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4021452Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4113712Z ##[group]Run if [[ -z $toolchain ]]; then
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4114200Z ^[[36;1mif [[ -z $toolchain ]]; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4114685Z ^[[36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4115251Z ^[[36;1m  echo "'toolchain' is a required input" >&2^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4115591Z ^[[36;1m  exit 1^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4115956Z ^[[36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4116351Z ^[[36;1m  if [[ Linux == macOS ]]; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4117371Z ^[[36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4117914Z ^[[36;1m  else^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4118395Z ^[[36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4118862Z ^[[36;1m  fi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4119218Z ^[[36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4119705Z ^[[36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4120135Z ^[[36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4120590Z ^[[36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4121116Z ^[[36;1melse^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4121426Z ^[[36;1m  delimiter=EOF^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4121794Z ^[[36;1m  while [[ $toolchain == *$delimiter* ]]; do delimiter+=_; done^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4122332Z ^[[36;1m  printf 'toolchain<<%s\n%s\n%s\n' "$delimiter" "$toolchain" "$delimiter" >> $GITHUB_OUTPUT^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4122773Z ^[[36;1mfi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4157993Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4158545Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4158837Z   toolchain: 1.99.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4159136Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4261634Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=23]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4265748Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4319222Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4319763Z ^[[36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4347284Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4347700Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4403868Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=13]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4406549Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4441940Z ##[group]Run if ! command -v rustup &>/dev/null; then
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4442331Z ^[[36;1mif ! command -v rustup &>/dev/null; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4442989Z ^[[36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4443667Z ^[[36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4444005Z ^[[36;1mfi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4470078Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4470555Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4470871Z   CARGO_HOME: /home/runner/.cargo
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4471159Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4524524Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=11]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4527999Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4536642Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4553157Z ##[start-action display=rustup toolchain install 1.99.1;id=__dtolnay_rust-toolchain.__run_4]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4585663Z ##[group]Run set -f  # split targets and components on commas and whitespace, without glob expansion
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4586570Z ^[[36;1mset -f  # split targets and components on commas and whitespace, without glob expansion^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4587357Z ^[[36;1mflags=()^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4587884Z ^[[36;1mfor t in ${targets//,/ }; do flags+=(--target "$t"); done^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4588391Z ^[[36;1mfor c in ${components//,/ }; do flags+=(--component "$c"); done^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4588984Z ^[[36;1mif [[ $toolchain == nightly && -n $components ]]; then flags+=(--allow-downgrade); fi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4589600Z ^[[36;1mlog=$(mktemp)^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4589977Z ^[[36;1mtrap 'rm -f "$log"' EXIT^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4590435Z ^[[36;1mfor attempt in 1 2 3 4 5; do^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4591028Z ^[[36;1m  if rustup toolchain install "$toolchain" "${flags[@]}" --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4591656Z ^[[36;1m    break^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4592007Z ^[[36;1m  else^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4592330Z ^[[36;1m    status=$?^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4592682Z ^[[36;1m  fi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4593056Z ^[[36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4593749Z ^[[36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4594345Z ^[[36;1m    exit "$status"^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4594780Z ^[[36;1m  fi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4595273Z ^[[36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4595768Z ^[[36;1m  sleep 30^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4596051Z ^[[36;1mdone^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4623278Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4623788Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4624096Z   CARGO_HOME: /home/runner/.cargo
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4624511Z   toolchain: 1.99.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4624828Z   targets: 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4625133Z   components: 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4625453Z   RUSTUP_PERMIT_COPY_RENAME: 1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.4625819Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.5613126Z info: syncing channel updates for 1.99.1-x86_64-unknown-linux-gnu
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.9454122Z info: latest update on 2026-10-15 for version 1.99.1 (58cf8f9c3 2026-10-13)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:45.9455085Z info: downloading 3 components
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4285849Z 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4343961Z   1.99.1-x86_64-unknown-linux-gnu installed - rustc 1.99.1 (58cf8f9c3 2026-10-13)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4344451Z 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4510814Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=7995]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4518967Z ##[start-action display=rustup default 1.99.1;id=__dtolnay_rust-toolchain.__run_5]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4547994Z ##[group]Run rustup default "$toolchain" --force-non-host
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4548393Z ^[[36;1mrustup default "$toolchain" --force-non-host^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4577265Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4577606Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4577844Z   CARGO_HOME: /home/runner/.cargo
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4578134Z   toolchain: 1.99.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4578365Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4661811Z info: using existing install for 1.99.1-x86_64-unknown-linux-gnu
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4675703Z info: default toolchain set to 1.99.1-x86_64-unknown-linux-gnu
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4675906Z 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4731332Z   1.99.1-x86_64-unknown-linux-gnu unchanged - rustc 1.99.1 (58cf8f9c3 2026-10-13)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4732543Z info: note that the toolchain '1.99.1-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/cooee/cooee/rust-toolchain.toml')
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4733040Z 
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4744667Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=22]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4748562Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4773799Z ##[group]Run DATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4774477Z ^[[36;1mDATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4775028Z ^[[36;1mHASH=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-hash: //p')^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4775486Z ^[[36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4801922Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4802269Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4802504Z   CARGO_HOME: /home/runner/.cargo
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4802801Z   toolchain: 1.99.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.4803024Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5063312Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=31]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5065988Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5092766Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5093157Z ^[[36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5093476Z ^[[36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5093766Z ^[[36;1mfi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5122222Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5122590Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5122863Z   CARGO_HOME: /home/runner/.cargo
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5123126Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5173261Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=10]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5175577Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5200480Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5200823Z ^[[36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5201121Z ^[[36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5201466Z ^[[36;1mfi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5225612Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5225922Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5226155Z   CARGO_HOME: /home/runner/.cargo
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5226454Z   CARGO_INCREMENTAL: 0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5226823Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5272317Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=9]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5275961Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5301878Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5302392Z ^[[36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5302995Z ^[[36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5303568Z ^[[36;1m  if rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[89]\.'; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5304048Z ^[[36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5304500Z ^[[36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5304981Z ^[[36;1m  elif rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.6[67]\.'; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5305478Z ^[[36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5306032Z ^[[36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5306376Z ^[[36;1m  fi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5306595Z ^[[36;1mfi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5328325Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5328635Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5328932Z   CARGO_HOME: /home/runner/.cargo
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5329187Z   CARGO_INCREMENTAL: 0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5329418Z   CARGO_TERM_COLOR: always
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5329695Z   toolchain: 1.99.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5329914Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5554795Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=27]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5559948Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5588302Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5588899Z ^[[36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5589426Z ^[[36;1mif rustc +"$toolchain" --version --verbose | grep -q '^release: 1\.7[01]\.'; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5589890Z ^[[36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5590185Z ^[[36;1mfi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5615602Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5615935Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5616198Z   CARGO_HOME: /home/runner/.cargo
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5616469Z   CARGO_INCREMENTAL: 0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5616833Z   CARGO_TERM_COLOR: always
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5617083Z   toolchain: 1.99.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5617347Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5757246Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=19]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5761994Z ##[start-action display=rustc +1.99.1 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5786433Z ##[group]Run rustc +"$toolchain" --version --verbose
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5787028Z ^[[36;1mrustc +"$toolchain" --version --verbose^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5813260Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5813609Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5813852Z   CARGO_HOME: /home/runner/.cargo
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5814113Z   CARGO_INCREMENTAL: 0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5814379Z   CARGO_TERM_COLOR: always
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5814632Z   toolchain: 1.99.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5814841Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5938705Z rustc 1.99.1 (58cf8f9c3 2026-10-13)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5939123Z binary: rustc
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5939495Z commit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5939908Z commit-date: 2026-10-13
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5940173Z host: x86_64-unknown-linux-gnu
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5940420Z release: 1.99.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5940674Z LLVM version: 23.1.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.5951463Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=18]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.6013343Z ##[group]Run cargo install --locked --git https://github.com/jirathip-dev/herdsman --branch staging drover
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.6014080Z ^[[36;1mcargo install --locked --git https://github.com/jirathip-dev/herdsman --branch staging drover^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.6042171Z shell: /usr/bin/bash -e {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.6042521Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.6042750Z   CARGO_HOME: /home/runner/.cargo
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.6042993Z   CARGO_INCREMENTAL: 0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.6043281Z   CARGO_TERM_COLOR: always
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.6043519Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.6552779Z info: syncing channel updates for 1.99.1-x86_64-unknown-linux-gnu
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.8404847Z info: latest update on 2026-10-15 for version 1.99.1 (58cf8f9c3 2026-10-13)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:53.8521124Z info: downloading 2 components
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:54.5827981Z ^[[1m^[[92m    Updating^[[0m git repository `https://github.com/jirathip-dev/herdsman`
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:58.4055066Z ^[[1m^[[92m  Installing^[[0m drover v0.1.0 (https://github.com/jirathip-dev/herdsman?branch=staging#95d82357)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:58.4055824Z ^[[1m^[[33mwarning^[[0m: default toolchain implicitly overridden with `1.99.1-x86_64-unknown-linux-gnu` by rustup toolchain file
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:58.4056303Z   ^[[1m^[[94m|^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:58.4056865Z   ^[[1m^[[94m= ^[[0m^[[1mhelp^[[0m: use `cargo +stable install` if you meant to use the stable toolchain
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:58.4057517Z   ^[[1m^[[94m= ^[[0m^[[1mnote^[[0m: rustup selects the toolchain based on the parent environment and not the environment of the package being installed
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:58.4064621Z ^[[1m^[[92m    Updating^[[0m crates.io index
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:58.4065395Z ^[[1m^[[92m    Updating^[[0m git repository `https://github.com/jirathip-dev/shed`
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.2404879Z ^[[1m^[[92m Downloading^[[0m crates ...
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.3764155Z ^[[1m^[[92m  Downloaded^[[0m aead v0.6.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.3780404Z ^[[1m^[[92m  Downloaded^[[0m anstyle-parse v1.0.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.3817821Z ^[[1m^[[92m  Downloaded^[[0m zeroize v1.9.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.3849570Z ^[[1m^[[92m  Downloaded^[[0m anyhow v1.0.104
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.3890359Z ^[[1m^[[92m  Downloaded^[[0m aes v0.9.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.3995006Z ^[[1m^[[92m  Downloaded^[[0m aes-gcm v0.11.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4080868Z ^[[1m^[[92m  Downloaded^[[0m zmij v1.0.23
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4127194Z ^[[1m^[[92m  Downloaded^[[0m anstream v1.0.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4388164Z ^[[1m^[[92m  Downloaded^[[0m anstyle-query v1.1.5
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4549166Z ^[[1m^[[92m  Downloaded^[[0m anstyle v1.0.14
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4622030Z ^[[1m^[[92m  Downloaded^[[0m fallible-streaming-iterator v0.1.9
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4730352Z ^[[1m^[[92m  Downloaded^[[0m getrandom v0.4.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4764263Z ^[[1m^[[92m  Downloaded^[[0m hkdf v0.13.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4778297Z ^[[1m^[[92m  Downloaded^[[0m rand_core v0.10.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4815702Z ^[[1m^[[92m  Downloaded^[[0m ctutils v0.4.7
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4871195Z ^[[1m^[[92m  Downloaded^[[0m proc-macro2 v1.0.107
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4884622Z ^[[1m^[[92m  Downloaded^[[0m serde_json v1.0.154
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4917340Z ^[[1m^[[92m  Downloaded^[[0m fallible-iterator v0.3.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4923138Z ^[[1m^[[92m  Downloaded^[[0m group v0.14.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4929808Z ^[[1m^[[92m  Downloaded^[[0m socket2 v0.6.5
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4940649Z ^[[1m^[[92m  Downloaded^[[0m colorchoice v1.0.5
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4945819Z ^[[1m^[[92m  Downloaded^[[0m hmac v0.13.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4955121Z ^[[1m^[[92m  Downloaded^[[0m mio v1.2.4
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.4980321Z ^[[1m^[[92m  Downloaded^[[0m const-oid v0.10.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5059358Z ^[[1m^[[92m  Downloaded^[[0m subtle v2.6.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5099849Z ^[[1m^[[92m  Downloaded^[[0m toml_write v0.1.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5106616Z ^[[1m^[[92m  Downloaded^[[0m universal-hash v0.6.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5111660Z ^[[1m^[[92m  Downloaded^[[0m heck v0.5.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5116945Z ^[[1m^[[92m  Downloaded^[[0m signature v3.0.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5122656Z ^[[1m^[[92m  Downloaded^[[0m clap_lex v1.1.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5128830Z ^[[1m^[[92m  Downloaded^[[0m serde_spanned v0.6.9
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5137102Z ^[[1m^[[92m  Downloaded^[[0m cmov v0.5.4
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5145313Z ^[[1m^[[92m  Downloaded^[[0m cpubits v0.1.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5149358Z ^[[1m^[[92m  Downloaded^[[0m ff v0.14.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5156294Z ^[[1m^[[92m  Downloaded^[[0m sha2 v0.11.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5170794Z ^[[1m^[[92m  Downloaded^[[0m itoa v1.0.18
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5177677Z ^[[1m^[[92m  Downloaded^[[0m base64ct v1.8.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5188313Z ^[[1m^[[92m  Downloaded^[[0m primeorder v0.14.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5196659Z ^[[1m^[[92m  Downloaded^[[0m cfg-if v1.0.5
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5202410Z ^[[1m^[[92m  Downloaded^[[0m hybrid-array v0.4.15
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5218009Z ^[[1m^[[92m  Downloaded^[[0m elliptic-curve v0.14.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5232216Z ^[[1m^[[92m  Downloaded^[[0m foldhash v0.2.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5238502Z ^[[1m^[[92m  Downloaded^[[0m primefield v0.14.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5245688Z ^[[1m^[[92m  Downloaded^[[0m pkcs8 v0.11.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5258877Z ^[[1m^[[92m  Downloaded^[[0m pkg-config v0.3.34
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5265345Z ^[[1m^[[92m  Downloaded^[[0m toml_datetime v0.6.11
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5271397Z ^[[1m^[[92m  Downloaded^[[0m ecdsa v0.17.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5281699Z ^[[1m^[[92m  Downloaded^[[0m utf8parse v0.2.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5286920Z ^[[1m^[[92m  Downloaded^[[0m hashlink v0.12.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5295381Z ^[[1m^[[92m  Downloaded^[[0m sec1 v0.8.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5303617Z ^[[1m^[[92m  Downloaded^[[0m unicode-ident v1.0.27
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5316334Z ^[[1m^[[92m  Downloaded^[[0m ctr v0.10.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5324899Z ^[[1m^[[92m  Downloaded^[[0m bitflags v2.13.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5342668Z ^[[1m^[[92m  Downloaded^[[0m base64 v0.23.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5360716Z ^[[1m^[[92m  Downloaded^[[0m cpufeatures v0.3.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5367060Z ^[[1m^[[92m  Downloaded^[[0m clap v4.6.7
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5404455Z ^[[1m^[[92m  Downloaded^[[0m p256 v0.14.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5422154Z ^[[1m^[[92m  Downloaded^[[0m base16ct v1.0.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5427908Z ^[[1m^[[92m  Downloaded^[[0m serde_core v1.0.229
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5440808Z ^[[1m^[[92m  Downloaded^[[0m serde_derive v1.0.229
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5454740Z ^[[1m^[[92m  Downloaded^[[0m cc v1.11.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5476284Z ^[[1m^[[92m  Downloaded^[[0m num-traits v0.2.19
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5488484Z ^[[1m^[[92m  Downloaded^[[0m once_cell v1.21.4
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5498962Z ^[[1m^[[92m  Downloaded^[[0m typenum v1.20.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5517247Z ^[[1m^[[92m  Downloaded^[[0m wnaf v0.14.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5523368Z ^[[1m^[[92m  Downloaded^[[0m cipher v0.5.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5535226Z ^[[1m^[[92m  Downloaded^[[0m der v0.8.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5563390Z ^[[1m^[[92m  Downloaded^[[0m inout v0.2.5
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5569474Z ^[[1m^[[92m  Downloaded^[[0m find-msvc-tools v0.1.15
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5576608Z ^[[1m^[[92m  Downloaded^[[0m syn v3.0.9
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5631770Z ^[[1m^[[92m  Downloaded^[[0m memchr v2.8.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5657339Z ^[[1m^[[92m  Downloaded^[[0m hashbrown v0.17.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5683328Z ^[[1m^[[92m  Downloaded^[[0m clap_builder v4.6.7
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5719980Z ^[[1m^[[92m  Downloaded^[[0m polyval v0.7.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5729360Z ^[[1m^[[92m  Downloaded^[[0m toml v0.8.23
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5741532Z ^[[1m^[[92m  Downloaded^[[0m equivalent v1.0.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5745539Z ^[[1m^[[92m  Downloaded^[[0m shlex v2.0.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5751019Z ^[[1m^[[92m  Downloaded^[[0m serde v1.0.229
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5766573Z ^[[1m^[[92m  Downloaded^[[0m rfc6979 v0.6.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5772934Z ^[[1m^[[92m  Downloaded^[[0m vcpkg v0.2.15
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5955235Z ^[[1m^[[92m  Downloaded^[[0m autocfg v1.5.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5964088Z ^[[1m^[[92m  Downloaded^[[0m block-buffer v0.12.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5970216Z ^[[1m^[[92m  Downloaded^[[0m clap_derive v4.6.7
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.5980680Z ^[[1m^[[92m  Downloaded^[[0m indexmap v2.14.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6000765Z ^[[1m^[[92m  Downloaded^[[0m spki v0.8.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6009427Z ^[[1m^[[92m  Downloaded^[[0m strsim v0.11.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6014804Z ^[[1m^[[92m  Downloaded^[[0m rusqlite v0.41.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6047933Z ^[[1m^[[92m  Downloaded^[[0m is_terminal_polyfill v1.70.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6053500Z ^[[1m^[[92m  Downloaded^[[0m toml_edit v0.22.27
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6073038Z ^[[1m^[[92m  Downloaded^[[0m crypto-common v0.2.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6078514Z ^[[1m^[[92m  Downloaded^[[0m quote v1.0.47
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6091064Z ^[[1m^[[92m  Downloaded^[[0m digest v0.11.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6101090Z ^[[1m^[[92m  Downloaded^[[0m ghash v0.6.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6106000Z ^[[1m^[[92m  Downloaded^[[0m serdect v0.4.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6113369Z ^[[1m^[[92m  Downloaded^[[0m libc v0.2.191
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6300810Z ^[[1m^[[92m  Downloaded^[[0m pin-project-lite v0.2.17
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6321669Z ^[[1m^[[92m  Downloaded^[[0m smallvec v1.16.4
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6329264Z ^[[1m^[[92m  Downloaded^[[0m bytes v1.12.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6345353Z ^[[1m^[[92m  Downloaded^[[0m crypto-bigint v0.7.10
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6413925Z ^[[1m^[[92m  Downloaded^[[0m tokio v1.54.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6613407Z ^[[1m^[[92m  Downloaded^[[0m winnow v0.7.15
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.6655937Z ^[[1m^[[92m  Downloaded^[[0m libsqlite3-sys v0.39.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.7518374Z ^[[1m^[[92m   Compiling^[[0m subtle v2.6.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.7519063Z ^[[1m^[[92m   Compiling^[[0m zeroize v1.9.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.7519490Z ^[[1m^[[92m   Compiling^[[0m libc v0.2.191
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.7519853Z ^[[1m^[[92m   Compiling^[[0m typenum v1.20.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.8359013Z ^[[1m^[[92m   Compiling^[[0m rand_core v0.10.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.8432944Z ^[[1m^[[92m   Compiling^[[0m getrandom v0.4.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.9061920Z ^[[1m^[[92m   Compiling^[[0m cfg-if v1.0.5
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:16:59.9226205Z ^[[1m^[[92m   Compiling^[[0m cmov v0.5.4
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.0175983Z ^[[1m^[[92m   Compiling^[[0m ctutils v0.4.7
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.0956651Z ^[[1m^[[92m   Compiling^[[0m proc-macro2 v1.0.107
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.1558905Z ^[[1m^[[92m   Compiling^[[0m const-oid v0.10.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.2766194Z ^[[1m^[[92m   Compiling^[[0m cpubits v0.1.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.2979698Z ^[[1m^[[92m   Compiling^[[0m unicode-ident v1.0.27
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.3370827Z ^[[1m^[[92m   Compiling^[[0m quote v1.0.47
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.4063501Z ^[[1m^[[92m   Compiling^[[0m hybrid-array v0.4.15
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.4479242Z ^[[1m^[[92m   Compiling^[[0m autocfg v1.5.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.6912135Z ^[[1m^[[92m   Compiling^[[0m num-traits v0.2.19
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.8675767Z ^[[1m^[[92m   Compiling^[[0m block-buffer v0.12.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.8742340Z ^[[1m^[[92m   Compiling^[[0m syn v3.0.9
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:00.9139858Z ^[[1m^[[92m   Compiling^[[0m serde_core v1.0.229
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:01.1538707Z ^[[1m^[[92m   Compiling^[[0m crypto-common v0.2.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:01.6308902Z ^[[1m^[[92m   Compiling^[[0m crypto-bigint v0.7.10
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:02.3433031Z ^[[1m^[[92m   Compiling^[[0m digest v0.11.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:02.4658871Z ^[[1m^[[92m   Compiling^[[0m ff v0.14.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:02.5407017Z ^[[1m^[[92m   Compiling^[[0m serde v1.0.229
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:02.6659763Z ^[[1m^[[92m   Compiling^[[0m hmac v0.13.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:02.7598855Z ^[[1m^[[92m   Compiling^[[0m der v0.8.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:03.1698669Z ^[[1m^[[92m   Compiling^[[0m cpufeatures v0.3.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:03.1938683Z ^[[1m^[[92m   Compiling^[[0m foldhash v0.2.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:03.3169052Z ^[[1m^[[92m   Compiling^[[0m hashbrown v0.17.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:03.9599211Z ^[[1m^[[92m   Compiling^[[0m group v0.14.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:04.0099076Z ^[[1m^[[92m   Compiling^[[0m serde_derive v1.0.229
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:04.0702938Z ^[[1m^[[92m   Compiling^[[0m inout v0.2.5
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:04.1434965Z ^[[1m^[[92m   Compiling^[[0m shlex v2.0.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:04.2429843Z ^[[1m^[[92m   Compiling^[[0m base16ct v1.0.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:04.3829243Z ^[[1m^[[92m   Compiling^[[0m find-msvc-tools v0.1.15
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:04.5028930Z ^[[1m^[[92m   Compiling^[[0m cc v1.11.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:04.9306129Z ^[[1m^[[92m   Compiling^[[0m sec1 v0.8.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:05.3819509Z ^[[1m^[[92m   Compiling^[[0m hkdf v0.13.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:05.4378961Z ^[[1m^[[92m   Compiling^[[0m zmij v1.0.23
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:05.4680555Z ^[[1m^[[92m   Compiling^[[0m utf8parse v0.2.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:05.5028945Z ^[[1m^[[92m   Compiling^[[0m vcpkg v0.2.15
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:05.5260333Z ^[[1m^[[92m   Compiling^[[0m pkg-config v0.3.34
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:05.7809018Z ^[[1m^[[92m   Compiling^[[0m anstyle-parse v1.0.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:05.8328784Z ^[[1m^[[92m   Compiling^[[0m elliptic-curve v0.14.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:05.8837932Z ^[[1m^[[92m   Compiling^[[0m cipher v0.5.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:05.9269871Z ^[[1m^[[92m   Compiling^[[0m libsqlite3-sys v0.39.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.0558672Z ^[[1m^[[92m   Compiling^[[0m primefield v0.14.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.0618991Z ^[[1m^[[92m   Compiling^[[0m universal-hash v0.6.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.1012757Z ^[[1m^[[92m   Compiling^[[0m serde_json v1.0.154
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.1544220Z ^[[1m^[[92m   Compiling^[[0m equivalent v1.0.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.1598105Z ^[[1m^[[92m   Compiling^[[0m is_terminal_polyfill v1.70.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.1833412Z ^[[1m^[[92m   Compiling^[[0m colorchoice v1.0.5
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.1892181Z ^[[1m^[[92m   Compiling^[[0m anstyle v1.0.14
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.1911719Z ^[[1m^[[92m   Compiling^[[0m anstyle-query v1.1.5
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.2168209Z ^[[1m^[[92m   Compiling^[[0m indexmap v2.14.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.2218769Z ^[[1m^[[92m   Compiling^[[0m wnaf v0.14.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.3141788Z ^[[1m^[[92m   Compiling^[[0m anstream v1.0.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.3708422Z ^[[1m^[[92m   Compiling^[[0m polyval v0.7.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.6301251Z ^[[1m^[[92m   Compiling^[[0m toml_datetime v0.6.11
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.6599287Z ^[[1m^[[92m   Compiling^[[0m serde_spanned v0.6.9
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.8339764Z ^[[1m^[[92m   Compiling^[[0m spki v0.8.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.8729733Z ^[[1m^[[92m   Compiling^[[0m rfc6979 v0.6.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.8862594Z ^[[1m^[[92m   Compiling^[[0m signature v3.0.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.9225496Z ^[[1m^[[92m   Compiling^[[0m memchr v2.8.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.9491309Z ^[[1m^[[92m   Compiling^[[0m strsim v0.11.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:06.9769846Z ^[[1m^[[92m   Compiling^[[0m clap_lex v1.1.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:07.1478959Z ^[[1m^[[92m   Compiling^[[0m anyhow v1.0.104
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:07.2541271Z ^[[1m^[[92m   Compiling^[[0m shed-proto v0.0.0 (https://github.com/jirathip-dev/shed?rev=9b88eb5be5bc9ba8c5c75480483b9861ddc6e993#9b88eb5b)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:07.3550013Z ^[[1m^[[92m   Compiling^[[0m winnow v0.7.15
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:07.5052596Z ^[[1m^[[92m   Compiling^[[0m toml_write v0.1.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:07.6079073Z ^[[1m^[[92m   Compiling^[[0m itoa v1.0.18
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:07.7278901Z ^[[1m^[[92m   Compiling^[[0m heck v0.5.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:07.8322455Z ^[[1m^[[92m   Compiling^[[0m clap_derive v4.6.7
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:08.8919592Z ^[[1m^[[92m   Compiling^[[0m toml_edit v0.22.27
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:09.0468499Z ^[[1m^[[92m   Compiling^[[0m clap_builder v4.6.7
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:10.1602694Z ^[[1m^[[92m   Compiling^[[0m ecdsa v0.17.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:10.5968981Z ^[[1m^[[92m   Compiling^[[0m ghash v0.6.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:10.6418652Z ^[[1m^[[92m   Compiling^[[0m primeorder v0.14.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:10.9848999Z ^[[1m^[[92m   Compiling^[[0m aes v0.9.3
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:11.4348760Z ^[[1m^[[92m   Compiling^[[0m ctr v0.10.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:11.5427903Z ^[[1m^[[92m   Compiling^[[0m aead v0.6.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:11.6188811Z ^[[1m^[[92m   Compiling^[[0m hashlink v0.12.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:11.8768639Z ^[[1m^[[92m   Compiling^[[0m sha2 v0.11.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:13.3174671Z ^[[1m^[[92m   Compiling^[[0m drover-core v0.1.0 (/home/runner/.cargo/git/checkouts/herdsman-6710e7347bfe06b4/95d8235/crates/core)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:13.4169663Z ^[[1m^[[92m   Compiling^[[0m bitflags v2.13.2
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:13.6429151Z ^[[1m^[[92m   Compiling^[[0m fallible-streaming-iterator v0.1.9
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:13.7188907Z ^[[1m^[[92m   Compiling^[[0m fallible-iterator v0.3.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:13.9688708Z ^[[1m^[[92m   Compiling^[[0m smallvec v1.16.4
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:14.1390018Z ^[[1m^[[92m   Compiling^[[0m p256 v0.14.0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:15.8824401Z ^[[1m^[[92m   Compiling^[[0m aes-gcm v0.11.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:15.9709319Z ^[[1m^[[92m   Compiling^[[0m clap v4.6.7
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:15.9938612Z ^[[1m^[[92m   Compiling^[[0m toml v0.8.23
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:18.1118640Z ^[[1m^[[92m   Compiling^[[0m base64 v0.23.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:18.4238557Z ^[[1m^[[92m   Compiling^[[0m mio v1.2.4
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:18.7989106Z ^[[1m^[[92m   Compiling^[[0m socket2 v0.6.5
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:18.9288337Z ^[[1m^[[92m   Compiling^[[0m bytes v1.12.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:18.9558645Z ^[[1m^[[92m   Compiling^[[0m pin-project-lite v0.2.17
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:19.0269426Z ^[[1m^[[92m   Compiling^[[0m drover v0.1.0 (/home/runner/.cargo/git/checkouts/herdsman-6710e7347bfe06b4/95d8235/crates/cli)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:19.4578593Z ^[[1m^[[92m   Compiling^[[0m tokio v1.54.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:17:58.9025561Z ^[[1m^[[92m   Compiling^[[0m rusqlite v0.41.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:18:13.0630494Z ^[[1m^[[92m   Compiling^[[0m drover-server v0.1.0 (/home/runner/.cargo/git/checkouts/herdsman-6710e7347bfe06b4/95d8235/crates/server)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:18:28.1149435Z ^[[1m^[[92m   Compiling^[[0m drover-service v0.1.0 (/home/runner/.cargo/git/checkouts/herdsman-6710e7347bfe06b4/95d8235/crates/service)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:06.8675074Z ^[[1m^[[92m    Finished^[[0m `release` profile [optimized] target(s) in 2m 12s
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:06.8774315Z ^[[1m^[[92m  Installing^[[0m /home/runner/.cargo/bin/drover
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:06.8775710Z ^[[1m^[[92m   Installed^[[0m package `drover v0.1.0 (https://github.com/jirathip-dev/herdsman?branch=staging#95d82357)` (executable `drover`)
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1819758Z ##[group]Run if [ "pull_request" = pull_request ]; then
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1820601Z ^[[36;1mif [ "pull_request" = pull_request ]; then^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1820925Z ^[[36;1m  printf '%s' "$BODY" > "$RUNNER_TEMP/pr-body.md"^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1821275Z ^[[36;1m  set -- --base HEAD^1 --pr-body "$RUNNER_TEMP/pr-body.md"^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1821596Z ^[[36;1mfi^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1821858Z ^[[36;1mdrover arch-check --config ".drover/arch.toml" "$@"^[[0m
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1850635Z shell: /usr/bin/bash -e {0}
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1850956Z env:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1851312Z   CARGO_HOME: /home/runner/.cargo
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1851646Z   CARGO_INCREMENTAL: 0
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1851979Z   CARGO_TERM_COLOR: always
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1863824Z   BODY: Closes #416
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	## For humans
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	A chat with any persona, such as the Orchestrator, now starts clean: no personal CLAUDE.md, no personal plugins or skills, no claude.ai connectors (Docs, Drive, Microsoft 365, Supabase). The same goes for persona members of a room.
+arch-check / arch-check	UNKNOWN STEP	A plain chat with no persona still loads your personal Claude setup, as before.
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	## What changed
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	- `recipe` in `crates/cooee-server/src/lib.rs` sets the provider's `no_personal_setup()` options on `launch.meta` for any thread with a persona or a profile. Plain threads get none. Room members start through the same `recipe` (`starter`), so they are covered too.
+arch-check / arch-check	UNKNOWN STEP	- `Logins::profile` no longer sets meta itself. That logic moved into the one place above, behind a new `Logins::no_personal_setup(agent)`, so a profile thread (including an owner profile read as a persona) behaves as it did under #320.
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	src/ net +7 (the issue gives no budget). It is one condition plus a lookup helper; the profile path loses its own copy.
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	## Evidence at 7d8863e067b3238a66f3117691915a204641af7d
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	- `cargo test -p cooee --test profiles --test personas --test rooms` → exit 0. New test: `a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it`. It checks the `shed run … --meta` line of a no-profile persona (options present), a plain thread (no `--meta`), and both members of a room: a no-profile persona and a profile read as a persona (options present).
+arch-check / arch-check	UNKNOWN STEP	- The same test without the production change (base `crates/cooee-server` plus the new test) → exit 101: `#416: no options in … run --acp fake-acp …`.
+arch-check / arch-check	UNKNOWN STEP	- `cargo test --workspace --locked` → exit 0.
+arch-check / arch-check	UNKNOWN STEP	- `cargo fmt --all --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `scripts/line-cap.sh` (19097 / 27500), `scripts/neutral-core.sh`, `scripts/hygiene.sh`, `scripts/dep-direction.sh`, `drover arch-check` → all exit 0. `topcoat` and `just` are not installed on this host, so `topcoat fmt --check` did not run.
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	### Real session (AC 3)
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	I ran this branch's `cooee serve` as a scratch instance on the mini: the real shed, the default claude login, and a copy of `personas/orchestrator.toml` without its `plugins` line (drover is not installed in a scratch instance). I asked the same question in two threads: whether a global CLAUDE.md is loaded, which MCP servers and connectors it has, and which plugins and skills.
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	**Orchestrator persona (no profile):**
+arch-check / arch-check	UNKNOWN STEP	> 1) Global CLAUDE.md: None. No `~/.claude/CLAUDE.md` content is loaded in my context.
+arch-check / arch-check	UNKNOWN STEP	> 2) There is one MCP server, `cooee`, under the prefix `mcp__cooee__` … No claude.ai connectors are present: no Docs, Drive, Microsoft 365, Supabase or anything else.
+arch-check / arch-check	UNKNOWN STEP	> 3) No plugins are loaded. The skills available are: dataviz, update-config, keybindings-help, code-review, simplify, fewer-permission-prompts, loop, schedule, claude-api, workflow-authoring, run, plugin-authoring, init, security-review
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	These skills are Claude Code's bundled ones. None of the owner's personal plugins (vercel, the LSP plugins) or synced `anthropic-skills:*` appear.
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	**Plain thread, same login (control):**
+arch-check / arch-check	UNKNOWN STEP	> 1) Yes, `~/.claude/CLAUDE.md` is loaded. Its first line is `# Global preferences`.
+arch-check / arch-check	UNKNOWN STEP	> 2) Connected: claude.ai Claude Docs … cooee. Listed but not authorized: claude.ai Google Drive, claude.ai Microsoft 365, claude.ai Supabase, plugin:vercel:vercel
+arch-check / arch-check	UNKNOWN STEP	> 3) Vercel plugin (vercel:* skills and agents), cowork-plugin-management, anthropic-skills: …
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	So `strictMcpConfig` does drop the claude.ai connectors (q1701), and no follow-up fix is needed. Both test terminals were removed from shed afterwards.
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	## Why (round 1)
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	Decided: recipe sets the provider's no-personal-setup options for any thread with a persona or a profile; Logins::profile no longer sets them itself
+arch-check / arch-check	UNKNOWN STEP	Because: crates/cooee-server/src/lib.rs:619
+arch-check / arch-check	UNKNOWN STEP	Because: "every persona chat starts without the owner's personal setup; only a plain chat with no persona keeps it"
+arch-check / arch-check	UNKNOWN STEP	Decided: room members are covered by the same line, since starter builds their recipe through recipe()
+arch-check / arch-check	UNKNOWN STEP	Because: crates/cooee-server/src/lib.rs:776
+arch-check / arch-check	UNKNOWN STEP	Rejected: setting meta in the persona branch while also keeping it in Logins::profile — two places doing one thing
+arch-check / arch-check	UNKNOWN STEP	Rejected: a meta flag on Logins::home — the plain path must stay unchanged, and the caller already knows whether a persona is set
+arch-check / arch-check	UNKNOWN STEP	Check: profiles.rs a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it fails with base crates/cooee-server
+arch-check / arch-check	UNKNOWN STEP	Check: a real Orchestrator session on the default login reports no global CLAUDE.md, no plugins and no claude.ai connectors; a plain thread shows all three
+arch-check / arch-check	UNKNOWN STEP	Owner: Persona chats and room members now start without your personal Claude setup and connectors; plain chats keep it.
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	<sub>note on 7d8863e · git log --notes=why</sub>
+arch-check / arch-check	UNKNOWN STEP	
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:07.1874377Z ##[endgroup]
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.3886604Z crates/cooee-server/src/lib.rs:1: `crates/cooee-server/src/lib.rs` is 2357 lines, over 800 (baseline Some(2354))
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.3887291Z arch-check: 1461 files, 1 violations
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.3902311Z ##[error]Process completed with exit code 1.
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.4016430Z Post job cleanup.
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.4663143Z [command]/usr/bin/git version
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.4696979Z git version 2.56.1
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.4722134Z Temporarily overriding HOME='/home/runner/work/_temp/34b74fcc-0d5a-40a0-9342-21053a7b13d1' before making global git config changes
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.4723116Z Adding repository directory to the temporary git global config as a safe directory
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.4725636Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cooee/cooee
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.4757148Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.4784088Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.4993508Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.5010587Z http.https://github.com/.extraheader
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.5018603Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.5047580Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.5279848Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.5305085Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.5621320Z Cleaning up orphan processes
+arch-check / arch-check	UNKNOWN STEP	2026-11-16T01:19:08.5863089Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -1,0 +1,191 @@
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	﻿2026-11-16T02:16:47.5825612Z ##[group]Run setsid --wait just test
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:47.5826048Z ^[[36;1msetsid --wait just test^[[0m
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:47.5871743Z shell: /usr/bin/bash -e {0}
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:47.5871978Z env:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:47.5872154Z   CARGO_TERM_COLOR: always
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:47.5872347Z   REF: 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:47.5872512Z   CARGO_HOME: /home/runner/.cargo
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:47.5872733Z   CARGO_INCREMENTAL: 0
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:47.5872921Z   CACHE_ON_FAILURE: false
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:47.5873114Z ##[endgroup]
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:47.7048350Z cargo test --workspace --locked
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:47.8416603Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:49.7937937Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:49.7966429Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:16:50.2656878Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:00.3908504Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:17.5581684Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 29.82s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:17.6573974Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/deps/cooee-e2c5105a732600ce)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:17.6584659Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:17.6584790Z running 1 test
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:17.6592118Z test update::tests::only_a_new_green_head_is_installed ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:17.6592896Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/deps/accounts-f2433eaa96fd75b7)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:17.6593339Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:17.6593633Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:17.6594053Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:17.6598814Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:17.6598942Z running 2 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:18.5301312Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.0076678Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.0077202Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.0077506Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.35s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.0077917Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.0082683Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/deps/accounts_env-acc42215802d7259)
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.0093909Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.0094021Z running 7 tests
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.0181102Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.0346551Z test an_inherited_token_never_signs_a_folder_in ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.1263571Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.1346999Z test unknown_provider_or_account_refuses_on_one_line ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.1400668Z test ls_json_lists_every_account_without_its_token ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2653118Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... FAILED
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2905754Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2906182Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2906275Z failures:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2906421Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2906647Z ---- ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age stdout ----
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2906966Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2907304Z thread 'ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age' (4815) panicked at crates/cooee/tests/accounts_env.rs:270:5:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2907907Z assertion `left == right` failed
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2908187Z   left: (Number(12), Number(0))
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2908483Z  right: (Number(12), Number(40))
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2908877Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2909198Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2909212Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2909296Z failures:
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2909931Z     ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2910816Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test accounts_env`
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2911143Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2911451Z test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2911863Z 
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2963838Z error: recipe `test` failed on line 14 with exit code 101
+msrv (ubuntu-latest)	test (incl. upgrade compatibility and crash injection)	2026-11-16T02:17:20.2979227Z ##[error]Process completed with exit code 101.
+stable (ubuntu-latest)	test	﻿2026-11-16T02:16:33.5586871Z ##[group]Run setsid --wait cargo test --workspace --locked
+stable (ubuntu-latest)	test	2026-11-16T02:16:33.5587385Z ^[[36;1msetsid --wait cargo test --workspace --locked^[[0m
+stable (ubuntu-latest)	test	2026-11-16T02:16:33.5632891Z shell: /usr/bin/bash -e {0}
+stable (ubuntu-latest)	test	2026-11-16T02:16:33.5633119Z env:
+stable (ubuntu-latest)	test	2026-11-16T02:16:33.5633302Z   CARGO_TERM_COLOR: always
+stable (ubuntu-latest)	test	2026-11-16T02:16:33.5633505Z   REF: 
+stable (ubuntu-latest)	test	2026-11-16T02:16:33.5633673Z   RUSTUP_TOOLCHAIN: stable
+stable (ubuntu-latest)	test	2026-11-16T02:16:33.5633868Z   CARGO_HOME: /home/runner/.cargo
+stable (ubuntu-latest)	test	2026-11-16T02:16:33.5634084Z   CARGO_INCREMENTAL: 0
+stable (ubuntu-latest)	test	2026-11-16T02:16:33.5634272Z   CACHE_ON_FAILURE: false
+stable (ubuntu-latest)	test	2026-11-16T02:16:33.5634467Z ##[endgroup]
+stable (ubuntu-latest)	test	2026-11-16T02:16:33.6177525Z ^[[1m^[[92m    Updating^[[0m crates.io index
+stable (ubuntu-latest)	test	2026-11-16T02:16:34.9347029Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-core)
+stable (ubuntu-latest)	test	2026-11-16T02:16:36.9667736Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-machines)
+stable (ubuntu-latest)	test	2026-11-16T02:16:36.9669216Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-terminal)
+stable (ubuntu-latest)	test	2026-11-16T02:16:37.4697717Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee-server)
+stable (ubuntu-latest)	test	2026-11-16T02:16:48.0394811Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/home/runner/work/cooee/cooee/crates/cooee)
+stable (ubuntu-latest)	test	2026-11-16T02:17:05.7341934Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 32.13s
+stable (ubuntu-latest)	test	2026-11-16T02:17:05.8686492Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/build/cooee/4495d5694ed4786e/out/cooee-4495d5694ed4786e)
+stable (ubuntu-latest)	test	2026-11-16T02:17:05.8699270Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:05.8699521Z running 1 test
+stable (ubuntu-latest)	test	2026-11-16T02:17:05.8705639Z test update::tests::only_a_new_green_head_is_installed ... ok
+stable (ubuntu-latest)	test	2026-11-16T02:17:05.8706148Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:05.8706772Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/build/cooee/ebcb476e1475269f/out/accounts-ebcb476e1475269f)
+stable (ubuntu-latest)	test	2026-11-16T02:17:05.8707653Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (ubuntu-latest)	test	2026-11-16T02:17:05.8708143Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:05.8712775Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:05.8713030Z running 2 tests
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.1204622Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.2397585Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.2398892Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/build/cooee/1f53d7690f8d05e6/out/accounts_env-1f53d7690f8d05e6)
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.2399391Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.2399680Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.2400052Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.2410277Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.2410422Z running 7 tests
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.2504097Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.2664634Z test an_inherited_token_never_signs_a_folder_in ... ok
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.3590176Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.3726338Z test ls_json_lists_every_account_without_its_token ... ok
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.3803272Z test unknown_provider_or_account_refuses_on_one_line ... ok
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.3930201Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... FAILED
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4316221Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4316655Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4316770Z failures:
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4316919Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4317227Z ---- ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age stdout ----
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4317703Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4318258Z thread 'ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age' (3854) panicked at crates/cooee/tests/accounts_env.rs:270:5:
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4319021Z assertion `left == right` failed
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4319248Z   left: (Number(12), Number(0))
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4319468Z  right: (Number(12), Number(40))
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4320126Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4320380Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4320398Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4320476Z failures:
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4320743Z     ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4320984Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4321196Z test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4321474Z 
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4327036Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test accounts_env`
+stable (ubuntu-latest)	test	2026-11-16T02:17:06.4390234Z ##[error]Process completed with exit code 101.
+stable (macos-latest)	test	﻿2026-11-16T02:44:56.9966470Z ##[group]Run cargo test --workspace --locked
+stable (macos-latest)	test	2026-11-16T02:44:56.9966870Z ^[[36;1m cargo test --workspace --locked^[[0m
+stable (macos-latest)	test	2026-11-16T02:44:57.6647430Z shell: /bin/bash -e {0}
+stable (macos-latest)	test	2026-11-16T02:44:57.6648240Z env:
+stable (macos-latest)	test	2026-11-16T02:44:57.6649070Z   CARGO_TERM_COLOR: always
+stable (macos-latest)	test	2026-11-16T02:44:57.6649500Z   REF: 
+stable (macos-latest)	test	2026-11-16T02:44:57.6650100Z   RUSTUP_TOOLCHAIN: stable
+stable (macos-latest)	test	2026-11-16T02:44:57.6651790Z   TMPDIR: /tmp/mini-cooee/
+stable (macos-latest)	test	2026-11-16T02:44:57.6651980Z   CARGO_HOME: /Users/jkmacmini/services/actions-runner-cooee/_work/_tool/cooee/cargo
+stable (macos-latest)	test	2026-11-16T02:44:57.6652230Z   RUSTUP_HOME: /Users/jkmacmini/services/actions-runner-cooee/_work/_tool/cooee/rustup
+stable (macos-latest)	test	2026-11-16T02:44:57.6652480Z   GIT_CONFIG_GLOBAL: /Users/jkmacmini/services/actions-runner-cooee/_work/_temp/gitconfig
+stable (macos-latest)	test	2026-11-16T02:44:57.6652660Z   GIT_CONFIG_NOSYSTEM: 1
+stable (macos-latest)	test	2026-11-16T02:44:57.6652770Z   CARGO_NET_GIT_FETCH_WITH_CLI: true
+stable (macos-latest)	test	2026-11-16T02:44:57.6652900Z   DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+stable (macos-latest)	test	2026-11-16T02:44:57.6653040Z   CARGO_INCREMENTAL: 0
+stable (macos-latest)	test	2026-11-16T02:44:57.6653180Z   CACHE_ON_FAILURE: false
+stable (macos-latest)	test	2026-11-16T02:44:57.6653280Z ##[endgroup]
+stable (macos-latest)	test	2026-11-16T02:44:59.7630600Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-core)
+stable (macos-latest)	test	2026-11-16T02:45:06.0895910Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-machines)
+stable (macos-latest)	test	2026-11-16T02:45:06.0902490Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-terminal)
+stable (macos-latest)	test	2026-11-16T02:45:06.2768400Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-server)
+stable (macos-latest)	test	2026-11-16T02:45:15.7841560Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee)
+stable (macos-latest)	test	2026-11-16T02:45:23.5369740Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 25.66s
+stable (macos-latest)	test	2026-11-16T02:45:23.5583250Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/build/cooee/547246e38b726422/out/cooee-547246e38b726422)
+stable (macos-latest)	test	2026-11-16T02:45:23.9690680Z 
+stable (macos-latest)	test	2026-11-16T02:45:23.9705660Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/build/cooee/4492a5e41aeb576b/out/accounts-4492a5e41aeb576b)
+stable (macos-latest)	test	2026-11-16T02:45:23.9706340Z running 1 test
+stable (macos-latest)	test	2026-11-16T02:45:23.9712490Z test update::tests::only_a_new_green_head_is_installed ... ok
+stable (macos-latest)	test	2026-11-16T02:45:23.9715230Z 
+stable (macos-latest)	test	2026-11-16T02:45:23.9715760Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (macos-latest)	test	2026-11-16T02:45:23.9716190Z 
+stable (macos-latest)	test	2026-11-16T02:45:24.2828030Z 
+stable (macos-latest)	test	2026-11-16T02:45:24.2828410Z running 2 tests
+stable (macos-latest)	test	2026-11-16T02:45:26.6854670Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+stable (macos-latest)	test	2026-11-16T02:45:27.4666320Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+stable (macos-latest)	test	2026-11-16T02:45:27.4666840Z 
+stable (macos-latest)	test	2026-11-16T02:45:27.4667110Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.18s
+stable (macos-latest)	test	2026-11-16T02:45:27.4667960Z 
+stable (macos-latest)	test	2026-11-16T02:45:27.4676560Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/build/cooee/371a308a46cbe965/out/accounts_env-371a308a46cbe965)
+stable (macos-latest)	test	2026-11-16T02:45:27.8473070Z 
+stable (macos-latest)	test	2026-11-16T02:45:27.8473900Z running 7 tests
+stable (macos-latest)	test	2026-11-16T02:45:27.9081320Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+stable (macos-latest)	test	2026-11-16T02:45:27.9197460Z test unknown_provider_or_account_refuses_on_one_line ... ok
+stable (macos-latest)	test	2026-11-16T02:45:27.9346050Z test an_inherited_token_never_signs_a_folder_in ... ok
+stable (macos-latest)	test	2026-11-16T02:45:28.0610420Z test ls_json_lists_every_account_without_its_token ... ok
+stable (macos-latest)	test	2026-11-16T02:45:28.0643100Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+stable (macos-latest)	test	2026-11-16T02:45:28.2870270Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+stable (macos-latest)	test	2026-11-16T02:45:28.2894300Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... FAILED
+stable (macos-latest)	test	2026-11-16T02:45:28.2924340Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test accounts_env`
+stable (macos-latest)	test	2026-11-16T02:45:28.2924690Z 
+stable (macos-latest)	test	2026-11-16T02:45:28.2924800Z failures:
+stable (macos-latest)	test	2026-11-16T02:45:28.2924930Z 
+stable (macos-latest)	test	2026-11-16T02:45:28.2925200Z ---- ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age stdout ----
+stable (macos-latest)	test	2026-11-16T02:45:28.2925600Z 
+stable (macos-latest)	test	2026-11-16T02:45:28.2926130Z thread 'ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age' (227503966) panicked at crates/cooee/tests/accounts_env.rs:270:5:
+stable (macos-latest)	test	2026-11-16T02:45:28.2926850Z assertion `left == right` failed
+stable (macos-latest)	test	2026-11-16T02:45:28.2927110Z   left: (Number(12), Number(0))
+stable (macos-latest)	test	2026-11-16T02:45:28.2927380Z  right: (Number(12), Number(40))
+stable (macos-latest)	test	2026-11-16T02:45:28.2927770Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+stable (macos-latest)	test	2026-11-16T02:45:28.2928080Z 
+stable (macos-latest)	test	2026-11-16T02:45:28.2928080Z 
+stable (macos-latest)	test	2026-11-16T02:45:28.2928160Z failures:
+stable (macos-latest)	test	2026-11-16T02:45:28.2928490Z     ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age
+stable (macos-latest)	test	2026-11-16T02:45:28.2928830Z 
+stable (macos-latest)	test	2026-11-16T02:45:28.2929110Z test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s
+stable (macos-latest)	test	2026-11-16T02:45:28.2929570Z 
+stable (macos-latest)	test	2026-11-16T02:45:28.2946020Z ##[error]Process completed with exit code 101.
