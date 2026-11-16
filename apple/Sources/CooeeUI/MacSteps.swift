@@ -5,6 +5,7 @@ import SwiftUI
 
 internal struct MacWelcome: View {
     @Environment(\.look) private var look
+    internal let found: ExistingInstall?
     internal let send: MacSend
 
     internal var body: some View {
@@ -17,6 +18,7 @@ internal struct MacWelcome: View {
             )
             .ui(15, .regular, look).foregroundStyle(palette.mute).frame(maxWidth: 480, alignment: .leading)
             Spacer()
+            if let found, found.cli { MacExisting(labels: found.labels, send: send) }
             HStack {
                 Text("Only a client?").ui(13, .regular, look).foregroundStyle(palette.mute)
                 Button {
@@ -26,9 +28,33 @@ internal struct MacWelcome: View {
                 }
                 .buttonStyle(.plain)
                 Spacer()
-                MacButton(title: "Set up this Mac", primary: true) { send(.setUp) }
+                if found?.cli != true {
+                    MacButton(title: "Set up this Mac", primary: true) { send(.setUp) }
+                }
             }
         }
+        .task { send(.look) }
+    }
+}
+
+internal struct MacExisting: View {
+    @Environment(\.look) private var look
+    internal let labels: [String]
+    internal let send: MacSend
+
+    internal var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("cooee already runs on this Mac").ui(15, .semibold, look)
+            Text(
+                "\(labels.isEmpty ? "A cooee server answers on its port." : "Installed from the command line: \(labels.joined(separator: ", ")).") Use it: this app connects to it and adds no login items. Take it over: the app stops that service and runs its own in its place, with the same config, devices, threads and plugins."
+            )
+            .ui(13, .regular, look).foregroundStyle(look.palette.mute).frame(maxWidth: 520, alignment: .leading)
+            HStack {
+                MacButton(title: "Use it (recommended)", primary: true) { send(.useExisting) }
+                if !labels.isEmpty { MacButton(title: "Take it over") { send(.takeOver) } }
+            }
+        }
+        .padding(16).surface(look, radius: 14)
     }
 }
 
