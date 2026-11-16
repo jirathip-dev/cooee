@@ -113,8 +113,8 @@ extension Frame {
         MacStep.allCases.map { step in mac("mac-setup-\(step.rawValue)", 960, 640, .farmDark) { MacSetup(step: step) } }
             + [
                 mac("mac-connect", 960, 640, .farmLight) { MacConnect() },
-                mac("mac-window-dark", 1280, 820, .farmDark) { WideView() },
-                mac("mac-window-light", 1280, 820, .farmLight) { WideView() },
+                mac("mac-window-dark", 1280, 820, .farmDark) { Sidebar() },
+                mac("mac-window-light", 1280, 820, .farmLight) { Sidebar() },
                 mac("mac-persona-panel-dark", 360, 820, .farmDark) { PersonaPanel(personaID: "coder", column: true) },
             ]
     }
@@ -185,16 +185,16 @@ extension Frame {
             phone("room-ask-dark", .farmDark) { RoomView.asking() },
             phone("room-ask-terminal-dark", .farmDark, style: .terminal) { RoomView.asking() },
             phone("room-ask-scene-light", .farmLight, style: .scene) { RoomView.asking() },
-            mac("room-wide-dark", 1440, 900, .farmDark) { WideView.kestrel() },
+            mac("room-wide-dark", 1440, 900, .farmDark) { Sidebar.kestrel() },
             phone("asked-dark", .farmDark) { ChatView.asked() },
             phone("asked-light", .farmLight) { ChatView.asked() },
             phone("linked-dark", .farmDark) { LinkedView.researcher() },
             phone("linked-terminal-dark", .farmDark, style: .terminal) { LinkedView.researcher() },
-            mac("linked-wide-light", 1440, 900, .farmLight) { WideView.linked() },
+            mac("linked-wide-light", 1440, 900, .farmLight) { Sidebar.linked() },
             Frame(
                 name: "room-terminal-wide", width: 1440, height: 900, palette: .farmDark, style: .terminal,
                 phone: false,
-                view: { AnyView(WideView.kestrel()) }
+                view: { AnyView(Sidebar.kestrel()) }
             ),
         ]
     }

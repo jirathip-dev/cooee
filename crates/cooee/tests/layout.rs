@@ -156,3 +156,63 @@ fn a_bad_write_keeps_the_last_good_layout_and_reset_restores_the_default() {
     assert_eq!(events.next().0, "changed");
     assert_eq!(layout(&c, &tag).0, 304);
 }
+
+const MANIFEST: &str = "name = \"drover\"\nversion = \"0.1.0\"\nbuild = \"true\"\nrun = \"true\"\n\n[[places]]\n\
+                        type = \"header-strip\"\nlabel = \"Queue\"\nscreen = \"/screens/queue\"\n\n[permissions]\n\
+                        places = [\"header-strip\", \"menu-row\"]\n";
+
+#[test]
+fn a_plugins_places_are_merged_and_a_place_its_manifest_lacks_is_skipped() {
+    let dir = scratch("layout-places");
+    let build = dir.join("data/plugins/drover/builds/c0ffee12345");
+    fs::create_dir_all(&build).unwrap();
+    fs::write(build.join("cooee-plugin.toml"), MANIFEST).unwrap();
+    let lock = serde_json::json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0ffee12345",
+                                    "version": "0.1.0", "listed": true, "tabs": [], "port": 1, "enabled": true }]);
+    fs::write(dir.join("data/plugins.lock"), lock.to_string()).unwrap();
+    let shed = FakeShed::start(&dir.join("shed"), version());
+    let c = Cooee::start(&dir, &shed.dir);
+    let served = |c: &Cooee| serde_json::from_str::<Value>(&layout(c, "").2).unwrap();
+
+    let first = served(&c);
+    let strip = &first["layout"]["root"]["slots"]["main"][1]["slots"]["strip"];
+    assert_eq!(
+        strip,
+        &serde_json::json!([{ "type": "screen", "id": "drover-0", "source": "drover", "path": "/screens/queue",
+                              "label": "Queue", "place": "strip" }]),
+        "{first}"
+    );
+    assert_eq!(first["skipped"], serde_json::json!([]));
+
+    let mut events = Events::open(&c);
+    let moved = DEFAULT
+        .replace(
+            r#"{ "type": "sidebar", "#,
+            r#"{ "type": "sidebar", "slots": { "top": [{ "type": "screen", "source": "drover", "path": "/screens/queue", "label": "Queue", "place": { "wide": "column", "compact": "menu" } }] }, "#,
+        )
+        .replace(
+            r#""config": { "composer": true"#,
+            r#""slots": { "cards": [{ "type": "screen", "source": "drover", "path": "/screens/cards", "place": "cards" }] }, "config": { "composer": true"#,
+        );
+    fs::write(dir.join("layout.json"), &moved).unwrap();
+    assert_eq!(events.next().0, "changed");
+    let answer = served(&c);
+    let root = &answer["layout"]["root"];
+    assert_eq!(
+        root["slots"]["side"][0]["slots"]["top"][0]["place"],
+        serde_json::json!({ "wide": "column", "compact": "menu" }),
+        "{answer}"
+    );
+    assert_eq!(
+        root["slots"]["main"][1]["slots"],
+        serde_json::json!({ "cards": [] })
+    );
+    assert_eq!(root["slots"]["main"][0]["id"], "home");
+    assert_eq!(
+        answer["skipped"],
+        serde_json::json!([
+            r#"root.slots.main[1].slots.cards[0]: drover may not be placed "cards""#
+        ])
+    );
+    assert_ne!(answer["etag"], first["etag"]);
+}
