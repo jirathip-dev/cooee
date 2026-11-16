@@ -1,0 +1,9 @@
+Decided: merged origin/staging (#312, #421, #263); opening the menu loads the looks, then #312's core menu screen, one after the other
+Because: apple/Sources/CooeeFeatures/MenuFeature.swift:87
+Rejected: merging the two loads in parallel — the TestStore would see their answers in either order
+Decided: lib.rs registers #312's screens routes beside this PR's themes routes, staying under its arch baseline
+Because: crates/cooee-server/src/lib.rs:2157
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: crates/cooee-server/src/themes.rs:393
+Check: swift test (MenuFeatureTests), cargo test --workspace and drover arch-check pass at head; the PR merges cleanly into staging
+Owner: The branch sits on current staging again; the new menu screen and the Theme picker both load when the menu opens.
