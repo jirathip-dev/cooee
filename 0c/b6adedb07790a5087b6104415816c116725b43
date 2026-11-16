@@ -1,0 +1,11 @@
+Decided: merged origin/staging (#312, #421); the screens/mod.rs and tests/support/mod.rs conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #421's per-area test support split
+Decided: gen.sh's new flat() writes support/mod.rs with no //! or // header, and the file is regenerated, not hand-edited
+Because: scripts/gen.sh:33
+Rejected: hand-stripping support/mod.rs — arch-check fails a generated file that differs from what gen.sh writes
+Decided: no code change for the one-off perf.rs read of a half-written log line at host load 54
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: sh scripts/gen.sh leaves the tree clean, and drover arch-check reports 0 violations
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Owner: the branch is up to date with staging again, and the newly split test support follows the comment rule
