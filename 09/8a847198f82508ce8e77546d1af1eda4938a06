@@ -1,0 +1,15 @@
+Decided: the app looks via `launchctl list` (any dev.cooee.* label) and the port's listener name from lsof, parsed by one pure ExistingInstall init in CooeeCore
+Because: "a `dev.cooee.cooee` LaunchAgent (any instance), or a server already answering on the configured port"
+Decided: a listener named cooee with no CLI label counts as a CLI server (use it only); any other listener is "port taken" with a plain error
+Because: apple/Sources/CooeeApp/MacLive.swift:115
+Decided: take over runs launchctl disable then bootout on each CLI label, so the left plist does not load again at login and nothing is deleted
+Because: apple/Sources/CooeeApp/MacLive.swift:122
+Decided: the check runs each time the setup welcome appears (every launch with no paired server); the app registers login items only from setup
+Because: apple/Sources/CooeeUI/MacSteps.swift:36
+Decided: use it unregisters the app's own login items if any, then pairs with the running server and opens Home
+Because: "the app becomes a client of the running server, registers no login items, and shows the server's state"
+Decided: cooee setup and install call refuse_app first, before any step or file write, dry run included
+Because: crates/cooee/src/setup.rs:102
+Rejected: identifying a cooee server by an HTTP probe — no route names the server, and URLSession is allowed only in CooeeAPI
+Check: tests/setup.rs with_the_mac_apps_login_items_setup_and_install_refuse_and_start_nothing and doctor_warns_when_both_the_cli_and_the_mac_app_are_installed fail on base; MacServerTests and MacSetupExistingTests
+Owner: the Mac app now finds a command-line cooee already running and offers to use it or take it over, and the command line refuses to install a second server next to the app.
