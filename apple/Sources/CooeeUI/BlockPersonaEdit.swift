@@ -5,13 +5,18 @@ internal struct PersonaActions {
     internal var close: () -> Void
     internal var save: () -> Void
     internal var clear: () -> Void
+    internal var chat: () -> Void
     internal var agent: @MainActor @Sendable (String) -> Void = { _ in }
     internal var browse: () -> Void = {}
 
-    internal init(close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {}) {
+    internal init(
+        close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {},
+        chat: @escaping () -> Void = {}
+    ) {
         self.close = close
         self.save = save
         self.clear = clear
+        self.chat = chat
     }
 }
 
@@ -110,6 +115,13 @@ extension PersonaEditBlocks {
             }
             Group2(header: "Character") { paragraph("Character", $draft.character) }
             Group2(header: "Instructions") { instructions }
+            if !look.still {
+                Button(action: actions.chat) {
+                    Text(draft.id.isEmpty ? "Set up by chat instead" : "Refine by chat").ui(15, .medium, look)
+                        .foregroundStyle(look.palette.link)
+                }
+                .buttonStyle(.plain)
+            }
             if memoryCount > 0 { Group2(header: "Memory · \(memoryCount) notes") { notes } }
             Group2 {
                 Button(action: actions.browse) {

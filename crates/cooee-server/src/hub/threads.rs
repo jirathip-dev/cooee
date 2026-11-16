@@ -141,6 +141,7 @@ impl Hub {
                     unread: g.unseen > 0,
                     unseen: g.unseen,
                     archived: live.meta.archived,
+                    setup: live.meta.setup,
                     workflow: live.meta.workflow.clone(),
                     routine: g.routine,
                     members: rooms::seated(&live.meta),

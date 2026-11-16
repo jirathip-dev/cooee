@@ -25,6 +25,7 @@ internal struct ChatScreen: View {
             back: onBack
         )
         actions.retry = { store.send(.outbox(.retry($0))) }
+        actions.view = { store.send(.delegate(.persona(store.persona.id))) }
         let (places, attachable) = (store.places, store.attachable)
         actions.places = places.map(\.label)
         actions.open = { store.send(.plugins(.open(places[$0]))) }

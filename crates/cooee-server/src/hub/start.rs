@@ -208,6 +208,7 @@ impl Hub {
             random_id: random_id.to_owned(),
             room: recipe.room.clone(),
             asked_by: recipe.asked_by.clone(),
+            setup: recipe.setup,
             routine: recipe.routine.clone(),
             ..Thread::default()
         })?;

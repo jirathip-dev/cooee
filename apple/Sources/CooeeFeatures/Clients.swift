@@ -30,7 +30,9 @@ public struct ThreadsClient: Sendable {
         @Sendable (_ server: Server, _ thread: String, _ item: Int, _ option: String, _ value: String?) async throws
             -> Void
     public var start:
-        @Sendable (_ server: Server, _ persona: APIPersona, _ machine: String, _ text: String) async throws -> String
+        @Sendable (_ server: Server, _ persona: APIPersona, _ machine: String, _ text: String, _ setup: Bool)
+            async throws
+            -> String
     public var move: @Sendable (_ server: Server, _ thread: String, _ machine: String) async throws -> Void
     public var retry: @Sendable (_ server: Server, _ thread: String) async throws -> Void
     public var room: @Sendable (_ server: Server, _ title: String, _ members: [String]) async throws -> String

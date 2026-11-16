@@ -40,6 +40,7 @@ public struct PersonaFeature: Sendable {
         case browsed(FolderListing)
         case folder(String?)
         case save
+        case chat
         case clearMemory
         case close
         case failed(String)
@@ -48,6 +49,7 @@ public struct PersonaFeature: Sendable {
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case saved(APIPersona)
+            case chat(APIPersona)
         }
     }
 
@@ -106,9 +108,9 @@ public struct PersonaFeature: Sendable {
     private func act(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
         case .save:
-            state.busy = true
-            state.error = nil
-            return save(state)
+            return save(&state, chat: false)
+        case .chat:
+            return save(&state, chat: true)
         case .clearMemory:
             return forget(state)
         case .close:
@@ -155,14 +157,17 @@ extension PersonaFeature {
         return run { await $0(.browsed(try await personas.folders(server, path))) }
     }
 
-    private func save(_ state: State) -> Effect<Action> {
+    private func save(_ state: inout State, chat: Bool) -> Effect<Action> {
+        state.busy = true
+        state.error = nil
         let (personas, plugins, server, draft, path) = (personas, plugins, state.server, state.draft, state.path)
+        let done: @Sendable (APIPersona) -> Action = { .delegate(chat ? .chat($0) : .saved($0)) }
         guard !state.isNew else {
-            return run { await $0(.delegate(.saved(try await personas.create(server, draft)))) }
+            return run { await $0(done(try await personas.create(server, draft))) }
         }
         return run { send in
             let saved = try JSONEncoder().encode(try await plugins.act(server, .core, path, .save(draft)))
-            await send(.delegate(.saved(try JSONDecoder().decode(APIPersona.self, from: saved))))
+            await send(done(try JSONDecoder().decode(APIPersona.self, from: saved)))
         }
     }
 
