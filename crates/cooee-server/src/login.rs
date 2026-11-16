@@ -521,8 +521,9 @@ impl Logins {
 
     /// What a thread of agent profile `p` runs with: its account's label and [`Launch`] (the account's folder, the
     /// settings file in the provider's `settings` variable (in place of the account's folder when it is the same
-    /// variable), the env, its secrets read from `data` through a file there, the policy), and its instructions. A
-    /// profile its agent can't run as written is refused: settings with no `settings` variable (its guard can't run).
+    /// variable), the env, its secrets read from `data` through a file there, the policy, its provider's "no personal
+    /// setup" session options), and its instructions. A profile its agent can't run as written is refused: settings
+    /// with no `settings` variable (its guard can't run).
     ///
     /// # Errors
     /// [`HubError::Refused`] as above, for an unknown account, a missing secret or an unreadable file.
@@ -530,6 +531,7 @@ impl Logins {
         let refused = |why: String| HubError::Refused(why);
         let (account, mut launch) = self.home(&p.agent, p.account.as_deref())?;
         let provider = self.providers.for_agent(&p.agent);
+        launch.meta = provider.and_then(|v| v.no_personal_setup());
         if let Some(settings) = &p.settings {
             let var = provider
                 .map(|v| v.spec().settings.as_str())
