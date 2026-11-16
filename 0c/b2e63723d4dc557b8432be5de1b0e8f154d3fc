@@ -1,0 +1,8 @@
+Decided: merged origin/staging twice; resolved Blocks.swift, PluginSheets.swift and Frames.swift keeping both sides (staging's card poster source plus #213's focus, picked and beside)
+Because: "Impl: the apple CI job; simulator screenshots matching the approved frames"
+Decided: trimmed 29 apple lines to fit apple_cap after staging grew: value environment keys use @Entry, Diagram.forward is one filter
+Because: apple/Sources/CooeeUI/Blocks.swift:76
+Rejected: @Entry for the closure keys — the strict build rejects closures in @Entry
+Rejected: asking to raise the cap — trimming fits it (12998 / 13000)
+Check: apple-check exit 0 and line-cap on a clean export at the head
+Owner: The workflow map branch is up to date with staging, with a few lines tightened to stay under the app's size limit.
