@@ -1,0 +1,9 @@
+Decided: merged origin/staging (#270, #315, #359, #252 and others); SwiftLint file length kept by moving the notes helper to PersonaPickers.swift
+Because: apple/Sources/CooeeFeatures/ChatOutbox.swift:67
+Decided: ChatActions stays in its own file with staging's view action added; Chat.swift keeps only the view
+Because: apple/Sources/CooeeUI/ChatActions.swift:17
+Decided: new threads send both this branch's model and effort and staging's setup flag; the persona sheet keeps Delete and staging's Chat delegate
+Because: apple/Sources/CooeeAPI/Endpoints.swift:166
+Rejected: committing the previous lane's wip snapshot — it held only a locally re-resolved Package.resolved that staging already tracks
+Check: apple line cap 13896 of 14316 at 1628f9661 (staging alone 13497)
+Owner: Same nine controls; this round only catches up with staging.
