@@ -1,5 +1,3 @@
-//! An SSE stream from `cooee serve` and its events.
-
 use std::{
     io::{BufRead, BufReader},
     net::TcpStream,

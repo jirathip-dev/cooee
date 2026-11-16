@@ -64,8 +64,9 @@ extension ChatFeature {
             case .thread(let thread):
                 try await threads.send(server, thread, message.text, message.files, queue)
                 await send(.outbox(.delivered(message.id)))
-            case .new:
-                let thread = try await threads.start(server, persona, machine, message.text)
+            case .new, .setup:
+                let setup = if case .setup = target { true } else { false }
+                let thread = try await threads.start(server, persona, machine, message.text, setup)
                 await send(.outbox(.delivered(message.id)))
                 await send(.delegate(.started(thread)))
             }

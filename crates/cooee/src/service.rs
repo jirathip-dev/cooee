@@ -1,9 +1,6 @@
-//! The instance as a launchd service: what `cooee install`, `cooee doctor` and `cooee setup` share.
-
 use std::{
     env, fs,
     path::{Path, PathBuf},
-    process::Command,
 };
 
 use cooee_core::{Config, SHED_CARGO};
@@ -12,14 +9,16 @@ pub(crate) fn shed_install() -> String {
     format!("{} && shed serve", SHED_CARGO.join(" "))
 }
 
-/// This machine's tailnet name (`tailscale status`), if Tailscale is up.
 pub(crate) fn tailnet_name() -> Option<String> {
-    let out = Command::new("tailscale")
+    let out = cooee_core::runner::command("tailscale")
         .args(["status", "--json"])
         .output()
         .ok()?;
     let status: serde_json::Value = serde_json::from_slice(&out.stdout).ok()?;
-    let name = status["Self"]["DNSName"].as_str()?.trim_end_matches('.');
+    let name = status
+        .pointer("/Self/DNSName")?
+        .as_str()?
+        .trim_end_matches('.');
     (!name.is_empty()).then(|| name.to_owned())
 }
 
@@ -27,7 +26,6 @@ pub(crate) fn label(instance: &str) -> String {
     format!("dev.cooee.{instance}")
 }
 
-/// The launchd label of the instance's `serve` service or its `update` timer.
 pub(crate) fn job(instance: &str, verb: &str) -> String {
     match verb {
         "serve" => label(instance),
@@ -35,22 +33,19 @@ pub(crate) fn job(instance: &str, verb: &str) -> String {
     }
 }
 
-/// XML text: `&`, `<` and `>` escaped.
 pub(crate) fn xml(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
 }
 
-/// The instance's launchd plist, `~/Library/LaunchAgents/<job(instance, verb)>.plist`, and its text: `cooee <verb>`
-/// (with `--config <path>` if `explicit`), logging to the data folder; `serve` kept alive, `update` every 15 minutes.
 pub(crate) fn plist(
     config: &Config,
     path: &Path,
     explicit: bool,
     verb: &str,
 ) -> Result<(PathBuf, String), String> {
-    let home = env::var_os("HOME").ok_or("no HOME")?;
+    let home = cooee_core::env_var("HOME").ok_or("no HOME")?;
     let data = config.data_dir().ok_or("no data folder")?;
     let exe = env::current_exe().map_err(|e| e.to_string())?;
     let mut argv = vec![
@@ -75,7 +70,9 @@ pub(crate) fn plist(
         )
     };
     let log = xml(&data.join(log).display().to_string());
-    let env_path = xml(&env::var("PATH").unwrap_or_default());
+    let env_path = xml(&cooee_core::env_var("PATH")
+        .and_then(|v| v.into_string().ok())
+        .unwrap_or_default());
     let label = job(&config.instance, verb);
     let plist = format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -107,7 +104,6 @@ pub(crate) fn plist(
     Ok((file, plist))
 }
 
-/// Writes the plist `file`, and the data folder its log goes to.
 pub(crate) fn write_plist(config: &Config, file: &Path, plist: &str) -> Result<(), String> {
     let data = config.data_dir().ok_or("no data folder")?;
     fs::create_dir_all(&data).map_err(|e| e.to_string())?;

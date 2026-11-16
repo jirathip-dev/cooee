@@ -6,6 +6,7 @@ internal struct ActButton<Label: View>: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.openThread) private var openThread
     @Environment(\.open) private var open
+    @Environment(\.openBeside) private var openBeside
     @State private var pending: JSONValue?
     internal var action: String?
     internal let source: JSONValue
@@ -27,8 +28,10 @@ internal struct ActButton<Label: View>: View {
             openURL(url)
         } else if let thread = source["tap"]?.string("thread") {
             openThread(thread)
-        } else if let sheet = source["tap"]?.string("sheet") {
-            open(sheet)
+        } else if let path = source["tap"]?.string("open"), let openBeside {
+            openBeside(path)
+        } else if let tap = source["tap"], let path = tap.string("sheet") ?? tap.string("open") {
+            open(tap.string("focus").map { "\(path)#\($0)" } ?? path)
         } else if let action = BlockAction(action: action, source: source, values: values) {
             act(action)
         }
@@ -120,6 +123,7 @@ internal struct CardBlock: View {
                 RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 3).padding(.vertical, 16)
             }
         }
+        .modifier(BlockActs(block: block))
     }
 
     private var member: Persona? {

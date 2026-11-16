@@ -1,11 +1,6 @@
-//! The routes that start a thread's agent again at a new place: "Use a folder…" (#86) and a move to another machine (#151).
-
 use std::{path::PathBuf, sync::Arc};
 
-use cooee_core::{
-    Config,
-    personas::{self, Persona},
-};
+use cooee_core::{Config, agents::Agent};
 use serde::Deserialize;
 use topcoat::{
     Result,
@@ -15,7 +10,6 @@ use topcoat::{
 
 use crate::{Answer, Data, HubError, hub, logins, machine, profiles, recipe, thread_id};
 
-/// `POST /threads/{id}/folder`: "Use a folder…" (#86).
 #[derive(Deserialize)]
 struct Attach {
     folder: PathBuf,
@@ -34,7 +28,7 @@ pub(crate) async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooe
             (&data, config.as_deref(), &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
-            (t.model, t.effort),
+            ((t.model, t.effort), t.setup),
         )?;
         hub.attach(&id, &a.folder, &recipe)
     });
@@ -43,7 +37,6 @@ pub(crate) async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooe
     ))
 }
 
-/// `POST /threads/{id}/move`: to `machine` (#151; empty: this host), once it is ready for the thread's persona.
 #[derive(Deserialize)]
 struct Move {
     machine: String,
@@ -58,16 +51,17 @@ pub(crate) async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<c
     let done = tokio::task::spawn_blocking(move || {
         let (t, _) = hub.thread(&id)?;
         if !m.machine.is_empty() {
-            let p = personas::find(dir.as_deref(), &data, &t.profile).unwrap_or_else(|_| Persona {
+            let found = profiles(&hub, (&data, dir.as_deref()));
+            let found = found.into_iter().find(|a| a.id == t.profile);
+            let p = found.unwrap_or_else(|| Agent {
                 id: id.clone(),
                 agent: t.agent.clone(),
-                profile: Some(t.profile.clone()).filter(|p| !p.is_empty()),
                 folder: t
                     .folder
                     .as_ref()
                     .map(|f| f.display().to_string())
                     .unwrap_or_default(),
-                ..Persona::default()
+                ..Agent::default()
             });
             machine::ready(&config, &m.machine, &p).map_err(HubError::Refused)?;
         }
@@ -77,7 +71,7 @@ pub(crate) async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<c
             (&data, dir.as_deref(), &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
-            (t.model, t.effort),
+            ((t.model, t.effort), t.setup),
         )?;
         hub.move_to(&id, &m.machine, &recipe)
     });

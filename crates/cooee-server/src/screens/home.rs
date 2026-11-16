@@ -1,6 +1,6 @@
 //! `GET /screens/home` (#311): the app's bundled home, its blocks filled with the threads and personas they draw.
 
-use cooee_core::personas;
+use cooee_core::agents;
 use serde_json::{Value, json};
 use topcoat::{
     Result,
@@ -10,7 +10,6 @@ use topcoat::{
 
 use crate::{Answer, Data, blocking, refused};
 
-/// The home the app draws offline: its title and blocks, with no threads or personas.
 const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/screens/home.json");
 
 /// `{type: screen, source: core, title, blocks, threads, personas}`: `threads` as `GET /threads`, `personas` as
@@ -21,8 +20,13 @@ pub async fn home(cx: &Cx) -> Result<Answer<Value>> {
     let (data, config) = (d.0.clone(), d.1.clone());
     let screen = blocking(cx, move |hub| {
         let mut screen: Value = serde_json::from_str(BUNDLED).map_err(refused)?;
-        screen["threads"] = json!(hub.list());
-        screen["personas"] = json!(personas::list(config.as_deref(), &data));
+        if let Some(o) = screen.as_object_mut() {
+            o.insert("threads".to_owned(), json!(hub.list()));
+            o.insert(
+                "personas".to_owned(),
+                json!(agents::list(config.as_deref(), &data)),
+            );
+        }
         Ok(super::core(screen))
     });
     Ok(Answer(screen.await))

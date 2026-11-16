@@ -24,7 +24,7 @@ internal struct ChatMachineTests {
                 if let refused = refusals.next() { throw refused }
                 calls.record("move \(thread) \(machine)")
             }
-            $0.threads.start = { _, persona, machine, text in
+            $0.threads.start = { _, persona, machine, text, _ in
                 calls.record("start \(persona.id) \(machine) \(text)")
                 return "n1"
             }

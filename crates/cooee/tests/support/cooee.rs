@@ -1,5 +1,3 @@
-//! `cooee serve` under test, a tiny HTTP client for it, and scratch folders.
-
 use std::{
     env, fs,
     io::{BufRead, BufReader, Read, Write},
@@ -16,10 +14,21 @@ use super::{Events, is_item};
 
 /// A scratch folder, empty.
 pub fn scratch(name: &str) -> PathBuf {
-    let dir = env::temp_dir().join(format!("cooee-{name}-{}", std::process::id()));
-    let _ = fs::remove_dir_all(&dir);
+    let dir = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-{name}-{}", std::process::id())),
+    );
+    fs::remove_dir_all(&dir).ok();
     fs::create_dir_all(&dir).unwrap();
     dir
+}
+
+/// Agent `id`'s folder under config folder `dir` (#359): `agent.toml` holding `toml`, and `INSTRUCTIONS.md`.
+pub fn agent(dir: &Path, id: &str, toml: &str, instructions: &str) -> PathBuf {
+    let home = dir.join("agents").join(id);
+    fs::create_dir_all(&home).unwrap();
+    fs::write(home.join("agent.toml"), toml).unwrap();
+    fs::write(home.join("INSTRUCTIONS.md"), instructions).unwrap();
+    home
 }
 
 /// `cooee serve` on a free port with data in `dir/data`, the fake shed in `shed`, the root `dir/root` unless `extra`
@@ -171,7 +180,6 @@ shed_dir = {}
         body: &str,
     ) -> (String, String) {
         let mut stream = TcpStream::connect(&self.addr).unwrap();
-        // One write: a refusal sent before a late body arrives would reset the connection under the read.
         let mut request = Vec::new();
         write!(request, "{method} {path} HTTP/1.0\r\n").unwrap();
         if !headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("host")) {
@@ -256,22 +264,22 @@ shed_dir = {}
 }
 
 impl Drop for Cooee {
-    /// SIGTERM, so `cooee serve` stops what it runs; SIGKILL if it hasn't ended within 5 s.
     fn drop(&mut self) {
         if !matches!(self.child.try_wait(), Ok(None)) {
             return;
         }
-        let _ = Command::new("kill")
+        Command::new("kill")
             .args(["-TERM", &self.child.id().to_string()])
-            .status();
+            .status()
+            .ok();
         for _ in 0..100 {
             if !matches!(self.child.try_wait(), Ok(None)) {
                 return;
             }
             thread::sleep(Duration::from_millis(50));
         }
-        let _ = self.child.kill();
-        let _ = self.child.wait();
+        self.child.kill().ok();
+        self.child.wait().ok();
     }
 }
 

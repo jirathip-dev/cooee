@@ -17,7 +17,6 @@ mod service;
 mod setup;
 mod update;
 
-/// The usage line, every command's part in name order.
 fn usage_line() -> String {
     let parts: Vec<&str> = cmd::ALL.iter().map(|c| c.usage).collect();
     format!(
@@ -26,7 +25,6 @@ fn usage_line() -> String {
     )
 }
 
-/// Whether `instance` is a valid instance name: lowercase letters, digits and `-`.
 fn named(instance: &str) -> bool {
     !instance.is_empty()
         && instance
@@ -42,13 +40,13 @@ fn main() -> ExitCode {
         Err(failed) => return exit(Err(failed), &usage),
     };
     if !named(inv.instance()) {
-        eprintln!("cooee: an instance name is lowercase letters, digits and `-`");
+        cooee_core::note!("cooee: an instance name is lowercase letters, digits and `-`");
         return ExitCode::from(2);
     }
     let result = match inv.words().as_slice() {
         ["--version" | "-V"] => return update::version(),
         ["--help" | "-h"] => {
-            println!("{usage}");
+            cooee_core::say!("{usage}");
             return ExitCode::SUCCESS;
         }
         [word, ..] => cmd::ALL
@@ -64,11 +62,11 @@ fn exit(result: Result<(), Failed>, usage: &str) -> ExitCode {
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(Failed::Usage) => {
-            eprintln!("{usage}");
+            cooee_core::note!("{usage}");
             ExitCode::from(2)
         }
         Err(Failed::Because(e)) => {
-            eprintln!("cooee: {e}");
+            cooee_core::note!("cooee: {e}");
             ExitCode::FAILURE
         }
         Err(Failed::Exit(code)) => code,

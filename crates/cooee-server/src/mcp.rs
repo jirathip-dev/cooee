@@ -12,7 +12,7 @@ use std::{
     fmt::Write as _,
     io::{self, BufRead, BufReader, Read, Write},
     net::TcpStream,
-    process::{Child, ChildStdin, Command, Stdio},
+    process::{Child, ChildStdin, Stdio},
     sync::{
         Arc, Mutex, PoisonError,
         mpsc::{self, Receiver, Sender},
@@ -52,10 +52,10 @@ pub fn token(key: &str, thread: &str) -> String {
     cooee_core::sha256(format!("{key}:{thread}").as_bytes())
 }
 
-/// `POST <path>` to cooee with the thread's token; the answer's JSON, or cooee's sentence.
 fn ask(path: &str, body: &Value) -> Result<Value, String> {
-    let var =
-        env::var(VAR).map_err(|_| format!("{VAR} isn't set: run me as a thread's MCP server"))?;
+    let var = cooee_core::env_var(VAR)
+        .and_then(|v| v.into_string().ok())
+        .ok_or_else(|| format!("{VAR} isn't set: run me as a thread's MCP server"))?;
     let (url, token) = var
         .split_once(' ')
         .ok_or(format!("{VAR} is `<url> <token>`"))?;
@@ -64,10 +64,8 @@ fn ask(path: &str, body: &Value) -> Result<Value, String> {
         .ok_or("cooee's URL is http://host:port")?;
     let body = body.to_string();
     let mut s = TcpStream::connect(host).map_err(|e| format!("cooee at {url}: {e}"))?;
-    // `ask_persona` waits up to 10 minutes for its reply.
     s.set_read_timeout(Some(Duration::from_secs(630)))
         .map_err(|e| e.to_string())?;
-    // HTTP/1.0: the whole body, never chunked.
     let head = format!(
         "POST {path} HTTP/1.0\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {token}\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n",
         body.len()
@@ -84,7 +82,6 @@ fn ask(path: &str, body: &Value) -> Result<Value, String> {
     }
 }
 
-/// The thread's grant for `server`.
 fn grant(server: &str, thread: &str) -> Result<Grant, String> {
     let g = ask(
         "/mcp/agent/grant",
@@ -101,13 +98,11 @@ fn error(id: &Value, code: i64, message: &str) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
 }
 
-/// Writes one message as a line.
 fn put(out: &Mutex<io::Stdout>, msg: &Value) {
     let mut out = out.lock().unwrap_or_else(PoisonError::into_inner);
-    let _ = writeln!(out, "{msg}").and_then(|()| out.flush());
+    writeln!(out, "{msg}").and_then(|()| out.flush()).ok();
 }
 
-/// The real server: a child on stdio, or an http endpoint; its messages arrive on the channel given to [`open`].
 enum Upstream {
     Stdio(Child, ChildStdin),
     Http {
@@ -118,11 +113,10 @@ enum Upstream {
     },
 }
 
-/// Starts (stdio) or names (http) `g`'s server; what it sends goes to `tx`.
 fn open(g: &Grant, tx: Sender<Value>) -> Result<Upstream, String> {
     match g.kind.as_str() {
         "stdio" => {
-            let mut child = Command::new(&g.command)
+            let mut child = cooee_core::runner::command(&g.command)
                 .args(&g.args)
                 .envs(g.env.iter().map(|(k, v)| (k, v)))
                 .env_remove(VAR)
@@ -155,13 +149,11 @@ fn open(g: &Grant, tx: Sender<Value>) -> Result<Upstream, String> {
     }
 }
 
-/// A curl config line's quoted value.
 fn quoted(v: &str) -> String {
     format!("\"{}\"", v.replace('\\', r"\\").replace('"', "\\\""))
 }
 
 impl Upstream {
-    /// Sends one message; an http server's answer (JSON or an event stream) goes to the channel.
     fn send(&mut self, msg: &Value) -> Result<(), String> {
         let (url, headers, session, tx) = match self {
             Self::Stdio(_, stdin) => return writeln!(stdin, "{msg}").map_err(|e| e.to_string()),
@@ -172,7 +164,6 @@ impl Upstream {
                 tx,
             } => (url, headers, session, tx),
         };
-        // The headers and the body go on curl's stdin, never its command line.
         let mut config = format!(
             "url = {}\nrequest = \"POST\"\nsilent\ninclude\n",
             quoted(url)
@@ -187,10 +178,10 @@ impl Upstream {
             .chain(sid)
             .chain(headers.iter().map(|(k, v)| (k.as_str(), v.as_str())))
         {
-            let _ = writeln!(config, "header = {}", quoted(&format!("{k}: {v}")));
+            writeln!(config, "header = {}", quoted(&format!("{k}: {v}"))).ok();
         }
-        let _ = writeln!(config, "data-binary = {}", quoted(&msg.to_string()));
-        let mut child = Command::new("curl")
+        writeln!(config, "data-binary = {}", quoted(&msg.to_string())).ok();
+        let mut child = cooee_core::runner::command("curl")
             .args(["-K", "-"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -213,11 +204,12 @@ impl Upstream {
         }
         let id = msg.get("id").filter(|_| !status.starts_with('2'));
         if let Some(id) = id {
-            let _ = tx.send(error(
+            tx.send(error(
                 id,
                 -32000,
                 &format!("the server answered HTTP {status}"),
-            ));
+            ))
+            .ok();
             return Ok(());
         }
         let events = body.lines().filter_map(|l| l.strip_prefix("data:"));
@@ -227,14 +219,13 @@ impl Upstream {
                 .filter(|b| b.trim_start().starts_with('{')),
         ) {
             if let Ok(v) = serde_json::from_str::<Value>(v) {
-                let _ = tx.send(v);
+                tx.send(v).ok();
             }
         }
         Ok(())
     }
 }
 
-/// `result.tools` of a `tools/list` answer, only the allowed ones.
 fn only(mut msg: Value, tools: Option<&[String]>) -> Value {
     if let (Some(allow), Some(list)) = (
         tools,
@@ -283,7 +274,7 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
             continue;
         };
         let id = msg.get("id").cloned().unwrap_or(Value::Null);
-        match msg["method"].as_str() {
+        match msg.get("method").and_then(Value::as_str) {
             Some("tools/list") => {
                 lists
                     .lock()
@@ -314,8 +305,8 @@ pub fn proxy(server: &str, thread: &str) -> Result<(), String> {
         up.send(&msg)?;
     }
     if let Upstream::Stdio(mut child, _) = up {
-        let _ = child.kill();
-        let _ = child.wait();
+        child.kill().ok();
+        child.wait().ok();
     }
     Ok(())
 }
@@ -334,11 +325,12 @@ pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
             let msg = rx
                 .recv_timeout(Duration::from_secs(10))
                 .map_err(|_| format!("no answer to {method}"))?;
-            if msg["id"] == id {
-                return msg
-                    .get("result")
-                    .cloned()
-                    .ok_or_else(|| msg["error"]["message"].to_string());
+            if msg.get("id").is_some_and(|v| *v == id) {
+                return msg.get("result").cloned().ok_or_else(|| {
+                    msg.pointer("/error/message")
+                        .unwrap_or(&Value::Null)
+                        .to_string()
+                });
             }
         }
     };
@@ -347,10 +339,14 @@ pub fn tools(g: &Grant) -> Result<Vec<(String, String)>, String> {
         call(&mut up, 2, "tools/list", json!({}))
     });
     if let Upstream::Stdio(mut child, _) = up {
-        let _ = child.kill();
-        let _ = child.wait();
+        child.kill().ok();
+        child.wait().ok();
     }
-    let list = listed?["tools"].as_array().cloned().unwrap_or_default();
+    let list = listed?
+        .get("tools")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
     let text = |t: &Value, k: &str| t[k].as_str().unwrap_or_default().to_owned();
     Ok(list
         .iter()
@@ -404,6 +400,14 @@ fn own_tools() -> Value {
             "limit": { "type": "integer", "description": "fewer hits, at most 5" }
         } }
     });
+    let update = json!({
+        "name": "update_persona",
+        "description": "Rewrite your persona's Character or Instructions (the whole text of each given). In a setup chat it is saved at once; elsewhere the owner approves a card with the diff first. It reaches your next session.",
+        "inputSchema": { "type": "object", "properties": {
+            "character": { "type": "string", "description": "who you are, your tone" },
+            "instructions": { "type": "string", "description": "your standing rules" }
+        } }
+    });
     let routine = json!({
         "name": "create_routine",
         "description": "Make a routine (when the owner asks for something on a schedule): at each due time its prompt is sent to you, in this chat (place chat, the default) or as a new thread like this one (place new_thread). The owner sees it in this chat and changes it in Settings › routines. {{due}} in the prompt is the due time. A refusal starts with BAD_SCHEDULE, BAD_NAME, BAD_PROMPT, BAD_PLACE, TOO_MANY or NOT_HERE.",
@@ -427,11 +431,11 @@ fn own_tools() -> Value {
             } }
         } }
     });
-    json!([tool, remember, ask_persona, history, routine, skill])
+    json!([tool, remember, ask_persona, history, update, routine, skill])
 }
 
 /// `cooee mcp serve --thread <id>`: cooee's own MCP server: `propose_server`, and `remember` (#126),
-/// `ask_persona` (#156), `history` (#217) and `skill` (#218) for a persona's.
+/// `ask_persona` (#156), `history` (#217), `update_persona` (#270) and `skill` (#218) for a persona's.
 ///
 /// # Errors
 /// Never past a broken stdin; each refused proposal is the tool's error.
@@ -445,7 +449,11 @@ pub fn serve(thread: &str) -> Result<(), String> {
         let Some(id) = msg.get("id") else {
             continue;
         };
-        let answer = match msg["method"].as_str().unwrap_or_default() {
+        let answer = match msg
+            .get("method")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+        {
             "initialize" => reply(
                 id,
                 &json!({
@@ -467,9 +475,9 @@ pub fn serve(thread: &str) -> Result<(), String> {
                         "Proposed. The owner sees a card with the exact command or URL; once approved with Face ID it is added switched off. Nothing has run.",
                     )),
                     Some("remember") => Some(("/mcp/agent/remember", "")),
-                    // Its answer (a string) is the reply.
                     Some("ask_persona") => Some(("/mcp/agent/ask", "")),
                     Some("history") => Some(("/mcp/agent/history", "")),
+                    Some("update_persona") => Some(("/mcp/agent/persona", "")),
                     Some("create_routine") => Some((
                         "/mcp/agent/routine",
                         "Made. The owner sees it in this chat and can change it in Settings › routines.",

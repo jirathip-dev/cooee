@@ -129,6 +129,7 @@ internal struct FieldsBlock: View {
 
 internal struct FieldRow: View {
     @Environment(\.look) private var look
+    @Environment(\.focus) private var focus
     @State private var editing = false
     @State private var draft = ""
     internal let field: JSONValue
@@ -158,8 +159,11 @@ internal struct FieldRow: View {
             }
             .padding(.horizontal, 12).frame(minHeight: 38).padding(.vertical, note == nil ? 0 : 4)
             .background(palette.background.opacity(0.5), in: .rect(cornerRadius: 10))
+            .overlay {
+                if focus == name { RoundedRectangle(cornerRadius: 10).strokeBorder(palette.lead, lineWidth: 2) }
+            }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.plain).id(name)
         .alert(field.string("label") ?? name, isPresented: typing) { editor }
         .confirmationDialog(field.string("label") ?? name, isPresented: picking) {
             ForEach(field.list("options").compactMap(\.string), id: \.self) { option in

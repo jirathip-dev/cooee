@@ -14,21 +14,18 @@ use std::{
 use serde_json::{Value, json};
 
 const BIN: &str = env!("CARGO_BIN_EXE_cooee");
-/// The "now" every run reads (`COOEE_NOW`): 2026-11-16 00:01 UTC, two hours before the weekly reset below.
 const NOW: u64 = 1_794_787_260;
 
 struct Fixture {
     dir: PathBuf,
-    /// A secret-shaped value kept in the signed-in account's folder, built at runtime.
     secret: String,
 }
 
-/// Provider `fake` (`FAKE_HOME`; signed in when the folder has `creds`, or when a token is inherited: it must not
-/// be; usage from the folder's `usage.txt`), whose accounts are `work` (signed in) and
-/// `idle` (signed out), and provider `claude` with token files `ci` (0600) and `loose` (0644).
 fn fixture(name: &str) -> Fixture {
-    let dir = env::temp_dir().join(format!("cooee-{name}-{}", std::process::id()));
-    let _ = fs::remove_dir_all(&dir);
+    let dir = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-{name}-{}", std::process::id())),
+    );
+    fs::remove_dir_all(&dir).ok();
     let accounts = dir.join("data/accounts");
     fs::create_dir_all(accounts.join("fake/idle")).unwrap();
     fs::create_dir_all(accounts.join("fake/work")).unwrap();
@@ -59,7 +56,6 @@ fn fixture(name: &str) -> Fixture {
 }
 
 impl Fixture {
-    /// `cooee accounts <args>`: its exit code, stdout and stderr; neither ever holds the folder's secret.
     fn run(&self, args: &[&str]) -> (i32, String, String) {
         let out = Command::new(BIN)
             .arg("accounts")
@@ -111,7 +107,6 @@ fn env_prints_a_folder_accounts_variable_and_reports_signed_out() {
     assert_eq!(err, "cooee: fake/idle is signed out\n");
     assert_eq!(f.run(&["env", "fake", "work", "--require-signed-in"]).0, 0);
 
-    // The system default: no folder, no variable.
     assert_eq!(parse(&f.run(&["env", "fake", ""]).1), json!({}));
 }
 
@@ -220,7 +215,6 @@ fn an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays() {
     let (code, _, err) = f.run(&["add", "fake", "../x", "--folder", a.to_str().unwrap()]);
     assert_eq!(code, 1, "{err}");
 
-    // Its own folder, not the link: the CLI keys its keychain login by the folder's path.
     let (code, out, _) = f.run(&["env", "fake", "A", "--require-signed-in"]);
     assert_eq!((code, parse(&out)), (0, json!({ "FAKE_HOME": a })));
     let ls = parse(&f.run(&["ls", "--json"]).1);
@@ -275,7 +269,6 @@ fn ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age() 
         json!({ "five_hour": w(12, NOW + 53_940), "seven_day": w(40, NOW + 7_140), "read_at": NOW, "age_s": 0 })
     );
 
-    // A stored reading 2 minutes old (fresh: not read again) whose 5 h window reset a minute ago.
     let reading = json!({ "usage": { "work": {
         "five_hour": w(97, NOW - 60), "seven_day": w(55, NOW + 86_400), "read_at": NOW - 120 } } });
     fs::write(

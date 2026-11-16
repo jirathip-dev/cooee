@@ -14,10 +14,9 @@ use std::{
     io::{self, BufRead, BufReader, Read, Write},
     net::{SocketAddr, TcpListener, TcpStream},
     path::PathBuf,
-    process::Command,
     sync::{Arc, Mutex, PoisonError},
     thread,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, UNIX_EPOCH},
 };
 
 use cooee_core::{
@@ -35,7 +34,6 @@ pub const MEMORY_CRITICAL_PCT: u64 = 90;
 /// The history kept and drawn: 24 h, in seconds.
 pub const DAY: u64 = 86_400;
 
-/// The tab's UI module.
 const TAB: &str = include_str!("tab.js");
 
 /// One machine's card: what shed last said about it.
@@ -86,7 +84,6 @@ impl Card {
         }
     }
 
-    /// The push for its problems: `air: offline, last seen 12 min ago`.
     fn alert(&self, now: u64) -> String {
         let s = self.now.clone().unwrap_or_default();
         let what: Vec<String> = self
@@ -97,7 +94,9 @@ impl Card {
                     Some(t) => format!("offline, last seen {}", html::ago(now, t)),
                     None => "offline, never seen".to_owned(),
                 },
-                Problem::DiskLow => format!("disk {} free", html::size(s.disk_free_mb)),
+                Problem::DiskLow => {
+                    format!("disk {} free", html::size(html::float(s.disk_free_mb)))
+                }
                 Problem::MemoryCritical => {
                     format!("memory pressure critical ({}%)", s.mem_pressure_pct)
                 }
@@ -158,7 +157,7 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 /// Unix seconds now.
 #[must_use]
 pub fn unix_now() -> u64 {
-    SystemTime::now()
+    cooee_core::clock::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| d.as_secs())
 }
@@ -177,10 +176,8 @@ impl Machines {
         }
     }
 
-    /// `shed [--dir] --json <args>`: its stdout as JSON (shed prints JSON for an offline machine too, exit 1), or
-    /// its stderr.
     fn shed(&self, args: &[&str]) -> Result<Value, String> {
-        let mut cmd = Command::new(&self.shed);
+        let mut cmd = cooee_core::runner::command(&self.shed);
         if let Some(dir) = &self.dir {
             cmd.arg("--dir").arg(dir);
         }
@@ -241,13 +238,14 @@ impl Machines {
                 card.online = stats.is_some();
                 card.error = answer.as_ref().err().filter(|e| !e.is_empty()).cloned();
                 if let Some(s) = stats {
-                    // Only what is new, should a shed answer more than was asked for.
                     let new = s.history.into_iter().filter(|s| s.at > after);
                     card.history.extend(new);
                     card.last_seen = Some(s.now.at);
                     card.now = Some(s.now);
                 } else {
-                    let seen = answer.ok().and_then(|v| v["last_seen"].as_u64());
+                    let seen = answer
+                        .ok()
+                        .and_then(|v| v.get("last_seen").and_then(serde_json::Value::as_u64));
                     card.last_seen = seen.or(card.last_seen);
                 }
                 card
@@ -272,7 +270,7 @@ impl Machines {
                 match cooee.post("/plugin/push", &push) {
                     Ok(200..=299) => {}
                     r => {
-                        eprintln!("cooee-machines: push for {}: {r:?}", card.name);
+                        cooee_core::note!("cooee-machines: push for {}: {r:?}", card.name);
                         continue;
                     }
                 }
@@ -299,7 +297,7 @@ pub fn serve(listener: &TcpListener, token: &str, machines: &Arc<Machines>) {
         let (token, machines) = (token.to_owned(), Arc::clone(machines));
         thread::spawn(move || {
             if let Err(e) = answer(stream, &token, &machines) {
-                eprintln!("cooee-machines: {e}");
+                cooee_core::note!("cooee-machines: {e}");
             }
         });
     }
@@ -336,16 +334,15 @@ fn answer(stream: TcpStream, token: &str, machines: &Machines) -> io::Result<()>
         body.len()
     )?;
     s.flush()?;
-    // Drain what is left so closing never resets the connection under the answer.
-    let _ = s.set_read_timeout(Some(Duration::from_millis(100)));
-    let _ = s.read(&mut [0; 1024]);
+    s.set_read_timeout(Some(Duration::from_millis(100))).ok();
+    s.read(&mut [0; 1024]).map(drop).ok();
     Ok(())
 }
 
 /// This machine's short host name, or `this machine`.
 #[must_use]
 pub fn local_name() -> String {
-    let host = Command::new("hostname").arg("-s").output();
+    let host = cooee_core::runner::command("hostname").arg("-s").output();
     let local = host.map_or_else(
         |_| String::new(),
         |o| String::from_utf8_lossy(&o.stdout).trim().to_owned(),
@@ -380,7 +377,7 @@ pub fn start(
     thread::spawn(move || {
         loop {
             machines.tick(unix_now(), &cooee);
-            thread::sleep(Duration::from_secs(60));
+            cooee_core::clock::sleep(Duration::from_secs(60));
         }
     });
     Ok(())

@@ -31,7 +31,8 @@
       "type": "object",
       "properties": {
         "open": { "type": "string" }, "sheet": { "type": "string" }, "action": { "type": "string" },
-        "values": { "type": "object" }, "thread": { "type": "string" }, "url": { "type": "string" }
+        "values": { "type": "object" }, "thread": { "type": "string" }, "url": { "type": "string" },
+        "focus": { "type": "string" }
       }
     },
     "confirm": {
@@ -96,7 +97,8 @@
         { "if": { "properties": { "type": { "const": "web" } } }, "then": { "$ref": "#/$defs/web" } },
         { "if": { "properties": { "type": { "const": "diff" } } }, "then": { "$ref": "#/$defs/diff" } },
         { "if": { "properties": { "type": { "const": "editor" } } }, "then": { "$ref": "#/$defs/editor" } },
-        { "if": { "properties": { "type": { "const": "scene" } } }, "then": { "$ref": "#/$defs/scene" } }
+        { "if": { "properties": { "type": { "const": "scene" } } }, "then": { "$ref": "#/$defs/scene" } },
+        { "if": { "properties": { "type": { "const": "diagram" } } }, "then": { "$ref": "#/$defs/diagram" } }
       ]
     },
     "screen": {
@@ -104,7 +106,7 @@
       "properties": {
         "title": { "type": "string" }, "large": { "type": "boolean" }, "stream": { "type": "string" },
         "actions": { "type": "array", "items": { "$ref": "#/$defs/act" } }, "blocks": { "$ref": "#/$defs/blocks" },
-        "back": { "type": "string" }, "done": { "$ref": "#/$defs/submit" },
+        "back": { "type": "string" }, "done": { "$ref": "#/$defs/submit" }, "refresh": { "type": "boolean" },
         "pending": {
           "type": "object",
           "required": ["count", "text", "discard", "review"],
@@ -150,6 +152,7 @@
         },
         "value": { "$ref": "#/$defs/value" }, "accessory": { "enum": ["chevron", "none"] },
         "swipe": { "type": "array", "items": { "$ref": "#/$defs/act" } }, "tap": { "$ref": "#/$defs/tap" },
+        "menu": { "type": "array", "items": { "$ref": "#/$defs/act" } },
         "indent": { "type": "integer", "minimum": 0, "maximum": 2 }, "style": { "enum": ["link", "destructive"] },
         "button": { "$ref": "#/$defs/act" }, "handle": { "type": "boolean" }, "lifted": { "type": "boolean" },
         "changed": { "type": "boolean" },
@@ -169,6 +172,23 @@
     "scene": {
       "required": ["lanes"],
       "properties": { "label": { "type": "string" }, "lanes": { "type": "array", "items": { "$ref": "#/$defs/lane" } } }
+    },
+    "diagram": {
+      "required": ["source"],
+      "properties": {
+        "title": { "type": "string" }, "source": { "type": "string" }, "selected": { "type": "string" },
+        "counts": { "type": "object", "additionalProperties": { "type": "number" } },
+        "nodes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "state": { "$ref": "#/$defs/tone" }, "coat": { "type": "string" }, "tap": { "$ref": "#/$defs/tap" },
+              "limit": { "type": "string" }, "label": { "type": "string" }, "value": { "type": "string" }
+            }
+          }
+        }
+      }
     },
     "round": {
       "type": "object",
@@ -195,7 +215,8 @@
         "kind": { "enum": ["ask", "run", "secret", "config", "proposal"] }, "tone": { "$ref": "#/$defs/tone" },
         "title": { "type": "string" }, "subtitle": { "type": "string" }, "meta": { "type": "string" },
         "badge": { "$ref": "#/$defs/badge" }, "buttons": { "$ref": "#/$defs/blocks" }, "tap": { "$ref": "#/$defs/tap" },
-        "push": { "type": "boolean" }, "blocks": { "$ref": "#/$defs/blocks" }
+        "push": { "type": "boolean" }, "blocks": { "$ref": "#/$defs/blocks" },
+        "menu": { "type": "array", "items": { "$ref": "#/$defs/act" } }
       }
     },
     "choice": {

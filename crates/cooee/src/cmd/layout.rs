@@ -1,5 +1,3 @@
-//! `cooee layout check <layout.json>...`: the layout gate.
-
 use crate::{
     check,
     cli::{Failed, Flag, Invocation},

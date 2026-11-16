@@ -1,5 +1,3 @@
-//! "Use a folder…" (#86) and a move to another machine (#151): a thread's agent starts again at its new place.
-
 use std::{collections::BTreeMap, fs, path::Path};
 
 use super::{
@@ -41,13 +39,6 @@ impl Hub {
         self.relaunch(id, (&folder, machine), recipe)
     }
 
-    /// Thread `id`'s later turns run in `folder` on `machine`. shed fixes a session's folder and machine when it
-    /// starts, so its agent starts again there as `recipe` says, and the next message carries a hand-over: the
-    /// profile's instructions, where it was and its last turns. The chat says so; the old terminal is closed.
-    ///
-    /// # Errors
-    /// [`HubError::Refused`] for a closed or Workflow thread; [`HubError::Shed`] when the agent can't start there
-    /// (the thread stays where it was).
     fn relaunch(
         &self,
         id: &str,
@@ -80,7 +71,7 @@ impl Hub {
             })
             .and_then(|_| Ok(self.shed.ready(&terminal)?));
         if let Some((file, _)) = &recipe.launch.secrets {
-            let _ = fs::remove_file(file);
+            fs::remove_file(file).ok();
         }
         let session = started?;
         let mut live = lock(&live);
@@ -103,7 +94,14 @@ impl Hub {
                 _ => None,
             })
             .collect();
-        let last = turns[turns.len().saturating_sub(6)..].join("\n\n");
+        let last = turns
+            .iter()
+            .rev()
+            .take(6)
+            .rev()
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("\n\n");
         let handover = format!(
             "{}\n\nThis chat moved from {} to {}, where you now run; what it made before is still there. Its last turns:\n\n{last}",
             recipe.instructions.trim_end(),
@@ -138,10 +136,10 @@ impl Hub {
         if let Some(s) = session
             && let Err(e) = self.settle(id, &terminal, &s)
         {
-            eprintln!("cooee: {id}: model: {e}");
+            cooee_core::note!("cooee: {id}: model: {e}");
         }
         if let Err(e) = self.shed.close(&old) {
-            eprintln!("cooee: {e}");
+            cooee_core::note!("cooee: {e}");
         }
         Ok(item)
     }

@@ -22,6 +22,7 @@ extension ThreadsClient: DependencyKey {
     public static let liveValue = ThreadsClient(
         home: { server in try await Client(server).home() },
         personas: { server in try await Client(server).personas() },
+        looks: { server in try await Client(server).looks() },
         messages: { server, thread in try await Client(server).messages(thread) },
         events: { server, thread, since in Client(server).events(thread, since: since) },
         send: { server, thread, text, files, queue in
@@ -37,8 +38,8 @@ extension ThreadsClient: DependencyKey {
         answer: { server, thread, item, option, value in
             try await Client(server).answer(thread, item: item, option: option, value: value)
         },
-        start: { server, persona, machine, text in
-            try await Client(server).newThread(persona: persona, machine: machine, text: text)
+        start: { server, persona, machine, text, setup in
+            try await Client(server).newThread(persona: persona, machine: machine, text: text, setup: setup)
         },
         move: { server, thread, machine in try await Client(server).move(thread, to: machine) },
         retry: { server, thread in try await Client(server).retry(thread) },

@@ -27,7 +27,6 @@ fn status(head: &str) -> u16 {
     head[9..12].parse().unwrap()
 }
 
-/// Every read and write, with `cookie` (maybe none): its status.
 fn statuses(c: &Cooee, cookie: &str) -> Vec<(&'static str, u16)> {
     let json = ("Content-Type", "application/json");
     let calls: [(&str, &str, &str); 8] = [
@@ -89,7 +88,6 @@ fn pair_use_remove_and_only_the_hash_on_disk() {
     let id = devices["devices"][0]["id"].as_str().unwrap().to_owned();
     assert!(c.cli(&["devices"]).contains(&id));
 
-    // A code is single use: entering it again (here: a second pairing) is a new device.
     let second = c.pair().unwrap();
     assert_ne!(second, token);
     assert_eq!(c.cli(&["devices"]).lines().count(), 2);
@@ -109,14 +107,12 @@ fn pair_use_remove_and_only_the_hash_on_disk() {
 
 const FORM: (&str, &str) = ("Content-Type", "application/x-www-form-urlencoded");
 
-/// The code `cooee pair` prints.
 fn new_code(c: &Cooee) -> String {
     let out = c.cli(&["pair"]);
     let line = out.lines().find_map(|l| l.strip_prefix("code  ")).unwrap();
     line[..7].replace(' ', "")
 }
 
-/// Where a `POST /pair` of `body` from `addr` sends the browser, and the cookie it sets.
 fn enter(c: &Cooee, addr: &str, body: &str) -> (String, Option<String>) {
     let (head, _) = c.raw("POST", "/pair", &[FORM, ("X-Forwarded-For", addr)], body);
     assert_eq!(status(&head), 303, "{head}");
@@ -132,7 +128,6 @@ fn enter(c: &Cooee, addr: &str, body: &str) -> (String, Option<String>) {
 #[test]
 fn a_qr_codes_link_carries_a_code_that_pairs_at_once() {
     let (_dir, _shed, c) = setup("qr", "");
-    // A paired device shows the QR: the link with a new code, as an SVG.
     let (code, body) = c.post("/devices/pair", &json!({}));
     assert_eq!(code, 200, "{body}");
     let qr: Value = serde_json::from_str(&body).unwrap();
@@ -140,7 +135,6 @@ fn a_qr_codes_link_carries_a_code_that_pairs_at_once() {
     let link = qr["link"].as_str().unwrap();
     assert_eq!(link, format!("https://{}/pair?code={pin}", c.addr));
     assert!(qr["svg"].as_str().unwrap().contains("<svg"), "{qr}");
-    // The six boxes, as the form posts them: `code` then `d2`…`d6`.
     let six: Vec<String> = (2..=6)
         .zip(pin.chars().skip(1))
         .map(|(i, d)| format!("&d{i}={d}"))
@@ -162,14 +156,12 @@ fn a_wrong_expired_or_reused_code_says_so() {
     let wrong = if pin == "000000" { "111111" } else { "000000" };
     let (to, cookie) = enter(&c, "203.0.113.2", &format!("code={wrong}"));
     assert_eq!((to.as_str(), cookie), ("/pair?bad=wrong&left=4", None));
-    // Used once, it has run out.
     assert!(enter(&c, "203.0.113.2", &format!("code={pin}")).1.is_some());
     let (to, cookie) = enter(&c, "203.0.113.2", &format!("code={pin}"));
     assert_eq!(
         (to.as_str(), cookie),
         (format!("/pair?bad=expired&code={pin}").as_str(), None)
     );
-    // After 10 minutes, too.
     let pin = new_code(&c);
     let file = dir.join("data/devices.json");
     let mut devices: Value = serde_json::from_str(&fs::read_to_string(&file).unwrap()).unwrap();
@@ -194,14 +186,12 @@ fn five_wrong_codes_a_minute_refuse_that_address() {
         enter(&c, "203.0.113.3", &format!("code={wrong}")).0,
         "/pair?bad=limit&wait=60"
     );
-    // Even the right code is refused from there for the minute.
     let pin = new_code(&c);
     let (to, cookie) = enter(&c, "203.0.113.3", &format!("code={pin}"));
     assert!(
         to.starts_with("/pair?bad=limit&wait=") && cookie.is_none(),
         "{to}"
     );
-    // Another address may still pair.
     assert!(enter(&c, "203.0.113.4", &format!("code={pin}")).1.is_some());
 }
 
@@ -214,7 +204,6 @@ fn a_foreign_host_or_origin_is_refused_even_paired() {
     let cookie = ("Cookie", c.cookie.as_str());
     let get =
         |headers: &[(&str, &str)]| status(&c.raw("GET", "/threads/t1/messages", headers, "").0);
-    // Ours: the bind address (the default Host), localhost and an allowed name, with or without a port.
     assert_eq!(get(&[cookie]), 404);
     assert_eq!(get(&[cookie, ("Host", "localhost:4747")]), 404);
     assert_eq!(get(&[cookie, ("Host", "PHONE.tailnet.example")]), 404);
@@ -222,7 +211,6 @@ fn a_foreign_host_or_origin_is_refused_even_paired() {
         get(&[cookie, ("Origin", "https://phone.tailnet.example")]),
         404
     );
-    // DNS rebinding: another name, even with a paired cookie; the `*` entry widens nothing.
     assert_eq!(get(&[cookie, ("Host", "evil.example")]), 403);
     assert_eq!(get(&[cookie, ("Host", "evil.example:4747")]), 403);
     assert_eq!(get(&[cookie, ("Origin", "http://evil.example")]), 403);
@@ -249,13 +237,11 @@ fn push_subscriptions_are_checked_and_tied_to_the_device() {
     assert_eq!(subs[0]["endpoint"], "https://push.example.com/x");
 }
 
-/// `POST path` with `body` and no cookie: the status and headers, and the body.
 fn open_post(c: &Cooee, path: &str, body: &Value) -> (String, String) {
     let json = ("Content-Type", "application/json");
     c.raw("POST", path, &[json], &body.to_string())
 }
 
-/// A fake platform authenticator: one P-256 passkey, signing as `WebAuthn` does for this server's origin.
 struct Authenticator {
     key: SigningKey,
     id: String,
@@ -271,7 +257,6 @@ impl Authenticator {
         }
     }
 
-    /// The authenticator data: the relying party's hash, then user present and verified (Face ID).
     fn auth(&self) -> Vec<u8> {
         let mut a = Sha256::digest(self.host.split(':').next().unwrap()).to_vec();
         a.extend([0x05, 0, 0, 0, 1]);
@@ -291,7 +276,6 @@ impl Authenticator {
         B64.encode(sig.to_der().as_bytes())
     }
 
-    /// `navigator.credentials.create` for `challenge`: the body `POST /passkeys` takes.
     fn create(&self, challenge: &str) -> Value {
         let mut spki = vec![
             0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01,
@@ -304,14 +288,12 @@ impl Authenticator {
         json!({ "id": self.id, "key": B64.encode(spki), "client": B64.encode(client), "auth": B64.encode(self.auth()) })
     }
 
-    /// `navigator.credentials.get` for `challenge`, signed.
     fn get(&self, challenge: &str) -> Value {
         let (auth, client) = (self.auth(), self.client("webauthn.get", challenge));
         json!({ "id": self.id, "client": B64.encode(&client), "auth": B64.encode(&auth), "sig": self.sig(&auth, &client) })
     }
 }
 
-/// A fresh challenge from `POST /passkey/challenge`, asked without a cookie.
 fn challenge(c: &Cooee) -> String {
     let (_, body) = open_post(c, "/passkey/challenge", &json!({}));
     serde_json::from_str::<Value>(&body).unwrap()["challenge"]
@@ -320,20 +302,17 @@ fn challenge(c: &Cooee) -> String {
         .to_owned()
 }
 
-/// The paired device saves a passkey; it is listed.
 fn save_passkey(c: &Cooee, a: &Authenticator) {
     let (code, body) = c.post("/passkeys", &a.create(&challenge(c)));
     assert_eq!(code, 200, "{body}");
     assert_eq!(c.json("/passkeys")[0]["id"], a.id.as_str());
 }
 
-/// An iPad's JSON request.
 const IPAD: [(&str, &str); 2] = [
     ("Content-Type", "application/json"),
     ("User-Agent", "Mozilla/5.0 (iPad) Safari/604.1"),
 ];
 
-/// A new device's request: its check word and claim.
 fn ask(c: &Cooee) -> (String, Value) {
     let (head, body) = c.raw("POST", "/pair/request", &IPAD, "{}");
     assert_eq!(status(&head), 200, "{head}");
@@ -349,7 +328,6 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
     use std::os::unix::fs::PermissionsExt;
     let dir = scratch("approve");
     let shed = FakeShed::start(&dir.join("shed"), version());
-    // A fake push service: `curl` logs where it posts.
     let bin = dir.join("bin");
     fs::create_dir_all(&bin).unwrap();
     let log = dir.join("pushed.log");
@@ -374,7 +352,6 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
     let (word, claim) = ask(&c);
     assert_eq!(word.split(' ').count(), 2, "{word}");
     assert_eq!(status(&open_post(&c, "/pair/claim", &claim).0), 202);
-    // Every paired device gets the push, and the card.
     let at = std::time::Instant::now();
     while !fs::read_to_string(&log)
         .unwrap_or_default()
@@ -390,7 +367,6 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
     );
     let id = asks[0]["id"].clone();
 
-    // Approving needs a valid passkey signature over a fresh challenge.
     let answer = |passkey: Value| {
         c.post(
             "/pair/answer",
@@ -414,7 +390,6 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
     let (code, body) = answer(phone.get(&challenge(&c)));
     assert_eq!(code, 200, "{body}");
 
-    // The new device pairs by itself; the card clears.
     let (head, _) = c.raw("POST", "/pair/claim", &IPAD, &claim.to_string());
     let token = head
         .lines()
@@ -427,7 +402,6 @@ fn a_new_device_asks_and_a_paired_one_approves_it_with_its_passkey() {
     );
     assert_eq!(c.json("/pair/asks"), json!([]));
     assert!(c.cli(&["devices"]).contains("iPad"));
-    // The devices list says who approved it; the passkey is the approver's, not the iPad's.
     let ipad = |path: &str| -> Value {
         serde_json::from_str(&c.raw("GET", path, &[("Cookie", &cookie)], "").1).unwrap()
     };
@@ -460,8 +434,6 @@ fn a_declined_request_tells_the_new_device_who_said_no() {
     assert_eq!(c.cli(&["devices"]).lines().count(), 1, "not paired");
 }
 
-/// #142: the Mac app answers from the server's own machine: `cooee pair asks` lists the request as `/pair/asks` does,
-/// and `cooee pair approve` pairs it without a passkey (the owner at its keyboard), by "this Mac".
 #[test]
 fn the_mac_lists_and_approves_a_request_from_the_cli() {
     let (_dir, _shed, c) = setup("cli-approve", "");
@@ -509,7 +481,6 @@ fn a_passkey_signs_a_device_back_in_and_can_be_removed() {
     let phone = Authenticator::new(&c, 7);
     save_passkey(&c, &phone);
 
-    // The cookie is gone (Safari's data cleared): the passkey pairs this browser again, with no code.
     let signed = phone.get(&challenge(&c));
     let (head, _) = open_post(&c, "/passkey/signin", &signed);
     assert_eq!(status(&head), 200, "{head}");
@@ -523,14 +494,12 @@ fn a_passkey_signs_a_device_back_in_and_can_be_removed() {
         200
     );
     assert_ne!(c.json("/passkeys")[0]["used"], 0);
-    // The passkey is now the signed-in browser's (its approve card offers approving), no more the old cookie's.
     let mine = |cookie: &str| {
         let (_, body) = c.raw("GET", "/passkeys", &[("Cookie", cookie)], "");
         serde_json::from_str::<Value>(&body).unwrap()[0]["mine"].clone()
     };
     assert_eq!(mine(&cookie), true);
     assert_eq!(c.json("/passkeys")[0]["mine"], false);
-    // A challenge is good once; another passkey is refused.
     assert_eq!(status(&open_post(&c, "/passkey/signin", &signed).0), 403);
     let (head, body) = open_post(
         &c,
@@ -543,7 +512,6 @@ fn a_passkey_signs_a_device_back_in_and_can_be_removed() {
         "{body}"
     );
 
-    // Removed in Settings › devices: it signs in no more.
     assert_eq!(
         c.post("/passkeys/remove", &json!({ "id": phone.id })).0,
         200
@@ -586,7 +554,6 @@ fn alerts_status_test_and_off_are_this_devices() {
     let sub = json!({ "endpoint": endpoint, "p256dh": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4", "auth": "BTBZMqHH6r4Tts7J_aSIgg" });
     assert_eq!(c.post("/push/subscribe", &sub).0, 200);
     assert_eq!(c.json("/push/endpoints"), json!([endpoint]));
-    // Another device sees none of it and can't turn it off.
     let other = format!("cooee={}", c.pair().unwrap());
     let (_, body) = c.raw("GET", "/push/endpoints", &[("Cookie", &other)], "");
     assert_eq!(body, "[]");

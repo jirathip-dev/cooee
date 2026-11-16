@@ -18,8 +18,6 @@ use std::{
 use cooee_machines::{Cooee, DAY, Machines, render, serve};
 use serde_json::{Value, json};
 
-/// The fake CLI: `machine ls` prints `ls.json`; `--on <m> … machine stats` prints `<m>.json` (exit 1 when it says
-/// offline, as shed does); `machine stats` prints `local.json`, or fails like an unreachable server without one.
 const SHED: &str = r#"#!/bin/sh
 d=$(dirname "$0")
 printf '%s\n' "$*" >>"$d/calls.log"
@@ -37,7 +35,8 @@ const NOW: u64 = 1_800_000_000;
 fn shed() -> &'static Path {
     static SHED_FILE: OnceLock<PathBuf> = OnceLock::new();
     SHED_FILE.get_or_init(|| {
-        let shed = env::temp_dir().join(format!("cooee-machines-shed-{}", std::process::id()));
+        let shed = Path::new(env!("CARGO_TARGET_TMPDIR"))
+            .join(format!("machines-shed-{}", std::process::id()));
         fs::write(&shed, SHED).unwrap();
         fs::set_permissions(&shed, fs::Permissions::from_mode(0o755)).unwrap();
         shed
@@ -45,8 +44,10 @@ fn shed() -> &'static Path {
 }
 
 fn scratch(name: &str) -> PathBuf {
-    let dir = env::temp_dir().join(format!("cooee-machines-{name}-{}", std::process::id()));
-    let _ = fs::remove_dir_all(&dir);
+    let dir = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-machines-{name}-{}", std::process::id())),
+    );
+    fs::remove_dir_all(&dir).ok();
     fs::create_dir_all(&dir).unwrap();
     std::os::unix::fs::symlink(shed(), dir.join("shed")).unwrap();
     fs::write(
@@ -107,7 +108,6 @@ fn online_and_offline_with_last_seen() {
     );
     assert!(html.contains("offline · last seen 12 min ago"), "{html}");
 
-    // The Air comes back; the Mini's shed stops answering: offline, last seen when it last answered, and why.
     answer(&dir, "air", &sample(NOW + 60, 0.1, 20, 90_000));
     fs::remove_file(dir.join("local.json")).unwrap();
     let cards = m.poll(NOW + 3 * 3600);
@@ -120,7 +120,6 @@ fn online_and_offline_with_last_seen() {
         html.contains("<p class=\"er\">shed: no server at shed.sock</p>"),
         "{html}"
     );
-    // Its last numbers stay on the card.
     assert!(
         html.contains("<span class=\"k\">load/cpu</span><b>0.40</b>"),
         "{html}"
@@ -159,7 +158,6 @@ fn a_card_shows_load_memory_swap_disk_and_terminals() {
     ] {
         assert!(card.contains(want), "{want}\n{card}");
     }
-    // Each number opens its chart, named for a screen reader.
     assert!(
         mini.contains("<details id=\"mini-load\"><summary>"),
         "{mini}"
@@ -195,7 +193,6 @@ fn the_24_h_history_is_asked_for_once_then_only_what_is_new() {
         )),
         "{log}"
     );
-    // Every sample and the one taken now is a point of the sparkline, oldest at the left, now at the right.
     let html = render(&[card], NOW);
     let spark = html.split("<svg class=\"sp\"").nth(1).unwrap();
     let points = spark
@@ -211,7 +208,6 @@ fn the_24_h_history_is_asked_for_once_then_only_what_is_new() {
         "{points}"
     );
 
-    // A minute later: only the samples after the newest kept one are asked for, and the oldest falls out of 24 h.
     let mut next = sample(NOW + 60, 0.5, 40, 60_000);
     next["history"] = json!([sample(NOW, 0.5, 40, 60_000)]);
     answer(&dir, "local", &next);
@@ -225,14 +221,12 @@ fn the_24_h_history_is_asked_for_once_then_only_what_is_new() {
     assert_eq!(card.history[0].at, NOW - DAY + 120);
     assert_eq!(card.history.last().unwrap().at, NOW);
 
-    // A shed that answers the whole day again: nothing kept twice.
     answer(&dir, "local", &first);
     let card = m.poll(NOW + 120).remove(0);
     assert_eq!(card.history.len(), 1438);
     assert_eq!(card.history.last().unwrap().at, NOW);
 }
 
-/// A fake cooee: every POST's path and body; it answers `status`.
 struct FakeCooee {
     cooee: Cooee,
     posts: Arc<Mutex<Vec<(String, Value)>>>,
@@ -271,10 +265,11 @@ impl FakeCooee {
                     .unwrap()
                     .push((path, serde_json::from_slice(&body).unwrap()));
                 let code = code.load(Ordering::SeqCst);
-                let _ = write!(
+                write!(
                     r.into_inner(),
                     "HTTP/1.0 {code} X\r\nContent-Length: 0\r\n\r\n"
-                );
+                )
+                .ok();
             }
         });
         let cooee = Cooee {
@@ -304,24 +299,20 @@ fn an_alert_is_pushed_once_per_state_and_the_tab_dot_follows() {
         json!({ "text": "air: offline, last seen 12 min ago", "path": "air", "tag": "machine" });
     let dot = |on| ("/plugin/dot".to_owned(), json!({ "on": on }));
     assert_eq!(cooee.take(), [("/plugin/push".to_owned(), push), dot(true)]);
-    // Still offline: nothing more.
     m.tick(NOW + 60, &cooee.cooee);
     m.tick(NOW + 120, &cooee.cooee);
     assert_eq!(cooee.take(), []);
 
-    // Back, but its disk is low and its memory critical: a new state, one push.
     answer(&dir, "air", &sample(NOW + 180, 0.1, 95, 8 * 1024));
     m.tick(NOW + 180, &cooee.cooee);
     m.tick(NOW + 240, &cooee.cooee);
     let push = json!({ "text": "air: disk 8.0 GB free; memory pressure critical (95%)", "path": "air", "tag": "machine" });
     assert_eq!(cooee.take(), [("/plugin/push".to_owned(), push)]);
 
-    // All well: no push, the dot goes.
     answer(&dir, "air", &sample(NOW + 300, 0.1, 20, 90_000));
     m.tick(NOW + 300, &cooee.cooee);
     assert_eq!(cooee.take(), [dot(false)]);
 
-    // A push cooee refuses is tried again on the next poll, then not again.
     fs::remove_file(dir.join("local.json")).unwrap();
     cooee.status.store(500, Ordering::SeqCst);
     m.tick(NOW + 360, &cooee.cooee);

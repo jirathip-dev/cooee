@@ -13,13 +13,11 @@ use topcoat::{
 
 use crate::{Answer, HubError, Paired, blocking, manager, on_logins, pairing, refused};
 
-/// Screen `id` titled `title`: one list `id` of `rows`.
 fn list(id: &str, title: &str, rows: &[Value]) -> Value {
     let blocks = json!([{ "type": "list", "id": id, "rows": rows }]);
     super::core(json!({ "type": "screen", "id": id, "title": title, "blocks": blocks }))
 }
 
-/// The paired devices as `GET /devices` lists them, the requester's own subtitled `this device`.
 pub(super) async fn device_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
     let paired = pairing::devices(cx);
     let me = request_context::<Paired>(cx).0.id.clone();
@@ -27,8 +25,8 @@ pub(super) async fn device_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
         let list = paired.list().map_err(refused)?;
         let row = |d: cooee_core::Device| {
             let mut row = json!({ "type": "row", "id": d.id, "title": d.label });
-            if d.id == me {
-                row["subtitle"] = json!("this device");
+            if let (true, Some(o)) = (d.id == me, row.as_object_mut()) {
+                o.insert("subtitle".to_owned(), json!("this device"));
             }
             row
         };
@@ -37,7 +35,6 @@ pub(super) async fn device_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
     .await
 }
 
-/// Every provider's accounts, `provider · who`, subtitled signed in (tone `ok`), signed out or can't tell.
 pub(super) async fn signin_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
     on_logins(cx, |l| {
         let sheets = l.statuses();
@@ -58,7 +55,6 @@ pub(super) async fn signin_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
     .await
 }
 
-/// The allowed machines as `GET /machines` lists them, this host first: each host, online or offline.
 pub(super) async fn machine_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
     let all = Arc::clone(app_context::<Arc<Machines>>(cx));
     blocking(cx, move |_| {
@@ -72,7 +68,6 @@ pub(super) async fn machine_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
     .await
 }
 
-/// The installed plugins as `GET /plugins` lists them: each name and version.
 pub(super) async fn plugin_rows(cx: &Cx) -> Result<Vec<Value>, HubError> {
     let m = manager(cx);
     blocking(cx, move |_| {

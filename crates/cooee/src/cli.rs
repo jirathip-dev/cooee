@@ -1,5 +1,3 @@
-//! What every command shares: its entry in the command table, the parsed line and why a command did not finish.
-
 use std::{
     path::{Path, PathBuf},
     process::ExitCode,
@@ -7,7 +5,6 @@ use std::{
 
 use cooee_core::Config;
 
-/// One command. Its file in `cmd/` exports everything but the name.
 pub(crate) struct Command {
     /// The first word: the file's name.
     pub name: &'static str,
@@ -17,21 +14,14 @@ pub(crate) struct Command {
     pub run: fn(&Invocation) -> Result<(), Failed>,
 }
 
-/// A flag a command reads. As today, a flag is taken out wherever it stands on the line.
 pub(crate) enum Flag {
-    /// `--yes`
     Switch(&'static str),
-    /// `--rev <r>`
     Value(&'static str),
 }
 
-/// Why a command did not finish.
 pub(crate) enum Failed {
-    /// The usage line on stderr, exit 2.
     Usage,
-    /// `cooee: <why>` on stderr, exit 1.
     Because(String),
-    /// Said on stderr already: this exit code.
     Exit(ExitCode),
 }
 
@@ -41,7 +31,6 @@ impl From<String> for Failed {
     }
 }
 
-/// The parsed line: `--instance` and `--config` (global), the word, the flags found, what is left.
 pub(crate) struct Invocation {
     instance: String,
     path: Option<PathBuf>,
@@ -52,7 +41,6 @@ pub(crate) struct Invocation {
     values: Vec<(&'static str, String)>,
 }
 
-/// Removes `--flag <value>` from `args`: `Err` when the value is missing.
 fn flag(args: &mut Vec<String>, name: &str) -> Result<Option<String>, ()> {
     let Some(i) = args.iter().position(|a| a == name) else {
         return Ok(None);
@@ -162,7 +150,6 @@ impl Invocation {
     }
 }
 
-/// Loads instance `instance`'s config (the defaults when there is no file).
 pub(crate) fn load(path: Option<&Path>, instance: &str) -> Result<Config, String> {
     let config = path.map_or_else(|| Ok(Config::default()), Config::load);
     let config = config.map_err(|e| e.to_string())?;
@@ -172,18 +159,33 @@ pub(crate) fn load(path: Option<&Path>, instance: &str) -> Result<Config, String
     })
 }
 
-/// Shows a confirm's `text`; goes on with `--yes` or a `y` typed.
 pub(crate) fn confirm(text: &str, yes: bool) -> Result<(), String> {
-    println!("{text}");
+    cooee_core::say!("{text}");
     if yes {
         return Ok(());
     }
-    print!("go ahead? [y/N] ");
-    let _ = std::io::Write::flush(&mut std::io::stdout());
+    cooee_core::say_open!("go ahead? [y/N] ");
+    std::io::Write::flush(&mut std::io::stdout()).ok();
     let mut answer = String::new();
-    let _ = std::io::stdin().read_line(&mut answer);
+    std::io::stdin().read_line(&mut answer).ok();
     match answer.trim() {
         "y" | "yes" => Ok(()),
         _ => Err("nothing changed".to_owned()),
     }
+}
+
+pub(crate) fn migrate(config: &Config, dry_run: bool) -> Result<(), String> {
+    let (Some(dir), Some(data)) = (config.dir.as_deref(), config.data_dir()) else {
+        return Ok(());
+    };
+    let today = cooee_core::routines::local(crate::devices::now(), 0);
+    let plan = cooee_core::migrate::plan(dir, &data, &today[..10]);
+    if dry_run {
+        plan.lines().iter().for_each(|l| cooee_core::say!("{l}"));
+        return Ok(());
+    }
+    plan.apply(|line| cooee_core::note!("cooee: migrate: {line}"))
+        .map_err(|e| {
+            format!("migrate: {e}; the old files are untouched; `cooee config migrate` tries again")
+        })
 }

@@ -1,0 +1,6 @@
+name = "coder"
+label = "Coder"
+agent = "fake-acp"
+instructions = "coder.md"
+policy = "allow"
+avatar = "idle"

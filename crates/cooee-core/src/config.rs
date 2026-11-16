@@ -1,7 +1,7 @@
-//! The config file: one TOML file, every key optional, unknown keys an error.
-
 use std::{
-    env, fs, io,
+    env,
+    ffi::OsString,
+    fs, io,
     net::{IpAddr, Ipv4Addr},
     path::{Path, PathBuf},
 };
@@ -9,6 +9,12 @@ use std::{
 use serde::Deserialize;
 
 use crate::{Spec, provider};
+
+/// The environment variable `name` (#203: CI's arch-check bans `env::var` outside this module).
+#[must_use]
+pub fn env_var(name: &str) -> Option<OsString> {
+    env::var_os(name)
+}
 
 /// cooee's settings, read from `config.toml`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -268,7 +274,6 @@ pub fn save_roots(path: &Path, roots: &[PathBuf]) -> io::Result<()> {
             },
         )
         .collect();
-    // A JSON array of strings is a TOML inline array too.
     let line = format!("roots = {}", serde_json::to_string(&roots)?);
     let table = toml::de::DeTable::parse(&text).map_err(io::Error::other)?;
     let old = table.get_ref().iter().find(|(k, _)| k.get_ref() == "roots");
@@ -304,7 +309,9 @@ mod tests {
 
     #[test]
     fn roots_under_home_are_expanded() {
-        let path = env::temp_dir().join(format!("cooee-roots-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-roots-{}.toml", std::process::id())),
+        );
         fs::write(&path, r#"roots = ["~/Projects", "~", "/srv/~x"]"#).unwrap();
         let roots = Config::load(&path).unwrap().roots;
         fs::remove_file(&path).unwrap();
@@ -317,7 +324,9 @@ mod tests {
 
     #[test]
     fn missing_file_gives_defaults() {
-        let path = env::temp_dir().join(format!("cooee-no-config-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-no-config-{}.toml", std::process::id())),
+        );
         assert_eq!(
             Config::load(&path).unwrap(),
             Config {
@@ -330,7 +339,9 @@ mod tests {
 
     #[test]
     fn saving_roots_keeps_the_other_lines() {
-        let path = env::temp_dir().join(format!("cooee-save-{}.toml", std::process::id()));
+        let path = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-save-{}.toml", std::process::id())),
+        );
         let home = PathBuf::from(env::var_os("HOME").unwrap());
         let text = "# mine\nport = 1\nroots = [\n  \"/a\",\n] # old\n\n[[plugins]]\nname = \"x\"\n";
         fs::write(&path, text).unwrap();

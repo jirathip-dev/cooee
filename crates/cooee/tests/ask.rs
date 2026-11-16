@@ -16,18 +16,15 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, scratch, version};
+use support::{Cooee, FakeShed, agent, scratch, version};
 
 struct Setup {
     shed: FakeShed,
     cooee: Cooee,
 }
 
-/// cooee with personas Ada (may ask Bo), Bo (may ask Cy), Cy (may ask Ada and Ed) and Di (may ask no one); Ed
-/// works in the folder `away`.
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
-    fs::create_dir_all(dir.join("personas")).unwrap();
     for (n, may) in [
         ("Ada", "bo"),
         ("Bo", "cy"),
@@ -39,9 +36,8 @@ fn setup(name: &str) -> Setup {
         } else {
             format!("\"{may}\"")
         };
-        let file = dir.join(format!("personas/{}.toml", n.to_lowercase()));
         let toml = format!("name = \"{n}\"\nagent = \"fake-acp\"\ncan_message = [{may}]\n");
-        fs::write(file, toml).unwrap();
+        agent(&dir, &n.to_lowercase(), &toml, "");
     }
     let away = dir.join("root/away");
     fs::create_dir_all(&away).unwrap();
@@ -49,13 +45,12 @@ fn setup(name: &str) -> Setup {
         "name = \"Ed\"\nagent = \"fake-acp\"\nfolder = {:?}\n",
         away.to_string_lossy()
     );
-    fs::write(dir.join("personas/ed.toml"), ed).unwrap();
+    agent(&dir, "ed", &ed, "");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let cooee = Cooee::start(&dir, &shed.dir);
     Setup { shed, cooee }
 }
 
-/// Polls `f` for up to 10 s.
 fn eventually(mut f: impl FnMut() -> bool) {
     for _ in 0..200 {
         if f() {
@@ -67,7 +62,6 @@ fn eventually(mut f: impl FnMut() -> bool) {
 }
 
 impl Setup {
-    /// A thread of `persona`'s, its first reply in.
     fn start(&self, persona: &str) -> String {
         let new =
             json!({ "agent": "fake-acp", "profile": persona, "text": "hi", "random_id": persona });
@@ -86,8 +80,6 @@ impl Setup {
         all["items"].as_array().unwrap().clone()
     }
 
-    /// `ask_persona` called by thread `id`'s agent through cooee's own MCP server: the tool's text and whether it
-    /// is an error.
     fn ask(&self, id: &str, args: &Value) -> (String, bool) {
         let file = self.shed.dir.join(format!("mcp-cooee-{id}.json"));
         let servers: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
@@ -110,13 +102,11 @@ impl Setup {
         (text, result["isError"] == json!(true))
     }
 
-    /// Thread `id`'s `ask` cards.
     fn cards(&self, id: &str) -> Vec<Value> {
         let items = self.items(id);
         items.into_iter().filter(|i| i["kind"] == "ask").collect()
     }
 
-    /// The exchange threads thread `id`'s cards open, once each.
     fn linked(&self, id: &str) -> Vec<String> {
         let mut linked = Vec::new();
         for card in self.cards(id) {
@@ -128,7 +118,6 @@ impl Setup {
         linked
     }
 
-    /// Each card's `(persona, outcome)`.
     fn outcomes(&self, id: &str) -> Vec<(Value, Value)> {
         let cards = self.cards(id);
         cards
@@ -152,7 +141,6 @@ fn an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steer
     );
     assert_eq!((reply.as_str(), failed), ("Hello", false));
 
-    // Ada's chat has the card: whom it asked, what, the outcome and the thread it opens.
     let card = &s.cards(&ada)[0];
     let asked = (
         &card["persona"],
@@ -171,7 +159,6 @@ fn an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steer
     );
     assert!(card.get("note").is_none(), "{card}");
 
-    // The owner sees the exchange: listed under Ada's thread, the question Ada's and Bo's reply, then its return.
     let linked = s.linked(&ada);
     assert_eq!(linked.len(), 1, "{:?}", s.items(&ada));
     let x = &linked[0].clone();
@@ -199,14 +186,12 @@ fn an_allowed_ask_returns_the_reply_in_a_linked_thread_the_owner_reads_and_steer
     let framed = r#"\n\n[Ada]:\n\nwhat is for dinner?"}"#;
     assert!(prompts[0].contains(framed), "{prompts:?}");
 
-    // The next ask reuses it: no other thread.
     let (reply, _) = s.ask(&ada, &json!({ "persona": "bo", "message": "and dessert?" }));
     assert_eq!(reply, "Hello");
     assert_eq!((s.linked(&ada), s.threads()), (linked, 2));
     let replies = s.items(x).iter().filter(|i| i["kind"] == "agent").count();
     assert_eq!(replies, 2);
 
-    // The owner writes a note in it: it reaches Bo's session as the owner's.
     let steer = json!({ "text": "keep it short", "random_id": "steer" });
     assert_eq!(s.cooee.post(&format!("/threads/{x}/send"), &steer).0, 200);
     let marked = r#""[The owner's note; the asker gets it with your reply]:\n\nkeep it short""#;
@@ -235,7 +220,6 @@ fn the_owners_note_mid_exchange_reaches_the_asked_persona_and_returns_to_the_ask
     });
     assert_eq!(waiting, [(json!("bo"), json!("asking"))]);
 
-    // Bo read the note as the owner's, and Ada got it with Bo's reply.
     let marked = "[The owner's note; the asker gets it with your reply]:\n\nUse the 10-Q";
     let want = format!("noted: {marked}\n\n[The owner's note to Bo: Use the 10-Q]");
     assert_eq!((reply, failed), (want, false));
@@ -245,7 +229,6 @@ fn the_owners_note_mid_exchange_reaches_the_asked_persona_and_returns_to_the_ask
         (&json!("replied"), &json!("Use the 10-Q"))
     );
 
-    // In the exchange the note is the owner's (no speaker), and its end says the note went back.
     let items = s.items(&x);
     let note = items.iter().find(|i| i["text"] == "Use the 10-Q").unwrap();
     assert!(
@@ -268,7 +251,6 @@ fn a_persona_its_can_message_doesnt_name_is_not_allowed() {
     let di = s.start("di");
     let (why, failed) = s.ask(&di, &json!({ "persona": "bo", "message": "hi" }));
     assert!(failed && why.starts_with("NOT_ALLOWED: "), "{why}");
-    // Nothing started, nothing linked: each chat has its refused card.
     assert_eq!(s.threads(), 2);
     assert!(s.linked(&ada).is_empty() && s.linked(&di).is_empty());
     assert_eq!(s.outcomes(&ada), [(json!("cy"), json!("not_allowed"))]);
@@ -304,7 +286,6 @@ fn no_reply_in_time_is_a_timeout_and_a_session_that_cant_start_is_offline() {
     assert_eq!(s.outcomes(&ada), [(json!("bo"), json!("timeout"))]);
 
     let cy = s.start("cy");
-    // Ed's session never comes up in `away`.
     s.shed.gate("fails-in-away", true);
     let (why, failed) = s.ask(&cy, &json!({ "persona": "ed", "message": "hi" }));
     assert!(failed && why.starts_with("OFFLINE: "), "{why}");

@@ -22,10 +22,9 @@ public struct ChatView: View {
                 Scroller(end: true) {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(items) { item in
-                            ItemView(item: item) { actions.retry(item.id) }.environment(\.act) {
-                                actions.answer(item.id, $0)
-                            }
-                            .disabled(actions.answering.contains(item.id))
+                            ItemView(item: item, retry: { actions.retry(item.id) }, view: actions.view)
+                                .environment(\.act) { actions.answer(item.id, $0) }
+                                .disabled(actions.answering.contains(item.id))
                         }
                     }
                     .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 16)
