@@ -1,0 +1,5 @@
+Decided: merged origin/staging (#178) into issue-313; the Frames.swift conflict keeps #178's three room-ask frames and draws room-wide-dark through Sidebar.kestrel(), since WideView is deleted in this PR.
+Because: "Delete `WideView` and `MacChrome`'s split."
+Rejected: keeping WideView.kestrel() from staging — WideView no longer exists, so that side would not compile.
+Check: room-wide-dark and the room-ask frames pass SnapshotTests unchanged at 0343835b1 (apple-check exit 0).
+Owner: Staging's room-ask changes are merged in; the wide frames still look exactly as before.
