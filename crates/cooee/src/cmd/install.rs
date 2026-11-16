@@ -25,6 +25,7 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
 }
 
 fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> Result<(), String> {
+    crate::service::refuse_app()?;
     let path = path.ok_or("no config path: set HOME")?;
     if !path.exists() {
         let hosts = tailnet_name().map(|n| format!("allowed_hosts = [{n:?}]\n"));

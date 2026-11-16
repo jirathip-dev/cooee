@@ -34,7 +34,7 @@ public struct MacSetup: View {
 
     @ViewBuilder private var content: some View {
         switch store.step {
-        case .welcome: MacWelcome(send: send)
+        case .welcome: MacWelcome(found: store.found, send: send)
         case .folders: MacFolders(store: store, send: send)
         case .signins: MacSignins(store: store, send: send)
         case .tailscale: MacTailscale(store: store, send: send)

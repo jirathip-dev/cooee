@@ -41,6 +41,9 @@ internal struct MacSetupFeatureTests {
     private func mac(_ asks: Queue<[PairRequest]>) throws -> MacServerClient {
         let (calls, items, claude, home, code) = (calls, items, claude, home, try pairCode())
         return MacServerClient(
+            existing: { .none },
+            useExisting: { calls.record("use existing") },
+            takeOver: { calls.record("take over \($0)") },
             start: {
                 calls.record("start")
                 return items
