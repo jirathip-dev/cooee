@@ -361,7 +361,7 @@ impl Themes {
                     };
                     let stage = self.dir.join(".themes-stage").join(name);
                     let fetched = self.fetch(&p, &stage);
-                    let _ = fs::remove_dir_all(&stage);
+                    fs::remove_dir_all(&stage).ok();
                     fetched.map(drop)
                 })
             };
@@ -370,7 +370,7 @@ impl Themes {
                     freed += size(&old);
                     fs::remove_dir_all(&old)?;
                 }
-                Err(e) => eprintln!("cooee: theme {name} keeps its old clone for now: {e}"),
+                Err(e) => cooee_core::note!("cooee: theme {name} keeps its old clone for now: {e}"),
             }
         }
         Ok(freed)

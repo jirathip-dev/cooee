@@ -272,7 +272,9 @@ impl Setup {
         let e = |e: io::Error| e.to_string();
         let t = match cooee_server::Themes::new(config) {
             Err(_) if self.dry_run => {
-                cooee_core::say!("themes:\n  would install farm and ask which other themes to install");
+                cooee_core::say!(
+                    "themes:\n  would install farm and ask which other themes to install"
+                );
                 return Ok(());
             }
             t => t.map_err(e)?,

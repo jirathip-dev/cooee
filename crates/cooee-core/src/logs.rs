@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn a_log_past_max_mb_keeps_exactly_keep_old_files() {
         let dir = std::env::temp_dir().join(format!("cooee-logs-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
+        fs::remove_dir_all(&dir).ok();
         fs::create_dir_all(&dir).unwrap();
         let log = dir.join("cooee.log");
         let logs = Logs { max_mb: 1, keep: 3 };
@@ -99,6 +99,6 @@ mod tests {
         assert_eq!(fs::read(old(&log, 1)).unwrap()[0], b'f');
         assert_eq!(fs::read(old(&log, 3)).unwrap()[0], b'd');
         assert_eq!(fs::read(&log).unwrap(), b"after");
-        let _ = fs::remove_dir_all(&dir);
+        fs::remove_dir_all(&dir).ok();
     }
 }

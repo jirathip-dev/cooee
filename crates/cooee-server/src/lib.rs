@@ -2115,7 +2115,7 @@ fn housekeep(config: &Config, data: &std::path::Path) -> io::Result<()> {
         loop {
             for name in cooee_core::logs::FILES {
                 if let Err(e) = logs.0.rotate(&logs.1.join(name)) {
-                    eprintln!("cooee: rotating {name}: {e}");
+                    cooee_core::note!("cooee: rotating {name}: {e}");
                 }
             }
             std::thread::sleep(Duration::from_secs(600));
@@ -2124,11 +2124,11 @@ fn housekeep(config: &Config, data: &std::path::Path) -> io::Result<()> {
     let old = Themes::new(config)?;
     std::thread::spawn(move || match old.migrate() {
         Ok(0) => {}
-        Ok(freed) => eprintln!(
+        Ok(freed) => cooee_core::note!(
             "cooee: themes: freed {freed} bytes ({} MB) of old clones",
             freed >> 20
         ),
-        Err(e) => eprintln!("cooee: themes: old clones: {e}"),
+        Err(e) => cooee_core::note!("cooee: themes: old clones: {e}"),
     });
     Ok(())
 }
