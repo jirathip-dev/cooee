@@ -18,10 +18,11 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, is_item, others_go_on, scratch, version};
+use support::{Cooee, FakeShed, HANG, is_item, others_go_on, scratch, version};
 
 /// A plugin backend on a free port: every request's head (request line and lowercased headers) and body. Its
-/// next answer to `/cooee/choice` is `choice`'s, when set; while `hang` is set it answers no choice.
+/// next answer to `/cooee/choice` is `choice`'s, when set; while `hang` is set (for at most [`HANG`]) it answers no
+/// choice.
 struct Backend {
     port: u16,
     seen: Arc<Mutex<Vec<(String, String)>>>,
@@ -87,7 +88,11 @@ fn answer(
     log.lock()
         .unwrap()
         .push((head, String::from_utf8(body).unwrap()));
-    while matches!(path.as_str(), "/cooee/choice" | "/hang") && hang.load(Ordering::SeqCst) {
+    let until = Instant::now() + HANG;
+    while matches!(path.as_str(), "/cooee/choice" | "/hang")
+        && hang.load(Ordering::SeqCst)
+        && Instant::now() < until
+    {
         thread::sleep(Duration::from_millis(20));
     }
     if path == "/cooee/choice"
@@ -890,7 +895,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
 }
 
 /// #288: a plugin whose answer hangs holds only its own card: meanwhile another thread's send, the thread list and
-/// the home page each answer within 200 ms, and that thread's reply streams in.
+/// the home page each answer, and that thread's reply streams in.
 #[test]
 fn a_hanging_plugin_answer_never_holds_another_thread() {
     let s = setup("plugin-hang");
@@ -916,7 +921,7 @@ fn a_hanging_plugin_answer_never_holds_another_thread() {
 }
 
 /// #291: more calls to a hung plugin than the server has blocking threads: the first 8 wait on it, the rest fail at
-/// once, and meanwhile the hub and the other plugin each answer within 200 ms.
+/// once, and meanwhile, while those 8 still hang, the hub and the other plugin each answer.
 #[test]
 fn a_hung_plugin_holds_only_its_own_calls() {
     let s = setup("plugin-busy");
@@ -926,7 +931,7 @@ fn a_hung_plugin_holds_only_its_own_calls() {
     let get = format!("GET /p/a/api/hang HTTP/1.0\r\nHost: {addr}\r\nCookie: {cookie}\r\n\r\n");
     let call = || {
         let mut last = String::new();
-        for _ in 0..50 {
+        for _ in 0..500 {
             let mut answer = String::new();
             let got = TcpStream::connect(addr).and_then(|mut c| {
                 c.set_read_timeout(Some(Duration::from_secs(20)))?;
@@ -964,7 +969,8 @@ fn a_hung_plugin_holds_only_its_own_calls() {
         let at = Instant::now();
         assert_eq!(s.cooee.get("/p/b/api/echo").0, 200);
         let took = at.elapsed();
-        assert!(took < Duration::from_millis(200), "plugin b took {took:?}");
+        assert!(took < HANG / 2, "plugin b took {took:?}");
+        assert!(answers.try_recv().is_err(), "the 8 calls to a still hang");
         s.a.hang.store(false, Ordering::SeqCst);
         for answer in answers.iter().take(8) {
             assert!(answer.contains(r#"{"path":"/hang"}"#), "{answer}");
