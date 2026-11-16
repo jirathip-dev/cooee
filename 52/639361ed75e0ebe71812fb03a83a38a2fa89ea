@@ -1,0 +1,11 @@
+Decided: merged origin/staging (#177, #291, #427); Root keeps #177's cast environment beside this PR's menu load
+Because: apple/Sources/CooeeUI/Root.swift:22
+Decided: Settings' own decoder reads #276's pinned rooms, else they would be lost on relaunch
+Because: apple/Sources/CooeeCore/Settings.swift:35
+Decided: the looks routes live in themes.rs; lib.rs only registers them, staying at its arch baseline
+Because: crates/cooee-server/src/themes.rs:393
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: "A pack installed or removed on the server shows or disappears in the list"
+Rejected: an in-memory pack cache with a file watcher — more code than one load per call needs
+Check: swift test, cargo test --workspace and drover arch-check pass at head; the PR merges cleanly into staging
+Owner: The branch sits on current staging again; the Theme picker works as before.
