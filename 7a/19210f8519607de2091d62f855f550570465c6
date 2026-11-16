@@ -1,0 +1,9 @@
+Decided: apple/e2e/map.toml names LiveThemeUITests for its test file, the pack pin and the themes server test
+Because: apple/e2e/map.toml:66
+Decided: merged origin/staging (#201, #318); lib.rs keeps the themes routes and the /look/ opening, minus the comments #201 strips
+Because: crates/cooee-server/src/lib.rs:136
+Decided: serve.sh still copies packs/themes, which #318's build vendors before that line runs
+Because: apple/e2e/serve.sh:17
+Rejected: mapping Layout.swift to LiveThemeUITests only — it would narrow a shared file from the whole suite
+Check: scripts/e2e-scope.sh, ci/ci-scripts-test.sh, scripts/comments.py, cargo test -p cooee --test themes and swift test pass at head
+Owner: The theme test is now on the CI test map, so the iPhone theme run is no longer blocked.
