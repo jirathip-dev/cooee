@@ -1,0 +1,4 @@
+Decided: merge origin/staging into issue-459; it merged clean, no conflicts to resolve
+Because: .github/workflows/apple.yml:289
+Rejected: none
+Owner: the branch is brought up to date with staging; the fix itself is unchanged
