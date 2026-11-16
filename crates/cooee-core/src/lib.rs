@@ -1,4 +1,4 @@
-//! cooee's core: configuration, threads, their store and chat, paired devices, provider sign-ins and accounts, installed plugins, agent profiles and the shed client. No HTTP.
+//! cooee's core: the model and its files. No HTTP.
 
 #![forbid(unsafe_code)]
 
@@ -19,25 +19,12 @@ pub mod plugins;
 pub mod profiles;
 pub mod provider;
 mod providers;
+mod root;
 pub mod routines;
 pub mod secrets;
 mod shed;
 pub mod skills;
 mod store;
+pub mod swag;
 
-pub use accounts::{Account, Accounts, Sheet, Usage, Window};
-pub use chat::{Body, Card, Change, Chat, Item, Summary, Turn};
-pub use config::{Apns, ApnsEnv, Config, ConfigError, Perf, Plugin, ROOTS_FIX, save_roots};
-pub use devices::{
-    Asking, Claim, Credential, Device, Devices, Passkey, append_line, label, random, sha256,
-    write_private,
-};
-pub use login::{Ran, Spec, Status, links, redact};
-pub use profiles::Profile;
-pub use provider::{Entry, Plain, Provider, Providers, agents_fix};
-pub use shed::{Agent, Launch, Shed, ShedError};
-pub use shed_proto;
-pub use store::{
-    FORMAT, Kind, Member, Message, Queued, Reason, Role, RoomTurn, Store, StoreError, Thread,
-    Workflow,
-};
+pub use root::*;

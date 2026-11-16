@@ -85,7 +85,6 @@ pub fn first_token(thread: &str, agent: &str, start: Instant) {
     write(log, line, start);
 }
 
-/// The value at `p` percent of `sorted` (nearest rank).
 fn rank(sorted: &[u64], p: usize) -> u64 {
     sorted[(sorted.len() * p).div_ceil(100).max(1) - 1]
 }

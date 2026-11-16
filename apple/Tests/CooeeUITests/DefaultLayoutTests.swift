@@ -11,7 +11,7 @@ internal struct DefaultLayoutTests {
         let root = CooeeCore.Layout.bundled.root
         #expect(CooeeCore.Layout.bundled.etag.isEmpty && root.content == .component(.nav))
         #expect(root.slots["main"]?.map(\.id) == ["home", "chat", "pairing"])
-        #expect(root.slots["menu"]?.map(\.id) == ["menu", "settings", "reset-layout"])
+        #expect(root.slots["menu"]?.map(\.id) == ["menu", "settings", "terminal", "reset-layout"])
         #expect(root.slots["main"]?.last?.locked == true && root.slots["menu"]?.last?.locked == true)
         #expect(root.slots.values.joined().filter(\.locked).count == 2)
     }
@@ -20,12 +20,17 @@ internal struct DefaultLayoutTests {
         #expect(
             Self.places(CooeeCore.Layout.bundled.resolved(for: .compact)) == [
                 "nav": .inline, "sidebar": .menu, "home": .push, "chat": .push, "pairing": .push,
-                "menu": .sheet, "settings": .sheet, "reset-layout": .menu,
+                "menu": .sheet, "settings": .sheet, "terminal": .menu, "reset-layout": .menu,
             ])
         #expect(
             Self.places(CooeeCore.Layout.bundled.resolved(for: .wide)) == [
                 "nav": .inline, "sidebar": .column, "home": .panel, "chat": .push, "pairing": .push,
-                "menu": .sheet, "settings": .sheet, "reset-layout": .menu,
+                "menu": .sheet, "settings": .sheet, "terminal": .menu, "reset-layout": .menu,
             ])
+    }
+
+    @Test internal func theBundledHomeDrawsItsPinnedRowThenItsChats() {
+        #expect(HomeScreen.bundled.title == "cooee")
+        #expect(HomeScreen.bundled.blocks.map(\.type) == ["pinned", "chats"])
     }
 }

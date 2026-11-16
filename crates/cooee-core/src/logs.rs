@@ -85,7 +85,6 @@ mod tests {
             io::Write::write_all(&mut held, &vec![b'a' + round; (1 << 20) + 1]).unwrap();
             logs.rotate(&log).unwrap();
         }
-        // Under max_mb: untouched.
         io::Write::write_all(&mut held, b"after").unwrap();
         logs.rotate(&log).unwrap();
         let mut names: Vec<_> = fs::read_dir(&dir)
@@ -97,7 +96,6 @@ mod tests {
             names,
             ["cooee.log", "cooee.log.1", "cooee.log.2", "cooee.log.3"]
         );
-        // The newest old file is .1; the writer holding the log open still writes to it.
         assert_eq!(fs::read(old(&log, 1)).unwrap()[0], b'f');
         assert_eq!(fs::read(old(&log, 3)).unwrap()[0], b'd');
         assert_eq!(fs::read(&log).unwrap(), b"after");

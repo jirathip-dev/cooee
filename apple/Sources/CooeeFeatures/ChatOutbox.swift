@@ -3,6 +3,13 @@ import CooeeCore
 import Foundation
 
 extension ChatFeature {
+    @CasePathable
+    public enum Outbox: Sendable, Equatable {
+        case delivered(Int)
+        case undelivered(Int, String)
+        case retry(Int)
+    }
+
     internal func send(_ state: inout State) -> Effect<Action> {
         let text = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty || !state.files.isEmpty else { return .none }
@@ -13,7 +20,7 @@ extension ChatFeature {
         return deliver(state, message)
     }
 
-    internal func outbox(_ state: inout State, _ action: Action) -> Effect<Action> {
+    internal func outbox(_ state: inout State, _ action: Outbox) -> Effect<Action> {
         switch action {
         case .delivered(let id):
             state.outbox.removeAll { $0.id == id }
@@ -24,7 +31,9 @@ extension ChatFeature {
             state.draft = state.outbox[index].text
             state.files = state.outbox[index].files
         case .retry(let id):
-            guard let index = state.outbox.firstIndex(where: { $0.id == id && $0.failure != nil }) else { return .none }
+            guard let index = state.outbox.firstIndex(where: { $0.id == id && $0.failure != nil }) else {
+                return id == 0 ? restart(state) : .none
+            }
             state.outbox[index].failure = nil
             let message = state.outbox[index]
             if state.draft == message.text, state.files == message.files {
@@ -32,27 +41,35 @@ extension ChatFeature {
                 state.files = []
             }
             return deliver(state, message)
-        default:
-            break
         }
         return .none
     }
 
+    private func restart(_ state: State) -> Effect<Action> {
+        guard case .thread(let thread) = state.target, state.pending != nil else { return .none }
+        let (threads, server) = (threads, state.server)
+        return .run { _ in
+            try await threads.retry(server, thread)
+        } catch: { error, send in
+            await send(.failed(error.localizedDescription))
+        }
+    }
+
     private func deliver(_ state: State, _ message: Outgoing) -> Effect<Action> {
-        let (threads, server, queue) = (threads, state.server, state.working)
-        let target = state.target
+        let (threads, server, queue) = (threads, state.server, state.working && state.exchange == nil)
+        let (target, machine) = (state.target, state.machine.current)
         return .run { send in
             switch target {
             case .thread(let thread):
                 try await threads.send(server, thread, message.text, message.files, queue)
-                await send(.delivered(message.id))
+                await send(.outbox(.delivered(message.id)))
             case .new(let persona):
-                let thread = try await threads.start(server, persona, message.text)
-                await send(.delivered(message.id))
+                let thread = try await threads.start(server, persona, machine, message.text)
+                await send(.outbox(.delivered(message.id)))
                 await send(.delegate(.started(thread)))
             }
         } catch: { error, send in
-            await send(.undelivered(message.id, error.localizedDescription))
+            await send(.outbox(.undelivered(message.id, error.localizedDescription)))
         }
     }
 }

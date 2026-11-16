@@ -6,15 +6,13 @@ cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.
 ## A theme pack: `themes/<name>/`
 
 A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` is built in;
-`farm`, `kitchen` and `garden` are first-party packs in [jirathip-dev/swag](https://github.com/jirathip-dev/swag)'s
-`packs/`, listed in the curated index. farm, the default, also ships inside the build (`packs/farm/`), so it installs
-offline (#363).
+`farm`, `kitchen` and `garden` are the first-party packs, from the shared swag repo (below).
 
 | File | Required | What it is |
 |---|---|---|
 | `theme.json` | yes | `label`, `scheme: {dark, light}` (the default scheme per mode), `sprites` (bool), `moments` (bool), `words`, and `scene` (the Scene's layers: element ids in `scene.svg`) |
-| `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100), optionally Scene's 132 × 100 poses `s-scene-edit s-scene-idle s-scene-done s-scene-needs s-scene-merged s-scene-fail` (#115: farm and kitchen carry herdsman's vector figures; without them Scene draws `s-<state>`); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
-| `scene.svg` | when `sprites` or `scene` | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned), its `viewBox` at most 400 × 320 (the first-party packs carry herdsman's Herd scenes, `docs/design/scene/build.mjs`: 390 × 320 or 392 × 188), holding each layer `scene` names. A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
+| `sprites.svg` | when `sprites` | `<symbol>`s `s-edit s-read s-run s-idle s-done s-needs s-merged s-fail` (24 px) and `s-loading s-empty` (132 × 100), optionally Scene's 132 × 100 poses `s-scene-edit s-scene-idle s-scene-done s-scene-needs s-scene-merged s-scene-fail` (#115: farm and kitchen carry vector figures; without them Scene draws `s-<state>`); two-frame loops use `.kf1/.kf2` or `.f1/.f2`; pages `<use>` it by URL, so it loads only once a sprite shows |
+| `scene.svg` | when `sprites` or `scene` | Scene's backdrop (#34): the strip on top of each page, drawn at the page's width (`object-fit: cover`, bottom-aligned), its `viewBox` at most 400 × 320 (the first-party packs' scenes are 390 × 320 or 392 × 188), holding each layer `scene` names. A `#night` element styled by `:target` gives the night look (`scene.svg#night`, 19:00 to 07:00 on the device's clock); herdsman's load layers (`.h-busy .h-held .l-overcast .l-rain`) stay hidden, as cooee has no host load |
 | `schemes/<name>.json` | no | the pack's own colour schemes (below); its `theme.json` may name them |
 | `icon.png` | no | the tile in the look sheet, the favicon and the home-screen icon (else cooee's icon) |
 
@@ -26,21 +24,32 @@ working pill, the live line, a turn's end, push text), the plain word follows th
 **The theme gate** checks a pack: `theme.json` parses; its word keys are state keys; every scheme it holds or names is
 of the right mode and passes the contrast gate (WCAG AA, below); `sprites.svg` holds every required state; `scene.svg`
 is at most 400 × 320 with every layer; and no file is too big (`sprites.svg` 512 KiB, `scene.svg` and `icon.png` 256 KiB, the
-rest 16 KiB). `cooee theme check <path>...` runs it (CI runs it on `packs/farm` and the starter), and so does every load: `cooee serve`
+rest 16 KiB). `cooee theme check <path>...` runs it (CI runs it on the pinned first-party packs and `packs/starter`), and so does every load: `cooee serve`
 refuses a pack that fails it, and prints why.
+
+## Where the first-party packs come from
+
+The first-party packs live in one repo that cooee and drover share, https://github.com/jirathip-dev/swag, as
+`packs/<name>/`. cooee pins one commit of it in `packs/swag.toml`, with the sha256 of every file it takes
+(`"farm/sprites.svg" = "…"`). The build fetches those files at that commit into `packs/themes/` (git-ignored) and into
+the binary, so an install with no network still has its themes. A file that doesn't match its sha256 is never installed,
+and `cargo test` fails on it. The theme gate runs on whatever is pinned (`just themes`, in CI), so a bad pack can't ship.
+
+**To bump the pin:** change the art in swag and merge it there. Then, in cooee, set `commit` in `packs/swag.toml` to
+that swag commit and put each changed file's `shasum -a 256` beside it. A new pack, such as bush, is one line per file.
+`cargo test` and `just themes` check the result. Nothing else in this repo changes.
 
 ## Installing and removing themes
 
 - `cooee theme add <name | git-url | path> [--rev R] [--yes]` copies a pack into `<config dir>/themes/<name>/` once it
-  passes the gate, and pins it in `<data>/themes.lock` (name, source, commit). A name is the index's pack, at its
-  pinned commit, fetched into `<data>/themes/<name>/`: a shallow clone (`--depth 1`) with only its folder checked out
-  (farm at the index's commit is copied from the build instead). On start, an old full clone `<data>/themes/<name>.git`
-  is replaced by that, once it is in place, and the space freed is logged. A git URL or a folder that isn't in the index shows "not reviewed" and asks first. `cooee theme
-  remove <name>` and `cooee theme list` do the rest. `cooee serve` reads them at its next start.
-- **The index** is `plugins/index.toml`'s `[[theme]]` entries: `name`, `url`, `path` (the pack's folder in the repo),
-  the pinned `commit`, `description`, `first_party`. Adding one is a normal reviewed PR.
-- `cooee setup` installs farm from the build, then offers the other first-party themes as a pick list; the default
-  is all of them.
+  passes the gate, and pins it in `<data>/themes.lock` (name, source, commit). A name is a first-party pack, from the
+  build's own copy at swag's pin; a git URL or a folder (or a first-party name at another `--rev`) shows "not
+  reviewed" and asks once first. A git source is fetched into `<data>/themes/<name>/` as a shallow clone (`--depth 1`)
+  with only its folder checked out (#363). On start, an old full clone `<data>/themes/<name>.git` is deleted once its
+  new form is in place, and the space freed is logged. `cooee theme remove <name>` and `cooee theme list` do the rest.
+  `cooee serve` reads them at its next start.
+- `cooee setup` installs farm, then offers the other first-party themes as a pick list; the default is all of them.
+- **To share a pack**, push its folder to any git repo; anyone adds it by that URL (`cooee theme add <git-url>`).
 
 An own folder in `themes/` (not added by `cooee theme add`) loads too; one with a built-in's name replaces it. `plain` was `terminal` before #35: a
 saved `terminal` pick or `theme = "terminal"` shows `plain`. A theme naming an unknown scheme, or a scheme of the wrong mode, is refused.

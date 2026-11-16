@@ -91,7 +91,6 @@ public struct ConfigError: Error, CustomStringConvertible {
     public var description: String { message }
 }
 
-/// Typed shape of `.anti-slop.json`; unknown keys are ignored.
 private struct ConfigFile: Decodable {
     let disabled: [String]?
 }

@@ -1,13 +1,3 @@
-// #48 mockup: the app's own look on static pages. Served from the repo root (`node docs/design/new-thread/shoot.mjs
-// --serve`), so the pages load design-system/app.css, design-system/look.js, packs/farm/, tests/swag/packs/ and design-system/schemes/
-// as they are today: nothing here copies the design system. A classic script before look.js: it builds `LOOK` (as the
-// server did) and puts the URL's pick in localStorage, where look.js reads it.
-//   ?theme=farm|kitchen|garden|plain  &mode=system|light|dark  &style=modern|terminal  &sprites=on|ascii|off
-//   [data-only="a b"]  shown only on those screens; [data-exp=<screen>] aria-expanded on that screen
-//   [data-ld="claude · jk@work.com"]  the connecting line: what look.js gains for the `loading` state (below)
-//   <aside class="side" data-cur=<id>>  the desktop sidebar: side.html put in, its [data-id=<id>] row aria-current
-//   ?s=<screen>  one screen (html[data-screen]); without it the page stacks every screen in <html data-screens> as frames,
-//                each one phone screen (844 px) below 1000 px wide, else one 900 px desktop screen.
 (() => {
   const q = new URLSearchParams(location.search);
   const get = (u) => { const x = new XMLHttpRequest(); x.open("GET", u, false); x.send(); return JSON.parse(x.responseText); };
@@ -16,7 +6,7 @@
     "farm-light", "kitchen-light", "garden-light"];
   globalThis.LOOK = {
     default: "farm",
-    themes: Object.fromEntries(THEMES.map((t) => [t, get(t === "plain" ? "/design-system/themes/plain/theme.json" : (t === "farm" ? "/packs/farm/theme.json" : `/tests/swag/packs/${t}/theme.json`))])),
+    themes: Object.fromEntries(THEMES.map((t) => [t, get(t === "plain" ? "/design-system/themes/plain/theme.json" : `/packs/themes/${t}/theme.json`)])),
     schemes: Object.fromEntries(SCHEMES.map((s) => [s, get(`/design-system/schemes/${s}.json`)])),
   };
   const pick = {};
@@ -54,9 +44,6 @@
     for (const e of document.querySelectorAll("[data-only]")) if (!e.dataset.only.split(" ").includes(s)) e.remove();
     for (const e of document.querySelectorAll("[data-exp]")) e.setAttribute("aria-expanded", e.dataset.exp === s);
   }
-  // The loading state on a line: the theme's loading figure at line height (32 × 24), the glyph ↻ in a theme without
-  // sprites, the dot with sprites off, `o.o` in ascii; then the theme's loading word and `· connecting <who>`. A theme
-  // with no loading word (terminal) says `connecting <who>` alone. `data-ld=""` (the thread bar): the mark and word only.
   function fillLoading() {
     const t = LOOK.themes[LOOK.themes[pick.theme] ? pick.theme : LOOK.default], figs = pick.sprites || "on";
     const name = pick.theme || LOOK.default;

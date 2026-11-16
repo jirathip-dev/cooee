@@ -4,6 +4,7 @@ public enum MemberState: String, Sendable, Equatable {
     case waiting
     case upNext = "up next"
     case replying, replied, passed
+    case asking = "asks you"
 }
 
 public struct RoomRound: Sendable, Equatable {
@@ -14,6 +15,8 @@ public struct RoomRound: Sendable, Equatable {
     public private(set) var turn = 0
     public private(set) var since: Date?
     public private(set) var passed: [String] = []
+    public private(set) var asking: String?
+    private var paused: Date?
     private var states: [String: MemberState] = [:]
     private var current: String?
 
@@ -21,7 +24,18 @@ public struct RoomRound: Sendable, Equatable {
 
     public init() {}
 
-    public func state(_ member: String) -> MemberState { states[member] ?? .waiting }
+    public func state(_ member: String) -> MemberState { member == asking ? .asking : states[member] ?? .waiting }
+
+    public mutating func asks(_ member: String, when: Date) {
+        asking = member
+        paused = paused ?? when
+    }
+
+    public mutating func answered(when: Date) {
+        if let paused, let since { self.since = since + when.timeIntervalSince(paused) }
+        asking = nil
+        paused = nil
+    }
 
     public mutating func asked(_ members: [String], text: String, when: Date) {
         let next: MemberState = text.contains("@") ? .waiting : .upNext
@@ -52,6 +66,8 @@ public struct RoomRound: Sendable, Equatable {
         }
         current = nil
         since = nil
+        asking = nil
+        paused = nil
         states = states.mapValues { $0 == .upNext ? .waiting : $0 }
     }
 
@@ -114,6 +130,19 @@ public enum Clock {
         formatter.dateFormat = "HH:mm"
         formatter.timeZone = zone
         return formatter.string(from: Date(timeIntervalSince1970: Double(milliseconds) / 1000))
+    }
+
+    /// `Today 09:50`, or the day and the time when it is not `now`'s day.
+    public static func day(_ milliseconds: Int64, now: Date, in zone: TimeZone = .current) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone
+        let date = Date(timeIntervalSince1970: Double(milliseconds) / 1000)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "d MMM"
+        formatter.timeZone = zone
+        let day = calendar.isDate(date, inSameDayAs: now) ? "Today" : formatter.string(from: date)
+        return "\(day) \(time(milliseconds, in: zone))"
     }
 
     public static func round(_ seconds: Int) -> String {

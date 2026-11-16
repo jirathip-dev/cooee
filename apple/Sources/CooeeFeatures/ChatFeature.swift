@@ -23,24 +23,40 @@ public struct ChatFeature: Sendable {
         public var draft = ""
         public var files: [Attachment] = []
         public var outbox: [Outgoing] = []
+        public var pending: String?
         public var answering: Set<Int> = []
         public var room: Room?
+        public var exchange: Exchange?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
-        @Presents public var screen: PluginScreenFeature.State?
+        public var workflow: [ListedChat]?
+        public var workflowOpen = false
+        public var unfolded: String?
+        public var machine = MachineChip()
+        @Presents public var screen: ScreenFeature.State?
         @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
         public var drawn: [Item] {
-            room.map { RoomItems.build(items, names: $0.names, last: $0.round) }
-                ?? ChatItems.build(items, live: live, outbox: outbox)
+            if let exchange { return LinkedItems.build(items, exchange: exchange, outbox: outbox, now: since) }
+            return room.map { RoomItems.build(items, names: $0.names, last: $0.round) + $0.cards }
+                ?? ChatItems.build(
+                    items, live: live, outbox: first + outbox, style: persona.api.style, working: working)
         }
 
-        public init(server: Server, target: Target, persona: Persona, room: Room? = nil) {
+        private var first: [Outgoing] {
+            let failure = turn.state == "unconnected" ? turn.note ?? "" : nil
+            return pending.map { [Outgoing(id: 0, text: $0, failure: failure)] } ?? []
+        }
+
+        public var step: String? { persona.api.style == .chat ? ChatItems.step(items) : nil }
+
+        public init(server: Server, target: Target, persona: Persona, room: Room? = nil, exchange: Exchange? = nil) {
             self.server = server
             self.target = target
             self.persona = persona
             self.room = room
+            self.exchange = exchange
         }
     }
 
@@ -49,45 +65,30 @@ public struct ChatFeature: Sendable {
         case loaded(Slice)
         case event(StreamEvent)
         case failed(String)
-        case draftChanged(String)
-        case attach([Attachment])
-        case detach(Int)
-        case send
-        case delivered(Int)
-        case undelivered(Int, String)
-        case retry(Int)
-        case stop
-        case steer(Int)
-        case unqueue(Int)
-        case answer(Int, BlockAction)
-        case answered(Int, String?)
-        case inspect(String?)
-        case move(String, Int)
-        case seat(String)
-        case unseat(String)
-        case seated([String])
-        case delegate(Delegate)
+        case compose(Compose)
+        case outbox(Outbox)
+        case cards(Cards)
+        case room(Seats)
         case plugins(PluginAction)
-        case screen(PresentationAction<PluginScreenFeature.Action>)
+        case delegate(Delegate)
+        case screen(PresentationAction<ScreenFeature.Action>)
         case attaching(PresentationAction<AttachFeature.Action>)
+        case workflow(WorkflowAction)
+        case machine(MachineAction)
 
         @CasePathable
         public enum Delegate: Sendable, Equatable {
             case started(String)
             case open(String)
-        }
-
-        @CasePathable
-        public enum PluginAction: Sendable, Equatable {
-            case load
-            case loaded([Place], [PluginRow])
-            case open(Place)
-            case attach(PluginRow)
+            case persona(String)
+            case start(String)
+            case round(String)
         }
     }
 
     @Dependency(\.threads) internal var threads
     @Dependency(\.plugins) internal var pluginAPI
+    @Dependency(\.personas) internal var personas
     @Dependency(\.continuousClock) private var clock
     @Dependency(\.date.now) private var now
 
@@ -96,53 +97,40 @@ public struct ChatFeature: Sendable {
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .task:
-                return open(state)
-            case .loaded(let slice):
-                load(&state, slice)
-                return .none
-            case .event(let event):
-                state.room?.hear(event)
-                apply(&state, event)
-                return .none
-            case .failed(let error):
-                state.error = error
-                return .none
-            case .answer(let item, let action):
-                return answer(&state, item, action)
-            case .answered(let item, let error):
-                state.answering.remove(item)
-                state.error = error ?? state.error
-                return .none
-            case .delivered, .undelivered, .retry:
-                return outbox(&state, action)
-            default:
+            case .compose(let action):
                 return compose(&state, action)
+            case .outbox(let action):
+                return outbox(&state, action)
+            case .cards(let action):
+                return cards(&state, action)
+            case .room(let action):
+                return seat(&state, action)
+            case .machine(let action):
+                return machine(&state, action)
+            default:
+                return listen(&state, action)
             }
         }
         Reduce { state, action in plugins(&state, action) }
-            .ifLet(\.$screen, action: \.screen) { PluginScreenFeature() }
+            .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }
     }
 }
 
 extension ChatFeature {
-    private func compose(_ state: inout State, _ action: Action) -> Effect<Action> {
+    private func listen(_ state: inout State, _ action: Action) -> Effect<Action> {
         switch action {
-        case .draftChanged(let text):
-            state.draft = text
-        case .attach(let files):
-            state.files += files
-        case .detach(let index):
-            if state.files.indices.contains(index) { state.files.remove(at: index) }
-        case .send:
-            return send(&state)
-        case .stop:
-            return act(state) { threads, server, thread in try await threads.stop(server, thread) }
-        case .steer(let index), .unqueue(let index):
-            return queued(state, action, index)
+        case .task:
+            return open(state)
+        case .loaded(let slice):
+            load(&state, slice)
+        case .event(let event):
+            state.room?.hear(event, when: now)
+            apply(&state, event)
+        case .failed(let error):
+            state.error = error
         default:
-            return seat(&state, action)
+            break
         }
         return .none
     }
@@ -170,7 +158,9 @@ extension ChatFeature {
         state.queue = slice.queue
         state.turn = slice.turn
         state.since = now
+        state.pending = slice.pending?.text
         state.live = slice.turn.working ? slice.turn.text ?? "" : ""
+        state.room?.heard(slice.asks ?? [], when: now)
     }
 
     private func apply(_ state: inout State, _ event: StreamEvent) {
@@ -185,7 +175,7 @@ extension ChatFeature {
             if !state.working { state.live = "" }
         case .queue(let queue):
             state.queue = queue
-        case .reset, .roomTurn, .roomStop:
+        case .reset, .roomTurn, .roomStop, .roomAsk:
             break
         }
     }
@@ -196,40 +186,7 @@ extension ChatFeature {
         } else {
             state.items.append(item)
         }
+        if item.kind == "you" { state.pending = nil }
         if item.kind == "agent" { state.live = "" }
-    }
-
-    private func answer(_ state: inout State, _ item: Int, _ action: BlockAction) -> Effect<Action> {
-        guard case .thread(let thread) = state.target, let answer = action.answer else { return .none }
-        state.answering.insert(item)
-        let (threads, server) = (threads, state.server)
-        return .run { send in
-            try await threads.answer(server, thread, item, answer.option, answer.value)
-            await send(.answered(item, nil))
-        } catch: { error, send in
-            await send(.answered(item, error.localizedDescription))
-        }
-    }
-
-    private func queued(_ state: State, _ action: Action, _ index: Int) -> Effect<Action> {
-        guard state.queue.indices.contains(index) else { return .none }
-        let randomID = state.queue[index].randomID
-        guard case .steer = action else {
-            return act(state) { threads, server, thread in try await threads.unqueue(server, thread, randomID) }
-        }
-        return act(state) { threads, server, thread in try await threads.steer(server, thread, randomID) }
-    }
-
-    private func act(
-        _ state: State,
-        _ call: @escaping @Sendable (ThreadsClient, Server, String) async throws -> Void
-    ) -> Effect<Action> {
-        guard case .thread(let thread) = state.target else { return .none }
-        let (threads, server) = (threads, state.server)
-        return .run { _ in
-            try await call(threads, server, thread)
-        } catch: { error, send in
-            await send(.failed(error.localizedDescription))
-        }
     }
 }

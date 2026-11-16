@@ -1,5 +1,3 @@
-//! The config file: one TOML file, every key optional, unknown keys an error.
-
 use std::{
     env, fs, io,
     net::{IpAddr, Ipv4Addr},
@@ -55,6 +53,8 @@ pub struct Config {
     pub mcp: Vec<crate::mcp::Server>,
     /// Apple push for the native app (`[apns]`, #130); its key is `<data>/apns.p8`.
     pub apns: Option<Apns>,
+    /// Whether `cooee update` (its timer, every 15 minutes) installs main's newest green build (default on, #332).
+    pub auto_update: bool,
 }
 
 /// `[apns]`: the owner's APNs key's ids and the app it pushes to; none of it is secret.
@@ -136,6 +136,7 @@ impl Default for Config {
             logs: crate::logs::Logs::default(),
             mcp: Vec::new(),
             apns: None,
+            auto_update: true,
         }
     }
 }
@@ -268,7 +269,6 @@ pub fn save_roots(path: &Path, roots: &[PathBuf]) -> io::Result<()> {
             },
         )
         .collect();
-    // A JSON array of strings is a TOML inline array too.
     let line = format!("roots = {}", serde_json::to_string(&roots)?);
     let table = toml::de::DeTable::parse(&text).map_err(io::Error::other)?;
     let old = table.get_ref().iter().find(|(k, _)| k.get_ref() == "roots");

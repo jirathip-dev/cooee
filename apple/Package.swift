@@ -5,6 +5,7 @@ let strict: [SwiftSetting] =
     [.swiftLanguageMode(.v6), .enableExperimentalFeature("StrictConcurrency=complete")]
     + (Context.environment["COOEE_STRICT"] == "1" ? [.treatAllWarnings(as: .error)] : [])
 let tca = Target.Dependency.product(name: "ComposableArchitecture", package: "swift-composable-architecture")
+let sparkle = Target.Dependency.product(name: "Sparkle", package: "Sparkle", condition: .when(platforms: [.macOS]))
 
 let package = Package(
     name: "Cooee",
@@ -14,7 +15,8 @@ let package = Package(
         .library(name: "CooeeUI", targets: ["CooeeUI"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/swift-composable-architecture", exact: "1.26.2")
+        .package(url: "https://github.com/pointfreeco/swift-composable-architecture", exact: "1.26.2"),
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1"),
     ],
     targets: [
         .target(name: "CooeeCore", swiftSettings: strict),
@@ -28,7 +30,7 @@ let package = Package(
         ),
         .target(
             name: "CooeeApp",
-            dependencies: ["CooeeCore", "CooeeAPI", "CooeeFeatures", "CooeeUI", tca],
+            dependencies: ["CooeeCore", "CooeeAPI", "CooeeFeatures", "CooeeUI", tca, sparkle],
             swiftSettings: strict
         ),
         .testTarget(

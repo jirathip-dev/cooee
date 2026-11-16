@@ -1,9 +1,3 @@
-//! A provider's accounts: the system default login (its CLI's own folder) and the ones added in cooee, each a config
-//! folder `<data>/accounts/<provider>/<name>/` that its CLI gets through the provider's `home` variable.
-//! The CLI keeps its own login there or in its keychain; cooee never reads or stores a token. An existing folder is
-//! adopted as a link to it (#183). Beside the folders, `.cooee.json` keeps when each one's login last succeeded and
-//! its last usage reading. There is no default account: a new thread takes the last one used in its folder (#48).
-
 use std::{
     collections::BTreeMap,
     fs, io,
@@ -86,10 +80,8 @@ impl Usage {
     }
 }
 
-/// How long a usage reading stands before the usage command runs again (s).
 const FRESH: u64 = 300;
 
-/// `.cooee.json`: the last successful logins and usage readings, by name (an older one's `default` is ignored).
 #[derive(Default, Serialize, Deserialize)]
 struct Meta {
     #[serde(default)]
@@ -104,7 +96,6 @@ pub struct Accounts {
     root: PathBuf,
 }
 
-/// Fit for a folder name: `a-z A-Z 0-9 -` (herdsman's are `A`, `B`, …), not empty.
 fn safe(name: &str) -> bool {
     !name.is_empty() && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
 }
@@ -147,7 +138,6 @@ impl Accounts {
         let names = std::iter::once(String::new()).chain(names);
         names
             .map(|name| Account {
-                // An adopted folder by its own path: its CLI keys its keychain login by it.
                 dir: (!name.is_empty()).then(|| {
                     let at = self.root.join(provider).join(&name);
                     fs::read_link(&at).unwrap_or(at)
@@ -309,8 +299,6 @@ mod tests {
         fs::remove_dir_all(&data).unwrap();
     }
 
-    /// R19 (herdsman#333, #477): a new account's folder left by a login whose cooee died is no lock: the next
-    /// login takes the next name, and a failed one cleans up only its own.
     #[test]
     fn a_dead_logins_leftover_folder_never_blocks_a_new_account() {
         let data = std::env::temp_dir().join(format!("cooee-accounts-dead-{}", std::process::id()));

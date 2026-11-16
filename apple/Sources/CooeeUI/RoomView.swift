@@ -91,8 +91,8 @@ public struct RoomView: View {
             .frame(maxHeight: .infinity, alignment: .top)
             if scene.round.running {
                 RoundPill(
-                    turn: scene.round.turn, since: look.still ? nil : scene.round.since, elapsed: scene.elapsed,
-                    stop: actions.chat.stop
+                    turn: scene.round.turn, asking: scene.members.first { $0.id == scene.round.asking }?.name,
+                    since: look.still ? nil : scene.round.since, elapsed: scene.elapsed, stop: actions.chat.stop
                 )
             }
             Composer(hint: "Message the room", actions: actions.chat)
@@ -125,7 +125,7 @@ internal struct RoomHeader: View {
                 Button(action: onBack) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                     .buttonStyle(.plain).accessibilityLabel("Back")
             }
-            RoomStack(members: scene.members, size: 30, grid: false, state: .done)
+            RoomStack(members: scene.members, size: look.mono ? 26 : 30, grid: false, state: .done)
             VStack(alignment: .leading, spacing: 2) {
                 Text(scene.title).ui(17, .semibold, look).lineLimit(1).minimumScaleFactor(0.8)
                 Text("\(scene.members.count) members · \(RoomRound.turns) turns max").ui(13, .regular, look)

@@ -26,7 +26,7 @@ decisions: q888, q890, q891, q893–q895, q897 (conductor thread t53), and revis
   #722 is another issue. The Queue tab shows herdsman's own queue.
 
 There are three pages, built on the live design system as `docs/design/chat-first/` was. They link
-`design-system/app.css`, `design-system/schemes/` and the farm pack's `packs/farm/` (theme words, row sprites, scene strip)
+`design-system/app.css`, `design-system/schemes/` and the farm pack's `packs/themes/farm/` (theme words, row sprites, scene strip)
 without copying them. `ns.css` holds this design's additions as tokens only. `ns.js` sets the scheme as `shown.rs`
 does and draws the lists. `horses.svg` holds herdsman's vector horses (`assets/themes/farm/sprites.svg`, copied by
 `horses.mjs` until cooee#115 puts them in the pack). The design adds no new visual language. The only things drawn
