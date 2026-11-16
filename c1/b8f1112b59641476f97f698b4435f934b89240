@@ -1,0 +1,10 @@
+Decided: merged origin/staging (#423, #416); the justfile and ci.yml take staging's side, and the comment rule is a new gate file, ci/gates/comments.sh
+Because: "A CI check (a script or an arch/lint rule) enforcing the rule on every tracked source file, tests included"
+Rejected: keeping a comments recipe in the justfile — #423 froze it, and ci/gates.sh runs every file in ci/gates/ with no line elsewhere
+Decided: the single gates step in ci.yml gets GH_TOKEN, so the TODO(#N) open-issue check can call gh
+Because: ci/gates/comments.sh:6
+Decided: .herdsman/rules.md names ci/gates/comments.sh as the rule's enforcer
+Because: "Add the rule as a line in .herdsman/rules.md naming its enforcer"
+Check: ci/gates.sh comments exits 0, and the gates step in CI runs the comments gate and stays green
+Check: the justfile is identical to staging's, and drover arch-check reports 0 violations
+Owner: the comment check now runs as one of CI's standard gates, the same way every other check does since #423
