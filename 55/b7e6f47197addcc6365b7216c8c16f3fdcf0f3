@@ -1,0 +1,9 @@
+Decided: merged origin/staging; the theme source is #318's (swag pinned in packs/swag.toml, first-party packs vendored into the build), and this PR's packs/farm, tests/swag and [[theme]] entries are dropped
+Because: "farm ships inside the build, so the first run works offline."
+Decided: a git theme source is a depth-1 fetch with only its folder checked out, replacing #318's mirror clone
+Because: "Each is a shallow clone (`--depth 1`) of only its own folder (sparse checkout)."
+Decided: on start an old <data>/themes/<name>.git goes once its new form is in place: a first-party pack's is the build, any other's its shallow clone, kept under its pinned name
+Because: "only once the new form is in place"
+Rejected: keeping farm-only bundling and an index of swag entries — #318 already merged all three into the build, so a second source would be a second way to do one thing
+Check: crates/cooee/tests/themes.rs a_git_pack_is_a_shallow_clone_of_its_folder_alone and the migration test; mini copy du 428M -> 307M
+Owner: Logs stop growing past 16 MB each; old theme clones (122 MB on the mini) go on next start; farm works offline.
