@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use cooee_core::{Kind, Summary, Thread, Turn, personas};
+use cooee_core::{Kind, Summary, Thread, Turn, agents};
 use tokio::sync::broadcast;
 
 use super::{Hub, HubError, LAG, Out, Pending, Resume, Slice, glance, lock, now, rooms, waits};
@@ -111,7 +111,7 @@ impl Hub {
     /// The thread list, newest first.
     #[must_use]
     pub fn list(&self) -> Vec<Summary> {
-        let personas = personas::list(self.config_dir(), &self.data);
+        let personas = agents::list(self.config_dir(), &self.data);
         let mut asks = Vec::new();
         let mut rows: Vec<Summary> = self
             .all()
@@ -141,6 +141,7 @@ impl Hub {
                     unread: g.unseen > 0,
                     unseen: g.unseen,
                     archived: live.meta.archived,
+                    setup: live.meta.setup,
                     workflow: live.meta.workflow.clone(),
                     routine: g.routine,
                     members: rooms::seated(&live.meta),
@@ -192,7 +193,7 @@ impl Hub {
             None => (items.len().saturating_sub(before), items.len()),
         };
         Ok(Slice {
-            items: items[from..to.max(from)].to_vec(),
+            items: items.get(from..to.max(from)).unwrap_or_default().to_vec(),
             skipped_before: from,
             skipped_after: items.len() - to.max(from),
             turn: live.chat.turn.clone(),

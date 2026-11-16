@@ -18,6 +18,9 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
 }
 
 fn serve(config: &Config) -> Result<(), String> {
+    if let Err(e) = crate::cli::migrate(config, false) {
+        cooee_core::note!("cooee: {e}");
+    }
     let machines = config.plugins.iter().find(|p| p.name == "machines");
     let terminal = config
         .plugins
@@ -26,23 +29,25 @@ fn serve(config: &Config) -> Result<(), String> {
     if let Some(data) = config.data_dir() {
         std::thread::spawn(move || {
             match keychain::migrate(&data) {
-                Ok(Some(done)) => eprintln!("cooee: {done}"),
+                Ok(Some(done)) => cooee_core::note!("cooee: {done}"),
                 Ok(None) => {}
-                Err(e) => eprintln!("cooee: push key: {e}"),
+                Err(e) => cooee_core::note!("cooee: push key: {e}"),
             }
             match cooee_core::secrets::migrate(&data) {
                 Ok(moved) if moved.is_empty() => {}
-                Ok(moved) => eprintln!("cooee: moved into the keychain: {}", moved.join(", ")),
-                Err(e) => eprintln!("cooee: secrets: {e}"),
+                Ok(moved) => {
+                    cooee_core::note!("cooee: moved into the keychain: {}", moved.join(", "));
+                }
+                Err(e) => cooee_core::note!("cooee: secrets: {e}"),
             }
         });
     }
     cooee_server::serve(config, |addr| {
-        println!("cooee: listening on http://{addr}");
+        cooee_core::say!("cooee: listening on http://{addr}");
         if let (Some(p), Some(data)) = (terminal, config.data_dir()) {
             let shed = Shed::new(config.shed.clone(), config.shed_dir.clone());
             if let Err(e) = cooee_terminal::start(p, shed, &data) {
-                eprintln!("cooee: plugin terminal at {}: {e}", p.url);
+                cooee_core::note!("cooee: plugin terminal at {}: {e}", p.url);
             }
         }
         let Some(p) = machines else { return };
@@ -53,7 +58,7 @@ fn serve(config: &Config) -> Result<(), String> {
         };
         let (shed, dir) = (config.shed.clone(), config.shed_dir.clone());
         if let Err(e) = cooee_machines::start(p, shed, dir, SocketAddr::new(ip, addr.port())) {
-            eprintln!("cooee: plugin machines at {}: {e}", p.url);
+            cooee_core::note!("cooee: plugin machines at {}: {e}", p.url);
         }
     })
     .map_err(|e| e.to_string())

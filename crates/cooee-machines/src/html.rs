@@ -4,13 +4,16 @@ use cooee_core::shed_proto::Sample;
 
 use crate::{Card, DAY, Problem};
 
-pub(crate) fn size(mb: u64) -> String {
-    if mb < 1024 {
-        format!("{mb} MB")
+pub(crate) fn float(n: u64) -> f64 {
+    let half = |x: u64| f64::from(u32::try_from(x).unwrap_or(u32::MAX));
+    half(n >> 32) * 4_294_967_296.0 + half(n & u64::from(u32::MAX))
+}
+
+pub(crate) fn size(mb: f64) -> String {
+    if mb < 1024.0 {
+        format!("{mb:.0} MB")
     } else {
-        #[expect(clippy::cast_precision_loss, reason = "a size shown to one decimal")]
-        let gb = mb as f64 / 1024.0;
-        format!("{gb:.1} GB")
+        format!("{:.1} GB", mb / 1024.0)
     }
 }
 
@@ -39,8 +42,7 @@ fn line(points: &[(u64, f64)], now: u64, w: f64, h: f64) -> String {
     points
         .iter()
         .map(|&(at, v)| {
-            #[expect(clippy::cast_precision_loss, reason = "a position in a drawing")]
-            let x = (at.saturating_sub(start) as f64 / DAY as f64).min(1.0) * w;
+            let x = (float(at.saturating_sub(start)) / float(DAY)).min(1.0) * w;
             let y = if hi > lo {
                 h - (v - lo) / (hi - lo) * h
             } else {
@@ -67,7 +69,7 @@ fn metric(
     } else {
         format!("low {} · high {}", show(lo), show(hi))
     };
-    let _ = write!(
+    write!(
         out,
         "<details id=\"{id}\"><summary><span class=\"k\">{name}</span><b{}>{value}</b>\
          <svg class=\"sp\" viewBox=\"0 0 100 20\" preserveAspectRatio=\"none\" aria-hidden=\"true\">\
@@ -78,7 +80,7 @@ fn metric(
         if bad { " class=\"bad\"" } else { "" },
         line(points, now, 100.0, 20.0),
         line(points, now, 300.0, 100.0),
-    );
+    ).ok();
 }
 
 /// The cards, or a line while shed hasn't been asked yet.
@@ -101,29 +103,26 @@ pub fn render(cards: &[Card], now: u64) -> String {
             (false, Some(t)) => format!("offline · last seen {}", ago(now, t)),
             (false, None) => "offline · never seen".to_owned(),
         };
-        let _ = write!(
+        write!(
             out,
             "<article class=\"m{}\" aria-labelledby=\"m-{id}\"><h2 id=\"m-{id}\"><i aria-hidden=\"true\">●</i> \
              {name}</h2><p class=\"seen\">{seen}</p>",
             if c.online { " on" } else { " off" },
-        );
+        ).ok();
         if let Some(e) = &c.error {
-            let _ = write!(out, "<p class=\"er\">{}</p>", esc(e));
+            write!(out, "<p class=\"er\">{}</p>", esc(e)).ok();
         }
         if let Some(s) = &c.now {
             let samples: Vec<&Sample> = c.history.iter().chain([s]).collect();
             let series = |f: fn(&Sample) -> f64| -> Vec<(u64, f64)> {
                 samples.iter().map(|s| (s.at, f(s))).collect()
             };
-            #[expect(clippy::cast_precision_loss, reason = "MiB and percents, drawn")]
             let (mem, swap, disk) = (
-                series(|s| s.mem_pressure_pct as f64),
-                series(|s| s.swap_used_mb as f64),
-                series(|s| s.disk_free_mb as f64),
+                series(|s| float(s.mem_pressure_pct)),
+                series(|s| float(s.swap_used_mb)),
+                series(|s| float(s.disk_free_mb)),
             );
-            #[expect(clippy::cast_possible_truncation, reason = "MiB, shown")]
-            #[expect(clippy::cast_sign_loss, reason = "MiB, never negative")]
-            let mb = |v: f64| size(v as u64);
+            let mb = size;
             out.push_str("<div class=\"ms\">");
             let load = (
                 "load/cpu",
@@ -150,11 +149,15 @@ pub fn render(cards: &[Card], now: u64) -> String {
                 |v| format!("{v:.0}%"),
                 now,
             );
-            let w = ("swap", size(s.swap_used_mb), false);
+            let w = ("swap", size(float(s.swap_used_mb)), false);
             metric(&mut out, &format!("{id}-swap"), w, &swap, mb, now);
             let low = problems.contains(&Problem::DiskLow);
             let word = if low { " low" } else { "" };
-            let d = ("disk free", format!("{}{word}", size(s.disk_free_mb)), low);
+            let d = (
+                "disk free",
+                format!("{}{word}", size(float(s.disk_free_mb))),
+                low,
+            );
             metric(&mut out, &format!("{id}-disk"), d, &disk, mb, now);
             out.push_str("</div>");
             let terminals: Vec<String> = s
@@ -167,7 +170,7 @@ pub fn render(cards: &[Card], now: u64) -> String {
             } else {
                 terminals.join(" · ")
             };
-            let _ = write!(out, "<p class=\"tm\">terminals: {terminals}</p>");
+            write!(out, "<p class=\"tm\">terminals: {terminals}</p>").ok();
         }
         out.push_str("</article>");
     }

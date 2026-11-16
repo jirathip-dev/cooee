@@ -71,10 +71,10 @@ at 1×. **Data:** illustrative. The issues are real cooee and herdsman titles, b
 
 ## Open questions for the owner
 
-1. **Where the sheet's data comes from.** The issue names `GET /workflow` (#127), but `docs/api.md` has no such route
+1. **Where the sheet's data comes from.** The issue names `GET /workflow` (#127), but `docs/chat.md` has no such route
    today. **Recommend:** build the sheet from `GET /threads`' existing `workflow` labels, grouped by group+item: the
    stage is the newest round's `role`, and the title is its thread's `title`. That means no new server route. The
-   alternative is to add `GET /workflow` (one row per item, with its rounds), with its `docs/api.md` entry, in
+   alternative is to add `GET /workflow` (one row per item, with its rounds), with its `docs/chat.md` entry, in
    #229's PR.
 2. **How a plugin claims a source.** **Recommend:** `claims = ["<source>"]` in the manifest, shown at attach. The
    alternative is a new place type, `workflow-sheet`, with `source` on it, which would also let a plugin put the

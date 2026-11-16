@@ -14,9 +14,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-use cooee_core::personas::PLAIN;
+use cooee_core::agents::PLAIN;
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, scratch, version};
+use support::{Cooee, FakeShed, agent, scratch, version};
 
 struct Setup {
     dir: PathBuf,
@@ -32,31 +32,24 @@ fn setup(name: &str) -> Setup {
     fs::create_dir_all(data.join("accounts/fake/work")).unwrap();
     fs::create_dir_all(data.join("secrets")).unwrap();
     fs::write(data.join("secrets/API_KEY"), format!("{token}\n")).unwrap();
-    let profiles = dir.join("profiles");
-    fs::create_dir_all(&profiles).unwrap();
-    fs::write(profiles.join("coder.md"), "Follow the house rules.\n").unwrap();
-    fs::write(
-        profiles.join("settings.json"),
-        r#"{"hooks":{"PreToolUse":[]}}"#,
-    )
-    .unwrap();
-    let profile = |file: &str, text: &str| fs::write(profiles.join(file), text).unwrap();
-    profile(
-        "coder.toml",
-        "name = \"coder\"\nlabel = \"Coder\"\nagent = \"fake-acp\"\naccount = \"work\"\n\
-         instructions = \"coder.md\"\nsettings = \"settings.json\"\npolicy = \"allow\"\n\
-         env = { MODE = \"review\", API_KEY = \"secret:API_KEY\" }\n",
+    let settings = r#"{"hooks":{"PreToolUse":[]}}"#;
+    let coder = agent(
+        &dir,
+        "coder",
+        "name = \"Coder\"\nagent = \"fake-acp\"\naccount = \"work\"\nsettings = \"settings.json\"\n\
+         policy = \"allow\"\nenv = { MODE = \"review\", API_KEY = \"secret:API_KEY\" }\n",
+        "Follow the house rules.\n",
     );
-    profile(
-        "guard.toml",
-        "name = \"guard\"\nlabel = \"Guarded\"\nagent = \"other-acp\"\nsettings = \"settings.json\"\n",
+    fs::write(coder.join("settings.json"), settings).unwrap();
+    let guard = agent(
+        &dir,
+        "guard",
+        "name = \"Guarded\"\nagent = \"other-acp\"\nsettings = \"settings.json\"\n",
+        "",
     );
-    profile(
-        "leak.toml",
-        &format!(
-            "name = \"leak\"\nlabel = \"Leak\"\nagent = \"fake-acp\"\nenv = {{ T = \"{token}\" }}\n"
-        ),
-    );
+    fs::write(guard.join("settings.json"), settings).unwrap();
+    let leak = format!("name = \"Leak\"\nagent = \"fake-acp\"\nenv = {{ T = \"{token}\" }}\n");
+    agent(&dir, "leak", &leak, "");
     let shed = FakeShed::start(&dir.join("shed"), version());
     let extra = "[[providers]]\nname = \"fake\"\nbase = \"claude\"\nagent = \"fake-acp\"\nhome = \"FAKE_HOME\"\n\
                  settings = \"FAKE_SETTINGS\"\nlogin = [\"true\"]\nstatus = [\"true\"]\n";
@@ -144,7 +137,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let (id, line) = s.thread("coder", "hi");
     let data = s.dir.join("data");
     let work = data.join("accounts/fake/work");
-    let settings = s.dir.join("profiles/settings.json");
+    let settings = s.dir.join("agents/coder/settings.json");
     assert!(line.contains(" --policy allow "), "{line}");
     let meta = line
         .split(" --meta ")
@@ -218,7 +211,7 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
 
     let mut written = fs::read_to_string(s.dir.join("cooee.err")).unwrap();
     assert!(
-        written.contains("leak.toml"),
+        written.contains("agents/leak/agent.toml"),
         "the left-out profile is logged: {written}"
     );
     written.push_str(&s.shed.cli_log());
@@ -440,7 +433,7 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     let dir = scratch("profiles-claude");
     let data = dir.join("data");
     fs::create_dir_all(data.join("accounts/claude/work")).unwrap();
-    let claude = dir.join("profiles/claude");
+    let claude = dir.join("agents/guarded/claude");
     fs::create_dir_all(&claude).unwrap();
     let guard = claude.join("guard.sh");
     fs::write(
@@ -452,8 +445,8 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
         { "matcher": "Bash", "hooks": [{ "type": "command", "command": guard }] } ] } });
     fs::write(claude.join("settings.json"), hooks.to_string()).unwrap();
     fs::write(
-        dir.join("profiles/guarded.toml"),
-        "name = \"guarded\"\nlabel = \"Guarded\"\nagent = \"fake-acp\"\naccount = \"work\"\nsettings = \"claude\"\n",
+        dir.join("agents/guarded/agent.toml"),
+        "name = \"Guarded\"\nagent = \"fake-acp\"\naccount = \"work\"\nsettings = \"claude\"\n",
     )
     .unwrap();
     let shed = FakeShed::start(&dir.join("shed"), version());
@@ -468,7 +461,11 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     .unwrap();
     let mut provider = cooee_core::provider::defaults().remove(0);
     provider.agent = "fake-acp".to_owned();
-    (provider.login, provider.status) = (vec!["true".to_owned()], vec!["true".to_owned()]);
+    (provider.login, provider.status, provider.usage) = (
+        vec!["true".to_owned()],
+        vec!["true".to_owned()],
+        vec!["true".to_owned()],
+    );
     let mut extra = "[[providers]]\n".to_owned();
     for (k, v) in serde_json::to_value(&provider)
         .unwrap()
@@ -507,12 +504,7 @@ fn options(line: &str) -> Option<Value> {
 #[test]
 fn a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it() {
     let s = setup("persona-no-personal");
-    fs::create_dir_all(s.dir.join("personas")).unwrap();
-    fs::write(
-        s.dir.join("personas/ada.toml"),
-        "name = \"Ada\"\nagent = \"fake-acp\"\n",
-    )
-    .unwrap();
+    agent(&s.dir, "ada", "name = \"Ada\"\nagent = \"fake-acp\"\n", "");
     let personal = |line: &str| {
         let o = options(line).unwrap_or_else(|| panic!("#416: no options in {line}"));
         assert_eq!(o["strictMcpConfig"], true, "{line}");

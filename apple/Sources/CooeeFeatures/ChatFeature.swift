@@ -7,6 +7,7 @@ public struct ChatFeature: Sendable {
     public enum Target: Equatable, Sendable {
         case thread(String)
         case new(APIPersona)
+        case setup(APIPersona)
     }
 
     @ObservableState
@@ -29,6 +30,8 @@ public struct ChatFeature: Sendable {
         public var exchange: Exchange?
         public var places: [Place] = []
         public var attachable: [PluginRow] = []
+        public var agents: [AgentOption] = []
+        public var lists: [ModelList] = []
         public var workflow: [ListedChat]?
         public var workflowOpen = false
         public var unfolded: String?
@@ -37,6 +40,8 @@ public struct ChatFeature: Sendable {
         @Presents public var attaching: AttachFeature.State?
 
         public var working: Bool { turn.working }
+        public var models: [String] { ModelList.picks(lists, agent: persona.api.agent) }
+        public var efforts: [String] { agents.first { $0.id == persona.api.agent }?.efforts ?? [] }
         public var drawn: [Item] {
             if let exchange { return LinkedItems.build(items, exchange: exchange, outbox: outbox, now: since) }
             return room.map { RoomItems.build(items, names: $0.names, last: $0.round) + $0.cards }
@@ -69,6 +74,9 @@ public struct ChatFeature: Sendable {
         case outbox(Outbox)
         case cards(Cards)
         case room(Seats)
+        case new
+        case profile
+        case pick(Pick)
         case plugins(PluginAction)
         case delegate(Delegate)
         case screen(PresentationAction<ScreenFeature.Action>)
@@ -82,6 +90,7 @@ public struct ChatFeature: Sendable {
             case open(String)
             case persona(String)
             case start(String)
+            case restart(APIPersona)
             case round(String)
         }
     }
@@ -89,6 +98,7 @@ public struct ChatFeature: Sendable {
     @Dependency(\.threads) internal var threads
     @Dependency(\.plugins) internal var pluginAPI
     @Dependency(\.personas) internal var personas
+    @Dependency(\.ownerCheck) internal var ownerCheck
     @Dependency(\.continuousClock) private var clock
     @Dependency(\.date.now) private var now
 
@@ -111,6 +121,7 @@ public struct ChatFeature: Sendable {
                 return listen(&state, action)
             }
         }
+        Reduce { state, action in agent(&state, action) }
         Reduce { state, action in plugins(&state, action) }
             .ifLet(\.$screen, action: \.screen) { ScreenFeature() }
             .ifLet(\.$attaching, action: \.attaching) { AttachFeature() }

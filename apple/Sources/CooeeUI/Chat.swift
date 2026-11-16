@@ -1,58 +1,6 @@
 import CooeeCore
 import SwiftUI
 
-public struct ChatActions {
-    public var draft: Binding<String>?
-    public var files: [String]
-    public var send: (() -> Void)?
-    public var attach: ([Attachment]) -> Void
-    public var detach: (Int) -> Void
-    public var stop: () -> Void
-    public var steer: (Int) -> Void
-    public var unqueue: (Int) -> Void
-    public var answer: (Int, BlockAction) -> Void
-    public var answering: Set<Int>
-    public var back: () -> Void
-    public var retry: (Int) -> Void = { _ in }
-    public var places: [String] = []
-    public var open: (Int) -> Void = { _ in }
-    public var attachable: [String] = []
-    public var attachPlugin: (Int) -> Void = { _ in }
-    public var step: String?
-    public var workflow: Int?
-    public var workflowOpen = false
-    public var showWorkflow: () -> Void = {}
-    public var backTo: String?
-    public var machine: MachineRow?
-    public var showMachine: () -> Void = {}
-
-    public init(
-        draft: Binding<String>? = nil,
-        files: [String] = [],
-        send: (() -> Void)? = nil,
-        attach: @escaping ([Attachment]) -> Void = { _ in },
-        detach: @escaping (Int) -> Void = { _ in },
-        stop: @escaping () -> Void = {},
-        steer: @escaping (Int) -> Void = { _ in },
-        unqueue: @escaping (Int) -> Void = { _ in },
-        answer: @escaping (Int, BlockAction) -> Void = { _, _ in },
-        answering: Set<Int> = [],
-        back: @escaping () -> Void = {}
-    ) {
-        self.draft = draft
-        self.files = files
-        self.send = send
-        self.attach = attach
-        self.detach = detach
-        self.stop = stop
-        self.steer = steer
-        self.unqueue = unqueue
-        self.answer = answer
-        self.answering = answering
-        self.back = back
-    }
-}
-
 public struct ChatView: View {
     @Environment(\.look) private var look
     private let persona: Persona
@@ -74,10 +22,9 @@ public struct ChatView: View {
                 Scroller(end: true) {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(items) { item in
-                            ItemView(item: item) { actions.retry(item.id) }.environment(\.act) {
-                                actions.answer(item.id, $0)
-                            }
-                            .disabled(actions.answering.contains(item.id))
+                            ItemView(item: item, retry: { actions.retry(item.id) }, view: actions.view)
+                                .environment(\.act) { actions.answer(item.id, $0) }
+                                .disabled(actions.answering.contains(item.id))
                         }
                     }
                     .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 16)
@@ -168,11 +115,11 @@ internal struct ChatHeader: View {
                     Button(action: actions.back) { RoundButton(symbol: "chevron.left", ascii: "<", size: 40) }
                         .buttonStyle(.plain).accessibilityLabel("Back")
                 }
-                Avatar(persona: persona, size: 38)
+                sheet { Avatar(persona: persona, size: 38) }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(persona.name).ui(16, .semibold, look)
+                    sheet { Text(persona.name).ui(16, .semibold, look) }
                     HStack(spacing: 6) {
-                        AgentChip(persona: persona)
+                        chip
                         if let machine = actions.machine {
                             Button(action: actions.showMachine) { MachineChipLabel(machine: machine) }
                                 .buttonStyle(.plain).accessibilityLabel("Machine \(machine.title)")
@@ -180,12 +127,33 @@ internal struct ChatHeader: View {
                     }
                 }
                 Spacer(minLength: 4)
+                if let new = actions.new {
+                    Button(action: new) { RoundButton(symbol: "plus", ascii: "+", size: 40) }
+                        .buttonStyle(.plain).accessibilityLabel("New chat")
+                }
                 more
             }
             if !chips.isEmpty || actions.workflow != nil { plugins }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(palette.line).frame(height: 0.5) }
+    }
+
+    private func sheet(_ label: () -> some View) -> some View {
+        Button {
+            actions.persona?()
+        } label: {
+            label()
+        }
+        .buttonStyle(.plain).accessibilityLabel(persona.name)
+    }
+
+    @ViewBuilder private var chip: some View {
+        if let choices = actions.choices {
+            AgentMenu(persona: persona, choices: choices, effort: false, pick: actions.agent, set: actions.model)
+        } else {
+            AgentChip(persona: persona)
+        }
     }
 
     @ViewBuilder private var more: some View {
@@ -209,10 +177,15 @@ internal struct ChatHeader: View {
                 Button {
                     actions.open(index)
                 } label: {
-                    Text(look.mono ? "[\(plugin.lowercased())]" : plugin).ui(13, .semibold, look)
-                        .foregroundStyle(look.palette.green)
-                        .padding(.horizontal, 12).frame(height: 30)
-                        .modifier(RoundSurface(look: look))
+                    HStack(spacing: 6) {
+                        Text(look.mono ? "[\(plugin.lowercased())]" : plugin)
+                        if let count = actions.counts.indices.contains(index) ? actions.counts[index] : nil {
+                            Badge(count: count, tint: look.palette.red)
+                        }
+                    }
+                    .ui(13, .semibold, look).foregroundStyle(look.palette.green)
+                    .padding(.horizontal, 12).frame(height: 30)
+                    .modifier(RoundSurface(look: look))
                 }
                 .buttonStyle(.plain)
             }

@@ -9,7 +9,7 @@ use std::{
     io::{self, Write},
     path::Path,
     sync::{Mutex, OnceLock, PoisonError},
-    time::{Instant, SystemTime, UNIX_EPOCH},
+    time::{Instant, UNIX_EPOCH},
 };
 
 use serde_json::{Value, json};
@@ -25,7 +25,7 @@ struct Log {
 static LOG: OnceLock<Log> = OnceLock::new();
 
 fn now() -> u64 {
-    SystemTime::now()
+    crate::clock::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
@@ -41,20 +41,22 @@ pub fn init(data: &Path, slow_ms: u64) -> io::Result<()> {
         .create(true)
         .append(true)
         .open(data.join(FILE))?;
-    let _ = LOG.set(Log {
+    LOG.set(Log {
         file: Mutex::new(file),
         slow_ms,
-    });
+    })
+    .ok();
     Ok(())
 }
 
 fn write(log: &Log, mut line: Value, start: Instant) {
-    line["at"] = now().into();
-    line["ms"] = u64::try_from(start.elapsed().as_millis())
-        .unwrap_or(u64::MAX)
-        .into();
+    if let Some(o) = line.as_object_mut() {
+        o.insert("at".to_owned(), now().into());
+        let ms = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
+        o.insert("ms".to_owned(), ms.into());
+    }
     let mut file = log.file.lock().unwrap_or_else(PoisonError::into_inner);
-    let _ = writeln!(file, "{line}");
+    writeln!(file, "{line}").ok();
 }
 
 /// One HTTP request (or SSE stream opened) since `start`: its method, route pattern (`/threads/{id}`) and status.
@@ -64,7 +66,7 @@ pub fn request(method: &str, route: &str, status: u16, start: Instant) {
     let name = format!("{method} {route}");
     let slow = ms >= u128::from(log.slow_ms);
     if slow {
-        eprintln!("cooee: slow: {name} {status} {ms} ms");
+        crate::note!("cooee: slow: {name} {status} {ms} ms");
     }
     let level = if slow { "warn" } else { "debug" };
     let line = json!({ "level": level, "kind": "http", "name": name, "status": status });
@@ -86,7 +88,8 @@ pub fn first_token(thread: &str, agent: &str, start: Instant) {
 }
 
 fn rank(sorted: &[u64], p: usize) -> u64 {
-    sorted[(sorted.len() * p).div_ceil(100).max(1) - 1]
+    let at = (sorted.len() * p).div_ceil(100).max(1) - 1;
+    sorted.get(at).copied().unwrap_or(0)
 }
 
 /// `perf.log`'s lines `at` or after `since` as a Markdown table: count, p50, p95 and max in ms per route, shed
@@ -99,14 +102,14 @@ pub fn table(log: &str, since: u64) -> String {
             continue;
         };
         let (Some(at), Some(ms), Some(kind), Some(name)) = (
-            l["at"].as_u64(),
-            l["ms"].as_u64(),
-            l["kind"].as_str(),
-            l["name"].as_str(),
+            l.get("at").and_then(Value::as_u64),
+            l.get("ms").and_then(Value::as_u64),
+            l.get("kind").and_then(Value::as_str),
+            l.get("name").and_then(Value::as_str),
         ) else {
             continue;
         };
-        let name = match l["via"].as_str() {
+        let name = match l.get("via").and_then(Value::as_str) {
             Some(via) => format!("{name} ({via})"),
             None => name.to_owned(),
         };
@@ -118,8 +121,8 @@ pub fn table(log: &str, since: u64) -> String {
         "| kind | name | n | p50 ms | p95 ms | max ms |\n|---|---|--:|--:|--:|--:|\n".to_owned();
     for ((kind, name), mut ms) in rows {
         ms.sort_unstable();
-        let (n, p50, p95, max) = (ms.len(), rank(&ms, 50), rank(&ms, 95), ms[ms.len() - 1]);
-        let _ = writeln!(out, "| {kind} | {name} | {n} | {p50} | {p95} | {max} |");
+        let (n, p50, p95, max) = (ms.len(), rank(&ms, 50), rank(&ms, 95), rank(&ms, 100));
+        writeln!(out, "| {kind} | {name} | {n} | {p50} | {p95} | {max} |").ok();
     }
     out
 }

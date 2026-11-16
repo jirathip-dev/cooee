@@ -1,9 +1,6 @@
-use std::{
-    sync::mpsc,
-    time::{Duration, Instant},
-};
+use std::{sync::mpsc, time::Duration};
 
-use cooee_core::{Body, Change, Item, personas};
+use cooee_core::{Body, Change, Item, agents};
 
 use super::{Hub, HubError, lock, now};
 
@@ -31,7 +28,7 @@ impl Hub {
         wait: Duration,
     ) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
-        let found = |p: &str| personas::find(self.config_dir(), &self.data, p).ok();
+        let found = |p: &str| agents::find(self.config_dir(), &self.data, p).ok();
         let name = found(target).map_or_else(|| target.to_owned(), |p| p.name);
         let card = |thread: &str, outcome: &str| Body::Ask {
             persona: target.to_owned(),
@@ -64,7 +61,7 @@ impl Hub {
             (m.asked_by == id && m.profile == target && !m.closed).then(|| m.id.clone())
         });
         let (rid, by) = (format!("ask-{key}-{}", now()), format!("[{}]:", asker.name));
-        let start = Instant::now();
+        let start = cooee_core::clock::instant();
         let sent = match open {
             Some(x) => self.send_after(&x, message, &rid, &[], &by).map(|_| x),
             None => self.seat(target, (message, &rid), |r| {

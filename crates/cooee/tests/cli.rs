@@ -31,7 +31,9 @@ fn unknown_args_and_config_keys_fail() {
             .code(),
         Some(2)
     );
-    let config = env::temp_dir().join(format!("cooee-bad-config-{}.toml", std::process::id()));
+    let config = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-bad-config-{}.toml", std::process::id())),
+    );
     fs::write(&config, "prot = 1\n").unwrap();
     let out = Command::new(BIN)
         .arg("serve")
@@ -57,12 +59,14 @@ fn get(addr: &str, path: &str) -> String {
 
 #[test]
 fn serve_listens_on_localhost_at_the_configured_port() {
-    let config = env::temp_dir().join(format!("cooee-config-{}.toml", std::process::id()));
+    let config = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-config-{}.toml", std::process::id())),
+    );
     fs::write(
         &config,
         format!(
             "port = 0\ndata = {:?}\n",
-            env::temp_dir().join("cooee-cli-data")
+            cooee_core::scratch::owned(env::temp_dir().join("cooee-cli-data"))
         ),
     )
     .unwrap();
@@ -98,7 +102,9 @@ fn serve_listens_on_localhost_at_the_configured_port() {
 
 #[test]
 fn listening_beyond_localhost_needs_allowed_hosts() {
-    let config = env::temp_dir().join(format!("cooee-bind-{}.toml", std::process::id()));
+    let config = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-bind-{}.toml", std::process::id())),
+    );
     fs::write(&config, "port = 0\nbind = \"0.0.0.0\"\n").unwrap();
     let out = Command::new(BIN)
         .args(["serve", "--config"])

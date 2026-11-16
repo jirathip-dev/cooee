@@ -25,15 +25,28 @@ internal struct ChatScreen: View {
             back: onBack
         )
         actions.retry = { store.send(.outbox(.retry($0))) }
+        actions.view = { store.send(.delegate(.persona(store.persona.id))) }
         let (places, attachable) = (store.places, store.attachable)
         actions.places = places.map(\.label)
+        actions.counts = places.map(\.count)
+        actions.new = store.persona.api.id.isEmpty ? nil : { store.send(.new) }
         actions.open = { store.send(.plugins(.open(places[$0]))) }
         actions.attachable = attachable.map(\.name)
         actions.attachPlugin = { store.send(.plugins(.attach(attachable[$0]))) }
+        return extras(store, actions)
+    }
+
+    private static func extras(_ store: StoreOf<ChatFeature>, _ chat: ChatActions) -> ChatActions {
+        var actions = chat
         actions.workflow = store.workflow.map { Workflow.issues($0).count(where: \.needsYou) }
         actions.showWorkflow = { store.send(.workflow(.show(true))) }
         actions.workflowOpen = store.workflowOpen
         actions.step = store.step
+        guard !store.persona.api.id.isEmpty else { return actions }
+        actions.persona = { store.send(.profile) }
+        actions.choices = PersonaChoices(agents: store.agents, models: store.models, efforts: store.efforts)
+        actions.agent = { store.send(.pick(.agent($0))) }
+        actions.model = { store.send(.pick(.model($0, $1))) }
         return actions
     }
 
@@ -60,6 +73,7 @@ internal struct ChatScreen: View {
         .environment(\.editPersona) { store.send(.delegate(.persona($0))) }
         .task { await store.send(.task).finish() }
         .task { await store.send(.plugins(.load)).finish() }
+        .task { await store.send(.pick(.load)).finish() }
         .task { await store.send(.machine(.load)).finish() }
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachScreen(store: $0) }

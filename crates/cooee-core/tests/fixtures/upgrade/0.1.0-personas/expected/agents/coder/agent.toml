@@ -1,0 +1,5 @@
+name = "Coder"
+style = "chat"
+avatar = "idle"
+agent = "fake-acp"
+policy = "allow"

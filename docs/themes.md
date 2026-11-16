@@ -3,6 +3,10 @@
 cooee's look follows herdsman's data-only theme contract (herdsman `docs/themes.md`), as the #7 design
 (`docs/design/look/`) draws it. A theme is a folder of data and a scheme is a JSON file. Neither holds code.
 
+## Today
+
+- **Looks:** Modern, Terminal and Scene styles; farm, kitchen and garden theme packs (#65, #66, #67).
+
 ## A theme pack: `themes/<name>/`
 
 A theme is one coherent pack: a folder, or a folder of a git repo. Only `plain` is built in;
@@ -88,3 +92,9 @@ Scene is offered only with Figures `sprite` (so never with plain).
 `Theme::push_body(key, line)` gives the body of a push: the theme word, the plain word, then the agent's line, as in
 `at the gate · needs you · codex: Edit src/pair.rs?`. The plain theme says `needs you · …`. Push uses
 the server's default theme (`theme` in `config.toml`), because a device's own pick never leaves that device.
+
+## The native look sheet's API
+
+The native look sheet's themes (#252): `GET /api/v1/looks` answers the installed packs as they are now, as JSON:
+`{themes: {name: theme.json}, schemes: {name: {label, color-scheme, tokens}}, …}`. Each pack's files are
+at `GET /look/{theme}/sprites.svg`, `scene.svg` and `icon.png`, with no cookie.

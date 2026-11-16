@@ -39,6 +39,7 @@ const KINDS: [(&str, &[&str], &[&str]); 8] = [
 const PLACES: [&str; 9] = [
     "push", "sheet", "panel", "column", "strip", "cards", "menu", "inline", "hidden",
 ];
+const TRANSITIONS: [&str; 4] = ["push", "sheet", "fade", "none"];
 const LOCKED: [&str; 2] = ["/screens/pairing", "/screens/reset-layout"];
 
 /// Why a layout was refused, and where: `line` and `col` count from 1.
@@ -71,19 +72,16 @@ pub fn check(text: &str) -> Result<Value, Broken> {
         col: e.column(),
         why: e.to_string(),
     })?;
-    if file["format"].as_f64() != Some(1.0) {
-        return Err(at(
-            "\"format\"",
-            0,
-            format!("format {} is not 1", file["format"]),
-        ));
+    let format = file.get("format").unwrap_or(&Value::Null);
+    if format.as_f64() != Some(1.0) {
+        return Err(at("\"format\"", 0, format!("format {format} is not 1")));
     }
-    if file["root"]["type"] != "nav" {
+    let root = file.get("root").unwrap_or(&Value::Null);
+    if root.get("type").is_none_or(|t| t != "nav") {
         return Err(at("\"root\"", 0, "root: not a nav".into()));
     }
     let mut ids: HashSet<String> = ["pairing", "reset-layout"].map(str::to_owned).into();
-    node(&file["root"], "root", 1, &mut ids)
-        .map_err(|(why, bad, nth)| at(&format!("{bad:?}"), nth, why))?;
+    node(root, "root", 1, &mut ids).map_err(|(why, bad, nth)| at(&format!("{bad:?}"), nth, why))?;
     Ok(file)
 }
 
@@ -134,6 +132,15 @@ fn node(
     if !place.is_null() && named == [None; 3] {
         return fail("no place in", "place");
     }
+    if let Some(t) = n.get("transition") {
+        let name = t.as_str().unwrap_or_default();
+        if !TRANSITIONS.contains(&name) {
+            return fail(
+                "unknown transition",
+                if name.is_empty() { "transition" } else { name },
+            );
+        }
+    }
     for k in n["config"].as_object().into_iter().flat_map(|o| o.keys()) {
         if !config.contains(&k.as_str()) {
             return fail("unknown config", k);
@@ -152,7 +159,7 @@ fn node(
 
 fn merged(mut layout: Value, plugins: &[Manifest]) -> (Value, Vec<String>) {
     let mut placed = Vec::new();
-    sources(&layout["root"], &mut placed);
+    sources(layout.get("root").unwrap_or(&Value::Null), &mut placed);
     for m in plugins.iter().filter(|m| !placed.contains(&m.name)) {
         let screens = m
             .places
@@ -164,10 +171,24 @@ fn merged(mut layout: Value, plugins: &[Manifest]) -> (Value, Vec<String>) {
                 PlaceKind::ChatCards => ("chat", "cards", "cards"),
                 PlaceKind::MenuRow => ("nav", "menu", "menu"),
             };
-            let Some(host) = find(&mut layout["root"], kind) else {
+            let Some(host) = layout.get_mut("root").and_then(|r| find(r, kind)) else {
                 continue;
             };
-            let list = &mut host["slots"][slot];
+            let Some(slots) = host
+                .as_object_mut()
+                .map(|h| h.entry("slots").or_insert(Value::Null))
+            else {
+                continue;
+            };
+            if slots.is_null() {
+                *slots = json!({});
+            }
+            let Some(list) = slots
+                .as_object_mut()
+                .map(|s| s.entry(slot).or_insert(Value::Null))
+            else {
+                continue;
+            };
             if list.is_null() {
                 *list = json!([]);
             }
@@ -180,7 +201,9 @@ fn merged(mut layout: Value, plugins: &[Manifest]) -> (Value, Vec<String>) {
         }
     }
     let mut skipped = Vec::new();
-    prune(&mut layout["root"], "root", plugins, &mut skipped);
+    if let Some(root) = layout.get_mut("root") {
+        prune(root, "root", plugins, &mut skipped);
+    }
     (layout, skipped)
 }
 
@@ -286,7 +309,7 @@ impl Layouts {
         std::thread::spawn(move || {
             loop {
                 again.reload();
-                std::thread::sleep(Duration::from_secs(1));
+                cooee_core::clock::sleep(Duration::from_secs(1));
             }
         });
         me
@@ -307,7 +330,7 @@ impl Layouts {
             }
             Err(b) => ("broken", json!(s.broken.insert(b))),
         };
-        let _ = self.tx.send((said.0, said.1.to_string()));
+        self.tx.send((said.0, said.1.to_string())).ok();
     }
 
     fn reset(&self) -> io::Result<()> {

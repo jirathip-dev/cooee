@@ -19,7 +19,7 @@ internal struct Frame: Sendable, CustomTestStringConvertible {
     internal func styled(_ other: LookStyle) -> Frame {
         Frame(
             name: "\(name)@\(other.rawValue)", width: width, height: height, palette: palette, style: other,
-            phone: phone, view: view
+            phone: phone, folder: folder, view: view
         )
     }
 
@@ -43,7 +43,7 @@ extension Frame {
     private static let phoneHeight: CGFloat = 874
 
     internal static var all: [Frame] {
-        designs + styled + settings + missingPoster + QueueFrames.all + DiagramFrames.all
+        designs + styled + settings + missingPoster + additions + QueueFrames.all + DiagramFrames.all
     }
 
     internal static var everyStyle: [Frame] {
@@ -166,6 +166,19 @@ extension Frame {
                 Color.clear.overlay(alignment: .top) { BlocksView(card, source: nil).padding(BlocksView.inset) }
             }
             return LookStyle.allCases.map(frame.styled)
+        }
+    }
+
+    private static var additions: [Frame] {
+        BlockAdditions.Addition.allCases.flatMap { addition in
+            let wide = addition == .refresh
+            let frame = Frame(
+                name: "additions-\(addition.rawValue)", width: wide ? 960 : phoneWidth,
+                height: wide ? 640 : phoneHeight,
+                palette: .farmDark, style: .modern, phone: !wide, folder: "v3-additions",
+                view: { AnyView(BlockAdditions(addition)) }
+            )
+            return [frame, frame.styled(.terminal), frame.styled(.scene)]
         }
     }
 

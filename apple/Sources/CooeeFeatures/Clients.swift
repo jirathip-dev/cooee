@@ -14,6 +14,7 @@ public struct PairingClient: Sendable {
 public struct ThreadsClient: Sendable {
     public var home: @Sendable (_ server: Server) async throws -> HomeAnswer
     public var personas: @Sendable (_ server: Server) async throws -> [APIPersona]
+    public var looks: @Sendable (_ server: Server) async throws -> Looks
     public var messages: @Sendable (_ server: Server, _ thread: String) async throws -> Slice
     public var events:
         @Sendable (_ server: Server, _ thread: String, _ since: String) -> AsyncThrowingStream<StreamEvent, any Error> =
@@ -25,11 +26,15 @@ public struct ThreadsClient: Sendable {
     public var unqueue: @Sendable (_ server: Server, _ thread: String, _ randomID: String) async throws -> Void
     public var stop: @Sendable (_ server: Server, _ thread: String) async throws -> Void
     public var read: @Sendable (_ server: Server, _ thread: String, _ item: Int) async throws -> Void
+    public var model:
+        @Sendable (_ server: Server, _ thread: String, _ model: String, _ effort: String) async throws -> Void
     public var answer:
         @Sendable (_ server: Server, _ thread: String, _ item: Int, _ option: String, _ value: String?) async throws
             -> Void
     public var start:
-        @Sendable (_ server: Server, _ persona: APIPersona, _ machine: String, _ text: String) async throws -> String
+        @Sendable (_ server: Server, _ persona: APIPersona, _ machine: String, _ text: String, _ setup: Bool)
+            async throws
+            -> String
     public var move: @Sendable (_ server: Server, _ thread: String, _ machine: String) async throws -> Void
     public var retry: @Sendable (_ server: Server, _ thread: String) async throws -> Void
     public var room: @Sendable (_ server: Server, _ title: String, _ members: [String]) async throws -> String
@@ -41,6 +46,7 @@ public struct ThreadsClient: Sendable {
 @DependencyClient
 public struct PersonasClient: Sendable {
     public var create: @Sendable (_ server: Server, _ persona: APIPersona) async throws -> APIPersona
+    public var remove: @Sendable (_ server: Server, _ persona: String) async throws -> Void
     public var agents: @Sendable (_ server: Server) async throws -> [AgentOption]
     public var models: @Sendable (_ server: Server) async throws -> [ModelList]
     public var machines: @Sendable (_ server: Server) async throws -> [MachineRow]
@@ -51,6 +57,11 @@ public struct PersonasClient: Sendable {
 public struct PushClient: Sendable {
     public var token: @Sendable () async throws -> String
     public var register: @Sendable (_ server: Server, _ token: String, _ enabled: Bool) async throws -> Void
+}
+
+@DependencyClient
+public struct OwnerCheck: Sendable {
+    public var confirm: @Sendable (_ reason: String) async -> Bool = { _ in false }
 }
 
 @DependencyClient
@@ -78,6 +89,9 @@ public struct NearbyClient: Sendable {
 
 @DependencyClient
 public struct MacServerClient: Sendable {
+    public var existing: @Sendable () async -> ExistingInstall = { .none }
+    public var useExisting: @Sendable () async throws -> Void
+    public var takeOver: @Sendable (_ labels: [String]) async throws -> Void
     public var start: @Sendable () async throws -> LoginItems
     public var folders: @Sendable () async -> [String] = { [] }
     public var addFolder: @Sendable (_ path: String) async throws -> Void
@@ -104,6 +118,10 @@ extension PersonasClient: TestDependencyKey {
 
 extension PushClient: TestDependencyKey {
     public static let testValue = PushClient()
+}
+
+extension OwnerCheck: TestDependencyKey {
+    public static let testValue = OwnerCheck()
 }
 
 extension SettingsStore: TestDependencyKey {
@@ -145,6 +163,11 @@ extension DependencyValues {
     public var push: PushClient {
         get { self[PushClient.self] }
         set { self[PushClient.self] = newValue }
+    }
+
+    public var ownerCheck: OwnerCheck {
+        get { self[OwnerCheck.self] }
+        set { self[OwnerCheck.self] = newValue }
     }
 
     public var settingsStore: SettingsStore {

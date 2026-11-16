@@ -1,9 +1,8 @@
 use std::{
-    env, fs, io,
+    fs, io,
     net::{Ipv4Addr, SocketAddr, TcpStream},
     path::Path,
-    process::{Command, Stdio},
-    thread,
+    process::Stdio,
     time::Duration,
 };
 
@@ -13,7 +12,7 @@ use crate::{
     cli::load,
     devices::pair,
     doctor::doctor,
-    service::{job, plist, tailnet_name, write_plist},
+    service::{job, plist, refuse_app, tailnet_name, write_plist},
 };
 
 /// `cooee setup`'s flags.
@@ -26,8 +25,11 @@ pub struct Setup {
 }
 
 pub(crate) fn ok(argv: &[&str]) -> bool {
-    Command::new(argv[0])
-        .args(&argv[1..])
+    let Some((prog, rest)) = argv.split_first() else {
+        return false;
+    };
+    cooee_core::runner::command(prog)
+        .args(rest)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()
@@ -35,7 +37,8 @@ pub(crate) fn ok(argv: &[&str]) -> bool {
 }
 
 pub(crate) fn output(argv: &[&str]) -> Option<String> {
-    let out = Command::new(argv[0]).args(&argv[1..]).output().ok()?;
+    let (prog, rest) = argv.split_first()?;
+    let out = cooee_core::runner::command(prog).args(rest).output().ok()?;
     out.status
         .success()
         .then(|| String::from_utf8_lossy(&out.stdout).into_owned())
@@ -45,7 +48,7 @@ pub(crate) fn wait(f: impl Fn() -> bool) -> bool {
     (0..40).any(|_| {
         let done = f();
         if !done {
-            thread::sleep(Duration::from_millis(250));
+            cooee_core::clock::sleep(Duration::from_millis(250));
         }
         done
     })
@@ -55,11 +58,12 @@ impl Setup {
     fn exec(&self, argv: &[&str]) -> Result<(), String> {
         let line = argv.join(" ");
         if self.dry_run {
-            println!("  would run: {line}");
+            cooee_core::say!("  would run: {line}");
             return Ok(());
         }
-        println!("  $ {line}");
-        let status = Command::new(argv[0]).args(&argv[1..]).status();
+        cooee_core::say!("  $ {line}");
+        let (prog, rest) = argv.split_first().ok_or("nothing to run")?;
+        let status = cooee_core::runner::command(prog).args(rest).status();
         match status {
             Ok(s) if s.success() => Ok(()),
             Ok(s) => Err(format!("`{line}` failed ({s})")),
@@ -74,11 +78,11 @@ impl Setup {
         f: impl FnOnce() -> Result<(), String>,
     ) -> Result<(), String> {
         if self.dry_run {
-            println!("  would write {}:\n{text}", file.display());
+            cooee_core::say!("  would write {}:\n{text}", file.display());
             return Ok(());
         }
         f()?;
-        println!("  wrote {}", file.display());
+        cooee_core::say!("  wrote {}", file.display());
         Ok(())
     }
 
@@ -86,15 +90,16 @@ impl Setup {
         if self.yes {
             return default.to_owned();
         }
-        println!("  {question}");
+        cooee_core::say!("  {question}");
         let mut line = String::new();
-        let _ = io::stdin().read_line(&mut line);
+        io::stdin().read_line(&mut line).ok();
         let line = line.trim();
         (if line.is_empty() { default } else { line }).to_owned()
     }
 
     /// Every step, in order, then the pairing code.
     pub fn run(&self, path: &Path) -> Result<(), String> {
+        refuse_app()?;
         let uid = output(&["id", "-u"]).ok_or("`id -u` failed")?;
         let gui = format!("gui/{}", uid.trim());
         let updated = self.shed()?;
@@ -106,13 +111,13 @@ impl Setup {
         self.service(&config, path, &gui, false, "update")?;
         self.tailnet(config.port)?;
         if self.dry_run {
-            println!("would run: cooee doctor, then cooee pair");
+            cooee_core::say!("would run: cooee doctor, then cooee pair");
             return Ok(());
         }
-        println!("doctor:");
+        cooee_core::say!("doctor:");
         doctor(&config)
             .map_err(|e| format!("doctor: {e}\nfix it, then run `cooee setup` again"))?;
-        println!("\npair your phone:");
+        cooee_core::say!("\npair your phone:");
         pair(&config)
     }
 
@@ -147,7 +152,7 @@ impl Setup {
         match other {
             Some(e) if !loaded => return Err(held(e)),
             _ if loaded => {
-                println!("  warn: restarting shed serve ends every running shed session");
+                cooee_core::say!("  warn: restarting shed serve ends every running shed session");
                 if self
                     .ask("restart it now? [Y/n]", "y")
                     .starts_with(['n', 'N'])
@@ -166,7 +171,7 @@ impl Setup {
                 &format!("{gui}/{SHED_LABEL}"),
             ])?;
         } else {
-            let home = env::var_os("HOME").ok_or("no HOME")?;
+            let home = cooee_core::env_var("HOME").ok_or("no HOME")?;
             let file = Path::new(&home).join(format!("Library/LaunchAgents/{SHED_LABEL}.plist"));
             self.exec(&["launchctl", "bootstrap", gui, &file.display().to_string()])?;
         }
@@ -208,7 +213,9 @@ impl Setup {
             match tailnet_name() {
                 Some(name) => add.push(format!("allowed_hosts = [{name:?}]")),
                 None => {
-                    println!("  note: no tailnet name (is Tailscale up?): allowed_hosts left out");
+                    cooee_core::say!(
+                        "  note: no tailnet name (is Tailscale up?): allowed_hosts left out"
+                    );
                 }
             }
         }
@@ -240,7 +247,7 @@ impl Setup {
                 let what: Vec<&str> = what
                     .chain((!has).then_some("the terminal plugin"))
                     .collect();
-                println!("  note: kept its keys; adding {}", what.join(", "));
+                cooee_core::say!("  note: kept its keys; adding {}", what.join(", "));
             }
             let head: String = add.iter().flat_map(|k| [k.as_str(), "\n"]).collect();
             let new = format!("{head}{text}{plugin}");
@@ -265,7 +272,7 @@ impl Setup {
         let e = |e: io::Error| e.to_string();
         let t = match cooee_server::Themes::new(config) {
             Err(_) if self.dry_run => {
-                println!("themes:\n  would install farm and ask which other themes to install");
+                cooee_core::say!("themes:\n  would install farm and ask which other themes to install");
                 return Ok(());
             }
             t => t.map_err(e)?,
@@ -295,12 +302,14 @@ impl Setup {
         }
         for name in farm.into_iter().chain(want) {
             if self.dry_run {
-                println!("  would install theme {name}");
+                cooee_core::say!("  would install theme {name}");
                 continue;
             }
             match t.plan(name, None).and_then(|p| t.add(&p)) {
-                Ok(()) => println!("  installed theme {name}"),
-                Err(why) => println!("  theme {name}: {why}\n  later: cooee theme add {name}"),
+                Ok(()) => cooee_core::say!("  installed theme {name}"),
+                Err(why) => {
+                    cooee_core::say!("  theme {name}: {why}\n  later: cooee theme add {name}");
+                }
             }
         }
         Ok(())
@@ -376,7 +385,11 @@ impl Setup {
     fn tailnet(&self, port: u16) -> Result<(), String> {
         let served = output(&["tailscale", "serve", "status", "--json"])
             .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
-            .is_some_and(|s| !s["TCP"][port.to_string()].is_null());
+            .is_some_and(|s| {
+                s.get("TCP")
+                    .and_then(|t| t.get(port.to_string()))
+                    .is_some_and(|p| !p.is_null())
+            });
         if !step(&format!("tailscale serve {port}"), served) {
             let (https, to) = (
                 format!("--https={port}"),
@@ -389,6 +402,6 @@ impl Setup {
 }
 
 fn step(name: &str, done: bool) -> bool {
-    println!("{name}:{}", if done { " done, skipped" } else { "" });
+    cooee_core::say!("{name}:{}", if done { " done, skipped" } else { "" });
     done
 }

@@ -13,7 +13,11 @@ internal struct PinnedRow: View {
         switch look.style {
         case .scene:
             ZStack(alignment: .bottom) {
-                Sprite(name: "scene-strip").scaledToFill().frame(height: 180).clipped()
+                if let art = look.art {
+                    PackArt(art: art, path: "scene.svg").frame(height: 180)
+                } else {
+                    Sprite(name: "scene-strip").scaledToFill().frame(height: 180).clipped()
+                }
                 strip.padding(.bottom, 8)
             }
             .frame(height: 180)

@@ -45,4 +45,26 @@ internal struct MacServerTests {
         #expect(LoginItems(cooee: .enabled, shed: .missing).summary == "cooee on · shed not found")
         #expect(LoginItems(cooee: .off, shed: .enabled).summary == "cooee off · shed on")
     }
+
+    @Test internal func anExistingInstallIsFoundFromLaunchctlAndThePortsListener() {
+        let head = "PID\tStatus\tLabel\n-\t0\tcom.apple.Finder\n"
+        let cli = "412\t0\tdev.cooee.cooee\n413\t0\tdev.shed.serve\n"
+        let app = "500\t0\tcom.jirathip.cooee.serve\n501\t0\tcom.jirathip.cooee.shed\n"
+        let cooee = "p412\nccooee\nf7\n"
+        func found(_ listed: String, _ listener: String = "") -> ExistingInstall {
+            ExistingInstall(launchctl: head + listed, listener: listener, port: 4747)
+        }
+        #expect(found("") == .none)
+        #expect(found(cli, cooee) == .cli(labels: ["dev.cooee.cooee", "dev.shed.serve"]))
+        #expect(found("9\t0\tdev.cooee.work\n") == .cli(labels: ["dev.cooee.work"]))
+        #expect(found("", cooee) == .cli(labels: []))
+        #expect(found(app, "p500\nccooee\n") == .app)
+        #expect(found(cli + app, cooee) == .both(labels: ["dev.cooee.cooee", "dev.shed.serve"]))
+        #expect(found("413\t0\tdev.shed.serve\n", "p77\ncnode\n") == .portTaken(port: 4747, program: "node"))
+        #expect(found(cli + app).labels == ["dev.cooee.cooee", "dev.shed.serve"] && found(app).labels.isEmpty)
+        let cliFlags = [
+            found(cli), found(cli + app), found("", cooee), found(""), found(app), found("", "p1\ncnode\n"),
+        ]
+        #expect(cliFlags.map(\.cli) == [true, true, true, false, false, false])
+    }
 }

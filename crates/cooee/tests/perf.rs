@@ -146,7 +146,7 @@ fn cooee_perf_turns_a_log_into_the_table() {
     let ago = |min: u128| now - min * 60_000;
     let mut log = String::new();
     for (i, ms) in [5, 1, 9, 3, 7, 2, 8, 4, 6, 10].iter().enumerate() {
-        let l = json!({ "at": ago(1 + i as u128), "level": "debug", "kind": "http", "name": "GET /threads", "status": 200, "ms": ms });
+        let l = json!({ "at": ago(1 + u128::try_from(i).unwrap()), "level": "debug", "kind": "http", "name": "GET /threads", "status": 200, "ms": ms });
         writeln!(log, "{l}").unwrap();
     }
     let lines = [

@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use cooee_core::shed_proto::{ApprovalOption, EventKind, Reported};
 
 use super::*;
@@ -24,8 +22,10 @@ fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
 }
 
 pub(super) fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("cooee-hub-{name}-{}", std::process::id()));
-    let _ = fs::remove_dir_all(&dir);
+    let dir = cooee_core::scratch::owned(
+        std::env::temp_dir().join(format!("cooee-hub-{name}-{}", std::process::id())),
+    );
+    fs::remove_dir_all(&dir).ok();
     fs::create_dir_all(dir.join("data/threads")).unwrap();
     dir
 }
@@ -61,7 +61,7 @@ fn r6_requests_over_a_long_log_are_within_budget() {
     }
     seed(&dir, "long", &lines);
     let hub = hub(&dir);
-    let at = Instant::now();
+    let at = cooee_core::clock::instant();
     let slice = hub.slice("long", Some(500), 50, 50).unwrap();
     let newest = hub.slice("long", None, 500, 0).unwrap();
     let rows = hub.list();
@@ -259,7 +259,7 @@ fn prune_drops_only_the_workflow_sessions_shed_no_longer_lists() {
     }
     let hub = hub(&dir);
     let at = now();
-    std::thread::sleep(Duration::from_millis(2));
+    cooee_core::clock::sleep(Duration::from_millis(2));
     hub.apply(event("new", 1, EventKind::Text { text: "w".into() }));
     hub.prune(&[], at);
     let ids: Vec<String> = hub.list().into_iter().map(|r| r.id).collect();
