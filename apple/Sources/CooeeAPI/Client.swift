@@ -27,14 +27,14 @@ public final class Client: Sendable {
     internal let token: String?
     internal let session: URLSession
     internal let retry: Duration
-    internal let clock: any Clock<Duration>
+    internal let clock: any _Concurrency.Clock<Duration>
 
     public init(
         base: URL,
         token: String? = nil,
         configuration: URLSessionConfiguration = .ephemeral,
         retry: Duration = .seconds(2),
-        clock: any Clock<Duration> = ContinuousClock()
+        clock: any _Concurrency.Clock<Duration> = ContinuousClock()
     ) {
         self.base = base
         self.token = token
