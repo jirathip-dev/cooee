@@ -18,12 +18,10 @@ pub const WAIT: Duration = Duration::from_secs(5);
 /// keeps the item for (a self-signed one ties it to one build).
 pub const IDENTITY: &str = "Apple Development";
 
-/// Secret `name`'s file: where Linux keeps it, and where a Mac's waits to be moved.
 fn file(data: &Path, name: &str) -> PathBuf {
     data.join("secrets").join(name)
 }
 
-/// The keychain account prefix of data folder `data`, so two instances never share a secret.
 #[cfg(target_os = "macos")]
 fn prefix(data: &Path) -> String {
     let hash = crate::sha256(data.as_os_str().as_encoded_bytes());
@@ -97,7 +95,6 @@ pub fn names(data: &Path) -> io::Result<Vec<String>> {
     files(data)
 }
 
-/// The secret files in `data` (`.`-names are a launch's hand-off, not secrets).
 fn files(data: &Path) -> io::Result<Vec<String>> {
     let dir = match fs::read_dir(data.join("secrets")) {
         Ok(d) => d,
@@ -139,7 +136,6 @@ pub fn migrate(data: &Path) -> io::Result<Vec<String>> {
     Ok(names)
 }
 
-/// Overwrites `path` with zeros, then removes it.
 fn shred(path: &Path) -> io::Result<()> {
     let len = fs::metadata(path)?.len();
     let mut f = fs::OpenOptions::new().write(true).open(path)?;
@@ -173,7 +169,6 @@ mod keychain {
         ))
     }
 
-    /// Turns keychain prompts off for good: a prompt no one sees is an error, not a wait.
     fn quiet() {
         static OFF: OnceLock<()> = OnceLock::new();
         OFF.get_or_init(|| std::mem::forget(SecKeychain::disable_user_interaction()));
@@ -249,7 +244,6 @@ mod tests {
         d
     }
 
-    /// #713: a keychain call that never returns is a visible error once its time is up, never a hang.
     #[test]
     fn a_keychain_call_that_hangs_is_a_time_out_error() {
         let (_hold, gate) = mpsc::channel::<()>();
@@ -262,7 +256,6 @@ mod tests {
         assert!(e.to_string().contains("didn't answer"), "{e}");
     }
 
-    /// On Linux the 0600 file is the store: saved there, read from there, listed, and never moved.
     #[cfg(not(target_os = "macos"))]
     #[test]
     fn linux_keeps_secrets_in_their_0600_file() {
@@ -282,8 +275,6 @@ mod tests {
         assert!(path.exists());
     }
 
-    /// An unsigned cooee (every test build) never puts a secret in the keychain, where its next build couldn't
-    /// read it: the file stays and the refusal says why.
     #[cfg(target_os = "macos")]
     #[test]
     fn an_unsigned_cooee_leaves_the_file_and_says_why() {

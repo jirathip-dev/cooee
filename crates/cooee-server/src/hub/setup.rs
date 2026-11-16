@@ -1,7 +1,3 @@
-//! `update_persona` (#270): a thread's persona rewrites its own Character and Instructions. A setup chat's update is
-//! saved at once with a line in the chat; any other thread's raises a card with the diff, saved only on approve. The
-//! brief is built when a session starts, so a change shows in the next session.
-
 use cooee_core::{
     Body, Card, Change,
     personas::{self, Persona},
@@ -22,7 +18,6 @@ pub struct Update {
 }
 
 impl Update {
-    /// `p` with the update, and the names of the fields it changes.
     fn apply(&self, mut p: Persona) -> (Persona, Vec<&'static str>) {
         let mut changed = Vec::new();
         for (name, new, old) in [
@@ -38,7 +33,6 @@ impl Update {
     }
 }
 
-/// Each changed field's old lines as `-`, then its new ones as `+`, under its name.
 fn diff(old: &Persona, new: &Persona) -> String {
     let mut out = Vec::new();
     for (name, was, now) in [
@@ -55,7 +49,6 @@ fn diff(old: &Persona, new: &Persona) -> String {
 }
 
 impl Hub {
-    /// Persona `persona`, saved with `u`: the fields it changed.
     fn save_persona(&self, persona: &str, u: &Update) -> Result<Vec<&'static str>, HubError> {
         let refused = |e: std::io::Error| HubError::Refused(e.to_string());
         let config = self.config_dir().ok_or_else(|| {
@@ -123,7 +116,6 @@ impl Hub {
         )
     }
 
-    /// The owner's answer to an `update_persona` card: `approve` saves it.
     pub(super) fn persona_answer(
         &self,
         id: &str,

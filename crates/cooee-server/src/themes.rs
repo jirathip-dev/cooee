@@ -1,9 +1,3 @@
-//! Theme packs (docs/themes.md): `cooee theme add|remove|list` and Settings › look › themes. A pack is a folder or
-//! a folder of a git repo; an installed one is copied into `<config dir>/themes/<name>/` once it passes the theme
-//! gate, and pinned in `<data>/themes.lock` (its source and commit). `[new theme]` and `[remix]` make one in
-//! `<config dir>/themes-dev/<name>/` for an agent to build; `[keep]` moves it into `themes/` only once it passes the
-//! gate, and `[publish]` makes it a git repo of its own.
-
 use std::{
     fs, io,
     path::{Path, PathBuf},
@@ -11,26 +5,10 @@ use std::{
     sync::Mutex,
 };
 
-use cooee_core::{Config, plugins::Listed};
+use cooee_core::{Config, swag::Swag};
 use serde::{Deserialize, Serialize};
 
 use crate::hub::lock;
-
-/// The starter pack `[new theme]` begins from: the plain words, placeholder sprites and scene.
-const STARTER: [(&str, &str); 3] = [
-    (
-        "theme.json",
-        include_str!("../../../packs/starter/theme.json"),
-    ),
-    (
-        "sprites.svg",
-        include_str!("../../../packs/starter/sprites.svg"),
-    ),
-    (
-        "scene.svg",
-        include_str!("../../../packs/starter/scene.svg"),
-    ),
-];
 
 fn other(why: impl Into<String>) -> io::Error {
     io::Error::other(why.into())
@@ -41,18 +19,18 @@ fn other(why: impl Into<String>) -> io::Error {
 pub struct Pinned {
     /// Its folder in `themes/`.
     pub name: String,
-    /// Where it came from: the index, its git URL or folder, or `made here`.
+    /// Where it came from: its git URL (swag's, for a first-party pack) or folder, or `made here`.
     pub source: String,
     /// The commit it was copied from (none: not a git repo).
     #[serde(default)]
     pub commit: String,
-    /// It came from the index.
+    /// A first-party pack, at swag's pin.
     #[serde(default)]
     pub listed: bool,
 }
 
 /// What `add` would install: its name, source, the folder in the repo and the revision; `text` says so, with "not
-/// reviewed" when it isn't in the index.
+/// reviewed" when it isn't a first-party pack at swag's pin.
 #[derive(Debug, Clone)]
 pub struct Pack {
     /// Its folder in `themes/`.
@@ -63,7 +41,7 @@ pub struct Pack {
     pub path: String,
     /// The revision (a git source).
     pub rev: String,
-    /// It is in the index.
+    /// A first-party pack at swag's pin.
     pub listed: bool,
     /// The confirm, for the owner.
     pub text: String,
@@ -73,7 +51,7 @@ pub struct Pack {
 pub struct Themes {
     dir: PathBuf,
     data: PathBuf,
-    index: Vec<Listed>,
+    swag: Swag,
     ops: Mutex<()>,
 }
 
@@ -93,7 +71,6 @@ fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
     Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
 }
 
-/// Copies folder `from` into `to` (made), all but `.git`; a symlink is refused, never followed.
 fn copy(from: &Path, to: &Path) -> io::Result<()> {
     fs::create_dir_all(to)?;
     for e in fs::read_dir(from)? {
@@ -128,7 +105,7 @@ fn valid(name: &str) -> io::Result<()> {
 }
 
 fn gate(dir: &Path) -> io::Result<()> {
-    cooee_web::check(dir).map_err(|fails| {
+    crate::look::check(dir).map_err(|fails| {
         other(format!(
             "it fails the theme gate:\n  {}",
             fails.join("\n  ")
@@ -137,10 +114,10 @@ fn gate(dir: &Path) -> io::Result<()> {
 }
 
 impl Themes {
-    /// The instance's packs: its config folder, data folder and index (`plugin_index`, else the built-in one).
+    /// The instance's packs: its config and data folders.
     ///
     /// # Errors
-    /// When there is no config or data folder, or the index can't be read.
+    /// When there is no config or data folder.
     pub fn new(config: &Config) -> io::Result<Self> {
         let dir = config
             .dir
@@ -149,29 +126,22 @@ impl Themes {
         let data = config
             .data_dir()
             .ok_or_else(|| other("no data folder: set `data` or HOME"))?;
-        let index = cooee_core::plugins::themes(config.plugin_index.as_deref())?;
         Ok(Self {
             dir,
             data,
-            index,
+            swag: Swag::pinned(),
             ops: Mutex::default(),
         })
     }
 
-    /// The index's packs.
+    /// The first-party packs' names.
     #[must_use]
-    pub fn index(&self) -> &[Listed] {
-        &self.index
+    pub fn first_party(&self) -> Vec<&str> {
+        self.swag.names()
     }
 
     fn installed_dir(&self, name: &str) -> PathBuf {
         self.dir.join("themes").join(name)
-    }
-
-    /// Theme `name`'s folder in `themes-dev/`.
-    #[must_use]
-    pub fn dev_dir(&self, name: &str) -> PathBuf {
-        self.dir.join("themes-dev").join(name)
     }
 
     fn lock_path(&self) -> PathBuf {
@@ -190,7 +160,6 @@ impl Themes {
         }
     }
 
-    /// Pins `p` (`None`: unpins `name`).
     fn pin(&self, name: &str, p: Option<Pinned>) -> io::Result<()> {
         let mut all = self.pinned()?;
         all.retain(|x| x.name != name);
@@ -200,48 +169,46 @@ impl Themes {
         cooee_core::write_private(&self.lock_path(), text.as_bytes())
     }
 
-    /// What adding `source` would install: a name in the index (at its pinned commit), a local folder, or a git URL
-    /// (at `rev`, else its default branch).
+    /// What adding `source` would install: a first-party pack's name (at swag's pin, else at `rev` from swag), a local
+    /// folder, or a git URL (at `rev`, else its default branch).
     ///
     /// # Errors
-    /// When a name isn't in the index, or the name it would take isn't a theme's.
+    /// When a name isn't a first-party pack's, or the name it would take isn't a theme's.
     pub fn plan(&self, source: &str, rev: Option<&str>) -> io::Result<Pack> {
         if rev.is_some_and(|r| r.starts_with('-')) || source.starts_with('-') {
             return Err(other("a source or --rev can't start with -"));
         }
-        let listed = self.index.iter().find(|l| l.name == source);
-        let pack = match listed {
-            Some(l) => Pack {
-                name: l.name.clone(),
-                source: l.url.clone(),
-                path: l.path.clone(),
-                rev: rev.unwrap_or(&l.commit).to_owned(),
-                listed: true,
+        let first = self.swag.names();
+        let pack = if first.contains(&source) {
+            Pack {
+                name: source.to_owned(),
+                source: self.swag.url.clone(),
+                path: format!("packs/{source}"),
+                rev: rev.unwrap_or(&self.swag.commit).to_owned(),
+                listed: rev.is_none_or(|r| r == self.swag.commit),
                 text: String::new(),
-            },
-            None if source.contains('/') || source.contains(':') => {
-                // A folder by its full path, so its pin says where it was.
-                let source = fs::canonicalize(source)
-                    .map_or_else(|_| source.to_owned(), |p| p.to_string_lossy().into_owned());
-                let name = source
-                    .trim_end_matches('/')
-                    .rsplit(['/', ':'])
-                    .next()
-                    .unwrap_or_default();
-                Pack {
-                    name: name.trim_end_matches(".git").to_owned(),
-                    source: source.clone(),
-                    path: String::new(),
-                    rev: rev.unwrap_or("HEAD").to_owned(),
-                    listed: false,
-                    text: String::new(),
-                }
             }
-            None => {
-                return Err(other(format!(
-                    "{source} isn't in the index: add it by its git URL or folder"
-                )));
+        } else if source.contains('/') || source.contains(':') {
+            let source = fs::canonicalize(source)
+                .map_or_else(|_| source.to_owned(), |p| p.to_string_lossy().into_owned());
+            let name = source
+                .trim_end_matches('/')
+                .rsplit(['/', ':'])
+                .next()
+                .unwrap_or_default();
+            Pack {
+                name: name.trim_end_matches(".git").to_owned(),
+                source: source.clone(),
+                path: String::new(),
+                rev: rev.unwrap_or("HEAD").to_owned(),
+                listed: false,
+                text: String::new(),
             }
+        } else {
+            return Err(other(format!(
+                "{source} isn't a first-party theme ({}): add it by its git URL or folder",
+                first.join(" ")
+            )));
         };
         valid(&pack.name)?;
         let at = if pack.path.is_empty() {
@@ -254,13 +221,13 @@ impl Themes {
             pack.name, pack.source, pack.rev
         );
         if !pack.listed {
-            text += "\nnot reviewed: this theme isn't in cooee's index; look at its files before you add it";
+            text += "\nnot reviewed: this isn't a first-party theme at cooee's pin; look at its files before you add it";
         }
         Ok(Pack { text, ..pack })
     }
 
-    /// Installs `pack`: copies it (at its commit, for a git repo) into a staging folder, runs the theme gate on it,
-    /// then moves it into `themes/` and pins it.
+    /// Installs `pack`: copies it (a first-party pack from the build's checked copy, a git repo at its commit) into a
+    /// staging folder, runs the theme gate on it, then moves it into `themes/` and pins it.
     ///
     /// # Errors
     /// When it is installed already, can't be fetched, or fails the gate.
@@ -276,7 +243,9 @@ impl Themes {
         let stage = self.dir.join(".themes-stage").join(&pack.name);
         let _ = fs::remove_dir_all(&stage);
         let folder = Path::new(&pack.source);
-        let commit = if folder.is_dir() {
+        let commit = if pack.listed {
+            self.vendored(&pack.name, &stage)?
+        } else if folder.is_dir() {
             copy(&folder.join(&pack.path), &stage)?;
             git(folder, &["rev-parse", "HEAD"]).unwrap_or_default()
         } else {
@@ -294,19 +263,21 @@ impl Themes {
             &pack.name,
             Some(Pinned {
                 name: pack.name.clone(),
-                source: if pack.listed {
-                    "index".to_owned()
-                } else {
-                    pack.source.clone()
-                },
+                source: pack.source.clone(),
                 commit,
                 listed: pack.listed,
             }),
         )
     }
 
-    /// Fetches `pack`'s repo into its clone in `<data>/themes/<name>.git` and writes its folder at the commit into
-    /// `stage`; returns the commit.
+    fn vendored(&self, name: &str, stage: &Path) -> io::Result<String> {
+        fs::create_dir_all(stage)?;
+        for (file, bytes) in self.swag.files(name)? {
+            fs::write(stage.join(file), bytes)?;
+        }
+        Ok(self.swag.commit.clone())
+    }
+
     fn fetch(&self, pack: &Pack, stage: &Path) -> io::Result<String> {
         let repo = self.data.join("themes").join(format!("{}.git", pack.name));
         if repo.exists() {
@@ -390,110 +361,4 @@ impl Themes {
         rows.sort_by(|a, b| a.name.cmp(&b.name));
         Ok(rows)
     }
-
-    /// `[new theme]` (`from` none: the starter pack) or `[remix]` of installed theme `from`: theme `name`'s folder in
-    /// `themes-dev/`, for an agent to build.
-    ///
-    /// # Errors
-    /// When the name is taken or `from` isn't installed.
-    pub fn start(&self, name: &str, from: Option<&str>) -> io::Result<PathBuf> {
-        let _one = lock(&self.ops);
-        valid(name)?;
-        let dev = self.dev_dir(name);
-        if dev.exists() || self.installed_dir(name).exists() {
-            return Err(other(format!("a theme named {name} is there already")));
-        }
-        if let Some(from) = from {
-            valid(from)?;
-            let src = self.installed_dir(from);
-            if !src.is_dir() {
-                return Err(other(format!("{from} isn't installed")));
-            }
-            copy(&src, &dev)?;
-        } else {
-            fs::create_dir_all(&dev)?;
-            for (file, text) in STARTER {
-                fs::write(dev.join(file), text)?;
-            }
-        }
-        Ok(dev)
-    }
-
-    /// `[keep]`: theme `name` from `themes-dev/` into `themes/`, only once it passes the theme gate.
-    ///
-    /// # Errors
-    /// The gate's failures, or when the name is taken by now.
-    pub fn keep(&self, name: &str) -> io::Result<()> {
-        let _one = lock(&self.ops);
-        valid(name)?;
-        let (dev, to) = (self.dev_dir(name), self.installed_dir(name));
-        if !dev.is_dir() {
-            return Err(other(format!("no theme {name} is being built")));
-        }
-        gate(&dev)?;
-        if to.exists() {
-            return Err(other(format!("a theme named {name} is installed already")));
-        }
-        fs::create_dir_all(to.parent().unwrap_or(&to))?;
-        fs::rename(dev, to)?;
-        let made = Pinned {
-            name: name.to_owned(),
-            source: "made here".to_owned(),
-            ..Pinned::default()
-        };
-        self.pin(name, Some(made))
-    }
-
-    /// `[publish]`: installed theme `name` as a git repo of its own (its changes committed); returns the folder and
-    /// commit, to push and to propose for the index by PR.
-    ///
-    /// # Errors
-    /// When it isn't installed or git fails.
-    pub fn publish(&self, name: &str) -> io::Result<(PathBuf, String)> {
-        let _one = lock(&self.ops);
-        valid(name)?;
-        let dir = self.installed_dir(name);
-        if !dir.is_dir() {
-            return Err(other(format!("{name} isn't installed")));
-        }
-        if !dir.join(".git").exists() {
-            git(&dir, &["init", "--quiet", "-b", "main"])?;
-        }
-        git(&dir, &["add", "-A"])?;
-        if !git(&dir, &["status", "--porcelain"])?.is_empty() {
-            git(&dir, &["commit", "--quiet", "-m", &format!("theme {name}")])?;
-        }
-        let commit = git(&dir, &["rev-parse", "HEAD"])?;
-        let mut p = self.pinned()?.into_iter().find(|p| p.name == name);
-        let p = p.get_or_insert_with(|| Pinned {
-            name: name.to_owned(),
-            source: "made here".to_owned(),
-            ..Pinned::default()
-        });
-        p.commit.clone_from(&commit);
-        self.pin(name, Some(p.clone()))?;
-        Ok((dir, commit))
-    }
-}
-
-/// A fingerprint of the files in `dir` (names, sizes and change times): the preview reloads when it changes.
-#[must_use]
-pub fn stamp(dir: &Path) -> u64 {
-    use std::hash::{DefaultHasher, Hash, Hasher};
-    fn walk(dir: &Path, h: &mut DefaultHasher) {
-        let Ok(list) = fs::read_dir(dir) else { return };
-        let mut list: Vec<_> = list.flatten().collect();
-        list.sort_by_key(fs::DirEntry::file_name);
-        for e in list {
-            e.file_name().hash(h);
-            match e.metadata() {
-                Ok(m) if m.is_dir() => walk(&e.path(), h),
-                Ok(m) => (m.len(), m.modified().ok()).hash(h),
-                Err(_) => {}
-            }
-        }
-    }
-    let mut h = DefaultHasher::new();
-    walk(dir, &mut h);
-    h.finish()
 }

@@ -28,7 +28,6 @@ fn named<'a>(lines: &'a [Value], kind: &str, name: &str) -> Vec<&'a Value> {
         .collect()
 }
 
-/// Starts a thread with `text` and waits for its reply; its id.
 fn create(cooee: &Cooee, folder: &Path, text: &str) -> String {
     let new =
         json!({ "agent": "fake-acp", "folder": folder, "text": text, "random_id": "start-1" });
@@ -56,9 +55,9 @@ fn requests_and_shed_calls_are_timed_by_route_and_method_and_slow_ones_warn() {
     let cooee = Cooee::start_with(&dir, &shed.dir, "[perf]\nslow_ms = 0\n");
     let id = create(&cooee, &dir.join("root/project"), "hi");
     assert_eq!(cooee.get(&format!("/threads/{id}/messages?limit=5")).0, 200);
-    assert_eq!(cooee.get("/").0, 200);
+    assert_eq!(cooee.get("/models").0, 200);
     let log = lines(&dir);
-    assert_eq!(named(&log, "http", "GET /").len(), 1, "{log:?}");
+    assert_eq!(named(&log, "http", "GET /models").len(), 1, "{log:?}");
 
     let messages = named(&log, "http", "GET /threads/{id}/messages");
     assert!(!messages.is_empty(), "{log:?}");
@@ -156,7 +155,6 @@ fn cooee_perf_turns_a_log_into_the_table() {
         json!({ "at": ago(3), "level": "debug", "kind": "shed", "name": "agents", "via": "cli", "ms": 40 }),
         json!({ "at": ago(4), "level": "debug", "kind": "first_token", "name": "fake-acp", "thread": "t1", "ms": 700 }),
         json!({ "at": ago(5), "level": "debug", "kind": "first_token", "name": "fake-acp", "thread": "t1", "ms": 300 }),
-        // Older than the window.
         json!({ "at": ago(90), "level": "debug", "kind": "shed", "name": "get", "via": "socket", "ms": 999 }),
     ];
     for l in lines {

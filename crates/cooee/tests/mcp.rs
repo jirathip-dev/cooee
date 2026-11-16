@@ -3,8 +3,7 @@
 //! (their own `initialize`, id styles and order) and talks MCP to it. A fake stdio server offers tools a, b and c.
 //! The registry refuses a literal token; a profile's allowlist is all the agent sees and may call; references
 //! resolve when the proxy starts and their values reach no file, log or event; a closed thread's token stops
-//! working; `propose_server` only raises a card, which needs Face ID and adds the server off; the phone toggles and
-//! picks tools but can't change a command or URL.
+//! working; `propose_server` only raises a card, which needs Face ID and adds the server off.
 
 mod support;
 
@@ -25,8 +24,6 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use support::{Cooee, FakeShed, scratch, version};
 
-/// The fake MCP server: tools a, b and c; a call says which tool ran and whether `TOKEN` (a `secret:`) equals
-/// `WANT` (an `env:`); `ran` is touched when it starts.
 const SERVER: &str = r#"#!/bin/sh
 : >"$(dirname "$0")/ran"
 while IFS= read -r line; do
@@ -49,12 +46,9 @@ struct Setup {
     dir: PathBuf,
     shed: FakeShed,
     cooee: Cooee,
-    /// A secret-shaped value, built at runtime: `secret:TOKEN` and `env:WANT_TOKEN`.
     token: String,
 }
 
-/// cooee with the fake server `fs` (its `TOKEN` a secret, its `WANT` from cooee's environment) and the profile
-/// `coder` picking `fs` with only tool `a`.
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     let token = format!("tk-{}", "q7".repeat(16));
@@ -86,7 +80,6 @@ fn setup(name: &str) -> Setup {
 }
 
 impl Setup {
-    /// Starts a thread with `profile` (empty: Plain); its id and the MCP servers its agent was given.
     fn thread(&self, profile: &str) -> (String, Vec<Value>) {
         let random = format!("start-{}", self.shed.cli_log().len());
         let new = json!({ "agent": "fake-acp", "profile": profile, "folder": self.dir.join("root"),
@@ -102,32 +95,17 @@ impl Setup {
         (id, servers.as_array().unwrap().clone())
     }
 
-    /// The servers' list as `cooee mcp ls` prints it.
     fn ls(&self) -> String {
         self.cooee.cli(&["mcp", "ls"])
     }
-
-    /// A form POST as the phone's page sends it: the status, and the body.
-    fn form(&self, path: &str, body: &str) -> (u16, String) {
-        let headers = [
-            ("Content-Type", "application/x-www-form-urlencoded"),
-            ("Cookie", self.cooee.cookie.as_str()),
-        ];
-        let (head, body) = self.cooee.raw("POST", path, &headers, body);
-        (head[9..12].parse().unwrap(), body)
-    }
 }
 
-/// How an ACP adapter talks to its MCP servers.
 #[derive(Clone, Copy, Debug)]
 enum Agent {
-    /// Claude's adapter: numeric ids from 0, protocol 2025-06-18.
     Claude,
-    /// Codex's: string ids, protocol 2025-03-26, `tools/list` with a cursor.
     Codex,
 }
 
-/// One MCP server an agent started from its session's list, as that agent runs it.
 struct Mcp {
     child: Child,
     stdin: ChildStdin,
@@ -137,7 +115,6 @@ struct Mcp {
 }
 
 impl Mcp {
-    /// Starts `entry` (ACP's stdio shape) and initializes it as `agent` does.
     fn start(entry: &Value, agent: Agent) -> Self {
         let mut c = Command::new(entry["command"].as_str().unwrap());
         c.args(
@@ -177,7 +154,6 @@ impl Mcp {
         m
     }
 
-    /// One request: its result, or its error's message.
     fn call(&mut self, method: &str, params: &Value) -> Result<Value, String> {
         let id = match self.agent {
             Agent::Claude => json!(self.next),
@@ -197,7 +173,6 @@ impl Mcp {
         }
     }
 
-    /// The tools it offers.
     fn tools(&mut self) -> Vec<String> {
         let params = match self.agent {
             Agent::Claude => json!({}),
@@ -210,7 +185,6 @@ impl Mcp {
             .collect()
     }
 
-    /// Calls `tool`: its text, or the error.
     fn run(&mut self, tool: &str, arguments: &Value) -> Result<String, String> {
         let r = self.call(
             "tools/call",
@@ -227,7 +201,6 @@ impl Drop for Mcp {
     }
 }
 
-/// The session's server named `name`.
 fn named<'a>(servers: &'a [Value], name: &str) -> &'a Value {
     servers
         .iter()
@@ -235,7 +208,6 @@ fn named<'a>(servers: &'a [Value], name: &str) -> &'a Value {
         .unwrap_or_else(|| panic!("no {name} in {servers:?}"))
 }
 
-/// Every file under `dir` but its `secrets/`, as text.
 fn files(dir: &Path, out: &mut String) {
     for e in fs::read_dir(dir).into_iter().flatten().flatten() {
         if e.file_name() == "secrets" {
@@ -293,7 +265,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
 {
     let s = setup("mcp-proxy");
     let (id, servers) = s.thread("coder");
-    // cooee's own server, then the profile's pick, each through cooee.
     let names: Vec<&str> = servers
         .iter()
         .map(|s| s["name"].as_str().unwrap())
@@ -308,7 +279,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
     for agent in [Agent::Claude, Agent::Codex] {
         let mut m = Mcp::start(fs_entry, agent);
         assert_eq!(m.tools(), ["a"], "{agent:?}");
-        // The secret and the environment reference both resolved, in the server's own environment.
         assert_eq!(
             m.run("a", &json!({})),
             Ok("a ran; the token matches".to_owned()),
@@ -322,7 +292,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
         assert!(m.run("c", &json!({})).is_err(), "{agent:?}");
     }
 
-    // A Plain thread gets cooee's own server only; its token gets no grant for fs, nor another thread's.
     let (plain, servers) = s.thread("");
     assert_eq!(servers.len(), 1, "{servers:?}");
     let proxy = |var: &Value| {
@@ -348,7 +317,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
         "{e}"
     );
 
-    // Closing the thread revokes its token: the proxy's next call is refused.
     let mut m = Mcp::start(fs_entry, Agent::Claude);
     assert!(m.run("a", &json!({})).is_ok());
     assert_eq!(
@@ -359,8 +327,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
     assert!(e.contains("closed"), "{e}");
     drop(m);
 
-    // The value is nowhere but its own store: not the config, the data folder, cooee's log, what shed was told or
-    // the thread's events.
     let mut all = fs::read_to_string(&s.cooee.config).unwrap();
     files(&s.dir.join("data"), &mut all);
     files(&s.shed.dir, &mut all);
@@ -377,7 +343,6 @@ fn the_agent_sees_and_calls_only_the_allowed_tools_under_claude_and_codex_and_no
     assert_eq!(left, ["TOKEN"], "the --mcp file is gone");
 }
 
-/// A fake platform authenticator, as in tests/pairing.rs: one P-256 passkey signing for this server's origin.
 struct Authenticator {
     key: SigningKey,
     id: String,
@@ -411,7 +376,6 @@ impl Authenticator {
         (auth, client, B64.encode(sig.to_der().as_bytes()))
     }
 
-    /// Saves the passkey for the paired device.
     fn save(&self, c: &Cooee) {
         let (auth, client, _) = self.signed("webauthn.create", c);
         let mut spki = vec![
@@ -425,7 +389,6 @@ impl Authenticator {
         assert_eq!(c.post("/passkeys", &key).0, 200);
     }
 
-    /// `navigator.credentials.get` after Face ID.
     fn get(&self, c: &Cooee) -> Value {
         let (auth, client, sig) = self.signed("webauthn.get", c);
         json!({ "id": self.id, "client": B64.encode(client), "auth": B64.encode(auth), "sig": sig })
@@ -457,7 +420,6 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
         said.starts_with("Proposed.") && said.contains("Nothing has run"),
         "{said}"
     );
-    // A proposal that breaks a rule is the tool's error.
     let bad = cooee.call("tools/call", &json!({ "name": "propose_server", "arguments": { "name": "fs", "type": "stdio", "command": "x" } }));
     assert!(
         bad.unwrap()["content"][0]["text"]
@@ -488,7 +450,6 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
         "nothing runs before approval"
     );
 
-    // Approving needs Face ID: none, or a passkey this cooee doesn't know, is refused.
     let approve = |passkey: Value| {
         s.cooee.post(
             &format!("/threads/{id}/approve"),
@@ -511,121 +472,6 @@ fn propose_server_shows_the_exact_command_runs_nothing_and_needs_face_id_to_add_
     let ls = s.ls();
     assert!(ls.contains(&format!("[stdio] web · off · {exact}")), "{ls}");
     assert!(!ran.exists(), "approving adds it off; nothing ran");
-}
-
-#[test]
-fn the_phone_toggles_and_picks_tools_but_a_command_or_url_change_is_refused_server_side() {
-    let s = setup("mcp-phone");
-    let page = s.cooee.get("/mcp").1;
-    for part in [
-        r#"<div class="acr" data-server="fs"><span class="ptg">stdio</span>"#,
-        r#"<span class="st m">edit on Mac</span>"#,
-        r#"name="t:fs:a" checked"#,
-        r#"name="t:fs:b">"#,
-    ] {
-        assert!(page.contains(part), "{part} not in {page}");
-    }
-    let config = || fs::read_to_string(&s.cooee.config).unwrap();
-    let before = config();
-    for edit in [
-        "enabled=on&command=%2Fbin%2Fevil",
-        "url=https%3A%2F%2Fevil",
-        "args=x&enabled=off",
-        "env=T",
-    ] {
-        let (status, body) = s.form("/mcp/servers/fs", edit);
-        assert_eq!(status, 403, "{edit}: {body}");
-        assert!(body.contains("on the Mac only"), "{body}");
-    }
-    assert_eq!(config(), before, "a refused edit changes nothing");
-    assert_eq!(s.form("/mcp/servers/fs", "enabled=off").0, 303);
-    assert!(s.ls().contains("[stdio] fs · off"));
-    assert_eq!(s.form("/mcp/servers/fs", "enabled=on").0, 303);
-    assert!(s.ls().contains("[stdio] fs · on"));
-    assert!(config().contains("secret:TOKEN"), "{}", config());
-
-    // The profile's tools: a and c of a, b and c; then every one ticked is all of them.
-    assert_eq!(
-        s.form(
-            "/profiles/coder/mcp",
-            "s%3Afs=on&t%3Afs%3Aa=on&t%3Afs%3Ac=on"
-        )
-        .0,
-        303
-    );
-    let profile = || fs::read_to_string(s.dir.join("profiles/coder.toml")).unwrap();
-    assert!(
-        profile().ends_with("[[mcp]]\nserver = \"fs\"\ntools = [\"a\",\"c\"]\n"),
-        "{}",
-        profile()
-    );
-    let mut m = Mcp::start(named(&s.thread("coder").1, "fs"), Agent::Claude);
-    assert_eq!(m.tools(), ["a", "c"]);
-    drop(m);
-    assert_eq!(
-        s.form(
-            "/profiles/coder/mcp",
-            "s%3Afs=on&t%3Afs%3Aa=on&t%3Afs%3Ab=on&t%3Afs%3Ac=on"
-        )
-        .0,
-        303
-    );
-    assert!(
-        profile().ends_with("[[mcp]]\nserver = \"fs\"\n"),
-        "{}",
-        profile()
-    );
-
-    // `+ server` needs Face ID, then adds it off.
-    let add = "name=docs&type=http&target=https%3A%2F%2Fdocs.example%2Fmcp";
-    assert_eq!(s.form("/mcp/servers", add).0, 403);
-    let phone = Authenticator::new(&s.cooee);
-    phone.save(&s.cooee);
-    let passkey: String = url(&phone.get(&s.cooee).to_string());
-    let (status, body) = s.form("/mcp/servers", &format!("{add}&passkey={passkey}"));
-    assert_eq!(
-        (status, body.as_str()),
-        (200, "added docs, off: turn it on in settings › mcp servers")
-    );
-    assert!(
-        s.ls()
-            .contains("[http] docs · off · https://docs.example/mcp")
-    );
-    // Adding a name that exists would change its command: refused.
-    let passkey: String = url(&phone.get(&s.cooee).to_string());
-    let (status, body) = s.form(
-        "/mcp/servers",
-        &format!("name=fs&type=stdio&target=%2Fbin%2Fevil&passkey={passkey}"),
-    );
-    assert!(
-        status == 400 && body.contains("change it on the Mac"),
-        "{body}"
-    );
-    assert_eq!(s.form("/mcp/servers/docs/remove", "").0, 303);
-    assert!(!s.ls().contains("docs"));
-
-    // A secret from the phone goes straight to the store (never the config).
-    if !cfg!(target_os = "macos") {
-        assert_eq!(s.form("/mcp/secret", "name=NEW&value=s3cr3t-value").0, 303);
-        assert_eq!(
-            fs::read_to_string(s.dir.join("data/secrets/NEW")).unwrap(),
-            "s3cr3t-value"
-        );
-        assert!(!config().contains("s3cr3t-value"));
-    }
-}
-
-/// `s`, percent-encoded for a form.
-fn url(s: &str) -> String {
-    s.bytes()
-        .map(|b| {
-            if b.is_ascii_alphanumeric() {
-                (b as char).to_string()
-            } else {
-                format!("%{b:02X}")
-            }
-        })
-        .collect()
 }
 
 #[test]

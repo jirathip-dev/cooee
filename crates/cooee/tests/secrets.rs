@@ -11,7 +11,6 @@ use std::{
 
 use support::scratch;
 
-/// The Apple Development identity install.sh signs with, if the keychain has one.
 fn identity() -> Option<String> {
     let out = Command::new("security")
         .args(["find-identity", "-v", "-p", "codesigning"])
@@ -22,7 +21,6 @@ fn identity() -> Option<String> {
     Some(line.split('"').nth(1)?.to_owned())
 }
 
-/// A copy of the built cooee at `dir/name`, signed with `id` and `extra` codesign flags when `id` is set.
 fn copy(dir: &Path, name: &str, id: Option<&str>, extra: &[&str]) -> PathBuf {
     let path = dir.join(name);
     fs::copy(env!("CARGO_BIN_EXE_cooee"), &path).unwrap();
@@ -47,8 +45,6 @@ fn text(o: &Output) -> String {
     String::from_utf8_lossy(&o.stdout).into_owned() + &String::from_utf8_lossy(&o.stderr)
 }
 
-/// The migration moves the file's secret into the keychain and shreds the file; a rebuilt signed cooee (a new
-/// cdhash, same identity) reads it with prompts off; an unsigned build and an agent shell's `security` can't.
 #[test]
 fn only_the_signed_cooee_reads_its_secrets_across_rebuilds() {
     let Some(id) = identity() else {
@@ -92,7 +88,6 @@ fn only_the_signed_cooee_reads_its_secrets_across_rebuilds() {
         text(&refused)
     );
 
-    // An agent shell: `security` is no trusted app, so it gets no value (killed if it waits on a dialog).
     let shell = Command::new("perl")
         .args([
             "-e",

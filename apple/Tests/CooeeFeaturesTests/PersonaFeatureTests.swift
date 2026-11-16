@@ -7,24 +7,28 @@ import Testing
 @MainActor
 internal struct PersonaFeatureTests {
     private let calls = Calls()
-    private let note = PersonaNote(text: "Small commits", author: "owner", time: 5)
+    private let screen = JSONValue(json: #"{"type": "screen", "blocks": [{"type": "memory", "count": 1}]}"#)
+    private let cleared = JSONValue(json: #"{"type": "screen", "blocks": [{"type": "memory", "count": 0}]}"#)
     private let lists = [
         ModelList(agent: "fake-acp", models: [["fake-opus-3", "Opus"]], short: ["opus": "fake-opus-3"]),
         ModelList(agent: "codex", models: [["gpt-5.5", "GPT"]]),
     ]
+    private let machines = [MachineRow(name: "", host: "mini"), MachineRow(name: "air", host: "air", online: false)]
 
     private func store(_ persona: APIPersona) -> TestStoreOf<PersonaFeature> {
-        let (calls, note) = (calls, note)
+        let (calls, screen, cleared) = (calls, screen, cleared)
         return TestStore(initialState: PersonaFeature.State(server: mini, persona: persona)) {
             PersonaFeature()
         } withDependencies: {
-            $0.personas.memory = { _, id in
-                calls.record("memory \(id)")
-                return [note]
+            $0.plugins.screen = { _, source, path in
+                calls.record("screen \(source) \(path)")
+                return screen
             }
-            $0.personas.save = { _, persona in
-                calls.record("put \(persona.id) \(persona.character)")
-                return persona
+            $0.plugins.act = { _, _, path, action in
+                let values = action.values
+                let said = [values["character"]?.string, values["machine"]?.string].compactMap { $0 }
+                calls.record(([action.action, path] + said).joined(separator: " "))
+                return action.action == "clear" ? cleared : .object(values)
             }
             $0.personas.create = { _, persona in
                 calls.record("post \(persona.name)")
@@ -32,13 +36,13 @@ internal struct PersonaFeatureTests {
                 made.id = "scout"
                 return made
             }
-            $0.personas.forget = { _, id in calls.record("forget \(id)") }
             offers(&$0.personas)
         }
     }
 
     private func offers(_ personas: inout PersonasClient) {
-        let (calls, lists) = (calls, lists)
+        let (calls, lists, machines) = (calls, lists, machines)
+        personas.machines = { _ in machines }
         personas.agents = { _ in [AgentOption(id: "fake-acp", efforts: ["low", "high"]), AgentOption(id: "codex")] }
         personas.models = { _ in
             calls.record("models")
@@ -50,22 +54,28 @@ internal struct PersonaFeatureTests {
         }
     }
 
-    @Test internal func anEditReadsItsMemoryAndPutsTheChangedPersonaBack() async {
+    @Test internal func anEditReadsItsScreenAndSavesTheChangedPersonaThroughIt() async {
         let store = store(coder)
         await store.send(.task)
-        await store.receive(\.noted) { $0.notes = [note] }
+        await store.receive(\.loaded) { $0.screen = screen }
         await store.receive(\.offered) {
             $0.agents = [AgentOption(id: "fake-acp", efforts: ["low", "high"]), AgentOption(id: "codex")]
         }
         await store.receive(\.listed) { $0.lists = lists }
+        await store.receive(\.machines) { $0.machines = machines }
         await store.send(.binding(.set(\.draft.character, "Terse."))) { $0.draft.character = "Terse." }
+        await store.send(.binding(.set(\.draft.machine, "air"))) { $0.draft.machine = "air" }
         await store.send(.save) { $0.busy = true }
         var saved = coder
-        saved.character = "Terse."
+        (saved.character, saved.machine) = ("Terse.", "air")
         await store.receive(\.delegate.saved, saved)
         await store.send(.clearMemory)
-        await store.receive(\.noted) { $0.notes = [] }
-        #expect(calls.all == ["memory coder", "models", "put coder Terse.", "forget coder"])
+        await store.receive(\.loaded) { $0.screen = cleared }
+        #expect(
+            calls.all == [
+                "screen core /screens/persona/coder", "models", "save /screens/persona/coder Terse. air",
+                "clear /screens/persona/coder",
+            ])
     }
 
     @Test internal func aNewPersonaIsPostedAndReadsNoMemory() async {
@@ -91,9 +101,8 @@ internal struct PersonaFeatureTests {
     @Test internal func aRefusalShowsTheServersReason() async {
         let store = store(coder)
         let refused = APIError(status: 400, text: "a persona needs a name")
-        store.dependencies.personas.save = { _, _ in throw refused }
-        store.dependencies.personas.memory = { _, _ in throw refused }
-        store.dependencies.personas.forget = { _, _ in throw refused }
+        store.dependencies.plugins.act = { _, _, _, _ in throw refused }
+        store.dependencies.plugins.screen = { _, _, _ in throw refused }
         await store.send(.save) { $0.busy = true }
         await store.receive(\.failed) {
             $0.busy = false
@@ -105,6 +114,7 @@ internal struct PersonaFeatureTests {
         await store.receive(\.failed)
         await store.receive(\.failed)
         await store.receive(\.listed)
+        await store.receive(\.machines) { $0.machines = machines }
         await store.send(.clearMemory)
         await store.receive(\.failed)
     }
@@ -116,6 +126,7 @@ internal struct PersonaFeatureTests {
             $0.agents = [AgentOption(id: "fake-acp", efforts: ["low", "high"]), AgentOption(id: "codex")]
         }
         await store.receive(\.listed) { $0.lists = lists }
+        await store.receive(\.machines) { $0.machines = machines }
         #expect(store.state.models == ["opus", "fake-opus-3"] && store.state.efforts == ["low", "high"])
         await store.send(.binding(.set(\.draft.model, "opus"))) { $0.draft.model = "opus" }
         await store.send(.binding(.set(\.draft.effort, "high"))) { $0.draft.effort = "high" }

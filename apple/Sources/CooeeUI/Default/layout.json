@@ -16,7 +16,8 @@
       ],
       "menu": [
         { "type": "screen", "source": "core", "path": "/screens/menu", "id": "menu", "place": "sheet" },
-        { "type": "settings", "place": "sheet", "config": { "pages": ["look", "notifications", "appIcon"] } }
+        { "type": "settings", "place": "sheet", "config": { "pages": ["look", "notifications", "appIcon"] } },
+        { "type": "terminal", "place": "menu" }
       ]
     }
   }

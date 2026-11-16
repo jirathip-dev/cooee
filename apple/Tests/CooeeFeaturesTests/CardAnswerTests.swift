@@ -27,17 +27,17 @@ internal struct CardAnswerTests {
 
     @Test internal func aCardsAnswerGoesBackAsItsItemsChoiceWhileTheCardWaits() async {
         let store = store()
-        await store.send(.answer(4, run)) { $0.answering = [4] }
-        await store.receive(\.answered) { $0.answering = [] }
-        await store.send(.answer(5, BlockAction(action: "answer", values: [:])))
-        await self.store(.new(coder)).send(.answer(4, run))
+        await store.send(.cards(.answer(4, run))) { $0.answering = [4] }
+        await store.receive(\.cards.answered) { $0.answering = [] }
+        await store.send(.cards(.answer(5, BlockAction(action: "answer", values: [:]))))
+        await self.store(.new(coder)).send(.cards(.answer(4, run)))
         #expect(calls.all == ["answer a1 4 approve 3b7e"])
     }
 
     @Test internal func aRefusedAnswerSaysWhyAndTheCardCanBeTappedAgain() async {
         let store = store(failing: true)
-        await store.send(.answer(4, run)) { $0.answering = [4] }
-        await store.receive(\.answered) {
+        await store.send(.cards(.answer(4, run))) { $0.answering = [4] }
+        await store.receive(\.cards.answered) {
             $0.answering = []
             $0.error = "Stale."
         }

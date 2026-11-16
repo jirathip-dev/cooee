@@ -12,7 +12,7 @@ public struct PairingClient: Sendable {
 
 @DependencyClient
 public struct ThreadsClient: Sendable {
-    public var threads: @Sendable (_ server: Server) async throws -> [ThreadRow]
+    public var home: @Sendable (_ server: Server) async throws -> HomeAnswer
     public var personas: @Sendable (_ server: Server) async throws -> [APIPersona]
     public var messages: @Sendable (_ server: Server, _ thread: String) async throws -> Slice
     public var events:
@@ -29,7 +29,11 @@ public struct ThreadsClient: Sendable {
         @Sendable (_ server: Server, _ thread: String, _ item: Int, _ option: String, _ value: String?) async throws
             -> Void
     public var start:
-        @Sendable (_ server: Server, _ persona: APIPersona, _ text: String, _ setup: Bool) async throws -> String
+        @Sendable (_ server: Server, _ persona: APIPersona, _ machine: String, _ text: String, _ setup: Bool)
+            async throws
+            -> String
+    public var move: @Sendable (_ server: Server, _ thread: String, _ machine: String) async throws -> Void
+    public var retry: @Sendable (_ server: Server, _ thread: String) async throws -> Void
     public var room: @Sendable (_ server: Server, _ title: String, _ members: [String]) async throws -> String
     public var seat:
         @Sendable (_ server: Server, _ room: String, _ persona: String, _ place: Int?, _ remove: Bool) async throws
@@ -39,11 +43,9 @@ public struct ThreadsClient: Sendable {
 @DependencyClient
 public struct PersonasClient: Sendable {
     public var create: @Sendable (_ server: Server, _ persona: APIPersona) async throws -> APIPersona
-    public var save: @Sendable (_ server: Server, _ persona: APIPersona) async throws -> APIPersona
-    public var memory: @Sendable (_ server: Server, _ persona: String) async throws -> [PersonaNote]
-    public var forget: @Sendable (_ server: Server, _ persona: String) async throws -> Void
     public var agents: @Sendable (_ server: Server) async throws -> [AgentOption]
     public var models: @Sendable (_ server: Server) async throws -> [ModelList]
+    public var machines: @Sendable (_ server: Server) async throws -> [MachineRow]
     public var folders: @Sendable (_ server: Server, _ path: String?) async throws -> FolderListing
 }
 

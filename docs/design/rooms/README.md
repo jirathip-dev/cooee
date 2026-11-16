@@ -7,8 +7,8 @@ thread. It follows the owner's room decisions G1–G8 (q1046–q1054, 2026-11-10
 (`apple/design/v1/`): round glass buttons, the persona header with its agent chip, the working pill with Stop, and
 choice cards, in the three styles (q947).
 
-There are three pages, built on the live design system as `native-shell/` was. They link `web/src/app.css`,
-`web/schemes/`, the farm pack's `theme.json`, native-shell's phone chrome (`ns.css`: `.ph .stb .isl .hind .wd`,
+There are three pages, built on the live design system as `native-shell/` was. They link `design-system/app.css`,
+`design-system/schemes/`, the farm pack's `theme.json`, native-shell's phone chrome (`ns.css`: `.ph .stb .isl .hind .wd`,
 gallery), and #124's Scene sprites (`apple/Sources/CooeeUI/Sprites/`), without copying any of them. `rm.css` holds
 this design's additions as tokens only, and `rm.js` sets the scheme and style as `shown.rs` does. Avatars follow
 #124's `Avatar`: Modern draws the symbol on its tint, Terminal its ASCII figure ruled in the tint, and Scene its
@@ -22,7 +22,7 @@ horse in its coat, acting its state.
 
 Open a page without a query to see every frame in a gallery. `?f=<frame>` shows one frame at its own size, and
 `&mode=dark|light&style=modern|terminal|scene` sets the look. Serve the repo root over http, since the pages fetch from
-`web/` and `packs/`. Run `node docs/design/rooms/shoot.mjs <chrome-headless-shell> [regexp]` from the repo root to
+`design-system/` and `packs/`. Run `node docs/design/rooms/shoot.mjs <chrome-headless-shell> [regexp]` from the repo root to
 regenerate every PNG. It checks each shot for sideways scroll, anything past the right edge, and cut text without an
 ellipsis. **All 20 pass.** The 390 shots are 390 × 844 at 2×, and the 1440 shots are 1440 × 900 at 1×. Scheme: farm.
 Data: illustrative (#124's personas).

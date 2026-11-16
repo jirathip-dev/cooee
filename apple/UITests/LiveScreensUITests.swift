@@ -47,8 +47,7 @@
             queue.tap()
             XCTAssert(labelled(app, "#722").waitForExistence(timeout: 30))
             keep("queue")
-            XCTAssert(labelled(app, "review 1 ▸ herdsman-rev-722").waitForExistence(timeout: 30))
-            keep("queue-live")
+            followsTheQueueAndFoldsARowOpen(app)
             app.buttons["Pause"].firstMatch.tap()
             XCTAssert(labelled(app, "actions are off").waitForExistence(timeout: 30))
             keep("queue-offline")
@@ -128,6 +127,10 @@
             labelled(app, "Notifications").tap()
             XCTAssert(app.switches["Push notifications"].waitForExistence(timeout: 5))
             keep("avatar-menu-notifications")
+            app.navigationBars.buttons.firstMatch.tap()
+            labelled(app, "Terminal").tap()
+            XCTAssert(labelled(app, "Terminal ·").waitForExistence(timeout: 5))
+            keep("avatar-menu-terminal")
         }
     }
 #endif
