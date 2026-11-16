@@ -59,8 +59,8 @@ struct Serve(Cooee);
 impl Drop for Serve {
     fn drop(&mut self) {
         let pid = self.0.child.id().to_string();
-        let _ = Command::new("kill").args(["-TERM", &pid]).status();
-        let _ = self.0.child.wait();
+        Command::new("kill").args(["-TERM", &pid]).status().ok();
+        self.0.child.wait().ok();
     }
 }
 

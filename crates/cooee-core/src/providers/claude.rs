@@ -43,8 +43,10 @@ impl Provider for Claude {
         let Ok(v @ serde_json::Value::Object(_)) = serde_json::from_str(&ran.stdout) else {
             return crate::login::plain_status(ran);
         };
-        let who = v["email"].as_str().or(v["orgName"].as_str());
-        let s = match (v["loggedIn"].as_bool(), v["authMethod"].as_str(), who) {
+        let str = |k: &str| v.get(k).and_then(serde_json::Value::as_str);
+        let who = str("email").or(str("orgName"));
+        let logged_in = v.get("loggedIn").and_then(serde_json::Value::as_bool);
+        let s = match (logged_in, str("authMethod"), who) {
             (Some(true), Some(how), Some(who)) => {
                 Status::said(true, &format!("signed in · {how} ({who})"))
             }
@@ -111,7 +113,7 @@ fn window(line: &str, now: u64) -> Option<Window> {
         }
         Some(d) => {
             let (mon, day) = d.split_once(' ')?;
-            let month = MONTHS.iter().position(|m| *m == mon)? as u64 + 1;
+            let month = u64::try_from(MONTHS.iter().position(|m| *m == mon)?).ok()? + 1;
             let (day, year) = (day.parse().ok()?, 1970 + now / 31_556_952);
             (year - 1..=year + 1)
                 .filter_map(|y| Some(civil_days(y, month, day)? * 86_400 + secs))

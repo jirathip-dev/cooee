@@ -25,7 +25,7 @@ fn fixture(name: &str) -> Fixture {
     let dir = cooee_core::scratch::owned(
         env::temp_dir().join(format!("cooee-{name}-{}", std::process::id())),
     );
-    let _ = fs::remove_dir_all(&dir);
+    fs::remove_dir_all(&dir).ok();
     let accounts = dir.join("data/accounts");
     fs::create_dir_all(accounts.join("fake/idle")).unwrap();
     fs::create_dir_all(accounts.join("fake/work")).unwrap();

@@ -1,4 +1,4 @@
-use cooee_core::{personas, skills};
+use cooee_core::{agents, skills};
 use topcoat::{
     Result,
     context::Cx,
@@ -10,17 +10,14 @@ use crate::http::{Answer, Name, on_personas, thread_id};
 #[route(GET "/personas/{id}/skills")]
 async fn skill_list(cx: &Cx) -> Result<Answer<Vec<skills::Skill>>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| {
-        Ok(skills::list(d, &personas::find(Some(c), d, &id)?.id))
-    })
-    .await
+    on_personas(cx, move |_, c| Ok(skills::list(&agents::home(c, &id)?))).await
 }
 
 #[route(POST "/personas/{id}/skills")]
 async fn skill_add(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| {
-        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, None)
+    on_personas(cx, move |_, c| {
+        skills::save(&agents::home(c, &id)?, s, None)
     })
     .await
 }
@@ -28,17 +25,14 @@ async fn skill_add(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skill
 #[route(GET "/personas/{id}/skills/{name}")]
 async fn skill_get(cx: &Cx) -> Result<Answer<skills::Skill>> {
     let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
-    on_personas(cx, move |d, c| {
-        skills::read(d, &personas::find(Some(c), d, &id)?.id, &name)
-    })
-    .await
+    on_personas(cx, move |_, c| skills::read(&agents::home(c, &id)?, &name)).await
 }
 
 #[route(PUT "/personas/{id}/skills/{name}")]
 async fn skill_put(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skills::Skill>> {
     let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
-    on_personas(cx, move |d, c| {
-        skills::save(d, &personas::find(Some(c), d, &id)?.id, s, Some(&name))
+    on_personas(cx, move |_, c| {
+        skills::save(&agents::home(c, &id)?, s, Some(&name))
     })
     .await
 }
@@ -46,8 +40,8 @@ async fn skill_put(cx: &Cx, Json(s): Json<skills::Skill>) -> Result<Answer<skill
 #[route(DELETE "/personas/{id}/skills/{name}")]
 async fn skill_delete(cx: &Cx) -> Result<Answer<()>> {
     let (id, name) = (thread_id(cx), path_param::<Name>(cx).to_owned());
-    on_personas(cx, move |d, c| {
-        skills::remove(d, &personas::find(Some(c), d, &id)?.id, &name)
+    on_personas(cx, move |_, c| {
+        skills::remove(&agents::home(c, &id)?, &name)
     })
     .await
 }

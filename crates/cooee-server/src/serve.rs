@@ -16,7 +16,7 @@ use crate::{
     http::{Data, profiles, provider_name, recipe},
     hub, layout, look, pairing,
     passkey::Unlocks,
-    plugin, routes, routines, screens,
+    plugin, routes, routines, screens, themes,
 };
 
 fn starter(
@@ -34,7 +34,7 @@ fn starter(
             (&data, config.as_deref(), &list),
             ask,
             PathBuf::new(),
-            empty,
+            (empty, false),
         )
     })
 }
@@ -46,7 +46,7 @@ fn runner(
     config: Option<&std::path::Path>,
 ) -> Arc<routines::Runner> {
     let (dir, config) = (data.to_owned(), config.map(ToOwned::to_owned));
-    let data = dir.clone();
+    let (data, settings) = (dir.clone(), config.clone());
     let start: routines::Start = Box::new(move |hub, who| {
         let list = profiles(hub, (&data, config.as_deref()));
         let (agent, folder, mut recipe) = recipe(
@@ -54,7 +54,7 @@ fn runner(
             (&data, config.as_deref(), &list),
             (&who.agent, Some(&who.account), &who.profile),
             who.folder.clone(),
-            (who.model.clone(), who.effort.clone()),
+            ((who.model.clone(), who.effort.clone()), false),
         )?;
         if recipe.machine.is_empty() {
             recipe.machine.clone_from(&who.machine);
@@ -62,7 +62,11 @@ fn runner(
         let name = provider_name(&agent, &logins.statuses());
         Ok((agent, name, folder, recipe))
     });
-    Arc::new(routines::Runner::new(Arc::clone(hub), &dir, start))
+    Arc::new(routines::Runner::new(
+        Arc::clone(hub),
+        (settings.as_deref(), &dir),
+        start,
+    ))
 }
 
 /// The threads' API over `hub`, its routines' `runner`, the providers' `logins`, the plugin `manager` and pairing, behind the gate: requests must name `bind`, localhost
@@ -87,12 +91,12 @@ pub fn router(
         devices: Devices::new(data),
         hub: Arc::clone(&hub),
     };
-    screens::routes(routes::routes(
+    screens::routes(themes::routes(routes::routes(
         Router::builder()
             .layer(Timing)
             .layer(gate)
             .layer(BodyLimit::max(64 << 20).at("/threads")),
-    ))
+    )))
     .route(layout::get)
     .route(layout::events)
     .route(layout::reset)
@@ -132,9 +136,13 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
     let (looks, refused) = look::Looks::load(config.dir.as_deref(), config.theme.as_deref());
     for why in refused {
-        eprintln!("cooee: refused {why}");
+        cooee_core::note!("cooee: refused {why}");
     }
-    let theme = looks.themes[&looks.default].clone();
+    let theme = looks
+        .themes
+        .get(&looks.default)
+        .cloned()
+        .ok_or_else(|| io::Error::other(format!("no theme {}", looks.default)))?;
     let logins = Logins::new(
         shed.clone(),
         cooee_core::Providers::new(&config.providers),
@@ -155,10 +163,10 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
                 let launch = signins.home(&agent, Some(&account));
                 let probed = launch.and_then(|(_, l)| daily.probe(&agent, &account, &l));
                 if let Err(e) = probed {
-                    eprintln!("cooee: models of {agent}: {e}");
+                    cooee_core::note!("cooee: models of {agent}: {e}");
                 }
             }
-            std::thread::sleep(Duration::from_hours(1));
+            cooee_core::clock::sleep(Duration::from_hours(1));
         }
     });
     let runner = runner(&hub, Arc::clone(&logins), &data, config.dir.as_deref());

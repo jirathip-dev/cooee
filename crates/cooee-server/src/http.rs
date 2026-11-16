@@ -1,13 +1,8 @@
-use std::{
-    io,
-    path::PathBuf,
-    sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{io, path::PathBuf, sync::Arc, time::UNIX_EPOCH};
 
 use cooee_core::{
     Device, Plugin, ShedError,
-    personas::{self, Persona},
+    agents::{self, Agent},
 };
 use cooee_machines::Machines;
 use serde::{Deserialize, Serialize};
@@ -28,7 +23,7 @@ use crate::{Hub, HubError, Logins, Manager, Recipe};
 pub(crate) const COOKIE: &str = "cooee";
 
 pub(crate) fn now() -> u64 {
-    SystemTime::now()
+    cooee_core::clock::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
@@ -87,7 +82,7 @@ impl<T: Serialize> IntoResponse for Answer<T> {
             Err(HubError::Shed(
                 e @ (ShedError::Rpc(_) | ShedError::Bad(_) | ShedError::Cli { .. }),
             )) => {
-                eprintln!("cooee: {e}");
+                cooee_core::note!("cooee: {e}");
                 (
                     502,
                     "shed couldn't do that: run cooee doctor on the Mac.".to_owned(),
@@ -126,34 +121,13 @@ pub(crate) fn provider_name(agent: &str, providers: &[cooee_core::Sheet]) -> Str
 
 pub(crate) fn recipe(
     logins: &Logins,
-    (data, config, list): (
-        &std::path::Path,
-        Option<&std::path::Path>,
-        &[cooee_core::Profile],
-    ),
-    (agent, account, profile): (&str, Option<&str>, &str),
+    (data, config, list): (&std::path::Path, Option<&std::path::Path>, &[Agent]),
+    (agent, account, id): (&str, Option<&str>, &str),
     folder: PathBuf,
-    mut picked: (String, String),
+    (mut picked, setup): ((String, String), bool),
 ) -> Result<(String, PathBuf, Recipe), HubError> {
-    let persona = personas::find(config, data, profile).ok();
-    if let Some(p) = &persona {
-        for (pick, default) in [(&mut picked.0, &p.model), (&mut picked.1, &p.effort)] {
-            if pick.is_empty() {
-                pick.clone_from(default);
-            }
-        }
-    }
-    let (agent, profile, folder) = match &persona {
-        Some(p) => {
-            let keep = ["", "scratch"].contains(&p.folder.as_str());
-            let folder = if keep { folder } else { (&p.folder).into() };
-            (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder)
-        }
-        None => (agent, profile, folder),
-    };
-    let (agent, folder, mut recipe) = if profile.is_empty() {
-        let (account, mut launch) = logins.home(agent, account)?;
-        launch.meta = persona.as_ref().and(logins.no_personal_setup(agent));
+    let (agent, folder, mut recipe) = if id.is_empty() {
+        let (account, launch) = logins.home(agent, account)?;
         let recipe = Recipe {
             account,
             launch,
@@ -161,31 +135,43 @@ pub(crate) fn recipe(
         };
         (agent.to_owned(), folder, recipe)
     } else {
-        let p = list.iter().find(|p| p.id() == profile).cloned();
-        let p = p.ok_or_else(|| refused(format!("no profile {profile}")))?;
-        if p.hidden {
-            return Err(refused(format!("profile {profile} is hidden: {}", p.why)));
+        let a = list.iter().find(|a| a.id == id);
+        let a = a.ok_or_else(|| refused(format!("no profile {id}")))?;
+        if let Some(why) = a.lent.as_ref().and_then(|l| l.hidden.as_ref()) {
+            return Err(refused(format!("profile {id} is hidden: {why}")));
         }
-        let (account, launch, instructions) = logins.profile(&p, data)?;
+        for (pick, default) in [(&mut picked.0, &a.model), (&mut picked.1, &a.effort)] {
+            if pick.is_empty() {
+                pick.clone_from(default);
+            }
+        }
+        let (account, launch) = logins.agent(a, account, data)?;
         let recipe = Recipe {
             account,
-            profile: p.id(),
+            profile: a.id.clone(),
             launch,
-            instructions,
-            mcp: p.mcp.iter().map(|k| k.server.clone()).collect(),
+            instructions: a.brief(config),
+            mcp: a.mcp.iter().map(|k| k.server.clone()).collect(),
+            machine: a.machine.clone(),
             ..Recipe::default()
         };
-        (p.agent, p.folder.unwrap_or(folder), recipe)
+        (a.agent.clone(), a.work_folder().unwrap_or(folder), recipe)
     };
     recipe.launch.pick(logins.picks(&agent, &picked.1)?);
     (recipe.model, recipe.effort) = picked;
-    if let Some(mut p) = persona {
-        if p.instructions.trim().is_empty() {
-            p.instructions = std::mem::take(&mut recipe.instructions);
+    if setup {
+        if id.is_empty() || list.iter().any(|a| a.id == id && a.lent.is_some()) {
+            return Err(refused("a setup chat needs one of your own personas"));
         }
-        recipe.instructions = p.brief(data);
-        recipe.profile = p.id;
-        recipe.machine = p.machine;
+        if !recipe.instructions.is_empty() {
+            recipe.instructions.push_str(
+                "
+
+",
+            );
+        }
+        recipe.instructions.push_str(agents::SETUP);
+        recipe.setup = true;
     }
     Ok((agent, folder, recipe))
 }
@@ -195,10 +181,10 @@ pub(crate) struct Data(pub(crate) PathBuf, pub(crate) Option<PathBuf>);
 pub(crate) fn profiles(
     hub: &Hub,
     (data, config): (&std::path::Path, Option<&std::path::Path>),
-) -> Vec<cooee_core::Profile> {
-    let mut list = cooee_core::profiles::list(config, data, |name| hub.served(name));
+) -> Vec<Agent> {
+    let mut list = agents::all(config, data, |name| hub.served(name));
     for p in &mut list {
-        let via = p.plugin.as_deref().and_then(|n| hub.backend(n));
+        let via = p.lent.as_ref().and_then(|l| hub.backend(&l.plugin));
         if let (Some(via), Some(a)) = (via, &mut p.avatar)
             && a.starts_with('/')
         {
@@ -234,7 +220,7 @@ pub(crate) async fn on_personas<T: Send + 'static>(
     let d = app_context::<Data>(cx);
     let (data, config) = (d.0.clone(), d.1.clone());
     let done = blocking(cx, move |_| {
-        let config = config.ok_or_else(|| refused("there is no config folder for personas"))?;
+        let config = config.ok_or_else(|| refused("there is no config folder for agents"))?;
         f(&data, &config).map_err(refused)
     });
     Ok(Answer(done.await))
@@ -264,7 +250,7 @@ pub(crate) async fn on_logins<T: Send + 'static>(
         .map_err(|e| HubError::Refused(e.to_string()))?
 }
 
-pub(crate) async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>> {
+pub(crate) async fn persona_save(cx: &Cx, p: Agent) -> Result<Answer<Agent>> {
     let installed = hub(cx).installed();
     let machines = Arc::clone(app_context::<Arc<Machines>>(cx));
     on_personas(cx, move |d, c| {
@@ -273,7 +259,7 @@ pub(crate) async fn persona_save(cx: &Cx, p: Persona) -> Result<Answer<Persona>>
             None => allowed(&machines, &p.machine),
         };
         why.map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-        personas::save(c, d, p)
+        agents::save(c, d, p)
     })
     .await
 }

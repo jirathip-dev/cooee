@@ -1,10 +1,12 @@
-//! Routines (#75): a schedule that posts a prompt to an agent, made by the agent in chat and kept in
-//! `<data>/routines.json` with its run state. Pure: the server's runner gives `now` and the Mac's UTC offset.
+//! Routines (#75): a schedule that posts a prompt to an agent, made by the agent in chat. Each one's settings are
+//! `<config>/routines.toml`, its run state `<data>/routine-runs.json` (#359). Pure: the server's runner gives `now`
+//! and the Mac's UTC offset.
 
 mod cron;
 
 use std::{
-    io,
+    collections::BTreeMap,
+    fs, io,
     path::{Path, PathBuf},
 };
 
@@ -81,7 +83,8 @@ pub enum Place {
 
 /// How a `new_thread` run starts: the making chat's agent, account, profile or persona, folder, model, effort and
 /// machine.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Who {
     /// The agent.
     pub agent: String,
@@ -293,57 +296,157 @@ impl Routine {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct File {
-    format: u32,
-    routines: Vec<Routine>,
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Settings {
+    #[serde(default)]
+    routine: Vec<Def>,
 }
 
-/// The routines' file.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Def {
+    id: String,
+    name: String,
+    when: Schedule,
+    prompt: String,
+    #[serde(default)]
+    paused: bool,
+    place: Place,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Runs {
+    format: u32,
+    #[serde(default)]
+    runs: BTreeMap<String, State>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+struct State {
+    made_in: String,
+    made_at: u64,
+    last_due: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    last_run: Option<Run>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    chat_gone: Option<String>,
+}
+
+pub(crate) fn files(routines: &[Routine]) -> (String, Vec<u8>) {
+    let mut settings = Settings::default();
+    let mut runs = Runs {
+        format: crate::FORMAT,
+        runs: BTreeMap::new(),
+    };
+    for r in routines {
+        let Trigger::Schedule(when) = r.trigger.clone();
+        let chat_gone = match &r.paused {
+            Some(Paused::ChatGone { thread }) => Some(thread.clone()),
+            _ => None,
+        };
+        settings.routine.push(Def {
+            id: r.id.clone(),
+            name: r.name.clone(),
+            when,
+            prompt: r.prompt.clone(),
+            paused: r.paused == Some(Paused::Owner),
+            place: r.place.clone(),
+        });
+        let state = State {
+            made_in: r.made_in.clone(),
+            made_at: r.made_at,
+            last_due: r.last_due,
+            last_run: r.last_run.clone(),
+            chat_gone,
+        };
+        runs.runs.insert(r.id.clone(), state);
+    }
+    let toml = crate::toml_text(&serde_json::to_value(&settings).unwrap_or_default());
+    (toml, serde_json::to_vec_pretty(&runs).unwrap_or_default())
+}
+
+fn read(path: &Path) -> io::Result<Option<Vec<u8>>> {
+    match fs::read(path) {
+        Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
+        read => read.map(Some),
+    }
+}
+
+/// The routines' two files.
 #[derive(Debug, Clone)]
 pub struct Routines {
-    path: PathBuf,
+    settings: PathBuf,
+    runs: PathBuf,
 }
 
 impl Routines {
-    /// The routines in data folder `data`.
+    /// The routines of config folder `config`, their run state in data folder `data`.
     #[must_use]
-    pub fn new(data: &Path) -> Self {
+    pub fn new(config: &Path, data: &Path) -> Self {
         Self {
-            path: data.join("routines.json"),
+            settings: config.join("routines.toml"),
+            runs: data.join("routine-runs.json"),
         }
     }
 
-    /// Every routine (none before the first).
+    /// Every routine (none before the first), its settings joined with its run state.
     ///
     /// # Errors
-    /// When the file can't be read, isn't a routines file, or is a newer format.
+    /// When a file can't be read, isn't what it should be, or the run state is a newer format.
     pub fn load(&self) -> io::Result<Vec<Routine>> {
-        let bytes = match std::fs::read(&self.path) {
-            Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
-            read => read?,
+        let text = String::from_utf8(read(&self.settings)?.unwrap_or_default())
+            .map_err(io::Error::other)?;
+        let bad = |e: toml::de::Error| {
+            io::Error::other(format!("{}: {}", self.settings.display(), e.message()))
         };
-        let f: File = serde_json::from_slice(&bytes)?;
-        if f.format > crate::FORMAT {
+        let settings: Settings = toml::from_str(&text).map_err(bad)?;
+        let runs: Runs = match read(&self.runs)? {
+            Some(bytes) => serde_json::from_slice(&bytes)?,
+            None => Runs {
+                format: crate::FORMAT,
+                runs: BTreeMap::new(),
+            },
+        };
+        if runs.format > crate::FORMAT {
             return Err(io::Error::other(format!(
                 "{} is format {}, newer than this cooee",
-                self.path.display(),
-                f.format
+                self.runs.display(),
+                runs.format
             )));
         }
-        Ok(f.routines)
+        let joined = settings.routine.into_iter().map(|d| {
+            let s = runs.runs.get(&d.id).cloned().unwrap_or_default();
+            let gone = s.chat_gone.map(|thread| Paused::ChatGone { thread });
+            Routine {
+                trigger: Trigger::Schedule(d.when),
+                paused: if d.paused { Some(Paused::Owner) } else { gone },
+                made_in: s.made_in,
+                made_at: s.made_at,
+                last_due: s.last_due,
+                last_run: s.last_run,
+                id: d.id,
+                name: d.name,
+                place: d.place,
+                prompt: d.prompt,
+            }
+        });
+        Ok(joined.collect())
     }
 
-    /// Writes `routines` whole (write-temp, fsync, rename).
+    /// Writes `routines`: each file whole (write-temp, fsync, rename), and only when its part changed.
     ///
     /// # Errors
     /// When it can't be written.
     pub fn save(&self, routines: &[Routine]) -> io::Result<()> {
-        let f = File {
-            format: crate::FORMAT,
-            routines: routines.to_vec(),
-        };
-        crate::write_private(&self.path, &serde_json::to_vec_pretty(&f)?)
+        let (toml, runs) = files(routines);
+        for (path, bytes) in [(&self.settings, toml.as_bytes()), (&self.runs, &runs[..])] {
+            if read(path)?.as_deref() != Some(bytes) {
+                crate::write_private(path, bytes)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -450,7 +553,7 @@ mod tests {
         let dir = crate::scratch::owned(
             std::env::temp_dir().join(format!("cooee-routines-{}", std::process::id())),
         );
-        let file = Routines::new(&dir);
+        let file = Routines::new(&dir, &dir);
         assert_eq!(file.load().unwrap(), Vec::new());
         let mut r = Routine::make(&[], ask("0 9 * * 1", ""), &chat(), MON).unwrap();
         r.last_run = Some(Run {
@@ -461,11 +564,12 @@ mod tests {
             },
         });
         file.save(std::slice::from_ref(&r)).unwrap();
-        let text = std::fs::read_to_string(dir.join("routines.json")).unwrap();
-        assert!(text.contains("\"schedule\": \"0 9 * * 1\""), "{text}");
-        assert!(text.contains("\"outcome\": \"ran\""), "{text}");
+        let text = std::fs::read_to_string(dir.join("routines.toml")).unwrap();
+        assert!(text.contains("when = \"0 9 * * 1\""), "{text}");
+        let runs = std::fs::read_to_string(dir.join("routine-runs.json")).unwrap();
+        assert!(runs.contains("\"outcome\": \"ran\""), "{runs}");
         assert_eq!(file.load().unwrap(), vec![r]);
-        std::fs::write(dir.join("routines.json"), r#"{"format":9,"routines":[]}"#).unwrap();
+        std::fs::write(dir.join("routine-runs.json"), r#"{"format":9,"runs":{}}"#).unwrap();
         assert!(file.load().is_err());
         std::fs::remove_dir_all(&dir).unwrap();
     }

@@ -1,7 +1,7 @@
 //! `GET /screens/plugins/{name}/attach?persona=` (#312): the attach sheet as data, one `permissions` card of what
 //! installed plugin `name` may do for the persona. Only core serves this card kind.
 
-use cooee_core::{personas, plugins::PlaceKind};
+use cooee_core::{agents, plugins::PlaceKind};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use topcoat::{
@@ -38,7 +38,7 @@ pub async fn attach(cx: &Cx) -> Result<Response> {
             return Ok(Err(format!("{name} isn't installed.")));
         };
         Ok::<_, std::io::Error>(
-            personas::find(config.as_deref(), &data, &q.persona)
+            agents::find(config.as_deref(), &data, &q.persona)
                 .map(|p| sheet(&row, &p.name))
                 .map_err(|e| e.to_string()),
         )
@@ -68,8 +68,15 @@ fn sheet(p: &Row, persona: &str) -> Value {
     let actions = perms.actions.iter().map(|a| {
         let mut r = row(a);
         if perms.destructive.contains(a) {
-            r["style"] = json!("destructive");
-            r["badge"] = json!({ "text": "always confirmed first", "tone": "bad" });
+            if let Some(o) = r.as_object_mut() {
+                o.insert("style".to_owned(), json!("destructive"));
+            }
+            if let Some(o) = r.as_object_mut() {
+                o.insert(
+                    "badge".to_owned(),
+                    json!({ "text": "always confirmed first", "tone": "bad" }),
+                );
+            }
         }
         r
     });

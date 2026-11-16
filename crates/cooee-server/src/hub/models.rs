@@ -1,9 +1,8 @@
 use std::{collections::BTreeMap, fs};
 
 use cooee_core::{
-    Body, Change, Launch,
+    Body, Change, Launch, agents, memory,
     models::{self, Offered},
-    personas,
     shed_proto::AcpSession,
 };
 
@@ -48,7 +47,7 @@ impl Hub {
             seen: now(),
         });
         if let Err(e) = models::save(&self.data.join("models.json"), &lists) {
-            eprintln!("cooee: models.json: {e}");
+            cooee_core::note!("cooee: models.json: {e}");
         }
     }
 
@@ -70,15 +69,18 @@ impl Hub {
             self.store.save(&live.meta)?;
             let item = live.chat.push(now(), 0, Body::Note { text: text.clone() });
             live.publish(self, vec![Change::Item(item)])?;
-            let persona = personas::list(self.config_dir(), &self.data).into_iter();
+            let persona = agents::list(self.config_dir(), &self.data).into_iter();
             let persona = persona.filter(|p| p.id == live.meta.profile && p.model == pick);
             for p in persona {
-                let e = personas::Edit {
+                let e = memory::Edit {
                     text: Some(text.clone()),
-                    ..personas::Edit::default()
+                    ..memory::Edit::default()
                 };
-                if let Err(e) = personas::remember(&self.data, &p.id, "owner", &e, now()) {
-                    eprintln!("cooee: persona {}: {e}", p.id);
+                let none = || std::io::Error::other("no config folder");
+                let home = self.config_dir().ok_or_else(none);
+                let kept = home.and_then(|c| agents::home(c, &p.id));
+                if let Err(e) = kept.and_then(|h| memory::remember(&h, "owner", &e, now())) {
+                    cooee_core::note!("cooee: persona {}: {e}", p.id);
                 }
             }
         }

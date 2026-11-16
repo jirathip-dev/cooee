@@ -89,6 +89,10 @@ pub struct Thread {
     /// A linked exchange (#156): the thread whose persona asked this one's (`ask_persona`).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub asked_by: String,
+    /// A setup chat (#270): its persona's brief asks it to interview the owner and write its Character and
+    /// Instructions, and its `update_persona` saves at once.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub setup: bool,
     /// The routine whose run started it (#75).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub routine: Option<crate::routines::Mark>,
@@ -493,7 +497,7 @@ mod tests {
         let dir = crate::scratch::owned(
             env::temp_dir().join(format!("cooee-store-{name}-{}", std::process::id())),
         );
-        let _ = fs::remove_dir_all(&dir);
+        fs::remove_dir_all(&dir).ok();
         dir
     }
 
@@ -608,7 +612,7 @@ mod tests {
     #[test]
     #[ignore = "the child process of crash_between_temp_write_and_rename_keeps_old_file"]
     fn crash_child() {
-        let Some(dir) = env::var_os("COOEE_CRASH_DIR") else {
+        let Some(dir) = crate::env_var("COOEE_CRASH_DIR") else {
             return;
         };
         let store = Store::open(Path::new(&dir)).unwrap();

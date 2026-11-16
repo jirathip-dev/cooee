@@ -12,7 +12,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
     },
     thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 use cooee_core::{
@@ -129,7 +129,11 @@ fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
         .output()?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
-        return Err(other(format!("git {}: {}", args[0], err.trim())));
+        return Err(other(format!(
+            "git {}: {}",
+            args.first().unwrap_or(&""),
+            err.trim()
+        )));
     }
     Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
 }
@@ -153,13 +157,13 @@ fn sh(cmd: &str, dir: &Path, log: &Path) -> io::Result<Command> {
 
 fn note(log: &Path, line: &str) {
     let f = fs::OpenOptions::new().create(true).append(true).open(log);
-    let _ = f.and_then(|mut f| writeln!(f, "== cooee: {line}"));
+    f.and_then(|mut f| writeln!(f, "== cooee: {line}")).ok();
 }
 
 fn stop(child: &mut Child) {
     cooee_core::group::signal(child, "-TERM");
-    let _ = child.kill();
-    let _ = child.wait();
+    child.kill().ok();
+    child.wait().ok();
 }
 
 fn free_port() -> io::Result<u16> {
@@ -292,7 +296,7 @@ impl Manager {
         let mut all = self.fixed.clone();
         match plugins::read_entries(&self.data) {
             Ok(entries) => all.extend(entries),
-            Err(e) => eprintln!("cooee: {e}"),
+            Err(e) => cooee_core::note!("cooee: {e}"),
         }
         all
     }
@@ -390,11 +394,12 @@ impl Manager {
         );
         if !m.places.is_empty() {
             let actions = m.permissions.actions.join(", ");
-            let _ = write!(
+            write!(
                 text,
                 "\nscreens: {} places; actions: {actions}",
                 m.places.len()
-            );
+            )
+            .ok();
         }
         if !m.profiles.is_empty() {
             let labels: Vec<String> = m
@@ -402,13 +407,13 @@ impl Manager {
                 .iter()
                 .map(|p| format!("{} ({})", p.label, p.agent))
                 .collect();
-            let _ = write!(text, "\nagent profiles: {}", labels.join(", "));
+            write!(text, "\nagent profiles: {}", labels.join(", ")).ok();
         }
         if !m.needs.is_empty() {
-            let _ = write!(text, "\nneeds: {}", m.needs.join(", "));
+            write!(text, "\nneeds: {}", m.needs.join(", ")).ok();
         }
         if !missing.is_empty() {
-            let _ = write!(text, "\nmissing: {} (install it first)", missing.join(", "));
+            write!(text, "\nmissing: {} (install it first)", missing.join(", ")).ok();
         }
         if listed.is_none() {
             text += "\nnot reviewed: this plugin isn't in cooee's index; read its code before you add it";
@@ -430,8 +435,8 @@ impl Manager {
             self.log(name),
         );
         let gone = |dir: &Path| {
-            let _ = git(&repo, &["worktree", "remove", "--force", path(dir)]);
-            let _ = fs::remove_dir_all(dir);
+            git(&repo, &["worktree", "remove", "--force", path(dir)]).ok();
+            fs::remove_dir_all(dir).ok();
             git(&repo, &["worktree", "prune"])
         };
         gone(&dir)?;
@@ -494,7 +499,7 @@ impl Manager {
             module: first_path(m),
             token: token.to_owned(),
         };
-        let started = Instant::now();
+        let started = cooee_core::clock::instant();
         let answer = loop {
             if let Some(Ok(Some(s))) = child.as_mut().map(Child::try_wait) {
                 break Err(other(format!("its backend exited ({s}): see its log")));
@@ -509,7 +514,7 @@ impl Manager {
                         p.module
                     )));
                 }
-                _ => thread::sleep(Duration::from_millis(100)),
+                _ => cooee_core::clock::sleep(Duration::from_millis(100)),
             }
         };
         if let Some(c) = &mut child {
@@ -619,10 +624,11 @@ impl Manager {
         let keep = [commit, l.commit.as_str()];
         for e in fs::read_dir(self.dir(&l.name).join("builds"))?.flatten() {
             if !keep.iter().any(|k| e.file_name() == *k) {
-                let _ = git(
+                git(
                     &self.repo(&l.name),
                     &["worktree", "remove", "--force", path(&e.path())],
-                );
+                )
+                .ok();
             }
         }
         Ok(())
@@ -797,8 +803,8 @@ impl Manager {
         f: impl FnOnce(&Self) -> io::Result<()> + Send + 'static,
     ) -> io::Result<()> {
         let mut jobs = lock(&self.jobs);
-        if jobs.get(name).is_some_and(|j| j.ends_with('…')) {
-            return Err(other(format!("{name} is busy: {}", jobs[name])));
+        if let Some(j) = jobs.get(name).filter(|j| j.ends_with('…')) {
+            return Err(other(format!("{name} is busy: {j}")));
         }
         jobs.insert(name.to_owned(), format!("{what}…"));
         let (m, name) = (Arc::clone(self), name.to_owned());
@@ -921,10 +927,11 @@ impl Manager {
             }
             let why = "off after 5 crashes in 10 minutes".to_owned();
             let _one = lock(&self.ops);
-            let _ = self.change(&l.name, |l| {
+            self.change(&l.name, |l| {
                 l.enabled = false;
                 l.note.clone_from(&why);
-            });
+            })
+            .ok();
             alerts.push(format!(
                 "plugin {}: {why}; its log is in Settings › Plugins",
                 l.name
@@ -953,7 +960,7 @@ impl Manager {
                         item: 0,
                     });
                 }
-                thread::sleep(Duration::from_millis(500));
+                cooee_core::clock::sleep(Duration::from_millis(500));
             }
         });
     }
@@ -991,7 +998,7 @@ mod tests {
         let data = cooee_core::scratch::owned(
             std::env::temp_dir().join(format!("cooee-{test}-{}", std::process::id())),
         );
-        let _ = fs::remove_dir_all(&data);
+        fs::remove_dir_all(&data).ok();
         let build = data.join("plugins/x/builds/c0");
         fs::create_dir_all(&build).unwrap();
         let manifest = format!(
@@ -1036,7 +1043,7 @@ mod tests {
         let port = silent.local_addr().unwrap().port();
         let (data, build, m) = installed("hung", "echo ran >> runs; exec sleep 600", port);
         m.tick(0);
-        thread::sleep(Duration::from_millis(200));
+        cooee_core::clock::sleep(Duration::from_millis(200));
         for at in [1, 2] {
             m.tick(at * CHECK_EVERY);
             assert_eq!(lock(&m.runs)["x"].state, "running");
@@ -1044,7 +1051,7 @@ mod tests {
         m.tick(3 * CHECK_EVERY);
         assert!(lock(&m.runs)["x"].state.contains("hung"));
         m.tick(3 * CHECK_EVERY + 1000);
-        thread::sleep(Duration::from_millis(200));
+        cooee_core::clock::sleep(Duration::from_millis(200));
         assert_eq!(runs(&build), 2);
         assert_eq!(lock(&m.runs)["x"].state, "running");
         let log = fs::read_to_string(data.join("plugins/x/plugin.log")).unwrap();
@@ -1066,8 +1073,9 @@ mod tests {
         thread::spawn(move || {
             for mut s in ok.incoming().flatten() {
                 let mut buf = [0; 1024];
-                let _ = std::io::Read::read(&mut s, &mut buf);
-                let _ = s.write_all(b"HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
+                std::io::Read::read(&mut s, &mut buf).ok();
+                s.write_all(b"HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n")
+                    .ok();
                 count.fetch_add(1, Ordering::SeqCst);
             }
         });
@@ -1075,7 +1083,7 @@ mod tests {
         for at in 0..=60 {
             m.tick(at * CHECK_EVERY);
         }
-        thread::sleep(Duration::from_millis(200));
+        cooee_core::clock::sleep(Duration::from_millis(200));
         assert_eq!(served.load(Ordering::SeqCst), 60);
         assert_eq!(runs(&build), 1);
         assert_eq!(lock(&m.runs)["x"].state, "running");
@@ -1098,7 +1106,7 @@ mod tests {
             }
             let next = lock(&m.runs).get("x").map_or(at, |r| r.next);
             at = next.max(at) + 1;
-            thread::sleep(Duration::from_millis(20));
+            cooee_core::clock::sleep(Duration::from_millis(20));
         }
         assert_eq!(runs(), 5, "{alerts:?}");
         assert_eq!(

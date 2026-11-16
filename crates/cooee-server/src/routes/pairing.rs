@@ -73,7 +73,12 @@ async fn pair(cx: &Cx, Form(f): Form<PairForm>) -> Result<Response> {
             !m.is_empty()
         });
         let mine = misses.get(&who).map_or(&[][..], Vec::as_slice);
-        (mine.len() >= TRIES).then(|| (mine[0] + 60_000 - t).div_ceil(1000))
+        (mine.len() >= TRIES)
+            .then(|| {
+                mine.first()
+                    .map(|first| (first + 60_000 - t).div_ceil(1000))
+            })
+            .flatten()
     };
     if let Some(wait) = limited {
         return see_other(&format!("/pair?bad=limit&wait={wait}"), None);

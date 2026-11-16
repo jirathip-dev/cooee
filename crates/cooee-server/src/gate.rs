@@ -59,7 +59,7 @@ impl Layer for Gate {
                 return plain(403, "forbidden: foreign Host or Origin");
             }
             let path = uri(cx).path();
-            if OPEN.contains(&path) {
+            if OPEN.contains(&path) || path.starts_with("/look/") {
                 return next.run(cx, body).await;
             }
             if path.starts_with("/mcp/agent/") {
@@ -83,7 +83,7 @@ impl Layer for Gate {
             let found = match token.map(|t| self.devices.find(t, now())).transpose() {
                 Ok(found) => found.flatten(),
                 Err(e) => {
-                    eprintln!("cooee: devices: {e}");
+                    cooee_core::note!("cooee: devices: {e}");
                     return plain(503, "cooee can't read its paired devices: try again soon.");
                 }
             };
@@ -107,7 +107,7 @@ impl Layer for Timing {
 
     fn handle<'a>(&'a self, cx: &'a Cx, body: Body, next: Next<'a>) -> LayerFuture<'a> {
         Box::pin(async move {
-            let start = std::time::Instant::now();
+            let start = cooee_core::clock::instant();
             let response = next.run(cx, body).await.into_response(cx)?;
             let route = try_endpoint(cx).map_or("(none)", |e| match e.path().as_str() {
                 "" => "/",

@@ -127,7 +127,7 @@ pub fn read(store: &Store, id: &str, before: Option<u64>) -> Result<String, Stor
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, time::Instant};
+    use std::fs;
 
     use super::*;
 
@@ -135,7 +135,7 @@ mod tests {
         let dir = crate::scratch::owned(
             std::env::temp_dir().join(format!("cooee-history-{name}-{}", std::process::id())),
         );
-        let _ = fs::remove_dir_all(&dir);
+        fs::remove_dir_all(&dir).ok();
         Store::open(&dir).unwrap()
     }
 
@@ -261,7 +261,7 @@ mod tests {
             }
             fs::write(dir.join(format!("threads/{id}.jsonl")), lines).unwrap();
         }
-        let start = Instant::now();
+        let start = crate::clock::instant();
         let got = search(&s, &ids, "question 9 thread 999", 5).unwrap();
         let ms = start.elapsed().as_millis();
         assert!(got.starts_with("t3e7 "), "{got}");

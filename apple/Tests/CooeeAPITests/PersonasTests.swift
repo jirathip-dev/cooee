@@ -44,6 +44,19 @@ internal struct PersonasTests {
         #expect(server.requests("/personas").first?.httpMethod == "POST")
     }
 
+    @Test internal func aDeleteRemovesThePersonaAndAModelPickGoesToItsThread() async throws {
+        let server = CannedServer([
+            "/personas/coder": [Answer(headers: json, chunks: ["null"])],
+            "/threads/t1/model": [Answer(headers: json, chunks: [#""switched""#])],
+        ])
+        let client = server.client()
+        try await client.remove("coder")
+        try await client.model("t1", model: "opus", effort: "high")
+        #expect(server.requests("/personas/coder").map(\.httpMethod) == ["DELETE"])
+        #expect(
+            try server.decoded("/threads/t1/model", as: [String: String].self) == ["model": "opus", "effort": "high"])
+    }
+
     @Test internal func pushOnPostsTheDeviceTokenAndOffDeletesIt() async throws {
         let server = CannedServer(["/push/apns": [Answer(chunks: ["ok"])]])
         try await server.client().push("ab12", enabled: true)
@@ -86,5 +99,13 @@ internal struct PersonasTests {
         _ = try await client.folders(nil)
         let asked = server.requests("/folders").map { $0.url?.query() }
         #expect(asked == ["path=%2Fw%2Fmy%20app", nil])
+    }
+
+    @Test internal func aNewThreadCarriesThePickedModelAndEffort() async throws {
+        let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n1"}"#])]])
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp", model: "opus", effort: "high")
+        _ = try await server.client().newThread(persona: persona, machine: "", text: "hi", randomID: "r9")
+        let sent = try server.decoded("/threads", as: [String: JSONValue].self)
+        #expect(sent["model"] == .string("opus") && sent["effort"] == .string("high"))
     }
 }

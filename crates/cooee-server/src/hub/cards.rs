@@ -1,6 +1,6 @@
 use std::{io, sync::Mutex};
 
-use cooee_core::{Body, Card, Change, Item, Plugin, personas, shed_proto::ApprovalOption};
+use cooee_core::{Body, Card, Change, Item, Plugin, agents, shed_proto::ApprovalOption};
 
 use super::{CHANGE, CardSpec, Hub, HubError, Live, lock, now};
 
@@ -51,6 +51,9 @@ impl Hub {
                 if matches!(card.form.as_deref(), Some("mcp" | "skill")) =>
             {
                 Ok(self.proposal_answer(id, item, option))
+            }
+            Body::Approval { card, .. } if card.form.as_deref() == Some("persona") => {
+                Ok(self.persona_answer(id, item, option))
             }
             _ => return self.shed_approve(&live, &terminal, tapped, option),
         };
@@ -107,7 +110,7 @@ impl Hub {
     /// config's diff, a secret's name or a run's command and sha.
     pub fn card(&self, plugin: &Plugin, c: CardSpec) -> Result<Item, HubError> {
         let (thread, owner) = (self.thread(&c.thread)?.0, self.plugin_of(&plugin.name));
-        let personas = personas::list(self.config_dir(), &self.data);
+        let personas = agents::list(self.config_dir(), &self.data);
         let persona = personas.iter().find(|p| p.id == thread.profile);
         if !persona.is_some_and(|p| p.plugins.contains(&owner)) {
             return Err(HubError::Refused(format!(

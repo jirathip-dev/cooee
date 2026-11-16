@@ -1,9 +1,9 @@
 use std::{
-    env, fs,
+    fs,
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::ExitCode,
-    time::{SystemTime, UNIX_EPOCH},
+    time::UNIX_EPOCH,
 };
 
 use cooee_core::{Accounts, Config, Provider, Providers};
@@ -44,7 +44,7 @@ fn token_age(path: &Path) -> Result<u64, String> {
     let age = meta
         .modified()
         .ok()
-        .and_then(|m| SystemTime::now().duration_since(m).ok());
+        .and_then(|m| cooee_core::clock::now().duration_since(m).ok());
     Ok(age.map_or(0, |a| a.as_secs() / 86_400))
 }
 
@@ -97,7 +97,7 @@ fn entries<'a>(providers: &'a Providers, data: &Path) -> Vec<Entry<'a>> {
 /// Runs `cooee accounts …`: 0 done, 1 refused (stderr says why), 2 usage, 3 signed out with `--require-signed-in`.
 pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCode {
     let refuse = |code: u8, why: &str| {
-        eprintln!("cooee: {why}");
+        cooee_core::note!("cooee: {why}");
         ExitCode::from(code)
     };
     let Some(data) = config.data_dir() else {
@@ -128,19 +128,20 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
         ["ls"] => {
             let rows: Vec<Value> = all.iter().map(|e| row(e, &accounts)).collect();
             if json {
-                println!("{}", Value::Array(rows));
+                cooee_core::say!("{}", Value::Array(rows));
             } else {
                 for r in rows {
-                    let at = r["folder"].as_str().or(r["token_file"].as_str());
-                    let state = if r["signed_in"] == true {
+                    let field = |k: &str| r.get(k).and_then(Value::as_str);
+                    let at = field("folder").or(field("token_file"));
+                    let state = if r.get("signed_in") == Some(&Value::Bool(true)) {
                         "signed in"
                     } else {
                         "signed out"
                     };
-                    let name = r["name"].as_str().filter(|n| !n.is_empty());
-                    println!(
+                    let name = field("name").filter(|n| !n.is_empty());
+                    cooee_core::say!(
                         "{}  {}  {state}  {}",
-                        r["provider"].as_str().unwrap_or_default(),
+                        field("provider").unwrap_or_default(),
                         name.unwrap_or("(system default)"),
                         at.unwrap_or("~")
                     );
@@ -180,9 +181,9 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
                 if require {
                     return refuse(3, &format!("{provider}/{name} is signed out"));
                 }
-                eprintln!("cooee: {provider}/{name} is signed out");
+                cooee_core::note!("cooee: {provider}/{name} is signed out");
             }
-            println!("{}", Value::Object(env));
+            cooee_core::say!("{}", Value::Object(env));
             ExitCode::SUCCESS
         }
         _ => refuse(
@@ -195,11 +196,10 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
 
 fn row(e: &Entry, accounts: &Accounts) -> Value {
     let (signed_in, error) = e.state();
-    let now = env::var("COOEE_NOW")
-        .ok()
-        .and_then(|s| s.parse().ok())
+    let now = cooee_core::env_var("COOEE_NOW")
+        .and_then(|s| s.to_str()?.parse().ok())
         .unwrap_or_else(|| {
-            SystemTime::now()
+            cooee_core::clock::now()
                 .duration_since(UNIX_EPOCH)
                 .map_or(0, |d| d.as_secs())
         });
@@ -209,7 +209,9 @@ fn row(e: &Entry, accounts: &Accounts) -> Value {
     };
     let usage = usage.map(|u| {
         let mut v = json!(u);
-        v["age_s"] = json!(now.saturating_sub(u.read_at));
+        if let Some(o) = v.as_object_mut() {
+            o.insert("age_s".to_owned(), json!(now.saturating_sub(u.read_at)));
+        }
         v
     });
     let (folder, token) = match &e.login {

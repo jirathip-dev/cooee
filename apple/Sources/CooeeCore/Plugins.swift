@@ -2,7 +2,7 @@ import Foundation
 
 public struct Place: Codable, Sendable, Equatable, Identifiable {
     private enum CodingKeys: String, CodingKey {
-        case plugin, label, screen
+        case plugin, label, screen, count
         case key = "id"
     }
 
@@ -10,14 +10,16 @@ public struct Place: Codable, Sendable, Equatable, Identifiable {
     public let key: String
     public let label: String
     public let screen: String
+    public var count: Int?
 
     public var id: String { "\(plugin)\(screen)" }
 
-    public init(plugin: String, key: String, label: String, screen: String) {
+    public init(plugin: String, key: String, label: String, screen: String, count: Int? = nil) {
         self.plugin = plugin
         self.key = key
         self.label = label
         self.screen = screen
+        self.count = count
     }
 }
 

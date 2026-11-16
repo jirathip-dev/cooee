@@ -4,7 +4,7 @@ use std::{
     path::Path,
     process::{Child, Stdio},
     thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 #[cfg(unix)]
@@ -134,16 +134,28 @@ impl dyn Provider + '_ {
                 s
             })
         };
-        let stdout = drain(child.stdout.take().map(|r| Box::new(r) as _));
-        let stderr = drain(child.stderr.take().map(|r| Box::new(r) as _));
-        let deadline = Instant::now() + LIMIT;
+        let stdout = drain(
+            child
+                .stdout
+                .take()
+                .map(|r| -> Box<dyn Read + Send> { Box::new(r) }),
+        );
+        let stderr = drain(
+            child
+                .stderr
+                .take()
+                .map(|r| -> Box<dyn Read + Send> { Box::new(r) }),
+        );
+        let deadline = crate::clock::instant() + LIMIT;
         let ok = loop {
             match child.try_wait() {
                 Ok(Some(status)) => break status.success(),
-                Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(20)),
+                Ok(None) if crate::clock::instant() < deadline => {
+                    crate::clock::sleep(Duration::from_millis(20));
+                }
                 _ => {
                     kill_group(&mut child);
-                    let _ = child.wait();
+                    child.wait().ok();
                     return Ok(None);
                 }
             }
@@ -262,10 +274,10 @@ fn kill_group(child: &mut Child) {
     #[cfg(unix)]
     {
         crate::group::signal(child, "-TERM");
-        thread::sleep(Duration::from_millis(200));
+        crate::clock::sleep(Duration::from_millis(200));
         crate::group::signal(child, "-KILL");
     }
-    let _ = child.kill();
+    child.kill().ok();
 }
 
 pub(crate) fn one_line(text: &str) -> String {
@@ -280,7 +292,7 @@ fn installed(bin: &str) -> bool {
     if path.components().count() > 1 {
         return path.is_file();
     }
-    env::var_os("PATH").is_some_and(|p| env::split_paths(&p).any(|d| d.join(bin).is_file()))
+    crate::env_var("PATH").is_some_and(|p| env::split_paths(&p).any(|d| d.join(bin).is_file()))
 }
 
 fn tokenish(c: char) -> bool {
@@ -429,7 +441,7 @@ mod tests {
             home: "H".to_owned(),
             ..Spec::default()
         });
-        let started = Instant::now();
+        let started = crate::clock::instant();
         let s = p.check(Some(&pids));
         assert!(started.elapsed() < LIMIT + Duration::from_secs(2));
         assert_eq!(s, Status::unknown(TIMED_OUT));
@@ -442,10 +454,10 @@ mod tests {
                 .unwrap()
                 .success()
         };
-        let gone = Instant::now() + Duration::from_secs(2);
+        let gone = crate::clock::instant() + Duration::from_secs(2);
         for pid in pids.split_whitespace() {
-            while alive(pid) && Instant::now() < gone {
-                thread::sleep(Duration::from_millis(20));
+            while alive(pid) && crate::clock::instant() < gone {
+                crate::clock::sleep(Duration::from_millis(20));
             }
             assert!(!alive(pid), "pid {pid} still alive");
         }

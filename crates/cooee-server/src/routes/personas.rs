@@ -1,6 +1,9 @@
 use std::{collections::BTreeMap, sync::Arc};
 
-use cooee_core::personas::{self, Persona};
+use cooee_core::{
+    agents::{self, Agent},
+    memory,
+};
 use cooee_machines::Machines;
 use serde::Serialize;
 use topcoat::{
@@ -54,13 +57,13 @@ async fn model_list(cx: &Cx) -> Result<Answer<Vec<ModelList>>> {
 }
 
 #[route(GET "/personas")]
-async fn persona_list(cx: &Cx) -> Result<Answer<Vec<Persona>>> {
-    on_personas(cx, |d, c| Ok(personas::list(Some(c), d))).await
+async fn persona_list(cx: &Cx) -> Result<Answer<Vec<Agent>>> {
+    on_personas(cx, |d, c| Ok(agents::list(Some(c), d))).await
 }
 
 #[route(POST "/personas")]
-async fn persona_new(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>> {
-    let p = Persona {
+async fn persona_new(cx: &Cx, Json(p): Json<Agent>) -> Result<Answer<Agent>> {
+    let p = Agent {
         id: String::new(),
         ..p
     };
@@ -105,14 +108,14 @@ async fn machine_list(cx: &Cx) -> Result<Answer<Vec<MachineRow>>> {
 }
 
 #[route(GET "/personas/{id}")]
-async fn persona_get(cx: &Cx) -> Result<Answer<Persona>> {
+async fn persona_get(cx: &Cx) -> Result<Answer<Agent>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| personas::find(Some(c), d, &id)).await
+    on_personas(cx, move |d, c| agents::find(Some(c), d, &id)).await
 }
 
 #[route(PUT "/personas/{id}")]
-async fn persona_put(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>> {
-    let p = Persona {
+async fn persona_put(cx: &Cx, Json(p): Json<Agent>) -> Result<Answer<Agent>> {
+    let p = Agent {
         id: thread_id(cx),
         ..p
     };
@@ -120,59 +123,55 @@ async fn persona_put(cx: &Cx, Json(p): Json<Persona>) -> Result<Answer<Persona>>
 }
 
 #[route(GET "/personas/{id}/places")]
-async fn places(cx: &Cx) -> Result<Answer<Vec<personas::Place>>> {
+async fn places(cx: &Cx) -> Result<Answer<Vec<agents::Place>>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| personas::places(Some(c), d, &id)).await
+    on_personas(cx, move |d, c| agents::places(Some(c), d, &id)).await
 }
 
 #[route(DELETE "/personas/{id}")]
 async fn persona_delete(cx: &Cx) -> Result<Answer<()>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| personas::remove(c, d, &id)).await
+    on_personas(cx, move |_, c| agents::remove(c, &id)).await
 }
 
 #[route(GET "/personas/{id}/memory")]
-async fn memory(cx: &Cx) -> Result<Answer<Vec<personas::Note>>> {
+async fn memory_list(cx: &Cx) -> Result<Answer<Vec<memory::Note>>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| {
-        Ok(personas::notes(d, &personas::find(Some(c), d, &id)?.id))
-    })
-    .await
+    on_personas(cx, move |_, c| Ok(memory::notes(&agents::home(c, &id)?))).await
 }
 
-async fn owner_edit(cx: &Cx, e: personas::Edit) -> Result<Answer<Option<personas::Note>>> {
+async fn owner_edit(cx: &Cx, e: memory::Edit) -> Result<Answer<Option<memory::Note>>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| {
-        let id = personas::find(Some(c), d, &id)?.id;
-        personas::remember(d, &id, "owner", &e, now())
+    on_personas(cx, move |_, c| {
+        memory::remember(&agents::home(c, &id)?, "owner", &e, now())
     })
     .await
 }
 
 #[route(POST "/personas/{id}/memory")]
-async fn memory_add(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<personas::Note>>> {
-    let e = personas::Edit {
+async fn memory_add(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<memory::Note>>> {
+    let e = memory::Edit {
         text: Some(n.text),
-        ..personas::Edit::default()
+        ..memory::Edit::default()
     };
     owner_edit(cx, e).await
 }
 
 #[route(PUT "/personas/{id}/memory/{name}")]
-async fn memory_put(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<personas::Note>>> {
-    let e = personas::Edit {
+async fn memory_put(cx: &Cx, Json(n): Json<Code>) -> Result<Answer<Option<memory::Note>>> {
+    let e = memory::Edit {
         text: Some(n.text),
         replaces: Some(path_param::<Name>(cx).to_owned()),
-        ..personas::Edit::default()
+        ..memory::Edit::default()
     };
     owner_edit(cx, e).await
 }
 
 #[route(DELETE "/personas/{id}/memory/{name}")]
-async fn memory_drop(cx: &Cx) -> Result<Answer<Option<personas::Note>>> {
-    let e = personas::Edit {
+async fn memory_drop(cx: &Cx) -> Result<Answer<Option<memory::Note>>> {
+    let e = memory::Edit {
         forget: vec![path_param::<Name>(cx).to_owned()],
-        ..personas::Edit::default()
+        ..memory::Edit::default()
     };
     owner_edit(cx, e).await
 }
@@ -180,10 +179,7 @@ async fn memory_drop(cx: &Cx) -> Result<Answer<Option<personas::Note>>> {
 #[route(DELETE "/personas/{id}/memory")]
 async fn memory_clear(cx: &Cx) -> Result<Answer<()>> {
     let id = thread_id(cx);
-    on_personas(cx, move |d, c| {
-        personas::forget(d, &personas::find(Some(c), d, &id)?.id)
-    })
-    .await
+    on_personas(cx, move |_, c| memory::forget(&agents::home(c, &id)?)).await
 }
 
 pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
@@ -196,7 +192,7 @@ pub(super) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(persona_put)
         .route(persona_delete)
         .route(places)
-        .route(memory)
+        .route(memory_list)
         .route(memory_add)
         .route(memory_put)
         .route(memory_drop)

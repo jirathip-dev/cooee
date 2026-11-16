@@ -114,6 +114,8 @@ struct New {
     effort: String,
     #[serde(default)]
     machine: Option<String>,
+    #[serde(default)]
+    setup: bool,
 }
 
 #[route(POST "/threads")]
@@ -130,7 +132,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
             (&data, config.as_deref(), &list),
             (&new.agent, new.account.as_deref(), profile),
             new.folder,
-            picked,
+            (picked, new.setup),
         )?;
         if let Some(m) = new.machine {
             recipe.machine = m;
@@ -147,12 +149,14 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         } else {
             hub.create(&agent, &folder, &new.text, &new.random_id, &recipe)?
         };
-        let ours = list.into_iter().find(|p| p.id() == profile);
-        let ours = ours.and_then(|p| Some((hub.backend(p.plugin.as_deref()?)?, p.name)));
+        let ours = list.into_iter().find(|a| a.id == profile).and_then(|a| {
+            let name = a.id.split_once('/')?.1.to_owned();
+            Some((hub.backend(&a.lent?.plugin)?, name))
+        });
         if let Some((b, name)) = ours
             && let Err(e) = plugin::started(&b, &id, &name)
         {
-            eprintln!("cooee: plugin {}: thread-started: {e}", b.name);
+            cooee_core::note!("cooee: plugin {}: thread-started: {e}", b.name);
         }
         Ok(id)
     });
@@ -173,7 +177,7 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
             (&data, config.as_deref(), &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
-            (t.model, t.effort),
+            ((t.model, t.effort), t.setup),
         )?;
         let name = provider_name(&t.agent, &logins.statuses());
         hub.retry(&id, recipe, &name)

@@ -99,7 +99,10 @@ pub(crate) fn ceremony(
         return Err("That passkey is for another site.");
     }
     let hash = Sha256::digest(rp_id(host).as_bytes());
-    if auth.len() < 37 || auth[..32] != hash[..] || auth[32] & 0x05 != 0x05 {
+    if auth.len() < 37
+        || auth.get(..32) != Some(&hash[..])
+        || auth.get(32).is_none_or(|f| f & 0x05 != 0x05)
+    {
         return Err("That passkey wasn't checked with Face ID or a passcode.");
     }
     Ok(())

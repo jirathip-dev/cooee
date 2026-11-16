@@ -259,7 +259,10 @@ async fn plugin_log(cx: &Cx) -> Result<Response> {
         return plain(404, &format!("{} isn't installed.", q.name));
     }
     let text = std::fs::read(manager(cx).log(&q.name)).unwrap_or_default();
-    let tail = String::from_utf8_lossy(&text[text.len().saturating_sub(16 << 10)..]).into_owned();
+    let tail = text
+        .get(text.len().saturating_sub(16 << 10)..)
+        .unwrap_or_default();
+    let tail = String::from_utf8_lossy(tail).into_owned();
     plain(
         200,
         if tail.is_empty() {

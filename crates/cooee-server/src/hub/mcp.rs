@@ -1,9 +1,10 @@
-use std::{collections::BTreeMap, path::Path};
+use std::{collections::BTreeMap, io, path::Path};
 
 use cooee_core::{
     Body, Card, Change, Config, Item, Launch, Thread,
+    agents::{self, Home},
     mcp::{self, COOEE, Pick, Server},
-    personas,
+    memory,
     shed_proto::ApprovalOption,
     skills::{self, Skill},
 };
@@ -76,7 +77,7 @@ impl Proposal {
 impl Hub {
     /// Agents' MCP proxies reach cooee at `url` (`cooee serve`, once it listens).
     pub fn listening(&self, url: String) {
-        let _ = self.url.set(url);
+        self.url.set(url).ok();
     }
 
     /// The registry, read from the config file now.
@@ -118,8 +119,10 @@ impl Hub {
     }
 
     fn picks(&self, id: &str) -> Vec<Pick> {
-        cooee_core::profiles::find(self.config_dir(), &self.data, id)
-            .map_or_else(|_| Vec::new(), |p| p.mcp)
+        let list = agents::all(self.config_dir(), &self.data, |_| None);
+        list.into_iter()
+            .find(|a| a.id == id)
+            .map_or_else(Vec::new, |a| a.mcp)
     }
 
     fn grant_of(&self, s: Server, tools: Option<Vec<String>>) -> Result<Grant, String> {
@@ -219,19 +222,15 @@ impl Hub {
     ///
     /// # Errors
     /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an edit refused.
-    pub fn remember(&self, id: &str, token: &str, e: &personas::Edit) -> Result<String, HubError> {
-        let meta = self.token_of(id, token)?;
-        let found = personas::list(self.config_dir(), &self.data)
-            .into_iter()
-            .find(|p| p.id == meta.profile);
-        let p = found.ok_or_else(|| HubError::Refused(format!("thread {id} has no persona")))?;
-        let kept = personas::remember(&self.data, &p.id, "persona", e, now())
+    pub fn remember(&self, id: &str, token: &str, e: &memory::Edit) -> Result<String, HubError> {
+        let home = self.home_of(id, token)?;
+        let kept = memory::remember(&home, "persona", e, now())
             .map_err(|e| HubError::Refused(e.to_string()))?;
-        let used = personas::used(&personas::notes(&self.data, &p.id));
+        let used = memory::used(&memory::notes(&home));
         let what = kept.map_or_else(|| "Forgotten".to_owned(), |n| format!("Kept as [{}]", n.id));
         Ok(format!(
             "{what}; {used} of {} characters used.",
-            personas::CAP
+            memory::CAP
         ))
     }
 
@@ -248,7 +247,7 @@ impl Hub {
         before: Option<u64>,
     ) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
-        let persona = personas::find(self.config_dir(), &self.data, &meta.profile)
+        let persona = agents::find(self.config_dir(), &self.data, &meta.profile)
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
         let refused = |e: cooee_core::StoreError| HubError::Refused(e.to_string());
         if thread.is_empty() && query.trim().is_empty() {
@@ -306,8 +305,9 @@ impl Hub {
         (id, token): (&str, &str),
         p: SkillProposal,
     ) -> Result<Item, HubError> {
-        let persona = self.persona_of(id, token)?;
-        let old = skills::check(&self.data, &persona, &p.skill, p.replaces.as_deref())
+        let home = self.home_of(id, token)?;
+        let persona = self.token_of(id, token)?.profile;
+        let old = skills::check(&home, &p.skill, p.replaces.as_deref())
             .map_err(|e| HubError::Refused(e.to_string()))?;
         let verb = if p.replaces.is_some() { "edit" } else { "add" };
         let tool = format!(
@@ -328,16 +328,24 @@ impl Hub {
     /// # Errors
     /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or no such skill of its.
     pub fn read_skill(&self, (id, token): (&str, &str), name: &str) -> Result<String, HubError> {
-        let persona = self.persona_of(id, token)?;
-        let s = skills::read(&self.data, &persona, name)
-            .map_err(|e| HubError::Refused(format!("{e} for {persona}")))?;
+        let home = self.home_of(id, token)?;
+        let s = skills::read(&home, name).map_err(|e| {
+            let persona = home
+                .path()
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
+            HubError::Refused(format!("{e} for {persona}"))
+        })?;
         Ok(s.body.chars().take(8000).collect())
     }
 
-    fn persona_of(&self, id: &str, token: &str) -> Result<String, HubError> {
+    fn home_of(&self, id: &str, token: &str) -> Result<Home, HubError> {
         let meta = self.token_of(id, token)?;
-        personas::find(self.config_dir(), &self.data, &meta.profile)
-            .map(|p| p.id)
+        let config = self
+            .config_dir()
+            .ok_or_else(|| HubError::Refused("no config folder".to_owned()))?;
+        agents::home(config, &meta.profile)
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))
     }
 
@@ -400,7 +408,11 @@ impl Hub {
                 persona,
                 skill,
                 replaces,
-            } => skills::save(&self.data, &persona, skill, replaces.as_deref())
+            } => self
+                .config_dir()
+                .ok_or_else(|| io::Error::other("no config folder"))
+                .and_then(|c| agents::home(c, &persona))
+                .and_then(|h| skills::save(&h, skill, replaces.as_deref()))
                 .map(|s| Some(format!("saved skill {}", s.name)))
                 .map_err(|e| e.to_string()),
         }

@@ -43,20 +43,16 @@ fn call(shed: &FakeShed, id: &str, name: &str, args: &Value) -> Value {
     serde_json::from_slice::<Value>(&out.stdout).unwrap()["result"].clone()
 }
 
-fn change(file: &Path, f: impl FnOnce(&mut Vec<Value>)) {
+fn change(file: &Path, f: impl FnOnce(&mut serde_json::Map<String, Value>)) {
     let mut v: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
-    f(v["routines"].as_array_mut().unwrap());
+    f(v["runs"].as_object_mut().unwrap());
     fs::write(file, v.to_string()).unwrap();
 }
 
 fn recorded(file: &Path, id: &str) -> Value {
     for _ in 0..100 {
         let v: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
-        let r = v["routines"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|r| r["id"] == id);
+        let r = v["runs"].get(id);
         if let Some(r) = r.filter(|r| r["last_due"].as_u64().unwrap_or(0) > 0) {
             return r.clone();
         }
@@ -143,8 +139,8 @@ fn a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts() {
     drop(cooee);
 
     let eight_days_ago = ago(8);
-    let file = dir.join("data/routines.json");
-    change(&file, |list| list[0]["made_at"] = json!(eight_days_ago));
+    let file = dir.join("data/routine-runs.json");
+    change(&file, |runs| runs[&rid]["made_at"] = json!(eight_days_ago));
     let cooee = Cooee::start(&dir, &shed.dir);
     let ran = recorded(&file, &rid);
     let due = ran["last_due"].as_u64().unwrap();
@@ -176,13 +172,24 @@ fn a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts() {
     assert_eq!(prompts(), 1);
     drop(cooee);
 
-    change(&file, |list| {
-        let mut other = list[0].clone();
-        other["id"] = json!("r-other");
-        other["prompt"] = json!("Other due {{due}}");
+    let settings = dir.join("routines.toml");
+    let text = fs::read_to_string(&settings).unwrap();
+    let other = text
+        .replace(&format!("id = \"{rid}\""), "id = \"r-other\"")
+        .replace(
+            "prompt = \"Renewals due {{due}}?\"",
+            "prompt = \"Other due {{due}}\"",
+        );
+    assert!(
+        other.contains("r-other") && other.contains("Other due"),
+        "{text}"
+    );
+    fs::write(&settings, format!("{text}\n{other}")).unwrap();
+    change(&file, |runs| {
+        let mut other = runs[&rid].clone();
         other["last_due"] = json!(0);
         other.as_object_mut().unwrap().remove("last_run");
-        list.push(other);
+        runs.insert("r-other".to_owned(), other);
     });
     let cooee = Cooee::start(&dir, &shed.dir);
     recorded(&file, "r-other");
@@ -190,9 +197,9 @@ fn a_schedule_made_in_chat_runs_once_per_due_time_even_across_restarts() {
     assert_eq!((runs(&cooee, &id).len(), prompts()), (2, 1));
     drop(cooee);
 
-    change(&file, |list| {
-        list[0]["last_due"] = json!(0);
-        list[0].as_object_mut().unwrap().remove("last_run");
+    change(&file, |runs| {
+        runs[&rid]["last_due"] = json!(0);
+        runs[&rid].as_object_mut().unwrap().remove("last_run");
     });
     let cooee = Cooee::start(&dir, &shed.dir);
     assert_eq!(recorded(&file, &rid)["last_due"], due);
@@ -212,8 +219,8 @@ fn a_new_thread_routine_starts_a_thread_marked_with_it_in_the_list() {
         .unwrap()
         .to_owned();
     drop(cooee);
-    let file = dir.join("data/routines.json");
-    change(&file, |list| list[0]["made_at"] = json!(ago(2)));
+    let file = dir.join("data/routine-runs.json");
+    change(&file, |runs| runs[&rid]["made_at"] = json!(ago(2)));
     let cooee = Cooee::start(&dir, &shed.dir);
     let ran = recorded(&file, &rid);
     let started = ran["last_run"]["thread"].as_str().unwrap().to_owned();

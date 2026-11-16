@@ -17,9 +17,18 @@ pub fn scratch(name: &str) -> PathBuf {
     let dir = cooee_core::scratch::owned(
         env::temp_dir().join(format!("cooee-{name}-{}", std::process::id())),
     );
-    let _ = fs::remove_dir_all(&dir);
+    fs::remove_dir_all(&dir).ok();
     fs::create_dir_all(&dir).unwrap();
     dir
+}
+
+/// Agent `id`'s folder under config folder `dir` (#359): `agent.toml` holding `toml`, and `INSTRUCTIONS.md`.
+pub fn agent(dir: &Path, id: &str, toml: &str, instructions: &str) -> PathBuf {
+    let home = dir.join("agents").join(id);
+    fs::create_dir_all(&home).unwrap();
+    fs::write(home.join("agent.toml"), toml).unwrap();
+    fs::write(home.join("INSTRUCTIONS.md"), instructions).unwrap();
+    home
 }
 
 /// `cooee serve` on a free port with data in `dir/data`, the fake shed in `shed`, the root `dir/root` unless `extra`
@@ -259,17 +268,18 @@ impl Drop for Cooee {
         if !matches!(self.child.try_wait(), Ok(None)) {
             return;
         }
-        let _ = Command::new("kill")
+        Command::new("kill")
             .args(["-TERM", &self.child.id().to_string()])
-            .status();
+            .status()
+            .ok();
         for _ in 0..100 {
             if !matches!(self.child.try_wait(), Ok(None)) {
                 return;
             }
             thread::sleep(Duration::from_millis(50));
         }
-        let _ = self.child.kill();
-        let _ = self.child.wait();
+        self.child.kill().ok();
+        self.child.wait().ok();
     }
 }
 

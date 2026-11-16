@@ -8,7 +8,23 @@ use std::{
 use cooee_core::{Config, swag::Swag};
 use serde::{Deserialize, Serialize};
 
-use crate::hub::lock;
+use topcoat::{
+    Result,
+    context::{Cx, app_context},
+    router::{
+        Body,
+        content::Json,
+        path_param,
+        response::{IntoResponse, Response},
+        route,
+    },
+};
+
+use crate::{
+    http::{Data, plain},
+    hub::lock,
+    look::Looks,
+};
 
 fn other(why: impl Into<String>) -> io::Error {
     io::Error::other(why.into())
@@ -66,7 +82,11 @@ fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
         .output()?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
-        return Err(other(format!("git {}: {}", args[0], err.trim())));
+        return Err(other(format!(
+            "git {}: {}",
+            args.first().unwrap_or(&""),
+            err.trim()
+        )));
     }
     Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
 }
@@ -241,7 +261,7 @@ impl Themes {
             )));
         }
         let stage = self.dir.join(".themes-stage").join(&pack.name);
-        let _ = fs::remove_dir_all(&stage);
+        fs::remove_dir_all(&stage).ok();
         let folder = Path::new(&pack.source);
         let commit = if pack.listed {
             self.vendored(&pack.name, &stage)?
@@ -256,7 +276,7 @@ impl Themes {
             fs::rename(&stage, &to)
         });
         if done.is_err() {
-            let _ = fs::remove_dir_all(&stage);
+            fs::remove_dir_all(&stage).ok();
         }
         done?;
         self.pin(
@@ -360,5 +380,62 @@ impl Themes {
         }
         rows.sort_by(|a, b| a.name.cmp(&b.name));
         Ok(rows)
+    }
+}
+
+pub(crate) fn routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterBuilder {
+    b.route(looks_json).route(look_art)
+}
+
+fn looks(cx: &Cx) -> impl Future<Output = Result<Looks, tokio::task::JoinError>> {
+    let config = app_context::<Data>(cx).1.clone();
+    tokio::task::spawn_blocking(move || Looks::load(config.as_deref(), None).0)
+}
+
+#[route(GET "/api/v1/looks")]
+async fn looks_json(cx: &Cx) -> Result<Response> {
+    Json(looks(cx).await?).into_response(cx)
+}
+
+path_param!(look);
+path_param!(art);
+
+const FRAMES: &[u8] = b"<style>.kf1,.f1{opacity:var(--o1,1)}.kf2,.f2{opacity:var(--o2,0)}</style>";
+const CALM: &[u8] = b"<style>.h-busy,.h-held,.l-overcast,.l-rain{display:none}</style>";
+
+fn with_rule(svg: &[u8], rule: &[u8]) -> Vec<u8> {
+    let at = svg
+        .windows(4)
+        .position(|w| w == b"<svg")
+        .and_then(|i| {
+            svg.iter()
+                .skip(i)
+                .position(|&b| b == b'>')
+                .map(|j| i + j + 1)
+        })
+        .unwrap_or(0);
+    let (head, tail) = svg.split_at_checked(at).unwrap_or((&[], svg));
+    [head, rule, tail].concat()
+}
+
+#[route(GET "/look/{look}/{art}")]
+async fn look_art(cx: &Cx) -> Result<Response> {
+    let (name, art) = (path_param::<Look>(cx).to_owned(), path_param::<Art>(cx));
+    let looks = looks(cx).await?;
+    let theme = looks.themes.get(&name);
+    let svg = match art {
+        "sprites.svg" => theme
+            .and_then(|t| t.sprite_sheet.as_deref())
+            .map(|b| with_rule(b, FRAMES)),
+        "scene.svg" => theme
+            .and_then(|t| t.scene_art.as_deref())
+            .map(|b| with_rule(b, CALM)),
+        _ => None,
+    };
+    match svg {
+        Some(svg) => Ok(Response::builder()
+            .header("Content-Type", "image/svg+xml")
+            .body(Body::from(svg))?),
+        None => plain(404, "no such theme art"),
     }
 }
