@@ -70,6 +70,7 @@ internal struct PluginScreenSheet: View {
                             if size == .compact { store.send(.push(thread)) } else { store.send(.open(thread)) }
                         }
                         .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
+                        .environment(\.refresh, size == .compact ? nil : refresh)
                     } else if store.offline {
                         Text("Nothing kept from \(store.label) yet.").foregroundStyle(palette.mute)
                     } else {
@@ -78,6 +79,7 @@ internal struct PluginScreenSheet: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading).padding(BlocksView.inset)
             }
+            .modifier(Refreshing(refresh: size == .compact ? refresh : nil))
             if let said = store.said { Text(said).ui(13, .regular, look).foregroundStyle(palette.mute).padding(8) }
             if let pending = store.screen?.root["pending"] {
                 PendingBar(pending: pending).environment(\.act, { store.send(.act($0)) })
@@ -86,6 +88,11 @@ internal struct PluginScreenSheet: View {
         }
         .background(palette.background).foregroundStyle(palette.foreground)
         .task { await store.send(.task).finish() }
+    }
+
+    private var refresh: (@MainActor () -> Void)? {
+        guard store.screen?.root["refresh"]?.bool == true else { return nil }
+        return { store.send(.retry) }
     }
 
     private var back: (label: String, run: () -> Void)? {

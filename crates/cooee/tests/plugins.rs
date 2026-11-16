@@ -894,6 +894,34 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     );
 }
 
+/// #315: `cooee plugin check` passes a row's swipe and menu, a card's menu and a screen's refresh, and names each
+/// bad value.
+#[test]
+fn plugin_check_knows_swipe_menu_and_refresh() {
+    let s = setup("additions-check");
+    let act = json!({ "label": "Archive", "action": "archive", "tone": "bad" });
+    let good = json!({ "type": "screen", "title": "Queue", "refresh": true,
+        "actions": [{ "label": "More", "icon": "more", "menu": [act] }], "blocks": [
+        { "type": "list", "rows": [{ "type": "row", "title": "#1", "swipe": [act], "menu": [act] }] },
+        { "type": "card", "title": "Merge?", "menu": [act] } ] });
+    let (ok, said) = checked(&s, &good);
+    assert!(ok, "{said}");
+    let bad = json!({ "type": "screen", "title": "Queue", "refresh": "yes", "blocks": [
+        { "type": "row", "title": "#1", "swipe": [{ "action": "archive" }], "menu": { "label": "Archive" } },
+        { "type": "card", "menu": [{ "label": "Pin", "tone": "red" }] } ] });
+    let (ok, said) = checked(&s, &bad);
+    assert!(!ok);
+    assert_eq!(
+        said.lines().skip(1).map(str::trim).collect::<Vec<_>>(),
+        [
+            "$.blocks[0].swipe[0].label: is required",
+            "$.blocks[0].menu: an object is not array",
+            "$.blocks[1].menu[0].tone: \"red\" is not one of \"ok\", \"warn\", \"bad\", \"info\", \"mute\", \"accent\", \"working\", \"needs\", \"done\", \"fail\", \"idle\"",
+            "$.refresh: \"yes\" is not boolean",
+        ]
+    );
+}
+
 /// #288: a plugin whose answer hangs holds only its own card: meanwhile another thread's send, the thread list and
 /// the home page each answer, and that thread's reply streams in.
 #[test]

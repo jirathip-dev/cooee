@@ -120,6 +120,7 @@ internal struct CardBlock: View {
                 RoundedRectangle(cornerRadius: 2).fill(tint).frame(width: 3).padding(.vertical, 16)
             }
         }
+        .modifier(BlockActs(block: block))
     }
 
     private var member: Persona? {
