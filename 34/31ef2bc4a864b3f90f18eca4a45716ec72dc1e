@@ -1,0 +1,5 @@
+Decided: the staging merge (#428's server split) keeps staging's sorted frozen and generated lists and inserts slice 7's two frozen paths, Clients.swift and Live.swift, in sorted order
+Because: .drover/arch.toml:3
+Rejected: none
+Check: sh scripts/gen.sh leaves no diff and drover arch-check --base origin/staging exits 0; the merge touched no apple file
+Owner: Nothing changes in the app; a new native client is now one file in Clients/ and one in Live/.
