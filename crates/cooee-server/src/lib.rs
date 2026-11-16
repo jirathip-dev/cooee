@@ -1,4 +1,4 @@
-//! cooee's HTTP server: the native app's JSON API (docs/api.md), the threads' live events over SSE (replayed from the
+//! cooee's HTTP server: the native app's JSON API (docs/README.md), the threads' live events over SSE (replayed from the
 //! last seen event on reconnect), provider logins, pairing and push. Every request must name one of the server's own
 //! hosts (`Host`, and `Origin` when sent: no DNS rebinding), and every call but pairing needs a paired device's
 //! cookie; a plugin's backend posts with its token instead and is reached through cooee's proxy (docs/plugins.md).
