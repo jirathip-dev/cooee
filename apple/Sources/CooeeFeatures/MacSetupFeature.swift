@@ -14,6 +14,7 @@ public struct MacSetupFeature: Sendable {
     public struct State: Equatable {
         public var step: MacStep
         public var items: LoginItems?
+        public var found: ExistingInstall?
         public var folders: [String] = []
         public var agents: [FoundAgent] = []
         public var signIns: [SignIn] = []
@@ -30,7 +31,8 @@ public struct MacSetupFeature: Sendable {
     }
 
     public enum Action: Sendable {
-        case setUp
+        case look, useExisting, takeOver, setUp
+        case found(ExistingInstall)
         case started(LoginItems)
         case foldersLoaded([String])
         case agentsLoaded([FoundAgent])
@@ -62,7 +64,7 @@ public struct MacSetupFeature: Sendable {
 
     private static let order: [MacStep] = [.welcome, .folders, .signins, .tailscale, .pairPhone]
 
-    @Dependency(\.mac) private var mac
+    @Dependency(\.mac) internal var mac
     @Dependency(\.pairing) private var pairing
     @Dependency(\.serverStore) private var serverStore
     @Dependency(\.continuousClock) private var clock
@@ -74,6 +76,8 @@ public struct MacSetupFeature: Sendable {
             switch action {
             case .setUp:
                 return setUp(&state)
+            case .look, .found, .useExisting, .takeOver:
+                return existing(&state, action)
             case .next:
                 return move(&state, by: 1)
             case .back:
