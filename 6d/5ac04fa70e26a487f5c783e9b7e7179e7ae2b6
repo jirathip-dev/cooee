@@ -1,0 +1,6 @@
+Decided: staging build fix: the accounts_env usage test reads a dateless weekly reset instead of a fixed Nov 16 date
+Because: crates/cooee-core/src/providers/claude.rs:118
+Rejected: changing the parser's one-day grace — it is correct; only the test's fixed date expired
+Rejected: waiting for staging to fix it — the time bomb is on staging too and blocks this PR's CI
+Check: stable (macos-latest) green at the head; cargo test -p cooee --test accounts_env fails at 0cb2e63 today, passes at 6d5ac04
+Owner: A test that broke today because it hardcoded today's date now works on any day.
