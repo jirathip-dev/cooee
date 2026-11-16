@@ -1,0 +1,8 @@
+Decided: merge origin/staging; hub.rs and Models.swift were split upstream, so this branch's edits move to hub/threads.rs, hub/tests.rs and Models/Slice.swift, StreamEvent.swift and a new RoomAsk.swift.
+Because: crates/cooee-server/src/hub/threads.rs:209
+Decided: the room's open asks and its deadline pause are one OpenAsks value on Live, keeping hub.rs under arch-check's 800 lines.
+Because: crates/cooee-server/src/hub/rooms.rs:40
+Decided: a member's ask card is posted as .plugin(member) to staging's CardTrust; ask is not a guarded kind, so it draws.
+Because: apple/Sources/CooeeCore/CardTrust.swift:4
+Rejected: none
+Owner: the room-ask work now sits on today's staging, with no change in behaviour.
