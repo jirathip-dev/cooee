@@ -1,0 +1,5 @@
+Decided: accounts_env's usage fixture resets at a time of day with no date, so the test cannot expire (staging build fix).
+Because: crates/cooee-core/src/providers/claude.rs:118
+Rejected: a fixed later date — it expires the same way next year.
+Check: only test text changed; the round-2 product code is the same as at 24ce9d7.
+Owner: a test that broke once Nov 16 passed now works on any day; the room-ask work is unchanged.
