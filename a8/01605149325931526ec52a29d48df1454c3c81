@@ -1,0 +1,48 @@
+Decided: persona and owner profile merge into one agents::Agent read from <config>/agents/<id>/; a plugin's profile is lent read-only
+Because: docs/architecture/agent-folders/adr.md:63
+Decided: the move is a plan staged in agents.migrating/, committed by one rename, then old paths renamed *.bak-<date>
+Because: q1617
+Rejected: agents::copy and agents::set_mcp from shapes.md — no route calls them (GET /agents lists ACP agents; there is no profile MCP route), so they would be dead code
+Rejected: toml_edit to keep comments — a new dependency; files are written whole by the existing idiom (ADR Writing B)
+Decided: a profile's settings folder inside profiles/ is copied whole, and a copied file naming a profiles/ path gets a warn line
+Because: crates/cooee-core/src/migrate.rs:128
+Decided: a routine typed by hand into routines.toml gets made_at = now at the runner's next tick
+Decided: main() carries an expect(clippy::too_many_lines) for the two `config migrate` arms
+Check: crates/cooee-core/tests/upgrade_compat.rs migrates 0.1.0 and 0.1.0-personas against expected/ byte for byte, backups intact, second run a no-op
+Check: crates/cooee/tests/agents.rs covers a hand-written folder, a malformed one (log names the file, never the text) and the dry run's hashes
+Owner: your agents now live one folder each in the config folder; the first start converts the old files and keeps them as dated backups
+
+Decided: merge origin/staging; #242's persona style moves onto agents::Agent (agent.toml `style`, unset: detailed for an orchestrator, chat for the rest)
+Because: crates/cooee-core/src/agents.rs:229
+Decided: a plugin's lent agent is Style::Detailed, so it gets no plain-answer line, as a plugin profile thread did on staging
+Because: crates/cooee-core/src/profiles.rs:109
+Decided: `config migrate` is crates/cooee/src/cmd/config.rs and the shared migrate step lives in cli.rs, since #356 bans cmd:: outside main.rs
+Because: .drover/arch.toml:28
+Decided: toml_text moves to root.rs because lib.rs is generated now; #201's comment rule strips the branch's private doc comments
+Because: .drover/arch.toml:4
+Rejected: none
+Check: the upgrade fixtures' expected agent.toml now carry `style`; personas.rs's detailed-style test writes agents/chief/agent.toml
+Owner: brought up to date with staging; agents keep the new chat style setting
+
+Decided: merge origin/staging; the branch's api.md and architecture.md text moves to the per-area docs (profiles.md, personas.md, routines.md)
+Because: docs/architecture/hot-files/adr.md:139
+Rejected: none
+Check: docs/profiles.md shows the agent folder layout and agent.toml; docs/api.md and docs/architecture.md stay deleted (frozen)
+Owner: brought up to date with staging; the agent folder docs now sit in the agent profiles page
+
+Decided: delete the committed merge leftovers login.rs.orig and machine.rs.orig
+Decided: merge origin/staging; #417's "no instructions takes its profile's" happens at migration: an empty persona INSTRUCTIONS.md gets its profile's text
+Because: crates/cooee-core/src/migrate.rs:371
+Rejected: keeping staging's runtime personas/lead.toml check in tests/profiles.rs — nothing reads personas/ after migration, and agent.toml can't name a profile
+Decided: the branch's own #203 hits move to note!/say!, .ok(), get/get_mut and env_var; #202 test temp dirs go through scratch::owned
+Because: crates/cooee-core/src/agents.rs:176
+Check: crates/cooee/tests/personas.rs a_migrated_persona_without_instructions_takes_its_profiles migrates an old personas/ + profiles/ tree on start
+Owner: brought up to date with staging; an old persona without its own instructions keeps its profile's when converted
+
+Decided: merge origin/staging; #270's setup chat and update_persona run on agent folders: SETUP lives in agents, hub/setup.rs saves through agents::find and agents::save
+Because: crates/cooee-core/src/agents.rs:46
+Decided: a setup chat needs one of the owner's own agents; none, or a plugin's lent one, is refused, as it can't be saved
+Because: crates/cooee-server/src/lib.rs:544
+Rejected: letting a setup chat run as a plugin's lent agent — agents::find lists only the owner's, so its updates could never save
+Check: cargo test --workspace passes staging's #270 persona tests against agents/<id>/ folders
+Owner: brought up to date with staging; setting up an agent by chat works on the new agent folders
