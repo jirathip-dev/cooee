@@ -14,6 +14,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use cooee_core::personas::PLAIN;
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
 
@@ -21,13 +22,9 @@ struct Setup {
     dir: PathBuf,
     shed: FakeShed,
     cooee: Cooee,
-    /// A secret-shaped value, built at runtime: `secret:API_KEY`.
     token: String,
 }
 
-/// cooee with provider `fake` (Claude's behaviour) for `fake-acp` (accounts in `FAKE_HOME`, settings in
-/// `FAKE_SETTINGS`), its account `work`, the secret `API_KEY`, and in `<config>/profiles/`: `coder` (all of it),
-/// `guard` (settings for an agent with no settings variable) and `leak` (a secret inline).
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     let token = format!("sk-{}", "p4".repeat(16));
@@ -73,7 +70,6 @@ fn setup(name: &str) -> Setup {
 }
 
 impl Setup {
-    /// `POST /threads` in the root with `profile`: the status and body.
     fn start(&self, profile: &str, text: &str) -> (u16, String) {
         let random = format!("start-{}", self.shed.cli_log().len());
         let new = json!({ "agent": "fake-acp", "profile": profile, "folder": self.dir.join("root"),
@@ -81,8 +77,6 @@ impl Setup {
         self.cooee.post("/threads", &new)
     }
 
-    /// A started thread's id and its `shed run` line; a refused start is tried again for up to 20 s, a plugin's
-    /// profiles showing within the server's 5 s refresh (#289).
     fn thread(&self, profile: &str, text: &str) -> (String, String) {
         let until = Instant::now() + Duration::from_secs(20);
         let (mut status, mut body) = self.start(profile, text);
@@ -101,14 +95,12 @@ impl Setup {
         (id, line.to_owned())
     }
 
-    /// Thread `id`'s row in `GET /threads`.
     fn row(&self, id: &str) -> Value {
         let list = self.cooee.json("/threads");
         let row = list.as_array().unwrap().iter().find(|t| t["id"] == id);
         row.cloned().unwrap_or_else(|| panic!("no {id} in {list}"))
     }
 
-    /// Waits (up to 20 s) for installed plugin `name`'s backend to answer through its proxy.
     fn backend_up(&self, name: &str) {
         for _ in 0..400 {
             if self.cooee.get(&format!("/p/{name}/api/tab.js")).0 == 200 {
@@ -119,7 +111,6 @@ impl Setup {
         panic!("{name}'s backend never answered");
     }
 
-    /// Every file under `dir`, as text.
     fn files(dir: &Path, out: &mut String) {
         for e in fs::read_dir(dir).into_iter().flatten().flatten() {
             if e.file_type().unwrap().is_dir() {
@@ -135,7 +126,6 @@ impl Setup {
 fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_is_refused() {
     let s = setup("profiles");
 
-    // Plain: the agent as it is.
     let (id, line) = s.thread("", "hi");
     assert!(
         !line.contains(" -- ") && !line.contains("--policy") && !line.contains("--meta"),
@@ -151,8 +141,6 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         "{row}"
     );
 
-    // A file profile: its account, settings, env and policy on the adapter, its secret through the adapter's shell,
-    // its instructions ahead of the first message (stored alone).
     let (id, line) = s.thread("coder", "hi");
     let data = s.dir.join("data");
     let work = data.join("accounts/fake/work");
@@ -197,7 +185,10 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let terminal = format!("cooee-{id}");
     assert_eq!(
         s.shed.sent(&terminal),
-        ["\x1e{\"prompt\":\"Follow the house rules.\\n\\nhi\"}\n"]
+        [format!(
+            "\x1e{}\n",
+            json!({ "prompt": format!("Follow the house rules.\n\n{PLAIN}\n\nhi") })
+        )]
     );
     let items = s.cooee.json(&format!("/threads/{id}/messages"));
     assert_eq!(items["items"][0]["text"], "hi", "{items}");
@@ -208,7 +199,6 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         "{row}"
     );
 
-    // A guard its agent can't run: refused, nothing started.
     let runs = s.shed.cli_log().matches(" run ").count();
     let (status, body) = s.start("guard", "hi");
     assert_eq!(status, 400, "{body}");
@@ -222,12 +212,10 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
         2,
         "two threads, the refused start none"
     );
-    // An unknown profile, and one left out for a secret inline, are refused too.
     for id in ["nope", "leak"] {
         assert_eq!(s.start(id, "hi").0, 400, "{id}");
     }
 
-    // No secret in cooee's config, files or log, nor in what it told shed.
     let mut written = fs::read_to_string(s.dir.join("cooee.err")).unwrap();
     assert!(
         written.contains("leak.toml"),
@@ -282,7 +270,6 @@ fn a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it()
         out.contains("agent profiles: Conductor (fake-acp)"),
         "{out}"
     );
-    // Its backend answers no profiles of its own (a 404), so the manifest's is the one that starts.
     s.backend_up("plug");
     let (id, _) = s.thread("plug/conductor", "go");
     assert_eq!(
@@ -295,9 +282,6 @@ fn a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it()
     assert_eq!(s.start("plug/conductor", "go").0, 400);
 }
 
-/// A plugin backend (docs/plugins/hello's checks) that serves the profiles in the JSON file `list` at
-/// `GET /cooee/profiles` (read at each call; each call adds a line to `<list>.asked`, and none is answered while
-/// `<list>.hang` exists) and appends each `POST /cooee/thread-started` body to `log`.
 fn serving(list: &Path, log: &Path) -> String {
     format!(
         r#"import fs from "node:fs";
@@ -346,8 +330,6 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the
     s.cooee
         .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
 
-    // Once the server has its answer (within its 5 s refresh), the backend's list is the plugin's agents: a hidden one,
-    // and the manifest's it doesn't list, are refused.
     s.backend_up("plug");
     let runs = s.shed.cli_log().matches(" run ").count();
     let until = Instant::now() + Duration::from_secs(20);
@@ -362,7 +344,6 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the
     assert_eq!(s.shed.cli_log().matches(" run ").count(), runs);
     assert!(!log.exists(), "nothing started");
 
-    // `{thread}` is the new thread's id in the agent's env, and the backend is told the thread started.
     let (id, _) = s.thread("plug/fleet-a", "go");
     let env = s.shed.adapter_env();
     for var in [format!("HERDSMAN_THREAD={id}"), "FLEET=a".to_owned()] {
@@ -374,8 +355,6 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the
     s.cooee.cli(&["plugin", "remove", "plug"]);
 }
 
-/// #289: a backend that never answers its profiles never slows a start (none waits on its 5 s ask, the median is
-/// under 200 ms), which takes its last answer, none before the first; a changed list starts within the 5 s refresh.
 #[test]
 fn a_hanging_backend_never_slows_a_start_which_takes_its_last_answered_profiles() {
     let s = setup("profiles-hang");
@@ -400,7 +379,6 @@ fn a_hanging_backend_never_slows_a_start_which_takes_its_last_answered_profiles(
     .unwrap();
     git(&repo, &["add", "-A"]);
     git(&repo, &["commit", "--quiet", "-m", "1"]);
-    // While two asks hang, every start of `not` is quickly refused; then `shown` starts, as quickly.
     let hung_twice = |shown: Option<&str>, not: &str| {
         let count = || fs::read_to_string(&asked).map_or(0, |t| t.len());
         let (from, until) = (count(), Instant::now() + Duration::from_secs(30));
@@ -427,7 +405,6 @@ fn a_hanging_backend_never_slows_a_start_which_takes_its_last_answered_profiles(
             "{took:?}"
         );
     };
-    // Up to 20 s for `profile` to start, and how long that took.
     let starts = |profile: &str| {
         let at = Instant::now();
         while s.start(profile, "go").0 != 200 {
@@ -463,7 +440,6 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     let dir = scratch("profiles-claude");
     let data = dir.join("data");
     fs::create_dir_all(data.join("accounts/claude/work")).unwrap();
-    // The guard: a fake of herdsman's hook, refusing a push to main.
     let claude = dir.join("profiles/claude");
     fs::create_dir_all(&claude).unwrap();
     let guard = claude.join("guard.sh");
@@ -481,8 +457,6 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     )
     .unwrap();
     let shed = FakeShed::start(&dir.join("shed"), version());
-    // A fake claude-acp: runs the PreToolUse hook of `$CLAUDE_CONFIG_DIR/settings.json` on one Bash call, as
-    // Claude Code does, noting its output and exit.
     let adapter = shed.dir.join("fake-acp");
     fs::write(
         &adapter,
@@ -492,11 +466,9 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
          echo \"exit $?\" >>\"$out\"\n",
     )
     .unwrap();
-    // The built-in Claude Code provider, on the fake shed's agent.
     let mut provider = cooee_core::provider::defaults().remove(0);
     provider.agent = "fake-acp".to_owned();
     (provider.login, provider.status) = (vec!["true".to_owned()], vec!["true".to_owned()]);
-    // Its fields are strings and lists of them: as JSON, they are TOML too.
     let mut extra = "[[providers]]\n".to_owned();
     for (k, v) in serde_json::to_value(&provider)
         .unwrap()
@@ -524,4 +496,54 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     );
     let out = fs::read_to_string(shed.dir.join("hook.out")).unwrap();
     assert_eq!(out, "REFUSED MAIN_TARGET\nexit 2\n");
+}
+
+fn options(line: &str) -> Option<Value> {
+    let meta = line.split(" --meta ").nth(1)?.split(' ').next()?;
+    let meta: Value = serde_json::from_str(meta).unwrap();
+    Some(meta["claudeCode"]["options"].clone())
+}
+
+#[test]
+fn a_persona_with_no_profile_and_a_room_member_start_without_personal_setup_plain_keeps_it() {
+    let s = setup("persona-no-personal");
+    fs::create_dir_all(s.dir.join("personas")).unwrap();
+    fs::write(
+        s.dir.join("personas/ada.toml"),
+        "name = \"Ada\"\nagent = \"fake-acp\"\n",
+    )
+    .unwrap();
+    let personal = |line: &str| {
+        let o = options(line).unwrap_or_else(|| panic!("#416: no options in {line}"));
+        assert_eq!(o["strictMcpConfig"], true, "{line}");
+        assert_eq!(o["settingSources"], json!(["project", "local"]), "{line}");
+    };
+
+    let (_, line) = s.thread("ada", "hi");
+    personal(&line);
+    let (_, line) = s.thread("", "hi");
+    assert_eq!(options(&line), None, "{line}");
+
+    let room = json!({ "members": ["ada", "coder"], "random_id": "room" });
+    let (status, body) = s.cooee.post("/rooms", &room);
+    assert_eq!(status, 200, "{body}");
+    let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let said = json!({ "text": "hi all", "random_id": "said" });
+    let (status, body) = s.cooee.post(&format!("/threads/{id}/send"), &said);
+    assert_eq!(status, 200, "{body}");
+    for member in ["ada", "coder"] {
+        let label = format!("cooee.member={member}");
+        let line = (0..200).find_map(|_| {
+            let log = s.shed.cli_log();
+            let line = log.lines().find(|l| l.contains(&label)).map(str::to_owned);
+            line.or_else(|| {
+                std::thread::sleep(std::time::Duration::from_millis(50));
+                None
+            })
+        });
+        personal(&line.unwrap_or_else(|| panic!("{member}'s room session never started")));
+    }
 }

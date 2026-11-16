@@ -31,7 +31,8 @@
       "type": "object",
       "properties": {
         "open": { "type": "string" }, "sheet": { "type": "string" }, "action": { "type": "string" },
-        "values": { "type": "object" }, "thread": { "type": "string" }, "url": { "type": "string" }
+        "values": { "type": "object" }, "thread": { "type": "string" }, "url": { "type": "string" },
+        "focus": { "type": "string" }
       }
     },
     "confirm": {
@@ -96,7 +97,8 @@
         { "if": { "properties": { "type": { "const": "web" } } }, "then": { "$ref": "#/$defs/web" } },
         { "if": { "properties": { "type": { "const": "diff" } } }, "then": { "$ref": "#/$defs/diff" } },
         { "if": { "properties": { "type": { "const": "editor" } } }, "then": { "$ref": "#/$defs/editor" } },
-        { "if": { "properties": { "type": { "const": "scene" } } }, "then": { "$ref": "#/$defs/scene" } }
+        { "if": { "properties": { "type": { "const": "scene" } } }, "then": { "$ref": "#/$defs/scene" } },
+        { "if": { "properties": { "type": { "const": "diagram" } } }, "then": { "$ref": "#/$defs/diagram" } }
       ]
     },
     "screen": {
@@ -169,6 +171,23 @@
     "scene": {
       "required": ["lanes"],
       "properties": { "label": { "type": "string" }, "lanes": { "type": "array", "items": { "$ref": "#/$defs/lane" } } }
+    },
+    "diagram": {
+      "required": ["source"],
+      "properties": {
+        "title": { "type": "string" }, "source": { "type": "string" }, "selected": { "type": "string" },
+        "counts": { "type": "object", "additionalProperties": { "type": "number" } },
+        "nodes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "state": { "$ref": "#/$defs/tone" }, "coat": { "type": "string" }, "tap": { "$ref": "#/$defs/tap" },
+              "limit": { "type": "string" }, "label": { "type": "string" }, "value": { "type": "string" }
+            }
+          }
+        }
+      }
     },
     "round": {
       "type": "object",
@@ -352,7 +371,8 @@
               "screen": { "type": "string" }
             }
           }
-        }
+        },
+        "claims": { "type": "array", "items": { "type": "string" } }
       }
     },
     "attach": {

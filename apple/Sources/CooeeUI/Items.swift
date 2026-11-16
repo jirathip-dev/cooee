@@ -23,14 +23,18 @@ internal struct ItemView: View {
             .modifier(Copyable(text: item.plainText ?? ""))
         case .tools(_, let rows):
             ToolFold(rows: rows)
+        case .trace(_, let steps, let seconds):
+            TraceRow(steps: steps, seconds: seconds)
         case .note(_, let text):
             Text(text).ui(13, .regular, look).foregroundStyle(look.palette.mute).frame(maxWidth: .infinity)
         case .card(_, let poster, let block):
-            BlockNode(block: block).environment(\.card, CardContext(poster: poster))
+            BlockNode(block: block).environment(\.card, CardContext(poster: poster.map(LayoutSource.plugin) ?? .core))
         case .said(_, let speaker, let time, let blocks):
             Said(speaker: speaker, time: time, blocks: blocks)
         case .divider(_, let text):
             RoundDivider(text: text)
+        case .asked(_, let ask):
+            AskCard(ask: ask)
         }
     }
 }
@@ -38,12 +42,16 @@ internal struct ItemView: View {
 internal struct YouBubble: View {
     @Environment(\.look) private var look
     @Environment(\.members) private var members
+    @Environment(\.noteTo) private var noteTo
     internal let text: String
     internal let files: [String]
 
     internal var body: some View {
         let palette = look.palette
         VStack(alignment: .trailing, spacing: 6) {
+            if let noteTo {
+                Text("Your note · to \(noteTo)").ui(13, .regular, look).foregroundStyle(palette.mute)
+            }
             ForEach(files, id: \.self) { file in
                 Label(file, systemImage: "doc.text").ui(13, .regular, look).foregroundStyle(palette.mute)
                     .padding(.horizontal, 10).padding(.vertical, 6)

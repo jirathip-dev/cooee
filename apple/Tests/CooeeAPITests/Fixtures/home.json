@@ -1,0 +1,83 @@
+{
+  "type": "screen",
+  "source": "core",
+  "id": "home",
+  "title": "cooee",
+  "blocks": [
+    {
+      "type": "pinned",
+      "id": "pinned"
+    },
+    {
+      "type": "chats",
+      "id": "chats"
+    }
+  ],
+  "threads": [
+    {
+      "id": "a1b2",
+      "title": "Flaky e2e",
+      "agent": "fake-acp",
+      "account": "",
+      "profile": "coder",
+      "persona": "coder",
+      "folder": "/w/project",
+      "state": "working",
+      "last": "Hello",
+      "at": 1762790000000,
+      "unread": true,
+      "unseen": 2,
+      "archived": false
+    },
+    {
+      "id": "old",
+      "title": "Old",
+      "agent": "fake-acp",
+      "account": "",
+      "profile": "",
+      "persona": "",
+      "folder": "/w",
+      "state": "",
+      "last": "",
+      "at": 1762700000000,
+      "unread": false,
+      "unseen": 0,
+      "archived": true,
+      "workflow": {
+        "source": "drover",
+        "group": "cooee",
+        "item": "#1",
+        "role": "impl",
+        "round": "1",
+        "url": "https://example.com"
+      }
+    }
+  ],
+  "personas": [
+    {
+      "id": "coder",
+      "name": "Coder",
+      "role": "orchestrator",
+      "style": "detailed",
+      "fleets": [
+        "cooee"
+      ],
+      "avatar": "data:image/png;base64,AA==",
+      "character": "Terse.",
+      "instructions": "Test first.",
+      "folder": "/w",
+      "agent": "fake-acp",
+      "model": "gpt-5.5",
+      "effort": "high",
+      "machine": "air",
+      "plugins": [
+        "hello"
+      ],
+      "can_message": [
+        "chief"
+      ],
+      "pinned": true,
+      "profile": "coder"
+    }
+  ]
+}

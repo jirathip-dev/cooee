@@ -37,9 +37,12 @@ A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the
 `{thread, server: {name, type, command, args, url, why}}` → the card; `POST /mcp/agent/remember` `{thread, server:
 {text?, replaces?, forget?}}` → `remember`'s edit by the thread's persona, its answer the note's id and the use; `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
 (#156) → `ask_persona`'s reply (a string), the thread's persona asking one its `can_message` names in a linked exchange
-thread (the owner reads it and may reply to steer), waiting `timeout` seconds (300, at most 600). A refusal is a 400
+thread (the owner reads it and may write a note), waiting `timeout` seconds (300, at most 600). A refusal is a 400
 starting `NOT_ALLOWED`, `DEPTH` (an asked persona may ask one more, no further), `TIMEOUT` or `OFFLINE` (its session
-can't start).
+can't start). Each ask is an `ask` item in the asker's thread (#177), `asking` until it ends; in the exchange the
+question is a `you` item whose `speaker` is the asker's persona. The owner's message there reaches the asked persona
+marked as the owner's note, and the reply goes back with it (the card's `note`; the exchange ends with the `note`
+item `returned to <asker> [with your note] · <secs>s`).
 `POST /mcp/agent/history` `{thread, server: {query?, thread?, before?, limit?}}` (#217) → `history`'s text: with
 `query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
 at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending

@@ -1,6 +1,3 @@
-//! `cooee setup`: shed at the pinned rev and its service, the config, agents, cooee's service, `tailscale serve`,
-//! doctor and a pairing code; each step is skipped when already done, and `--dry-run` only prints the commands.
-
 use std::{
     env, fs, io,
     net::{Ipv4Addr, SocketAddr, TcpStream},
@@ -12,7 +9,12 @@ use std::{
 
 use cooee_core::{Config, SHED_CARGO, SHED_LABEL, Shed, ShedError, provider};
 
-use super::{doctor, label, load, pair, plist, tailnet_name, write_plist};
+use crate::{
+    cli::load,
+    devices::pair,
+    doctor::doctor,
+    service::{job, plist, tailnet_name, write_plist},
+};
 
 /// `cooee setup`'s flags.
 pub struct Setup {
@@ -23,8 +25,7 @@ pub struct Setup {
     pub yes: bool,
 }
 
-/// Whether `argv` exits 0 (its output dropped).
-fn ok(argv: &[&str]) -> bool {
+pub(crate) fn ok(argv: &[&str]) -> bool {
     Command::new(argv[0])
         .args(&argv[1..])
         .stdout(Stdio::null())
@@ -33,16 +34,14 @@ fn ok(argv: &[&str]) -> bool {
         .is_ok_and(|s| s.success())
 }
 
-/// `argv`'s stdout, if it exits 0.
-fn output(argv: &[&str]) -> Option<String> {
+pub(crate) fn output(argv: &[&str]) -> Option<String> {
     let out = Command::new(argv[0]).args(&argv[1..]).output().ok()?;
     out.status
         .success()
         .then(|| String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
-/// Polls `f` for up to 10 seconds.
-fn wait(f: impl Fn() -> bool) -> bool {
+pub(crate) fn wait(f: impl Fn() -> bool) -> bool {
     (0..40).any(|_| {
         let done = f();
         if !done {
@@ -53,7 +52,6 @@ fn wait(f: impl Fn() -> bool) -> bool {
 }
 
 impl Setup {
-    /// Runs `argv`, or with `--dry-run` only prints it.
     fn exec(&self, argv: &[&str]) -> Result<(), String> {
         let line = argv.join(" ");
         if self.dry_run {
@@ -69,7 +67,6 @@ impl Setup {
         }
     }
 
-    /// Writes `text` to `file`, or with `--dry-run` only prints it.
     fn write(
         &self,
         file: &Path,
@@ -85,7 +82,6 @@ impl Setup {
         Ok(())
     }
 
-    /// Asks `question`; `--yes`, an empty answer or no input take `default`.
     fn ask(&self, question: &str, default: &str) -> String {
         if self.yes {
             return default.to_owned();
@@ -106,7 +102,8 @@ impl Setup {
         let (config, changed) = self.config(path)?;
         self.themes(&config)?;
         self.agents(&config)?;
-        self.service(&config, path, &gui, changed)?;
+        self.service(&config, path, &gui, changed, "serve")?;
+        self.service(&config, path, &gui, false, "update")?;
         self.tailnet(config.port)?;
         if self.dry_run {
             println!("would run: cooee doctor, then cooee pair");
@@ -119,7 +116,6 @@ impl Setup {
         pair(&config)
     }
 
-    /// shed at the pinned rev; whether it was installed now.
     fn shed(&self) -> Result<bool, String> {
         let rev = SHED_CARGO[6];
         let done = output(&["cargo", "install", "--list"])
@@ -130,9 +126,6 @@ impl Setup {
         Ok(!done)
     }
 
-    /// shed's launchd job (`shed install`), started or restarted onto a new binary or off another protocol (after a
-    /// warning), answering `shed ls` and this build's hello. A serve on another protocol that isn't the job, or one
-    /// that still is after the restart, stops setup before cooee's own service moves onto this build.
     fn shed_service(&self, gui: &str, updated: bool) -> Result<(), String> {
         let loaded = ok(&["launchctl", "list", SHED_LABEL]);
         let answers = || ok(&["shed", "ls"]);
@@ -189,7 +182,6 @@ impl Setup {
         Ok(())
     }
 
-    /// The config with `port`, `allowed_hosts` and `roots`: missing keys added, the others kept; whether it changed.
     fn config(&self, path: &Path) -> Result<(Config, bool), String> {
         let text = fs::read_to_string(path).unwrap_or_default();
         let keys: toml::Table = text
@@ -224,7 +216,6 @@ impl Setup {
             let root = self.ask("folders for threads [~/Projects]:", "~/Projects");
             add.push(format!("roots = [{root:?}]"));
         }
-        // The owner's terminal plugin (#28), on the instance's port + 1000 with a token of its own.
         let plugins = keys.get("plugins").and_then(toml::Value::as_array);
         let has = plugins.is_some_and(|a| {
             a.iter()
@@ -251,7 +242,6 @@ impl Setup {
                     .collect();
                 println!("  note: kept its keys; adding {}", what.join(", "));
             }
-            // Top-level keys go first: after a `[table]` they would belong to it. The plugin goes last.
             let head: String = add.iter().flat_map(|k| [k.as_str(), "\n"]).collect();
             let new = format!("{head}{text}{plugin}");
             self.write(path, &new, || {
@@ -271,7 +261,6 @@ impl Setup {
         Ok((config, changed))
     }
 
-    /// The first-party theme packs asked for (default: all of them) from the index, the installed ones skipped.
     fn themes(&self, config: &Config) -> Result<(), String> {
         let e = |e: io::Error| e.to_string();
         let t = match cooee_server::Themes::new(config) {
@@ -283,10 +272,9 @@ impl Setup {
         };
         let have: Vec<String> = t.list().map_err(e)?.into_iter().map(|p| p.name).collect();
         let first: Vec<&str> = t
-            .index()
-            .iter()
-            .filter(|l| l.first_party && !have.contains(&l.name))
-            .map(|l| l.name.as_str())
+            .first_party()
+            .into_iter()
+            .filter(|n| !have.iter().any(|h| h == n))
             .collect();
         if step("themes", first.is_empty()) {
             return Ok(());
@@ -304,7 +292,6 @@ impl Setup {
                 println!("  would install theme {name}");
                 continue;
             }
-            // One that can't be fetched now (offline) is no reason to stop.
             match t.plan(name, None).and_then(|p| t.add(&p)) {
                 Ok(()) => println!("  installed theme {name}"),
                 Err(why) => println!("  theme {name}: {why}\n  later: cooee theme add {name}"),
@@ -313,7 +300,6 @@ impl Setup {
         Ok(())
     }
 
-    /// The first registered provider's ACP agent in shed, and each other one's if asked for.
     fn agents(&self, config: &Config) -> Result<(), String> {
         let have: Vec<String> = Shed::new(config.shed.clone(), config.shed_dir.clone())
             .agents()
@@ -344,16 +330,16 @@ impl Setup {
         Ok(())
     }
 
-    /// cooee's launchd job: its plist written and loaded, restarted onto a changed config.
     fn service(
         &self,
         config: &Config,
         path: &Path,
         gui: &str,
         changed: bool,
+        verb: &str,
     ) -> Result<(), String> {
-        let label = label(&self.instance);
-        let (file, text) = plist(config, path, self.explicit)?;
+        let label = job(&self.instance, verb);
+        let (file, text) = plist(config, path, self.explicit, verb)?;
         let same = fs::read_to_string(&file).is_ok_and(|t| t == text);
         let loaded = ok(&["launchctl", "list", &label]);
         if step(
@@ -381,7 +367,6 @@ impl Setup {
         Ok(())
     }
 
-    /// `tailscale serve` of the port over https, unless it is served already.
     fn tailnet(&self, port: u16) -> Result<(), String> {
         let served = output(&["tailscale", "serve", "status", "--json"])
             .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
@@ -397,7 +382,6 @@ impl Setup {
     }
 }
 
-/// Prints step `name`, `done, skipped` if `done`; returns `done`.
 fn step(name: &str, done: bool) -> bool {
     println!("{name}:{}", if done { " done, skipped" } else { "" });
     done

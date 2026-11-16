@@ -42,7 +42,9 @@ extension Frame {
     private static let phoneWidth: CGFloat = 402
     private static let phoneHeight: CGFloat = 874
 
-    internal static var all: [Frame] { designs + styled + settings + QueueFrames.all }
+    internal static var all: [Frame] {
+        designs + styled + settings + missingPoster + QueueFrames.all + DiagramFrames.all
+    }
 
     internal static var everyStyle: [Frame] {
         designs.flatMap { frame in LookStyle.allCases.map(frame.styled) }
@@ -84,9 +86,9 @@ extension Frame {
             phone("chat-card-\(mode)", palette) { ChatView.cards() },
             phone("chat-cards-more-\(mode)", palette) { ChatView.moreCards() },
             phone("chat-conductor-\(mode)", palette) { ChatView.conductor() },
-            phone("persona-\(mode)", palette) { PersonaSheet() },
+            phone("persona-\(mode)", palette) { PersonaEditBlocks() },
             phone("avatar-menu-\(mode)", palette) { HomeView(menuOpen: true) },
-            phone("persona-panel-\(mode)", palette) { PersonaPanel() },
+            phone("persona-panel-\(mode)", palette) { PersonaPanelBlocks() },
         ]
             + PhoneStep.allCases.map { step in
                 phone("pair-\(step.rawValue)-\(mode)", palette) { PhoneOnboarding(step: step) }
@@ -98,14 +100,14 @@ extension Frame {
             phone("style-terminal-home-dark", .farmDark, style: .terminal) { HomeView() },
             phone("style-terminal-chat-dark", .farmDark, style: .terminal) { ChatView.streaming() },
             phone("style-terminal-card-dark", .farmDark, style: .terminal) { ChatView.cards() },
-            phone("style-terminal-persona-dark", .farmDark, style: .terminal) { PersonaSheet() },
+            phone("style-terminal-persona-dark", .farmDark, style: .terminal) { PersonaEditBlocks() },
             phone("style-scene-home-light", .farmLight, style: .scene) { HomeView() },
             phone("style-scene-chat-light", .farmLight, style: .scene) { ChatView.streaming() },
             phone("style-scene-card-light", .farmLight, style: .scene) { ChatView.cards() },
-            phone("persona-panel-end-dark", .farmDark) { PersonaPanel(end: true) },
-            phone("persona-panel-empty-dark", .farmDark) { PersonaPanel(personaID: "chief") },
-            phone("persona-panel-terminal-dark", .farmDark, style: .terminal) { PersonaPanel() },
-            phone("persona-panel-scene-light", .farmLight, style: .scene) { PersonaPanel() },
+            phone("persona-panel-end-dark", .farmDark) { PersonaPanelBlocks(end: true) },
+            phone("persona-panel-empty-dark", .farmDark) { PersonaPanelBlocks(personaID: "chief") },
+            phone("persona-panel-terminal-dark", .farmDark, style: .terminal) { PersonaPanelBlocks() },
+            phone("persona-panel-scene-light", .farmLight, style: .scene) { PersonaPanelBlocks() },
         ]
     }
 
@@ -113,14 +115,16 @@ extension Frame {
         MacStep.allCases.map { step in mac("mac-setup-\(step.rawValue)", 960, 640, .farmDark) { MacSetup(step: step) } }
             + [
                 mac("mac-connect", 960, 640, .farmLight) { MacConnect() },
-                mac("mac-window-dark", 1280, 820, .farmDark) { WideView() },
-                mac("mac-window-light", 1280, 820, .farmLight) { WideView() },
-                mac("mac-persona-panel-dark", 360, 820, .farmDark) { PersonaPanel(personaID: "coder", column: true) },
+                mac("mac-window-dark", 1280, 820, .farmDark) { Sidebar() },
+                mac("mac-window-light", 1280, 820, .farmLight) { Sidebar() },
+                mac("mac-persona-panel-dark", 360, 820, .farmDark) {
+                    PersonaPanelBlocks(personaID: "coder", column: true)
+                },
             ]
     }
 
     private static var settings: [Frame] {
-        let pages: [(String, MenuFeature.Page)] = [
+        let pages: [(String, SettingsFrame)] = [
             ("sign-ins", .signIns), ("devices", .devices), ("machines", .machines), ("plugins", .plugins),
         ]
         let phones = pages.flatMap { name, page in
@@ -130,8 +134,10 @@ extension Frame {
         }
         let macs = pages.map { name, page in mac("mac-\(name)", 1180, 780, .farmDark) { SettingsWindow(page: page) } }
         let more = [
-            phone("terminal-dark", .farmDark) { MachineTerminal() },
-            phone("you-terminal-dark", .farmDark) { MachineTerminal(own: true) },
+            phone("terminal-dark", .farmDark) { TerminalView.agents() },
+            phone("you-terminal-dark", .farmDark) { TerminalView.own() },
+            phone("you-terminal-terminal-dark", .farmDark, style: .terminal) { TerminalView.own() },
+            phone("you-terminal-scene-light", .farmLight, style: .scene) { TerminalView.own() },
             phone("sign-ins-terminal-dark", .farmDark, style: .terminal) { SignInsView() },
             phone("machines-scene-light", .farmLight, style: .scene) { MachinesView() },
             mac("mac-plugins-light", 1180, 780, .farmLight) { SettingsWindow(page: .plugins) },
@@ -144,12 +150,22 @@ extension Frame {
     }
 
     @MainActor @ViewBuilder
-    private static func settingsPage(_ page: MenuFeature.Page) -> some View {
+    private static func settingsPage(_ page: SettingsFrame) -> some View {
         switch page {
         case .signIns: SignInsView()
         case .devices: DevicesView()
         case .machines: MachinesView()
         default: PluginsView()
+        }
+    }
+
+    private static var missingPoster: [Frame] {
+        CardTrust.guarded.sorted().flatMap { kind in
+            let card = JSONValue(json: #"{"type": "card", "id": "c", "kind": "\#(kind)", "title": "EDGAR_API_KEY"}"#)
+            let frame = phone("missing-poster-\(kind)", .farmDark) {
+                Color.clear.overlay(alignment: .top) { BlocksView(card, source: nil).padding(BlocksView.inset) }
+            }
+            return LookStyle.allCases.map(frame.styled)
         }
     }
 
@@ -161,13 +177,28 @@ extension Frame {
             phone("room-create-light", .farmLight) { NewRoomSheet.kestrel() },
             phone("room-member-dark", .farmDark) { MemberSheet.researcher() },
             phone("room-home-dark", .farmDark) { HomeView(chats: Fixtures.roomChats) },
+            phone("room-pinned-dark", .farmDark) { HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats) },
+            phone("room-pinned-terminal-dark", .farmDark, style: .terminal) {
+                HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats)
+            },
+            phone("room-pinned-scene-light", .farmLight, style: .scene) {
+                HomeView(pins: Fixtures.roomPins, chats: Fixtures.roomChats)
+            },
             phone("room-terminal-dark", .farmDark, style: .terminal) { RoomView.kestrel() },
             phone("room-scene-light", .farmLight, style: .scene) { RoomView.kestrel() },
-            mac("room-wide-dark", 1440, 900, .farmDark) { WideView.kestrel() },
+            phone("room-ask-dark", .farmDark) { RoomView.asking() },
+            phone("room-ask-terminal-dark", .farmDark, style: .terminal) { RoomView.asking() },
+            phone("room-ask-scene-light", .farmLight, style: .scene) { RoomView.asking() },
+            mac("room-wide-dark", 1440, 900, .farmDark) { Sidebar.kestrel() },
+            phone("asked-dark", .farmDark) { ChatView.asked() },
+            phone("asked-light", .farmLight) { ChatView.asked() },
+            phone("linked-dark", .farmDark) { LinkedView.researcher() },
+            phone("linked-terminal-dark", .farmDark, style: .terminal) { LinkedView.researcher() },
+            mac("linked-wide-light", 1440, 900, .farmLight) { Sidebar.linked() },
             Frame(
                 name: "room-terminal-wide", width: 1440, height: 900, palette: .farmDark, style: .terminal,
                 phone: false,
-                view: { AnyView(WideView.kestrel()) }
+                view: { AnyView(Sidebar.kestrel()) }
             ),
         ]
     }

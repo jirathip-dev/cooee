@@ -1,4 +1,3 @@
-// A TCP proxy the reconnect test can cut: cut() resets every connection and refuses new ones until restore().
 import net from 'node:net';
 export function proxy(listenPort, target) {
   const socks = new Set(); let down = false;

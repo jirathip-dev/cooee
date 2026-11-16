@@ -50,6 +50,8 @@ type Item = { id: number; at: number; seq?: number } & (
       by?: string; answered?: number; form?: "config" | "secret" | "thread"; detail?: string; line?: string; until?: number;
       block: Card }  // #138: the #125 card block the native app draws (docs/plugins/screens.schema.json)
   | { kind: "link"; text: string; thread: string; title: string; out?: boolean }
+  | { kind: "ask"; persona: string; name: string; text: string; thread: string;  // #177: an ask_persona card
+      outcome: "asking" | "replied" | "not_allowed" | "depth" | "timeout" | "offline"; secs: number; note?: string }
   | { kind: "plan"; entries: { content: string; status: string; priority?: string }[] }
   | { kind: "note"; text: string }
   | { kind: "ended"; text: string }
