@@ -1,0 +1,5 @@
+Decided: merge origin/staging; setup re-applied where staging split hub.rs, and the View button uses staging's persona delegate
+Because: crates/cooee-server/src/hub/cards.rs:56
+Rejected: keep the PR's viewPersona delegate beside staging's persona(id) — two ways to open the same sheet
+Check: apple/Sources/CooeeUI/ChatScreen.swift sends .delegate(.persona(id)) for View; PersonaScreen wires chat
+Owner: Same feature; this round catches up with staging, which split the server hub, removed the web client and moved persona screens.
