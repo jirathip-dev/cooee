@@ -29,6 +29,7 @@
             approve.click()
             XCTAssert(labelled(app, "1 approved").waitForExistence(timeout: 30))
             keep(app, "approved")
+            app.terminate()
         }
 
         @MainActor

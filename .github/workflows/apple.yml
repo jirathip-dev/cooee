@@ -285,10 +285,16 @@ jobs:
           defaults write com.jirathip.cooee SUHasLaunchedBefore -bool YES
           defaults write com.jirathip.cooee SULastCheckTime -date "2000-01-01 00:00:00 +0000"
           log="$HOME/Library/Logs/cooee-update.log"
+          pgrep -lf "$app/Contents/MacOS/Cooee" && { echo "the setup run's Cooee is still running"; exit 1; }
           open "$app"
           waited=0
           until grep -q waiting "$log" 2>/dev/null; do
-            [ "$waited" -lt 300 ] || { echo "no update staged"; cat "$RUNNER_TEMP/feed.log"; exit 1; }
+            [ "$waited" -lt 300 ] || {
+              echo "no update staged"
+              cat "$RUNNER_TEMP/feed.log"
+              log show --last 6m --style compact --predicate 'subsystem == "org.sparkle-project.Sparkle"'
+              exit 1
+            }
             sleep 5
             waited=$((waited + 5))
           done
