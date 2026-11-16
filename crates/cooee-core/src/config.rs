@@ -53,6 +53,8 @@ pub struct Config {
     pub mcp: Vec<crate::mcp::Server>,
     /// Apple push for the native app (`[apns]`, #130); its key is `<data>/apns.p8`.
     pub apns: Option<Apns>,
+    /// Whether `cooee update` (its timer, every 15 minutes) installs main's newest green build (default on, #332).
+    pub auto_update: bool,
 }
 
 /// `[apns]`: the owner's APNs key's ids and the app it pushes to; none of it is secret.
@@ -133,6 +135,7 @@ impl Default for Config {
             perf: Perf::default(),
             mcp: Vec::new(),
             apns: None,
+            auto_update: true,
         }
     }
 }

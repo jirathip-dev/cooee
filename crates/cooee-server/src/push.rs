@@ -501,13 +501,13 @@ impl Push {
     }
 
     /// Sends `note` to every paired device's subscriptions and APNs tokens (only `to`'s, if set), in the
-    /// background: a 404/410, APNs' `BadDeviceToken` or an unpaired device drops it; other failures are logged.
-    pub fn send_to(&self, to: Option<&str>, note: &Note) {
+    /// background (its handle): a 404/410, APNs' `BadDeviceToken` or an unpaired device drops it; other failures are logged.
+    pub fn send_to(&self, to: Option<&str>, note: &Note) -> thread::JoinHandle<()> {
         let (push, to, note) = (self.clone(), to.map(str::to_owned), note.clone());
         thread::spawn(move || match push.deliver(to.as_deref(), &note) {
             Ok(log) => log.iter().for_each(|l| eprintln!("cooee: push{l}")),
             Err(e) => eprintln!("cooee: push: {e}"),
-        });
+        })
     }
 
     /// [`Push::send_to`] every device.
