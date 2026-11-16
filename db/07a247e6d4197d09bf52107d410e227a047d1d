@@ -1,0 +1,5 @@
+Decided: merge origin/staging; the persona sheet keeps staging's instructions view and this PR's chat link below it
+Because: apple/Sources/CooeeUI/BlockPersonaEdit.swift:117
+Rejected: drop staging's instructions view for the old paragraph — that would undo #435's profile fallback
+Check: the persona sheet shows Instructions, then Set up by chat instead / Refine by chat
+Owner: Same feature; this round catches up with staging, where an empty persona's instructions come from its profile.
