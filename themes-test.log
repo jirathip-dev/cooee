@@ -1,0 +1,13 @@
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-252/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-252/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.53s
+     Running tests/themes.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-252/debug/deps/themes-206101ab4f14a9e1)
+
+running 4 tests
+test check_passes_the_first_party_packs_and_fails_a_broken_one ... ok
+test the_gate_fails_active_content_in_a_packs_svg ... ok
+test a_pack_with_a_symlink_is_never_installed ... ok
+test add_remove_and_list_with_the_lock ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.15s
+

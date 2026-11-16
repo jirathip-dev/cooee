@@ -1,0 +1,19 @@
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-252/crates/cooee-server)
+    Checking cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-252/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.45s
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-252/crates/cooee-core)
+    Checking tokio v1.54.1
+    Checking tokio-util v0.7.20
+    Checking topcoat-core v0.11.0
+    Checking topcoat-view v0.11.0
+    Checking h2 v0.4.20
+    Checking cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-252/crates/cooee-machines)
+    Checking tokio-tungstenite v0.29.0
+    Checking cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-252/crates/cooee-terminal)
+    Checking hyper v1.12.0
+    Checking hyper-util v0.1.21
+    Checking topcoat-router v0.11.0
+    Checking topcoat v0.11.0
+    Checking cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-252/crates/cooee-server)
+    Checking cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-252/crates/cooee)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.81s

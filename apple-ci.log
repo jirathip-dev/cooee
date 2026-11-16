@@ -1,0 +1,42 @@
+apple	just apple-check	﻿2026-11-16T15:31:57.5319500Z ##[group]Run mkdir -p "$COOEE_RENDERED" && just apple-check
+apple	just apple-check	2026-11-16T15:31:57.5319820Z ^[[36;1mmkdir -p "$COOEE_RENDERED" && just apple-check^[[0m
+apple	just apple-check	2026-11-16T15:31:57.5347180Z shell: /bin/bash -e {0}
+apple	just apple-check	2026-11-16T15:31:57.5347410Z env:
+apple	just apple-check	2026-11-16T15:31:57.5347590Z   MAC: true
+apple	just apple-check	2026-11-16T15:31:57.5347760Z   FULL: true
+apple	just apple-check	2026-11-16T15:31:57.5347930Z   E2E: false
+apple	just apple-check	2026-11-16T15:31:57.5348090Z   ONLY: 
+apple	just apple-check	2026-11-16T15:31:57.5348470Z   TMPDIR: /tmp/mini-cooee/
+apple	just apple-check	2026-11-16T15:31:57.5348850Z   CARGO_HOME: /Users/jkmacmini/services/actions-runner-cooee/_work/_tool/cooee/cargo
+apple	just apple-check	2026-11-16T15:31:57.5349420Z   RUSTUP_HOME: /Users/jkmacmini/services/actions-runner-cooee/_work/_tool/cooee/rustup
+apple	just apple-check	2026-11-16T15:31:57.5350010Z   GIT_CONFIG_GLOBAL: /Users/jkmacmini/services/actions-runner-cooee/_work/_temp/gitconfig
+apple	just apple-check	2026-11-16T15:31:57.5350440Z   GIT_CONFIG_NOSYSTEM: 1
+apple	just apple-check	2026-11-16T15:31:57.5350670Z   CARGO_NET_GIT_FETCH_WITH_CLI: true
+apple	just apple-check	2026-11-16T15:31:57.5350990Z   DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+apple	just apple-check	2026-11-16T15:31:57.5351350Z   CARGO_INCREMENTAL: 0
+apple	just apple-check	2026-11-16T15:31:57.5351560Z   CARGO_TERM_COLOR: always
+apple	just apple-check	2026-11-16T15:31:57.5351780Z   CACHE_ON_FAILURE: false
+apple	just apple-check	2026-11-16T15:31:57.5354780Z   GH_TOKEN: ***
+apple	just apple-check	2026-11-16T15:31:57.5355140Z   COOEE_RENDERED: /Users/jkmacmini/services/actions-runner-cooee/_work/_temp/rendered
+apple	just apple-check	2026-11-16T15:31:57.5355770Z ##[endgroup]
+apple	just apple-check	2026-11-16T15:31:57.5752700Z scripts/apple-check.sh
+apple	just apple-check	2026-11-16T15:31:57.6462250Z 
+apple	just apple-check	2026-11-16T15:31:57.6462610Z == swift format
+apple	just apple-check	2026-11-16T15:31:57.9757300Z 
+apple	just apple-check	2026-11-16T15:31:57.9757630Z == anti-slop
+apple	just apple-check	2026-11-16T15:31:59.2019170Z Fetching https://github.com/swiftlang/swift-syntax.git from cache
+apple	just apple-check	2026-11-16T15:32:00.2094630Z Fetched https://github.com/swiftlang/swift-syntax.git from cache (1.02s)
+apple	just apple-check	2026-11-16T15:32:00.2097160Z Computing version for https://github.com/swiftlang/swift-syntax.git
+apple	just apple-check	2026-11-16T15:32:00.6408470Z Computed https://github.com/swiftlang/swift-syntax.git at 603.0.2 (1.49s)
+apple	just apple-check	2026-11-16T15:32:00.6408990Z Computed https://github.com/swiftlang/swift-syntax.git at 603.0.2 (0.00s)
+apple	just apple-check	2026-11-16T15:32:00.7068230Z Creating working copy for https://github.com/swiftlang/swift-syntax.git
+apple	just apple-check	2026-11-16T15:32:00.9292400Z Working copy of https://github.com/swiftlang/swift-syntax.git resolved at 603.0.2
+apple	just apple-check	2026-11-16T15:35:07.0996390Z no violations
+apple	just apple-check	2026-11-16T15:35:07.0996560Z 
+apple	just apple-check	2026-11-16T15:35:07.0996630Z == TODO(#N) names an open issue
+apple	just apple-check	2026-11-16T15:35:07.1529220Z every TODO names an open issue
+apple	just apple-check	2026-11-16T15:35:07.1529410Z 
+apple	just apple-check	2026-11-16T15:35:07.1529480Z == SwiftLint 0.65.1
+apple	just apple-check	2026-11-16T15:35:09.5610060Z /Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/apple/Tests/CooeeAPITests/ClientTests.swift:6:10: error: Type Body Length Violation: Struct body should span 150 lines or less excluding comments and whitespace: currently spans 162 lines (type_body_length)
+apple	just apple-check	2026-11-16T15:35:09.5625730Z error: recipe `apple-check` failed on line 11 with exit code 2
+apple	just apple-check	2026-11-16T15:35:09.5637000Z ##[error]Process completed with exit code 2.

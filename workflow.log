@@ -1,0 +1,12 @@
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-252/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-252/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.68s
+     Running tests/workflow.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-252/debug/deps/workflow-6c4ae0782f54bdc1)
+
+running 3 tests
+test a_lane_is_listed_with_its_labels_but_never_among_the_agents ... ok
+test a_lane_opens_as_a_chat_that_streams_takes_a_reply_and_stops ... ok
+test a_lane_goes_once_its_tool_removes_it ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.49s
+
