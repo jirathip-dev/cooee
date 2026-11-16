@@ -1,0 +1,6 @@
+Decided: staging build fix: the accounts_env week reading resets at a time with no date, so it can never read as already reset
+Because: crates/cooee-core/src/providers/claude.rs:118
+Because: crates/cooee/tests/accounts_env.rs:257
+Rejected: computing a date a few days from now in the test — more test code for what the claude.rs fixed-clock unit tests already cover
+Check: cargo test -p cooee --test accounts_env passes at head; at 9567e08 it fails today with (12, 0) vs (12, 40)
+Owner: A test that broke today because its hard-coded date passed is fixed; persona chats still start without your personal setup.
