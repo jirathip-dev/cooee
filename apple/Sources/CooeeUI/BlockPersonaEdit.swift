@@ -1,39 +1,30 @@
 import CooeeCore
 import SwiftUI
 
-public struct PersonaActions {
-    public var close: () -> Void
-    public var save: () -> Void
-    public var clear: () -> Void
-    public var agent: @MainActor @Sendable (String) -> Void = { _ in }
-    public var browse: () -> Void = {}
-    public var more: () -> Void = {}
-    public var delete: (() -> Void)?
-    public var photo: () -> Void = {}
+internal struct PersonaActions {
+    internal var close: () -> Void
+    internal var save: () -> Void
+    internal var clear: () -> Void
+    internal var agent: @MainActor @Sendable (String) -> Void = { _ in }
+    internal var browse: () -> Void = {}
+    internal var more: () -> Void = {}
+    internal var delete: (() -> Void)?
+    internal var photo: () -> Void = {}
 
-    public init(close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {}) {
+    internal init(close: @escaping () -> Void = {}, save: @escaping () -> Void = {}, clear: @escaping () -> Void = {}) {
         self.close = close
         self.save = save
         self.clear = clear
     }
 }
 
-public struct PersonaMemory {
-    public let notes: [Field]
-    public let count: Int
-
-    public init(notes: [Field], count: Int) {
-        self.notes = notes
-        self.count = count
-    }
-}
-
-public struct PersonaSheet: View {
+public struct PersonaEditBlocks: View {
     @Environment(\.look) private var look
     @Binding private var draft: APIPersona
     private let choices: PersonaChoices
     private let persona: Persona
-    private let memory: PersonaMemory
+    private let screen: JSONValue
+    private let now: Date
     private let error: String?
     private let actions: PersonaActions
 
@@ -72,28 +63,45 @@ public struct PersonaSheet: View {
         persona = Fixtures.persona(personaID)
         _draft = .constant(persona.api)
         choices = PersonaChoices()
-        memory = PersonaMemory(notes: Fixtures.chiefMemory, count: 12)
+        screen = .chiefEdit
+        now = Date(timeIntervalSince1970: JSONValue.chiefEditNow)
         error = nil
         actions = PersonaActions()
     }
 
-    public init(
+    internal init(
         draft: Binding<APIPersona>,
         choices: PersonaChoices,
-        memory: PersonaMemory,
+        screen: JSONValue,
         error: String?,
         actions: PersonaActions
     ) {
         _draft = draft
         self.choices = choices
         persona = Persona(draft.wrappedValue)
-        self.memory = memory
+        self.screen = screen
+        now = Date()
         self.error = error
         self.actions = actions
     }
+
+    private var memory: JSONValue? { screen.list("blocks").first { $0.type == "memory" } }
+
+    private var memoryCount: Int { Int(memory?["count"]?.number ?? 0) }
+
+    private var avatarLook: PersonaLook {
+        draft.avatar == persona.api.avatar ? persona.look : Persona(draft).look
+    }
+
+    internal static func notes(_ screen: JSONValue, persona: String, now: Date) -> [Field] {
+        let memory = screen.list("blocks").first { $0.type == "memory" }
+        let data = (try? JSONEncoder().encode(memory?["notes"] ?? .array([]))) ?? Data()
+        return Listing.memory(
+            (try? JSONDecoder().decode([PersonaNote].self, from: data)) ?? [], persona: persona, now: now)
+    }
 }
 
-extension PersonaSheet {
+extension PersonaEditBlocks {
     private var sections: some View {
         VStack(spacing: 18) {
             VStack(spacing: 8) {
@@ -118,7 +126,7 @@ extension PersonaSheet {
             }
             Group2(header: "Character") { paragraph("Character", $draft.character) }
             Group2(header: "Instructions") { paragraph("Instructions", $draft.instructions) }
-            if memory.count > 0 { Group2(header: "Memory · \(memory.count) notes") { notes } }
+            if memoryCount > 0 { Group2(header: "Memory · \(memoryCount) notes") { notes } }
             Group2 {
                 Button(action: actions.browse) {
                     SettingRow(
@@ -141,10 +149,6 @@ extension PersonaSheet {
                 }
             }
         }
-    }
-
-    private var avatarLook: PersonaLook {
-        draft.avatar == persona.api.avatar ? persona.look : Persona(draft).look
     }
 
     private var machine: some View {
@@ -184,7 +188,8 @@ extension PersonaSheet {
 
     @ViewBuilder private var notes: some View {
         let palette = look.palette
-        ForEach(Array(memory.notes.prefix(3).enumerated()), id: \.offset) { _, note in
+        let newest = Self.notes(screen, persona: draft.name, now: now).prefix(3)
+        ForEach(Array(newest.enumerated()), id: \.offset) { _, note in
             VStack(alignment: .leading, spacing: 2) {
                 Text(note.key).ui(15, .regular, look).lineLimit(1)
                 Text(note.value).ui(12, .regular, look).foregroundStyle(palette.mute)
@@ -196,8 +201,8 @@ extension PersonaSheet {
             }
         }
         HStack {
-            if memory.count > 3 {
-                Button("Show all \(memory.count)", action: actions.more).buttonStyle(.plain).foregroundStyle(
+            if memoryCount > 3 {
+                Button("Show all \(memoryCount)", action: actions.more).buttonStyle(.plain).foregroundStyle(
                     palette.link)
             }
             Spacer()
@@ -205,7 +210,7 @@ extension PersonaSheet {
                 Text("Clear memory…").foregroundStyle(palette.red)
             } else {
                 Menu("Clear memory…") {
-                    Button("Clear all \(memory.count) notes", role: .destructive, action: actions.clear)
+                    Button("Clear all \(memoryCount) notes", role: .destructive, action: actions.clear)
                 }
                 .foregroundStyle(palette.red)
             }

@@ -16,10 +16,6 @@ internal struct PersonaControlsTests {
             $0.threads.home = { _ in HomeAnswer(screen: homeScreen, threads: [row("n1")], personas: [coder]) }
             $0.threads.personas = { _ in [coder] }
             $0.plugins.installed = { _ in [] }
-            $0.personas.save = { _, persona in
-                calls.record("put \(persona.id) \(persona.avatar ?? "")")
-                return persona
-            }
             $0.personas.remove = { _, id in calls.record("remove \(id)") }
         }
     }
@@ -29,9 +25,9 @@ internal struct PersonaControlsTests {
         return TestStore(initialState: PersonaFeature.State(server: mini, persona: persona)) {
             PersonaFeature()
         } withDependencies: {
-            $0.personas.save = { _, persona in
-                calls.record("put \(persona.id) \(persona.avatar ?? "")")
-                return persona
+            $0.plugins.act = { _, _, path, action in
+                calls.record("\(action.action) \(path) \(action.values["avatar"]?.string ?? "")")
+                return .object(action.values)
             }
             $0.personas.remove = { _, id in calls.record("remove \(id)") }
         }
@@ -123,7 +119,7 @@ internal struct PersonaControlsTests {
         var saved = coder
         saved.avatar = "initials-green"
         await store.receive(\.delegate.saved, saved)
-        #expect(calls.all == ["put coder initials-green"])
+        #expect(calls.all == ["save /screens/persona/coder initials-green"])
         await store.send(.showAll) { $0.showingAll = true }
     }
 }

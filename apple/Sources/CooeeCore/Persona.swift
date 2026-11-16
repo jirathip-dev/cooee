@@ -201,3 +201,11 @@ public struct FolderListing: Codable, Sendable, Equatable {
             ? all : all.filter { ($0 as NSString).lastPathComponent.localizedCaseInsensitiveContains(words) }
     }
 }
+
+extension BlockAction {
+    public static func save(_ persona: APIPersona) -> Self {
+        let data = (try? JSONEncoder().encode(persona)) ?? Data()
+        let value = (try? JSONDecoder().decode(JSONValue.self, from: data)) ?? .null
+        return Self(action: "save", values: value.fields)
+    }
+}

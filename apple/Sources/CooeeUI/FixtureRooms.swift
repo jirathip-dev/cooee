@@ -117,10 +117,10 @@ extension NewRoomSheet {
     }
 }
 
-extension WideView where Detail == RoomView {
-    public static func kestrel() -> WideView<RoomView> {
-        WideView(
-            chats: Fixtures.roomChats, selected: "r1", actions: HomeActions(),
+extension Sidebar where Column == EmptyView, Detail == RoomView {
+    public static func kestrel() -> Sidebar<EmptyView, RoomView> {
+        Sidebar(
+            chats: Fixtures.roomChats, selected: "r1", actions: HomeActions(), column: { EmptyView() },
             detail: { RoomView.kestrel(wide: true) }
         )
     }

@@ -8,13 +8,12 @@ internal struct PersonaScreen: View {
     @Bindable internal var store: StoreOf<PersonaFeature>
 
     internal var body: some View {
-        let notes = Listing.memory(store.notes, persona: store.draft.name, now: Date())
-        PersonaSheet(
+        PersonaEditBlocks(
             draft: $store.draft,
             choices: PersonaChoices(
                 agents: store.agents, models: store.models, efforts: store.efforts, machines: store.machines
             ),
-            memory: PersonaMemory(notes: notes, count: store.notes.count),
+            screen: store.screen ?? .bundledPersona,
             error: store.error,
             actions: actions
         )
@@ -28,7 +27,11 @@ internal struct PersonaScreen: View {
                 )
             }
         }
-        .sheet(isPresented: $store.showingAll) { AllNotes(notes: notes) { store.showingAll = false } }
+        .sheet(isPresented: $store.showingAll) {
+            AllNotes(
+                notes: PersonaEditBlocks.notes(store.screen ?? .bundledPersona, persona: store.draft.name, now: Date())
+            ) { store.showingAll = false }
+        }
         .alert($store.scope(state: \.alert, action: \.alert))
         .photosPicker(isPresented: $store.choosingPhoto, selection: photo, matching: .images)
     }

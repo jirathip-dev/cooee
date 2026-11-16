@@ -5,7 +5,7 @@
 //! hand-placed token files, `<data>/accounts/<provider>/<name>.token` (0600 or tighter), whose value goes in it.
 
 use std::{
-    fs,
+    env, fs,
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     process::ExitCode,
@@ -205,12 +205,17 @@ pub fn run(config: &Config, args: &[&str], json: bool, require: bool) -> ExitCod
 }
 
 /// An account as `accounts ls --json` lists it (never its token), with a signed-in folder account's usage and the
-/// reading's age in seconds.
+/// reading's age in seconds, both at `COOEE_NOW` (s since the epoch) when it is set.
 fn row(e: &Entry, accounts: &Accounts) -> Value {
     let (signed_in, error) = e.state();
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| d.as_secs());
+    let now = env::var("COOEE_NOW")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| {
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map_or(0, |d| d.as_secs())
+        });
     let usage = match &e.login {
         Login::Folder(dir) if signed_in => accounts.usage(e.provider, &e.name, dir.as_deref(), now),
         _ => None,

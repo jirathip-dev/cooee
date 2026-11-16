@@ -30,10 +30,12 @@ internal struct PersonaRenderTests {
         return out as Data
     }
 
-    private static func sheet(_ notes: [Field]) throws -> Pixels {
-        let sheet = PersonaSheet(
-            draft: .constant(chief), choices: PersonaChoices(), memory: PersonaMemory(notes: notes, count: 5),
-            error: nil, actions: PersonaActions()
+    private static func sheet(_ texts: [String]) throws -> Pixels {
+        let notes = texts.map { #"{"text": "\#($0)", "by": "owner", "at": 1000}"# }.joined(separator: ",")
+        let screen = JSONValue(
+            json: #"{"type": "screen", "blocks": [{"type": "memory", "count": 5, "notes": [\#(notes)]}]}"#)
+        let sheet = PersonaEditBlocks(
+            draft: .constant(chief), choices: PersonaChoices(), screen: screen, error: nil, actions: PersonaActions()
         )
         return try pixels(sheet, height: 1400)
     }
@@ -56,13 +58,17 @@ internal struct PersonaRenderTests {
     }
 
     @Test internal func memoryDrawsOnlyTheNewestThreeNotes() throws {
-        let newest = (1...3).map { Field("Note \($0)", "from you · \($0)d") }
-        let five = try Self.sheet(newest + [Field("Old 4", "4d"), Field("Old 5", "5d")])
-        #expect(
-            try Self.sheet(newest + [Field("Other 4", "6d"), Field("Other 5", "7d")]).differing(from: five, by: 16)
-                < 0.0001)
-        #expect(
-            try Self.sheet([Field("Changed", "1m")] + newest.dropFirst() + newest.prefix(2)).differing(
-                from: five, by: 16) > 0.001)
+        let newest = ["Note 1", "Note 2", "Note 3"]
+        let five = try Self.sheet(["Old 4", "Old 5"] + newest)
+        #expect(try Self.sheet(["Other 4", "Other 5"] + newest).differing(from: five, by: 16) < 0.0001)
+        let changed = try Self.sheet(["Old 4", "Old 5", "Note 1", "Note 2", "Changed"]).differing(from: five, by: 16)
+        let none = try Self.sheet([]).differing(from: five, by: 16)
+        #expect(changed > 0.0003 && none > 0.001)
+        let all = PersonaEditBlocks.notes(
+            JSONValue(
+                json:
+                    #"{"blocks": [{"type": "memory", "notes": [{"text": "a", "by": "owner", "at": 1}, {"text": "b", "by": "persona", "at": 2}]}]}"#
+            ), persona: "Chief", now: Date(timeIntervalSince1970: 10))
+        #expect(all.map(\.key) == ["b", "a"])
     }
 }
