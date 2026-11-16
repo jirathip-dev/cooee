@@ -48,7 +48,7 @@ impl Hub {
             seen: now(),
         });
         if let Err(e) = models::save(&self.data.join("models.json"), &lists) {
-            eprintln!("cooee: models.json: {e}");
+            cooee_core::note!("cooee: models.json: {e}");
         }
     }
 
@@ -78,7 +78,7 @@ impl Hub {
                     ..personas::Edit::default()
                 };
                 if let Err(e) = personas::remember(&self.data, &p.id, "owner", &e, now()) {
-                    eprintln!("cooee: persona {}: {e}", p.id);
+                    cooee_core::note!("cooee: persona {}: {e}", p.id);
                 }
             }
         }

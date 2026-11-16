@@ -31,7 +31,7 @@ fn mcp(config: &Config, args: &[&str], usage: &str) -> Result<(), String> {
         ["ls"] => {
             for s in &list {
                 let on = if s.enabled { "on" } else { "off" };
-                println!("[{}] {} · {on} · {}", s.kind, s.name, s.shown());
+                cooee_core::say!("[{}] {} · {on} · {}", s.kind, s.name, s.shown());
             }
             return Ok(());
         }
@@ -104,6 +104,6 @@ fn mcp(config: &Config, args: &[&str], usage: &str) -> Result<(), String> {
     };
     cooee_core::mcp::check(&list)?;
     save(path, &list).map_err(|e| format!("{}: {e}", path.display()))?;
-    println!("{said}");
+    cooee_core::say!("{said}");
     Ok(())
 }

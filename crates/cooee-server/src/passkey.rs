@@ -163,18 +163,19 @@ fn ceremony(
     host: &str,
 ) -> Result<(), String> {
     let c: serde_json::Value = serde_json::from_slice(client).map_err(|e| e.to_string())?;
-    if c["type"] != kind || c["challenge"] != B64.encode(challenge) {
+    let field = |k: &str| c.get(k).and_then(serde_json::Value::as_str);
+    if field("type") != Some(kind) || field("challenge") != Some(&B64.encode(challenge)) {
         return Err("not this challenge".to_owned());
     }
-    let origin = c["origin"].as_str().unwrap_or_default();
+    let origin = field("origin").unwrap_or_default();
     let on = origin.split_once("://").map_or("", |(_, h)| name(h));
     if on != name(host) {
         return Err(format!("an origin of {origin}"));
     }
-    if auth.len() < 37 || auth[..32] != Sha256::digest(name(host).as_bytes())[..] {
+    if auth.len() < 37 || auth.get(..32) != Some(&Sha256::digest(name(host).as_bytes())[..]) {
         return Err("another site's passkey".to_owned());
     }
-    if auth[32] & 0b101 != 0b101 {
+    if auth.get(32).is_none_or(|f| f & 0b101 != 0b101) {
         return Err("Face ID (user verification) is needed".to_owned());
     }
     Ok(())
@@ -190,7 +191,7 @@ fn der(sig: &[u8]) -> Option<[u8; 64]> {
         let (&n, r) = rest.strip_prefix(&[0x02])?.split_first()?;
         let (int, r) = r.split_at_checked(usize::from(n))?;
         rest = r;
-        let int = &int[int.iter().take_while(|&&b| b == 0).count()..];
+        let int = int.get(int.iter().take_while(|&&b| b == 0).count()..)?;
         half.get_mut(32usize.checked_sub(int.len())?..)?
             .copy_from_slice(int);
     }

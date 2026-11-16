@@ -14,8 +14,10 @@ use super::{Events, is_item};
 
 /// A scratch folder, empty.
 pub fn scratch(name: &str) -> PathBuf {
-    let dir = env::temp_dir().join(format!("cooee-{name}-{}", std::process::id()));
-    let _ = fs::remove_dir_all(&dir);
+    let dir = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-{name}-{}", std::process::id())),
+    );
+    fs::remove_dir_all(&dir).ok();
     fs::create_dir_all(&dir).unwrap();
     dir
 }
@@ -257,17 +259,18 @@ impl Drop for Cooee {
         if !matches!(self.child.try_wait(), Ok(None)) {
             return;
         }
-        let _ = Command::new("kill")
+        Command::new("kill")
             .args(["-TERM", &self.child.id().to_string()])
-            .status();
+            .status()
+            .ok();
         for _ in 0..100 {
             if !matches!(self.child.try_wait(), Ok(None)) {
                 return;
             }
             thread::sleep(Duration::from_millis(50));
         }
-        let _ = self.child.kill();
-        let _ = self.child.wait();
+        self.child.kill().ok();
+        self.child.wait().ok();
     }
 }
 

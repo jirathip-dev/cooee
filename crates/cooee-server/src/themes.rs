@@ -1,7 +1,7 @@
 use std::{
     fs, io,
     path::{Path, PathBuf},
-    process::{Command, Stdio},
+    process::Stdio,
     sync::Mutex,
 };
 
@@ -68,7 +68,7 @@ pub struct Themes {
 }
 
 fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
-    let out = Command::new("git")
+    let out = cooee_core::runner::command("git")
         .arg("-C")
         .arg(dir)
         .args(["-c", "user.name=cooee", "-c", "user.email=cooee@localhost"])
@@ -78,7 +78,11 @@ fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
         .output()?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
-        return Err(other(format!("git {}: {}", args[0], err.trim())));
+        return Err(other(format!(
+            "git {}: {}",
+            args.first().unwrap_or(&""),
+            err.trim()
+        )));
     }
     Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
 }
@@ -253,7 +257,7 @@ impl Themes {
             )));
         }
         let stage = self.dir.join(".themes-stage").join(&pack.name);
-        let _ = fs::remove_dir_all(&stage);
+        fs::remove_dir_all(&stage).ok();
         let folder = Path::new(&pack.source);
         let commit = if pack.listed {
             self.vendored(&pack.name, &stage)?
@@ -268,7 +272,7 @@ impl Themes {
             fs::rename(&stage, &to)
         });
         if done.is_err() {
-            let _ = fs::remove_dir_all(&stage);
+            fs::remove_dir_all(&stage).ok();
         }
         done?;
         self.pin(
@@ -309,7 +313,7 @@ impl Themes {
         )
         .map_err(|_| other(format!("{} has no commit {}", pack.source, pack.rev)))?;
         fs::create_dir_all(stage)?;
-        let mut archive = Command::new("git")
+        let mut archive = cooee_core::runner::command("git")
             .arg("-C")
             .arg(&repo)
             .args([
@@ -320,7 +324,7 @@ impl Themes {
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .spawn()?;
-        let untar = Command::new("tar")
+        let untar = cooee_core::runner::command("tar")
             .arg("-x")
             .arg("-C")
             .arg(stage)

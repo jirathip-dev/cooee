@@ -155,14 +155,14 @@ impl Hub {
             l.meta.asked_at += at.saturating_sub(l.asks.paused);
             l.asks.paused = 0;
             if let Err(e) = self.store.save(&l.meta) {
-                eprintln!("cooee: room {}: {e}", l.meta.id);
+                cooee_core::note!("cooee: room {}: {e}", l.meta.id);
             }
         }
     }
 
     /// Sets how a member's session starts (once).
     pub fn set_starter(&self, starter: Starter) {
-        let _ = self.starter.set(starter);
+        self.starter.set(starter).ok();
     }
 
     /// A new room of `members` (persona ids, in room order), titled `title` (empty: their ids); once per
@@ -180,7 +180,7 @@ impl Hub {
             return Err(refused(format!("a room has 2 to {MEMBERS} members")));
         }
         for (i, m) in members.iter().enumerate() {
-            if members[..i].contains(m) {
+            if members.iter().take(i).any(|o| o == m) {
                 return Err(refused(format!("{m} is in the room twice")));
             }
             self.joinable(m)?;
@@ -425,7 +425,7 @@ impl Hub {
             .place(&folder)
             .and_then(|folder| self.start(&agent, &folder, prompt, random_id, &recipe));
         if let Some((file, _)) = &recipe.launch.secrets {
-            let _ = fs::remove_file(file);
+            fs::remove_file(file).ok();
         }
         seated
     }
@@ -527,7 +527,7 @@ impl Hub {
         for room in due {
             let note = "10 minutes passed: this message's turns stopped";
             if let Err(e) = self.stop_round(&room, "deadline", note) {
-                eprintln!("cooee: room {room}: {e}");
+                cooee_core::note!("cooee: room {room}: {e}");
             }
         }
     }
