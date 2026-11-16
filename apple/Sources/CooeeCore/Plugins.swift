@@ -62,20 +62,6 @@ public struct PluginRow: Codable, Sendable, Equatable, Identifiable {
 
     public var id: String { name }
 
-    public var source: String { listed ? "cooee's index" : url }
-
-    public var may: [String] {
-        let lines = places.map { place in
-            switch place.kind {
-            case "header-strip": "\(place.label) chip on the header strip"
-            case "chat-cards": "cards in its chats"
-            default: "\(place.label) row in Plugins"
-            }
-        }
-        let claimed = claims.map { "sessions labelled source=\($0) in its Workflow sheet" }
-        return lines + claimed + (permissions.push ? ["notifications"] : [])
-    }
-
     public init(
         name: String,
         version: String,
