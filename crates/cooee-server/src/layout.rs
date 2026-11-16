@@ -1,5 +1,3 @@
-//! The owner's `layout.json` beside `config.toml`, checked by the app's rules, served as the last good one (#300).
-
 use std::{
     collections::HashSet,
     fs, io,
@@ -26,7 +24,6 @@ use cooee_core::plugins::{self, Manifest, PlaceKind};
 
 use crate::{Data, header, hub::lock, plain};
 
-/// The layout an app draws when the owner has none: the app's bundled default.
 const DEFAULT: &str = include_str!("../../../apple/Sources/CooeeUI/Default/layout.json");
 
 const KINDS: [(&str, &[&str], &[&str]); 8] = [
@@ -90,7 +87,6 @@ pub fn check(text: &str) -> Result<Value, Broken> {
     Ok(file)
 }
 
-/// Checks one node and its slots (`ids`: the ids taken so far): `Err((why, the offending text, its occurrence))`.
 fn node(
     n: &Value,
     path: &str,
@@ -154,9 +150,6 @@ fn node(
     Ok(())
 }
 
-/// `layout` with each installed plugin's manifest places added where the owner's file places none of its screens
-/// (`header-strip` in the chat's strip, `chat-cards` in its cards, `menu-row` in the menu), then every plugin screen
-/// its manifest may not have there dropped: the layout and why each node was dropped.
 fn merged(mut layout: Value, plugins: &[Manifest]) -> (Value, Vec<String>) {
     let mut placed = Vec::new();
     sources(&layout["root"], &mut placed);
@@ -232,8 +225,6 @@ fn prune(n: &mut Value, path: &str, plugins: &[Manifest], skipped: &mut Vec<Stri
     }
 }
 
-/// Why plugin screen `n` may not be where it is: no such enabled plugin, or a place its `[permissions] places`
-/// lacks (`cards` needs `chat-cards`, `menu` needs `menu-row`, any other shown place `header-strip`).
 fn refused(n: &Value, plugins: &[Manifest]) -> Option<String> {
     let source = n["source"]
         .as_str()
@@ -263,12 +254,10 @@ fn refused(n: &Value, plugins: &[Manifest]) -> Option<String> {
     Some(format!("{source} may not be placed {bad:?}"))
 }
 
-/// What `GET /layout` serves, and why the file isn't it when it's broken.
 struct Served {
     etag: String,
     layout: Value,
     broken: Option<Broken>,
-    /// The file's text last read (none: no file), so a broken one is reported once.
     seen: Option<String>,
 }
 
@@ -303,8 +292,6 @@ impl Layouts {
         me
     }
 
-    /// Reads the file again: a good change is served and `changed` fanned out; a bad one is fanned out as `broken`
-    /// and the last good layout stays.
     fn reload(&self) {
         let text = self.file.as_ref().and_then(|f| fs::read_to_string(f).ok());
         let mut s = lock(&self.served);
@@ -323,7 +310,6 @@ impl Layouts {
         let _ = self.tx.send((said.0, said.1.to_string()));
     }
 
-    /// Writes the default over the file, keeping the old one as `layout.json.bak`.
     fn reset(&self) -> io::Result<()> {
         let Some(file) = &self.file else {
             return Err(io::Error::other("no config folder"));
@@ -349,7 +335,6 @@ pub async fn get(cx: &Cx) -> Result<Response> {
     answer(cx)
 }
 
-/// The enabled installed plugins' manifests.
 fn manifests(cx: &Cx) -> Vec<Manifest> {
     let data = &app_context::<Data>(cx).0;
     let installed = plugins::read_lock(data).unwrap_or_default();
@@ -391,7 +376,6 @@ pub async fn events(cx: &Cx) -> Result<Sse<impl Stream<Item = Result<Event>> + u
         .broken
         .as_ref()
         .map(|b| ("broken", json!(b).to_string()));
-    // A subscriber that fell behind is dropped; it reconnects and reads `GET /layout`.
     let rest = stream::unfold(
         rx,
         |mut rx| async move { rx.recv().await.ok().map(|e| (e, rx)) },

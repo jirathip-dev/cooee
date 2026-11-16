@@ -1,5 +1,3 @@
-//! `cooee serve`: the instance's server and its first-party plugins.
-
 use std::net::{Ipv4Addr, SocketAddr};
 
 use cooee_core::{Config, Shed};
@@ -19,14 +17,12 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
     }
 }
 
-/// Serves the instance; `[[plugins]]` entries named `machines` and `terminal` are the first-party plugins, run here.
 fn serve(config: &Config) -> Result<(), String> {
     let machines = config.plugins.iter().find(|p| p.name == "machines");
     let terminal = config
         .plugins
         .iter()
         .find(|p| p.name == cooee_terminal::NAME);
-    // In the background, so a keychain that never answers holds up nothing.
     if let Some(data) = config.data_dir() {
         std::thread::spawn(move || {
             match keychain::migrate(&data) {

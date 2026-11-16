@@ -1,5 +1,3 @@
-//! `cooee devices` and `cooee devices rm <id>`: the paired devices.
-
 use cooee_core::Config;
 
 use crate::{

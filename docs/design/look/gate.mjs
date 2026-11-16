@@ -1,11 +1,8 @@
-// #423: serve.js's scheme gate (assets/serve.js `gate`), browser- and node-safe, so the mockup's table and check.mjs
-// share it. Contrast and CIEDE2000 are ../schemes/check.mjs's, unchanged.
 export const TOKENS = ['--bg', '--card', '--edge', '--line', '--scrim', '--fg', '--mute', '--l', '--link',
   '--g', '--a', '--r', '--p', '--c', '--fk-l', '--fk-p', '--fk-c', '--fk-g', '--fk-a'];
 const lin = c => (c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 const lum = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 export const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
-// `color-mix(in srgb, c p%, transparent)` painted over bg, as the board's tints are (.ask, .later, .grp[data-t]).
 const over = (c, bg, p) => c.slice(0, 3).map((v, i) => v * p + bg[i] * (1 - p));
 
 function lab([r, g, b]) {
@@ -15,7 +12,6 @@ function lab([r, g, b]) {
   const [fx, fy, fz] = [x / 0.95047, y, z / 1.08883].map(f);
   return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
 }
-// CIEDE2000 (Sharma et al. 2005).
 export function de(c1, c2) {
   const [L1, a1, b1] = lab(c1), [L2, a2, b2] = lab(c2), rad = Math.PI / 180;
   const C = (Math.hypot(a1, b1) + Math.hypot(a2, b2)) / 2, G = 0.5 * (1 - Math.sqrt(C ** 7 / (C ** 7 + 25 ** 7)));

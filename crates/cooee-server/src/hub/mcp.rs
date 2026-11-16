@@ -1,5 +1,3 @@
-//! MCP servers (#56) and skills (#218): the registry, a thread's proxies and their grants, and what agents propose.
-
 use std::{collections::BTreeMap, path::Path};
 
 use cooee_core::{
@@ -38,17 +36,11 @@ pub struct Proposal {
     pub why: String,
 }
 
-/// What an agent proposed, until the owner answers its card.
 pub(super) enum Proposed {
-    /// A server for the registry (#56).
     Server(Server),
-    /// A skill for the thread's persona (#218), new or the edit of `replaces`.
     Skill {
-        /// The persona.
         persona: String,
-        /// The skill.
         skill: Skill,
-        /// The skill it edits.
         replaces: Option<String>,
     },
 }
@@ -81,7 +73,6 @@ impl Proposal {
     }
 }
 
-/// MCP servers (#56): the registry in the config file, a thread's proxies and their grants, and proposals.
 impl Hub {
     /// Agents' MCP proxies reach cooee at `url` (`cooee serve`, once it listens).
     pub fn listening(&self, url: String) {
@@ -122,18 +113,15 @@ impl Hub {
         Ok(said)
     }
 
-    /// The config's folder (its `profiles/`).
     pub(super) fn config_dir(&self) -> Option<&Path> {
         self.config.as_deref().and_then(Path::parent)
     }
 
-    /// Profile `id`'s picks (none for Plain or a profile gone).
     fn picks(&self, id: &str) -> Vec<Pick> {
         cooee_core::profiles::find(self.config_dir(), &self.data, id)
             .map_or_else(|_| Vec::new(), |p| p.mcp)
     }
 
-    /// `s` resolved, with `tools` allowed.
     fn grant_of(&self, s: Server, tools: Option<Vec<String>>) -> Result<Grant, String> {
         let (env, headers) = s.resolved(&self.data)?;
         Ok(Grant {
@@ -147,8 +135,6 @@ impl Hub {
         })
     }
 
-    /// `recipe`'s launch for thread `id`, with its MCP servers: cooee's own, then each its profile picks (on, and
-    /// resolving now), each a `cooee mcp proxy` holding the thread's token. Before cooee listens: none.
     pub(super) fn mcp_launch(&self, id: &str, recipe: &Recipe) -> Result<Launch, HubError> {
         let mut launch = recipe.launch.clone();
         let (Some(url), Ok(exe)) = (self.url.get(), std::env::current_exe()) else {
@@ -348,7 +334,6 @@ impl Hub {
         Ok(s.body.chars().take(8000).collect())
     }
 
-    /// The id of thread `id`'s persona, for its token.
     fn persona_of(&self, id: &str, token: &str) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
         personas::find(self.config_dir(), &self.data, &meta.profile)
@@ -356,7 +341,6 @@ impl Hub {
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))
     }
 
-    /// A proposal's card in thread `id`: what it does, its form and its detail; `p` waits for the owner's answer.
     fn raise(
         &self,
         id: &str,
@@ -400,7 +384,6 @@ impl Hub {
         })
     }
 
-    /// The owner's answer to a proposal: `approve` adds a server, off, or saves a skill.
     pub(super) fn proposal_answer(
         &self,
         id: &str,

@@ -17,7 +17,6 @@ use topcoat::{
 
 use crate::{Data, Name, manage::Row, manager, plain};
 
-/// `?persona=`: whom it attaches to.
 #[derive(Deserialize)]
 struct Query {
     persona: String,
@@ -48,7 +47,6 @@ pub async fn attach(cx: &Cx) -> Result<Response> {
     }
 }
 
-/// What `p` may do once attached to `persona`, as the app's attach sheet words it.
 fn may(p: &Row) -> Vec<String> {
     let places = p.places.iter().map(|place| match place.kind {
         PlaceKind::HeaderStrip => format!("{} chip on the header strip", place.label),
@@ -61,7 +59,6 @@ fn may(p: &Row) -> Vec<String> {
     places.chain(claims).chain(push).collect()
 }
 
-/// The attach screen of `p` for `persona`: one `permissions` card of three sections, each a header and a list.
 fn sheet(p: &Row, persona: &str) -> Value {
     let (l, perms) = (&p.locked, &p.permissions);
     let row = |title: &str| json!({ "type": "row", "id": title, "title": title });

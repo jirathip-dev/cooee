@@ -67,7 +67,6 @@ esac"#,
     ),
 ];
 
-/// The commands that change something, as the fakes log them.
 const CHANGES: &[&str] = &[
     "cargo install --locked",
     "shed install",
@@ -78,8 +77,6 @@ const CHANGES: &[&str] = &[
     "tailscale serve --bg",
 ];
 
-/// A fake machine: `HOME` at `home`, the fakes in `home/bin`, a port that is listening and, unless `dry`, a fake shed
-/// server at the per-user socket.
 struct Mac {
     home: PathBuf,
     port: u16,
@@ -119,8 +116,6 @@ impl Mac {
         self.cooee_typing(args, None)
     }
 
-    /// `cooee <args>` with `input` typed in (none: no input). Git never reaches GitHub: the theme index's repo is a
-    /// missing folder here, unless the config names an index of its own.
     fn cooee_typing(&self, args: &[&str], input: Option<&str>) -> Output {
         let mut child = Command::new(BIN)
             .args(args)
@@ -154,7 +149,6 @@ impl Mac {
         child.wait_with_output().unwrap()
     }
 
-    /// The logged commands that change something, then the log is emptied.
     fn changes(&self) -> Vec<String> {
         let log = self.home.join("calls.log");
         let calls = fs::read_to_string(&log).unwrap_or_default();
@@ -171,7 +165,6 @@ impl Mac {
     }
 }
 
-/// Every file under `dir`, relative to it.
 fn files(dir: &Path) -> Vec<String> {
     let mut all = Vec::new();
     for entry in fs::read_dir(dir).unwrap().flatten() {
@@ -190,8 +183,6 @@ fn files(dir: &Path) -> Vec<String> {
     all
 }
 
-/// The owner's terminal plugin (#28) as setup adds it for an instance on `port`: port + 1000, with the 64 hex digit
-/// token written in `config`.
 fn terminal(port: u16, config: &str) -> String {
     let token = config
         .rsplit_once("token = \"")
@@ -295,7 +286,6 @@ fn a_fresh_machine_runs_every_step_once_in_order_and_a_second_run_skips_them() {
     );
 }
 
-/// A shed on another protocol than this build's: its fix, as an error names it.
 fn old_shed(mac: &Mac) -> (FakeShed, String) {
     let at = mac.home.join("Library/Caches/shed");
     let old = Hello {
@@ -324,8 +314,6 @@ fn old_shed(mac: &Mac) -> (FakeShed, String) {
     (FakeShed::start(&at, old), said)
 }
 
-/// #397: shed's job runs the pinned binary but its serve still speaks protocol 0: setup warns, restarts it, connects
-/// again, and only then restarts cooee onto this build.
 #[test]
 fn a_managed_shed_on_another_protocol_is_restarted_after_a_warning() {
     let mac = Mac::new("su-shed-old", true);
@@ -359,8 +347,6 @@ fn a_managed_shed_on_another_protocol_is_restarted_after_a_warning() {
     assert!(changes[1].ends_with("/dev.shed.serve"), "{changes:?}");
 }
 
-/// #397: a shed serve on another protocol that isn't cooee's launchd job is left alone, and so is cooee: setup stops
-/// before restarting cooee onto this build, naming both sides and the fix.
 #[test]
 fn an_unmanaged_shed_on_another_protocol_holds_cooee_back_naming_the_fix() {
     let mac = Mac::new("su-shed-un", true);
@@ -449,7 +435,6 @@ fn an_existing_config_keeps_its_keys() {
         "{stdout}"
     );
 
-    // Another port than the config's is refused, the file untouched.
     let out = mac.cooee(&["setup", "--yes", "--port", "1"]);
     assert!(
         String::from_utf8_lossy(&out.stderr).contains(&format!("says port = {}", mac.port)),
@@ -471,7 +456,6 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
         format!("port = {}\nroots = [\"/srv\"]\n", mac.port),
     )
     .unwrap();
-    // Asked which (swag's packs, from the build's own copy: no fetch), kitchen is typed; no Codex, no Gemini.
     let args = ["setup", "--port", &mac.port.to_string()];
     let out = mac.cooee_typing(&args, Some("kitchen\n\n\n"));
     let stdout = String::from_utf8_lossy(&out.stdout);
@@ -505,7 +489,6 @@ fn setup_installs_the_first_party_themes_chosen_with_no_network() {
             .join(".local/share/cooee/cooee/themes/kitchen.git")
             .exists()
     );
-    // The default is all of them: farm and garden, the ones left.
     let out = mac.setup(&["--yes"]);
     assert!(out.status.success(), "{out:?}");
     let stdout = String::from_utf8_lossy(&out.stdout);
@@ -556,7 +539,6 @@ fn install_sh_checks_its_tools_then_installs_cooee_and_runs_setup() {
     let install = format!("cargo install --locked --path {}\n", crate_dir.display());
     let mut sign = String::new();
     if cfg!(target_os = "macos") {
-        // #167: no Apple Development identity, no install: an unsigned cooee couldn't keep its secrets.
         let security = bin.join("security");
         fs::write(&security, "#!/bin/sh\necho '  0 valid identities found'\n").unwrap();
         fs::set_permissions(&security, fs::Permissions::from_mode(0o755)).unwrap();
@@ -588,8 +570,6 @@ fn install_sh_checks_its_tools_then_installs_cooee_and_runs_setup() {
 
 const SHA: &str = "2222222222222222222222222222222222222222";
 
-/// A fake Mac with the `old` binary installed and serving, main's head at [`SHA`] with ci `conclusion` and the
-/// `new` binary at that commit.
 fn updating(name: &str, conclusion: &str, new: &str) -> Mac {
     let mac = Mac::new(name, true);
     let exe = |file: &Path, body: &str| {
@@ -624,7 +604,6 @@ impl Mac {
         self.home.join(".local/share/cooee/cooee")
     }
 
-    /// What `name` under `HOME` prints when run.
     fn prints(&self, name: &str) -> String {
         let out = Command::new(self.home.join(name)).output().unwrap();
         String::from_utf8(out.stdout).unwrap()
@@ -738,7 +717,6 @@ fn a_new_build_that_does_not_answer_is_rolled_back_and_the_old_one_serves_again(
         fs::read_to_string(mac.data().join("update.failed")).unwrap(),
         SHA
     );
-    // The next check doesn't try the same commit again.
     fs::write(mac.home.join("calls.log"), "").unwrap();
     assert!(mac.cooee(&["update"]).status.success());
     let log = fs::read_to_string(mac.data().join("update.log")).unwrap();

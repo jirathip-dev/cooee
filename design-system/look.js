@@ -1,19 +1,3 @@
-// cooee's look (docs/design/look), a classic script in <head>, so a device's pick shows before the first paint. The
-// server puts `LOOK` (every theme and scheme, and its default theme) before this file. The pick is this device's
-// alone, in localStorage: theme, mode (system | light | dark), style (modern | terminal), sprites (on | ascii | off), and a
-// scheme per mode (unset: the theme's default). System follows prefers-color-scheme live. Elements are filled as
-// they are parsed or added, so pages and chat.js only name what they show:
-//   [data-st=working|needs|done|fail|idle|ended]  a state: the sprite (data-tool=edit|read|run while working), the
-//                                                 glyph (a theme without sprites) or the dot (sprites off), then the
-//                                                 theme word (data-plain adds `· plain word`)
-//   [data-w=<key>]                                a theme word (data-plain adds `· plain word`)
-//   [data-s=loading|empty]                        the theme's 132 × 100 figure (sprites off: none)
-//   [data-open=look|settings|folders]             opens the look sheet, Settings (#settings/<section> opens it there)
-//                                                 or Settings › Folders
-// Ascii draws a state as a 3-character figure and the big figures as text. A theme with moments sets
-// html[data-moments=on] (chat.js plays them). Settings fires `cooee-sheet` once drawn, for chat.js's sections.
-// A plugin tab (iframe[data-plugin]) gets the look as a message (`cooee-look`: CSS variables, style, sprites, words
-// and the theme's data URLs) when it asks (`cooee-look?`) and again on every change.
 (() => {
   const KEY = "cooee.look", html = document.documentElement, mq = matchMedia("(prefers-color-scheme: dark)");
   const PLAIN = { working: "working", needs: "needs you", done: "done", fail: "failed", idle: "idle", ended: "ended",
@@ -26,10 +10,9 @@
     "farm-light", "kitchen-light", "garden-light"];
   const SEL = "[data-st],[data-w],[data-s]";
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-  // The built-in ones in the design's order, then the owner's own by name.
   const sorted = (o, order) => Object.keys(o).sort((a, b) => ((order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99)) || a.localeCompare(b));
   let pick = {};
-  try { pick = JSON.parse(localStorage.getItem(KEY)) || {}; } catch { /* no storage: the defaults */ }
+  try { pick = JSON.parse(localStorage.getItem(KEY)) || {}; } catch { }
 
   const name = () => (LOOK.themes[pick.theme] ? pick.theme : LOOK.default);
   const theme = () => LOOK.themes[name()];
@@ -68,7 +51,6 @@
     }
   }).observe(html, { subtree: true, childList: true, attributes: true, attributeFilter: ["data-st", "data-tool"] });
 
-  // The look as a plugin tab gets it.
   function forPlugin() {
     const t = theme();
     return { type: "cooee-look", theme: name(), mode: mode(), style: style(), sprites: figs(),
@@ -90,8 +72,6 @@
     if (open) render();
   }
 
-  // A change keeps the reader where they were: the row at the top of the view stays there, cut at the same share
-  // of its height, however much the new style grows or shrinks it.
   function hold(change) {
     const box = document.getElementById("msgs"), rows = box ? box.children : document.querySelectorAll(".fh,.tr");
     const top = box ? box.getBoundingClientRect().top : 0;
@@ -107,14 +87,12 @@
   function set(k, v) {
     if (k === "dark" || k === "light") {
       if (v === theme().scheme[k]) delete pick[k]; else pick[k] = v;
-      // A tap on the other mode's list shows it: Appearance switches to that mode.
       if (k !== mode()) pick.mode = k;
     } else pick[k] = v;
-    try { localStorage.setItem(KEY, JSON.stringify(pick)); } catch { /* this page only */ }
+    try { localStorage.setItem(KEY, JSON.stringify(pick)); } catch { }
     hold(paint);
   }
 
-  // The sheets: the look sheet (STYLE, SPRITES, THEME, APPEARANCE, COLOURS) and Settings.
   let open = "", sheet = null;
   const tick = (on) => (on ? '<i class="tk">✓</i>' : "");
   const keys = (k, list, cur, at = "k") => `<div class="seg" role="radiogroup" aria-label="${k}">${list.map((v) =>
@@ -155,8 +133,6 @@
       <p class="ch" id="s-report">report</p><button type="button" class="sr" data-report><span class="sk">report a problem</span><i class="cv">▸</i></button>`;
   }
 
-  // Settings › Folders: the roots, each with [remove], and the Mac's folders from the home folder down (names only,
-  // hidden ones behind a toggle), the one shown with [add as root]. Closing it after a change reloads the page.
   const fol = { path: "", hidden: false, at: null, err: "", changed: false };
   const tilde = (p) => (fol.at && p.startsWith(fol.at.home) ? `~${p.slice(fol.at.home.length)}` : p);
   async function folders(change) {
@@ -207,7 +183,6 @@
     if (!which && location.hash.startsWith("#settings")) history.replaceState(null, "", location.pathname + location.search);
   }
   globalThis.cooeeSheet = show;
-  // A deep link: #settings, or #settings/<section> scrolled to that section.
   function deep() {
     const m = location.hash.match(/^#settings(?:\/([\w-]+))?$/);
     if (!m) return;
@@ -230,7 +205,6 @@
     else show("");
   });
   addEventListener("keydown", (e) => { if (e.key === "Escape" && open) show(""); });
-  // System follows the phone live; another tab's pick shows here too.
   mq.addEventListener("change", () => hold(paint));
   addEventListener("storage", (e) => {
     if (e.key !== KEY) return;

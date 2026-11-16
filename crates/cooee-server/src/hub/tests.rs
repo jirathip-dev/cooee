@@ -4,12 +4,10 @@ use cooee_core::shed_proto::{ApprovalOption, EventKind, Reported};
 
 use super::*;
 
-/// A hub over `dir`'s data with no shed (its follower retries in the background, harmlessly).
 pub(super) fn hub(dir: &Path) -> Arc<Hub> {
     hub_on(dir, dir.join("no-shed"))
 }
 
-/// [`hub`] with `bin` as the shed CLI.
 fn hub_on(dir: &Path, bin: PathBuf) -> Arc<Hub> {
     let shed = Shed::new(bin, Some(dir.join("no-shed-dir")));
     let (looks, _) = crate::look::Looks::load(None, None);
@@ -32,7 +30,6 @@ pub(super) fn scratch(name: &str) -> PathBuf {
     dir
 }
 
-/// Thread `id` on terminal `cooee-<id>`, with `lines` as its items file.
 fn seed(dir: &Path, id: &str, lines: &str) {
     let threads = dir.join("data/threads");
     let meta = json!({ "format": 1, "thread": { "id": id, "title": id, "messages": [], "terminal": format!("cooee-{id}") } });
@@ -51,8 +48,6 @@ fn event(id: &str, seq: u64, kind: EventKind) -> Event {
     }
 }
 
-/// R6 (herdsman#447): a thread of 1,000 messages written as 30,000 versions serves its requests (a slice, the
-/// list, the page's thread) in under 300 ms: none is quadratic in the log. (The fold at load: cooee-core `chat`.)
 #[test]
 fn r6_requests_over_a_long_log_are_within_budget() {
     let dir = scratch("budget");
@@ -84,8 +79,6 @@ fn r6_requests_over_a_long_log_are_within_budget() {
     assert!(took < Duration::from_millis(300), "{took:?}");
 }
 
-/// R15 (herdsman#444, #445, #493, #534): a working turn with no shed event for 30 minutes (a fake clock) is
-/// surfaced as needs-you, once; its next event puts it back to working.
 #[test]
 fn r15_a_turn_idle_30_minutes_is_surfaced_as_needs_you() {
     let dir = scratch("stuck");
@@ -107,17 +100,13 @@ fn r15_a_turn_idle_30_minutes_is_surfaced_as_needs_you() {
         (turn.state.as_str(), turn.note.as_deref()),
         ("blocked", Some("no progress for 30 minutes"))
     );
-    // Once: a second look sends nothing more.
     hub.watch(t0 + 2 * STUCK);
     assert_eq!(rx.len(), 1);
-    // On the list too.
     assert_eq!(hub.list()[0].state, "blocked");
     hub.apply(event("idle", 2, EventKind::Text { text: "w".into() }));
     assert_eq!(state(&hub).state, "working");
 }
 
-/// #155 (G2): a room's turns on an owner message stop 10 minutes after it (a fake clock): its queued turns are
-/// dropped, the room told and its pages sent `room-stop`, once.
 #[test]
 fn a_rooms_turns_stop_at_the_deadline() {
     let dir = scratch("deadline");
@@ -145,8 +134,6 @@ fn a_rooms_turns_stop_at_the_deadline() {
     assert!(rx.try_recv().is_err());
 }
 
-/// #178: a member's open ask reaches its room's pages and slice with the member's session, and pauses the room's
-/// deadline (a fake clock); answering it closes it there and resumes the deadline, shifted by the pause.
 #[test]
 fn a_members_ask_shows_in_its_room_and_pauses_its_deadline() {
     let dir = scratch("room-ask");
@@ -200,8 +187,6 @@ fn a_members_ask_shows_in_its_room_and_pauses_its_deadline() {
     assert_eq!(round(&hub), 0);
 }
 
-/// #155: a member's session that started after its reply was already in is kept, never cancelled; one that
-/// started after [stop] is cancelled (the cancel reaches shed, here none: a shed error), once.
 #[test]
 fn only_a_stop_cancels_a_members_session_as_it_starts() {
     let dir = scratch("seated");
@@ -216,7 +201,6 @@ fn only_a_stop_cancels_a_members_session_as_it_starts() {
     fs::write(dir.join("data/threads/room.jsonl"), "").unwrap();
     let seated = |hub: &Hub| hub.thread("room").unwrap().0.members[0].session.clone();
 
-    // Ada replied before its start returned: its turn is gone, Bo's is next.
     fs::write(
         dir.join("data/threads/room.json"),
         room(json!([turn("bo")])).to_string(),
@@ -226,7 +210,6 @@ fn only_a_stop_cancels_a_members_session_as_it_starts() {
     hub.started("room", "ada", Ok("s1".to_owned())).unwrap();
     assert_eq!(seated(&hub), "s1");
 
-    // [stop] while Ada's session starts: nothing to cancel then, so it is cancelled once started.
     fs::write(
         dir.join("data/threads/room.json"),
         room(json!([turn("ada"), turn("bo")])).to_string(),
@@ -239,8 +222,6 @@ fn only_a_stop_cancels_a_members_session_as_it_starts() {
     hub.started("room", "ada", Ok("s1".to_owned())).unwrap();
 }
 
-/// #55: however often the agent list is read, `shed agents` runs once a minute (a fake clock); a failed run
-/// keeps the list.
 #[test]
 fn the_agent_list_is_refreshed_at_most_once_a_minute() {
     use std::os::unix::fs::PermissionsExt;
@@ -267,8 +248,6 @@ fn the_agent_list_is_refreshed_at_most_once_a_minute() {
     assert_eq!((count(), hub.agents().unwrap()[0].id.as_str()), (3, "a"));
 }
 
-/// #33: a Workflow session whose terminal shed no longer lists is dropped (its files too); one that moved since
-/// the listing and the owner's own chats stay.
 #[test]
 fn prune_drops_only_the_workflow_sessions_shed_no_longer_lists() {
     let dir = scratch("prune");
@@ -289,8 +268,6 @@ fn prune_drops_only_the_workflow_sessions_shed_no_longer_lists() {
     assert!(!threads.join("gone.json").exists());
 }
 
-/// #295: a thread unused past the idle threshold (a fake clock) is unloaded, its row unchanged, and reloads intact
-/// on next use; a page reconnecting within the replay window gets its events, one later is reset.
 #[test]
 fn an_idle_threads_chat_unloads_and_reloads_intact() {
     let dir = scratch("unload");

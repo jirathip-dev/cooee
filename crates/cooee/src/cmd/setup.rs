@@ -1,5 +1,3 @@
-//! `cooee setup`: everything from shed to a pairing code.
-
 use crate::{
     cli::{Failed, Flag, Invocation},
     setup,

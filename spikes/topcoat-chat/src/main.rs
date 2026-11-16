@@ -16,13 +16,11 @@ use topcoat::{
 
 type S = &'static Shed;
 
-/// The farm scheme as herdsman applies it: every token of `schemes/farm.json` on `:root`.
 static SCHEME: LazyLock<String> = LazyLock::new(|| {
     let s: serde_json::Value = serde_json::from_str(include_str!("../theme/schemes/farm.json")).unwrap();
     let vars: String = s["tokens"].as_object().unwrap().iter().map(|(k, v)| format!("{k}:{};", v.as_str().unwrap())).collect();
     format!(":root{{{vars}color-scheme:{}}}", s["color-scheme"].as_str().unwrap())
 });
-/// The farm theme's sprite sheet, unchanged, as `<defs>` for `<use href="#row-…">`.
 static SPRITES: &str = include_str!("../theme/themes/farm/sprites.svg");
 static THEME: LazyLock<serde_json::Value> = LazyLock::new(|| serde_json::from_str(include_str!("../theme/themes/farm/theme.json")).unwrap());
 
@@ -32,7 +30,6 @@ fn row_sprite(kind: &str) -> String {
 
 #[component]
 async fn sprite(kind: &str) -> Result<impl View> {
-    // herdsman crops the 132 × 100 box to the 16 sprite px (8.25 each): 1.5 css px a pixel at 24 px.
     let href = format!("#{}", row_sprite(kind));
     Ok(view! { <svg class="rsp" viewBox="0 0 132 100" aria-hidden="true"><use href=(href)></use></svg> })
 }
@@ -78,7 +75,6 @@ async fn threads() -> Result<impl View> {
     })
 }
 
-/// Sends the composer's text into the thread.
 #[procedure]
 async fn send(cx: &Cx, text: String) -> Result<usize> {
     let shed = *app_context::<S>(cx);
@@ -89,13 +85,11 @@ async fn send(cx: &Cx, text: String) -> Result<usize> {
     Ok(n)
 }
 
-/// The approval row's option buttons.
 #[procedure]
 async fn choose(cx: &Cx, option: String) -> Result<bool> {
     Ok(app_context::<S>(cx).choose(option))
 }
 
-/// Restarts the fake shed's run (the measure scripts, and the thread's ↻).
 #[procedure]
 async fn restart(cx: &Cx) -> Result<bool> {
     app_context::<S>(cx).start();
@@ -123,7 +117,6 @@ async fn composer(cx: &Cx) -> Result<impl View> {
     })
 }
 
-/// What the composer sent, as the thread's newest messages.
 #[component]
 async fn sent(cx: &Cx) -> Result<impl View> {
     Ok(live! {
@@ -142,7 +135,6 @@ async fn sent(cx: &Cx) -> Result<impl View> {
     })
 }
 
-/// One chunk of the streaming reply: it re-renders per token until it is full, then its region ends.
 #[component]
 async fn reply_chunk(cx: &Cx, c: usize) -> Result<impl View> {
     let shed = *app_context::<S>(cx);
@@ -172,9 +164,7 @@ async fn live_thread(cx: &Cx) -> Result<impl View> {
                 <ol class="msgs" id="msgs">
                     <li class="msg you">"Stream 2,000 tokens, call two tools and ask before pushing."</li>
                     <li class="msg agent">
-                        // The reply text and the rows are separate regions: a token re-renders only the text.
                         (live! {
-                            // A new chunk re-renders the list; each chunk streams in its own region (reply_chunk).
                             let mut rx = shed.tx.subscribe();
                             let mut seen = (u64::MAX, 0);
                             loop {
@@ -238,7 +228,6 @@ async fn live_thread(cx: &Cx) -> Result<impl View> {
     })
 }
 
-/// 1,000 messages, both sides, some long, some Thai.
 fn long_messages() -> Vec<(bool, String)> {
     let words = ["the", "build", "passed", "on", "staging", "สวัสดีครับ", "ที่นี่", "review", "found", "two", "issues", "merge"];
     (0..1000).map(|i| {

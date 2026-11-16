@@ -1,7 +1,3 @@
-// The owner's terminal (crates/cooee-terminal): the owner's shells and, read-only, the agents' terminals. shed keeps
-// the screen; this draws its updates (rows of coloured runs) as a monospace grid in cooee's theme. Typing goes to the
-// shell as text (Thai too), the key bar as named keys. Pinch to zoom. 10 minutes without a touch or key lock it:
-// the screen blurs and cooee asks for Face ID again (the shells keep running).
 document.head.appendChild(document.createElement("style")).textContent = `
 [hidden]{display:none!important}html,body{height:100%}body{display:flex;flex-direction:column;padding:0!important;overflow:hidden}
 .top{display:flex;gap:6px;padding:6px;align-items:center}.top select{flex:1;min-width:0;min-height:40px;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--edge);border-radius:8px}
@@ -41,7 +37,7 @@ const inp = el("textarea", { className: "in", ariaLabel: "Type into the shell", 
 inp.setAttribute("autocorrect", "off");
 
 const IDLE = 10 * 60 * 1000;
-let current = null; // {name, owner}
+let current = null;
 let stop = () => {};
 let rows = [];
 let size = 13;
@@ -52,7 +48,6 @@ let used = Date.now();
 let seen = 0;
 let unlocking = null;
 
-// Calls this plugin's backend: JSON, or null after saying why. A locked tab waits for Face ID, then tries again.
 const call = async (path, body) => {
   const init = body === undefined ? {} : { method: "POST", type: "application/json", body: JSON.stringify(body) };
   const r = await cooee.fetch(path, init);
@@ -80,7 +75,6 @@ const lock = () => {
   })();
   return unlocking;
 };
-// Use: a touch, a key or a scroll. It keeps the unlock alive (at most a call a minute); 10 minutes without locks.
 const touch = () => {
   used = Date.now();
   if (used - seen > 60_000 && !unlocking) {
@@ -93,7 +87,6 @@ setInterval(() => {
   if (Date.now() - used >= IDLE && !unlocking) lock();
 }, 5_000);
 
-// shed's colours: 0–15 the theme's, then the xterm cube and greys, or [r, g, b].
 const NAMED = ["var(--mute)", "var(--r)", "var(--g)", "var(--a)", "var(--link)", "var(--p)", "var(--link)", "var(--fg)"];
 const level = (v) => (v ? 55 + v * 40 : 0);
 const colour = (c) => {
@@ -117,7 +110,6 @@ const row = (runs) => {
   }
   return d;
 };
-// One update: every row on `full`, else the rows that changed; then the cursor.
 const draw = (u) => {
   if (u.full) {
     for (const d of rows) d.remove();
@@ -142,7 +134,6 @@ const watch = (t) => {
   stop = cooee.events(`/watch?t=${t.name}`, async (e) => {
     if (e.event === "screen") draw(JSON.parse(e.data));
     else if (e.event === "closed") {
-      // Its shell exited, or cooee locked the tab: the list says which.
       if ((await call("/list")) !== null) load();
     }
   });
@@ -191,8 +182,6 @@ more.onclick = async () => {
   more.hidden = true;
 };
 
-// Typing: text as text, the keyboard's own keys and the bar's as names, one call at a time and in order (text typed
-// while a call is out goes in one). Ctrl is sticky for the next letter.
 let queue = Promise.resolve();
 let batch = null;
 const later = (f) => {
@@ -278,7 +267,6 @@ el("button", { textContent: "paste" }, bar).onclick = async () => {
     pasted.focus();
   }
 };
-// ↑ history: the lines typed here in this shell, newest first; a tap types one again (no Enter).
 el("button", { textContent: "↑ history", ariaLabel: "history" }, bar).onclick = () => {
   hist.replaceChildren();
   for (const l of typed) el("button", { textContent: l }, hist).onclick = () => (type(l), (hist.hidden = true));
@@ -287,7 +275,6 @@ el("button", { textContent: "↑ history", ariaLabel: "history" }, bar).onclick 
 };
 document.body.append(hist, paste, bar);
 
-// Pinch: the font size (8–28 px); then an owner's shell is resized to the columns and rows that fit.
 const probe = el("span", { textContent: "M".repeat(10) }, view);
 probe.style.cssText = "position:absolute;visibility:hidden";
 let fitting = 0;
@@ -319,5 +306,4 @@ view.addEventListener("touchend", () => {
   pinch = null;
 });
 
-// The page's #name (a chat's [▸ terminal] typed into that shell) opens on it.
 await load(location.hash.slice(1) || undefined);

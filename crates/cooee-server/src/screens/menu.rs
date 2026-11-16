@@ -7,7 +7,6 @@ use topcoat::{Result, context::Cx, router::route};
 use super::settings;
 use crate::{Answer, HubError, refused};
 
-/// The menu the app draws offline.
 const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/screens/menu.json");
 
 /// `{type: screen, source: core, id, title, blocks}`: `signins` valued with the signed-in accounts, `devices` with
