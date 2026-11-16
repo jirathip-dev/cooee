@@ -20,7 +20,11 @@ use topcoat::{
     },
 };
 
-use crate::{Data, hub::lock, look::Looks, plain};
+use crate::{
+    http::{Data, plain},
+    hub::lock,
+    look::Looks,
+};
 
 fn other(why: impl Into<String>) -> io::Error {
     io::Error::other(why.into())

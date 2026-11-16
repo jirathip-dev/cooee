@@ -22,7 +22,10 @@ use topcoat::{
 
 use cooee_core::plugins::{self, Manifest, PlaceKind};
 
-use crate::{Data, header, hub::lock, plain};
+use crate::{
+    http::{Data, header, plain},
+    hub::lock,
+};
 
 const DEFAULT: &str = include_str!("../../../apple/Sources/CooeeUI/Default/layout.json");
 

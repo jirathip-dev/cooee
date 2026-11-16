@@ -11,20 +11,12 @@ use cooee_core::{
 use topcoat::{
     Result,
     context::{Cx, app_context},
-    router::{
-        Body as Bytes, RouterBuilder,
-        content::{Form, Json},
-        response::Response,
-        route,
-    },
 };
 
 use crate::{
-    AgentAsk, Answer, bearer,
+    http::refused,
     hub::{Hub, HubError, Recipe, now},
-    plain,
     push::Note,
-    refused, thread_id,
 };
 
 /// How a `new_thread` run starts as `who`: its agent, the agent's name, its folder and its recipe.
@@ -250,51 +242,6 @@ pub(crate) async fn on<T: Send + 'static>(
     tokio::task::spawn_blocking(move || f(&r))
         .await
         .map_err(refused)?
-}
-
-#[route(POST "/mcp/agent/routine")]
-async fn mcp_routine(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<Item>> {
-    let token = bearer(cx);
-    Ok(Answer(
-        on(cx, move |r| {
-            let ask = serde_json::from_value(a.server).map_err(refused)?;
-            r.create((&a.thread, &token), ask, now())
-        })
-        .await,
-    ))
-}
-
-#[route(GET "/routines.json")]
-async fn routine_list(cx: &Cx) -> Result<Answer<Vec<Routine>>> {
-    Ok(Answer(on(cx, Runner::list).await))
-}
-
-fn back<T>(done: Result<T, HubError>) -> Result<Response> {
-    match done {
-        Ok(_) => Ok(Response::builder().status(204).body(Bytes::from(()))?),
-        Err(e) => plain(400, &e.to_string()),
-    }
-}
-
-#[route(POST "/routines/{id}")]
-async fn routine_edit(cx: &Cx, Form(e): Form<Edit>) -> Result<Response> {
-    let id = thread_id(cx);
-    back(on(cx, move |r| r.edit(&id, e, now())).await)
-}
-
-#[route(POST "/routines/{id}/delete")]
-async fn routine_delete(cx: &Cx) -> Result<Response> {
-    let id = thread_id(cx);
-    back(on(cx, move |r| r.delete(&id)).await)
-}
-
-/// The routines' routes, on `runner`.
-pub fn routes(runner: Arc<Runner>, b: RouterBuilder) -> RouterBuilder {
-    b.app_context(runner)
-        .route(mcp_routine)
-        .route(routine_list)
-        .route(routine_edit)
-        .route(routine_delete)
 }
 
 fn minutes(z: &str) -> Option<i32> {

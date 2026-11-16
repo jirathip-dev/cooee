@@ -19,7 +19,11 @@ use topcoat::{
     },
 };
 
-use crate::{Answer, Data, HubError, blocking, persona_save, plain, refused, routines, thread_id};
+use crate::{
+    HubError,
+    http::{Answer, Data, blocking, persona_save, plain, refused, thread_id},
+    routines,
+};
 
 const BUNDLED: &str =
     include_str!("../../../../apple/Sources/CooeeUI/Default/screens/persona.json");
