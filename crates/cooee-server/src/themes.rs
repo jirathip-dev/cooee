@@ -339,6 +339,10 @@ impl Themes {
                 Ok(())
             } else {
                 self.plan(&pin.source, Some(&pin.commit)).and_then(|p| {
+                    let p = Pack {
+                        name: name.to_owned(),
+                        ..p
+                    };
                     let stage = self.dir.join(".themes-stage").join(name);
                     let fetched = self.fetch(&p, &stage);
                     let _ = fs::remove_dir_all(&stage);
