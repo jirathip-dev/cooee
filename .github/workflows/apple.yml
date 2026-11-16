@@ -226,6 +226,8 @@ jobs:
           cat "$feed/appcast.xml"
           python3 -m http.server 8787 --bind 127.0.0.1 -d "$feed" >"$RUNNER_TEMP/feed.log" 2>&1 &
           echo "FEED=$!" >> "$GITHUB_ENV"
+          for _ in $(seq 30); do curl -sfo /dev/null http://127.0.0.1:8787/appcast.xml && break; sleep 1; done
+          curl -sSfo /dev/null http://127.0.0.1:8787/appcast.xml || { echo "the feed does not answer on 8787"; exit 1; }
           pid() { launchctl print "gui/$(id -u)/com.jirathip.cooee.$1" | awk '$1 == "pid" { print $3 }'; }
           serve=$(pid serve)
           shed=$(pid shed)
