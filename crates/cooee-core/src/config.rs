@@ -55,6 +55,8 @@ pub struct Config {
     pub apns: Option<Apns>,
     /// GitHub webhooks for routines (`[hooks]`, #261); off when unset.
     pub hooks: Option<Hooks>,
+    /// Whether `cooee update` (its timer, every 15 minutes) installs main's newest green build (default on, #332).
+    pub auto_update: bool,
 }
 
 /// `[hooks]`: a second listener serving only `POST /hooks/github`, published by Tailscale Funnel.
@@ -153,6 +155,7 @@ impl Default for Config {
             mcp: Vec::new(),
             apns: None,
             hooks: None,
+            auto_update: true,
         }
     }
 }

@@ -58,6 +58,7 @@
       "id": "coder",
       "name": "Coder",
       "role": "orchestrator",
+      "style": "detailed",
       "fleets": [
         "cooee"
       ],

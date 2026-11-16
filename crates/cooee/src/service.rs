@@ -27,6 +27,14 @@ pub(crate) fn label(instance: &str) -> String {
     format!("dev.cooee.{instance}")
 }
 
+/// The launchd label of the instance's `serve` service or its `update` timer.
+pub(crate) fn job(instance: &str, verb: &str) -> String {
+    match verb {
+        "serve" => label(instance),
+        _ => format!("{}.{verb}", label(instance)),
+    }
+}
+
 /// XML text: `&`, `<` and `>` escaped.
 pub(crate) fn xml(s: &str) -> String {
     s.replace('&', "&amp;")
@@ -34,19 +42,20 @@ pub(crate) fn xml(s: &str) -> String {
         .replace('>', "&gt;")
 }
 
-/// The instance's launchd plist, `~/Library/LaunchAgents/dev.cooee.<instance>.plist`, and its text: `cooee serve`
-/// (with `--config <path>` if `explicit`), kept alive, logging to the data folder.
+/// The instance's launchd plist, `~/Library/LaunchAgents/<job(instance, verb)>.plist`, and its text: `cooee <verb>`
+/// (with `--config <path>` if `explicit`), logging to the data folder; `serve` kept alive, `update` every 15 minutes.
 pub(crate) fn plist(
     config: &Config,
     path: &Path,
     explicit: bool,
+    verb: &str,
 ) -> Result<(PathBuf, String), String> {
     let home = env::var_os("HOME").ok_or("no HOME")?;
     let data = config.data_dir().ok_or("no data folder")?;
     let exe = env::current_exe().map_err(|e| e.to_string())?;
     let mut argv = vec![
         exe.display().to_string(),
-        "serve".into(),
+        verb.into(),
         "--instance".into(),
         config.instance.clone(),
     ];
@@ -57,9 +66,17 @@ pub(crate) fn plist(
         .iter()
         .map(|a| ["\n    <string>", &xml(a), "</string>"].concat())
         .collect();
-    let log = xml(&data.join("cooee.log").display().to_string());
+    let (log, run) = if verb == "serve" {
+        ("cooee.log", "KeepAlive</key>\n  <true/>")
+    } else {
+        (
+            "update.log",
+            "StartInterval</key>\n  <integer>900</integer>",
+        )
+    };
+    let log = xml(&data.join(log).display().to_string());
     let env_path = xml(&env::var("PATH").unwrap_or_default());
-    let label = label(&config.instance);
+    let label = job(&config.instance, verb);
     let plist = format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -77,8 +94,7 @@ pub(crate) fn plist(
   </dict>
   <key>RunAtLoad</key>
   <true/>
-  <key>KeepAlive</key>
-  <true/>
+  <key>{run}
   <key>StandardOutPath</key>
   <string>{log}</string>
   <key>StandardErrorPath</key>

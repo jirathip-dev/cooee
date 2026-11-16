@@ -33,12 +33,15 @@ internal struct ChatScreen: View {
         actions.workflow = store.workflow.map { Workflow.issues($0).count(where: \.needsYou) }
         actions.showWorkflow = { store.send(.workflow(.show(true))) }
         actions.workflowOpen = store.workflowOpen
+        actions.step = store.step
         return actions
     }
 
     private var actions: ChatActions {
         var actions = Self.actions(store, back: onBack)
         actions.backTo = backTo
+        actions.machine = store.machine.shown
+        actions.showMachine = { store.send(.machine(.show(true))) }
         return actions
     }
 
@@ -53,8 +56,11 @@ internal struct ChatScreen: View {
             headed: headed,
             actions: actions
         )
+        .environment(\.openThread) { store.send(.delegate(.open($0))) }
+        .environment(\.editPersona) { store.send(.delegate(.persona($0))) }
         .task { await store.send(.task).finish() }
         .task { await store.send(.plugins(.load)).finish() }
+        .task { await store.send(.machine(.load)).finish() }
         .sheet(item: $store.scope(state: \.screen, action: \.screen)) { PluginScreenSheet(store: $0) }
         .sheet(item: $store.scope(state: \.attaching, action: \.attaching)) { AttachSheet(store: $0) }
         .sheet(isPresented: Binding(get: { store.workflowOpen }, set: { store.send(.workflow(.show($0))) })) {
@@ -66,6 +72,13 @@ internal struct ChatScreen: View {
                 done: { store.send(.workflow(.show(false))) }
             )
             .presentationDetents([.fraction(0.8)])
+        }
+        .sheet(isPresented: Binding(get: { store.machine.open }, set: { store.send(.machine(.show($0))) })) {
+            MachineSheet(
+                chip: store.machine, started: store.target.started,
+                pick: { store.send(.machine(.pick($0))) }, done: { store.send(.machine(.show(false))) }
+            )
+            .presentationDetents([.medium])
         }
     }
 }

@@ -133,6 +133,8 @@ struct Glance {
     ask: Option<(String, String, String)>,
     /// The approval that waits, else the newest item's last line.
     last: String,
+    /// Who said the newest item: a room's member or its owner, `""` in a chat.
+    speaker: String,
     /// When the newest item came.
     at: u64,
     /// How many items, not the owner's own, came after the read mark.
@@ -159,6 +161,7 @@ fn glance(live: &Live) -> Glance {
         | Body::Agent { text, .. }
         | Body::Note { text }
         | Body::Link { text, .. }
+        | Body::Ask { text, .. }
         | Body::Ended { text } => text,
         Body::Tool { title, .. } => title,
         Body::Approval { tool, .. } => tool,
@@ -176,6 +179,7 @@ fn glance(live: &Live) -> Glance {
         last: waiting
             .unwrap_or_else(|| text.lines().last().unwrap_or("").chars().take(80).collect()),
         at: last.map_or(0, |i| i.at),
+        speaker: last.map(|i| i.speaker.clone()).unwrap_or_default(),
         unseen: items[from..]
             .iter()
             .filter(|i| !matches!(i.body, Body::You { .. }))
