@@ -114,7 +114,7 @@ extension PersonaEditBlocks {
                 }
             }
             Group2(header: "Character") { paragraph("Character", $draft.character) }
-            Group2(header: "Instructions") { paragraph("Instructions", $draft.instructions) }
+            Group2(header: "Instructions") { instructions }
             if !look.still {
                 Button(action: actions.chat) {
                     Text(draft.id.isEmpty ? "Set up by chat instead" : "Refine by chat").ui(15, .medium, look)
@@ -135,6 +135,15 @@ extension PersonaEditBlocks {
                 if !choices.machines.isEmpty { machine }
             }
             if let error { Text(error).ui(13, .regular, look).foregroundStyle(look.palette.red) }
+        }
+    }
+
+    @ViewBuilder private var instructions: some View {
+        if let profile = draft.profile, draft.instructions.isEmpty {
+            Text("from profile \(profile)").ui(15, .regular, look).foregroundStyle(look.palette.mute).padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            paragraph("Instructions", $draft.instructions)
         }
     }
 
