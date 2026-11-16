@@ -28,7 +28,7 @@ pub(crate) async fn attach(cx: &Cx, Json(a): Json<Attach>) -> Result<Answer<cooe
             (&data, config.as_deref(), &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
-            (t.model, t.effort),
+            ((t.model, t.effort), t.setup),
         )?;
         hub.attach(&id, &a.folder, &recipe)
     });
@@ -71,7 +71,7 @@ pub(crate) async fn move_thread(cx: &Cx, Json(m): Json<Move>) -> Result<Answer<c
             (&data, dir.as_deref(), &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
-            (t.model, t.effort),
+            ((t.model, t.effort), t.setup),
         )?;
         hub.move_to(&id, &m.machine, &recipe)
     });

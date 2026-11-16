@@ -52,6 +52,9 @@ impl Hub {
             {
                 Ok(self.proposal_answer(id, item, option))
             }
+            Body::Approval { card, .. } if card.form.as_deref() == Some("persona") => {
+                Ok(self.persona_answer(id, item, option))
+            }
             _ => return self.shed_approve(&live, &terminal, tapped, option),
         };
         let mut live = lock(&live);

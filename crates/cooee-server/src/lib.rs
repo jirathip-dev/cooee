@@ -412,6 +412,8 @@ struct New {
     effort: String,
     #[serde(default)]
     machine: Option<String>,
+    #[serde(default)]
+    setup: bool,
 }
 
 #[derive(Serialize)]
@@ -433,7 +435,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
             (&data, config.as_deref(), &list),
             (&new.agent, new.account.as_deref(), profile),
             new.folder,
-            picked,
+            (picked, new.setup),
         )?;
         if let Some(m) = new.machine {
             recipe.machine = m;
@@ -488,7 +490,7 @@ async fn retry(cx: &Cx) -> Result<Answer<()>> {
             (&data, config.as_deref(), &list),
             (&t.agent, Some(&t.account), &t.profile),
             PathBuf::new(),
-            (t.model, t.effort),
+            ((t.model, t.effort), t.setup),
         )?;
         let name = provider_name(&t.agent, &logins.statuses());
         hub.retry(&id, recipe, &name)
@@ -503,7 +505,7 @@ fn recipe(
     (data, config, list): (&std::path::Path, Option<&std::path::Path>, &[Agent]),
     (agent, account, id): (&str, Option<&str>, &str),
     folder: PathBuf,
-    mut picked: (String, String),
+    (mut picked, setup): ((String, String), bool),
 ) -> Result<(String, PathBuf, Recipe), HubError> {
     let (agent, folder, mut recipe) = if id.is_empty() {
         let (account, launch) = logins.home(agent, account)?;
@@ -538,6 +540,20 @@ fn recipe(
     };
     recipe.launch.pick(logins.picks(&agent, &picked.1)?);
     (recipe.model, recipe.effort) = picked;
+    if setup {
+        if id.is_empty() || list.iter().any(|a| a.id == id && a.lent.is_some()) {
+            return Err(refused("a setup chat needs one of your own personas"));
+        }
+        if !recipe.instructions.is_empty() {
+            recipe.instructions.push_str(
+                "
+
+",
+            );
+        }
+        recipe.instructions.push_str(agents::SETUP);
+        recipe.setup = true;
+    }
     Ok((agent, folder, recipe))
 }
 
@@ -681,7 +697,7 @@ fn starter(
             (&data, config.as_deref(), &list),
             ask,
             PathBuf::new(),
-            empty,
+            (empty, false),
         )
     })
 }
@@ -701,7 +717,7 @@ fn runner(
             (&data, config.as_deref(), &list),
             (&who.agent, Some(&who.account), &who.profile),
             who.folder.clone(),
-            (who.model.clone(), who.effort.clone()),
+            ((who.model.clone(), who.effort.clone()), false),
         )?;
         if recipe.machine.is_empty() {
             recipe.machine.clone_from(&who.machine);
@@ -1653,6 +1669,18 @@ async fn mcp_remember(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>
     ))
 }
 
+#[route(POST "/mcp/agent/persona")]
+async fn mcp_persona(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
+    let token = bearer(cx);
+    Ok(Answer(
+        blocking(cx, move |hub| {
+            let u = serde_json::from_value(a.server).map_err(refused)?;
+            hub.update_persona(&a.thread, &token, u)
+        })
+        .await,
+    ))
+}
+
 async fn on_personas<T: Send + 'static>(
     cx: &Cx,
     f: impl FnOnce(&std::path::Path, &std::path::Path) -> io::Result<T> + Send + 'static,
@@ -1834,6 +1862,7 @@ fn persona_routes(b: topcoat::router::RouterBuilder) -> topcoat::router::RouterB
         .route(memory_drop)
         .route(memory_clear)
         .route(mcp_remember)
+        .route(mcp_persona)
         .route(mcp_history)
         .route(skill_list)
         .route(skill_add)

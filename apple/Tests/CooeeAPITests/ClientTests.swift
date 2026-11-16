@@ -17,7 +17,7 @@ internal struct ClientTests {
 
     private struct Started: Decodable, Equatable {
         private enum CodingKeys: String, CodingKey {
-            case agent, profile, machine, text, background
+            case agent, profile, machine, text, background, setup
             case randomID = "random_id"
         }
 
@@ -27,6 +27,7 @@ internal struct ClientTests {
         fileprivate let text: String
         fileprivate let randomID: String
         fileprivate let background: Bool
+        fileprivate var setup = false
     }
 
     @Test internal func homePersonasAndASliceDecodeAsDocumented() async throws {
@@ -162,5 +163,19 @@ internal struct ClientTests {
         #expect(client.base == server.url)
         #expect(try client.request("GET", "/threads").value(forHTTPHeaderField: "Cookie") == "cooee=t1")
         #expect(throws: APIError.self) { try Client.http(URLResponse()) }
+    }
+}
+
+extension ClientTests {
+    @Test internal func aSetupChatSaysSo() async throws {
+        let server = CannedServer(["/threads": [Answer(headers: json, chunks: [#"{"id":"n2"}"#])]])
+        let persona = APIPersona(id: "coder", name: "Coder", agent: "fake-acp")
+        #expect(
+            try await server.client().newThread(persona: persona, machine: "", text: "hi", setup: true, randomID: "r8")
+                == "n2")
+        let body = try server.decoded("/threads", as: Started.self)
+        let want = Started(
+            agent: "fake-acp", profile: "coder", machine: "", text: "hi", randomID: "r8", background: true, setup: true)
+        #expect(body == want)
     }
 }

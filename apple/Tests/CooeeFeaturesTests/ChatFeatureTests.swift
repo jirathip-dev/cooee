@@ -38,8 +38,8 @@ internal struct ChatFeatureTests {
             $0.threads.send = { _, thread, text, files, queue in
                 calls.record("\(queue ? "queue" : "send") \(thread) \(text) \(files.count)")
             }
-            $0.threads.start = { _, persona, machine, text in
-                calls.record("start \(persona.id) \(machine) \(text)")
+            $0.threads.start = { _, persona, machine, text, setup in
+                calls.record("start \(persona.id) \(machine) \(text)\(setup ? " setup" : "")")
                 return "n1"
             }
             $0.threads.stop = { _, thread in calls.record("stop \(thread)") }
@@ -162,5 +162,19 @@ internal struct ChatFeatureTests {
         let store = store { $0.threads.stop = { _, _ in throw APIError(status: 409, text: "Nothing runs.") } }
         await store.send(.compose(.stop))
         await store.receive(\.failed) { $0.error = "Nothing runs." }
+    }
+}
+
+extension ChatFeatureTests {
+    @Test internal func aSetupChatStartsInSetupMode() async {
+        let store = store(.setup(coder))
+        await store.send(.compose(.draftChanged("hi"))) { $0.draft = "hi" }
+        await store.send(.compose(.send)) {
+            $0.draft = ""
+            $0.outbox = [Outgoing(id: -1, text: "hi")]
+        }
+        await store.receive(\.outbox.delivered) { $0.outbox = [] }
+        await store.receive(\.delegate.started)
+        #expect(calls.all == ["start coder  hi setup"])
     }
 }

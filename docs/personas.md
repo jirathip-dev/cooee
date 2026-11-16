@@ -15,7 +15,11 @@ and `effort` its defaults. It is `<config>/agents/<id>/`: `agent.toml`, `CHARACT
 "persona" | "owner", at}`, a line `- [id] text <!-- by:… at:… -->` of its folder's `memory.md`; `id` is short, and a note kept before #216 gets one
 on first read. The persona edits its notes with the `remember` tool of cooee's own MCP server: `{text?, replaces?,
 forget?}` adds `text`, puts it in place of note `replaces`, or drops the ids in `forget`; an exact duplicate adds
-nothing. Notes hold at most 2,000 characters in all (#216): a write that would pass that is a 400 naming the use and
+nothing. With the `update_persona` tool (#270) `{character?, instructions?}` it rewrites its own Character or
+Instructions (never another persona's): in a setup chat it is saved at once, with an `Updated Character` /
+`Updated Instructions` note in the chat; in any other it raises an approval card (`form: "persona"`, `detail` the
+diff: each changed field's name, its old lines `-`, its new `+`) with `approve` and `deny`, and nothing is saved until
+it is approved (a restart drops a card not answered). Either way the change reaches the next session's brief. Notes hold at most 2,000 characters in all (#216): a write that would pass that is a 400 naming the use and
 the ids, so notes are merged or forgotten first; a persona already past it keeps and reads every note, and may only
 shrink them. `plugins` (#129) are the installed plugins (or config
 `[[plugins]]` entries) attached to it: a plugin's cards go only to its threads. `role` (#159) is `""` (a plain persona)

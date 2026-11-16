@@ -35,7 +35,7 @@ The registry is the Mac's: `cooee mcp add|rm|enable|disable`.
 A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the thread's token>`, no cookie:
 `POST /mcp/agent/grant` `{thread, server}` → the server resolved and its allowed `tools`; `POST /mcp/agent/propose`
 `{thread, server: {name, type, command, args, url, why}}` → the card; `POST /mcp/agent/remember` `{thread, server:
-{text?, replaces?, forget?}}` → `remember`'s edit by the thread's persona, its answer the note's id and the use; `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
+{text?, replaces?, forget?}}` → `remember`'s edit by the thread's persona, its answer the note's id and the use; `POST /mcp/agent/persona` `{thread, server: {character?, instructions?}}` (#270) → `update_persona`'s answer (an unknown field, or no change, a 400); `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
 (#156) → `ask_persona`'s reply (a string), the thread's persona asking one its `can_message` names in a linked exchange
 thread (the owner reads it and may write a note), waiting `timeout` seconds (300, at most 600). A refusal is a 400
 starting `NOT_ALLOWED`, `DEPTH` (an asked persona may ask one more, no further), `TIMEOUT` or `OFFLINE` (its session

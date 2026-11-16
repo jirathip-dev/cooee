@@ -29,7 +29,8 @@ internal struct PersonaScreen: View {
 
     private var actions: PersonaActions {
         var actions = PersonaActions(
-            close: { store.send(.close) }, save: { store.send(.save) }, clear: { store.send(.clearMemory) }
+            close: { store.send(.close) }, save: { store.send(.save) }, clear: { store.send(.clearMemory) },
+            chat: { store.send(.chat) }
         )
         actions.agent = { store.send(.agent($0)) }
         actions.browse = { store.send(.browse(nil)) }

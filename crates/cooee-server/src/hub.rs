@@ -29,12 +29,14 @@ mod plugins;
 mod relaunch;
 mod rooms;
 mod send;
+mod setup;
 mod start;
 #[cfg(test)]
 mod tests;
 mod threads;
 use mcp::Proposed;
 pub use rooms::Starter;
+pub use setup::Update;
 
 const REPLAY: u64 = 5 * 60 * 1000;
 
@@ -278,6 +280,8 @@ pub struct Recipe {
     pub asked_by: String,
     /// The machine it runs on (#148; empty: this host), one of [`cooee_machines::Machines::added`].
     pub machine: String,
+    /// A setup chat (#270).
+    pub setup: bool,
     /// The routine whose run starts it (#75).
     pub routine: Option<Mark>,
 }
@@ -304,6 +308,7 @@ pub struct Hub {
     url: OnceLock<String>,
     mcp_key: String,
     proposals: Mutex<HashMap<(String, u64), Proposed>>,
+    updates: Mutex<HashMap<(String, u64), (String, Update)>>,
     registry: Mutex<()>,
     turns: mpsc::Sender<String>,
     starter: OnceLock<Starter>,
@@ -513,6 +518,7 @@ impl Hub {
             url: OnceLock::new(),
             mcp_key,
             proposals: Mutex::default(),
+            updates: Mutex::default(),
             registry: Mutex::default(),
             turns,
             starter: OnceLock::new(),
