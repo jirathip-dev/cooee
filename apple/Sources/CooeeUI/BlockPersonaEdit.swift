@@ -97,13 +97,6 @@ public struct PersonaEditBlocks: View {
     private var avatarLook: PersonaLook {
         draft.avatar == persona.api.avatar ? persona.look : Persona(draft).look
     }
-
-    internal static func notes(_ screen: JSONValue, persona: String, now: Date) -> [Field] {
-        let memory = screen.list("blocks").first { $0.type == "memory" }
-        let data = (try? JSONEncoder().encode(memory?["notes"] ?? .array([]))) ?? Data()
-        return Listing.memory(
-            (try? JSONDecoder().decode([PersonaNote].self, from: data)) ?? [], persona: persona, now: now)
-    }
 }
 
 extension PersonaEditBlocks {

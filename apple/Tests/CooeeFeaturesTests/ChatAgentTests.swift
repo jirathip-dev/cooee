@@ -17,7 +17,7 @@ internal struct ChatAgentTests {
             $0.personas.agents = { _ in agents }
             $0.personas.models = { _ in lists }
             $0.threads.model = { _, thread, model, effort in calls.record("model \(thread) \(model) \(effort)") }
-            $0.threads.start = { _, persona, _, text in
+            $0.threads.start = { _, persona, _, text, _ in
                 calls.record("start \(persona.agent) \(persona.model) \(persona.effort) \(text)")
                 return "n1"
             }
