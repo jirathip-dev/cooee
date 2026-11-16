@@ -1,0 +1,11 @@
+Decided: one core screen /screens/persona/<id> carries the seven #244 sections as blocks; the panel and the edit sheet both draw from it.
+Because: "the #244 sections as blocks (Screen + Sites, Terminal, Workflow, Routines, Places, Memory, Edit), actions via `/screens/action`"
+Decided: saving an existing persona and clearing its memory go through POST /screens/action; the app's old per-persona save, memory and forget calls are deleted.
+Because: apple/Sources/CooeeFeatures/PersonaFeature.swift:163
+Rejected: a screen for a new persona — it has no id yet, so creating one stays POST /personas and its sheet draws the bundled persona.json.
+Decided: core leaves screen, terminal and workflow empty (it holds no data for them); the app hides an empty section as before.
+Because: crates/cooee-server/src/screens/persona.rs:24
+Decided: no new frames recorded: every persona-panel, persona and mac-persona-panel frame already existed in apple/design/v1 from #244 and passes unchanged.
+Because: "Persona panel frames recorded from the Swift view first, then unchanged after the swap (iPhone sheet and Mac column)."
+Check: SnapshotTests frameMatchesTheDesign for persona-panel-*, persona-*, style-terminal-persona-dark and mac-persona-panel-dark with no PNG in apple/design changed.
+Owner: The persona panel and the persona edit sheet now come from the Mac as a screen; nothing looks different.
