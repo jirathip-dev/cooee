@@ -133,7 +133,7 @@ impl Layer for Gate {
                 return plain(403, "forbidden: foreign Host or Origin");
             }
             let path = uri(cx).path();
-            if OPEN.contains(&path) {
+            if OPEN.contains(&path) || path.starts_with("/look/") {
                 return next.run(cx, body).await;
             }
             if path.starts_with("/mcp/agent/") {
@@ -2034,11 +2034,13 @@ pub fn router(
     };
     routines::routes(
         runner,
-        room_routes(persona_routes(screens::routes(pairing::routes(
-            Router::builder()
-                .layer(Timing)
-                .layer(gate)
-                .layer(BodyLimit::max(64 << 20).at("/threads")),
+        room_routes(persona_routes(screens::routes(themes::routes(
+            pairing::routes(
+                Router::builder()
+                    .layer(Timing)
+                    .layer(gate)
+                    .layer(BodyLimit::max(64 << 20).at("/threads")),
+            ),
         )))),
     )
     .route(push_key)

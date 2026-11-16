@@ -107,7 +107,8 @@ internal struct Figure: View {
         if let lane, look.style == .terminal {
             Text(lane.figure).ui(13, .bold, look).foregroundStyle(palette.round(lane)).frame(width: 40)
         } else if look.style == .scene, let coat = figure.string("coat") ?? lane.map({ _ in SceneLane.coat(title) }) {
-            Sprite(name: "horse-\(coat)-\(lane?.pose ?? "idle")").frame(width: 40, height: 30)
+            Sprite(name: "horse-\(coat)-\(lane?.pose ?? "idle")", pack: "sprites.svg#s-\(lane?.pose ?? "idle")").frame(
+                width: 40, height: 30)
         } else if let lane {
             Sprite(name: "row-\(sprite(lane))").frame(width: 22, height: 22).frame(width: 28)
         } else if let icon = figure.string("icon") {
