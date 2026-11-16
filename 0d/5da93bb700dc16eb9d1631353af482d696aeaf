@@ -1,0 +1,9 @@
+Decided: after the update, the step reads the Mac's /screens/home as a freshly paired client and fails by name if it lists no Coder
+Because: .github/workflows/apple.yml:265
+Because: "the Mac app at version 1 finds version 2 on the local appcast, stages it, restarts into it, and the phone stays paired"
+Rejected: a retry or a longer wait in the phone test — the phone already waited 30 s on a loaded home
+Rejected: dropping the Coder check — then nothing shows the updated server keeps the Mac's config
+Check: run 43971450883 at ff34827 updated and restarted both login items; only the phone's Coder check failed
+Check: a local cooee serve with the Mac's config and coder.toml lists Coder in /personas and /screens/home
+Check: mac-setup needs one more workflow_dispatch run at this head (q1729)
+Owner: the update itself now works; CI now checks the Mac's server directly so a last failure shows whether the Mac or the phone loses the persona
