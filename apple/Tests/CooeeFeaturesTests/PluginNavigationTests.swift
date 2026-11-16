@@ -52,6 +52,32 @@ internal struct PluginNavigationTests {
         #expect(paths.all == ["/screens/fleets/cooee", "/screens/queue"])
     }
 
+    @Test internal func aTimerTapPushesItsSettingsScreenFocusedOnItsFieldAndBackClearsTheFocus() async {
+        let paths = Calls()
+        let store = store(showing: Self.screen) {
+            $0.plugins.screen = { _, _, path in
+                paths.record(path)
+                return .object(["title": .string(path)])
+            }
+        }
+        await store.send(.navigate("/screens/global#limits.stall_minutes")) {
+            $0.path = ["/screens/global"]
+            $0.focus = "limits.stall_minutes"
+            $0.screen = nil
+        }
+        await store.receive(\.loaded) {
+            $0.screen = LiveScreen(.object(["title": .string("/screens/global")]))
+            $0.asOf = epoch
+        }
+        await store.send(.navigate(nil)) {
+            $0.path = []
+            $0.focus = nil
+            $0.screen = nil
+        }
+        await store.receive(\.loaded) { $0.screen = LiveScreen(.object(["title": .string("/screens/queue")])) }
+        #expect(paths.all == ["/screens/global", "/screens/queue"])
+    }
+
     @Test internal func anAnswersOpenPushesThatScreen() async {
         let store = store(showing: Self.screen) {
             $0.plugins.act = { _, _, _, _ in .object(["open": .string("/screens/fleets/review")]) }

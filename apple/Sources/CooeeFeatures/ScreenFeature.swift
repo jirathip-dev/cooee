@@ -17,6 +17,7 @@ public struct ScreenFeature: Sendable {
         public var acting = false
         public var said: String?
         public var path: [String] = []
+        public var focus: String?
         @Presents public var lane: ChatFeature.State?
 
         public var offline: Bool { unreachable != nil }
@@ -167,7 +168,9 @@ extension ScreenFeature {
     }
 
     private func navigate(_ state: inout State, to path: String?) -> Effect<Action> {
-        if let path { state.path.append(path) } else if state.path.popLast() == nil { return .none }
+        let parts = path?.split(separator: "#", maxSplits: 1).map(String.init) ?? []
+        if let first = parts.first { state.path.append(first) } else if state.path.popLast() == nil { return .none }
+        state.focus = parts.dropFirst().first
         state.screen = nil
         state.unreachable = nil
         return follow(state)

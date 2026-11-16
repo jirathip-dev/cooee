@@ -27,8 +27,8 @@ internal struct ActButton<Label: View>: View {
             openURL(url)
         } else if let thread = source["tap"]?.string("thread") {
             openThread(thread)
-        } else if let sheet = source["tap"]?.string("sheet") {
-            open(sheet)
+        } else if let tap = source["tap"], let path = tap.string("sheet") ?? tap.string("open") {
+            open(tap.string("focus").map { "\(path)#\($0)" } ?? path)
         } else if let action = BlockAction(action: action, source: source, values: values) {
             act(action)
         }

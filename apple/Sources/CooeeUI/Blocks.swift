@@ -9,14 +9,16 @@ public struct BlocksView: View {
     private let act: @MainActor (BlockAction) -> Void
     private let open: @MainActor (String) -> Void
     private let openThread: @MainActor (String) -> Void
+    private let focus: String?
 
     public var body: some View {
         BlockNode(block: block).environment(\.act, act).environment(\.open, open)
-            .environment(\.openThread, openThread)
+            .environment(\.openThread, openThread).environment(\.focus, focus)
     }
 
     public init(
         _ block: JSONValue,
+        focus: String? = nil,
         act: @escaping @MainActor (BlockAction) -> Void = { _ in },
         open: @escaping @MainActor (String) -> Void = { _ in },
         openThread: @escaping @MainActor (String) -> Void = { _ in }
@@ -25,6 +27,7 @@ public struct BlocksView: View {
         self.act = act
         self.open = open
         self.openThread = openThread
+        self.focus = focus
     }
 }
 
@@ -43,6 +46,10 @@ private struct OpenKey: EnvironmentKey {
 
 private struct OpenThreadKey: EnvironmentKey {
     fileprivate static var defaultValue: @MainActor (String) -> Void { { _ in } }
+}
+
+private struct FocusKey: EnvironmentKey {
+    fileprivate static var defaultValue: String? { nil }
 }
 
 private struct CardKey: EnvironmentKey {
@@ -67,6 +74,11 @@ extension EnvironmentValues {
     internal var openThread: @MainActor (String) -> Void {
         get { self[OpenThreadKey.self] }
         set { self[OpenThreadKey.self] = newValue }
+    }
+
+    internal var focus: String? {
+        get { self[FocusKey.self] }
+        set { self[FocusKey.self] = newValue }
     }
 
     internal var card: CardContext {
@@ -109,6 +121,7 @@ internal struct BlockNode: View {
         case "scene": SceneBlock(block: block)
         case "diff": DiffBlock(block: block)
         case "editor": EditorBlock(block: block)
+        case "diagram": DiagramBlock(block: block)
         default: EmptyView()
         }
     }
