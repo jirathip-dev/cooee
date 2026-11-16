@@ -1,5 +1,3 @@
-//! `cooee plugin`: install, update, remove, list and check plugins (docs/plugins.md).
-
 use cooee_core::Config;
 
 use crate::{
@@ -22,7 +20,6 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
     }
 }
 
-/// `cooee plugin add|update|remove|list` (docs/plugins.md).
 fn plugin(
     config: &Config,
     args: &[&str],

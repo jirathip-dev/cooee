@@ -1,7 +1,3 @@
-// #225: the 20 new app icons as flat vector, in Corral's look (its herd-art Treatment A): a head-and-shoulders
-// portrait facing left, flat fills with soft shading (black or white at low opacity), on one solid dark background
-// per set. Farm is Corral's four horse PNGs, copied byte for byte. Writes icons/<set>-<name>.svg at 1024 × 1024.
-// Usage: node docs/design/app-icons/art.mjs
 import { writeFileSync } from 'node:fs';
 
 const here = new URL('.', import.meta.url).pathname;
@@ -12,7 +8,6 @@ const eye = (x, y, r = 26) =>
 const svg = (bg, body) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="${bg}"/>${body}</svg>\n`;
 
-// ── Modern: cooee's kookaburra ──────────────────────────────────────────────────────────────────────────────────
 const KB = { bg: '#13263d', cream: '#efe5cf', chest: '#e3d4b4', brown: '#6a4630', dark: '#4a3122', crown: '#8a6542', blue: '#6fb4e2', beak: '#2c2723', jaw: '#cfbd98' };
 const kbBody = `
   <path d="M330 1024 C350 840 430 700 560 640 C700 590 900 620 1024 700 L1024 1024 Z" fill="${KB.chest}"/>
@@ -59,7 +54,6 @@ const kookaburra = {
     <g transform="translate(60 110) scale(.78)">${kbHead(eye(468, 418, 28))}${kbBeakShut}</g>`),
 };
 
-// ── Bush: roo, wombat, koala, emu (#22 reuses these) ─────────────────────────────────────────────────────────────
 const BUSH = '#3b2318';
 const bush = {
   roo: svg(BUSH, `
@@ -114,7 +108,6 @@ const bush = {
     ${eye(440, 310, 26)}`),
 };
 
-// ── Garden: four plants in the shop ──────────────────────────────────────────────────────────────────────────────
 const GARDEN = '#1c3324';
 const pot = `<path d="M240 900 L784 900 L760 1024 L264 1024 Z" fill="#c4683e"/><rect x="210" y="860" width="604" height="70" rx="14" fill="#d8784a"/>${shade('M520 860 L814 860 L814 930 L770 930 L760 1024 L520 1024 Z', 0.14)}`;
 const leaf = (x, y, s, r, c = '#3f8a4c') =>
@@ -144,7 +137,6 @@ const garden = {
     ${pot}`),
 };
 
-// ── Kitchen: four cooks ─────────────────────────────────────────────────────────────────────────────────────────
 const KITCHEN = '#2a1f1a';
 const cook = ({ skin, hat, hair = '', top, extra = '' }) => svg(KITCHEN, `
   <path d="M240 1024 C260 830 390 720 540 710 C720 710 880 820 920 1024 Z" fill="${top}"/>
@@ -188,7 +180,6 @@ const kitchen = {
   }),
 };
 
-// ── Terminal: four prompt glyphs ────────────────────────────────────────────────────────────────────────────────
 const TERM = '#0d1117';
 const glyph = (color, body) => svg(TERM, `
   <rect x="112" y="152" width="800" height="720" rx="72" fill="#161b22"/><rect x="112" y="152" width="800" height="96" rx="48" fill="#21262d"/><rect x="112" y="200" width="800" height="48" fill="#21262d"/>

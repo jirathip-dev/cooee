@@ -1,5 +1,3 @@
-//! A thread's own actions and reads: its title, archive, files, cancel, close, the list, a slice and its events.
-
 use std::path::PathBuf;
 
 use cooee_core::{Kind, Summary, Thread, Turn, personas};
@@ -121,7 +119,6 @@ impl Hub {
             .filter_map(|live| {
                 let live = lock(live);
                 let g = live.unloaded.clone().unwrap_or_else(|| glance(&live));
-                // A room's member sessions are the room's (#154).
                 if !live.meta.room.is_empty() {
                     asks.extend(g.ask);
                     return None;
@@ -206,6 +203,7 @@ impl Hub {
             }),
             queue: live.meta.queue.clone(),
             waiting: items.iter().find(|i| waits(&i.body)).cloned(),
+            asks: live.asks.open.clone(),
         })
     }
 

@@ -1,5 +1,3 @@
-//! Cards on a thread: approvals, plugin cards, said lines, links and model picks.
-
 use std::{io, sync::Mutex};
 
 use cooee_core::{Body, Card, Change, Item, Plugin, personas, shed_proto::ApprovalOption};
@@ -42,7 +40,6 @@ impl Hub {
                 .find(|p| &p.name == name)
                 .ok_or_else(|| io::Error::other("no longer configured"))
                 .and_then(|p| {
-                    // A run card's `approve` carries the sha it showed, never the page's value.
                     let value = match card.form.as_deref() {
                         Some("run-card") => card.sha.as_deref().filter(|_| option == "approve"),
                         _ => value,
@@ -88,7 +85,6 @@ impl Hub {
         option: &str,
     ) -> Result<Option<Item>, HubError> {
         if let Err(e) = self.shed.approve(terminal, option) {
-            // Not delivered: the row can be tapped again.
             let mut live = lock(live);
             let untapped = live.chat.update(tapped.id, 0, |b| {
                 if let Body::Approval { tapped, .. } = b {

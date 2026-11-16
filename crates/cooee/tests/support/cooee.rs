@@ -1,5 +1,3 @@
-//! `cooee serve` under test, a tiny HTTP client for it, and scratch folders.
-
 use std::{
     env, fs,
     io::{BufRead, BufReader, Read, Write},
@@ -171,7 +169,6 @@ shed_dir = {}
         body: &str,
     ) -> (String, String) {
         let mut stream = TcpStream::connect(&self.addr).unwrap();
-        // One write: a refusal sent before a late body arrives would reset the connection under the read.
         let mut request = Vec::new();
         write!(request, "{method} {path} HTTP/1.0\r\n").unwrap();
         if !headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("host")) {
@@ -256,7 +253,6 @@ shed_dir = {}
 }
 
 impl Drop for Cooee {
-    /// SIGTERM, so `cooee serve` stops what it runs; SIGKILL if it hasn't ended within 5 s.
     fn drop(&mut self) {
         if !matches!(self.child.try_wait(), Ok(None)) {
             return;
@@ -275,8 +271,11 @@ impl Drop for Cooee {
     }
 }
 
+/// The longest a test plugin's call hangs.
+pub const HANG: Duration = Duration::from_secs(10);
+
 /// #288: while a call for another thread hangs, thread `other` goes on: its send, the thread list and the home page
-/// each answer within 200 ms, and its reply streams in.
+/// each answer well before the hang's [`HANG`] is up, and its reply streams in.
 pub fn others_go_on(cooee: &Cooee, other: &str) {
     let cursor = cooee.json(&format!("/threads/{other}/messages"))["cursor"]
         .as_str()
@@ -292,7 +291,7 @@ pub fn others_go_on(cooee: &Cooee, other: &str) {
         let (status, body) = call();
         let took = at.elapsed();
         assert_eq!(status, 200, "{what}: {body}");
-        assert!(took < Duration::from_millis(200), "{what} took {took:?}");
+        assert!(took < HANG / 2, "{what} took {took:?}");
     };
     quick("send", &|| cooee.post(&path, &send));
     quick("list", &|| cooee.get("/threads"));

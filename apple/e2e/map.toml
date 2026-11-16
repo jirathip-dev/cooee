@@ -64,7 +64,7 @@
 "apple/UITests/LiveQueueUITests.swift" = "LiveDroverUITests"
 "apple/e2e/screens.py" = "LiveDroverUITests"
 "apple/UITests/LiveThemeUITests.swift" = "LiveThemeUITests"
-"packs/themes/*" = "LiveThemeUITests"
+"packs/swag.toml" = "LiveThemeUITests"
 "crates/cooee/tests/themes.rs" = "LiveThemeUITests"
 "apple/Sources/CooeeUI/Workflow.swift" = "LiveWorkflowUITests"
 "apple/UITests/LiveWorkflowUITests.swift" = "LiveWorkflowUITests"

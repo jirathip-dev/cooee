@@ -1,6 +1,3 @@
-//! `cooee update [--check]` (#332): installs main's head once its `ci` run passed, with `scripts/install.sh`'s steps,
-//! restarts the instance's service and puts the old binary back if the service doesn't answer.
-
 use std::{
     env,
     fs::{self, OpenOptions},
@@ -22,7 +19,6 @@ fn short(sha: &str) -> &str {
     sha.get(..7).unwrap_or(sha)
 }
 
-/// GitHub's API answer at `path` in cooee's repo (public: no token).
 fn api(path: &str) -> Result<serde_json::Value, String> {
     let url = format!("https://api.github.com/repos/jirathip-dev/cooee/{path}");
     let out = setup::output(&["curl", "-sfL", "--max-time", "20", &url])
@@ -30,7 +26,6 @@ fn api(path: &str) -> Result<serde_json::Value, String> {
     serde_json::from_str(&out).map_err(|e| format!("{url}: {e}"))
 }
 
-/// The newest `ci` run of a push to main matching `query`.
 fn ci_run(query: &str) -> Result<serde_json::Value, String> {
     let runs = api(&format!(
         "actions/workflows/ci.yml/runs?branch=main&event=push&per_page=1&{query}"
@@ -38,7 +33,6 @@ fn ci_run(query: &str) -> Result<serde_json::Value, String> {
     Ok(runs["workflow_runs"][0].clone())
 }
 
-/// main's head and its `ci` run's conclusion (none while it runs or before it starts).
 fn head() -> Result<(String, Option<String>), String> {
     let head = api("commits/main")?["sha"]
         .as_str()
@@ -128,14 +122,11 @@ fn update(config: &Config, check: bool) -> Result<(), String> {
     }
 }
 
-/// The installed binary, where `scripts/install.sh` puts it.
 fn bin() -> Result<PathBuf, String> {
     let home = env::var_os("HOME").ok_or("no HOME")?;
     Ok(Path::new(&home).join(".cargo/bin/cooee"))
 }
 
-/// Installs `sha` over `bin`, keeping the old one; if that fails or the restarted service doesn't answer, puts the old
-/// one back and restarts it.
 fn install(config: &Config, bin: &Path, sha: &str) -> Result<(), String> {
     let old = bin.with_extension("old");
     fs::copy(bin, &old).map_err(|e| format!("keeping {}: {e}", bin.display()))?;
@@ -163,7 +154,6 @@ fn install(config: &Config, bin: &Path, sha: &str) -> Result<(), String> {
     ))
 }
 
-/// Restarts the instance's service; whether it answers on its port.
 fn restart(config: &Config) -> bool {
     let uid = setup::output(&["id", "-u"]).unwrap_or_default();
     let job = format!("gui/{}/{}", uid.trim(), label(&config.instance));
@@ -172,7 +162,6 @@ fn restart(config: &Config) -> bool {
         && setup::wait(|| setup::ok(&["curl", "-sf", "-o", "/dev/null", "--max-time", "2", &url]))
 }
 
-/// Appends `line` to the one log, `<data>/update.log`, with the time; shows it in a terminal.
 fn log(data: &Path, line: &str) -> Result<(), String> {
     if std::io::stdout().is_terminal() {
         println!("{line}");

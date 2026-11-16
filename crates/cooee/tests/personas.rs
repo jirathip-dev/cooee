@@ -23,7 +23,6 @@ struct Setup {
     cooee: Cooee,
 }
 
-/// cooee with the profile `coder` in `<config>/profiles/` (its instructions, env, policy and avatar).
 fn setup(name: &str) -> Setup {
     let dir = scratch(name);
     let profiles = dir.join("profiles");
@@ -41,7 +40,6 @@ fn setup(name: &str) -> Setup {
 }
 
 impl Setup {
-    /// `method path` with `body`: the status and the body as JSON (a string when it isn't).
     fn call(&self, method: &str, path: &str, body: Option<&Value>) -> (u16, Value) {
         let (status, text) = self.cooee.request(method, path, body);
         (
@@ -50,7 +48,6 @@ impl Setup {
         )
     }
 
-    /// A new thread as `persona`: its id, its `shed run` line, and the first prompt the agent got.
     fn start(&self, persona: &str) -> (String, String, String) {
         let random = format!("start-{}", self.shed.cli_log().len());
         let new =
@@ -72,19 +69,16 @@ impl Setup {
         (id, line, prompt["prompt"].as_str().unwrap().to_owned())
     }
 
-    /// Thread `id`'s row in `GET /threads`.
     fn row(&self, id: &str) -> Value {
         let rows = self.cooee.json("/threads");
         let row = rows.as_array().unwrap().iter().find(|r| r["id"] == id);
         row.unwrap_or_else(|| panic!("no row {id}: {rows}")).clone()
     }
 
-    /// The persona of thread `id`'s row in `GET /threads`.
     fn row_persona(&self, id: &str) -> Value {
         self.row(id)["persona"].clone()
     }
 
-    /// `remember` called with `args` by thread `id`'s agent through cooee's own MCP server: the tool's answer.
     fn remember(&self, id: &str, args: &Value) -> Value {
         let file = self.shed.dir.join(format!("mcp-cooee-{id}.json"));
         let servers: Value = serde_json::from_str(&fs::read_to_string(file).unwrap()).unwrap();
@@ -125,7 +119,6 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
             .unwrap()
             .contains("name = \"Chief Cook\"")
     );
-    // The same name again, or one with no agent, is refused.
     assert_eq!(s.call("POST", "/personas", Some(&new)).0, 400);
     assert_eq!(
         s.call("POST", "/personas", Some(&json!({ "name": "X" }))).0,
@@ -134,7 +127,6 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
 
     assert_eq!(chief["pinned"], false);
 
-    // Edited and pinned (#139): its id stays, the edit is kept and read back.
     let edit = json!({ "name": "Chief", "character": "A calm chef.", "instructions": "Answer in two lines.",
                        "agent": "fake-acp", "folder": "scratch", "pinned": true });
     let (status, edited) = s.call("PUT", "/personas/chief-cook", Some(&edit));
@@ -146,8 +138,6 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     assert!(fs::read_to_string(&file).unwrap().contains("pinned = true"));
     assert_eq!(s.call("PUT", "/personas/nobody", Some(&edit)).0, 400);
 
-    // Its chat: its agent, Character, Instructions and (#242) Chat style's line ahead of the first message; the row
-    // names it.
     assert_eq!(chief["style"], "chat");
     let chat = format!("A calm chef.\n\nAnswer in two lines.\n\n{PLAIN}\n\nhi");
     let (id, line, prompt) = s.start("chief-cook");
@@ -155,7 +145,6 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     assert_eq!(prompt, chat);
     assert_eq!(s.row_persona(&id), "chief-cook");
 
-    // A note by the persona (its remember tool) and one by the owner: both listed, both in its next session.
     let said = s.remember(&id, &json!({ "text": "The owner takes tea, no sugar." }));
     assert_eq!(said["isError"], false, "{said}");
     let (status, owner) = s.call(
@@ -187,11 +176,9 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
             && prompt.ends_with("\n\nhi"),
         "{prompt}"
     );
-    // A thread with no persona has nothing to remember for.
     let (plain, _, _) = s.start("");
     assert_eq!(s.remember(&plain, &json!({ "text": "x" }))["isError"], true);
 
-    // Clearing its memory removes the notes only: it and its chats stay.
     assert_eq!(s.call("DELETE", "/personas/chief-cook/memory", None).0, 200);
     assert_eq!(s.cooee.json("/personas/chief-cook/memory"), json!([]));
     assert_eq!(s.cooee.json("/personas/chief-cook")["name"], "Chief");
@@ -202,7 +189,6 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
         "hi"
     );
 
-    // Deleted: gone from the list, its file gone, its chats kept (their rows name no persona now).
     assert_eq!(s.call("DELETE", "/personas/chief-cook", None).0, 200);
     assert!(!file.exists());
     assert_eq!(s.call("GET", "/personas/chief-cook", None).0, 400);
@@ -222,7 +208,6 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
         );
     }
 
-    // Paired devices only.
     let (head, _) = s.cooee.raw("GET", "/personas", &[], "");
     assert!(
         head.starts_with("HTTP/1.0 401") || head.starts_with("HTTP/1.1 401"),
@@ -230,7 +215,6 @@ fn a_persona_is_created_edited_and_deleted_and_its_notes_reach_its_next_session(
     );
 }
 
-/// #242: a Detailed persona is kept so, and its new sessions get no Chat style line.
 #[test]
 fn a_detailed_persona_gets_no_plain_line() {
     let s = setup("personas-detailed");
@@ -258,7 +242,6 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
                  "role": "", "style": "chat", "fleets": [] }])
     );
 
-    // It runs as the profile: its env and policy on the adapter, its instructions ahead of the first message.
     let check = |prompt: &str| {
         let (id, line, sent) = s.start("coder");
         assert!(
@@ -270,7 +253,6 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
     };
     check(&format!("Follow the house rules.\n\n{PLAIN}\n\nhi"));
 
-    // Edited: saved as a persona that still runs as the profile, which is untouched.
     let mut edit = list[0].clone();
     edit["character"] = json!("Gruff but kind.");
     edit["profile"] = json!("someone-else");
@@ -286,21 +268,17 @@ fn a_profile_is_read_as_a_persona_with_nothing_lost_and_an_edit_keeps_it() {
         "Gruff but kind.\n\nFollow the house rules.\n\n{PLAIN}\n\nhi"
     ));
 
-    // Deleting it removes the persona and the profile it runs as.
     assert_eq!(s.call("DELETE", "/personas/coder", None).0, 200);
     assert!(!profile.exists() && !s.dir.join("personas/coder.toml").exists());
     assert_eq!(s.cooee.json("/personas"), json!([]));
 }
 
-/// drover installed (off, so nothing runs it) in `<data>/plugins.lock`.
 fn install_drover(s: &Setup) {
     let lock = json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0",
                         "version": "0.1.0", "tabs": ["queue"], "port": 1, "enabled": false }]);
     fs::write(s.dir.join("data/plugins.lock"), lock.to_string()).unwrap();
 }
 
-/// #129: a plugin is attached and detached over the API, only an installed one; the places list only attached
-/// plugins' screens, and none has one before #125.
 #[test]
 fn a_plugin_is_attached_to_a_persona_and_detached() {
     let s = setup("personas-plugins");
@@ -337,8 +315,6 @@ fn a_plugin_is_attached_to_a_persona_and_detached() {
     assert_eq!(s.cooee.json("/personas/chief")["plugins"], json!([]));
 }
 
-/// #129, #159: the conductor profile's persona, and a persona file of it saved before #159, become orchestrators with
-/// the name the owner set; drover goes with them and with no other.
 #[test]
 fn migration_keeps_the_name_and_sets_the_orchestrator_role() {
     let s = setup("personas-drover");
@@ -357,7 +333,6 @@ fn migration_keeps_the_name_and_sets_the_orchestrator_role() {
         (json!("Maestro"), json!("orchestrator"), json!([]))
     );
     assert_eq!(seen("coder"), (json!("Coder"), json!(""), json!([])));
-    // #242: an orchestrator's chat is detailed unless set, a plain persona's chat.
     assert_eq!(read("conductor")["style"], "detailed");
     assert_eq!(read("coder")["style"], "chat");
     install_drover(&s);
@@ -383,7 +358,6 @@ fn migration_keeps_the_name_and_sets_the_orchestrator_role() {
     assert_eq!(read("conductor")["style"], "chat");
 }
 
-/// #159: renaming the orchestrator keeps its role, its drover and its fleets; its thread's row shows the new name.
 #[test]
 fn renaming_the_orchestrator_changes_no_attachment() {
     let s = setup("personas-rename");
@@ -416,8 +390,6 @@ fn renaming_the_orchestrator_changes_no_attachment() {
     );
 }
 
-/// #159: any number of orchestrators, each with its own fleets (two may share one), each with drover; a plain
-/// persona's row has role `""`.
 #[test]
 fn two_orchestrator_personas_each_with_their_own_fleets() {
     let s = setup("personas-two");
@@ -476,8 +448,6 @@ fn two_orchestrator_personas_each_with_their_own_fleets() {
     );
 }
 
-/// #159: drover attaches by role, whatever the name: setting a persona's role attaches it, clearing it detaches it;
-/// an unknown role is refused.
 #[test]
 fn the_plugin_attaches_by_role() {
     let s = setup("personas-role");
@@ -498,9 +468,6 @@ fn the_plugin_attaches_by_role() {
     assert!(s.call("PUT", "/personas/conductor", Some(&read)).0 >= 400);
 }
 
-/// #148: a persona names the machine it runs on (empty: this host), one added to shed; a thread runs on its
-/// persona's or the one picked at its start; anything else is refused; one saved before #148 is on this host with
-/// nothing lost; `GET /machines` lists the allowed ones with what shed says of them.
 #[test]
 fn a_persona_and_its_threads_name_their_machine() {
     let s = setup("persona-machine");
@@ -518,10 +485,8 @@ fn a_persona_and_its_threads_name_their_machine() {
         "stats-air.json",
         &json!({ "machine": "air", "online": false, "last_seen": 1_700_000_000u64 }),
     );
-    // Its link is up: a thread on air starts there (#149).
     s.shed.link("air", "up", 1_700_000_000, None);
 
-    // Migration: a persona file from before #148 (and the profile read as one) is on this host, nothing lost.
     let old = "name = \"Old\"\ncharacter = \"Kept.\"\ninstructions = \"Still.\"\nfolder = \"scratch\"\n\
                agent = \"fake-acp\"\nmodel = \"\"\neffort = \"\"\nplugins = []\n";
     fs::create_dir_all(s.dir.join("personas")).unwrap();
@@ -537,7 +502,6 @@ fn a_persona_and_its_threads_name_their_machine() {
     let (plain, _, _) = s.start("old");
     assert_eq!(s.row(&plain)["machine"], "");
 
-    // Set: kept in its file and read back; its threads run there.
     let mut on_air = read.clone();
     on_air["machine"] = json!("air");
     let (status, saved) = s.call("PUT", "/personas/old", Some(&on_air));
@@ -551,14 +515,12 @@ fn a_persona_and_its_threads_name_their_machine() {
     let (id, _, _) = s.start("old");
     assert_eq!(s.row(&id)["machine"], "air");
 
-    // Override at start: this host for one thread; the persona keeps air.
     let new = json!({ "agent": "fake-acp", "profile": "old", "text": "hi", "random_id": "here", "machine": "" });
     let (status, body) = s.call("POST", "/threads", Some(&new));
     assert_eq!(status, 200, "{body}");
     assert_eq!(s.row(body["id"].as_str().unwrap())["machine"], "");
     assert_eq!(s.cooee.json("/personas/old")["machine"], "air");
 
-    // Outside the allowlist: refused, for a persona and for a thread, nothing saved or started.
     let mut nowhere = read.clone();
     nowhere["machine"] = json!("nowhere");
     let (status, why) = s.call("PUT", "/personas/old", Some(&nowhere));
@@ -572,7 +534,6 @@ fn a_persona_and_its_threads_name_their_machine() {
     assert_eq!(status, 400, "{why}");
     assert_eq!(s.cooee.json("/threads").as_array().unwrap().len(), rows);
 
-    // Cleared: back on this host.
     let (status, cleared) = s.call("PUT", "/personas/old", Some(&read));
     assert_eq!(
         (status, &cleared["machine"]),
@@ -582,7 +543,6 @@ fn a_persona_and_its_threads_name_their_machine() {
     let (id, _, _) = s.start("old");
     assert_eq!(s.row(&id)["machine"], "");
 
-    // The allowed machines: this host first, then each added one, with shed's link state and health.
     let machines = s.cooee.json("/machines");
     let machines = machines.as_array().unwrap();
     assert_eq!(machines.len(), 2, "{machines:?}");
@@ -604,14 +564,12 @@ fn a_persona_and_its_threads_name_their_machine() {
     );
 }
 
-/// cooee with the persona `cook` and a thread of its: the thread's id.
 fn cook(s: &Setup) -> String {
     let new = json!({ "name": "Cook", "agent": "fake-acp", "folder": "scratch" });
     assert_eq!(s.call("POST", "/personas", Some(&new)).0, 200);
     s.start("cook").0
 }
 
-/// `cook`'s notes.
 fn memory(s: &Setup) -> Vec<Value> {
     let notes = s.cooee.json("/personas/cook/memory");
     notes.as_array().unwrap().clone()
@@ -623,7 +581,6 @@ fn old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief() {
     let new = json!({ "name": "Cook", "agent": "fake-acp", "folder": "scratch" });
     assert_eq!(s.call("POST", "/personas", Some(&new)).0, 200);
 
-    // Notes kept before ids, already past the cap: each gets an id on first read, and all reach the brief.
     let big = "y".repeat(2000);
     let file = s.dir.join("data/personas/cook/memory.jsonl");
     fs::create_dir_all(file.parent().unwrap()).unwrap();
@@ -648,11 +605,9 @@ fn old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief() {
             "Your notes (edit them with your remember tool):\n- [{tea}] Tea, no sugar.\n- [{long}] {big}\n\n{PLAIN}\n\nhi"
         )
     );
-    // Unchanged notes: the next session's brief is byte-identical.
     let (second, _, again) = s.start("cook");
     assert_eq!(again, brief);
 
-    // Past the cap nothing is added; the refusal names the use and the ids.
     let full = s.remember(&first, &json!({ "text": "New." }));
     let said = full["content"][0]["text"].as_str().unwrap();
     assert_eq!(full["isError"], true, "{full}");
@@ -662,7 +617,6 @@ fn old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief() {
     );
     assert_eq!(memory(&s), notes);
 
-    // Replacing the long note shrinks it: only that note changes, its id kept.
     let path = format!("/personas/cook/memory/{long}");
     let (status, put) = s.call("PUT", &path, Some(&json!({ "text": "Short." })));
     assert_eq!((status, put["id"].as_str()), (200, Some(long)), "{put}");
@@ -670,7 +624,6 @@ fn old_notes_past_the_cap_get_ids_and_a_session_keeps_its_brief() {
     assert_eq!(now[0], notes[0]);
     assert_eq!((now[1]["text"].as_str(), now.len()), (Some("Short."), 2));
 
-    // The change mid-session leaves that session alone: its next message goes without a brief.
     let say = json!({ "text": "again", "random_id": "r2" });
     let (status, body) = s.call("POST", &format!("/threads/{second}/send"), Some(&say));
     assert_eq!(status, 200, "{body}");
@@ -683,7 +636,6 @@ fn remember_adds_replaces_and_forgets_one_note_under_the_cap() {
     let s = setup("personas-memory");
     let id = cook(&s);
 
-    // A new note is kept and named; an exact duplicate adds nothing.
     let tea = s.remember(&id, &json!({ "text": "Tea, no sugar." }));
     assert_eq!(tea["isError"], false, "{tea}");
     let tea = memory(&s)[0]["id"].as_str().unwrap().to_owned();
@@ -697,7 +649,6 @@ fn remember_adds_replaces_and_forgets_one_note_under_the_cap() {
     let notes = memory(&s);
     let sam = notes[1]["id"].as_str().unwrap();
 
-    // Replace changes only its note, keeping its id.
     let swap = s.remember(&id, &json!({ "text": "Call me Sammy.", "replaces": sam }));
     assert_eq!(swap["isError"], false, "{swap}");
     let now = memory(&s);
@@ -707,7 +658,6 @@ fn remember_adds_replaces_and_forgets_one_note_under_the_cap() {
         (Some(sam), Some("Call me Sammy."))
     );
 
-    // Forget drops only its note, by the tool or the API; an unknown id is refused.
     let gone = s.remember(&id, &json!({ "forget": [tea] }));
     let said = "Forgotten; 27 of 2000 characters used.";
     assert_eq!(gone["content"][0]["text"], said, "{gone}");
@@ -720,7 +670,6 @@ fn remember_adds_replaces_and_forgets_one_note_under_the_cap() {
         true
     );
 
-    // Up to the cap is kept; past it is a 400 naming the use.
     let up_to = json!({ "text": "z".repeat(1987) });
     assert_eq!(s.call("POST", "/personas/cook/memory", Some(&up_to)).0, 200);
     let one = json!({ "text": "1" });

@@ -65,6 +65,10 @@ internal struct MenuFeatureTests {
                 server: mini, source: .core, path: "/screens/settings/devices", label: "Devices")
         }
         await store.send(.open(false)) { $0.page = nil }
+        await store.send(.show("/screens/queue", label: "Queue", source: .plugin("drover"))) {
+            $0.page = ScreenFeature.State(
+                server: mini, source: .plugin("drover"), path: "/screens/queue", label: "Queue")
+        }
     }
 
     @Test internal func offlineTheMenuKeepsTheBundledOneAndWithoutAServerOpensNothing() async {

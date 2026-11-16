@@ -1,7 +1,3 @@
-//! The threads, live: each thread's chat, its numbered page events (kept in a ring for replay) and their
-//! subscribers, fed by one shed `events` stream for every terminal: cooee's own, and the Workflow sessions other
-//! tools start, known by their labels (#33).
-
 use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     fs, io,
@@ -40,29 +36,20 @@ mod threads;
 use mcp::Proposed;
 pub use rooms::Starter;
 
-/// How long a thread keeps its page events for a reconnecting page, in milliseconds (#295).
 const REPLAY: u64 = 5 * 60 * 1000;
 
-/// How many page events a watching page may fall behind before it is cut off to resume from the replay.
 const LAG: usize = 256;
 
-/// How long a thread goes unused before its chat is unloaded, in milliseconds (#295).
 const IDLE: u64 = 10 * 60 * 1000;
 
-/// The label every cooee terminal carries.
 const LABEL: &str = "cooee";
 
-/// A working turn with no shed event for this long is surfaced as needs-you (herdsman#444), in milliseconds.
 const STUCK: u64 = 30 * 60 * 1000;
 
-/// How long a conductor's answer may be changed (#553 row 31), in milliseconds.
 const CHANGE: u64 = 30 * 60 * 1000;
 
-/// How often the installed agents are checked again and stuck turns looked for.
 const TICK: Duration = Duration::from_secs(30);
-/// How long the agent list is kept before the background refreshes it (#55), in milliseconds.
 const AGENTS_FOR: u64 = 60_000;
-/// How often the installed plugins' backends are asked for their profiles again (#289).
 const SERVED_EVERY: Duration = Duration::from_secs(5);
 
 /// Why a thread action failed.
@@ -93,51 +80,32 @@ pub struct Out {
     pub data: String,
 }
 
-/// A thread in memory.
 struct Live {
     meta: Thread,
     chat: Chat,
-    /// The newest shed event applied.
     applied: u64,
     seq: u64,
-    /// The page events of the last [`REPLAY`], each with when it was sent.
     ring: VecDeque<(u64, Out)>,
-    /// Made when a page first subscribes, dropped when the chat is unloaded.
     tx: Option<broadcast::Sender<Out>>,
-    /// The state the last published change left (a push goes on a change of state only).
     was: String,
-    /// When its last shed event came (or it was loaded), in Unix milliseconds.
     moved: u64,
-    /// Its working turn was surfaced as stuck; the next shed event clears it.
     stuck: bool,
-    /// The first message of a start that answered at once ([`Hub::create_later`]), until shed takes it.
     pending: Option<String>,
-    /// When its last prompt was sent, until the reply's first chunk came (#53).
     sent: Option<Instant>,
-    /// A room's round was stopped while its working member's session was starting: cancel it once started (#155).
     stopped_starting: bool,
-    /// When it was last used, in Unix milliseconds.
+    asks: rooms::OpenAsks,
     used: u64,
-    /// Its row's view of the chat while the chat is unloaded (only its turn stays); `None` while loaded.
     unloaded: Option<Glance>,
-    /// The messages handed to shed, by `random_id`, until it answers.
     sending: Vec<String>,
-    /// The shed events that came while a message was on its way, applied after it.
     held: Vec<Event>,
 }
 
-/// What the thread list shows of a thread's chat.
 #[derive(Clone)]
 struct Glance {
-    /// A member session's approval that waits, for its room's row: the room, the persona and the tool.
     ask: Option<(String, String, String)>,
-    /// The approval that waits, else the newest item's last line.
     last: String,
-    /// Who said the newest item: a room's member or its owner, `""` in a chat.
     speaker: String,
-    /// When the newest item came.
     at: u64,
-    /// How many items, not the owner's own, came after the read mark.
     unseen: usize,
     routine: String,
 }
@@ -188,8 +156,6 @@ fn glance(live: &Live) -> Glance {
     }
 }
 
-/// What applying a shed event leaves to do once its thread is unlocked: its next queued message, its final reply,
-/// its room and persona, and its asker's key.
 struct After {
     next: Result<Option<Queued>, HubError>,
     reply: Option<Body>,
@@ -197,7 +163,6 @@ struct After {
     asked: String,
 }
 
-/// The name of the routine that started thread `live`, else of the one that sent its last `you` item (#75).
 fn routine_of(live: &Live) -> String {
     let you = live.chat.items.iter().rev().find_map(|i| match &i.body {
         Body::You { routine, .. } => Some(routine),
@@ -227,6 +192,9 @@ pub struct Slice {
     pub queue: Vec<Queued>,
     /// The oldest config card that waits (#553 row 32), wherever it is.
     pub waiting: Option<Item>,
+    /// A room's members' open asks (#178).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub asks: Vec<rooms::RoomAsk>,
 }
 
 /// A thread's first message while it connects: its text and the start's id (the item it becomes has it).
@@ -316,46 +284,28 @@ pub struct Recipe {
 pub struct Hub {
     shed: Shed,
     store: Store,
-    /// `<data>/scratch`: a thread started with no folder runs in its own folder here, named by its id (#48).
     scratch: PathBuf,
-    /// `<data>/files/<thread>/`: the files sent with messages.
     files: PathBuf,
     push: Push,
-    /// Whether shed was last seen on another protocol (#397): its alerts go once per state.
     shed_version: AtomicBool,
-    /// The server's default theme, whose words a push says.
     theme: crate::look::Theme,
     roots: Mutex<Vec<PathBuf>>,
-    /// The config file the roots are saved in.
     config: Option<PathBuf>,
     plugins: Mutex<Vec<Plugin>>,
-    /// `shed agents`, as last checked, and when: a page load never runs the CLI itself (herdsman#337).
     agents: Mutex<(Result<Vec<Agent>, String>, u64)>,
-    /// Each installed plugin's served profiles as its backend last answered: a page never asks a backend (#289).
     served: Mutex<HashMap<String, Option<Vec<Profile>>>>,
     boot: String,
     threads: Mutex<BTreeMap<String, Arc<Mutex<Live>>>>,
-    /// The same threads by terminal: a shed event locks only its own thread.
     terminals: Mutex<HashMap<String, Arc<Mutex<Live>>>>,
-    /// The stamp of the newest thread id handed out.
     last: Mutex<u64>,
-    /// The data folder (the secrets' file fallback).
     data: PathBuf,
-    /// Where a thread's MCP proxies reach cooee, once it listens.
     url: OnceLock<String>,
-    /// The key each thread's MCP token is made with (`<data>/mcp.key`).
     mcp_key: String,
-    /// The servers and skills agents proposed, by thread and card, until answered (a restart drops them).
     proposals: Mutex<HashMap<(String, u64), Proposed>>,
-    /// Held while the MCP registry is written.
     registry: Mutex<()>,
-    /// The rooms with a member's turn to start, for the turn worker.
     turns: mpsc::Sender<String>,
-    /// How a room's member session starts, given its persona.
     starter: OnceLock<Starter>,
-    /// Each pending `ask_persona` (#156) by `<asking thread>><persona>`: where its reply goes.
     asks: Mutex<HashMap<String, mpsc::Sender<String>>>,
-    /// Each agent and account's models, as last seen (#193; `<data>/models.json`).
     models: Mutex<Vec<cooee_core::models::Offered>>,
 }
 
@@ -382,7 +332,6 @@ pub struct Listing {
     pub roots: Vec<PathBuf>,
 }
 
-/// Terminal `name` on `machine` (empty: this host): shed names another machine's `<machine>/<name>` (#149).
 fn on_machine(machine: &str, name: &str) -> String {
     if machine.is_empty() {
         name.to_owned()
@@ -417,6 +366,7 @@ impl Live {
             pending: None,
             sent: None,
             stopped_starting: false,
+            asks: rooms::OpenAsks::default(),
             used: now(),
             unloaded: None,
             sending: Vec::new(),
@@ -424,15 +374,12 @@ impl Live {
         }
     }
 
-    /// Drops the page events older than [`REPLAY`] before `now`.
     fn trim(&mut self, now: u64) {
         while self.ring.front().is_some_and(|(at, _)| at + REPLAY < now) {
             self.ring.pop_front();
         }
     }
 
-    /// Unloads the chat (keeping its turn and its row's glance) if unused for [`IDLE`] before `now`, with no page
-    /// watching and no turn under way.
     fn unload(&mut self, now: u64) {
         let turn = &self.chat.turn;
         let busy = matches!(turn.state.as_str(), "working" | "connecting" | "blocked")
@@ -469,7 +416,6 @@ impl Live {
         }
     }
 
-    /// Stores and then publishes `changes`, pushing the ones the owner should hear of.
     fn publish(&mut self, hub: &Hub, changes: Vec<Change>) -> Result<(), StoreError> {
         let store = &hub.store;
         for mut change in changes {
@@ -481,6 +427,7 @@ impl Live {
                 if let Some(c) = self.chat.items.iter_mut().find(|c| c.id == i.id) {
                     c.speaker.clone_from(&i.speaker);
                 }
+                hub.room_ask(&self.meta, i.clone());
             }
             let watched = self.tx.as_ref().is_some_and(|t| t.receiver_count() > 0);
             if let Some(n) = note(
@@ -531,7 +478,6 @@ impl Hub {
         let (mut threads, mut terminals) = (BTreeMap::new(), HashMap::new());
         for id in store.ids()? {
             let mut meta = store.load(&id)?;
-            // Before #48 the system default login was stored by its label.
             if meta.account == "System default" {
                 meta.account.clear();
             }
@@ -605,7 +551,6 @@ impl Hub {
         Ok(hub)
     }
 
-    /// Thread `id`, its chat loaded.
     fn live(&self, id: &str) -> Result<Arc<Mutex<Live>>, HubError> {
         let live = lock(&self.threads)
             .get(id)
@@ -615,7 +560,6 @@ impl Hub {
         Ok(live)
     }
 
-    /// Marks `live` used, reading its chat back from the store if it was unloaded.
     fn load(&self, live: &mut Live) -> Result<(), StoreError> {
         live.used = now();
         if live.unloaded.is_some() {
@@ -627,7 +571,6 @@ impl Hub {
         Ok(())
     }
 
-    /// Trims every thread's page events to [`REPLAY`] before `now` and unloads the idle threads' chats (#295).
     fn unload(&self, now: u64) {
         for live in self.all() {
             let mut live = lock(&live);
@@ -651,8 +594,6 @@ impl Hub {
         }
     }
 
-    /// Checks each open thread's terminal: one that runs is attached (its state shown), one that is gone ends the
-    /// thread. Returns the oldest applied shed event among the attached, to replay from.
     fn reattach(&self) -> Result<Option<u64>, ShedError> {
         self.shed.hello()?;
         let (at, terminals) = (now(), self.shed.ls(BTreeMap::new())?);
@@ -702,7 +643,6 @@ impl Hub {
         Ok(since)
     }
 
-    /// Lists Workflow session `t` (#33) as a thread, stored so its rows outlive a restart; `None` if it isn't one.
     fn adopt(&self, t: &TerminalInfo) -> Option<Arc<Mutex<Live>>> {
         let workflow = Workflow::from_labels(&t.labels).filter(|_| t.acp.is_some())?;
         let safe = |c: char| c.is_ascii_alphanumeric() || c == '-' || c == '_';
@@ -765,13 +705,10 @@ impl From<HubError> for io::Error {
     }
 }
 
-/// Whether `body` is a config card that waits for the owner (#553 row 32).
 fn waits(body: &Body) -> bool {
     matches!(body, Body::Approval { chosen: None, card, .. } if card.form.as_deref() == Some("config") && card.line.is_none())
 }
 
-/// `~/x` for a folder under `$HOME` (as given, or resolved: a folder a chat works in is stored resolved); none
-/// (empty): `scratch`, a chat's own folder.
 fn short(folder: &Path) -> String {
     if folder.as_os_str().is_empty() {
         return "scratch".to_owned();

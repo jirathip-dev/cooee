@@ -1,5 +1,3 @@
-//! `cooee doctor`: checks the instance.
-
 use crate::{
     cli::{Failed, Flag, Invocation},
     doctor::doctor,

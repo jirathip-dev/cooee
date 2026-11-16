@@ -1,5 +1,3 @@
-//! `cooee perf [--minutes <n>]`: the latency table (#53).
-
 use std::{
     fs,
     time::{SystemTime, UNIX_EPOCH},
@@ -22,7 +20,6 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
     Ok(perf(&inv.config()?, minutes)?)
 }
 
-/// Prints p50/p95/max per route, shed method and first token over the last `minutes` of `perf.log` (#53).
 fn perf(config: &Config, minutes: u64) -> Result<(), String> {
     let data = config
         .data_dir()

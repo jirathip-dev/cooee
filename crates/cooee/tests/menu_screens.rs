@@ -11,7 +11,6 @@ use support::{Cooee, FakeShed, scratch, version};
 
 const BUNDLED: &str = include_str!("../../../apple/Sources/CooeeUI/Default/screens/menu.json");
 
-/// The manifest of the installed `drover` plugin's build: a menu row, a claim, push, a destructive action and a host.
 const MANIFEST: &str = "name = \"drover\"\nversion = \"0.1.0\"\nbuild = \"true\"\nrun = \"true\"\nclaims = [\"lab\"]\n\n[[places]]\n\
                         type = \"menu-row\"\nlabel = \"Queue\"\nscreen = \"/screens/queue\"\n\n[permissions]\n\
                         places = [\"menu-row\"]\npush = true\nactions = [\"merge\", \"wave\"]\n\

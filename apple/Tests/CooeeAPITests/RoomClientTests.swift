@@ -56,4 +56,23 @@ internal struct RoomClientTests {
         let reply = APIItem(id: 3, time: 1, kind: "agent", text: "Hi", speaker: "am")
         #expect(got == [.roomTurn("am"), .item(reply), .roomStop("done"), .reset])
     }
+
+    @Test internal func aMembersAskIsARoomEvent() async throws {
+        let server = CannedServer([
+            "/threads/r1/events": [
+                Answer(
+                    headers: sse,
+                    chunks: [
+                        "id: b.1\nevent: room-ask\ndata: {\"member\":\"res\",\"session\":\"s1\",\"item\":",
+                        "{\"id\":7,\"at\":1,\"kind\":\"approval\",\"speaker\":\"res\",\"block\":{\"type\":\"card\",",
+                        "\"blocks\":[{\"type\":\"choice\"}]}}}\n\nid: b.2\nevent: reset\ndata: {}\n\n",
+                    ]
+                )
+            ]
+        ])
+        var got: [StreamEvent] = []
+        for try await event in server.client().events("r1", since: "b.0") { got.append(event) }
+        guard case .roomAsk(let ask) = got.first else { return #expect(Bool(false)) }
+        #expect(ask.member == "res" && ask.session == "s1" && ask.item.id == 7 && ask.open)
+    }
 }

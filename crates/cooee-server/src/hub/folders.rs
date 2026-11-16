@@ -1,5 +1,3 @@
-//! The folders a thread may work in: the roots, browsing them, and new folders.
-
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -7,7 +5,6 @@ use std::{
 
 use super::{Hub, HubError, Listing, lock, outside, refused};
 
-/// The folders right inside `dir` (hidden ones if `hidden`; never symlinks), sorted.
 fn dirs(dir: &Path, hidden: bool) -> Vec<PathBuf> {
     let mut out: Vec<PathBuf> = fs::read_dir(dir)
         .into_iter()
@@ -21,8 +18,6 @@ fn dirs(dir: &Path, hidden: bool) -> Vec<PathBuf> {
     out
 }
 
-/// `path` (default the home folder), if it is a folder inside the home folder, resolved but spelled from `$HOME`
-/// (as `~` shortens it); and `$HOME`.
 fn in_home(path: Option<&Path>) -> Result<(PathBuf, PathBuf), HubError> {
     let home = std::env::var_os("HOME")
         .map(PathBuf::from)
@@ -63,7 +58,6 @@ impl Hub {
         out
     }
 
-    /// `folder`, resolved, if it is a root or inside one; none (empty) stays empty: the thread's scratch folder.
     pub(super) fn place(&self, folder: &Path) -> Result<PathBuf, HubError> {
         if folder.as_os_str().is_empty() {
             return Ok(PathBuf::new());
@@ -71,14 +65,12 @@ impl Hub {
         self.allowed(folder).ok_or_else(|| outside(folder))
     }
 
-    /// `folder`, resolved, if it is a root or inside one.
     pub(super) fn allowed(&self, folder: &Path) -> Option<PathBuf> {
         let folder = folder.canonicalize().ok()?;
         let inside = |root: &PathBuf| root.canonicalize().is_ok_and(|r| folder.starts_with(r));
         lock(&self.roots).iter().any(inside).then_some(folder)
     }
 
-    /// `folder`, if it is a folder that is a root or inside one, spelled from that root as listed.
     fn in_root(&self, folder: &Path) -> Option<PathBuf> {
         let real = folder.canonicalize().ok().filter(|p| p.is_dir())?;
         lock(&self.roots).iter().find_map(|root| {

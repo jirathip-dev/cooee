@@ -30,7 +30,7 @@ public struct MenuFeature: Sendable {
     public enum Action: Sendable {
         case open(Bool)
         case loaded(JSONValue)
-        case show(String, label: String)
+        case show(String, label: String, source: LayoutSource = .core)
         case page(PresentationAction<ScreenFeature.Action>)
         case path([Page])
         case load
@@ -92,9 +92,9 @@ public struct MenuFeature: Sendable {
                 })
         case .loaded(let screen):
             state.screen = screen
-        case .show(let path, let label):
+        case .show(let path, let label, let source):
             guard let server = state.server else { return .none }
-            state.page = ScreenFeature.State(server: server, source: .core, path: path, label: label)
+            state.page = ScreenFeature.State(server: server, source: source, path: path, label: label)
         default:
             break
         }

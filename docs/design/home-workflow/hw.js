@@ -1,7 +1,3 @@
-// #229 mockup: the native Home lists your personas' chats only; a session with a `source` label is workflow, drawn in
-// the place of the plugin that claims that source (drover: Conductor's Workflow sheet); everything else folds into
-// Others. On the live design system (web/src/app.css, the farm pack) and the native host of #116/#125 (ns.css, sd.css).
-// As sd.js: `?mode=dark|light`, `?f=<frame>` one frame alone (the shots), else the page's gallery.
 const W = '../../../web/', P = '../../../packs/themes/';
 const q = new URLSearchParams(location.search);
 const T = 'farm', MODE = q.get('mode') || 'dark', F = q.get('f');
@@ -21,8 +17,6 @@ const ICON = { new: '<path d="M12 5v14M5 12h14"/>', more: '<circle cx="5" cy="12
   flow: '<circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="12" r="2.2"/><path d="M6 8.2v7.6M8 6.8 16 11M8 17.2l8-4.2"/>' };
 const ic = k => `<svg class=hic viewBox="0 0 24 24" aria-hidden=true>${ICON[k]}</svg>`;
 
-// Personas (the pinned row) and their chats. A chat row is its persona's avatar, `Name  chat title`, its last line
-// (`…` while working, a red `!` when it waits on you), age and unread: apple/design/v1's home-*.
 const PERS = { cond: ['Conductor', 'CD', '--g'], chief: ['Chief', 'CH', '--l'], coder: ['Coder', 'CO', '--c'], res: ['Researcher', 'RE', '--p'], acct: ['Account Manager', 'AM', '--link'] };
 const av = (id, cls = '') => `<i class="av ${cls}" style="--av:var(${PERS[id][2]})" aria-hidden=true>${PERS[id][1]}</i>`;
 const CHATS = [['coder', 'Flaky e2e on the look sheet', '$ cargo test -p cooee-core', 'now', 2, 'working'],
@@ -35,12 +29,10 @@ const mark = s => s === 'working' ? '<i class=hwk aria-label=working>•••</
 const chatRow = ([id, title, last, age, ud, st], sel) => `<a class="pr hwr${ud ? ' ud' : ''}${sel ? ' sel' : ''}" href="#">${av(id)}<span class=an><b>${esc(PERS[id][0])}</b> <small>${esc(title)}</small></span><span class=ta>${age}</span>
   <span class=tp>${mark(st)}<span>${esc(last)}</span>${ud ? `<i class=bd>${ud}</i>` : ''}</span></a>`;
 
-// Others: chats with no persona, and workflow sessions whose `source` no installed plugin claims.
 const LOOSE = [['Bonjour probe', 'Claude Code · scratch', '_cooee._tcp answers on the LAN.', '3h', 1],
   ['jq filter for fleet.toml', 'Codex · ~/src/cooee', '.fleet.cooee.role | keys', '1d'],
   ['New chat', 'Claude Code · scratch', 'Hi! What can I help with?', '4d']];
 const NIGHTLY = [['nightly · deps bump', 'source nightly · round 1', 'cargo update -p tokio: 1.47 → 1.48', '6h', 'done']];
-// drover's sessions (source=drover, group=repo, item=issue, role, round): what its Workflow sheet holds.
 const ISSUES = [
   { k: 'needs', repo: 'cooee', n: 229, stage: 'design', round: 1, title: "native Home: personas' chats only; lanes in their plugin's place", age: '6m',
     rounds: [['design', 'needs', 'mockups up · approve / revise / reject', '6m']] },
@@ -66,7 +58,6 @@ const workflowSheet = () => `<div class=dim></div><div class="ps sdx hwsh" role=
     const is = ISSUES.filter(i => i.k === k);
     return is.length ? `<h2 class=ch>${WORD[k]}</h2><div class=hwg>${is.map(issueRow).join('')}</div>` : ''; }).join('')}</div></div></div>`;
 
-// Screens.
 const head = (back, title, extra = '') => `<header class="nb sc"><a class=bk href="#"><b>‹</b>${back}</a><b class=nt>${title}</b><span>${extra}</span></header>`;
 const home = sel => `<div class=scr><div class=in><div class=pin>${['chief', 'coder', 'res', 'acct', 'cond'].map(id => `<a href="#">${av(id)}<span>${PERS[id][0].split(' ')[0]}</span></a>`).join('')}</div>
   <h2 class=lt2>Chats</h2>${CHATS.map((c, i) => chatRow(c, sel === i)).join('')}
@@ -90,8 +81,6 @@ const others = sel => `<div class="scr"><div class=in><h1 class=lt>Others</h1><p
   <p class=sf>${UNCLAIMED ? 'Install drover and attach it to a persona: its sessions move to that persona’s Workflow sheet.' : 'drover claims source drover: its sessions are in Conductor › Workflow.'}</p></div></div>
   ${head('Home', 'Others')}`;
 
-// A chat (the persona's, or a round's session opened as a normal chat). The Conductor's header strip carries drover's
-// places: Queue, Events and, new, Workflow (its needs-you count).
 const strip = on => `<nav class=hs aria-label=drover><a class=hsc href="#">Queue<i class=hsn>7</i></a><a class=hsc href="#">Events</a><a class="hsc${on ? ' on' : ''}" href="#">${ic('flow')}Workflow<i class=hsn>1</i></a></nav>`;
 const chat = c => `<div class="cvw${c.strip ? ' hs2' : ''}"><ol class=tc aria-label=messages>${c.body}</ol>
   <form class=tw><button type=button class=att aria-label=attach>+</button><textarea rows=1 aria-label=message placeholder="${esc(c.ph)}"></textarea><button type=button aria-label=send>↑</button></form></div>

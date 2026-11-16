@@ -1,8 +1,3 @@
-// #1: shoot the v1 mockup's views in dark and light and measure them against herdsman's docs/ui.md gate 2 (as its
-// docs/design/conductor-chat/shoot.mjs does): no sideways scroll or box past the right edge, text 11/13 px (inputs
-// 16), every bracket control 28 px tall (a choice row: ≤ 4 lines) with a ≥ 44 px tap, every tap row ≥ 44 px,
-// one-line cells ellipsised. Prints one line per shot, exits 1 on a failure. No deps: Chrome's --remote-debugging-pipe.
-// Usage (repo root): node docs/design/v1/shoot.mjs <chrome-headless-shell>
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -11,7 +6,6 @@ import { extname, join } from 'node:path';
 
 const here = new URL('.', import.meta.url).pathname;
 const [chrome] = process.argv.slice(2);
-// [page, hash, name, width, full height (else one 844 / 900 px screen), DPR]
 const VIEWS = [
   ['threads.html', '', 'threads-390', 390, true, 2], ['threads.html', '#new', 'threads-new-390', 390, true, 2],
   ['threads.html', '', 'threads-1440', 1440, true, 1],
@@ -46,7 +40,6 @@ const send = (method, params = {}, sessionId) => new Promise((ok, no) => {
 });
 const sleep = ms => new Promise(ok => setTimeout(ok, ms));
 
-// Runs in the page: every rule above, as a list of "what · where" strings.
 function audit() {
   const bad = [], W = innerWidth, name = e => e.tagName.toLowerCase() + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\s+/).join('.') : '') + ` "${(e.textContent || e.placeholder || '').trim().slice(0, 30)}"`;
   const shown = e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden';

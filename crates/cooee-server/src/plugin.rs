@@ -1,8 +1,3 @@
-//! Plugins (docs/plugins.md): a tab whose UI module, served by the plugin's own backend, runs in a sandboxed frame.
-//! Its calls reach that backend through cooee with the plugin's token, never the device's cookie: one HTTP/1.0
-//! request per call (so the answer is never chunked), an event stream read line by line. A call ends at its deadline
-//! (connect, send and the whole answer) and a backend has at most [`IN_FLIGHT`] calls at once: one more fails at once.
-
 use std::{
     collections::HashMap,
     io::{self, BufRead, BufReader, Read, Write},
@@ -15,16 +10,13 @@ use cooee_core::{Plugin, Profile};
 use futures_util::{Stream, stream};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 
-/// The largest answer cooee passes on.
 const MAX_BODY: u64 = 16 << 20;
 
 /// The most calls one backend has in flight; one more fails at once instead of taking a blocking thread.
 pub const IN_FLIGHT: usize = 8;
 
-/// The calls in flight, by backend URL.
 static BUSY: LazyLock<Mutex<HashMap<String, usize>>> = LazyLock::new(Mutex::default);
 
-/// One of a backend's [`IN_FLIGHT`] places, given back when dropped.
 struct Permit(String);
 
 impl Permit {
@@ -57,7 +49,6 @@ pub struct Conn {
 }
 
 impl Conn {
-    /// The time left before the deadline.
     fn left(&self) -> io::Result<Option<Duration>> {
         let left = self.until.saturating_duration_since(Instant::now());
         if left.is_zero() {
@@ -380,7 +371,6 @@ mod tests {
 
     use super::*;
 
-    /// A backend that sends a heartbeat and one event, then nothing, and says when cooee closes the connection.
     fn silent_backend() -> (Plugin, mpsc::Receiver<()>) {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let port = listener.local_addr().unwrap().port();
@@ -421,7 +411,6 @@ mod tests {
         closed.recv_timeout(Duration::from_secs(5)).unwrap();
     }
 
-    /// A backend that answers one byte a second: its head at once when `head`, else that too a byte a second.
     fn trickle(head: bool) -> Plugin {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let url = format!("http://{}", listener.local_addr().unwrap());

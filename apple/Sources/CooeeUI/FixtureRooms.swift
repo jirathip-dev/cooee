@@ -72,6 +72,28 @@ extension RoomView {
     public static func kestrel(wide: Bool = false) -> RoomView {
         RoomView(scene: Fixtures.room, back: !wide, wide: wide)
     }
+
+    public static func asking() -> RoomView {
+        var round = RoomRound()
+        round.asked(Fixtures.kestrel, text: "Where is Kestrel's revenue heading?", when: .distantPast)
+        round.began("chief")
+        round.replied("chief")
+        round.began("coder")
+        round.began("res")
+        round.asks("res", when: .distantPast)
+        guard case .card(let id, _, let block) = Fixtures.cards[2] else { return kestrel() }
+        let items: [Item] = [
+            .you(id: 1, text: "Where is Kestrel's revenue heading? Use their last three 10-Qs."),
+            .said(
+                id: 2, speaker: "chief", time: "10:02",
+                markdown: [.text("@Researcher has the filings; I'll wait for the numbers.")]),
+            .card(id: id, poster: "res", block: block),
+        ]
+        return RoomView(
+            scene: RoomScene(
+                title: "Kestrel launch", members: Fixtures.kestrel.map(Fixtures.persona), others: [], round: round,
+                items: items, inspecting: nil))
+    }
 }
 
 extension MemberSheet {
@@ -95,10 +117,10 @@ extension NewRoomSheet {
     }
 }
 
-extension WideView where Detail == RoomView {
-    public static func kestrel() -> WideView<RoomView> {
-        WideView(
-            chats: Fixtures.roomChats, selected: "r1", actions: HomeActions(),
+extension Sidebar where Column == EmptyView, Detail == RoomView {
+    public static func kestrel() -> Sidebar<EmptyView, RoomView> {
+        Sidebar(
+            chats: Fixtures.roomChats, selected: "r1", actions: HomeActions(), column: { EmptyView() },
             detail: { RoomView.kestrel(wide: true) }
         )
     }

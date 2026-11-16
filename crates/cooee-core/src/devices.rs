@@ -1,9 +1,3 @@
-//! Paired devices (herdsman's `devices.rs`): `cooee pair` opens a six-digit code for 10 minutes; the browser that
-//! enters it gets a random token as its cookie. Only SHA-256 hashes of codes and tokens are kept, in
-//! `<data>/devices.json` (mode 0600). Five wrong codes drop the open one. The other way round (#47): a new device asks
-//! to pair and shows a check word; a paired device approves it (with its passkey) or declines; the new device then
-//! collects its token with the claim it was given. Passkeys (their public keys) are kept here too.
-
 use std::{
     fmt::Write as _,
     fs,
@@ -19,10 +13,8 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-/// How long a pairing code is good for, in milliseconds.
 const CODE_TTL: u64 = 10 * 60 * 1000;
 
-/// Wrong codes before the open one is dropped.
 const MISSES: u32 = 5;
 
 /// One paired browser.
@@ -59,15 +51,12 @@ pub struct Passkey {
 #[serde(default)]
 struct File {
     devices: Vec<Device>,
-    /// The open code's hash and when it was made.
     code: Option<(String, u64)>,
     misses: u32,
     asks: Vec<Request>,
     passkeys: Vec<Credential>,
 }
 
-/// A new device's open request to pair: its claim's hash, the check word it shows, what it is, when it asked and the
-/// answer (`None`: waiting; the answering device's label with yes or no).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Request {
     claim: String,
@@ -77,10 +66,8 @@ struct Request {
     answer: Option<(bool, String)>,
 }
 
-/// Open requests kept at once; a newer one drops the oldest.
 const REQUESTS: usize = 4;
 
-/// How long a request waits for an answer, in milliseconds.
 const ASK_TTL: u64 = 5 * 60 * 1000;
 
 /// What a new device's claim finds: its request gone (expired, cancelled or never made), still waiting, declined (by
@@ -129,7 +116,6 @@ pub struct Credential {
     pub used: u64,
 }
 
-/// Two words from a fixed list, so a check word is never mistaken for a code.
 const WORDS: [[&str; 16]; 2] = [
     [
         "maple", "amber", "river", "cedar", "coral", "misty", "sunny", "quiet", "swift", "lucky",
@@ -141,7 +127,6 @@ const WORDS: [[&str; 16]; 2] = [
     ],
 ];
 
-/// A six-digit code.
 fn six() -> io::Result<String> {
     let b = random(4)?;
     Ok(format!(
@@ -151,12 +136,10 @@ fn six() -> io::Result<String> {
 }
 
 impl File {
-    /// Drops the requests older than [`ASK_TTL`].
     fn expire(&mut self, now: u64) {
         self.asks.retain(|r| r.at + ASK_TTL > now);
     }
 
-    /// Adds a device with `token`, named `label` (its id: `id`, else from the token's hash); the device.
     fn add(&mut self, token: &str, id: Option<String>, label: &str, now: u64) -> &mut Device {
         let hash = sha256(token.as_bytes());
         self.devices.push(Device {
@@ -178,8 +161,6 @@ pub struct Devices {
     cache: Mutex<Option<(Stamp, File)>>,
 }
 
-/// What tells one version of the devices file from another: its mtime, size and inode (a save renames a new file
-/// in).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Stamp(SystemTime, u64, u64);
 
@@ -197,7 +178,6 @@ pub fn sha256(data: &[u8]) -> String {
     hex(&sha2::Sha256::digest(data))
 }
 
-/// Lowercase hex.
 fn hex(bytes: &[u8]) -> String {
     bytes.iter().fold(String::new(), |mut s, b| {
         let _ = write!(s, "{b:02x}");
@@ -251,7 +231,6 @@ pub fn write_private(path: &Path, bytes: &[u8]) -> io::Result<()> {
     fs::File::open(dir)?.sync_all()
 }
 
-/// Constant-time equality.
 fn same(a: &str, b: &str) -> bool {
     a.len() == b.len() && a.bytes().zip(b.bytes()).fold(0, |d, (x, y)| d | (x ^ y)) == 0
 }
@@ -636,7 +615,6 @@ mod tests {
             .claim(&code, "Mozilla/5.0 (iPhone)", 2000)
             .unwrap()
             .unwrap();
-        // Single use.
         assert_eq!(d.claim(&code, "x", 2000).unwrap(), None);
         let found = d.find(&token, 3000).unwrap().unwrap();
         assert_eq!(found.label, "iPhone");
@@ -666,7 +644,6 @@ mod tests {
         for _ in 0..MISSES {
             assert_eq!(d.claim(wrong, "x", 1).unwrap(), None);
         }
-        // Too many misses dropped the code: even the right one fails now.
         assert_eq!(d.claim(&code, "x", 1).unwrap(), None);
     }
 
@@ -684,7 +661,6 @@ mod tests {
         assert!(!d.answer("deadbeef", true, "iPhone", 1).unwrap());
         assert!(d.answer(&open[0].id, true, "iPhone", 1).unwrap());
         assert_eq!(d.asking(1).unwrap(), []);
-        // Renamed on the approving device before and after the new one picks it up; its id is the request's.
         assert!(d.rename(&open[0].id, "Kim's iPad").unwrap());
         let Claim::Paired(token) = d.collect(&claim, 2).unwrap() else {
             panic!("not paired");
@@ -701,7 +677,6 @@ mod tests {
         let disk = fs::read_to_string(&d.path).unwrap();
         assert!(!disk.contains(&claim) && !disk.contains(&token), "{disk}");
 
-        // Declined: the new device hears who said no, once.
         let (_, claim) = d.ask("x", 0).unwrap();
         let id = d.asking(0).unwrap()[0].id.clone();
         assert!(d.answer(&id, false, "iPhone", 1).unwrap());
@@ -712,7 +687,6 @@ mod tests {
         );
         assert_eq!(d.collect(&claim, 2).unwrap(), Claim::Gone);
 
-        // Expired after 5 minutes, cancelled, and a fifth request dropping the oldest.
         let (_, claim) = d.ask("x", 0).unwrap();
         assert_eq!(d.asking(ASK_TTL).unwrap(), []);
         assert_eq!(d.collect(&claim, ASK_TTL).unwrap(), Claim::Gone);
@@ -726,8 +700,6 @@ mod tests {
         assert_eq!(d.collect(&first, 1).unwrap(), Claim::Gone);
     }
 
-    /// #294: the auth middleware's lookups parse the file once while it is unchanged; another writer's change (the
-    /// CLI's pair or remove) counts on the next lookup.
     #[test]
     fn lookups_parse_an_unchanged_file_once_and_see_the_next_change() {
         let d = scratch("cache");
@@ -763,7 +735,6 @@ mod tests {
         );
     }
 
-    /// R3 (herdsman#501): a devices file that can't be read is an error, never "not paired".
     #[test]
     fn an_unreadable_store_is_an_error_not_unpaired() {
         let d = scratch("unreadable");
@@ -772,7 +743,6 @@ mod tests {
         assert!(d.find(&token, 1).is_err());
     }
 
-    /// R18 (herdsman#342): parallel writes of one file each use a temp file of their own and rename it whole.
     #[test]
     fn parallel_writes_never_share_a_temp_file() {
         let dir = std::env::temp_dir().join(format!("cooee-write-{}", std::process::id()));

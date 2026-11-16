@@ -1,5 +1,3 @@
-//! Sending to a thread: a message, its files, the queue, and the prompt shed gets.
-
 use std::{fs, sync::Mutex, time::Instant};
 
 use cooee_core::{
@@ -31,7 +29,6 @@ impl Hub {
         self.send_after(id, text, random_id, files, "")
     }
 
-    /// [`Hub::send`] with `before` (a profile's instructions) ahead of the text for the agent; only the text is stored.
     pub(super) fn send_after(
         &self,
         id: &str,
@@ -55,13 +52,11 @@ impl Hub {
         self.deliver(&live, q, before)
     }
 
-    /// The stored message `random_id`, if it was sent.
     pub(super) fn sent(live: &Live, random_id: &str) -> Option<Item> {
         let mine = |i: &&Item| matches!(&i.body, Body::You { random_id: r, .. } if r == random_id);
         live.chat.items.iter().rev().find(mine).cloned()
     }
 
-    /// A message to send or queue, its files stored.
     pub(super) fn take(
         &self,
         live: &Live,
@@ -104,8 +99,6 @@ impl Hub {
         })
     }
 
-    /// Sends `q` to the agent, `before` ahead of it, then stores and publishes it; refused when the agent stopped,
-    /// whose session would drop it (#253). The thread is unlocked while shed takes it.
     pub(super) fn deliver(
         &self,
         live: &Mutex<Live>,
@@ -117,7 +110,6 @@ impl Hub {
             let mut l = lock(live);
             l.sending.push(q.random_id.clone());
             let handover = l.meta.handover.clone();
-            // After Use a folder…, the hand-over goes once ahead of the next message.
             let before = if !before.trim().is_empty() {
                 before
             } else if l.meta.asked_by.is_empty() {
@@ -181,7 +173,6 @@ impl Hub {
         stored
     }
 
-    /// Stores and publishes message `q`, which shed took (its prompt timed from `start`, with `handover` ahead).
     fn store_sent(
         &self,
         live: &mut Live,
@@ -209,7 +200,6 @@ impl Hub {
         Ok(item)
     }
 
-    /// Hands `prompt` to `terminal`'s agent on `machine`; refused when the turn `ended` and the agent stopped.
     fn prompt(
         &self,
         terminal: &str,

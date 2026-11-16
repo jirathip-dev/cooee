@@ -1,5 +1,3 @@
-//! `cooee theme add|remove|list|check` (docs/themes.md).
-
 use std::path::Path;
 
 use cooee_core::Config;
