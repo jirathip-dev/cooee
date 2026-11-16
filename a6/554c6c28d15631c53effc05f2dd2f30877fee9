@@ -1,0 +1,8 @@
+Decided: the post-update readiness probe counts any HTTP reply on 4747 as up (curl without -f), in the app's restart script and the workflow
+Because: crates/cooee-server/src/pairing.rs:110
+Because: apple/Sources/CooeeApp/MacLive.swift:26
+Rejected: probing another route — any reply proves cooee listens, and apple.yml:200 already probes /pair this way
+Rejected: a retry — the 405 is the same on every try, the run 43822353374 shows 120 of them
+Check: dispatch run 43822353374 at de18c12 staged version 2 (round-1 fix works), then logged 405s and "cooee does not answer on 4747"
+Check: mac-setup needs one more workflow_dispatch run at this head (q1729)
+Owner: the update now installs; the check after the restart misread a live server as down, and now accepts any answer
