@@ -1,0 +1,7 @@
+Decided: the setup UI test terminates the Mac app; the update step fails by name if that app is still up and prints Sparkle's log when nothing is staged
+Because: "The local appcast is served (items for versions 1 and 2"
+Because: apple/UITests/MacSetupUITests.swift:31
+Rejected: a retry or a longer wait — the running app's next Sparkle check is 24h out, so waiting never helps
+Rejected: the self-hosted Mac runner — the cause is the test, not the GitHub runner
+Check: feed.log was empty in job 133000875645, so no request reached the feed; a fresh version 1 with SULastCheckTime 2000 checks at once
+Owner: the Mac update test left the setup run's app open; the test now closes it so the update check runs on a fresh launch
