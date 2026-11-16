@@ -1,0 +1,5 @@
+Decided: the app target's Persona preview draws PersonaEditBlocks, the view that replaced the deleted PersonaSheet.
+Because: apple/Cooee/RootView.swift:7
+Rejected: dropping the Persona preview — it is the app's only preview of the edit sheet, and the new view is a drop-in.
+Check: xcodebuild of the Cooee scheme for macOS and iOS Simulator builds; no PersonaSheet left in apple/.
+Owner: Fixes the app build that still pointed at the removed persona sheet; nothing looks different.
