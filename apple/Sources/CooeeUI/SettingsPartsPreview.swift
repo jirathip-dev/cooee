@@ -1,4 +1,3 @@
-import CooeeFeatures
 import SwiftUI
 
 internal struct SettingsPage<Content: View>: View {
@@ -126,7 +125,7 @@ internal struct TrendLine: View {
 
 internal struct MacSettings<Page: View>: View {
     @Environment(\.look) private var look
-    internal let selected: MenuFeature.Page
+    internal let selected: SettingsFrame
     @ViewBuilder internal var page: Page
 
     internal var body: some View {
@@ -160,7 +159,7 @@ internal struct MacSettings<Page: View>: View {
         ]
     }
 
-    private func sideRow(_ page: MenuFeature.Page, _ symbol: String, _ title: String, _ tint: Color) -> some View {
+    private func sideRow(_ page: SettingsFrame, _ symbol: String, _ title: String, _ tint: Color) -> some View {
         let active = page == selected
         return HStack(spacing: 10) {
             if !look.mono {
@@ -176,10 +175,15 @@ internal struct MacSettings<Page: View>: View {
 }
 
 internal struct SideRow {
-    internal let page: MenuFeature.Page
+    internal let page: SettingsFrame
     internal let symbol: String
     internal let title: String
     internal let tint: KeyPath<Palette, Color>
 
     internal func color(_ palette: Palette) -> Color { palette[keyPath: tint] }
+}
+
+/// A settings design frame's page: the sidebar row it selects and the page it draws.
+public enum SettingsFrame: Hashable, Sendable {
+    case look, notifications, signIns, devices, terminal, machines, plugins
 }

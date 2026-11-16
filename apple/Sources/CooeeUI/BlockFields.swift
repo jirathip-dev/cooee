@@ -52,7 +52,7 @@ internal struct SecretBlock: View {
     internal var body: some View {
         let palette = look.palette
         let name = block.string("name") ?? ""
-        let poster = context.poster.map { "the \($0) plugin" } ?? "its plugin"
+        let poster = context.poster.map { $0 == .core ? "cooee" : "the \($0.name) plugin" } ?? "its plugin"
         VStack(alignment: .leading, spacing: 10) {
             Button {
                 editing = true

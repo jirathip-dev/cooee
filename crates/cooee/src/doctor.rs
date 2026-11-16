@@ -71,6 +71,7 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
         }
         Err(e) => check(false, format!("push keys: {e}")),
     }
+    crate::update::doctor(config);
     match tailnet_name() {
         None => check(false, "tailnet: no name (is Tailscale up?)".to_owned()),
         Some(name) => {

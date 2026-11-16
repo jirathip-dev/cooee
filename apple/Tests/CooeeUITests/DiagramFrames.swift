@@ -23,7 +23,9 @@ internal enum DiagramFrames {
         _ screen: JSONValue, focus: String? = nil, width: CGFloat? = nil, beside: (String, JSONValue)? = nil
     ) -> some View {
         Color.clear.overlay(alignment: .top) {
-            BlocksView(screen, focus: focus, picked: beside?.0, beside: beside?.1).padding(BlocksView.inset).frame(
+            BlocksView(screen, source: .plugin("drover"), focus: focus, picked: beside?.0, beside: beside?.1).padding(
+                BlocksView.inset
+            ).frame(
                 width: width
             ).padding(
                 .top, width == nil ? 0 : 36)

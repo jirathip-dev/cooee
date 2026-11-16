@@ -39,12 +39,13 @@ internal enum QueueFrames {
     }()
 
     @MainActor private static func sheet() -> some View {
-        Color.clear.overlay(alignment: .top) { BlocksView(screen).padding(BlocksView.inset) }.clipped()
+        Color.clear.overlay(alignment: .top) { BlocksView(screen, source: .plugin("drover")).padding(BlocksView.inset) }
+            .clipped()
     }
 
     @MainActor private static func panel() -> some View {
         Color.clear.overlay(alignment: .top) {
-            BlocksView(screen).padding(BlocksView.inset).frame(width: 760).padding(.top, 36)
+            BlocksView(screen, source: .plugin("drover")).padding(BlocksView.inset).frame(width: 760).padding(.top, 36)
         }
         .clipped()
     }
@@ -66,7 +67,12 @@ internal enum QueueFrames {
         let lanes = Frame(
             name: "queue-figures-modern-dark", width: 64, height: 360, palette: .farmDark, style: .modern,
             phone: false,
-            view: { AnyView(Color.clear.overlay(alignment: .top) { BlocksView(figures).padding(.top, 36) }) })
+            view: {
+                AnyView(
+                    Color.clear.overlay(alignment: .top) {
+                        BlocksView(figures, source: .plugin("drover")).padding(.top, 36)
+                    })
+            })
         return phones + macs + [lanes]
     }
 }

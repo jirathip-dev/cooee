@@ -6,6 +6,8 @@ import Testing
 
 @MainActor
 internal struct MenuFeatureTests {
+    nonisolated private static let menu = JSONValue(
+        json: #"{"type": "screen", "id": "menu", "source": "core", "blocks": []}"#)
     private let calls = Calls()
 
     private func store(_ server: Server? = mini, push: String? = nil) -> TestStoreOf<MenuFeature> {
@@ -19,12 +21,17 @@ internal struct MenuFeatureTests {
             $0.push.token = { "ab12" }
             $0.push.register = { _, token, enabled in calls.record("register \(token) \(enabled)") }
             $0.appIcon.set = { icon in calls.record("icon \(icon.asset)") }
+            $0.plugins.screen = { _, source, path in
+                calls.record("screen \(source.name)\(path)")
+                return Self.menu
+            }
         }
     }
 
     @Test internal func theLookIsPickedAndKept() async {
         let store = store()
         await store.send(.open(true)) { $0.open = true }
+        await store.receive(\.loaded) { $0.screen = Self.menu }
         await store.send(.path([.look])) { $0.path = [.look] }
         await store.send(.scheme(.dark)) { $0.settings.scheme = .dark }
         await store.send(.style(.terminal)) { $0.settings.style = .terminal }
@@ -32,7 +39,28 @@ internal struct MenuFeatureTests {
             $0.open = false
             $0.path = []
         }
-        #expect(calls.all == ["save dark modern -", "save dark terminal -", "icon TerminalPrompt"])
+        #expect(
+            calls.all == [
+                "screen core/screens/menu", "save dark modern -", "save dark terminal -", "icon TerminalPrompt",
+            ])
+    }
+
+    @Test internal func aServerRowOpensCoresScreenAndClosingTheMenuDropsIt() async {
+        let store = store()
+        await store.send(.show("/screens/settings/devices", label: "Devices")) {
+            $0.page = ScreenFeature.State(
+                server: mini, source: .core, path: "/screens/settings/devices", label: "Devices")
+        }
+        await store.send(.open(false)) { $0.page = nil }
+    }
+
+    @Test internal func offlineTheMenuKeepsTheBundledOneAndWithoutAServerOpensNothing() async {
+        let store = store()
+        store.dependencies.plugins.screen = { _, _, _ in throw APIError(status: 0, text: "offline") }
+        await store.send(.open(true)) { $0.open = true }
+        let alone = self.store(nil)
+        await alone.send(.open(true)) { $0.open = true }
+        await alone.send(.show("/screens/settings/devices", label: "Devices"))
     }
 
     @Test internal func aPickedIconStaysThroughStyleChangesUntilTheLookIsFollowedAgain() async {
