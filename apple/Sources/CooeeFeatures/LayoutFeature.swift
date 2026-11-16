@@ -44,10 +44,22 @@ public struct LayoutFeature: Sendable {
         public var server: Server?
         public var layout: Layout
         public var broken: String?
+        public var screens: IdentifiedArrayOf<ScreenFeature.State> = []
 
         public init(server: Server?, layout: Layout) {
             self.server = server
             self.layout = layout
+            place()
+        }
+
+        fileprivate mutating func place() {
+            guard let server else { return }
+            let fresh = layout.resolved(for: .wide).sidebarRows(on: .wide).compactMap { node -> ScreenFeature.State? in
+                guard node.place == .column, case .screen(let source, let path) = node.content else { return nil }
+                return screens[id: ScreenFeature.State.id(source, path)]
+                    ?? ScreenFeature.State(server: server, source: source, path: path, label: node.label ?? "")
+            }
+            screens = IdentifiedArray(fresh, uniquingIDsWith: { first, _ in first })
         }
     }
 
@@ -57,6 +69,7 @@ public struct LayoutFeature: Sendable {
         case event(LayoutEvent)
         case reset
         case resetDone(LayoutAnswer?)
+        case screens(IdentifiedActionOf<ScreenFeature>)
     }
 
     private enum CancelID { case fetch }
@@ -85,16 +98,21 @@ public struct LayoutFeature: Sendable {
             case .resetDone(nil):
                 store.save(nil)
                 state.layout = (try? store.load()) ?? state.layout
+                state.place()
                 state.broken = "reset here; the Mac's layout.json is unchanged until it's back"
+            case .screens:
+                break
             }
             return .none
         }
+        .forEach(\.screens, action: \.screens) { ScreenFeature() }
     }
 
     private func apply(_ state: inout State, _ answer: LayoutAnswer) {
         do {
             state.layout = try Layout(answer)
-            state.broken = nil
+            state.place()
+            state.broken = answer.skipped?.first.map { "layout.json \($0) · not drawn" }
             store.save(answer)
         } catch {
             state.broken = "app can't read this layout: \(error) · last good layout kept"
