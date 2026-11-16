@@ -560,16 +560,16 @@ fn recipe(
         }
     }
     let (agent, profile, folder) = match &persona {
-        Some(p) if !["", "scratch"].contains(&p.folder.as_str()) => (
-            p.agent.as_str(),
-            p.profile.as_deref().unwrap_or(""),
-            PathBuf::from(&p.folder),
-        ),
-        Some(p) => (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder),
+        Some(p) => {
+            let keep = ["", "scratch"].contains(&p.folder.as_str());
+            let folder = if keep { folder } else { (&p.folder).into() };
+            (p.agent.as_str(), p.profile.as_deref().unwrap_or(""), folder)
+        }
         None => (agent, profile, folder),
     };
     let (agent, folder, mut recipe) = if profile.is_empty() {
-        let (account, launch) = logins.home(agent, account)?;
+        let (account, mut launch) = logins.home(agent, account)?;
+        launch.meta = persona.as_ref().and(logins.no_personal_setup(agent));
         let recipe = Recipe {
             account,
             launch,
