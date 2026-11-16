@@ -128,11 +128,8 @@ const WORDS: [[&str; 16]; 2] = [
 ];
 
 fn six() -> io::Result<String> {
-    let b = random(4)?;
-    Ok(format!(
-        "{:06}",
-        u32::from_be_bytes([b[0], b[1], b[2], b[3]]) % 1_000_000
-    ))
+    let b: [u8; 4] = random(4)?.try_into().unwrap_or_default();
+    Ok(format!("{:06}", u32::from_be_bytes(b) % 1_000_000))
 }
 
 impl File {
@@ -142,7 +139,7 @@ impl File {
 
     fn add(&mut self, token: &str, id: Option<String>, label: &str, now: u64) -> &mut Device {
         let hash = sha256(token.as_bytes());
-        self.devices.push(Device {
+        self.devices.push_mut(Device {
             id: id.unwrap_or_else(|| hash[..8].to_owned()),
             label: label.to_owned(),
             hash,
@@ -150,8 +147,7 @@ impl File {
             used: now,
             by: String::new(),
             passkey: None,
-        });
-        self.devices.last_mut().expect("just pushed")
+        })
     }
 }
 
@@ -180,7 +176,7 @@ pub fn sha256(data: &[u8]) -> String {
 
 fn hex(bytes: &[u8]) -> String {
     bytes.iter().fold(String::new(), |mut s, b| {
-        let _ = write!(s, "{b:02x}");
+        write!(s, "{b:02x}").ok();
         s
     })
 }
@@ -347,12 +343,11 @@ impl Devices {
     /// # Errors
     /// When the file can't be read or written.
     pub fn ask(&self, agent: &str, now: u64) -> io::Result<(String, String)> {
-        let (b, claim) = (random(2)?, hex(&random(32)?));
-        let word = format!(
-            "{} {}",
-            WORDS[0][usize::from(b[0] % 16)],
-            WORDS[1][usize::from(b[1] % 16)]
-        );
+        let ([b0, b1], claim) = (random(2)?.try_into().unwrap_or_default(), hex(&random(32)?));
+        let [w0, w1] = WORDS;
+        let pick =
+            |w: [&'static str; 16], b: u8| w.get(usize::from(b % 16)).copied().unwrap_or_default();
+        let word = format!("{} {}", pick(w0, b0), pick(w1, b1));
         self.change(|f| {
             f.expire(now);
             if f.asks.len() >= REQUESTS {
@@ -416,7 +411,7 @@ impl Devices {
             let Some(i) = f.asks.iter().position(|r| same(&r.claim, &hash)) else {
                 return Ok(Claim::Gone);
             };
-            match f.asks[i].answer.clone() {
+            match f.asks.get(i).and_then(|r| r.answer.clone()) {
                 None => Ok(Claim::Waiting),
                 Some((false, by)) => {
                     f.asks.remove(i);
@@ -535,12 +530,13 @@ impl Devices {
             return Ok(None);
         };
         if device.used + 3_600_000 <= now {
-            let _ = self.change(|f| {
+            self.change(|f| {
                 for d in f.devices.iter_mut().filter(|d| d.hash == hash) {
                     d.used = now;
                 }
                 Ok(())
-            });
+            })
+            .ok();
         }
         Ok(Some(device))
     }
@@ -587,8 +583,10 @@ mod tests {
     use super::*;
 
     fn scratch(name: &str) -> Devices {
-        let dir = std::env::temp_dir().join(format!("cooee-devices-{name}-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-devices-{name}-{}", std::process::id())),
+        );
+        fs::remove_dir_all(&dir).ok();
         Devices::new(&dir)
     }
 
@@ -745,8 +743,10 @@ mod tests {
 
     #[test]
     fn parallel_writes_never_share_a_temp_file() {
-        let dir = std::env::temp_dir().join(format!("cooee-write-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&dir);
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-write-{}", std::process::id())),
+        );
+        fs::remove_dir_all(&dir).ok();
         let path = dir.join("state.json");
         std::thread::scope(|s| {
             for i in 0..16 {

@@ -71,7 +71,7 @@ impl Hub {
             })
             .and_then(|_| Ok(self.shed.ready(&terminal)?));
         if let Some((file, _)) = &recipe.launch.secrets {
-            let _ = fs::remove_file(file);
+            fs::remove_file(file).ok();
         }
         let session = started?;
         let mut live = lock(&live);
@@ -94,7 +94,14 @@ impl Hub {
                 _ => None,
             })
             .collect();
-        let last = turns[turns.len().saturating_sub(6)..].join("\n\n");
+        let last = turns
+            .iter()
+            .rev()
+            .take(6)
+            .rev()
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("\n\n");
         let handover = format!(
             "{}\n\nThis chat moved from {} to {}, where you now run; what it made before is still there. Its last turns:\n\n{last}",
             recipe.instructions.trim_end(),
@@ -129,10 +136,10 @@ impl Hub {
         if let Some(s) = session
             && let Err(e) = self.settle(id, &terminal, &s)
         {
-            eprintln!("cooee: {id}: model: {e}");
+            cooee_core::note!("cooee: {id}: model: {e}");
         }
         if let Err(e) = self.shed.close(&old) {
-            eprintln!("cooee: {e}");
+            cooee_core::note!("cooee: {e}");
         }
         Ok(item)
     }

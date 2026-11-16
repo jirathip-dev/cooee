@@ -1,6 +1,5 @@
 use std::{
     path::PathBuf,
-    process::Command,
     sync::{Arc, Mutex, PoisonError},
 };
 
@@ -61,7 +60,7 @@ impl Runner {
         std::thread::spawn(move || {
             loop {
                 runner.tick(now());
-                std::thread::sleep(beat);
+                cooee_core::clock::sleep(beat);
             }
         });
     }
@@ -146,13 +145,15 @@ impl Runner {
         let _held = self.lock.lock().unwrap_or_else(PoisonError::into_inner);
         let mut list = match self.list() {
             Ok(list) => list,
-            Err(e) => return eprintln!("cooee: routines: {e}"),
+            Err(e) => return cooee_core::note!("cooee: routines: {e}"),
         };
         for at in 0..list.len() {
-            let Some(due) = list[at].due(now, offset) else {
+            let Some(r) = list.get_mut(at) else {
                 continue;
             };
-            let r = &mut list[at];
+            let Some(due) = r.due(now, offset) else {
+                continue;
+            };
             if r.paused.is_none() {
                 let outcome = self.run(r, due, offset);
                 if let (Outcome::Failed { .. }, Place::Chat { thread }) = (&outcome, &r.place)
@@ -177,7 +178,7 @@ impl Runner {
             }
             r.last_due = due;
             if let Err(e) = self.file.save(&list) {
-                eprintln!("cooee: routines: {e}");
+                cooee_core::note!("cooee: routines: {e}");
             }
         }
     }
@@ -209,11 +210,13 @@ impl Runner {
     fn offset(&self, now: u64) -> i32 {
         let mut o = self.offset.lock().unwrap_or_else(PoisonError::into_inner);
         if o.1 == 0 || now.saturating_sub(o.1) >= HOUR {
-            let out = Command::new("date").arg("+%z").output();
+            let out = cooee_core::runner::command("date").arg("+%z").output();
             let text = out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned());
             match text.ok().as_deref().and_then(minutes) {
                 Some(m) => *o = (m, now),
-                None => eprintln!("cooee: routines: can't read the UTC offset; using {}", o.0),
+                None => {
+                    cooee_core::note!("cooee: routines: can't read the UTC offset; using {}", o.0);
+                }
             }
         }
         o.0

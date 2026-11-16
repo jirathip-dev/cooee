@@ -447,7 +447,9 @@ mod tests {
 
     #[test]
     fn the_file_round_trips_and_refuses_a_newer_format() {
-        let dir = std::env::temp_dir().join(format!("cooee-routines-{}", std::process::id()));
+        let dir = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-routines-{}", std::process::id())),
+        );
         let file = Routines::new(&dir);
         assert_eq!(file.load().unwrap(), Vec::new());
         let mut r = Routine::make(&[], ask("0 9 * * 1", ""), &chat(), MON).unwrap();

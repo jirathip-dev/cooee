@@ -14,6 +14,7 @@ public struct PairingClient: Sendable {
 public struct ThreadsClient: Sendable {
     public var home: @Sendable (_ server: Server) async throws -> HomeAnswer
     public var personas: @Sendable (_ server: Server) async throws -> [APIPersona]
+    public var looks: @Sendable (_ server: Server) async throws -> Looks
     public var messages: @Sendable (_ server: Server, _ thread: String) async throws -> Slice
     public var events:
         @Sendable (_ server: Server, _ thread: String, _ since: String) -> AsyncThrowingStream<StreamEvent, any Error> =

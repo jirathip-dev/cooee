@@ -15,9 +15,7 @@
         /// when it fails.
         public static func run(_ executable: URL, _ arguments: [String], limit: Double = 60) async throws -> String {
             try await withCheckedThrowingContinuation { done in
-                DispatchQueue.global().async {
-                    done.resume(with: Result { try wait(executable, arguments, limit: limit) })
-                }
+                Thread { done.resume(with: Result { try wait(executable, arguments, limit: limit) }) }.start()
             }
         }
 
@@ -46,11 +44,10 @@
 
         private static func exited(_ process: Process, within limit: Double) throws -> Bool {
             try process.run()
-            let pid = process.processIdentifier
-            let stop = DispatchWorkItem { kill(pid, SIGKILL) }
-            DispatchQueue.global().asyncAfter(deadline: .now() + limit, execute: stop)
+            let deadline = Date.now.addingTimeInterval(limit)
+            while process.isRunning && Date.now < deadline { Thread.sleep(forTimeInterval: 0.02) }
+            if process.isRunning { kill(process.processIdentifier, SIGKILL) }
             process.waitUntilExit()
-            stop.cancel()
             return process.terminationReason == .exit
         }
 

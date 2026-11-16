@@ -192,7 +192,7 @@ impl Hub {
             None => (items.len().saturating_sub(before), items.len()),
         };
         Ok(Slice {
-            items: items[from..to.max(from)].to_vec(),
+            items: items.get(from..to.max(from)).unwrap_or_default().to_vec(),
             skipped_before: from,
             skipped_after: items.len() - to.max(from),
             turn: live.chat.turn.clone(),
