@@ -1,5 +1,6 @@
 pub mod attach;
 pub mod home;
+pub mod locked;
 pub mod menu;
 pub mod persona;
 pub mod settings;
@@ -17,6 +18,8 @@ pub(crate) fn routes(b: RouterBuilder) -> RouterBuilder {
         .route(attach::attach)
         .route(persona::persona)
         .route(persona::action)
+        .route(locked::pairing)
+        .route(locked::reset_layout)
 }
 
 fn core(mut screen: Value) -> Value {

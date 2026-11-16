@@ -15,7 +15,8 @@ internal struct MenuHost: View {
         NavigationStack(path: Binding(get: { menu.path }, set: { menu.send(.path($0)) })) {
             ScrollView {
                 VStack(spacing: 12) {
-                    ForEach(rows, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
+                    ForEach(rows.filter { !$0.locked }, id: \.id) { SlotView(store: store, node: $0, compact: compact) }
+                    ActionRow(symbol: "arrow.counterclockwise", title: "Reset layout") { store.send(.layout(.reset)) }
                 }
                 .padding(12)
             }
