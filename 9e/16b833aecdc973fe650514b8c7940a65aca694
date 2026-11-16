@@ -1,0 +1,66 @@
+Decided: merge origin/staging; hub.rs keeps staging's Proposed proposals and this PR's updates map side by side
+Because: crates/cooee-server/src/hub.rs:239
+Decided: mcp.rs lists both update_persona and skill for a persona's thread and routes each to its own endpoint
+Because: crates/cooee-server/src/mcp.rs:407
+Rejected: folding update_persona into staging's Proposed and raise() — its cards say decline, this PR's tests and card say deny; a refactor outside a merge round
+Check: crates/cooee/tests/mcp.rs expects both update_persona and skill in the tool list
+Owner: Same feature; this round catches up with staging, which added persona skills next to it.
+
+Decided: merge origin/staging; a thread carries both setup (#270) and routine (#75), and the agent tool list has update_persona beside create_routine
+Because: crates/cooee-server/src/mcp.rs:441
+Decided: a routine's new_thread run starts with setup false
+Because: crates/cooee-server/src/lib.rs:956
+Rejected: copy the origin chat's setup flag into a routine run — a scheduled run is not an interview with the owner
+Check: crates/cooee/tests/mcp.rs expects update_persona, create_routine and skill in that order
+Owner: Same feature; this round catches up with staging, which added routines next to it.
+
+Decided: merge origin/staging; the persona card answer arm stays beside staging's new shed_approve(&live, &terminal, ..) signature
+Because: crates/cooee-server/src/hub.rs:1713
+Decided: ThreadsClient keeps start's setup argument beside staging's new room and seat closures
+Because: apple/Sources/CooeeFeatures/Clients.swift:31
+Rejected: re-run CI without merging — the PR was CONFLICTING with staging, and the red checks were runner cancellations plus an unrelated ui timing test
+Check: apple/Sources/CooeeApp/Live.swift wires start with setup, and room and seat as staging wrote them
+Owner: Same feature; this round catches up with staging, which added rooms and machine checks.
+
+Decided: merge origin/staging again (clean) and re-run CI; no code change this round
+Because: crates/cooee-server/src/hub.rs:270
+Rejected: a code fix for the FAIL — the red checks at 28067ba were runner shutdowns (cancelled), not test failures
+Rejected: committing the previous lane's wip snapshot — it held only local log files, which never go in git
+Check: CI at the new head is green, including build (generic/platform=iOS Simulator)
+Owner: Same feature; this round only catches up with staging and re-runs the cancelled checks.
+
+Decided: merge origin/staging; PersonaFeature's act() sends both save and chat through save(&state, chat:)
+Because: apple/Sources/CooeeFeatures/PersonaFeature.swift:103
+Decided: PersonaActions keeps chat beside staging's agent and browse; Root's actions builder wires all three
+Because: apple/Sources/CooeeUI/Root.swift:172
+Rejected: a code fix for the machines test FAIL — cooee-machines is untouched by this PR and the test passes 5 of 5 locally at this head
+Check: the Set up by chat / Refine by chat link still sends .chat, and the persona pickers from staging still work
+Owner: Same feature; this round catches up with staging, which added persona agent, model and folder pickers.
+
+Decided: merge origin/staging; setup re-applied where staging split hub.rs, and the View button uses staging's persona delegate
+Because: crates/cooee-server/src/hub/cards.rs:56
+Rejected: keep the PR's viewPersona delegate beside staging's persona(id) — two ways to open the same sheet
+Check: apple/Sources/CooeeUI/ChatScreen.swift sends .delegate(.persona(id)) for View; PersonaScreen wires chat
+Owner: Same feature; this round catches up with staging, which split the server hub, removed the web client and moved persona screens.
+
+Decided: merge origin/staging; this PR's docs/api.md lines move into staging's split docs word for word
+Because: docs/personas.md:19
+Decided: setup on POST /threads and Row lives in docs/chat.md, the endpoint in docs/mcp.md
+Because: docs/chat.md:40
+Rejected: keep docs/api.md alive — staging deleted it (#444), so it would be a second home for the same API
+Rejected: committing the previous lane's wip snapshot — it held only local log files
+Check: docs/chat.md, docs/personas.md and docs/mcp.md carry setup, update_persona and /mcp/agent/persona
+Owner: Same feature; this round catches up with staging, which split the API doc into one doc per area.
+
+Decided: merge origin/staging; the persona sheet keeps staging's instructions view and this PR's chat link below it
+Because: apple/Sources/CooeeUI/BlockPersonaEdit.swift:117
+Rejected: drop staging's instructions view for the old paragraph — that would undo #435's profile fallback
+Check: the persona sheet shows Instructions, then Set up by chat instead / Refine by chat
+Owner: Same feature; this round catches up with staging, where an empty persona's instructions come from its profile.
+
+Decided: move this PR's three setup-chat tests into same-file extensions of ClientTests, AppFeatureTests and ChatFeatureTests
+Because: apple/Tests/CooeeFeaturesTests/AppFeatureTests.swift:172
+Rejected: raise SwiftLint's type_body_length — the rule caps type size at 150 lines and is not this issue's to change
+Rejected: committing the previous lane's wip snapshot — it held only local log files
+Check: SwiftLint passes in the apple job; the three tests still run (refineByChatOpensASetupChat, aSetupChatStartsInSetupMode, aSetupChatSaysSo)
+Owner: Same feature; this round only moves three tests so the Apple lint passes.
