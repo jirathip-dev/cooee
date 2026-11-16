@@ -1,0 +1,5 @@
+Decided: merged origin/staging with #177; the panel's Edit and New chat send #177's persona and start delegates, and this PR's edit and newChat delegates are deleted.
+Because: apple/Sources/CooeeFeatures/ChatPanel.swift:43
+Rejected: keeping both pairs of delegates — two ways to open the persona sheet or start a chat for one meaning.
+Check: ChatPanelTests still sees Edit open the persona sheet and New chat start one with the persona; apple-check, line cap and arch-check are green.
+Owner: The branch is up to date with staging again; the … panel works as before, now through the same paths as the rest of the app.
