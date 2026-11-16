@@ -1,6 +1,6 @@
 # Accounts: the credential helper contract
 
-cooee owns its accounts: their folders, their sign-in (the sheet, `docs/architecture.md`) and this helper. A fleet
+cooee owns its accounts: their folders, their sign-in (the sheet, `docs/sign-ins.md`) and this helper. A fleet
 engine (herdsman) gets an account's login environment from `cooee accounts env` and lists them with
 `cooee accounts ls --json`; it never reads cooee's folders. Every CLI keeps its own login: cooee never stores a
 token, and a folder account's token is never read or printed.
@@ -11,7 +11,7 @@ over herdsman's own `[accounts]`; herdsman falls back to its folder source when 
 
 ## Providers
 
-One table, the config's `[[providers]]` `home` variable (`docs/architecture.md`, Configuration):
+One table, the config's `[[providers]]` `home` variable (`docs/configuration.md`):
 
 | provider | variable |
 |---|---|

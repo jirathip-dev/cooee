@@ -72,8 +72,16 @@ cmds() {
 crate crates/cooee-core/src "cooee's core: the model and its files. No HTTP." \
   accounts blocks chat config devices login providers root shed store
 routes crates/cooee-server/src/routes
-crate crates/cooee-server/src "cooee's HTTP server: the native app's JSON API (docs/api.md)." \
+crate crates/cooee-server/src "cooee's HTTP server: the native app's JSON API (docs/README.md)." \
   gate http hub layout login look manage pairing passkey plugin push root routes routines screens serve themes
 cmds crates/cooee/src/cmd
 flat crates/cooee/tests/support
+# today: README.md's list between its markers, from the `## Today` bullets of docs/*.md in file-name order, their ../ links made the README's.
+for f in $(printf '%s\n' docs/*.md | LC_ALL=C sort); do
+  awk '/^## / { on = $0 == "## Today"; next } on && /^- / { gsub(/\]\(\.\.\//, "]("); print }' "$f"
+done >README.md.today
+awk -v f=README.md.today '/^<!-- \/today -->$/ { while ((getline l < f) > 0) print l; skip = 0 } !skip { print } /^<!-- today:/ { skip = 1 }' \
+  README.md >README.md.gen
+mv README.md.gen README.md
+rm README.md.today
 cargo update --workspace --quiet

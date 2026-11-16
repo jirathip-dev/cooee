@@ -5,10 +5,13 @@ frozen = [
   "apple/UITests/LiveUITests.swift",
   "crates/cooee-core/src/root.rs",
   "crates/cooee-server/src/root.rs",
+  "docs/api.md",
+  "docs/architecture.md",
   "justfile",
 ]
 generated = [
   "Cargo.lock",
+  "README.md",
   "crates/cooee-core/src/lib.rs",
   "crates/cooee-server/src/lib.rs",
   "crates/cooee-server/src/routes/mod.rs",

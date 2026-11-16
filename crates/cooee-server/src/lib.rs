@@ -1,4 +1,4 @@
-//! cooee's HTTP server: the native app's JSON API (docs/api.md).
+//! cooee's HTTP server: the native app's JSON API (docs/README.md).
 
 #![forbid(unsafe_code)]
 
