@@ -1,0 +1,5 @@
+Decided: merged origin/staging into issue-213; it merged with no conflicts
+Because: "Impl: the apple CI job; simulator screenshots matching the approved frames"
+Rejected: none
+Check: cargo plugins and screens tests and the line cap pass at the merge head
+Owner: The workflow map branch is brought up to date with staging; nothing in it changed.
