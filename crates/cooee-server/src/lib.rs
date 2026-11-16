@@ -551,7 +551,10 @@ fn recipe(
     };
     recipe.launch.pick(logins.picks(&agent, &picked.1)?);
     (recipe.model, recipe.effort) = picked;
-    if let Some(p) = persona {
+    if let Some(mut p) = persona {
+        if p.instructions.trim().is_empty() {
+            p.instructions = std::mem::take(&mut recipe.instructions);
+        }
         recipe.instructions = p.brief(data);
         recipe.profile = p.id;
         recipe.machine = p.machine;
