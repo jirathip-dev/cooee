@@ -25,7 +25,7 @@ internal struct LiveTests {
         var items: [APIItem] = []
         for _ in 0..<100 where !items.contains(where: { $0.kind == "agent" }) {
             items = try await client.messages(id).items
-            try await Task.sleep(for: .milliseconds(100))
+            try await ContinuousClock().sleep(for: .milliseconds(100))
         }
         #expect(items.map(\.kind) == ["you", "agent"])
         #expect(items.last?.text == "streamed 3 words")

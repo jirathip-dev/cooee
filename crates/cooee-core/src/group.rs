@@ -1,6 +1,6 @@
 //! Signals to the process group a child leads (#336).
 
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, Stdio};
 
 /// Sends `sig` (`-TERM`, `-KILL`) to the process group `child` leads; whether it did. Refuses pid 1 or below, a
 /// child already reaped (its pid may be reused) and one that leads no group of its own (it shares the caller's).
@@ -9,7 +9,7 @@ pub fn signal(child: &mut Child, sig: &str) -> bool {
     if child.id() <= 1 || !matches!(child.try_wait(), Ok(None)) || !leads_group(&pid) {
         return false;
     }
-    Command::new("kill")
+    crate::runner::command("kill")
         .args([sig, "--", &format!("-{pid}")])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -18,7 +18,7 @@ pub fn signal(child: &mut Child, sig: &str) -> bool {
 }
 
 fn leads_group(pid: &str) -> bool {
-    Command::new("ps")
+    crate::runner::command("ps")
         .args(["-o", "pgid=", "-p", pid])
         .stderr(Stdio::null())
         .output()

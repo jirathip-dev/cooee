@@ -27,7 +27,7 @@ impl Hub {
         let mut agents = lock(&self.agents);
         agents.1 = at;
         match fresh {
-            Err(e) if agents.0.is_ok() => eprintln!("cooee: kept the agent list: {e}"),
+            Err(e) if agents.0.is_ok() => cooee_core::note!("cooee: kept the agent list: {e}"),
             fresh => agents.0 = fresh,
         }
     }
@@ -78,7 +78,7 @@ impl Hub {
     ) -> Result<String, HubError> {
         let started = self.start_in(agent, folder, (text, random_id), recipe);
         if let Some((file, _)) = &recipe.launch.secrets {
-            let _ = fs::remove_file(file);
+            fs::remove_file(file).ok();
         }
         started
     }
@@ -150,7 +150,7 @@ impl Hub {
             let done =
                 done.and_then(|()| hub.connect(&id, (fresh, true), &text, &random_id, &recipe));
             if let Some((file, _)) = &recipe.launch.secrets {
-                let _ = fs::remove_file(file);
+                fs::remove_file(file).ok();
             }
             let mut l = lock(&live);
             match done {
@@ -168,7 +168,7 @@ impl Hub {
             }
             let turn = l.chat.turn.clone();
             if let Err(e) = l.publish(&hub, vec![Change::State(turn)]) {
-                eprintln!("cooee: {e}");
+                cooee_core::note!("cooee: {e}");
             }
         });
         Ok(())
@@ -320,7 +320,7 @@ impl Hub {
         if let Some(s) = self.shed.ready(&terminal)?
             && let Err(e) = self.settle(id, &terminal, &s)
         {
-            eprintln!("cooee: {id}: model: {e}");
+            cooee_core::note!("cooee: {id}: model: {e}");
         }
         self.send_after(id, text, random_id, &[], &recipe.instructions)?;
         Ok(())

@@ -480,7 +480,11 @@ fn a_claude_profiles_settings_folder_is_its_config_folder_and_its_hook_refuses_a
     .unwrap();
     let mut provider = cooee_core::provider::defaults().remove(0);
     provider.agent = "fake-acp".to_owned();
-    (provider.login, provider.status) = (vec!["true".to_owned()], vec!["true".to_owned()]);
+    (provider.login, provider.status, provider.usage) = (
+        vec!["true".to_owned()],
+        vec!["true".to_owned()],
+        vec!["true".to_owned()],
+    );
     let mut extra = "[[providers]]\n".to_owned();
     for (k, v) in serde_json::to_value(&provider)
         .unwrap()

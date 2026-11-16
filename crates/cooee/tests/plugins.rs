@@ -95,18 +95,20 @@ fn answer(
         && let Some((code, v)) = choice.lock().unwrap().take()
     {
         let mut s = r.into_inner();
-        let _ = write!(
+        write!(
             s,
             "HTTP/1.0 {code} X\r\nContent-Type: application/json\r\n\r\n{v}"
-        );
+        )
+        .ok();
         return;
     }
     if path == "/beats" {
         let mut s = r.into_inner();
-        let _ = write!(
+        write!(
             s,
             "HTTP/1.0 200 OK\r\nContent-Type: text/event-stream\r\n\r\n"
-        );
+        )
+        .ok();
         while s.write_all(b": beat\n\n").is_ok() {
             thread::sleep(Duration::from_millis(50));
         }
@@ -123,7 +125,7 @@ fn answer(
         _ => ("application/json", json!({ "path": path }).to_string()),
     };
     let mut s = r.into_inner();
-    let _ = write!(s, "HTTP/1.0 200 OK\r\nContent-Type: {kind}\r\n\r\n{text}");
+    write!(s, "HTTP/1.0 200 OK\r\nContent-Type: {kind}\r\n\r\n{text}").ok();
 }
 
 const TOKEN_A: &str = "token-a-0123456789abcdef";
@@ -868,6 +870,32 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
 }
 
 #[test]
+fn plugin_check_knows_swipe_menu_and_refresh() {
+    let s = setup("additions-check");
+    let act = json!({ "label": "Archive", "action": "archive", "tone": "bad" });
+    let good = json!({ "type": "screen", "title": "Queue", "refresh": true,
+        "actions": [{ "label": "More", "icon": "more", "menu": [act] }], "blocks": [
+        { "type": "list", "rows": [{ "type": "row", "title": "#1", "swipe": [act], "menu": [act] }] },
+        { "type": "card", "title": "Merge?", "menu": [act] } ] });
+    let (ok, said) = checked(&s, &good);
+    assert!(ok, "{said}");
+    let bad = json!({ "type": "screen", "title": "Queue", "refresh": "yes", "blocks": [
+        { "type": "row", "title": "#1", "swipe": [{ "action": "archive" }], "menu": { "label": "Archive" } },
+        { "type": "card", "menu": [{ "label": "Pin", "tone": "red" }] } ] });
+    let (ok, said) = checked(&s, &bad);
+    assert!(!ok);
+    assert_eq!(
+        said.lines().skip(1).map(str::trim).collect::<Vec<_>>(),
+        [
+            "$.blocks[0].swipe[0].label: is required",
+            "$.blocks[0].menu: an object is not array",
+            "$.blocks[1].menu[0].tone: \"red\" is not one of \"ok\", \"warn\", \"bad\", \"info\", \"mute\", \"accent\", \"working\", \"needs\", \"done\", \"fail\", \"idle\"",
+            "$.refresh: \"yes\" is not boolean",
+        ]
+    );
+}
+
+#[test]
 fn a_hanging_plugin_answer_never_holds_another_thread() {
     let s = setup("plugin-hang");
     let id = new_thread(&s, "Say hello");
@@ -925,7 +953,7 @@ fn a_hung_plugin_holds_only_its_own_calls() {
         for _ in 0..600 {
             let tx = tx.clone();
             scope.spawn(move || {
-                let _ = tx.send(call());
+                tx.send(call()).ok();
             });
         }
         let busy: Vec<String> = answers.iter().take(592).collect();

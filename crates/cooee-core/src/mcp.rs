@@ -2,7 +2,7 @@
 //! variables and headers hold. A value is never written down: only `secret:<NAME>` ([`crate::secrets`]) or
 //! `env:<NAME>` (the Mac's environment), resolved in memory when a thread's proxy starts.
 
-use std::{collections::BTreeMap, env, fs, io, path::Path};
+use std::{collections::BTreeMap, fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
 
@@ -230,7 +230,7 @@ pub type Vars = Vec<(String, String)>;
 pub fn check(servers: &[Server]) -> Result<(), String> {
     for (i, s) in servers.iter().enumerate() {
         s.check()?;
-        if servers[..i].iter().any(|o| o.name == s.name) {
+        if servers.iter().take(i).any(|o| o.name == s.name) {
             return Err(format!(
                 "mcp {}: there are two servers of that name",
                 s.name
@@ -303,7 +303,9 @@ pub fn set_secret(data: &Path, name: &str, value: &str) -> io::Result<()> {
 /// Names what is missing, never a value.
 pub fn resolve(r: &str, data: &Path) -> Result<String, String> {
     if let Some(n) = r.strip_prefix("env:") {
-        return env::var(n).map_err(|_| format!("env:{n} isn't set on the Mac"));
+        return crate::env_var(n)
+            .and_then(|v| v.into_string().ok())
+            .ok_or_else(|| format!("env:{n} isn't set on the Mac"));
     }
     let n = r.strip_prefix("secret:").ok_or("not a reference")?;
     crate::secrets::get(data, n)

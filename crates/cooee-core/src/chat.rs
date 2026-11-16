@@ -272,7 +272,11 @@ impl Chat {
 
     fn put(&mut self, item: Item) -> Item {
         match self.items.binary_search_by_key(&item.id, |i| i.id) {
-            Ok(at) => self.items[at].clone_from(&item),
+            Ok(at) => {
+                if let Some(i) = self.items.get_mut(at) {
+                    i.clone_from(&item);
+                }
+            }
             Err(at) => self.items.insert(at, item.clone()),
         }
         item
@@ -298,14 +302,16 @@ impl Chat {
     /// Replaces item `id`'s body; `None` when there is no such item.
     pub fn update(&mut self, id: u64, seq: u64, f: impl FnOnce(&mut Body)) -> Option<Item> {
         let at = self.items.binary_search_by_key(&id, |i| i.id).ok()?;
-        let item = &mut self.items[at];
+        let item = self.items.get_mut(at)?;
         f(&mut item.body);
         item.seq = item.seq.max(seq);
         Some(item.clone())
     }
 
     fn find(&self, f: impl Fn(&Body) -> bool) -> Option<u64> {
-        self.items[self.start.min(self.items.len())..]
+        self.items
+            .get(self.start..)
+            .unwrap_or_default()
             .iter()
             .rev()
             .find(|i| f(&i.body))
@@ -320,7 +326,10 @@ impl Chat {
 
     fn end(&mut self, at: u64, seq: u64, status: Option<&str>) -> Vec<Change> {
         self.turn.text.clear();
-        let open: Vec<u64> = self.items[self.start.min(self.items.len())..]
+        let open: Vec<u64> = self
+            .items
+            .get(self.start..)
+            .unwrap_or_default()
             .iter()
             .filter(|i| matches!(&i.body, Body::Tool { ended: None, .. }))
             .map(|i| i.id)
@@ -571,7 +580,7 @@ mod tests {
                 })
             })
             .collect();
-        let at = std::time::Instant::now();
+        let at = crate::clock::instant();
         let chat = Chat::from_versions(versions);
         let took = at.elapsed();
         assert_eq!((chat.items.len(), chat.seq()), (1000, 30_000));

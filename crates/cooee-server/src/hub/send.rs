@@ -105,7 +105,7 @@ impl Hub {
         q: Queued,
         before: &str,
     ) -> Result<Item, HubError> {
-        let start = Instant::now();
+        let start = cooee_core::clock::instant();
         let (terminal, machine, ended, handover, prompt) = {
             let mut l = lock(live);
             l.sending.push(q.random_id.clone());
@@ -156,7 +156,7 @@ impl Hub {
                 },
             );
             if let Err(e) = l.publish(self, vec![Change::Item(item)]) {
-                eprintln!("cooee: {e}");
+                cooee_core::note!("cooee: {e}");
             }
         }
         let stored = sent.and_then(|()| self.store_sent(&mut l, q, start, &handover));

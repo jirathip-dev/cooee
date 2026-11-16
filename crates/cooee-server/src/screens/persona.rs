@@ -101,8 +101,10 @@ async fn fill(cx: &Cx, id: String) -> Result<Value, HubError> {
             .collect();
         let notes = personas::notes(&data, &p.id);
         let mut screen: Value = serde_json::from_str(BUNDLED).map_err(refused)?;
-        screen["title"] = json!(p.name);
-        for block in screen["blocks"].as_array_mut().into_iter().flatten() {
+        if let Some(o) = screen.as_object_mut() {
+            o.insert("title".to_owned(), json!(p.name));
+        }
+        for block in screen.get_mut("blocks").and_then(Value::as_array_mut).into_iter().flatten() {
             match block["type"].as_str() {
                 Some("routines") => block["rows"] = json!(routines),
                 Some("places") => block["rows"] = json!(places),

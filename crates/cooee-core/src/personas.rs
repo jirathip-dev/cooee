@@ -145,7 +145,7 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
         let read = fs::read_to_string(&file).map_err(|e| e.to_string());
         match read.and_then(|t| from_file(id, &t).map_err(|e| e.message().to_owned())) {
             Ok(p) => out.push(p),
-            Err(e) => eprintln!("cooee: {}: {e}", file.display()),
+            Err(e) => crate::note!("cooee: {}: {e}", file.display()),
         }
     }
     for p in profiles::list(config, data, |_| None) {
@@ -282,7 +282,7 @@ pub fn save(config: &Path, data: &Path, mut p: Persona) -> io::Result<Persona> {
     })?;
     let mut text = String::new();
     for (k, v) in fields.as_object().into_iter().flatten() {
-        let _ = writeln!(text, "{k} = {v}");
+        writeln!(text, "{k} = {v}").ok();
     }
     fs::create_dir_all(config.join("personas"))?;
     fs::write(config.join("personas").join(format!("{}.toml", p.id)), text)?;
@@ -335,12 +335,16 @@ pub fn notes(data: &Path, id: &str) -> Vec<Note> {
         .collect();
     if notes.iter().any(|n| n.id.is_empty()) {
         for i in 0..notes.len() {
-            if notes[i].id.is_empty() {
-                notes[i].id = fresh(&notes, &notes[i]);
+            let id = match notes.get(i) {
+                Some(n) if n.id.is_empty() => fresh(&notes, n),
+                _ => continue,
+            };
+            if let Some(n) = notes.get_mut(i) {
+                n.id = id;
             }
         }
         if let Err(e) = write(data, id, &notes) {
-            eprintln!("cooee: persona {id}: notes: {e}");
+            crate::note!("cooee: persona {id}: notes: {e}");
         }
     }
     notes
@@ -437,11 +441,11 @@ impl Persona {
     pub fn brief(&self, data: &Path) -> String {
         let mut notes = String::from("Your notes (edit them with your remember tool):");
         for n in self::notes(data, &self.id) {
-            let _ = write!(notes, "\n- [{}] {}", n.id, n.text);
+            write!(notes, "\n- [{}] {}", n.id, n.text).ok();
         }
         let mut skills = String::from("Your skills (read one with cooee's skill tool):");
         for s in skills::list(data, &self.id).iter().take(skills::MAX) {
-            let _ = write!(skills, "\n- {}: {}", s.name, s.description);
+            write!(skills, "\n- {}: {}", s.name, s.description).ok();
         }
         let plain = if self.style == Style::Chat { PLAIN } else { "" };
         let parts = [

@@ -6,7 +6,8 @@ The ADR: [architecture/layout-blocks](architecture/layout-blocks/adr.md.
 
 The owner's `layout.json` beside `config.toml`, read every second. The server serves only a layout that passes the
 app's rules (`cooee layout check <file>` runs the same ones): with no file, or no good one yet, the app's bundled
-default (`apple/Sources/CooeeUI/Default/layout.json`). A bad write changes nothing served.
+default (`apple/Sources/CooeeUI/Default/layout.json`). A bad write changes nothing served. Beside its `place`, a
+node may name a `transition`: `push` (the default), `sheet`, `fade` or `none`, how the app brings it on screen.
 
 | Call | Body | Answer |
 |---|---|---|

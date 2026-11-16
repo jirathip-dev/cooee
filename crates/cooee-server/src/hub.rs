@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError, atomic::AtomicBool, mpsc},
     thread,
-    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, UNIX_EPOCH},
 };
 
 use cooee_core::{
@@ -150,7 +150,9 @@ fn glance(live: &Live) -> Glance {
             .unwrap_or_else(|| text.lines().last().unwrap_or("").chars().take(80).collect()),
         at: last.map_or(0, |i| i.at),
         speaker: last.map(|i| i.speaker.clone()).unwrap_or_default(),
-        unseen: items[from..]
+        unseen: items
+            .get(from..)
+            .unwrap_or_default()
             .iter()
             .filter(|i| !matches!(i.body, Body::You { .. }))
             .count(),
@@ -315,7 +317,7 @@ pub struct Hub {
 }
 
 pub(crate) fn now() -> u64 {
-    SystemTime::now()
+    cooee_core::clock::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
@@ -417,7 +419,7 @@ impl Live {
         self.trim(at);
         self.ring.push_back((at, out.clone()));
         if let Some(tx) = &self.tx {
-            let _ = tx.send(out);
+            tx.send(out).ok();
         }
     }
 
@@ -527,7 +529,7 @@ impl Hub {
         thread::spawn(move || {
             for room in next {
                 if let Err(e) = worker.take_turn(&room) {
-                    eprintln!("cooee: room {room}: {e}");
+                    cooee_core::note!("cooee: room {room}: {e}");
                 }
             }
         });
@@ -536,15 +538,15 @@ impl Hub {
         let asker = Arc::clone(&hub);
         thread::spawn(move || {
             loop {
-                let began = Instant::now();
+                let began = cooee_core::clock::instant();
                 asker.refresh_served();
-                thread::sleep(SERVED_EVERY.saturating_sub(began.elapsed()));
+                cooee_core::clock::sleep(SERVED_EVERY.saturating_sub(began.elapsed()));
             }
         });
         let ticker = Arc::clone(&hub);
         thread::spawn(move || {
             loop {
-                thread::sleep(TICK);
+                cooee_core::clock::sleep(TICK);
                 ticker.refresh(now(), false);
                 ticker.watch(now());
                 ticker.unload(now());
@@ -623,7 +625,7 @@ impl Hub {
             let got = self.shed.get(&terminal);
             let mut live = lock(&live);
             if let Err(e) = self.load(&mut live) {
-                eprintln!("cooee: {e}");
+                cooee_core::note!("cooee: {e}");
                 continue;
             }
             let changes = match got {
@@ -643,7 +645,7 @@ impl Hub {
                 Err(e) => return Err(e),
             };
             if let Err(e) = live.publish(self, changes) {
-                eprintln!("cooee: {e}");
+                cooee_core::note!("cooee: {e}");
             }
         }
         Ok(since)
@@ -671,7 +673,7 @@ impl Hub {
             ..Thread::default()
         };
         if let Err(e) = self.store.save(&meta) {
-            eprintln!("cooee: {e}");
+            cooee_core::note!("cooee: {e}");
             return None;
         }
         let live = Arc::new(Mutex::new(Live::new(meta, Chat::default())));
@@ -693,7 +695,7 @@ impl Hub {
             };
             self.remove(&id);
             if let Err(e) = self.store.remove(&id) {
-                eprintln!("cooee: {e}");
+                cooee_core::note!("cooee: {e}");
             }
         }
     }
@@ -719,7 +721,7 @@ fn short(folder: &Path) -> String {
     if folder.as_os_str().is_empty() {
         return "scratch".to_owned();
     }
-    let home = std::env::var_os("HOME").map(PathBuf::from);
+    let home = cooee_core::env_var("HOME").map(PathBuf::from);
     let homes = home
         .iter()
         .flat_map(|h| [h.clone(), h.canonicalize().unwrap_or_default()]);
