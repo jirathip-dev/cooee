@@ -1,0 +1,8 @@
+Decided: delete the committed merge leftovers login.rs.orig and machine.rs.orig
+Decided: merge origin/staging; #417's "no instructions takes its profile's" happens at migration: an empty persona INSTRUCTIONS.md gets its profile's text
+Because: crates/cooee-core/src/migrate.rs:371
+Rejected: keeping staging's runtime personas/lead.toml check in tests/profiles.rs — nothing reads personas/ after migration, and agent.toml can't name a profile
+Decided: the branch's own #203 hits move to note!/say!, .ok(), get/get_mut and env_var; #202 test temp dirs go through scratch::owned
+Because: crates/cooee-core/src/agents.rs:176
+Check: crates/cooee/tests/personas.rs a_migrated_persona_without_instructions_takes_its_profiles migrates an old personas/ + profiles/ tree on start
+Owner: brought up to date with staging; an old persona without its own instructions keeps its profile's when converted
