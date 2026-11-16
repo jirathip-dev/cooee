@@ -120,9 +120,17 @@ extension Client {
         case "text": return .text(try decoder.decode(Chunk.self, from: data).text)
         case "state": return .state(try decoder.decode(Turn.self, from: data))
         case "queue": return .queue(try decoder.decode([Queued].self, from: data))
+        case "reset": return .reset
+        default: return try room(event, data)
+        }
+    }
+
+    private static func room(_ event: String, _ data: Data) throws -> StreamEvent? {
+        let decoder = JSONDecoder()
+        switch event {
         case "room-turn": return .roomTurn(try decoder.decode(Seat.self, from: data).member)
         case "room-stop": return .roomStop(try decoder.decode(Stop.self, from: data).reason)
-        case "reset": return .reset
+        case "room-ask": return .roomAsk(try decoder.decode(RoomAsk.self, from: data))
         default: return nil
         }
     }

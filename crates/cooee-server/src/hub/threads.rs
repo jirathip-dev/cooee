@@ -206,6 +206,7 @@ impl Hub {
             }),
             queue: live.meta.queue.clone(),
             waiting: items.iter().find(|i| waits(&i.body)).cloned(),
+            asks: live.asks.open.clone(),
         })
     }
 
