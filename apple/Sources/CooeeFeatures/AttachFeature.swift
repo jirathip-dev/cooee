@@ -8,6 +8,7 @@ public struct AttachFeature: Sendable {
         public let server: Server
         public let persona: APIPersona
         public let plugin: PluginRow
+        public var screen: JSONValue?
         public var attaching = false
         public var error: String?
 
@@ -19,6 +20,8 @@ public struct AttachFeature: Sendable {
     }
 
     public enum Action: Sendable {
+        case task
+        case loaded(JSONValue)
         case attach
         case failed(String)
         case delegate(Delegate)
@@ -36,6 +39,17 @@ public struct AttachFeature: Sendable {
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
+            case .task:
+                let (plugins, server) = (plugins, state.server)
+                let path = "/screens/plugins/\(state.plugin.name)/attach?persona=\(state.persona.id)"
+                return .run { send in
+                    await send(.loaded(try await plugins.screen(server, .core, path)))
+                } catch: { error, send in
+                    await send(.failed(error.localizedDescription))
+                }
+            case .loaded(let screen):
+                state.screen = screen
+                return .none
             case .attach:
                 state.attaching = true
                 state.error = nil
