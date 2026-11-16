@@ -1,0 +1,90 @@
+$ git rev-parse HEAD
+fb8b0afee4b02d55117c04a3024e82f3d2fa1c6b
+exit=0
+$ ls .drover/verify.md
+ls: .drover/verify.md: No such file or directory
+exit=1
+$ git diff --stat origin/staging...HEAD
+ .github/workflows/apple.yml         | 8 +++++++-
+ apple/UITests/MacSetupUITests.swift | 1 +
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+exit=0
+$ gh run list --repo jirathip-dev/cooee --workflow apple.yml --branch issue-459 --limit 10
+queued		mac-setup: the setup test quits the Mac app so the self-update finds version 2 (#459)	apple	issue-459	pull_request	43785189857	10m36s	2026-11-16T01:15:32Z
+completed	cancelled	mac-setup: the setup test quits the Mac app so the self-update finds version 2 (#459)	apple	issue-459	pull_request	43784983238	2m0s	2026-11-16T01:13:33Z
+completed	success	mac-setup: the setup test quits the Mac app so the self-update finds version 2 (#459)	apple	issue-459	pull_request	43781794620	32m3s	2026-11-16T00:40:45Z
+exit=0
+$ drover pr cooee 459 --json | (mac-setup checks)
+mac-setup COMPLETED SKIPPED https://github.com/jirathip-dev/cooee/actions/runs/43784983238/job/133030503786
+mac-setup COMPLETED SKIPPED https://github.com/jirathip-dev/cooee/actions/runs/43785189857/job/133031140070
+exit=0
+--- round at head de18c12 ---
+$ git rev-parse HEAD
+de18c120675227a609bb311baf9ea489e34c113f
+exit=0
+$ ls .drover/verify.md
+ls: .drover/verify.md: No such file or directory
+exit=1
+$ git diff --stat origin/staging...HEAD
+ .github/workflows/apple.yml         | 8 +++++++-
+ apple/UITests/MacSetupUITests.swift | 6 ++++++
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+exit=0
+$ gh run list --repo jirathip-dev/cooee --workflow apple.yml --branch issue-459 --limit 10 --json databaseId,event,status,conclusion,headSha,createdAt
+[{"conclusion":"success","createdAt":"2026-11-16T06:40:54Z","databaseId":43818428844,"event":"pull_request","headSha":"de18c120675227a609bb311baf9ea489e34c113f","status":"completed"},{"conclusion":"success","createdAt":"2026-11-16T06:35:57Z","databaseId":43817846627,"event":"pull_request","headSha":"de18c120675227a609bb311baf9ea489e34c113f","status":"completed"},{"conclusion":"failure","createdAt":"2026-11-16T01:15:32Z","databaseId":43785189857,"event":"pull_request","headSha":"fb8b0afee4b02d55117c04a3024e82f3d2fa1c6b","status":"completed"},{"conclusion":"cancelled","createdAt":"2026-11-16T01:13:33Z","databaseId":43784983238,"event":"pull_request","headSha":"fb8b0afee4b02d55117c04a3024e82f3d2fa1c6b","status":"completed"},{"conclusion":"success","createdAt":"2026-11-16T00:40:45Z","databaseId":43781794620,"event":"pull_request","headSha":"69551e333660a32697777eef5204a17d35ebceef","status":"completed"}]
+exit=0
+$ gh run view 43818428844 --repo jirathip-dev/cooee --json jobs --jq '.jobs[]|[.name,.conclusion]|@tsv'
+scope	success
+mac-setup	skipped
+apple	success
+exit=0
+$ gh run list --repo jirathip-dev/cooee --workflow apple.yml --event workflow_dispatch --limit 5 --json databaseId,headBranch,headSha,status,conclusion,createdAt
+[{"conclusion":"success","createdAt":"2026-11-15T02:13:08Z","databaseId":43666724054,"headBranch":"issue-330","headSha":"393ddb5218ba1af492de56521a97634116d5f68e","status":"completed"},{"conclusion":"success","createdAt":"2026-11-15T02:10:54Z","databaseId":43666543588,"headBranch":"issue-330","headSha":"393ddb5218ba1af492de56521a97634116d5f68e","status":"completed"},{"conclusion":"success","createdAt":"2026-11-15T01:24:39Z","databaseId":43662963139,"headBranch":"issue-330","headSha":"393ddb5218ba1af492de56521a97634116d5f68e","status":"completed"},{"conclusion":"success","createdAt":"2026-11-15T00:25:26Z","databaseId":43658092397,"headBranch":"issue-330","headSha":"606cfa78fa75ff806e210ad92a9a119213b0e03e","status":"completed"},{"conclusion":"success","createdAt":"2026-11-14T14:37:42Z","databaseId":43605853833,"headBranch":"issue-330","headSha":"606cfa78fa75ff806e210ad92a9a119213b0e03e","status":"completed"}]
+exit=0
+$ git diff origin/staging...HEAD -- .github/workflows/apple.yml
+diff --git a/.github/workflows/apple.yml b/.github/workflows/apple.yml
+index 5895970ab..d5f8ef900 100644
+--- a/.github/workflows/apple.yml
++++ b/.github/workflows/apple.yml
+@@ -286,10 +286,16 @@ jobs:
+           defaults write com.jirathip.cooee SUHasLaunchedBefore -bool YES
+           defaults write com.jirathip.cooee SULastCheckTime -date "2000-01-01 00:00:00 +0000"
+           log="$HOME/Library/Logs/cooee-update.log"
++          pgrep -lf "$app/Contents/MacOS/Cooee" && { echo "the setup run's Cooee is still running"; exit 1; }
+           open "$app"
+           waited=0
+           until grep -q waiting "$log" 2>/dev/null; do
+-            [ "$waited" -lt 300 ] || { echo "no update staged"; cat "$RUNNER_TEMP/feed.log"; exit 1; }
++            [ "$waited" -lt 300 ] || {
++              echo "no update staged"
++              cat "$RUNNER_TEMP/feed.log"
++              log show --last 6m --style compact --predicate 'subsystem == "org.sparkle-project.Sparkle"'
++              exit 1
++            }
+             sleep 5
+             waited=$((waited + 5))
+           done
+exit=0
+--- verdict written: FAIL (form-only), infra: no mac-setup run at de18c12 ---
+$ gh run list --repo jirathip-dev/cooee --workflow apple.yml --branch issue-459 --event workflow_dispatch --json databaseId,headSha,conclusion
+[]
+exit=0
+$ gh run view 43818428844 --repo jirathip-dev/cooee --json headSha,jobs --jq ...
+de18c120675227a609bb311baf9ea489e34c113f
+scope	success
+mac-setup	skipped
+apple	success
+exit=0
+--- round at head a6554c6c28d15631c53effc05f2dd2f30877fee9 ---
+$ ios doctor
+ios doctor exit=0
+ios e2e exit=65
+ios curl exit=7 (7: nothing listens)
+ios e2e: dark look Failing test LiveIconUITests.testAvatarMenu (LiveScreensUITests.swift:118 XCTAssertFalse x4: Sign-ins/Devices/Machines/Plugins present); light look not run (e2e-light.xcresult missing)
+$ gh run download 43866709032 -n mac-setup-shots -D .verify/shots/mac
+mac shots run 43866709032 exit=0
+$ gh run view 43866709032 --repo jirathip-dev/cooee --json conclusion,jobs   (workflow_dispatch at a6554c6)
+failure
+mac-setup	failure   (step: the Mac updates itself through a local appcast; the phone stays paired, exit 65)
+scope	success
+apple	failure   (step: apple/e2e/run.sh, LiveIconUITests.testAvatarMenu and LiveWorkflowUITests.testWorkflowSheetHomeAndOthers)
