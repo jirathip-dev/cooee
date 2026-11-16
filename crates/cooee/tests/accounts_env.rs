@@ -254,8 +254,8 @@ fn ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age() 
     fs::write(
         f.folder("work").join("usage.txt"),
         "Current session: 12% used · resets 3pm (UTC)\n\
-         Current week (all models): 40% used · resets 2am (UTC)\n\
-         Current week (Fable): 0% used · resets 2am (UTC)\n",
+         Current week (all models): 40% used · resets 11:59pm (UTC)\n\
+         Current week (Fable): 0% used · resets 11:59pm (UTC)\n",
     )
     .unwrap();
     let usage = |f: &Fixture| {
