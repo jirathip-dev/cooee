@@ -1,0 +1,5 @@
+Decided: merge origin/staging; the branch's api.md and architecture.md text moves to the per-area docs (profiles.md, personas.md, routines.md)
+Because: docs/architecture/hot-files/adr.md:139
+Rejected: none
+Check: docs/profiles.md shows the agent folder layout and agent.toml; docs/api.md and docs/architecture.md stay deleted (frozen)
+Owner: brought up to date with staging; the agent folder docs now sit in the agent profiles page
