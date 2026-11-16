@@ -61,62 +61,6 @@ public struct MacConnect: View {
     }
 }
 
-public struct WideView<Detail: View>: View {
-    @Environment(\.look) private var look
-    private let screen: HomeScreen
-    private let pins: [Pin]
-    private let all: [Persona]
-    private let chats: [ListedChat]
-    private let selected: String?
-    private let actions: HomeActions
-    private let detail: Detail
-
-    public var body: some View {
-        let palette = look.palette
-        HStack(spacing: 0) {
-            VStack(spacing: 0) {
-                TopBar(title: screen.title, personas: all, actions: actions).padding(.top, look.still ? 34 : 8)
-                Scroller {
-                    HomeBlocks(
-                        screen: screen, pins: pins, chats: chats, selected: selected, actions: actions, wide: true
-                    )
-                    if !actions.others.isEmpty { OthersRow(titles: actions.others, open: actions.openOthers) }
-                }
-            }
-            .frame(width: 360).background(palette.card.opacity(look.style == .modern ? 0.45 : 0.8))
-            .overlay(alignment: .trailing) { Rectangle().fill(palette.line).frame(width: 1) }
-            detail.padding(.top, 12).frame(maxWidth: .infinity)
-        }
-        .foregroundStyle(palette.foreground)
-    }
-
-    public init(
-        screen: HomeScreen = .bundled,
-        pins: [Pin] = Fixtures.personas.map(Pin.persona),
-        all: [Persona] = Fixtures.personas,
-        chats: [ListedChat],
-        selected: String?,
-        actions: HomeActions,
-        @ViewBuilder detail: () -> Detail
-    ) {
-        self.screen = screen
-        self.pins = pins
-        self.all = all
-        self.chats = chats
-        self.selected = selected
-        self.actions = actions
-        self.detail = detail()
-    }
-}
-
-extension WideView where Detail == ChatView {
-    public init() {
-        self.init(chats: Fixtures.chats, selected: "t1", actions: HomeActions()) {
-            ChatView.streaming(back: false)
-        }
-    }
-}
-
 public struct MacChrome<Content: View>: View {
     private let content: Content
 
