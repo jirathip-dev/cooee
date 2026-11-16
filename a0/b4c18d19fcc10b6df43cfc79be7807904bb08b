@@ -1,0 +1,9 @@
+Decided: tap.open now pushes its path inside the sheet like tap.sheet; the app had ignored open taps
+Because: "tapping a state lists its issues (the Queue rows)"
+Decided: tap.focus travels as a path fragment that ScreenFeature splits off into state.focus, never sent to the server
+Because: "tapping a timer node opens that limit's row in the #184 Fleets settings sheet"
+Decided: layout is the design README's three rules in CooeeCore/Diagram, drawn with Canvas lines plus SwiftUI nodes, no web view
+Because: "The app draws it natively in all three styles (Modern, Terminal, Scene), no web view"
+Rejected: the Mac's issues-beside-the-map panel — a state tap pushes on every size; a second live screen in the sheet would cost a child store and break the apple line cap
+Check: DiagramFrames snapshots against docs/design/workflow-diagram PNGs; ScreenFeature focus test; plugin check on the new fixtures
+Owner: The workflow map draws natively with live counts; tapping a state shows its issues, tapping a timer opens its setting.
