@@ -1,4 +1,3 @@
-import CooeeFeatures
 import SwiftUI
 
 extension TerminalView {
@@ -31,7 +30,7 @@ extension TerminalView {
 }
 
 public struct SettingsWindow: View {
-    private let page: MenuFeature.Page
+    private let page: SettingsFrame
 
     public var body: some View {
         MacSettings(selected: page) {
@@ -44,7 +43,7 @@ public struct SettingsWindow: View {
         }
     }
 
-    public init(page: MenuFeature.Page) {
+    public init(page: SettingsFrame) {
         self.page = page
     }
 }

@@ -29,6 +29,18 @@ crate() {
   mv "$dir/lib.rs.gen" "$dir/lib.rs"
 }
 
+# flat DIR: DIR/mod.rs, a private `mod` line per module, all re-exported flat (the test support's index).
+flat() {
+  dir=$1 ms=$(modules "$1")
+  {
+    printf '#![allow(dead_code, reason = "each test file uses part of the support")]\n\n'
+    for m in $ms; do printf 'mod %s;\n' "$m"; done
+    printf '\n#[allow(unused_imports, reason = "a test file may use none of an area'"'"'s items")]\n'
+    printf 'pub use {%s};\n' "$(for m in $ms; do printf '%s::*, ' "$m"; done | sed 's/, $//')"
+  } >"$dir/mod.rs.gen"
+  mv "$dir/mod.rs.gen" "$dir/mod.rs"
+}
+
 # cmds DIR: DIR/mod.rs, a `mod` line per command file and the table `ALL`, one entry per file in name order.
 cmds() {
   dir=$1
@@ -46,4 +58,5 @@ cmds() {
 crate crates/cooee-core/src "cooee's core: the model and its files. No HTTP." \
   accounts blocks chat config devices login providers root shed store
 cmds crates/cooee/src/cmd
+flat crates/cooee/tests/support
 cargo update --workspace --quiet

@@ -28,7 +28,7 @@ internal struct ItemView: View {
         case .note(_, let text):
             Text(text).ui(13, .regular, look).foregroundStyle(look.palette.mute).frame(maxWidth: .infinity)
         case .card(_, let poster, let block):
-            BlockNode(block: block).environment(\.card, CardContext(poster: poster))
+            BlockNode(block: block).environment(\.card, CardContext(poster: poster.map(LayoutSource.plugin) ?? .core))
         case .said(_, let speaker, let time, let blocks):
             Said(speaker: speaker, time: time, blocks: blocks)
         case .divider(_, let text):
