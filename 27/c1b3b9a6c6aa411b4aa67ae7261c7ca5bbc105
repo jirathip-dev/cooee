@@ -1,0 +1,5 @@
+Decided: merge origin/staging; accounts_env.rs conflict resolved to staging's version, since staging fixed the same expired test date
+Because: crates/cooee/tests/accounts_env.rs:257
+Rejected: none
+Check: cargo test --workspace --locked passes at the merge head; the branch no longer changes accounts_env.rs
+Owner: The branch is up to date with staging; persona chats still start without your personal setup.
