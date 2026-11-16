@@ -1,7 +1,7 @@
 use std::{
     io::Read,
     path::Path,
-    process::{Command, Stdio},
+    process::Stdio,
     thread,
     time::{Duration, Instant},
 };
@@ -19,7 +19,7 @@ fn account(data: &Path) -> String {
 fn read(data: &Path) -> Result<Option<String>, ()> {
     let a = account(data);
     let find = ["find-generic-password", "-s", "cooee", "-a", &a, "-w"];
-    let Ok(mut child) = Command::new("security")
+    let Ok(mut child) = cooee_core::runner::command("security")
         .args(find)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())

@@ -120,7 +120,7 @@ pub struct Manager {
 }
 
 fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
-    let out = Command::new("git")
+    let out = cooee_core::runner::command("git")
         .arg("-C")
         .arg(dir)
         .args(args)
@@ -140,7 +140,7 @@ fn path(p: &Path) -> &str {
 
 fn sh(cmd: &str, dir: &Path, log: &Path) -> io::Result<Command> {
     let out = fs::OpenOptions::new().create(true).append(true).open(log)?;
-    let mut c = Command::new("sh");
+    let mut c = cooee_core::runner::command("sh");
     c.arg("-c")
         .arg(cmd)
         .current_dir(dir)
@@ -179,7 +179,7 @@ fn attach_token(m: &Manifest) -> Option<String> {
 }
 
 fn on_path(tool: &str) -> bool {
-    Command::new("sh")
+    cooee_core::runner::command("sh")
         .args(["-c", "command -v \"$1\"", "sh", tool])
         .stdout(Stdio::null())
         .status()
@@ -988,7 +988,9 @@ mod tests {
     }
 
     fn installed(test: &str, run: &str, port: u16) -> (PathBuf, PathBuf, Arc<Manager>) {
-        let data = std::env::temp_dir().join(format!("cooee-{test}-{}", std::process::id()));
+        let data = cooee_core::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-{test}-{}", std::process::id())),
+        );
         let _ = fs::remove_dir_all(&data);
         let build = data.join("plugins/x/builds/c0");
         fs::create_dir_all(&build).unwrap();

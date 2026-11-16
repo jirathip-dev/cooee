@@ -1,6 +1,5 @@
 use std::{
     net::{Ipv4Addr, SocketAddr, TcpStream},
-    process::Command,
     time::Duration,
 };
 
@@ -18,7 +17,7 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
         }
     };
     let label = label(&config.instance);
-    let loaded = Command::new("launchctl")
+    let loaded = cooee_core::runner::command("launchctl")
         .args(["list", &label])
         .output()
         .is_ok_and(|o| o.status.success());
@@ -76,7 +75,7 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
             if !config.allowed_hosts.contains(&name) {
                 check(false, format!("{url}: add {name:?} to allowed_hosts"));
             }
-            let reached = Command::new("curl")
+            let reached = cooee_core::runner::command("curl")
                 .args(["-sf", "-o", "/dev/null", "--max-time", "5"])
                 .arg(format!("{url}pair"))
                 .status()

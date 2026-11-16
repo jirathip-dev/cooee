@@ -20,6 +20,8 @@ pub mod provider;
 mod providers;
 mod root;
 pub mod routines;
+pub mod runner;
+pub mod scratch;
 pub mod secrets;
 mod shed;
 pub mod skills;

@@ -5,7 +5,6 @@ use std::{
     io::{self, BufRead, BufReader, ErrorKind, Write},
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
-    process::Command,
     sync::{Arc, Mutex, MutexGuard, PoisonError},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -741,7 +740,7 @@ impl Shed {
     }
 
     fn cli<R: DeserializeOwned>(&self, args: &[&str]) -> Result<R, ShedError> {
-        let mut cmd = Command::new(&self.bin);
+        let mut cmd = crate::runner::command(&self.bin);
         if let Some(dir) = &self.dir {
             cmd.arg("--dir").arg(dir);
         }

@@ -487,14 +487,12 @@ fn io_err(path: &Path) -> impl FnOnce(io::Error) -> StoreError + '_ {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        env,
-        process::{Command, Stdio},
-        thread,
-    };
+    use std::{env, process::Stdio, thread};
 
     fn scratch(name: &str) -> PathBuf {
-        let dir = env::temp_dir().join(format!("cooee-store-{name}-{}", std::process::id()));
+        let dir = crate::scratch::owned(
+            env::temp_dir().join(format!("cooee-store-{name}-{}", std::process::id())),
+        );
         let _ = fs::remove_dir_all(&dir);
         dir
     }
@@ -585,7 +583,7 @@ mod tests {
         let dir = scratch("crash");
         let store = Store::open(&dir).unwrap();
         store.save(&sample("a", "old")).unwrap();
-        let status = Command::new(env::current_exe().unwrap())
+        let status = crate::runner::command(env::current_exe().unwrap())
             .args([
                 "--exact",
                 "store::tests::crash_child",
