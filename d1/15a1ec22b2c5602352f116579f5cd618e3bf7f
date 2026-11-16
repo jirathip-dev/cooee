@@ -1,0 +1,11 @@
+Decided: a layout naming /screens/pairing or /screens/reset-layout, or hiding the root nav, is refused (LayoutError.locked), not silently dropped
+Because: "A layout that drops or replaces either screen is refused (last good kept)."
+Rejected: keep the ADR's silent drop-and-reinsert — the issue's acceptance criterion asks for a refusal, and a refusal tells the owner why
+Decided: pairing steps are the bundled Default/screens/pairing.json, one step block per PhoneStep, drawn by PairingBlocks; Onboarding.swift is gone
+Because: "/screens/pairing` (the steps as blocks around the `scanner` component)"
+Decided: a text naming a {value} the app lacks is not drawn, so the fixture-only lines (Found mini, Guy approved) come from values, not code
+Decided: the menu host draws reset-layout as its last row itself and skips locked nodes from the tree
+Because: "the menu host appends reset-layout as its last row from a constant"
+Rejected: a bundled reset-layout.json for the app — the row is one constant; the server serves its screen inline
+Check: pairing frames byte-identical to the pre-change renders, all styles (cmp on COOEE_RENDERED output)
+Owner: Pairing now draws from a data file and a layout.json that tries to replace pairing or reset is refused with the last good layout kept.
