@@ -1,0 +1,8 @@
+Decided: merged origin/staging (#213); the tests/plugins.rs and screens-as-data/sd.js conflicts keep staging's code with every rule-breaking comment line dropped
+Because: "Strip every comment that breaks it: plain comments, and doc comments on non-public items"
+Rejected: keeping the branch side of the conflicts — it would drop #213's workflow map
+Decided: no code change for the reliability.rs background-start race in the first gates run at host load 27
+Because: "Behaviour is unchanged: tests pass, only comments differ"
+Check: every modified code file matches the merged staging commit once comments are removed, and scripts/comments.py exits 0
+Check: the merge leaves crates/cooee-core/src/lib.rs unchanged, and drover arch-check reports 0 violations
+Owner: the branch is up to date with staging again, and the new workflow-map code follows the comment rule
