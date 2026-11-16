@@ -1,0 +1,4 @@
+Decided: merged origin/staging (#435, #444); the look API notes moved from the deleted docs/api.md into docs/themes.md
+Because: docs/themes.md:94
+Rejected: none
+Owner: The branch sits on current staging again; the Theme picker is unchanged.
