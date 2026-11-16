@@ -1,7 +1,6 @@
 use std::{
     collections::BTreeMap,
     sync::{Mutex, atomic::Ordering},
-    thread,
     time::Duration,
 };
 
@@ -35,12 +34,12 @@ impl Hub {
                 Err(e) if e.to_string() != said => {
                     said = e.to_string();
                     if !self.shed_seen(Some(&e)) {
-                        eprintln!("cooee: {said}");
+                        cooee_core::note!("cooee: {said}");
                     }
                 }
                 Err(_) => {}
             }
-            thread::sleep(Duration::from_secs(1));
+            cooee_core::clock::sleep(Duration::from_secs(1));
         }
     }
 
@@ -55,7 +54,7 @@ impl Hub {
             "shed speaks this build's protocol again".to_owned(),
             ToString::to_string,
         );
-        eprintln!("cooee: {body}");
+        cooee_core::note!("cooee: {body}");
         self.push.send(&Note {
             title: "cooee".to_owned(),
             body,
@@ -80,7 +79,7 @@ impl Hub {
             return;
         }
         if let Err(e) = self.load(&mut live) {
-            eprintln!("cooee: {e}");
+            cooee_core::note!("cooee: {e}");
             return;
         }
         let after = self.applied(&mut live, event);
@@ -168,7 +167,7 @@ impl Hub {
             _ => done,
         };
         if let Err(e) = done {
-            eprintln!("cooee: {e}");
+            cooee_core::note!("cooee: {e}");
         }
     }
 
@@ -222,7 +221,7 @@ impl Hub {
             self.push.send(&self.routed(&live.meta, n));
             let turn = live.chat.turn.clone();
             if let Err(e) = live.publish(self, vec![Change::State(turn)]) {
-                eprintln!("cooee: {e}");
+                cooee_core::note!("cooee: {e}");
             }
         }
     }

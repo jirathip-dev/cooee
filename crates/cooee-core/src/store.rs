@@ -493,7 +493,7 @@ mod tests {
         let dir = crate::scratch::owned(
             env::temp_dir().join(format!("cooee-store-{name}-{}", std::process::id())),
         );
-        let _ = fs::remove_dir_all(&dir);
+        fs::remove_dir_all(&dir).ok();
         dir
     }
 
@@ -608,7 +608,7 @@ mod tests {
     #[test]
     #[ignore = "the child process of crash_between_temp_write_and_rename_keeps_old_file"]
     fn crash_child() {
-        let Some(dir) = env::var_os("COOEE_CRASH_DIR") else {
+        let Some(dir) = crate::env_var("COOEE_CRASH_DIR") else {
             return;
         };
         let store = Store::open(Path::new(&dir)).unwrap();

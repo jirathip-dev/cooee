@@ -65,8 +65,15 @@ fn sheet(p: &Row, persona: &str) -> Value {
     let actions = perms.actions.iter().map(|a| {
         let mut r = row(a);
         if perms.destructive.contains(a) {
-            r["style"] = json!("destructive");
-            r["badge"] = json!({ "text": "always confirmed first", "tone": "bad" });
+            if let Some(o) = r.as_object_mut() {
+                o.insert("style".to_owned(), json!("destructive"));
+            }
+            if let Some(o) = r.as_object_mut() {
+                o.insert(
+                    "badge".to_owned(),
+                    json!({ "text": "always confirmed first", "tone": "bad" }),
+                );
+            }
         }
         r
     });

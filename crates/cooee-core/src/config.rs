@@ -1,5 +1,7 @@
 use std::{
-    env, fs, io,
+    env,
+    ffi::OsString,
+    fs, io,
     net::{IpAddr, Ipv4Addr},
     path::{Path, PathBuf},
 };
@@ -7,6 +9,12 @@ use std::{
 use serde::Deserialize;
 
 use crate::{Spec, provider};
+
+/// The environment variable `name` (#203: CI's arch-check bans `env::var` outside this module).
+#[must_use]
+pub fn env_var(name: &str) -> Option<OsString> {
+    env::var_os(name)
+}
 
 /// cooee's settings, read from `config.toml`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]

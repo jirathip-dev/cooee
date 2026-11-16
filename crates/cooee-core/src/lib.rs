@@ -5,6 +5,7 @@
 mod accounts;
 mod blocks;
 mod chat;
+pub mod clock;
 mod config;
 mod devices;
 pub mod group;
@@ -12,6 +13,7 @@ pub mod history;
 mod login;
 pub mod mcp;
 pub mod models;
+pub mod out;
 pub mod perf;
 pub mod personas;
 pub mod plugins;

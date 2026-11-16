@@ -200,23 +200,20 @@ impl Looks {
     /// The built-in theme and schemes, then the owner's own from `config_dir`: schemes, the packs in `themes/` (an own
     /// one of the same name replaces a built-in; a pack's own schemes join the rest).
     /// `default` is the server's default theme (else farm, when it is installed, else plain). Returns why each own
-    /// file was refused (unreadable, invalid, failing the gate).
-    ///
-    /// # Panics
-    ///
-    /// If a built-in theme or scheme doesn't parse (a build bug the tests catch).
+    /// file was refused (unreadable, invalid, failing the gate); a built-in that doesn't parse (a build bug the tests
+    /// catch) is left out.
     #[must_use]
     pub fn load(config_dir: Option<&Path>, default: Option<&str>) -> (Self, Vec<String>) {
         let mut refused = Vec::new();
         let mut schemes = builtin_schemes();
         let mut themes: BTreeMap<String, Theme> = THEMES
             .iter()
-            .map(|(n, json, sprites, icon, scene)| {
-                let mut t: Theme = serde_json::from_str(json).expect(n);
+            .filter_map(|(n, json, sprites, icon, scene)| {
+                let mut t: Theme = serde_json::from_str(json).ok()?;
                 t.sprite_sheet = sprites.map(<[u8]>::to_vec);
                 t.icon = Some(icon.to_vec());
                 t.scene_art = scene.map(<[u8]>::to_vec);
-                ((*n).to_owned(), t)
+                Some(((*n).to_owned(), t))
             })
             .collect();
         if let Some(dir) = config_dir {
@@ -271,7 +268,7 @@ impl Looks {
 fn builtin_schemes() -> BTreeMap<String, Scheme> {
     SCHEMES
         .iter()
-        .map(|(n, json)| ((*n).to_owned(), serde_json::from_str(json).expect(n)))
+        .filter_map(|(n, json)| Some(((*n).to_owned(), serde_json::from_str(json).ok()?)))
         .collect()
 }
 
@@ -564,7 +561,13 @@ fn ratio(a: Rgb, b: Rgb) -> f64 {
 }
 
 fn over(c: Rgb, bg: Rgb, p: f64) -> Rgb {
-    [0, 1, 2].map(|i| c[i] * p + bg[i] * (1.0 - p))
+    let mix = |x: f64, y: f64| x * p + y * (1.0 - p);
+    let ([red, green, blue], [back_red, back_green, back_blue]) = (c, bg);
+    [
+        mix(red, back_red),
+        mix(green, back_green),
+        mix(blue, back_blue),
+    ]
 }
 
 fn lab(rgb: Rgb) -> Rgb {
@@ -650,7 +653,8 @@ pub fn gate(s: &Scheme) -> Result<(), String> {
             fails.push(format!("{what} {v:.2} (min {min})"));
         }
     };
-    let (bg, r, a) = (c["--bg"], c["--r"], c["--a"]);
+    let c = |k: &str| c.get(k).copied().unwrap_or_default();
+    let (bg, r, a) = (c("--bg"), c("--r"), c("--a"));
     let tints = [
         ("the needs-you card", over(r, bg, 0.15)),
         ("a red group header", over(r, bg, 0.12)),
@@ -660,17 +664,17 @@ pub fn gate(s: &Scheme) -> Result<(), String> {
         for k in [
             "--fg", "--mute", "--l", "--link", "--fk-l", "--fk-p", "--fk-c", "--fk-g", "--fk-a",
         ] {
-            check(format!("{k} on {b}"), ratio(c[k], c[b]), 4.5);
+            check(format!("{k} on {b}"), ratio(c(k), c(b)), 4.5);
         }
         for k in ["--g", "--a", "--r"] {
-            check(format!("{k} on {b}"), ratio(c[k], c[b]), 3.0);
+            check(format!("{k} on {b}"), ratio(c(k), c(b)), 3.0);
         }
     }
-    check("--bg on --l".to_owned(), ratio(bg, c["--l"]), 4.5);
+    check("--bg on --l".to_owned(), ratio(bg, c("--l")), 4.5);
     for k in ["--fg", "--mute", "--l"] {
         check(
             format!("{k} on {}", tints[0].0),
-            ratio(c[k], tints[0].1),
+            ratio(c(k), tints[0].1),
             4.5,
         );
     }
@@ -682,7 +686,7 @@ pub fn gate(s: &Scheme) -> Result<(), String> {
         pairs.extend(["--g", "--a", "--r"].map(|y| (x, y)));
     }
     for (x, y) in pairs {
-        check(format!("ΔE2000 {x} ↔ {y}"), de(c[x], c[y]), 20.0);
+        check(format!("ΔE2000 {x} ↔ {y}"), de(c(x), c(y)), 20.0);
     }
     if fails.is_empty() {
         Ok(())
@@ -699,7 +703,7 @@ mod tests {
         let dir = cooee_core::scratch::owned(
             std::env::temp_dir().join(format!("cooee-look-{name}-{}", std::process::id())),
         );
-        let _ = fs::remove_dir_all(&dir);
+        fs::remove_dir_all(&dir).ok();
         fs::create_dir_all(&dir).unwrap();
         dir
     }

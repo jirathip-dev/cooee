@@ -1,12 +1,11 @@
 use std::{
     collections::BTreeMap,
-    env,
     fmt::Write as _,
     io::{self, BufRead, BufReader, ErrorKind, Write},
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
     sync::{Arc, Mutex, MutexGuard, PoisonError},
-    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
+    time::{Duration, UNIX_EPOCH},
 };
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -184,7 +183,7 @@ struct Conn {
 
 impl Conn {
     fn call<R: DeserializeOwned>(&mut self, method: Method, params: Value) -> Result<R, ShedError> {
-        let start = Instant::now();
+        let start = crate::clock::instant();
         let result = self.exchange(method, params);
         crate::perf::shed(method.name(), "socket", start);
         result
@@ -242,7 +241,11 @@ impl Shed {
     /// `~/Library/Caches/shed/shed.sock`, elsewhere `$XDG_RUNTIME_DIR/shed.sock`.
     #[must_use]
     pub fn new(bin: PathBuf, dir: Option<PathBuf>) -> Self {
-        let var = |k| env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from);
+        let var = |k| {
+            crate::env_var(k)
+                .filter(|v| !v.is_empty())
+                .map(PathBuf::from)
+        };
         let socket = match &dir {
             Some(dir) => dir.join("shed.sock"),
             None if cfg!(target_os = "macos") => var("HOME")
@@ -586,7 +589,7 @@ impl Shed {
                 let line = conn.line().ok()??;
                 match serde_json::from_str(&line) {
                     Ok(event) => return Some(event),
-                    Err(e) => eprintln!("cooee: dropped a shed event ({e}): {}", line.trim()),
+                    Err(e) => crate::note!("cooee: dropped a shed event ({e}): {}", line.trim()),
                 }
             }
         }))
@@ -619,7 +622,7 @@ impl Shed {
         cmd: Vec<String>,
         timeout: f64,
     ) -> Result<Option<i32>, ShedError> {
-        let at = SystemTime::now().duration_since(UNIX_EPOCH);
+        let at = crate::clock::now().duration_since(UNIX_EPOCH);
         let run = RunParams {
             name: Some(format!("cooee-check-{:x}", at.map_or(0, |d| d.as_nanos()))),
             labels: BTreeMap::from([("cooee-check".to_owned(), "1".to_owned())]),
@@ -716,7 +719,7 @@ impl Shed {
             if let Some((file, vars)) = &launch.secrets {
                 let q = |v: &str| format!("'{}'", v.replace('\'', r"'\''"));
                 let text = vars.iter().fold(String::new(), |mut t, (k, v)| {
-                    let _ = writeln!(t, "{k}={}", q(v));
+                    writeln!(t, "{k}={}", q(v)).ok();
                     t
                 });
                 crate::write_private(file, text.as_bytes()).map_err(|e| ShedError::Cli {
@@ -734,7 +737,7 @@ impl Shed {
         }
         let run = self.cli(&args);
         if let Some((file, _)) = &launch.mcp {
-            let _ = std::fs::remove_file(file);
+            std::fs::remove_file(file).ok();
         }
         run
     }
@@ -748,7 +751,7 @@ impl Shed {
             args: args.join(" "),
             detail,
         };
-        let start = Instant::now();
+        let start = crate::clock::instant();
         let out = cmd.arg("--json").args(args).output();
         let verb = if args.first() == Some(&"--on") {
             args.get(2)

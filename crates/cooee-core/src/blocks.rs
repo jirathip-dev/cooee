@@ -69,11 +69,11 @@ impl Item {
                 let recommended = options.iter().find(|o| o.kind == "recommended");
                 let mut choice = json!({ "type": "choice", "id": answer, "action": "answer",
                     "options": options.iter().map(|o| json!({ "value": o.id, "label": o.name })).collect::<Vec<_>>() });
-                if let Some(r) = recommended {
-                    choice["recommended"] = json!(r.id);
+                if let (Some(r), Some(c)) = (recommended, choice.as_object_mut()) {
+                    c.insert("recommended".to_owned(), json!(r.id));
                 }
-                if plugin.is_some() && card.form.is_none() {
-                    choice["other"] = json!({ "placeholder": "other…" });
+                if let (true, Some(c)) = (plugin.is_some() && card.form.is_none(), choice.as_object_mut()) {
+                    c.insert("other".to_owned(), json!({ "placeholder": "other…" }));
                 }
                 choice
             }

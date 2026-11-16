@@ -143,7 +143,7 @@ impl FakeShed {
 
     fn listen(self) -> Self {
         let socket = self.dir.join("shed.sock");
-        let _ = fs::remove_file(&socket);
+        fs::remove_file(&socket).ok();
         let listener = UnixListener::bind(&socket).unwrap();
         let shed = self;
         let server = shed.clone();
@@ -172,11 +172,11 @@ impl FakeShed {
     /// Kills this server, as a shed restart does: its socket is gone and every connection closed (returns once each
     /// is, so none with an event stream open).
     pub fn stop(&self) {
-        let _ = fs::remove_file(self.dir.join("shed.sock"));
+        fs::remove_file(self.dir.join("shed.sock")).ok();
         self.shared.lock().unwrap().subs.clear();
         let conns = std::mem::take(&mut self.conns.lock().unwrap().0);
         for conn in &conns {
-            let _ = conn.shutdown(Shutdown::Both);
+            conn.shutdown(Shutdown::Both).ok();
         }
         drop(conns);
         while self.conns.lock().unwrap().2 > 0 {
@@ -210,7 +210,7 @@ impl FakeShed {
         if shut {
             fs::write(path, "").unwrap();
         } else {
-            let _ = fs::remove_file(path);
+            fs::remove_file(path).ok();
         }
     }
 
@@ -388,7 +388,7 @@ impl FakeShed {
             return false;
         };
         if let Some(stdin) = &mut proc.stdin {
-            let _ = stdin.write_all(text.as_bytes());
+            stdin.write_all(text.as_bytes()).ok();
         }
         true
     }
@@ -591,7 +591,7 @@ impl FakeShed {
                 .unwrap()
                 .push((req.method.clone(), req.params.clone()));
             if self.dir.join("hangup").exists() {
-                let _ = writer.shutdown(Shutdown::Both);
+                writer.shutdown(Shutdown::Both).ok();
                 return;
             }
             let id = req.id.clone().unwrap_or_default();
@@ -636,7 +636,7 @@ impl FakeShed {
                 "kill" => {
                     let procs = self.procs.by_name.lock().unwrap();
                     if let Some(p) = procs.get(&name).filter(|p| p.exit.is_none()) {
-                        let _ = Command::new("kill").arg(p.pid.to_string()).status();
+                        Command::new("kill").arg(p.pid.to_string()).status().ok();
                     }
                     drop(procs);
                     self.shared.lock().unwrap().stopped.insert(name.clone());

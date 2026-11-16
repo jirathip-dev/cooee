@@ -25,7 +25,7 @@ fn asks(config: &Config) -> Result<(), String> {
     let asking = devices_of(config)?
         .asking(now())
         .map_err(|e| e.to_string())?;
-    println!(
+    cooee_core::say!(
         "{}",
         serde_json::to_string(&asking).map_err(|e| e.to_string())?
     );

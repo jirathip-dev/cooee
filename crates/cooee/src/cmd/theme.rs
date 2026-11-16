@@ -23,10 +23,10 @@ fn theme(
         let mut failed = 0;
         for p in paths {
             match cooee_server::check(Path::new(p)) {
-                Ok(()) => println!("ok   {p}"),
+                Ok(()) => cooee_core::say!("ok   {p}"),
                 Err(fails) => {
                     failed += 1;
-                    println!("FAIL {p}\n     {}", fails.join("\n     "));
+                    cooee_core::say!("FAIL {p}\n     {}", fails.join("\n     "));
                 }
             }
         }
@@ -42,27 +42,27 @@ fn theme(
         ["add", source] => {
             let pack = t.plan(source, rev).map_err(e)?;
             if pack.listed {
-                println!("{}", pack.text);
+                cooee_core::say!("{}", pack.text);
             } else {
                 confirm(&pack.text, yes)?;
             }
             t.add(&pack).map_err(e)?;
-            println!("added {}: pick it in Settings › look", pack.name);
+            cooee_core::say!("added {}: pick it in Settings › look", pack.name);
         }
         ["remove", name] => {
             t.remove(name).map_err(e)?;
-            println!("removed {name}");
+            cooee_core::say!("removed {name}");
         }
         ["list"] => {
             let packs = t.list().map_err(e)?;
             if packs.is_empty() {
-                println!(
+                cooee_core::say!(
                     "no themes installed: plain is built in; `cooee theme add <name>` adds one"
                 );
             }
             for p in packs {
                 let commit = p.commit.get(..7).unwrap_or("-");
-                println!("{}  {}  {commit}", p.name, p.source);
+                cooee_core::say!("{}  {}  {commit}", p.name, p.source);
             }
         }
         _ => return Err(usage.to_owned()),

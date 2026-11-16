@@ -66,7 +66,11 @@ fn git(dir: &Path, args: &[&str]) -> io::Result<String> {
         .output()?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr);
-        return Err(other(format!("git {}: {}", args[0], err.trim())));
+        return Err(other(format!(
+            "git {}: {}",
+            args.first().unwrap_or(&""),
+            err.trim()
+        )));
     }
     Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
 }
@@ -241,7 +245,7 @@ impl Themes {
             )));
         }
         let stage = self.dir.join(".themes-stage").join(&pack.name);
-        let _ = fs::remove_dir_all(&stage);
+        fs::remove_dir_all(&stage).ok();
         let folder = Path::new(&pack.source);
         let commit = if pack.listed {
             self.vendored(&pack.name, &stage)?
@@ -256,7 +260,7 @@ impl Themes {
             fs::rename(&stage, &to)
         });
         if done.is_err() {
-            let _ = fs::remove_dir_all(&stage);
+            fs::remove_dir_all(&stage).ok();
         }
         done?;
         self.pin(

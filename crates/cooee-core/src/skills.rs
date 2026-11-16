@@ -158,20 +158,28 @@ pub fn remove(data: &Path, persona: &str, name: &str) -> io::Result<()> {
 pub fn diff(old: &str, new: &str) -> String {
     let (a, b): (Vec<&str>, Vec<&str>) = (old.lines().collect(), new.lines().collect());
     let head = a.iter().zip(&b).take_while(|(x, y)| x == y).count();
-    let tail = a[head..]
+    let (a_rest, b_rest) = (
+        a.get(head..).unwrap_or_default(),
+        b.get(head..).unwrap_or_default(),
+    );
+    let tail = a_rest
         .iter()
         .rev()
-        .zip(b[head..].iter().rev())
+        .zip(b_rest.iter().rev())
         .take_while(|(x, y)| x == y)
         .count();
+    let (a_mid, a_tail) = a_rest
+        .split_at_checked(a_rest.len() - tail)
+        .unwrap_or_default();
+    let b_mid = b_rest.get(..b_rest.len() - tail).unwrap_or_default();
     let mut out = String::new();
-    let lines = a[..head].iter().map(|l| ("  ", l));
+    let lines = a.iter().take(head).map(|l| ("  ", l));
     let lines = lines
-        .chain(a[head..a.len() - tail].iter().map(|l| ("- ", l)))
-        .chain(b[head..b.len() - tail].iter().map(|l| ("+ ", l)))
-        .chain(a[a.len() - tail..].iter().map(|l| ("  ", l)));
+        .chain(a_mid.iter().map(|l| ("- ", l)))
+        .chain(b_mid.iter().map(|l| ("+ ", l)))
+        .chain(a_tail.iter().map(|l| ("  ", l)));
     for (mark, l) in lines {
-        let _ = writeln!(out, "{mark}{l}");
+        writeln!(out, "{mark}{l}").ok();
     }
     out
 }

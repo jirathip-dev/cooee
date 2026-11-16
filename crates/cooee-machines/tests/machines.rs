@@ -47,7 +47,7 @@ fn scratch(name: &str) -> PathBuf {
     let dir = cooee_core::scratch::owned(
         env::temp_dir().join(format!("cooee-machines-{name}-{}", std::process::id())),
     );
-    let _ = fs::remove_dir_all(&dir);
+    fs::remove_dir_all(&dir).ok();
     fs::create_dir_all(&dir).unwrap();
     std::os::unix::fs::symlink(shed(), dir.join("shed")).unwrap();
     fs::write(
@@ -265,10 +265,11 @@ impl FakeCooee {
                     .unwrap()
                     .push((path, serde_json::from_slice(&body).unwrap()));
                 let code = code.load(Ordering::SeqCst);
-                let _ = write!(
+                write!(
                     r.into_inner(),
                     "HTTP/1.0 {code} X\r\nContent-Length: 0\r\n\r\n"
-                );
+                )
+                .ok();
             }
         });
         let cooee = Cooee {

@@ -194,7 +194,7 @@ impl Ctx {
 pub fn run(config: &Config, machine: &str, yes: bool) -> Result<(), String> {
     let lines = Ctx::new(config).check(machine, yes);
     for (ok, what) in &lines {
-        println!("{} {what}", if *ok { "ok  " } else { "FAIL" });
+        cooee_core::say!("{} {what}", if *ok { "ok  " } else { "FAIL" });
     }
     match lines.iter().filter(|(ok, _)| !ok).count() {
         0 => Ok(()),
