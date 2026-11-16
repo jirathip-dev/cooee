@@ -43,7 +43,8 @@ mq.addEventListener('change', paint);
 export const sprite = (id, cls = 'rsp') => !SPRITES && cls === 'rsp' ? '<i class=sd></i>' : art
   ? `<svg class=${cls} viewBox="${/^(loading|empty)$/.test(id) ? '0 0 132 100' : '0 0 24 24'}" aria-hidden=true><use href="#s-${id}"/></svg>` : '';
 if (art) {
-  const svg = await fetch(at(`sprites/${T}.svg`)).then(r => r.text());
+  // The pack's own sheet, as the build vendors it at swag's pin (packs/swag.toml): serve the repo root.
+  const svg = await fetch(at(`../../../packs/themes/${T}/sprites.svg`)).then(r => r.text());
   document.body.insertAdjacentHTML('afterbegin', `<svg width=0 height=0 style="position:absolute" aria-hidden=true><defs>${svg.replace(/^[\s\S]*?<svg[^>]*>|<\/svg>\s*$/g, '')}</defs></svg>`);
 }
 export function fill(root = document) {
