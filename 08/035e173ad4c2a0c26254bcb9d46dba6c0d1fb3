@@ -1,0 +1,12 @@
+Decided: GET /layout merges each enabled plugin's manifest places into the served layout and drops a plugin node its [permissions] places lacks, listing each in a new `skipped` field the app shows as its one amber line.
+Because: "the manifest-places merge in `GET /layout` (a plugin goes only where its manifest allows)"
+Because: "A disallowed place: that node is skipped and reported, the rest draws."
+Decided: place to permission: cards needs chat-cards, menu needs menu-row, hidden needs none, any other shown place (strip, column, panel, sheet, push, inline) needs header-strip.
+Rejected: fanning skips out as `broken` SSE — the merge depends on the installed plugins, read at GET time, not on the file the poll watches.
+Decided: the sidebar component draws its top and list nodes in the Mac's sidebar column (a plugin screen inline, fetched by one ScreenFeature each in LayoutFeature) and as avatar-menu rows on compact.
+Because: "On compact the sidebar's rows become menu rows."
+Decided: WideView is deleted; its split is the Sidebar view, which the wide snapshot frames now draw with no column nodes.
+Rejected: deleting MacChrome — it holds no split, only the snapshot frames' window corners and traffic lights (apple/Tests/CooeeUITests/Frames.swift:30).
+Check: wide frames (mac-window-*, room-wide-dark, room-terminal-wide, linked-wide-light) pass unchanged in SnapshotTests.
+Check: SidebarRenderTests draws a moved drover screen in the sidebar column and leaves the detail pixels identical.
+Owner: A plugin screen can now sit in the Mac's sidebar (a menu row on iPhone); a place its manifest does not allow is skipped with one amber line.
