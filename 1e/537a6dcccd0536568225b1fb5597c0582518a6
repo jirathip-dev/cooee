@@ -1,0 +1,5 @@
+Decided: the looks client test moved unchanged into LooksClientTests, so ClientTests stays under SwiftLint's 150-line type body
+Because: apple/Tests/CooeeAPITests/LooksClientTests.swift:5
+Rejected: trimming other ClientTests cases — they are staging's tests, not this PR's
+Check: scripts/apple-check.sh passes at head (CI apple job)
+Owner: A test file got too long for the lint rule; one test moved to its own file, nothing in the app changed.
