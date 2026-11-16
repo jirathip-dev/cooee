@@ -1,0 +1,49 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling ref-cast v1.0.27
+   Compiling serde_json v1.0.154
+   Compiling hashbrown v0.17.1
+   Compiling hybrid-array v0.4.15
+   Compiling serde v1.0.229
+   Compiling core-foundation-sys v0.8.7
+   Compiling memchr v2.8.3
+   Compiling serde_core v1.0.229
+   Compiling foldhash v0.2.0
+   Compiling shed-proto v0.0.0 (https://github.com/jirathip-dev/shed?rev=4ac443dbbcb51227dc9df2fb55e2f0834d6a91eb#4ac443db)
+   Compiling dyn-clone v1.0.20
+   Compiling winnow v1.0.5
+   Compiling security-framework-sys v2.17.0
+   Compiling core-foundation v0.10.1
+   Compiling cpufeatures v0.3.1
+   Compiling toml_parser v1.1.5+spec-1.1.0
+   Compiling security-framework v3.7.0
+   Compiling indexmap v2.14.2
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling digest v0.11.3
+   Compiling sha2 v0.11.1
+   Compiling quote v1.0.47
+   Compiling syn v3.0.9
+   Compiling toml_datetime v1.1.2+spec-1.1.0
+   Compiling serde_spanned v1.1.2
+   Compiling toml v1.2.0+spec-1.1.0
+   Compiling serde_derive_internals v0.30.0
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.21
+   Compiling schemars_derive v1.2.3
+   Compiling thiserror v2.0.21
+   Compiling schemars v1.2.3
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-270/crates/cooee-core)
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-270/crates/cooee-machines)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.01s
+     Running tests/machines.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-270/debug/deps/machines-06869db9fc7cdf07)
+
+running 5 tests
+test a_card_shows_load_memory_swap_disk_and_terminals ... ok
+test online_and_offline_with_last_seen ... ok
+test the_24_h_history_is_asked_for_once_then_only_what_is_new ... ok
+test an_alert_is_pushed_once_per_state_and_the_tab_dot_follows ... ok
+test the_backend_answers_only_with_the_plugin_token ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.87s
+
