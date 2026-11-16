@@ -59,25 +59,7 @@ internal struct PluginScreenSheet: View {
         return VStack(spacing: 0) {
             SheetBar(cancel: back, title: store.offline ? "" : store.label, done: "Done") { dismiss() }
             if let who = store.unreachable { offline(who) }
-            ScrollView {
-                Group {
-                    if let screen = store.screen {
-                        BlocksView(screen.root, source: store.source) {
-                            store.send(.act($0))
-                        } open: {
-                            store.send(.navigate($0))
-                        } openThread: { thread in
-                            if size == .compact { store.send(.push(thread)) } else { store.send(.open(thread)) }
-                        }
-                        .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
-                    } else if store.offline {
-                        Text("Nothing kept from \(store.label) yet.").foregroundStyle(palette.mute)
-                    } else {
-                        ProgressView()
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading).padding(BlocksView.inset)
-            }
+            ScrollViewReader { proxy in ScrollView { content }.onChange(of: store.screen == nil) { scroll(proxy) } }
             if let said = store.said { Text(said).ui(13, .regular, look).foregroundStyle(palette.mute).padding(8) }
             if let pending = store.screen?.root["pending"] {
                 PendingBar(pending: pending).environment(\.act, { store.send(.act($0)) })
@@ -86,6 +68,43 @@ internal struct PluginScreenSheet: View {
         }
         .background(palette.background).foregroundStyle(palette.foreground)
         .task { await store.send(.task).finish() }
+    }
+
+    private var content: some View {
+        let palette = look.palette
+        return Group {
+            if let screen = store.screen {
+                BlocksView(
+                    screen.root, source: store.source, focus: store.focus, picked: wide ? store.beside : nil,
+                    beside: wide ? store.besideScreen : nil
+                ) {
+                    store.send(.act($0))
+                } open: {
+                    store.send(.navigate($0))
+                } openThread: { thread in
+                    if size == .compact { store.send(.push(thread)) } else { store.send(.open(thread)) }
+                }
+                .environment(\.openBeside, beside)
+                .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
+            } else if store.offline {
+                Text("Nothing kept from \(store.label) yet.").foregroundStyle(palette.mute)
+            } else {
+                ProgressView()
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading).padding(BlocksView.inset)
+    }
+
+    private var wide: Bool { size != .compact }
+
+    private var beside: (@MainActor (String) -> Void)? {
+        guard wide else { return nil }
+        return { store.send(.beside($0)) }
+    }
+
+    private func scroll(_ proxy: ScrollViewProxy) {
+        guard let focus = store.focus, store.screen != nil else { return }
+        Task { @MainActor in proxy.scrollTo(focus, anchor: .center) }
     }
 
     private var back: (label: String, run: () -> Void)? {
