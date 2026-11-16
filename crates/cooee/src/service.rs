@@ -26,6 +26,30 @@ pub(crate) fn label(instance: &str) -> String {
     format!("dev.cooee.{instance}")
 }
 
+pub(crate) fn app_items() -> Vec<&'static str> {
+    ["com.jirathip.cooee.serve", "com.jirathip.cooee.shed"]
+        .into_iter()
+        .filter(|l| {
+            cooee_core::runner::command("launchctl")
+                .args(["list", l])
+                .output()
+                .is_ok_and(|o| o.status.success())
+        })
+        .collect()
+}
+
+pub(crate) fn refuse_app() -> Result<(), String> {
+    let items = app_items();
+    if items.is_empty() {
+        return Ok(());
+    }
+    Err(format!(
+        "the cooee Mac app already runs this Mac's server (login items {}): use the app, or remove its login \
+         items in System Settings > General > Login Items first",
+        items.join(", ")
+    ))
+}
+
 pub(crate) fn job(instance: &str, verb: &str) -> String {
     match verb {
         "serve" => label(instance),

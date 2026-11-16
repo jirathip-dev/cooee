@@ -12,7 +12,7 @@ use crate::{
     cli::load,
     devices::pair,
     doctor::doctor,
-    service::{job, plist, tailnet_name, write_plist},
+    service::{job, plist, refuse_app, tailnet_name, write_plist},
 };
 
 /// `cooee setup`'s flags.
@@ -99,6 +99,7 @@ impl Setup {
 
     /// Every step, in order, then the pairing code.
     pub fn run(&self, path: &Path) -> Result<(), String> {
+        refuse_app()?;
         let uid = output(&["id", "-u"]).ok_or("`id -u` failed")?;
         let gui = format!("gui/{}", uid.trim());
         let updated = self.shed()?;

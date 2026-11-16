@@ -6,7 +6,7 @@ use std::{
 use cooee_core::{Config, ROOTS_FIX, Shed, ShedError, agents_fix};
 use cooee_server::machine;
 
-use crate::service::{label, shed_install, tailnet_name};
+use crate::service::{app_items, label, shed_install, tailnet_name};
 
 pub(crate) fn doctor(config: &Config) -> Result<(), String> {
     let mut failed = Vec::new();
@@ -25,6 +25,14 @@ pub(crate) fn doctor(config: &Config) -> Result<(), String> {
         loaded,
         format!("service {label} loaded (else: cooee install)"),
     );
+    let app = app_items();
+    if loaded && !app.is_empty() {
+        cooee_core::say!(
+            "warn both {label} and the Mac app's login items ({}) are installed: two servers on one Mac\n     \
+             fix: in the app, take over the CLI install, or remove the app's login items",
+            app.join(", ")
+        );
+    }
     let port = config.port;
     let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
     let up = TcpStream::connect_timeout(&addr, Duration::from_secs(2)).is_ok();
