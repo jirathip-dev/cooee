@@ -39,6 +39,7 @@ const KINDS: [(&str, &[&str], &[&str]); 8] = [
 const PLACES: [&str; 9] = [
     "push", "sheet", "panel", "column", "strip", "cards", "menu", "inline", "hidden",
 ];
+const TRANSITIONS: [&str; 4] = ["push", "sheet", "fade", "none"];
 const LOCKED: [&str; 2] = ["/screens/pairing", "/screens/reset-layout"];
 
 /// Why a layout was refused, and where: `line` and `col` count from 1.
@@ -130,6 +131,15 @@ fn node(
     }
     if !place.is_null() && named == [None; 3] {
         return fail("no place in", "place");
+    }
+    if let Some(t) = n.get("transition") {
+        let name = t.as_str().unwrap_or_default();
+        if !TRANSITIONS.contains(&name) {
+            return fail(
+                "unknown transition",
+                if name.is_empty() { "transition" } else { name },
+            );
+        }
     }
     for k in n["config"].as_object().into_iter().flat_map(|o| o.keys()) {
         if !config.contains(&k.as_str()) {
