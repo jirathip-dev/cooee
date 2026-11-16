@@ -262,7 +262,10 @@ jobs:
           [ "$version" = 2 ] || { echo "the app is version $version, not 2"; exit 1; }
           [ -n "$(pid serve)" ] && [ "$(pid serve)" != "$serve" ] || { echo "cooee did not restart"; exit 1; }
           [ -n "$(pid shed)" ] && [ "$(pid shed)" != "$shed" ] || { echo "shed did not restart"; exit 1; }
-          curl -sS -o /dev/null -w 'cooee answers %{http_code}\n' http://127.0.0.1:4747/pair
+          code=$("$app/Contents/Helpers/cooee" pair </dev/null | sed -n 's/^code  \([0-9]*\) \([0-9]*\).*/\1\2/p')
+          cookie=$(curl -sS -D - -o /dev/null --data "code=${code:?}" http://127.0.0.1:4747/pair | sed -n 's/^[Ss]et-[Cc]ookie: cooee=\([^;]*\).*/\1/p')
+          curl -sS -b "cooee=${cookie:?}" http://127.0.0.1:4747/screens/home | tee "$RUNNER_TEMP/home.json"
+          grep -q '"name":"Coder"' "$RUNNER_TEMP/home.json" || { echo "the updated cooee lists no Coder persona"; exit 1; }
           TEST_RUNNER_COOEE_AFTER_UPDATE=1 xcodebuild -project Cooee.xcodeproj -scheme Cooee -destination "id=$SIM" \
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/packages" -derivedDataPath "$RUNNER_TEMP/ios" -only-testing:CooeeAppUITests/LiveUITests/testStaysPairedAfterTheMacUpdates \
             -resultBundlePath "$RUNNER_TEMP/after-update.xcresult" test-without-building
@@ -270,7 +273,7 @@ jobs:
         if: failure()
         run: |
           pgrep -lf 'cooee|shed|zsh|security' || true
-          for f in "$HOME/.config/cooee/cooee/config.toml" "$HOME/.local/share/cooee/cooee/devices.json"; do
+          for f in "$HOME/.config/cooee/cooee/config.toml" "$HOME/.local/share/cooee/cooee/devices.json" "$HOME/.local/share/cooee/cooee/perf.log"; do
             echo "== $f"; cat "$f" || true
           done
           ls -la "$HOME/.local/share/cooee/cooee" || true
