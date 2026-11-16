@@ -1,0 +1,11 @@
+Decided: staging's screens/ module stays its own module, registered in serve.rs beside routes::routes
+Because: crates/cooee-server/src/serve.rs:90
+Decided: manager, on_logins and persona_save move to http.rs, since screens and a route area both use them
+Because: crates/cooee-server/src/http.rs:250
+Decided: the routine runner's on stays in routines.rs as staging has it, so screens need no routes:: path
+Because: crates/cooee-server/src/routines.rs:219
+Decided: moved bodies take #201's comment strip and staging's plugin-stream and persona-start changes verbatim
+Because: crates/cooee-server/src/http.rs:264
+Rejected: moving screens/ into routes/ — that's outside slice 1, and screens are a staging feature that has no ADR row yet
+Check: the 106 registered routes match staging's set; gen.sh leaves no diff; arch-check --base origin/staging has 0 violations
+Owner: Nothing changes in the app; staging's new screens keep working on top of the split server files.
