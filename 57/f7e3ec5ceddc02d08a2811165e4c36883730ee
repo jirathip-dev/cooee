@@ -1,0 +1,13 @@
+Decided: merged staging after #332; [hooks] and auto_update are both Config fields, Hooks stays its own struct
+Because: crates/cooee-core/src/config.rs:57
+Decided: the routine card is a Proposed::Later variant beside the MCP and skill ones in hub/mcp.rs
+Because: crates/cooee-server/src/hub/mcp.rs:55
+Decided: a routine card's approve takes the same proposal path as mcp and skill, so the thread is unlocked before its save runs
+Because: crates/cooee-server/src/hub/cards.rs:54
+Decided: staging build fix, lib.rs was over its size baseline, so the routines' runner builder lives in routines.rs as is
+Because: .drover/arch-baseline.txt:1
+Decided: an event routine from create_routine raises a Face ID card (form routine); approving saves it, declining saves nothing
+Because: q1351
+Rejected: binding the hooks listener in serve() — lib.rs would go over its baseline; Runner::every at routines.rs:83 owns it
+Check: drover arch-check exits 0; routines::serving at routines.rs:578 is the old lib.rs runner(), only moved
+Owner: Agents can now set up routines that fire on GitHub events, saved only after you approve them with Face ID.
