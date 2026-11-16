@@ -1,0 +1,10 @@
+arch-check: 1 files, 0 violations
+would-fail (shadow) x: `false`
+```
+
+```
+FAIL x: `false`
+```
+
+```
+drover checks test ok

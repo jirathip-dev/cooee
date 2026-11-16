@@ -1,0 +1,41 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-202/crates/cooee-core)
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-202/crates/cooee-machines)
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-202/crates/cooee-terminal)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-202/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-202/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 42s
+     Running unittests src/main.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-202/debug/deps/cooee-2a782bdd01681a3b)
+
+running 1 test
+test update::tests::only_a_new_green_head_is_installed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/accounts.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-202/debug/deps/accounts-5beb394cc8b4c2a1)
+
+running 2 tests
+test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... FAILED
+test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... FAILED
+
+failures:
+
+---- signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted stdout ----
+
+thread 'signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted' (316316114) panicked at crates/cooee/tests/support/shed.rs:147:52:
+called `Result::unwrap()` on an `Err` value: Error { kind: InvalidInput, message: "path must be shorter than SUN_LEN" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it stdout ----
+
+thread 'add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it' (316316113) panicked at crates/cooee/tests/support/shed.rs:147:52:
+called `Result::unwrap()` on an `Err` value: Error { kind: InvalidInput, message: "path must be shorter than SUN_LEN" }
+
+
+failures:
+    add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it
+    signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p cooee --test accounts`
+exit 101
