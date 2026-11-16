@@ -1,0 +1,67 @@
+stable (macos-latest)	test	﻿2026-11-16T02:00:27.3679710Z ##[group]Run cargo test --workspace --locked
+stable (macos-latest)	test	2026-11-16T02:00:27.3679940Z ^[[36;1m cargo test --workspace --locked^[[0m
+stable (macos-latest)	test	2026-11-16T02:00:27.3722700Z shell: /bin/bash -e {0}
+stable (macos-latest)	test	2026-11-16T02:00:27.3722910Z env:
+stable (macos-latest)	test	2026-11-16T02:00:27.3723050Z   CARGO_TERM_COLOR: always
+stable (macos-latest)	test	2026-11-16T02:00:27.3723190Z   REF: 
+stable (macos-latest)	test	2026-11-16T02:00:27.3723320Z   RUSTUP_TOOLCHAIN: stable
+stable (macos-latest)	test	2026-11-16T02:00:27.3723480Z   TMPDIR: /tmp/mini-cooee/
+stable (macos-latest)	test	2026-11-16T02:00:27.3723720Z   CARGO_HOME: /Users/jkmacmini/services/actions-runner-cooee/_work/_tool/cooee/cargo
+stable (macos-latest)	test	2026-11-16T02:00:27.3724060Z   RUSTUP_HOME: /Users/jkmacmini/services/actions-runner-cooee/_work/_tool/cooee/rustup
+stable (macos-latest)	test	2026-11-16T02:00:27.3724400Z   GIT_CONFIG_GLOBAL: /Users/jkmacmini/services/actions-runner-cooee/_work/_temp/gitconfig
+stable (macos-latest)	test	2026-11-16T02:00:27.3724660Z   GIT_CONFIG_NOSYSTEM: 1
+stable (macos-latest)	test	2026-11-16T02:00:27.3724810Z   CARGO_NET_GIT_FETCH_WITH_CLI: true
+stable (macos-latest)	test	2026-11-16T02:00:27.3725010Z   DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+stable (macos-latest)	test	2026-11-16T02:00:27.3725220Z   CARGO_INCREMENTAL: 0
+stable (macos-latest)	test	2026-11-16T02:00:27.3725400Z   CACHE_ON_FAILURE: false
+stable (macos-latest)	test	2026-11-16T02:00:27.3725540Z ##[endgroup]
+stable (macos-latest)	test	2026-11-16T02:00:29.7856200Z ^[[1m^[[92m   Compiling^[[0m cooee-core v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-core)
+stable (macos-latest)	test	2026-11-16T02:00:35.0891930Z ^[[1m^[[92m   Compiling^[[0m cooee-machines v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-machines)
+stable (macos-latest)	test	2026-11-16T02:00:35.0993770Z ^[[1m^[[92m   Compiling^[[0m cooee-terminal v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-terminal)
+stable (macos-latest)	test	2026-11-16T02:00:35.5540260Z ^[[1m^[[92m   Compiling^[[0m cooee-server v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee-server)
+stable (macos-latest)	test	2026-11-16T02:00:44.3928320Z ^[[1m^[[92m   Compiling^[[0m cooee v0.1.0 (/Users/jkmacmini/services/actions-runner-cooee/_work/cooee/cooee/crates/cooee)
+stable (macos-latest)	test	2026-11-16T02:00:54.1250200Z ^[[1m^[[92m    Finished^[[0m `test` profile [unoptimized + debuginfo] target(s) in 26.63s
+stable (macos-latest)	test	2026-11-16T02:00:54.1633570Z ^[[1m^[[92m     Running^[[0m unittests src/main.rs (target/debug/build/cooee/547246e38b726422/out/cooee-547246e38b726422)
+stable (macos-latest)	test	2026-11-16T02:00:54.5609730Z 
+stable (macos-latest)	test	2026-11-16T02:00:54.5634620Z ^[[1m^[[92m     Running^[[0m tests/accounts.rs (target/debug/build/cooee/4492a5e41aeb576b/out/accounts-4492a5e41aeb576b)
+stable (macos-latest)	test	2026-11-16T02:00:54.5635320Z running 1 test
+stable (macos-latest)	test	2026-11-16T02:00:54.5643790Z test update::tests::only_a_new_green_head_is_installed ... ok
+stable (macos-latest)	test	2026-11-16T02:00:54.5677580Z 
+stable (macos-latest)	test	2026-11-16T02:00:54.5679420Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+stable (macos-latest)	test	2026-11-16T02:00:54.5680020Z 
+stable (macos-latest)	test	2026-11-16T02:00:54.9118760Z 
+stable (macos-latest)	test	2026-11-16T02:00:54.9219670Z running 2 tests
+stable (macos-latest)	test	2026-11-16T02:00:56.6869940Z test signed_in_only_while_the_status_says_so_not_from_the_last_sign_in_noted ... ok
+stable (macos-latest)	test	2026-11-16T02:00:57.7118370Z test add_account_listed_only_on_success_thread_pick_spawns_with_its_folder_sign_out_removes_it ... ok
+stable (macos-latest)	test	2026-11-16T02:00:57.7207450Z ^[[1m^[[92m     Running^[[0m tests/accounts_env.rs (target/debug/build/cooee/371a308a46cbe965/out/accounts_env-371a308a46cbe965)
+stable (macos-latest)	test	2026-11-16T02:00:57.7208020Z 
+stable (macos-latest)	test	2026-11-16T02:00:57.7278010Z test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.80s
+stable (macos-latest)	test	2026-11-16T02:00:57.7278980Z 
+stable (macos-latest)	test	2026-11-16T02:00:58.0229280Z 
+stable (macos-latest)	test	2026-11-16T02:00:58.0234090Z running 7 tests
+stable (macos-latest)	test	2026-11-16T02:00:58.0493800Z test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+stable (macos-latest)	test	2026-11-16T02:00:58.0697920Z test unknown_provider_or_account_refuses_on_one_line ... ok
+stable (macos-latest)	test	2026-11-16T02:00:58.0849230Z test an_inherited_token_never_signs_a_folder_in ... ok
+stable (macos-latest)	test	2026-11-16T02:00:58.1827000Z test ls_json_lists_every_account_without_its_token ... ok
+stable (macos-latest)	test	2026-11-16T02:00:58.2273140Z test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+stable (macos-latest)	test	2026-11-16T02:00:58.2374700Z test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... FAILED
+stable (macos-latest)	test	2026-11-16T02:00:58.3733340Z test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+stable (macos-latest)	test	2026-11-16T02:00:58.3835000Z ^[[1m^[[91merror^[[0m: test failed, to rerun pass `-p cooee --test accounts_env`
+stable (macos-latest)	test	2026-11-16T02:00:58.3835420Z 
+stable (macos-latest)	test	2026-11-16T02:00:58.3934150Z failures:
+stable (macos-latest)	test	2026-11-16T02:00:58.3934550Z 
+stable (macos-latest)	test	2026-11-16T02:00:58.3934970Z ---- ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age stdout ----
+stable (macos-latest)	test	2026-11-16T02:00:58.3935440Z 
+stable (macos-latest)	test	2026-11-16T02:00:58.3935940Z thread 'ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age' (221267410) panicked at crates/cooee/tests/accounts_env.rs:270:5:
+stable (macos-latest)	test	2026-11-16T02:00:58.3936670Z assertion `left == right` failed
+stable (macos-latest)	test	2026-11-16T02:00:58.3936970Z   left: (Number(12), Number(0))
+stable (macos-latest)	test	2026-11-16T02:00:58.3937270Z  right: (Number(12), Number(40))
+stable (macos-latest)	test	2026-11-16T02:00:58.3937700Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+stable (macos-latest)	test	2026-11-16T02:00:58.3938010Z 
+stable (macos-latest)	test	2026-11-16T02:00:58.3938020Z 
+stable (macos-latest)	test	2026-11-16T02:00:58.3938130Z failures:
+stable (macos-latest)	test	2026-11-16T02:00:58.3938480Z     ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age
+stable (macos-latest)	test	2026-11-16T02:00:58.3938860Z 
+stable (macos-latest)	test	2026-11-16T02:00:58.3939130Z test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+stable (macos-latest)	test	2026-11-16T02:00:58.3940260Z 
+stable (macos-latest)	test	2026-11-16T02:00:58.3949170Z ##[error]Process completed with exit code 101.

@@ -1,0 +1,30 @@
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-213/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.07s
+     Running tests/accounts_env.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-213/debug/deps/accounts_env-29806703f12c9b5b)
+
+running 7 tests
+test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+test unknown_provider_or_account_refuses_on_one_line ... ok
+test an_inherited_token_never_signs_a_folder_in ... ok
+test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+test ls_json_lists_every_account_without_its_token ... ok
+test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... FAILED
+test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+
+failures:
+
+---- ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age stdout ----
+
+thread 'ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age' (227862531) panicked at crates/cooee/tests/accounts_env.rs:270:5:
+assertion `left == right` failed
+  left: (Number(12), Number(0))
+ right: (Number(12), Number(40))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age
+
+test result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.29s
+
+error: test failed, to rerun pass `-p cooee --test accounts_env`

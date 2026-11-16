@@ -1,0 +1,16 @@
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-213/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/issue-213/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.29s
+     Running tests/accounts_env.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-impl-213/debug/deps/accounts_env-29806703f12c9b5b)
+
+running 7 tests
+test a_token_file_goes_in_the_token_variable_only_at_0600_or_tighter ... ok
+test unknown_provider_or_account_refuses_on_one_line ... ok
+test an_inherited_token_never_signs_a_folder_in ... ok
+test ls_json_lists_every_account_without_its_token ... ok
+test env_prints_a_folder_accounts_variable_and_reports_signed_out ... ok
+test ls_json_carries_usage_and_a_reading_past_its_reset_reads_zero_with_its_age ... ok
+test an_adopted_folder_is_an_account_until_dropped_and_the_folder_stays ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.03s
+
