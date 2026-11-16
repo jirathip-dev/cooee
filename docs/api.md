@@ -16,6 +16,8 @@ type Item = { id: number; at: number; seq?: number } & (
       by?: string; answered?: number; form?: "config" | "secret" | "thread"; detail?: string; line?: string; until?: number;
       block: Card }  // #138: the #125 card block the native app draws (docs/plugins/screens.schema.json)
   | { kind: "link"; text: string; thread: string; title: string; out?: boolean }
+  | { kind: "ask"; persona: string; name: string; text: string; thread: string;  // #177: an ask_persona card
+      outcome: "asking" | "replied" | "not_allowed" | "depth" | "timeout" | "offline"; secs: number; note?: string }
   | { kind: "plan"; entries: { content: string; status: string; priority?: string }[] }
   | { kind: "note"; text: string }
   | { kind: "ended"; text: string }
@@ -30,7 +32,7 @@ type File = { name: string; data: string }; // data: the bytes in base64
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, persona_name, persona_role, folder, machine, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}, routine}` (`unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted, `persona_name` and `persona_role` its name and role; `machine`: the one it runs on, `""` this host) |
+| `GET /threads` | | every thread, newest first: `Row[]`, `Row` is `{id, title, agent, account, profile, persona, persona_name, persona_role, folder, machine, state, last, at, unread, unseen, archived, workflow?: {source, group, item, role, round, url}, routine, asked_by?}` (`asked_by`: a linked exchange's asker thread, #177; `unseen`: the agent's items past the read mark; `persona`: its persona's id, `""` for none or one deleted, `persona_name` and `persona_role` its name and role; `machine`: the one it runs on, `""` this host) |
 | `POST /threads` | `{agent, account?, profile?, model?, effort?, folder?, machine?, text, random_id, background?}` (`profile`: a persona's or profile's id; a persona's agent, folder, model, effort and machine are its defaults; `machine` overrides its persona's, `""` this host, one not in `GET /machines` a 400) | `{id}`, once the agent took the first message (no `folder`: the thread runs in its own scratch folder, `<data>/scratch/<id>`, and lists as `scratch`); with `background: true` (the page, #48) at once, the thread `connecting` and the agent starting behind it (a failed start: `unconnected`, the turn's `note` says why) |
 | `POST /threads/{id}/retry` | `{}` | `null`: an `unconnected` thread starts again with its first message |
 | `POST /threads/{id}/folder` | `{folder}` (a root or inside one): "Use a folder…"; its agent starts again there and the next message carries a hand-over | the `note` it adds |
@@ -56,7 +58,7 @@ another run; load the newest slice again).
 
 ## Personas (#126)
 
-A persona is `{id, name, role, fleets, avatar?, character, instructions, folder, agent, model, effort, machine, plugins, can_message, pinned, profile?}`: `avatar` an image
+A persona is `{id, name, role, style, fleets, avatar?, character, instructions, folder, agent, model, effort, machine, plugins, can_message, pinned, profile?}`: `avatar` an image
 (`https://…`, `data:image/…`; none: the client draws initials), `folder` an owned folder or `scratch`, `agent`, `model`
 and `effort` its defaults. It is `<config>/personas/<id>.toml`; an owner profile with no persona of its name is read
 as one (`profile`: the profile it runs as, its account, settings, env, MCP servers and policy kept; never set over the
@@ -73,7 +75,10 @@ or `orchestrator` (one of herdsman's, any number, any name; `fleets` the repos o
 cover too): an installed `drover` is attached to each orchestrator by its role, never its name. The persona read
 from a `conductor` profile (or saved from one before #159) is an orchestrator, its name kept. `machine` (#148) is the one its threads run on: `""` this host (every
 persona saved before), else one added to shed (`shed machine add`). `can_message` (#156) names the personas it may ask
-with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). A skill
+with `ask_persona`. `pinned` (#139) puts it in the native app's Home row (none pinned: every persona is). `style`
+(#242) is how the native app draws its chats: `chat` (only each turn's reply, its tool steps folded into one row that
+opens a trace sheet; each new session is also told to answer short and plain) or `detailed` (every step, as before).
+A file without one reads as `detailed` for an orchestrator and `chat` for any other persona. A skill
 (#218) is `<data>/personas/<id>/skills/<name>/SKILL.md`, front matter (`name`, `description`) and a body, at most 20;
 each session's brief lists them `name: description` by name, never a body, which the persona reads with the `skill`
 tool. Clearing the notes leaves the skills; deleting the persona removes both. An unknown id or a broken rule is a
@@ -149,7 +154,7 @@ tool. Clearing the notes leaves the skills; deleting the persona removes both. A
 
 | Call | Body | Answer |
 |---|---|---|
-| `GET /plugins` | | `{installed: {name, version, commit, listed, state, enabled, first_party, improving?, previous?, tabs, places, permissions}[], index: {name, description}[], jobs: {name: text}, issues}` |
+| `GET /plugins` | | `{installed: {name, version, commit, listed, state, enabled, first_party, improving?, previous?, tabs, places, claims, permissions}[], index: {name, description}[], jobs: {name: text}, issues}` (`claims` (#229): the workflow `source` labels its manifest claims; the native app draws a `GET /threads` row whose `workflow.source` one claims in that plugin's place on a persona it is attached to, and any other workflow row under Home's Others) |
 | `GET /plugins/log?name=N` | | the plugin's log, text |
 | `POST /plugins/plan` | `{source}` or `{name, at}` | `{commit, text}`: what would run, to confirm |
 | `POST /plugins/add`, `/plugins/update` | the plan's body and its `commit` (a confirm holds for that commit only) | a JSON string (`"installing"`, …) |
@@ -170,9 +175,12 @@ A thread's MCP proxy and `cooee mcp serve` call with `Authorization: Bearer <the
 `{thread, server: {name, type, command, args, url, why}}` → the card; `POST /mcp/agent/remember` `{thread, server:
 {text?, replaces?, forget?}}` → `remember`'s edit by the thread's persona, its answer the note's id and the use; `POST /mcp/agent/ask` `{thread, server: {persona, message, timeout?}}`
 (#156) → `ask_persona`'s reply (a string), the thread's persona asking one its `can_message` names in a linked exchange
-thread (the owner reads it and may reply to steer), waiting `timeout` seconds (300, at most 600). A refusal is a 400
+thread (the owner reads it and may write a note), waiting `timeout` seconds (300, at most 600). A refusal is a 400
 starting `NOT_ALLOWED`, `DEPTH` (an asked persona may ask one more, no further), `TIMEOUT` or `OFFLINE` (its session
-can't start).
+can't start). Each ask is an `ask` item in the asker's thread (#177), `asking` until it ends; in the exchange the
+question is a `you` item whose `speaker` is the asker's persona. The owner's message there reaches the asked persona
+marked as the owner's note, and the reply goes back with it (the card's `note`; the exchange ends with the `note`
+item `returned to <asker> [with your note] · <secs>s`).
 `POST /mcp/agent/history` `{thread, server: {query?, thread?, before?, limit?}}` (#217) → `history`'s text: with
 `query`, at most 5 (and `limit`) of the persona's threads, newest first, `<thread> <date>: <snippet>` (200 characters
 at most); with `thread`, its owner messages and final replies (no tool rows), at most 4,000 characters, ending
@@ -195,6 +203,22 @@ answer nothing.
 
 A row's `routine` is the name of the routine whose run started the thread, else of the one that sent its last `you`
 item (that item's `routine: {id, name}`); `""` for none. The `routine` item is `{routine, name, when, place}`.
+
+## Layout (#300, [architecture/layout-blocks](architecture/layout-blocks/adr.md))
+
+The owner's `layout.json` beside `config.toml`, read every second. The server serves only a layout that passes the
+app's rules (`cooee layout check <file>` runs the same ones): with no file, or no good one yet, the app's bundled
+default (`apple/Sources/CooeeUI/Default/layout.json`). A bad write changes nothing served.
+
+| Call | Body | Answer |
+|---|---|---|
+| `GET /layout` | | `{etag, layout}` and an `ETag` header; 304 with no body when `If-None-Match` names it |
+| `GET /layout/events` | | SSE: `changed {etag}` after a good write; `broken {line, col, why}` after a bad one, and at once to a new subscriber while the file is broken |
+| `POST /layout/reset` | | writes the default to `layout.json`, the old file kept as `layout.json.bak`; answers as `GET /layout`; 409 with no config folder |
+| `GET /screens/home` | | core's home (#311): `{type: "screen", source: "core", id, title, blocks, threads, personas}`, the app's bundled `Default/screens/home.json` with `threads` as `GET /threads` and `personas` as `GET /personas`; `source` is always the server's |
+| `GET /screens/menu` | | core's avatar menu (#312): the app's bundled `Default/screens/menu.json` with `source: "core"`; the rows that open a server screen carry a `value`: `signins` the signed-in accounts joined `, `, `devices` the paired count, `machines` the hosts joined `, `, `plugins` the installed count |
+| `GET /screens/settings/{devices,signins,machines,plugins}` | | core's settings screens (#312): `{type: "screen", source: "core", id, title, blocks}`, one `list` of `row`s from the data `GET /devices`, the sign-ins sheet, `GET /machines` and `GET /plugins` read |
+| `GET /screens/plugins/{name}/attach?persona=<id>` | | the attach sheet (#312): screen `attach`, one `card` of kind `permissions` (only core sends it): what installed plugin `name` may do for the persona, its actions (destructive ones always confirmed first) and the hosts its backend reaches; 404 for a plugin or persona that doesn't exist |
 
 ## Pairing (no cookie needed)
 

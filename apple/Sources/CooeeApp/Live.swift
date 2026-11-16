@@ -16,7 +16,7 @@ extension PairingClient: DependencyKey {
 
 extension ThreadsClient: DependencyKey {
     public static let liveValue = ThreadsClient(
-        threads: { server in try await Client(server).threads() },
+        home: { server in try await Client(server).home() },
         personas: { server in try await Client(server).personas() },
         messages: { server, thread in try await Client(server).messages(thread) },
         events: { server, thread, since in Client(server).events(thread, since: since) },
@@ -30,7 +30,11 @@ extension ThreadsClient: DependencyKey {
         answer: { server, thread, item, option, value in
             try await Client(server).answer(thread, item: item, option: option, value: value)
         },
-        start: { server, persona, text in try await Client(server).newThread(persona: persona, text: text) },
+        start: { server, persona, machine, text in
+            try await Client(server).newThread(persona: persona, machine: machine, text: text)
+        },
+        move: { server, thread, machine in try await Client(server).move(thread, to: machine) },
+        retry: { server, thread in try await Client(server).retry(thread) },
         room: { server, title, members in try await Client(server).newRoom(title: title, members: members) },
         seat: { server, room, persona, place, remove in
             try await Client(server).seat(room, persona: persona, place: place, remove: remove)
@@ -46,6 +50,7 @@ extension PersonasClient: DependencyKey {
         forget: { server, persona in try await Client(server).forget(persona) },
         agents: { server in try await Client(server).agents() },
         models: { server in try await Client(server).models() },
+        machines: { server in try await Client(server).machines() },
         folders: { server, path in try await Client(server).folders(path) }
     )
 }
@@ -86,10 +91,25 @@ extension PluginsClient: DependencyKey {
     public static let liveValue = PluginsClient(
         places: { server, persona in try await Client(server).places(persona) },
         installed: { server in try await Client(server).plugins() },
-        screen: { server, plugin, path in try await Client(server).screen(plugin, path) },
-        events: { server, plugin, path in Client(server).screenEvents(plugin, path) },
-        act: { server, plugin, screen, action in try await Client(server).act(plugin, screen: screen, action) },
+        screen: { server, source, path in try await Client(server).screen(source, path) },
+        events: { server, source, path in Client(server).screenEvents(source, path) },
+        act: { server, source, screen, action in try await Client(server).act(source, screen: screen, action) },
         attach: { server, plugin, persona in try await Client(server).attach(plugin, to: persona) }
+    )
+}
+
+extension TerminalClient: DependencyKey {
+    public static let liveValue = TerminalClient(
+        list: { server in try await Client(server).terminals() },
+        shell: { server in try await Client(server).newShell() },
+        input: { server, terminal, input in
+            switch input {
+            case .text(let keystrokes): try await Client(server).type(keystrokes, into: terminal)
+            case .keys(let keys): try await Client(server).press(keys, in: terminal)
+            }
+        },
+        resize: { server, terminal, size in try await Client(server).resize(terminal, to: size) },
+        watch: { server, terminal in Client(server).watch(terminal) }
     )
 }
 
@@ -98,6 +118,18 @@ extension ScreenCache: DependencyKey {
         load: { key in KeptScreens().load(key) },
         save: { key, kept in KeptScreens().save(key, kept) }
     )
+}
+
+extension LayoutClient: DependencyKey {
+    public static let liveValue = LayoutClient(
+        fetch: { server, etag in try await Client(server).layout(etag: etag) },
+        events: { server in Client(server).layoutEvents() },
+        reset: { server in try await Client(server).resetLayout() }
+    )
+}
+
+extension LayoutStore: DependencyKey {
+    public static let liveValue = LayoutStore.onDisk(LayoutFile(), bundled: .bundled)
 }
 
 extension ServerStore: DependencyKey {
@@ -120,7 +152,8 @@ public struct CooeeRoot: View {
     #endif
     private let store = Store(
         initialState: AppFeature.State(
-            server: ServerStore.liveValue.load(), settings: SettingsStore.liveValue.load(), mac: Self.mac
+            layout: (try? LayoutStore.liveValue.load()) ?? .bundled, server: ServerStore.liveValue.load(),
+            settings: SettingsStore.liveValue.load(), mac: Self.mac
         )
     ) { AppFeature() }
 

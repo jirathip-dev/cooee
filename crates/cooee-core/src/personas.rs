@@ -30,6 +30,21 @@ pub enum Role {
     Orchestrator,
 }
 
+/// How a persona's native chat reads (#242).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Style {
+    /// Only the final reply, its steps folded into one row; told to answer short and plain.
+    #[default]
+    Chat,
+    /// Every step, as it happens.
+    Detailed,
+}
+
+/// What a [`Style::Chat`] persona's new session is told after its brief.
+pub const PLAIN: &str =
+    "Answer short, plain and conversational: summarise, and give the details only when asked.";
+
 /// One persona.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields)]
@@ -41,6 +56,8 @@ pub struct Persona {
     pub name: String,
     /// Its role (#159).
     pub role: Role,
+    /// How its chat reads (#242): `chat` unless set, `detailed` for an orchestrator.
+    pub style: Style,
     /// The repos or fleets it covers (#159); another persona may cover them too.
     pub fleets: Vec<String>,
     /// An image (as a profile's avatar); none: the client draws its initials.
@@ -142,6 +159,7 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
                     .unwrap_or_default(),
                 agent: p.agent,
                 role: role(&p.name, None),
+                style: style(role(&p.name, None), None),
                 profile: Some(p.name),
                 ..Persona::default()
             });
@@ -162,11 +180,23 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Persona> {
 fn from_file(id: &str, text: &str) -> Result<Persona, toml::de::Error> {
     let table: toml::Table = toml::from_str(text)?;
     let set = table.contains_key("role");
+    let styled = table.contains_key("style");
     let p: Persona = toml::Value::Table(table).try_into()?;
+    let role = role(id, set.then_some(p.role));
     Ok(Persona {
         id: id.to_owned(),
-        role: role(id, set.then_some(p.role)),
+        role,
+        style: style(role, styled.then_some(p.style)),
         ..p
+    })
+}
+
+/// The style a persona has, else (saved before #242) its role's: an orchestrator's chat is detailed.
+fn style(role: Role, set: Option<Style>) -> Style {
+    set.unwrap_or(if role == Role::Orchestrator {
+        Style::Detailed
+    } else {
+        Style::Chat
     })
 }
 
@@ -404,8 +434,8 @@ pub fn forget(data: &Path, id: &str) -> io::Result<()> {
 }
 
 impl Persona {
-    /// What its agent gets ahead of a new session's first message: its Character, Instructions, notes and skills'
-    /// descriptions (#218), by name; never a skill's body.
+    /// What its agent gets ahead of a new session's first message: its Character, Instructions, notes, skills'
+    /// descriptions (#218), by name, never a skill's body, and, in [`Style::Chat`], [`PLAIN`].
     #[must_use]
     pub fn brief(&self, data: &Path) -> String {
         let mut notes = String::from("Your notes (edit them with your remember tool):");
@@ -416,11 +446,13 @@ impl Persona {
         for s in skills::list(data, &self.id).iter().take(skills::MAX) {
             let _ = write!(skills, "\n- {}: {}", s.name, s.description);
         }
+        let plain = if self.style == Style::Chat { PLAIN } else { "" };
         let parts = [
             self.character.trim(),
             self.instructions.trim(),
             &notes,
             &skills,
+            plain,
         ];
         let parts = parts
             .into_iter()

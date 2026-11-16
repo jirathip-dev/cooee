@@ -11,8 +11,10 @@ use std::{
     fs,
     path::{Path, PathBuf},
     process::Command,
+    time::{Duration, Instant},
 };
 
+use cooee_core::personas::PLAIN;
 use serde_json::{Value, json};
 use support::{Cooee, FakeShed, scratch, version};
 
@@ -80,9 +82,15 @@ impl Setup {
         self.cooee.post("/threads", &new)
     }
 
-    /// A started thread's id and its `shed run` line.
+    /// A started thread's id and its `shed run` line; a refused start is tried again for up to 20 s, a plugin's
+    /// profiles showing within the server's 5 s refresh (#289).
     fn thread(&self, profile: &str, text: &str) -> (String, String) {
-        let (status, body) = self.start(profile, text);
+        let until = Instant::now() + Duration::from_secs(20);
+        let (mut status, mut body) = self.start(profile, text);
+        while status == 400 && Instant::now() < until {
+            std::thread::sleep(Duration::from_millis(50));
+            (status, body) = self.start(profile, text);
+        }
         assert_eq!(status, 200, "{body}");
         let id = serde_json::from_str::<Value>(&body).unwrap()["id"]
             .as_str()
@@ -107,7 +115,7 @@ impl Setup {
             if self.cooee.get(&format!("/p/{name}/api/tab.js")).0 == 200 {
                 return;
             }
-            std::thread::sleep(std::time::Duration::from_millis(50));
+            std::thread::sleep(Duration::from_millis(50));
         }
         panic!("{name}'s backend never answered");
     }
@@ -190,7 +198,10 @@ fn plain_adds_nothing_a_file_profile_is_applied_at_spawn_a_guard_that_cant_run_i
     let terminal = format!("cooee-{id}");
     assert_eq!(
         s.shed.sent(&terminal),
-        ["\x1e{\"prompt\":\"Follow the house rules.\\n\\nhi\"}\n"]
+        [format!(
+            "\x1e{}\n",
+            json!({ "prompt": format!("Follow the house rules.\n\n{PLAIN}\n\nhi") })
+        )]
     );
     let items = s.cooee.json(&format!("/threads/{id}/messages"));
     assert_eq!(items["items"][0]["text"], "hi", "{items}");
@@ -289,7 +300,8 @@ fn a_plugins_profile_starts_while_it_is_installed_and_its_add_confirm_names_it()
 }
 
 /// A plugin backend (docs/plugins/hello's checks) that serves the profiles in the JSON file `list` at
-/// `GET /cooee/profiles` (read at each call) and appends each `POST /cooee/thread-started` body to `log`.
+/// `GET /cooee/profiles` (read at each call; each call adds a line to `<list>.asked`, and none is answered while
+/// `<list>.hang` exists) and appends each `POST /cooee/thread-started` body to `log`.
 fn serving(list: &Path, log: &Path) -> String {
     format!(
         r#"import fs from "node:fs";
@@ -298,6 +310,8 @@ const {{ PORT, TOKEN }} = process.env;
 http.createServer(async (req, res) => {{
   if (req.headers.authorization !== `Bearer ${{TOKEN}}`) return res.writeHead(401).end();
   if (req.url === "/tab.js") return res.writeHead(200).end("document.body.append('plug');");
+  if (req.url === "/cooee/profiles") fs.appendFileSync({list:?} + ".asked", "\n");
+  if (req.url === "/cooee/profiles" && fs.existsSync({list:?} + ".hang")) return;
   if (req.url === "/cooee/profiles") return res.writeHead(200).end(`{{"profiles":${{fs.readFileSync({list:?})}}}}`);
   let b = ""; for await (const c of req) b += c;
   if (req.url === "/cooee/thread-started") {{ fs.appendFileSync({log:?}, b + "\n"); return res.writeHead(200).end("{{}}"); }}
@@ -336,11 +350,16 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the
     s.cooee
         .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
 
-    // Once the server runs it, the backend's list is the plugin's agents: a hidden one, and the manifest's it doesn't
-    // list, are refused.
+    // Once the server has its answer (within its 5 s refresh), the backend's list is the plugin's agents: a hidden one,
+    // and the manifest's it doesn't list, are refused.
     s.backend_up("plug");
     let runs = s.shed.cli_log().matches(" run ").count();
-    let (status, body) = s.start("plug/fleet-b", "go");
+    let until = Instant::now() + Duration::from_secs(20);
+    let (mut status, mut body) = s.start("plug/fleet-b", "go");
+    while !body.contains("hidden") && Instant::now() < until {
+        std::thread::sleep(Duration::from_millis(50));
+        (status, body) = s.start("plug/fleet-b", "go");
+    }
     assert_eq!(status, 400, "{body}");
     assert!(body.contains("hidden: its guard can't be proven"), "{body}");
     assert_eq!(s.start("plug/old", "go").0, 400);
@@ -355,6 +374,90 @@ fn a_backend_serves_its_plugins_agents_a_hidden_one_is_refused_and_thread_is_the
     }
     let told: Value = serde_json::from_str(fs::read_to_string(&log).unwrap().trim()).unwrap();
     assert_eq!(told, json!({ "thread": id, "profile": "fleet-a" }));
+
+    s.cooee.cli(&["plugin", "remove", "plug"]);
+}
+
+/// #289: a backend that never answers its profiles never slows a start (none waits on its 5 s ask, the median is
+/// under 200 ms), which takes its last answer, none before the first; a changed list starts within the 5 s refresh.
+#[test]
+fn a_hanging_backend_never_slows_a_start_which_takes_its_last_answered_profiles() {
+    let s = setup("profiles-hang");
+    let repo = s.dir.join("plug.git");
+    fs::create_dir_all(&repo).unwrap();
+    git(&repo, &["init", "--quiet", "-b", "main"]);
+    let (list, log) = (s.dir.join("served.json"), s.dir.join("started.log"));
+    let (asked, hang) = (
+        s.dir.join("served.json.asked"),
+        s.dir.join("served.json.hang"),
+    );
+    let serve = |name: &str| {
+        let v = json!([{ "name": name, "label": name, "agent": "fake-acp" }]);
+        fs::write(&list, v.to_string()).unwrap();
+    };
+    fs::write(repo.join("server.mjs"), serving(&list, &log)).unwrap();
+    fs::write(
+        repo.join("cooee-plugin.toml"),
+        "name = \"plug\"\nversion = \"1\"\nbuild = \"true\"\nrun = \"TOKEN=$COOEE_PLUGIN_TOKEN exec node server.mjs\"\n\
+         [[tabs]]\nname = \"plug\"\nlabel = \"Plug\"\nmodule = \"/tab.js\"\n",
+    )
+    .unwrap();
+    git(&repo, &["add", "-A"]);
+    git(&repo, &["commit", "--quiet", "-m", "1"]);
+    // While two asks hang, every start of `not` is quickly refused; then `shown` starts, as quickly.
+    let hung_twice = |shown: Option<&str>, not: &str| {
+        let count = || fs::read_to_string(&asked).map_or(0, |t| t.len());
+        let (from, until) = (count(), Instant::now() + Duration::from_secs(30));
+        let mut took = Vec::new();
+        let mut timed = |profile: &str| {
+            let at = Instant::now();
+            let (status, body) = s.start(profile, "go");
+            took.push(at.elapsed());
+            assert!(took[took.len() - 1] < Duration::from_secs(2), "{took:?}");
+            (status, body)
+        };
+        while count() < from + 2 {
+            assert!(Instant::now() < until, "never asked twice");
+            assert_eq!(timed(not).0, 400, "{not} before its answer");
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        if let Some(shown) = shown {
+            let (status, body) = timed(shown);
+            assert_eq!(status, 200, "{shown}, the last answer: {body}");
+        }
+        took.sort();
+        assert!(
+            took[took.len() / 2] < Duration::from_millis(200),
+            "{took:?}"
+        );
+    };
+    // Up to 20 s for `profile` to start, and how long that took.
+    let starts = |profile: &str| {
+        let at = Instant::now();
+        while s.start(profile, "go").0 != 200 {
+            assert!(
+                at.elapsed() < Duration::from_secs(20),
+                "{profile} never starts"
+            );
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        at.elapsed()
+    };
+
+    fs::write(&hang, "").unwrap();
+    serve("fleet-a");
+    s.cooee
+        .cli(&["plugin", "add", &repo.to_string_lossy(), "--yes"]);
+    hung_twice(None, "plug/fleet-a");
+    fs::remove_file(&hang).unwrap();
+    starts("plug/fleet-a");
+
+    fs::write(&hang, "").unwrap();
+    serve("fleet-z");
+    hung_twice(Some("plug/fleet-a"), "plug/fleet-z");
+    fs::remove_file(&hang).unwrap();
+    let took = starts("plug/fleet-z");
+    assert!(took < Duration::from_secs(11), "{took:?}");
 
     s.cooee.cli(&["plugin", "remove", "plug"]);
 }
