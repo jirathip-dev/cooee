@@ -1,0 +1,5 @@
+Decided: staging's #356 gate move wins in ci.yml and justfile; this PR's vendoring build step moves into ci/gates/themes.sh
+Because: ci/gates/themes.sh:4
+Rejected: none
+Check: ci/gates/themes.sh builds cooee before theme check, so packs/themes/ holds swag's pinned packs
+Owner: Branch brought up to date with staging; the theme check still runs on the pinned swag packs.
