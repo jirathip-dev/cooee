@@ -1,0 +1,8 @@
+Decided: merge origin/staging; this PR's docs/api.md lines move into staging's split docs word for word
+Because: docs/personas.md:19
+Decided: setup on POST /threads and Row lives in docs/chat.md, the endpoint in docs/mcp.md
+Because: docs/chat.md:40
+Rejected: keep docs/api.md alive — staging deleted it (#444), so it would be a second home for the same API
+Rejected: committing the previous lane's wip snapshot — it held only local log files
+Check: docs/chat.md, docs/personas.md and docs/mcp.md carry setup, update_persona and /mcp/agent/persona
+Owner: Same feature; this round catches up with staging, which split the API doc into one doc per area.
