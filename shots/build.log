@@ -1,0 +1,8 @@
+   Compiling cooee-core v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/verify-464-r1/crates/cooee-core)
+   Compiling cooee-machines v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/verify-464-r1/crates/cooee-machines)
+   Compiling cooee-terminal v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/verify-464-r1/crates/cooee-terminal)
+   Compiling cooee-server v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/verify-464-r1/crates/cooee-server)
+   Compiling cooee v0.1.0 (/Users/jkmacmini/.local/share/drover/work/cooee/verify-464-r1/crates/cooee)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.02s
+  Executable tests/plugins.rs (/Users/jkmacmini/.local/share/herdsman/work/.build/cooee-verify-464-r1/debug/deps/plugins-d810606dd26b5c96)
+cargo test -p cooee --test plugins --no-run  21.43s user 2.30s system 157% cpu 15.060 total
