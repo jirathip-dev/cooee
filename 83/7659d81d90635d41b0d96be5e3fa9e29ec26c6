@@ -1,0 +1,11 @@
+Decided: merged origin/staging; staging's docs/api.md edits (9 hunks: ask items, asked_by, room asks, persona style, plugin claims, layout skipped, core screens) applied verbatim to the area docs holding those lines
+Because: "Behaviour unchanged: bodies move as-is; tests only move or get renamed"
+Decided: arch.toml takes staging's frozen and generated lists plus this slice's docs/architecture.md, docs/api.md and README.md; gen.sh runs staging's cmds/flat then the Today list
+Because: .drover/arch.toml:3
+Decided: justfile left as staging has it, the Today-list comment dropped, since staging froze that path
+Because: .drover/arch.toml:3
+Decided: lib.rs takes staging's removal of the two doc lines; its header and the new home-workflow design notes point at the area docs
+Because: crates/cooee-server/src/lib.rs:1
+Rejected: none
+Check: drover arch-check --base origin/staging exits 0 and sh scripts/gen.sh leaves no diff
+Owner: Brought the docs split up to date with staging; staging's new API notes now sit in their area pages.
