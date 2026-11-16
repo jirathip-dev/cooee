@@ -238,7 +238,9 @@ mod tests {
     use super::*;
 
     fn scratch(name: &str) -> PathBuf {
-        let d = std::env::temp_dir().join(format!("cooee-secrets-{name}-{}", std::process::id()));
+        let d = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-secrets-{name}-{}", std::process::id())),
+        );
         let _ = fs::remove_dir_all(&d);
         fs::create_dir_all(d.join("secrets")).unwrap();
         d

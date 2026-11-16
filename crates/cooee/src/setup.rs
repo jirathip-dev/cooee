@@ -2,7 +2,7 @@ use std::{
     env, fs, io,
     net::{Ipv4Addr, SocketAddr, TcpStream},
     path::Path,
-    process::{Command, Stdio},
+    process::Stdio,
     thread,
     time::Duration,
 };
@@ -26,7 +26,7 @@ pub struct Setup {
 }
 
 pub(crate) fn ok(argv: &[&str]) -> bool {
-    Command::new(argv[0])
+    cooee_core::runner::command(argv[0])
         .args(&argv[1..])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -35,7 +35,10 @@ pub(crate) fn ok(argv: &[&str]) -> bool {
 }
 
 pub(crate) fn output(argv: &[&str]) -> Option<String> {
-    let out = Command::new(argv[0]).args(&argv[1..]).output().ok()?;
+    let out = cooee_core::runner::command(argv[0])
+        .args(&argv[1..])
+        .output()
+        .ok()?;
     out.status
         .success()
         .then(|| String::from_utf8_lossy(&out.stdout).into_owned())
@@ -59,7 +62,9 @@ impl Setup {
             return Ok(());
         }
         println!("  $ {line}");
-        let status = Command::new(argv[0]).args(&argv[1..]).status();
+        let status = cooee_core::runner::command(argv[0])
+            .args(&argv[1..])
+            .status();
         match status {
             Ok(s) if s.success() => Ok(()),
             Ok(s) => Err(format!("`{line}` failed ({s})")),

@@ -273,7 +273,9 @@ mod tests {
 
     #[test]
     fn system_first_a_new_account_listed_once_adopted_and_removal() {
-        let data = std::env::temp_dir().join(format!("cooee-accounts-{}", std::process::id()));
+        let data = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-accounts-{}", std::process::id())),
+        );
         let a = Accounts::new(&data);
         let names = |a: &Accounts| -> Vec<String> {
             a.list("claude").into_iter().map(|a| a.name).collect()
@@ -301,7 +303,9 @@ mod tests {
 
     #[test]
     fn a_dead_logins_leftover_folder_never_blocks_a_new_account() {
-        let data = std::env::temp_dir().join(format!("cooee-accounts-dead-{}", std::process::id()));
+        let data = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-accounts-dead-{}", std::process::id())),
+        );
         let _ = fs::remove_dir_all(&data);
         let a = Accounts::new(&data);
         fs::create_dir_all(data.join("accounts/claude/.new-account-2")).unwrap();

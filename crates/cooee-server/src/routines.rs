@@ -1,6 +1,5 @@
 use std::{
     path::PathBuf,
-    process::Command,
     sync::{Arc, Mutex, PoisonError},
 };
 
@@ -209,7 +208,7 @@ impl Runner {
     fn offset(&self, now: u64) -> i32 {
         let mut o = self.offset.lock().unwrap_or_else(PoisonError::into_inner);
         if o.1 == 0 || now.saturating_sub(o.1) >= HOUR {
-            let out = Command::new("date").arg("+%z").output();
+            let out = cooee_core::runner::command("date").arg("+%z").output();
             let text = out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned());
             match text.ok().as_deref().and_then(minutes) {
                 Some(m) => *o = (m, now),

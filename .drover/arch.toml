@@ -30,6 +30,12 @@ paths = ["crates/cooee/src/**"]
 except = ["crates/cooee/src/main.rs", "crates/cooee/src/cmd/mod.rs"]
 reason = "#356: a command is reached only through cmd::ALL, from main.rs; commands share through cli.rs"
 
+[[ban]]
+pattern = "Command::new"
+paths = ["crates/*/src/**"]
+except = ["crates/cooee-core/src/runner.rs"]
+reason = "#202: only the runner starts a process: use cooee_core::runner::command"
+
 [[collect]]
 dir = "crates/cooee/tests/support"
 glob = "*.rs"

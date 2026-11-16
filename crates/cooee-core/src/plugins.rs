@@ -413,7 +413,9 @@ mod tests {
 
     #[test]
     fn entries_round_trip() {
-        let data = std::env::temp_dir().join(format!("cooee-entries-{}", std::process::id()));
+        let data = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-entries-{}", std::process::id())),
+        );
         let p = Plugin {
             name: "a".into(),
             label: "A \"q\"".into(),
