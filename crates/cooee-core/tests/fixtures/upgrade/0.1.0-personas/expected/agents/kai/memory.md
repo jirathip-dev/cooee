@@ -1,0 +1,2 @@
+- [3c] The owner prefers summaries under five lines <!-- by:persona at:1731283200000 -->
+- [a01c] Deploys go out on Thursdays<br>never on a Friday <!-- by:owner at:1731369600000 -->

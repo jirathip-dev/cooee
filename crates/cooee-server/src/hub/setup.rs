@@ -1,6 +1,6 @@
 use cooee_core::{
     Body, Card, Change,
-    personas::{self, Persona},
+    agents::{self, Agent},
     shed_proto::ApprovalOption,
 };
 use serde::Deserialize;
@@ -18,7 +18,7 @@ pub struct Update {
 }
 
 impl Update {
-    fn apply(&self, mut p: Persona) -> (Persona, Vec<&'static str>) {
+    fn apply(&self, mut p: Agent) -> (Agent, Vec<&'static str>) {
         let mut changed = Vec::new();
         for (name, new, old) in [
             ("Character", &self.character, &mut p.character),
@@ -33,7 +33,7 @@ impl Update {
     }
 }
 
-fn diff(old: &Persona, new: &Persona) -> String {
+fn diff(old: &Agent, new: &Agent) -> String {
     let mut out = Vec::new();
     for (name, was, now) in [
         ("Character", &old.character, &new.character),
@@ -55,9 +55,9 @@ impl Hub {
             HubError::Refused("there is no config folder for personas".to_owned())
         })?;
         let (p, changed) =
-            u.apply(personas::find(Some(config), &self.data, persona).map_err(refused)?);
+            u.apply(agents::find(Some(config), &self.data, persona).map_err(refused)?);
         if !changed.is_empty() {
-            personas::save(config, &self.data, p).map_err(refused)?;
+            agents::save(config, &self.data, p).map_err(refused)?;
         }
         Ok(changed)
     }
@@ -69,7 +69,7 @@ impl Hub {
     /// [`HubError::Refused`] for a wrong token, a closed thread, one with no persona, or an update changing nothing.
     pub fn update_persona(&self, id: &str, token: &str, u: Update) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
-        let old = personas::find(self.config_dir(), &self.data, &meta.profile)
+        let old = agents::find(self.config_dir(), &self.data, &meta.profile)
             .map_err(|_| HubError::Refused(format!("thread {id} has no persona")))?;
         let (new, changed) = u.apply(old.clone());
         if changed.is_empty() {

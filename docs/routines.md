@@ -3,8 +3,9 @@
 ## How it works
 
 A routine is a schedule (five-field cron in the Mac's local time, its UTC offset read with `date +%z` hourly, at
-least 15 minutes between due times), a place and a prompt, kept with its run state in `<data>/routines.json` (0600,
-written whole). An agent makes one in chat with cooee's own `create_routine` tool, as itself: the chat gets a `⟳
+least 15 minutes between due times), a place and a prompt: `<config>/routines.toml` (`[[routine]]`: `id`, `name`,
+`when`, `prompt`, `paused`, `[routine.place]`), its run state in `<data>/routine-runs.json`, each written whole (0600)
+when its part changed. One typed by hand first runs at its next due time. An agent makes one in chat with cooee's own `create_routine` tool, as itself: the chat gets a `⟳
 Created routine` line; a Workflow session or a routine's own run can't. `POST /routines/<id>` renames,
 retimes, pauses and resumes them, `POST /routines/<id>/delete` deletes them; there is no other way to make one. Every 30 seconds the runner runs each
 routine whose newest due time is past both its last recorded one and its making, once (missed ones run once, late),

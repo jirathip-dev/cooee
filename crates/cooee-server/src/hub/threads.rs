@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use cooee_core::{Kind, Summary, Thread, Turn, personas};
+use cooee_core::{Kind, Summary, Thread, Turn, agents};
 use tokio::sync::broadcast;
 
 use super::{Hub, HubError, LAG, Out, Pending, Resume, Slice, glance, lock, now, rooms, waits};
@@ -111,7 +111,7 @@ impl Hub {
     /// The thread list, newest first.
     #[must_use]
     pub fn list(&self) -> Vec<Summary> {
-        let personas = personas::list(self.config_dir(), &self.data);
+        let personas = agents::list(self.config_dir(), &self.data);
         let mut asks = Vec::new();
         let mut rows: Vec<Summary> = self
             .all()

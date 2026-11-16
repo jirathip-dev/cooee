@@ -1,11 +1,13 @@
-//! A persona's skills (#218): `<data>/personas/<id>/skills/<name>/SKILL.md`, front matter (`name`, `description`)
-//! and a body. The brief lists their descriptions; a body is read on demand.
+//! An agent's skills (#218): `skills/<name>/SKILL.md` in its folder, front matter (`name`, `description`) and a
+//! body. The brief lists their descriptions; a body is read on demand.
 
-use std::{fmt::Write as _, fs, io, path::Path};
+use std::{fmt::Write as _, fs, io};
 
 use serde::{Deserialize, Serialize};
 
-/// The most skills a persona keeps.
+use crate::agents::Home;
+
+/// The most skills an agent keeps.
 pub const MAX: usize = 20;
 /// The longest description, in characters.
 pub const DESCRIPTION: usize = 120;
@@ -26,8 +28,8 @@ fn refused(why: String) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidInput, why)
 }
 
-fn dir(data: &Path, persona: &str) -> std::path::PathBuf {
-    data.join("personas").join(persona).join("skills")
+fn dir(home: &Home) -> std::path::PathBuf {
+    home.path().join("skills")
 }
 
 fn checked(name: &str) -> io::Result<&str> {
@@ -69,10 +71,10 @@ impl Skill {
     }
 }
 
-/// Persona `persona`'s skills, by name.
+/// The agent's skills, by name.
 #[must_use]
-pub fn list(data: &Path, persona: &str) -> Vec<Skill> {
-    let mut out: Vec<Skill> = fs::read_dir(dir(data, persona))
+pub fn list(home: &Home) -> Vec<Skill> {
+    let mut out: Vec<Skill> = fs::read_dir(dir(home))
         .into_iter()
         .flatten()
         .flatten()
@@ -87,22 +89,22 @@ pub fn list(data: &Path, persona: &str) -> Vec<Skill> {
     out
 }
 
-/// Persona `persona`'s skill `name`.
+/// The agent's skill `name`.
 ///
 /// # Errors
 /// A name that isn't one, or no such skill.
-pub fn read(data: &Path, persona: &str, name: &str) -> io::Result<Skill> {
-    let file = dir(data, persona).join(checked(name)?).join("SKILL.md");
+pub fn read(home: &Home, name: &str) -> io::Result<Skill> {
+    let file = dir(home).join(checked(name)?).join("SKILL.md");
     let text = fs::read_to_string(file).map_err(|_| refused(format!("no skill {name}")))?;
     Ok(Skill::parse(name, &text))
 }
 
-/// Checks `s` as persona `persona`'s new skill, or the edit of its skill `replaces`; returns the file it replaces
+/// Checks `s` as the agent's new skill, or the edit of its skill `replaces`; returns the file it replaces
 /// (empty for a new one).
 ///
 /// # Errors
 /// A bad name, an empty or too long description, a name taken, no skill `replaces`, or a 21st skill.
-pub fn check(data: &Path, persona: &str, s: &Skill, replaces: Option<&str>) -> io::Result<String> {
+pub fn check(home: &Home, s: &Skill, replaces: Option<&str>) -> io::Result<String> {
     checked(&s.name)?;
     let d = s.description.trim();
     if d.is_empty() || d.contains('\n') || d.chars().count() > DESCRIPTION {
@@ -110,9 +112,9 @@ pub fn check(data: &Path, persona: &str, s: &Skill, replaces: Option<&str>) -> i
             "a skill's description is one line of at most {DESCRIPTION} characters"
         )));
     }
-    let all = list(data, persona);
+    let all = list(home);
     let old = match replaces {
-        Some(r) => read(data, persona, r)?.file(),
+        Some(r) => read(home, r)?.file(),
         None => String::new(),
     };
     if replaces != Some(s.name.as_str()) && all.iter().any(|o| o.name == s.name) {
@@ -124,33 +126,33 @@ pub fn check(data: &Path, persona: &str, s: &Skill, replaces: Option<&str>) -> i
     Ok(old)
 }
 
-/// Saves `s` as persona `persona`'s new skill, or as the edit of its skill `replaces` (which may rename it).
+/// Saves `s` as the agent's new skill, or as the edit of its skill `replaces` (which may rename it).
 ///
 /// # Errors
 /// As [`check`], or a file that can't be written.
-pub fn save(data: &Path, persona: &str, s: Skill, replaces: Option<&str>) -> io::Result<Skill> {
-    check(data, persona, &s, replaces)?;
+pub fn save(home: &Home, s: Skill, replaces: Option<&str>) -> io::Result<Skill> {
+    check(home, &s, replaces)?;
     let s = Skill {
         description: s.description.trim().to_owned(),
         body: s.body.trim_end().to_owned(),
         ..s
     };
-    let folder = dir(data, persona).join(&s.name);
+    let folder = dir(home).join(&s.name);
     fs::create_dir_all(&folder)?;
     fs::write(folder.join("SKILL.md"), s.file())?;
     if let Some(old) = replaces.filter(|r| *r != s.name) {
-        remove(data, persona, old)?;
+        remove(home, old)?;
     }
     Ok(s)
 }
 
-/// Deletes persona `persona`'s skill `name`.
+/// Deletes the agent's skill `name`.
 ///
 /// # Errors
 /// A bad name, no such skill, or a folder that can't be removed.
-pub fn remove(data: &Path, persona: &str, name: &str) -> io::Result<()> {
-    read(data, persona, name)?;
-    fs::remove_dir_all(dir(data, persona).join(name))
+pub fn remove(home: &Home, name: &str) -> io::Result<()> {
+    read(home, name)?;
+    fs::remove_dir_all(dir(home).join(name))
 }
 
 /// `old` to `new` as lines: the common head and tail as `  `, the rest `- ` then `+ `.

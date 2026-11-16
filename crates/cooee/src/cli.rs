@@ -173,3 +173,19 @@ pub(crate) fn confirm(text: &str, yes: bool) -> Result<(), String> {
         _ => Err("nothing changed".to_owned()),
     }
 }
+
+pub(crate) fn migrate(config: &Config, dry_run: bool) -> Result<(), String> {
+    let (Some(dir), Some(data)) = (config.dir.as_deref(), config.data_dir()) else {
+        return Ok(());
+    };
+    let today = cooee_core::routines::local(crate::devices::now(), 0);
+    let plan = cooee_core::migrate::plan(dir, &data, &today[..10]);
+    if dry_run {
+        plan.lines().iter().for_each(|l| cooee_core::say!("{l}"));
+        return Ok(());
+    }
+    plan.apply(|line| cooee_core::note!("cooee: migrate: {line}"))
+        .map_err(|e| {
+            format!("migrate: {e}; the old files are untouched; `cooee config migrate` tries again")
+        })
+}

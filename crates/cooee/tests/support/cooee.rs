@@ -22,6 +22,15 @@ pub fn scratch(name: &str) -> PathBuf {
     dir
 }
 
+/// Agent `id`'s folder under config folder `dir` (#359): `agent.toml` holding `toml`, and `INSTRUCTIONS.md`.
+pub fn agent(dir: &Path, id: &str, toml: &str, instructions: &str) -> PathBuf {
+    let home = dir.join("agents").join(id);
+    fs::create_dir_all(&home).unwrap();
+    fs::write(home.join("agent.toml"), toml).unwrap();
+    fs::write(home.join("INSTRUCTIONS.md"), instructions).unwrap();
+    home
+}
+
 /// `cooee serve` on a free port with data in `dir/data`, the fake shed in `shed`, the root `dir/root` unless `extra`
 /// sets `roots`, its stderr in `dir/cooee.err` and no providers unless `extra` names some; paired (`cookie` goes with every request).
 pub struct Cooee {

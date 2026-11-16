@@ -1,6 +1,6 @@
 use std::{sync::mpsc, time::Duration};
 
-use cooee_core::{Body, Change, Item, personas};
+use cooee_core::{Body, Change, Item, agents};
 
 use super::{Hub, HubError, lock, now};
 
@@ -28,7 +28,7 @@ impl Hub {
         wait: Duration,
     ) -> Result<String, HubError> {
         let meta = self.token_of(id, token)?;
-        let found = |p: &str| personas::find(self.config_dir(), &self.data, p).ok();
+        let found = |p: &str| agents::find(self.config_dir(), &self.data, p).ok();
         let name = found(target).map_or_else(|| target.to_owned(), |p| p.name);
         let card = |thread: &str, outcome: &str| Body::Ask {
             persona: target.to_owned(),
