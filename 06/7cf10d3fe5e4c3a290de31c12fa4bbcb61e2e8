@@ -1,0 +1,108 @@
+Decided: merged origin/staging; /api/v1/looks and the pack art route moved from the deleted web/src/lib.rs into cooee-server
+Because: crates/cooee-server/src/lib.rs:1848
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: "A pack installed or removed on the server shows or disappears in the list"
+Decided: /look/{theme}/ art is served with no cookie, as it was before #189, for the app's WebKit Scene art
+Because: crates/cooee-server/src/lib.rs:143
+Decided: staging build fix: chat.rs and setup.rs shed-version tests now expect the message shed.rs sends
+Because: crates/cooee-core/src/shed.rs:335
+Rejected: an in-memory pack cache with a file watcher — more code than one load per call needs
+Check: cargo test -p cooee --test themes and cargo test --workspace pass at head; the PR merges cleanly into staging
+Owner: The branch sits on current staging again; the Theme list and pack art now come from the server's own API.
+
+Decided: merged origin/staging (#229, #289); both sides' AppFeatureTests stubs and serve.sh notes are kept
+Because: apple/e2e/serve.sh:11
+Decided: the looks routes live in themes.rs; lib.rs only registers them, staying at its #356 arch baseline
+Because: crates/cooee-server/src/themes.rs:393
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: "A pack installed or removed on the server shows or disappears in the list"
+Decided: /look/{theme}/ art is served with no cookie, as before #189, for the app's WebKit Scene art
+Because: crates/cooee-server/src/lib.rs:143
+Rejected: an in-memory pack cache with a file watcher — more code than one load per call needs
+Check: drover arch-check, cargo test -p cooee --test themes and swift test pass at head; the PR merges cleanly into staging
+Owner: The branch sits on current staging again; nothing in the Theme picker changed.
+
+Decided: merged origin/staging (#276); the room pin action sits in MenuFeature's pick beside the theme, keeping body under complexity 8
+Because: apple/Sources/CooeeFeatures/MenuFeature.swift:88
+Decided: Settings' own decoder reads #276's pinned rooms, else they would be lost on relaunch
+Because: apple/Sources/CooeeCore/Settings.swift:35
+Decided: the looks routes live in themes.rs; lib.rs only registers them, staying at its arch baseline
+Because: crates/cooee-server/src/themes.rs:393
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: "A pack installed or removed on the server shows or disappears in the list"
+Rejected: an in-memory pack cache with a file watcher — more code than one load per call needs
+Check: swift test (RoomPinTests, MenuFeatureTests), cargo test --workspace and drover arch-check pass at head
+Owner: The branch sits on current staging again; pinned rooms and the Theme picker both keep working.
+
+Decided: merged origin/staging (#177, #291); Root keeps #177's cast environment beside this PR's menu load
+Because: apple/Sources/CooeeUI/Root.swift:22
+Decided: Settings' own decoder reads #276's pinned rooms, else they would be lost on relaunch
+Because: apple/Sources/CooeeCore/Settings.swift:35
+Decided: the looks routes live in themes.rs; lib.rs only registers them, staying at its arch baseline
+Because: crates/cooee-server/src/themes.rs:393
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: "A pack installed or removed on the server shows or disappears in the list"
+Rejected: an in-memory pack cache with a file watcher — more code than one load per call needs
+Check: swift test, cargo test --workspace and drover arch-check pass at head; the PR merges cleanly into staging
+Owner: The branch sits on current staging again; the Theme picker works as before.
+
+Decided: merged origin/staging (#177, #291, #427); Root keeps #177's cast environment beside this PR's menu load
+Because: apple/Sources/CooeeUI/Root.swift:22
+Decided: Settings' own decoder reads #276's pinned rooms, else they would be lost on relaunch
+Because: apple/Sources/CooeeCore/Settings.swift:35
+Decided: the looks routes live in themes.rs; lib.rs only registers them, staying at its arch baseline
+Because: crates/cooee-server/src/themes.rs:393
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: "A pack installed or removed on the server shows or disappears in the list"
+Rejected: an in-memory pack cache with a file watcher — more code than one load per call needs
+Check: swift test, cargo test --workspace and drover arch-check pass at head; the PR merges cleanly into staging
+Owner: The branch sits on current staging again; the Theme picker works as before.
+
+Decided: merged origin/staging (#312, #421); opening the menu loads the looks, then #312's core menu screen, one after the other
+Because: apple/Sources/CooeeFeatures/MenuFeature.swift:87
+Rejected: merging the two loads in parallel — the TestStore would see their answers in either order
+Decided: lib.rs registers #312's screens routes beside this PR's themes routes, staying under its arch baseline
+Because: crates/cooee-server/src/lib.rs:2157
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: crates/cooee-server/src/themes.rs:393
+Check: swift test (MenuFeatureTests), cargo test --workspace and drover arch-check pass at head; the PR merges cleanly into staging
+Owner: The branch sits on current staging again; the new menu screen and the Theme picker both load when the menu opens.
+
+Decided: merged origin/staging (#312, #421, #263); opening the menu loads the looks, then #312's core menu screen, one after the other
+Because: apple/Sources/CooeeFeatures/MenuFeature.swift:87
+Rejected: merging the two loads in parallel — the TestStore would see their answers in either order
+Decided: lib.rs registers #312's screens routes beside this PR's themes routes, staying under its arch baseline
+Because: crates/cooee-server/src/lib.rs:2157
+Decided: the looks are read from the config's themes/ on each call, so an added or removed pack shows without a restart
+Because: crates/cooee-server/src/themes.rs:393
+Check: swift test (MenuFeatureTests), cargo test --workspace and drover arch-check pass at head; the PR merges cleanly into staging
+Owner: The branch sits on current staging again; the new menu screen and the Theme picker both load when the menu opens.
+
+Decided: apple/e2e/map.toml names LiveThemeUITests for its test file, the pack pin and the themes server test
+Because: apple/e2e/map.toml:66
+Decided: merged origin/staging (#201, #318); lib.rs keeps the themes routes and the /look/ opening, minus the comments #201 strips
+Because: crates/cooee-server/src/lib.rs:136
+Decided: serve.sh still copies packs/themes, which #318's build vendors before that line runs
+Because: apple/e2e/serve.sh:17
+Rejected: mapping Layout.swift to LiveThemeUITests only — it would narrow a shared file from the whole suite
+Check: scripts/e2e-scope.sh, ci/ci-scripts-test.sh, scripts/comments.py, cargo test -p cooee --test themes and swift test pass at head
+Owner: The theme test is now on the CI test map, so the iPhone theme run is no longer blocked.
+
+Decided: merged origin/staging (#435, #444); the look API notes moved from the deleted docs/api.md into docs/themes.md
+Because: docs/themes.md:94
+Rejected: none
+Owner: The branch sits on current staging again; the Theme picker is unchanged.
+
+Decided: the looks client test moved unchanged into LooksClientTests, so ClientTests stays under SwiftLint's 150-line type body
+Because: apple/Tests/CooeeAPITests/LooksClientTests.swift:5
+Rejected: trimming other ClientTests cases — they are staging's tests, not this PR's
+Check: scripts/apple-check.sh passes at head (CI apple job)
+Owner: A test file got too long for the lint rule; one test moved to its own file, nothing in the app changed.
+
+Decided: merged origin/staging (#472, #473), bringing ci/drover-checks-test.sh that the lessons check runs
+Because: .github/workflows/lessons.yml:21
+Decided: with_rule splits the art at the style insert with split_at_checked, for staging's clippy slicing ban
+Because: crates/cooee-server/src/themes.rs:413
+Rejected: an allow on indexing_slicing — the gate caps allows and the checked split costs no lines
+Check: ci/gates.sh clippy, the lessons checker tests, cargo test -p cooee --test themes and scripts/apple-check.sh pass at head
+Owner: The branch sits on current staging again; the Theme picker is unchanged.
