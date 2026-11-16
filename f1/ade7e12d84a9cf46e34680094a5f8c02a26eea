@@ -1,0 +1,7 @@
+Decided: add .drover/verify.md so the verify stage launches the app through apple/e2e/run.sh, which makes its own simulator with xcrun simctl, with no sim-task needed.
+Because: apple/e2e/run.sh:2
+Decided: the recipe runs one class with PERSONA=false and a fresh mktemp E2E_DIR.
+Because: apple/e2e/steps/30-personas.sh:3
+Rejected: waiting for sim-task on the host — a host install is the owner's, and run.sh already drives the simulator.
+Check: run the Launch command with LiveDroverUITests; exit 0 and persona-panel-dark/light in the manifests show Edit and New chat for Conductor.
+Owner: Reviewers can now launch the app in a simulator themselves; the … panel is unchanged.
