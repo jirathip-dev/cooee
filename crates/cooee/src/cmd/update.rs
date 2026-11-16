@@ -1,5 +1,3 @@
-//! `cooee update [--check]` (#332): installs main's newest green build; `--check` only says what it would do.
-
 use crate::{
     cli::{Failed, Flag, Invocation},
     update,

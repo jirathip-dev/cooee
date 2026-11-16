@@ -1,7 +1,3 @@
-// #181 (from #125's screens-as-data/shoot.mjs): shoot each frame alone (`?f=`) in its look: a phone screen at 390 × 844
-// (DPR 2, farm dark and light) and the Mac window at 1440 × 900 (DPR 1). Each shot is checked: no sideways scroll,
-// nothing past the right edge, a cut line ellipsised.
-// Usage (repo root): node docs/design/queue-scene/shoot.mjs <chrome-headless-shell> [regexp]
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -10,7 +6,6 @@ import { extname, join } from 'node:path';
 
 const here = new URL('.', import.meta.url).pathname, root = join(here, '../../..');
 const [chrome, re] = process.argv.slice(2);
-// [page, frame, width, modes, look]: the PNG is `<frame>[-<look>]-<width>-<mode>.png` (Scene's frames carry no look).
 const BOTH = ['dark', 'light'];
 const VIEWS = [
   ['scene', 'scene', 390, BOTH, 'scene'], ['scene', 'lane', 390, BOTH, 'scene'], ['scene', 'wide', 1440, BOTH, 'scene'],
@@ -47,7 +42,6 @@ function audit() {
   const bad = [], W = innerWidth, name = e => e.tagName.toLowerCase() + (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\s+/).join('.') : '') + ` "${(e.textContent || '').trim().slice(0, 30)}"`;
   if (document.documentElement.scrollWidth > W) bad.push(`sideways scroll ${document.documentElement.scrollWidth} > ${W}`);
   for (const e of document.querySelectorAll('.one *')) {
-    // The chip rows scroll sideways by design, and a swipe moves the chat past the edge; the hidden layers and svg are not text.
     if (!e.getClientRects().length || e.closest('.dch,.sim,.fld,svg,.stb,pre')) continue;
     const r = e.getBoundingClientRect(), s = getComputedStyle(e);
     if (s.visibility === 'hidden' || r.bottom < 0 || r.top > innerHeight) continue;

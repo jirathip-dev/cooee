@@ -1,5 +1,3 @@
-//! `cooee accounts`: the provider accounts and their folders.
-
 use std::process::ExitCode;
 
 use crate::{

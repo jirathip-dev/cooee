@@ -104,6 +104,8 @@ jobs:
       # own, so a test's group signal can never reach the runner.
       - name: gates (ci/gates/*.sh)
         run: setsid --wait ci/gates.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   stable:
     name: stable (ubuntu-latest)

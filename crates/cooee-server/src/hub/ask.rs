@@ -1,8 +1,3 @@
-//! `ask_persona` (#156): a thread's persona asks another, one its `can_message` names (G4), in a linked exchange
-//! thread the owner reads and may write a note in; the asked persona's next final reply is the answer. Each
-//! refusal starts with a code the agent can read: `NOT_ALLOWED`, `DEPTH`, `TIMEOUT` or `OFFLINE`. Each ask is an
-//! `ask` card in the asker's chat (#177), and the owner's note goes back to the asker with the reply.
-
 use std::{
     sync::mpsc,
     time::{Duration, Instant},
@@ -12,10 +7,8 @@ use cooee_core::{Body, Change, Item, personas};
 
 use super::{Hub, HubError, lock, now};
 
-/// How many asks deep a chain goes: an asked persona may ask one more, no further (G4).
 const DEPTH: usize = 2;
 
-/// Ahead of the owner's message in a linked exchange, so the asked persona tells it from the asker's (q1079).
 pub(super) const OWNER_NOTE: &str = "[The owner's note; the asker gets it with your reply]:";
 
 fn no<T>(code: &str, why: &str) -> Result<T, HubError> {
@@ -118,7 +111,6 @@ impl Hub {
         })
     }
 
-    /// Ask card `item` in thread `id` ended `outcome` after `secs`, the asker given `note`.
     fn answered(
         &self,
         id: &str,
@@ -146,7 +138,6 @@ impl Hub {
         )
     }
 
-    /// The owner's notes in exchange thread `x` after its question item `question`, one a line.
     fn notes(&self, x: &str, question: u64) -> Result<String, HubError> {
         let live = self.live(x)?;
         let live = lock(&live);
@@ -164,7 +155,6 @@ impl Hub {
         Ok(notes.join("\n"))
     }
 
-    /// Changes thread `id`'s last item that `pick` matches with `f` and tells the pages; its id, 0 for none.
     fn revise(
         &self,
         id: &str,

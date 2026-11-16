@@ -1,5 +1,3 @@
-//! The names callers import from the crate root. Add none: a new module is public and reached by its path.
-
 pub use crate::accounts::{Account, Accounts, Sheet, Usage, Window};
 pub use crate::chat::{Body, Card, Change, Chat, Item, Summary, Turn};
 pub use crate::config::{Apns, ApnsEnv, Config, ConfigError, Perf, Plugin, ROOTS_FIX, save_roots};

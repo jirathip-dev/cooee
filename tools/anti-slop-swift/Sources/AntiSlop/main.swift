@@ -1,12 +1,6 @@
 import AntiSlopCore
 import Foundation
 
-// Usage:
-//   anti-slop [paths...] [--disable=rule-id,rule-id] [--list-rules] [--help]
-//
-// Lints every .swift file under the given paths (recursively; defaults to the
-// current directory). Exits 1 when any violation is found.
-
 let usage = """
     anti-slop — opinionated rules that reject low-evidence Swift patterns.
 
@@ -52,7 +46,7 @@ func parseArguments(_ arguments: ArraySlice<String>) -> Options? {
         } else if argument.hasPrefix("--config=") {
             options.configPath = String(argument.dropFirst("--config=".count))
         } else if argument == "--list-rules" || argument == "-h" || argument == "--help" {
-            return nil // handled by caller before parsing matters
+            return nil
         } else if argument.hasPrefix("-") && argument != "-" {
             FileHandle.standardError.write(Data("[anti-slop] unknown option: \(argument)\n".utf8))
             exit(2)
@@ -109,8 +103,6 @@ guard var options = parseArguments(arguments) else {
 
 let searchPaths = options.paths.isEmpty ? ["."] : options.paths
 
-// Persistent config (.anti-slop.json, discovered walking up from the working
-// directory) merges with --disable flags; CLI flags are additive.
 do {
     options.disabled.formUnion(
         try AntiSlopConfig.resolve(

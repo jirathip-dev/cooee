@@ -1,5 +1,3 @@
-//! `cooee install --port <p>`: the instance's launchd service.
-
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -26,8 +24,6 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
     Ok(install(path, inv.instance(), port, inv.explicit())?)
 }
 
-/// Writes the instance's launchd plist (and its config with `port`, if it has none), then prints the commands that
-/// start it, serve it on the tailnet and, if shed isn't running, install shed.
 fn install(path: Option<PathBuf>, instance: &str, port: u16, explicit: bool) -> Result<(), String> {
     let path = path.ok_or("no config path: set HOME")?;
     if !path.exists() {

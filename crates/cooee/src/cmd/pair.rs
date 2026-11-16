@@ -1,5 +1,3 @@
-//! `cooee pair`: a pairing code, and the requests to pair.
-
 use cooee_core::Config;
 
 use crate::{
@@ -14,7 +12,6 @@ pub(super) fn run(inv: &Invocation) -> Result<(), Failed> {
     Ok(pairing(&inv.config()?, &inv.rest(), inv.usage())?)
 }
 
-/// `cooee pair`, `cooee pair asks` and `cooee pair approve|decline <id>`.
 fn pairing(config: &Config, args: &[&str], usage: &str) -> Result<(), String> {
     match args {
         [] => pair(config),
@@ -24,7 +21,6 @@ fn pairing(config: &Config, args: &[&str], usage: &str) -> Result<(), String> {
     }
 }
 
-/// The requests to pair still waiting, as `GET /pair/asks` lists them (JSON): the Mac app's Approve prompt reads it.
 fn asks(config: &Config) -> Result<(), String> {
     let asking = devices_of(config)?
         .asking(now())
@@ -36,8 +32,6 @@ fn asks(config: &Config) -> Result<(), String> {
     Ok(())
 }
 
-/// Approves (`yes`) or declines the waiting request `id` as "this Mac": the owner at its keyboard, so no passkey,
-/// as `cooee pair` makes a code without one.
 fn answer(config: &Config, id: &str, yes: bool) -> Result<(), String> {
     let devices = devices_of(config)?;
     if devices

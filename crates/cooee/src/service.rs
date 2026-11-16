@@ -1,5 +1,3 @@
-//! The instance as a launchd service: what `cooee install`, `cooee doctor` and `cooee setup` share.
-
 use std::{
     env, fs,
     path::{Path, PathBuf},
@@ -12,7 +10,6 @@ pub(crate) fn shed_install() -> String {
     format!("{} && shed serve", SHED_CARGO.join(" "))
 }
 
-/// This machine's tailnet name (`tailscale status`), if Tailscale is up.
 pub(crate) fn tailnet_name() -> Option<String> {
     let out = Command::new("tailscale")
         .args(["status", "--json"])
@@ -27,7 +24,6 @@ pub(crate) fn label(instance: &str) -> String {
     format!("dev.cooee.{instance}")
 }
 
-/// The launchd label of the instance's `serve` service or its `update` timer.
 pub(crate) fn job(instance: &str, verb: &str) -> String {
     match verb {
         "serve" => label(instance),
@@ -35,15 +31,12 @@ pub(crate) fn job(instance: &str, verb: &str) -> String {
     }
 }
 
-/// XML text: `&`, `<` and `>` escaped.
 pub(crate) fn xml(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
 }
 
-/// The instance's launchd plist, `~/Library/LaunchAgents/<job(instance, verb)>.plist`, and its text: `cooee <verb>`
-/// (with `--config <path>` if `explicit`), logging to the data folder; `serve` kept alive, `update` every 15 minutes.
 pub(crate) fn plist(
     config: &Config,
     path: &Path,
@@ -107,7 +100,6 @@ pub(crate) fn plist(
     Ok((file, plist))
 }
 
-/// Writes the plist `file`, and the data folder its log goes to.
 pub(crate) fn write_plist(config: &Config, file: &Path, plist: &str) -> Result<(), String> {
     let data = config.data_dir().ok_or("no data folder")?;
     fs::create_dir_all(&data).map_err(|e| e.to_string())?;

@@ -1,7 +1,3 @@
-// #225: shoot each frame (`?f=`) full height: 390 wide at DPR 2, 1440 wide at DPR 1. Each shot is checked: no
-// sideways scroll, nothing past the right edge, a cut line ellipsised. No deps: Chrome's --remote-debugging-pipe,
-// as docs/design/native-shell/shoot.mjs.
-// Usage (repo root): node docs/design/app-icons/shoot.mjs <chrome-headless-shell> [regexp]
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -10,7 +6,6 @@ import { extname, join } from 'node:path';
 
 const here = new URL('.', import.meta.url).pathname;
 const [chrome, re] = process.argv.slice(2);
-// [page, frame, width, mode, png]
 const VIEWS = [
   ['icons', 'sheet', 390, 'dark', 'icons-390.png'], ['icons', 'wide-sheet', 1440, 'dark', 'icons-1440.png'],
   ...['dark', 'light'].flatMap(m => ['look', 'picker', 'picked'].map(f => ['picker', f, 390, m, `${f}-390-${m}.png`])),

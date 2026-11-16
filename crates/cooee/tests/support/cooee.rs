@@ -1,5 +1,3 @@
-//! `cooee serve` under test, a tiny HTTP client for it, and scratch folders.
-
 use std::{
     env, fs,
     io::{BufRead, BufReader, Read, Write},
@@ -171,7 +169,6 @@ shed_dir = {}
         body: &str,
     ) -> (String, String) {
         let mut stream = TcpStream::connect(&self.addr).unwrap();
-        // One write: a refusal sent before a late body arrives would reset the connection under the read.
         let mut request = Vec::new();
         write!(request, "{method} {path} HTTP/1.0\r\n").unwrap();
         if !headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("host")) {
@@ -256,7 +253,6 @@ shed_dir = {}
 }
 
 impl Drop for Cooee {
-    /// SIGTERM, so `cooee serve` stops what it runs; SIGKILL if it hasn't ended within 5 s.
     fn drop(&mut self) {
         if !matches!(self.child.try_wait(), Ok(None)) {
             return;

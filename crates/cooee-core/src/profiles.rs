@@ -125,7 +125,6 @@ impl Profile {
         Ok(())
     }
 
-    /// Its paths made whole: `~/x` under `$HOME`, others under `base`.
     fn rooted(mut self, base: &Path) -> Self {
         let home = env::var_os("HOME").map(PathBuf::from);
         let whole = |p: &mut PathBuf, base: &Path| {
@@ -315,7 +314,6 @@ pub fn create(
     if taken || file.exists() {
         return Err(refused(format!("there is an agent {} already", p.name)));
     }
-    // TOML's basic strings read JSON's.
     let q = |v: &str| serde_json::to_string(v).unwrap_or_default();
     let paths = [
         ("folder", &p.folder),

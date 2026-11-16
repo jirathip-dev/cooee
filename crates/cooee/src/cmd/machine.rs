@@ -1,5 +1,3 @@
-//! `cooee machine check <m> [--yes]`: one machine's setup (#150).
-
 use cooee_server::machine;
 
 use crate::cli::{Failed, Flag, Invocation};

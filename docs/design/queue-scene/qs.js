@@ -1,11 +1,3 @@
-// #181 mockup: drover's Queue with the `scene` block and fold-open rounds, drawn from fixtures/queue.json on the design
-// system (web/src/app.css, #116's ns.css, #125's sd.css). One function per block, as #125's sd.js; only what #181
-// adds is new here (the scene block, a row's rounds, the look's figure). The art is referenced, never copied: the
-// horses and the strip are the native app's own PNGs (apple/Sources/CooeeUI/Sprites/), the row figures the farm pack's.
-// `?theme=farm&mode=dark|light&look=scene|modern|terminal`, `?f=<frame>` shows one frame alone (the shots). Fills:
-//   [data-host=sheet]   the Queue as a sheet over the Conductor chat; data-open: the row ids folded open; data-y: scroll
-//   [data-host=lane]    a lane tapped from the strip: its chat pushed on the sheet (‹ Queue)
-//   [data-wide]         the Mac window, the Queue as a centred panel
 const W = '../../../web/', P = '../../../packs/themes/', SPR = '../../../apple/Sources/CooeeUI/Sprites/';
 const q = new URLSearchParams(location.search);
 const T = q.get('theme') || 'farm', MODE = q.get('mode') || 'dark', LOOK = q.get('look') || document.body.dataset.look || 'scene', F = q.get('f');
@@ -14,7 +6,6 @@ const theme = await json(`${P}${T}/theme.json`), scheme = await json(`${W}scheme
 const r = document.documentElement;
 for (const [k, v] of Object.entries(scheme.tokens)) r.style.setProperty(k, v);
 r.style.colorScheme = scheme['color-scheme'];
-// app.css knows two styles (modern, terminal); Scene is Modern's type and shapes plus the strip and the horses.
 Object.assign(r.dataset, { theme: T, style: LOOK === 'terminal' ? 'terminal' : 'modern', look: LOOK, scene: 'off', mode: MODE });
 const defs = async u => (await fetch(u).then(r => r.text())).replace(/^[\s\S]*?<svg[^>]*>|<\/svg>\s*$/g, '');
 document.body.insertAdjacentHTML('afterbegin', `<svg width=0 height=0 style="position:absolute" aria-hidden=true><defs>${await defs(`${P}${T}/sprites.svg`)}</defs></svg>`);
@@ -28,8 +19,6 @@ const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)
 const tone = t => t ? ` data-tone=${t}` : '';
 const PLAIN = { working: 'working', needs: 'needs you', done: 'done', fail: 'failed', idle: 'idle' };
 const word = k => theme.words[k] || PLAIN[k];
-// The app's, never the plugin's: the lane state's figure per look. Scene: the horse in its coat, acting the state
-// (CooeeCore LaneState.pose); Terminal: LaneState.figure; Modern: the theme's row sprite.
 const ASCII = { working: '~o=', needs: '(!)', done: '\\o/', idle: '-.-', fail: 'x_x' };
 const COATS = ['ch', 'gry', 'blk', 'bay', 'wht'];
 const coat = id => COATS[Number(String(id).match(/\d+/)?.[0] || 0) % COATS.length];
@@ -42,18 +31,12 @@ const spark = a => { const lo = Math.min(...a), hi = Math.max(...a), d = hi - lo
 const src = s => s.replace(/^\/files\/730\//, '../native-shell/');
 
 let OPEN = new Set(), inCard = false;
-// #181: the scene block. The plugin sends lanes and states only; the app draws the theme's strip, sorts the lanes
-// into its places (needs at the gate first, then refused at the fence, the trail, the stable, grazing) and skips
-// the block in Modern and Terminal, where the rows below already carry every lane.
 const ZONE = ['needs', 'fail', 'working', 'done', 'idle'];
 const scene = b => LOOK !== 'scene' ? '' : `<section class=scb aria-label="${esc(b.label || 'lanes')}"><img class=bg src="${SPR}scene-strip.png" alt="">
   <div class=fld>${[...b.lanes].sort((x, y) => ZONE.indexOf(x.state) - ZONE.indexOf(y.state)).map((l, i, a) =>
     `<a class="ln${i && a[i - 1].state !== l.state ? ' nz' : ''}" href="#" data-k=${l.state} aria-label="${esc(`${l.title} ${l.stage}, ${word(l.state)}`)}">${horse(l.id, l.state, 'hs')}
      <span class=nc><b>${esc(l.title)}</b> ${esc(l.stage)}</span><span class=nw>${esc(word(l.state))}</span></a>`).join('')}</div></section>`;
 
-// #181: a row with `rounds` folds open in place (a client toggle, no request), as #116's Workflow row: its rounds on a
-// line, each with its state's dot, summary and age; the last is current and open: its lane, its last tool lines, its
-// blocks (an ask's buttons) and its links.
 const round = (x, last) => `<li class="rn${last ? ' cur' : ''}" data-k=${x.state}><div class=rh><b>${esc(x.name)}</b><span class=rs>${esc(x.summary)}</span><span class="ta${!last && x.tap ? ' cv' : ''}">${rel(x.since)}</span></div>${
   last && (x.lane || x.blocks || x.links) ? `<div class=rnb>${x.lane ? `<p class=ds>${[x.lane.name, x.lane.harness, x.lane.model, x.lane.host].map(esc).join(' · ')}</p>` : ''}${
   x.lane?.lines ? `<ol class=lv>${x.lane.lines.map((l, i, a) => `<li>${i === a.length - 1 ? '▍ ' : ''}${esc(l)}</li>`).join('')}</ol>` : ''}${
@@ -89,10 +72,8 @@ const all = bs => (bs || []).map(b => B[b.type]?.(b) ?? '').join('');
 const MORE = '<svg class=hic viewBox="0 0 24 24" aria-hidden=true><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>';
 const sheet = (s, y) => `<div class=dim></div><div class="ps sdx" role=dialog aria-label="${esc(s.title)}"><div class=psh><span><a href="#" aria-label=More>${MORE}</a></span><b>${esc(s.title)}</b><a href="#">Done</a></div>
   <div class=pb><div class=in${y ? ` style="--y:${y}px"` : ''}>${all(s.blocks)}</div></div></div>`;
-// Behind the sheet: the Conductor chat with drover's chips on its header strip (#125 revision 3).
 const behind = () => `<div class=bh><b>Conductor</b><span class=hsc>Queue<i class=hsn>7</i></span><span class=hsc>Events</span></div>`;
 
-// A lane tapped from the strip (`tap: {thread}`): the lane's chat pushed on the sheet, back to Queue.
 const laneChat = (s, id) => { const l = s.blocks.find(b => b.type === 'scene').lanes.find(x => x.id === id);
   const fig2 = LOOK === 'scene' ? horse(l.id, l.state, 'lh') : fig({ state: l.state, tool: l.tool }, l.id);
   return `<div class=dim></div><div class="ps sdx lc" role=dialog aria-label="${esc(l.tap.thread)}"><div class=psh><a href="#">‹ Queue</a><b>${esc(l.tap.thread)}</b><a href="#">Done</a></div>

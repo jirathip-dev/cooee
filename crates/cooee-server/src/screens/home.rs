@@ -10,7 +10,6 @@ use topcoat::{
 
 use crate::{Answer, Data, blocking, refused};
 
-/// The home the app draws offline: its title and blocks, with no threads or personas.
 const BUNDLED: &str = include_str!("../../../../apple/Sources/CooeeUI/Default/screens/home.json");
 
 /// `{type: screen, source: core, title, blocks, threads, personas}`: `threads` as `GET /threads`, `personas` as
