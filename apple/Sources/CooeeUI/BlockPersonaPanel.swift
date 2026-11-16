@@ -1,10 +1,10 @@
 import CooeeCore
 import SwiftUI
 
-public struct PersonaPanel: View {
+public struct PersonaPanelBlocks: View {
     @Environment(\.look) private var look
     private let persona: Persona
-    private let content: PanelContent
+    private let screen: JSONValue
     private let column: Bool
     private let end: Bool
 
@@ -16,7 +16,7 @@ public struct PersonaPanel: View {
             }
             header
             Scroller(end: end) {
-                PanelSections(content: content).padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
+                PersonaBlocks(screen: screen).padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
             }
             footer.padding(.horizontal, 16).padding(.top, 10).padding(.bottom, column ? 16 : 30)
                 .overlay(alignment: .top) { Rectangle().fill(palette.line).frame(height: 0.5) }
@@ -27,13 +27,13 @@ public struct PersonaPanel: View {
 
     public init(personaID: String = "cond", column: Bool = false, end: Bool = false) {
         persona = Fixtures.persona(personaID)
-        content = PanelContent.fixture(personaID)
+        screen = JSONValue.personaPanels[personaID] ?? .bundledPersona
         self.column = column
         self.end = end
     }
 }
 
-extension PersonaPanel {
+extension PersonaPanelBlocks {
     private var header: some View {
         HStack(spacing: 10) {
             Avatar(persona: persona, size: column ? 36 : 44)
@@ -52,10 +52,12 @@ extension PersonaPanel {
     }
 
     private var footer: some View {
-        HStack(spacing: 10) {
-            action("pencil", "Edit")
+        let blocks = screen.list("blocks")
+        let memory = Int(blocks.first { $0.type == "memory" }?["count"]?.number ?? 0)
+        return HStack(spacing: 10) {
+            if blocks.contains(where: { $0.type == "edit" }) { action("pencil", "Edit") }
             action("square.and.pencil", "New chat")
-            action("brain.head.profile", content.memory > 0 ? "Memory · \(content.memory)" : "Memory")
+            action("brain.head.profile", memory > 0 ? "Memory · \(memory)" : "Memory")
         }
     }
 
@@ -91,4 +93,12 @@ extension PersonaPanel {
                 .ignoresSafeArea()
         }
     }
+}
+
+extension JSONValue {
+    internal static let bundledPersona: JSONValue = {
+        // SAFETY: Default/screens/persona.json is copied into this module's bundle by Package.swift
+        let url = Bundle.module.url(forResource: "persona", withExtension: "json", subdirectory: "Default/screens")!
+        return (try? JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: url))) ?? .null
+    }()
 }

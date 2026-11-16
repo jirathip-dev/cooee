@@ -99,30 +99,11 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@v2
         with:
-          tool: just,cargo-deny,topcoat-cli@0.11.0
-      - name: fmt (cargo fmt, topcoat fmt)
-        run: just fmt
-      - name: clippy (pedantic, at most 10 allows)
-        run: just clippy
-      - name: test (incl. upgrade compatibility and crash injection)
-        # #336: on Linux, a session of its own, so a test's group signal can never reach the runner.
-        run: setsid --wait just test
-      - name: doc
-        run: just doc
-      - name: deny (licences, advisories, duplicate versions)
-        run: just deny
-      - name: line cap (crates/*/src ≤ line_cap; apple/ Swift ≤ apple_cap)
-        run: just cap
-      - name: dependency direction (cooee-core has no workspace deps)
-        run: just deps
-      - name: public hygiene (ci/denylist.txt)
-        run: just hygiene
-      - name: neutral core (no provider named outside crates/cooee-core/src/providers and tests)
-        run: just neutral
-      - name: theme gate (packs/themes and the starter)
-        run: just themes
-      - name: CI scripts (scope, reuse, nightly)
-        run: just ci-scripts
+          tool: cargo-deny,topcoat-cli@0.11.0
+      # #356: every gate of ci/gates/ (ci/gates.sh), so a new gate adds no line here. #336: on Linux, a session of its
+      # own, so a test's group signal can never reach the runner.
+      - name: gates (ci/gates/*.sh)
+        run: setsid --wait ci/gates.sh
 
   stable:
     name: stable (ubuntu-latest)

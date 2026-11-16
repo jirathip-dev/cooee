@@ -18,10 +18,11 @@ use std::{
 };
 
 use serde_json::{Value, json};
-use support::{Cooee, FakeShed, is_item, others_go_on, scratch, version};
+use support::{Cooee, FakeShed, HANG, is_item, others_go_on, scratch, version};
 
 /// A plugin backend on a free port: every request's head (request line and lowercased headers) and body. Its
-/// next answer to `/cooee/choice` is `choice`'s, when set; while `hang` is set it answers no choice.
+/// next answer to `/cooee/choice` is `choice`'s, when set; while `hang` is set (for at most [`HANG`]) it answers no
+/// choice.
 struct Backend {
     port: u16,
     seen: Arc<Mutex<Vec<(String, String)>>>,
@@ -87,7 +88,11 @@ fn answer(
     log.lock()
         .unwrap()
         .push((head, String::from_utf8(body).unwrap()));
-    while matches!(path.as_str(), "/cooee/choice" | "/hang") && hang.load(Ordering::SeqCst) {
+    let until = Instant::now() + HANG;
+    while matches!(path.as_str(), "/cooee/choice" | "/hang")
+        && hang.load(Ordering::SeqCst)
+        && Instant::now() < until
+    {
         thread::sleep(Duration::from_millis(20));
     }
     if path == "/cooee/choice"
@@ -844,15 +849,20 @@ fn cooees_own_cards_go_out_as_blocks_and_settle_to_their_line() {
     );
 }
 
-/// #138: `cooee plugin check` passes every #125, #181 and #184 fixture and fails a broken answer, naming the field.
+/// #138: `cooee plugin check` passes every #125, #181, #184 and #213 fixture and fails a broken answer, naming the field.
 #[test]
 fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let design = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/design");
-    let mut files: Vec<_> = ["screens-as-data", "fleets-config", "queue-scene"]
-        .iter()
-        .flat_map(|d| std::fs::read_dir(design.join(d).join("fixtures")).unwrap())
-        .map(|f| f.unwrap().path())
-        .collect();
+    let mut files: Vec<_> = [
+        "screens-as-data",
+        "fleets-config",
+        "queue-scene",
+        "workflow-diagram",
+    ]
+    .iter()
+    .flat_map(|d| std::fs::read_dir(design.join(d).join("fixtures")).unwrap())
+    .map(|f| f.unwrap().path())
+    .collect();
     files.sort();
     let out = Command::new(env!("CARGO_BIN_EXE_cooee"))
         .args(["plugin", "check"])
@@ -862,7 +872,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
     let said = String::from_utf8_lossy(&out.stdout);
     assert!(
         out.status.success()
-            && said.lines().count() == 21
+            && said.lines().count() == 25
             && said.lines().all(|l| l.starts_with("ok")),
         "{said}"
     );
@@ -890,7 +900,7 @@ fn plugin_check_passes_the_fixtures_and_names_a_broken_field() {
 }
 
 /// #288: a plugin whose answer hangs holds only its own card: meanwhile another thread's send, the thread list and
-/// the home page each answer within 200 ms, and that thread's reply streams in.
+/// the home page each answer, and that thread's reply streams in.
 #[test]
 fn a_hanging_plugin_answer_never_holds_another_thread() {
     let s = setup("plugin-hang");
@@ -916,7 +926,7 @@ fn a_hanging_plugin_answer_never_holds_another_thread() {
 }
 
 /// #291: more calls to a hung plugin than the server has blocking threads: the first 8 wait on it, the rest fail at
-/// once, and meanwhile the hub and the other plugin each answer within 200 ms.
+/// once, and meanwhile, while those 8 still hang, the hub and the other plugin each answer.
 #[test]
 fn a_hung_plugin_holds_only_its_own_calls() {
     let s = setup("plugin-busy");
@@ -926,7 +936,7 @@ fn a_hung_plugin_holds_only_its_own_calls() {
     let get = format!("GET /p/a/api/hang HTTP/1.0\r\nHost: {addr}\r\nCookie: {cookie}\r\n\r\n");
     let call = || {
         let mut last = String::new();
-        for _ in 0..50 {
+        for _ in 0..500 {
             let mut answer = String::new();
             let got = TcpStream::connect(addr).and_then(|mut c| {
                 c.set_read_timeout(Some(Duration::from_secs(20)))?;
@@ -964,7 +974,8 @@ fn a_hung_plugin_holds_only_its_own_calls() {
         let at = Instant::now();
         assert_eq!(s.cooee.get("/p/b/api/echo").0, 200);
         let took = at.elapsed();
-        assert!(took < Duration::from_millis(200), "plugin b took {took:?}");
+        assert!(took < HANG / 2, "plugin b took {took:?}");
+        assert!(answers.try_recv().is_err(), "the 8 calls to a still hang");
         s.a.hang.store(false, Ordering::SeqCst);
         for answer in answers.iter().take(8) {
             assert!(answer.contains(r#"{"path":"/hang"}"#), "{answer}");

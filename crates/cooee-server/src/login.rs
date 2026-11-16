@@ -513,6 +513,12 @@ impl Logins {
         Ok((a.name, launch))
     }
 
+    /// Agent `agent`'s provider's "no personal setup" session options, if it has them.
+    #[must_use]
+    pub fn no_personal_setup(&self, agent: &str) -> Option<serde_json::Value> {
+        self.providers.for_agent(agent)?.no_personal_setup()
+    }
+
     /// What a thread of agent profile `p` runs with: its account's label and [`Launch`] (the account's folder, the
     /// settings file in the provider's `settings` variable (in place of the account's folder when it is the same
     /// variable), the env, its secrets read from `data` through a file there, the policy, its provider's "no personal

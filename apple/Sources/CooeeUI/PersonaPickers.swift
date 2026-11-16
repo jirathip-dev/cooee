@@ -1,13 +1,13 @@
 import CooeeCore
 import SwiftUI
 
-public struct PersonaChoices {
-    public var agents: [AgentOption]
-    public var models: [String]
-    public var efforts: [String]
-    public var machines: [MachineRow]
+internal struct PersonaChoices {
+    internal var agents: [AgentOption]
+    internal var models: [String]
+    internal var efforts: [String]
+    internal var machines: [MachineRow]
 
-    public init(
+    internal init(
         agents: [AgentOption] = [],
         models: [String] = [],
         efforts: [String] = [],

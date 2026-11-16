@@ -6,7 +6,7 @@ import Foundation
 @Reducer
 public struct ScreenFeature: Sendable {
     @ObservableState
-    public struct State: Equatable {
+    public struct State: Equatable, Identifiable {
         public let server: Server
         public let source: LayoutSource
         public let home: String
@@ -17,12 +17,19 @@ public struct ScreenFeature: Sendable {
         public var acting = false
         public var said: String?
         public var path: [String] = []
+        public var focus: String?
+        public var beside: String?
+        public var besideScreen: JSONValue?
         @Presents public var lane: ChatFeature.State?
 
         public var offline: Bool { unreachable != nil }
         public var title: String { screen?.root.string("title") ?? label }
         public var current: String { path.last ?? home }
         public var key: String { "\(server.url.absoluteString)|\(source.name)|\(current)" }
+        public var id: String { Self.id(source, home) }
+
+        /// The id of the screen `source` serves at `path`, as a layout node names it.
+        public static func id(_ source: LayoutSource, _ path: String) -> String { "\(source.name)|\(path)" }
 
         public init(server: Server, source: LayoutSource, path: String, label: String) {
             self.server = server
@@ -47,6 +54,8 @@ public struct ScreenFeature: Sendable {
         case navigate(String?)
         case open(String)
         case push(String)
+        case beside(String)
+        case besideLoaded(JSONValue)
         case lane(PresentationAction<ChatFeature.Action>)
         case delegate(Delegate)
 
@@ -56,7 +65,7 @@ public struct ScreenFeature: Sendable {
         }
     }
 
-    private enum CancelID { case follow }
+    private enum CancelID { case follow, beside }
 
     @Dependency(\.plugins) private var plugins
     @Dependency(\.screenCache) private var cache
@@ -84,7 +93,7 @@ public struct ScreenFeature: Sendable {
                 return acted(&state, answer, error)
             case .navigate(let path):
                 return navigate(&state, to: path)
-            case .open, .push, .lane, .delegate:
+            case .open, .push, .beside, .besideLoaded, .lane, .delegate:
                 return opened(&state, action)
             }
             return .none
@@ -124,6 +133,18 @@ extension ScreenFeature {
         case .push(let thread):
             let persona = Persona(APIPersona(id: "", name: thread, agent: ""))
             state.lane = ChatFeature.State(server: state.server, target: .thread(thread), persona: persona)
+        case .beside(let path):
+            state.beside = path
+            state.besideScreen = nil
+            let (plugins, server, source) = (plugins, state.server, state.source)
+            return .run { send in
+                await send(.besideLoaded(try await plugins.screen(server, source, path)))
+            } catch: { error, send in
+                await send(.failed(Self.who(error, source: source)))
+            }
+            .cancellable(id: CancelID.beside, cancelInFlight: true)
+        case .besideLoaded(let screen):
+            state.besideScreen = screen
         default:
             break
         }
@@ -167,7 +188,11 @@ extension ScreenFeature {
     }
 
     private func navigate(_ state: inout State, to path: String?) -> Effect<Action> {
-        if let path { state.path.append(path) } else if state.path.popLast() == nil { return .none }
+        let parts = path?.split(separator: "#", maxSplits: 1).map(String.init) ?? []
+        if let first = parts.first { state.path.append(first) } else if state.path.popLast() == nil { return .none }
+        state.focus = parts.dropFirst().first
+        state.beside = nil
+        state.besideScreen = nil
         state.screen = nil
         state.unreachable = nil
         return follow(state)

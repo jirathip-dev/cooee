@@ -126,7 +126,7 @@ public enum ChatItems {
 
     private static func card(_ item: APIItem) -> Item? {
         if let ask = Ask(item) { return .asked(id: item.id, ask) }
-        return item.block.map { .card(id: item.id, poster: item.plugin, block: $0) }
+        return item.block.map { .card(id: item.id, poster: item.plugin ?? item.speaker, block: $0) }
     }
 
     public static func step(_ items: [APIItem]) -> String? {
