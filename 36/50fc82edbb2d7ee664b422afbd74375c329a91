@@ -1,0 +1,15 @@
+Decided: Clients.swift splits into Clients/<Name>.swift, each with its struct, testValue and DependencyValues accessor; bodies move as-is
+Because: docs/architecture/hot-files/shapes.md:19
+Decided: Live.swift splits into Live/<Name>+Live.swift, one per DependencyKey extension, including PluginsClient, ScreenCache, LayoutClient and LayoutStore whose structs live elsewhere
+Because: docs/architecture/hot-files/adr.md:91
+Decided: CooeeRoot moves verbatim to CooeeApp/CooeeRoot.swift
+Because: "Adds: Clients/, Live/, CooeeRoot.swift."
+Decided: the staging merge ports #240's edits into the split files: OwnerCheck gets Clients/OwnerCheck.swift and Live/OwnerCheck+Live.swift, TerminalClient gets Live/TerminalClient+Live.swift
+Because: apple/Sources/CooeeApp/Live/OwnerCheck+Live.swift:8
+Decided: the arch.toml merge keeps staging's frozen paths, bans and collect blocks and adds slice 7's two frozen paths and two collect blocks
+Because: .drover/arch.toml:3
+Decided: the UserDefaults SwiftLint ban exempts the CooeeApp/Live folder, where SettingsStore's live value now lives
+Because: apple/.swiftlint.yml:67
+Check: sorted body lines of staging's two old files equal the new files' bar imports, AppIconClient's #else and the nine DependencyValues extension pairs
+Rejected: one Clients file per area instead of per client — the ADR names one file per client
+Owner: Nothing changes in the app; a new native client is now one file in Clients/ and one in Live/.
