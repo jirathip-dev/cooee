@@ -160,14 +160,14 @@ pub(crate) fn load(path: Option<&Path>, instance: &str) -> Result<Config, String
 }
 
 pub(crate) fn confirm(text: &str, yes: bool) -> Result<(), String> {
-    println!("{text}");
+    cooee_core::say!("{text}");
     if yes {
         return Ok(());
     }
-    print!("go ahead? [y/N] ");
-    let _ = std::io::Write::flush(&mut std::io::stdout());
+    cooee_core::say_open!("go ahead? [y/N] ");
+    std::io::Write::flush(&mut std::io::stdout()).ok();
     let mut answer = String::new();
-    let _ = std::io::stdin().read_line(&mut answer);
+    std::io::stdin().read_line(&mut answer).ok();
     match answer.trim() {
         "y" | "yes" => Ok(()),
         _ => Err("nothing changed".to_owned()),
@@ -181,10 +181,10 @@ pub(crate) fn migrate(config: &Config, dry_run: bool) -> Result<(), String> {
     let today = cooee_core::routines::local(crate::devices::now(), 0);
     let plan = cooee_core::migrate::plan(dir, &data, &today[..10]);
     if dry_run {
-        plan.lines().iter().for_each(|l| println!("{l}"));
+        plan.lines().iter().for_each(|l| cooee_core::say!("{l}"));
         return Ok(());
     }
-    plan.apply(|line| eprintln!("cooee: migrate: {line}"))
+    plan.apply(|line| cooee_core::note!("cooee: migrate: {line}"))
         .map_err(|e| {
             format!("migrate: {e}; the old files are untouched; `cooee config migrate` tries again")
         })

@@ -193,8 +193,8 @@ impl Mcp {
 
 impl Drop for Mcp {
     fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
+        self.child.kill().ok();
+        self.child.wait().ok();
     }
 }
 

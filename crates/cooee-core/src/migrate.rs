@@ -368,9 +368,11 @@ impl Plan {
                 "agents/{id}: `agent` differs in {shown} and its profile; the profile's is kept"
             ));
         }
-        if !f.instructions.is_empty() {
+        if a.instructions.trim().is_empty() {
+            a.instructions.clone_from(&f.instructions);
+        } else if !f.instructions.is_empty() {
             self.warn(format!(
-                "agents/{id}: its profile's instructions file was never read for it; not migrated"
+                "agents/{id}: its profile's instructions were never read for it; not migrated"
             ));
         }
         if f.lent.is_some() {
@@ -539,7 +541,7 @@ impl Plan {
             Ok(())
         };
         if let Err(e) = staging() {
-            let _ = fs::remove_dir_all(&staged);
+            fs::remove_dir_all(&staged).ok();
             return Err(e);
         }
         fs::rename(&staged, &agents)?;

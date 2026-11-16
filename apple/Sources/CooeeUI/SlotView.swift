@@ -8,7 +8,7 @@ internal struct SlotView: View {
     internal let node: LayoutNode<LayoutPlace>
     internal let compact: Bool
 
-    internal var body: some View {
+    @ViewBuilder private var placed: some View {
         if node.place != .hidden {
             switch node.content {
             case .component(let kind):
@@ -32,6 +32,10 @@ internal struct SlotView: View {
                 EmptyView()
             }
         }
+    }
+
+    internal var body: some View {
+        placed.transition(node.transition.entering)
     }
 }
 
@@ -107,6 +111,7 @@ private struct NavHost: View {
                         chat.map { SlotView(store: store, node: $0, compact: false) }
                     }
                 }
+                .animation(.snappy, value: store.path.last)
             }
         }
         .sheet(isPresented: Binding(get: { store.menu.open }, set: { store.send(.menu(.open($0))) })) {
@@ -219,9 +224,12 @@ private struct ColumnScreen: View {
                     open($0)
                 }
                 .disabled(store.offline || store.acting).opacity(store.offline ? 0.6 : 1)
+                .environment(\.refresh, screen.root["refresh"]?.bool == true ? refresh : nil)
             }
         }
         .padding(BlocksView.inset)
         .task { await store.send(.task).finish() }
     }
+
+    private func refresh() { store.send(.retry) }
 }

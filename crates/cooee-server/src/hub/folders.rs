@@ -19,7 +19,7 @@ fn dirs(dir: &Path, hidden: bool) -> Vec<PathBuf> {
 }
 
 fn in_home(path: Option<&Path>) -> Result<(PathBuf, PathBuf), HubError> {
-    let home = std::env::var_os("HOME")
+    let home = cooee_core::env_var("HOME")
         .map(PathBuf::from)
         .unwrap_or_default();
     let real = home.canonicalize().unwrap_or_default();

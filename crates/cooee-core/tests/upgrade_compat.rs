@@ -61,12 +61,12 @@ fn every_earlier_release_loads_without_losing_data() {
     for release in releases() {
         let (_, data) = folders(&release);
         let store = Store::open(&data).unwrap();
-        let scratch = env::temp_dir().join(format!(
+        let scratch = cooee_core::scratch::owned(env::temp_dir().join(format!(
             "cooee-upgrade-{}-{}",
             release.file_name().unwrap().to_string_lossy(),
             std::process::id()
-        ));
-        let _ = fs::remove_dir_all(&scratch);
+        )));
+        fs::remove_dir_all(&scratch).ok();
         let rewritten = Store::open(&scratch).unwrap();
         for id in store.ids().unwrap() {
             let file = data.join("threads").join(format!("{id}.json"));
@@ -171,10 +171,12 @@ fn every_earlier_release_migrates_once_losing_nothing() {
     let mut moved = 0;
     for release in releases() {
         let name = release.file_name().unwrap().to_string_lossy().into_owned();
-        let scratch = env::temp_dir().join(format!("cooee-migrate-{name}-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&scratch);
+        let scratch = cooee_core::scratch::owned(
+            env::temp_dir().join(format!("cooee-migrate-{name}-{}", std::process::id())),
+        );
+        fs::remove_dir_all(&scratch).ok();
         copy(&release, &scratch);
-        let _ = fs::remove_dir_all(scratch.join("expected"));
+        fs::remove_dir_all(scratch.join("expected")).ok();
         let (config, data) = folders(&scratch);
         let before = tree(&scratch);
         let plan = migrate::plan(&config, &data, DAY);

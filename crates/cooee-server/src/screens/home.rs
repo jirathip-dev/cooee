@@ -20,8 +20,13 @@ pub async fn home(cx: &Cx) -> Result<Answer<Value>> {
     let (data, config) = (d.0.clone(), d.1.clone());
     let screen = blocking(cx, move |hub| {
         let mut screen: Value = serde_json::from_str(BUNDLED).map_err(refused)?;
-        screen["threads"] = json!(hub.list());
-        screen["personas"] = json!(agents::list(config.as_deref(), &data));
+        if let Some(o) = screen.as_object_mut() {
+            o.insert("threads".to_owned(), json!(hub.list()));
+            o.insert(
+                "personas".to_owned(),
+                json!(agents::list(config.as_deref(), &data)),
+            );
+        }
         Ok(super::core(screen))
     });
     Ok(Answer(screen.await))

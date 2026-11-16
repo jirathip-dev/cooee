@@ -77,14 +77,18 @@ fn parse(line: &str) -> Option<Note> {
 
 pub(crate) fn render(mut notes: Vec<Note>) -> (Vec<Note>, String) {
     for i in 0..notes.len() {
-        if notes[i].id.is_empty() {
-            notes[i].id = fresh(&notes, &notes[i]);
+        let id = match notes.get(i) {
+            Some(n) if n.id.is_empty() => fresh(&notes, n),
+            _ => continue,
+        };
+        if let Some(n) = notes.get_mut(i) {
+            n.id = id;
         }
     }
     let mut text = String::new();
     for n in &notes {
         let body = n.text.replace("\r\n", "\n").replace('\n', "<br>");
-        let _ = writeln!(text, "- [{}] {body} <!-- by:{} at:{} -->", n.id, n.by, n.at);
+        writeln!(text, "- [{}] {body} <!-- by:{} at:{} -->", n.id, n.by, n.at).ok();
     }
     (notes, text)
 }
@@ -99,7 +103,7 @@ pub fn notes(home: &Home) -> Vec<Note> {
     }
     let (notes, _) = render(notes);
     if let Err(e) = write(home, &notes) {
-        eprintln!("cooee: {}: notes: {e}", home.path().display());
+        crate::note!("cooee: {}: notes: {e}", home.path().display());
     }
     notes
 }

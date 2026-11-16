@@ -27,7 +27,7 @@ use std::{
     net::{IpAddr, SocketAddr},
     path::PathBuf,
     sync::Arc,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, UNIX_EPOCH},
 };
 
 use cooee_core::{
@@ -78,7 +78,7 @@ const OPEN: [&str; 6] = [
 const COOKIE: &str = "cooee";
 
 fn now() -> u64 {
-    SystemTime::now()
+    cooee_core::clock::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
 }
@@ -133,7 +133,7 @@ impl Layer for Gate {
                 return plain(403, "forbidden: foreign Host or Origin");
             }
             let path = uri(cx).path();
-            if OPEN.contains(&path) {
+            if OPEN.contains(&path) || path.starts_with("/look/") {
                 return next.run(cx, body).await;
             }
             if path.starts_with("/mcp/agent/") {
@@ -157,7 +157,7 @@ impl Layer for Gate {
             let found = match token.map(|t| self.devices.find(t, now())).transpose() {
                 Ok(found) => found.flatten(),
                 Err(e) => {
-                    eprintln!("cooee: devices: {e}");
+                    cooee_core::note!("cooee: devices: {e}");
                     return plain(503, "cooee can't read its paired devices: try again soon.");
                 }
             };
@@ -181,7 +181,7 @@ impl Layer for Timing {
 
     fn handle<'a>(&'a self, cx: &'a Cx, body: Body, next: Next<'a>) -> LayerFuture<'a> {
         Box::pin(async move {
-            let start = std::time::Instant::now();
+            let start = cooee_core::clock::instant();
             let response = next.run(cx, body).await.into_response(cx)?;
             let route = try_endpoint(cx).map_or("(none)", |e| match e.path().as_str() {
                 "" => "/",
@@ -232,7 +232,7 @@ impl<T: Serialize> IntoResponse for Answer<T> {
             Err(HubError::Shed(
                 e @ (ShedError::Rpc(_) | ShedError::Bad(_) | ShedError::Cli { .. }),
             )) => {
-                eprintln!("cooee: {e}");
+                cooee_core::note!("cooee: {e}");
                 (
                     502,
                     "shed couldn't do that: run cooee doctor on the Mac.".to_owned(),
@@ -457,7 +457,7 @@ async fn create(cx: &Cx, Json(new): Json<New>) -> Result<Answer<Created>> {
         if let Some((b, name)) = ours
             && let Err(e) = plugin::started(&b, &id, &name)
         {
-            eprintln!("cooee: plugin {}: thread-started: {e}", b.name);
+            cooee_core::note!("cooee: plugin {}: thread-started: {e}", b.name);
         }
         Ok(id)
     });
@@ -1263,7 +1263,10 @@ async fn plugin_log(cx: &Cx) -> Result<Response> {
         return plain(404, &format!("{} isn't installed.", q.name));
     }
     let text = std::fs::read(manager(cx).log(&q.name)).unwrap_or_default();
-    let tail = String::from_utf8_lossy(&text[text.len().saturating_sub(16 << 10)..]).into_owned();
+    let tail = text
+        .get(text.len().saturating_sub(16 << 10)..)
+        .unwrap_or_default();
+    let tail = String::from_utf8_lossy(tail).into_owned();
     plain(
         200,
         if tail.is_empty() {
@@ -1885,10 +1888,10 @@ async fn mcp_skill(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     Ok(Answer(
         blocking(cx, move |hub| {
             let me = (a.thread.as_str(), token.as_str());
-            if let Some(name) = a.server["read"].as_str() {
+            if let Some(name) = a.server.get("read").and_then(serde_json::Value::as_str) {
                 return hub.read_skill(me, name);
             }
-            let p = serde_json::from_value(a.server["propose"].clone())
+            let p = serde_json::from_value(a.server.get("propose").cloned().unwrap_or_default())
                 .map_err(|_| HubError::Refused("give read or propose".to_owned()))?;
             hub.propose_skill(me, p).map(|_| {
                 "Proposed. The owner sees a card; nothing is saved until they approve it."
@@ -1910,9 +1913,15 @@ async fn mcp_grant(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<mcp::Grant
 #[route(POST "/mcp/agent/ask")]
 async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let (token, s) = (bearer(cx), a.server);
-    let text = |k: &str| s[k].as_str().unwrap_or_default().to_owned();
+    let text = |k: &str| {
+        s.get(k)
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_owned()
+    };
     let (persona, message) = (text("persona"), text("message"));
-    let wait = Duration::from_secs(s["timeout"].as_u64().unwrap_or(300).min(600));
+    let number = |k: &str| s.get(k).and_then(serde_json::Value::as_u64);
+    let wait = Duration::from_secs(number("timeout").unwrap_or(300).min(600));
     Ok(Answer(
         blocking(cx, move |hub| {
             hub.ask_persona((&a.thread, &token), &persona, &message, wait)
@@ -1924,9 +1933,15 @@ async fn mcp_ask(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
 #[route(POST "/mcp/agent/history")]
 async fn mcp_history(cx: &Cx, Json(a): Json<AgentAsk>) -> Result<Answer<String>> {
     let (token, s) = (bearer(cx), a.server);
-    let text = |k: &str| s[k].as_str().unwrap_or_default().to_owned();
-    let (query, thread, before) = (text("query"), text("thread"), s["before"].as_u64());
-    let limit = usize::try_from(s["limit"].as_u64().unwrap_or(5)).unwrap_or(5);
+    let text = |k: &str| {
+        s.get(k)
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_owned()
+    };
+    let number = |k: &str| s.get(k).and_then(serde_json::Value::as_u64);
+    let (query, thread, before) = (text("query"), text("thread"), number("before"));
+    let limit = usize::try_from(number("limit").unwrap_or(5)).unwrap_or(5);
     Ok(Answer(
         blocking(cx, move |hub| {
             hub.history((&a.thread, &token), (&query, limit), &thread, before)
@@ -1986,11 +2001,13 @@ pub fn router(
     };
     routines::routes(
         runner,
-        room_routes(persona_routes(screens::routes(pairing::routes(
-            Router::builder()
-                .layer(Timing)
-                .layer(gate)
-                .layer(BodyLimit::max(64 << 20).at("/threads")),
+        room_routes(persona_routes(screens::routes(themes::routes(
+            pairing::routes(
+                Router::builder()
+                    .layer(Timing)
+                    .layer(gate)
+                    .layer(BodyLimit::max(64 << 20).at("/threads")),
+            ),
         )))),
     )
     .route(push_key)
@@ -2086,9 +2103,13 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
     let shed = cooee_core::Shed::new(config.shed.clone(), config.shed_dir.clone());
     let (looks, refused) = look::Looks::load(config.dir.as_deref(), config.theme.as_deref());
     for why in refused {
-        eprintln!("cooee: refused {why}");
+        cooee_core::note!("cooee: refused {why}");
     }
-    let theme = looks.themes[&looks.default].clone();
+    let theme = looks
+        .themes
+        .get(&looks.default)
+        .cloned()
+        .ok_or_else(|| io::Error::other(format!("no theme {}", looks.default)))?;
     let logins = Logins::new(
         shed.clone(),
         cooee_core::Providers::new(&config.providers),
@@ -2109,10 +2130,10 @@ pub fn serve(config: &Config, ready: impl FnOnce(SocketAddr)) -> io::Result<()> 
                 let launch = signins.home(&agent, Some(&account));
                 let probed = launch.and_then(|(_, l)| daily.probe(&agent, &account, &l));
                 if let Err(e) = probed {
-                    eprintln!("cooee: models of {agent}: {e}");
+                    cooee_core::note!("cooee: models of {agent}: {e}");
                 }
             }
-            std::thread::sleep(Duration::from_hours(1));
+            cooee_core::clock::sleep(Duration::from_hours(1));
         }
     });
     let runner = runner(&hub, Arc::clone(&logins), &data, config.dir.as_deref());

@@ -1,7 +1,4 @@
-use std::{
-    sync::mpsc,
-    time::{Duration, Instant},
-};
+use std::{sync::mpsc, time::Duration};
 
 use cooee_core::{Body, Change, Item, agents};
 
@@ -64,7 +61,7 @@ impl Hub {
             (m.asked_by == id && m.profile == target && !m.closed).then(|| m.id.clone())
         });
         let (rid, by) = (format!("ask-{key}-{}", now()), format!("[{}]:", asker.name));
-        let start = Instant::now();
+        let start = cooee_core::clock::instant();
         let sent = match open {
             Some(x) => self.send_after(&x, message, &rid, &[], &by).map(|_| x),
             None => self.seat(target, (message, &rid), |r| {

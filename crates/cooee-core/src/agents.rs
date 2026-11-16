@@ -267,7 +267,7 @@ pub fn list(config: Option<&Path>, data: &Path) -> Vec<Agent> {
         }
         match load(&d, id) {
             Ok(a) => out.push(a),
-            Err(e) => eprintln!("cooee: {}: {e}", d.join("agent.toml").display()),
+            Err(e) => crate::note!("cooee: {}: {e}", d.join("agent.toml").display()),
         }
     }
     let lock = plugins::read_lock(data).unwrap_or_default();
@@ -301,7 +301,7 @@ pub fn all(
         } else {
             let read = fs::read_to_string(build.join("cooee-plugin.toml"));
             let Ok(m) = read.and_then(|t| plugins::Manifest::parse(&t)) else {
-                eprintln!("cooee: {}: no readable cooee-plugin.toml", build.display());
+                crate::note!("cooee: {}: no readable cooee-plugin.toml", build.display());
                 continue;
             };
             m.profiles
@@ -309,7 +309,7 @@ pub fn all(
         for p in profiles {
             match p.lend(&l.name, &build) {
                 Ok(a) => out.push(a),
-                Err(e) => eprintln!("cooee: plugin {}: {e}", l.name),
+                Err(e) => crate::note!("cooee: plugin {}: {e}", l.name),
             }
         }
     }
@@ -484,10 +484,10 @@ impl Agent {
         let mut skills = String::from("Your skills (read one with cooee's skill tool):");
         if let Some(h) = &home {
             for n in memory::notes(h) {
-                let _ = write!(notes, "\n- [{}] {}", n.id, n.text);
+                write!(notes, "\n- [{}] {}", n.id, n.text).ok();
             }
             for s in skills::list(h).iter().take(skills::MAX) {
-                let _ = write!(skills, "\n- {}: {}", s.name, s.description);
+                write!(skills, "\n- {}: {}", s.name, s.description).ok();
             }
         }
         let plain = if self.style == Style::Chat { PLAIN } else { "" };

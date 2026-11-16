@@ -158,6 +158,7 @@ internal struct RelativeText: View {
 
 internal struct GroupBlock: View {
     @Environment(\.look) private var look
+    @Environment(\.refresh) private var refresh
     internal let block: JSONValue
 
     internal var body: some View {
@@ -176,6 +177,10 @@ internal struct GroupBlock: View {
                 Spacer(minLength: 4)
                 ForEach(Array(block.list("actions").enumerated()), id: \.offset) { _, item in
                     ToolbarItemView(item: item)
+                }
+                if block["refresh"]?.bool == true, let refresh {
+                    Button(action: refresh) { RoundButton(symbol: "arrow.clockwise", ascii: "r", size: 36) }
+                        .buttonStyle(.plain).accessibilityLabel("Refresh")
                 }
                 if let done = block["done"] { DoneButton(done: done) }
             }

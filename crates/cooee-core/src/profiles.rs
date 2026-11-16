@@ -130,8 +130,6 @@ impl Profile {
 
 #[cfg(test)]
 mod tests {
-    use std::env;
-
     use super::*;
 
     fn profile(text: &str) -> Profile {
@@ -179,7 +177,9 @@ mod tests {
 
     #[test]
     fn secrets_are_read_from_their_files_and_plain_values_kept() {
-        let data = env::temp_dir().join(format!("cooee-profile-env-{}", std::process::id()));
+        let data = crate::scratch::owned(
+            std::env::temp_dir().join(format!("cooee-profile-env-{}", std::process::id())),
+        );
         fs::create_dir_all(data.join("secrets")).unwrap();
         fs::write(data.join("secrets/S"), "s3cret\n").unwrap();
         let p = profile("env = { A = \"x\", B = \"secret:S\" }");

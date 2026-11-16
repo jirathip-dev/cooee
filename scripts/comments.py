@@ -152,6 +152,7 @@ class Lexer:
 
 
 def public(lines, n, lang):
+    start = n
     while n < len(lines) and (not lines[n].strip() or ATTRIBUTE[lang].match(lines[n].strip()) or lines[n].strip().startswith("///")):
         if lang == "rust" and lines[n].strip().startswith("#[") and not lines[n].rstrip().endswith("]"):
             while n < len(lines) and not lines[n].rstrip().endswith("]"):
@@ -162,6 +163,8 @@ def public(lines, n, lang):
     line = lines[n]
     if PUBLIC[lang].match(line.strip()):
         return True
+    if lang == "rust" and line.strip().startswith("macro_rules!"):
+        return any(above.strip() == "#[macro_export]" for above in lines[start:n])
     indent = len(line) - len(line.lstrip())
     for above in reversed(lines[:n]):
         if above.strip() and len(above) - len(above.lstrip()) < indent:

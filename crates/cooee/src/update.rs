@@ -3,7 +3,7 @@ use std::{
     fs::{self, OpenOptions},
     io::{IsTerminal, Write},
     path::{Path, PathBuf},
-    process::{Command, ExitCode},
+    process::ExitCode,
 };
 
 use cooee_core::Config;
@@ -30,16 +30,21 @@ fn ci_run(query: &str) -> Result<serde_json::Value, String> {
     let runs = api(&format!(
         "actions/workflows/ci.yml/runs?branch=main&event=push&per_page=1&{query}"
     ))?;
-    Ok(runs["workflow_runs"][0].clone())
+    Ok(runs
+        .pointer("/workflow_runs/0")
+        .cloned()
+        .unwrap_or_default())
 }
 
 fn head() -> Result<(String, Option<String>), String> {
-    let head = api("commits/main")?["sha"]
-        .as_str()
+    let head = api("commits/main")?
+        .get("sha")
+        .and_then(serde_json::Value::as_str)
         .ok_or("main has no sha")?
         .to_owned();
     let run = ci_run(&format!("head_sha={head}"))?;
-    Ok((head, run["conclusion"].as_str().map(str::to_owned)))
+    let conclusion = run.get("conclusion").and_then(serde_json::Value::as_str);
+    Ok((head, conclusion.map(str::to_owned)))
 }
 
 /// The commit to install, or why there is none: main's `head` once its ci run passed, unless it is installed already
@@ -65,7 +70,7 @@ pub fn decide(
 /// `cooee --version`: the version and the commit it was built at, if known.
 pub fn version() -> ExitCode {
     let rev = REV.map(|r| format!(" ({r})")).unwrap_or_default();
-    println!("cooee {}{rev}", env!("CARGO_PKG_VERSION"));
+    cooee_core::say!("cooee {}{rev}", env!("CARGO_PKG_VERSION"));
     ExitCode::SUCCESS
 }
 
@@ -82,7 +87,7 @@ pub fn run(config: &Config) -> Result<(), String> {
 fn update(config: &Config, check: bool) -> Result<(), String> {
     let data = config.data_dir().ok_or("no data folder")?;
     if !config.auto_update {
-        println!("auto-update is off (auto_update = false in the config)");
+        cooee_core::say!("auto-update is off (auto_update = false in the config)");
         return Ok(());
     }
     let failed = fs::read_to_string(data.join("update.failed")).ok();
@@ -91,13 +96,13 @@ fn update(config: &Config, check: bool) -> Result<(), String> {
         Ok(sha) => sha,
         Err(why) if !check => return log(&data, &why),
         Err(why) => {
-            println!("would do nothing: {why}");
+            cooee_core::say!("would do nothing: {why}");
             return Ok(());
         }
     };
     let job = label(&config.instance);
     if check {
-        println!(
+        cooee_core::say!(
             "would install {sha}, restart {job} and check that port {} answers",
             config.port
         );
@@ -123,14 +128,14 @@ fn update(config: &Config, check: bool) -> Result<(), String> {
 }
 
 fn bin() -> Result<PathBuf, String> {
-    let home = env::var_os("HOME").ok_or("no HOME")?;
+    let home = cooee_core::env_var("HOME").ok_or("no HOME")?;
     Ok(Path::new(&home).join(".cargo/bin/cooee"))
 }
 
 fn install(config: &Config, bin: &Path, sha: &str) -> Result<(), String> {
     let old = bin.with_extension("old");
     fs::copy(bin, &old).map_err(|e| format!("keeping {}: {e}", bin.display()))?;
-    let installed = Command::new("sh")
+    let installed = cooee_core::runner::command("sh")
         .args(["-c", INSTALL, "install.sh"])
         .env("COOEE_REV", sha)
         .status()
@@ -164,7 +169,7 @@ fn restart(config: &Config) -> bool {
 
 fn log(data: &Path, line: &str) -> Result<(), String> {
     if std::io::stdout().is_terminal() {
-        println!("{line}");
+        cooee_core::say!("{line}");
     }
     let file = OpenOptions::new()
         .create(true)
@@ -176,11 +181,15 @@ fn log(data: &Path, line: &str) -> Result<(), String> {
 
 /// `cooee doctor`'s line: the installed commit, main's green head, the last check and whether auto-update is on.
 pub fn doctor(config: &Config) {
-    let green =
-        ci_run("status=success").map(|r| r["head_sha"].as_str().map_or("none", short).to_owned());
+    let green = ci_run("status=success").map(|r| {
+        r.get("head_sha")
+            .and_then(serde_json::Value::as_str)
+            .map_or("none", short)
+            .to_owned()
+    });
     let log = config.data_dir().map(|d| d.join("update.log"));
     let ago = log.and_then(|l| fs::metadata(l).ok()?.modified().ok()?.elapsed().ok());
-    println!(
+    cooee_core::say!(
         "info update: installed {}, main's green head {}, last check {}, auto-update {}",
         REV.map_or("unknown", short),
         green.unwrap_or_else(|e| e),

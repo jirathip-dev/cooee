@@ -35,7 +35,8 @@ const NOW: u64 = 1_800_000_000;
 fn shed() -> &'static Path {
     static SHED_FILE: OnceLock<PathBuf> = OnceLock::new();
     SHED_FILE.get_or_init(|| {
-        let shed = env::temp_dir().join(format!("cooee-machines-shed-{}", std::process::id()));
+        let shed = Path::new(env!("CARGO_TARGET_TMPDIR"))
+            .join(format!("machines-shed-{}", std::process::id()));
         fs::write(&shed, SHED).unwrap();
         fs::set_permissions(&shed, fs::Permissions::from_mode(0o755)).unwrap();
         shed
@@ -43,8 +44,10 @@ fn shed() -> &'static Path {
 }
 
 fn scratch(name: &str) -> PathBuf {
-    let dir = env::temp_dir().join(format!("cooee-machines-{name}-{}", std::process::id()));
-    let _ = fs::remove_dir_all(&dir);
+    let dir = cooee_core::scratch::owned(
+        env::temp_dir().join(format!("cooee-machines-{name}-{}", std::process::id())),
+    );
+    fs::remove_dir_all(&dir).ok();
     fs::create_dir_all(&dir).unwrap();
     std::os::unix::fs::symlink(shed(), dir.join("shed")).unwrap();
     fs::write(
@@ -262,10 +265,11 @@ impl FakeCooee {
                     .unwrap()
                     .push((path, serde_json::from_slice(&body).unwrap()));
                 let code = code.load(Ordering::SeqCst);
-                let _ = write!(
+                write!(
                     r.into_inner(),
                     "HTTP/1.0 {code} X\r\nContent-Length: 0\r\n\r\n"
-                );
+                )
+                .ok();
             }
         });
         let cooee = Cooee {

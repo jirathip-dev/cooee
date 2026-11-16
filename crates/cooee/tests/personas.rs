@@ -275,6 +275,38 @@ fn an_agents_launch_keys_are_read_only_and_an_edit_keeps_them() {
     assert_eq!(s.cooee.json("/personas"), json!([]));
 }
 
+#[test]
+fn a_persona_without_instructions_takes_its_profiles() {
+    let s = setup("personas-pinstr");
+    let personas = s.dir.join("personas");
+    fs::create_dir_all(&personas).unwrap();
+    let persona = |id: &str, more: &str| {
+        let text = format!(
+            "name = \"{id}\"\nagent = \"fake-acp\"\nprofile = \"coder\"\nstyle = \"detailed\"\ncharacter = \"Calm.\"\n{more}"
+        );
+        fs::write(personas.join(format!("{id}.toml")), text).unwrap();
+    };
+    persona("lead", "");
+    persona("own", "instructions = \"My own rules.\"\n");
+    let note = json!({ "text": "Tea, no sugar." });
+    let (status, added) = s.call("POST", "/personas/lead/memory", Some(&note));
+    assert_eq!(status, 200, "{added}");
+    let id = added["id"].as_str().unwrap();
+
+    let (_, line, brief) = s.start("lead");
+    assert!(
+        line.contains(" MODE=review "),
+        "runs as the profile: {line}"
+    );
+    assert_eq!(
+        brief,
+        format!(
+            "Calm.\n\nFollow the house rules.\n\nYour notes (edit them with your remember tool):\n- [{id}] Tea, no sugar.\n\nhi"
+        )
+    );
+    assert_eq!(s.start("own").2, "Calm.\n\nMy own rules.\n\nhi");
+}
+
 fn install_drover(s: &Setup) {
     let lock = json!([{ "name": "drover", "url": "https://example.com/drover", "commit": "c0",
                         "version": "0.1.0", "tabs": ["queue"], "port": 1, "enabled": false }]);

@@ -47,7 +47,7 @@ impl Hub {
             seen: now(),
         });
         if let Err(e) = models::save(&self.data.join("models.json"), &lists) {
-            eprintln!("cooee: models.json: {e}");
+            cooee_core::note!("cooee: models.json: {e}");
         }
     }
 
@@ -80,7 +80,7 @@ impl Hub {
                 let home = self.config_dir().ok_or_else(none);
                 let kept = home.and_then(|c| agents::home(c, &p.id));
                 if let Err(e) = kept.and_then(|h| memory::remember(&h, "owner", &e, now())) {
-                    eprintln!("cooee: persona {}: {e}", p.id);
+                    cooee_core::note!("cooee: persona {}: {e}", p.id);
                 }
             }
         }

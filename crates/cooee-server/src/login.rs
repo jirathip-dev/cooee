@@ -1,6 +1,5 @@
 use std::{
     collections::BTreeMap,
-    env,
     panic::AssertUnwindSafe,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
@@ -121,14 +120,14 @@ impl Logins {
         thread::spawn(move || {
             loop {
                 checker.tick();
-                thread::sleep(Duration::from_secs(1));
+                cooee_core::clock::sleep(Duration::from_secs(1));
             }
         });
         let shed = logins.shed.clone();
         thread::spawn(move || {
             let labels = BTreeMap::from([(LABEL.to_owned(), "1".to_owned())]);
             for t in shed.ls(labels).unwrap_or_default() {
-                let _ = shed.close(&t.name);
+                shed.close(&t.name).ok();
             }
         });
         logins
@@ -270,7 +269,7 @@ impl Logins {
         let run = RunParams {
             name: Some(format!("{LABEL}-{name}-{:x}", now())),
             labels: BTreeMap::from([(LABEL.to_owned(), "1".to_owned())]),
-            cwd: env::var_os("HOME")
+            cwd: cooee_core::env_var("HOME")
                 .filter(|_| machine.is_none())
                 .map_or_else(|| PathBuf::from("/"), PathBuf::from),
             keep: false,
@@ -296,7 +295,7 @@ impl Logins {
                 return Err(e.into());
             }
         };
-        let _ = self.shed.resize(&terminal, 40, 500);
+        self.shed.resize(&terminal, 40, 500).ok();
         live.insert(name.to_owned(), Login::Running(terminal.clone()));
         let logins = Arc::clone(self);
         let name = name.to_owned();
@@ -320,7 +319,7 @@ impl Logins {
             Err(e) => (false, e.to_string()),
         };
         if let Err(e) = self.shed.close(terminal) {
-            eprintln!("cooee: {terminal}: {e}");
+            cooee_core::note!("cooee: {terminal}: {e}");
         }
         ended
     }

@@ -1,6 +1,8 @@
 pub use crate::accounts::{Account, Accounts, Sheet, Usage, Window};
 pub use crate::chat::{Body, Card, Change, Chat, Item, Summary, Turn};
-pub use crate::config::{Apns, ApnsEnv, Config, ConfigError, Perf, Plugin, ROOTS_FIX, save_roots};
+pub use crate::config::{
+    Apns, ApnsEnv, Config, ConfigError, Perf, Plugin, ROOTS_FIX, env_var, save_roots,
+};
 pub use crate::devices::{
     Asking, Claim, Credential, Device, Devices, Passkey, append_line, label, random, sha256,
     write_private,
@@ -48,7 +50,7 @@ fn toml_table(out: &mut String, path: &str, v: &serde_json::Value) {
             || v.as_str() == Some("")
             || v.as_array().is_some_and(Vec::is_empty);
         if !empty && !nested(v) {
-            let _ = writeln!(out, "{} = {v}", key(k));
+            writeln!(out, "{} = {v}", key(k)).ok();
         }
     }
     for (k, v) in m.iter().filter(|(_, v)| nested(v)) {
@@ -59,7 +61,7 @@ fn toml_table(out: &mut String, path: &str, v: &serde_json::Value) {
             _ => (Vec::new(), "", ""),
         };
         for item in items {
-            let _ = writeln!(out, "\n{open}{path}{close}");
+            writeln!(out, "\n{open}{path}{close}").ok();
             toml_table(out, &format!("{path}."), item);
         }
     }
