@@ -1,0 +1,7 @@
+Decided: the server's generated doc line points at docs/README.md, as #422 on staging does, since docs/api.md is gone
+Because: scripts/gen.sh:75
+Decided: arch.toml keeps slice 1's frozen and generated lines and adds staging's docs freezes and generated README.md
+Because: .drover/arch.toml:3
+Rejected: none
+Check: sh scripts/gen.sh leaves no diff; drover arch-check --base origin/staging has 0 violations
+Owner: Nothing changes in the app; the split server files now sit on top of staging's new docs layout.
